@@ -45,7 +45,7 @@ public class OsCpuLoggingTest {
     }
 
     static void analyzeOutputForOsCpuLog(OutputAnalyzer output) throws Exception {
-        output.shouldContain("CPU:total");
+        output.shouldContain("CPU: total");
         output.shouldHaveExitValue(0);
     }
 

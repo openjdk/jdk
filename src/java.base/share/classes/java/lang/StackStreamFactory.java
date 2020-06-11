@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,7 @@ final class StackStreamFactory {
         final R walk() {
             checkState(NEW);
             try {
-                // VM will need to stablize the stack before walking.  It will invoke
+                // VM will need to stabilize the stack before walking.  It will invoke
                 // the AbstractStackWalker::doStackWalk method once it fetches the first batch.
                 // the callback will be invoked within the scope of the callStackWalk frame.
                 return beginStackWalk();

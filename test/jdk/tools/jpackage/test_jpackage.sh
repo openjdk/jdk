@@ -75,4 +75,4 @@ exec_command ()
 
 set_args "$@"
 basedir="$(dirname $0)"
-exec_command "$basedir/run_tests.sh" -m create "${args[@]}"
+exec_command ${SHELL} "$basedir/run_tests.sh" -m create "${args[@]}"

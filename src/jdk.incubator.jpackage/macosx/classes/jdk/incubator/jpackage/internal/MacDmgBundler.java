@@ -25,16 +25,27 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.ResourceBundle;
 import static jdk.incubator.jpackage.internal.MacAppImageBuilder.ICON_ICNS;
 import static jdk.incubator.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
 
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERBOSE;
 
 public class MacDmgBundler extends MacBaseInstallerBundler {
 
@@ -65,9 +76,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         IOUtils.writableOutputDir(outdir.toPath());
 
-        File appImageDir = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
         try {
-            appImageDir.mkdirs();
             File appLocation = prepareAppBundle(params);
 
             if (appLocation != null && prepareConfigFiles(params)) {
@@ -327,6 +336,10 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         File mountedRoot = new File(imagesRoot.getAbsolutePath(),
                     APP_NAME.fetchFrom(params));
         try {
+            Files.deleteIfExists(AppImageFile.getPathInAppImage(
+                    mountedRoot.toPath().resolve(APP_NAME.fetchFrom(params)
+                            + ".app")));
+
             // background image
             File bgdir = new File(mountedRoot, BACKGROUND_IMAGE_FOLDER);
             bgdir.mkdirs();

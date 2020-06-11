@@ -2069,8 +2069,8 @@ static bool _print_ascii_file(const char* filename, outputStream* st, const char
   return true;
 }
 
-static void _print_ascii_file_h(const char* header, const char* filename, outputStream* st) {
-  st->print_cr("%s:", header);
+static void _print_ascii_file_h(const char* header, const char* filename, outputStream* st, bool same_line = true) {
+  st->print("%s:%c", header, same_line ? ' ' : '\n');
   if (!_print_ascii_file(filename, st)) {
     st->print_cr("<Not Available>");
   }
@@ -2085,44 +2085,46 @@ void os::print_dll_info(outputStream *st) {
   jio_snprintf(fname, sizeof(fname), "/proc/%d/maps", pid);
 
   if (!_print_ascii_file(fname, st)) {
-    st->print("Can not get library information for pid = %d\n", pid);
+    st->print_cr("Can not get library information for pid = %d", pid);
   }
 }
 
-int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
-  FILE *procmapsFile = NULL;
+struct loaded_modules_info_param {
+  os::LoadedModulesCallbackFunc callback;
+  void *param;
+};
 
-  // Open the procfs maps file for the current process
-  if ((procmapsFile = fopen("/proc/self/maps", "r")) != NULL) {
-    // Allocate PATH_MAX for file name plus a reasonable size for other fields.
-    char line[PATH_MAX + 100];
+static int dl_iterate_callback(struct dl_phdr_info *info, size_t size, void *data) {
+  if ((info->dlpi_name == NULL) || (*info->dlpi_name == '\0')) {
+    return 0;
+  }
 
-    // Read line by line from 'file'
-    while (fgets(line, sizeof(line), procmapsFile) != NULL) {
-      u8 base, top, inode;
-      char name[sizeof(line)];
+  struct loaded_modules_info_param *callback_param = reinterpret_cast<struct loaded_modules_info_param *>(data);
+  address base = NULL;
+  address top = NULL;
+  for (int idx = 0; idx < info->dlpi_phnum; idx++) {
+    const ElfW(Phdr) *phdr = info->dlpi_phdr + idx;
+    if (phdr->p_type == PT_LOAD) {
+      address raw_phdr_base = reinterpret_cast<address>(info->dlpi_addr + phdr->p_vaddr);
 
-      // Parse fields from line, discard perms, offset and device
-      int matches = sscanf(line, UINT64_FORMAT_X "-" UINT64_FORMAT_X " %*s %*s %*s " INT64_FORMAT " %s",
-             &base, &top, &inode, name);
-      // the last entry 'name' is empty for some entries, so we might have 3 matches instead of 4 for some lines
-      if (matches < 3) continue;
-      if (matches == 3) name[0] = '\0';
+      address phdr_base = align_down(raw_phdr_base, phdr->p_align);
+      if ((base == NULL) || (base > phdr_base)) {
+        base = phdr_base;
+      }
 
-      // Filter by inode 0 so that we only get file system mapped files.
-      if (inode != 0) {
-
-        // Call callback with the fields of interest
-        if(callback(name, (address)base, (address)top, param)) {
-          // Oops abort, callback aborted
-          fclose(procmapsFile);
-          return 1;
-        }
+      address phdr_top = align_up(raw_phdr_base + phdr->p_memsz, phdr->p_align);
+      if ((top == NULL) || (top < phdr_top)) {
+        top = phdr_top;
       }
     }
-    fclose(procmapsFile);
   }
-  return 0;
+
+  return callback_param->callback(info->dlpi_name, base, top, callback_param->param);
+}
+
+int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
+  struct loaded_modules_info_param callback_param = {callback, param};
+  return dl_iterate_phdr(&dl_iterate_callback, &callback_param);
 }
 
 void os::print_os_info_brief(outputStream* st) {
@@ -2135,7 +2137,7 @@ void os::print_os_info_brief(outputStream* st) {
 }
 
 void os::print_os_info(outputStream* st) {
-  st->print("OS:");
+  st->print_cr("OS:");
 
   os::Linux::print_distro_info(st);
 
@@ -2145,8 +2147,7 @@ void os::print_os_info(outputStream* st) {
 
   // Print warning if unsafe chroot environment detected
   if (unsafe_chroot_detected) {
-    st->print("WARNING!! ");
-    st->print_cr("%s", unstable_chroot_error);
+    st->print_cr("WARNING!! %s", unstable_chroot_error);
   }
 
   os::Linux::print_libversion_info(st);
@@ -2154,14 +2155,21 @@ void os::print_os_info(outputStream* st) {
   os::Posix::print_rlimit_info(st);
 
   os::Posix::print_load_average(st);
+  st->cr();
 
   os::Linux::print_full_memory_info(st);
+  st->cr();
 
   os::Linux::print_proc_sys_info(st);
+  st->cr();
 
-  os::Linux::print_ld_preload_file(st);
+  if (os::Linux::print_ld_preload_file(st)) {
+    st->cr();
+  }
 
-  os::Linux::print_container_info(st);
+  if (os::Linux::print_container_info(st)) {
+    st->cr();
+  }
 
   VM_Version::print_platform_virtualization_info(st);
 
@@ -2222,9 +2230,8 @@ void os::Linux::print_distro_info(outputStream* st) {
     st->print("Debian ");
     _print_ascii_file("/etc/debian_version", st);
   } else {
-    st->print("Linux");
+    st->print_cr("Linux");
   }
-  st->cr();
 }
 
 static void parse_os_info_helper(FILE* fp, char* distro, size_t length, bool get_first_line) {
@@ -2293,14 +2300,13 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 
 void os::Linux::print_libversion_info(outputStream* st) {
   // libc, pthread
-  st->print("libc:");
+  st->print("libc: ");
   st->print("%s ", os::Linux::glibc_version());
   st->print("%s ", os::Linux::libpthread_version());
   st->cr();
 }
 
 void os::Linux::print_proc_sys_info(outputStream* st) {
-  st->cr();
   _print_ascii_file_h("/proc/sys/kernel/threads-max (system-wide limit on the number of threads)",
                       "/proc/sys/kernel/threads-max", st);
   _print_ascii_file_h("/proc/sys/vm/max_map_count (maximum number of memory map areas a process may have)",
@@ -2310,7 +2316,7 @@ void os::Linux::print_proc_sys_info(outputStream* st) {
 }
 
 void os::Linux::print_full_memory_info(outputStream* st) {
-  _print_ascii_file_h("\n/proc/meminfo", "/proc/meminfo", st);
+  _print_ascii_file_h("/proc/meminfo", "/proc/meminfo", st, false);
   st->cr();
 
   // some information regarding THPs; for details see
@@ -2321,9 +2327,8 @@ void os::Linux::print_full_memory_info(outputStream* st) {
                       "/sys/kernel/mm/transparent_hugepage/defrag", st);
 }
 
-void os::Linux::print_ld_preload_file(outputStream* st) {
-  _print_ascii_file("/etc/ld.so.preload", st, "\n/etc/ld.so.preload:");
-  st->cr();
+bool os::Linux::print_ld_preload_file(outputStream* st) {
+  return _print_ascii_file("/etc/ld.so.preload", st, "/etc/ld.so.preload:");
 }
 
 void os::Linux::print_uptime_info(outputStream* st) {
@@ -2334,97 +2339,97 @@ void os::Linux::print_uptime_info(outputStream* st) {
   }
 }
 
-
-void os::Linux::print_container_info(outputStream* st) {
+bool os::Linux::print_container_info(outputStream* st) {
   if (!OSContainer::is_containerized()) {
-    return;
+    return false;
   }
 
-  st->print("container (cgroup) information:\n");
+  st->print_cr("container (cgroup) information:");
 
   const char *p_ct = OSContainer::container_type();
-  st->print("container_type: %s\n", p_ct != NULL ? p_ct : "not supported");
+  st->print_cr("container_type: %s", p_ct != NULL ? p_ct : "not supported");
 
   char *p = OSContainer::cpu_cpuset_cpus();
-  st->print("cpu_cpuset_cpus: %s\n", p != NULL ? p : "not supported");
+  st->print_cr("cpu_cpuset_cpus: %s", p != NULL ? p : "not supported");
   free(p);
 
   p = OSContainer::cpu_cpuset_memory_nodes();
-  st->print("cpu_memory_nodes: %s\n", p != NULL ? p : "not supported");
+  st->print_cr("cpu_memory_nodes: %s", p != NULL ? p : "not supported");
   free(p);
 
   int i = OSContainer::active_processor_count();
   st->print("active_processor_count: ");
   if (i > 0) {
-    st->print("%d\n", i);
+    st->print_cr("%d", i);
   } else {
-    st->print("not supported\n");
+    st->print_cr("not supported");
   }
 
   i = OSContainer::cpu_quota();
   st->print("cpu_quota: ");
   if (i > 0) {
-    st->print("%d\n", i);
+    st->print_cr("%d", i);
   } else {
-    st->print("%s\n", i == OSCONTAINER_ERROR ? "not supported" : "no quota");
+    st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no quota");
   }
 
   i = OSContainer::cpu_period();
   st->print("cpu_period: ");
   if (i > 0) {
-    st->print("%d\n", i);
+    st->print_cr("%d", i);
   } else {
-    st->print("%s\n", i == OSCONTAINER_ERROR ? "not supported" : "no period");
+    st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no period");
   }
 
   i = OSContainer::cpu_shares();
   st->print("cpu_shares: ");
   if (i > 0) {
-    st->print("%d\n", i);
+    st->print_cr("%d", i);
   } else {
-    st->print("%s\n", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
+    st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
   }
 
   jlong j = OSContainer::memory_limit_in_bytes();
   st->print("memory_limit_in_bytes: ");
   if (j > 0) {
-    st->print(JLONG_FORMAT "\n", j);
+    st->print_cr(JLONG_FORMAT, j);
   } else {
-    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
 
   j = OSContainer::memory_and_swap_limit_in_bytes();
   st->print("memory_and_swap_limit_in_bytes: ");
   if (j > 0) {
-    st->print(JLONG_FORMAT "\n", j);
+    st->print_cr(JLONG_FORMAT, j);
   } else {
-    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
 
   j = OSContainer::memory_soft_limit_in_bytes();
   st->print("memory_soft_limit_in_bytes: ");
   if (j > 0) {
-    st->print(JLONG_FORMAT "\n", j);
+    st->print_cr(JLONG_FORMAT, j);
   } else {
-    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
 
   j = OSContainer::OSContainer::memory_usage_in_bytes();
   st->print("memory_usage_in_bytes: ");
   if (j > 0) {
-    st->print(JLONG_FORMAT "\n", j);
+    st->print_cr(JLONG_FORMAT, j);
   } else {
-    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
 
   j = OSContainer::OSContainer::memory_max_usage_in_bytes();
   st->print("memory_max_usage_in_bytes: ");
   if (j > 0) {
-    st->print(JLONG_FORMAT "\n", j);
+    st->print_cr(JLONG_FORMAT, j);
   } else {
-    st->print("%s\n", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
-  st->cr();
+
+  return true;
 }
 
 void os::Linux::print_steal_info(outputStream* st) {
@@ -2554,8 +2559,9 @@ static void print_sys_devices_cpu_info(outputStream* st, char* buf, size_t bufle
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Only print the model name if the platform provides this as a summary
   if (!print_model_name_and_flags(st, buf, buflen)) {
-    _print_ascii_file_h("\n/proc/cpuinfo", "/proc/cpuinfo", st);
+    _print_ascii_file_h("/proc/cpuinfo", "/proc/cpuinfo", st, false);
   }
+  st->cr();
   print_sys_devices_cpu_info(st, buf, buflen);
 }
 

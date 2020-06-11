@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,12 @@
 #include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.hpp"
 #include "jfr/recorder/storage/jfrMemorySpaceRetrieval.hpp"
+#include "jfr/utilities/jfrLinkedList.hpp"
 
 class JfrCheckpointManager;
 class JfrChunkWriter;
 class JfrSerializer;
 class JfrTypeManager;
-class Mutex;
 class Thread;
 
 struct JfrCheckpointEntry {
@@ -44,7 +44,7 @@ struct JfrCheckpointEntry {
   juint nof_segments;
 };
 
-typedef JfrMemorySpace<JfrBuffer, JfrMspaceSequentialRetrieval, JfrCheckpointManager> JfrCheckpointMspace;
+typedef JfrMemorySpace<JfrCheckpointManager, JfrMspaceRetrieval, JfrLinkedList<JfrBuffer>, JfrLinkedList<JfrBuffer>, true > JfrCheckpointMspace;
 
 //
 // Responsible for maintaining checkpoints and by implication types.
@@ -53,60 +53,48 @@ typedef JfrMemorySpace<JfrBuffer, JfrMspaceSequentialRetrieval, JfrCheckpointMan
 //
 class JfrCheckpointManager : public JfrCHeapObj {
  public:
-  typedef JfrCheckpointMspace::Type Buffer;
+  typedef JfrCheckpointMspace::Node Buffer;
+  typedef JfrCheckpointMspace::NodePtr BufferPtr;
  private:
-  JfrCheckpointMspace* _free_list_mspace;
-  JfrCheckpointMspace* _epoch_transition_mspace;
-  Mutex* _lock;
-  const Thread* _service_thread;
+  JfrCheckpointMspace* _mspace;
   JfrChunkWriter& _chunkwriter;
-  bool _checkpoint_epoch_state;
 
-  // mspace callback
-  void register_full(Buffer* t, Thread* thread);
-  void lock();
-  void unlock();
-  DEBUG_ONLY(bool is_locked() const;)
+  JfrCheckpointManager(JfrChunkWriter& cw);
+  ~JfrCheckpointManager();
+  static JfrCheckpointManager& instance();
+  static JfrCheckpointManager* create(JfrChunkWriter& cw);
+  bool initialize();
+  static void destroy();
 
-  JfrCheckpointMspace* lookup(Buffer* old) const;
-  bool use_epoch_transition_mspace(const Thread* t) const;
-  size_t write_epoch_transition_mspace();
-
-  static Buffer* lease_buffer(Thread* t, size_t size = 0);
-  static Buffer* lease_buffer(Buffer* old, Thread* t, size_t size = 0);
-  static Buffer* flush(Buffer* old, size_t used, size_t requested, Thread* t);
+  bool lookup(Buffer* old) const;
+  static BufferPtr lease(Thread* thread, bool previous_epoch = false, size_t size = 0);
+  static BufferPtr lease(BufferPtr old, Thread* thread, size_t size = 0);
+  static BufferPtr flush(BufferPtr old, size_t used, size_t requested, Thread* thread);
 
   size_t clear();
   size_t write();
   size_t flush();
+  void notify_threads();
 
-  size_t write_static_type_set();
-  size_t write_threads();
+  size_t write_static_type_set(Thread* thread);
+  size_t write_threads(Thread* thread);
   size_t write_static_type_set_and_threads();
   void clear_type_set();
   void write_type_set();
-  static void write_type_set_for_unloaded_classes();
 
   void begin_epoch_shift();
   void end_epoch_shift();
-  void synchronize_checkpoint_manager_with_current_epoch();
 
-  void notify_threads();
-
-  JfrCheckpointManager(JfrChunkWriter& cw);
-  ~JfrCheckpointManager();
-
-  static JfrCheckpointManager& instance();
-  static JfrCheckpointManager* create(JfrChunkWriter& cw);
-  bool initialize();
+  static void on_unloading_classes();
   void on_rotation();
-  static void destroy();
+
+  // mspace callback
+  void register_full(BufferPtr buffer, Thread* thread);
 
  public:
   size_t flush_type_set();
-  static void create_thread_blob(Thread* t);
-  static void write_thread_checkpoint(Thread* t);
-  void register_service_thread(const Thread* t);
+  static void create_thread_blob(Thread* thread);
+  static void write_thread_checkpoint(Thread* thread);
 
   friend class Jfr;
   friend class JfrRecorder;
@@ -115,7 +103,7 @@ class JfrCheckpointManager : public JfrCHeapObj {
   friend class JfrCheckpointWriter;
   friend class JfrSerializer;
   friend class JfrStackTraceRepository;
-  template <typename, template <typename> class, typename>
+  template <typename, template <typename> class, typename, typename, bool>
   friend class JfrMemorySpace;
 };
 

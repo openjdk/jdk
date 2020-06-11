@@ -221,7 +221,7 @@ final class MetadataHandler extends DefaultHandler implements EntityResolver {
         SAXParser parser = new SAXParserImpl();
         MetadataHandler t = new MetadataHandler();
         try (InputStream is = new BufferedInputStream(SecuritySupport.getResourceAsStream("/jdk/jfr/internal/types/metadata.xml"))) {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, () -> "Parsing metadata.xml");
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Parsing metadata.xml");
             try {
                 parser.parse(is, t);
                 return t.buildTypes();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -63,7 +62,6 @@ static const ZStatSubPhase ZSubPhasePauseRootsObjectSynchronizer("Pause Roots Ob
 static const ZStatSubPhase ZSubPhasePauseRootsManagement("Pause Roots Management");
 static const ZStatSubPhase ZSubPhasePauseRootsJVMTIExport("Pause Roots JVMTIExport");
 static const ZStatSubPhase ZSubPhasePauseRootsJVMTIWeakExport("Pause Roots JVMTIWeakExport");
-static const ZStatSubPhase ZSubPhasePauseRootsSystemDictionary("Pause Roots SystemDictionary");
 static const ZStatSubPhase ZSubPhasePauseRootsVMThread("Pause Roots VM Thread");
 static const ZStatSubPhase ZSubPhasePauseRootsJavaThreads("Pause Roots Java Threads");
 static const ZStatSubPhase ZSubPhasePauseRootsCodeCache("Pause Roots CodeCache");
@@ -202,7 +200,6 @@ ZRootsIterator::ZRootsIterator(bool visit_jvmti_weak_export) :
     _management(this),
     _jvmti_export(this),
     _jvmti_weak_export(this),
-    _system_dictionary(this),
     _vm_thread(this),
     _java_threads(this),
     _code_cache(this) {
@@ -254,12 +251,6 @@ void ZRootsIterator::do_jvmti_weak_export(ZRootsIteratorClosure* cl) {
   JvmtiExport::weak_oops_do(&always_alive, cl);
 }
 
-void ZRootsIterator::do_system_dictionary(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseRootsSystemDictionary);
-  // Handles are processed via _vm_handles.
-  SystemDictionary::oops_do(cl, false /* include_handles */);
-}
-
 void ZRootsIterator::do_vm_thread(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRootsVMThread);
   ZRootsIteratorThreadClosure thread_cl(cl);
@@ -283,7 +274,6 @@ void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
   _object_synchronizer.oops_do(cl);
   _management.oops_do(cl);
   _jvmti_export.oops_do(cl);
-  _system_dictionary.oops_do(cl);
   _vm_thread.oops_do(cl);
   _java_threads.oops_do(cl);
   if (!ClassUnloading) {

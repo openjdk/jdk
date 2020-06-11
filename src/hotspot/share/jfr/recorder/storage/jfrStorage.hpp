@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,52 +25,51 @@
 #define SHARE_JFR_RECORDER_STORAGE_JFRSTORAGE_HPP
 
 #include "jfr/recorder/storage/jfrBuffer.hpp"
+#include "jfr/recorder/storage/jfrFullStorage.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.hpp"
 #include "jfr/recorder/storage/jfrMemorySpaceRetrieval.hpp"
+#include "jfr/utilities/jfrConcurrentQueue.hpp"
+#include "jfr/utilities/jfrLinkedList.hpp"
+#include "jfr/utilities/jfrNode.hpp"
+#include "jfr/utilities/jfrRelation.hpp"
 
 class JfrChunkWriter;
 class JfrPostBox;
 class JfrStorage;
 class JfrStorageControl;
 
-typedef JfrMemorySpace<JfrBuffer, JfrMspaceAlternatingRetrieval, JfrStorage> JfrStorageMspace;
-typedef JfrMemorySpace<JfrBuffer, JfrThreadLocalRetrieval, JfrStorage> JfrThreadLocalMspace;
-typedef JfrMemorySpace<JfrAgeNode, JfrMspaceSequentialRetrieval, JfrStorage> JfrStorageAgeMspace;
+typedef JfrMemorySpace<JfrStorage, JfrMspaceRetrieval, JfrLinkedList<JfrBuffer> > JfrStorageMspace;
+typedef JfrMemorySpace<JfrStorage, JfrMspaceRemoveRetrieval, JfrConcurrentQueue<JfrBuffer>, JfrLinkedList<JfrBuffer> > JfrThreadLocalMspace;
+typedef JfrFullStorage<JfrBuffer*, JfrValueNode> JfrFullList;
 
 //
 // Responsible for providing backing storage for writing events.
 //
 class JfrStorage : public JfrCHeapObj {
  public:
-  typedef JfrStorageMspace::Type Buffer;
+  typedef JfrStorageMspace::Node    Buffer;
+  typedef JfrStorageMspace::NodePtr BufferPtr;
+
  private:
   JfrStorageControl* _control;
   JfrStorageMspace* _global_mspace;
   JfrThreadLocalMspace* _thread_local_mspace;
-  JfrStorageMspace* _transient_mspace;
-  JfrStorageAgeMspace* _age_mspace;
+  JfrFullList* _full_list;
   JfrChunkWriter& _chunkwriter;
   JfrPostBox& _post_box;
 
-  // mspace callbacks
-  void register_full(Buffer* t, Thread* thread);
-  void lock();
-  void unlock();
-  DEBUG_ONLY(bool is_locked() const;)
-
-  Buffer* acquire_large(size_t size, Thread* t);
-  Buffer* acquire_transient(size_t size, Thread* thread);
-  bool flush_regular_buffer(Buffer* const buffer, Thread* t);
-  Buffer* flush_regular(Buffer* cur, const u1* cur_pos, size_t used, size_t req, bool native, Thread* t);
-  Buffer* flush_large(Buffer* cur, const u1* cur_pos, size_t used, size_t req, bool native, Thread* t);
-  Buffer* provision_large(Buffer* cur, const u1* cur_pos, size_t used, size_t req, bool native, Thread* t);
-  void release(Buffer* buffer, Thread* t);
+  BufferPtr acquire_large(size_t size, Thread* thread);
+  BufferPtr acquire_transient(size_t size, Thread* thread);
+  bool flush_regular_buffer(BufferPtr buffer, Thread* thread);
+  BufferPtr flush_regular(BufferPtr cur, const u1* cur_pos, size_t used, size_t req, bool native, Thread* thread);
+  BufferPtr flush_large(BufferPtr cur, const u1* cur_pos, size_t used, size_t req, bool native, Thread* thread);
+  BufferPtr provision_large(BufferPtr cur, const u1* cur_pos, size_t used, size_t req, bool native, Thread* thread);
+  void release(BufferPtr buffer, Thread* thread);
 
   size_t clear();
   size_t clear_full();
   size_t write_full();
   size_t write_at_safepoint();
-  size_t scavenge();
 
   JfrStorage(JfrChunkWriter& cw, JfrPostBox& post_box);
   ~JfrStorage();
@@ -80,19 +79,21 @@ class JfrStorage : public JfrCHeapObj {
   bool initialize();
   static void destroy();
 
- public:
-  static Buffer* acquire_thread_local(Thread* t, size_t size = 0);
-  static void release_thread_local(Buffer* buffer, Thread* t);
-  void release_large(Buffer* const buffer, Thread* t);
-  static Buffer* flush(Buffer* cur, size_t used, size_t req, bool native, Thread* t);
-  void discard_oldest(Thread* t);
-  static JfrStorageControl& control();
+  // mspace callback
+  void register_full(BufferPtr buffer, Thread* thread);
 
+ public:
+  static BufferPtr acquire_thread_local(Thread* thread, size_t size = 0);
+  static void release_thread_local(BufferPtr buffer, Thread* thread);
+  void release_large(BufferPtr buffer, Thread* thread);
+  static BufferPtr flush(BufferPtr cur, size_t used, size_t req, bool native, Thread* thread);
+  void discard_oldest(Thread* thread);
+  static JfrStorageControl& control();
   size_t write();
 
   friend class JfrRecorder;
   friend class JfrRecorderService;
-  template <typename, template <typename> class, typename>
+  template <typename, template <typename> class, typename, typename, bool>
   friend class JfrMemorySpace;
 };
 

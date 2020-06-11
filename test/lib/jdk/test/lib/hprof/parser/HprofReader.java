@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,12 +156,11 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
         return (numberRead == MAGIC_NUMBER);
     }
 
-    public HprofReader(String fileName, PositionDataInputStream in,
+    public HprofReader(ReadBuffer readBuffer, PositionDataInputStream in,
                        int dumpNumber, boolean callStack, int debugLevel)
                        throws IOException {
         super(in);
-        RandomAccessFile file = new RandomAccessFile(fileName, "r");
-        this.snapshot = new Snapshot(MappedReadBuffer.create(file));
+        this.snapshot = new Snapshot(readBuffer);
         this.dumpsToSkip = dumpNumber - 1;
         this.callStack = callStack;
         this.debugLevel = debugLevel;
@@ -173,6 +172,13 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
             stackTraces = new Hashtable<Integer, StackTrace>(43);
             classNameFromSerialNo = new Hashtable<Integer, String>();
         }
+    }
+
+    public HprofReader(String fileName, PositionDataInputStream in,
+                       int dumpNumber, boolean callStack, int debugLevel)
+                       throws IOException {
+        this(MappedReadBuffer.create(new RandomAccessFile(fileName, "r")),
+            in, dumpNumber, callStack, debugLevel);
     }
 
     public Snapshot read() throws IOException {

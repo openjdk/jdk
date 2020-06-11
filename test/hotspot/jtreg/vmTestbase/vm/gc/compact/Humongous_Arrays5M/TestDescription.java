@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @key stress gc randomness
+ * @key stress randomness
  *
  * @summary converted from VM Testbase vm/gc/compact/Humongous_Arrays5M.
  * VM Testbase keywords: [gc, stress, stressopt, feature_g1, nonconcurrent, quick]

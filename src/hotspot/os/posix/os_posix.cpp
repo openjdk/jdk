@@ -370,6 +370,10 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
   assert(split > 0, "Sanity");
   assert(is_aligned(base, os::vm_allocation_granularity()), "Sanity");
   assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
+
+  // NMT: tell NMT to track both parts individually from now on.
+  MemTracker::record_virtual_memory_split_reserved(base, size, split);
+
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
@@ -392,7 +396,7 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm*  res) {
 }
 
 void os::Posix::print_load_average(outputStream* st) {
-  st->print("load average:");
+  st->print("load average: ");
   double loadavg[3];
   int res = os::loadavg(loadavg, 3);
   if (res != -1) {
@@ -486,7 +490,7 @@ void os::Posix::print_rlimit_info(outputStream* st) {
 
 void os::Posix::print_uname_info(outputStream* st) {
   // kernel
-  st->print("uname:");
+  st->print("uname: ");
   struct utsname name;
   uname(&name);
   st->print("%s ", name.sysname);

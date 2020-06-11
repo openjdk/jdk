@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,5 +38,11 @@
  * <strong>Throws</strong> section of each method's specification.
  *
  * @since 1.2
+ * @deprecated The RMI Activation mechanism has been deprecated and may
+ * be removed from a future version of the Java Platform. All of the classes
+ * and interfaces in this package have been terminally deprecated. The
+ * {@code rmid} tool has also been terminally deprecated. There is no
+ * replacement for the RMI Activation mechanism in the Java Platform. Users of
+ * RMI Activation are advised to migrate their applications to other technologies.
  */
 package java.rmi.activation;

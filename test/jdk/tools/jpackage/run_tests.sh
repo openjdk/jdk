@@ -248,18 +248,18 @@ installJtreg ()
 
 preRun ()
 {
-  local xargs_args=(-t --no-run-if-empty rm)
-  if [ -n "$dry_run" ]; then
-    xargs_args=(--no-run-if-empty echo rm)
-  fi
-
   if [ ! -d "$output_dir" ]; then
     exec_command mkdir -p "$output_dir"
   fi
   [ ! -d "$output_dir" ] || output_dir=$(cd "$output_dir" && pwd)
 
   # Clean output directory
-  [ "$mode" != "create" ] || find $output_dir -maxdepth 1 -type f -name '*.exe' -or -name '*.msi' -or -name '*.rpm' -or -name '*.deb' | xargs "${xargs_args[@]}"
+  if [ "$mode" == "create" ]; then
+    for f in $(find $output_dir -maxdepth 1 -type f -name '*.exe' -or -name '*.msi' -or -name '*.rpm' -or -name '*.deb'); do
+      echo rm "$f"
+      [ -n "$dry_run" ] || rm "$f"
+    done
+  fi
 }
 
 

@@ -31,6 +31,11 @@
  * object registry, and the <em>{@index rmid rmid tool}</em> tool to start
  * the activation system daemon.
  *
+ * <p> <strong>Deprecation Notice:</strong> The RMI Activation mechanism has been
+ * deprecated and may be removed from a future version of the Java Platform. See the
+ * <a href="{@docRoot}/java.rmi/java/rmi/activation/package-summary.html">
+ * {@code java.rmi.activation}</a> package specification for further information.
+ *
  * @toolGuide rmiregistry
  * @toolGuide rmid
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,9 @@ public class AppImageFileTest {
     @Test
     public void testIdentity() throws IOException {
         Map<String, ? super Object> params = new LinkedHashMap<>();
-        params.put("name", "Foo");
-        params.put("app-version", "2.3");
-        params.put("description", "Duck is the King");
+        params.put(Arguments.CLIOptions.NAME.getId(), "Foo");
+        params.put(Arguments.CLIOptions.VERSION.getId(), "2.3");
+        params.put(Arguments.CLIOptions.DESCRIPTION.getId(), "Duck is the King");
         AppImageFile aif = create(params);
 
         Assert.assertEquals("Foo", aif.getLauncherName());
@@ -61,11 +61,13 @@ public class AppImageFileTest {
         // We should be ready to handle curious minds.
         Map<String, ? super Object> params = new LinkedHashMap<>();
         params.put("invalidParamName", "randomStringValue");
+        params.put(Arguments.CLIOptions.APPCLASS.getId(), "TestClass");
+        params.put(Arguments.CLIOptions.MAIN_JAR.getId(), "test.jar");
         create(params);
 
         params = new LinkedHashMap<>();
-        params.put("name", "foo");
-        params.put("app-version", "");
+        params.put(Arguments.CLIOptions.NAME.getId(), "foo");
+        params.put(Arguments.CLIOptions.VERSION.getId(), "");
         create(params);
     }
 

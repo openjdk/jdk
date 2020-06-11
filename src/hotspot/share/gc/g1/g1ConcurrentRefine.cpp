@@ -114,15 +114,6 @@ void G1ConcurrentRefineThreadControl::maybe_activate_next(uint cur_worker_id) {
   }
 }
 
-void G1ConcurrentRefineThreadControl::print_on(outputStream* st) const {
-  for (uint i = 0; i < _num_max_threads; ++i) {
-    if (_threads[i] != NULL) {
-      _threads[i]->print_on(st);
-      st->cr();
-    }
-  }
-}
-
 void G1ConcurrentRefineThreadControl::worker_threads_do(ThreadClosure* tc) {
   for (uint i = 0; i < _num_max_threads; i++) {
     if (_threads[i] != NULL) {
@@ -316,10 +307,6 @@ void G1ConcurrentRefine::threads_do(ThreadClosure *tc) {
 
 uint G1ConcurrentRefine::max_num_threads() {
   return G1ConcRefinementThreads;
-}
-
-void G1ConcurrentRefine::print_threads_on(outputStream* st) const {
-  _thread_control.print_on(st);
 }
 
 static size_t calc_new_green_zone(size_t green,

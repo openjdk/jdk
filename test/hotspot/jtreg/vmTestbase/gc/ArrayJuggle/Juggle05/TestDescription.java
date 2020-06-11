@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @key stress gc randomness
+ * @key stress randomness
  *
  * @summary converted from VM Testbase gc/ArrayJuggle/Juggle05.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent]

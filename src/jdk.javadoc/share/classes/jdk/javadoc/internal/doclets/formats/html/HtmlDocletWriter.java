@@ -998,7 +998,7 @@ public class HtmlDocletWriter {
 
         CommentHelper ch = utils.getCommentHelper(element);
         String tagName = ch.getTagName(see);
-        String seetext = replaceDocRootDir(utils.normalizeNewlines(ch.getText(see)).toString());
+        String seetext = replaceDocRootDir(removeTrailingSlash(utils.normalizeNewlines(ch.getText(see)).toString()));
         // Check if @see is an href or "string"
         if (seetext.startsWith("<") || seetext.startsWith("\"")) {
             return new RawHtml(seetext);
@@ -1010,7 +1010,6 @@ public class HtmlDocletWriter {
         Content text = plainOrCode(kind == LINK_PLAIN, new RawHtml(seetext));
 
         TypeElement refClass = ch.getReferencedClass(see);
-        String refClassName =  ch.getReferencedClassName(see);
         Element refMem =       ch.getReferencedMember(see);
         String refMemName =    ch.getReferencedMemberName(see);
 
@@ -1018,6 +1017,10 @@ public class HtmlDocletWriter {
             refMemName = refMem.toString();
         }
         if (refClass == null) {
+            ModuleElement refModule = ch.getReferencedModule(see);
+            if (refModule != null && utils.isIncluded(refModule)) {
+                return getModuleLink(refModule, label.isEmpty() ? text : label);
+            }
             //@see is not referencing an included class
             PackageElement refPackage = ch.getReferencedPackage(see);
             if (refPackage != null && utils.isIncluded(refPackage)) {
@@ -1028,9 +1031,11 @@ public class HtmlDocletWriter {
                 return getPackageLink(refPackage, label);
             } else {
                 // @see is not referencing an included class, module or package. Check for cross links.
-                DocLink elementCrossLink = (configuration.extern.isModule(refClassName))
-                        ? getCrossModuleLink(utils.elementUtils.getModuleElement(refClassName)) :
-                        (refPackage != null) ? getCrossPackageLink(refPackage) : null;
+                String refModuleName =  ch.getReferencedModuleName(see);
+                DocLink elementCrossLink = (refPackage != null) ? getCrossPackageLink(refPackage) :
+                        (configuration.extern.isModule(refModuleName))
+                                ? getCrossModuleLink(utils.elementUtils.getModuleElement(refModuleName))
+                                : null;
                 if (elementCrossLink != null) {
                     // Element cross link found
                     return links.createLink(elementCrossLink,
@@ -1116,6 +1121,10 @@ public class HtmlDocletWriter {
             return getDocLink(LinkInfoImpl.Kind.SEE_TAG, containing,
                     refMem, (label.isEmpty() ? text: label), false);
         }
+    }
+
+    private String removeTrailingSlash(String s) {
+        return s.endsWith("/") ? s.substring(0, s.length() -1) : s;
     }
 
     private Content plainOrCode(boolean plain, Content body) {

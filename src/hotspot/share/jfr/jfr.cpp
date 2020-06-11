@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
-#include "jfr/periodic/sampling/jfrThreadSampler.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
@@ -33,6 +32,7 @@
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "runtime/java.hpp"
+#include "runtime/thread.hpp"
 
 bool Jfr::is_enabled() {
   return JfrRecorder::is_enabled();
@@ -66,7 +66,7 @@ void Jfr::on_create_vm_3() {
 
 void Jfr::on_unloading_classes() {
   if (JfrRecorder::is_created()) {
-    JfrCheckpointManager::write_type_set_for_unloaded_classes();
+    JfrCheckpointManager::on_unloading_classes();
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package gc.stress;
 
 /*
  * @test TestStressG1Humongous
- * @key gc stress
+ * @key stress
  * @summary Stress G1 by humongous allocations in situation near OOM
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder

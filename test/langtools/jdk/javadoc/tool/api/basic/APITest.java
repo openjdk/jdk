@@ -197,7 +197,7 @@ class APITest {
             "help-doc.html",
             "index-all.html",
             "index.html",
-            "script-dir/jquery-3.4.1.min.js",
+            "script-dir/jquery-3.5.1.min.js",
             "script-dir/jquery-ui.min.js",
             "script-dir/jquery-ui.min.css",
             "script-dir/jquery-ui.structure.min.css",

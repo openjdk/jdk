@@ -50,6 +50,11 @@ public class Hello implements OpenFilesHandler {
 
         var lines = printArgs(args);
 
+        Stream.of(args).forEach(arg -> System.out.println(
+                arg.codePoints()
+                        .mapToObj(codePoint -> String.format("0x%04x", codePoint))
+                        .collect(Collectors.joining(",", "[", "]"))));
+
         lines.forEach(System.out::println);
 
         var outputFile = getOutputFile(args);

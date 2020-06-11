@@ -143,6 +143,8 @@ JVM_InternString
 JVM_Interrupt
 JVM_InvokeMethod
 JVM_IsArrayClass
+JVM_IsCDSDumpingEnabled
+JVM_IsCDSSharingEnabled
 JVM_IsConstructorIx
 JVM_IsHiddenClass
 JVM_IsInterface
@@ -155,6 +157,7 @@ JVM_IsVMGeneratedMethodIx
 JVM_LatestUserDefinedLoader
 JVM_LoadLibrary
 JVM_LookupDefineClass
+JVM_LookupLambdaProxyClassFromArchive
 JVM_MaxMemory
 JVM_MaxObjectInspectionAge
 JVM_MonitorNotify
@@ -171,6 +174,7 @@ JVM_RawMonitorCreate
 JVM_RawMonitorDestroy
 JVM_RawMonitorEnter
 JVM_RawMonitorExit
+JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
 JVM_ResumeThread

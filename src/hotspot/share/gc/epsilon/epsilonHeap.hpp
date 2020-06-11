@@ -117,7 +117,6 @@ public:
   bool block_is_obj(const HeapWord* addr) const { return false; }
 
   // No GC threads
-  virtual void print_gc_threads_on(outputStream* st) const {}
   virtual void gc_threads_do(ThreadClosure* tc) const {}
 
   // No nmethod handling

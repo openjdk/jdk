@@ -140,6 +140,9 @@ namespace tstrings {
     }
 
 #ifdef TSTRINGS_WITH_WCHAR
+    // conversion to the active code page
+    std::string toACP(const std::wstring& utf16str);
+
     // conversion to Utf8
     std::string toUtf8(const std::wstring& utf16str);
 

@@ -1607,7 +1607,7 @@ void os::print_os_info(outputStream* st) {
     st->print("N/A ");
   }
 #endif
-  st->print("OS:");
+  st->print_cr("OS:");
   os::win32::print_windows_version(st);
 
   os::win32::print_uptime_info(st);
@@ -3236,6 +3236,10 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
   release_memory(base, size);
   reserve_memory(split, base);
   reserve_memory(size - split, split_address);
+
+  // NMT: nothing to do here. Since Windows implements the split by
+  //  releasing and re-reserving memory, the parts are already registered
+  //  as individual mappings with NMT.
 
 }
 

@@ -24,7 +24,6 @@
 package gc;
 
 /* @test TestAllocateHeapAt.java
- * @key gc
  * @summary Test to check allocation of Java Heap with AllocateHeapAt option
  * @requires vm.gc != "Z" & os.family != "aix"
  * @library /test/lib

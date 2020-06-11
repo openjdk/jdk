@@ -302,9 +302,9 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   jvmtiError get_stack_trace(JavaThread *java_thread,
                                            jint stack_depth, jint max_count,
                                            jvmtiFrameInfo* frame_buffer, jint* count_ptr);
-  jvmtiError get_current_contended_monitor(JavaThread *java_thread,
+  jvmtiError get_current_contended_monitor(JavaThread *calling_thread, JavaThread *java_thread,
                                            jobject *monitor_ptr);
-  jvmtiError get_owned_monitors(JavaThread* java_thread,
+  jvmtiError get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
   jvmtiError check_top_frame(JavaThread* current_thread, JavaThread* java_thread,
                              jvalue value, TosState tos, Handle* ret_ob_h);
@@ -376,19 +376,21 @@ public:
 // HandshakeClosure to get monitor information with stack depth.
 class GetOwnedMonitorInfoClosure : public HandshakeClosure {
 private:
+  JavaThread* _calling_thread;
   JvmtiEnv *_env;
   jvmtiError _result;
   GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
 
 public:
-  GetOwnedMonitorInfoClosure(JvmtiEnv* env,
+  GetOwnedMonitorInfoClosure(JavaThread* calling_thread, JvmtiEnv* env,
                              GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitor_list)
     : HandshakeClosure("GetOwnedMonitorInfo"),
+      _calling_thread(calling_thread),
       _env(env),
       _result(JVMTI_ERROR_NONE),
       _owned_monitors_list(owned_monitor_list) {}
-  void do_thread(Thread *target);
   jvmtiError result() { return _result; }
+  void do_thread(Thread *target);
 };
 
 
@@ -419,13 +421,15 @@ public:
 // HandshakeClosure to get current contended monitor.
 class GetCurrentContendedMonitorClosure : public HandshakeClosure {
 private:
+  JavaThread *_calling_thread;
   JvmtiEnv *_env;
   jobject *_owned_monitor_ptr;
   jvmtiError _result;
 
 public:
-  GetCurrentContendedMonitorClosure(JvmtiEnv *env, jobject *mon_ptr)
+  GetCurrentContendedMonitorClosure(JavaThread* calling_thread, JvmtiEnv *env, jobject *mon_ptr)
     : HandshakeClosure("GetCurrentContendedMonitor"),
+      _calling_thread(calling_thread),
       _env(env),
       _owned_monitor_ptr(mon_ptr),
       _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {}

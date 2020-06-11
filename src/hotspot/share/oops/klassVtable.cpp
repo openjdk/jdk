@@ -961,6 +961,8 @@ bool klassVtable::adjust_default_method(int vtable_index, Method* old_method, Me
 // search the vtable for uses of either obsolete or EMCP methods
 void klassVtable::adjust_method_entries(bool * trace_name_printed) {
   int prn_enabled = 0;
+  ResourceMark rm;
+
   for (int index = 0; index < length(); index++) {
     Method* old_method = unchecked_method_at(index);
     if (old_method == NULL || !old_method->is_old()) {
@@ -978,27 +980,29 @@ void klassVtable::adjust_method_entries(bool * trace_name_printed) {
       updated_default = adjust_default_method(index, old_method, new_method);
     }
 
-    if (log_is_enabled(Info, redefine, class, update)) {
-      ResourceMark rm;
-      if (!(*trace_name_printed)) {
-        log_info(redefine, class, update)
-          ("adjust: klassname=%s for methods from name=%s",
-           _klass->external_name(), old_method->method_holder()->external_name());
-        *trace_name_printed = true;
-      }
-      log_debug(redefine, class, update, vtables)
-        ("vtable method update: %s(%s), updated default = %s",
-         new_method->name()->as_C_string(), new_method->signature()->as_C_string(), updated_default ? "true" : "false");
+    if (!(*trace_name_printed)) {
+      log_info(redefine, class, update)
+        ("adjust: klassname=%s for methods from name=%s",
+         _klass->external_name(), old_method->method_holder()->external_name());
+      *trace_name_printed = true;
     }
+    log_trace(redefine, class, update, vtables)
+      ("vtable method update: class: %s method: %s, updated default = %s",
+       _klass->external_name(), new_method->external_name(), updated_default ? "true" : "false");
   }
 }
 
 // a vtable should never contain old or obsolete methods
 bool klassVtable::check_no_old_or_obsolete_entries() {
+  ResourceMark rm;
+
   for (int i = 0; i < length(); i++) {
     Method* m = unchecked_method_at(i);
     if (m != NULL &&
         (NOT_PRODUCT(!m->is_valid() ||) m->is_old() || m->is_obsolete())) {
+      log_trace(redefine, class, update, vtables)
+        ("vtable check found old method entry: class: %s old: %d obsolete: %d, method: %s",
+         _klass->external_name(), m->is_old(), m->is_obsolete(), m->external_name());
       return false;
     }
   }
@@ -1281,8 +1285,9 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
 #if INCLUDE_JVMTI
 // search the itable for uses of either obsolete or EMCP methods
 void klassItable::adjust_method_entries(bool * trace_name_printed) {
-
+  ResourceMark rm;
   itableMethodEntry* ime = method_entry(0);
+
   for (int i = 0; i < _size_method_table; i++, ime++) {
     Method* old_method = ime->method();
     if (old_method == NULL || !old_method->is_old()) {
@@ -1292,25 +1297,27 @@ void klassItable::adjust_method_entries(bool * trace_name_printed) {
     Method* new_method = old_method->get_new_method();
     ime->initialize(new_method);
 
-    if (log_is_enabled(Info, redefine, class, update)) {
-      ResourceMark rm;
-      if (!(*trace_name_printed)) {
-        log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
-        *trace_name_printed = true;
-      }
-      log_trace(redefine, class, update, itables)
-        ("itable method update: %s(%s)", new_method->name()->as_C_string(), new_method->signature()->as_C_string());
+    if (!(*trace_name_printed)) {
+      log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
+      *trace_name_printed = true;
     }
+    log_trace(redefine, class, update, itables)
+      ("itable method update: class: %s method: %s", _klass->external_name(), new_method->external_name());
   }
 }
 
 // an itable should never contain old or obsolete methods
 bool klassItable::check_no_old_or_obsolete_entries() {
+  ResourceMark rm;
   itableMethodEntry* ime = method_entry(0);
+
   for (int i = 0; i < _size_method_table; i++) {
     Method* m = ime->method();
     if (m != NULL &&
         (NOT_PRODUCT(!m->is_valid() ||) m->is_old() || m->is_obsolete())) {
+      log_trace(redefine, class, update, itables)
+        ("itable check found old method entry: class: %s old: %d obsolete: %d, method: %s",
+         _klass->external_name(), m->is_old(), m->is_obsolete(), m->external_name());
       return false;
     }
     ime++;

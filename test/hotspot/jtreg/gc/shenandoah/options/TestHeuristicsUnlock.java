@@ -25,7 +25,6 @@
 /*
  * @test TestHeuristicsUnlock
  * @summary Test that Shenandoah heuristics are unlocked properly
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

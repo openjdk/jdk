@@ -25,7 +25,7 @@ package gc.epsilon;
 
 /**
  * @test TestObjects
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Epsilon is able to allocate objects, and does not corrupt their state
  * @library /test/lib

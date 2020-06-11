@@ -60,9 +60,9 @@
 //
 
 class JfrBuffer {
+ public:
+  JfrBuffer* _next; // list support
  private:
-  JfrBuffer* _next;
-  JfrBuffer* _prev;
   const void* _identity;
   u1* _pos;
   mutable const u1* _top;
@@ -76,22 +76,6 @@ class JfrBuffer {
   JfrBuffer();
   bool initialize(size_t header_size, size_t size);
   void reinitialize(bool exclusion = false);
-
-  JfrBuffer* next() const {
-    return _next;
-  }
-
-  JfrBuffer* prev() const {
-    return _prev;
-  }
-
-  void set_next(JfrBuffer* next) {
-    _next = next;
-  }
-
-  void set_prev(JfrBuffer* prev) {
-    _prev = prev;
-  }
 
   const u1* start() const {
     return ((const u1*)this) + _header_size;
@@ -157,6 +141,9 @@ class JfrBuffer {
     return Atomic::load_acquire(&_identity);
   }
 
+  // use only if implied owner already
+  void set_identity(const void* id);
+
   void acquire(const void* id);
   bool try_acquire(const void* id);
   bool acquired_by(const void* id) const;
@@ -181,19 +168,6 @@ class JfrBuffer {
   bool excluded() const;
   void set_excluded();
   void clear_excluded();
-};
-
-class JfrAgeNode : public JfrBuffer {
- private:
-  JfrBuffer* _retired;
- public:
-  JfrAgeNode() : _retired(NULL) {}
-  void set_retired_buffer(JfrBuffer* retired) {
-    _retired = retired;
-  }
-  JfrBuffer* retired_buffer() const {
-    return _retired;
-  }
 };
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRBUFFER_HPP

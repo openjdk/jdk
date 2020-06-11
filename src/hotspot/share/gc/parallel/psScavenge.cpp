@@ -43,6 +43,8 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -102,8 +104,8 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
       ObjectSynchronizer::oops_do(&roots_closure);
       break;
 
-    case ParallelRootType::system_dictionary:
-      SystemDictionary::oops_do(&roots_closure);
+    case ParallelRootType::vm_global:
+      OopStorageSet::vm_global()->oops_do(&roots_closure);
       break;
 
     case ParallelRootType::class_loader_data:

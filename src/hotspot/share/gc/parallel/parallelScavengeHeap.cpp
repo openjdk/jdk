@@ -615,10 +615,6 @@ void ParallelScavengeHeap::gc_threads_do(ThreadClosure* tc) const {
   ParallelScavengeHeap::heap()->workers().threads_do(tc);
 }
 
-void ParallelScavengeHeap::print_gc_threads_on(outputStream* st) const {
-  ParallelScavengeHeap::heap()->workers().print_worker_threads_on(st);
-}
-
 void ParallelScavengeHeap::print_tracing_info() const {
   AdaptiveSizePolicyOutput::print();
   log_debug(gc, heap, exit)("Accumulated young generation GC time %3.7f secs", PSScavenge::accumulated_time()->seconds());

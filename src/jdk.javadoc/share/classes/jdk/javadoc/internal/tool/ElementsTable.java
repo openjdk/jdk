@@ -566,7 +566,10 @@ public class ElementsTable {
                 continue;
             if (!isMandated(mdle, rd) && onlyTransitive == rd.isTransitive()) {
                 if (!haveModuleSources(dep)) {
-                    messager.printWarning(dep, "main.module_not_found", dep.getSimpleName());
+                    if (!warnedNoSources.contains(dep)) {
+                        messager.printWarning(dep, "main.module_source_not_found", dep.getQualifiedName());
+                        warnedNoSources.add(dep);
+                    }
                 }
                 result.add(dep);
             } else if (isMandated(mdle, rd) && haveModuleSources(dep)) {
@@ -580,9 +583,11 @@ public class ElementsTable {
         return toolEnv.elements.getOrigin(mdle, rd) == MANDATED;
     }
 
+    Set<ModuleElement> warnedNoSources = new HashSet<>();
+
     Map<ModuleSymbol, Boolean> haveModuleSourcesCache = new HashMap<>();
     private boolean haveModuleSources(ModuleElement mdle) throws ToolException {
-        ModuleSymbol msym =  (ModuleSymbol)mdle;
+        ModuleSymbol msym =  (ModuleSymbol) mdle;
         if (msym.sourceLocation != null) {
             return true;
         }
@@ -620,7 +625,7 @@ public class ElementsTable {
 
             if (expandAll) {
                  // add non-public requires if needed
-                result.addAll(getModuleRequires(mdle, !expandAll));
+                result.addAll(getModuleRequires(mdle, false));
             }
         }
 

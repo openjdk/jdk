@@ -1178,13 +1178,6 @@ void ShenandoahHeap::prepare_for_verify() {
   }
 }
 
-void ShenandoahHeap::print_gc_threads_on(outputStream* st) const {
-  workers()->print_worker_threads_on(st);
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::print_worker_threads_on(st);
-  }
-}
-
 void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
   workers()->threads_do(tcl);
   if (_safepoint_workers != NULL) {

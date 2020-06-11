@@ -93,4 +93,6 @@
     return byte_offset_of(JavaFrameAnchor, _last_Java_fp);
   }
 
+  void set_last_Java_sp(intptr_t* sp)   { _last_Java_sp = sp; }
+
 #endif // CPU_ZERO_JAVAFRAMEANCHOR_ZERO_HPP

@@ -1293,9 +1293,11 @@ void Parse::Block::init_graph(Parse* outer) {
     _successors[i] = block2;
 
     // Accumulate pred info for the other block, too.
-    if (i < ns) {
-      block2->_pred_count++;
-    } else {
+    // Note: We also need to set _pred_count for exception blocks since they could
+    // also have normal predecessors (reached without athrow by an explicit jump).
+    // This also means that next_path_num can be called along exception paths.
+    block2->_pred_count++;
+    if (i >= ns) {
       block2->_is_handler = true;
     }
 
@@ -1310,10 +1312,6 @@ void Parse::Block::init_graph(Parse* outer) {
     }
     #endif
   }
-
-  // Note: We never call next_path_num along exception paths, so they
-  // never get processed as "ready".  Also, the input phis of exception
-  // handlers get specially processed, so that
 }
 
 //---------------------------successor_for_bci---------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public:
   static void test(void (*function)(ZForwarding*), uint32_t size) {
     // Create page
     const ZVirtualMemory vmem(0, ZPageSizeSmall);
-    const ZPhysicalMemory pmem(ZPhysicalMemorySegment(0, ZPageSizeSmall));
+    const ZPhysicalMemory pmem(ZPhysicalMemorySegment(0, ZPageSizeSmall, true));
     ZPage page(ZPageTypeSmall, vmem, pmem);
 
     page.reset();

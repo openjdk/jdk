@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 
 static jobject chunk_monitor = NULL;
 static int64_t threshold = 0;
@@ -53,6 +54,9 @@ static jobject get_chunk_monitor(Thread* thread) {
 
 static void notify() {
   Thread* const thread = Thread::current();
+  // can safepoint here
+  ThreadInVMfromNative transition((JavaThread*)thread);
+  ResetNoHandleMark rnhm;
   JfrJavaSupport::notify_all(get_chunk_monitor(thread), thread);
 }
 

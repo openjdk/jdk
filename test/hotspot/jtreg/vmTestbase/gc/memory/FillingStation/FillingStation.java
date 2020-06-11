@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @key stress gc randomness
+ * @key stress randomness
  *
  * @summary converted from VM Testbase gc/memory/FillingStation.
  * VM Testbase keywords: [gc, stress, nonconcurrent]

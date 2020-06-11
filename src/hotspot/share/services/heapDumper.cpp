@@ -32,6 +32,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "gc/shared/workgroup.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -52,6 +53,7 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/heapDumper.hpp"
+#include "services/heapDumperCompression.hpp"
 #include "services/threadService.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -377,18 +379,15 @@ enum {
   INITIAL_CLASS_COUNT = 200
 };
 
-// Supports I/O operations on a dump file
+// Supports I/O operations for a dump
 
 class DumpWriter : public StackObj {
  private:
   enum {
-    io_buffer_max_size = 8*M,
-    io_buffer_min_size = 64*K,
+    io_buffer_max_size = 1*M,
+    io_buffer_max_waste = 10*K,
     dump_segment_header_size = 9
   };
-
-  int _fd;              // file descriptor (-1 if dump file not open)
-  julong _bytes_written; // number of byte written to dump file
 
   char* _buffer;    // internal buffer
   size_t _size;
@@ -399,12 +398,8 @@ class DumpWriter : public StackObj {
   DEBUG_ONLY(size_t _sub_record_left;) // The bytes not written for the current sub-record.
   DEBUG_ONLY(bool _sub_record_ended;) // True if we have called the end_sub_record().
 
-  char* _error;   // error message when I/O fails
+  CompressionBackend _backend; // Does the actual writing.
 
-  void set_file_descriptor(int fd)              { _fd = fd; }
-  int file_descriptor() const                   { return _fd; }
-
-  bool is_open() const                          { return file_descriptor() >= 0; }
   void flush();
 
   char* buffer() const                          { return _buffer; }
@@ -412,25 +407,26 @@ class DumpWriter : public StackObj {
   size_t position() const                       { return _pos; }
   void set_position(size_t pos)                 { _pos = pos; }
 
-  void set_error(const char* error)             { _error = (char*)os::strdup(error); }
+  // Can be called if we have enough room in the buffer.
+  void write_fast(void* s, size_t len);
 
-  // all I/O go through this function
-  void write_internal(void* s, size_t len);
+  // Returns true if we have enough room in the buffer for 'len' bytes.
+  bool can_write_fast(size_t len);
 
  public:
-  DumpWriter(const char* path);
+  // Takes ownership of the writer and compressor.
+  DumpWriter(AbstractWriter* writer, AbstractCompressor* compressor);
+
   ~DumpWriter();
 
-  void close();
-
   // total number of bytes written to the disk
-  julong bytes_written() const          { return _bytes_written; }
+  julong bytes_written() const          { return (julong) _backend.get_written(); }
 
-  char* error() const                   { return _error; }
+  char const* error() const             { return _backend.error(); }
 
   // writer functions
   void write_raw(void* s, size_t len);
-  void write_u1(u1 x)                   { write_raw((void*)&x, 1); }
+  void write_u1(u1 x);
   void write_u2(u2 x);
   void write_u4(u4 x);
   void write_u8(u8 x);
@@ -445,70 +441,38 @@ class DumpWriter : public StackObj {
   void end_sub_record();
   // Finishes the current dump segment if not already finished.
   void finish_dump_segment();
+
+  // Called by threads used for parallel writing.
+  void writer_loop()                    { _backend.thread_loop(false); }
+  // Called when finished to release the threads.
+  void deactivate()                     { flush(); _backend.deactivate(); }
 };
 
-DumpWriter::DumpWriter(const char* path) : _fd(-1), _bytes_written(0), _pos(0),
-                                           _in_dump_segment(false), _error(NULL) {
-  // try to allocate an I/O buffer of io_buffer_size. If there isn't
-  // sufficient memory then reduce size until we can allocate something.
-  _size = io_buffer_max_size;
-  do {
-    _buffer = (char*)os::malloc(_size, mtInternal);
-    if (_buffer == NULL) {
-      _size = _size >> 1;
-    }
-  } while (_buffer == NULL && _size >= io_buffer_min_size);
-
-  if (_buffer == NULL) {
-    set_error("Could not allocate buffer memory for heap dump");
-  } else {
-    _fd = os::create_binary_file(path, false);    // don't replace existing file
-
-    // if the open failed we record the error
-    if (_fd < 0) {
-      set_error(os::strerror(errno));
-    }
-  }
+// Check for error after constructing the object and destroy it in case of an error.
+DumpWriter::DumpWriter(AbstractWriter* writer, AbstractCompressor* compressor) :
+  _buffer(NULL),
+  _size(0),
+  _pos(0),
+  _in_dump_segment(false),
+  _backend(writer, compressor, io_buffer_max_size, io_buffer_max_waste) {
+  flush();
 }
 
 DumpWriter::~DumpWriter() {
-  close();
-  os::free(_buffer);
-  os::free(_error);
+  flush();
 }
 
-// closes dump file (if open)
-void DumpWriter::close() {
-  // flush and close dump file
-  if (is_open()) {
-    flush();
-    os::close(file_descriptor());
-    set_file_descriptor(-1);
-  }
+void DumpWriter::write_fast(void* s, size_t len) {
+  assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
+  assert(buffer_size() - position() >= len, "Must fit");
+  debug_only(_sub_record_left -= len);
+
+  memcpy(buffer() + position(), s, len);
+  set_position(position() + len);
 }
 
-// write directly to the file
-void DumpWriter::write_internal(void* s, size_t len) {
-  if (is_open()) {
-    const char* pos = (char*)s;
-    ssize_t n = 0;
-    while (len > 0) {
-      uint tmp = (uint)MIN2(len, (size_t)INT_MAX);
-      n = os::write(file_descriptor(), pos, tmp);
-
-      if (n < 0) {
-        // EINTR cannot happen here, os::write will take care of that
-        set_error(os::strerror(errno));
-        os::close(file_descriptor());
-        set_file_descriptor(-1);
-        return;
-      }
-
-      _bytes_written += n;
-      pos += n;
-      len -= n;
-    }
-  }
+bool DumpWriter::can_write_fast(size_t len) {
+  return buffer_size() - position() >= len;
 }
 
 // write raw bytes
@@ -516,17 +480,17 @@ void DumpWriter::write_raw(void* s, size_t len) {
   assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
   debug_only(_sub_record_left -= len);
 
-  // flush buffer to make room
-  if (len > buffer_size() - position()) {
-    assert(!_in_dump_segment || _is_huge_sub_record, "Cannot overflow in non-huge sub-record.");
+  // flush buffer to make room.
+  while (len > buffer_size() - position()) {
+    assert(!_in_dump_segment || _is_huge_sub_record,
+           "Cannot overflow in non-huge sub-record.");
+
+    size_t to_write = buffer_size() - position();
+    memcpy(buffer() + position(), s, to_write);
+    s = (void*) ((char*) s + to_write);
+    len -= to_write;
+    set_position(position() + to_write);
     flush();
-
-    // If larger than the buffer, just write it directly.
-    if (len > buffer_size()) {
-      write_internal(s, len);
-
-      return;
-    }
   }
 
   memcpy(buffer() + position(), s, len);
@@ -535,26 +499,33 @@ void DumpWriter::write_raw(void* s, size_t len) {
 
 // flush any buffered bytes to the file
 void DumpWriter::flush() {
-  write_internal(buffer(), position());
-  set_position(0);
+  _backend.get_new_buffer(&_buffer, &_pos, &_size);
+}
+
+// Makes sure we inline the fast write into the write_u* functions. This is a big speedup.
+#define WRITE_KNOWN_TYPE(p, len) do { if (can_write_fast((len))) write_fast((p), (len)); \
+                                      else write_raw((p), (len)); } while (0)
+
+void DumpWriter::write_u1(u1 x) {
+  WRITE_KNOWN_TYPE((void*) &x, 1);
 }
 
 void DumpWriter::write_u2(u2 x) {
   u2 v;
   Bytes::put_Java_u2((address)&v, x);
-  write_raw((void*)&v, 2);
+  WRITE_KNOWN_TYPE((void*)&v, 2);
 }
 
 void DumpWriter::write_u4(u4 x) {
   u4 v;
   Bytes::put_Java_u4((address)&v, x);
-  write_raw((void*)&v, 4);
+  WRITE_KNOWN_TYPE((void*)&v, 4);
 }
 
 void DumpWriter::write_u8(u8 x) {
   u8 v;
   Bytes::put_Java_u8((address)&v, x);
-  write_raw((void*)&v, 8);
+  WRITE_KNOWN_TYPE((void*)&v, 8);
 }
 
 void DumpWriter::write_objectID(oop o) {
@@ -597,7 +568,8 @@ void DumpWriter::finish_dump_segment() {
     // (in which case the segment length was already set to the correct value initially).
     if (!_is_huge_sub_record) {
       assert(position() > dump_segment_header_size, "Dump segment should have some content");
-      Bytes::put_Java_u4((address) (buffer() + 5), (u4) (position() - dump_segment_header_size));
+      Bytes::put_Java_u4((address) (buffer() + 5),
+                         (u4) (position() - dump_segment_header_size));
     }
 
     flush();
@@ -609,8 +581,9 @@ void DumpWriter::start_sub_record(u1 tag, u4 len) {
   if (!_in_dump_segment) {
     if (position() > 0) {
       flush();
-      assert(position() == 0, "Must be at the start");
     }
+
+    assert(position() == 0, "Must be at the start");
 
     write_u1(HPROF_HEAP_DUMP_SEGMENT);
     write_u4(0); // timestamp
@@ -1503,7 +1476,7 @@ void HeapObjectDumper::do_object(oop o) {
 }
 
 // The VM operation that performs the heap dump
-class VM_HeapDumper : public VM_GC_Operation {
+class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
  private:
   static VM_HeapDumper* _global_dumper;
   static DumpWriter*    _global_writer;
@@ -1559,7 +1532,8 @@ class VM_HeapDumper : public VM_GC_Operation {
     VM_GC_Operation(0 /* total collections,      dummy, ignored */,
                     GCCause::_heap_dump /* GC Cause */,
                     0 /* total full collections, dummy, ignored */,
-                    gc_before_heap_dump) {
+                    gc_before_heap_dump),
+    AbstractGangTask("dump heap") {
     _local_writer = writer;
     _gc_before_heap_dump = gc_before_heap_dump;
     _klass_map = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, true);
@@ -1590,7 +1564,9 @@ class VM_HeapDumper : public VM_GC_Operation {
 
   VMOp_Type type() const { return VMOp_HeapDumper; }
   void doit();
+  void work(uint worker_id);
 };
+
 
 VM_HeapDumper* VM_HeapDumper::_global_dumper = NULL;
 DumpWriter*    VM_HeapDumper::_global_writer = NULL;
@@ -1820,8 +1796,26 @@ void VM_HeapDumper::doit() {
   set_global_dumper();
   set_global_writer();
 
+  WorkGang* gang = ch->get_safepoint_workers();
+
+  if (gang == NULL) {
+    work(0);
+  } else {
+    gang->run_task(this, gang->active_workers(), true);
+  }
+
+  // Now we clear the global variables, so that a future dumper can run.
+  clear_global_dumper();
+  clear_global_writer();
+}
+
+void VM_HeapDumper::work(uint worker_id) {
+  if (!Thread::current()->is_VM_thread()) {
+    writer()->writer_loop();
+    return;
+  }
+
   // Write the file header - we always use 1.0.2
-  size_t used = ch->used();
   const char* header = "JAVA PROFILE 1.0.2";
 
   // header is few bytes long - no chance to overflow int
@@ -1884,9 +1878,8 @@ void VM_HeapDumper::doit() {
   // Writes the HPROF_HEAP_DUMP_END record.
   DumperSupport::end_of_dump(writer());
 
-  // Now we clear the global variables, so that a future dumper might run.
-  clear_global_dumper();
-  clear_global_writer();
+  // We are done with writing. Release the worker threads.
+  writer()->deactivate();
 }
 
 void VM_HeapDumper::dump_stack_traces() {
@@ -1902,6 +1895,7 @@ void VM_HeapDumper::dump_stack_traces() {
     oop threadObj = thread->threadObj();
     if (threadObj != NULL && !thread->is_exiting() && !thread->is_hidden_from_external_view()) {
       // dump thread stack trace
+      ResourceMark rm;
       ThreadStackTrace* stack_trace = new ThreadStackTrace(thread, false);
       stack_trace->dump_stack_at_safepoint(-1);
       _stack_traces[_num_threads++] = stack_trace;
@@ -1944,7 +1938,7 @@ void VM_HeapDumper::dump_stack_traces() {
 }
 
 // dump the heap to given path.
-int HeapDumper::dump(const char* path, outputStream* out) {
+int HeapDumper::dump(const char* path, outputStream* out, int compression) {
   assert(path != NULL && strlen(path) > 0, "path missing");
 
   // print message in interactive case
@@ -1956,8 +1950,19 @@ int HeapDumper::dump(const char* path, outputStream* out) {
   // create JFR event
   EventHeapDump event;
 
-  // create the dump writer. If the file can be opened then bail
-  DumpWriter writer(path);
+  AbstractCompressor* compressor = NULL;
+
+  if (compression > 0) {
+    compressor = new (std::nothrow) GZipCompressor(compression);
+
+    if (compressor == NULL) {
+      set_error("Could not allocate gzip compressor");
+      return -1;
+    }
+  }
+
+  DumpWriter writer(new (std::nothrow) FileWriter(path), compressor);
+
   if (writer.error() != NULL) {
     set_error(writer.error());
     if (out != NULL) {
@@ -1976,8 +1981,7 @@ int HeapDumper::dump(const char* path, outputStream* out) {
     VMThread::execute(&dumper);
   }
 
-  // close dump file and record any error that the writer may have encountered
-  writer.close();
+  // record any error that the writer may have encountered
   set_error(writer.error());
 
   // emit JFR event
@@ -2024,7 +2028,7 @@ char* HeapDumper::error_as_C_string() const {
 }
 
 // set the error string
-void HeapDumper::set_error(char* error) {
+void HeapDumper::set_error(char const* error) {
   if (_error != NULL) {
     os::free(_error);
   }

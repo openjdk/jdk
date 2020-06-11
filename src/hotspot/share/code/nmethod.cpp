@@ -1116,7 +1116,9 @@ bool nmethod::can_convert_to_zombie() {
   // not_entrant. However, with concurrent code cache unloading, the state
   // might have moved on to unloaded if it is_unloading(), due to racing
   // concurrent GC threads.
-  assert(is_not_entrant() || is_unloading(), "must be a non-entrant method");
+  assert(is_not_entrant() || is_unloading() ||
+         !Thread::current()->is_Code_cache_sweeper_thread(),
+         "must be a non-entrant method if called from sweeper");
 
   // Since the nmethod sweeper only does partial sweep the sweeper's traversal
   // count can be greater than the stack traversal count before it hits the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,21 +85,25 @@ class JfrTraceId : public AllStatic {
   static void assign(const ClassLoaderData* cld);
   static traceid assign_thread_id();
 
-  static traceid get(const Klass* klass);
-  static traceid get(jclass jc);
-  static traceid get(const Thread* thread);
+  // through load barrier
+  static traceid load(const Klass* klass);
+  static traceid load(jclass jc);
+  static traceid load(const Method* method);
+  static traceid load(const Klass* klass, const Method* method);
+  static traceid load(const ModuleEntry* module);
+  static traceid load(const PackageEntry* package);
+  static traceid load(const ClassLoaderData* cld);
+  static traceid load_leakp(const Klass* klass, const Method* method); // leak profiler
 
-  // tag construct as used, returns pre-tagged traceid
-  static traceid use(const Klass* klass);
-  static traceid use(jclass jc);
-  static traceid use(const Method* method);
-  static traceid use(const Klass* klass, const Method* method);
-  static traceid use(const ModuleEntry* module);
-  static traceid use(const PackageEntry* package);
-  static traceid use(const ClassLoaderData* cld);
-
-  // leak profiler
-  static void set_leakp(const Klass* klass, const Method* method);
+  // load barrier elision
+  static traceid load_raw(const Klass* klass);
+  static traceid load_raw(jclass jc);
+  static traceid load_raw(const Thread* thread);
+  static traceid load_raw(const Method* method);
+  static traceid load_raw(const Klass* klass, const Method* method);
+  static traceid load_raw(const ModuleEntry* module);
+  static traceid load_raw(const PackageEntry* package);
+  static traceid load_raw(const ClassLoaderData* cld);
 
   static void remove(const Klass* klass);
   static void restore(const Klass* klass);

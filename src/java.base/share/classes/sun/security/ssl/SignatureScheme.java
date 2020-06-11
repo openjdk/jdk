@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,6 +274,17 @@ enum SignatureScheme {
                 Arrays.asList(handshakeSupportedProtocols);
 
         boolean mediator = true;
+
+        // Disable EdDSA algorithms for TLS.  Remove this when support is added.
+        if (id == 0x0807 || id == 0x0808) {
+            mediator = false;
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.warning(
+                    "Signature algorithm, " + algorithm +
+                        ", not supported by JSSE");
+            }
+        }
+
         // An EC provider, for example the SunEC provider, may support
         // AlgorithmParameters but not KeyPairGenerator or Signature.
         //

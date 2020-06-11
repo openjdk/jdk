@@ -577,9 +577,6 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 
-java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8081652 generic-all
-java/lang/management/ThreadMXBean/AllThreadIds.java             8131745 generic-all
-
 javax/management/monitor/DerivedGaugeMonitorTest.java         8042211 generic-all
 javax/management/remote/mandatory/connection/MultiThreadDeadLockTest.java 8227337 generic-all
 
@@ -755,7 +752,6 @@ javax/swing/JComboBox/8032878/bug8032878.java 8196092,8196439 windows-all,macosx
 javax/swing/JComboBox/8072767/bug8072767.java 8196093 windows-all,macosx-all
 javax/swing/JComponent/4337267/bug4337267.java 8146451 windows-all
 javax/swing/JFileChooser/4524490/bug4524490.java 8042380 generic-all
-javax/swing/JFileChooser/8002077/bug8002077.java 8196094 windows-all,macosx-all
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8193942 generic-all
 javax/swing/JList/6462008/bug6462008.java 7156347 generic-all

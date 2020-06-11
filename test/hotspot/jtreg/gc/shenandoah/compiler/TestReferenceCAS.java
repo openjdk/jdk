@@ -29,7 +29,6 @@
 /*
  * @test TestReferenceCAS
  * @summary Shenandoah reference CAS test
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @modules java.base/jdk.internal.misc:+open
  *
@@ -43,7 +42,6 @@
 /*
  * @test TestReferenceCAS
  * @summary Shenandoah reference CAS test
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
  * @modules java.base/jdk.internal.misc:+open
  *

@@ -50,7 +50,6 @@ class ObjectSampleCheckpoint : AllStatic {
   static void write_stacktrace(const JfrStackTrace* trace, JfrCheckpointWriter& writer);
   static void write(const ObjectSampler* sampler, EdgeStore* edge_store, bool emit_all, Thread* thread);
  public:
-  static void on_klass_unload(const Klass* k);
   static void on_type_set(JfrCheckpointWriter& writer);
   static void on_type_set_unload(JfrCheckpointWriter& writer);
   static void on_thread_exit(JavaThread* jt);

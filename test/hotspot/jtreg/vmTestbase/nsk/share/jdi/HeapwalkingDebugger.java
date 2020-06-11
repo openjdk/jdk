@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,45 @@ import nsk.share.TestBug;
 public class HeapwalkingDebugger extends TestDebuggerType2 {
     // instances of some classes couldn't be strictly controlled during test execution, use non-strict checks for this classes
     protected boolean strictCheck(String className) {
-        boolean otherThreadPresent = isJFR_active();
-        return HeapwalkingDebuggee.useStrictCheck(className, otherThreadPresent);
+        if (className.equals("java.lang.String"))
+            return false;
+
+        if (className.equals("char[]"))
+            return false;
+
+        if (className.equals("byte[]"))
+            return false;
+
+        if (className.equals("boolean[]"))
+            return false;
+
+        if (className.equals("float[]"))
+            return false;
+
+        if (className.equals("long[]"))
+            return false;
+
+        if (className.equals("int[]"))
+            return false;
+
+        if (className.equals("double[]"))
+            return false;
+
+        if (className.equals("java.lang.Thread")) {
+            return !isJFRActive();
+        }
+
+        return true;
+    }
+
+    protected boolean isJFRActive() {
+       ReferenceType referenceType = debuggee.classByName("nsk.share.jdi.HeapwalkingDebuggee");
+       if (referenceType == null)
+           throw new RuntimeException("Debugeee is not initialized yet");
+
+        Field isJFRActiveFld = referenceType.fieldByName("isJFRActive");
+        boolean isJFRActive = ((BooleanValue)referenceType.getValue(isJFRActiveFld)).value();
+        return isJFRActive;
     }
 
     // wrapper for VirtualMachine.instanceCounts

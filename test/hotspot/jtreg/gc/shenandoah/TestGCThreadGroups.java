@@ -25,7 +25,6 @@
 /**
  * @test TestGCThreadGroups
  * @summary Test Shenandoah GC uses concurrent/parallel threads correctly
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -38,7 +37,6 @@
 /**
  * @test TestGCThreadGroups
  * @summary Test Shenandoah GC uses concurrent/parallel threads correctly
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -81,7 +79,6 @@
 /**
  * @test TestGCThreadGroups
  * @summary Test Shenandoah GC uses concurrent/parallel threads correctly
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions

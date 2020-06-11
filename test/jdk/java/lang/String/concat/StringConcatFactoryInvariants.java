@@ -220,7 +220,7 @@ public class StringConcatFactoryInvariants {
         fail("Static arguments and recipe mismatch: too many",
                 () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeThreshold, "bar", "baz"));
 
-        fail("Static arguments and recipe mismatch, too many, overflowing constant is null",
+        failNPE("Static arguments and recipe mismatch, too many, overflowing constant is null",
                 () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeThreshold, "bar", null));
 
         // Advanced factory: check for mismatched recipe and dynamic arguments

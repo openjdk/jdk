@@ -1713,7 +1713,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
                 return (c != null && ((JComboBox)c).isPopupVisible());
             } else if (getName() == ENTER) {
                 JRootPane root = SwingUtilities.getRootPane((JComboBox)c);
-                if (root != null) {
+                if (root != null && (c != null && !((JComboBox)c).isPopupVisible())) {
                     InputMap im = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
                     ActionMap am = root.getActionMap();
                     if (im != null && am != null) {

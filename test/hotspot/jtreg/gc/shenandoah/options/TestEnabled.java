@@ -26,7 +26,6 @@ import java.lang.management.ManagementFactory;
 
 /*
  * @test TestEnabled
- * @key gc
  * @requires vm.gc.Shenandoah & vm.gc == "null" & !vm.graal.enabled
  * @run main/othervm -Dexpected=false -Xmx64m                                                       TestEnabled
  * @run main/othervm -Dexpected=true  -Xmx64m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC TestEnabled
@@ -34,7 +33,6 @@ import java.lang.management.ManagementFactory;
 
 /*
  * @test TestEnabledAlready
- * @key gc
  * @requires vm.gc.Shenandoah & vm.gc == "Shenandoah" & !vm.graal.enabled
  * @run main/othervm -Dexpected=true -Xmx64m                                                        TestEnabled
  */

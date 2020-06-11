@@ -169,7 +169,19 @@ void Jvm::launch() {
         jint ergo);
 
     std::vector<char*> argv;
+#ifdef TSTRINGS_WITH_WCHAR
+    std::vector<std::string> mbcs_args;
+    do {
+        tstring_array::const_iterator it = args.begin();
+        const tstring_array::const_iterator end = args.end();
+        for (; it != end; ++it) {
+            mbcs_args.push_back(tstrings::toACP(*it));
+        }
+    } while (0);
+    convertArgs(mbcs_args, argv);
+#else
     convertArgs(args, argv);
+#endif
 
     // Don't count terminal '0'.
     const int argc = (int)argv.size() - 1;

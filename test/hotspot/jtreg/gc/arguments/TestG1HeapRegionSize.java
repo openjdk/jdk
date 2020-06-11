@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestG1HeapRegionSize
- * @key gc
  * @bug 8021879
  * @requires vm.gc.G1
  * @summary Verify that the flag G1HeapRegionSize is updated properly

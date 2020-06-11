@@ -26,7 +26,6 @@ package gc;
 /*
  * @test TestAgeOutputSerial
  * @bug 8164936
- * @key gc
  * @requires vm.gc.Serial
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -39,7 +38,6 @@ package gc;
  * @test TestAgeOutputG1
  * @bug 8164936
  * @summary Check that collectors using age table based aging print an age table even for the first garbage collection
- * @key gc
  * @requires vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @library /test/lib

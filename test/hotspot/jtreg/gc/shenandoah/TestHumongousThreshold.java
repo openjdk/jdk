@@ -24,7 +24,7 @@
 
 /*
  * @test TestHumongousThreshold
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *
@@ -70,7 +70,7 @@
 
 /*
  * @test TestHumongousThreshold
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
  * @library /test/lib
  *

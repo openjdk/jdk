@@ -80,7 +80,8 @@ public class Comparators {
 
     /**
      * Returns a Comparator for all classes, compares the simple names of
-     * TypeElement, if equal then the fully qualified names.
+     * TypeElement, if equal then the fully qualified names, and if equal again
+     * the names of the enclosing modules.
      *
      * @return Comparator
      */
@@ -92,7 +93,8 @@ public class Comparators {
                     int result = compareNames(e1, e2);
                     if (result == 0)
                         result = compareFullyQualifiedNames(e1, e2);
-
+                    if (result == 0)
+                        result = compareModuleNames(e1, e2);
                     return result;
                 }
             };
@@ -103,7 +105,8 @@ public class Comparators {
     private Comparator<Element> packageComparator = null;
 
     /**
-     * Returns a Comparator for packages, by comparing the fully qualified names.
+     * Returns a Comparator for packages, by comparing the fully qualified names,
+     * and if those are equal the names of the enclosing modules.
      *
      * @return a Comparator
      */
@@ -112,7 +115,10 @@ public class Comparators {
             packageComparator = new ElementComparator() {
                 @Override
                 public int compare(Element pkg1, Element pkg2) {
-                    return compareFullyQualifiedNames(pkg1, pkg2);
+                    int result = compareFullyQualifiedNames(pkg1, pkg2);
+                    if (result == 0)
+                        result = compareModuleNames(pkg1, pkg2);
+                    return result;
                 }
             };
         }
@@ -123,7 +129,7 @@ public class Comparators {
 
     /**
      * Returns a Comparator for deprecated items listed on deprecated list page, by comparing the
-     * fully qualified names.
+     * fully qualified names, and if those are equal the names of the enclosing modules.
      *
      * @return a Comparator
      */
@@ -132,7 +138,10 @@ public class Comparators {
             deprecatedComparator = new ElementComparator() {
                 @Override
                 public int compare(Element e1, Element e2) {
-                    return compareFullyQualifiedNames(e1, e2);
+                    int result = compareFullyQualifiedNames(e1, e2);
+                    if (result == 0)
+                        result = compareModuleNames(e1, e2);
+                    return result;
                 }
             };
         }
@@ -211,7 +220,8 @@ public class Comparators {
      *  2a. if equal and if the type is of ExecutableElement(Constructor, Methods),
      *      a case insensitive comparison of parameter the type signatures
      *  2b. if equal, case sensitive comparison of the type signatures
-     *  3. finally, if equal, compare the FQNs of the entities
+     *  3. if equal, compare the FQNs of the entities
+     *  4. finally, if equal, compare the names of the enclosing modules
      * @return an element comparator for index file use
      */
     public Comparator<Element> makeIndexElementComparator() {
@@ -261,7 +271,10 @@ public class Comparators {
                         }
                     }
                     // else fall back on fully qualified names
-                    return compareFullyQualifiedNames(e1, e2);
+                    result = compareFullyQualifiedNames(e1, e2);
+                    if (result != 0)
+                        return result;
+                    return compareModuleNames(e1, e2);
                 }
             };
         }
@@ -345,7 +358,8 @@ public class Comparators {
      * 1. member names
      * 2. then fully qualified member names
      * 3. then parameter types if applicable
-     * 4. finally the element kinds ie. package, class, interface etc.
+     * 4. the element kinds ie. package, class, interface etc.
+     * 5. finally the name of the enclosing modules
      * @return a comparator to sort classes and members for class use
      */
     public Comparator<Element> makeClassUseComparator() {
@@ -381,7 +395,11 @@ public class Comparators {
                     if (result != 0) {
                         return result;
                     }
-                    return compareElementKinds(e1, e2);
+                    result = compareElementKinds(e1, e2);
+                    if (result != 0) {
+                        return result;
+                    }
+                    return compareModuleNames(e1, e2);
                 }
             };
         }
@@ -464,6 +482,26 @@ public class Comparators {
             String thisElement = getFullyQualifiedName(e1);
             String thatElement = getFullyQualifiedName(e2);
             return utils.compareStrings(thisElement, thatElement);
+        }
+
+        /**
+         * Compares the name of the modules of two elements.
+         * @param e1 the first element
+         * @param e2 the second element
+         * @return a negative integer, zero, or a positive integer as the first
+         *         argument is less than, equal to, or greater than the second
+         */
+        protected int compareModuleNames(Element e1, Element e2) {
+            ModuleElement m1 = utils.elementUtils.getModuleOf(e1);
+            ModuleElement m2 = utils.elementUtils.getModuleOf(e2);
+            if (m1 != null && m2 != null) {
+                return compareFullyQualifiedNames(m1, m2);
+            } else if (m1 != null) {
+                return 1;
+            } else if (m2 != null) {
+                return -1;
+            }
+            return 0;
         }
 
         protected int compareElementKinds(Element e1, Element e2) {

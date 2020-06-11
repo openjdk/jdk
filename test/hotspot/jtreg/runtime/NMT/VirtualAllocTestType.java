@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Test Reserve/Commit/Uncommit/Release of virtual memory and that we track it correctly
- * @key nmt jcmd
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

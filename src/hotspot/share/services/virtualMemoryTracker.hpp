@@ -210,11 +210,8 @@ class VirtualMemoryRegion {
   inline bool overlap_region(address addr, size_t sz) const {
     assert(sz > 0, "Invalid size");
     assert(size() > 0, "Invalid size");
-    VirtualMemoryRegion rgn(addr, sz);
     return contain_address(addr) ||
-           contain_address(addr + sz - 1) ||
-           rgn.contain_address(base()) ||
-           rgn.contain_address(end() - 1);
+           contain_address(addr + sz - 1);
   }
 
   inline bool adjacent_to(address addr, size_t sz) const {
@@ -240,6 +237,24 @@ class VirtualMemoryRegion {
     set_size(size() + sz);
   }
 
+  // Returns 0 if regions overlap; 1 if this region follows rgn;
+  //  -1 if this region precedes rgn.
+  inline int compare(const VirtualMemoryRegion& rgn) const {
+    if (overlap_region(rgn.base(), rgn.size())) {
+      return 0;
+    } else if (base() >= rgn.end()) {
+      return 1;
+    } else {
+      assert(rgn.base() >= end(), "Sanity");
+      return -1;
+    }
+  }
+
+  // Returns true if regions overlap, false otherwise.
+  inline bool equals(const VirtualMemoryRegion& rgn) const {
+    return compare(rgn) == 0;
+  }
+
  protected:
   void set_base(address base) {
     assert(base != NULL, "Sanity check");
@@ -260,24 +275,6 @@ class CommittedMemoryRegion : public VirtualMemoryRegion {
  public:
   CommittedMemoryRegion(address addr, size_t size, const NativeCallStack& stack) :
     VirtualMemoryRegion(addr, size), _stack(stack) { }
-
-  inline int compare(const CommittedMemoryRegion& rgn) const {
-    if (overlap_region(rgn.base(), rgn.size())) {
-      return 0;
-    } else {
-      if (base() == rgn.base()) {
-        return 0;
-      } else if (base() > rgn.base()) {
-        return 1;
-      } else {
-        return -1;
-      }
-    }
-  }
-
-  inline bool equals(const CommittedMemoryRegion& rgn) const {
-    return compare(rgn) == 0;
-  }
 
   inline void set_call_stack(const NativeCallStack& stack) { _stack = stack; }
   inline const NativeCallStack* call_stack() const         { return &_stack; }
@@ -315,24 +312,6 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
   void  set_flag(MEMFLAGS flag);
   inline MEMFLAGS flag() const            { return _flag;  }
-
-  inline int compare(const ReservedMemoryRegion& rgn) const {
-    if (overlap_region(rgn.base(), rgn.size())) {
-      return 0;
-    } else {
-      if (base() == rgn.base()) {
-        return 0;
-      } else if (base() > rgn.base()) {
-        return 1;
-      } else {
-        return -1;
-      }
-    }
-  }
-
-  inline bool equals(const ReservedMemoryRegion& rgn) const {
-    return compare(rgn) == 0;
-  }
 
   // uncommitted thread stack bottom, above guard pages if there is any.
   address thread_stack_uncommitted_bottom() const;
@@ -404,6 +383,11 @@ class VirtualMemoryTracker : AllStatic {
   static bool remove_uncommitted_region (address base_addr, size_t size);
   static bool remove_released_region    (address base_addr, size_t size);
   static void set_reserved_region_type  (address addr, MEMFLAGS flag);
+
+  // Given an existing memory mapping registered with NMT, split the mapping in
+  //  two. The newly created two mappings will be registered under the call
+  //  stack and the memory flags of the original section.
+  static bool split_reserved_region(address addr, size_t size, size_t split);
 
   // Walk virtual memory data structure for creating baseline, etc.
   static bool walk_virtual_memory(VirtualMemoryWalker* walker);

@@ -37,18 +37,8 @@ public class WinExeBundler extends AbstractBundler {
         System.loadLibrary("jpackage");
     }
 
-    private static final ResourceBundle I18N = ResourceBundle.getBundle(
-            "jdk.incubator.jpackage.internal.resources.WinResources");
-
-    public static final BundlerParamInfo<WinAppBundler> APP_BUNDLER
-            = new WindowsBundlerParam<>(
-                    "win.app.bundler",
-                    WinAppBundler.class,
-                    params -> new WinAppBundler(),
-                    null);
-
     public static final BundlerParamInfo<File> EXE_IMAGE_DIR
-            = new WindowsBundlerParam<>(
+            = new StandardBundlerParam<>(
                     "win.exe.imageDir",
                     File.class,
                     params -> {
@@ -107,7 +97,7 @@ public class WinExeBundler extends AbstractBundler {
         File exeImageDir = EXE_IMAGE_DIR.fetchFrom(params);
 
         // Write msi to temporary directory.
-        File msi = msiBundler.bundle(params, exeImageDir);
+        File msi = msiBundler.execute(params, exeImageDir);
 
         try {
             new ScriptRunner()

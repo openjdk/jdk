@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestMaxRAMFlags
- * @key gc
  * @bug 8222252
  * @summary Verify correct MaxHeapSize and UseCompressedOops when MaxRAM and MaxRAMPercentage
  * are specified.

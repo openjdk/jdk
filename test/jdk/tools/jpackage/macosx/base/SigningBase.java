@@ -30,16 +30,22 @@ import jdk.jpackage.test.Executor.Result;
 
 public class SigningBase {
 
-    public static String DEV_NAME = "jpackage.openjdk.java.net";
-    public static String APP_CERT
-            = "Developer ID Application: " + DEV_NAME;
-    public static String INSTALLER_CERT
-            = "Developer ID Installer: " + DEV_NAME;
-    public static String KEYCHAIN = "jpackagerTest.keychain";
+    public static String DEV_NAME;
+    public static String APP_CERT;
+    public static String INSTALLER_CERT;
+    public static String KEYCHAIN;
+    static {
+        String value = System.getProperty("jpackage.mac.signing.key.user.name");
+        DEV_NAME = (value == null) ?  "jpackage.openjdk.java.net" : value;
+        APP_CERT = "Developer ID Application: " + DEV_NAME;
+        INSTALLER_CERT = "Developer ID Installer: " + DEV_NAME;
+        value = System.getProperty("jpackage.mac.signing.keychain");
+        KEYCHAIN = (value == null) ? "jpackagerTest.keychain" : value;
+    }
 
     private static void checkString(List<String> result, String lookupString) {
         TKit.assertTextStream(lookupString).predicate(
-                (line, what) -> line.trim().equals(what)).apply(result.stream());
+                (line, what) -> line.trim().contains(what)).apply(result.stream());
     }
 
     private static List<String> codesignResult(Path target, boolean signed) {
@@ -92,8 +98,6 @@ public class SigningBase {
         if (exitCode == 0) {
             lookupString = target.toString() + ": accepted";
             checkString(output, lookupString);
-            lookupString = "source=" + DEV_NAME;
-            checkString(output, lookupString);
         } else if (exitCode == 3) {
             // allow failure purely for not being notarized
             lookupString = target.toString() + ": rejected";
@@ -120,7 +124,7 @@ public class SigningBase {
 
     private static void verifyPkgutilResult(List<String> result) {
         result.stream().forEachOrdered(TKit::trace);
-        String lookupString = "Status: signed by a certificate trusted for current user";
+        String lookupString = "Status: signed by";
         checkString(result, lookupString);
         lookupString = "1. " + INSTALLER_CERT;
         checkString(result, lookupString);

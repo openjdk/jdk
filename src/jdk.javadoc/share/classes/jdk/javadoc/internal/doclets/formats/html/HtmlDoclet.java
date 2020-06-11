@@ -219,7 +219,7 @@ public class HtmlDoclet extends AbstractDoclet {
 
     private void copyJqueryFiles() throws DocletException {
         List<String> files = Arrays.asList(
-                "jquery-3.4.1.min.js",
+                "jquery-3.5.1.min.js",
                 "jquery-ui.min.js",
                 "jquery-ui.min.css",
                 "jquery-ui.structure.min.css",

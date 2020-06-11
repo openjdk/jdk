@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -2243,7 +2244,8 @@ public class MethodHandles {
                 Class<?> lookupClass = lookup.lookupClass();
                 ClassLoader loader = lookupClass.getClassLoader();
                 ProtectionDomain pd = (loader != null) ? lookup.lookupClassProtectionDomain() : null;
-                Class<?> c = JLA.defineClass(loader, lookupClass, name, bytes, pd, initialize, classFlags, classData);
+                Class<?> c = SharedSecrets.getJavaLangAccess()
+                        .defineClass(loader, lookupClass, name, bytes, pd, initialize, classFlags, classData);
                 assert !isNestmate() || c.getNestHost() == lookupClass.getNestHost();
                 return c;
             }
@@ -2263,7 +2265,7 @@ public class MethodHandles {
         private ProtectionDomain lookupClassProtectionDomain() {
             ProtectionDomain pd = cachedProtectionDomain;
             if (pd == null) {
-                cachedProtectionDomain = pd = JLA.protectionDomain(lookupClass);
+                cachedProtectionDomain = pd = SharedSecrets.getJavaLangAccess().protectionDomain(lookupClass);
             }
             return pd;
         }
@@ -2282,8 +2284,6 @@ public class MethodHandles {
          *  members in packages that are exported unconditionally.
          */
         static final Lookup PUBLIC_LOOKUP = new Lookup(Object.class, null, UNCONDITIONAL);
-
-        static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
         private static void checkUnprivilegedlookupClass(Class<?> lookupClass) {
             String name = lookupClass.getName();
@@ -2584,6 +2584,43 @@ assertEquals("[x, y, z]", pb.command().toString());
         public Class<?> findClass(String targetName) throws ClassNotFoundException, IllegalAccessException {
             Class<?> targetClass = Class.forName(targetName, false, lookupClass.getClassLoader());
             return accessClass(targetClass);
+        }
+
+        /**
+         * Ensures that {@code targetClass} has been initialized. The class
+         * to be initialized must be {@linkplain #accessClass accessible}
+         * to this {@code Lookup} object.  This method causes {@code targetClass}
+         * to be initialized if it has not been already initialized,
+         * as specified in JVMS {@jvms 5.5}.
+         *
+         * @param targetClass the class to be initialized
+         * @return {@code targetClass} that has been initialized
+         *
+         * @throws  IllegalArgumentException if {@code targetClass} is a primitive type or {@code void}
+         *          or array class
+         * @throws  IllegalAccessException if {@code targetClass} is not
+         *          {@linkplain #accessClass accessible} to this lookup
+         * @throws  ExceptionInInitializerError if the class initialization provoked
+         *          by this method fails
+         * @throws  SecurityException if a security manager is present and it
+         *          <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         * @since 15
+         * @jvms 5.5 Initialization
+         */
+        public Class<?> ensureInitialized(Class<?> targetClass) throws IllegalAccessException {
+            if (targetClass.isPrimitive())
+                throw new IllegalArgumentException(targetClass + " is a primitive class");
+            if (targetClass.isArray())
+                throw new IllegalArgumentException(targetClass + " is an array class");
+
+            if (!VerifyAccess.isClassAccessible(targetClass, lookupClass, prevLookupClass, allowedModes)) {
+                throw new MemberName(targetClass).makeAccessException("access violation", this);
+            }
+            checkSecurityManager(targetClass, null);
+
+            // ensure class initialization
+            Unsafe.getUnsafe().ensureClassInitialized(targetClass);
+            return targetClass;
         }
 
         /**

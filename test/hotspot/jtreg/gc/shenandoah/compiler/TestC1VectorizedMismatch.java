@@ -24,7 +24,7 @@
 
 /* @test TestC1VectorizedMismatch
  * @summary test C1 vectorized mismatch intrinsic
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *

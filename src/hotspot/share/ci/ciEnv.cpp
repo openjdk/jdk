@@ -41,6 +41,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -230,7 +231,7 @@ ciEnv::~ciEnv() {
 
 // ------------------------------------------------------------------
 // Cache Jvmti state
-void ciEnv::cache_jvmti_state() {
+bool ciEnv::cache_jvmti_state() {
   VM_ENTRY_MARK;
   // Get Jvmti capabilities under lock to get consistant values.
   MutexLocker mu(JvmtiThreadState_lock);
@@ -240,6 +241,7 @@ void ciEnv::cache_jvmti_state() {
   _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions();
   _jvmti_can_pop_frame                  = JvmtiExport::can_pop_frame();
   _jvmti_can_get_owned_monitor_info     = JvmtiExport::can_get_owned_monitor_info();
+  return _task != NULL && _task->method()->is_old();
 }
 
 bool ciEnv::jvmti_state_changed() const {

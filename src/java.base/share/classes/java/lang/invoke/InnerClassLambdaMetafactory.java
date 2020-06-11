@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,6 +245,47 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     }
 
     /**
+     * Spins the lambda proxy class.
+     *
+     * This first checks if a lambda proxy class can be loaded from CDS archive.
+     * Otherwise, generate the lambda proxy class. If CDS dumping is enabled, it
+     * registers the lambda proxy class for including into the CDS archive.
+     */
+    private Class<?> spinInnerClass() throws LambdaConversionException {
+        // include lambda proxy class in CDS archive at dump time
+        if (LambdaProxyClassArchive.isDumpArchive()) {
+            Class<?> innerClass = generateInnerClass();
+            LambdaProxyClassArchive.register(targetClass,
+                                             samMethodName,
+                                             invokedType,
+                                             samMethodType,
+                                             implMethod,
+                                             instantiatedMethodType,
+                                             isSerializable,
+                                             markerInterfaces,
+                                             additionalBridges,
+                                             innerClass);
+            return innerClass;
+        }
+
+        // load from CDS archive if present
+        Class<?> innerClass = LambdaProxyClassArchive.find(targetClass,
+                                                           samMethodName,
+                                                           invokedType,
+                                                           samMethodType,
+                                                           implMethod,
+                                                           instantiatedMethodType,
+                                                           isSerializable,
+                                                           markerInterfaces,
+                                                           additionalBridges,
+                                                           !disableEagerInitialization);
+        if (innerClass == null) {
+            innerClass = generateInnerClass();
+        }
+        return innerClass;
+    }
+
+    /**
      * Generate a class file which implements the functional
      * interface, define and return the class.
      *
@@ -259,7 +300,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * @throws LambdaConversionException If properly formed functional interface
      * is not found
      */
-    private Class<?> spinInnerClass() throws LambdaConversionException {
+    private Class<?> generateInnerClass() throws LambdaConversionException {
         String[] interfaces;
         String samIntf = samBase.getName().replace('.', '/');
         boolean accidentallySerializable = !isSerializable && Serializable.class.isAssignableFrom(samBase);

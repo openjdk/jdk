@@ -26,7 +26,7 @@ package gc.stress.gcold;
 
 /*
  * @test TestGCOldWithParallel
- * @key gc randomness
+ * @key randomness
  * @library / /test/lib
  * @requires vm.gc.Parallel
  * @summary Stress the Parallel GC by trying to make old objects more likely to be garbage than young objects.

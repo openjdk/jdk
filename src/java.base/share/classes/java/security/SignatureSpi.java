@@ -387,13 +387,15 @@ public abstract class SignatureSpi {
      * <p>This method is overridden by providers to return the parameters
      * used with this signature engine.
      *
-     * <p> If this signature engine has been previously initialized with
-     * parameters (by calling the {@code engineSetParameter} method), this
-     * method returns the same parameters. If this signature engine has not been
-     * initialized with parameters, this method may return a combination of
-     * default and randomly generated parameter values if the underlying
-     * signature implementation supports it and can successfully generate
-     * them. Otherwise, {@code null} is returned.
+     * <p> If this signature engine has been initialized with parameters
+     * (by calling {@link #engineSetParameter(AlgorithmParameterSpec)} or
+     * {@link #engineSetParameter(String, Object)}) and the underlying signature
+     * implementation supports returning the parameters as
+     * {@code AlgorithmParameters}, this method returns the same parameters.
+     * If the parameters were not set, this method may return a combination
+     * of default and randomly generated parameter values if the
+     * underlying signature implementation supports it and can successfully
+     * generate them. Otherwise, {@code null} is returned.
      *
      * @return the parameters used with this signature engine, or {@code null}
      *

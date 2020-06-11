@@ -29,7 +29,6 @@ import jdk.test.lib.Platform;
 
 /*
  * @test TestCardTablePageCommits
- * @key gc
  * @bug 8059066
  * @summary Tests that the card table does not commit the same page twice
  * @requires vm.gc.Parallel

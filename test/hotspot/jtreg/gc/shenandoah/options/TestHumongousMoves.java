@@ -25,7 +25,7 @@
 /*
  * @test TestHumongousMoves
  * @summary Check Shenandoah reacts on setting humongous moves correctly
- * @key gc randomness
+ * @key randomness
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  *

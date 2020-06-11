@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8176481
+ * @bug 8176481 8246705
  * @summary Tests behavior of the tool, when modules are present as
  *          binaries.
  * @modules
@@ -60,7 +60,7 @@ public class MissingSourceModules extends ModuleTestBase {
 
         execNegativeTask("--module-path", modulePath.toString(),
                 "--module", "ma");
-        assertMessagePresent("module ma not found.");
+        assertMessagePresent("module ma not found");
     }
 
     @Test
@@ -77,11 +77,11 @@ public class MissingSourceModules extends ModuleTestBase {
         Path mPath = Paths.get(modulePath.toString(), "ma");
         execNegativeTask("--source-path", mPath.toString(),
                 "--module", "ma");
-        assertMessagePresent("module ma not found.");
+        assertMessagePresent("module ma not found on source path");
 
         execNegativeTask("--class-path", mPath.toString(),
                 "--module", "ma");
-        assertMessagePresent("module ma not found.");
+        assertMessagePresent("module ma not found");
     }
 
     @Test
@@ -106,7 +106,7 @@ public class MissingSourceModules extends ModuleTestBase {
                 "--module-source-path", src.toString(),
                 "--expand-requires", "all",
                 "--module", "ma");
-        assertMessagePresent("module mb not found.");
+        assertMessagePresent("source files for module mb not found");
     }
 
     @Test
@@ -131,6 +131,6 @@ public class MissingSourceModules extends ModuleTestBase {
                 "--module-source-path", src.toString(),
                 "--expand-requires", "transitive",
                 "--module", "ma");
-        assertMessagePresent("module mb not found.");
+        assertMessagePresent("source files for module mb not found");
     }
 }

@@ -24,7 +24,6 @@
 /**
  * @test
  * @bug 8055061
- * @key nmt
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

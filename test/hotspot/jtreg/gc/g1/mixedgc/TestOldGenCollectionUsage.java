@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import gc.testlibrary.g1.MixedGCProvoker;
  * @test TestOldGenCollectionUsage.java
  * @bug 8195115
  * @summary G1 Old Gen's CollectionUsage.used is zero after mixed GC which is incorrect
- * @key gc
  * @requires vm.gc.G1
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc

@@ -147,7 +147,9 @@ public class MulticastSocket extends DatagramSocket {
 
 
     /**
-     * Create a multicast socket.
+     * Constructs a multicast socket and binds it to any available port
+     * on the local host machine.  The socket will be bound to the
+     * {@link InetAddress#isAnyLocalAddress wildcard} address.
      *
      * <p>
      * If there is a security manager, its {@code checkListen} method is first
@@ -171,7 +173,9 @@ public class MulticastSocket extends DatagramSocket {
     }
 
     /**
-     * Create a multicast socket and bind it to a specific port.
+     * Constructs a multicast socket and binds it to the specified port
+     * on the local host machine. The socket will be bound to the
+     * {@link InetAddress#isAnyLocalAddress wildcard} address.
      *
      * <p>If there is a security manager,
      * its {@code checkListen} method is first called
@@ -188,6 +192,9 @@ public class MulticastSocket extends DatagramSocket {
      *            while creating the MulticastSocket
      * @throws    SecurityException  if a security manager exists and its
      *            {@code checkListen} method doesn't allow the operation.
+     * @throws    IllegalArgumentException  if port is  <a href="DatagramSocket.html#PortRange">
+     *            out of range.</a>
+     *
      * @see       SecurityManager#checkListen
      * @see       java.net.DatagramSocket#setReuseAddress(boolean)
      */
@@ -196,9 +203,10 @@ public class MulticastSocket extends DatagramSocket {
     }
 
     /**
-     * Create a MulticastSocket bound to the specified socket address.
+     * Creates a multicast socket, bound to the specified local
+     * socket address.
      * <p>
-     * Or, if the address is {@code null}, create an unbound socket.
+     * If the address is {@code null} an unbound socket will be created.
      *
      * <p>If there is a security manager,
      * its {@code checkListen} method is first called

@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @key stress gc randomness
+ * @key stress randomness
  *
  * @summary converted from VM Testbase gc/lock/jvmti/alloc/jvmtialloclock02.
  * VM Testbase keywords: [gc, stress, stressopt, jvmti, nonconcurrent, quick]

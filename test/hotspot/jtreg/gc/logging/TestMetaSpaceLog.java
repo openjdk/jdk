@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,6 @@ import sun.hotspot.WhiteBox;
  * @test TestMetaSpaceLog
  * @bug 8211123
  * @summary Ensure that the Metaspace is updated in the log
- * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

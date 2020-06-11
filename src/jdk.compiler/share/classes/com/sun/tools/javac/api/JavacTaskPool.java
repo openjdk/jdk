@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javac.api;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -183,6 +184,10 @@ public class JavacTaskPool {
                                                        opts, classes, compilationUnits, ctx);
 
         task.addTaskListener(ctx);
+
+        if (out != null) {
+            Log.instance(ctx).setWriters(new PrintWriter(out, true));
+        }
 
         Z result = worker.withTask(task);
 

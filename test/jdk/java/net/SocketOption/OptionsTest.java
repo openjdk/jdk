@@ -31,6 +31,7 @@
  * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl OptionsTest
  * @run main/othervm -Xcheck:jni -Djava.net.preferIPv4Stack=true OptionsTest
  * @run main/othervm --limit-modules=java.base OptionsTest
+ * @run main/othervm/policy=options.policy OptionsTest
  */
 
 import java.lang.reflect.Method;
@@ -343,7 +344,7 @@ public class OptionsTest {
     static Object getServerSocketTrafficClass(ServerSocket ss) throws Exception {
         try {
             Class<?> c = Class.forName("jdk.net.Sockets");
-            Method m = c.getDeclaredMethod("getOption", ServerSocket.class, SocketOption.class);
+            Method m = c.getMethod("getOption", ServerSocket.class, SocketOption.class);
             return m.invoke(null, ss, StandardSocketOptions.IP_TOS);
         } catch (ClassNotFoundException e) {
             // Ok, jdk.net module not present, just fall back

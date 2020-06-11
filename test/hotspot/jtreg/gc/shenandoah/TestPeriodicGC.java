@@ -25,7 +25,6 @@
 /*
  * @test TestPeriodicGC
  * @summary Test that periodic GC is working
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @run driver TestPeriodicGC

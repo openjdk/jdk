@@ -31,7 +31,6 @@
 class ZPhysicalMemoryBacking {
 private:
   ZGranuleMap<HANDLE> _handles;
-  size_t              _size;
 
   HANDLE get_handle(uintptr_t offset) const;
   void put_handle(uintptr_t offset, HANDLE handle);
@@ -41,13 +40,11 @@ private:
   size_t uncommit_from_paging_file(size_t offset, size_t size);
 
 public:
-  ZPhysicalMemoryBacking();
+  ZPhysicalMemoryBacking(size_t max_capacity);
 
   bool is_initialized() const;
 
-  void warn_commit_limits(size_t max) const;
-
-  size_t size() const;
+  void warn_commit_limits(size_t max_capacity) const;
 
   size_t commit(size_t offset, size_t length);
   size_t uncommit(size_t offset, size_t length);

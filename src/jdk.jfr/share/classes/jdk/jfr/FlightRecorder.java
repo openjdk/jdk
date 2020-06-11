@@ -187,15 +187,19 @@ public final class FlightRecorder {
                 // before initialization is done
                 initialized = true;
                 Logger.log(JFR, INFO, "Flight Recorder initialized");
-                Logger.log(JFR, DEBUG, "maxchunksize: " + Options.getMaxChunkSize()+ " bytes");
-                Logger.log(JFR, DEBUG, "memorysize: " + Options.getMemorySize()+ " bytes");
-                Logger.log(JFR, DEBUG, "globalbuffersize: " + Options.getGlobalBufferSize()+ " bytes");
-                Logger.log(JFR, DEBUG, "globalbuffercount: " + Options.getGlobalBufferCount());
-                Logger.log(JFR, DEBUG, "dumppath: " + Options.getDumpPath());
-                Logger.log(JFR, DEBUG, "samplethreads: " + Options.getSampleThreads());
-                Logger.log(JFR, DEBUG, "stackdepth: " + Options.getStackDepth());
-                Logger.log(JFR, DEBUG, "threadbuffersize: " + Options.getThreadBufferSize());
-                Logger.log(JFR, LogLevel.INFO, "Repository base directory: " + Repository.getRepository().getBaseLocation());
+                if (Logger.shouldLog(JFR, DEBUG)) {
+                    Logger.log(JFR, DEBUG, "maxchunksize: " + Options.getMaxChunkSize()+ " bytes");
+                    Logger.log(JFR, DEBUG, "memorysize: " + Options.getMemorySize()+ " bytes");
+                    Logger.log(JFR, DEBUG, "globalbuffersize: " + Options.getGlobalBufferSize()+ " bytes");
+                    Logger.log(JFR, DEBUG, "globalbuffercount: " + Options.getGlobalBufferCount());
+                    Logger.log(JFR, DEBUG, "dumppath: " + Options.getDumpPath());
+                    Logger.log(JFR, DEBUG, "samplethreads: " + Options.getSampleThreads());
+                    Logger.log(JFR, DEBUG, "stackdepth: " + Options.getStackDepth());
+                    Logger.log(JFR, DEBUG, "threadbuffersize: " + Options.getThreadBufferSize());
+                }
+                if (Logger.shouldLog(JFR, INFO)) {
+                    Logger.log(JFR, INFO, "Repository base directory: " + Repository.getRepository().getBaseLocation());
+                }
                 PlatformRecorder.notifyRecorderInitialized(platformRecorder);
             }
         }

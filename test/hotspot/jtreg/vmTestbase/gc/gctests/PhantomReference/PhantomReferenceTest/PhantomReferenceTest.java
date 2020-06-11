@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @key stress gc randomness
+ * @key stress randomness
  *
  * @summary converted from VM Testbase gc/gctests/PhantomReference/PhantomReferenceTest.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent, jrockit]

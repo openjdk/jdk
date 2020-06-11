@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
          * You can override this to return null or throw if there are no transforms.
          * This method exists so that the transforms can be "grown" lazily.
          * This is necessary if the transform *adds* a field to an instance,
-         * which sometimtes requires the creation, on the fly, of an extended species.
+         * which sometimes requires the creation, on the fly, of an extended species.
          * This method is only called once for any particular parameter.
          * The species caches the result in a private array.
          *

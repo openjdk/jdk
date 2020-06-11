@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestG1ConcMarkStepDurationMillis
- * @key gc
  * @requires vm.gc.G1
  * @summary Tests argument processing for double type flag, G1ConcMarkStepDurationMillis
  * @library /test/lib

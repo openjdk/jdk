@@ -35,20 +35,15 @@
 // committing and uncommitting, each ZGranuleSize'd chunk is mapped to
 // a separate paging file mapping.
 
-ZPhysicalMemoryBacking::ZPhysicalMemoryBacking() :
-    _handles(MaxHeapSize),
-    _size(0) {}
+ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
+    _handles(max_capacity) {}
 
 bool ZPhysicalMemoryBacking::is_initialized() const {
   return true;
 }
 
-void ZPhysicalMemoryBacking::warn_commit_limits(size_t max) const {
+void ZPhysicalMemoryBacking::warn_commit_limits(size_t max_capacity) const {
   // Does nothing
-}
-
-size_t ZPhysicalMemoryBacking::size() const {
-  return _size;
 }
 
 HANDLE ZPhysicalMemoryBacking::get_handle(uintptr_t offset) const {
@@ -95,15 +90,7 @@ size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) {
   log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
                       offset / M, (offset + length) / M, length / M);
 
-  const size_t committed = commit_from_paging_file(offset, length);
-
-  const size_t end = offset + committed;
-  if (end > _size) {
-    // Update size
-    _size = end;
-  }
-
-  return committed;
+  return commit_from_paging_file(offset, length);
 }
 
 size_t ZPhysicalMemoryBacking::uncommit(size_t offset, size_t length) {

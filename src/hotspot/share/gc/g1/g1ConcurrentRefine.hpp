@@ -57,7 +57,6 @@ public:
   // activate it.
   void maybe_activate_next(uint cur_worker_id);
 
-  void print_on(outputStream* st) const;
   void worker_threads_do(ThreadClosure* tc);
   void stop();
 };
@@ -138,8 +137,6 @@ public:
 
   // Maximum number of refinement threads.
   static uint max_num_threads();
-
-  void print_threads_on(outputStream* st) const;
 
   // Cards in the dirty card queue set.
   size_t green_zone() const      { return _green_zone;  }

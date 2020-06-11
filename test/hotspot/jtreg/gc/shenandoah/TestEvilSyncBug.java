@@ -25,7 +25,6 @@
 /*
  * @test TestEvilSyncBug
  * @summary Tests for crash/assert when attaching init thread during shutdown
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

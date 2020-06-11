@@ -25,6 +25,7 @@
 
 package sun.management;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.management.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,7 +40,6 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.misc.VM.BufferPool;
 
@@ -63,7 +63,9 @@ public class ManagementFactoryHelper {
     static {
         // make sure that the management lib is loaded within
         // java.lang.management.ManagementFactory
-        jdk.internal.misc.Unsafe.getUnsafe().ensureClassInitialized(ManagementFactory.class);
+        try {
+            MethodHandles.lookup().ensureInitialized(ManagementFactory.class);
+        } catch (IllegalAccessException e) {}
     }
 
     private static final VMManagement jvm = new VMManagementImpl();

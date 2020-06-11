@@ -111,6 +111,15 @@ abstract class FileSystem {
      */
     public abstract int getBooleanAttributes(File f);
 
+    /**
+     * Checks if all the given boolean attributes are true for the file or
+     * directory denoted by the given abstract pathname. False if it does not
+     * exist or some other I/O error occurs.
+     */
+    public boolean hasBooleanAttributes(File f, int attributes) {
+        return (getBooleanAttributes(f) & attributes) == attributes;
+    }
+
     @Native public static final int ACCESS_READ    = 0x04;
     @Native public static final int ACCESS_WRITE   = 0x02;
     @Native public static final int ACCESS_EXECUTE = 0x01;

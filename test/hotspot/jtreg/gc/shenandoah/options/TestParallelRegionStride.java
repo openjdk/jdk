@@ -24,7 +24,6 @@
 
 /*
  * @test TestParallelRegionStride
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahParallelRegionStride=1    -Xmx128m TestParallelRegionStride

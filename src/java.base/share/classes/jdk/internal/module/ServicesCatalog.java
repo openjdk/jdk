@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public final class ServicesCatalog {
     }
 
     /**
-     * Returns the list of service provides for the given service type
+     * Returns the list of service providers for the given service type
      * name, creating it if needed.
      */
     private List<ServiceProvider> providers(String service) {
@@ -132,7 +132,7 @@ public final class ServicesCatalog {
     }
 
     /**
-     * Add a provider in the given module to this services catalog
+     * Adds a provider in the given module to this services catalog.
      *
      * @apiNote This method is for use by java.lang.instrument
      */

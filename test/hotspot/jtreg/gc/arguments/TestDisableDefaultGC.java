@@ -27,7 +27,6 @@ package gc.arguments;
  * @test TestDisableDefaultGC
  * @summary Test that the VM complains when the default GC is disabled and no other GC is specified
  * @bug 8068579
- * @key gc
  * @library /test/lib
  * @library /
  * @requires vm.gc=="null"

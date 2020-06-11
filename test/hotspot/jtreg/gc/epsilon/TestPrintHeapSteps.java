@@ -25,7 +25,6 @@ package gc.epsilon;
 
 /**
  * @test TestPrintSteps
- * @key gc
  * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Tests -XX:EpsilonPrintHeapSteps works
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonPrintHeapSteps=0    gc.epsilon.TestPrintHeapSteps

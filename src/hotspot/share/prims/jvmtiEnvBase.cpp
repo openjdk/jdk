@@ -647,7 +647,7 @@ JvmtiEnvBase::count_locked_objects(JavaThread *java_thread, Handle hobj) {
 
 
 jvmtiError
-JvmtiEnvBase::get_current_contended_monitor(JavaThread *java_thread, jobject *monitor_ptr) {
+JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThread *java_thread, jobject *monitor_ptr) {
   JavaThread *current_jt = JavaThread::current();
   assert(current_jt == java_thread ||
          current_jt == java_thread->active_handshaker(),
@@ -677,14 +677,14 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *java_thread, jobject *mo
   } else {
     HandleMark hm;
     Handle     hobj(current_jt, obj);
-    *monitor_ptr = jni_reference(current_jt, hobj);
+    *monitor_ptr = jni_reference(calling_thread, hobj);
   }
   return JVMTI_ERROR_NONE;
 }
 
 
 jvmtiError
-JvmtiEnvBase::get_owned_monitors(JavaThread* java_thread,
+JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread,
                                  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list) {
   jvmtiError err = JVMTI_ERROR_NONE;
   JavaThread *current_jt = JavaThread::current();
@@ -702,7 +702,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread* java_thread,
          jvf = jvf->java_sender()) {
       if (MaxJavaStackTraceDepth == 0 || depth++ < MaxJavaStackTraceDepth) {  // check for stack too deep
         // add locked objects for this frame into list
-        err = get_locked_objects_in_frame(current_jt, java_thread, jvf, owned_monitors_list, depth-1);
+        err = get_locked_objects_in_frame(calling_thread, java_thread, jvf, owned_monitors_list, depth-1);
         if (err != JVMTI_ERROR_NONE) {
           return err;
         }
@@ -711,7 +711,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread* java_thread,
   }
 
   // Get off stack monitors. (e.g. acquired via jni MonitorEnter).
-  JvmtiMonitorClosure jmc(java_thread, current_jt, owned_monitors_list, this);
+  JvmtiMonitorClosure jmc(java_thread, calling_thread, owned_monitors_list, this);
   ObjectSynchronizer::monitors_iterate(&jmc);
   err = jmc.error();
 
@@ -1548,12 +1548,12 @@ VM_SetFramePop::doit() {
 
 void
 GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
-  _result = ((JvmtiEnvBase *)_env)->get_owned_monitors((JavaThread *)target, _owned_monitors_list);
+  _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread, (JavaThread *)target, _owned_monitors_list);
 }
 
 void
 GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
-  _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor((JavaThread *)target, _owned_monitor_ptr);
+  _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor(_calling_thread, (JavaThread *)target, _owned_monitor_ptr);
 }
 
 void

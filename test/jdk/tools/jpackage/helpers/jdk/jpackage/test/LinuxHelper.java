@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,22 @@ package jdk.jpackage.test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.incubator.jpackage.internal.IOUtils;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
+
+
 
 public class LinuxHelper {
     private static String getRelease(JPackageCommand cmd) {
@@ -165,8 +176,7 @@ public class LinuxHelper {
             .addArgument(cmd.outputBundle())
             .addArgument(destinationDir)
             .execute();
-            return destinationDir.resolve(String.format(".%s",
-                    cmd.appInstallationDirectory())).normalize();
+            return destinationDir;
         };
         return deb;
     }
@@ -191,8 +201,7 @@ public class LinuxHelper {
                             cmd.outputBundle().toAbsolutePath().toString())))
             .setDirectory(destinationDir)
             .execute();
-            return destinationDir.resolve(String.format(".%s",
-                    cmd.appInstallationDirectory())).normalize();
+            return destinationDir;
         };
 
         return rpm;
@@ -282,27 +291,6 @@ public class LinuxHelper {
             boolean integrated) {
         final String xdgUtils = "xdg-utils";
 
-        test.addBundleVerifier(cmd -> {
-            List<String> prerequisites = getPrerequisitePackages(cmd);
-            boolean xdgUtilsFound = prerequisites.contains(xdgUtils);
-            if (integrated) {
-                TKit.assertTrue(xdgUtilsFound, String.format(
-                        "Check [%s] is in the list of required packages %s",
-                        xdgUtils, prerequisites));
-            } else {
-                TKit.assertFalse(xdgUtilsFound, String.format(
-                        "Check [%s] is NOT in the list of required packages %s",
-                        xdgUtils, prerequisites));
-            }
-        });
-
-        test.forTypes(PackageType.LINUX_DEB, () -> {
-            addDebBundleDesktopIntegrationVerifier(test, integrated);
-        });
-    }
-
-    private static void addDebBundleDesktopIntegrationVerifier(PackageTest test,
-            boolean integrated) {
         Function<List<String>, String> verifier = (lines) -> {
             // Lookup for xdg commands
             return lines.stream().filter(line -> {
@@ -314,21 +302,29 @@ public class LinuxHelper {
         };
 
         test.addBundleVerifier(cmd -> {
-            TKit.withTempDirectory("dpkg-control-files", tempDir -> {
-                // Extract control Debian package files into temporary directory
-                Executor.of("dpkg", "-e")
-                .addArgument(cmd.outputBundle())
-                .addArgument(tempDir)
-                .execute();
+            // Verify dependencies.
+            List<String> prerequisites = getPrerequisitePackages(cmd);
+            boolean xdgUtilsFound = prerequisites.contains(xdgUtils);
+            TKit.assertTrue(xdgUtilsFound == integrated, String.format(
+                    "Check [%s] is%s in the list of required packages %s",
+                    xdgUtils, integrated ? "" : " NOT", prerequisites));
 
-                Path controlFile = Path.of("postinst");
+            Map<Scriptlet, List<String>> scriptlets = getScriptlets(cmd);
+            if (integrated) {
+                Set<Scriptlet> requiredScriptlets = Stream.of(Scriptlet.values()).sorted().collect(
+                        Collectors.toSet());
+                TKit.assertTrue(scriptlets.keySet().containsAll(
+                        requiredScriptlets), String.format(
+                                "Check all required scriptlets %s found in the package. Package scriptlets: %s",
+                                requiredScriptlets, scriptlets.keySet()));
+            }
 
-                // Lookup for xdg commands in postinstall script
-                String lineWithXsdCommand = verifier.apply(
-                        Files.readAllLines(tempDir.resolve(controlFile)));
+            // Lookup for xdg commands in scriptlets.
+            scriptlets.entrySet().forEach(scriptlet -> {
+                String lineWithXsdCommand = verifier.apply(scriptlet.getValue());
                 String assertMsg = String.format(
-                        "Check if %s@%s control file uses xdg commands",
-                        cmd.outputBundle(), controlFile);
+                        "Check if [%s] scriptlet uses xdg commands",
+                        scriptlet.getKey());
                 if (integrated) {
                     TKit.assertNotNull(lineWithXsdCommand, assertMsg);
                 } else {
@@ -413,6 +409,19 @@ public class LinuxHelper {
                         fa.getMime()));
             });
         });
+
+        test.addBundleVerifier(cmd -> {
+            final Path mimeTypeIconFileName = fa.getLinuxIconFileName();
+            if (mimeTypeIconFileName != null) {
+                // Verify there are xdg registration commands for mime icon file.
+                Path mimeTypeIcon = cmd.appLayout().destktopIntegrationDirectory().resolve(
+                        mimeTypeIconFileName);
+
+                Map<Scriptlet, List<String>> scriptlets = getScriptlets(cmd);
+                scriptlets.entrySet().stream().forEach(e -> verifyIconInScriptlet(
+                        e.getKey(), e.getValue(), mimeTypeIcon));
+            }
+        });
     }
 
     private static String queryFileMimeType(Path file) {
@@ -424,6 +433,122 @@ public class LinuxHelper {
         return Executor.of("xdg-mime", "query", "default", mimeType)
                 .executeAndGetFirstLineOfOutput();
     }
+
+    private static void verifyIconInScriptlet(Scriptlet scriptletType,
+            List<String> scriptletBody, Path iconPathInPackage) {
+        final String dashMime = IOUtils.replaceSuffix(
+                iconPathInPackage.getFileName(), null).toString();
+        final String xdgCmdName = "xdg-icon-resource";
+
+        Stream<String> scriptletBodyStream = scriptletBody.stream()
+                .filter(str -> str.startsWith(xdgCmdName))
+                .filter(str -> Pattern.compile(
+                        "\\b" + dashMime + "\\b").matcher(str).find());
+        if (scriptletType == Scriptlet.PostInstall) {
+            scriptletBodyStream = scriptletBodyStream.filter(str -> List.of(
+                    str.split("\\s+")).contains(iconPathInPackage.toString()));
+        }
+
+        scriptletBodyStream.peek(xdgCmd -> {
+            Matcher m = XDG_CMD_ICON_SIZE_PATTERN.matcher(xdgCmd);
+            TKit.assertTrue(m.find(), String.format(
+                    "Check icon size is specified as a number in [%s] xdg command of [%s] scriptlet",
+                    xdgCmd, scriptletType));
+            int iconSize = Integer.parseInt(m.group(1));
+            TKit.assertTrue(XDG_CMD_VALID_ICON_SIZES.contains(iconSize),
+                    String.format(
+                            "Check icon size [%s] is one of %s values",
+                            iconSize, XDG_CMD_VALID_ICON_SIZES));
+        })
+        .findFirst().orElseGet(() -> {
+            TKit.assertUnexpected(String.format(
+                    "Failed to find [%s] command in [%s] scriptlet for [%s] icon file",
+                    xdgCmdName, scriptletType, iconPathInPackage));
+            return null;
+        });
+    }
+
+    private static Map<Scriptlet, List<String>> getScriptlets(
+            JPackageCommand cmd, Scriptlet... scriptlets) {
+        cmd.verifyIsOfType(PackageType.LINUX);
+
+        Set<Scriptlet> scriptletSet = Set.of(
+                scriptlets.length == 0 ? Scriptlet.values() : scriptlets);
+        switch (cmd.packageType()) {
+            case LINUX_DEB:
+                return getDebScriptlets(cmd, scriptletSet);
+
+            case LINUX_RPM:
+                return getRpmScriptlets(cmd, scriptletSet);
+        }
+
+        // Unreachable
+        return null;
+    }
+
+    private static Map<Scriptlet, List<String>> getDebScriptlets(
+            JPackageCommand cmd, Set<Scriptlet> scriptlets) {
+        Map<Scriptlet, List<String>> result = new HashMap<>();
+        TKit.withTempDirectory("dpkg-control-files", tempDir -> {
+            // Extract control Debian package files into temporary directory
+            Executor.of("dpkg", "-e")
+                    .addArgument(cmd.outputBundle())
+                    .addArgument(tempDir)
+                    .execute();
+
+            for (Scriptlet scriptlet : scriptlets) {
+                Path controlFile = Path.of(scriptlet.deb);
+                result.put(scriptlet, Files.readAllLines(tempDir.resolve(
+                        controlFile)));
+            }
+        });
+        return result;
+    }
+
+    private static Map<Scriptlet, List<String>> getRpmScriptlets(
+            JPackageCommand cmd, Set<Scriptlet> scriptlets) {
+        List<String> output = Executor.of("rpm", "-qp", "--scripts",
+                cmd.outputBundle().toString()).executeAndGetOutput();
+
+        Map<Scriptlet, List<String>> result = new HashMap<>();
+        List<String> curScriptletBody = null;
+        for (String str : output) {
+            Matcher m = Scriptlet.RPM_HEADER_PATTERN.matcher(str);
+            if (m.find()) {
+                Scriptlet scriptlet = Scriptlet.RPM_MAP.get(m.group(1));
+                if (scriptlets.contains(scriptlet)) {
+                    curScriptletBody = new ArrayList<>();
+                    result.put(scriptlet, curScriptletBody);
+                } else if (curScriptletBody != null) {
+                    curScriptletBody = null;
+                }
+            } else if (curScriptletBody != null) {
+                curScriptletBody.add(str);
+            }
+        }
+
+        return result;
+    }
+
+    private static enum Scriptlet {
+        PostInstall("postinstall", "postinst"),
+        PreUninstall("preuninstall", "prerm");
+
+        Scriptlet(String rpm, String deb) {
+            this.rpm = rpm;
+            this.deb = deb;
+        }
+
+        private final String rpm;
+        private final String deb;
+
+        static final Pattern RPM_HEADER_PATTERN = Pattern.compile(String.format(
+                "(%s) scriptlet \\(using /bin/sh\\):", Stream.of(values()).map(
+                        v -> v.rpm).collect(Collectors.joining("|"))));
+
+        static final Map<String, Scriptlet> RPM_MAP = Stream.of(values()).collect(
+                Collectors.toMap(v -> v.rpm, v -> v));
+    };
 
     public static String getDefaultPackageArch(PackageType type) {
         if (archs == null) {
@@ -451,5 +576,10 @@ public class LinuxHelper {
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "lib/server/libjvm.so"));
 
-    static private Map<PackageType, String> archs;
+    private static Map<PackageType, String> archs;
+
+    private final static Pattern XDG_CMD_ICON_SIZE_PATTERN = Pattern.compile("\\s--size\\s+(\\d+)\\b");
+
+    // Values grabbed from https://linux.die.net/man/1/xdg-icon-resource
+    private final static Set<Integer> XDG_CMD_VALID_ICON_SIZES = Set.of(16, 22, 32, 48, 64, 128);
 }

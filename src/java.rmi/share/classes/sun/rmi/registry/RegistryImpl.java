@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -436,6 +436,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
      *          {@link ObjectInputFilter.Status#REJECTED} if rejected,
      *          otherwise {@link ObjectInputFilter.Status#UNDECIDED}
      */
+    @SuppressWarnings("removal")
     private static ObjectInputFilter.Status registryFilter(ObjectInputFilter.FilterInfo filterInfo) {
         if (registryFilter != null) {
             ObjectInputFilter.Status status = registryFilter.checkInput(filterInfo);

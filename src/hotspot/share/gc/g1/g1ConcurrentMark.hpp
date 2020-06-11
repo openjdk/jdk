@@ -583,7 +583,6 @@ public:
 
   void print_summary_info();
 
-  void print_worker_threads_on(outputStream* st) const;
   void threads_do(ThreadClosure* tc) const;
 
   void print_on_error(outputStream* st) const;

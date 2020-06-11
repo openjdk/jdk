@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,82 +25,114 @@
 #define SHARE_JFR_RECORDER_STORAGE_JFRMEMORYSPACE_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "jfr/utilities/jfrDoublyLinkedList.hpp"
-#include "jfr/utilities/jfrIterator.hpp"
 
-template <typename T, template <typename> class RetrievalType, typename Callback>
+const size_t JFR_MSPACE_UNLIMITED_CACHE_SIZE = max_uintx;
+
+/*
+ * A JfrMemorySpace abstracts a memory area by exposing configurable relations and functions.
+ *
+ * A memory space, or mspace for short, manages committed memory as multiples of a basic unit, min_element_size.
+ * At the lowest level, and for higher levels of control, memory units can be directly managed using the allocate() and deallocate() functions.
+ * More convenience is achieved by instead using one of the many higher level functions, which use allocate() and deallocate() underneath.
+ * For storage, there exist two lists, a free list and a live list, each of a type that is configurable using policies.
+ * To get memory from the mspace, use the acquire() function. To release the memory back, use release().
+ * The exact means for how memory is provisioned and delivered through acquire() is configurable using a RetreivalPolicy.
+ * A JfrMemorySpace can be specialized to be 'epoch aware', meaning it will perform list management as a function of
+ * epoch state. This provides a convenient, relatively low-level mechanism, to process epoch relative data.
+ *
+ * A client of a JfrMemorySpace will specialize it according to the dimensions exposed by the following policies:
+ *
+ * Client            the type of the client, an instance is to be passed into the constructor.
+ *                   a client must provide a single callback function:
+ *                   register_full(FreeListType::Node*, Thread*);
+ *
+ * RetrievalPolicy   a template template class detailing how to retrieve memory for acquire.
+ *                   the type parameter for the RetrivalPolicy template class is JfrMemorySpace and the policy class must provide:
+ *                   FreeListType::Node* acquire(JfrMemorySpace* mspace, FreeListType* free_list, Thread*, size_t size, bool previous_epoch);
+ *
+ * FreeListType      the type of the free list. The syntactic interface to be fullfilled is most conveniently read from an example,
+ *                   please see utilities/jfrConcurrentQueue.hpp.
+ *
+ * FreeListType::Node gives the basic node type for each individual unit to be managed by the memory space.
+ *
+ * LiveListType      the type of the live list. The syntactic interface is equivalent to the FreeListType.
+ *                   LiveListType::Node must be compatible with FreeListType::Node.
+ *
+ * epoch_aware       boolean, default value is false.
+ *
+ */
+
+template <typename Client,
+          template <typename> class RetrievalPolicy,
+          typename FreeListType,
+          typename LiveListType = FreeListType,
+          bool epoch_aware = false>
 class JfrMemorySpace : public JfrCHeapObj {
  public:
-  typedef T Type;
-  typedef RetrievalType<JfrMemorySpace<T, RetrievalType, Callback> > Retrieval;
-  typedef JfrDoublyLinkedList<Type> List;
-  typedef StopOnNullIterator<List> Iterator;
- private:
-  List _free;
-  List _full;
-  size_t _min_elem_size;
-  size_t _limit_size;
-  size_t _cache_count;
-  Callback* _callback;
-
-  bool should_populate_cache() const { return _free.count() < _cache_count; }
-
+  typedef FreeListType FreeList;
+  typedef LiveListType LiveList;
+  typedef typename FreeListType::Node Node;
+  typedef typename FreeListType::NodePtr NodePtr;
  public:
-  JfrMemorySpace(size_t min_elem_size, size_t limit_size, size_t cache_count, Callback* callback);
+  JfrMemorySpace(size_t min_elem_size, size_t free_list_cache_count_limit, Client* client);
   ~JfrMemorySpace();
-  bool initialize();
+  bool initialize(size_t cache_prealloc_count, bool prealloc_to_free_list = true);
 
-  size_t min_elem_size() const { return _min_elem_size; }
-  size_t limit_size() const { return _limit_size; }
+  size_t min_element_size() const;
 
-  bool has_full() const { return _full.head() != NULL; }
-  bool has_free() const { return _free.head() != NULL; }
-  bool is_full_empty() const { return !has_full(); }
-  bool is_free_empty() const { return !has_free(); }
+  NodePtr allocate(size_t size);
+  void deallocate(NodePtr node);
 
-  size_t full_count() const { return _full.count(); }
-  size_t free_count() const { return _free.count(); }
+  NodePtr acquire(size_t size, bool free_list, Thread* thread, bool previous_epoch = false);
+  void release(NodePtr node);
+  void release_live(NodePtr t, bool previous_epoch = false);
+  void release_free(NodePtr t);
 
-  List& full() { return _full; }
-  const List& full() const { return _full; }
-  List& free() { return _free; }
-  const List& free() const { return _free; }
+  FreeList& free_list();
+  const FreeList& free_list() const;
 
-  Type* full_head() { return _full.head(); }
-  Type* full_tail() { return _full.tail(); }
-  Type* free_head() { return _free.head(); }
-  Type* free_tail() { return _free.tail(); }
+  LiveList& live_list(bool previous_epoch = false);
+  const LiveList& live_list(bool previous_epoch = false) const;
 
-  void insert_free_head(Type* t) { _free.prepend(t); }
-  void insert_free_tail(Type* t) { _free.append(t); }
-  void insert_free_tail(Type* t, Type* tail, size_t count) { _free.append_list(t, tail, count); }
-  void insert_full_head(Type* t) { _full.prepend(t); }
-  void insert_full_tail(Type* t) { _full.append(t); }
-  void insert_full_tail(Type* t, Type* tail, size_t count) { _full.append_list(t, tail, count); }
+  bool free_list_is_empty() const;
+  bool free_list_is_nonempty() const;
+  bool live_list_is_empty(bool previous_epoch = false) const;
+  bool live_list_is_nonempty(bool previous_epoch = false) const;
 
-  Type* remove_free(Type* t) { return _free.remove(t); }
-  Type* remove_full(Type* t) { return _full.remove(t); }
-  Type* remove_free_tail() { _free.remove(_free.tail()); }
-  Type* remove_full_tail() { return _full.remove(_full.tail()); }
-  Type* clear_full(bool return_tail = false) { return _full.clear(return_tail); }
-  Type* clear_free(bool return_tail = false) { return _free.clear(return_tail); }
-  void release_full(Type* t);
-  void release_free(Type* t);
+  void add_to_free_list(NodePtr node);
+  void add_to_live_list(NodePtr node, bool previous_epoch = false);
 
-  void register_full(Type* t, Thread* thread) { _callback->register_full(t, thread); }
-  void lock() { _callback->lock(); }
-  void unlock() { _callback->unlock(); }
-  DEBUG_ONLY(bool is_locked() const { return _callback->is_locked(); })
+  template <typename Callback>
+  void iterate_free_list(Callback& callback);
 
-  Type* allocate(size_t size);
-  void deallocate(Type* t);
-  Type* get(size_t size, Thread* thread) { return Retrieval::get(size, this, thread); }
+  template <typename Callback>
+  void iterate_live_list(Callback& callback, bool previous_epoch = false);
 
-  template <typename IteratorCallback, typename IteratorType>
-  void iterate(IteratorCallback& callback, bool full = true, jfr_iter_direction direction = forward);
+  bool in_free_list(const Node* node) const;
+  bool in_live_list(const Node* node, bool previous_epoch = false) const;
+  bool in_current_epoch_list(const Node* node) const;
+  bool in_previous_epoch_list(const Node* node) const;
 
-  bool in_full_list(const Type* t) const { return _full.in_list(t); }
-  bool in_free_list(const Type* t) const { return _free.in_list(t); }
+  void decrement_free_list_count();
+  void register_full(NodePtr node, Thread* thread);
+
+ private:
+  FreeList _free_list;
+  LiveList _live_list_epoch_0;
+  LiveList _live_list_epoch_1;
+  Client*  _client;
+  const size_t _min_element_size;
+  const size_t _free_list_cache_count_limit;
+  size_t _free_list_cache_count;
+
+  bool should_populate_free_list_cache() const;
+  bool is_free_list_cache_limited() const;
+  const LiveList& epoch_list_selector(u1 epoch) const;
+  LiveList& epoch_list_selector(u1 epoch);
+  const LiveList& current_epoch_list() const;
+  LiveList& current_epoch_list();
+  const LiveList& previous_epoch_list() const;
+  LiveList& previous_epoch_list();
 };
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRMEMORYSPACE_HPP

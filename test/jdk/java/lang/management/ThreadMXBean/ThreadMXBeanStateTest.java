@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@
  * @build ThreadMXBeanStateTest ThreadStateController
  * @run main ThreadMXBeanStateTest
  */
+
+import jdk.test.lib.Utils;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -112,7 +114,7 @@ public class ThreadMXBeanStateTest {
             thread.checkThreadState(TERMINATED);
         } finally {
             try {
-                System.out.println(thread.getLog());
+                System.out.println(thread.getLog(Utils.adjustTimeout(60_000)));
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 System.out.println("TEST FAILED: Unexpected exception.");

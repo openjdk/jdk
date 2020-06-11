@@ -1237,8 +1237,11 @@ class Eval {
                 case PRIVATE:
                     // quietly ignore, user cannot see effects one way or the other
                     break;
-                case STATIC:
                 case FINAL:
+                    //OK to declare an element final
+                    //final classes needed for sealed classes
+                    break;
+                case STATIC:
                     list.add(mod);
                     break;
             }

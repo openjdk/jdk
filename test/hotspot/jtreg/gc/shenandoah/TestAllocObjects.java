@@ -25,7 +25,6 @@
 /*
  * @test TestAllocObjects
  * @summary Acceptance tests: collector can withstand allocation
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -52,7 +51,6 @@
 /*
  * @test TestAllocObjects
  * @summary Acceptance tests: collector can withstand allocation
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -120,7 +118,6 @@
 /*
  * @test TestAllocObjects
  * @summary Acceptance tests: collector can withstand allocation
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions

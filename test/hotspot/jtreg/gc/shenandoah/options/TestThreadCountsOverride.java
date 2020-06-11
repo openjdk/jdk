@@ -25,7 +25,6 @@
 /*
  * @test TestThreadCountsOverride
  * @summary Test that Shenandoah GC thread counts are overridable
- * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

@@ -878,7 +878,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
      if (_verbose) {
        // Safepoint state
-       st->print("VM state:");
+       st->print("VM state: ");
 
        if (SafepointSynchronize::is_synchronizing()) st->print("synchronizing");
        else if (SafepointSynchronize::is_at_safepoint()) st->print("at safepoint");

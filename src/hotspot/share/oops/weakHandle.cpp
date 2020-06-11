@@ -31,7 +31,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 
-template <> OopStorage* WeakHandle<vm_class_loader_data>::get_storage() {
+template <> OopStorage* WeakHandle<vm_weak_data>::get_storage() {
   return OopStorageSet::vm_weak();
 }
 
@@ -77,6 +77,6 @@ void WeakHandle<T>::print_on(outputStream* st) const {
 }
 
 // Provide instantiation.
-template class WeakHandle<vm_class_loader_data>;
+template class WeakHandle<vm_weak_data>;
 template class WeakHandle<vm_string_table_data>;
 template class WeakHandle<vm_resolved_method_table_data>;

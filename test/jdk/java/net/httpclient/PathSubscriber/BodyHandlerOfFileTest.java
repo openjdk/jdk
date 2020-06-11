@@ -33,8 +33,12 @@
  *          java.net.http/jdk.internal.net.http.hpack
  *          jdk.httpserver
  * @library /test/lib ../http2/server
- * @compile ../HttpServerAdapters.java
+ * @build Http2TestServer Http2TestServerConnection Http2TestExchange
+ *        Http2Handler OutgoingPushPromise Queue
  * @build jdk.test.lib.net.SimpleSSLContext
+ * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.util.FileUtils
+ * @compile ../HttpServerAdapters.java
  * @run testng/othervm BodyHandlerOfFileTest
  * @run testng/othervm/java.security.policy=ofFile.policy BodyHandlerOfFileTest
  */

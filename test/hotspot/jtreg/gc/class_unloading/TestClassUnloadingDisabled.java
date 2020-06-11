@@ -25,7 +25,6 @@ package gc.class_unloading;
 
 /*
  * @test TestClassUnloadingDisabledSerial
- * @key gc
  * @bug 8114823
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @requires vm.opt.ClassUnloading != true
@@ -43,7 +42,6 @@ package gc.class_unloading;
 
 /*
  * @test TestClassUnloadingDisabledParallel
- * @key gc
  * @bug 8114823
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @requires vm.opt.ClassUnloading != true
@@ -61,7 +59,6 @@ package gc.class_unloading;
 
 /*
  * @test TestClassUnloadingDisabledG1
- * @key gc
  * @bug 8114823
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @requires vm.opt.ClassUnloading != true
@@ -79,7 +76,6 @@ package gc.class_unloading;
 
 /*
  * @test TestClassUnloadingDisabledShenandoah
- * @key gc
  * @bug 8114823
  * @comment Graal does not support Shenandoah
  * @requires vm.gc.Shenandoah & !vm.graal.enabled

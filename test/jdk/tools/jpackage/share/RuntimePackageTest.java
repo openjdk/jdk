@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,18 +50,53 @@ import jdk.jpackage.test.Annotations.Test;
  * @library ../helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @comment Temporary disable for Linux and OSX until functionality implemented
+ * @comment Temporary disable for OSX until functionality implemented
  * @requires (os.family != "mac")
+ * @requires (jpackage.test.SQETest == null)
+ * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @compile RuntimePackageTest.java
+ * @run main/othervm/timeout=1400 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=RuntimePackageTest
+ */
+
+/*
+ * @test
+ * @summary jpackage with --runtime-image
+ * @library ../helpers
+ * @key jpackagePlatformPackage
+ * @build jdk.jpackage.test.*
+ * @comment Temporary disable for OSX until functionality implemented
+ * @requires (os.family != "mac")
+ * @requires (jpackage.test.SQETest != null)
  * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
  * @compile RuntimePackageTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=RuntimePackageTest
+ *  --jpt-run=RuntimePackageTest.test
  */
 public class RuntimePackageTest {
 
     @Test
     public static void test() {
-        new PackageTest()
+        init(PackageType.NATIVE).run();
+    }
+
+    @Test
+    public static void testUsrInstallDir() {
+        init(PackageType.LINUX)
+        .addInitializer(cmd -> cmd.addArguments("--install-dir", "/usr"))
+        .run();
+    }
+
+    @Test
+    public static void testUsrInstallDir2() {
+        init(PackageType.LINUX)
+        .addInitializer(cmd -> cmd.addArguments("--install-dir", "/usr/lib/Java"))
+        .run();
+    }
+
+    private static PackageTest init(Set<PackageType> types) {
+        return new PackageTest()
+        .forTypes(types)
         .addInitializer(cmd -> {
             cmd.addArguments("--runtime-image", Optional.ofNullable(
                     JPackageCommand.DEFAULT_RUNTIME_IMAGE).orElse(Path.of(
@@ -83,8 +118,7 @@ public class RuntimePackageTest {
 
             assertFileListEmpty(srcRuntime, "Missing");
             assertFileListEmpty(dstRuntime, "Unexpected");
-        })
-        .run();
+        });
     }
 
     private static Set<Path> listFiles(Path root) throws IOException {

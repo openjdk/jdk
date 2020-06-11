@@ -41,7 +41,6 @@ import jdk.test.lib.SA.SATestUtils;
 /**
  * @test
  * @bug 6313383
- * @key regression
  * @requires vm.hasSA
  * @summary Regression test for hprof export issue due to large heaps (>2G)
  * @library /test/lib

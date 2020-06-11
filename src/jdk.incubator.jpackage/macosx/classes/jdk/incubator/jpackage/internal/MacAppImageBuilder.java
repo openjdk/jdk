@@ -30,10 +30,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -42,7 +40,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -54,11 +51,22 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
-import static jdk.incubator.jpackage.internal.MacBaseInstallerBundler.*;
-import static jdk.incubator.jpackage.internal.MacAppBundler.*;
+import static jdk.incubator.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
+import static jdk.incubator.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
+import static jdk.incubator.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.COPYRIGHT;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_CONTENT_TYPE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_DESCRIPTION;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_EXTENSIONS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_ICON;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.ICON;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
 
 public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
@@ -74,13 +82,10 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     private final Path root;
     private final Path contentsDir;
-    private final Path appDir;
-    private final Path javaModsDir;
     private final Path resourcesDir;
     private final Path macOSDir;
     private final Path runtimeDir;
     private final Path runtimeRoot;
-    private final Path mdir;
 
     private static List<String> keyChains;
 
@@ -139,26 +144,89 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     null : Boolean.valueOf(s)
         );
 
-    public MacAppImageBuilder(Map<String, Object> params, Path imageOutDir)
-            throws IOException {
-        super(params, imageOutDir.resolve(APP_NAME.fetchFrom(params)
-                + ".app/Contents/runtime/Contents/Home"));
+    private static final StandardBundlerParam<String> FA_MAC_CFBUNDLETYPEROLE =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_CFBUNDLETYPEROLE,
+                     String.class,
+                     params -> "Editor",
+                     (s, p) -> s
+     );
 
-        Objects.requireNonNull(imageOutDir);
+     private static final StandardBundlerParam<String> FA_MAC_LSHANDLERRANK =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_LSHANDLERRANK,
+                     String.class,
+                     params -> "Owner",
+                     (s, p) -> s
+     );
 
-        this.root = imageOutDir.resolve(APP_NAME.fetchFrom(params) + ".app");
+     private static final StandardBundlerParam<String> FA_MAC_NSSTORETYPEKEY =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_NSSTORETYPEKEY,
+                     String.class,
+                     params -> null,
+                     (s, p) -> s
+     );
+
+     private static final StandardBundlerParam<String> FA_MAC_NSDOCUMENTCLASS =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_NSDOCUMENTCLASS,
+                     String.class,
+                     params -> null,
+                     (s, p) -> s
+     );
+
+     private static final StandardBundlerParam<String> FA_MAC_LSTYPEISPACKAGE =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_LSTYPEISPACKAGE,
+                     String.class,
+                     params -> null,
+                     (s, p) -> s
+     );
+
+     private static final StandardBundlerParam<String> FA_MAC_LSDOCINPLACE =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_LSDOCINPLACE,
+                     String.class,
+                     params -> null,
+                     (s, p) -> s
+     );
+
+     private static final StandardBundlerParam<String> FA_MAC_UIDOCBROWSER =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_UIDOCBROWSER,
+                     String.class,
+                     params -> null,
+                     (s, p) -> s
+     );
+
+     @SuppressWarnings("unchecked")
+     private static final StandardBundlerParam<List<String>> FA_MAC_NSEXPORTABLETYPES =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_NSEXPORTABLETYPES,
+                     (Class<List<String>>) (Object) List.class,
+                     params -> null,
+                     (s, p) -> Arrays.asList(s.split("(,|\\s)+"))
+             );
+
+     @SuppressWarnings("unchecked")
+     private static final StandardBundlerParam<List<String>> FA_MAC_UTTYPECONFORMSTO =
+             new StandardBundlerParam<>(
+                     Arguments.MAC_UTTYPECONFORMSTO,
+                     (Class<List<String>>) (Object) List.class,
+                     params -> Arrays.asList("public.data"),
+                     (s, p) -> Arrays.asList(s.split("(,|\\s)+"))
+             );
+
+    public MacAppImageBuilder(Path imageOutDir) {
+        super(imageOutDir);
+
+        this.root = imageOutDir;
         this.contentsDir = root.resolve("Contents");
-        this.appDir = contentsDir.resolve("app");
-        this.javaModsDir = appDir.resolve("mods");
-        this.resourcesDir = contentsDir.resolve("Resources");
-        this.macOSDir = contentsDir.resolve("MacOS");
-        this.runtimeDir = contentsDir.resolve("runtime");
-        this.runtimeRoot = runtimeDir.resolve("Contents/Home");
-        this.mdir = runtimeRoot.resolve("lib");
-        Files.createDirectories(appDir);
-        Files.createDirectories(resourcesDir);
-        Files.createDirectories(macOSDir);
-        Files.createDirectories(runtimeDir);
+        this.resourcesDir = appLayout.destktopIntegrationDirectory();
+        this.macOSDir = appLayout.launchersDirectory();
+        this.runtimeDir = appLayout.runtimeDirectory();
+        this.runtimeRoot = appLayout.runtimeHomeDirectory();
     }
 
     private void writeEntry(InputStream in, Path dstFile) throws IOException {
@@ -167,18 +235,10 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     }
 
     @Override
-    public Path getAppDir() {
-        return appDir;
-    }
-
-    @Override
-    public Path getAppModsDir() {
-        return javaModsDir;
-    }
-
-    @Override
     public void prepareApplicationFiles(Map<String, ? super Object> params)
             throws IOException {
+        Files.createDirectories(macOSDir);
+
         Map<String, ? super Object> originalParams = new HashMap<>(params);
         // Generate PkgInfo
         File pkgInfoFile = new File(contentsDir.toFile(), "PkgInfo");
@@ -195,8 +255,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
         executable.toFile().setExecutable(true, false);
         // generate main app launcher config file
-        File cfg = new File(root.toFile(), getLauncherCfgName(params));
-        writeCfgFile(params, cfg);
+        writeCfgFile(params);
 
         // create additional app launcher(s) and config file(s)
         List<Map<String, ? super Object>> entryPoints =
@@ -213,12 +272,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             addExecutable.toFile().setExecutable(true, false);
 
             // add config file for add launcher
-            cfg = new File(root.toFile(), getLauncherCfgName(tmp));
-            writeCfgFile(tmp, cfg);
+            writeCfgFile(tmp);
         }
 
         // Copy class path entries to Java folder
-        copyClassPathEntries(appDir, params);
+        copyApplication(params);
 
         /*********** Take care of "config" files *******/
 
@@ -244,19 +302,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         sign(params);
     }
 
-    @Override
-    public void prepareJreFiles(Map<String, ? super Object> params)
-            throws IOException {
-        copyRuntimeFiles(params);
-        sign(params);
-    }
-
-    @Override
-    File getRuntimeImageDir(File runtimeImageTop) {
-        File home = new File(runtimeImageTop, "Contents/Home");
-        return (home.exists() ? home : runtimeImageTop);
-    }
-
     private void copyRuntimeFiles(Map<String, ? super Object> params)
             throws IOException {
         // Generate Info.plist
@@ -265,18 +310,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         // generate java runtime info.plist
         writeRuntimeInfoPlist(
                 runtimeDir.resolve("Contents/Info.plist").toFile(), params);
-
-        // copy library
-        Path runtimeMacOSDir = Files.createDirectories(
-                runtimeDir.resolve("Contents/MacOS"));
-
-        // JDK 9, 10, and 11 have extra '/jli/' subdir
-        Path jli = runtimeRoot.resolve("lib/libjli.dylib");
-        if (!Files.exists(jli)) {
-            jli = runtimeRoot.resolve("lib/jli/libjli.dylib");
-        }
-
-        Files.copy(jli, runtimeMacOSDir.resolve("libjli.dylib"));
     }
 
     private void sign(Map<String, ? super Object> params) throws IOException {
@@ -312,33 +345,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     }
 
     private static String getLauncherName(Map<String, ? super Object> params) {
-        if (APP_NAME.fetchFrom(params) != null) {
-            return APP_NAME.fetchFrom(params);
-        } else {
-            return MAIN_CLASS.fetchFrom(params);
-        }
-    }
-
-    public static String getLauncherCfgName(
-            Map<String, ? super Object> params) {
-        return "Contents/app/" + APP_NAME.fetchFrom(params) + ".cfg";
-    }
-
-    private void copyClassPathEntries(Path javaDirectory,
-            Map<String, ? super Object> params) throws IOException {
-        List<RelativeFileSet> resourcesList =
-                APP_RESOURCES_LIST.fetchFrom(params);
-        if (resourcesList == null) {
-            throw new RuntimeException(
-                    I18N.getString("message.null-classpath"));
-        }
-
-        for (RelativeFileSet classPath : resourcesList) {
-            File srcdir = classPath.getBaseDirectory();
-            for (String fname : classPath.getIncludedFiles()) {
-                copyEntry(javaDirectory, srcdir, fname);
-            }
-        }
+        return APP_NAME.fetchFrom(params);
     }
 
     private String getBundleName(Map<String, ? super Object> params) {
@@ -381,6 +388,31 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 .saveToFile(file);
     }
 
+    private void writeStringArrayPlist(StringBuilder sb, String key,
+            List<String> values) {
+        if (values != null && !values.isEmpty()) {
+            sb.append("  <key>").append(key).append("</key>\n").append("   <array>\n");
+            values.forEach((value) -> {
+                sb.append("    <string>").append(value).append("</string>\n");
+            });
+            sb.append("   </array>\n");
+        }
+    }
+
+    private void writeStringPlist(StringBuilder sb, String key, String value) {
+        if (value != null && !value.isEmpty()) {
+            sb.append("  <key>").append(key).append("</key>\n").append("  <string>")
+                    .append(value).append("</string>\n").append("\n");
+         }
+    }
+
+    private void writeBoolPlist(StringBuilder sb, String key, String value) {
+        if (value != null && !value.isEmpty()) {
+            sb.append("  <key>").append(key).append("</key>\n").append("  <")
+                    .append(value).append("/>\n").append("\n");
+         }
+    }
+
     private void writeInfoPlist(File file, Map<String, ? super Object> params)
             throws IOException {
         Log.verbose(MessageFormat.format(I18N.getString(
@@ -399,163 +431,71 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         data.put("DEPLOY_BUNDLE_SHORT_VERSION", VERSION.fetchFrom(params));
         data.put("DEPLOY_BUNDLE_CFBUNDLE_VERSION", VERSION.fetchFrom(params));
 
-        boolean hasMainJar = MAIN_JAR.fetchFrom(params) != null;
-        boolean hasMainModule =
-                StandardBundlerParam.MODULE.fetchFrom(params) != null;
-
-        if (hasMainJar) {
-            data.put("DEPLOY_MAIN_JAR_NAME", MAIN_JAR.fetchFrom(params).
-                    getIncludedFiles().iterator().next());
-        }
-        else if (hasMainModule) {
-            data.put("DEPLOY_MODULE_NAME",
-                    StandardBundlerParam.MODULE.fetchFrom(params));
-        }
-
-        StringBuilder sb = new StringBuilder();
-        List<String> jvmOptions = JAVA_OPTIONS.fetchFrom(params);
-
-        String newline = ""; //So we don't add extra line after last append
-        for (String o : jvmOptions) {
-            sb.append(newline).append(
-                    "    <string>").append(o).append("</string>");
-            newline = "\n";
-        }
-
-        data.put("DEPLOY_JAVA_OPTIONS", sb.toString());
-
-        sb = new StringBuilder();
-        List<String> args = ARGUMENTS.fetchFrom(params);
-        newline = "";
-        // So we don't add unneccessary extra line after last append
-
-        for (String o : args) {
-            sb.append(newline).append("    <string>").append(o).append(
-                    "</string>");
-            newline = "\n";
-        }
-        data.put("DEPLOY_ARGUMENTS", sb.toString());
-
-        newline = "";
-
-        data.put("DEPLOY_LAUNCHER_CLASS", MAIN_CLASS.fetchFrom(params));
-
-        data.put("DEPLOY_APP_CLASSPATH",
-                  getCfgClassPath(CLASSPATH.fetchFrom(params)));
-
         StringBuilder bundleDocumentTypes = new StringBuilder();
         StringBuilder exportedTypes = new StringBuilder();
         for (Map<String, ? super Object>
                 fileAssociation : FILE_ASSOCIATIONS.fetchFrom(params)) {
 
             List<String> extensions = FA_EXTENSIONS.fetchFrom(fileAssociation);
-
             if (extensions == null) {
                 Log.verbose(I18N.getString(
                         "message.creating-association-with-null-extension"));
             }
 
-            List<String> mimeTypes = FA_CONTENT_TYPE.fetchFrom(fileAssociation);
             String itemContentType = MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params)
                     + "." + ((extensions == null || extensions.isEmpty())
                     ? "mime" : extensions.get(0));
             String description = FA_DESCRIPTION.fetchFrom(fileAssociation);
             File icon = FA_ICON.fetchFrom(fileAssociation);
 
-            bundleDocumentTypes.append("    <dict>\n")
-                    .append("      <key>LSItemContentTypes</key>\n")
-                    .append("      <array>\n")
-                    .append("        <string>")
-                    .append(itemContentType)
-                    .append("</string>\n")
-                    .append("      </array>\n")
-                    .append("\n")
-                    .append("      <key>CFBundleTypeName</key>\n")
-                    .append("      <string>")
-                    .append(description)
-                    .append("</string>\n")
-                    .append("\n")
-                    .append("      <key>LSHandlerRank</key>\n")
-                    .append("      <string>Owner</string>\n")
-                            // TODO make a bundler arg
-                    .append("\n")
-                    .append("      <key>CFBundleTypeRole</key>\n")
-                    .append("      <string>Editor</string>\n")
-                            // TODO make a bundler arg
-                    .append("\n")
-                    .append("      <key>LSIsAppleDefaultForType</key>\n")
-                    .append("      <true/>\n")
-                            // TODO make a bundler arg
-                    .append("\n");
+            bundleDocumentTypes.append(" <dict>\n");
+            writeStringArrayPlist(bundleDocumentTypes, "LSItemContentTypes",
+                    Arrays.asList(itemContentType));
+            writeStringPlist(bundleDocumentTypes, "CFBundleTypeName", description);
+            writeStringPlist(bundleDocumentTypes, "LSHandlerRank",
+                    FA_MAC_LSHANDLERRANK.fetchFrom(fileAssociation));
+            writeStringPlist(bundleDocumentTypes, "CFBundleTypeRole",
+                    FA_MAC_CFBUNDLETYPEROLE.fetchFrom(fileAssociation));
+            writeStringPlist(bundleDocumentTypes, "NSPersistentStoreTypeKey",
+                    FA_MAC_NSSTORETYPEKEY.fetchFrom(fileAssociation));
+            writeStringPlist(bundleDocumentTypes, "NSDocumentClass",
+                    FA_MAC_NSDOCUMENTCLASS.fetchFrom(fileAssociation));
+            writeBoolPlist(bundleDocumentTypes, "LSIsAppleDefaultForType",
+                    "true");
+            writeBoolPlist(bundleDocumentTypes, "LSTypeIsPackage",
+                    FA_MAC_LSTYPEISPACKAGE.fetchFrom(fileAssociation));
+            writeBoolPlist(bundleDocumentTypes, "LSSupportsOpeningDocumentsInPlace",
+                    FA_MAC_LSDOCINPLACE.fetchFrom(fileAssociation));
+            writeBoolPlist(bundleDocumentTypes, "UISupportsDocumentBrowser",
+                    FA_MAC_UIDOCBROWSER.fetchFrom(fileAssociation));
+            if (icon != null && icon.exists()) {
+                writeStringPlist(bundleDocumentTypes, "CFBundleTypeIconFile",
+                        icon.getName());
+            }
+            bundleDocumentTypes.append("  </dict>\n");
+
+            exportedTypes.append("  <dict>\n");
+            writeStringPlist(exportedTypes, "UTTypeIdentifier",
+                    itemContentType);
+            writeStringPlist(exportedTypes, "UTTypeDescription",
+                    description);
+            writeStringArrayPlist(exportedTypes, "UTTypeConformsTo",
+                    FA_MAC_UTTYPECONFORMSTO.fetchFrom(fileAssociation));
 
             if (icon != null && icon.exists()) {
-                bundleDocumentTypes
-                        .append("      <key>CFBundleTypeIconFile</key>\n")
-                        .append("      <string>")
-                        .append(icon.getName())
-                        .append("</string>\n");
+                writeStringPlist(exportedTypes, "UTTypeIconFile", icon.getName());
             }
-            bundleDocumentTypes.append("    </dict>\n");
-
-            exportedTypes.append("    <dict>\n")
-                    .append("      <key>UTTypeIdentifier</key>\n")
-                    .append("      <string>")
-                    .append(itemContentType)
-                    .append("</string>\n")
-                    .append("\n")
-                    .append("      <key>UTTypeDescription</key>\n")
-                    .append("      <string>")
-                    .append(description)
-                    .append("</string>\n")
-                    .append("      <key>UTTypeConformsTo</key>\n")
-                    .append("      <array>\n")
-                    .append("          <string>public.data</string>\n")
-                            //TODO expose this?
-                    .append("      </array>\n")
-                    .append("\n");
-
-            if (icon != null && icon.exists()) {
-                exportedTypes.append("      <key>UTTypeIconFile</key>\n")
-                        .append("      <string>")
-                        .append(icon.getName())
-                        .append("</string>\n")
-                        .append("\n");
-            }
-
             exportedTypes.append("\n")
-                    .append("      <key>UTTypeTagSpecification</key>\n")
-                    .append("      <dict>\n")
-                            // TODO expose via param? .append(
-                            // "        <key>com.apple.ostype</key>\n");
-                            // TODO expose via param? .append(
-                            // "        <string>ABCD</string>\n")
+                    .append("  <key>UTTypeTagSpecification</key>\n")
+                    .append("  <dict>\n")
                     .append("\n");
-
-            if (extensions != null && !extensions.isEmpty()) {
-                exportedTypes.append(
-                        "        <key>public.filename-extension</key>\n")
-                        .append("        <array>\n");
-
-                for (String ext : extensions) {
-                    exportedTypes.append("          <string>")
-                            .append(ext)
-                            .append("</string>\n");
-                }
-                exportedTypes.append("        </array>\n");
-            }
-            if (mimeTypes != null && !mimeTypes.isEmpty()) {
-                exportedTypes.append("        <key>public.mime-type</key>\n")
-                        .append("        <array>\n");
-
-                for (String mime : mimeTypes) {
-                    exportedTypes.append("          <string>")
-                            .append(mime)
-                            .append("</string>\n");
-                }
-                exportedTypes.append("        </array>\n");
-            }
-            exportedTypes.append("      </dict>\n")
-                    .append("    </dict>\n");
+            writeStringArrayPlist(exportedTypes, "public.filename-extension",
+                    extensions);
+            writeStringArrayPlist(exportedTypes, "public.mime-type",
+                    FA_CONTENT_TYPE.fetchFrom(fileAssociation));
+            writeStringArrayPlist(exportedTypes, "NSExportableTypes",
+                    FA_MAC_NSEXPORTABLETYPES.fetchFrom(fileAssociation));
+            exportedTypes.append("  </dict>\n").append(" </dict>\n");
         }
         String associationData;
         if (bundleDocumentTypes.length() > 0) {
@@ -788,8 +728,9 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
         Path frameworkPath = appLocation.resolve("Contents/Frameworks");
         if (Files.isDirectory(frameworkPath)) {
-            Files.list(frameworkPath)
-                    .forEach(signIdentifiedByPList);
+            try (var fileList = Files.list(frameworkPath)) {
+                fileList.forEach(signIdentifiedByPList);
+            }
 
             ioe = toThrow.get();
             if (ioe != null) {

@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestHeapFreeRatio
- * @key gc
  * @bug 8025661
  * @summary Test parsing of -Xminf and -Xmaxf
  * @library /test/lib

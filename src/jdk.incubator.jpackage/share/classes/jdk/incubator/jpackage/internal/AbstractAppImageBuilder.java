@@ -28,18 +28,13 @@ package jdk.incubator.jpackage.internal;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.ResourceBundle;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
-
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.ICON;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import jdk.incubator.jpackage.internal.resources.ResourceLocator;
-
 
 /*
  * AbstractAppImageBuilder
@@ -49,13 +44,12 @@ import jdk.incubator.jpackage.internal.resources.ResourceLocator;
 
 public abstract class AbstractAppImageBuilder {
 
-    private static final ResourceBundle I18N = ResourceBundle.getBundle(
-            "jdk.incubator.jpackage.internal.resources.MainResources");
-
     private final Path root;
+    protected final ApplicationLayout appLayout;
 
-    public AbstractAppImageBuilder(Map<String, Object> unused, Path root) {
+    public AbstractAppImageBuilder(Path root) {
         this.root = root;
+        appLayout = ApplicationLayout.platformAppImage().resolveAt(root);
     }
 
     public InputStream getResourceAsStream(String name) {
@@ -64,119 +58,24 @@ public abstract class AbstractAppImageBuilder {
 
     public abstract void prepareApplicationFiles(
             Map<String, ? super Object> params) throws IOException;
-    public abstract void prepareJreFiles(
-            Map<String, ? super Object> params) throws IOException;
-    public abstract Path getAppDir();
-    public abstract Path getAppModsDir();
 
-    public Path getRuntimeRoot() {
-        return this.root;
+    protected void writeCfgFile(Map<String, ? super Object> params) throws
+            IOException {
+        new CfgFile().initFromParams(params).create(root);
     }
 
-    protected void copyEntry(Path appDir, File srcdir, String fname)
+    ApplicationLayout getAppLayout() {
+        return appLayout;
+    }
+
+    protected void copyApplication(Map<String, ? super Object> params)
             throws IOException {
-        Path dest = appDir.resolve(fname);
-        Files.createDirectories(dest.getParent());
-        File src = new File(srcdir, fname);
-        if (src.isDirectory()) {
-            IOUtils.copyRecursive(src.toPath(), dest);
-        } else {
-            Files.copy(src.toPath(), dest);
+        Path inputPath = SOURCE_DIR.fetchFrom(params);
+        if (inputPath != null) {
+            IOUtils.copyRecursive(SOURCE_DIR.fetchFrom(params),
+                    appLayout.appDirectory());
         }
-    }
-
-    public void writeCfgFile(Map<String, ? super Object> params,
-            File cfgFileName) throws IOException {
-        cfgFileName.getParentFile().mkdirs();
-        cfgFileName.delete();
-        File mainJar = JLinkBundlerHelper.getMainJar(params);
-        ModFile.ModType mainJarType = ModFile.ModType.Unknown;
-
-        if (mainJar != null) {
-            mainJarType = new ModFile(mainJar).getModType();
-        }
-
-        String mainModule = StandardBundlerParam.MODULE.fetchFrom(params);
-
-        try (PrintStream out = new PrintStream(cfgFileName)) {
-
-            out.println("[Application]");
-            out.println("app.name=" + APP_NAME.fetchFrom(params));
-            out.println("app.version=" + VERSION.fetchFrom(params));
-            out.println("app.runtime=" + getCfgRuntimeDir());
-            out.println("app.classpath="
-                    + getCfgClassPath(CLASSPATH.fetchFrom(params)));
-
-            // The main app is required to be a jar, modular or unnamed.
-            if (mainModule != null &&
-                    (mainJarType == ModFile.ModType.Unknown ||
-                    mainJarType == ModFile.ModType.ModularJar)) {
-                out.println("app.mainmodule=" + mainModule);
-            } else {
-                String mainClass =
-                        StandardBundlerParam.MAIN_CLASS.fetchFrom(params);
-                // If the app is contained in an unnamed jar then launch it the
-                // legacy way and the main class string must be
-                // of the format com/foo/Main
-                if (mainJar != null) {
-                    out.println("app.classpath=" + getCfgAppDir()
-                            + mainJar.toPath().getFileName().toString());
-                }
-                if (mainClass != null) {
-                    out.println("app.mainclass=" + mainClass);
-                }
-            }
-
-            out.println();
-            out.println("[JavaOptions]");
-            List<String> jvmargs = JAVA_OPTIONS.fetchFrom(params);
-            for (String arg : jvmargs) {
-                out.println("java-options=" + arg);
-            }
-            Path modsDir = getAppModsDir();
-
-            if (modsDir != null && modsDir.toFile().exists()) {
-                out.println("java-options=" + "--module-path");
-                out.println("java-options=" + getCfgAppDir().replace("\\","/") + "mods");
-            }
-
-            out.println();
-            out.println("[ArgOptions]");
-            List<String> args = ARGUMENTS.fetchFrom(params);
-            for (String arg : args) {
-                out.println("arguments=" + arg);
-            }
-        }
-    }
-
-    File getRuntimeImageDir(File runtimeImageTop) {
-        return runtimeImageTop;
-    }
-
-    protected String getCfgAppDir() {
-        return "$ROOTDIR" + File.separator
-                + getAppDir().getFileName() + File.separator;
-    }
-
-    protected String getCfgRuntimeDir() {
-        return "$ROOTDIR" + File.separator + "runtime";
-    }
-
-    String getCfgClassPath(String classpath) {
-        String cfgAppDir = getCfgAppDir();
-
-        StringBuilder sb = new StringBuilder();
-        for (String path : classpath.split("[:;]")) {
-            if (path.length() > 0) {
-                sb.append(cfgAppDir);
-                sb.append(path);
-                sb.append(File.pathSeparator);
-            }
-        }
-        if (sb.length() > 0) {
-            sb.deleteCharAt(sb.length() - 1);
-        }
-        return sb.toString();
+        AppImageFile.save(root, params);
     }
 
     public static OverridableResource createIconResource(String defaultIconName,

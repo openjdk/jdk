@@ -895,7 +895,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
     } else {
-      k->set_java_mirror_handle(NULL);
+      k->set_java_mirror_handle(OopHandle());
       k->clear_has_raw_archived_mirror();
     }
   }
@@ -1201,7 +1201,7 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
           ik->is_shared_app_class())) {
       // Archiving mirror for classes from non-builtin loaders is not
       // supported. Clear the _java_mirror within the archived class.
-      k->set_java_mirror_handle(NULL);
+      k->set_java_mirror_handle(OopHandle());
       return NULL;
     }
   }

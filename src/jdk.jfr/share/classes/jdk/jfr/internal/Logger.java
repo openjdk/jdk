@@ -47,12 +47,6 @@ public final class Logger {
         }
     }
 
-    public static void log(LogTag logTag, LogLevel logLevel, Supplier<String> messageSupplier) {
-        if (shouldLog(logTag, logLevel)) {
-            logInternal(logTag, logLevel, messageSupplier.get());
-        }
-    }
-
     private static void logInternal(LogTag logTag, LogLevel logLevel, String message) {
         if (message == null || message.length() < MAX_SIZE) {
             JVM.log(logTag.id, logLevel.level, message);

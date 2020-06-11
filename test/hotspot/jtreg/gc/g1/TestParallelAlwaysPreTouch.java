@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package gc.g1;
 
 /*
  * @test
- * @key gc regression
  * @bug 8169703
  * @summary Regression test to ensure AlwaysPreTouch with multiple threads works at mutator time.
  * Allocates a few humongous objects that will be allocated by expanding the heap, causing concurrent parallel

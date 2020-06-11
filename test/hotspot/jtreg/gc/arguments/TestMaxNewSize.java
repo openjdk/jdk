@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestMaxNewSizeSerial
- * @key gc
  * @bug 7057939
  * @summary Make sure that MaxNewSize always has a useful value after argument
  * processing.
@@ -40,7 +39,6 @@ package gc.arguments;
 
 /*
  * @test TestMaxNewSizeParallel
- * @key gc
  * @bug 7057939
  * @summary Make sure that MaxNewSize always has a useful value after argument
  * processing.
@@ -55,7 +53,6 @@ package gc.arguments;
 
 /*
  * @test TestMaxNewSizeG1
- * @key gc
  * @bug 7057939
  * @summary Make sure that MaxNewSize always has a useful value after argument
  * processing.

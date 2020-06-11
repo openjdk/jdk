@@ -578,12 +578,14 @@ public interface VirtualMachine extends Mirror {
      * Determines if the target VM supports the addition
      * of methods when performing class redefinition.
      * @see #redefineClasses
+     * @deprecated A JVM TI based JDWP back-end will never set this capability to true.
      *
      * @return <code>true</code> if the feature is supported,
      * <code>false</code> otherwise.
      *
      * @since 1.4
      */
+    @Deprecated(since="15")
     boolean canAddMethod();
 
     /**
@@ -591,12 +593,14 @@ public interface VirtualMachine extends Mirror {
      * changes when performing class redefinition that are
      * otherwise restricted by {@link #redefineClasses}.
      * @see #redefineClasses
+     * @deprecated A JVM TI based JDWP back-end will never set this capability to true.
      *
      * @return <code>true</code> if the feature is supported,
      * <code>false</code> otherwise.
      *
      * @since 1.4
      */
+    @Deprecated(since="15")
     boolean canUnrestrictedlyRedefineClasses();
 
     /**

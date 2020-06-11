@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package gc.arguments;
 
 /**
  * @test TestAlignmentToUseLargePagesSerial
- * @key gc regression
  * @bug 8024396
  * @requires vm.gc.Serial
  * @run main/othervm -Xms71M -Xmx91M -XX:+UseSerialGC -XX:+UseLargePages gc.arguments.TestAlignmentToUseLargePages
@@ -34,7 +33,6 @@ package gc.arguments;
 
 /**
  * @test TestAlignmentToUseLargePagesParallel
- * @key gc regression
  * @summary All parallel GC variants may use large pages without the requirement that the heap alignment is large page aligned. Other collectors also need to start up with odd sized heaps.
  * @bug 8024396
  * @requires vm.gc.Parallel
@@ -44,7 +42,6 @@ package gc.arguments;
 
 /**
  * @test TestAlignmentToUseLargePagesG1
- * @key gc regression
  * @bug 8024396
  * @requires vm.gc.G1
  * @run main/othervm -Xms71M -Xmx91M -XX:+UseG1GC -XX:+UseLargePages gc.arguments.TestAlignmentToUseLargePages
@@ -53,7 +50,6 @@ package gc.arguments;
 
 /**
  * @test TestAlignmentToUseLargePagesShenandoah
- * @key gc
  * @bug 8024396
  * @comment Graal does not support Shenandoah
  * @requires vm.gc.Shenandoah & !vm.graal.enabled

@@ -26,7 +26,6 @@ package gc;
 /*
  * @test TestConcurrentGCBreakpoints
  * @summary Test of WhiteBox concurrent GC control.
- * @key gc
  * @modules java.base
  * @library /test/lib
  * @build sun.hotspot.WhiteBox

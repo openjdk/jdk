@@ -25,7 +25,7 @@ package gc.stress.gcold;
 
 /*
  * @test TestGCOldWithShenandoah
- * @key gc stress randomness
+ * @key stress randomness
  * @library / /test/lib
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
@@ -53,7 +53,7 @@ package gc.stress.gcold;
 
 /*
  * @test TestGCOldWithShenandoah
- * @key gc stress randomness
+ * @key stress randomness
  * @library / /test/lib
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
@@ -88,7 +88,7 @@ package gc.stress.gcold;
 
 /*
  * @test TestGCOldWithShenandoah
- * @key gc stress randomness
+ * @key stress randomness
  * @library / /test/lib
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.

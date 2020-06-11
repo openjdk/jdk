@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @key gc randomness
+ * @key randomness
  *
  * @summary converted from VM Testbase gc/gctests/gctest04.
  * VM Testbase keywords: [gc]

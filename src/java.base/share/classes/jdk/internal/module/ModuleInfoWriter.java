@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,6 +210,14 @@ public final class ModuleInfoWriter {
         throws IOException
     {
         write(descriptor, null, null, out);
+    }
+
+    /**
+     * Returns a byte array containing the given module descriptor in
+     * module-info.class format.
+     */
+    public static byte[] toBytes(ModuleDescriptor descriptor) {
+        return toModuleInfo(descriptor, null, null);
     }
 
     /**

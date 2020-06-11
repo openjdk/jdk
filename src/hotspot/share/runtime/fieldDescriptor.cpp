@@ -193,7 +193,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       if (obj->obj_field(offset()) != NULL) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
-        st->print_cr("NULL");
+        st->print("NULL");
       }
       break;
     case T_OBJECT:
@@ -202,7 +202,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       if (obj->obj_field(offset()) != NULL) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
-        st->print_cr("NULL");
+        st->print("NULL");
       }
       break;
     default:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package gc.arguments;
  * @summary Sanity check that the ArrayAllocatorMallocLimit flag can be set.
  * The test helps verifying that size_t flags can be set/read.
  * @bug 8054823
- * @key gc
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc

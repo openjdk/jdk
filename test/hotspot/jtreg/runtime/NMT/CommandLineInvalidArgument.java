@@ -23,7 +23,6 @@
 
  /*
  * @test
- * @key nmt
  * @summary Invalid argument to NMT should result in an informative error message
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

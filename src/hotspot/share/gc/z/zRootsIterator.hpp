@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,6 @@ private:
   void do_management(ZRootsIteratorClosure* cl);
   void do_jvmti_export(ZRootsIteratorClosure* cl);
   void do_jvmti_weak_export(ZRootsIteratorClosure* cl);
-  void do_system_dictionary(ZRootsIteratorClosure* cl);
   void do_vm_thread(ZRootsIteratorClosure* cl);
   void do_java_threads(ZRootsIteratorClosure* cl);
   void do_code_cache(ZRootsIteratorClosure* cl);
@@ -122,7 +121,6 @@ private:
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_management>          _management;
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_export>        _jvmti_export;
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_weak_export>   _jvmti_weak_export;
-  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_system_dictionary>   _system_dictionary;
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_vm_thread>           _vm_thread;
   ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_java_threads>      _java_threads;
   ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_code_cache>        _code_cache;

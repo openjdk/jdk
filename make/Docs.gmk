@@ -610,9 +610,9 @@ ifeq ($(ENABLE_PANDOC), true)
   # PANDOC_HTML_MANPAGE_FILTER, a wrapper around
   # PANDOC_HTML_MANPAGE_FILTER_JAVASCRIPT. This is created by buildtools-jdk.
 
-  # We should also depend on the source javascript filter
-  PANDOC_HTML_MANPAGE_FILTER_JAVASCRIPT := \
-      $(TOPDIR)/make/scripts/pandoc-html-manpage-filter.js
+  # We should also depend on the source code for the filter
+  PANDOC_HTML_MANPAGE_FILTER_SOURCE := $(call FindFiles, \
+      $(TOPDIR)/make/jdk/src/classes/build/tools/pandocfilter)
 
   $(foreach m, $(ALL_MODULES), \
     $(eval MAN_$m := $(call FindModuleManDirs, $m)) \
@@ -632,7 +632,7 @@ ifeq ($(ENABLE_PANDOC), true)
             OPTIONS := --toc -V include-before='$(SPECS_TOP)' -V include-after='$(SPECS_BOTTOM_1)', \
             POST_PROCESS := $(TOOL_FIXUPPANDOC), \
             EXTRA_DEPS := $(PANDOC_HTML_MANPAGE_FILTER) \
-                $(PANDOC_HTML_MANPAGE_FILTER_JAVASCRIPT), \
+                $(PANDOC_HTML_MANPAGE_FILTER_SOURCE), \
         )) \
         $(eval JDK_SPECS_TARGETS += $($($m_$f_NAME))) \
       ) \

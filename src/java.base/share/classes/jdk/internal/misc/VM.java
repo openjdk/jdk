@@ -471,6 +471,16 @@ public class VM {
     public static native long getRandomSeedForCDSDump();
 
     /**
+     * Check if CDS dynamic dumping is enabled via the DynamicDumpSharedSpaces flag.
+     */
+    public static native boolean isCDSDumpingEnabled();
+
+    /**
+     * Check if CDS sharing is enabled by via the UseSharedSpaces flag.
+     */
+    public static native boolean isCDSSharingEnabled();
+
+    /**
      * Provides access to information on buffer usage.
      */
     public interface BufferPool {

@@ -77,10 +77,9 @@ public class HexPrinterTest {
     Object[][] builtinParams() {
         return new Object[][]{
                 {"minimal", "", "%02x", 16, "", 64, HexPrinter.Formatters.NONE, ""},
-                {"canonical", "%08x  ", "%02x ", 16, "|", 31, HexPrinter.Formatters.ASCII, "|\n"},
-                {"simple", "%5d: ", "%02x ", 16, " // ", 64, HexPrinter.Formatters.PRINTABLE, "\n"},
-                {"source", "    ", "(byte)%3d, ", 8, " // ", 64, HexPrinter.Formatters.PRINTABLE,
-                        "\n"},
+                {"canonical", "%08x  ", "%02x ", 16, "|", 31, HexPrinter.Formatters.PRINTABLE, "|\n"},
+                {"simple", "%5d: ", "%02x ", 16, " // ", 64, HexPrinter.Formatters.ASCII, "\n"},
+                {"source", "    ", "(byte)%3d, ", 8, " // ", 64, HexPrinter.Formatters.PRINTABLE, "\n"},
         };
     }
 
@@ -160,6 +159,52 @@ public class HexPrinterTest {
                 ndx = out.indexOf(lineSep, ndx) + lineSep.length();
             }
         }
+    }
+
+    @Test
+    static void testPrintable() {
+        String expected =
+                "................................" +
+                " !\"#$%&'()*+,-./0123456789:;<=>?" +
+                "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_" +
+                "`abcdefghijklmnopqrstuvwxyz{|}~." +
+                "................................" +
+                "................................" +
+                "................................" +
+                "................................";
+        byte[] bytes = new byte[256];
+        for (int i = 0; i < bytes.length; i++)
+            bytes[i] = (byte)i;
+        HexPrinter p = HexPrinter.minimal()
+                        .withBytesFormat("", 256)
+                        .formatter(HexPrinter.Formatters.PRINTABLE, "", 512);
+        String actual = p.toString(bytes);
+        Assert.assertEquals(actual, expected, "Formatters.Printable mismatch");
+    }
+
+    @Test
+    static void testASCII() {
+        String expected = "\\nul\\soh\\stx\\etx\\eot\\enq\\ack\\bel\\b\\t\\n\\vt\\f\\r\\so\\si\\dle" +
+                "\\dc1\\dc2\\dc3\\dc4\\nak\\syn\\etb\\can\\em\\sub\\esc\\fs\\gs\\rs\\us" +
+                " !\"#$%&'()*+,-./0123456789:;<=>?" +
+                "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_" +
+                "`abcdefghijklmnopqrstuvwxyz{|}~\\127" +
+                "\\128\\129\\130\\131\\132\\133\\134\\135\\136\\137\\138\\139\\140\\141\\142\\143" +
+                "\\144\\145\\146\\147\\148\\149\\150\\151\\152\\153\\154\\155\\156\\157\\158\\159" +
+                "\\160\\161\\162\\163\\164\\165\\166\\167\\168\\169\\170\\171\\172\\173\\174\\175" +
+                "\\176\\177\\178\\179\\180\\181\\182\\183\\184\\185\\186\\187\\188\\189\\190\\191" +
+                "\\192\\193\\194\\195\\196\\197\\198\\199\\200\\201\\202\\203\\204\\205\\206\\207" +
+                "\\208\\209\\210\\211\\212\\213\\214\\215\\216\\217\\218\\219\\220\\221\\222\\223" +
+                "\\224\\225\\226\\227\\228\\229\\230\\231\\232\\233\\234\\235\\236\\237\\238\\239" +
+                "\\240\\241\\242\\243\\244\\245\\246\\247\\248\\249\\250\\251\\252\\253\\254\\255";
+        byte[] bytes = new byte[256];
+        for (int i = 0; i < bytes.length; i++)
+            bytes[i] = (byte)i;
+        HexPrinter p = HexPrinter.minimal()
+                        .withBytesFormat("", 256)
+                        .formatter(HexPrinter.Formatters.ASCII, "", 256);
+        String actual = p.toString(bytes);
+        Assert.assertEquals(actual, expected, "Formatters.ASCII mismatch");
     }
 
     @DataProvider(name = "PrimitiveFormatters")
@@ -252,6 +297,13 @@ public class HexPrinterTest {
         };
     }
 
+    @DataProvider(name = "badsources")
+    Object[][] badSources() {
+        return new Object[][]{
+                {genBytes(21), 5, 22},
+        };
+    }
+
     public static byte[] genData(int len) {
         // Create a byte array with data for two lines
         byte[] bytes = new byte[len];
@@ -310,6 +362,26 @@ public class HexPrinterTest {
         String r = p.toString(bytes);
         Assert.assertEquals(r.length(), bytes.length * 2, "encoded byte wrong size");
         Assert.assertEquals(r.replace("00", "").length(), 0, "contents not all zeros");
+    }
+
+    @Test(dataProvider = "badsources",
+            expectedExceptions = java.lang.IndexOutOfBoundsException.class)
+    public void testBadToStringByteBuffer(byte[] bytes, int offset, int length) {
+        if (length < 0)
+            length = bytes.length - offset;
+        ByteBuffer bb = ByteBuffer.wrap(bytes, 0, bytes.length);
+        System.out.printf("Source: %s, off: %d, len: %d%n",
+                bytes.getClass().getName(), offset, length);
+        String actual;
+        if (offset == 0 && length < 0) {
+            bb.position(offset);
+            bb.limit(length);
+            actual = HexPrinter.simple().toString(bb);
+        } else
+            actual = HexPrinter.simple().toString(bb, offset, length);
+        System.out.println(actual);
+        String expected = HexPrinter.simple().toString(bytes, offset, length);
+        Assert.assertEquals(actual, expected, "mismatch in format()");
     }
 
     @Test(dataProvider = "sources")

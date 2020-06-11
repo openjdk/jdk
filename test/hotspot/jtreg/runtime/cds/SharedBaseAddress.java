@@ -58,7 +58,8 @@ public class SharedBaseAddress {
                 .setArchiveName(filename)
                 .addPrefix("-XX:SharedBaseAddress=" + testEntry)
                 .addPrefix("-Xlog:cds=debug")
-                .addPrefix("-Xlog:cds+reloc=debug");
+                .addPrefix("-Xlog:cds+reloc=debug")
+                .addPrefix("-XX:NativeMemoryTracking=detail");
 
             CDSTestUtils.createArchiveAndCheck(opts);
             OutputAnalyzer out = CDSTestUtils.runWithArchiveAndCheck(opts);

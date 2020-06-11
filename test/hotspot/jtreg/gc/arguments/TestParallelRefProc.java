@@ -25,7 +25,6 @@ package gc.arguments;
 
 /*
  * @test TestParallelRefProc
- * @key gc
  * @summary Test defaults processing for -XX:+ParallelRefProcEnabled.
  * @library /test/lib
  * @library /

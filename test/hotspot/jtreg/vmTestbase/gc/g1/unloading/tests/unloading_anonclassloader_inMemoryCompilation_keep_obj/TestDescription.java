@@ -25,7 +25,7 @@
 /*
  * @test
  * @modules java.base/jdk.internal.misc:+open
- * @key stress gc randomness
+ * @key stress randomness
  *
  * @summary converted from VM Testbase gc/g1/unloading/tests/unloading_anonclassloader_inMemoryCompilation_keep_obj.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent, javac]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,35 @@ import java.util.Map;
  */
 public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayout> {
     enum PathRole {
-        RUNTIME, APP, LAUNCHERS, DESKTOP, APP_MODS, DLLS, RELEASE
+        /**
+         * Java run-time directory.
+         */
+        RUNTIME,
+
+        /**
+         * Java run-time home directory.
+         */
+        RUNTIME_HOME,
+
+        /**
+         * Application data directory.
+         */
+        APP,
+
+        /**
+         * Directory with application launchers.
+         */
+        LAUNCHERS,
+
+        /**
+         * Directory for files for desktop integration.
+         */
+        DESKTOP,
+
+        /**
+         * Directory with application Java modules.
+         */
+        MODULES,
     }
 
     ApplicationLayout(Map<Object, Path> paths) {
@@ -62,13 +90,6 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
     }
 
     /**
-     * Path to directory with dynamic libraries.
-     */
-    public Path dllDirectory() {
-        return pathGroup().getPath(PathRole.DLLS);
-    }
-
-    /**
      * Path to application data directory.
      */
     public Path appDirectory() {
@@ -76,17 +97,24 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
     }
 
     /**
-     * Path to Java runtime directory.
+     * Path to Java run-time directory.
      */
     public Path runtimeDirectory() {
         return pathGroup().getPath(PathRole.RUNTIME);
     }
 
     /**
+     * Path to Java run-time home directory.
+     */
+    public Path runtimeHomeDirectory() {
+        return pathGroup().getPath(PathRole.RUNTIME_HOME);
+    }
+
+    /**
      * Path to application mods directory.
      */
     public Path appModsDirectory() {
-        return pathGroup().getPath(PathRole.APP_MODS);
+        return pathGroup().getPath(PathRole.MODULES);
     }
 
     /**
@@ -96,22 +124,14 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
         return pathGroup().getPath(PathRole.DESKTOP);
     }
 
-    /**
-     * Path to release file in the Java runtime directory.
-     */
-    public Path runtimeRelease() {
-        return pathGroup().getPath(PathRole.RELEASE);
-    }
-
     static ApplicationLayout linuxAppImage() {
         return new ApplicationLayout(Map.of(
                 PathRole.LAUNCHERS, Path.of("bin"),
                 PathRole.APP, Path.of("lib/app"),
                 PathRole.RUNTIME, Path.of("lib/runtime"),
+                PathRole.RUNTIME_HOME, Path.of("lib/runtime"),
                 PathRole.DESKTOP, Path.of("lib"),
-                PathRole.DLLS, Path.of("lib"),
-                PathRole.APP_MODS, Path.of("lib/app/mods"),
-                PathRole.RELEASE, Path.of("lib/runtime/release")
+                PathRole.MODULES, Path.of("lib/app/mods")
         ));
     }
 
@@ -120,10 +140,9 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.LAUNCHERS, Path.of(""),
                 PathRole.APP, Path.of("app"),
                 PathRole.RUNTIME, Path.of("runtime"),
+                PathRole.RUNTIME_HOME, Path.of("runtime"),
                 PathRole.DESKTOP, Path.of(""),
-                PathRole.DLLS, Path.of(""),
-                PathRole.APP_MODS, Path.of("app/mods"),
-                PathRole.RELEASE, Path.of("runtime/release")
+                PathRole.MODULES, Path.of("app/mods")
         ));
     }
 
@@ -132,10 +151,9 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.LAUNCHERS, Path.of("Contents/MacOS"),
                 PathRole.APP, Path.of("Contents/app"),
                 PathRole.RUNTIME, Path.of("Contents/runtime"),
+                PathRole.RUNTIME_HOME, Path.of("Contents/runtime/Contents/Home"),
                 PathRole.DESKTOP, Path.of("Contents/Resources"),
-                PathRole.DLLS, Path.of("Contents/MacOS"),
-                PathRole.APP_MODS, Path.of("Contents/app/mods"),
-                PathRole.RELEASE, Path.of("Contents/runtime/Contents/Home/release")
+                PathRole.MODULES, Path.of("Contents/app/mods")
         ));
     }
 
@@ -157,6 +175,19 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
 
     public static ApplicationLayout javaRuntime() {
         return new ApplicationLayout(Map.of(PathRole.RUNTIME, Path.of("")));
+    }
+
+    public static ApplicationLayout linuxUsrTreePackageImage(Path prefix,
+            String packageName) {
+        final Path lib = prefix.resolve(Path.of("lib", packageName));
+        return new ApplicationLayout(Map.of(
+                PathRole.LAUNCHERS, prefix.resolve("bin"),
+                PathRole.APP, lib.resolve("app"),
+                PathRole.RUNTIME, lib.resolve("runtime"),
+                PathRole.RUNTIME_HOME, lib.resolve("runtime"),
+                PathRole.DESKTOP, lib,
+                PathRole.MODULES, lib.resolve("app/mods")
+        ));
     }
 
     private final PathGroup data;

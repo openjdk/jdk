@@ -27,6 +27,7 @@
  * SealedCompilationTests
  *
  * @test
+ * @bug 8246353
  * @summary Negative compilation tests, and positive compilation (smoke) tests for sealed classes
  * @library /lib/combo /tools/lib
  * @modules
@@ -58,11 +59,13 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.SourceVersion;
 
 import com.sun.tools.javac.util.Assert;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 import org.testng.annotations.Test;
 import tools.javac.combo.CompilationTestCase;
 
@@ -90,11 +93,18 @@ public class SealedCompilationTests extends CompilationTestCase {
 
     /* simplest annotation processor just to force a round of annotation processing for all tests
      */
+    @SupportedAnnotationTypes("*")
     public static class SimplestAP extends AbstractProcessor {
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
             return true;
         }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
     }
 
     public SealedCompilationTests() {
@@ -257,6 +267,8 @@ public class SealedCompilationTests extends CompilationTestCase {
 
         for (String s : List.of(
                 "class sealed {}",
+                "enum sealed {}",
+                "record sealed() {}",
                 "interface sealed {}",
                 "@interface sealed {}"
         )) {
@@ -268,6 +280,34 @@ public class SealedCompilationTests extends CompilationTestCase {
                 "class Foo { sealed i; }",
                 "class Foo { void m(sealed i) {} }"
                 )) {
+            assertFail("compiler.err.restricted.type.not.allowed.here", s);
+        }
+
+        for (String s : List.of(
+                "class SealedTest { String permits; }",
+                "class SealedTest { int permits = 0; }",
+                "class SealedTest { void test(String permits) { } }",
+                "class SealedTest { void permits(String permits) { } }",
+                "class SealedTest { void test() { String permits = null; } }"
+        )) {
+            assertOK(s);
+        }
+
+        for (String s : List.of(
+                "class permits {}",
+                "enum permits {}",
+                "record permits() {}",
+                "interface permits {}",
+                "@interface permits {}"
+        )) {
+            assertFail("compiler.err.restricted.type.not.allowed", s);
+        }
+
+        for (String s : List.of(
+                "class Foo { permits m() {} }",
+                "class Foo { permits i; }",
+                "class Foo { void m(permits i) {} }"
+        )) {
             assertFail("compiler.err.restricted.type.not.allowed.here", s);
         }
 
@@ -691,6 +731,18 @@ public class SealedCompilationTests extends CompilationTestCase {
             }
             throw new AssertionError("Expected output not found. Expected: " + expected);
         }
+    }
+
+    public void testNonSealedErroneousSuper() {
+        assertFail("compiler.err.cant.resolve",
+                   d -> {
+                       if (diags.keys().size() != 1) {
+                           fail("Unexpected errors: " + diags.toString());
+                       }
+                   },
+                   """
+                   non-sealed class C extends Undefined {}
+                   """);
     }
 
     public void testIllFormedNonSealed() {

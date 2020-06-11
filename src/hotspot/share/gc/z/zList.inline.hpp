@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,21 +205,31 @@ inline void ZList<T>::transfer(ZList<T>* list) {
   }
 }
 
-template <typename T, bool forward>
-inline ZListIteratorImpl<T, forward>::ZListIteratorImpl(const ZList<T>* list) :
+template <typename T, bool Forward>
+inline ZListIteratorImpl<T, Forward>::ZListIteratorImpl(const ZList<T>* list) :
     _list(list),
-    _next(forward ? list->first() : list->last()) {}
+    _next(Forward ? list->first() : list->last()) {}
 
-template <typename T, bool forward>
-inline bool ZListIteratorImpl<T, forward>::next(T** elem) {
+template <typename T, bool Forward>
+inline bool ZListIteratorImpl<T, Forward>::next(T** elem) {
   if (_next != NULL) {
     *elem = _next;
-    _next = forward ? _list->next(_next) : _list->prev(_next);
+    _next = Forward ? _list->next(_next) : _list->prev(_next);
     return true;
   }
 
   // No more elements
   return false;
+}
+
+template <typename T, bool Forward>
+inline ZListRemoveIteratorImpl<T, Forward>::ZListRemoveIteratorImpl(ZList<T>* list) :
+    _list(list) {}
+
+template <typename T, bool Forward>
+inline bool ZListRemoveIteratorImpl<T, Forward>::next(T** elem) {
+  *elem = Forward ? _list->remove_first() : _list->remove_last();
+  return *elem != NULL;
 }
 
 template <typename T>
@@ -229,5 +239,9 @@ inline ZListIterator<T>::ZListIterator(const ZList<T>* list) :
 template <typename T>
 inline ZListReverseIterator<T>::ZListReverseIterator(const ZList<T>* list) :
     ZListIteratorImpl<T, ZLIST_REVERSE>(list) {}
+
+template <typename T>
+inline ZListRemoveIterator<T>::ZListRemoveIterator(ZList<T>* list) :
+    ZListRemoveIteratorImpl<T, ZLIST_FORWARD>(list) {}
 
 #endif // SHARE_GC_Z_ZLIST_INLINE_HPP

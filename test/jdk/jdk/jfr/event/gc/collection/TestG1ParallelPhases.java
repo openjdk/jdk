@@ -95,7 +95,7 @@ public class TestG1ParallelPhases {
             "JNIRoots",
             "ObjectSynchronizerRoots",
             "ManagementRoots",
-            "SystemDictionaryRoots",
+            "VMGlobalRoots",
             "CLDGRoots",
             "JVMTIRoots",
             "CMRefRoots",

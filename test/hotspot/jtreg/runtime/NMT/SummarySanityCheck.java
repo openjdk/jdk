@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @key nmt jcmd
  * @summary Sanity check the output of NMT
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
