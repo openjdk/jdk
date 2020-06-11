@@ -388,16 +388,7 @@ class ClassLoader: AllStatic {
 
   // Helper function used by CDS code to get the number of module path
   // entries during shared classpath setup time.
-  static int num_module_path_entries() {
-    Arguments::assert_is_dumping_archive();
-    int num_entries = 0;
-    ClassPathEntry* e= ClassLoader::_module_path_entries;
-    while (e != NULL) {
-      num_entries ++;
-      e = e->next();
-    }
-    return num_entries;
-  }
+  static int num_module_path_entries();
   static void  exit_with_path_failure(const char* error, const char* message);
   static char* skip_uri_protocol(char* source);
   static void  record_result(InstanceKlass* ik, const ClassFileStream* stream, TRAPS);

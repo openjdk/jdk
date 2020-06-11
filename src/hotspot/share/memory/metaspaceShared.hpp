@@ -184,6 +184,7 @@ class MetaspaceShared : AllStatic {
   static void* _shared_metaspace_static_top;
   static intx _relocation_delta;
   static char* _requested_base_address;
+  static bool _use_optimized_module_handling;
  public:
   enum {
     // core archive spaces
@@ -372,6 +373,11 @@ class MetaspaceShared : AllStatic {
   static void write_core_archive_regions(FileMapInfo* mapinfo,
                                          GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
                                          GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps);
+
+  // Can we skip some expensive operations related to modules?
+  static bool use_optimized_module_handling()     { return _use_optimized_module_handling;  }
+  static void disable_optimized_module_handling() { _use_optimized_module_handling = false; }
+
 private:
 #if INCLUDE_CDS
   static void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,

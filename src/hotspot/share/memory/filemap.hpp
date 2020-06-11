@@ -227,6 +227,8 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   char*  _mapped_base_address;          // Actual base address where archive is mapped.
 
   bool   _allow_archiving_with_java_agent; // setting of the AllowArchivingWithJavaAgent option
+  bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
+                                        // some expensive operations.
   size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
 
   char* from_mapped_offset(size_t offset) const {
