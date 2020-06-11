@@ -70,8 +70,9 @@ Method**  VM_RedefineClasses::_added_methods        = NULL;
 int       VM_RedefineClasses::_matching_methods_length = 0;
 int       VM_RedefineClasses::_deleted_methods_length  = 0;
 int       VM_RedefineClasses::_added_methods_length    = 0;
+
+// This flag is global as the constructor does not reset it:
 bool      VM_RedefineClasses::_has_redefined_Object = false;
-bool      VM_RedefineClasses::_has_null_class_loader = false;
 u8        VM_RedefineClasses::_id_counter = 0;
 
 VM_RedefineClasses::VM_RedefineClasses(jint class_count,
@@ -83,8 +84,6 @@ VM_RedefineClasses::VM_RedefineClasses(jint class_count,
   _any_class_has_resolved_methods = false;
   _res = JVMTI_ERROR_NONE;
   _the_class = NULL;
-  _has_redefined_Object = false;
-  _has_null_class_loader = false;
   _id = next_id();
 }
 
@@ -3598,7 +3597,10 @@ void VM_RedefineClasses::AdjustAndCleanMetadata::do_klass(Klass* k) {
   bool trace_name_printed = false;
 
   // If the class being redefined is java.lang.Object, we need to fix all
-  // array class vtables also
+  // array class vtables also. The _has_redefined_Object flag is global.
+  // Once the java.lang.Object has been redefined (by the current or one
+  // of the previous VM_RedefineClasses operations) we have to always
+  // adjust method entries for array classes.
   if (k->is_array_klass() && _has_redefined_Object) {
     k->vtable().adjust_method_entries(&trace_name_printed);
 
@@ -3614,22 +3616,6 @@ void VM_RedefineClasses::AdjustAndCleanMetadata::do_klass(Klass* k) {
       if (methods->at(index)->method_data() != NULL) {
         methods->at(index)->method_data()->clean_weak_method_links();
       }
-    }
-
-    // HotSpot specific optimization! HotSpot does not currently
-    // support delegation from the bootstrap class loader to a
-    // user-defined class loader. This means that if the bootstrap
-    // class loader is the initiating class loader, then it will also
-    // be the defining class loader. This also means that classes
-    // loaded by the bootstrap class loader cannot refer to classes
-    // loaded by a user-defined class loader. Note: a user-defined
-    // class loader can delegate to the bootstrap class loader.
-    //
-    // If the current class being redefined has a user-defined class
-    // loader as its defining class loader, then we can skip all
-    // classes loaded by the bootstrap class loader.
-    if (!_has_null_class_loader && ik->class_loader() == NULL) {
-      return;
     }
 
     // Adjust all vtables, default methods and itables, to clean out old methods.
@@ -3650,21 +3636,24 @@ void VM_RedefineClasses::AdjustAndCleanMetadata::do_klass(Klass* k) {
     // constant pool cache holds the Method*s for non-virtual
     // methods and for virtual, final methods.
     //
-    // Special case: if the current class being redefined, then new_cp
-    // has already been attached to the_class and old_cp has already
-    // been added as a previous version. The new_cp doesn't have any
-    // cached references to old methods so it doesn't need to be
-    // updated. We can simply start with the previous version(s) in
-    // that case.
+    // Special case: if the current class is being redefined by the current
+    // VM_RedefineClasses operation, then new_cp has already been attached
+    // to the_class and old_cp has already been added as a previous version.
+    // The new_cp doesn't have any cached references to old methods so it
+    // doesn't need to be updated and we could optimize by skipping it.
+    // However, the current class can be marked as being redefined by another
+    // VM_RedefineClasses operation which has already executed its doit_prologue
+    // and needs cpcache method entries adjusted. For simplicity, the cpcache
+    // update is done unconditionally. It should result in doing nothing for
+    // classes being redefined by the current VM_RedefineClasses operation.
+    // Method entries in the previous version(s) are adjusted as well.
     ConstantPoolCache* cp_cache;
 
-    if (!ik->is_being_redefined()) {
-      // this klass' constant pool cache may need adjustment
-      ConstantPool* other_cp = ik->constants();
-      cp_cache = other_cp->cache();
-      if (cp_cache != NULL) {
-        cp_cache->adjust_method_entries(&trace_name_printed);
-      }
+    // this klass' constant pool cache may need adjustment
+    ConstantPool* other_cp = ik->constants();
+    cp_cache = other_cp->cache();
+    if (cp_cache != NULL) {
+      cp_cache->adjust_method_entries(&trace_name_printed);
     }
 
     // the previous versions' constant pool caches may need adjustment
@@ -4109,9 +4098,8 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 
   InstanceKlass* the_class = get_ik(the_jclass);
 
-  // Set some flags to control and optimize adjusting method entries
+  // Set a flag to control and optimize adjusting method entries
   _has_redefined_Object |= the_class == SystemDictionary::Object_klass();
-  _has_null_class_loader |= the_class->class_loader() == NULL;
 
   // Remove all breakpoints in methods of this class
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
