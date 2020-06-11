@@ -49,5 +49,3 @@ JAVA_FLAGS_BIG := @BOOTCYCLE_JVM_ARGS_BIG@
 # settings for CDS.
 JAVA_FLAGS := $(filter-out -XX:SharedArchiveFile% -Xshare%, $(JAVA_FLAGS))
 
-# Pandoc cannot be used without the jjs plugin, which was removed with Nashorn.
-ENABLE_PANDOC := false

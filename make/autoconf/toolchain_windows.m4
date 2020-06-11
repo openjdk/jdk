@@ -378,9 +378,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
   if test "x$DEVKIT_VS_VERSION" = x; then
     if test "x$VS_ENV_CMD" != x; then
       # We have found a Visual Studio environment on disk, let's extract variables from the vsvars bat file.
-      echo will rewrite VS_ENV_CMD from :$VS_ENV_CMD:
       UTIL_FIXUP_EXECUTABLE(VS_ENV_CMD)
-      echo to VS_ENV_CMD=$VS_ENV_CMD
 
       # Lets extract the variables that are set by vcvarsall.bat/vsvars32.bat/vsvars64.bat
       AC_MSG_NOTICE([Trying to extract Visual Studio environment variables])
@@ -404,35 +402,33 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # In some cases, the VS_ENV_CMD will change directory, change back so
       # the set-vs-env.sh ends up in the right place.
       $ECHO 'cd %~dp0' >> $EXTRACT_VC_ENV_BAT_FILE
-        # These will end up something like:
-        # echo VS_PATH=\"$PATH\" > set-vs-env.sh
-        # The trailing space for everyone except PATH is no typo, but is needed due
-        # to trailing \ in the Windows paths. These will be stripped later.
-        # Trying pure CMD extract. This results in windows paths that need to
-        # be converted post extraction, but a simpler script.
-        $ECHO 'echo VS_PATH="%PATH%" > set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO 'echo VS_INCLUDE="%INCLUDE% " >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO 'echo VS_LIB="%LIB% " >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO 'echo VCINSTALLDIR="%VCINSTALLDIR% " >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO 'echo VCToolsRedistDir="%VCToolsRedistDir% " >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO 'echo WindowsSdkDir="%WindowsSdkDir% " >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
-        $ECHO 'echo WINDOWSSDKDIR="%WINDOWSSDKDIR% " >> set-vs-env.sh' \
-            >> $EXTRACT_VC_ENV_BAT_FILE
+      # These will end up something like:
+      # echo VS_PATH=\"$PATH\" > set-vs-env.sh
+      # The trailing space for everyone except PATH is no typo, but is needed due
+      # to trailing \ in the Windows paths. These will be stripped later.
+      # Trying pure CMD extract. This results in windows paths that need to
+      # be converted post extraction, but a simpler script.
+      $ECHO 'echo VS_PATH="%PATH%" > set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO 'echo VS_INCLUDE="%INCLUDE% " >> set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO 'echo VS_LIB="%LIB% " >> set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO 'echo VCINSTALLDIR="%VCINSTALLDIR% " >> set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO 'echo VCToolsRedistDir="%VCToolsRedistDir% " >> set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO 'echo WindowsSdkDir="%WindowsSdkDir% " >> set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO 'echo WINDOWSSDKDIR="%WINDOWSSDKDIR% " >> set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
 
       # Now execute the newly created bat file.
       # Change directory so we don't need to mess with Windows paths in redirects.
       cd $VS_ENV_TMP_DIR
       BATPATH=$VS_ENV_TMP_DIR/extract-vs-env.bat
       UTIL_REWRITE_AS_WINDOWS_MIXED_PATH(BATPATH)
-      echo will execute $BATPATH
-      $CMD /c "$BATPATH"
-      # > extract-vs-env.log 2>&1
+      $CMD /c "$BATPATH" > extract-vs-env.log 2>&1
       cd $CONFIGURE_START_DIR
 
       if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then

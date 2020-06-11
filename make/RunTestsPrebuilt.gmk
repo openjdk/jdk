@@ -194,11 +194,10 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
     $(error Cannot continue.)
   endif
   FIXPATH := $(TEST_IMAGE_DIR)/bin/fixpath.sh exec
-  PATH_SEP:=:
 else
   FIXPATH :=
-  PATH_SEP:=:
 endif
+PATH_SEP:=:
 
 # Check number of cores and memory in MB
 ifeq ($(OPENJDK_TARGET_OS), linux)
