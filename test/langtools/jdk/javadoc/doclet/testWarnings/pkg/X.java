@@ -24,6 +24,8 @@ public class X implements Serializable {
      * {@link #m()}<br/>
      * {@link #f}<br/>
      * {@link java.lang.String#toString()}<br/>
+     * <hr/>
+     * <p/>
      */
     public void foo() {}
 }

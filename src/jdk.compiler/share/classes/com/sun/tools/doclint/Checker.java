@@ -375,7 +375,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
 
         // check for self closing tags, such as <a id="name"/>
-        if (tree.isSelfClosing()) {
+        if (tree.isSelfClosing() && !isSelfClosingAllowed(t)) {
             env.messages.error(HTML, tree, "dc.tag.self.closing", treeName);
         }
 
@@ -413,6 +413,13 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             if (t == null || t.endKind == HtmlTag.EndKind.NONE)
                 tagStack.pop();
         }
+    }
+
+    // so-called "self-closing" tags are only permitted in HTML 5, for void elements
+    // https://html.spec.whatwg.org/multipage/syntax.html#start-tags
+    private boolean isSelfClosingAllowed(HtmlTag tag) {
+        return env.htmlVersion == HtmlVersion.HTML5
+                && tag.endKind == HtmlTag.EndKind.NONE;
     }
 
     private void checkStructure(StartElementTree tree, HtmlTag t) {
