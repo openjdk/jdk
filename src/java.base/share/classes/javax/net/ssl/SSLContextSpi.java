@@ -40,6 +40,11 @@ import java.security.*;
  */
 public abstract class SSLContextSpi {
     /**
+     * Constructor for subclasses to call.
+     */
+    public SSLContextSpi() {}
+
+    /**
      * Initializes this context.
      *
      * @param km the sources of authentication keys
