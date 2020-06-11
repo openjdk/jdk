@@ -1119,28 +1119,24 @@ DynamicArchiveBuilder* DynamicArchive::_builder = NULL;
 
 
 bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
+  assert(!dynamic_info->is_static(), "must be");
   // Check if the recorded base archive matches with the current one
   FileMapInfo* base_info = FileMapInfo::current_info();
   DynamicArchiveHeader* dynamic_header = dynamic_info->dynamic_header();
 
   // Check the header crc
   if (dynamic_header->base_header_crc() != base_info->crc()) {
-    FileMapInfo::fail_continue("Archive header checksum verification failed.");
+    FileMapInfo::fail_continue("Dynamic archive cannot be used: static archive header checksum verification failed.");
     return false;
   }
 
   // Check each space's crc
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     if (dynamic_header->base_region_crc(i) != base_info->space_crc(i)) {
-      FileMapInfo::fail_continue("Archive region #%d checksum verification failed.", i);
+      FileMapInfo::fail_continue("Dynamic archive cannot be used: static archive region #%d checksum verification failed.", i);
       return false;
     }
   }
 
-  // Validate the dynamic archived shared path table, and set the global
-  // _shared_path_table to that.
-  if (!dynamic_info->validate_shared_path_table()) {
-    return false;
-  }
   return true;
 }
