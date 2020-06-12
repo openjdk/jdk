@@ -366,10 +366,12 @@
                                                                             \
   notproduct(intx, PrintIdealGraphLevel, 0,                                 \
           "Level of detail of the ideal graph printout. "                   \
-          "System-wide value, 0=nothing is printed, 4=all details printed. "\
+          "System-wide value, -1=printing is disabled, "                    \
+          "0=print nothing except IGVPrintLevel directives, "               \
+          "4=all details printed. "                                         \
           "Level of detail of printouts can be set on a per-method level "  \
           "as well by using CompileCommand=option.")                        \
-          range(0, 4)                                                       \
+          range(-1, 4)                                                      \
                                                                             \
   notproduct(intx, PrintIdealGraphPort, 4444,                               \
           "Ideal graph printer to network port")                            \
