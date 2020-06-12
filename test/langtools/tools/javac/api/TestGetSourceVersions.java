@@ -28,13 +28,13 @@
  * @author  Peter von der Ah\u00e9
  * @modules java.compiler
  *          jdk.compiler
- * @run main/fail T6395981
- * @run main/fail T6395981 RELEASE_3  RELEASE_5  RELEASE_6
- * @run main/fail T6395981 RELEASE_0  RELEASE_1  RELEASE_2  RELEASE_3  RELEASE_4
- *                         RELEASE_5  RELEASE_6
- * @run main T6395981      RELEASE_3  RELEASE_4  RELEASE_5  RELEASE_6  RELEASE_7
- *                         RELEASE_8  RELEASE_9  RELEASE_10 RELEASE_11 RELEASE_12
- *                         RELEASE_13 RELEASE_14 RELEASE_15 RELEASE_16
+ * @run main/fail TestGetSourceVersions
+ * @run main/fail TestGetSourceVersions RELEASE_3  RELEASE_5  RELEASE_6
+ * @run main/fail TestGetSourceVersions RELEASE_0  RELEASE_1  RELEASE_2  RELEASE_3  RELEASE_4
+ *                                      RELEASE_5  RELEASE_6
+ * @run main TestGetSourceVersions      RELEASE_3  RELEASE_4  RELEASE_5  RELEASE_6  RELEASE_7
+ *                                      RELEASE_8  RELEASE_9  RELEASE_10 RELEASE_11 RELEASE_12
+ *                                      RELEASE_13 RELEASE_14 RELEASE_15 RELEASE_16
  */
 
 import java.util.EnumSet;
@@ -44,7 +44,7 @@ import javax.tools.Tool;
 import javax.tools.ToolProvider;
 import static javax.lang.model.SourceVersion.*;
 
-public class T6395981 {
+public class TestGetSourceVersions {
     public static void main(String... args) {
         Tool compiler = ToolProvider.getSystemJavaCompiler();
         Set<SourceVersion> expected = EnumSet.noneOf(SourceVersion.class);
