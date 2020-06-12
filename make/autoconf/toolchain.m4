@@ -972,12 +972,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     fi
   fi
 
-  if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    # If this is a --hash-style=gnu system, use --hash-style=both, why?
-    HAS_GNU_HASH=`$CC -dumpspecs 2>/dev/null | $GREP 'hash-style=gnu'`
-    # This is later checked when setting flags.
-  fi
-
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     # Check if linker has -z noexecstack.
     HAS_NOEXECSTACK=`$CC -Wl,--help 2>/dev/null | $GREP 'z noexecstack'`
