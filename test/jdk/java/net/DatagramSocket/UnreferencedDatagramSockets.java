@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib
  * @modules java.management java.base/java.io:+open java.base/java.net:+open
- *          java.base/sun.net
+ *          java.base/sun.net java.base/sun.nio.ch:+open
  * @run main/othervm UnreferencedDatagramSockets
  * @run main/othervm -Djava.net.preferIPv4Stack=true UnreferencedDatagramSockets
  * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl UnreferencedDatagramSockets
