@@ -32,7 +32,7 @@
  * @build LinkClassApp
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar link_class_app.jar LinkClassApp Parent Child Parent2 Child2 MyShutdown
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LinkClassTest
  */
 
