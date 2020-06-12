@@ -424,7 +424,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # Change directory so we don't need to mess with Windows paths in redirects.
       BATPATH=$VS_ENV_TMP_DIR/extract-vs-env.bat
       UTIL_REWRITE_AS_WINDOWS_MIXED_PATH(BATPATH)
-      $CMD /c "$BATPATH" > extract-vs-env.log 2>&1
+      # The "| cat" is to stop SetEnv.Cmd to mess with system colors on some systems
+      $CMD /c "$BATPATH" > extract-vs-env.log | $CAT 2>&1
 
       if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
         AC_MSG_NOTICE([Could not succesfully extract the environment variables needed for the VS setup.])
