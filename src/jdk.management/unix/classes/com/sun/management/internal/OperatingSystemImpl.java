@@ -158,6 +158,10 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
                     return getCpuLoad0();
                 } else {
                     int[] cpuSet = containerMetrics.getEffectiveCpuSetCpus();
+                    // in case the effectiveCPUSetCpus are not available, attempt to use just cpusets.cpus
+                    if (cpuSet == null || cpuSet.length <= 0) {
+                        cpuSet = containerMetrics.getCpuSetCpus();
+                    }
                     if (cpuSet != null && cpuSet.length > 0) {
                         double systemLoad = 0.0;
                         for (int cpu : cpuSet) {
@@ -182,7 +186,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
 
     private boolean isCpuSetSameAsHostCpuSet() {
         if (containerMetrics != null && containerMetrics.getCpuSetCpus() != null) {
-            return containerMetrics.getCpuSetCpus().length == getHostConfiguredCpuCount0();
+            return containerMetrics.getCpuSetCpus().length == getHostOnlineCpuCount0();
         }
         return false;
     }
@@ -200,6 +204,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private native long getTotalSwapSpaceSize0();
     private native double getSingleCpuLoad0(int cpuNum);
     private native int getHostConfiguredCpuCount0();
+    private native int getHostOnlineCpuCount0();
 
     static {
         initialize0();
