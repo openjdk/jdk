@@ -303,59 +303,6 @@ public final class BasicTest {
         HelloApp.executeLauncherAndVerifyOutput(cmd);
     }
 
-    @Parameter("Hello")
-    @Parameter("com.foo/com.foo.main.Aloha")
-    @Test
-    public void testJLinkRuntime(String javaAppDesc) throws IOException {
-        JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
-
-        JPackageCommand cmd = JPackageCommand.helloAppImage(appDesc);
-
-        final String moduleName = appDesc.moduleName();
-
-        if (moduleName != null) {
-            // Build module jar.
-            cmd.executePrerequisiteActions();
-        }
-
-        final Path runtimeDir = TKit.createTempDirectory("runtime").resolve("data");
-
-        // List of modules required for test app.
-        final var modules = new String[] {
-            "java.base",
-            "java.desktop"
-        };
-
-        Executor jlink = getToolProvider(JavaTool.JLINK)
-        .saveOutput(false)
-        .addArguments(
-                "--add-modules", String.join(",", modules),
-                "--output", runtimeDir.toString(),
-                "--strip-debug",
-                "--no-header-files",
-                "--no-man-pages");
-
-        TKit.trace("jlink output BEGIN");
-        try (Stream<Path> paths = Files.walk(runtimeDir)) {
-            paths.filter(Files::isRegularFile)
-                    .map(runtimeDir::relativize)
-                    .map(Path::toString)
-                    .forEach(TKit::trace);
-        }
-        TKit.trace("jlink output END");
-
-        if (moduleName != null) {
-            jlink.addArguments("--add-modules", moduleName, "--module-path",
-                    Path.of(cmd.getArgumentValue("--module-path")).resolve(
-                            "hello.jar").toString());
-        }
-
-        jlink.execute();
-
-        cmd.addArguments("--runtime-image", runtimeDir);
-        cmd.executeAndAssertHelloAppImageCreated();
-    }
-
     private static Executor getJPackageToolProvider() {
         return getToolProvider(JavaTool.JPACKAGE);
     }
