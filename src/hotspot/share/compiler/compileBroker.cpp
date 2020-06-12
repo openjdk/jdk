@@ -687,7 +687,7 @@ void CompileBroker::compilation_init_phase1(Thread* THREAD) {
   // Start the compiler thread(s) and the sweeper thread
   init_compiler_sweeper_threads();
   // totalTime performance counter is always created as it is required
-  // by the implementation of java.lang.management.CompilationMBean.
+  // by the implementation of java.lang.management.CompilationMXBean.
   {
     // Ensure OOM leads to vm_exit_during_initialization.
     EXCEPTION_MARK;
@@ -2478,7 +2478,7 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
     // Compilation succeeded
 
     // update compilation ticks - used by the implementation of
-    // java.lang.management.CompilationMBean
+    // java.lang.management.CompilationMXBean
     _perf_total_compilation->inc(time.ticks());
     _peak_compilation_time = time.milliseconds() > _peak_compilation_time ? time.milliseconds() : _peak_compilation_time;
 

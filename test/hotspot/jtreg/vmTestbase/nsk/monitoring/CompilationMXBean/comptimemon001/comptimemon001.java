@@ -32,7 +32,7 @@
  * VM Testbase readme:
  * DESCRIPTION
  *     The test checks that
- *         CompilationMBean.isCompilationTimeMonitoringSupported()
+ *         CompilationMXBean.isCompilationTimeMonitoringSupported()
  *     method returns true. The test performs directly access to management
  *     metrics within the same JVM.
  *     Note, that the test is correct ONLY against Sun's Hotspot VM. This
