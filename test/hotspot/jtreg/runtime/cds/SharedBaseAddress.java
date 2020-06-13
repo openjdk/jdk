@@ -41,6 +41,7 @@ public class SharedBaseAddress {
         "1g", "8g", "64g","512g", "4t",
         "32t", "128t", "0",
         "1", "64k", "64M",
+        "0x800001000",        // Default base address + 1 page - probably valid but unaligned to metaspace alignment, see JDK 8247522
         "0xfffffffffff00000", // archive top wraps around 64-bit address space
         "0xfff80000",         // archive top wraps around 32-bit address space
         "0xffffffffffffffff", // archive bottom wraps around 64-bit address space -- due to align_up()
