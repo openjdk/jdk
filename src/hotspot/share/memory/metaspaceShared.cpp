@@ -1638,6 +1638,7 @@ void VM_PopulateDumpSharedSpace::relocate_to_requested_base_address(CHeapBitMap*
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
+  HeapShared::run_full_gc_in_vm_thread();
   CHeapBitMap ptrmap;
   MetaspaceShared::initialize_ptr_marker(&ptrmap);
 
@@ -1956,14 +1957,9 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     link_and_cleanup_shared_classes(CATCH);
     log_info(cds)("Rewriting and linking classes: done");
 
-    if (HeapShared::is_heap_object_archiving_allowed()) {
-      // Avoid fragmentation while archiving heap objects.
-      Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(true);
-      Universe::heap()->collect(GCCause::_archive_time_gc);
-      Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(false);
-    }
-
     VM_PopulateDumpSharedSpace op;
+    MutexLocker ml(THREAD, HeapShared::is_heap_object_archiving_allowed() ?
+                   Heap_lock : NULL);     // needed by HeapShared::run_gc()
     VMThread::execute(&op);
   }
 }

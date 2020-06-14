@@ -28,6 +28,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
@@ -182,6 +183,25 @@ void HeapShared::archive_klass_objects(Thread* THREAD) {
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       ik->constants()->archive_resolved_references(THREAD);
+    }
+  }
+}
+
+void HeapShared::run_full_gc_in_vm_thread() {
+  if (is_heap_object_archiving_allowed()) {
+    // Avoid fragmentation while archiving heap objects.
+    // We do this inside a safepoint, so that no further allocation can happen after GC
+    // has finished.
+    if (GCLocker::is_active()) {
+      // Just checking for safety ...
+      // This should not happen during -Xshare:dump. If you see this, probably the Java core lib
+      // has been modified such that JNI code is executed in some clean up threads after
+      // we have finished class loading.
+      log_warning(cds)("GC locker is held, unable to start extra compacting GC. This may produce suboptimal results.");
+    } else {
+      log_info(cds)("Run GC ...");
+      Universe::heap()->collect_as_vm_thread(GCCause::_archive_time_gc);
+      log_info(cds)("Run GC done");
     }
   }
 }
