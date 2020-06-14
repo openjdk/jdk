@@ -101,7 +101,7 @@ private:
 
   size_t update_and_get_progress_history();
 
-  void wait(long time_ms);
+  void wait(size_t time_ms);
   void notify_waiters();
 };
 
