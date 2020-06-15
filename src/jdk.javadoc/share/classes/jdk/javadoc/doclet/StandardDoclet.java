@@ -70,6 +70,10 @@ public class StandardDoclet implements Doclet {
 
     private final HtmlDoclet htmlDoclet;
 
+    /**
+     * Creates an instance of the standard doclet, used to generate HTML-formatted
+     * documentation.
+     */
     public StandardDoclet() {
         htmlDoclet = new HtmlDoclet(this);
     }
