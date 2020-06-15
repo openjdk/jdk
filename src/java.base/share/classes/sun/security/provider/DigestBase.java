@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,6 +233,7 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
     public Object clone() throws CloneNotSupportedException {
         DigestBase copy = (DigestBase) super.clone();
         copy.buffer = copy.buffer.clone();
+        copy.oneByte = null;
         return copy;
     }
 

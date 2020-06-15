@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,12 @@ public abstract class MessageDigest extends MessageDigestSpi {
         this.algorithm = algorithm;
     }
 
+    // private constructor used only by Delegate class
+    private MessageDigest(String algorithm, Provider p) {
+        this.algorithm = algorithm;
+        this.provider = p;
+    }
+
     /**
      * Returns a MessageDigest object that implements the specified digest
      * algorithm.
@@ -178,10 +184,11 @@ public abstract class MessageDigest extends MessageDigestSpi {
                                              (String)null);
             if (objs[0] instanceof MessageDigest) {
                 md = (MessageDigest)objs[0];
+                md.provider = (Provider)objs[1];
             } else {
-                md = new Delegate((MessageDigestSpi)objs[0], algorithm);
+                md = Delegate.of((MessageDigestSpi)objs[0], algorithm,
+                    (Provider) objs[1]);
             }
-            md.provider = (Provider)objs[1];
 
             if (!skipDebug && pdebug != null) {
                 pdebug.println("MessageDigest." + algorithm +
@@ -245,8 +252,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
             return md;
         } else {
             MessageDigest delegate =
-                new Delegate((MessageDigestSpi)objs[0], algorithm);
-            delegate.provider = (Provider)objs[1];
+                    Delegate.of((MessageDigestSpi)objs[0], algorithm,
+                    (Provider)objs[1]);
             return delegate;
         }
     }
@@ -298,8 +305,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
             return md;
         } else {
             MessageDigest delegate =
-                new Delegate((MessageDigestSpi)objs[0], algorithm);
-            delegate.provider = (Provider)objs[1];
+                    Delegate.of((MessageDigestSpi)objs[0], algorithm,
+                    (Provider)objs[1]);
             return delegate;
         }
     }
@@ -547,8 +554,6 @@ public abstract class MessageDigest extends MessageDigestSpi {
     }
 
 
-
-
     /*
      * The following class allows providers to extend from MessageDigestSpi
      * rather than from MessageDigest. It represents a MessageDigest with an
@@ -563,14 +568,45 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * and its original parent (Object).
      */
 
-    static class Delegate extends MessageDigest implements MessageDigestSpi2 {
+    private static class Delegate extends MessageDigest
+            implements MessageDigestSpi2 {
+        // use this class for spi objects which implements Cloneable
+        private static final class CloneableDelegate extends Delegate
+                implements Cloneable {
+
+            private CloneableDelegate(MessageDigestSpi digestSpi,
+                    String algorithm, Provider p) {
+                super(digestSpi, algorithm, p);
+            }
+        }
 
         // The provider implementation (delegate)
-        private MessageDigestSpi digestSpi;
+        private final MessageDigestSpi digestSpi;
 
-        // constructor
-        public Delegate(MessageDigestSpi digestSpi, String algorithm) {
-            super(algorithm);
+        // factory method used by MessageDigest class to create Delegate objs
+        static Delegate of(MessageDigestSpi digestSpi, String algo,
+                Provider p) {
+            Objects.requireNonNull(digestSpi);
+            boolean isCloneable = (digestSpi instanceof Cloneable);
+            // Spi impls from SunPKCS11 provider implement Cloneable but their
+            // clone() may throw CloneNotSupportException
+            if (isCloneable && p.getName().startsWith("SunPKCS11") &&
+                    p.getClass().getModule().getName().equals
+                    ("jdk.crypto.cryptoki")) {
+                try {
+                    digestSpi.clone();
+                } catch (CloneNotSupportedException cnse) {
+                    isCloneable = false;
+                }
+            }
+            return (isCloneable? new CloneableDelegate(digestSpi, algo, p) :
+                    new Delegate(digestSpi, algo, p));
+        }
+
+        // private constructor
+        private Delegate(MessageDigestSpi digestSpi, String algorithm,
+                Provider p) {
+            super(algorithm, p);
             this.digestSpi = digestSpi;
         }
 
@@ -582,17 +618,16 @@ public abstract class MessageDigest extends MessageDigestSpi {
          * @throws    CloneNotSupportedException if this is called on a
          * delegate that does not support {@code Cloneable}.
          */
+        @Override
         public Object clone() throws CloneNotSupportedException {
-            if (digestSpi instanceof Cloneable) {
-                MessageDigestSpi digestSpiClone =
-                    (MessageDigestSpi)digestSpi.clone();
+            if (this instanceof Cloneable) {
                 // Because 'algorithm', 'provider', and 'state' are private
                 // members of our supertype, we must perform a cast to
                 // access them.
-                MessageDigest that =
-                    new Delegate(digestSpiClone,
-                                 ((MessageDigest)this).algorithm);
-                that.provider = ((MessageDigest)this).provider;
+                MessageDigest that = new CloneableDelegate(
+                        (MessageDigestSpi)digestSpi.clone(),
+                        ((MessageDigest)this).algorithm,
+                        ((MessageDigest)this).provider);
                 that.state = ((MessageDigest)this).state;
                 return that;
             } else {
@@ -600,22 +635,27 @@ public abstract class MessageDigest extends MessageDigestSpi {
             }
         }
 
+        @Override
         protected int engineGetDigestLength() {
             return digestSpi.engineGetDigestLength();
         }
 
+        @Override
         protected void engineUpdate(byte input) {
             digestSpi.engineUpdate(input);
         }
 
+        @Override
         protected void engineUpdate(byte[] input, int offset, int len) {
             digestSpi.engineUpdate(input, offset, len);
         }
 
+        @Override
         protected void engineUpdate(ByteBuffer input) {
             digestSpi.engineUpdate(input);
         }
 
+        @Override
         public void engineUpdate(SecretKey key) throws InvalidKeyException {
             if (digestSpi instanceof MessageDigestSpi2) {
                 ((MessageDigestSpi2)digestSpi).engineUpdate(key);
@@ -624,15 +664,19 @@ public abstract class MessageDigest extends MessageDigestSpi {
                 ("Digest does not support update of SecretKey object");
             }
         }
+
+        @Override
         protected byte[] engineDigest() {
             return digestSpi.engineDigest();
         }
 
+        @Override
         protected int engineDigest(byte[] buf, int offset, int len)
             throws DigestException {
                 return digestSpi.engineDigest(buf, offset, len);
         }
 
+        @Override
         protected void engineReset() {
             digestSpi.engineReset();
         }
