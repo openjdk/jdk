@@ -77,9 +77,9 @@ public class HexPrinterTest {
     Object[][] builtinParams() {
         return new Object[][]{
                 {"minimal", "", "%02x", 16, "", 64, HexPrinter.Formatters.NONE, ""},
-                {"canonical", "%08x  ", "%02x ", 16, "|", 31, HexPrinter.Formatters.PRINTABLE, "|\n"},
-                {"simple", "%5d: ", "%02x ", 16, " // ", 64, HexPrinter.Formatters.ASCII, "\n"},
-                {"source", "    ", "(byte)%3d, ", 8, " // ", 64, HexPrinter.Formatters.PRINTABLE, "\n"},
+                {"canonical", "%08x  ", "%02x ", 16, "|", 31, HexPrinter.Formatters.PRINTABLE, "|" + System.lineSeparator()},
+                {"simple", "%5d: ", "%02x ", 16, " // ", 64, HexPrinter.Formatters.ASCII,  System.lineSeparator()},
+                {"source", "    ", "(byte)%3d, ", 8, " // ", 64, HexPrinter.Formatters.PRINTABLE,  System.lineSeparator()},
         };
     }
 
