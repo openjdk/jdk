@@ -1879,42 +1879,6 @@ int os::vm_allocation_granularity() {
   return os::Bsd::page_size();
 }
 
-// Rationale behind this function:
-//  current (Mon Apr 25 20:12:18 MSD 2005) oprofile drops samples without executable
-//  mapping for address (see lookup_dcookie() in the kernel module), thus we cannot get
-//  samples for JITted code. Here we create private executable mapping over the code cache
-//  and then we can use standard (well, almost, as mapping can change) way to provide
-//  info for the reporting script by storing timestamp and location of symbol
-void bsd_wrap_code(char* base, size_t size) {
-  static volatile jint cnt = 0;
-
-  if (!UseOprofile) {
-    return;
-  }
-
-  char buf[PATH_MAX + 1];
-  int num = Atomic::add(&cnt, 1);
-
-  snprintf(buf, PATH_MAX + 1, "%s/hs-vm-%d-%d",
-           os::get_temp_directory(), os::current_process_id(), num);
-  unlink(buf);
-
-  int fd = ::open(buf, O_CREAT | O_RDWR, S_IRWXU);
-
-  if (fd != -1) {
-    off_t rv = ::lseek(fd, size-2, SEEK_SET);
-    if (rv != (off_t)-1) {
-      if (::write(fd, "", 1) == 1) {
-        mmap(base, size,
-             PROT_READ|PROT_WRITE|PROT_EXEC,
-             MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE, fd, 0);
-      }
-    }
-    ::close(fd);
-    unlink(buf);
-  }
-}
-
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
   warning("INFO: os::commit_memory(" INTPTR_FORMAT ", " SIZE_FORMAT
