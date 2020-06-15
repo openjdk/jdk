@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,11 +92,14 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 
+import jdk.test.lib.Utils;
+
 /*
  * @test OldMBeanServerTest.java
  * @bug 5072268
  * @summary Test that nothing assumes a post-1.2 MBeanServer
  * @author Eamonn McManus
+ * @library /test/lib
  * @modules java.management.rmi
  * @run main/othervm -ea OldMBeanServerTest
  */
@@ -278,7 +281,7 @@ public class OldMBeanServerTest {
             count += (Integer) h;
         }
         void waitForCount(int expect) throws InterruptedException {
-            long deadline = System.currentTimeMillis() + 2000L;
+            long deadline = System.currentTimeMillis() + Utils.adjustTimeout(2000);
             while (count < expect && System.currentTimeMillis() < deadline)
                 Thread.sleep(1);
             assert count == expect;
