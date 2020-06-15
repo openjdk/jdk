@@ -385,7 +385,6 @@ void JfrCheckpointManager::on_rotation() {
 }
 
 void JfrCheckpointManager::clear_type_set() {
-  assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(!JfrRecorder::is_recording(), "invariant");
   Thread* t = Thread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(t));
@@ -398,7 +397,6 @@ void JfrCheckpointManager::clear_type_set() {
 }
 
 void JfrCheckpointManager::write_type_set() {
-  assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   {
     Thread* const thread = Thread::current();
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread));
