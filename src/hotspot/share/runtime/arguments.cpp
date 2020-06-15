@@ -1449,11 +1449,13 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     value = &prop[key_len + 1];
   }
 
+#if INCLUDE_CDS
   if (is_internal_module_property(key) ||
       strcmp(key, "jdk.module.main") == 0) {
     MetaspaceShared::disable_optimized_module_handling();
     log_info(cds)("Using optimized module handling disabled due to incompatible property: %s=%s", key, value);
   }
+#endif
 
   if (strcmp(key, "java.compiler") == 0) {
     process_java_compiler_argument(value);
@@ -2498,8 +2500,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -bootclasspath/a:
     } else if (match_option(option, "-Xbootclasspath/a:", &tail)) {
       Arguments::append_sysclasspath(tail);
+#if INCLUDE_CDS
       MetaspaceShared::disable_optimized_module_handling();
       log_info(cds)("Using optimized module handling disabled due to bootclasspath was appended");
+#endif
     // -bootclasspath/p:
     } else if (match_option(option, "-Xbootclasspath/p:", &tail)) {
         jio_fprintf(defaultStream::output_stream(),

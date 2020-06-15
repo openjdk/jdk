@@ -278,12 +278,13 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   }
 }
 
-void ShenandoahPacer::wait(long time_ms) {
+void ShenandoahPacer::wait(size_t time_ms) {
   // Perform timed wait. It works like like sleep(), except without modifying
   // the thread interruptible status. MonitorLocker also checks for safepoints.
   assert(time_ms > 0, "Should not call this with zero argument, as it would stall until notify");
+  assert(time_ms <= LONG_MAX, "Sanity");
   MonitorLocker locker(_wait_monitor);
-  _wait_monitor->wait(time_ms);
+  _wait_monitor->wait((long)time_ms);
 }
 
 void ShenandoahPacer::notify_waiters() {
