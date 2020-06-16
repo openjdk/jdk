@@ -41,7 +41,7 @@
  *        ../test-classes/TestMHApp.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run junit/othervm/timeout=240 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MethodHandlesInvokersTest
+ * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MethodHandlesInvokersTest
  */
 
 import org.junit.Test;

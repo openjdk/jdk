@@ -61,7 +61,7 @@ public class StaticInnerTest extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0)
                       .shouldContain("HelloStaticInner source: shared objects file (top)")
-                      .shouldMatch(".class.load. HelloStaticInner[$]InnerHello[$][$]Lambda[$]1/0x.*source:.*shared.*objects.*file.*(top)");
+                      .shouldMatch(".class.load. HelloStaticInner[$]InnerHello[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file.*(top)");
             });
     }
 }
