@@ -25,7 +25,6 @@
  * @test
  * @summary Test the native process builder API.
  * @library /test/lib
- * @build Test
  * @run main/native TestNativeProcessBuilder
  */
 
@@ -39,6 +38,13 @@ public class TestNativeProcessBuilder {
         ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("jvm-test-launcher");
         pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
         new OutputAnalyzer(pb.start())
-            .shouldHaveExitValue(0);
+            .shouldHaveExitValue(0)
+            .stdoutShouldContain("Hello Test");
+    }
+
+    public static class Test {
+        public static void test() {
+            System.out.println("Hello Test");
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,23 @@ public class OutputAnalyzerTest {
             throw new Exception("shouldNotMatch() failed to throw exception");
         } catch (RuntimeException e) {
             // expected
+        }
+
+        {
+            String aaaa = "aaaa";
+            String result = output.firstMatch(aaaa);
+            if (!aaaa.equals(result)) {
+                throw new Exception("firstMatch(String) failed to match. Expected: " + aaaa + " got: " + result);
+            }
+        }
+
+        {
+            String aa = "aa";
+            String aa_grouped_aa = aa + "(" + aa + ")";
+            String result = output.firstMatch(aa_grouped_aa, 1);
+            if (!aa.equals(result)) {
+                throw new Exception("firstMatch(String, int) failed to match. Expected: " + aa + " got: " + result);
+            }
         }
     }
 

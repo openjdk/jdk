@@ -21,8 +21,59 @@
  * questions.
  */
 
-public class Test {
-    public static void test() {
-        System.out.println ("Hello Test");
+#include <jni.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+JNIEnv* create_vm(JavaVM **jvm)
+{
+    JNIEnv* env;
+    JavaVMInitArgs args;
+    JavaVMOption options[1];
+
+    char classpath[4096];
+    snprintf(classpath, sizeof classpath,
+             "-Djava.class.path=%s", getenv("CLASSPATH"));
+    options[0].optionString = classpath;
+
+    args.version = JNI_VERSION_1_8;
+    args.nOptions = 1;
+    args.options = &options[0];
+    args.ignoreUnrecognized = 0;
+
+    int ret = JNI_CreateJavaVM(jvm, (void**)&env, &args);
+    if (ret < 0) {
+      exit(10);
     }
+
+    return env;
+}
+
+
+void run(JNIEnv *env) {
+  jclass test_class;
+  jmethodID test_method;
+
+  test_class = (*env)->FindClass(env, "TestNativeProcessBuilder$Test");
+  if (test_class == NULL) {
+    exit(11);
+  }
+
+  test_method = (*env)->GetStaticMethodID(env, test_class, "test", "()V");
+  if (test_method == NULL) {
+    exit(12);
+  }
+
+  (*env)->CallStaticVoidMethod(env, test_class, test_method);
+}
+
+
+int main(int argc, char **argv)
+{
+  JavaVM *jvm;
+  JNIEnv *env = create_vm(&jvm);
+
+  run(env);
+
+  return 0;
 }
