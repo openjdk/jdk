@@ -26,9 +26,6 @@
 ###########################################################################
 #
 # javadoc
-jdk/javadoc/tool/enum/docComments/Main.java                                     8152313    generic-all    convert to doclet test framework
-jdk/javadoc/tool/enum/enumType/Main.java                                        8152313    generic-all    convert to doclet test framework
-jdk/javadoc/tool/varArgs/Main.java                                              8152313    generic-all    convert to doclet test framework
 jdk/javadoc/doclet/testIOException/TestIOException.java                         8164597    windows-all
 
 ###########################################################################
