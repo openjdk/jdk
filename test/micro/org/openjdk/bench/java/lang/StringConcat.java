@@ -28,11 +28,8 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.infra.Blackhole;
 
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -54,6 +51,8 @@ public class StringConcat {
 
     public byte byteValue = (byte)-128;
 
+    public String emptyString = "";
+
     @Benchmark
     public String concatConstInt() {
         return "string" + intValue;
@@ -62,6 +61,16 @@ public class StringConcat {
     @Benchmark
     public String concatConstString() {
         return "string" + stringValue;
+    }
+
+    @Benchmark
+    public String concatEmptyRight() {
+        return stringValue + emptyString;
+    }
+
+    @Benchmark
+    public String concatEmptyLeft() {
+        return emptyString + stringValue;
     }
 
     @Benchmark
