@@ -63,13 +63,22 @@ public class ReturnBlobToWrongHeapTest {
 
     public static void main(String[] args) {
         if (codeCacheMinBlockLength == 1) {
+            // start with allocating a small block
+            long firstSegmentSizedAddress = 0;
+            firstSegmentSizedAddress = allocate(0);
+            if (firstSegmentSizedAddress == 0) {
+                throw new RuntimeException("Test failed: Failed allocating first segment-sized blob");
+            }
+
             // Fill first code heap with large blobs until allocation fails.
             long address;
             while ((address = allocate((int)largeBlobSize)) != 0) {
             }
 
-            // Allocate segment-sized blocks in first code heap.
-            long lastSegmentSizedAddress = 0; // Address of the last segment-sized blob allocated
+            // Allocate segment-sized blocks in first code heap until it runs out
+            // Remember the last one
+            // Use the pre-allocated one as backup if the code cache is already completely full.
+            long lastSegmentSizedAddress = firstSegmentSizedAddress;
             while ((address = allocate(0)) != 0) {
                 lastSegmentSizedAddress = address;
             }
