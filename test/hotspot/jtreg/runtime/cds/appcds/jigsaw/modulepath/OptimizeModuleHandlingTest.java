@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @requires vm.cds
+ * @requires vm.cds & !vm.jvmci
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver OptimizeModuleHandlingTest
  * @summary test module path changes for optimization of
