@@ -79,7 +79,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC HeapDumpCompressedTest
+ * @run main/othervm -XX:+UseZGC HeapDumpCompressedTest
  */
 
 /*
@@ -91,7 +91,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC HeapDumpCompressedTest
+ * @run main/othervm -XX:+UseShenandoahGC HeapDumpCompressedTest
  */
 
 /*
