@@ -965,11 +965,11 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
 // Statically allocate fixup lists because they always get created.
 void java_lang_Class::allocate_fixup_lists() {
   GrowableArray<Klass*>* mirror_list =
-    new (ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(40, true);
+    new (ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(40, mtClass);
   set_fixup_mirror_list(mirror_list);
 
   GrowableArray<Klass*>* module_list =
-    new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, true);
+    new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, mtModule);
   set_fixup_module_field_list(module_list);
 }
 

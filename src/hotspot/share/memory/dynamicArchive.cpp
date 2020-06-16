@@ -521,8 +521,8 @@ private:
 
 public:
   DynamicArchiveBuilder() {
-    _klasses = new (ResourceObj::C_HEAP, mtClass) GrowableArray<InstanceKlass*>(100, true, mtInternal);
-    _symbols = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Symbol*>(1000, true, mtInternal);
+    _klasses = new (ResourceObj::C_HEAP, mtClass) GrowableArray<InstanceKlass*>(100, mtClass);
+    _symbols = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Symbol*>(1000, mtClass);
 
     _estimated_metsapceobj_bytes = 0;
     _estimated_hashtable_bytes = 0;

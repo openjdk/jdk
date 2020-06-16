@@ -33,7 +33,7 @@ static const int initial_array_size = 64;
 
 template <typename T>
 static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (ResourceObj::C_HEAP, mtTracing) GrowableArray<T>(size, true, mtTracing);
+  return new (ResourceObj::C_HEAP, mtTracing) GrowableArray<T>(size, mtTracing);
 }
 
 // Track the set of unloaded klasses during a chunk / epoch.

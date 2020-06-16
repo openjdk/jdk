@@ -117,7 +117,7 @@ void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue val
   } else {
     // No deferred updates pending for this thread.
     // allocate in C heap
-    deferred =  new(ResourceObj::C_HEAP, mtCompiler) GrowableArray<jvmtiDeferredLocalVariableSet*> (1, true);
+    deferred =  new(ResourceObj::C_HEAP, mtCompiler) GrowableArray<jvmtiDeferredLocalVariableSet*> (1, mtCompiler);
     thread()->set_deferred_locals(deferred);
   }
   if (locals == NULL) {
@@ -329,7 +329,7 @@ jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int
   _id = id;
   _vframe_id = vframe_id;
   // Alway will need at least one, must be on C heap
-  _locals = new(ResourceObj::C_HEAP, mtCompiler) GrowableArray<jvmtiDeferredLocalVariable*> (1, true);
+  _locals = new(ResourceObj::C_HEAP, mtCompiler) GrowableArray<jvmtiDeferredLocalVariable*> (1, mtCompiler);
 }
 
 jvmtiDeferredLocalVariableSet::~jvmtiDeferredLocalVariableSet() {

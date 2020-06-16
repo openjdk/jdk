@@ -681,7 +681,7 @@ static bool is_thread_excluded(Handle thread) {
 static int add_thread_to_exclusion_list(jobject thread) {
   ThreadExclusionListAccess lock;
   if (exclusion_list == NULL) {
-    exclusion_list = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<jweak>(10, true, mtTracing);
+    exclusion_list = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<jweak>(10, mtTracing);
   }
   assert(exclusion_list != NULL, "invariant");
   assert(thread_is_not_excluded(thread), "invariant");

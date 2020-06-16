@@ -106,15 +106,14 @@ class GenericGrowableArray : public ResourceObj {
 
   // This GA will use the resource stack for storage if c_heap==false,
   // Else it will use the C heap.  Use clear_and_deallocate to avoid leaks.
-  GenericGrowableArray(int initial_size, int initial_len, bool c_heap, MEMFLAGS flags = mtNone) {
+  GenericGrowableArray(int initial_size, int initial_len, MEMFLAGS flags) {
     _len = initial_len;
     _max = initial_size;
     _memflags = flags;
 
-    // memory type has to be specified for C heap allocation
-    assert(!(c_heap && flags == mtNone), "memory type not specified for C heap object");
-
     assert(_len >= 0 && _len <= _max, "initial_len too big");
+
+    const bool c_heap = flags != mtNone;
     _arena = (c_heap ? (Arena*)1 : NULL);
     set_nesting();
     assert(!on_C_heap() || allocated_on_C_heap(), "growable array must be on C heap if elements are");
@@ -141,12 +140,6 @@ class GenericGrowableArray : public ResourceObj {
 
   void* raw_allocate(int elementSize);
 
-  // some uses pass the Thread explicitly for speed (4990299 tuning)
-  void* raw_allocate(Thread* thread, int elementSize) {
-    assert(on_stack(), "fast ResourceObj path only");
-    return (void*)resource_allocate_bytes(thread, elementSize * _max);
-  }
-
   void free_C_heap(void* elements);
 };
 
@@ -168,14 +161,10 @@ template<class E> class GrowableArray : public GenericGrowableArray {
   void grow(int j);
   void raw_at_put_grow(int i, const E& p, const E& fill);
   void  clear_and_deallocate();
- public:
-  GrowableArray(Thread* thread, int initial_size) : GenericGrowableArray(initial_size, 0, false) {
-    _data = (E*)raw_allocate(thread, sizeof(E));
-    for (int i = 0; i < _max; i++) ::new ((void*)&_data[i]) E();
-  }
 
-  GrowableArray(int initial_size, bool C_heap = false, MEMFLAGS F = mtInternal)
-    : GenericGrowableArray(initial_size, 0, C_heap, F) {
+public:
+  GrowableArray(int initial_size, MEMFLAGS F = mtNone)
+    : GenericGrowableArray(initial_size, 0, F) {
     _data = (E*)raw_allocate(sizeof(E));
 // Needed for Visual Studio 2012 and older
 #ifdef _MSC_VER
@@ -184,8 +173,8 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     for (int i = 0; i < _max; i++) ::new ((void*)&_data[i]) E();
   }
 
-  GrowableArray(int initial_size, int initial_len, const E& filler, bool C_heap = false, MEMFLAGS memflags = mtInternal)
-    : GenericGrowableArray(initial_size, initial_len, C_heap, memflags) {
+  GrowableArray(int initial_size, int initial_len, const E& filler, MEMFLAGS memflags = mtNone)
+    : GenericGrowableArray(initial_size, initial_len, memflags) {
     _data = (E*)raw_allocate(sizeof(E));
     int i = 0;
     for (; i < _len; i++) ::new ((void*)&_data[i]) E(filler);
@@ -203,7 +192,7 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     for (; i < _max; i++) ::new ((void*)&_data[i]) E();
   }
 
-  GrowableArray() : GenericGrowableArray(2, 0, false) {
+  GrowableArray() : GenericGrowableArray(2, 0, mtNone) {
     _data = (E*)raw_allocate(sizeof(E));
     ::new ((void*)&_data[0]) E();
     ::new ((void*)&_data[1]) E();

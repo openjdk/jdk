@@ -451,7 +451,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
 
   uint length = mem->req();
-  GrowableArray <Node *> values(length, length, NULL, false);
+  GrowableArray <Node *> values(length, length, NULL);
 
   // create a new Phi for the value
   PhiNode *phi = new PhiNode(mem->in(0), phi_type, NULL, mem->_idx, instance_id, alias_idx, offset);

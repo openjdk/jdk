@@ -459,7 +459,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
 static GrowableArray<Handle>* _extra_interned_strings = NULL;
 
 void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
-  _extra_interned_strings = new (ResourceObj::C_HEAP, mtInternal)GrowableArray<Handle>(10000, true);
+  _extra_interned_strings = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Handle>(10000, mtClassShared);
 
   HashtableTextDump reader(filename);
   reader.check_version("VERSION: 1.0");

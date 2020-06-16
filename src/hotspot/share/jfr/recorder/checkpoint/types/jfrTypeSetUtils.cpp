@@ -268,8 +268,8 @@ void JfrArtifactSet::initialize(bool class_unload, bool clear /* false */) {
   _symbol_id->set_class_unload(class_unload);
   _total_count = 0;
   // resource allocation
-  _klass_list = new GrowableArray<const Klass*>(initial_klass_list_size, false, mtTracing);
-  _klass_loader_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size, false, mtTracing);
+  _klass_list = new GrowableArray<const Klass*>(initial_klass_list_size);
+  _klass_loader_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size);
 }
 
 JfrArtifactSet::~JfrArtifactSet() {

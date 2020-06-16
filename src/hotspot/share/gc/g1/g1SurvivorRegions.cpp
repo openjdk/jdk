@@ -29,7 +29,7 @@
 #include "utilities/debug.hpp"
 
 G1SurvivorRegions::G1SurvivorRegions() :
-  _regions(new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(8, true, mtGC)),
+  _regions(new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(8, mtGC)),
   _used_bytes(0),
   _regions_on_node() {}
 

@@ -71,17 +71,14 @@
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #include "symbolengine.hpp"
 #include "windbghelp.hpp"
 
-
 #ifdef _DEBUG
 #include <crtdbg.h>
 #endif
-
 
 #include <windows.h>
 #include <sys/types.h>

@@ -49,7 +49,7 @@ static const int initial_array_size = 64;
 
 template <typename T>
 static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (ResourceObj::C_HEAP, mtTracing) GrowableArray<T>(size, true, mtTracing);
+  return new (ResourceObj::C_HEAP, mtTracing) GrowableArray<T>(size, mtTracing);
 }
 
 static bool initialize(TRAPS) {
@@ -137,7 +137,7 @@ jobject JdkJfrEvent::get_all_klasses(TRAPS) {
   }
 
   ResourceMark rm(THREAD);
-  GrowableArray<const void*> event_subklasses(THREAD, initial_array_size);
+  GrowableArray<const void*> event_subklasses(initial_array_size);
   fill_klasses(event_subklasses, klass, THREAD);
 
   if (event_subklasses.is_empty()) {

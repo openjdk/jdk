@@ -73,7 +73,7 @@ template <MEMFLAGS F> inline void BasicHashtable<F>::initialize(int table_size, 
   _first_free_entry = NULL;
   _end_block = NULL;
   _number_of_entries = number_of_entries;
-  _entry_blocks = new(ResourceObj::C_HEAP, F) GrowableArray<char*>(4, true, F);
+  _entry_blocks = new(ResourceObj::C_HEAP, F) GrowableArray<char*>(4, F);
 }
 
 

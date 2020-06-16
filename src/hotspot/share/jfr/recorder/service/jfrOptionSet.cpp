@@ -702,7 +702,7 @@ bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** opti
   const size_t value_length = strlen(value);
 
   if (start_flight_recording_options_array == NULL) {
-    start_flight_recording_options_array = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<const char*>(8, true, mtTracing);
+    start_flight_recording_options_array = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<const char*>(8, mtTracing);
   }
   assert(start_flight_recording_options_array != NULL, "invariant");
   char* const startup_value = NEW_C_HEAP_ARRAY(char, value_length + 1, mtTracing);

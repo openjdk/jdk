@@ -325,7 +325,7 @@ public:
   DumpTimeLambdaProxyClassInfo() : _proxy_klasses(NULL) {}
   void add_proxy_klass(InstanceKlass* proxy_klass) {
     if (_proxy_klasses == NULL) {
-      _proxy_klasses = new (ResourceObj::C_HEAP, mtInternal)GrowableArray<InstanceKlass*>(5, true);
+      _proxy_klasses = new (ResourceObj::C_HEAP, mtClassShared)GrowableArray<InstanceKlass*>(5, mtClassShared);
     }
     assert(_proxy_klasses != NULL, "sanity");
     _proxy_klasses->append(proxy_klass);
@@ -1547,10 +1547,10 @@ bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
 void DumpTimeSharedClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   if (_verifier_constraints == NULL) {
-    _verifier_constraints = new(ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(4, true, mtClass);
+    _verifier_constraints = new(ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(4, mtClass);
   }
   if (_verifier_constraint_flags == NULL) {
-    _verifier_constraint_flags = new(ResourceObj::C_HEAP, mtClass) GrowableArray<char>(4, true, mtClass);
+    _verifier_constraint_flags = new(ResourceObj::C_HEAP, mtClass) GrowableArray<char>(4, mtClass);
   }
   GrowableArray<DTVerifierConstraint>* vc_array = _verifier_constraints;
   for (int i = 0; i < vc_array->length(); i++) {
@@ -1730,7 +1730,7 @@ void DumpTimeSharedClassInfo::record_linking_constraint(Symbol* name, Handle loa
   assert(loader1 != loader2, "sanity");
   LogTarget(Info, class, loader, constraints) log;
   if (_loader_constraints == NULL) {
-    _loader_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTLoaderConstraint>(4, true, mtClass);
+    _loader_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTLoaderConstraint>(4, mtClass);
   }
   char lt1 = get_loader_type_by(loader1());
   char lt2 = get_loader_type_by(loader2());
