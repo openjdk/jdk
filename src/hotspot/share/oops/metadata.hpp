@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,17 +34,17 @@ class Metadata : public MetaspaceObj {
   // Debugging hook to check that the metadata has not been deleted.
   NOT_PRODUCT(int _valid;)
  public:
-  NOT_PRODUCT(Metadata()     { _valid = 0; })
-  NOT_PRODUCT(bool is_valid() const volatile { return _valid == 0; })
+  NOT_PRODUCT(Metadata() : _valid(0) {})
+  NOT_PRODUCT(bool is_valid() const { return _valid == 0; })
 
   int identity_hash()                { return (int)(uintptr_t)this; }
 
-  virtual bool is_metadata()           const volatile { return true; }
-  virtual bool is_klass()              const volatile { return false; }
-  virtual bool is_method()             const volatile { return false; }
-  virtual bool is_methodData()         const volatile { return false; }
-  virtual bool is_constantPool()       const volatile { return false; }
-  virtual bool is_methodCounters()     const volatile { return false; }
+  virtual bool is_metadata()           const { return true; }
+  virtual bool is_klass()              const { return false; }
+  virtual bool is_method()             const { return false; }
+  virtual bool is_methodData()         const { return false; }
+  virtual bool is_constantPool()       const { return false; }
+  virtual bool is_methodCounters()     const { return false; }
   virtual int  size()                  const = 0;
   virtual MetaspaceObj::Type type()    const = 0;
   virtual const char* internal_name()  const = 0;

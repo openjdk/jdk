@@ -201,7 +201,7 @@ protected:
   enum StaticLookupMode   { find_static,   skip_static };
   enum PrivateLookupMode  { find_private,  skip_private };
 
-  bool is_klass() const volatile { return true; }
+  virtual bool is_klass() const { return true; }
 
   // super() cannot be InstanceKlass* -- Java arrays are covariant, and _super is used
   // to implement that. NB: the _super of "[Ljava/lang/Integer;" is "[Ljava/lang/Number;"

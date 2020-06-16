@@ -1957,7 +1957,7 @@ public:
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
   MethodData() : _extra_data_lock(Mutex::leaf, "MDO extra data lock") {}; // For ciMethodData
 
-  bool is_methodData() const volatile { return true; }
+  virtual bool is_methodData() const { return true; }
   void initialize();
 
   // Whole-method sticky bits and flags

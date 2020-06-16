@@ -96,7 +96,7 @@ Klass* oopDesc::klass() const {
   }
 }
 
-Klass* oopDesc::klass_or_null() const volatile {
+Klass* oopDesc::klass_or_null() const {
   if (UseCompressedClassPointers) {
     return CompressedKlassPointers::decode(_metadata._compressed_klass);
   } else {
@@ -104,12 +104,10 @@ Klass* oopDesc::klass_or_null() const volatile {
   }
 }
 
-Klass* oopDesc::klass_or_null_acquire() const volatile {
+Klass* oopDesc::klass_or_null_acquire() const {
   if (UseCompressedClassPointers) {
-    // Workaround for non-const load_acquire parameter.
-    const volatile narrowKlass* addr = &_metadata._compressed_klass;
-    volatile narrowKlass* xaddr = const_cast<volatile narrowKlass*>(addr);
-    return CompressedKlassPointers::decode(Atomic::load_acquire(xaddr));
+    narrowKlass nklass = Atomic::load_acquire(&_metadata._compressed_klass);
+    return CompressedKlassPointers::decode(nklass);
   } else {
     return Atomic::load_acquire(&_metadata._klass);
   }
