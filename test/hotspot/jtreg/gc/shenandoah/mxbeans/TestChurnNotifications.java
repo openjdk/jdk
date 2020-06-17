@@ -91,7 +91,7 @@ import com.sun.management.GarbageCollectionNotificationInfo;
 public class TestChurnNotifications {
 
     static final long HEAP_MB = 128;                           // adjust for test configuration above
-    static final long TARGET_MB = Long.getLong("target", 8_000); // 8 Gb allocation
+    static final long TARGET_MB = Long.getLong("target", 2_000); // 2 Gb allocation
 
     // Should we track the churn precisely?
     // Precise tracking is only reliable when GC is fully stop-the-world. Otherwise,
