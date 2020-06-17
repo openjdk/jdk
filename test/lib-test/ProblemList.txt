@@ -21,18 +21,20 @@
 # questions.
 #
 
-# This file identifies the root of the test-suite hierarchy.
-# It also contains test-suite configuration information.
+#############################################################################
+#
+# List of quarantined tests -- tests that should not be run by default, because
+# they may fail due to known reason. The reason (CR#) must be mandatory specified.
+#
+# List items are testnames followed by labels, all MUST BE commented
+#   as to why they are here and use a label:
+#     generic-all   Problems on all platforms
+#     generic-ARCH  Where ARCH is one of: x64, i586, ppc64, ppc64le, s390x etc.
+#     OSNAME-all    Where OSNAME is one of: linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. macosx-x64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. macosx-10.7.4
+#
+# More than one label is allowed but must be on the same line.
+#
+#############################################################################
 
-# The list of keywords supported in this test suite
-# randomness:           test uses randomness, test cases differ from run to run
-keys=randomness
-
-# Minimum jtreg version
-requiredVersion=5.1 b1
-
-# Path to libraries in the topmost test directory. This is needed so @library
-# does not need ../../ notation to reach them
-external.lib.roots = ../../
-
-groups=TEST.groups

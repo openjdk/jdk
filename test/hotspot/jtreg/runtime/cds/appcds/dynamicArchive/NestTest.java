@@ -67,7 +67,7 @@ public class NestTest extends DynamicArchiveTestBase {
             "-Xlog:class+load=debug,class+resolve=debug,class+unload=info",
             "-cp", appJar, mainClass, "run")
             .assertNormalExit(output -> {
-                output.shouldMatch(".class.load.* NestApp[$]InnerA[$]InnerInnerA[$][$]Lambda[$]1/0x.*source:.*shared.*objects.*file.*(top)")
+                output.shouldMatch(".class.load.* NestApp[$]InnerA[$]InnerInnerA[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file.*(top)")
                       .shouldHaveExitValue(0);
             });
     }

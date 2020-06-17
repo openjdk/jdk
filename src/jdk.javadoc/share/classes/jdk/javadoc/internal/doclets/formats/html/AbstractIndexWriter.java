@@ -159,6 +159,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                 break;
             case CLASS:
             case ENUM:
+            case RECORD:
             case ANNOTATION_TYPE:
             case INTERFACE:
                 dt = HtmlTree.DT(getLink(new LinkInfoImpl(configuration,
