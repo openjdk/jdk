@@ -132,11 +132,13 @@ public class CodeCache {
     }
     if (result == null) return null;
     if (Assert.ASSERTS_ENABLED) {
-      // The HeapBlock that contains this blob is outside of the blob
-      // but it shouldn't be an error to find a blob based on the
-      // pointer to the HeapBlock.
-      Assert.that(result.blobContains(start) || result.blobContains(start.addOffsetTo(8)),
-                                                                    "found wrong CodeBlob");
+      // The pointer to the HeapBlock that contains this blob is outside of the blob,
+      // but it shouldn't be an error to find a blob based on the pointer to the HeapBlock.
+      // The heap block header is padded out to an 8-byte boundary. See heap.hpp. The
+      // simplest way to compute the header size is just 2 * addressSize.
+      Assert.that(result.blobContains(start) ||
+                  result.blobContains(start.addOffsetTo(2 * VM.getVM().getAddressSize())),
+                  "found wrong CodeBlob");
     }
     return result;
   }
