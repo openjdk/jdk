@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ public class TCKLocalizedPrinterParser {
     @Test(dataProvider="time")
     public void test_time_print(LocalTime time, FormatStyle timeStyle, int timeStyleOld, Locale locale) {
         DateFormat old = DateFormat.getTimeInstance(timeStyleOld, locale);
-        Date oldDate = new Date(1970, 0, 0, time.getHour(), time.getMinute(), time.getSecond());
+        Date oldDate = new Date(1970 - 1900, 0, 0, time.getHour(), time.getMinute(), time.getSecond());
         String text = old.format(oldDate);
 
         DateTimeFormatter f = builder.appendLocalized(null, timeStyle).toFormatter(locale);
@@ -192,7 +192,7 @@ public class TCKLocalizedPrinterParser {
     @Test(dataProvider="time")
     public void test_time_parse(LocalTime time, FormatStyle timeStyle, int timeStyleOld, Locale locale) {
         DateFormat old = DateFormat.getTimeInstance(timeStyleOld, locale);
-        Date oldDate = new Date(1970, 0, 0, time.getHour(), time.getMinute(), time.getSecond());
+        Date oldDate = new Date(1970 - 1900, 0, 0, time.getHour(), time.getMinute(), time.getSecond());
         String text = old.format(oldDate);
 
         DateTimeFormatter f = builder.appendLocalized(null, timeStyle).toFormatter(locale);
