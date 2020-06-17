@@ -107,6 +107,7 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup$ClassOption outerClass java/lang/invoke/MethodHandles$Lookup innerClassName ClassOption flags 4019
 innerclass innerClass java/lang/invoke/VarHandle$AccessMode outerClass java/lang/invoke/VarHandle innerClassName AccessMode flags 4019
 method name defineHiddenClass descriptor ([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/invoke/MethodHandles$Lookup; thrownTypes java/lang/IllegalAccessException flags 81
+method name ensureInitialized descriptor (Ljava/lang/Class;)Ljava/lang/Class; thrownTypes java/lang/IllegalAccessException flags 1 signature (Ljava/lang/Class<*>;)Ljava/lang/Class<*>;
 
 class name java/lang/invoke/MethodHandles$Lookup$ClassOption
 header extends java/lang/Enum nestHost java/lang/invoke/MethodHandles flags 4031 signature Ljava/lang/Enum<Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;>;

@@ -27,5 +27,11 @@
 # ##########################################################
 #
 class name jdk/net/ExtendedSocketOptions
+header extends java/lang/Object flags 31
+-field name SO_FLOW_SLA descriptor Ljava/net/SocketOption;
 field name SO_INCOMING_NAPI_ID descriptor Ljava/net/SocketOption; flags 19 signature Ljava/net/SocketOption<Ljava/lang/Integer;>;
+
+-class name jdk/net/SocketFlow
+
+-class name jdk/net/SocketFlow$Status
 
