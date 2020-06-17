@@ -46,6 +46,7 @@ private:
   BinaryMagnitudeSeq _delays;
   TruncatedSeq* _progress_history;
   Monitor* _wait_monitor;
+  ShenandoahSharedFlag _need_notify_waiters;
 
   // Set once per phase
   volatile intptr_t _epoch;
@@ -89,6 +90,8 @@ public:
   void pace_for_alloc(size_t words);
   void unpace_for_alloc(intptr_t epoch, size_t words);
 
+  void notify_waiters();
+
   intptr_t epoch();
 
   void print_on(outputStream* out) const;
@@ -97,12 +100,12 @@ private:
   inline void report_internal(size_t words);
   inline void report_progress_internal(size_t words);
 
+  inline void add_budget(size_t words);
   void restart_with(size_t non_taxable_bytes, double tax_rate);
 
   size_t update_and_get_progress_history();
 
   void wait(size_t time_ms);
-  void notify_waiters();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPACER_HPP

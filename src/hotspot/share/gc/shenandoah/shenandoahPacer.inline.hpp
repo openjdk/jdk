@@ -47,21 +47,26 @@ inline void ShenandoahPacer::report_alloc(size_t words) {
 
 inline void ShenandoahPacer::report_internal(size_t words) {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
-  STATIC_ASSERT(sizeof(size_t) <= sizeof(intptr_t));
-  intptr_t inc = (intptr_t) words;
-  intptr_t new_budget = Atomic::add(&_budget, inc);
-
-  // Was the budget replenished beyond zero? Then all pacing claims
-  // are satisfied, notify the waiters.
-  if (new_budget >= 0 && (new_budget - inc) < 0) {
-    notify_waiters();
-  }
+  add_budget(words);
 }
 
 inline void ShenandoahPacer::report_progress_internal(size_t words) {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
   STATIC_ASSERT(sizeof(size_t) <= sizeof(intptr_t));
   Atomic::add(&_progress, (intptr_t)words);
+}
+
+inline void ShenandoahPacer::add_budget(size_t words) {
+  STATIC_ASSERT(sizeof(size_t) <= sizeof(intptr_t));
+  intptr_t inc = (intptr_t) words;
+  intptr_t new_budget = Atomic::add(&_budget, inc);
+
+  // Was the budget replenished beyond zero? Then all pacing claims
+  // are satisfied, notify the waiters. Avoid taking any locks here,
+  // as it can be called from hot paths and/or while holding other locks.
+  if (new_budget >= 0 && (new_budget - inc) < 0) {
+    _need_notify_waiters.try_set();
+  }
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPACER_INLINE_HPP
