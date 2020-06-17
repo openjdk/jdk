@@ -447,9 +447,18 @@ public final class StringConcatFactory {
      */
     private static MethodHandle generateMHInlineCopy(MethodType mt, List<String> elements) {
 
-        // Fast-path two-argument Object + Object concatenations
+        // Fast-path unary concatenations
+        if (elements.size() == 1) {
+            String s0 = elements.get(0);
+            if (s0 == null) {
+                return unaryConcat(mt.parameterType(0));
+            } else {
+                return MethodHandles.insertArguments(unaryConcat(Object.class), 0, s0);
+            }
+        }
+        // Fast-path binary concatenations
         if (elements.size() == 2) {
-            // Two object arguments
+            // Two arguments
             String s0 = elements.get(0);
             String s1 = elements.get(1);
 
@@ -459,20 +468,22 @@ public final class StringConcatFactory {
                     s0 == null &&
                     s1 == null) {
                 return simpleConcat();
-            } else if (mt.parameterCount() == 1 &&
-                    !mt.parameterType(0).isPrimitive()) {
-
-                // One Object argument, one constant
-                MethodHandle mh = simpleConcat();
-
-                if (s0 != null && s1 == null) {
-                    // First recipe element is a constant
-                    return MethodHandles.insertArguments(mh, 0, s0);
-
-                } else if (s1 != null && s0 == null) {
-                    // Second recipe element is a constant
-                    return MethodHandles.insertArguments(mh, 1, s1);
-
+            } else if (mt.parameterCount() == 1) {
+                // One argument, one constant
+                String constant;
+                int constIdx;
+                if (s1 == null) {
+                    constant = s0;
+                    constIdx = 0;
+                } else {
+                    constant = s1;
+                    constIdx = 1;
+                }
+                if (constant.isEmpty()) {
+                    return unaryConcat(mt.parameterType(0));
+                } else if (!mt.parameterType(0).isPrimitive()) {
+                    // Non-primitive argument
+                    return MethodHandles.insertArguments(simpleConcat(), constIdx, constant);
                 }
             }
             // else... fall-through to slow-path
@@ -730,6 +741,76 @@ public final class StringConcatFactory {
                     lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, double.class);
         }
         return mh;
+    }
+
+    private @Stable static MethodHandle INT_STRINGIFIER;
+    private static MethodHandle intStringifier() {
+        MethodHandle mh = INT_STRINGIFIER;
+        if (mh == null) {
+            INT_STRINGIFIER = mh =
+                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, int.class);
+        }
+        return mh;
+    }
+
+    private @Stable static MethodHandle LONG_STRINGIFIER;
+    private static MethodHandle longStringifier() {
+        MethodHandle mh = LONG_STRINGIFIER;
+        if (mh == null) {
+            LONG_STRINGIFIER = mh =
+                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, long.class);
+        }
+        return mh;
+    }
+
+    private @Stable static MethodHandle CHAR_STRINGIFIER;
+    private static MethodHandle charStringifier() {
+        MethodHandle mh = CHAR_STRINGIFIER;
+        if (mh == null) {
+            CHAR_STRINGIFIER = mh =
+                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, char.class);
+        }
+        return mh;
+    }
+
+    private @Stable static MethodHandle BOOLEAN_STRINGIFIER;
+    private static MethodHandle booleanStringifier() {
+        MethodHandle mh = BOOLEAN_STRINGIFIER;
+        if (mh == null) {
+            BOOLEAN_STRINGIFIER = mh =
+                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, boolean.class);
+        }
+        return mh;
+    }
+
+    private @Stable static MethodHandle NEW_STRINGIFIER;
+    private static MethodHandle newStringifier() {
+        MethodHandle mh = NEW_STRINGIFIER;
+        if (mh == null) {
+            NEW_STRINGIFIER = mh = JLA.stringConcatHelper("newStringOf",
+                    methodType(String.class, Object.class));
+        }
+        return mh;
+    }
+
+    private static MethodHandle unaryConcat(Class<?> cl) {
+        if (!cl.isPrimitive()) {
+            return newStringifier();
+        } else if (cl == int.class || cl == short.class || cl == byte.class) {
+            return intStringifier();
+        } else if (cl == long.class) {
+            return longStringifier();
+        } else if (cl == char.class) {
+            return charStringifier();
+        } else if (cl == boolean.class) {
+            return booleanStringifier();
+        } else if (cl == float.class) {
+            return floatStringifier();
+        } else if (cl == double.class) {
+            return doubleStringifier();
+        } else {
+            throw new InternalError("Unhandled type for unary concatenation: " + cl);
+        }
     }
 
     private static final ConcurrentMap<Class<?>, MethodHandle> PREPENDERS;

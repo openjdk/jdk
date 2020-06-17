@@ -427,6 +427,22 @@ final class StringConcatHelper {
     }
 
     /**
+     * Produce a String from a concatenation of single argument, which we
+     * end up using for trivial concatenations like {@code "" + arg}.
+     *
+     * This will always create a new Object to comply with JLS 15.18.1:
+     * "The String object is newly created unless the expression is a
+     * compile-time constant expression".
+     *
+     * @param arg           the only argument
+     * @return String       resulting string
+     */
+    @ForceInline
+    static String newStringOf(Object arg) {
+        return new String(stringOf(arg));
+    }
+
+    /**
      * We need some additional conversion for Objects in general, because
      * {@code String.valueOf(Object)} may return null. String conversion rules
      * in Java state we need to produce "null" String in this case, so we
