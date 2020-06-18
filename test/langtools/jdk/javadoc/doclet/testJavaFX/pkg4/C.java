@@ -28,7 +28,7 @@ public class C {
     /**
      * Defines the number of cycles in this animation. The {@code cycleCount}
      * may be {@code INDEFINITE} for animations that repeat indefinitely.
-     * Now we add a > to deliberately cause an Html error.
+     * Now we add <> to deliberately cause an Html error.
      * @defaultValue 11
      * @since JavaFX 8.0
      */
