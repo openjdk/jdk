@@ -166,6 +166,8 @@ public class ShortcutHintTest {
                             "Exec=APPLICATION_LAUNCHER",
                             "Terminal=false",
                             "Type=Application",
+                            "Comment=",
+                            "Icon=APPLICATION_ICON",
                             "Categories=DEPLOY_BUNDLE_CATEGORY",
                             expectedVersionString
                     ));

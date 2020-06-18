@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -332,6 +333,73 @@ public class LinuxHelper {
                 }
             });
         });
+
+        test.addInstallVerifier(cmd -> {
+            // Verify .desktop files.
+            try (var files = Files.walk(cmd.appLayout().destktopIntegrationDirectory(), 1)) {
+                List<Path> desktopFiles = files
+                        .filter(path -> path.getFileName().toString().endsWith(".desktop"))
+                        .collect(Collectors.toList());
+                if (!integrated) {
+                    TKit.assertStringListEquals(List.of(),
+                            desktopFiles.stream().map(Path::toString).collect(
+                                    Collectors.toList()),
+                            "Check there are no .desktop files in the package");
+                }
+                for (var desktopFile : desktopFiles) {
+                    verifyDesktopFile(cmd, desktopFile);
+                }
+            }
+        });
+    }
+
+    private static void verifyDesktopFile(JPackageCommand cmd, Path desktopFile)
+            throws IOException {
+        TKit.trace(String.format("Check [%s] file BEGIN", desktopFile));
+        List<String> lines = Files.readAllLines(desktopFile);
+        TKit.assertEquals("[Desktop Entry]", lines.get(0), "Check file header");
+
+        Map<String, String> data = lines.stream()
+        .skip(1)
+        .peek(str -> TKit.assertTextStream("=").predicate(String::contains).apply(Stream.of(str)))
+        .map(str -> {
+            String components[] = str.split("=(?=.+)");
+            if (components.length == 1) {
+                return Map.entry(str.substring(0, str.length() - 1), "");
+            }
+            return Map.entry(components[0], components[1]);
+        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> {
+            TKit.assertUnexpected("Multiple values of the same key");
+            return null;
+        }));
+
+        final Set<String> mandatoryKeys = new HashSet(Set.of("Name", "Comment",
+                "Exec", "Icon", "Terminal", "Type", "Categories"));
+        mandatoryKeys.removeAll(data.keySet());
+        TKit.assertTrue(mandatoryKeys.isEmpty(), String.format(
+                "Check for missing %s keys in the file", mandatoryKeys));
+
+        for (var e : Map.of("Type", "Application", "Terminal", "false").entrySet()) {
+            String key = e.getKey();
+            TKit.assertEquals(e.getValue(), data.get(key), String.format(
+                    "Check value of [%s] key", key));
+        }
+
+        // Verify value of `Exec` property in .desktop files are escaped if required
+        String launcherPath = data.get("Exec");
+        if (Pattern.compile("\\s").matcher(launcherPath).find()) {
+            TKit.assertTrue(launcherPath.startsWith("\"")
+                    && launcherPath.endsWith("\""),
+                    "Check path to the launcher is enclosed in double quotes");
+            launcherPath = launcherPath.substring(1, launcherPath.length() - 1);
+        }
+
+        Stream.of(launcherPath, data.get("Icon"))
+                .map(Path::of)
+                .map(cmd::pathToUnpackedPackageFile)
+                .forEach(TKit::assertFileExists);
+
+        TKit.trace(String.format("Check [%s] file END", desktopFile));
     }
 
     static void initFileAssociationsTestFile(Path testFile) {

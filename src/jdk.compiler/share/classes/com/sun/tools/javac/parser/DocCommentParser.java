@@ -221,17 +221,6 @@ public class DocCommentParser {
                     }
                     break;
 
-                case '>':
-                    newline = false;
-                    addPendingText(trees, bp - 1);
-                    trees.add(m.at(bp).newErroneousTree(newString(bp, bp + 1), diagSource, "dc.bad.gt"));
-                    nextChar();
-                    if (textStart == -1) {
-                        textStart = bp;
-                        lastNonWhite = -1;
-                    }
-                    break;
-
                 case '{':
                     inlineTag(trees);
                     break;

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8008949 8234051
+ * @bug 8008949 8234051 8245696
  * @summary doclet crashes if HTML files in module doc-files directories
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -33,6 +33,8 @@
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import toolbox.ToolBox;
 import javadoc.tester.JavadocTester;
@@ -133,5 +135,44 @@ public class TestDocFiles extends JavadocTester {
                 "package text file");
         checkOutput("m/p/doc-files/pkg-file.html", true,
                 "Package HTML file");
+    }
+
+    @Test
+    public void testBadFiles(Path  base) throws IOException {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                "package p; public class C { }");
+        Path df = src.resolve("p").resolve("doc-files");
+
+        // note that '?' may be an illegal filename character on some systems (e.g. Windows)
+        List<String> cases = List.of("valid", "#bad#", "#bad", "bad#bad", "bad?bad");
+        List<Path> files = new ArrayList<>();
+        for (String s : cases) {
+            try {
+                Path f = df.resolve(s);
+                tb.writeFile(f, "dummy contents");
+                files.add(f);
+            } catch (Throwable t) {
+                out.println("Cannot write doc-file " + s);
+            }
+        }
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        // only check for those files
+        for (Path f : files) {
+            if (f.getFileName().toString().contains("valid")) {
+                checkOutput("p/doc-files/" + f.getFileName(), true,
+                        "dummy contents");
+            } else {
+                // be careful handing file separator characters in the message
+                checkOutput(Output.OUT, true,
+                        "warning - File " + f + " not copied: invalid name");
+            }
+        }
     }
 }

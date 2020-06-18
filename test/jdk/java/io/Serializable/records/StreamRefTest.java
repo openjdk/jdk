@@ -30,12 +30,12 @@
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static org.testng.Assert.assertEquals;
@@ -116,13 +116,12 @@ public class StreamRefTest {
     public void basicRefWithInvalidA() throws Exception {
         out.println("\n---");
         var a = new A(3);
-        Field f = A.class.getDeclaredField("x");
-        f.setAccessible(true);
-        f.set(a, -3);  // a "bad" value
         var b = new B(a);
-        assert a.x() == -3;
 
-        var byteStream = serialize(a, b);
+        var bytes = serializeToBytes(a, b);
+        // injects a bad (negative) value for field x (of record A), in the stream
+        updateIntValue(3, -3, bytes, 40);
+        var byteStream = new ObjectInputStream(new ByteArrayInputStream(bytes));
 
         InvalidObjectException ioe = expectThrows(IOE, () -> deserializeOne(byteStream));
         out.println("caught expected IOE: " + ioe);
@@ -138,13 +137,12 @@ public class StreamRefTest {
     public void reverseBasicRefWithInvalidA() throws Exception {
         out.println("\n---");
         var a = new A(3);
-        Field f = A.class.getDeclaredField("x");
-        f.setAccessible(true);
-        f.set(a, -3);  // a "bad" value
         var b = new B(a);
-        assert a.x() == -3;
 
-        var byteStream = serialize(b, a);
+        var bytes = serializeToBytes(b, a);
+        // injects a bad (negative) value for field x (of record A), in the stream
+        updateIntValue(3, -3, bytes, 96);
+        var byteStream = new ObjectInputStream(new ByteArrayInputStream(bytes));
 
         InvalidObjectException ioe = expectThrows(IOE, () -> deserializeOne(byteStream));
         out.println("caught expected IOE: " + ioe);
@@ -209,14 +207,35 @@ public class StreamRefTest {
 
     // ---
 
+    static void assertExpectedIntValue(int expectedValue, byte[] bytes, int offset)
+        throws IOException {
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes, offset, 4);
+        DataInputStream dis = new DataInputStream(bais);
+        assertEquals(dis.readInt(), expectedValue);
+    }
+
+    static void updateIntValue(int expectedValue, int newValue, byte[] bytes, int offset)
+        throws IOException
+    {
+        assertExpectedIntValue(expectedValue, bytes, offset);
+        bytes[offset + 0] = (byte)((newValue >>> 24) & 0xFF);
+        bytes[offset + 1] = (byte)((newValue >>> 16) & 0xFF);
+        bytes[offset + 2] = (byte)((newValue >>>  8) & 0xFF);
+        bytes[offset + 3] = (byte)((newValue >>>  0) & 0xFF);
+        assertExpectedIntValue(newValue, bytes, offset);
+    }
+
     static ObjectInputStream serialize(Object... objs) throws IOException {
+        return new ObjectInputStream(new ByteArrayInputStream(serializeToBytes(objs)));
+    }
+
+    static byte[] serializeToBytes(Object... objs) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         for (Object obj : objs)
             oos.writeObject(obj);
         oos.close();
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        return new ObjectInputStream(bais);
+        return baos.toByteArray();
     }
 
     @SuppressWarnings("unchecked")
