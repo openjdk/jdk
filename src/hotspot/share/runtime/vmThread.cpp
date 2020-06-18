@@ -447,13 +447,6 @@ void VMThread::loop() {
       assert(_cur_vm_operation == NULL, "no current one should be executing");
       _cur_vm_operation = _vm_queue->remove_next();
 
-      // Stall time tracking code
-      if (PrintVMQWaitTime && _cur_vm_operation != NULL) {
-        jlong stall = nanos_to_millis(os::javaTimeNanos() - _cur_vm_operation->timestamp());
-        if (stall > 0)
-          tty->print_cr("%s stall: " JLONG_FORMAT,  _cur_vm_operation->name(), stall);
-      }
-
       while (!should_terminate() && _cur_vm_operation == NULL) {
         // wait with a timeout to guarantee safepoints at regular intervals
         // (if there is cleanup work to do)
@@ -643,7 +636,6 @@ void VMThread::execute(VM_Operation* op) {
       MonitorLocker ml(VMOperationQueue_lock, Mutex::_no_safepoint_check_flag);
       log_debug(vmthread)("Adding VM operation: %s", op->name());
       _vm_queue->add(op);
-      op->set_timestamp(os::javaTimeNanos());
       ml.notify();
     }
     {
