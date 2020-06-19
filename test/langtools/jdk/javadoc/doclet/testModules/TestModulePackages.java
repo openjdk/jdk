@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178070 8196201 8184205 8246429
+ * @bug 8178070 8196201 8184205 8246429 8198705
  * @summary Test packages table in module summary pages
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -167,6 +167,14 @@ public class TestModulePackages extends JavadocTester {
                     <div class="sub-title"><span class="module-label-in-type">Module</span>&nbsp;<a href="../module-summary.html">o</a></div>
                     <div class="sub-title"><span class="package-label-in-type">Package</span>&nbsp;<a href="package-summary.html">p</a></div>
                     """);
+        checkOutput("type-search-index.js", true,
+                """
+                     {"p":"p","m":"m","l":"C"},{"p":"p","m":"o","l":"C"}""");
+        checkOutput("member-search-index.js", true,
+                """
+                     {"m":"m","p":"p","c":"C","l":"C()","u":"%3Cinit%3E()"}""",
+                """
+                     {"m":"o","p":"p","c":"C","l":"C()","u":"%3Cinit%3E()"}""");
     }
 
     @Test
