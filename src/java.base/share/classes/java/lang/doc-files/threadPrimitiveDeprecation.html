@@ -282,7 +282,7 @@ The resulting <code>run</code> method is:
         }
     }
 </pre>
-<hr size="3" noshade="noshade" />
+<hr>
 <h2>Can I combine the two techniques to produce a thread that may
 be safely "stopped" or "suspended"?</h2>
 Yes, it's reasonably straightforward. The one subtlety is that the
@@ -324,6 +324,5 @@ If the <code>stop</code> method calls <code>Thread.interrupt</code>, as
 described above, it needn't call <code>notify</code> as well, but it
 still must be synchronized. This ensures that the target thread
 won't miss an interrupt due to a race condition.
-<p><!-- Body text ends here --></p>
 </body>
 </html>
