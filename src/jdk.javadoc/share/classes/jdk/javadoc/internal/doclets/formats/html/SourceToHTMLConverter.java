@@ -235,7 +235,7 @@ public class SourceToHTMLConverter {
      * @param path the path for the file.
      */
     private void writeToFile(Content body, DocPath path, TypeElement te) throws DocFileIOException {
-        Head head = new Head(path, configuration.docletVersion, configuration.startTime)
+        Head head = new Head(path, configuration.getDocletVersionString(), configuration.startTime)
 //                .setTimestamp(!options.notimestamp) // temporary: compatibility!
                 .setTitle(resources.getText("doclet.Window_Source_title"))
 //                .setCharset(options.charset) // temporary: compatibility!
