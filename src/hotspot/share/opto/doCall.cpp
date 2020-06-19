@@ -65,7 +65,7 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
 CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool call_does_dispatch,
                                        JVMState* jvms, bool allow_inline,
                                        float prof_factor, ciKlass* speculative_receiver_type,
-                                       bool allow_intrinsics, bool delayed_forbidden) {
+                                       bool allow_intrinsics) {
   ciMethod*       caller   = jvms->method();
   int             bci      = jvms->bci();
   Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
@@ -145,8 +145,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // MethodHandle.invoke* are native methods which obviously don't
   // have bytecodes and so normal inlining fails.
   if (callee->is_method_handle_intrinsic()) {
-    CallGenerator* cg = CallGenerator::for_method_handle_call(jvms, caller, callee, delayed_forbidden);
-    assert(cg == NULL || !delayed_forbidden || !cg->is_late_inline() || cg->is_mh_late_inline(), "unexpected CallGenerator");
+    CallGenerator* cg = CallGenerator::for_method_handle_call(jvms, caller, callee);
     return cg;
   }
 
@@ -182,12 +181,10 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           // opportunity to perform some high level optimizations
           // first.
           if (should_delay_string_inlining(callee, jvms)) {
-            assert(!delayed_forbidden, "strange");
             return CallGenerator::for_string_late_inline(callee, cg);
           } else if (should_delay_boxing_inlining(callee, jvms)) {
-            assert(!delayed_forbidden, "strange");
             return CallGenerator::for_boxing_late_inline(callee, cg);
-          } else if ((should_delay || AlwaysIncrementalInline) && !delayed_forbidden) {
+          } else if ((should_delay || AlwaysIncrementalInline)) {
             return CallGenerator::for_late_inline(callee, cg);
           }
         }
