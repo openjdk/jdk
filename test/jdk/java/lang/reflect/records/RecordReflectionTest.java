@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8235369 8235550
+ * @bug 8235369 8235550 8247444
  * @summary reflection test for records
  * @compile --enable-preview -source ${jdk.version} RecordReflectionTest.java
  * @run testng/othervm --enable-preview RecordReflectionTest
@@ -187,4 +187,19 @@ public class RecordReflectionTest {
         assertEquals(f.getAnnotatedType().getAnnotations().length, 1);
         assertEquals(f.getAnnotatedType().getAnnotations()[0].toString(), annos[0].toString());
     }
+
+    public void testReadOnlyFieldInRecord() throws Throwable {
+        R2 o = new R2(1, 2);
+        Class<?> recordClass = R2.class;
+        String fieldName = "i";
+        Field f = recordClass.getDeclaredField(fieldName);
+        assertTrue(f.trySetAccessible());
+        assertTrue(f.get(o) != null);
+        try {
+            f.set(o, null);
+            assertTrue(false, "should fail to set " + fieldName);
+        } catch (IllegalAccessException e) {
+        }
+    }
+
 }

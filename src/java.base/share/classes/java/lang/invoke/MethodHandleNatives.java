@@ -118,6 +118,7 @@ class MethodHandleNatives {
             MN_IS_FIELD            = 0x00040000, // field
             MN_IS_TYPE             = 0x00080000, // nested type
             MN_CALLER_SENSITIVE    = 0x00100000, // @CallerSensitive annotation detected
+            MN_TRUSTED_FINAL       = 0x00200000, // trusted final field
             MN_REFERENCE_KIND_SHIFT = 24, // refKind
             MN_REFERENCE_KIND_MASK = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
             // The SEARCH_* bits are not for MN.flags but for the matchFlags argument of MHN.getMembers:
