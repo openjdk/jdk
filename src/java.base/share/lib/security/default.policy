@@ -79,6 +79,8 @@ grant codeBase "jrt:/java.sql.rowset" {
 
 grant codeBase "jrt:/java.xml.crypto" {
     permission java.lang.RuntimePermission
+                   "getStackWalkerWithClassReference";
+    permission java.lang.RuntimePermission
                    "accessClassInPackage.sun.security.util";
     permission java.util.PropertyPermission "*", "read";
     permission java.security.SecurityPermission "putProviderProperty.XMLDSig";
