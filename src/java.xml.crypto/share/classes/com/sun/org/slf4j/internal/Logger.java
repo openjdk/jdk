@@ -103,14 +103,14 @@ public class Logger {
         }
     }
 
-    public void log0(Level level, String s, Throwable e) {
+    private void log0(Level level, String s, Throwable e) {
         if (impl.isLoggable(level)) {
             var sf = WALKER.walk(f -> f.skip(2).findFirst()).get();
             impl.logp(Level.FINE, sf.getClassName(), sf.getMethodName(), s, e);
         }
     }
 
-    public void log0(Level level, String s, Object... o) {
+    private void log0(Level level, String s, Object... o) {
         if (impl.isLoggable(level)) {
             var sf = WALKER.walk(f -> f.skip(2).findFirst()).get();
             impl.logp(Level.FINE, sf.getClassName(), sf.getMethodName(),
