@@ -112,7 +112,7 @@ public class PipedWriter extends Writer {
      * Implements the {@code write} method of {@code Writer}.
      *
      * @param   c   the {@code char} to be written.
-     * @throw   IOException  if the pipe is
+     * @throws  IOException  if the pipe is
      *          <a href=PipedOutputStream.html#BROKEN> {@code broken}</a>,
      *          {@link #connect(java.io.PipedReader) unconnected}, closed
      *          or an I/O error occurs.

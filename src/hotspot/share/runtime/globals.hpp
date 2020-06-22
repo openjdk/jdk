@@ -614,7 +614,7 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, OmitStackTraceInFastThrow, true,                            \
           "Omit backtraces for some 'hot' exceptions in optimized code")    \
                                                                             \
-  manageable(bool, ShowCodeDetailsInExceptionMessages, false,               \
+  manageable(bool, ShowCodeDetailsInExceptionMessages, true,                \
           "Show exception messages from RuntimeExceptions that contain "    \
           "snippets of the failing code. Disable this to improve privacy.") \
                                                                             \

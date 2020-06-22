@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,6 +51,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
 
 import jdk.internal.shellsupport.doc.JavadocFormatter;
 import jdk.internal.jshell.tool.StopDetectingInputStream.State;
@@ -974,6 +978,15 @@ class ConsoleIOContext extends IOContext {
         int pendingBraces = 0;
         com.sun.tools.javac.util.Context ctx =
                 new com.sun.tools.javac.util.Context();
+        SimpleJavaFileObject source = new SimpleJavaFileObject(URI.create("mem://snippet"),
+                                                               JavaFileObject.Kind.SOURCE) {
+            @Override
+            public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+                return code;
+            }
+        };
+        ctx.put(DiagnosticListener.class, d -> {});
+        com.sun.tools.javac.util.Log.instance(ctx).useSource(source);
         com.sun.tools.javac.parser.ScannerFactory scannerFactory =
                 com.sun.tools.javac.parser.ScannerFactory.instance(ctx);
         com.sun.tools.javac.parser.Scanner scanner =

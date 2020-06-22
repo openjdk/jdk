@@ -231,6 +231,9 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   // Trust final fields in all boxed classes
   if (holder->is_box_klass())
     return true;
+  // Trust final fields in records
+  if (holder->is_record())
+    return true;
   // Trust final fields in String
   if (holder->name() == ciSymbol::java_lang_String())
     return true;

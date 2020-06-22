@@ -148,6 +148,9 @@ public class SearchIndexItem {
                 if (!containingPackage.isEmpty()) {
                     item.append("\"p\":\"").append(containingPackage).append("\",");
                 }
+                if (!containingModule.isEmpty()) {
+                    item.append("\"m\":\"").append(containingModule).append("\",");
+                }
                 item.append("\"l\":\"").append(label).append("\"");
                 if (!url.isEmpty()) {
                     item.append(",\"u\":\"").append(url).append("\"");
@@ -155,8 +158,11 @@ public class SearchIndexItem {
                 item.append("}");
                 break;
             case MEMBERS:
-                item.append("{")
-                        .append("\"p\":\"").append(containingPackage).append("\",")
+                item.append("{");
+                if (!containingModule.isEmpty()) {
+                    item.append("\"m\":\"").append(containingModule).append("\",");
+                }
+                item.append("\"p\":\"").append(containingPackage).append("\",")
                         .append("\"c\":\"").append(containingClass).append("\",")
                         .append("\"l\":\"").append(label).append("\"");
                 if (!url.isEmpty()) {

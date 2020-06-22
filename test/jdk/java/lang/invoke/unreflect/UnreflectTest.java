@@ -23,9 +23,10 @@
 
 /**
  * @test
- * @compile src/Fields.java
- * @run testng/othervm UnreflectTest
- * @summary Test Lookup::unreflectSetter and Lookup::unreflectVarHandle
+ * @bug 8238358 8247444
+ * @run testng/othervm --enable-preview UnreflectTest
+ * @summary Test Lookup::unreflectSetter and Lookup::unreflectVarHandle on
+ *          trusted final fields (declared in hidden classes and records)
  */
 
 import java.io.IOException;
@@ -87,6 +88,24 @@ public class UnreflectTest {
         readWriteAccessibleObject(hiddenClass, "STATIC_NON_FINAL", null, false);
         readOnlyAccessibleObject(hiddenClass, "FINAL", o, true);
         readWriteAccessibleObject(hiddenClass, "NON_FINAL", o, false);
+    }
+
+    static record TestRecord(int i) {
+        static final Object STATIC_FINAL = new Object();
+        static Object STATIC_NON_FINAL = new Object();
+    }
+
+    /*
+     * Test Lookup::unreflectSetter and Lookup::unreflectVarHandle that
+     * cannot write the value of a non-static final field in a record class
+     */
+    @SuppressWarnings("preview")
+    public void testFieldsInRecordClass() throws Throwable {
+        assertTrue(TestRecord.class.isRecord());
+        Object o = new TestRecord(1);
+        readOnlyAccessibleObject(TestRecord.class, "STATIC_FINAL", null, true);
+        readWriteAccessibleObject(TestRecord.class, "STATIC_NON_FINAL", null, false);
+        readOnlyAccessibleObject(TestRecord.class, "i", o, true);
     }
 
     /*

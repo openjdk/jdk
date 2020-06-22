@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 
 /** Common utility routines used by both java.lang and
@@ -334,6 +335,14 @@ public class Reflection {
             return m.isAnnotationPresent(CallerSensitive.class);
         }
         return false;
+    }
+
+    /*
+     * Tests if the given Field is a trusted final field and it cannot be
+     * modified reflectively regardless of the value of its accessible flag.
+     */
+    public static boolean isTrustedFinalField(Field field) {
+        return SharedSecrets.getJavaLangReflectAccess().isTrustedFinalField(field);
     }
 
     /**

@@ -102,6 +102,8 @@ class fieldDescriptor {
   bool has_initialized_final_update() const { return access_flags().has_field_initialized_final_update(); }
   bool has_generic_signature()    const    { return access_flags().field_has_generic_signature(); }
 
+  bool is_trusted_final()         const;
+
   inline void set_is_field_access_watched(const bool value);
   inline void set_is_field_modification_watched(const bool value);
   inline void set_has_initialized_final_update(const bool value);

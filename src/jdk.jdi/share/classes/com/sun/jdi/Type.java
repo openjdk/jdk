@@ -152,7 +152,7 @@ public interface Type extends Mirror {
      * Returns the name of this type. The result is of the same form as
      * the name returned by {@link Class#getName()}.
      * The returned name may not be a
-     * <a href="${docRoot}/java.base/java/lang/ClassLoader.html#binary-name">binary name</a>.
+     * <a href="{@docRoot}/java.base/java/lang/ClassLoader.html#binary-name">binary name</a>.
      *
      * @return the name of this type
      */
