@@ -28,7 +28,7 @@ import java.util.concurrent.Callable;
 /**
  * @test
  * @summary Test input invariants for StringConcatFactory
- * @bug 8246152
+ * @bug 8246152 8247681
  *
  * @compile StringConcatFactoryInvariants.java
  *
@@ -46,6 +46,7 @@ public class StringConcatFactoryInvariants {
         MethodType mt = MethodType.methodType(String.class, String.class, int.class);
         String recipe = "" + TAG_ARG + TAG_ARG + TAG_CONST;
         Object[][] constants = new Object[][] {
+                new String[] { "" },
                 new String[] { "bar" },
                 new Integer[] { 1 },
                 new Short[] { 2 },
@@ -60,6 +61,7 @@ public class StringConcatFactoryInvariants {
         // The string representation that should end up if the corresponding
         // Object[] in constants is used as an argument to makeConcatWithConstants
         String[] constantString = new String[] {
+                "",
                 "bar",
                 "1",
                 "2",
@@ -113,6 +115,21 @@ public class StringConcatFactoryInvariants {
             for (int i = 0; i < constants.length; i++) {
                 CallSite cs = StringConcatFactory.makeConcatWithConstants(lookup, methodName, mt, recipe, constants[i]);
                 test("foo42".concat(constantString[i]), (String) cs.getTarget().invokeExact("foo", 42));
+            }
+        }
+
+        // Check unary expressions with pre- and postfix constants
+        {
+            String constArgRecipe = "" + TAG_CONST + TAG_ARG;
+            String argConstRecipe = "" + TAG_ARG + TAG_CONST;
+            MethodType unaryMt = MethodType.methodType(String.class, String.class);
+
+            for (int i = 0; i < constants.length; i++) {
+                CallSite prefixCS = StringConcatFactory.makeConcatWithConstants(lookup, methodName, unaryMt, constArgRecipe, constants[i]);
+                test(constantString[i].concat("foo"), (String) prefixCS.getTarget().invokeExact("foo"));
+
+                CallSite postfixCS = StringConcatFactory.makeConcatWithConstants(lookup, methodName, unaryMt, argConstRecipe, constants[i]);
+                test("foo".concat(constantString[i]), (String) postfixCS.getTarget().invokeExact("foo"));
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,9 +248,31 @@ public class TCKYear extends AbstractDateTimeTest {
     @DataProvider(name="goodParseData")
     Object[][] provider_goodParseData() {
         return new Object[][] {
-                {"0000", Year.of(0)},
                 {"9999", Year.of(9999)},
                 {"2000", Year.of(2000)},
+
+                {"0", Year.of(0)},
+                {"00", Year.of(0)},
+                {"000", Year.of(0)},
+                {"0000", Year.of(0)},
+                {"00000", Year.of(0)},
+                {"+00000", Year.of(0)},
+                {"-0", Year.of(0)},
+                {"-00", Year.of(0)},
+                {"-000", Year.of(0)},
+                {"-0000", Year.of(0)},
+                {"-00000", Year.of(0)},
+                {"1", Year.of(1)},
+                {"01", Year.of(1)},
+                {"001", Year.of(1)},
+                {"0001", Year.of(1)},
+                {"00001", Year.of(1)},
+                {"+00001", Year.of(1)},
+                {"-1", Year.of(-1)},
+                {"-01", Year.of(-1)},
+                {"-001", Year.of(-1)},
+                {"-0001", Year.of(-1)},
+                {"-00001", Year.of(-1)},
 
                 {"+12345678", Year.of(12345678)},
                 {"+123456", Year.of(123456)},
@@ -272,20 +294,18 @@ public class TCKYear extends AbstractDateTimeTest {
     Object[][] provider_badParseData() {
         return new Object[][] {
                 {"", 0},
-                {"-00", 1},
                 {"--01-0", 1},
                 {"A01", 0},
-                {"200", 0},
                 {"2009/12", 4},
 
-                {"-0000-10", 0},
-                {"-12345678901-10", 11},
-                {"+1-10", 1},
-                {"+12-10", 1},
-                {"+123-10", 1},
-                {"+1234-10", 0},
-                {"12345-10", 0},
-                {"+12345678901-10", 11},
+                {"-0000-10", 5},
+                {"-12345678901-10", 10},
+                {"+1-10", 2},
+                {"+12-10", 3},
+                {"+123-10", 4},
+                {"+1234-10", 5},
+                {"12345-10", 5},
+                {"+12345678901-10", 10},
         };
     }
 

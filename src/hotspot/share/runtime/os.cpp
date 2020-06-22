@@ -959,7 +959,7 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
 void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // cpu
   st->print("CPU:");
-  st->print("total %d", os::processor_count());
+  st->print(" total %d", os::processor_count());
   // It's not safe to query number of active processors after crash
   // st->print("(active %d)", os::active_processor_count()); but we can
   // print the initial number of active processors.
@@ -1157,6 +1157,9 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 
   if (accessible) {
     st->print(INTPTR_FORMAT " points into unknown readable memory:", p2i(addr));
+    if (is_aligned(addr, sizeof(intptr_t))) {
+      st->print(" " PTR_FORMAT " |", *(intptr_t*)addr);
+    }
     for (address p = addr; p < align_up(addr + 1, sizeof(intptr_t)); ++p) {
       st->print(" %02x", *(u1*)p);
     }

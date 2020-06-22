@@ -22,10 +22,12 @@
  */
 
 /* @test
+ * @bug 8238358 8247444
  * @summary Ensure that sun.misc.Unsafe::objectFieldOffset and staticFieldOffset
- *          throw UnsupportedOperationException on Field of a hidden class
+ *          throw UnsupportedOperationException on Field of a hidden or record class
  * @modules jdk.unsupported
- * @run main UnsafeFieldOffsets
+ * @compile --enable-preview -source ${jdk.version} UnsafeFieldOffsets.java
+ * @run testng/othervm --enable-preview UnsafeFieldOffsets
  */
 
 import sun.misc.Unsafe;
@@ -38,6 +40,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
+
 public class UnsafeFieldOffsets {
     static class Fields {
         static final Object STATIC_FINAL = new Object();
@@ -45,9 +50,14 @@ public class UnsafeFieldOffsets {
         final Object FINAL = new Object();
         Object NON_FINAL = new Object();
     }
+    record TestRecord(int i) {
+        static final Object STATIC_FINAL = new Object();
+        static Object STATIC_NON_FINAL = new Object();
+    }
 
     private static Unsafe UNSAFE = getUnsafe();
     private static final Class<?> HIDDEN_CLASS = defineHiddenClass();
+    private static final Class<?> RECORD_CLASS = TestRecord.class;
 
     private static Unsafe getUnsafe() {
         try {
@@ -65,7 +75,7 @@ public class UnsafeFieldOffsets {
         try {
             byte[] bytes = Files.readAllBytes(cf);
             Class<?> c = MethodHandles.lookup().defineHiddenClass(bytes, true).lookupClass();
-            assertHiddenClass(c);
+            assertTrue(c.isHidden());
             return c;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -74,13 +84,8 @@ public class UnsafeFieldOffsets {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        // non-hidden class
-        testStaticField(Fields.class, "STATIC_FINAL");
-        testStaticField(Fields.class, "STATIC_NON_FINAL");
-        testInstanceField(Fields.class, "FINAL");
-        testInstanceField(Fields.class, "NON_FINAL");
-
+    @Test
+    public void testNormalClass() throws Throwable {
         // hidden class
         testStaticField(HIDDEN_CLASS, "STATIC_FINAL");
         testStaticField(HIDDEN_CLASS, "STATIC_NON_FINAL");
@@ -88,13 +93,30 @@ public class UnsafeFieldOffsets {
         testInstanceField(HIDDEN_CLASS, "NON_FINAL");
     }
 
+    @Test
+    public void testHiddenClass() throws Throwable {
+        // hidden class
+        testStaticField(HIDDEN_CLASS, "STATIC_FINAL");
+        testStaticField(HIDDEN_CLASS, "STATIC_NON_FINAL");
+        testInstanceField(HIDDEN_CLASS, "FINAL");
+        testInstanceField(HIDDEN_CLASS, "NON_FINAL");
+    }
+
+    @Test
+    public void testRecordClass() throws Throwable {
+        // record class
+        testRecordStaticField(RECORD_CLASS, "STATIC_FINAL");
+        testRecordStaticField(RECORD_CLASS, "STATIC_NON_FINAL");
+        testRecordInstanceField(RECORD_CLASS, "i");
+    }
+
     private static void testStaticField(Class<?> c, String name) throws Exception {
         Field f = c.getDeclaredField(name);
         try {
             UNSAFE.staticFieldOffset(f);
-            assertNonHiddenClass(c);
+            assertFalse(c.isHidden(), "Expected UOE thrown: " + c);
         } catch (UnsupportedOperationException e) {
-            assertHiddenClass(c);
+            assertTrue(c.isHidden(), "Expected hidden class: " + c);
         }
     }
 
@@ -102,19 +124,31 @@ public class UnsafeFieldOffsets {
         Field f = c.getDeclaredField(name);
         try {
             UNSAFE.objectFieldOffset(f);
-            assertNonHiddenClass(c);
+            assertFalse(c.isHidden(), "Expected UOE thrown: " + c);
         } catch (UnsupportedOperationException e) {
-            assertHiddenClass(c);
+            assertTrue(c.isHidden(), "Expected hidden class: " + c);
         }
     }
 
-    private static void assertNonHiddenClass(Class<?> c) {
-        if (c.isHidden())
-            throw new RuntimeException("Expected UOE but not thrown: " + c);
+    @SuppressWarnings("preview")
+    private static void testRecordStaticField(Class<?> c, String name) throws Exception {
+        Field f = c.getDeclaredField(name);
+        try {
+            UNSAFE.staticFieldOffset(f);
+            assertFalse(c.isRecord(), "Expected UOE thrown: " + c);
+        } catch (UnsupportedOperationException e) {
+            assertTrue(c.isRecord(), "Expected record class: " + c);
+        }
     }
 
-    private static void assertHiddenClass(Class<?> c) {
-        if (!c.isHidden())
-            throw new RuntimeException("Expected hidden class but is not: " + c);
+    @SuppressWarnings("preview")
+    private static void testRecordInstanceField(Class<?> c, String name) throws Exception {
+        Field f = c.getDeclaredField(name);
+        try {
+            UNSAFE.objectFieldOffset(f);
+            assertFalse(c.isRecord(), "Expected UOE thrown: " + c);
+        } catch (UnsupportedOperationException e) {
+            assertTrue(c.isRecord(), "Expected record class: " + c);
+        }
     }
 }

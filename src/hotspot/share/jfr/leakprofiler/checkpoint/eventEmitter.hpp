@@ -51,6 +51,7 @@ class EventEmitter : public CHeapObj<mtTracing> {
 
   void write_event(const ObjectSample* sample, EdgeStore* edge_store);
   size_t write_events(ObjectSampler* sampler, EdgeStore* store, bool emit_all);
+  void link_sample_with_edge(const ObjectSample* sample, EdgeStore* edge_store);
 
   static void emit(ObjectSampler* sampler, int64_t cutoff_ticks, bool emit_all, bool skip_bfs);
 };

@@ -1739,11 +1739,18 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WEmbeddedFrame_printBand
 //     ::PatBlt(hDC, destX+1, destY+1, destWidth-2, destHeight-2, PATCOPY);
 //     ::SelectObject(hDC, oldBrush);
 
+    /* This code is rarely used now. It used to be invoked by Java plugin browser
+     * printing. Today embedded frames are used only when a toolkit such as SWT
+     * needs to embed
+     */
     TRY;
     jbyte *image = NULL;
     try {
-        image = (jbyte *)env->GetPrimitiveArrayCritical(imageArray, 0);
+        int length = env->GetArrayLength(imageArray);
+        image = new jbyte[length];
         CHECK_NULL(image);
+        env->GetByteArrayRegion(imageArray, 0, length, image);
+
         struct {
             BITMAPINFOHEADER bmiHeader;
             DWORD*                 bmiColors;
@@ -1777,13 +1784,11 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WEmbeddedFrame_printBand
      fclose(file);
 #endif //DEBUG_PRINTING
     } catch (...) {
-        if (image != NULL) {
-            env->ReleasePrimitiveArrayCritical(imageArray, image, 0);
-        }
+        delete[] image;
         throw;
     }
 
-    env->ReleasePrimitiveArrayCritical(imageArray, image, 0);
+    delete[] image;
 
     CATCH_BAD_ALLOC;
 }
@@ -2803,100 +2808,6 @@ static jbyte* reverseDIB(jbyte* imageBits, long srcWidth, long srcHeight,
     return NULL;
 }
 
-#if 0
-
-/*
- * Class:     sun_awt_windows_WPrinterJob
- * Method:    drawImageIntRGB
- * Signature: (J[IFFFFFFFFII)V
- */
-JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_drawImageIntRGB
-  (JNIEnv *env, jobject self,
-   jlong printDC, jintArray image,
-   jfloat destX, jfloat destY,
-   jfloat destWidth, jfloat destHeight,
-   jfloat srcX, jfloat srcY,
-   jfloat srcWidth, jfloat srcHeight,
-   jint srcBitMapWidth, jint srcBitMapHeight) {
-
-    int result = 0;
-
-    assert(printDC != NULL);
-    assert(image != NULL);
-    assert(srcX >= 0);
-    assert(srcY >= 0);
-    assert(srcWidth > 0);
-    assert(srcHeight > 0);
-    assert(srcBitMapWidth > 0);
-    assert(srcBitMapHeight > 0);
-
-
-    static int alphaMask =  0xff000000;
-    static int redMask =    0x00ff0000;
-    static int greenMask =  0x0000ff00;
-    static int blueMask =   0x000000ff;
-
-    struct {
-        BITMAPV4HEADER header;
-        DWORD          masks[256];
-    } dib;
-
-
-
-    memset(&dib,0,sizeof(dib));
-    dib.header.bV4Size = sizeof(dib.header);
-    dib.header.bV4Width = srcBitMapWidth;
-    dib.header.bV4Height = -srcBitMapHeight;    // Top down DIB
-    dib.header.bV4Planes = 1;
-    dib.header.bV4BitCount = 32;
-    dib.header.bV4V4Compression = BI_BITFIELDS;
-    dib.header.bV4SizeImage = 0;        // It's the default size.
-    dib.header.bV4XPelsPerMeter = 0;
-    dib.header.bV4YPelsPerMeter = 0;
-    dib.header.bV4ClrUsed = 0;
-    dib.header.bV4ClrImportant = 0;
-    dib.header.bV4RedMask = redMask;
-    dib.header.bV4GreenMask = greenMask;
-    dib.header.bV4BlueMask = blueMask;
-    dib.header.bV4AlphaMask = alphaMask;
-    dib.masks[0] = redMask;
-    dib.masks[1] = greenMask;
-    dib.masks[2] = blueMask;
-    dib.masks[3] = alphaMask;
-
-    jint *imageBits = NULL;
-
-    try {
-        imageBits = (jint *)env->GetPrimitiveArrayCritical(image, 0);
-
-        if (printDC){
-            result = ::StretchDIBits( (HDC)printDC,
-                                      ROUND_TO_LONG(destX),
-                                      ROUND_TO_LONG(destY),
-                                      ROUND_TO_LONG(destWidth),
-                                      ROUND_TO_LONG(destHeight),
-                                      ROUND_TO_LONG(srcX),
-                                      ROUND_TO_LONG(srcY),
-                                      ROUND_TO_LONG(srcWidth),
-                                      ROUND_TO_LONG(srcHeight),
-                                      imageBits,
-                                      (BITMAPINFO *)&dib,
-                                      DIB_RGB_COLORS,
-                                      SRCCOPY);
-
-        }
-    } catch (...) {
-        if (imageBits != NULL) {
-            env->ReleasePrimitiveArrayCritical(image, imageBits, 0);
-        }
-        throw;
-    }
-
-    env->ReleasePrimitiveArrayCritical(image, imageBits, 0);
-
-}
-#else
-
 /*
  * Class:     sun_awt_windows_WPrinterJob
  * Method:    drawDIBImage
@@ -2991,7 +2902,6 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_drawDIBImage
     env->ReleasePrimitiveArrayCritical(image, imageBits, 0);
 
 }
-#endif
 
 /*
  * An utility function to print passed image byte array to
@@ -3059,7 +2969,7 @@ static void doPrintBand(JNIEnv *env, jboolean browserPrinting,
     CATCH_BAD_ALLOC;
 
 }
-static FILE* outfile = NULL;
+
 static int bitsToDevice(HDC printDC, jbyte *image, long destX, long destY,
                         long width, long height) {
     int result = 0;
@@ -3072,6 +2982,9 @@ static int bitsToDevice(HDC printDC, jbyte *image, long destX, long destY,
     /* height could be negative to indicate that this is a top-down DIB */
 //      assert(height > 0);
 
+    if (!printDC || height == 0) {
+        return result;
+    }
     struct {
         BITMAPINFOHEADER bmiHeader;
         DWORD*             bmiColors;
@@ -3099,11 +3012,9 @@ static int bitsToDevice(HDC printDC, jbyte *image, long destX, long destY,
     if (bitMapHeader.bmiHeader.biHeight < 0) {
       jbyte *dibImage = reverseDIB(image, width, height, 24);
       if (dibImage != NULL) {
-        bitMapHeader.bmiHeader.biWidth = ROUND_TO_LONG(width);
-        bitMapHeader.bmiHeader.biHeight = ROUND_TO_LONG(height);
-
-        if (printDC){
-          result = ::SetDIBitsToDevice(printDC,
+            bitMapHeader.bmiHeader.biWidth = ROUND_TO_LONG(width);
+            bitMapHeader.bmiHeader.biHeight = ROUND_TO_LONG(height);
+            result = ::SetDIBitsToDevice(printDC,
                                 ROUND_TO_LONG(destX),   // left of dest rect
                                 ROUND_TO_LONG(destY),   // top of dest rect
                                 ROUND_TO_LONG(width),   // width of dest rect
@@ -3115,12 +3026,9 @@ static int bitsToDevice(HDC printDC, jbyte *image, long destX, long destY,
                                 dibImage,       // points to the DIB
                                 (BITMAPINFO *)&bitMapHeader,
                                 DIB_RGB_COLORS);
-        }
-
-        free (dibImage);
+            free (dibImage);
       }
     } else {
-      if (printDC){
           result = ::SetDIBitsToDevice(printDC,
                                 destX,  // left of dest rect
                                 destY,  // top of dest rect
@@ -3133,9 +3041,30 @@ static int bitsToDevice(HDC printDC, jbyte *image, long destX, long destY,
                                 image,  // points to the DIB
                                 (BITMAPINFO *)&bitMapHeader,
                                 DIB_RGB_COLORS);
-      }
+         if (result == 0) {
+             size_t size = width * height * 3; // Always 24bpp, also DWORD aligned.
+             void *imageData = NULL;
+             try {
+                  imageData = safe_Malloc(size);
+              } catch (std::bad_alloc&) {
+                  return result;
+              }
+              memcpy(imageData, image, size);
+              result = ::SetDIBitsToDevice(printDC,
+                                    destX,  // left of dest rect
+                                    destY,  // top of dest rect
+                                    width,  // width of dest rect
+                                    height, // height of dest rect
+                                    0,      // left of source rect
+                                    0,      // top of source rect
+                                    0,      // line number of 1st source scan line
+                                    height, // number of source scan lines
+                                    imageData,  // points to the DIB
+                                    (BITMAPINFO *)&bitMapHeader,
+                                    DIB_RGB_COLORS);
+              free(imageData);
+         }
     }
-
     return result;
 }
 

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
 #include "jfr/leakprofiler/chains/objectSampleMarker.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
@@ -40,16 +41,18 @@
 #include "jfr/utilities/jfrHashtable.hpp"
 #include "jfr/utilities/jfrPredicate.hpp"
 #include "jfr/utilities/jfrRelation.hpp"
+#include "memory/resourceArea.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 
 const int initial_array_size = 64;
 
 template <typename T>
 static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (ResourceObj::C_HEAP, mtTracing) GrowableArray<T>(size, true, mtTracing);
+  return new (ResourceObj::C_HEAP, mtTracing) GrowableArray<T>(size, mtTracing);
 }
 
 static GrowableArray<traceid>* unloaded_thread_id_set = NULL;
@@ -248,17 +251,20 @@ static void install_stack_traces(const ObjectSampler* sampler, JfrStackTraceRepo
   assert(sampler != NULL, "invariant");
   const ObjectSample* const last = sampler->last();
   if (last != sampler->last_resolved()) {
+    ResourceMark rm;
     JfrKlassUnloading::sort();
     StackTraceBlobInstaller installer(stack_trace_repo);
     iterate_samples(installer);
   }
 }
 
-// caller needs ResourceMark
 void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler, JfrStackTraceRepository& stack_trace_repo) {
-  assert(JfrStream_lock->owned_by_self(), "invariant");
   assert(sampler != NULL, "invariant");
   assert(LeakProfiler::is_running(), "invariant");
+  Thread* const thread = Thread::current();
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread);)
+  // can safepoint here
+  ThreadInVMfromNative transition((JavaThread*)thread);
   MutexLocker lock(ClassLoaderDataGraph_lock);
   // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
   install_stack_traces(sampler, stack_trace_repo);
@@ -365,7 +371,6 @@ static void write_sample_blobs(const ObjectSampler* sampler, bool emit_all, Thre
 }
 
 void ObjectSampleCheckpoint::write(const ObjectSampler* sampler, EdgeStore* edge_store, bool emit_all, Thread* thread) {
-  assert_locked_or_safepoint(JfrStream_lock);
   assert(sampler != NULL, "invariant");
   assert(edge_store != NULL, "invariant");
   assert(thread != NULL, "invariant");
@@ -416,6 +421,7 @@ static void save_type_set_blob(JfrCheckpointWriter& writer, bool copy = false) {
 
 void ObjectSampleCheckpoint::on_type_set(JfrCheckpointWriter& writer) {
   assert(LeakProfiler::is_running(), "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(Thread::current());)
   const ObjectSample* last = ObjectSampler::sampler()->last();
   if (writer.has_data() && last != NULL) {
     save_type_set_blob(writer);

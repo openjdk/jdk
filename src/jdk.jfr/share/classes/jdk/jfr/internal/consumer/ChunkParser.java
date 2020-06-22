@@ -318,9 +318,10 @@ public final class ChunkParser {
             final long logLastCP = lastCP;
             final long logDelta = delta;
             if (logTrace) {
-                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE, () -> {
-                    return "New constant pool: startPosition=" + logLastCP + ", size=" + size + ", deltaToNext=" + logDelta + ", flush=" + flush + ", poolCount=" + poolCount;
-                });
+                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE,
+                        "New constant pool: startPosition=" + logLastCP +
+                        ", size=" + size + ", deltaToNext=" + logDelta +
+                        ", flush=" + flush + ", poolCount=" + poolCount);
             }
             for (int i = 0; i < poolCount; i++) {
                 long id = input.readLong(); // type id

@@ -266,6 +266,7 @@
   template(returnType_name,                           "returnType")                               \
   template(signature_name,                            "signature")                                \
   template(slot_name,                                 "slot")                                     \
+  template(trusted_final_name,                        "trustedFinal")                             \
                                                                                                   \
   /* Support for annotations (JDK 1.5 and above) */                                               \
                                                                                                   \
@@ -598,12 +599,6 @@
   template(createGCNotification_name,                  "createGCNotification")                                    \
   template(createGCNotification_signature,             "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/sun/management/GcInfo;)V") \
   template(createDiagnosticFrameworkNotification_name, "createDiagnosticFrameworkNotification")                   \
-  template(createMemoryPoolMBean_name,                 "createMemoryPoolMBean")                                   \
-  template(createMemoryManagerMBean_name,              "createMemoryManagerMBean")                                \
-  template(createGarbageCollectorMBean_name,           "createGarbageCollectorMBean")                             \
-  template(createMemoryPoolMBean_signature,            "(Ljava/lang/String;ZJJ)Ljava/lang/management/MemoryPoolMBean;") \
-  template(createMemoryManagerMBean_signature,         "(Ljava/lang/String;)Ljava/lang/management/MemoryManagerMBean;") \
-  template(createGarbageCollectorMBean_signature,      "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/management/GarbageCollectorMBean;") \
   template(trigger_name,                               "trigger")                                                 \
   template(clear_name,                                 "clear")                                                   \
   template(trigger_method_signature,                   "(ILjava/lang/management/MemoryUsage;)V")                  \

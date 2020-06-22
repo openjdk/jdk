@@ -484,6 +484,16 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     PREDEFINED_RUNTIME_IMAGE.getID()));
         }
 
+        if (Platform.isMac()) {
+            // On Mac topImage can be runtime root or runtime home.
+            Path runtimeHome = topImage.toPath().resolve("Contents/Home");
+            if (Files.isDirectory(runtimeHome)) {
+                // topImage references runtime root, adjust it to pick data from
+                // runtime home
+                topImage = runtimeHome.toFile();
+            }
+        }
+
         // copy whole runtime, need to skip jmods and src.zip
         final List<String> excludes = Arrays.asList("jmods", "src.zip");
         IOUtils.copyRecursive(topImage.toPath(),

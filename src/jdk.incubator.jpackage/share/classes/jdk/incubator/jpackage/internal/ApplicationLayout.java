@@ -177,5 +177,18 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
         return new ApplicationLayout(Map.of(PathRole.RUNTIME, Path.of("")));
     }
 
+    public static ApplicationLayout linuxUsrTreePackageImage(Path prefix,
+            String packageName) {
+        final Path lib = prefix.resolve(Path.of("lib", packageName));
+        return new ApplicationLayout(Map.of(
+                PathRole.LAUNCHERS, prefix.resolve("bin"),
+                PathRole.APP, lib.resolve("app"),
+                PathRole.RUNTIME, lib.resolve("runtime"),
+                PathRole.RUNTIME_HOME, lib.resolve("runtime"),
+                PathRole.DESKTOP, lib,
+                PathRole.MODULES, lib.resolve("app/mods")
+        ));
+    }
+
     private final PathGroup data;
 }

@@ -24,11 +24,20 @@
 
 import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.ManagementFactory;
+import jdk.internal.platform.Metrics;
 
 public class CheckOperatingSystemMXBean {
 
     public static void main(String[] args) {
         System.out.println("Checking OperatingSystemMXBean");
+        Metrics metrics = jdk.internal.platform.Container.metrics();
+        System.out.println("Metrics instance: " + (metrics == null ? "null" : "non-null"));
+        if (metrics != null) {
+            System.out.println("Metrics.getMemoryAndSwapLimit() == " + metrics.getMemoryAndSwapLimit());
+            System.out.println("Metrics.getMemoryLimit() == " + metrics.getMemoryLimit());
+            System.out.println("Metrics.getMemoryAndSwapUsage() == " + metrics.getMemoryAndSwapUsage());
+            System.out.println("Metrics.getMemoryUsage() == " + metrics.getMemoryUsage());
+        }
 
         OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
         System.out.println(String.format("Runtime.availableProcessors: %d", Runtime.getRuntime().availableProcessors()));

@@ -315,7 +315,7 @@ GrowableArray<JVMFlagRange*>* JVMFlagRangeList::_ranges = NULL;
 // Check the ranges of all flags that have them
 void JVMFlagRangeList::init(void) {
 
-  _ranges = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JVMFlagRange*>(INITIAL_RANGES_SIZE, true);
+  _ranges = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JVMFlagRange*>(INITIAL_RANGES_SIZE, mtArguments);
 
   EMIT_RANGE_START
 

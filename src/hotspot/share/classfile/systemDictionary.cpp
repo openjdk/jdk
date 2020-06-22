@@ -703,7 +703,7 @@ InstanceKlass* SystemDictionary::handle_parallel_super_load(
   return NULL;
 }
 
-static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld) {
+void SystemDictionary::post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld) {
   assert(event != NULL, "invariant");
   assert(k != NULL, "invariant");
   assert(event->should_commit(), "invariant");
@@ -1232,6 +1232,7 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
 InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
                                                         PackageEntry* pkg_entry,
                                                         TRAPS) {
+  assert(UseSharedSpaces, "Sanity check");
   InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
   if (ik != NULL && ik->is_shared_boot_class()) {
     return load_shared_class(ik, Handle(), Handle(), NULL, pkg_entry, THREAD);
@@ -1251,18 +1252,30 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
                                                Handle class_loader, TRAPS) {
   assert(!ModuleEntryTable::javabase_moduleEntry()->is_patched(),
          "Cannot use sharing if java.base is patched");
-  ResourceMark rm(THREAD);
-  int path_index = ik->shared_classpath_index();
-  ClassLoaderData* loader_data = class_loader_data(class_loader);
-  if (path_index < 0) {
+  if (ik->shared_classpath_index() < 0) {
     // path_index < 0 indicates that the class is intended for a custom loader
     // and should not be loaded by boot/platform/app loaders
-    if (loader_data->is_builtin_class_loader_data()) {
+    if (is_builtin_class_loader(class_loader())) {
       return false;
     } else {
       return true;
     }
   }
+
+  // skip class visibility check
+  if (MetaspaceShared::use_optimized_module_handling()) {
+    assert(SystemDictionary::is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader, THREAD), "Optimizing module handling failed.");
+    return true;
+  }
+  return is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader, THREAD);
+}
+
+bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
+                                               InstanceKlass* ik,
+                                               PackageEntry* pkg_entry,
+                                               Handle class_loader, TRAPS) {
+  int path_index = ik->shared_classpath_index();
+  ClassLoaderData* loader_data = class_loader_data(class_loader);
   SharedClassPathEntry* ent =
             (SharedClassPathEntry*)FileMapInfo::shared_path(path_index);
   if (!Universe::is_module_initialized()) {
@@ -1369,6 +1382,37 @@ bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle 
   return true;
 }
 
+InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* ik,
+                                                                Handle class_loader,
+                                                                Handle protection_domain,
+                                                                PackageEntry* pkg_entry,
+                                                                TRAPS) {
+  InstanceKlass* shared_nest_host = SystemDictionaryShared::get_shared_nest_host(ik);
+  assert(shared_nest_host->is_shared(), "nest host must be in CDS archive");
+  Symbol* cn = shared_nest_host->name();
+  Klass *s = resolve_or_fail(cn, class_loader, protection_domain, true, CHECK_NULL);
+  if (s != shared_nest_host) {
+    // The dynamically resolved nest_host is not the same as the one we used during dump time,
+    // so we cannot use ik.
+    return NULL;
+  } else {
+    assert(s->is_shared(), "must be");
+  }
+
+  // The lambda proxy class and its nest host have the same class loader and class loader data,
+  // as verified in SystemDictionaryShared::add_lambda_proxy_class()
+  assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
+  assert(shared_nest_host->class_loader_data() == ClassLoaderData::class_loader_data(class_loader()), "mismatched class loader data");
+  ik->set_nest_host(shared_nest_host, THREAD);
+
+  InstanceKlass* loaded_ik = load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, CHECK_NULL);
+
+  assert(shared_nest_host->is_same_class_package(ik),
+         "lambda proxy class and its nest host must be in the same package");
+
+  return loaded_ik;
+}
+
 InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    Handle class_loader,
                                                    Handle protection_domain,
@@ -1389,8 +1433,13 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     return NULL;
   }
 
-  InstanceKlass* new_ik = KlassFactory::check_shared_class_file_load_hook(
+  InstanceKlass* new_ik = NULL;
+  // CFLH check is skipped for VM hidden or anonymous classes (see KlassFactory::create_from_stream).
+  // It will be skipped for shared VM hidden lambda proxy classes.
+  if (!SystemDictionaryShared::is_hidden_lambda_proxy(ik)) {
+    new_ik = KlassFactory::check_shared_class_file_load_hook(
       ik, class_name, class_loader, protection_domain, cfs, CHECK_NULL);
+  }
   if (new_ik != NULL) {
     // The class is changed by CFLH. Return the new class. The shared class is
     // not used.
@@ -1560,12 +1609,14 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
 
     // Search for classes in the CDS archive.
     InstanceKlass* k = NULL;
-    {
+
 #if INCLUDE_CDS
+    if (UseSharedSpaces)
+    {
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
       k = load_shared_boot_class(class_name, pkg_entry, THREAD);
-#endif
     }
+#endif
 
     if (k == NULL) {
       // Use VM class loader

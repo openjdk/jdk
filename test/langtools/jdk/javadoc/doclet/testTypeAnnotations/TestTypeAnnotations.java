@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      8005091 8009686 8025633 8026567 6469562 8071982 8071984 8162363 8175200 8186332 8182765
- *           8187288
+ *           8187288 8241969
  * @summary  Make sure that type annotations are displayed correctly
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -334,6 +334,35 @@ public class TestTypeAnnotations extends JavadocTester {
                     tle="class in typeannos">MyList</a>&lt;? extends <a href="WldB.html" title="anno\
                     tation in typeannos">@WldB</a>("m") java.lang.String&gt;</span>&nbsp;<span class\
                     ="member-name">returnWcExtends</span>()</div>""");
+
+        checkOutput("typeannos/SelfTest.html", true,
+                """
+                    <div class="member-signature"><span class="return-type"><a href="MyList.html" ti\
+                    tle="class in typeannos">MyList</a>&lt;<a href="WldA.html" title="annotation in \
+                    typeannos">@WldA</a> ?&gt;</span>&nbsp;<span class="member-name">returnWcExtends\
+                    </span>()</div>""",
+                """
+                    <div class="member-signature"><span class="return-type"><a href="MyList.html" ti\
+                    tle="class in typeannos">MyList</a>&lt;<a href="WldA.html" title="annotation in \
+                    typeannos">@WldA</a> ? extends <a href="WldA.html" title="annotation in typeanno\
+                    s">@WldA</a> <a href="MyList.html" title="class in typeannos">MyList</a>&lt;<a h\
+                    ref="WldB.html" title="annotation in typeannos">@WldB</a>("m") ?&gt;&gt;</span>&\
+                    nbsp;<span class="member-name">complex</span>()</div>""");
+
+        checkOutput("typeannos/SelfWithValue.html", true,
+                """
+                    <div class="member-signature"><span class="return-type"><a href="MyList.html" ti\
+                    tle="class in typeannos">MyList</a>&lt;<a href="WldB.html" title="annotation in \
+                    typeannos">@WldB</a>("m") ?&gt;</span>&nbsp;<span class="member-name">returnWcEx\
+                    tends</span>()</div>""",
+                """
+                    <div class="member-signature"><span class="return-type"><a href="MyList.html" ti\
+                    tle="class in typeannos">MyList</a>&lt;<a href="WldB.html" title="annotation in \
+                    typeannos">@WldB</a>("m") ? extends <a href="MyList.html" title="class in typean\
+                    nos">MyList</a>&lt;<a href="WldB.html" title="annotation in typeannos">@WldB</a>\
+                    ("m") ? super java.lang.String&gt;&gt;</span>&nbsp;<span class="member-name">com\
+                    plex</span>()</div>""");
+
 
         // Test for receiver annotations (Receivers.java).
         checkOutput("typeannos/DefaultUnmodified.html", true,

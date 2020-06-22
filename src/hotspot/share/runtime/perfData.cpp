@@ -563,12 +563,12 @@ PerfLongCounter* PerfDataManager::create_long_counter(CounterNS ns,
 
 PerfDataList::PerfDataList(int length) {
 
-  _set = new(ResourceObj::C_HEAP, mtInternal) PerfDataArray(length, true);
+  _set = new(ResourceObj::C_HEAP, mtInternal) PerfDataArray(length, mtInternal);
 }
 
 PerfDataList::PerfDataList(PerfDataList* p) {
 
-  _set = new(ResourceObj::C_HEAP, mtInternal) PerfDataArray(p->length(), true);
+  _set = new(ResourceObj::C_HEAP, mtInternal) PerfDataArray(p->length(), mtInternal);
 
   _set->appendAll(p->get_impl());
 }

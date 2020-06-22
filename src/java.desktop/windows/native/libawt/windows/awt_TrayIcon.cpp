@@ -1001,25 +1001,21 @@ Java_sun_awt_windows_WTrayIconPeer_setNativeIcon(JNIEnv *env, jobject self,
 
     delete[] andMaskPtr;
 
-    jint *intRasterDataPtr = NULL;
+    /* Copy the raster data because GDI may fail on some Java heap
+     * allocated memory.
+     */
+    length = env->GetArrayLength(intRasterData);
+    jint *intRasterDataPtr = new jint[length];
     HBITMAP hColor = NULL;
     try {
-        intRasterDataPtr = (jint *)env->GetPrimitiveArrayCritical(intRasterData, 0);
-        if (intRasterDataPtr == NULL) {
-            ::DeleteObject(hMask);
-            return;
-        }
+        env->GetIntArrayRegion(intRasterData, 0, length, intRasterDataPtr);
         hColor = AwtTrayIcon::CreateBMP(NULL, (int *)intRasterDataPtr, nSS, nW, nH);
     } catch (...) {
-        if (intRasterDataPtr != NULL) {
-            env->ReleasePrimitiveArrayCritical(intRasterData, intRasterDataPtr, 0);
-        }
+        delete[] intRasterDataPtr;
         ::DeleteObject(hMask);
         throw;
     }
-
-    env->ReleasePrimitiveArrayCritical(intRasterData, intRasterDataPtr, 0);
-    intRasterDataPtr = NULL;
+    delete[] intRasterDataPtr;
 
     HICON hIcon = NULL;
 

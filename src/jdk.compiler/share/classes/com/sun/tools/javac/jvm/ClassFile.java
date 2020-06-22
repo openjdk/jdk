@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,8 @@ public class ClassFile {
         V56(56, 0),   // JDK 12
         V57(57, 0),   // JDK 13
         V58(58, 0),   // JDK 14
-        V59(59, 0);   // JDK 15
+        V59(59, 0),   // JDK 15
+        V60(60, 0);   // JDK 16
         Version(int major, int minor) {
             this.major = major;
             this.minor = minor;

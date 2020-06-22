@@ -139,9 +139,15 @@ public class Comparators {
                 @Override
                 public int compare(Element e1, Element e2) {
                     int result = compareFullyQualifiedNames(e1, e2);
-                    if (result == 0)
-                        result = compareModuleNames(e1, e2);
-                    return result;
+                    if (result != 0) {
+                        return result;
+                    }
+                    // if elements are executable compare their parameter arrays
+                    result = compareParameters(e1, e2);
+                    if (result != 0) {
+                        return result;
+                    }
+                    return compareModuleNames(e1, e2);
                 }
             };
         }
@@ -256,19 +262,11 @@ public class Comparators {
                     if (result != 0) {
                         return result;
                     }
-                    // if element kinds are the same, and are methods,
-                    // compare the method parameters
-                    if (hasParameters(e1)) {
-                        List<? extends VariableElement> parameters1 = ((ExecutableElement)e1).getParameters();
-                        List<? extends VariableElement> parameters2 = ((ExecutableElement)e2).getParameters();
-                        result = compareParameters(false, parameters1, parameters2);
-                        if (result != 0) {
-                            return result;
-                        }
-                        result = compareParameters(true, parameters1, parameters2);
-                        if (result != 0) {
-                            return result;
-                        }
+                    // if element kinds are the same, and are executable,
+                    // compare the parameter arrays
+                    result = compareParameters(e1, e2);
+                    if (result != 0) {
+                        return result;
                     }
                     // else fall back on fully qualified names
                     result = compareFullyQualifiedNames(e1, e2);
@@ -383,15 +381,7 @@ public class Comparators {
                     if (result != 0) {
                         return result;
                     }
-                    if (hasParameters(e1) && hasParameters(e2)) {
-                        List<? extends VariableElement> parameters1 = ((ExecutableElement)e1).getParameters();
-                        List<? extends VariableElement> parameters2 = ((ExecutableElement)e2).getParameters();
-                        result = compareParameters(false, parameters1, parameters2);
-                        if (result != 0) {
-                            return result;
-                        }
-                        result = compareParameters(true, parameters1, parameters2);
-                    }
+                    result = compareParameters(e1, e2);
                     if (result != 0) {
                         return result;
                     }
@@ -504,6 +494,34 @@ public class Comparators {
             return 0;
         }
 
+        /**
+         * Compares the parameter arrays of two elements if they both are executable.
+         * @param e1 the first element
+         * @param e2 the second element
+         * @return a negative integer, zero, or a positive integer as the first
+         *         argument is less than, equal to, or greater than the second
+         */
+        protected int compareParameters(Element e1, Element e2) {
+            int result = 0;
+            if (hasParameters(e1) && hasParameters(e2)) {
+                List<? extends VariableElement> parameters1 = ((ExecutableElement)e1).getParameters();
+                List<? extends VariableElement> parameters2 = ((ExecutableElement)e2).getParameters();
+                result = compareParameters(false, parameters1, parameters2);
+                if (result != 0) {
+                    return result;
+                }
+                result = compareParameters(true, parameters1, parameters2);
+            }
+            return result;
+        }
+
+        /**
+         * Compares the kinds of two elements.
+         * @param e1 the first element
+         * @param e2 the second element
+         * @return a negative integer, zero, or a positive integer as the first
+         *         argument is less than, equal to, or greater than the second
+         */
         protected int compareElementKinds(Element e1, Element e2) {
             return Integer.compare(getKindIndex(e1), getKindIndex(e2));
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,7 +341,7 @@ public:
   void set_break_at_compile(bool z) { _break_at_compile = z; }
 
   // Cache Jvmti state
-  void  cache_jvmti_state();
+  bool  cache_jvmti_state();
   bool  jvmti_state_changed() const;
   bool  should_retain_local_variables() const {
     return _jvmti_can_access_local_variables || _jvmti_can_pop_frame;

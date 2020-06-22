@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,30 +120,5 @@ public class GatherDiagnosticInfoObserver implements Harness.Observer {
         RegressionParameters rp = (RegressionParameters) params;
         compileJdk = rp.getCompileJDK().getAbsoluteFile().toPath();
         testJdk = rp.getTestJDK().getAbsoluteFile().toPath();
-    }
-
-    @Override
-    public void startingTest(TestResult tr) {
-        // no-op
-    }
-
-    @Override
-    public void stoppingTestRun() {
-        // no-op
-    }
-
-    @Override
-    public void finishedTesting() {
-        // no-op
-    }
-
-    @Override
-    public void finishedTestRun(boolean allOK) {
-        // no-op
-    }
-
-    @Override
-    public void error(String msg) {
-        // no-op
     }
 }

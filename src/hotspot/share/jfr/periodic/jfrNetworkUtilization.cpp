@@ -77,7 +77,7 @@ static InterfaceEntry& new_entry(const NetworkInterface* iface, GrowableArray<In
 
 static GrowableArray<InterfaceEntry>* get_interfaces() {
   if (_interfaces == NULL) {
-    _interfaces = new(ResourceObj::C_HEAP, mtTracing) GrowableArray<InterfaceEntry>(10, true, mtTracing);
+    _interfaces = new(ResourceObj::C_HEAP, mtTracing) GrowableArray<InterfaceEntry>(10, mtTracing);
   }
   return _interfaces;
 }

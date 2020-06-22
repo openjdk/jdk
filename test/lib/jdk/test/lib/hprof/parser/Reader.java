@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ public abstract class Reader {
             }
             heapFile = heapFile.substring(0, pos);
         }
+        GzipRandomAccess access = null;
         try (PositionDataInputStream in = new PositionDataInputStream(
                 new BufferedInputStream(new FileInputStream(heapFile)))) {
             int i = in.readInt();
@@ -89,6 +90,20 @@ public abstract class Reader {
                     = new HprofReader(heapFile, in, dumpNumber,
                                       callStack, debugLevel);
                 return r.read();
+            } else if ((access = GzipRandomAccess.getAccess(heapFile, 16)) != null) {
+                in.close();
+                try (PositionDataInputStream in2 = new PositionDataInputStream(
+                        new BufferedInputStream(access.asStream(0)))) {
+                    i = in2.readInt();
+                    if (i == HprofReader.MAGIC_NUMBER) {
+                        Reader r
+                            = new HprofReader(access.asFileBuffer(), in2, dumpNumber,
+                                              callStack, debugLevel);
+                        return r.read();
+                    } else {
+                        throw new IOException("Wrong magic number in gzipped file: " + i);
+                    }
+                }
             } else {
                 throw new IOException("Unrecognized magic number: " + i);
             }

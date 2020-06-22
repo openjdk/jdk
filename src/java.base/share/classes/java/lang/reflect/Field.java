@@ -72,6 +72,7 @@ class Field extends AccessibleObject implements Member {
     private String              name;
     private Class<?>            type;
     private int                 modifiers;
+    private boolean             trustedFinal;
     // Generics and annotations support
     private transient String    signature;
     // generic info repository; lazily initialized
@@ -119,6 +120,7 @@ class Field extends AccessibleObject implements Member {
           String name,
           Class<?> type,
           int modifiers,
+          boolean trustedFinal,
           int slot,
           String signature,
           byte[] annotations)
@@ -127,6 +129,7 @@ class Field extends AccessibleObject implements Member {
         this.name = name;
         this.type = type;
         this.modifiers = modifiers;
+        this.trustedFinal = trustedFinal;
         this.slot = slot;
         this.signature = signature;
         this.annotations = annotations;
@@ -148,7 +151,7 @@ class Field extends AccessibleObject implements Member {
         if (this.root != null)
             throw new IllegalArgumentException("Can not copy a non-root Field");
 
-        Field res = new Field(clazz, name, type, modifiers, slot, signature, annotations);
+        Field res = new Field(clazz, name, type, modifiers, trustedFinal, slot, signature, annotations);
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.fieldAccessor = fieldAccessor;
@@ -728,7 +731,9 @@ class Field extends AccessibleObject implements Member {
      *     this {@code Field} object;</li>
      * <li>the field is non-static; and</li>
      * <li>the field's declaring class is not a {@linkplain Class#isHidden()
-     *     hidden class}.</li>
+     *     hidden class}; and</li>
+     * <li>the field's declaring class is not a {@linkplain Class#isRecord()
+     *     record class}.</li>
      * </ul>
      * If any of the above checks is not met, this method throws an
      * {@code IllegalAccessException}.
@@ -1145,8 +1150,12 @@ class Field extends AccessibleObject implements Member {
     }
 
     @Override
-    Field getRoot() {
+    /* package-private */ Field getRoot() {
         return root;
+    }
+
+    /* package-private */ boolean isTrustedFinal() {
+        return trustedFinal;
     }
 
     /**

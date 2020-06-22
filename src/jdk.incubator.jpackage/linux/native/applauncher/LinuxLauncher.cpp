@@ -23,29 +23,41 @@
  * questions.
  */
 
+#include <stdio.h>
 #include "AppLauncher.h"
 #include "FileUtils.h"
 #include "UnixSysInfo.h"
+#include "Package.h"
 
 
 namespace {
+
 
 void launchApp() {
     setlocale(LC_ALL, "en_US.utf8");
 
     const tstring launcherPath = SysInfo::getProcessModulePath();
 
-    // Launcher should be in "bin" subdirectory of app image.
-    const tstring appImageRoot = FileUtils::dirname(
-            FileUtils::dirname(launcherPath));
+    const Package ownerPackage = Package::findOwnerOfFile(launcherPath);
 
-    AppLauncher()
-        .setImageRoot(appImageRoot)
-        .addJvmLibName(_T("lib/libjli.so"))
-        .setAppDir(FileUtils::mkpath() << appImageRoot << _T("lib/app"))
-        .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
-                << _T("lib/runtime"))
-        .launch();
+    AppLauncher appLauncher;
+    appLauncher.addJvmLibName(_T("lib/libjli.so"));
+
+    if (ownerPackage.name().empty()) {
+        // Launcher should be in "bin" subdirectory of app image.
+        const tstring appImageRoot = FileUtils::dirname(
+                FileUtils::dirname(launcherPath));
+
+        appLauncher
+            .setImageRoot(appImageRoot)
+            .setAppDir(FileUtils::mkpath() << appImageRoot << _T("lib/app"))
+            .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
+                    << _T("lib/runtime"));
+    } else {
+        ownerPackage.initAppLauncher(appLauncher);
+    }
+
+    appLauncher.launch();
 }
 
 } // namespace

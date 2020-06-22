@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ public class GCDuringDump {
     };
     public static String agentClasses[] = {
         GCDuringDumpTransformer.class.getName(),
+        GCDuringDumpTransformer.MyCleaner.class.getName(),
     };
 
     public static void main(String[] args) throws Throwable {
@@ -55,15 +56,18 @@ public class GCDuringDump {
         String gcLog = Boolean.getBoolean("test.cds.verbose.gc") ?
             "-Xlog:gc*=info,gc+region=trace,gc+alloc+region=debug" : "-showversion";
 
-        for (int i=0; i<2; i++) {
+        for (int i=0; i<3; i++) {
             // i = 0 -- run without agent = no extra GCs
             // i = 1 -- run with agent = cause extra GCs
+            // i = 2 -- run with agent = cause extra GCs + use java.lang.ref.Cleaner
 
             String extraArg = (i == 0) ? "-showversion" : "-javaagent:" + agentJar;
             String extraOption = (i == 0) ? "-showversion" : "-XX:+AllowArchivingWithJavaAgent";
+            String extraOption2 = (i != 2) ? "-showversion" : "-Dtest.with.cleaner=true";
 
             TestCommon.testDump(appJar, TestCommon.list(Hello.class.getName()),
-                                "-XX:+UnlockDiagnosticVMOptions", extraOption,
+                                "-XX:+UnlockDiagnosticVMOptions", extraOption, extraOption2,
+                                "-Xlog:exceptions=trace",
                                 extraArg, "-Xmx32m", gcLog);
 
             TestCommon.run(

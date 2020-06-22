@@ -23,9 +23,9 @@
 
 package jdk.test.lib;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
@@ -239,7 +239,7 @@ public class Platform {
         String jdkPath = System.getProperty("java.home");
         Path javaPath = Paths.get(jdkPath + "/bin/java");
         String javaFileName = javaPath.toAbsolutePath().toString();
-        if (!javaPath.toFile().exists()) {
+        if (Files.notExists(javaPath)) {
             throw new FileNotFoundException("Could not find file " + javaFileName);
         }
 

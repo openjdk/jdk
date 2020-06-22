@@ -217,6 +217,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _compressed_class_ptrs = UseCompressedClassPointers;
   _max_heap_size = MaxHeapSize;
   _narrow_klass_shift = CompressedKlassPointers::shift();
+  _use_optimized_module_handling = MetaspaceShared::use_optimized_module_handling();
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -498,7 +499,7 @@ void FileMapInfo::record_non_existent_class_path_entry(const char* path) {
   Arguments::assert_is_dumping_archive();
   log_info(class, path)("non-existent Class-Path entry %s", path);
   if (_non_existent_class_paths == NULL) {
-    _non_existent_class_paths = new (ResourceObj::C_HEAP, mtInternal)GrowableArray<const char*>(10, true);
+    _non_existent_class_paths = new (ResourceObj::C_HEAP, mtClass)GrowableArray<const char*>(10, mtClass);
   }
   _non_existent_class_paths->append(os::strdup(path));
 }
@@ -625,8 +626,7 @@ int FileMapInfo::num_paths(const char* path) {
 }
 
 GrowableArray<const char*>* FileMapInfo::create_path_array(const char* paths) {
-  GrowableArray<const char*>* path_array =  new(ResourceObj::RESOURCE_AREA, mtInternal)
-      GrowableArray<const char*>(10);
+  GrowableArray<const char*>* path_array = new GrowableArray<const char*>(10);
 
   ClasspathStream cp_stream(paths);
   while (cp_stream.has_next()) {
@@ -2130,11 +2130,23 @@ bool FileMapHeader::validate() {
     return false;
   }
 
+  if (!_use_optimized_module_handling) {
+    MetaspaceShared::disable_optimized_module_handling();
+    log_info(cds)("use_optimized_module_handling disabled: archive was created without optimized module handling");
+  }
+
   return true;
 }
 
 bool FileMapInfo::validate_header() {
-  return header()->validate();
+  if (!header()->validate()) {
+    return false;
+  }
+  if (_is_static) {
+    return true;
+  } else {
+    return DynamicArchive::validate(this);
+  }
 }
 
 // Check if a given address is within one of the shared regions

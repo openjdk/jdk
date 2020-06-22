@@ -522,7 +522,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(12), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "PrintVMQWaitTime",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseNewFieldLayout",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "ForceNUMA",                    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
@@ -548,24 +547,11 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SharedReadOnlySize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
-  { "BindGCTaskThreadsToCPUs",       JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
-  { "UseGCTaskAffinity",             JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
-  { "GCTaskTimeStampEntries",        JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
-  { "G1RSetScanBlockSize",           JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "UseParallelOldGC",              JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "CompactFields",                 JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "FieldsAllocationStyle",         JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
-#ifndef X86
-  { "UseSSE",                        JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-#endif // !X86
-  { "UseAdaptiveGCBoundary",         JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "MonitorBound",                  JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
-#ifdef AARCH64
-  { "UseBarriersForVolatile",        JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+#ifdef BSD
+  { "UseBsdPosixThreadCPUClocks",    JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "UseOprofile",                   JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 #endif
-  { "UseLWPSynchronization",         JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "BranchOnRegister",              JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "LIRFillDelaySlots",             JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+  { "PrintVMQWaitTime",              JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
@@ -1466,6 +1452,14 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
 
     value = &prop[key_len + 1];
   }
+
+#if INCLUDE_CDS
+  if (is_internal_module_property(key) ||
+      strcmp(key, "jdk.module.main") == 0) {
+    MetaspaceShared::disable_optimized_module_handling();
+    log_info(cds)("Using optimized module handling disabled due to incompatible property: %s=%s", key, value);
+  }
+#endif
 
   if (strcmp(key, "java.compiler") == 0) {
     process_java_compiler_argument(value);
@@ -2510,6 +2504,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -bootclasspath/a:
     } else if (match_option(option, "-Xbootclasspath/a:", &tail)) {
       Arguments::append_sysclasspath(tail);
+#if INCLUDE_CDS
+      MetaspaceShared::disable_optimized_module_handling();
+      log_info(cds)("Using optimized module handling disabled due to bootclasspath was appended");
+#endif
     // -bootclasspath/p:
     } else if (match_option(option, "-Xbootclasspath/p:", &tail)) {
         jio_fprintf(defaultStream::output_stream(),
@@ -3112,7 +3110,7 @@ void Arguments::add_patch_mod_prefix(const char* module_name, const char* path, 
 
   // Create GrowableArray lazily, only if --patch-module has been specified
   if (_patch_mod_prefix == NULL) {
-    _patch_mod_prefix = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<ModulePatchPath*>(10, true);
+    _patch_mod_prefix = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<ModulePatchPath*>(10, mtArguments);
   }
 
   _patch_mod_prefix->push(new ModulePatchPath(module_name, path));
@@ -3368,7 +3366,7 @@ class ScopedVMInitArgs : public StackObj {
 
     int length = args->nOptions + args_to_insert->nOptions - 1;
     GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtArguments)
-              GrowableArray<JavaVMOption>(length, true);    // Construct new option array
+              GrowableArray<JavaVMOption>(length, mtArguments);    // Construct new option array
     for (int i = 0; i < args->nOptions; i++) {
       if (i == vm_options_file_pos) {
         // insert the new options starting at the same place as the
@@ -3480,7 +3478,7 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
 }
 
 jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args) {
-  GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JavaVMOption>(2, true);    // Construct option array
+  GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JavaVMOption>(2, mtArguments);    // Construct option array
 
   // some pointers to help with parsing
   char *buffer_end = buffer + buf_len;

@@ -90,7 +90,9 @@ final class RepositoryChunk {
         unFinishedRAF.close();
         this.size = SecuritySupport.getFileSize(chunkFile);
         this.endTime = endTime;
-        Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, () -> "Chunk finished: " + chunkFile);
+        if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Chunk finished: " + chunkFile);
+        }
     }
 
     public Instant getStartTime() {
@@ -104,11 +106,15 @@ final class RepositoryChunk {
     private void delete(SafePath f) {
         try {
             SecuritySupport.delete(f);
-            Logger.log(LogTag.JFR, LogLevel.DEBUG, () -> "Repository chunk " + f + " deleted");
+            if (Logger.shouldLog(LogTag.JFR, LogLevel.DEBUG)) {
+                Logger.log(LogTag.JFR, LogLevel.DEBUG, "Repository chunk " + f + " deleted");
+            }
         } catch (IOException e) {
             // Probably happens because file is being streamed
             // on Windows where files in use can't be removed.
-            Logger.log(LogTag.JFR, LogLevel.DEBUG, ()  -> "Repository chunk " + f + " could not be deleted: " + e.getMessage());
+            if (Logger.shouldLog(LogTag.JFR, LogLevel.DEBUG)) {
+                Logger.log(LogTag.JFR, LogLevel.DEBUG, "Repository chunk " + f + " could not be deleted: " + e.getMessage());
+            }
             if (f != null) {
                 FilePurger.add(f);
             }
@@ -123,18 +129,24 @@ final class RepositoryChunk {
         try {
             unFinishedRAF.close();
         } catch (IOException e) {
-            Logger.log(LogTag.JFR, LogLevel.ERROR, () -> "Could not close random access file: " + chunkFile.toString() + ". File will not be deleted due to: " + e.getMessage());
+            if (Logger.shouldLog(LogTag.JFR, LogLevel.ERROR)) {
+                Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not close random access file: " + chunkFile.toString() + ". File will not be deleted due to: " + e.getMessage());
+            }
         }
     }
 
     public synchronized void use() {
         ++refCount;
-        Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, () -> "Use chunk " + toString() + " ref count now " + refCount);
+        if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Use chunk " + toString() + " ref count now " + refCount);
+        }
     }
 
     public synchronized void release() {
         --refCount;
-        Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, () -> "Release chunk " + toString() + " ref count now " + refCount);
+        if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Release chunk " + toString() + " ref count now " + refCount);
+        }
         if (refCount == 0) {
             destroy();
         }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4515705 4804296 4702454 4697036 8025633 8182765
+ * @bug      4515705 4804296 4702454 4697036 8025633 8182765 8247235
  * @summary  Make sure that first sentence warning only appears once.
  *           Make sure that only warnings/errors are printed when quiet is used.
  *           Make sure that links to private/unincluded methods do not cause
@@ -50,17 +50,23 @@ public class TestWarnings extends JavadocTester {
                 "pkg");
         checkExit(Exit.ERROR);
 
-        checkOutput(Output.OUT, true,
+        checkOutput(Output.OUT, false,
                 "X.java:23: error: self-closing element not allowed");
 
-        checkOutput(Output.OUT, true,
+        checkOutput(Output.OUT, false,
                 "X.java:24: error: self-closing element not allowed");
 
-        checkOutput(Output.OUT, true,
+        checkOutput(Output.OUT, false,
                 "X.java:25: error: self-closing element not allowed");
 
-        checkOutput(Output.OUT, true,
+        checkOutput(Output.OUT, false,
                 "X.java:26: error: self-closing element not allowed");
+
+        checkOutput(Output.OUT, true,
+                "X.java:28: error: self-closing element not allowed");
+
+        checkOutput(Output.OUT, true,
+                "X.java:28: warning: empty <p> tag");
 
         checkOutput("pkg/X.html", false,
                 "can't find m()");

@@ -275,6 +275,10 @@ std::wstring fromMultiByte(const std::string& str, int encoding) {
 }
 } // namespace
 
+std::string toACP(const std::wstring& utf16str) {
+    return toMultiByte(utf16str, CP_ACP);
+}
+
 std::string toUtf8(const std::wstring& utf16str) {
     return toMultiByte(utf16str, CP_UTF8);
 }

@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Spliterator;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
+import jdk.internal.util.ArraysSupport;
 
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.UTF16;
@@ -239,7 +240,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
     /**
      * Returns a capacity at least as large as the given minimum capacity.
-     * Returns the current capacity increased by the same amount + 2 if
+     * Returns the current capacity increased by the current length + 2 if
      * that suffices.
      * Will not return a capacity greater than
      * {@code (MAX_ARRAY_SIZE >> coder)} unless the given minimum capacity
@@ -250,26 +251,14 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *         greater than (Integer.MAX_VALUE >> coder)
      */
     private int newCapacity(int minCapacity) {
-        // overflow-conscious code
-        int oldCapacity = value.length >> coder;
-        int newCapacity = (oldCapacity << 1) + 2;
-        if (newCapacity - minCapacity < 0) {
-            newCapacity = minCapacity;
+        int oldLength = value.length;
+        int newLength = minCapacity << coder;
+        int growth = newLength - oldLength;
+        int length = ArraysSupport.newLength(oldLength, growth, oldLength + (2 << coder));
+        if (length == Integer.MAX_VALUE) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
-        int SAFE_BOUND = MAX_ARRAY_SIZE >> coder;
-        return (newCapacity <= 0 || SAFE_BOUND - newCapacity < 0)
-            ? hugeCapacity(minCapacity)
-            : newCapacity;
-    }
-
-    private int hugeCapacity(int minCapacity) {
-        int SAFE_BOUND = MAX_ARRAY_SIZE >> coder;
-        int UNSAFE_BOUND = Integer.MAX_VALUE >> coder;
-        if (UNSAFE_BOUND - minCapacity < 0) { // overflow
-            throw new OutOfMemoryError();
-        }
-        return (minCapacity > SAFE_BOUND)
-            ? minCapacity : SAFE_BOUND;
+        return length >> coder;
     }
 
     /**

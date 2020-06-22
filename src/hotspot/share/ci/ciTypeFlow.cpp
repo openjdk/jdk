@@ -61,7 +61,7 @@ ciTypeFlow::JsrSet::JsrSet(Arena* arena, int default_len) {
     _set = new (arena) GrowableArray<JsrRecord*>(arena, default_len, 0, NULL);
   } else {
     // Allocate growable array in current ResourceArea.
-    _set = new GrowableArray<JsrRecord*>(4, 0, NULL, false);
+    _set = new GrowableArray<JsrRecord*>(4, 0, NULL);
   }
 }
 

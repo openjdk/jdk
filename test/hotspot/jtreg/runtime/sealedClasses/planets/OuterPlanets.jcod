@@ -28,7 +28,7 @@
 class planets/OuterPlanets {
   0xCAFEBABE;
   65535; // minor version
-  59; // version
+  60; // version
   [18] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A

@@ -647,7 +647,7 @@ JvmtiEnvBase::count_locked_objects(JavaThread *java_thread, Handle hobj) {
 
 
 jvmtiError
-JvmtiEnvBase::get_current_contended_monitor(JavaThread *java_thread, jobject *monitor_ptr) {
+JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThread *java_thread, jobject *monitor_ptr) {
   JavaThread *current_jt = JavaThread::current();
   assert(current_jt == java_thread ||
          current_jt == java_thread->active_handshaker(),
@@ -677,14 +677,14 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *java_thread, jobject *mo
   } else {
     HandleMark hm;
     Handle     hobj(current_jt, obj);
-    *monitor_ptr = jni_reference(current_jt, hobj);
+    *monitor_ptr = jni_reference(calling_thread, hobj);
   }
   return JVMTI_ERROR_NONE;
 }
 
 
 jvmtiError
-JvmtiEnvBase::get_owned_monitors(JavaThread* java_thread,
+JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread,
                                  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list) {
   jvmtiError err = JVMTI_ERROR_NONE;
   JavaThread *current_jt = JavaThread::current();
@@ -702,7 +702,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread* java_thread,
          jvf = jvf->java_sender()) {
       if (MaxJavaStackTraceDepth == 0 || depth++ < MaxJavaStackTraceDepth) {  // check for stack too deep
         // add locked objects for this frame into list
-        err = get_locked_objects_in_frame(current_jt, java_thread, jvf, owned_monitors_list, depth-1);
+        err = get_locked_objects_in_frame(calling_thread, java_thread, jvf, owned_monitors_list, depth-1);
         if (err != JVMTI_ERROR_NONE) {
           return err;
         }
@@ -711,7 +711,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread* java_thread,
   }
 
   // Get off stack monitors. (e.g. acquired via jni MonitorEnter).
-  JvmtiMonitorClosure jmc(java_thread, current_jt, owned_monitors_list, this);
+  JvmtiMonitorClosure jmc(java_thread, calling_thread, owned_monitors_list, this);
   ObjectSynchronizer::monitors_iterate(&jmc);
   err = jmc.error();
 
@@ -937,11 +937,12 @@ JvmtiEnvBase::get_frame_location(JavaThread *java_thread, jint depth,
 
 jvmtiError
 JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject object, jvmtiMonitorUsage* info_ptr) {
-  HandleMark hm;
-  Handle hobj;
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  Thread* current_thread = VMThread::vm_thread();
+  assert(current_thread == Thread::current(), "must be");
 
-  Thread* current_thread = Thread::current();
-  bool at_safepoint = SafepointSynchronize::is_at_safepoint();
+  HandleMark hm(current_thread);
+  Handle hobj;
 
   // Check arguments
   {
@@ -952,6 +953,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     hobj = Handle(current_thread, mirror);
   }
 
+  ThreadsListHandle tlh(current_thread);
   JavaThread *owning_thread = NULL;
   ObjectMonitor *mon = NULL;
   jvmtiMonitorUsage ret = {
@@ -962,11 +964,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   // first derive the object's owner and entry_count (if any)
   {
     // Revoke any biases before querying the mark word
-    if (at_safepoint) {
-      BiasedLocking::revoke_at_safepoint(hobj);
-    } else {
-      BiasedLocking::revoke(hobj, calling_thread);
-    }
+    BiasedLocking::revoke_at_safepoint(hobj);
 
     address owner = NULL;
     {
@@ -994,39 +992,19 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     }
 
     if (owner != NULL) {
-      // Use current thread since function can be called from a
-      // JavaThread or the VMThread.
-      ThreadsListHandle tlh;
       // This monitor is owned so we have to find the owning JavaThread.
       owning_thread = Threads::owning_thread_from_monitor_owner(tlh.list(), owner);
-      // Cannot assume (owning_thread != NULL) here because this function
-      // may not have been called at a safepoint and the owning_thread
-      // might not be suspended.
-      if (owning_thread != NULL) {
-        // The monitor's owner either has to be the current thread, at safepoint
-        // or it has to be suspended. Any of these conditions will prevent both
-        // contending and waiting threads from modifying the state of
-        // the monitor.
-        if (!at_safepoint && !owning_thread->is_thread_fully_suspended(true, &debug_bits)) {
-          // Don't worry! This return of JVMTI_ERROR_THREAD_NOT_SUSPENDED
-          // will not make it back to the JVM/TI agent. The error code will
-          // get intercepted in JvmtiEnv::GetObjectMonitorUsage() which
-          // will retry the call via a VM_GetObjectMonitorUsage VM op.
-          return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-        }
-        HandleMark hm;
-        Handle     th(current_thread, owning_thread->threadObj());
-        ret.owner = (jthread)jni_reference(calling_thread, th);
-      }
-      // implied else: no owner
-    } // ThreadsListHandle is destroyed here.
+      assert(owning_thread != NULL, "owning JavaThread must not be NULL");
+      Handle     th(current_thread, owning_thread->threadObj());
+      ret.owner = (jthread)jni_reference(calling_thread, th);
+    }
 
     if (owning_thread != NULL) {  // monitor is owned
       // The recursions field of a monitor does not reflect recursions
       // as lightweight locks before inflating the monitor are not included.
       // We have to count the number of recursive monitor entries the hard way.
       // We pass a handle to survive any GCs along the way.
-      ResourceMark rm;
+      ResourceMark rm(current_thread);
       ret.entry_count = count_locked_objects(owning_thread, hobj);
     }
     // implied else: entry_count == 0
@@ -1069,13 +1047,9 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
 
     if (ret.waiter_count > 0) {
       // we have contending and/or waiting threads
-      HandleMark hm;
-      // Use current thread since function can be called from a
-      // JavaThread or the VMThread.
-      ThreadsListHandle tlh;
       if (nWant > 0) {
         // we have contending threads
-        ResourceMark rm;
+        ResourceMark rm(current_thread);
         // get_pending_threads returns only java thread so we do not need to
         // check for non java threads.
         GrowableArray<JavaThread*>* wantList = Threads::get_pending_threads(tlh.list(), nWant, (address)mon);
@@ -1085,21 +1059,6 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
         }
         for (int i = 0; i < nWant; i++) {
           JavaThread *pending_thread = wantList->at(i);
-          // If the monitor has no owner, then a non-suspended contending
-          // thread could potentially change the state of the monitor by
-          // entering it. The JVM/TI spec doesn't allow this.
-          if (owning_thread == NULL && !at_safepoint &&
-              !pending_thread->is_thread_fully_suspended(true, &debug_bits)) {
-            if (ret.owner != NULL) {
-              destroy_jni_reference(calling_thread, ret.owner);
-            }
-            for (int j = 0; j < i; j++) {
-              destroy_jni_reference(calling_thread, ret.waiters[j]);
-            }
-            deallocate((unsigned char*)ret.waiters);
-            deallocate((unsigned char*)ret.notify_waiters);
-            return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-          }
           Handle th(current_thread, pending_thread->threadObj());
           ret.waiters[i] = (jthread)jni_reference(calling_thread, th);
         }
@@ -1145,7 +1104,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
 
 ResourceTracker::ResourceTracker(JvmtiEnv* env) {
   _env = env;
-  _allocations = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<unsigned char*>(20, true);
+  _allocations = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<unsigned char*>(20, mtServiceability);
   _failed = false;
 }
 ResourceTracker::~ResourceTracker() {
@@ -1548,12 +1507,12 @@ VM_SetFramePop::doit() {
 
 void
 GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
-  _result = ((JvmtiEnvBase *)_env)->get_owned_monitors((JavaThread *)target, _owned_monitors_list);
+  _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread, (JavaThread *)target, _owned_monitors_list);
 }
 
 void
 GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
-  _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor((JavaThread *)target, _owned_monitor_ptr);
+  _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor(_calling_thread, (JavaThread *)target, _owned_monitor_ptr);
 }
 
 void

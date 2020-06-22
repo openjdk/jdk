@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Test implicit String concatenations, multiple shapes.
- * @bug 8148483 8245959
+ * @bug 8148483 8245959 8247681
  *
  * @compile ImplicitStringConcatShapes.java
  * @run main/othervm -Xverify:all ImplicitStringConcatShapes

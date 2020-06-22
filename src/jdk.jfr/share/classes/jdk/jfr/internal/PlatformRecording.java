@@ -115,7 +115,7 @@ public final class PlatformRecording implements AutoCloseable {
                 startTime = null;
             }
             startNanos = recorder.start(this);
-            Logger.log(LogTag.JFR, LogLevel.INFO, () -> {
+            if (Logger.shouldLog(LogTag.JFR, LogLevel.INFO)) {
                 // Only print non-default values so it easy to see
                 // which options were added
                 StringJoiner options = new StringJoiner(", ");
@@ -141,8 +141,9 @@ public final class PlatformRecording implements AutoCloseable {
                 if (optionText.length() != 0) {
                     optionText = "{" + optionText + "}";
                 }
-                return "Started recording \"" + getName() + "\" (" + getId() + ") " + optionText;
-            });
+                Logger.log(LogTag.JFR, LogLevel.INFO,
+                        "Started recording \"" + getName() + "\" (" + getId() + ") " + optionText);
+            };
             newState = getState();
         }
         notifyIfStateChanged(oldState, newState);
@@ -576,12 +577,16 @@ public final class PlatformRecording implements AutoCloseable {
     private void added(RepositoryChunk c) {
         c.use();
         size += c.getSize();
-        Logger.log(JFR, DEBUG, () -> "Recording \"" + name + "\" (" + id + ") added chunk " + c.toString() + ", current size=" + size);
+        if (Logger.shouldLog(JFR, DEBUG)) {
+            Logger.log(JFR, DEBUG, "Recording \"" + name + "\" (" + id + ") added chunk " + c.toString() + ", current size=" + size);
+        }
     }
 
     private void removed(RepositoryChunk c) {
         size -= c.getSize();
-        Logger.log(JFR, DEBUG, () -> "Recording \"" + name + "\" (" + id + ") removed chunk " + c.toString() + ", current size=" + size);
+        if (Logger.shouldLog(JFR, DEBUG)) {
+            Logger.log(JFR, DEBUG, "Recording \"" + name + "\" (" + id + ") removed chunk " + c.toString() + ", current size=" + size);
+        }
         c.release();
     }
 

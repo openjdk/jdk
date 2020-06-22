@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcInitLogger.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "logging/log.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/globals.hpp"
@@ -54,56 +55,56 @@ void GCInitLogger::print_version() {
 }
 
 void GCInitLogger::print_cpu() {
-  log_info(gc, init)("CPUs: %u total, %u available",
-                     os::processor_count(),
-                     os::initial_active_processor_count());
+  log_info_p(gc, init)("CPUs: %u total, %u available",
+                       os::processor_count(),
+                       os::initial_active_processor_count());
 }
 
 void GCInitLogger::print_memory() {
   julong memory = os::physical_memory();
-  log_info(gc, init)("Memory: " JULONG_FORMAT "%s",
-                     byte_size_in_proper_unit(memory), proper_unit_for_byte_size(memory));
+  log_info_p(gc, init)("Memory: " JULONG_FORMAT "%s",
+                       byte_size_in_proper_unit(memory), proper_unit_for_byte_size(memory));
 }
 
 void GCInitLogger::print_large_pages() {
-  log_info(gc, init)("Large Page Support: %s", large_pages_support());
+  log_info_p(gc, init)("Large Page Support: %s", large_pages_support());
 }
 
 void GCInitLogger::print_numa() {
   if (UseNUMA) {
-    log_info(gc, init)("NUMA Support: Enabled");
-    log_info(gc, init)("NUMA Nodes: " SIZE_FORMAT, os::numa_get_groups_num());
+    log_info_p(gc, init)("NUMA Support: Enabled");
+    log_info_p(gc, init)("NUMA Nodes: " SIZE_FORMAT, os::numa_get_groups_num());
   } else {
-    log_info(gc, init)("NUMA Support: Disabled");
+    log_info_p(gc, init)("NUMA Support: Disabled");
   }
 }
 
 void GCInitLogger::print_compressed_oops() {
   if (UseCompressedOops) {
-    log_info(gc, init)("Compressed Oops: Enabled (%s)",
-                       CompressedOops::mode_to_string(CompressedOops::mode()));
+    log_info_p(gc, init)("Compressed Oops: Enabled (%s)",
+                         CompressedOops::mode_to_string(CompressedOops::mode()));
   } else {
-    log_info(gc, init)("Compressed Oops: Disabled");
+    log_info_p(gc, init)("Compressed Oops: Disabled");
   }
 }
 
 void GCInitLogger::print_heap() {
-  log_info(gc, init)("Heap Min Capacity: " SIZE_FORMAT "%s",
-                     byte_size_in_exact_unit(MinHeapSize), exact_unit_for_byte_size(MinHeapSize));
-  log_info(gc, init)("Heap Initial Capacity: " SIZE_FORMAT "%s",
-                     byte_size_in_exact_unit(InitialHeapSize), exact_unit_for_byte_size(InitialHeapSize));
-  log_info(gc, init)("Heap Max Capacity: " SIZE_FORMAT "%s",
-                     byte_size_in_exact_unit(MaxHeapSize), exact_unit_for_byte_size(MaxHeapSize));
+  log_info_p(gc, init)("Heap Min Capacity: " SIZE_FORMAT "%s",
+                       byte_size_in_exact_unit(MinHeapSize), exact_unit_for_byte_size(MinHeapSize));
+  log_info_p(gc, init)("Heap Initial Capacity: " SIZE_FORMAT "%s",
+                       byte_size_in_exact_unit(InitialHeapSize), exact_unit_for_byte_size(InitialHeapSize));
+  log_info_p(gc, init)("Heap Max Capacity: " SIZE_FORMAT "%s",
+                       byte_size_in_exact_unit(MaxHeapSize), exact_unit_for_byte_size(MaxHeapSize));
 
-  log_info(gc, init)("Pre-touch: %s", AlwaysPreTouch ? "Enabled" : "Disabled");
+  log_info_p(gc, init)("Pre-touch: %s", AlwaysPreTouch ? "Enabled" : "Disabled");
 }
 
 void GCInitLogger::print_workers() {
   if (ParallelGCThreads > 0) {
-    log_info(gc, init)("Parallel Workers: %u", ParallelGCThreads);
+    log_info_p(gc, init)("Parallel Workers: %u", ParallelGCThreads);
   }
   if (ConcGCThreads > 0) {
-    log_info(gc, init)("Concurrent Workers: %u", ConcGCThreads);
+    log_info_p(gc, init)("Concurrent Workers: %u", ConcGCThreads);
   }
 }
 

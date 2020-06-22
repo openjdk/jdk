@@ -40,7 +40,7 @@
  * @build StrConcatApp
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar strConcatApp.jar StrConcatApp
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. NoClassToArchive
  */
 

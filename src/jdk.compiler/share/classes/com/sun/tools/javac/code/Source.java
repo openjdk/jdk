@@ -100,9 +100,14 @@ public enum Source {
     JDK14("14"),
 
     /**
-      * 15, tbd
+      * 15, text blocks
       */
-    JDK15("15");
+    JDK15("15"),
+
+    /**
+      * 16, tbd
+      */
+    JDK16("16");
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -153,19 +158,22 @@ public enum Source {
     }
 
     public Target requiredTarget() {
-        if (this.compareTo(JDK15) >= 0) return Target.JDK1_15;
-        if (this.compareTo(JDK14) >= 0) return Target.JDK1_14;
-        if (this.compareTo(JDK13) >= 0) return Target.JDK1_13;
-        if (this.compareTo(JDK12) >= 0) return Target.JDK1_12;
-        if (this.compareTo(JDK11) >= 0) return Target.JDK1_11;
-        if (this.compareTo(JDK10) >= 0) return Target.JDK1_10;
-        if (this.compareTo(JDK9) >= 0) return Target.JDK1_9;
-        if (this.compareTo(JDK8) >= 0) return Target.JDK1_8;
-        if (this.compareTo(JDK7) >= 0) return Target.JDK1_7;
-        if (this.compareTo(JDK6) >= 0) return Target.JDK1_6;
-        if (this.compareTo(JDK5) >= 0) return Target.JDK1_5;
-        if (this.compareTo(JDK1_4) >= 0) return Target.JDK1_4;
-        return Target.JDK1_1;
+        return switch(this) {
+        case JDK16  -> Target.JDK1_16;
+        case JDK15  -> Target.JDK1_15;
+        case JDK14  -> Target.JDK1_14;
+        case JDK13  -> Target.JDK1_13;
+        case JDK12  -> Target.JDK1_12;
+        case JDK11  -> Target.JDK1_11;
+        case JDK10  -> Target.JDK1_10;
+        case JDK9   -> Target.JDK1_9;
+        case JDK8   -> Target.JDK1_8;
+        case JDK7   -> Target.JDK1_7;
+        case JDK6   -> Target.JDK1_6;
+        case JDK5   -> Target.JDK1_5;
+        case JDK1_4 -> Target.JDK1_4;
+        default     -> Target.JDK1_1;
+        };
     }
 
     /**
@@ -206,10 +214,10 @@ public enum Source {
         SWITCH_RULE(JDK14, Fragments.FeatureSwitchRules, DiagKind.PLURAL),
         SWITCH_EXPRESSION(JDK14, Fragments.FeatureSwitchExpressions, DiagKind.PLURAL),
         TEXT_BLOCKS(JDK15, Fragments.FeatureTextBlocks, DiagKind.PLURAL),
-        PATTERN_MATCHING_IN_INSTANCEOF(JDK15, Fragments.FeaturePatternMatchingInstanceof, DiagKind.NORMAL),
-        REIFIABLE_TYPES_INSTANCEOF(JDK15, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
-        RECORDS(JDK15, Fragments.FeatureRecords, DiagKind.PLURAL),
-        SEALED_CLASSES(JDK15, Fragments.FeatureSealedClasses, DiagKind.PLURAL),
+        PATTERN_MATCHING_IN_INSTANCEOF(JDK16, Fragments.FeaturePatternMatchingInstanceof, DiagKind.NORMAL),
+        REIFIABLE_TYPES_INSTANCEOF(JDK16, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
+        RECORDS(JDK16, Fragments.FeatureRecords, DiagKind.PLURAL),
+        SEALED_CLASSES(JDK16, Fragments.FeatureSealedClasses, DiagKind.PLURAL),
         ;
 
         enum DiagKind {
@@ -272,37 +280,23 @@ public enum Source {
     }
 
     public static SourceVersion toSourceVersion(Source source) {
-        switch(source) {
-        case JDK1_2:
-            return RELEASE_2;
-        case JDK1_3:
-            return RELEASE_3;
-        case JDK1_4:
-            return RELEASE_4;
-        case JDK5:
-            return RELEASE_5;
-        case JDK6:
-            return RELEASE_6;
-        case JDK7:
-            return RELEASE_7;
-        case JDK8:
-            return RELEASE_8;
-        case JDK9:
-            return RELEASE_9;
-        case JDK10:
-            return RELEASE_10;
-        case JDK11:
-            return RELEASE_11;
-        case JDK12:
-            return RELEASE_12;
-        case JDK13:
-            return RELEASE_13;
-        case JDK14:
-            return RELEASE_14;
-        case JDK15:
-            return RELEASE_15;
-        default:
-            return null;
-        }
+        return switch(source) {
+        case JDK1_2 -> RELEASE_2;
+        case JDK1_3 -> RELEASE_3;
+        case JDK1_4 -> RELEASE_4;
+        case JDK5   -> RELEASE_5;
+        case JDK6   -> RELEASE_6;
+        case JDK7   -> RELEASE_7;
+        case JDK8   -> RELEASE_8;
+        case JDK9   -> RELEASE_9;
+        case JDK10  -> RELEASE_10;
+        case JDK11  -> RELEASE_11;
+        case JDK12  -> RELEASE_12;
+        case JDK13  -> RELEASE_13;
+        case JDK14  -> RELEASE_14;
+        case JDK15  -> RELEASE_15;
+        case JDK16  -> RELEASE_16;
+        default     -> null;
+        };
     }
 }

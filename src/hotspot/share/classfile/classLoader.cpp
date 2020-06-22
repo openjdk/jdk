@@ -583,7 +583,7 @@ void ClassLoader::setup_patch_mod_entries() {
   int num_of_entries = patch_mod_args->length();
 
   // Set up the boot loader's _patch_mod_entries list
-  _patch_mod_entries = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, true);
+  _patch_mod_entries = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, mtModule);
 
   for (int i = 0; i < num_of_entries; i++) {
     const char* module_name = (patch_mod_args->at(i))->module_name();
@@ -1528,6 +1528,19 @@ void ClassLoader::initialize_module_path(TRAPS) {
     FileMapInfo::allocate_shared_path_table();
   }
 }
+
+// Helper function used by CDS code to get the number of module path
+// entries during shared classpath setup time.
+int ClassLoader::num_module_path_entries() {
+  Arguments::assert_is_dumping_archive();
+  int num_entries = 0;
+  ClassPathEntry* e= ClassLoader::_module_path_entries;
+  while (e != NULL) {
+    num_entries ++;
+    e = e->next();
+  }
+  return num_entries;
+}
 #endif
 
 jlong ClassLoader::classloader_time_ms() {
@@ -1596,7 +1609,7 @@ void ClassLoader::classLoader_init2(TRAPS) {
     // subsequently do the first class load. So, no lock is needed for this.
     assert(_exploded_entries == NULL, "Should only get initialized once");
     _exploded_entries = new (ResourceObj::C_HEAP, mtModule)
-      GrowableArray<ModuleClassPathList*>(EXPLODED_ENTRY_SIZE, true);
+      GrowableArray<ModuleClassPathList*>(EXPLODED_ENTRY_SIZE, mtModule);
     add_to_exploded_build_list(vmSymbols::java_base(), CHECK);
   }
 }

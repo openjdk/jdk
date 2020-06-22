@@ -189,7 +189,7 @@ class ConstantPool : public Metadata {
  public:
   static ConstantPool* allocate(ClassLoaderData* loader_data, int length, TRAPS);
 
-  bool is_constantPool() const volatile     { return true; }
+  virtual bool is_constantPool() const      { return true; }
 
   Array<u1>* tags() const                   { return _tags; }
   Array<u2>* operands() const               { return _operands; }

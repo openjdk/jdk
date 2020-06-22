@@ -24,6 +24,7 @@
 import java.nio.file.Path;
 import jdk.incubator.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
 /**
@@ -51,6 +52,13 @@ public class EmptyFolderPackageTest {
                         EmptyFolderBase.createDirStrcture(input);
                     })
                     .addInstallVerifier(cmd -> {
+                        if (cmd.packageType() == PackageType.WIN_MSI) {
+                            if (cmd.isPackageUnpacked("Not running file "
+                                    + "structure check for empty folders")) {
+                                return;
+                            }
+                        }
+
                         ApplicationLayout appLayout = cmd.appLayout();
                         Path appDir = appLayout.appDirectory();
                         EmptyFolderBase.validateDirStrcture(appDir);

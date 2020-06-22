@@ -1005,24 +1005,22 @@ void PhaseIterGVN::verify_step(Node* n) {
   if (VerifyIterativeGVN) {
     _verify_window[_verify_counter % _verify_window_size] = n;
     ++_verify_counter;
-    ResourceMark rm;
-    ResourceArea* area = Thread::current()->resource_area();
-    VectorSet old_space(area), new_space(area);
-    if (C->unique() < 1000 ||
-        0 == _verify_counter % (C->unique() < 10000 ? 10 : 100)) {
+    if (C->unique() < 1000 || 0 == _verify_counter % (C->unique() < 10000 ? 10 : 100)) {
       ++_verify_full_passes;
-      Node::verify_recur(C->root(), -1, old_space, new_space);
+      Node::verify(C->root(), -1);
     }
-    const int verify_depth = 4;
-    for ( int i = 0; i < _verify_window_size; i++ ) {
+    for (int i = 0; i < _verify_window_size; i++) {
       Node* n = _verify_window[i];
-      if ( n == NULL )  continue;
-      if( n->in(0) == NodeSentinel ) {  // xform_idom
+      if (n == NULL) {
+        continue;
+      }
+      if (n->in(0) == NodeSentinel) { // xform_idom
         _verify_window[i] = n->in(1);
-        --i; continue;
+        --i;
+        continue;
       }
       // Typical fanout is 1-2, so this call visits about 6 nodes.
-      Node::verify_recur(n, verify_depth, old_space, new_space);
+      Node::verify(n, 4);
     }
   }
 }

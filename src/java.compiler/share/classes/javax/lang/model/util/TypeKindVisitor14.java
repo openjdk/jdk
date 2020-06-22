@@ -61,7 +61,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see TypeKindVisitor9
  * @since 14
  */
-@SupportedSourceVersion(RELEASE_15)
+@SupportedSourceVersion(RELEASE_16)
 public class TypeKindVisitor14<R, P> extends TypeKindVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses to call; uses {@code null}

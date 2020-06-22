@@ -53,6 +53,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * An unbounded {@linkplain BlockingQueue blocking queue} that uses
@@ -135,14 +136,6 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * Default array capacity.
      */
     private static final int DEFAULT_INITIAL_CAPACITY = 11;
-
-    /**
-     * The maximum size of array to allocate.
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
-     */
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     /**
      * Priority queue represented as a balanced binary heap: the two
@@ -298,16 +291,9 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         if (allocationSpinLock == 0 &&
             ALLOCATIONSPINLOCK.compareAndSet(this, 0, 1)) {
             try {
-                int newCap = oldCap + ((oldCap < 64) ?
-                                       (oldCap + 2) : // grow faster if small
-                                       (oldCap >> 1));
-                if (newCap - MAX_ARRAY_SIZE > 0) {    // possible overflow
-                    int minCap = oldCap + 1;
-                    if (minCap < 0 || minCap > MAX_ARRAY_SIZE)
-                        throw new OutOfMemoryError();
-                    newCap = MAX_ARRAY_SIZE;
-                }
-                if (newCap > oldCap && queue == array)
+                int growth = oldCap < 64 ? oldCap + 2 : oldCap >> 1;
+                int newCap = ArraysSupport.newLength(oldCap, 1, growth);
+                if (queue == array)
                     newArray = new Object[newCap];
             } finally {
                 allocationSpinLock = 0;

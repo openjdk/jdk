@@ -79,9 +79,9 @@ private:
 
 public:
   void init() {
-    _module = NULL;
+    _module = OopHandle();
+    _pd = OopHandle();
     _loader_data = NULL;
-    _pd = NULL;
     _reads = NULL;
     _version = NULL;
     _location = NULL;

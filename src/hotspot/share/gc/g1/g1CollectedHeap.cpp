@@ -2555,7 +2555,10 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
   print_on(st);
 
   // Print the per-region information.
-  print_regions_on(st);
+  if (_hrm != NULL) {
+    st->cr();
+    print_regions_on(st);
+  }
 }
 
 void G1CollectedHeap::print_on_error(outputStream* st) const {

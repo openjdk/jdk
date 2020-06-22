@@ -2751,7 +2751,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             BigInteger base2 = (this.signum < 0 || this.compareTo(m1) >= 0
                                 ? this.mod(m1) : this);
 
-            // Caculate (base ** exponent) mod m1.
+            // Calculate (base ** exponent) mod m1.
             BigInteger a1 = (m1.equals(ONE) ? ZERO :
                              base2.oddModPow(exponent, m1));
 
@@ -2905,7 +2905,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * This means that if you have a k-bit window, to compute n^z,
      * where z is the high k bits of the exponent, 1/2 of the time
      * it requires no squarings.  1/4 of the time, it requires 1
-     * squaring, ... 1/2^(k-1) of the time, it reqires k-2 squarings.
+     * squaring, ... 1/2^(k-1) of the time, it requires k-2 squarings.
      * And the remaining 1/2^(k-1) of the time, the top k bits are a
      * 1 followed by k-1 0 bits, so it again only requires k-2
      * squarings, not k-1.  The average of these is 1.  Add that

@@ -872,10 +872,8 @@ BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
 ifeq ($(call isTargetOs, windows), true)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
     BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c
-    BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exejvm-test-launcher := jvm.lib
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit := jvm.lib
 else
-    BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exejvm-test-launcher := -ljvm
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libbootclssearch_agent += -lpthread
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libsystemclssearch_agent += -lpthread
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libgetsysprop001 += -lpthread

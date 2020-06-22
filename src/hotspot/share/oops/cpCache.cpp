@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -561,15 +561,14 @@ oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool
 #if INCLUDE_JVMTI
 
 void log_adjust(const char* entry_type, Method* old_method, Method* new_method, bool* trace_name_printed) {
-  if (log_is_enabled(Info, redefine, class, update)) {
-    ResourceMark rm;
-    if (!(*trace_name_printed)) {
-      log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
-      *trace_name_printed = true;
-    }
-    log_debug(redefine, class, update, constantpool)
-          ("cpc %s entry update: %s(%s)", entry_type, new_method->name()->as_C_string(), new_method->signature()->as_C_string());
+  ResourceMark rm;
+
+  if (!(*trace_name_printed)) {
+    log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
+    *trace_name_printed = true;
   }
+  log_trace(redefine, class, update, constantpool)
+    ("cpc %s entry update: %s", entry_type, new_method->external_name());
 }
 
 // RedefineClasses() API support:
@@ -767,7 +766,7 @@ void ConstantPoolCache::walk_entries_for_initialization(bool check_only) {
 void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   assert(!is_shared(), "shared caches are not deallocated");
   data->remove_handle(_resolved_references);
-  set_resolved_references(NULL);
+  set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
   set_reference_map(NULL);
 }
@@ -809,9 +808,13 @@ void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
 
 // the constant pool cache should never contain old or obsolete methods
 bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
+  ResourceMark rm;
   for (int i = 1; i < length(); i++) {
-    if (entry_at(i)->get_interesting_method_entry() != NULL &&
-        !entry_at(i)->check_no_old_or_obsolete_entries()) {
+    Method* m = entry_at(i)->get_interesting_method_entry();
+    if (m != NULL && !entry_at(i)->check_no_old_or_obsolete_entries()) {
+      log_trace(redefine, class, update, constantpool)
+        ("cpcache check found old method entry: class: %s, old: %d, obsolete: %d, method: %s",
+         constant_pool()->pool_holder()->external_name(), m->is_old(), m->is_obsolete(), m->external_name());
       return false;
     }
   }

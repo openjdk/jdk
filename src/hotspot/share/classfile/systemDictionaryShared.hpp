@@ -105,6 +105,7 @@
 class ClassFileStream;
 class DumpTimeSharedClassInfo;
 class DumpTimeSharedClassTable;
+class LambdaProxyClassDictionary;
 class RunTimeSharedClassInfo;
 class RunTimeSharedDictionary;
 
@@ -178,7 +179,6 @@ private:
                                              TRAPS);
   static Handle get_shared_protection_domain(Handle class_loader,
                                              ModuleEntry* mod, TRAPS);
-  static Handle init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS);
 
   static void atomic_set_array_index(OopHandle array, int index, oop o) {
     // Benign race condition:  array.obj_at(index) may already be filled in.
@@ -213,13 +213,17 @@ private:
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin,
                                bool is_static_archive = true);
+  static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
   static bool is_jfr_event_class(InstanceKlass *k);
+  static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
   static void warn_excluded(InstanceKlass* k, const char* reason);
   static bool should_be_excluded(InstanceKlass* k);
 
   DEBUG_ONLY(static bool _no_class_loading_should_happen;)
 
 public:
+  static bool is_hidden_lambda_proxy(InstanceKlass* ik);
+  static Handle init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS);
   static InstanceKlass* find_builtin_class(Symbol* class_name);
 
   static const RunTimeSharedClassInfo* find_record(RunTimeSharedDictionary* static_dict,
@@ -284,6 +288,23 @@ public:
                                              TRAPS) NOT_CDS_RETURN;
   static void set_class_has_failed_verification(InstanceKlass* ik) NOT_CDS_RETURN;
   static bool has_class_failed_verification(InstanceKlass* ik) NOT_CDS_RETURN_(false);
+  static void add_lambda_proxy_class(InstanceKlass* caller_ik,
+                                     InstanceKlass* lambda_ik,
+                                     Symbol* invoked_name,
+                                     Symbol* invoked_type,
+                                     Symbol* method_type,
+                                     Method* member_method,
+                                     Symbol* instantiated_method_type) NOT_CDS_RETURN;
+  static InstanceKlass* get_shared_lambda_proxy_class(InstanceKlass* caller_ik,
+                                                      Symbol* invoked_name,
+                                                      Symbol* invoked_type,
+                                                      Symbol* method_type,
+                                                      Method* member_method,
+                                                      Symbol* instantiated_method_type) NOT_CDS_RETURN_(NULL);
+  static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(NULL);
+  static InstanceKlass* prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
+                                                          InstanceKlass* caller_ik,
+                                                          bool initialize, TRAPS) NOT_CDS_RETURN_(NULL);
   static bool check_linking_constraints(InstanceKlass* klass, TRAPS) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2, TRAPS) NOT_CDS_RETURN;
@@ -296,6 +317,7 @@ public:
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static size_t estimate_size_for_archive();
   static void write_to_archive(bool is_static_archive = true);
+  static void adjust_lambda_proxy_class_dictionary();
   static void serialize_dictionary_headers(class SerializeClosure* soc,
                                            bool is_static_archive = true);
   static void serialize_well_known_klasses(class SerializeClosure* soc);

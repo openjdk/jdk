@@ -43,7 +43,7 @@ $(eval $(call IncludeCustomExtension, common/FindTests.gmk))
 TEST_BASEDIRS += $(TOPDIR)/test $(TOPDIR)
 
 # JTREG_TESTROOTS might have been set by a custom extension
-JTREG_TESTROOTS += $(addprefix $(TOPDIR)/test/, hotspot/jtreg jdk langtools jaxp)
+JTREG_TESTROOTS += $(addprefix $(TOPDIR)/test/, hotspot/jtreg jdk langtools jaxp lib-test)
 
 # Extract the names of the Jtreg group files from the TEST.ROOT files. The
 # TEST.ROOT files being properties files can be interpreted as makefiles so

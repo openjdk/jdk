@@ -65,11 +65,11 @@
 *
 * We say that the FIFO solution is "mostly" concurrent, in certain situations.
 *
-* Safe memory reclamation is based on a reference tracking scheme based on versions, implemented using JfrVersion.
-* An access to the list is "version controlled", with clients checking out the latest version of the list.
-* Destructive modifications made by clients, i.e. deletions, are committed to describe new versions of the list.
-* Before reclamation, a client inspects the versioning system to ensure checkouts for versions strictly
-* less than the version of the modification have all been relinquished. See utilities/JfrVersion.hpp.
+* Safe memory reclamation is based on a reference tracking scheme based on versioning, implemented using JfrVersionSystem.
+* An access to the list is "versioned", with clients checking out the latest version describing the list.
+* Destructive modifications made by clients, i.e. deletions, are signalled by incrementing the version.
+* Before reclamation, a client inspects JfrVersionSystem to ensure checkouts with versions strictly
+* less than the version of the modification have been relinquished. See utilities/JfrVersionSystem.hpp.
 *
 * Insertions can only take place from one end of the list, head or tail, exclusively.
 * Specializations, a.k.a clients, must ensure this requirement.

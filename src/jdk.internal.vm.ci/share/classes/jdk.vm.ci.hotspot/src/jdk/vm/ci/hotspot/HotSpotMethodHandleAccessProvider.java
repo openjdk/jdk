@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
         final ResolvedJavaField methodHandleFormField;
         final ResolvedJavaField lambdaFormVmentryField;
         final HotSpotResolvedJavaField callSiteTargetField;
+        final HotSpotResolvedJavaField constantCallSiteFrozenField;
         final ResolvedJavaField methodField;
         final HotSpotResolvedJavaField vmtargetField;
 
@@ -94,6 +95,9 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
 
                 ResolvedJavaType callSiteType = resolveType("Ljava/lang/invoke/CallSite;");
                 callSiteTargetField = (HotSpotResolvedJavaField) findFieldInClass(callSiteType, "target", methodHandleType);
+                ResolvedJavaType constantCallSiteType = resolveType("Ljava/lang/invoke/ConstantCallSite;");
+                ResolvedJavaType booleanType = resolveType("Z");
+                constantCallSiteFrozenField = (HotSpotResolvedJavaField) findFieldInClass(constantCallSiteType, "isFrozen", booleanType);
             } catch (Throwable ex) {
                 throw new JVMCIError(ex);
             }

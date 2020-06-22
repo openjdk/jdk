@@ -2555,7 +2555,7 @@ JVM_ENTRY(void, JVM_RegisterWhiteBoxMethods(JNIEnv* env, jclass wbclass))
   {
     if (WhiteBoxAPI) {
       // Make sure that wbclass is loaded by the null classloader
-      InstanceKlass* ik = InstanceKlass::cast(JNIHandles::resolve(wbclass)->klass());
+      InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(wbclass)));
       Handle loader(THREAD, ik->class_loader());
       if (loader.is_null()) {
         WhiteBox::register_methods(env, wbclass, thread, methods, sizeof(methods) / sizeof(methods[0]));

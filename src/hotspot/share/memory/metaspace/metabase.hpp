@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,7 @@ class Metabase {
   void clear_next()       { set_next(NULL); }
   void clear_prev()       { set_prev(NULL); }
 
-  size_t size() const volatile { return _word_size; }
-  void set_size(size_t v) { _word_size = v; }
+  size_t size() const     { return _word_size; }
 
   void link_next(T* ptr)  { set_next(ptr); }
   void link_prev(T* ptr)  { set_prev(ptr); }

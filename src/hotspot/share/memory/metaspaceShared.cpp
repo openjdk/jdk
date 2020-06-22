@@ -89,6 +89,7 @@ size_t MetaspaceShared::_i2i_entry_code_buffers_size = 0;
 void* MetaspaceShared::_shared_metaspace_static_top = NULL;
 intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
+bool MetaspaceShared::_use_optimized_module_handling = true;
 
 // The CDS archive is divided into the following regions:
 //     mc  - misc code (the method entry trampolines, c++ vtables)
@@ -458,7 +459,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
 static GrowableArray<Handle>* _extra_interned_strings = NULL;
 
 void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
-  _extra_interned_strings = new (ResourceObj::C_HEAP, mtInternal)GrowableArray<Handle>(10000, true);
+  _extra_interned_strings = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Handle>(10000, mtClassShared);
 
   HashtableTextDump reader(filename);
   reader.check_version("VERSION: 1.0");
@@ -1637,6 +1638,7 @@ void VM_PopulateDumpSharedSpace::relocate_to_requested_base_address(CHeapBitMap*
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
+  HeapShared::run_full_gc_in_vm_thread();
   CHeapBitMap ptrmap;
   MetaspaceShared::initialize_ptr_marker(&ptrmap);
 
@@ -1955,14 +1957,9 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     link_and_cleanup_shared_classes(CATCH);
     log_info(cds)("Rewriting and linking classes: done");
 
-    if (HeapShared::is_heap_object_archiving_allowed()) {
-      // Avoid fragmentation while archiving heap objects.
-      Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(true);
-      Universe::heap()->collect(GCCause::_archive_time_gc);
-      Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(false);
-    }
-
     VM_PopulateDumpSharedSpace op;
+    MutexLocker ml(THREAD, HeapShared::is_heap_object_archiving_allowed() ?
+                   Heap_lock : NULL);     // needed by HeapShared::run_gc()
     VMThread::execute(&op);
   }
 }
@@ -2269,6 +2266,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
                                                                  class_space_rs);
   if (mapped_base_address == NULL) {
     result = MAP_ARCHIVE_MMAP_FAILURE;
+    log_debug(cds)("Failed to reserve spaces (use_requested_addr=%u)", (unsigned)use_requested_addr);
   } else {
 
 #ifdef ASSERT
@@ -2376,6 +2374,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           static_mapinfo->map_heap_regions();
         }
       });
+    log_info(cds)("Using optimized module handling %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
   } else {
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);
@@ -2471,6 +2470,8 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     if (archive_space_rs.is_reserved()) {
       assert(base_address == NULL ||
              (address)archive_space_rs.base() == base_address, "Sanity");
+      // Register archive space with NMT.
+      MemTracker::record_virtual_memory_type(archive_space_rs.base(), mtClassShared);
       return archive_space_rs.base();
     }
     return NULL;
@@ -2497,8 +2498,8 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
          "CompressedClassSpaceSize malformed: "
          SIZE_FORMAT, CompressedClassSpaceSize);
 
-  const size_t ccs_begin_offset = align_up(archive_space_size,
-                                           class_space_alignment);
+  const size_t ccs_begin_offset = align_up(base_address + archive_space_size,
+                                           class_space_alignment) - base_address;
   const size_t gap_size = ccs_begin_offset - archive_space_size;
 
   const size_t total_range_size =
@@ -2590,16 +2591,9 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
     return result;
   }
 
-  if (mapinfo->is_static()) {
-    if (!mapinfo->validate_shared_path_table()) {
-      unmap_archive(mapinfo);
-      return MAP_ARCHIVE_OTHER_FAILURE;
-    }
-  } else {
-    if (!DynamicArchive::validate(mapinfo)) {
-      unmap_archive(mapinfo);
-      return MAP_ARCHIVE_OTHER_FAILURE;
-    }
+  if (!mapinfo->validate_shared_path_table()) {
+    unmap_archive(mapinfo);
+    return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
   mapinfo->set_is_mapped(true);

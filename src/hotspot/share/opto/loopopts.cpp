@@ -909,6 +909,9 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 
             // Compute latest point this store can go
             Node* lca = get_late_ctrl(n, get_ctrl(n));
+            if (lca->is_OuterStripMinedLoop()) {
+              lca = lca->in(LoopNode::EntryControl);
+            }
             if (n_loop->is_member(get_loop(lca))) {
               // LCA is in the loop - bail out
               _igvn.replace_node(hook, n);

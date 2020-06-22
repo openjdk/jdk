@@ -368,6 +368,8 @@ class InstanceKlass: public Klass {
 
   void set_shared_class_loader_type(s2 loader_type);
 
+  void assign_class_loader_type();
+
   bool has_nonstatic_fields() const        {
     return (_misc_flags & _misc_has_nonstatic_fields) != 0;
   }

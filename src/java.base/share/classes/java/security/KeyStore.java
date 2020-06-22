@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1762,35 +1762,33 @@ public class KeyStore {
             dataStream.mark(Integer.MAX_VALUE);
 
             // Detect the keystore type
-            for (String type : Security.getAlgorithms("KeyStore")) {
-                Object[] objs = null;
-
-                try {
-                    objs = Security.getImpl(type, "KeyStore", (String)null);
-
-                    KeyStoreSpi impl = (KeyStoreSpi)objs[0];
-                    if (impl.engineProbe(dataStream)) {
-
-                        if (kdebug != null) {
-                            kdebug.println(type + " keystore detected: " +
-                                file);
+            for (Provider p : Security.getProviders()) {
+                for (Provider.Service s : p.getServices()) {
+                    if (s.getType().equals("KeyStore")) {
+                        try {
+                            KeyStoreSpi impl = (KeyStoreSpi) s.newInstance(null);
+                            if (impl.engineProbe(dataStream)) {
+                                if (kdebug != null) {
+                                    kdebug.println(s.getAlgorithm()
+                                            + " keystore detected: " + file);
+                                }
+                                keystore = new KeyStore(impl, p, s.getAlgorithm());
+                                break;
+                            }
+                        } catch (NoSuchAlgorithmException e) {
+                            // ignore
+                            if (kdebug != null) {
+                                kdebug.println("not found - " + e);
+                            }
+                        } catch (IOException e) {
+                            // ignore
+                            if (kdebug != null) {
+                                kdebug.println("I/O error in " + file + " - " + e);
+                            }
                         }
-
-                        keystore = new KeyStore(impl, (Provider)objs[1], type);
-                        break;
-                    }
-                } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-                    // ignore
-                    if (kdebug != null) {
-                        kdebug.println(type + " not found - " + e);
-                    }
-                } catch (IOException e) {
-                    // ignore
-                    if (kdebug != null) {
-                        kdebug.println("I/O error in " + file + " - " + e);
+                        dataStream.reset(); // prepare the stream for the next probe
                     }
                 }
-                dataStream.reset(); // prepare the stream for the next probe
             }
 
             // Load the keystore data

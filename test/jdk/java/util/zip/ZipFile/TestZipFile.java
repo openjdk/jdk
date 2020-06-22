@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,40 +30,48 @@
  */
 
 import java.io.*;
-import java.lang.reflect.Method;
-import java.nio.*;
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.zip.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.CRC32;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 public class TestZipFile {
 
-    private static Random r = new Random();
-    private static int    N = 50;
-    private static int    NN = 10;
-    private static int    ENUM = 10000;
-    private static int    ESZ = 10000;
+    private static final Random r = new Random();
+    private static final int    N = 50;
+    private static final int    NN = 10;
+    private static final int    ENUM = 10000;
+    private static final int    ESZ = 10000;
     private static ExecutorService executor = Executors.newFixedThreadPool(20);
-    private static Set<Path> paths = new HashSet<>();
+    private static final Set<Path> paths = new HashSet<>();
+    private static final boolean isWindows = System.getProperty("os.name")
+            .startsWith("Windows");
 
     static void realMain (String[] args) throws Throwable {
-
         try {
             for (int i = 0; i < N; i++) {
                 test(r.nextInt(ENUM), r.nextInt(ESZ), false, true);
                 test(r.nextInt(ENUM), r.nextInt(ESZ), true, true);
             }
-
+            executor.shutdown();
+            executor.awaitTermination(10, TimeUnit.MINUTES);
+            executor = Executors.newFixedThreadPool(20);
             for (int i = 0; i < NN; i++) {
                 test(r.nextInt(ENUM), 100000 + r.nextInt(ESZ), false, true);
                 test(r.nextInt(ENUM), 100000 + r.nextInt(ESZ), true, true);
-                testCachedDelete();
-                testCachedOverwrite();
-                //test(r.nextInt(ENUM), r.nextInt(ESZ), false, true);
+                if(!isWindows) {
+                    testCachedDelete();
+                    testCachedOverwrite();
+                }
             }
-
             test(70000, 1000, false, true);   // > 65536 entry number;
             testDelete();                     // OPEN_DELETE
 
@@ -77,7 +85,7 @@ public class TestZipFile {
     }
 
     static void test(int numEntry, int szMax, boolean addPrefix, boolean cleanOld) {
-        String name = "zftest" + r.nextInt() + ".zip";
+        String name = "test-" + r.nextInt() + ".zip";
         Zip zip = new Zip(name, numEntry, szMax, addPrefix, cleanOld);
         for (int i = 0; i < NN; i++) {
             executor.submit(() -> doTest(zip));
@@ -89,7 +97,7 @@ public class TestZipFile {
     // (2) test the ZipFile works correctly
     // (3) check the zip is deleted after ZipFile gets closed
     static void testDelete() throws Throwable {
-        String name = "zftest" + r.nextInt() + ".zip";
+        String name = "testDelete-" + r.nextInt() + ".zip";
         Zip zip = new Zip(name, r.nextInt(ENUM), r.nextInt(ESZ), false, true);
         try (ZipFile zf = new ZipFile(new File(zip.name),
                                       ZipFile.OPEN_READ | ZipFile.OPEN_DELETE ))
@@ -108,7 +116,7 @@ public class TestZipFile {
     // (3) zip1 tests should fail, but no crash
     // (4) zip2 tasks should all get zip2, then pass normal testing.
     static void testCachedDelete() throws Throwable {
-        String name = "zftest" + r.nextInt() + ".zip";
+        String name = "testCachedDelete-" + r.nextInt() + ".zip";
         Zip zip1 = new Zip(name, r.nextInt(ENUM), r.nextInt(ESZ), false, true);
 
         try (ZipFile zf = new ZipFile(zip1.name)) {
@@ -135,7 +143,7 @@ public class TestZipFile {
    // overwrite the "zip1"  and create a new one to test. So the two zip files
    // have the same fileKey, but probably different lastModified()
     static void testCachedOverwrite() throws Throwable {
-        String name = "zftest" + r.nextInt() + ".zip";
+        String name = "testCachedOverWrite-" + r.nextInt() + ".zip";
         Zip zip1 = new Zip(name, r.nextInt(ENUM), r.nextInt(ESZ), false, true);
         try (ZipFile zf = new ZipFile(zip1.name)) {
             for (int i = 0; i < NN; i++) {
@@ -153,8 +161,8 @@ public class TestZipFile {
     // or deleted/rewritten, we only care if it crahes or not.
     static void verifyNoCrash(Zip zip) throws RuntimeException {
         try (ZipFile zf = new ZipFile(zip.name)) {
-            List<ZipEntry> zlist = new ArrayList(zip.entries.keySet());
-            String[] elist = zf.stream().map( e -> e.getName()).toArray(String[]::new);
+            List<ZipEntry> zlist = new ArrayList<>(zip.entries.keySet());
+            String[] elist = zf.stream().map(e -> e.getName()).toArray(String[]::new);
             if (!Arrays.equals(elist,
                                zlist.stream().map( e -> e.getName()).toArray(String[]::new)))
             {
@@ -219,12 +227,12 @@ public class TestZipFile {
     static void doTest0(Zip zip, ZipFile zf) throws Throwable {
         // (0) check zero-length entry name, no AIOOBE
         try {
-            check(zf.getEntry("") == null);;
+            check(zf.getEntry("") == null);
         } catch (Throwable t) {
             unexpected(t);
         }
 
-        List<ZipEntry> list = new ArrayList(zip.entries.keySet());
+        List<ZipEntry> list = new ArrayList<>(zip.entries.keySet());
         // (1) check entry list, in expected order
         if (!check(Arrays.equals(
                 list.stream().map( e -> e.getName()).toArray(String[]::new),
@@ -256,29 +264,11 @@ public class TestZipFile {
                 }
             }
         }
-        // (3) check getMetaInfEntryNames
-        String[] metas = list.stream()
-                             .map( e -> e.getName())
-                             .filter( s -> s.startsWith("META-INF/"))
-                             .sorted()
-                             .toArray(String[]::new);
-        if (metas.length > 0) {
-            // meta-inf entries
-            Method getMetas = ZipFile.class.getDeclaredMethod("getMetaInfEntryNames");
-            getMetas.setAccessible(true);
-            String[] names = (String[])getMetas.invoke(zf);
-            if (names == null) {
-                fail("Failed to get metanames from " + zf);
-            } else {
-                Arrays.sort(names);
-                check(Arrays.equals(names, metas));
-            }
-        }
     }
 
     private static class Zip {
-        String name;
-        Map<ZipEntry, byte[]> entries;
+        final String name;
+        final Map<ZipEntry, byte[]> entries;
         BasicFileAttributes attrs;
         long lastModified;
 
@@ -292,7 +282,7 @@ public class TestZipFile {
                 }
                 paths.add(p);
             } catch (Exception x) {
-                throw (RuntimeException)x;
+                throw new RuntimeException(x);
             }
 
             try (FileOutputStream fos = new FileOutputStream(name);
@@ -309,7 +299,7 @@ public class TestZipFile {
                     String ename = "entry-" + i + "-name-" + r.nextLong();
                     ZipEntry ze = new ZipEntry(ename);
                     int method = r.nextBoolean() ? ZipEntry.STORED : ZipEntry.DEFLATED;
-                    writeEntry(zos, crc, ze, ZipEntry.STORED, szMax);
+                    writeEntry(zos, crc, ze, method, szMax);
                 }
                 // add some manifest entries
                 for (int i = 0; i < r.nextInt(20); i++) {
@@ -318,13 +308,13 @@ public class TestZipFile {
                     writeEntry(zos, crc, ze, ZipEntry.STORED, szMax);
                 }
             } catch (Exception x) {
-                throw (RuntimeException)x;
+                throw new RuntimeException(x);
             }
             try {
                 this.attrs = Files.readAttributes(Paths.get(name), BasicFileAttributes.class);
                 this.lastModified = new File(name).lastModified();
             } catch (Exception x) {
-                throw (RuntimeException)x;
+                throw new RuntimeException(x);
             }
         }
 
@@ -358,11 +348,10 @@ public class TestZipFile {
     static void fail() {failed++; Thread.dumpStack();}
     static void fail(String msg) {System.out.println(msg); fail();}
     static void unexpected(Throwable t) {failed++; t.printStackTrace();}
-    static void unexpected(Throwable t, String msg) {
-        System.out.println(msg); failed++; t.printStackTrace();}
+
     static boolean check(boolean cond) {if (cond) pass(); else fail(); return cond;}
 
-    public static void main(String[] args) throws Throwable {
+    public static void main(String[] args) {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.println("\nPassed = " + passed + " failed = " + failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}

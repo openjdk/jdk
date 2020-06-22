@@ -1297,11 +1297,16 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
 
   Stack<oop,mtGC> oop_stack;
 
-  // First, we process GC roots according to current GC cycle. This populates the work stack with initial objects.
-  ShenandoahHeapIterationRootScanner rp;
   ObjectIterateScanRootClosure oops(&_aux_bit_map, &oop_stack);
 
-  rp.roots_do(&oops);
+  {
+    // First, we process GC roots according to current GC cycle.
+    // This populates the work stack with initial objects.
+    // It is important to relinquish the associated locks before diving
+    // into heap dumper.
+    ShenandoahHeapIterationRootScanner rp;
+    rp.roots_do(&oops);
+  }
 
   // Work through the oop stack to traverse heap.
   while (! oop_stack.is_empty()) {

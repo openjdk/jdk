@@ -177,6 +177,7 @@ public class AddLauncherTest {
             cmd.addArguments("--module-path", modularJarCmd.getArgumentValue(
                     "--module-path"));
             cmd.addArguments("--add-modules", modularAppDesc.moduleName());
+            cmd.ignoreDefaultRuntime(true); // because of --add-modules
         }
 
         new AdditionalLauncher("ModularAppLauncher")

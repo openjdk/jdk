@@ -362,3 +362,15 @@ Java_com_sun_management_internal_OperatingSystemImpl_getHostConfiguredCpuCount0
        return -1;
     }
 }
+
+JNIEXPORT jint JNICALL
+Java_com_sun_management_internal_OperatingSystemImpl_getHostOnlineCpuCount0
+(JNIEnv *env, jobject mbean)
+{
+    int n = sysconf(_SC_NPROCESSORS_ONLN);
+    if (n <= 0) {
+        n = 1;
+    }
+    return n;
+}
+

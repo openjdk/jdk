@@ -179,7 +179,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     AC_MSG_ERROR([--with-version-string must have a value])
   elif test "x$with_version_string" != x; then
     # Additional [] needed to keep m4 from mangling shell constructs.
-    if [ [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z]+))?((\+)([0-9]+)?(-([-a-zA-Z0-9.]+))?)?$ ]] ]; then
+    if [ [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z0-9]+))?(((\+)([0-9]*))?(-([-a-zA-Z0-9.]+))?)?$ ]] ]; then
       VERSION_FEATURE=${BASH_REMATCH[[1]]}
       VERSION_INTERIM=${BASH_REMATCH[[3]]}
       VERSION_UPDATE=${BASH_REMATCH[[5]]}
@@ -188,9 +188,9 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       VERSION_EXTRA2=${BASH_REMATCH[[11]]}
       VERSION_EXTRA3=${BASH_REMATCH[[13]]}
       VERSION_PRE=${BASH_REMATCH[[15]]}
-      version_plus_separator=${BASH_REMATCH[[17]]}
-      VERSION_BUILD=${BASH_REMATCH[[18]]}
-      VERSION_OPT=${BASH_REMATCH[[20]]}
+      version_plus_separator=${BASH_REMATCH[[18]]}
+      VERSION_BUILD=${BASH_REMATCH[[19]]}
+      VERSION_OPT=${BASH_REMATCH[[21]]}
       # Unspecified numerical fields are interpreted as 0.
       if test "x$VERSION_INTERIM" = x; then
         VERSION_INTERIM=0
@@ -233,8 +233,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       # Interpret --without-* as empty string instead of the literal "no"
       VERSION_PRE=
     else
-      # Only [a-zA-Z] is allowed in the VERSION_PRE. Outer [ ] to quote m4.
-      [ VERSION_PRE=`$ECHO "$with_version_pre" | $TR -c -d '[a-z][A-Z]'` ]
+      # Only [a-zA-Z0-9] is allowed in the VERSION_PRE. Outer [ ] to quote m4.
+      [ VERSION_PRE=`$ECHO "$with_version_pre" | $TR -c -d '[a-zA-Z0-9]'` ]
       if test "x$VERSION_PRE" != "x$with_version_pre"; then
         AC_MSG_WARN([--with-version-pre value has been sanitized from '$with_version_pre' to '$VERSION_PRE'])
       fi

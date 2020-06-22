@@ -106,7 +106,7 @@ class JfrThreadGroupsHelper : public ResourceObj {
 };
 
 JfrThreadGroupsHelper::JfrThreadGroupsHelper(const JavaThread* jt, Thread* current) {
-  _thread_group_hierarchy = new GrowableArray<JfrThreadGroupPointers*>(10, false, mtTracing);
+  _thread_group_hierarchy = new GrowableArray<JfrThreadGroupPointers*>(10);
   _current_iterator_pos = populate_thread_group_hierarchy(jt, current) - 1;
 }
 
@@ -259,7 +259,7 @@ void JfrThreadGroup::JfrThreadGroupEntry::set_thread_group(JfrThreadGroupPointer
 }
 
 JfrThreadGroup::JfrThreadGroup() :
-  _list(new (ResourceObj::C_HEAP, mtTracing) GrowableArray<JfrThreadGroupEntry*>(initial_array_size, true, mtTracing)) {}
+  _list(new (ResourceObj::C_HEAP, mtTracing) GrowableArray<JfrThreadGroupEntry*>(initial_array_size, mtTracing)) {}
 
 JfrThreadGroup::~JfrThreadGroup() {
   if (_list != NULL) {

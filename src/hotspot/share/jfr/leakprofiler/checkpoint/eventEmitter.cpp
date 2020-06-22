@@ -58,10 +58,6 @@ void EventEmitter::emit(ObjectSampler* sampler, int64_t cutoff_ticks, bool emit_
   EdgeStore edge_store;
   if (cutoff_ticks <= 0) {
     // no reference chains
-    MutexLocker lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
-    // The lock is needed here to prevent the recorder thread (running flush())
-    // from writing old object events out from the thread local buffer
-    // before the required constant pools have been serialized.
     JfrTicks time_stamp = JfrTicks::now();
     EventEmitter emitter(time_stamp, time_stamp);
     emitter.write_events(sampler, &edge_store, emit_all);
@@ -73,7 +69,6 @@ void EventEmitter::emit(ObjectSampler* sampler, int64_t cutoff_ticks, bool emit_
 }
 
 size_t EventEmitter::write_events(ObjectSampler* object_sampler, EdgeStore* edge_store, bool emit_all) {
-  assert_locked_or_safepoint(JfrStream_lock);
   assert(_thread == Thread::current(), "invariant");
   assert(_thread->jfr_thread_local() == _jfr_thread_local, "invariant");
   assert(object_sampler != NULL, "invariant");
@@ -82,19 +77,32 @@ size_t EventEmitter::write_events(ObjectSampler* object_sampler, EdgeStore* edge
   const jlong last_sweep = emit_all ? max_jlong : object_sampler->last_sweep().value();
   size_t count = 0;
 
+  // First pass associates a live sample with its immediate edge
+  // in preparation for writing checkpoint information.
   const ObjectSample* current = object_sampler->first();
   while (current != NULL) {
     ObjectSample* prev = current->prev();
     if (current->is_alive_and_older_than(last_sweep)) {
-      write_event(current, edge_store);
+      link_sample_with_edge(current, edge_store);
       ++count;
     }
     current = prev;
   }
-
   if (count > 0) {
-    // serialize associated checkpoints and potential chains
+    // We need to serialize the associated checkpoints and potential chains
+    // before writing the events to ensure constants are available for resolution
+    // at the time old object sample events appear in the stream.
     ObjectSampleCheckpoint::write(object_sampler, edge_store, emit_all, _thread);
+
+    // Now we are ready to write the events
+    const ObjectSample* current = object_sampler->first();
+    while (current != NULL) {
+      ObjectSample* prev = current->prev();
+      if (current->is_alive_and_older_than(last_sweep)) {
+        write_event(current, edge_store);
+      }
+      current = prev;
+    }
   }
   return count;
 }
@@ -105,6 +113,22 @@ static int array_size(const oop object) {
     return arrayOop(object)->length();
   }
   return min_jint;
+}
+
+void EventEmitter::link_sample_with_edge(const ObjectSample* sample, EdgeStore* edge_store) {
+  assert(sample != NULL, "invariant");
+  assert(!sample->is_dead(), "invariant");
+  assert(edge_store != NULL, "invariant");
+  if (SafepointSynchronize::is_at_safepoint()) {
+    if (!sample->object()->mark().is_marked()) {
+      // Associated with an edge (chain) already during heap traversal.
+      return;
+    }
+  }
+  // In order to dump out a representation of the event
+  // even though the sample object was found not reachable / too long to reach,
+  // we need to register a top level edge.
+  edge_store->put(UnifiedOopRef::encode_in_native(sample->object_addr()));
 }
 
 void EventEmitter::write_event(const ObjectSample* sample, EdgeStore* edge_store) {
@@ -121,14 +145,10 @@ void EventEmitter::write_event(const ObjectSample* sample, EdgeStore* edge_store
     }
   }
   if (edge == NULL) {
-    // In order to dump out a representation of the event
-    // even though it was not reachable / too long to reach,
-    // we need to register a top level edge for this object.
-    edge = edge_store->put(UnifiedOopRef::encode_in_native(sample->object_addr()));
+    edge = edge_store->get(UnifiedOopRef::encode_in_native(sample->object_addr()));
   } else {
     gc_root_id = edge_store->gc_root_id(edge);
   }
-
   assert(edge != NULL, "invariant");
   const traceid object_id = edge_store->get_id(edge);
   assert(object_id != 0, "invariant");

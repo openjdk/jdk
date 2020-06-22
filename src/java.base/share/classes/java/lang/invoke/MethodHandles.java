@@ -3273,10 +3273,10 @@ return mh1;
         private MethodHandle unreflectField(Field f, boolean isSetter) throws IllegalAccessException {
             MemberName field = new MemberName(f, isSetter);
             if (isSetter && field.isFinal()) {
-                if (field.isStatic()) {
-                    throw field.makeAccessException("static final field has no write access", this);
-                } else if (field.getDeclaringClass().isHidden()){
-                    throw field.makeAccessException("final field in a hidden class has no write access", this);
+                if (field.isTrustedFinalField()) {
+                    String msg = field.isStatic() ? "static final field has no write access"
+                                                  : "final field has no write access";
+                    throw field.makeAccessException(msg, this);
                 }
             }
             assert(isSetter
@@ -3839,7 +3839,7 @@ return mh1;
                 refc = lookupClass();
             }
             return VarHandles.makeFieldHandle(getField, refc, getField.getFieldType(),
-                                             this.allowedModes == TRUSTED && !getField.getDeclaringClass().isHidden());
+                                              this.allowedModes == TRUSTED && !getField.isTrustedFinalField());
         }
         /** Check access and get the requested constructor. */
         private MethodHandle getDirectConstructor(Class<?> refc, MemberName ctor) throws IllegalAccessException {

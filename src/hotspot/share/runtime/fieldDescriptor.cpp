@@ -58,6 +58,11 @@ Symbol* fieldDescriptor::generic_signature() const {
   return NULL;
 }
 
+bool fieldDescriptor::is_trusted_final() const {
+  InstanceKlass* ik = field_holder();
+  return is_final() && (is_static() || ik->is_hidden() || ik->is_record());
+}
+
 AnnotationArray* fieldDescriptor::annotations() const {
   InstanceKlass* ik = field_holder();
   Array<AnnotationArray*>* md = ik->fields_annotations();
@@ -193,7 +198,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       if (obj->obj_field(offset()) != NULL) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
-        st->print_cr("NULL");
+        st->print("NULL");
       }
       break;
     case T_OBJECT:
@@ -202,7 +207,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       if (obj->obj_field(offset()) != NULL) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
-        st->print_cr("NULL");
+        st->print("NULL");
       }
       break;
     default:

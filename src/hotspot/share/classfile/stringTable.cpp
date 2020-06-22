@@ -623,7 +623,7 @@ size_t StringTable::verify_and_compare_entries() {
   Thread* thr = Thread::current();
   GrowableArray<oop>* oops =
     new (ResourceObj::C_HEAP, mtInternal)
-      GrowableArray<oop>((int)_current_size, true);
+      GrowableArray<oop>((int)_current_size, mtInternal);
 
   VerifyCompStrings vcs(oops);
   if (!_local_table->try_scan(thr, vcs)) {

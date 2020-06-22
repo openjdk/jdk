@@ -32,7 +32,7 @@ G1FullGCCompactionPoint::G1FullGCCompactionPoint() :
     _current_region(NULL),
     _threshold(NULL),
     _compaction_top(NULL) {
-  _compaction_regions = new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(32, true, mtGC);
+  _compaction_regions = new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(32, mtGC);
   _compaction_region_iterator = _compaction_regions->begin();
 }
 

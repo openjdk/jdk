@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,30 @@ import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.function.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.incubator.jpackage.internal.AppImageFile;
+import jdk.incubator.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
+import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingRunnable;
-import static jdk.jpackage.test.PackageType.*;
+import jdk.jpackage.test.Functional.ThrowingSupplier;
+
+
 
 /**
  * Instance of PackageTest is for configuring and running a single jpackage
@@ -170,7 +185,7 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     public PackageTest addBundleDesktopIntegrationVerifier(boolean integrated) {
-        forTypes(LINUX, () -> {
+        forTypes(PackageType.LINUX, () -> {
             LinuxHelper.addBundleDesktopIntegrationVerifier(this, integrated);
         });
         return this;
@@ -224,6 +239,10 @@ public final class PackageTest extends RunnablePackageTest {
         // running check of type of environment.
         addHelloAppInitializer(null);
 
+        forTypes(PackageType.LINUX, () -> {
+            LinuxHelper.addFileAssociationsVerifier(this, fa);
+        });
+
         String noActionMsg = "Not running file associations test";
         if (GraphicsEnvironment.isHeadless()) {
             TKit.trace(String.format(
@@ -258,10 +277,6 @@ public final class PackageTest extends RunnablePackageTest {
                 HelloApp.verifyOutputFile(appOutput, expectedArgs,
                         Collections.emptyMap());
             });
-        });
-
-        forTypes(PackageType.LINUX, () -> {
-            LinuxHelper.addFileAssociationsVerifier(this, fa);
         });
 
         return this;
@@ -538,19 +553,14 @@ public final class PackageTest extends RunnablePackageTest {
             }
             TKit.trace(String.format(formatString, cmd.getPrintableCommandLine()));
 
-            TKit.assertDirectoryExists(cmd.appRuntimeDirectory());
             if (!cmd.isRuntime()) {
-                TKit.assertExecutableFileExists(cmd.appLauncherPath());
-
                 if (PackageType.WINDOWS.contains(cmd.packageType())
                         && !cmd.isPackageUnpacked(
                                 "Not verifying desktop integration")) {
                     new WindowsHelper.DesktopIntegrationVerifier(cmd);
                 }
             }
-
-            TKit.assertPathExists(AppImageFile.getPathInAppImage(
-                    cmd.appInstallationDirectory()), false);
+            cmd.assertAppLayout();
 
             installVerifiers.forEach(v -> v.accept(cmd));
         }
@@ -566,7 +576,13 @@ public final class PackageTest extends RunnablePackageTest {
                 }
             }
 
-            TKit.assertPathExists(cmd.appInstallationDirectory(), false);
+            Path appInstallDir = cmd.appInstallationDirectory();
+            if (TKit.isLinux() && Path.of("/").equals(appInstallDir)) {
+                ApplicationLayout appLayout = cmd.appLayout();
+                TKit.assertPathExists(appLayout.runtimeDirectory(), false);
+            } else {
+                TKit.assertPathExists(appInstallDir, false);
+            }
 
             uninstallVerifiers.forEach(v -> v.accept(cmd));
         }

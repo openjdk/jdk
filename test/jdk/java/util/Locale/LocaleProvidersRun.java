@@ -26,6 +26,7 @@
  * @bug 6336885 7196799 7197573 7198834 8000245 8000615 8001440 8008577
  *      8010666 8013086 8013233 8013903 8015960 8028771 8054482 8062006
  *      8150432 8215913 8220227 8228465 8232871 8232860 8236495 8245241
+ *      8246721
  * @summary tests for "java.locale.providers" system property
  * @library /test/lib
  * @build LocaleProviders
@@ -33,7 +34,7 @@
  *        providersrc.spi.src.tznp8013086
  * @modules java.base/sun.util.locale
  *          java.base/sun.util.locale.provider
- * @run main LocaleProvidersRun
+ * @run main/othervm -Djdk.lang.Process.allowAmbiguousCommands=false LocaleProvidersRun
  */
 
 import java.util.Locale;
@@ -164,6 +165,8 @@ public class LocaleProvidersRun {
         testRun("HOST", "bug8232860Test", "", "", "");
 
         //testing 8245241 fix.
+        //jdk.lang.Process.allowAmbiguousCommands=false is needed for properly escaping
+        //double quotes in the string argument.
         testRun("FOO", "bug8245241Test",
             "Invalid locale provider adapter \"FOO\" ignored.", "", "");
     }

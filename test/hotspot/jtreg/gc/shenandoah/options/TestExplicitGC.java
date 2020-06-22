@@ -61,6 +61,7 @@ public class TestExplicitGC {
 
         {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                    "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xlog:gc",
@@ -77,6 +78,7 @@ public class TestExplicitGC {
 
         {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                    "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xlog:gc",
@@ -94,6 +96,7 @@ public class TestExplicitGC {
 
         {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                    "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xlog:gc",
@@ -111,6 +114,7 @@ public class TestExplicitGC {
 
         {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                    "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xlog:gc",
@@ -128,6 +132,7 @@ public class TestExplicitGC {
 
         {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                    "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xlog:gc",

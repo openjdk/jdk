@@ -90,7 +90,8 @@ class GangTaskDispatcher : public CHeapObj<mtGC> {
 
   // Distributes the task out to num_workers workers.
   // Returns when the task has been completed by all workers.
-  virtual void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers) = 0;
+  virtual void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers,
+                                              bool add_foreground_work) = 0;
 
   // Worker API.
 
@@ -215,8 +216,9 @@ public:
   // Run a task with the given number of workers, returns
   // when the task is done. The number of workers must be at most the number of
   // active workers.  Additional workers may be created if an insufficient
-  // number currently exists.
-  void run_task(AbstractGangTask* task, uint num_workers);
+  // number currently exists. If the add_foreground_work flag is true, the current thread
+  // is used to run the task too.
+  void run_task(AbstractGangTask* task, uint num_workers, bool add_foreground_work = false);
 
 protected:
   virtual AbstractGangWorker* allocate_worker(uint which);

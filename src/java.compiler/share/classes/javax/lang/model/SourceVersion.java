@@ -168,7 +168,7 @@ public enum SourceVersion {
      *
      * @since 10
      */
-     RELEASE_10,
+    RELEASE_10,
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -179,7 +179,7 @@ public enum SourceVersion {
      *
      * @since 11
      */
-     RELEASE_11,
+    RELEASE_11,
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -187,7 +187,7 @@ public enum SourceVersion {
      *
      * @since 12
      */
-     RELEASE_12,
+    RELEASE_12,
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -195,7 +195,7 @@ public enum SourceVersion {
      *
      * @since 13
      */
-     RELEASE_13,
+    RELEASE_13,
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -215,7 +215,15 @@ public enum SourceVersion {
      *
      * @since 15
      */
-     RELEASE_15;
+    RELEASE_15,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 16.
+     *
+     * @since 16
+     */
+    RELEASE_16;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -226,7 +234,7 @@ public enum SourceVersion {
      * @return the latest source version that can be modeled
      */
     public static SourceVersion latest() {
-        return RELEASE_15;
+        return RELEASE_16;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -241,7 +249,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(15, intVersion)):
+            valueOf("RELEASE_" + Math.min(16, intVersion)):
             RELEASE_10;
     }
 

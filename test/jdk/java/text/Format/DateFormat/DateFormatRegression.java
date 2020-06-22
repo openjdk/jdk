@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1067,7 +1067,7 @@ public class DateFormatRegression extends IntlTest {
         TimeZone.setDefault(TimeZone.getTimeZone("PST"));
         SimpleDateFormat fmt = new SimpleDateFormat("yy/MM/dd hh:ss zzz", Locale.JAPAN);
         @SuppressWarnings("deprecation")
-        String result = fmt.format(new Date(1999, 0, 1));
+        String result = fmt.format(new Date(1999 - 1900, 0, 1));
         logln("format()=>" + result);
         if (!result.endsWith("PST")) {
             errln("FAIL: SimpleDataFormat.format() did not retrun PST");

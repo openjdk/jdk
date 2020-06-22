@@ -312,7 +312,10 @@ public class DatagramSocket implements java.io.Closeable {
      * operation, if the packet's address is set and the packet's address
      * and the socket's address do not match, an {@code IllegalArgumentException}
      * will be thrown. A socket connected to a multicast address may only
-     * be used to send packets.
+     * be used to send packets. Datagrams in the socket's {@linkplain
+     * java.net.StandardSocketOptions#SO_RCVBUF socket receive buffer}, which
+     * have not been {@linkplain #receive(DatagramPacket) received} before invoking
+     * this method, may be discarded.
      *
      * @param address the remote address for the socket
      *
@@ -345,7 +348,10 @@ public class DatagramSocket implements java.io.Closeable {
      * behaves as if invoking {@link #connect(InetAddress,int) connect(InetAddress,int)}
      * with the given socket addresses IP address and port number, except that the
      * {@code SocketException} that may be raised is not wrapped in an
-     * {@code UncheckedIOException}.
+     * {@code UncheckedIOException}. Datagrams in the socket's {@linkplain
+     * java.net.StandardSocketOptions#SO_RCVBUF socket receive buffer}, which
+     * have not been {@linkplain #receive(DatagramPacket) received} before invoking
+     * this method, may be discarded.
      *
      * @param   addr    The remote address.
      *

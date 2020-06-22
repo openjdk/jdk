@@ -330,6 +330,7 @@ class HeapDumpDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _filename;
   DCmdArgument<bool>  _all;
+  DCmdArgument<jlong> _gzip;
 public:
   HeapDumpDCmd(outputStream* output, bool heap);
   static const char* name() {

@@ -68,7 +68,6 @@ import jdk.jfr.internal.Utils;
 public final class AnnotationElement {
     private final Type type;
     private final List<Object> annotationValues;
-    private final List<String> annotationNames;
     private final boolean inBootClassLoader;
 
     // package private
@@ -76,7 +75,9 @@ public final class AnnotationElement {
         Objects.requireNonNull(type);
         Objects.requireNonNull(objects);
         this.type = type;
-        if (objects.size() != type.getFields().size()) {
+        List<ValueDescriptor> fields = type.getFields();
+        int fieldCount = fields.size();
+        if (objects.size() != fieldCount) {
             StringJoiner descriptors = new StringJoiner(",", "[", "]");
             for (ValueDescriptor v : type.getFields()) {
                 descriptors.add(v.getName());
@@ -88,25 +89,18 @@ public final class AnnotationElement {
             throw new IllegalArgumentException("Annotation " + descriptors + " for " + type.getName() + " doesn't match number of values " + values);
         }
 
-        List<String> n = new ArrayList<>();
-        List<Object> v = new ArrayList<>();
-        int index = 0;
-        for (ValueDescriptor valueDescriptor : type.getFields()) {
+        for (int index = 0; index < fieldCount; index++) {
             Object object = objects.get(index);
             if (object == null) {
                 throw new IllegalArgumentException("Annotation value can't be null");
             }
             Class<?> valueType = object.getClass();
-            if (valueDescriptor.isArray()) {
+            if (fields.get(index).isArray()) {
                 valueType = valueType.getComponentType();
             }
             checkType(Utils.unboxType(valueType));
-            n.add(valueDescriptor.getName());
-            v.add(object);
-            index++;
         }
-        this.annotationValues = Utils.smallUnmodifiable(v);
-        this.annotationNames = Utils.smallUnmodifiable(n);
+        this.annotationValues = Utils.smallUnmodifiable(objects);
         this.inBootClassLoader = boot;
     }
 
@@ -162,9 +156,8 @@ public final class AnnotationElement {
         if (methods.length != map.size()) {
             throw new IllegalArgumentException("Number of declared methods must match size of value map");
         }
-        List<String> n = new ArrayList<>();
-        List<Object> v = new ArrayList<>();
-        Set<String> nameSet = new HashSet<>();
+        List<Object> v = new ArrayList<>(methods.length);
+        Set<String> nameSet = methods.length > 1 ? new HashSet<String>() : null;
         for (Method method : methods) {
             String fieldName = method.getName();
             Object object = map.get(fieldName);
@@ -198,18 +191,19 @@ public final class AnnotationElement {
                 fieldType = Utils.unboxType(object.getClass());
                 checkType(fieldType);
             }
-            if (nameSet.contains(fieldName)) {
-                throw new IllegalArgumentException("Value with name '" + fieldName + "' already exists");
+            if (nameSet!= null) {
+                if (nameSet.contains(fieldName)) {
+                    throw new IllegalArgumentException("Value with name '" + fieldName + "' already exists");
+                }
+                nameSet.add(fieldName);
             }
             if (isKnownJFRAnnotation(annotationType)) {
                 ValueDescriptor vd = new ValueDescriptor(fieldType, fieldName, Collections.emptyList(), true);
                 type.add(vd);
             }
-            n.add(fieldName);
             v.add(object);
         }
         this.annotationValues = Utils.smallUnmodifiable(v);
-        this.annotationNames = Utils.smallUnmodifiable(n);
         this.inBootClassLoader = annotationType.getClassLoader() == null;
     }
 
@@ -314,12 +308,9 @@ public final class AnnotationElement {
      */
     public Object getValue(String name) {
         Objects.requireNonNull(name);
-        int index = 0;
-        for (String n : annotationNames) {
-            if (name.equals(n)) {
-                return annotationValues.get(index);
-            }
-            index++;
+        int index = type.indexOf(name);
+        if (index != -1) {
+            return annotationValues.get(index);
         }
         StringJoiner valueNames = new StringJoiner(",", "[", "]");
         for (ValueDescriptor v : type.getFields()) {
@@ -339,12 +330,7 @@ public final class AnnotationElement {
      */
     public boolean hasValue(String name) {
         Objects.requireNonNull(name);
-        for (String n : annotationNames) {
-            if (name.equals(n)) {
-                return true;
-            }
-        }
-        return false;
+        return type.indexOf(name) != -1;
     }
 
     /**

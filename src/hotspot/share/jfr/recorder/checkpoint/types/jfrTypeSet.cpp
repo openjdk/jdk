@@ -1038,6 +1038,7 @@ size_t JfrTypeSet::serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* l
  * Clear all tags from the previous epoch.
  */
 void JfrTypeSet::clear() {
+  ResourceMark rm;
   JfrKlassUnloading::clear();
   clear_artifacts = true;
   setup(NULL, NULL, false, false);

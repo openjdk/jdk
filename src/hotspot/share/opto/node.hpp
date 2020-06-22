@@ -1150,8 +1150,7 @@ public:
   void collect_nodes_out_all_ctrl_boundary(GrowableArray<Node*> *ns) const;
 
   void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
-  void verify() const;               // Check Def-Use info for my subgraph
-  static void verify_recur(const Node *n, int verify_depth, VectorSet &old_space, VectorSet &new_space);
+  static void verify(Node* n, int verify_depth);
 
   // This call defines a class-unique string used to identify class instances
   virtual const char *Name() const;

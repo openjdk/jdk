@@ -276,7 +276,7 @@ public class HelpWriter extends HtmlDocletWriter {
                             HtmlTree.CODE(new StringContent(example[0])), example[1])));
         }
         Content searchSpecLink = HtmlTree.A(
-                resources.getText("doclet.help.search.spec.url", Runtime.version().feature()),
+                resources.getText("doclet.help.search.spec.url", configuration.getDocletVersion().feature()),
                 getContent("doclet.help.search.spec.title"));
         Content searchRefer = HtmlTree.P(getContent("doclet.help.search.refer", searchSpecLink));
         section.add(searchIntro)

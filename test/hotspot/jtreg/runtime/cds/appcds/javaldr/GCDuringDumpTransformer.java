@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,40 @@
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.IllegalClassFormatException;
+import java.lang.ref.Cleaner;
 import java.security.ProtectionDomain;
 
 public class GCDuringDumpTransformer implements ClassFileTransformer {
+    static boolean TEST_WITH_CLEANER = Boolean.getBoolean("test.with.cleaner");
+    static Cleaner cleaner;
+    static Thread thread;
+    static Object garbage;
+
+    static {
+        if (TEST_WITH_CLEANER) {
+            cleaner = Cleaner.create();
+            garbage = new Object();
+            cleaner.register(garbage, new MyCleaner());
+            System.out.println("Registered cleaner");
+        }
+    }
+
     public byte[] transform(ClassLoader loader, String name, Class<?> classBeingRedefined,
                             ProtectionDomain pd, byte[] buffer) throws IllegalClassFormatException {
-        try {
-            makeGarbage();
-        } catch (Throwable t) {
-            t.printStackTrace();
+        if (TEST_WITH_CLEANER) {
+            if (name.equals("Hello")) {
+                garbage = null;
+                System.out.println("Unreferenced GCDuringDumpTransformer.garbage");
+            }
+        } else {
             try {
-                Thread.sleep(200); // let GC to have a chance to run
-            } catch (Throwable t2) {}
+                makeGarbage();
+            } catch (Throwable t) {
+                t.printStackTrace();
+                try {
+                    Thread.sleep(200); // let GC to have a chance to run
+                } catch (Throwable t2) {}
+            }
         }
 
         return null;
@@ -45,7 +67,7 @@ public class GCDuringDumpTransformer implements ClassFileTransformer {
     private static Instrumentation savedInstrumentation;
 
     public static void premain(String agentArguments, Instrumentation instrumentation) {
-        System.out.println("ClassFileTransformer.premain() is called");
+        System.out.println("ClassFileTransformer.premain() is called: TEST_WITH_CLEANER = " + TEST_WITH_CLEANER);
         instrumentation.addTransformer(new GCDuringDumpTransformer(), /*canRetransform=*/true);
         savedInstrumentation = instrumentation;
     }
@@ -61,6 +83,17 @@ public class GCDuringDumpTransformer implements ClassFileTransformer {
     public static void makeGarbage() {
         for (int x=0; x<10; x++) {
             Object[] a = new Object[10000];
+        }
+    }
+
+    static class MyCleaner implements Runnable {
+        static int count = 0;
+        int i = count++;
+        public void run() {
+            // Allocate something. This will cause G1 to allocate an EDEN region.
+            // See JDK-8245925
+            Object o = new Object();
+            System.out.println("cleaning " + i);
         }
     }
 }

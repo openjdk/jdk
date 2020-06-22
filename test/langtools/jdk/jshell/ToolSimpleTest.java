@@ -132,7 +132,7 @@ public class ToolSimpleTest extends ReplToolTesting {
                         + "|  Caused by: java.io.IOException: bar\n"
                         + "|        at n (#2:1)\n"
                         + "|        ...\n"
-                        + "|  Caused by: java.lang.NullPointerException\n"
+                        + "|  Caused by: java.lang.NullPointerException: Cannot invoke \"String.toString()\" because \"null\" is null\n"
                         + "|        at p (#1:1)\n"
                         + "|        ..."),
                 (a) -> assertCommand(a, "/drop p",

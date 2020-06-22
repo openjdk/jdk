@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4927552 8026567 8071982 8162674 8175200 8175218 8183511 8186332
- *           8169819 8074407 8191030 8182765 8184205
+ *           8169819 8074407 8191030 8182765 8184205 8243533
  * @summary  test generated docs for deprecated items
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -164,8 +164,27 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </td>""",
                 """
                     <td class="col-last">
-                    <div class="block"><span class="deprecated-label">Deprecated.</span>
+                    <div class="block"><span class="deprecated-label">Deprecated, for removal: This \
+                    API element is subject to removal in a future version.</span>
                     <div class="deprecation-comment">class_test4 passes.</div>
+                    </div>
+                    </td>""",
+                """
+                    <td class="col-last">
+                    <div class="block"><span class="deprecated-label">Deprecated.</span>
+                    <div class="deprecation-comment">class_test5 passes.</div>
+                    </div>
+                    </td>""",
+                """
+                    <td class="col-last">
+                    <div class="block"><span class="deprecated-label">Deprecated.</span>
+                    <div class="deprecation-comment">class_test6 passes.</div>
+                    </div>
+                    </td>""",
+                """
+                    <td class="col-last">
+                    <div class="block"><span class="deprecated-label">Deprecated.</span>
+                    <div class="deprecation-comment">class_test7 passes.</div>
                     </div>
                     </td>""");
 
@@ -355,6 +374,78 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </tr>
                     </tbody>
                     </table>
-                    </div>""");
+                    </div>""",
+                """
+                    <div class="deprecated-summary" id="method">
+                    <table class="summary-table">
+                    <caption><span>Methods</span></caption>
+                    <thead>
+                    <tr>
+                    <th class="col-first" scope="col">Method</th>
+                    <th class="col-last" scope="col">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="alt-color">
+                    <th class="col-deprecated-item-name" scope="row"><a href="pkg/DeprecatedClassByAnnotation.html#method()">pkg.DeprecatedClassByAnnotation.method()</a></th>
+                    <td class="col-last"></td>
+                    </tr>
+                    <tr class="row-color">
+                    <th class="col-deprecated-item-name" scope="row"><a href="pkg/TestAnnotationType.html#optional()">pkg.TestAnnotationType.optional()</a></th>
+                    <td class="col-last">
+                    <div class="deprecation-comment">annotation_test2 passes.</div>
+                    </td>
+                    </tr>
+                    <tr class="alt-color">
+                    <th class="col-deprecated-item-name" scope="row"><a href="pkg/TestAnnotationType.html#required()">pkg.TestAnnotationType.required()</a></th>
+                    <td class="col-last">
+                    <div class="deprecation-comment">annotation_test3 passes.</div>
+                    </td>
+                    </tr>
+                    <tr class="row-color">
+                    <th class="col-deprecated-item-name" scope="row"><a href="pkg/TestClass.html#method()">pkg.TestClass.method()</a></th>
+                    <td class="col-last">
+                    <div class="deprecation-comment">class_test5 passes. This is the second sentence of deprecated description for a method.</div>
+                    </td>
+                    </tr>
+                    <tr class="alt-color">
+                    <th class="col-deprecated-item-name" scope="row"><a href="pkg/TestClass.html#overloadedMethod(int)">pkg.TestClass.overloadedMethod&#8203;(int)</a></th>
+                    <td class="col-last">
+                    <div class="deprecation-comment">class_test7 passes. Overloaded method 2.</div>
+                    </td>
+                    </tr>
+                    <tr class="row-color">
+                    <th class="col-deprecated-item-name" scope="row"><a href="pkg/TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod&#8203;(String)</a></th>
+                    <td class="col-last">
+                    <div class="deprecation-comment">class_test6 passes. Overloaded method 1.</div>
+                    </td>
+                    </tr>""",
+                """
+                    <div class="deprecated-summary" id="constructor">
+                    <table class="summary-table">
+                    <caption><span>Constructors</span></caption>
+                    <thead>
+                    <tr>
+                    <th class="col-first" scope="col">Constructor</th>
+                    <th class="col-last" scope="col">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="alt-color">
+                    <th class="col-deprecated-item-name" scope="row"><a href="pkg/DeprecatedClassByAnnotation.html#%3Cinit%3E()">pkg.DeprecatedClassByAnnotation()</a></th>
+                    <td class="col-last"></td>
+                    </tr>
+                    <tr class="row-color">
+                    <th class="col-deprecated-item-name" scope="row"><a href="pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></th>
+                    <td class="col-last">
+                    <div class="deprecation-comment">class_test3 passes. This is the second sentence of deprecated description for a constructor.</div>
+                    </td>
+                    </tr>
+                    <tr class="alt-color">
+                    <th class="col-deprecated-item-name" scope="row"><a href="pkg/TestClass.html#%3Cinit%3E(java.lang.String)">pkg.TestClass&#8203;(String)</a></th>
+                    <td class="col-last">
+                    <div class="deprecation-comment">class_test4 passes. Overloaded constructor.</div>
+                    </td>
+                    </tr>""");
     }
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563 8245147
+ * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563 8245147 8245586
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -70,9 +70,9 @@ public class Versions {
         Set.of("1.2", "1.3", "1.4", "1.5", "1.6");
 
     public static final Set<String> VALID_SOURCES =
-        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13", "14", "15");
+        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13", "14", "15", "16");
 
-    public static final String LATEST_MAJOR_VERSION = "59.0";
+    public static final String LATEST_MAJOR_VERSION = "60.0";
 
     static enum SourceTarget {
         SEVEN(true,   "51.0",  "7", Versions::checksrc7),
@@ -83,7 +83,8 @@ public class Versions {
         TWELVE(false, "56.0", "12", Versions::checksrc12),
         THIRTEEN(false, "57.0", "13", Versions::checksrc13),
         FOURTEEN(false, "58.0", "14", Versions::checksrc14),
-        FIFTEEN(false,  "59.0", "15", Versions::checksrc15);
+        FIFTEEN(false,  "59.0", "15", Versions::checksrc15),
+        SIXTEEN(false,  "60.0", "16", Versions::checksrc16);
 
         private final boolean dotOne;
         private final String classFileVer;
@@ -290,6 +291,13 @@ public class Versions {
 
    protected void checksrc15(List<String> args) {
        printargs("checksrc15", args);
+       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
+                                  "New14.java", "New15.java"));
+       // Add expectedFail after new language features added in a later release.
+    }
+
+   protected void checksrc16(List<String> args) {
+       printargs("checksrc16", args);
        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
                                   "New14.java", "New15.java"));
        // Add expectedFail after new language features added in a later release.

@@ -38,6 +38,8 @@ public class Main {
     /** Main entry point for the launcher.
      *  Note: This method calls System.exit.
      *  @param args command line arguments
+     *  @throws Exception only if an uncaught internal exception occurs;
+     *      just retained for historical compatibility
      */
     public static void main(String[] args) throws Exception {
         System.exit(compile(args));

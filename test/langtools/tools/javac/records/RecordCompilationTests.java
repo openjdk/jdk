@@ -1130,6 +1130,26 @@ public class RecordCompilationTests extends CompilationTestCase {
                         this.args = args;
                     }
                 }
+                """,
+                """
+                record R(@A int... ints) {}
+
+                @java.lang.annotation.Target({
+                        java.lang.annotation.ElementType.TYPE_USE,
+                        java.lang.annotation.ElementType.RECORD_COMPONENT})
+                @interface A {}
+                """,
+                """
+                record R(@A int... ints) {
+                    R(@A int... ints) {
+                        this.ints = ints;
+                    }
+                }
+
+                @java.lang.annotation.Target({
+                        java.lang.annotation.ElementType.TYPE_USE,
+                        java.lang.annotation.ElementType.RECORD_COMPONENT})
+                @interface A {}
                 """
         )) {
             assertOK(source);

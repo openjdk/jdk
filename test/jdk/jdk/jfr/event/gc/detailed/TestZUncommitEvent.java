@@ -26,10 +26,12 @@
 package jdk.jfr.event.gc.detailed;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static gc.testlibrary.Allocation.blackHole;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordingStream;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
@@ -43,10 +45,17 @@ import jdk.test.lib.jfr.Events;
 
 public class TestZUncommitEvent {
     public static void main(String[] args) throws Exception {
-        try (Recording recording = new Recording()) {
-            // Activate the event we are interested in and start recording
-            recording.enable(EventNames.ZUncommit);
-            recording.start();
+        List<RecordedEvent> events = new CopyOnWriteArrayList<>();
+        try (RecordingStream stream = new RecordingStream()) {
+            // Activate the event
+            stream.enable(EventNames.ZUncommit);
+            stream.onEvent(e -> {
+                // Got event, close stream
+                events.add(e);
+                stream.close();
+            });
+            // Start recording
+            stream.startAsync();
 
             // Allocate a large object, to force heap usage above min heap size
             blackHole(new byte[32 * 1024 * 1024]);
@@ -54,13 +63,8 @@ public class TestZUncommitEvent {
             // Collect
             System.gc();
 
-            // Wait for uncommit to happen
-            Thread.sleep(10 * 1000);
+            stream.awaitTermination();
 
-            recording.stop();
-
-            // Verify recording
-            List<RecordedEvent> events = Events.fromRecording(recording);
             System.out.println("Events: " + events.size());
             Events.hasEvents(events);
         }

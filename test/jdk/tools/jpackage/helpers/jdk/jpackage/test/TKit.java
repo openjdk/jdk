@@ -209,6 +209,17 @@ final public class TKit {
         }
     }
 
+    static Path removeRootFromAbsolutePath(Path v) {
+        if (!v.isAbsolute()) {
+            throw new IllegalArgumentException();
+        }
+
+        if (v.getNameCount() == 0) {
+            return Path.of("");
+        }
+        return v.subpath(0, v.getNameCount());
+    }
+
     public static void createTextFile(Path propsFilename, Collection<String> lines) {
         createTextFile(propsFilename, lines.stream());
     }

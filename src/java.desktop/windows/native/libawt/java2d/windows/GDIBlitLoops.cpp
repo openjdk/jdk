@@ -42,6 +42,68 @@ typedef struct tagBitmapheader  {
 } BmiType;
 
 /*
+ * Some GDI functions functions will fail if they operate on memory which spans
+ * virtual allocations as used by modern garbage collectors (ie ZGC).
+ * So if the call to SetDIBitsToDevice fails, we will re-try it on malloced
+ * memory rather than the pinned Java heap memory.
+ * Once Microsoft fix the GDI bug, the small performance penalty of this retry
+ * will be gone.
+ */
+static void retryingSetDIBitsToDevice(
+    HDC              hdc,
+    int              xDest,
+    int              yDest,
+    DWORD            w,
+    DWORD            h,
+    int              xSrc,
+    int              ySrc,
+    UINT             StartScan,
+    UINT             cLines,
+    const VOID       *lpvBits,
+    BITMAPINFO       *lpbmi,
+    UINT             ColorUse) {
+
+#ifdef DEBUG_PERF
+    LARGE_INTEGER    ts1, ts2;
+    QueryPerformanceCounter(&ts1);
+#endif
+
+    int ret =
+        SetDIBitsToDevice(hdc, xDest, yDest, w, h,
+                          xSrc, ySrc, StartScan, cLines, lpvBits,
+                          lpbmi, ColorUse);
+
+    if (ret != 0 || h == 0) {
+#ifdef DEBUG_PERF
+         QueryPerformanceCounter(&ts2);
+         printf("success time: %zd\n", (ts2.QuadPart-ts1.QuadPart));
+#endif
+        return;
+    }
+
+    size_t size = lpbmi->bmiHeader.biSizeImage;
+    void* imageData = NULL;
+    try {
+        imageData = safe_Malloc(size);
+    } catch (std::bad_alloc&) {
+    }
+    if (imageData == NULL) {
+        return;
+    }
+    memcpy(imageData, lpvBits, size); // this is the most expensive part.
+    SetDIBitsToDevice(hdc, xDest, yDest, w, h,
+                      xSrc, ySrc, StartScan, cLines, imageData,
+                      lpbmi, ColorUse);
+    free(imageData);
+
+#ifdef DEBUG_PERF
+    QueryPerformanceCounter(&ts2);
+    printf("with retry time: %zd\n", (ts2.QuadPart-ts1.QuadPart));
+#endif
+
+};
+
+/*
  * Class:     sun_java2d_windows_GDIBlitLoops
  * Method:    nativeBlit
  * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/SurfaceData;IIIIIIZ)V
@@ -127,7 +189,6 @@ Java_sun_java2d_windows_GDIBlitLoops_nativeBlit
         // then we can do the work much faster.  This is due to a constraint
         // in the way DIBs are structured and parsed by GDI
         jboolean fastBlt = ((srcInfo.scanStride & 0x03) == 0);
-
         bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
         bmi.bmiHeader.biWidth = srcInfo.scanStride/srcInfo.pixelStride;
         // fastBlt copies whole image in one call; else copy line-by-line
@@ -190,7 +251,7 @@ Java_sun_java2d_windows_GDIBlitLoops_nativeBlit
                 // Could also call StretchDIBits.  Testing showed slight
                 // performance advantage of SetDIBits instead, so since we
                 // have no need of scaling, might as well use SetDIBits.
-                SetDIBitsToDevice(hDC, dstx, dsty, width, height,
+                retryingSetDIBitsToDevice(hDC, dstx, dsty, width, height,
                     0, 0, 0, height, rasBase,
                     (BITMAPINFO*)&bmi, DIB_RGB_COLORS);
             }
@@ -198,7 +259,7 @@ Java_sun_java2d_windows_GDIBlitLoops_nativeBlit
             // Source scanlines not DWORD-aligned - copy each scanline individually
             for (int i = 0; i < height; i += 1) {
                 if (::IsWindowVisible(dstOps->window)) {
-                    SetDIBitsToDevice(hDC, dstx, dsty+i, width, 1,
+                    retryingSetDIBitsToDevice(hDC, dstx, dsty+i, width, 1,
                         0, 0, 0, 1, rasBase,
                         (BITMAPINFO*)&bmi, DIB_RGB_COLORS);
                     rasBase = (void*)((char*)rasBase + srcInfo.scanStride);

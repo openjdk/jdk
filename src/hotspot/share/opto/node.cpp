@@ -2152,62 +2152,78 @@ void Node::verify_edges(Unique_Node_List &visited) {
   }
 }
 
-void Node::verify_recur(const Node *n, int verify_depth,
-                        VectorSet &old_space, VectorSet &new_space) {
-  if ( verify_depth == 0 )  return;
-  if (verify_depth > 0)  --verify_depth;
-
+// Verify all nodes if verify_depth is negative
+void Node::verify(Node* n, int verify_depth) {
+  assert(verify_depth != 0, "depth should not be 0");
+  ResourceMark rm;
+  ResourceArea* area = Thread::current()->resource_area();
+  VectorSet old_space(area);
+  VectorSet new_space(area);
+  Node_List worklist(area);
+  worklist.push(n);
   Compile* C = Compile::current();
+  uint last_index_on_current_depth = 0;
+  verify_depth--; // Visiting the first node on depth 1
+  // Only add nodes to worklist if verify_depth is negative (visit all nodes) or greater than 0
+  bool add_to_worklist = verify_depth != 0;
 
-  // Contained in new_space or old_space?
-  VectorSet *v = C->node_arena()->contains(n) ? &new_space : &old_space;
-  // Check for visited in the proper space.  Numberings are not unique
-  // across spaces so we need a separate VectorSet for each space.
-  if( v->test_set(n->_idx) ) return;
 
-  if (n->is_Con() && n->bottom_type() == Type::TOP) {
-    if (C->cached_top_node() == NULL)
-      C->set_cached_top_node((Node*)n);
-    assert(C->cached_top_node() == n, "TOP node must be unique");
-  }
+  for (uint list_index = 0; list_index < worklist.size(); list_index++) {
+    n = worklist[list_index];
 
-  for( uint i = 0; i < n->len(); i++ ) {
-    Node *x = n->in(i);
-    if (!x || x->is_top()) continue;
-
-    // Verify my input has a def-use edge to me
-    if (true /*VerifyDefUse*/) {
-      // Count use-def edges from n to x
-      int cnt = 0;
-      for( uint j = 0; j < n->len(); j++ )
-        if( n->in(j) == x )
-          cnt++;
-      // Count def-use edges from x to n
-      uint max = x->_outcnt;
-      for( uint k = 0; k < max; k++ )
-        if (x->_out[k] == n)
-          cnt--;
-      assert( cnt == 0, "mismatched def-use edge counts" );
+    if (n->is_Con() && n->bottom_type() == Type::TOP) {
+      if (C->cached_top_node() == NULL) {
+        C->set_cached_top_node((Node*)n);
+      }
+      assert(C->cached_top_node() == n, "TOP node must be unique");
     }
 
-    verify_recur(x, verify_depth, old_space, new_space);
+    for (uint i = 0; i < n->len(); i++) {
+      Node* x = n->in(i);
+      if (!x || x->is_top()) {
+        continue;
+      }
+
+      // Verify my input has a def-use edge to me
+      // Count use-def edges from n to x
+      int cnt = 0;
+      for (uint j = 0; j < n->len(); j++) {
+        if (n->in(j) == x) {
+          cnt++;
+        }
+      }
+
+      // Count def-use edges from x to n
+      uint max = x->_outcnt;
+      for (uint k = 0; k < max; k++) {
+        if (x->_out[k] == n) {
+          cnt--;
+        }
+      }
+      assert(cnt == 0, "mismatched def-use edge counts");
+
+      // Contained in new_space or old_space?
+      VectorSet* v = C->node_arena()->contains(x) ? &new_space : &old_space;
+      // Check for visited in the proper space. Numberings are not unique
+      // across spaces so we need a separate VectorSet for each space.
+      if (add_to_worklist && !v->test_set(x->_idx)) {
+        worklist.push(x);
+      }
+    }
+
+    if (verify_depth > 0 && list_index == last_index_on_current_depth) {
+      // All nodes on this depth were processed and its inputs are on the worklist. Decrement verify_depth and
+      // store the current last list index which is the last node in the list with the new depth. All nodes
+      // added afterwards will have a new depth again. Stop adding new nodes if depth limit is reached (=0).
+      verify_depth--;
+      if (verify_depth == 0) {
+        add_to_worklist = false;
+      }
+      last_index_on_current_depth = worklist.size() - 1;
+    }
   }
-
-}
-
-//------------------------------verify-----------------------------------------
-// Check Def-Use info for my subgraph
-void Node::verify() const {
-  Compile* C = Compile::current();
-  Node* old_top = C->cached_top_node();
-  ResourceMark rm;
-  ResourceArea *area = Thread::current()->resource_area();
-  VectorSet old_space(area), new_space(area);
-  verify_recur(this, -1, old_space, new_space);
-  C->set_cached_top_node(old_top);
 }
 #endif
-
 
 //------------------------------walk-------------------------------------------
 // Graph walk, with both pre-order and post-order functions

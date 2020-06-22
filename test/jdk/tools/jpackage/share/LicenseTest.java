@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,47 +78,47 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage with --license-file
  * @library ../helpers
  * @key jpackagePlatformPackage
+ * @build jdk.jpackage.test.*
  * @compile LicenseTest.java
  * @requires (os.family == "linux")
  * @requires (jpackage.test.SQETest == null)
  * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LicenseTest.testCustomDebianCopyright
  *  --jpt-run=LicenseTest.testCustomDebianCopyrightSubst
+ *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree
+ *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree2
+ *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree3
+ *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree4
  */
 
 public class LicenseTest {
     public static void testCommon() {
-        new PackageTest().configureHelloApp()
+        PackageTest test = new PackageTest().configureHelloApp()
         .addInitializer(cmd -> {
             cmd.addArguments("--license-file", TKit.createRelativePathCopy(
                     LICENSE_FILE));
-        })
-        .forTypes(PackageType.LINUX)
-        .addBundleVerifier(cmd -> {
-            verifyLicenseFileInLinuxPackage(cmd, linuxLicenseFile(cmd));
-        })
-        .addInstallVerifier(cmd -> {
-            Path path = linuxLicenseFile(cmd);
-            if (path != null) {
-                TKit.assertReadableFileExists(path);
-            }
-        })
-        .addUninstallVerifier(cmd -> {
-            verifyLicenseFileNotInstalledLinux(linuxLicenseFile(cmd));
-        })
-        .forTypes(PackageType.LINUX_DEB)
-        .addInstallVerifier(cmd -> {
-            verifyLicenseFileInstalledDebian(debLicenseFile(cmd));
-        })
-        .forTypes(PackageType.LINUX_RPM)
-        .addInstallVerifier(cmd -> {
-            Path path = rpmLicenseFile(cmd);
-            if (path != null) {
-                verifyLicenseFileInstalledRpm(path);
-            }
-        })
-        .run();
+        });
+
+        initLinuxLicenseVerifier(test.forTypes(PackageType.LINUX));
+
+        test.run();
+    }
+
+    public static void testLinuxLicenseInUsrTree() {
+        testLinuxLicenseInUsrTree("/usr");
+    }
+
+    public static void testLinuxLicenseInUsrTree2() {
+        testLinuxLicenseInUsrTree("/usr/local");
+    }
+
+    public static void testLinuxLicenseInUsrTree3() {
+        testLinuxLicenseInUsrTree("/usr/foo");
+    }
+
+    public static void testLinuxLicenseInUsrTree4() {
+        testLinuxLicenseInUsrTree("/usrbuz");
     }
 
     public static void testCustomDebianCopyright() {
@@ -129,38 +129,78 @@ public class LicenseTest {
         new CustomDebianCopyrightTest().withSubstitution(true).run();
     }
 
-    private static Path rpmLicenseFile(JPackageCommand cmd) {
-        if (cmd.isPackageUnpacked("Not checking for rpm license file")) {
-            return null;
-        }
+    private static PackageTest initLinuxLicenseVerifier(PackageTest test) {
+        return test
+        .addBundleVerifier(cmd -> {
+            verifyLicenseFileInLinuxPackage(cmd, linuxLicenseFile(cmd));
+        })
+        .addInstallVerifier(cmd -> {
+            verifyLicenseFileInstalledLinux(cmd);
+        })
+        .addUninstallVerifier(cmd -> {
+            verifyLicenseFileNotInstalledLinux(linuxLicenseFile(cmd));
+        });
+    }
 
+    private static void testLinuxLicenseInUsrTree(String installDir) {
+        PackageTest test = new PackageTest()
+        .forTypes(PackageType.LINUX)
+        .configureHelloApp()
+        .addInitializer(cmd -> {
+            cmd.setFakeRuntime();
+            cmd.addArguments("--license-file", TKit.createRelativePathCopy(
+                    LICENSE_FILE));
+            cmd.addArguments("--install-dir", installDir);
+        });
+
+        initLinuxLicenseVerifier(test);
+
+        test.run();
+    }
+
+    private static Path rpmLicenseFile(JPackageCommand cmd) {
         final Path licenseRoot = Path.of(
                 new Executor()
                 .setExecutable("rpm")
                 .addArguments("--eval", "%{_defaultlicensedir}")
                 .executeAndGetFirstLineOfOutput());
+
         final Path licensePath = licenseRoot.resolve(String.format("%s-%s",
                 LinuxHelper.getPackageName(cmd), cmd.version())).resolve(
                 LICENSE_FILE.getFileName());
+
         return licensePath;
+    }
+
+    private static Path debLicenseFile(JPackageCommand cmd) {
+        Path installDir = cmd.appInstallationDirectory();
+
+        if (installDir.equals(Path.of("/")) || installDir.startsWith("/usr")) {
+            // Package is in '/usr' tree
+            return Path.of("/usr/share/doc/", LinuxHelper.getPackageName(cmd),
+                    "copyright");
+        }
+
+        return installDir.resolve("share/doc/copyright");
     }
 
     private static Path linuxLicenseFile(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.LINUX);
+        final Path licenseFile;
         switch (cmd.packageType()) {
             case LINUX_DEB:
-                return debLicenseFile(cmd);
+                licenseFile = debLicenseFile(cmd);
+                break;
 
             case LINUX_RPM:
-                return rpmLicenseFile(cmd);
+                licenseFile = rpmLicenseFile(cmd);
+                break;
 
             default:
-                return null;
+                throw new IllegalArgumentException();
         }
-    }
 
-    private static Path debLicenseFile(JPackageCommand cmd) {
-        return cmd.appInstallationDirectory().resolve("share/doc/copyright");
+        return cmd.pathToUnpackedPackageFile(licenseFile);
     }
 
     private static void verifyLicenseFileInLinuxPackage(JPackageCommand cmd,
@@ -197,6 +237,26 @@ public class LicenseTest {
                 Files.readAllLines(LICENSE_FILE)), actualLines, String.format(
                 "Check subset of package license file [%s] is a match of the source license file [%s]",
                 licenseFile, LICENSE_FILE));
+    }
+
+    private static void verifyLicenseFileInstalledLinux(JPackageCommand cmd)
+            throws IOException {
+
+        final Path licenseFile = linuxLicenseFile(cmd);
+        TKit.assertReadableFileExists(licenseFile);
+
+        switch (cmd.packageType()) {
+            case LINUX_DEB:
+                verifyLicenseFileInstalledDebian(licenseFile);
+                break;
+
+            case LINUX_RPM:
+                verifyLicenseFileInstalledRpm(licenseFile);
+                break;
+
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 
     private static void verifyLicenseFileNotInstalledLinux(Path licenseFile) {
@@ -266,7 +326,7 @@ public class LicenseTest {
                         licenseFileText());
             })
             .addInstallVerifier(cmd -> {
-                Path installedLicenseFile = debLicenseFile(cmd);
+                Path installedLicenseFile = linuxLicenseFile(cmd);
                 TKit.assertStringListEquals(expetedLicenseFileText(),
                         DEBIAN_COPYRIGT_FILE_STRIPPER.apply(Files.readAllLines(
                                 installedLicenseFile)), String.format(

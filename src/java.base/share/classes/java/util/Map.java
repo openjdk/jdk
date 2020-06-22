@@ -829,7 +829,7 @@ public interface Map<K, V> {
      * The default implementation is equivalent to, for this {@code map}:
      *
      * <pre> {@code
-     * if (map.containsKey(key) && Objects.equals(map.get(key), value)) {
+     * if (map.containsKey(key) && Objects.equals(map.get(key), oldValue)) {
      *     map.put(key, newValue);
      *     return true;
      * } else

@@ -23,11 +23,15 @@
  */
 
 #include "precompiled.hpp"
+#include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/recorder/service/jfrRecorderThread.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "logging/log.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -59,18 +63,24 @@ void recorderthread_entry(JavaThread* thread, Thread* unused) {
       }
       msgs = post_box.collect();
       JfrMsg_lock->unlock();
-      if (PROCESS_FULL_BUFFERS) {
-        service.process_full_buffers();
-      }
-      // Check amount of data written to chunk already
-      // if it warrants asking for a new chunk
-      service.evaluate_chunk_size_for_rotation();
-      if (START) {
-        service.start();
-      } else if (ROTATE) {
-        service.rotate(msgs);
-      } else if (FLUSHPOINT) {
-        service.flushpoint();
+      {
+        // Run as _thread_in_native as much a possible
+        // to minimize impact on safepoint synchronizations.
+        NoHandleMark nhm;
+        ThreadToNativeFromVM transition(thread);
+        if (PROCESS_FULL_BUFFERS) {
+          service.process_full_buffers();
+        }
+        // Check amount of data written to chunk already
+        // if it warrants asking for a new chunk.
+        service.evaluate_chunk_size_for_rotation();
+        if (START) {
+          service.start();
+        } else if (ROTATE) {
+          service.rotate(msgs);
+        } else if (FLUSHPOINT) {
+          service.flushpoint();
+        }
       }
       JfrMsg_lock->lock();
       post_box.notify_waiters();

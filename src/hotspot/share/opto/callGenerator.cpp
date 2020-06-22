@@ -821,13 +821,13 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
 }
 
 
-CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool delayed_forbidden) {
+CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* caller, ciMethod* callee) {
   assert(callee->is_method_handle_intrinsic(), "for_method_handle_call mismatch");
   bool input_not_const;
   CallGenerator* cg = CallGenerator::for_method_handle_inline(jvms, caller, callee, input_not_const);
   Compile* C = Compile::current();
   if (cg != NULL) {
-    if (!delayed_forbidden && AlwaysIncrementalInline) {
+    if (AlwaysIncrementalInline) {
       return CallGenerator::for_late_inline(callee, cg);
     } else {
       return cg;

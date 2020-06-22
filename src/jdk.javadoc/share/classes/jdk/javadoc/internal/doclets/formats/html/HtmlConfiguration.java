@@ -42,6 +42,7 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.doclet.StandardDoclet;
 import jdk.javadoc.doclet.Taglet;
+import jdk.javadoc.internal.Versions;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
@@ -50,8 +51,6 @@ import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-
-import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * Configure the output based on the command-line options.
@@ -142,29 +141,27 @@ public class HtmlConfiguration extends BaseConfiguration {
         contents = new Contents(this);
         options = new HtmlOptions(this);
 
-        String v;
+        Runtime.Version v;
         try {
-            // the version bundle is not localized
-            ResourceBundle rb = ResourceBundle.getBundle(versionBundleName, Locale.getDefault());
-            try {
-                v = rb.getString("release");
-            } catch (MissingResourceException e) {
-                v = defaultDocletVersion;
-            }
-        } catch (MissingResourceException e) {
-            v = defaultDocletVersion;
+            v = Versions.javadocVersion();
+        } catch (RuntimeException e) {
+            assert false : e;
+            v = Runtime.version(); // arguably, the only sensible default
         }
         docletVersion = v;
     }
 
-    private static final String versionBundleName = "jdk.javadoc.internal.tool.resources.version";
-    private static final String defaultDocletVersion = System.getProperty("java.version");
-    public final String docletVersion;
+    private final Runtime.Version docletVersion;
     public final Date startTime = new Date();
 
     @Override
-    public String getDocletVersion() {
+    public Runtime.Version getDocletVersion() {
         return docletVersion;
+    }
+
+    @Override
+    public String getDocletVersionString() {
+        return Versions.shortVersionStringOf(docletVersion);
     }
 
     @Override

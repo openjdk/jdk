@@ -124,7 +124,7 @@ class CallGenerator : public ResourceObj {
   static CallGenerator* for_direct_call(ciMethod* m, bool separate_io_projs = false);   // static, special
   static CallGenerator* for_virtual_call(ciMethod* m, int vtable_index);  // virtual, interface
 
-  static CallGenerator* for_method_handle_call(  JVMState* jvms, ciMethod* caller, ciMethod* callee, bool delayed_forbidden);
+  static CallGenerator* for_method_handle_call(  JVMState* jvms, ciMethod* caller, ciMethod* callee);
   static CallGenerator* for_method_handle_inline(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool& input_not_const);
 
   // How to generate a replace a direct call with an inline version

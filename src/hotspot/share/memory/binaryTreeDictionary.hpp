@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ class TreeChunk : public Chunk_t {
 
   Chunk_t* next() const { return Chunk_t::next(); }
   Chunk_t* prev() const { return Chunk_t::prev(); }
-  size_t size() const volatile { return Chunk_t::size(); }
+  size_t size() const { return Chunk_t::size(); }
 
   static size_t min_size();
 
