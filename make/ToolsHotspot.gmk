@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,25 @@
 # questions.
 #
 
+ifndef _TOOLS_HOTSPOT_GMK
+_TOOLS_HOTSPOT_GMK := 1
+
+include JavaCompilation.gmk
+
+HOTSPOT_TOOLS_OUTPUTDIR := $(BUILDTOOLS_OUTPUTDIR)/buildtools/hotspot_tools_classes
+
 ################################################################################
-# Setup make rules for JFR gensrc file generation.
-#
+# To avoid reevaluating the compilation setup for the tools each time this file
+# is included, the actual compilation is handled by CompileToolsHotspot.gmk. The
+# following trick is used to be able to declare a dependency on the built tools.
+BUILD_TOOLS_HOTSPOT := $(call SetupJavaCompilationCompileTarget, \
+    BUILD_TOOLS_HOTSPOT, $(HOTSPOT_TOOLS_OUTPUTDIR))
 
-include $(TOPDIR)/make/ToolsHotspot.gmk
+################################################################################
 
-JFR_SRCDIR := $(TOPDIR)/src/hotspot/share/jfr/metadata
-JFR_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jfrfiles
+TOOL_JFR_GEN := $(JAVA_SMALL) -cp $(HOTSPOT_TOOLS_OUTPUTDIR) \
+    build.tools.jfr.GenerateJfrFiles
 
-# Changing these will trigger a rebuild of generated jfr files.
-METADATA_XML := $(JFR_SRCDIR)/metadata.xml
-METADATA_XSD := $(JFR_SRCDIR)/metadata.xsd
+##########################################################################################
 
-$(eval $(call SetupExecute, jfr_gen_headers, \
-    INFO := Generating JFR header files, \
-    DEPS := $(METADATA_XML) $(METADATA_XSD) $(BUILD_TOOLS_HOTSPOT), \
-    OUTPUT_DIR := $(JFR_OUTPUTDIR), \
-    COMMAND := $(TOOL_JFR_GEN) --mode headers --xml $(METADATA_XML) --xsd $(METADATA_XSD) --output $(JFR_OUTPUTDIR), \
-))
-
-TARGETS += $(jfr_gen_headers)
+endif # _TOOLS_HOTSPOT_GMK

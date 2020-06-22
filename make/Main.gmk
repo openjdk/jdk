@@ -804,7 +804,7 @@ else
 
   # Declare dependencies between hotspot-<variant>* targets
   $(foreach v, $(JVM_VARIANTS), \
-      $(eval hotspot-$v-gensrc: java.base-copy) \
+      $(eval hotspot-$v-gensrc: java.base-copy buildtools-hotspot) \
       $(eval hotspot-$v-libs: hotspot-$v-gensrc java.base-copy) \
   )
 

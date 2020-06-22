@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,25 @@
 #
 
 ################################################################################
-# Setup make rules for JFR gensrc file generation.
-#
 
-include $(TOPDIR)/make/ToolsHotspot.gmk
+include ToolsHotspot.gmk
+include Execute.gmk
 
 JFR_SRCDIR := $(TOPDIR)/src/hotspot/share/jfr/metadata
-JFR_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jfrfiles
+JFR_DATA_OUTPUTDIR := $(OUTPUTDIR)/jdk/modules/jdk.jfr/jdk/jfr/internal/types
+JFR_DATA_OUTPUTFILE := $(JFR_DATA_OUTPUTDIR)/metadata.bin
+JFR_DATA_SUPPORTDIR := $(SUPPORT_OUTPUTDIR)/gendata/jdk.jfr
 
 # Changing these will trigger a rebuild of generated jfr files.
 METADATA_XML := $(JFR_SRCDIR)/metadata.xml
 METADATA_XSD := $(JFR_SRCDIR)/metadata.xsd
 
-$(eval $(call SetupExecute, jfr_gen_headers, \
-    INFO := Generating JFR header files, \
+$(eval $(call SetupExecute, jfr_gen_metadata, \
+    INFO := Generating JFR metadata, \
     DEPS := $(METADATA_XML) $(METADATA_XSD) $(BUILD_TOOLS_HOTSPOT), \
-    OUTPUT_DIR := $(JFR_OUTPUTDIR), \
-    COMMAND := $(TOOL_JFR_GEN) --mode headers --xml $(METADATA_XML) --xsd $(METADATA_XSD) --output $(JFR_OUTPUTDIR), \
+    OUTPUT_FILE := $(JFR_DATA_OUTPUTFILE), \
+    SUPPORT_DIR := $(JFR_DATA_SUPPORTDIR), \
+    COMMAND := $(TOOL_JFR_GEN) --mode metadata --xml $(METADATA_XML) --xsd $(METADATA_XSD) --output $(JFR_DATA_OUTPUTFILE), \
 ))
 
-TARGETS += $(jfr_gen_headers)
+TARGETS += $(jfr_gen_metadata)
