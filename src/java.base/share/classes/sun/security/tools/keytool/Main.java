@@ -260,12 +260,15 @@ public final class Main {
             PROVIDERPATH, V, PROTECTED),
         PRINTCERT("Prints.the.content.of.a.certificate",
             RFC, FILEIN, SSLSERVER, JARFILE,
+            KEYSTORE, STOREPASS, STORETYPE, TRUSTCACERTS,
             PROVIDERNAME, ADDPROVIDER, PROVIDERCLASS,
-            PROVIDERPATH, V),
+            PROVIDERPATH, V, PROTECTED),
         PRINTCERTREQ("Prints.the.content.of.a.certificate.request",
             FILEIN, V),
         PRINTCRL("Prints.the.content.of.a.CRL.file",
-            FILEIN, V),
+            FILEIN, KEYSTORE, STOREPASS, STORETYPE, TRUSTCACERTS,
+            PROVIDERNAME, ADDPROVIDER, PROVIDERCLASS, PROVIDERPATH,
+            V, PROTECTED),
         STOREPASSWD("Changes.the.store.password.of.a.keystore",
             NEW, KEYSTORE, CACERTS, STOREPASS, STORETYPE, PROVIDERNAME,
             ADDPROVIDER, PROVIDERCLASS, PROVIDERPATH, V),
@@ -719,7 +722,7 @@ public final class Main {
     }
 
     boolean isKeyStoreRelated(Command cmd) {
-        return cmd != PRINTCERT && cmd != PRINTCERTREQ && cmd != SHOWINFO;
+        return cmd != PRINTCERTREQ && cmd != SHOWINFO;
     }
 
     /**
@@ -904,14 +907,15 @@ public final class Main {
             } catch (FileNotFoundException e) {
                 // These commands do not need the keystore to be existing.
                 // Either it will create a new one or the keystore is
-                // optional (i.e. PRINTCRL).
+                // optional (i.e. PRINTCRL and PRINTCERT).
                 if (command != GENKEYPAIR &&
                         command != GENSECKEY &&
                         command != IDENTITYDB &&
                         command != IMPORTCERT &&
                         command != IMPORTPASS &&
                         command != IMPORTKEYSTORE &&
-                        command != PRINTCRL) {
+                        command != PRINTCRL &&
+                        command != PRINTCERT) {
                     throw new Exception(rb.getString
                             ("Keystore.file.does.not.exist.") + ksfname);
                 }
@@ -1073,7 +1077,7 @@ public final class Main {
                     }
                 } else {
                     // here we have EXPORTCERT and LIST (info valid until STOREPASSWD)
-                    if (command != PRINTCRL) {
+                    if (command != PRINTCRL && command != PRINTCERT) {
                         System.err.print(rb.getString("Enter.keystore.password."));
                         System.err.flush();
                         storePass = Password.readPassword(System.in);
@@ -1108,10 +1112,10 @@ public final class Main {
             }
         }
 
-        // -trustcacerts can only be specified on -importcert.
-        // Reset it so that warnings on CA cert will remain for
-        // -printcert, etc.
-        if (command != IMPORTCERT) {
+        // -trustcacerts can be specified on -importcert, -printcert or -printcrl.
+        // Reset it so that warnings on CA cert will remain for other command.
+        if (command != IMPORTCERT && command != PRINTCERT
+                && command != PRINTCRL) {
             trustcacerts = false;
         }
 
@@ -2442,27 +2446,6 @@ public final class Main {
         }
     }
 
-    private static <T> Iterable<T> e2i(final Enumeration<T> e) {
-        return new Iterable<T>() {
-            @Override
-            public Iterator<T> iterator() {
-                return new Iterator<T>() {
-                    @Override
-                    public boolean hasNext() {
-                        return e.hasMoreElements();
-                    }
-                    @Override
-                    public T next() {
-                        return e.nextElement();
-                    }
-                    public void remove() {
-                        throw new UnsupportedOperationException("Not supported yet.");
-                    }
-                };
-            }
-        };
-    }
-
     /**
      * Loads CRLs from a source. This method is also called in JarSigner.
      * @param src the source, which means System.in if null, or a URI,
@@ -2556,7 +2539,7 @@ public final class Main {
             throws Exception {
         X509CRLImpl xcrl = (X509CRLImpl)crl;
         X500Principal issuer = xcrl.getIssuerX500Principal();
-        for (String s: e2i(ks.aliases())) {
+        for (String s: Collections.list(ks.aliases())) {
             Certificate cert = ks.getCertificate(s);
             if (cert instanceof X509Certificate) {
                 X509Certificate xcert = (X509Certificate)cert;
@@ -2605,8 +2588,13 @@ public final class Main {
             if (issuer == null) {
                 out.println(rb.getString
                         ("STAR"));
-                out.println(rb.getString
-                        ("warning.not.verified.make.sure.keystore.is.correct"));
+                if (trustcacerts) {
+                    out.println(rb.getString
+                            ("warning.not.verified.make.sure.keystore.is.correct"));
+                } else {
+                    out.println(rb.getString
+                            ("warning.not.verified.make.sure.keystore.is.correct.or.specify.trustcacerts"));
+                }
                 out.println(rb.getString
                         ("STARNN"));
             }

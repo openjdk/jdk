@@ -51,6 +51,7 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.ServiceLoader;
 
+import sun.security.util.FilePaths;
 import sun.security.util.PropertyExpander;
 
 /**
@@ -110,10 +111,7 @@ public class KeyStoreUtil {
      * Returns the file name of the keystore with the configured CA certificates.
      */
     public static String getCacerts() {
-        String sep = File.separator;
-        return System.getProperty("java.home") + sep
-                + "lib" + sep + "security" + sep
-                + "cacerts";
+        return FilePaths.cacerts();
     }
 
     /**
