@@ -1199,10 +1199,8 @@ void GenCollectedHeap::save_marks() {
 }
 
 GenCollectedHeap* GenCollectedHeap::heap() {
-  CollectedHeap* heap = Universe::heap();
-  assert(heap != NULL, "Uninitialized access to GenCollectedHeap::heap()");
-  assert(heap->kind() == CollectedHeap::Serial, "Invalid name");
-  return (GenCollectedHeap*) heap;
+  // SerialHeap is the only subtype of GenCollectedHeap.
+  return named_heap<GenCollectedHeap>(CollectedHeap::Serial);
 }
 
 #if INCLUDE_SERIALGC

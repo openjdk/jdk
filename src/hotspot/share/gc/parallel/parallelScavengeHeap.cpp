@@ -689,13 +689,6 @@ void ParallelScavengeHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_trac
   gc_tracer->report_metaspace_summary(when, metaspace_summary);
 }
 
-ParallelScavengeHeap* ParallelScavengeHeap::heap() {
-  CollectedHeap* heap = Universe::heap();
-  assert(heap != NULL, "Uninitialized access to ParallelScavengeHeap::heap()");
-  assert(heap->kind() == CollectedHeap::Parallel, "Invalid name");
-  return (ParallelScavengeHeap*)heap;
-}
-
 CardTableBarrierSet* ParallelScavengeHeap::barrier_set() {
   return barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
 }
