@@ -118,21 +118,26 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     }
     assert(!heap->is_concurrent_mark_in_progress(), "sanity");
 
-    // c. Reset the bitmaps for new marking
+    // c. Update roots if this full GC is due to evac-oom, which may carry from-space pointers in roots.
+    if (has_forwarded_objects) {
+      heap->concurrent_mark()->update_roots(ShenandoahPhaseTimings::full_gc_update_roots);
+    }
+
+    // d. Reset the bitmaps for new marking
     heap->reset_mark_bitmap();
     assert(heap->marking_context()->is_bitmap_clear(), "sanity");
     assert(!heap->marking_context()->is_complete(), "sanity");
 
-    // d. Abandon reference discovery and clear all discovered references.
+    // e. Abandon reference discovery and clear all discovered references.
     ReferenceProcessor* rp = heap->ref_processor();
     rp->disable_discovery();
     rp->abandon_partial_discovery();
     rp->verify_no_references_recorded();
 
-    // e. Set back forwarded objects bit back, in case some steps above dropped it.
+    // f. Set back forwarded objects bit back, in case some steps above dropped it.
     heap->set_has_forwarded_objects(has_forwarded_objects);
 
-    // f. Sync pinned region status from the CP marks
+    // g. Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 
     // The rest of prologue:
@@ -242,7 +247,6 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
   rp->setup_policy(true); // forcefully purge all soft references
   rp->set_active_mt_degree(heap->workers()->active_workers());
 
-  cm->update_roots(ShenandoahPhaseTimings::full_gc_update_roots);
   cm->mark_roots(ShenandoahPhaseTimings::full_gc_scan_roots);
   cm->finish_mark_from_roots(/* full_gc = */ true);
   heap->mark_complete_marking_context();

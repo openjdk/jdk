@@ -139,12 +139,12 @@ class outputStream;
   f(full_gc,                                        "Pause Full GC (N)")               \
   f(full_gc_heapdump_pre,                           "  Pre Heap Dump")                 \
   f(full_gc_prepare,                                "  Prepare")                       \
+  f(full_gc_update_roots,                           "    Update Roots")                \
+  SHENANDOAH_PAR_PHASE_DO(full_gc_update_roots_,    "      FU: ", f)                   \
   f(full_gc_scan_roots,                             "  Scan Roots")                    \
   SHENANDOAH_PAR_PHASE_DO(full_gc_scan_roots_,      "    FS: ", f)                     \
   f(full_gc_scan_conc_roots,                        "  Scan Concurrent Roots")         \
   SHENANDOAH_PAR_PHASE_DO(full_gc_scan_conc_roots,  "    FCS: ", f)                    \
-  f(full_gc_update_roots,                           "  Update Roots")                  \
-  SHENANDOAH_PAR_PHASE_DO(full_gc_update_roots_,    "    FU: ", f)                     \
   f(full_gc_mark,                                   "  Mark")                          \
   f(full_gc_mark_finish_queues,                     "    Finish Queues")               \
   f(full_gc_weakrefs,                               "    Weak References")             \
