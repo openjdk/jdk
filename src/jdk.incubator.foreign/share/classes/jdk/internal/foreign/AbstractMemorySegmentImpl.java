@@ -149,14 +149,19 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
 
         long i = 0;
         if (length > 7) {
-            i = ArraysSupport.vectorizedMismatchLarge(
+            if ((byte) BYTE_HANDLE.get(this.baseAddress(), 0) != (byte) BYTE_HANDLE.get(that.baseAddress(), 0)) {
+                return 0;
+            }
+            i = ArraysSupport.vectorizedMismatchLargeForBytes(
                     this.base(), this.min(),
                     that.base(), that.min(),
-                    length, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
+                    length);
             if (i >= 0) {
                 return i;
             }
-            i = length - ~i;
+            long remaining = ~i;
+            assert remaining < 8 : "remaining greater than 7: " + remaining;
+            i = length - remaining;
         }
         MemoryAddress thisAddress = this.baseAddress();
         MemoryAddress thatAddress = that.baseAddress();
