@@ -427,34 +427,26 @@ void JfrCheckpointManager::on_unloading_classes() {
   }
 }
 
-class JavaThreadToVM : public StackObj {
- private:
-  JavaThread* _jt;
- public:
-  JavaThreadToVM(Thread* thread) : _jt(thread->is_Java_thread() ? (JavaThread*)thread : NULL) {
-    if (_jt != NULL) {
-      assert(_jt->thread_state() == _thread_in_native, "invariant");
-      _jt->set_thread_state(_thread_in_vm);
-    }
-  }
-  ~JavaThreadToVM() {
-    if (_jt != NULL) {
-      _jt->set_thread_state(_thread_in_native);
-    }
-  }
-};
+static size_t flush_type_set(Thread* thread) {
+  assert(thread != NULL, "invariant");
+  JfrCheckpointWriter writer(thread);
+  MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
+  MutexLocker module_lock(thread, Module_lock);
+  return JfrTypeSet::serialize(&writer, NULL, false, true);
+}
 
 size_t JfrCheckpointManager::flush_type_set() {
   size_t elements = 0;
   if (JfrTraceIdEpoch::has_changed_tag_state()) {
-    Thread* const t = Thread::current();
-    // can safepoint here (if JavaThread)
-    JavaThreadToVM transition(t);
-    ResetNoHandleMark rnhm;
-    MutexLocker cld_lock(t, ClassLoaderDataGraph_lock);
-    MutexLocker module_lock(t, Module_lock);
-    JfrCheckpointWriter writer(t);
-    elements = JfrTypeSet::serialize(&writer, NULL, false, true);
+    Thread* const thread = Thread::current();
+    if (thread->is_Java_thread()) {
+      // can safepoint here
+      ThreadInVMfromNative transition((JavaThread*)thread);
+      ResetNoHandleMark rnhm;
+      elements = ::flush_type_set(thread);
+    } else {
+      elements = ::flush_type_set(thread);
+    }
   }
   if (is_constant_pending()) {
     WriteOperation wo(_chunkwriter);
