@@ -1025,7 +1025,7 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
   nmethodLocker locker;
   nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror, locker);
-  if (nm == NULL) {
+  if (nm == NULL || !nm->is_in_use()) {
     JVMCI_THROW_NULL(InvalidInstalledCodeException);
   }
   methodHandle mh(THREAD, nm->method());
@@ -1034,7 +1034,7 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
 
   JavaArgumentUnboxer jap(signature, &jca, (arrayOop) JNIHandles::resolve(args), mh->is_static());
   JavaValue result(jap.return_type());
-  jca.set_alternative_target(nm);
+  jca.set_alternative_target(Handle(THREAD, JNIHandles::resolve(nmethod_mirror.as_jobject())));
   JavaCalls::call(&result, mh, &jca, CHECK_NULL);
 
   if (jap.return_type() == T_VOID) {
