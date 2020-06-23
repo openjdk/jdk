@@ -142,13 +142,11 @@ public final class MetadataRepository {
         handler.setRegistered(true);
         typeLibrary.addType(handler.getPlatformEventType());
         if (jvm.isRecording()) {
-            storeDescriptorInJVM(); // needed for emergency dump
             settingsManager.setEventControl(handler.getEventControl());
             settingsManager.updateRetransform(Collections.singletonList((eventClass)));
-        } else {
-            setStaleMetadata();
-        }
-        return handler.getEventType();
+       }
+       setStaleMetadata();
+       return handler.getEventType();
     }
 
     private PlatformEventType findMirrorType(Class<? extends jdk.internal.event.Event> eventClass) throws InternalError {
