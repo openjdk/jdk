@@ -46,6 +46,7 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -175,7 +176,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
                          vmSymbols::void_classloader_signature(),
                          CHECK);
 
-  _java_system_loader = OopHandle::create((oop)result.get_jobject());
+  _java_system_loader = OopHandle(OopStorageSet::vm_global(), (oop)result.get_jobject());
 
   JavaCalls::call_static(&result,
                          class_loader_klass,
@@ -183,7 +184,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
                          vmSymbols::void_classloader_signature(),
                          CHECK);
 
-  _java_platform_loader = OopHandle::create((oop)result.get_jobject());
+  _java_platform_loader = OopHandle(OopStorageSet::vm_global(), (oop)result.get_jobject());
 }
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool create_mirror_cld) {
@@ -2041,7 +2042,7 @@ void SystemDictionary::initialize(TRAPS) {
 
   // Allocate private object used as system class loader lock
   oop lock_obj = oopFactory::new_intArray(0, CHECK);
-  _system_loader_lock_obj = OopHandle::create(lock_obj);
+  _system_loader_lock_obj = OopHandle(OopStorageSet::vm_global(), lock_obj);
 
   // Initialize basic classes
   resolve_well_known_classes(CHECK);

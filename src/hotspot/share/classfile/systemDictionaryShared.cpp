@@ -36,6 +36,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
@@ -1118,7 +1119,7 @@ void SystemDictionaryShared::allocate_shared_protection_domain_array(int size, T
   if (_shared_protection_domains.resolve() == NULL) {
     oop spd = oopFactory::new_objArray(
         SystemDictionary::ProtectionDomain_klass(), size, CHECK);
-    _shared_protection_domains = OopHandle::create(spd);
+    _shared_protection_domains = OopHandle(OopStorageSet::vm_global(), spd);
   }
 }
 
@@ -1126,7 +1127,7 @@ void SystemDictionaryShared::allocate_shared_jar_url_array(int size, TRAPS) {
   if (_shared_jar_urls.resolve() == NULL) {
     oop sju = oopFactory::new_objArray(
         SystemDictionary::URL_klass(), size, CHECK);
-    _shared_jar_urls = OopHandle::create(sju);
+    _shared_jar_urls = OopHandle(OopStorageSet::vm_global(), sju);
   }
 }
 
@@ -1134,7 +1135,7 @@ void SystemDictionaryShared::allocate_shared_jar_manifest_array(int size, TRAPS)
   if (_shared_jar_manifests.resolve() == NULL) {
     oop sjm = oopFactory::new_objArray(
         SystemDictionary::Jar_Manifest_klass(), size, CHECK);
-    _shared_jar_manifests = OopHandle::create(sjm);
+    _shared_jar_manifests = OopHandle(OopStorageSet::vm_global(), sjm);
   }
 }
 

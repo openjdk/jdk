@@ -28,7 +28,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/oopHandle.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 
 inline oop OopHandle::resolve() const {
   return (_obj == NULL) ? (oop)NULL : NativeAccess<>::oop_load(_obj);
@@ -38,21 +37,19 @@ inline oop OopHandle::peek() const {
   return (_obj == NULL) ? (oop)NULL : NativeAccess<AS_NO_KEEPALIVE>::oop_load(_obj);
 }
 
-// Allocate a global handle and return
-inline OopHandle OopHandle::create(oop obj) {
-  oop* handle = OopStorageSet::vm_global()->allocate();
-  if (handle == NULL) {
+inline OopHandle::OopHandle(OopStorage* storage, oop obj) :
+    _obj(storage->allocate()) {
+  if (_obj == NULL) {
     vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR,
                           "Cannot create oop handle");
   }
-  NativeAccess<>::oop_store(handle, obj);
-  return OopHandle(handle);
+  NativeAccess<>::oop_store(_obj, obj);
 }
 
-inline void OopHandle::release() {
+inline void OopHandle::release(OopStorage* storage) {
   // Clear the OopHandle first
   NativeAccess<>::oop_store(_obj, (oop)NULL);
-  OopStorageSet::vm_global()->release(_obj);
+  storage->release(_obj);
 }
 
 #endif // SHARE_OOPS_OOPHANDLE_INLINE_HPP

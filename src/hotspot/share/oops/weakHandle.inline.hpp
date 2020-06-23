@@ -28,20 +28,17 @@
 #include "oops/weakHandle.hpp"
 #include "oops/access.inline.hpp"
 
-template <WeakHandleType T>
-oop WeakHandle<T>::resolve() const {
+inline oop WeakHandle::resolve() const {
   assert(!is_null(), "Must be created");
   return NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(_obj);
 }
 
-template <WeakHandleType T>
-oop WeakHandle<T>::peek() const {
+inline oop WeakHandle::peek() const {
   assert(!is_null(), "Must be created");
   return NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(_obj);
 }
 
-template <WeakHandleType T>
-void WeakHandle<T>::replace(oop with_obj) {
+inline void WeakHandle::replace(oop with_obj) {
   NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, with_obj);
 }
 
