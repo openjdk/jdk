@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -114,6 +115,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     public enum Flag {
         TABLE_HAS_CAPTION,
+        TABLE_IS_PRESENTATION,
         HAS_ELEMENT,
         HAS_HEADING,
         HAS_INLINE_TAG,
@@ -530,7 +532,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 if (t == top.tag) {
                     switch (t) {
                         case TABLE:
-                            if (!top.attrs.contains(HtmlTag.Attr.SUMMARY)
+                            if (!top.flags.contains(Flag.TABLE_IS_PRESENTATION)
+                                    && !top.attrs.contains(HtmlTag.Attr.SUMMARY)
                                     && !top.flags.contains(Flag.TABLE_HAS_CAPTION)) {
                                 env.messages.error(ACCESSIBILITY, tree,
                                         "dc.no.summary.or.caption.for.table");
@@ -684,6 +687,15 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                                 }
                             } catch (NumberFormatException ex) {
                                 env.messages.error(HTML, tree, "dc.attr.table.border.html5", attr);
+                            }
+                        }
+                        break;
+
+                    case ROLE:
+                        if (currTag == HtmlTag.TABLE) {
+                            String v = getAttrValue(tree);
+                            if (Objects.equals(v, "presentation")) {
+                                tagStack.peek().flags.add(Flag.TABLE_IS_PRESENTATION);
                             }
                         }
                         break;
