@@ -90,7 +90,6 @@ JNF_COCOA_ENTER(env);
     CGLCtxInfo *ctxinfo = (CGLCtxInfo *)oglc->ctxInfo;
 #if USE_NSVIEW_FOR_SCRATCH
     [ctxinfo->context makeCurrentContext];
-    [ctxinfo->context setView: ctxinfo->scratchSurface];
 #else
     [ctxinfo->context clearDrawable];
     [ctxinfo->context makeCurrentContext];

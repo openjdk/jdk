@@ -45,7 +45,7 @@ package com.sun.nio.sctp;
  * this handler interface as the type for parameters, return type, etc. rather
  * than the abstract class.
  *
- * @param  T  The type of the object attached to the receive operation
+ * @param  <T>  The type of the object attached to the receive operation
  *
  * @since 1.7
  */

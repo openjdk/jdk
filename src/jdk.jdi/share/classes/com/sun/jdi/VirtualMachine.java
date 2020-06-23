@@ -217,6 +217,7 @@ public interface VirtualMachine extends Mirror {
      * is false attempting any of the unsupported class file changes described
      * in <a href="{@docRoot}/../specs/jvmti.html#RedefineClasses">
      * JVM TI RedefineClasses</a> will throw this exception.
+     * </UL>
      *
      * @throws java.lang.NoClassDefFoundError if the bytes
      * don't correspond to the reference type (the names
