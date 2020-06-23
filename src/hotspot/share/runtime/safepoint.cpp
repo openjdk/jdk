@@ -1181,8 +1181,6 @@ void SafepointTracing::statistics_exit_log() {
     }
   }
 
-  log_info(safepoint, stats)("VM operations coalesced during safepoint " INT64_FORMAT,
-                              VMThread::get_coalesced_count());
   log_info(safepoint, stats)("Maximum sync time  " INT64_FORMAT" ns",
                               (int64_t)(_max_sync_time));
   log_info(safepoint, stats)("Maximum vm operation time (except for Exit VM operation)  "
