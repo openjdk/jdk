@@ -141,17 +141,6 @@ public:
 };
 static MarkActivationClosure mark_activation_closure;
 
-class SetHotnessClosure: public CodeBlobClosure {
-public:
-  virtual void do_code_blob(CodeBlob* cb) {
-    assert(cb->is_nmethod(), "CodeBlob should be nmethod");
-    nmethod* nm = (nmethod*)cb;
-    nm->set_hotness_counter(NMethodSweeper::hotness_counter_reset_val());
-  }
-};
-static SetHotnessClosure set_hotness_closure;
-
-
 int NMethodSweeper::hotness_counter_reset_val() {
   if (_hotness_counter_reset_val == 0) {
     _hotness_counter_reset_val = (ReservedCodeCacheSize < M) ? 1 : (ReservedCodeCacheSize / M) * 2;
@@ -202,29 +191,6 @@ CodeBlobClosure* NMethodSweeper::prepare_mark_active_nmethods() {
     tty->print_cr("### Sweep: stack traversal %ld", _traversals);
   }
   return &mark_activation_closure;
-}
-
-CodeBlobClosure* NMethodSweeper::prepare_reset_hotness_counters() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be executed at a safepoint");
-
-  // If we do not want to reclaim not-entrant or zombie methods there is no need
-  // to scan stacks
-  if (!MethodFlushing) {
-    return NULL;
-  }
-
-  // Check for restart
-  if (_current.method() != NULL) {
-    if (_current.method()->is_nmethod()) {
-      assert(CodeCache::find_blob_unsafe(_current.method()) == _current.method(), "Sweeper nmethod cached state invalid");
-    } else if (_current.method()->is_aot()) {
-      assert(CodeCache::find_blob_unsafe(_current.method()->code_begin()) == _current.method(), "Sweeper AOT method cached state invalid");
-    } else {
-      ShouldNotReachHere();
-    }
-  }
-
-  return &set_hotness_closure;
 }
 
 /**
