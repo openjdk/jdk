@@ -350,6 +350,10 @@ const size_t minimumSymbolTableSize = 1024;
   diagnostic(ccstrlist, DisableIntrinsic, "",                               \
          "do not expand intrinsics whose (internal) names appear here")     \
                                                                             \
+  diagnostic(ccstrlist, ControlIntrinsic, "",                               \
+         "Control intrinsics using a list of +/- (internal) names, "        \
+         "separated by commas")                                             \
+                                                                            \
   develop(bool, TraceCallFixup, false,                                      \
           "Trace all call fixups")                                          \
                                                                             \

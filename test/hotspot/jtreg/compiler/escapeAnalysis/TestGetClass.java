@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 8218201
  * @summary BCEscapeAnalyzer assigns wrong escape state to getClass return value.
  * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_getClass
+ *                   -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestGetClass::test
+ *                   -XX:+PrintCompilation compiler.escapeAnalysis.TestGetClass
+ * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:ControlIntrinsic=-_getClass
  *                   -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestGetClass::test
  *                   -XX:+PrintCompilation compiler.escapeAnalysis.TestGetClass
  */

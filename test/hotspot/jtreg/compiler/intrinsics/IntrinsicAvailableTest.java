@@ -39,6 +39,25 @@
  *                   -XX:+WhiteBoxAPI
  *                   -XX:-UseCRC32Intrinsics
  *                   compiler.intrinsics.IntrinsicAvailableTest
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:ControlIntrinsic=+_updateCRC32
+ *                   -XX:-UseCRC32Intrinsics
+ *                   compiler.intrinsics.IntrinsicAvailableTest
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:ControlIntrinsic=-_updateCRC32
+ *                   -XX:+UseCRC32Intrinsics
+ *                   compiler.intrinsics.IntrinsicAvailableTest
+ *
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:ControlIntrinsic=+_updateCRC32
+ *                   -XX:+UseCRC32Intrinsics
+ *                   compiler.intrinsics.IntrinsicAvailableTest
  */
 
 
@@ -93,7 +112,17 @@ public class IntrinsicAvailableTest extends CompilerWhiteBoxTest {
     }
 
     protected void checkIntrinsicForCompilationLevel(Executable method, int compLevel) throws Exception {
-        boolean intrinsicEnabled = Boolean.valueOf(getVMOption("UseCRC32Intrinsics"));
+        boolean intrinsicEnabled = true;
+        String controlIntrinsic = getVMOption("ControlIntrinsic", "");
+
+        if (controlIntrinsic.contains("+_updateCRC32")) {
+          intrinsicEnabled = true;
+        } else if (controlIntrinsic.contains("-_updateCRC32")) {
+          intrinsicEnabled = false;
+        }
+
+        intrinsicEnabled &= Boolean.valueOf(getVMOption("UseCRC32Intrinsics"));
+
         boolean intrinsicAvailable = WHITE_BOX.isIntrinsicAvailable(method,
                                                                     compLevel);
 
