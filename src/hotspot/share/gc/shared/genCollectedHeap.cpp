@@ -49,7 +49,7 @@
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
-#include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
@@ -825,10 +825,6 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   if (_process_strong_tasks->try_claim_task(GCH_PS_Universe_oops_do)) {
     Universe::oops_do(strong_roots);
   }
-  // Global (strong) JNI handles
-  if (_process_strong_tasks->try_claim_task(GCH_PS_JNIHandles_oops_do)) {
-    JNIHandles::oops_do(strong_roots);
-  }
 
   if (_process_strong_tasks->try_claim_task(GCH_PS_ObjectSynchronizer_oops_do)) {
     ObjectSynchronizer::oops_do(strong_roots);
@@ -844,8 +840,8 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
     AOTLoader::oops_do(strong_roots);
   }
 #endif
-  if (_process_strong_tasks->try_claim_task(GCH_PS_VMGlobal_oops_do)) {
-    OopStorageSet::vm_global()->oops_do(strong_roots);
+  if (_process_strong_tasks->try_claim_task(GCH_PS_OopStorageSet_oops_do)) {
+    OopStorageSet::strong_oops_do(strong_roots);
   }
 
   if (_process_strong_tasks->try_claim_task(GCH_PS_CodeCache_oops_do)) {
