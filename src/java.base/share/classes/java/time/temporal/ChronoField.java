@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,7 +270,7 @@ public enum ChronoField implements TemporalField {
      * The value is validated from 0 to 11 in strict and smart mode.
      * In lenient mode the value is not validated. It is combined with
      * {@code AMPM_OF_DAY} to form {@code HOUR_OF_DAY} by multiplying
-     * the {AMPM_OF_DAY} value by 12.
+     * the {@code AMPM_OF_DAY} value by 12.
      * <p>
      * See {@link #CLOCK_HOUR_OF_AMPM} for the related field that counts hours from 1 to 12.
      */
@@ -334,7 +334,7 @@ public enum ChronoField implements TemporalField {
      * The value is validated from 0 to 1 in strict and smart mode.
      * In lenient mode the value is not validated. It is combined with
      * {@code HOUR_OF_AMPM} to form {@code HOUR_OF_DAY} by multiplying
-     * the {AMPM_OF_DAY} value by 12.
+     * the {@code AMPM_OF_DAY} value by 12.
      */
     AMPM_OF_DAY("AmPmOfDay", HALF_DAYS, DAYS, ValueRange.of(0, 1), "dayperiod"),
     /**
