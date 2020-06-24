@@ -886,114 +886,6 @@ bool SystemDictionaryShared::is_sharing_possible(ClassLoaderData* loader_data) {
           SystemDictionary::is_platform_class_loader(class_loader));
 }
 
-// Currently AppCDS only archives classes from the run-time image, the
-// -Xbootclasspath/a path, the class path, and the module path.
-//
-// Check if a shared class can be loaded by the specific classloader. Following
-// are the "visible" archived classes for different classloaders.
-//
-// NULL classloader:
-//   - see SystemDictionary::is_shared_class_visible()
-// Platform classloader:
-//   - Module class from runtime image. ModuleEntry must be defined in the
-//     classloader.
-// App classloader:
-//   - Module Class from runtime image and module path. ModuleEntry must be defined in the
-//     classloader.
-//   - Class from -cp. The class must have no PackageEntry defined in any of the
-//     boot/platform/app classloader, or must be in the unnamed module defined in the
-//     AppClassLoader.
-bool SystemDictionaryShared::is_shared_class_visible_for_classloader(
-                                                     InstanceKlass* ik,
-                                                     Handle class_loader,
-                                                     Symbol* pkg_name,
-                                                     PackageEntry* pkg_entry,
-                                                     ModuleEntry* mod_entry,
-                                                     TRAPS) {
-  assert(class_loader.not_null(), "Class loader should not be NULL");
-  assert(Universe::is_module_initialized(), "Module system is not initialized");
-  ResourceMark rm(THREAD);
-
-  int path_index = ik->shared_classpath_index();
-  SharedClassPathEntry* ent =
-            (SharedClassPathEntry*)FileMapInfo::shared_path(path_index);
-
-  if (SystemDictionary::is_platform_class_loader(class_loader())) {
-    assert(ent != NULL, "shared class for PlatformClassLoader should have valid SharedClassPathEntry");
-    // The PlatformClassLoader can only load archived class originated from the
-    // run-time image. The class' PackageEntry/ModuleEntry must be
-    // defined by the PlatformClassLoader.
-    if (mod_entry != NULL) {
-      // PackageEntry/ModuleEntry is found in the classloader. Check if the
-      // ModuleEntry's location agrees with the archived class' origination.
-      if (ent->is_modules_image() && mod_entry->location()->starts_with("jrt:")) {
-        return true; // Module class from the runtime image
-      }
-    }
-  } else if (SystemDictionary::is_system_class_loader(class_loader())) {
-    assert(ent != NULL, "shared class for system loader should have valid SharedClassPathEntry");
-    if (pkg_name == NULL) {
-      // The archived class is in the unnamed package. Currently, the boot image
-      // does not contain any class in the unnamed package.
-      assert(!ent->is_modules_image(), "Class in the unnamed package must be from the classpath");
-      if (path_index >= ClassLoaderExt::app_class_paths_start_index()) {
-        assert(path_index < ClassLoaderExt::app_module_paths_start_index(), "invalid path_index");
-        return true;
-      }
-    } else {
-      // Check if this is from a PackageEntry/ModuleEntry defined in the AppClassloader.
-      if (pkg_entry == NULL) {
-        // It's not guaranteed that the class is from the classpath if the
-        // PackageEntry cannot be found from the AppClassloader. Need to check
-        // the boot and platform classloader as well.
-        ClassLoaderData* platform_loader_data =
-          ClassLoaderData::class_loader_data_or_null(SystemDictionary::java_platform_loader()); // can be NULL during bootstrap
-        if ((platform_loader_data == NULL ||
-             ClassLoader::get_package_entry(pkg_name, platform_loader_data) == NULL) &&
-             ClassLoader::get_package_entry(pkg_name, ClassLoaderData::the_null_class_loader_data()) == NULL) {
-          // The PackageEntry is not defined in any of the boot/platform/app classloaders.
-          // The archived class must from -cp path and not from the runtime image.
-          if (!ent->is_modules_image() && path_index >= ClassLoaderExt::app_class_paths_start_index() &&
-                                          path_index < ClassLoaderExt::app_module_paths_start_index()) {
-            return true;
-          }
-        }
-      } else if (mod_entry != NULL) {
-        // The package/module is defined in the AppClassLoader. We support
-        // archiving application module class from the runtime image or from
-        // a named module from a module path.
-        // Packages from the -cp path are in the unnamed_module.
-        if (ent->is_modules_image() && mod_entry->location()->starts_with("jrt:")) {
-          // shared module class from runtime image
-          return true;
-        } else if (pkg_entry->in_unnamed_module() && path_index >= ClassLoaderExt::app_class_paths_start_index() &&
-            path_index < ClassLoaderExt::app_module_paths_start_index()) {
-          // shared class from -cp
-          DEBUG_ONLY( \
-            ClassLoaderData* loader_data = class_loader_data(class_loader); \
-            assert(mod_entry == loader_data->unnamed_module(), "the unnamed module is not defined in the classloader");)
-          return true;
-        } else {
-          if(!pkg_entry->in_unnamed_module() &&
-              (path_index >= ClassLoaderExt::app_module_paths_start_index())&&
-              (path_index < FileMapInfo::get_number_of_shared_paths()) &&
-              (strcmp(ent->name(), ClassLoader::skip_uri_protocol(mod_entry->location()->as_C_string())) == 0)) {
-            // shared module class from module path
-            return true;
-          } else {
-            assert(path_index < FileMapInfo::get_number_of_shared_paths(), "invalid path_index");
-          }
-        }
-      }
-    }
-  } else {
-    // TEMP: if a shared class can be found by a custom loader, consider it visible now.
-    // FIXME: is this actually correct?
-    return true;
-  }
-  return false;
-}
-
 bool SystemDictionaryShared::has_platform_or_app_classes() {
   if (FileMapInfo::current_info()->has_platform_or_app_classes()) {
     return true;
@@ -1026,7 +918,7 @@ bool SystemDictionaryShared::has_platform_or_app_classes() {
 // [b] BuiltinClassLoader.loadClassOrNull() first calls findLoadedClass(name).
 // [c] At this point, if we can find the named class inside the
 //     shared_dictionary, we can perform further checks (see
-//     is_shared_class_visible_for_classloader() to ensure that this class
+//     SystemDictionary::is_shared_class_visible) to ensure that this class
 //     was loaded by the same class loader during dump time.
 //
 // Given these assumptions, we intercept the findLoadedClass() call to invoke

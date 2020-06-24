@@ -252,6 +252,7 @@ void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
 }
 
 void SharedClassPathEntry::init(bool is_modules_image,
+                                bool is_module_path,
                                 ClassPathEntry* cpe, TRAPS) {
   Arguments::assert_is_dumping_archive();
   _timestamp = 0;
@@ -272,6 +273,7 @@ void SharedClassPathEntry::init(bool is_modules_image,
         _from_class_path_attr = cpe->from_class_path_attr();
       }
       _filesize = st.st_size;
+      _is_module_path = is_module_path;
     }
   } else {
     // The file/dir must exist, or it would not have been added
@@ -296,6 +298,7 @@ void SharedClassPathEntry::set_name(const char* name, TRAPS) {
 
 void SharedClassPathEntry::copy_from(SharedClassPathEntry* ent, ClassLoaderData* loader_data, TRAPS) {
   _type = ent->_type;
+  _is_module_path = ent->_is_module_path;
   _timestamp = ent->_timestamp;
   _filesize = ent->_filesize;
   _from_class_path_attr = ent->_from_class_path_attr;
@@ -450,10 +453,11 @@ void FileMapInfo::allocate_shared_path_table() {
 int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS) {
   while (cpe != NULL) {
     bool is_jrt = (cpe == ClassLoader::get_jrt_entry());
+    bool is_module_path = i >= ClassLoaderExt::app_module_paths_start_index();
     const char* type = (is_jrt ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
     log_info(class, path)("add %s shared path (%s) %s", which, type, cpe->name());
     SharedClassPathEntry* ent = shared_path(i);
-    ent->init(is_jrt, cpe, THREAD);
+    ent->init(is_jrt, is_module_path, cpe, THREAD);
     if (cpe->is_jar_file()) {
       update_jar_manifest(cpe, ent, THREAD);
     }
@@ -511,6 +515,38 @@ int FileMapInfo::num_non_existent_class_paths() {
   } else {
     return 0;
   }
+}
+
+int FileMapInfo::get_module_shared_path_index(Symbol* location) {
+  if (location->starts_with("jrt:", 4) && get_number_of_shared_paths() > 0) {
+    assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
+    return 0;
+  }
+
+  if (ClassLoaderExt::app_module_paths_start_index() >= get_number_of_shared_paths()) {
+    // The archive(s) were created without --module-path option
+    return -1;
+  }
+
+  if (!location->starts_with("file:", 5)) {
+    return -1;
+  }
+
+  // skip_uri_protocol was also called during dump time -- see ClassLoaderExt::process_module_table()
+  ResourceMark rm;
+  const char* file = ClassLoader::skip_uri_protocol(location->as_C_string());
+  for (int i = ClassLoaderExt::app_module_paths_start_index(); i < get_number_of_shared_paths(); i++) {
+    SharedClassPathEntry* ent = shared_path(i);
+    assert(ent->in_named_module(), "must be");
+    bool cond = strcmp(file, ent->name()) == 0;
+    log_debug(class, path)("get_module_shared_path_index (%d) %s : %s = %s", i,
+                           location->as_C_string(), ent->name(), cond ? "same" : "different");
+    if (cond) {
+      return i;
+    }
+  }
+
+  return -1;
 }
 
 class ManifestStream: public ResourceObj {

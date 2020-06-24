@@ -58,6 +58,7 @@ class SharedClassPathEntry {
   void set_name(const char* name, TRAPS);
 
   u1     _type;
+  bool   _is_module_path;
   bool   _from_class_path_attr;
   time_t _timestamp;          // jar timestamp,  0 if is directory, modules image or other
   long   _filesize;           // jar/jimage file size, -1 if is directory, -2 if other
@@ -65,7 +66,7 @@ class SharedClassPathEntry {
   Array<u1>*   _manifest;
 
 public:
-  void init(bool is_modules_image, ClassPathEntry* cpe, TRAPS);
+  void init(bool is_modules_image, bool is_module_path, ClassPathEntry* cpe, TRAPS);
   void init_as_non_existent(const char* path, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
   bool validate(bool is_class_path = true) const;
@@ -96,6 +97,10 @@ public:
   }
   bool check_non_existent() const;
   void copy_from(SharedClassPathEntry* ent, ClassLoaderData* loader_data, TRAPS);
+  bool in_named_module() {
+    return is_modules_image() || // modules image doesn't contain unnamed modules
+           _is_module_path;      // module path doesn't contain unnamed modules
+  }
 };
 
 struct ArchiveHeapOopmapInfo {
@@ -521,6 +526,8 @@ public:
   static int get_number_of_shared_paths() {
     return _shared_path_table.size();
   }
+
+  static int get_module_shared_path_index(Symbol* location) NOT_CDS_RETURN_(-1);
 
   char* region_addr(int idx);
 

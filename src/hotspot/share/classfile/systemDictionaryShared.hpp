@@ -242,12 +242,6 @@ public:
 
   // Check if sharing is supported for the class loader.
   static bool is_sharing_possible(ClassLoaderData* loader_data);
-  static bool is_shared_class_visible_for_classloader(InstanceKlass* ik,
-                                                      Handle class_loader,
-                                                      Symbol* pkg_name,
-                                                      PackageEntry* pkg_entry,
-                                                      ModuleEntry* mod_entry,
-                                                      TRAPS);
 
   static bool add_unregistered_class(InstanceKlass* k, TRAPS);
   static InstanceKlass* dump_time_resolve_super_or_fail(Symbol* child_name,
