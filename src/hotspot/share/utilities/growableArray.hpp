@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_GROWABLEARRAY_HPP
 
 #include "memory/allocation.hpp"
-#include "oops/oop.hpp"
+#include "memory/iterator.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -39,7 +39,7 @@
 /*     WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING   */
 /*                                                                       */
 /* Should you use GrowableArrays to contain handles you must be certain  */
-/* the the GrowableArray does not outlive the HandleMark that contains   */
+/* that the GrowableArray does not outlive the HandleMark that contains  */
 /* the handles. Since GrowableArrays are typically resource allocated    */
 /* the following is an example of INCORRECT CODE,                        */
 /*                                                                       */
@@ -59,174 +59,71 @@
 /* }                                                                     */
 /*                                                                       */
 /* If the GrowableArrays you are creating is C_Heap allocated then it    */
-/* hould not old handles since the handles could trivially try and       */
+/* should not hold handles since the handles could trivially try and     */
 /* outlive their HandleMark. In some situations you might need to do     */
 /* this and it would be legal but be very careful and see if you can do  */
 /* the code in some other manner.                                        */
 /*                                                                       */
 /*************************************************************************/
 
-// To call default constructor the placement operator new() is used.
-// It should be empty (it only returns the passed void* pointer).
-// The definition of placement operator new(size_t, void*) in the <new>.
+// Non-template base class responsible for handling the length and max.
 
-#include <new>
 
-// Need the correct linkage to call qsort without warnings
-extern "C" {
-  typedef int (*_sort_Fn)(const void *, const void *);
-}
-
-class GenericGrowableArray : public ResourceObj {
+class GrowableArrayBase : public ResourceObj {
   friend class VMStructs;
 
- protected:
-  int    _len;          // current length
-  int    _max;          // maximum length
-  Arena* _arena;        // Indicates where allocation occurs:
-                        //   0 means default ResourceArea
-                        //   1 means on C heap
-                        //   otherwise, allocate in _arena
+protected:
+  // Current number of accessible elements
+  int _len;
+  // Current number of allocated elements
+  int _max;
 
-  MEMFLAGS   _memflags;   // memory type if allocation in C heap
-
-#ifdef ASSERT
-  int    _nesting;      // resource area nesting at creation
-  void   set_nesting();
-  void   check_nesting();
-#else
-#define  set_nesting();
-#define  check_nesting();
-#endif
-
-  // Where are we going to allocate memory?
-  bool on_C_heap() { return _arena == (Arena*)1; }
-  bool on_stack () { return _arena == NULL;      }
-  bool on_arena () { return _arena >  (Arena*)1;  }
-
-  // This GA will use the resource stack for storage if c_heap==false,
-  // Else it will use the C heap.  Use clear_and_deallocate to avoid leaks.
-  GenericGrowableArray(int initial_size, int initial_len, MEMFLAGS flags) {
-    _len = initial_len;
-    _max = initial_size;
-    _memflags = flags;
-
+  GrowableArrayBase(int initial_max, int initial_len) :
+      _len(initial_len),
+      _max(initial_max) {
     assert(_len >= 0 && _len <= _max, "initial_len too big");
-
-    const bool c_heap = flags != mtNone;
-    _arena = (c_heap ? (Arena*)1 : NULL);
-    set_nesting();
-    assert(!on_C_heap() || allocated_on_C_heap(), "growable array must be on C heap if elements are");
-    assert(!on_stack() ||
-           (allocated_on_res_area() || allocated_on_stack()),
-           "growable array must be on stack if elements are not on arena and not on C heap");
   }
 
-  // This GA will use the given arena for storage.
-  // Consider using new(arena) GrowableArray<T> to allocate the header.
-  GenericGrowableArray(Arena* arena, int initial_size, int initial_len) {
-    _len = initial_len;
-    _max = initial_size;
-    assert(_len >= 0 && _len <= _max, "initial_len too big");
-    _arena = arena;
-    _memflags = mtNone;
-
-    assert(on_arena(), "arena has taken on reserved value 0 or 1");
-    // Relax next assert to allow object allocation on resource area,
-    // on stack or embedded into an other object.
-    assert(allocated_on_arena() || allocated_on_stack(),
-           "growable array must be on arena or on stack if elements are on arena");
-  }
-
-  void* raw_allocate(int elementSize);
-
-  void free_C_heap(void* elements);
-};
-
-template<class E> class GrowableArrayIterator;
-template<class E, class UnaryPredicate> class GrowableArrayFilterIterator;
-
-template<class E>
-class CompareClosure : public Closure {
-public:
-    virtual int do_compare(const E&, const E&) = 0;
-};
-
-template<class E> class GrowableArray : public GenericGrowableArray {
-  friend class VMStructs;
-
- private:
-  E*     _data;         // data array
-
-  void grow(int j);
-  void raw_at_put_grow(int i, const E& p, const E& fill);
-  void  clear_and_deallocate();
+  ~GrowableArrayBase() {}
 
 public:
-  GrowableArray(int initial_size, MEMFLAGS F = mtNone)
-    : GenericGrowableArray(initial_size, 0, F) {
-    _data = (E*)raw_allocate(sizeof(E));
-// Needed for Visual Studio 2012 and older
-#ifdef _MSC_VER
-#pragma warning(suppress: 4345)
-#endif
-    for (int i = 0; i < _max; i++) ::new ((void*)&_data[i]) E();
-  }
-
-  GrowableArray(int initial_size, int initial_len, const E& filler, MEMFLAGS memflags = mtNone)
-    : GenericGrowableArray(initial_size, initial_len, memflags) {
-    _data = (E*)raw_allocate(sizeof(E));
-    int i = 0;
-    for (; i < _len; i++) ::new ((void*)&_data[i]) E(filler);
-    for (; i < _max; i++) ::new ((void*)&_data[i]) E();
-  }
-
-  // Watch out, if filler was generated by a constructor, the destuctor might
-  // be called on the original object invalidating all the copies made here.
-  // Carefully design the copy constructor.
-  GrowableArray(Arena* arena, int initial_size, int initial_len, const E& filler) :
-      GenericGrowableArray(arena, initial_size, initial_len) {
-    _data = (E*)raw_allocate(sizeof(E));
-    int i = 0;
-    for (; i < _len; i++) ::new ((void*)&_data[i]) E(filler);
-    for (; i < _max; i++) ::new ((void*)&_data[i]) E();
-  }
-
-  GrowableArray() : GenericGrowableArray(2, 0, mtNone) {
-    _data = (E*)raw_allocate(sizeof(E));
-    ::new ((void*)&_data[0]) E();
-    ::new ((void*)&_data[1]) E();
-  }
-
-                                // Does nothing for resource and arena objects
-  ~GrowableArray()              { if (on_C_heap()) clear_and_deallocate(); }
-
-  void  clear()                 { _len = 0; }
   int   length() const          { return _len; }
   int   max_length() const      { return _max; }
-  void  trunc_to(int l)         { assert(l <= _len,"cannot increase length"); _len = l; }
+
   bool  is_empty() const        { return _len == 0; }
   bool  is_nonempty() const     { return _len != 0; }
   bool  is_full() const         { return _len == _max; }
-  DEBUG_ONLY(E* data_addr() const      { return _data; })
 
-  void print();
-
-  int append(const E& elem) {
-    check_nesting();
-    if (_len == _max) grow(_len);
-    int idx = _len++;
-    _data[idx] = elem;
-    return idx;
+  void  clear()                 { _len = 0; }
+  void  trunc_to(int length)    {
+    assert(length <= _len,"cannot increase length");
+    _len = length;
   }
+};
 
-  bool append_if_missing(const E& elem) {
-    // Returns TRUE if elem is added.
-    bool missed = !contains(elem);
-    if (missed) append(elem);
-    return missed;
-  }
+template <typename E> class GrowableArrayIterator;
+template <typename E, typename UnaryPredicate> class GrowableArrayFilterIterator;
 
+// Extends GrowableArrayBase with a typed data array.
+//
+// E: Element type
+//
+// The "view" adds function that don't grow or deallocate
+// the _data array, so there's no need for an allocator.
+//
+// The "view" can be used to type erase the allocator classes
+// of GrowableArrayWithAllocator.
+template <typename E>
+class GrowableArrayView : public GrowableArrayBase {
+protected:
+  E* _data; // data array
+
+  GrowableArrayView<E>(E* data, int initial_max, int initial_len) :
+      GrowableArrayBase(initial_max, initial_len), _data(data) {}
+
+  ~GrowableArrayView() {}
+
+public:
   E& at(int i) {
     assert(0 <= i && i < _len, "illegal index");
     return _data[i];
@@ -264,8 +161,6 @@ public:
     return GrowableArrayIterator<E>(this, length());
   }
 
-  void push(const E& elem) { append(elem); }
-
   E pop() {
     assert(_len > 0, "empty list");
     return _data[--_len];
@@ -274,24 +169,6 @@ public:
   void at_put(int i, const E& elem) {
     assert(0 <= i && i < _len, "illegal index");
     _data[i] = elem;
-  }
-
-  E at_grow(int i, const E& fill = E()) {
-    assert(0 <= i, "negative index");
-    check_nesting();
-    if (i >= _len) {
-      if (i >= _max) grow(i);
-      for (int j = _len; j <= i; j++)
-        _data[j] = fill;
-      _len = i+1;
-    }
-    return _data[i];
-  }
-
-  void at_put_grow(int i, const E& elem, const E& fill = E()) {
-    assert(0 <= i, "negative index");
-    check_nesting();
-    raw_at_put_grow(i, elem, fill);
   }
 
   bool contains(const E& elem) const {
@@ -357,61 +234,12 @@ public:
     }
   }
 
-  // inserts the given element before the element at index i
-  void insert_before(const int idx, const E& elem) {
-    assert(0 <= idx && idx <= _len, "illegal index");
-    check_nesting();
-    if (_len == _max) grow(_len);
-    for (int j = _len - 1; j >= idx; j--) {
-      _data[j + 1] = _data[j];
-    }
-    _len++;
-    _data[idx] = elem;
-  }
-
-  void insert_before(const int idx, const GrowableArray<E>* array) {
-    assert(0 <= idx && idx <= _len, "illegal index");
-    check_nesting();
-    int array_len = array->length();
-    int new_len = _len + array_len;
-    if (new_len >= _max) grow(new_len);
-
-    for (int j = _len - 1; j >= idx; j--) {
-      _data[j + array_len] = _data[j];
-    }
-
-    for (int j = 0; j < array_len; j++) {
-      _data[idx + j] = array->_data[j];
-    }
-
-    _len += array_len;
-  }
-
-  void appendAll(const GrowableArray<E>* l) {
-    for (int i = 0; i < l->_len; i++) {
-      raw_at_put_grow(_len, l->_data[i], E());
-    }
-  }
-
-  void sort(int f(E*,E*)) {
+  void sort(int f(E*, E*)) {
     qsort(_data, length(), sizeof(E), (_sort_Fn)f);
   }
   // sort by fixed-stride sub arrays:
-  void sort(int f(E*,E*), int stride) {
+  void sort(int f(E*, E*), int stride) {
     qsort(_data, length() / stride, sizeof(E) * stride, (_sort_Fn)f);
-  }
-
-  // Binary search and insertion utility.  Search array for element
-  // matching key according to the static compare function.  Insert
-  // that element is not already in the list.  Assumes the list is
-  // already sorted according to compare function.
-  template <int compare(const E&, const E&)> E insert_sorted(const E& key) {
-    bool found;
-    int location = find_sorted<E, compare>(key, found);
-    if (!found) {
-      insert_before(location, key);
-    }
-    return at(location);
   }
 
   template <typename K, int compare(const K&, const E&)> int find_sorted(const K& key, bool& found) {
@@ -435,16 +263,7 @@ public:
     return min;
   }
 
-  E insert_sorted(CompareClosure<E>* cc, const E& key) {
-    bool found;
-    int location = find_sorted(cc, key, found);
-    if (!found) {
-      insert_before(location, key);
-    }
-    return at(location);
-  }
-
-  template<typename K>
+  template <typename K>
   int find_sorted(CompareClosure<E>* cc, const K& key, bool& found) {
     found = false;
     int min = 0;
@@ -465,80 +284,442 @@ public:
     }
     return min;
   }
-};
 
-// Global GrowableArray methods (one instance in the library per each 'E' type).
-
-template<class E> void GrowableArray<E>::grow(int j) {
-    int old_max = _max;
-    // grow the array by increasing _max to the first power of two larger than the size we need
-    _max = next_power_of_2((uint32_t)j);
-    // j < _max
-    E* newData = (E*)raw_allocate(sizeof(E));
-    int i = 0;
-    for (     ; i < _len; i++) ::new ((void*)&newData[i]) E(_data[i]);
-// Needed for Visual Studio 2012 and older
-#ifdef _MSC_VER
-#pragma warning(suppress: 4345)
-#endif
-    for (     ; i < _max; i++) ::new ((void*)&newData[i]) E();
-    for (i = 0; i < old_max; i++) _data[i].~E();
-    if (on_C_heap() && _data != NULL) {
-      free_C_heap(_data);
-    }
-    _data = newData;
-}
-
-template<class E> void GrowableArray<E>::raw_at_put_grow(int i, const E& p, const E& fill) {
-    if (i >= _len) {
-      if (i >= _max) grow(i);
-      for (int j = _len; j < i; j++)
-        _data[j] = fill;
-      _len = i+1;
-    }
-    _data[i] = p;
-}
-
-// This function clears and deallocate the data in the growable array that
-// has been allocated on the C heap.  It's not public - called by the
-// destructor.
-template<class E> void GrowableArray<E>::clear_and_deallocate() {
-    assert(on_C_heap(),
-           "clear_and_deallocate should only be called when on C heap");
-    clear();
-    if (_data != NULL) {
-      for (int i = 0; i < _max; i++) _data[i].~E();
-      free_C_heap(_data);
-      _data = NULL;
-    }
-}
-
-template<class E> void GrowableArray<E>::print() {
+  void print() {
     tty->print("Growable Array " INTPTR_FORMAT, this);
     tty->print(": length %ld (_max %ld) { ", _len, _max);
-    for (int i = 0; i < _len; i++) tty->print(INTPTR_FORMAT " ", *(intptr_t*)&(_data[i]));
+    for (int i = 0; i < _len; i++) {
+      tty->print(INTPTR_FORMAT " ", *(intptr_t*)&(_data[i]));
+    }
     tty->print("}\n");
+  }
+};
+
+// GrowableArrayWithAllocator extends the "view" with
+// the capability to grow and deallocate the data array.
+//
+// The allocator responsibility is delegated to the sub-class.
+//
+// Derived: The sub-class responsible for allocation / deallocation
+//  - E* Derived::allocate()       - member function responsible for allocation
+//  - void Derived::deallocate(E*) - member function responsible for deallocation
+template <typename E, typename Derived>
+class GrowableArrayWithAllocator : public GrowableArrayView<E> {
+  friend class VMStructs;
+
+  void grow(int j);
+
+protected:
+  GrowableArrayWithAllocator(E* data, int initial_max) :
+      GrowableArrayView<E>(data, initial_max, 0) {
+    for (int i = 0; i < initial_max; i++) {
+      ::new ((void*)&data[i]) E();
+    }
+  }
+
+  GrowableArrayWithAllocator(E* data, int initial_max, int initial_len, const E& filler) :
+      GrowableArrayView<E>(data, initial_max, initial_len) {
+    int i = 0;
+    for (; i < initial_len; i++) {
+      ::new ((void*)&data[i]) E(filler);
+    }
+    for (; i < initial_max; i++) {
+      ::new ((void*)&data[i]) E();
+    }
+  }
+
+  ~GrowableArrayWithAllocator() {}
+
+public:
+  int append(const E& elem) {
+    if (this->_len == this->_max) grow(this->_len);
+    int idx = this->_len++;
+    this->_data[idx] = elem;
+    return idx;
+  }
+
+  bool append_if_missing(const E& elem) {
+    // Returns TRUE if elem is added.
+    bool missed = !this->contains(elem);
+    if (missed) append(elem);
+    return missed;
+  }
+
+  void push(const E& elem) { append(elem); }
+
+  E at_grow(int i, const E& fill = E()) {
+    assert(0 <= i, "negative index");
+    if (i >= this->_len) {
+      if (i >= this->_max) grow(i);
+      for (int j = this->_len; j <= i; j++)
+        this->_data[j] = fill;
+      this->_len = i+1;
+    }
+    return this->_data[i];
+  }
+
+  void at_put_grow(int i, const E& elem, const E& fill = E()) {
+    assert(0 <= i, "negative index");
+    if (i >= this->_len) {
+      if (i >= this->_max) grow(i);
+      for (int j = this->_len; j < i; j++)
+        this->_data[j] = fill;
+      this->_len = i+1;
+    }
+    this->_data[i] = elem;
+  }
+
+  // inserts the given element before the element at index i
+  void insert_before(const int idx, const E& elem) {
+    assert(0 <= idx && idx <= this->_len, "illegal index");
+    if (this->_len == this->_max) grow(this->_len);
+    for (int j = this->_len - 1; j >= idx; j--) {
+      this->_data[j + 1] = this->_data[j];
+    }
+    this->_len++;
+    this->_data[idx] = elem;
+  }
+
+  void insert_before(const int idx, const GrowableArrayView<E>* array) {
+    assert(0 <= idx && idx <= this->_len, "illegal index");
+    int array_len = array->length();
+    int new_len = this->_len + array_len;
+    if (new_len >= this->_max) grow(new_len);
+
+    for (int j = this->_len - 1; j >= idx; j--) {
+      this->_data[j + array_len] = this->_data[j];
+    }
+
+    for (int j = 0; j < array_len; j++) {
+      this->_data[idx + j] = array->at(j);
+    }
+
+    this->_len += array_len;
+  }
+
+  void appendAll(const GrowableArrayView<E>* l) {
+    for (int i = 0; i < l->length(); i++) {
+      this->at_put_grow(this->_len, l->at(i), E());
+    }
+  }
+
+  // Binary search and insertion utility.  Search array for element
+  // matching key according to the static compare function.  Insert
+  // that element is not already in the list.  Assumes the list is
+  // already sorted according to compare function.
+  template <int compare(const E&, const E&)> E insert_sorted(const E& key) {
+    bool found;
+    int location = GrowableArrayView<E>::template find_sorted<E, compare>(key, found);
+    if (!found) {
+      insert_before(location, key);
+    }
+    return this->at(location);
+  }
+
+  E insert_sorted(CompareClosure<E>* cc, const E& key) {
+    bool found;
+    int location = find_sorted(cc, key, found);
+    if (!found) {
+      insert_before(location, key);
+    }
+    return this->at(location);
+  }
+
+  void clear_and_deallocate();
+};
+
+template <typename E, typename Derived>
+void GrowableArrayWithAllocator<E, Derived>::grow(int j) {
+  int old_max = this->_max;
+  // grow the array by increasing _max to the first power of two larger than the size we need
+  this->_max = next_power_of_2((uint32_t)j);
+  // j < _max
+  E* newData = static_cast<Derived*>(this)->allocate();
+  int i = 0;
+  for (     ; i < this->_len; i++) ::new ((void*)&newData[i]) E(this->_data[i]);
+  for (     ; i < this->_max; i++) ::new ((void*)&newData[i]) E();
+  for (i = 0; i < old_max; i++) this->_data[i].~E();
+  if (this->_data != NULL) {
+    static_cast<Derived*>(this)->deallocate(this->_data);
+  }
+  this->_data = newData;
 }
+
+template <typename E, typename Derived>
+void GrowableArrayWithAllocator<E, Derived>::clear_and_deallocate() {
+  if (this->_data != NULL) {
+    for (int i = 0; i < this->_max; i++) {
+      this->_data[i].~E();
+    }
+    static_cast<Derived*>(this)->deallocate(this->_data);
+    this->_data = NULL;
+  }
+  this->_len = 0;
+  this->_max = 0;
+}
+
+class GrowableArrayResourceAllocator {
+public:
+  static void* allocate(int max, int element_size);
+};
+
+// Arena allocator
+class GrowableArrayArenaAllocator {
+public:
+  static void* allocate(int max, int element_size, Arena* arena);
+};
+
+// CHeap allocator
+class GrowableArrayCHeapAllocator {
+public:
+  static void* allocate(int max, int element_size, MEMFLAGS memflags);
+  static void deallocate(void* mem);
+};
+
+#ifdef ASSERT
+
+// Checks resource allocation nesting
+class GrowableArrayNestingCheck {
+  // resource area nesting at creation
+  int _nesting;
+
+public:
+  GrowableArrayNestingCheck(bool on_stack);
+
+  void on_stack_alloc() const;
+};
+
+#endif // ASSERT
+
+// Encodes where the backing array is allocated
+// and performs necessary checks.
+class GrowableArrayMetadata {
+  uintptr_t _bits;
+
+  // resource area nesting at creation
+  debug_only(GrowableArrayNestingCheck _nesting_check;)
+
+  uintptr_t bits(MEMFLAGS memflags) const {
+    if (memflags == mtNone) {
+      // Stack allocation
+      return 0;
+    }
+
+    // CHeap allocation
+    return (uintptr_t(memflags) << 1) | 1;
+  }
+
+  uintptr_t bits(Arena* arena) const {
+    return uintptr_t(arena);
+  }
+
+public:
+  GrowableArrayMetadata(Arena* arena) :
+      _bits(bits(arena))
+      debug_only(COMMA _nesting_check(on_stack())) {
+  }
+
+  GrowableArrayMetadata(MEMFLAGS memflags) :
+      _bits(bits(memflags))
+      debug_only(COMMA _nesting_check(on_stack())) {
+  }
+
+#ifdef ASSERT
+  GrowableArrayMetadata(const GrowableArrayMetadata& other) :
+      _bits(other._bits),
+      _nesting_check(other._nesting_check) {
+    assert(!on_C_heap(), "Copying of CHeap arrays not supported");
+    assert(!other.on_C_heap(), "Copying of CHeap arrays not supported");
+  }
+
+  GrowableArrayMetadata& operator=(const GrowableArrayMetadata& other) {
+    _bits = other._bits;
+    _nesting_check = other._nesting_check;
+    assert(!on_C_heap(), "Assignment of CHeap arrays not supported");
+    assert(!other.on_C_heap(), "Assignment of CHeap arrays not supported");
+    return *this;
+  }
+
+  void init_checks(const GrowableArrayBase* array) const;
+  void on_stack_alloc_check() const;
+#endif // ASSERT
+
+  bool on_C_heap() const { return (_bits & 1) == 1; }
+  bool on_stack () const { return _bits == 0;      }
+  bool on_arena () const { return (_bits & 1) == 0 && _bits != 0; }
+
+  Arena* arena() const      { return (Arena*)_bits; }
+  MEMFLAGS memflags() const { return MEMFLAGS(_bits >> 1); }
+};
+
+// THE GrowableArray.
+//
+// Supports multiple allocation strategies:
+//  - Resource stack allocation: if memflags == mtNone
+//  - CHeap allocation: if memflags != mtNone
+//  - Arena allocation: if an arena is provided
+//
+// There are some drawbacks of using GrowableArray, that are removed in some
+// of the other implementations of GrowableArrayWithAllocator sub-classes:
+//
+// Memory overhead: The multiple allocation strategies uses extra metadata
+//  embedded in the instance.
+//
+// Strict allocation locations: There are rules about where the GrowableArray
+//  instance is allocated, that depends on where the data array is allocated.
+//  See: init_checks.
+
+template <typename E>
+class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E> > {
+  friend class GrowableArrayWithAllocator<E, GrowableArray<E> >;
+  friend class GrowableArrayTest;
+
+  static E* allocate(int max) {
+    return (E*)GrowableArrayResourceAllocator::allocate(max, sizeof(E));
+  }
+
+  static E* allocate(int max, MEMFLAGS memflags) {
+    if (memflags != mtNone) {
+      return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), memflags);
+    }
+
+    return (E*)GrowableArrayResourceAllocator::allocate(max, sizeof(E));
+  }
+
+  static E* allocate(int max, Arena* arena) {
+    return (E*)GrowableArrayArenaAllocator::allocate(max, sizeof(E), arena);
+  }
+
+  GrowableArrayMetadata _metadata;
+
+  void init_checks() const { debug_only(_metadata.init_checks(this);) }
+
+  // Where are we going to allocate memory?
+  bool on_C_heap() const { return _metadata.on_C_heap(); }
+  bool on_stack () const { return _metadata.on_stack(); }
+  bool on_arena () const { return _metadata.on_arena(); }
+
+  E* allocate() {
+    if (on_stack()) {
+      debug_only(_metadata.on_stack_alloc_check());
+      return allocate(this->_max);
+    }
+
+    if (on_C_heap()) {
+      return allocate(this->_max, _metadata.memflags());
+    }
+
+    assert(on_arena(), "Sanity");
+    return allocate(this->_max, _metadata.arena());
+  }
+
+  void deallocate(E* mem) {
+    if (on_C_heap()) {
+      GrowableArrayCHeapAllocator::deallocate(mem);
+    }
+  }
+
+public:
+  GrowableArray(int initial_max = 2, MEMFLAGS memflags = mtNone) :
+      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+          allocate(initial_max, memflags),
+          initial_max),
+      _metadata(memflags) {
+    init_checks();
+  }
+
+  GrowableArray(int initial_max, int initial_len, const E& filler, MEMFLAGS memflags = mtNone) :
+      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+          allocate(initial_max, memflags),
+          initial_max, initial_len, filler),
+      _metadata(memflags) {
+    init_checks();
+  }
+
+  GrowableArray(Arena* arena, int initial_max, int initial_len, const E& filler) :
+      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+          allocate(initial_max, arena),
+          initial_max, initial_len, filler),
+      _metadata(arena) {
+    init_checks();
+  }
+
+  ~GrowableArray() {
+    if (on_C_heap()) {
+      this->clear_and_deallocate();
+    }
+  }
+};
+
+// Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MEMFLAGS.
+template <typename E, MEMFLAGS F>
+class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> > {
+  friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >;
+
+  STATIC_ASSERT(F != mtNone);
+
+  static E* allocate(int max, MEMFLAGS flags) {
+    if (max == 0) {
+      return NULL;
+    }
+
+    return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), flags);
+  }
+
+  NONCOPYABLE(GrowableArrayCHeap);
+
+  E* allocate() {
+    return allocate(this->_max, F);
+  }
+
+  void deallocate(E* mem) {
+    GrowableArrayCHeapAllocator::deallocate(mem);
+  }
+
+public:
+  GrowableArrayCHeap(int initial_max) :
+      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >(
+          allocate(initial_max, F),
+          initial_max) {}
+
+  GrowableArrayCHeap(int initial_max, int initial_len, const E& filler) :
+      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >(
+          allocate(initial_max, F),
+          initial_max, initial_len, filler) {}
+
+  ~GrowableArrayCHeap() {
+    this->clear_and_deallocate();
+  }
+
+  void* operator new(size_t size) throw() {
+    return ResourceObj::operator new(size, ResourceObj::C_HEAP, F);
+  }
+
+  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
+    return ResourceObj::operator new(size, nothrow_constant, ResourceObj::C_HEAP, F);
+  }
+};
 
 // Custom STL-style iterator to iterate over GrowableArrays
 // It is constructed by invoking GrowableArray::begin() and GrowableArray::end()
-template<class E> class GrowableArrayIterator : public StackObj {
-  friend class GrowableArray<E>;
-  template<class F, class UnaryPredicate> friend class GrowableArrayFilterIterator;
+template <typename E>
+class GrowableArrayIterator : public StackObj {
+  friend class GrowableArrayView<E>;
+  template <typename F, typename UnaryPredicate> friend class GrowableArrayFilterIterator;
 
  private:
-  const GrowableArray<E>* _array; // GrowableArray we iterate over
-  int _position;                  // The current position in the GrowableArray
+  const GrowableArrayView<E>* _array; // GrowableArray we iterate over
+  int _position;                      // The current position in the GrowableArray
 
   // Private constructor used in GrowableArray::begin() and GrowableArray::end()
-  GrowableArrayIterator(const GrowableArray<E>* array, int position) : _array(array), _position(position) {
+  GrowableArrayIterator(const GrowableArrayView<E>* array, int position) : _array(array), _position(position) {
     assert(0 <= position && position <= _array->length(), "illegal position");
   }
 
  public:
   GrowableArrayIterator() : _array(NULL), _position(0) { }
-  GrowableArrayIterator<E>& operator++()  { ++_position; return *this; }
-  E operator*()                           { return _array->at(_position); }
+  GrowableArrayIterator<E>& operator++() { ++_position; return *this; }
+  E operator*()                          { return _array->at(_position); }
 
   bool operator==(const GrowableArrayIterator<E>& rhs)  {
     assert(_array == rhs._array, "iterator belongs to different array");
@@ -552,17 +733,18 @@ template<class E> class GrowableArrayIterator : public StackObj {
 };
 
 // Custom STL-style iterator to iterate over elements of a GrowableArray that satisfy a given predicate
-template<class E, class UnaryPredicate> class GrowableArrayFilterIterator : public StackObj {
-  friend class GrowableArray<E>;
+template <typename E, class UnaryPredicate>
+class GrowableArrayFilterIterator : public StackObj {
+  friend class GrowableArrayView<E>;
 
  private:
-  const GrowableArray<E>* _array;   // GrowableArray we iterate over
-  int _position;                    // Current position in the GrowableArray
-  UnaryPredicate _predicate;        // Unary predicate the elements of the GrowableArray should satisfy
+  const GrowableArrayView<E>* _array; // GrowableArray we iterate over
+  int _position;                      // Current position in the GrowableArray
+  UnaryPredicate _predicate;          // Unary predicate the elements of the GrowableArray should satisfy
 
  public:
-  GrowableArrayFilterIterator(const GrowableArrayIterator<E>& begin, UnaryPredicate filter_predicate)
-   : _array(begin._array), _position(begin._position), _predicate(filter_predicate) {
+  GrowableArrayFilterIterator(const GrowableArrayIterator<E>& begin, UnaryPredicate filter_predicate) :
+      _array(begin._array), _position(begin._position), _predicate(filter_predicate) {
     // Advance to first element satisfying the predicate
     while(_position != _array->length() && !_predicate(_array->at(_position))) {
       ++_position;
@@ -577,7 +759,7 @@ template<class E, class UnaryPredicate> class GrowableArrayFilterIterator : publ
     return *this;
   }
 
-  E operator*()   { return _array->at(_position); }
+  E operator*() { return _array->at(_position); }
 
   bool operator==(const GrowableArrayIterator<E>& rhs)  {
     assert(_array == rhs._array, "iterator belongs to different array");

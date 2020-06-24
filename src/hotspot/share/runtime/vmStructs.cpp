@@ -532,9 +532,8 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* GrowableArrays  */                                                                                                              \
   /*******************/                                                                                                              \
                                                                                                                                      \
-  nonstatic_field(GenericGrowableArray,        _len,                                          int)                                   \
-  nonstatic_field(GenericGrowableArray,        _max,                                          int)                                   \
-  nonstatic_field(GenericGrowableArray,        _arena,                                        Arena*)                                \
+  nonstatic_field(GrowableArrayBase,           _len,                                          int)                                   \
+  nonstatic_field(GrowableArrayBase,           _max,                                          int)                                   \
   nonstatic_field(GrowableArray<int>,          _data,                                         int*)                                  \
                                                                                                                                      \
   /********************************/                                                                                                 \
@@ -1339,7 +1338,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmSymbols)                                        \
                                                                           \
-  declare_toplevel_type(GenericGrowableArray)                             \
+  declare_toplevel_type(GrowableArrayBase)                                \
   declare_toplevel_type(GrowableArray<int>)                               \
   declare_toplevel_type(Arena)                                            \
     declare_type(ResourceArea, Arena)                                     \

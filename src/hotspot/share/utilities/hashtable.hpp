@@ -158,14 +158,14 @@ public:
 
 private:
   // Instance variables
-  int               _table_size;
-  HashtableBucket<F>*     _buckets;
+  int                              _table_size;
+  HashtableBucket<F>*              _buckets;
   BasicHashtableEntry<F>* volatile _free_list;
-  char*             _first_free_entry;
-  char*             _end_block;
-  int               _entry_size;
-  volatile int      _number_of_entries;
-  GrowableArray<char*>* _entry_blocks;
+  char*                            _first_free_entry;
+  char*                            _end_block;
+  int                              _entry_size;
+  volatile int                     _number_of_entries;
+  GrowableArrayCHeap<char*, F>     _entry_blocks;
 
 protected:
 

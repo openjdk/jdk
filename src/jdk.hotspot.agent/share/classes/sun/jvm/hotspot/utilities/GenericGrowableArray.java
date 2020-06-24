@@ -42,13 +42,11 @@ public class GenericGrowableArray extends VMObject {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type      = db.lookupType("GenericGrowableArray");
-    _arena_field = type.getAddressField("_arena");
+    Type type      = db.lookupType("GrowableArrayBase");
     _max_field = new CIntField(type.getCIntegerField("_max"), 0);
     _len_field = new CIntField(type.getCIntegerField("_len"), 0);
   }
 
-  private static AddressField _arena_field;
   private static CIntField _max_field;
   private static CIntField _len_field;
 
