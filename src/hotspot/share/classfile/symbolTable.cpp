@@ -513,6 +513,13 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   }
 
   assert((sym == NULL) || sym->refcount() != 0, "found dead symbol");
+#if INCLUDE_CDS
+  if (DumpSharedSpaces) {
+    if (sym != NULL) {
+      MetaspaceShared::add_symbol(sym);
+    }
+  }
+#endif
   return sym;
 }
 

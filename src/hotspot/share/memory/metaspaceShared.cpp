@@ -663,6 +663,33 @@ class CollectClassesClosure : public KlassClosure {
   }
 };
 
+// Global object for holding symbols that created during class loading. See SymbolTable::new_symbol
+static GrowableArray<Symbol*>* _global_symbol_objects = NULL;
+
+static int compare_symbols_by_address(Symbol** a, Symbol** b) {
+  if (a[0] < b[0]) {
+    return -1;
+  } else if (a[0] == b[0]) {
+    ResourceMark rm;
+    log_warning(cds)("Duplicated symbol %s unexpected", (*a)->as_C_string());
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
+void MetaspaceShared::add_symbol(Symbol* sym) {
+  MutexLocker ml(CDSAddSymbol_lock, Mutex::_no_safepoint_check_flag);
+  if (_global_symbol_objects == NULL) {
+    _global_symbol_objects = new (ResourceObj::C_HEAP, mtSymbol) GrowableArray<Symbol*>(2048, mtSymbol);
+  }
+  _global_symbol_objects->append(sym);
+}
+
+GrowableArray<Symbol*>* MetaspaceShared::collected_symbols() {
+  return _global_symbol_objects;
+}
+
 static void remove_unshareable_in_classes() {
   for (int i = 0; i < _global_klass_objects->length(); i++) {
     Klass* k = _global_klass_objects->at(i);
@@ -1238,34 +1265,6 @@ public:
   bool allow_nested_vm_operations() const { return true; }
 }; // class VM_PopulateDumpSharedSpace
 
-class SortedSymbolClosure: public SymbolClosure {
-  GrowableArray<Symbol*> _symbols;
-  virtual void do_symbol(Symbol** sym) {
-    assert((*sym)->is_permanent(), "archived symbols must be permanent");
-    _symbols.append(*sym);
-  }
-  static int compare_symbols_by_address(Symbol** a, Symbol** b) {
-    if (a[0] < b[0]) {
-      return -1;
-    } else if (a[0] == b[0]) {
-      ResourceMark rm;
-      log_warning(cds)("Duplicated symbol %s unexpected", (*a)->as_C_string());
-      return 0;
-    } else {
-      return 1;
-    }
-  }
-
-public:
-  SortedSymbolClosure() {
-    SymbolTable::symbols_do(this);
-    _symbols.sort(compare_symbols_by_address);
-  }
-  GrowableArray<Symbol*>* get_sorted_symbols() {
-    return &_symbols;
-  }
-};
-
 // ArchiveCompactor --
 //
 // This class is the central piece of shared archive compaction -- all metaspace data are
@@ -1277,7 +1276,6 @@ class ArchiveCompactor : AllStatic {
   static const int MAX_TABLE_SIZE     = 1000000;
 
   static DumpAllocStats* _alloc_stats;
-  static SortedSymbolClosure* _ssc;
 
   typedef KVHashtable<address, address, mtInternal> RelocationTable;
   static RelocationTable* _new_loc_table;
@@ -1421,8 +1419,6 @@ private:
 public:
   static void copy_and_compact() {
     ResourceMark rm;
-    SortedSymbolClosure the_ssc; // StackObj
-    _ssc = &the_ssc;
 
     log_info(cds)("Scanning all metaspace objects ... ");
     {
@@ -1458,9 +1454,11 @@ public:
     {
       log_info(cds)("Fixing symbol identity hash ... ");
       os::init_random(0x12345678);
-      GrowableArray<Symbol*>* symbols = _ssc->get_sorted_symbols();
-      for (int i=0; i<symbols->length(); i++) {
-        symbols->at(i)->update_identity_hash();
+      GrowableArray<Symbol*>* all_symbols = MetaspaceShared::collected_symbols();
+      all_symbols->sort(compare_symbols_by_address);
+      for (int i = 0; i < all_symbols->length(); i++) {
+        assert(all_symbols->at(i)->is_permanent(), "archived symbols must be permanent");
+        all_symbols->at(i)->update_identity_hash();
       }
     }
 #ifdef ASSERT
@@ -1471,10 +1469,6 @@ public:
       iterate_roots(&checker);
     }
 #endif
-
-
-    // cleanup
-    _ssc = NULL;
   }
 
   // We must relocate the System::_well_known_klasses only after we have copied the
@@ -1510,8 +1504,8 @@ public:
     // (see Symbol::operator new(size_t, int)). So if we iterate the Symbols by
     // ascending address order, we ensure that all Symbols are copied into deterministic
     // locations in the archive.
-    GrowableArray<Symbol*>* symbols = _ssc->get_sorted_symbols();
-    for (int i=0; i<symbols->length(); i++) {
+    GrowableArray<Symbol*>* symbols = _global_symbol_objects;
+    for (int i = 0; i < symbols->length(); i++) {
       it->push(symbols->adr_at(i));
     }
     if (_global_klass_objects != NULL) {
@@ -1541,7 +1535,6 @@ public:
 };
 
 DumpAllocStats* ArchiveCompactor::_alloc_stats;
-SortedSymbolClosure* ArchiveCompactor::_ssc;
 ArchiveCompactor::RelocationTable* ArchiveCompactor::_new_loc_table;
 
 void VM_PopulateDumpSharedSpace::dump_symbols() {
