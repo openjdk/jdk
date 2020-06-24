@@ -1768,6 +1768,18 @@ C2V_VMENTRY(void, ensureInitialized, (JNIEnv* env, jobject, jobject jvmci_type))
   }
 C2V_END
 
+C2V_VMENTRY(void, ensureLinked, (JNIEnv* env, jobject, jobject jvmci_type))
+  if (jvmci_type == NULL) {
+    JVMCI_THROW(NullPointerException);
+  }
+
+  Klass* klass = JVMCIENV->asKlass(jvmci_type);
+  if (klass != NULL && klass->is_instance_klass()) {
+    InstanceKlass* k = InstanceKlass::cast(klass);
+    k->link_class(CHECK);
+  }
+C2V_END
+
 C2V_VMENTRY_0(jint, interpreterFrameSize, (JNIEnv* env, jobject, jobject bytecode_frame_handle))
   if (bytecode_frame_handle == NULL) {
     JVMCI_THROW_0(NullPointerException);
@@ -2775,6 +2787,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getInterfaces",                                CC "(" HS_RESOLVED_KLASS ")[" HS_RESOLVED_KLASS,                                      FN_PTR(getInterfaces)},
   {CC "getComponentType",                             CC "(" HS_RESOLVED_KLASS ")" HS_RESOLVED_TYPE,                                        FN_PTR(getComponentType)},
   {CC "ensureInitialized",                            CC "(" HS_RESOLVED_KLASS ")V",                                                        FN_PTR(ensureInitialized)},
+  {CC "ensureLinked",                                 CC "(" HS_RESOLVED_KLASS ")V",                                                        FN_PTR(ensureLinked)},
   {CC "getIdentityHashCode",                          CC "(" OBJECTCONSTANT ")I",                                                           FN_PTR(getIdentityHashCode)},
   {CC "isInternedString",                             CC "(" OBJECTCONSTANT ")Z",                                                           FN_PTR(isInternedString)},
   {CC "unboxPrimitive",                               CC "(" OBJECTCONSTANT ")" OBJECT,                                                     FN_PTR(unboxPrimitive)},

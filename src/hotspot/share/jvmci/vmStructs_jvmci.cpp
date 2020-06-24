@@ -554,7 +554,14 @@
   declare_constant(InstanceKlass::linked)                                 \
   declare_constant(InstanceKlass::being_initialized)                      \
   declare_constant(InstanceKlass::fully_initialized)                      \
+                                                                          \
+  /*********************************/                                     \
+  /* InstanceKlass _misc_flags */                                         \
+  /*********************************/                                     \
+                                                                          \
   declare_constant(InstanceKlass::_misc_is_unsafe_anonymous)              \
+  declare_constant(InstanceKlass::_misc_has_nonstatic_concrete_methods)   \
+  declare_constant(InstanceKlass::_misc_declares_nonstatic_concrete_methods) \
                                                                           \
   declare_constant(JumpData::taken_off_set)                               \
   declare_constant(JumpData::displacement_off_set)                        \

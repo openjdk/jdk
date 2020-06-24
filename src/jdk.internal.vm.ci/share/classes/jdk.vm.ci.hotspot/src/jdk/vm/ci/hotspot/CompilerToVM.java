@@ -773,6 +773,11 @@ final class CompilerToVM {
     native void ensureInitialized(HotSpotResolvedObjectTypeImpl type);
 
     /**
+     * Forces linking of {@code type}.
+     */
+    native void ensureLinked(HotSpotResolvedObjectTypeImpl type);
+
+    /**
      * Checks if {@code object} is a String and is an interned string value.
      */
     native boolean isInternedString(HotSpotObjectConstantImpl object);
