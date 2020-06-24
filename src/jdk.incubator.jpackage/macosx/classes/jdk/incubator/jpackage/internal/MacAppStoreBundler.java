@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,19 @@
 package jdk.incubator.jpackage.internal;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.ResourceBundle;
 
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
-import static jdk.incubator.jpackage.internal.MacAppBundler.*;
-import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERBOSE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.incubator.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
+import static jdk.incubator.jpackage.internal.MacAppBundler.DEFAULT_ICNS_ICON;
+import static jdk.incubator.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
 
 public class MacAppStoreBundler extends MacBaseInstallerBundler {
 

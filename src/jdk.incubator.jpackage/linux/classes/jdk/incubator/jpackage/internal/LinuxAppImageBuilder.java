@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.ICON;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 
 public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
 
@@ -84,7 +85,7 @@ public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
 
         // create the additional launchers, if any
         List<Map<String, ? super Object>> entryPoints
-                = StandardBundlerParam.ADD_LAUNCHERS.fetchFrom(params);
+                = ADD_LAUNCHERS.fetchFrom(params);
         for (Map<String, ? super Object> entryPoint : entryPoints) {
             createLauncherForEntryPoint(AddLauncherArguments.merge(params,
                     entryPoint, ICON.getID(), ICON_PNG.getID()), params);

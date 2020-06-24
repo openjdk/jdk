@@ -48,8 +48,6 @@ import static jdk.incubator.jpackage.internal.OverridableResource.createResource
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_CONTENT_TYPE;
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.VENDOR;

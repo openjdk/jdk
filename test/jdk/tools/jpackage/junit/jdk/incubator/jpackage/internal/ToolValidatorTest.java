@@ -27,7 +27,9 @@ package jdk.incubator.jpackage.internal;
 import java.nio.file.Path;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import org.junit.Test;
 
 

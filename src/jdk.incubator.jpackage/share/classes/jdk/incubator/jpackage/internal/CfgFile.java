@@ -31,7 +31,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.ARGUMENTS;
 
 /**
  * App launcher's config file.
@@ -42,8 +45,8 @@ final class CfgFile {
     }
 
     CfgFile initFromParams(Map<String, ? super Object> params) {
-        launcherData = StandardBundlerParam.LAUNCHER_DATA.fetchFrom(params);
-        launcherName = StandardBundlerParam.APP_NAME.fetchFrom(params);
+        launcherData = LAUNCHER_DATA.fetchFrom(params);
+        launcherName = APP_NAME.fetchFrom(params);
         javaOptions = JAVA_OPTIONS.fetchFrom(params);
         arguments = ARGUMENTS.fetchFrom(params);
         return this;

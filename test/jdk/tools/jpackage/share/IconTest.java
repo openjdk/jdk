@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,29 @@
  */
 
 import java.io.IOException;
-import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import java.util.function.Consumer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import jdk.jpackage.test.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.LauncherIconVerifier;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.LinuxHelper;
+import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
-import jdk.jpackage.test.Annotations.*;
+import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.Test;
 
 /*
  * @test

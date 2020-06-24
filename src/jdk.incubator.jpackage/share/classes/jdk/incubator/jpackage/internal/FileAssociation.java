@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,18 @@ package jdk.incubator.jpackage.internal;
 import java.io.File;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_EXTENSIONS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_CONTENT_TYPE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_ICON;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_DESCRIPTION;
 
 final class FileAssociation {
     void verify() {

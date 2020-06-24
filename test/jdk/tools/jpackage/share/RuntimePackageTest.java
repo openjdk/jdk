@@ -28,7 +28,10 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import jdk.jpackage.test.*;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
 
 /**

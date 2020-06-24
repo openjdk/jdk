@@ -28,20 +28,16 @@ package jdk.incubator.jpackage.internal;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
 import java.util.ResourceBundle;
-import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
 
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.ICON;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 
 public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
@@ -107,8 +103,7 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
         copyApplication(params);
 
         // create the additional launcher(s), if any
-        List<Map<String, ? super Object>> entryPoints =
-                StandardBundlerParam.ADD_LAUNCHERS.fetchFrom(params);
+        List<Map<String, ? super Object>> entryPoints = ADD_LAUNCHERS.fetchFrom(params);
         for (Map<String, ? super Object> entryPoint : entryPoints) {
             createLauncherForEntryPoint(AddLauncherArguments.merge(params,
                     entryPoint, ICON.getID(), ICON_ICO.getID()), params);

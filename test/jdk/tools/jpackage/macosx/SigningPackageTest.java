@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  */
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import jdk.jpackage.test.*;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.TKit;
 
 /**
  * Tests generation of dmg and pkg with --mac-sign and related arguments.
