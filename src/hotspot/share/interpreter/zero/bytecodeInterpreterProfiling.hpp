@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,8 +30,6 @@
 #ifndef SHARE_INTERPRETER_BYTECODEINTERPRETERPROFILING_HPP
 #define SHARE_INTERPRETER_BYTECODEINTERPRETERPROFILING_HPP
 
-#ifdef CC_INTERP
-
 // Empty dummy implementations if profiling code is switched off. //////////////
 
 #define SET_MDX(mdx)
@@ -53,7 +51,5 @@
 #define BI_PROFILE_UPDATE_FINALCALL()
 #define BI_PROFILE_UPDATE_VIRTUALCALL(receiver)
 #define BI_PROFILE_UPDATE_SWITCH(switch_index)
-
-#endif // CC_INTERP
 
 #endif // SHARE_INTERPRETER_BYTECODEINTERPRETERPROFILING_HPP

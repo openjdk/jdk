@@ -27,9 +27,8 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
-#include "interpreter/bytecodeInterpreter.hpp"
-#include "interpreter/bytecodeInterpreter.inline.hpp"
-#include "interpreter/bytecodeInterpreterProfiling.hpp"
+#include "interpreter/zero/bytecodeInterpreter.inline.hpp"
+#include "interpreter/zero/bytecodeInterpreterProfiling.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
@@ -56,7 +55,6 @@
 #include "utilities/exceptions.hpp"
 
 // no precompiled headers
-#ifdef CC_INTERP
 
 /*
  * USELABELS - If using GCC, then use labels for the opcode dispatching
@@ -117,11 +115,10 @@
  * is no entry point to do the transition to vm so we just
  * do it by hand here.
  */
-#define VM_JAVA_ERROR_NO_JUMP(name, msg, note_a_trap)                             \
+#define VM_JAVA_ERROR_NO_JUMP(name, msg)                                          \
     DECACHE_STATE();                                                              \
     SET_LAST_JAVA_FRAME();                                                        \
     {                                                                             \
-       InterpreterRuntime::note_a_trap(THREAD, istate->method(), BCI());          \
        ThreadInVMfromJava trans(THREAD);                                          \
        Exceptions::_throw_msg(THREAD, __FILE__, __LINE__, name, msg);             \
     }                                                                             \
@@ -129,8 +126,8 @@
     CACHE_STATE();
 
 // Normal throw of a java error.
-#define VM_JAVA_ERROR(name, msg, note_a_trap)                                     \
-    VM_JAVA_ERROR_NO_JUMP(name, msg, note_a_trap)                                 \
+#define VM_JAVA_ERROR(name, msg)                                     \
+    VM_JAVA_ERROR_NO_JUMP(name, msg)                                 \
     goto handle_exception;
 
 #ifdef PRODUCT
@@ -173,7 +170,7 @@
                                           pc);                                   \
           RESET_LAST_JAVA_FRAME();                                               \
           CACHE_STATE();                                                         \
-          if (THREAD->pop_frame_pending() &&                                     \
+          if (THREAD->has_pending_popframe() &&                                  \
               !THREAD->pop_frame_in_process()) {                                 \
             goto handle_Pop_Frame;                                               \
           }                                                                      \
@@ -289,66 +286,8 @@
 
 
 #define METHOD istate->method()
-#define GET_METHOD_COUNTERS(res)    \
-  res = METHOD->method_counters();  \
-  if (res == NULL) {                \
-    CALL_VM(res = InterpreterRuntime::build_method_counters(THREAD, METHOD), handle_exception); \
-  }
-
-#define OSR_REQUEST(res, branch_pc) \
-            CALL_VM(res=InterpreterRuntime::frequency_counter_overflow(THREAD, branch_pc), handle_exception);
-/*
- * For those opcodes that need to have a GC point on a backwards branch
- */
-
-// Backedge counting is kind of strange. The asm interpreter will increment
-// the backedge counter as a separate counter but it does it's comparisons
-// to the sum (scaled) of invocation counter and backedge count to make
-// a decision. Seems kind of odd to sum them together like that
-
-// skip is delta from current bcp/bci for target, branch_pc is pre-branch bcp
-
-
-#define DO_BACKEDGE_CHECKS(skip, branch_pc)                                                         \
-    if ((skip) <= 0) {                                                                              \
-      MethodCounters* mcs;                                                                          \
-      GET_METHOD_COUNTERS(mcs);                                                                     \
-      if (UseLoopCounter) {                                                                         \
-        bool do_OSR = UseOnStackReplacement;                                                        \
-        mcs->backedge_counter()->increment();                                                       \
-        if (ProfileInterpreter) {                                                                   \
-          BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);                                   \
-          /* Check for overflow against MDO count. */                                               \
-          do_OSR = do_OSR                                                                           \
-            && (mdo_last_branch_taken_count >= (uint)InvocationCounter::InterpreterBackwardBranchLimit)\
-            /* When ProfileInterpreter is on, the backedge_count comes     */                       \
-            /* from the methodDataOop, which value does not get reset on   */                       \
-            /* the call to frequency_counter_overflow(). To avoid          */                       \
-            /* excessive calls to the overflow routine while the method is */                       \
-            /* being compiled, add a second test to make sure the overflow */                       \
-            /* function is called only once every overflow_frequency.      */                       \
-            && (!(mdo_last_branch_taken_count & 1023));                                             \
-        } else {                                                                                    \
-          /* check for overflow of backedge counter */                                              \
-          do_OSR = do_OSR                                                                           \
-            && mcs->invocation_counter()->reached_InvocationLimit(mcs->backedge_counter());         \
-        }                                                                                           \
-        if (do_OSR) {                                                                               \
-          nmethod* osr_nmethod;                                                                     \
-          OSR_REQUEST(osr_nmethod, branch_pc);                                                      \
-          if (osr_nmethod != NULL && osr_nmethod->is_in_use()) {                                    \
-            intptr_t* buf;                                                                          \
-            /* Call OSR migration with last java frame only, no checks. */                          \
-            CALL_VM_NAKED_LJF(buf=SharedRuntime::OSR_migration_begin(THREAD));                      \
-            istate->set_msg(do_osr);                                                                \
-            istate->set_osr_buf((address)buf);                                                      \
-            istate->set_osr_entry(osr_nmethod->osr_entry());                                        \
-            return;                                                                                 \
-          }                                                                                         \
-        }                                                                                           \
-      }  /* UseCompiler ... */                                                                      \
-      SAFEPOINT;                                                                                    \
-    }
+#define GET_METHOD_COUNTERS(res)
+#define DO_BACKEDGE_CHECKS(skip, branch_pc)
 
 /*
  * For those opcodes that need to have a GC point on a backwards branch
@@ -391,7 +330,7 @@
 #undef CHECK_NULL
 #define CHECK_NULL(obj_)                                                                         \
         if ((obj_) == NULL) {                                                                    \
-          VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), NULL, note_nullCheck_trap); \
+          VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), NULL);                      \
         }                                                                                        \
         VERIFY_OOP(obj_)
 
@@ -426,7 +365,7 @@
 // Call the VM. Don't check for pending exceptions.
 #define CALL_VM_NOCHECK(func)                                      \
         CALL_VM_NAKED_LJF(func)                                    \
-        if (THREAD->pop_frame_pending() &&                         \
+        if (THREAD->has_pending_popframe() &&                      \
             !THREAD->pop_frame_in_process()) {                     \
           goto handle_Pop_Frame;                                   \
         }                                                          \
@@ -607,12 +546,7 @@ BytecodeInterpreter::run(interpreterState istate) {
          topOfStack < istate->stack_base(),
          "Stack top out of range");
 
-#ifdef CC_INTERP_PROFILE
-  // MethodData's last branch taken count.
-  uint mdo_last_branch_taken_count = 0;
-#else
   const uint mdo_last_branch_taken_count = 0;
-#endif
 
   switch (istate->msg()) {
     case initialize: {
@@ -629,18 +563,6 @@ BytecodeInterpreter::run(interpreterState istate) {
       // count invocations
       assert(initialized, "Interpreter not initialized");
       if (_compiling) {
-        MethodCounters* mcs;
-        GET_METHOD_COUNTERS(mcs);
-#if COMPILER2_OR_JVMCI
-        if (ProfileInterpreter) {
-          METHOD->increment_interpreter_invocation_count(THREAD);
-        }
-#endif
-        mcs->invocation_counter()->increment();
-        if (mcs->invocation_counter()->reached_InvocationLimit(mcs->backedge_counter())) {
-          CALL_VM((void)InterpreterRuntime::frequency_counter_overflow(THREAD, NULL), handle_exception);
-          // We no longer retry on a counter overflow.
-        }
         // Get or create profile data. Check for pending (async) exceptions.
         BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
         SAFEPOINT;
@@ -783,7 +705,7 @@ BytecodeInterpreter::run(interpreterState istate) {
         os::breakpoint();
       }
       // returned from a java call, continue executing.
-      if (THREAD->pop_frame_pending() && !THREAD->pop_frame_in_process()) {
+      if (THREAD->has_pending_popframe() && !THREAD->pop_frame_in_process()) {
         goto handle_Pop_Frame;
       }
       if (THREAD->jvmti_thread_state() &&
@@ -1142,7 +1064,7 @@ run:
                   pc = istate->method()->code_base() + (intptr_t)(LOCALS_ADDR(reg));
                   UPDATE_PC_AND_CONTINUE(0);
               default:
-                  VM_JAVA_ERROR(vmSymbols::java_lang_InternalError(), "undefined opcode", note_no_trap);
+                  VM_JAVA_ERROR(vmSymbols::java_lang_InternalError(), "undefined opcode");
           }
       }
 
@@ -1223,7 +1145,7 @@ run:
       CASE(_i##opcname):                                                \
           if (test && (STACK_INT(-1) == 0)) {                           \
               VM_JAVA_ERROR(vmSymbols::java_lang_ArithmeticException(), \
-                            "/ by zero", note_div0Check_trap);          \
+                            "/ by zero");                               \
           }                                                             \
           SET_STACK_INT(VMint##opname(STACK_INT(-2),                    \
                                       STACK_INT(-1)),                   \
@@ -1235,7 +1157,7 @@ run:
             jlong l1 = STACK_LONG(-1);                                  \
             if (VMlongEqz(l1)) {                                        \
               VM_JAVA_ERROR(vmSymbols::java_lang_ArithmeticException(), \
-                            "/ by long zero", note_div0Check_trap);     \
+                            "/ by long zero");                          \
             }                                                           \
           }                                                             \
           /* First long at (-1,-2) next long at (-3,-4) */              \
@@ -1647,7 +1569,7 @@ run:
       if ((uint32_t)index >= (uint32_t)arrObj->length()) {                     \
           sprintf(message, "%d", index);                                       \
           VM_JAVA_ERROR(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), \
-                        message, note_rangeCheck_trap);                        \
+                        message);                                              \
       }
 
       /* 32-bit loads. These handle conversion from < 32-bit types */
@@ -1730,7 +1652,7 @@ run:
             if (rhsKlass != elemKlass && !rhsKlass->is_subtype_of(elemKlass)) { // ebx->is...
               // Decrement counter if subtype check failed.
               BI_PROFILE_SUBTYPECHECK_FAILED(rhsKlass);
-              VM_JAVA_ERROR(vmSymbols::java_lang_ArrayStoreException(), "", note_arrayCheck_trap);
+              VM_JAVA_ERROR(vmSymbols::java_lang_ArrayStoreException(), "");
             }
             // Profile checkcast with null_seen and receiver.
             BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/false, rhsKlass);
@@ -2155,7 +2077,6 @@ run:
             // Disable non-TLAB-based fast-path, because profiling requires that all
             // allocations go through InterpreterRuntime::_new() if THREAD->tlab().allocate
             // returns NULL.
-#ifndef CC_INTERP_PROFILE
             if (result == NULL) {
               need_zero = true;
               // Try allocate in shared eden
@@ -2169,7 +2090,6 @@ run:
                 result = (oop) compare_to;
               }
             }
-#endif
             if (result != NULL) {
               // Initialize object (if nonzero size and need) and then the header
               if (need_zero ) {
@@ -2254,7 +2174,7 @@ run:
               ResourceMark rm(THREAD);
               char* message = SharedRuntime::generate_class_cast_message(
                 objKlass, klassOf);
-              VM_JAVA_ERROR(vmSymbols::java_lang_ClassCastException(), message, note_classCheck_trap);
+              VM_JAVA_ERROR(vmSymbols::java_lang_ClassCastException(), message);
             }
             // Profile checkcast with null_seen and receiver.
             BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/false, objKlass);
@@ -2556,7 +2476,7 @@ run:
             jio_snprintf(buf, sizeof(buf), "Class %s does not implement the requested interface %s",
               recv_klass->external_name(),
               resolved_klass->external_name());
-            VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), buf, note_no_trap);
+            VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
           }
           callee = cache->f2_as_vfinal_method();
         }
@@ -2598,7 +2518,7 @@ run:
           // interface, and wasn't the same as when the caller was
           // compiled.
           if (scan->interface_klass() == NULL) {
-            VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), "", note_no_trap);
+            VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), "");
           }
         }
 
@@ -2904,7 +2824,7 @@ run:
     istate->set_msg(popping_frame);
     // Clear pending so while the pop is in process
     // we don't start another one if a call_vm is done.
-    THREAD->clr_pop_frame_pending();
+    THREAD->clear_popframe_condition();
     // Let interpreter (only) see the we're in the process of popping a frame
     THREAD->set_pop_frame_in_process();
 
@@ -3088,7 +3008,7 @@ run:
           oop rcvr = base->obj();
           if (rcvr == NULL) {
             if (!suppress_error) {
-              VM_JAVA_ERROR_NO_JUMP(vmSymbols::java_lang_NullPointerException(), "", note_nullCheck_trap);
+              VM_JAVA_ERROR_NO_JUMP(vmSymbols::java_lang_NullPointerException(), "");
               illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
             }
@@ -3488,9 +3408,6 @@ BytecodeInterpreter::print() {
   tty->print_cr("stack_base: " INTPTR_FORMAT, (uintptr_t) this->_stack_base);
   tty->print_cr("stack_limit: " INTPTR_FORMAT, (uintptr_t) this->_stack_limit);
   tty->print_cr("monitor_base: " INTPTR_FORMAT, (uintptr_t) this->_monitor_base);
-#if !defined(ZERO) && defined(PPC)
-  tty->print_cr("last_Java_fp: " INTPTR_FORMAT, (uintptr_t) this->_last_Java_fp);
-#endif // !ZERO
   tty->print_cr("self_link: " INTPTR_FORMAT, (uintptr_t) this->_self_link);
 }
 
@@ -3502,4 +3419,3 @@ extern "C" {
 #endif // PRODUCT
 
 #endif // JVMTI
-#endif // CC_INTERP

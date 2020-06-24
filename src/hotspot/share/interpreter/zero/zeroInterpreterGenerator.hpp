@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,12 @@
 #define SHARE_INTERPRETER_CPPINTERPRETERGENERATOR_HPP
 
 // This file contains the platform-independent parts
-// of the template interpreter generator.
+// of the Zero interpreter generator.
 
-#ifdef CC_INTERP
-#ifdef ZERO
 # include "entry_zero.hpp"
-# include "interpreter/interp_masm.hpp"
-#endif
+// # include "interpreter/interp_masm.hpp"
 
-class CppInterpreterGenerator: public AbstractInterpreterGenerator {
+class ZeroInterpreterGenerator: public AbstractInterpreterGenerator {
 
  private:
   void generate_all();
@@ -51,9 +48,8 @@ class CppInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_Reference_get_entry();
 
  public:
-  CppInterpreterGenerator(StubQueue* _code);
+  ZeroInterpreterGenerator(StubQueue* _code);
 
-#ifdef ZERO
  protected:
   MacroAssembler* assembler() const {
     return _masm;
@@ -71,8 +67,6 @@ class CppInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_entry(address entry_point) {
     return generate_entry_impl(assembler(), entry_point);
   }
-#endif // ZERO
 };
 
-#endif // CC_INTERP
 #endif // SHARE_INTERPRETER_CPPINTERPRETERGENERATOR_HPP

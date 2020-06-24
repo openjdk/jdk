@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,11 @@
 #ifndef SHARE_INTERPRETER_BYTECODEINTERPRETER_INLINE_HPP
 #define SHARE_INTERPRETER_BYTECODEINTERPRETER_INLINE_HPP
 
-#include "interpreter/bytecodeInterpreter.hpp"
+#include "interpreter/zero/bytecodeInterpreter.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 
 // This file holds platform-independent bodies of inline functions for the C++ based interpreter
-
-#ifdef CC_INTERP
 
 #ifdef ASSERT
 #define VERIFY_OOP(o_) \
@@ -43,12 +41,6 @@
 #define VERIFY_OOP(o)
 #endif
 
-#ifdef ZERO
 # include "bytecodeInterpreter_zero.inline.hpp"
-#else
-#error "Only Zero Bytecode Interpreter is supported"
-#endif
-
-#endif // CC_INTERP
 
 #endif // SHARE_INTERPRETER_BYTECODEINTERPRETER_INLINE_HPP

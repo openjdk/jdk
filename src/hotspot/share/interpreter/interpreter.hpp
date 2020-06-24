@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 #define SHARE_INTERPRETER_INTERPRETER_HPP
 
 #include "code/stubs.hpp"
-#include "interpreter/cppInterpreter.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateInterpreter.hpp"
+#include "interpreter/zero/zeroInterpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/align.hpp"
 
@@ -115,8 +116,8 @@ class CodeletMark: ResourceMark {
 };
 
 // Wrapper typedef to use the name Interpreter to mean either
-// the c++ interpreter or the template interpreter.
+// the Zero interpreter or the template interpreter.
 
-typedef CC_INTERP_ONLY(CppInterpreter) NOT_CC_INTERP(TemplateInterpreter) Interpreter;
+typedef ZERO_ONLY(ZeroInterpreter) NOT_ZERO(TemplateInterpreter) Interpreter;
 
 #endif // SHARE_INTERPRETER_INTERPRETER_HPP

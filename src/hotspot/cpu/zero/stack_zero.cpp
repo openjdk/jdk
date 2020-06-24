@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +24,8 @@
  */
 
 #include "precompiled.hpp"
-#include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/zero/bytecodeInterpreter.hpp"
 #include "runtime/thread.inline.hpp"
 #include "stack_zero.hpp"
 #include "stack_zero.inline.hpp"

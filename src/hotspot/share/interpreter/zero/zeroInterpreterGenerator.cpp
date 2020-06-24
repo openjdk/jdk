@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +24,21 @@
  */
 
 #include "precompiled.hpp"
-#include "interpreter/bytecodeInterpreter.hpp"
-#include "interpreter/cppInterpreterGenerator.hpp"
+#include "asm/assembler.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/zero/bytecodeInterpreter.hpp"
+#include "interpreter/zero/zeroInterpreter.hpp"
+#include "oops/method.hpp"
+#include "runtime/arguments.hpp"
+#include "zeroInterpreterGenerator.hpp"
 
-#ifdef CC_INTERP
-
-CppInterpreterGenerator::CppInterpreterGenerator(StubQueue* _code): AbstractInterpreterGenerator(_code) {
+ZeroInterpreterGenerator::ZeroInterpreterGenerator(StubQueue* _code): AbstractInterpreterGenerator(_code) {
   generate_all();
 }
 
-void CppInterpreterGenerator::generate_all() {
+void ZeroInterpreterGenerator::generate_all() {
   { CodeletMark cm(_masm, "slow signature handler");
     AbstractInterpreter::_slow_signature_handler = generate_slow_signature_handler();
   }
@@ -73,7 +77,7 @@ void CppInterpreterGenerator::generate_all() {
 }
 
 // Generate method entries
-address CppInterpreterGenerator::generate_method_entry(
+address ZeroInterpreterGenerator::generate_method_entry(
                                         AbstractInterpreter::MethodKind kind) {
   // determine code generation flags
   bool native = false;
@@ -126,4 +130,63 @@ address CppInterpreterGenerator::generate_method_entry(
 
   return entry_point;
 }
-#endif // CC_INTERP
+
+address ZeroInterpreterGenerator::generate_slow_signature_handler() {
+  _masm->advance(1);
+  return (address) InterpreterRuntime::slow_signature_handler;
+}
+
+address ZeroInterpreterGenerator::generate_math_entry(
+    AbstractInterpreter::MethodKind kind) {
+  if (!InlineIntrinsics)
+    return NULL;
+
+  Unimplemented();
+  return NULL;
+}
+
+address ZeroInterpreterGenerator::generate_abstract_entry() {
+  return generate_entry((address) ShouldNotCallThisEntry());
+}
+
+address ZeroInterpreterGenerator::generate_empty_entry() {
+  if (!UseFastEmptyMethods)
+    return NULL;
+
+  return generate_entry((address) ZeroInterpreter::empty_entry);
+}
+
+address ZeroInterpreterGenerator::generate_accessor_entry() {
+  if (!UseFastAccessorMethods)
+    return NULL;
+
+  return generate_entry((address) ZeroInterpreter::accessor_entry);
+}
+
+address ZeroInterpreterGenerator::generate_Reference_get_entry(void) {
+#if INCLUDE_G1GC
+  if (UseG1GC) {
+    // We need to generate have a routine that generates code to:
+    //   * load the value in the referent field
+    //   * passes that value to the pre-barrier.
+    //
+    // In the case of G1 this will record the value of the
+    // referent in an SATB buffer if marking is active.
+    // This will cause concurrent marking to mark the referent
+    // field as live.
+    Unimplemented();
+  }
+#endif // INCLUDE_G1GC
+
+  // If G1 is not enabled then attempt to go through the normal entry point
+  // Reference.get could be instrumented by jvmti
+  return NULL;
+}
+
+address ZeroInterpreterGenerator::generate_native_entry(bool synchronized) {
+  return generate_entry((address) ZeroInterpreter::native_entry);
+}
+
+address ZeroInterpreterGenerator::generate_normal_entry(bool synchronized) {
+  return generate_entry((address) ZeroInterpreter::normal_entry);
+}

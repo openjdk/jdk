@@ -88,8 +88,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   //
   // On entry:
   //   Z_ARG1  - intptr_t*       Address of java argument list in memory.
-  //   Z_state - cppInterpreter* Address of interpreter state for
-  //                               this method
+  //   Z_state - zeroInterpreter* Address of interpreter state for
+  //                              this method
   //   Z_method
   //
   // On exit (just before return instruction):

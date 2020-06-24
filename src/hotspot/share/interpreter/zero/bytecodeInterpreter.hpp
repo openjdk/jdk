@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
-#ifdef CC_INTERP
 
 // JavaStack Implementation
 #define MORE_STACK(count)  \
@@ -79,7 +77,7 @@ union frame_manager_message {
 class BytecodeInterpreter : StackObj {
 friend class SharedRuntime;
 friend class AbstractInterpreterGenerator;
-friend class CppInterpreterGenerator;
+friend class ZeroInterpreterGenerator;
 friend class InterpreterMacroAssembler;
 friend class frame;
 friend class VMStructs;
@@ -573,15 +571,8 @@ static const char* C_msg(BytecodeInterpreter::messages msg);
 void print();
 #endif // PRODUCT
 
-#ifdef ZERO
 # include "bytecodeInterpreter_zero.hpp"
-#else
-#error "Only Zero Bytecode Interpreter is supported"
-#endif
-
 
 }; // BytecodeInterpreter
-
-#endif // CC_INTERP
 
 #endif // SHARE_INTERPRETER_BYTECODEINTERPRETER_HPP

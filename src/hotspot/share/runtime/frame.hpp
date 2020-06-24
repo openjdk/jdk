@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,11 +280,9 @@ class frame {
 
   intptr_t* interpreter_frame_sender_sp() const;
 
-#ifndef CC_INTERP
   // template based interpreter deoptimization support
   void  set_interpreter_frame_sender_sp(intptr_t* sender_sp);
   void interpreter_frame_set_monitor_end(BasicObjectLock* value);
-#endif // CC_INTERP
 
   // Address of the temp oop in the frame. Needed as GC root.
   oop* interpreter_frame_temp_oop_addr() const;

@@ -39,21 +39,19 @@
 // an assembly language version (aka template interpreter) and a high level language version
 // (aka c++ interpreter). Th division of labor is as follows:
 
-// Template Interpreter          C++ Interpreter        Functionality
+// Template Interpreter          Zero Interpreter       Functionality
 //
 // templateTable*                bytecodeInterpreter*   actual interpretation of bytecodes
 //
-// templateInterpreter*          cppInterpreter*        generation of assembly code that creates
+// templateInterpreter*          zeroInterpreter*       generation of assembly code that creates
 //                                                      and manages interpreter runtime frames.
-//                                                      Also code for populating interpreter
-//                                                      frames created during deoptimization.
 //
 
 class InterpreterMacroAssembler;
 
 class AbstractInterpreter: AllStatic {
   friend class VMStructs;
-  friend class CppInterpreterGenerator;
+  friend class ZeroInterpreterGenerator;
   friend class TemplateInterpreterGenerator;
  public:
   enum MethodKind {

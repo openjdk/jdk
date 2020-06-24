@@ -26,10 +26,6 @@
 #ifndef CPU_S390_GLOBALDEFINITIONS_S390_HPP
 #define CPU_S390_GLOBALDEFINITIONS_S390_HPP
 
-#ifdef CC_INTERP
-#error "CC_INTERP is not supported on z/Architecture."
-#endif
-
 // Convenience macro that produces a string literal with the filename
 // and linenumber of the location where the macro was used.
 #ifndef FILE_AND_LINE

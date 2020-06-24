@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #ifndef CPU_ZERO_ENTRY_ZERO_HPP
 #define CPU_ZERO_ENTRY_ZERO_HPP
 
-#include "interpreter/cppInterpreter.hpp"
+#include "interpreter/zero/zeroInterpreter.hpp"
 
 class ZeroEntry {
  public:
@@ -69,7 +69,7 @@ class ZeroEntry {
  private:
   static void maybe_deoptimize(int deoptimized_frames, TRAPS) {
     if (deoptimized_frames)
-      CppInterpreter::main_loop(deoptimized_frames - 1, THREAD);
+      ZeroInterpreter::main_loop(deoptimized_frames - 1, THREAD);
   }
 
  public:

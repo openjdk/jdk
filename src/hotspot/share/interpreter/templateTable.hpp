@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "runtime/frame.hpp"
 #include "utilities/macros.hpp"
 
-#ifndef CC_INTERP
+#ifndef ZERO
 // All the necessary definitions used for (bytecode) template generation. Instead of
 // spreading the implementation functionality for each bytecode in the interpreter
 // and the snippet generator, a template is assigned to each bytecode which can be
@@ -351,6 +351,6 @@ class TemplateTable: AllStatic {
 #include CPU_HEADER(templateTable)
 
 };
-#endif /* !CC_INTERP */
+#endif /* !ZERO */
 
 #endif // SHARE_INTERPRETER_TEMPLATETABLE_HPP

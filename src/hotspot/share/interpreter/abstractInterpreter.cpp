@@ -27,7 +27,6 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
-#include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -121,7 +120,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
     return kind;
   }
 
-#ifndef CC_INTERP
+#ifndef ZERO
   switch (m->intrinsic_id()) {
     // Use optimized stub code for CRC32 native methods.
     case vmIntrinsics::_updateCRC32            : return java_util_zip_CRC32_update;
@@ -136,7 +135,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
     case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
     default:                                 break;
   }
-#endif // CC_INTERP
+#endif // ZERO
 
   // Native method?
   // Note: This test must come _before_ the test for intrinsic
@@ -189,7 +188,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
   // Accessor method?
   if (m->is_getter()) {
     // TODO: We should have used ::is_accessor above, but fast accessors in Zero expect only getters.
-    // See CppInterpreter::accessor_entry in cppInterpreter_zero.cpp. This should be fixed in Zero,
+    // See ZeroInterpreter::accessor_entry in zeroInterpreter_zero.cpp. This should be fixed in Zero,
     // then the call above updated to ::is_accessor
     assert(m->size_of_parameters() == 1, "fast code for accessors assumes parameter size = 1");
     return accessor;

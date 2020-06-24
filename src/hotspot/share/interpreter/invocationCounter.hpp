@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,22 +82,6 @@ private:
   void set(uint count, uint carry);
 
 public:
-#ifdef CC_INTERP
-  static int InterpreterInvocationLimit;        // CompileThreshold scaled for interpreter use
-  static int InterpreterBackwardBranchLimit;    // A separate threshold for on stack replacement
-
-  // Test counter using scaled limits like the asm interpreter would do rather than doing
-  // the shifts to normalize the counter.
-  // Checks sum of invocation_counter and backedge_counter as the template interpreter does.
-  bool reached_InvocationLimit(InvocationCounter *back_edge_count) const {
-    return (_counter & count_mask) + (back_edge_count->_counter & count_mask) >=
-           (uint) InterpreterInvocationLimit;
-  }
-  bool reached_BackwardBranchLimit(InvocationCounter *back_edge_count) const {
-    return (_counter & count_mask) + (back_edge_count->_counter & count_mask) >=
-           (uint) InterpreterBackwardBranchLimit;
-  }
-#endif // CC_INTERP
 
   // Miscellaneous
   static ByteSize counter_offset()               { return byte_offset_of(InvocationCounter, _counter); }

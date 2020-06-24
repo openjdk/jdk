@@ -36,7 +36,6 @@
 # include "interpreter/interpreter.hpp"
 #endif
 
-
 class MacroAssembler;
 class Label;
 

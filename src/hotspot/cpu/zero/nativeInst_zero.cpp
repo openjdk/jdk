@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,17 +26,9 @@
 #include "precompiled.hpp"
 #include "assembler_zero.inline.hpp"
 #include "entry_zero.hpp"
-#include "interpreter/cppInterpreter.hpp"
-#include "memory/resourceArea.hpp"
+#include "interpreter/zero/zeroInterpreter.hpp"
 #include "nativeInst_zero.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
-#include "utilities/ostream.hpp"
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
 
 // This method is called by nmethod::make_not_entrant_or_zombie to
 // insert a jump to SharedRuntime::get_handle_wrong_method_stub()
@@ -48,10 +40,6 @@ void NativeJump::patch_verified_entry(address entry,
                                       address dest) {
   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "should be");
 
-#ifdef CC_INTERP
   ((ZeroEntry*) verified_entry)->set_entry_point(
-    (address) CppInterpreter::normal_entry);
-#else
-  Unimplemented();
-#endif // CC_INTERP
+    (address) ZeroInterpreter::normal_entry);
 }

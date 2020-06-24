@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,10 +25,9 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
-#include "interpreter/bytecodeInterpreter.hpp"
-#include "interpreter/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/zero/bytecodeInterpreter.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
@@ -39,8 +38,6 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/debug.hpp"
-
-#ifdef CC_INTERP
 
 const char *BytecodeInterpreter::name_of_field_at_address(address addr) {
 #define DO(member) {if (addr == (address) &(member)) return XSTR(member);}
@@ -102,5 +99,3 @@ void BytecodeInterpreter::layout_interpreterState(interpreterState istate,
   istate->set_stack(stack);
   istate->set_stack_limit(stack_base - method->max_stack() - 1);
 }
-
-#endif // CC_INTERP

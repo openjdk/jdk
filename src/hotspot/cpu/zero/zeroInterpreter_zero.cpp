@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,34 +26,73 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
-#include "interpreter/cppInterpreter.hpp"
-#include "interpreter/cppInterpreterGenerator.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "oops/arrayOop.hpp"
+#include "interpreter/zero/bytecodeInterpreter.hpp"
+#include "interpreter/zero/zeroInterpreter.hpp"
+#include "interpreter/zero/zeroInterpreterGenerator.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "prims/jvmtiThreadState.hpp"
-#include "runtime/arguments.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
-#include "runtime/vframeArray.hpp"
-#include "stack_zero.inline.hpp"
+#include "runtime/timerTrace.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-#ifdef CC_INTERP
+#include "entry_zero.hpp"
+#include "stack_zero.inline.hpp"
 
+void ZeroInterpreter::initialize_stub() {
+  if (_code != NULL) return;
+
+  // generate interpreter
+  int code_size = InterpreterCodeSize;
+  NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
+  _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,
+                         "Interpreter");
+}
+
+void ZeroInterpreter::initialize_code() {
+  AbstractInterpreter::initialize();
+
+  // generate interpreter
+  { ResourceMark rm;
+    TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
+    ZeroInterpreterGenerator g(_code);
+    if (PrintInterpreter) print();
+  }
+
+  // Allow c++ interpreter to do one initialization now that switches are set, etc.
+  BytecodeInterpreter start_msg(BytecodeInterpreter::initialize);
+  if (JvmtiExport::can_post_interpreter_events())
+    BytecodeInterpreter::runWithChecks(&start_msg);
+  else
+    BytecodeInterpreter::run(&start_msg);
+}
+
+void ZeroInterpreter::invoke_method(Method* method, address entry_point, TRAPS) {
+  ((ZeroEntry *) entry_point)->invoke(method, THREAD);
+}
+
+void ZeroInterpreter::invoke_osr(Method* method,
+                                address   entry_point,
+                                address   osr_buf,
+                                TRAPS) {
+  ((ZeroEntry *) entry_point)->invoke_osr(method, osr_buf, THREAD);
+}
+
+
+
+InterpreterCodelet* ZeroInterpreter::codelet_containing(address pc) {
+  // FIXME: I'm pretty sure _code is null and this is never called, which is why it's copied.
+  return (InterpreterCodelet*)_code->stub_containing(pc);
+}
 #define fixup_after_potential_safepoint()       \
   method = istate->method()
 
@@ -66,7 +105,7 @@
   CALL_VM_NOCHECK_NOFIX(func)                   \
   fixup_after_potential_safepoint()
 
-int CppInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
+int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
 
   // Allocate and initialize our frame.
@@ -104,7 +143,7 @@ intptr_t narrow(BasicType type, intptr_t result) {
 }
 
 
-void CppInterpreter::main_loop(int recurse, TRAPS) {
+void ZeroInterpreter::main_loop(int recurse, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
   ZeroStack *stack = thread->zero_stack();
 
@@ -234,7 +273,7 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
   }
 }
 
-int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
+int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Make sure method is native and not abstract
   assert(method->is_native() && !method->is_abstract(), "should be");
 
@@ -247,6 +286,7 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   interpreterState istate = frame->interpreter_state();
   intptr_t *locals = istate->locals();
 
+#if 0
   // Update the invocation counter
   if ((UseCompiler || CountCompiledCalls) && !method->is_synchronized()) {
     MethodCounters* mcs = method->method_counters();
@@ -264,6 +304,7 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
         goto unwind_and_return;
     }
   }
+#endif
 
   // Lock if necessary
   BasicObjectLock *monitor;
@@ -504,7 +545,7 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   return 0;
 }
 
-int CppInterpreter::accessor_entry(Method* method, intptr_t UNUSED, TRAPS) {
+int ZeroInterpreter::accessor_entry(Method* method, intptr_t UNUSED, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
   ZeroStack *stack = thread->zero_stack();
   intptr_t *locals = stack->sp();
@@ -637,7 +678,7 @@ int CppInterpreter::accessor_entry(Method* method, intptr_t UNUSED, TRAPS) {
   return 0;
 }
 
-int CppInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
+int ZeroInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
   ZeroStack *stack = thread->zero_stack();
 
@@ -656,7 +697,7 @@ int CppInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
 // The new slots will be inserted before slot insert_before.
 // Slots < insert_before will have the same slot number after the insert.
 // Slots >= insert_before will become old_slot + num_slots.
-void CppInterpreter::insert_vmslots(int insert_before, int num_slots, TRAPS) {
+void ZeroInterpreter::insert_vmslots(int insert_before, int num_slots, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
   ZeroStack *stack = thread->zero_stack();
 
@@ -670,7 +711,7 @@ void CppInterpreter::insert_vmslots(int insert_before, int num_slots, TRAPS) {
     SET_VMSLOTS_SLOT(VMSLOTS_SLOT(i + num_slots), i);
 }
 
-void CppInterpreter::remove_vmslots(int first_slot, int num_slots, TRAPS) {
+void ZeroInterpreter::remove_vmslots(int first_slot, int num_slots, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
   ZeroStack *stack = thread->zero_stack();
   intptr_t *vmslots = stack->sp();
@@ -683,13 +724,13 @@ void CppInterpreter::remove_vmslots(int first_slot, int num_slots, TRAPS) {
   stack->set_sp(stack->sp() + num_slots);
 }
 
-BasicType CppInterpreter::result_type_of_handle(oop method_handle) {
+BasicType ZeroInterpreter::result_type_of_handle(oop method_handle) {
   oop method_type = java_lang_invoke_MethodHandle::type(method_handle);
   oop return_type = java_lang_invoke_MethodType::rtype(method_type);
   return java_lang_Class::as_BasicType(return_type, (Klass* *) NULL);
 }
 
-intptr_t* CppInterpreter::calculate_unwind_sp(ZeroStack* stack,
+intptr_t* ZeroInterpreter::calculate_unwind_sp(ZeroStack* stack,
                                               oop method_handle) {
   oop method_type = java_lang_invoke_MethodHandle::type(method_handle);
   int argument_slots = java_lang_invoke_MethodType::ptype_slot_count(method_type);
@@ -697,7 +738,7 @@ intptr_t* CppInterpreter::calculate_unwind_sp(ZeroStack* stack,
   return stack->sp() + argument_slots;
 }
 
-JRT_ENTRY(void, CppInterpreter::throw_exception(JavaThread* thread,
+JRT_ENTRY(void, ZeroInterpreter::throw_exception(JavaThread* thread,
                                                 Symbol*     name,
                                                 char*       message))
   THROW_MSG(name, message);
@@ -804,18 +845,27 @@ InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
   return (InterpreterFrame *) fp;
 }
 
-address CppInterpreter::return_entry(TosState state, int length, Bytecodes::Code code) {
+address ZeroInterpreter::return_entry(TosState state, int length, Bytecodes::Code code) {
   ShouldNotCallThis();
   return NULL;
 }
 
-address CppInterpreter::deopt_entry(TosState state, int length) {
+address ZeroInterpreter::deopt_entry(TosState state, int length) {
+  return NULL;
+}
+
+address ZeroInterpreter::remove_activation_preserving_args_entry() {
+  // Do an uncommon trap type entry. c++ interpreter will know
+  // to pop frame and preserve the args
+  return Interpreter::deopt_entry(vtos, 0);
+}
+
+address ZeroInterpreter::remove_activation_early_entry(TosState state) {
   return NULL;
 }
 
 // Helper for figuring out if frames are interpreter frames
 
-bool CppInterpreter::contains(address pc) {
+bool ZeroInterpreter::contains(address pc) {
   return false; // make frame::print_value_on work
 }
-#endif // CC_INTERP
