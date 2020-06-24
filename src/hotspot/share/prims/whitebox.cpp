@@ -41,6 +41,7 @@
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/log.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -478,12 +479,6 @@ WB_END
 
 WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
   if (UseG1GC) {
-    if (AsyncDeflateIdleMonitors) {
-      // AsyncDeflateIdleMonitors needs to know when System.gc() or
-      // the equivalent is called so any special clean up can be done
-      // at a safepoint, e.g., TestHumongousClassLoader.java.
-      ObjectSynchronizer::set_is_special_deflation_requested(true);
-    }
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     if (!g1h->concurrent_mark()->cm_thread()->during_cycle()) {
       g1h->collect(GCCause::_wb_conc_mark);
@@ -1455,12 +1450,6 @@ WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString
 WB_END
 
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
-  if (AsyncDeflateIdleMonitors) {
-    // AsyncDeflateIdleMonitors needs to know when System.gc() or
-    // the equivalent is called so any special clean up can be done
-    // at a safepoint, e.g., TestHumongousClassLoader.java.
-    ObjectSynchronizer::set_is_special_deflation_requested(true);
-  }
   Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(true);
   Universe::heap()->collect(GCCause::_wb_full_gc);
 #if INCLUDE_G1GC
@@ -1809,14 +1798,12 @@ WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
   return (jboolean) obj_oop->mark().has_monitor();
 WB_END
 
+WB_ENTRY(jboolean, WB_DeflateIdleMonitors(JNIEnv* env, jobject wb))
+  log_info(monitorinflation)("WhiteBox initiated DeflateIdleMonitors");
+  return ObjectSynchronizer::request_deflate_idle_monitors();
+WB_END
+
 WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
-  if (AsyncDeflateIdleMonitors) {
-    // AsyncDeflateIdleMonitors needs to know when System.gc() or
-    // the equivalent is called so any special clean up can be done
-    // at a safepoint, e.g., TestRTMTotalCountIncrRate.java or
-    // TestUseRTMForStackLocks.java.
-    ObjectSynchronizer::set_is_special_deflation_requested(true);
-  }
   VM_ForceSafepoint force_safepoint_op;
   VMThread::execute(&force_safepoint_op);
 WB_END
@@ -2480,6 +2467,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddModuleExportsToAll },
   {CC"assertMatchingSafepointCalls", CC"(ZZ)V",       (void*)&WB_AssertMatchingSafepointCalls },
   {CC"assertSpecialLock",  CC"(ZZ)V",                 (void*)&WB_AssertSpecialLock },
+  {CC"deflateIdleMonitors", CC"()Z",                  (void*)&WB_DeflateIdleMonitors },
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },

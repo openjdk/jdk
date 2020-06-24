@@ -161,9 +161,9 @@ class ObjectSynchronizer : AllStatic {
   static bool is_async_deflation_needed();
   static bool is_safepoint_deflation_needed();
   static bool is_async_deflation_requested() { return _is_async_deflation_requested; }
-  static bool is_special_deflation_requested() { return _is_special_deflation_requested; }
+  static jlong last_async_deflation_time_ns() { return _last_async_deflation_time_ns; }
+  static bool request_deflate_idle_monitors();  // for whitebox test support and VM exit logging
   static void set_is_async_deflation_requested(bool new_value) { _is_async_deflation_requested = new_value; }
-  static void set_is_special_deflation_requested(bool new_value) { _is_special_deflation_requested = new_value; }
   static jlong time_since_last_async_deflation_ms();
   static void oops_do(OopClosure* f);
   // Process oops in thread local used monitors
@@ -200,7 +200,6 @@ class ObjectSynchronizer : AllStatic {
   // global list of blocks of monitors
   static PaddedObjectMonitor* g_block_list;
   static volatile bool _is_async_deflation_requested;
-  static volatile bool _is_special_deflation_requested;
   static jlong         _last_async_deflation_time_ns;
 
   // Function to prepend new blocks to the appropriate lists:

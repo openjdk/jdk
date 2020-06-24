@@ -261,11 +261,10 @@ void VMThread::run() {
   }
 
   if (AsyncDeflateIdleMonitors && log_is_enabled(Info, monitorinflation)) {
-    // AsyncDeflateIdleMonitors does a special deflation at the final
-    // safepoint in order to reduce the in-use monitor population that
-    // is reported by ObjectSynchronizer::log_in_use_monitor_details()
-    // at VM exit.
-    ObjectSynchronizer::set_is_special_deflation_requested(true);
+    // AsyncDeflateIdleMonitors does a special deflation in order
+    // to reduce the in-use monitor population that is reported by
+    // ObjectSynchronizer::log_in_use_monitor_details() at VM exit.
+    ObjectSynchronizer::request_deflate_idle_monitors();
   }
 
   // 4526887 let VM thread exit at Safepoint
