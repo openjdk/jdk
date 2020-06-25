@@ -3770,7 +3770,7 @@ montgomery_multiply(julong a[], julong b[], julong n[],
   julong t0 = 0, t1 = 0, t2 = 0; // Triple-precision accumulator
   int i;
 
-  assert(inv * n[0] == -1ULL, "broken inverse in Montgomery multiply");
+  assert(inv * n[0] == ULLONG_MAX, "broken inverse in Montgomery multiply");
 
   for (i = 0; i < len; i++) {
     int j;
@@ -3812,7 +3812,7 @@ montgomery_square(julong a[], julong n[],
   julong t0 = 0, t1 = 0, t2 = 0; // Triple-precision accumulator
   int i;
 
-  assert(inv * n[0] == -1ULL, "broken inverse in Montgomery square");
+  assert(inv * n[0] == ULLONG_MAX, "broken inverse in Montgomery square");
 
   for (i = 0; i < len; i++) {
     int j;
