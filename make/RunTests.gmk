@@ -143,9 +143,6 @@ endif
 # Optionally create AOT libraries for specified modules before running tests.
 # Note, this could not be done during JDK build time.
 ################################################################################
-
-# Note, this could not be done during JDK build time.
-
 # Parameter 1 is the name of the rule.
 #
 # Remaining parameters are named arguments.
@@ -198,6 +195,10 @@ define SetupAotModuleBody
   $1_AOT_TARGETS += $$($1_AOT_LIB)
 endef
 
+################################################################################
+# Optionally create AOT libraries before running tests.
+# Note, this could not be done during JDK build time.
+################################################################################
 # Parameter 1 is the name of the rule.
 #
 # Remaining parameters are named arguments.
@@ -291,9 +292,9 @@ $(eval $(call SetTestOpt,FAILURE_HANDLER_TIMEOUT,JTREG))
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
         TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM RUN_PROBLEM_LISTS \
-        RETRY_COUNT, \
+        RETRY_COUNT MAX_OUTPUT, \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
-        EXTRA_PROBLEM_LISTS AOT_MODULES, \
+        EXTRA_PROBLEM_LISTS AOT_MODULES LAUNCHER_OPTIONS, \
 ))
 
 ifneq ($(JTREG), )
@@ -843,6 +844,14 @@ define SetupRunJtregTestBody
   JTREG_RETAIN ?= fail,error
   JTREG_RUN_PROBLEM_LISTS ?= false
   JTREG_RETRY_COUNT ?= 0
+
+  ifneq ($$(JTREG_LAUNCHER_OPTIONS), )
+    $1_JTREG_LAUNCHER_OPTIONS += $$(JTREG_LAUNCHER_OPTIONS)
+  endif
+
+  ifneq ($$(JTREG_MAX_OUTPUT), )
+    $1_JTREG_LAUNCHER_OPTIONS += -Djavatest.maxOutputSize=$$(JTREG_MAX_OUTPUT)
+  endif
 
   ifneq ($$($1_JTREG_MAX_MEM), 0)
     $1_JTREG_BASIC_OPTIONS += -vmoption:-Xmx$$($1_JTREG_MAX_MEM)
