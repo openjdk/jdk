@@ -305,10 +305,12 @@ public class WinMsiBundler  extends AbstractBundler {
             // Ignore custom icon if any as we don't want to copy anything in
             // Java Runtime image.
             installerIcon = ApplicationLayout.javaRuntime()
+                    .resolveAt(appDir.toPath())
                     .runtimeDirectory()
                     .resolve(Path.of("bin", "java.exe"));
         } else {
             installerIcon = ApplicationLayout.windowsAppImage()
+                    .resolveAt(appDir.toPath())
                     .launchersDirectory()
                     .resolve(APP_NAME.fetchFrom(params) + ".exe");
         }

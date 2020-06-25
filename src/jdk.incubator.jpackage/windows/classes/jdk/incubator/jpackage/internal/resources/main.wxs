@@ -87,8 +87,10 @@
     <?endif?>
 
     <CustomAction Id="JpSetARPINSTALLLOCATION" Property="ARPINSTALLLOCATION" Value="[INSTALLDIR]" />
+
     <?ifdef JpIcon ?>
-    <CustomAction Id="JpSetARPPRODUCTICON" Property="ARPPRODUCTICON" Value="[INSTALLDIR]$(var.JpIcon)" />
+    <Property Id="ARPPRODUCTICON" Value="JpARPPRODUCTICON"/>
+    <Icon Id="JpARPPRODUCTICON" SourceFile="$(var.JpIcon)"/>
     <?endif?>
 
     <UI>
@@ -140,9 +142,6 @@
 
     <InstallExecuteSequence>
       <Custom Action="JpSetARPINSTALLLOCATION" After="CostFinalize">Not Installed</Custom>
-      <?ifdef JpIcon ?>
-      <Custom Action="JpSetARPPRODUCTICON" After="JpSetARPINSTALLLOCATION">Not Installed</Custom>
-      <?endif?>
     </InstallExecuteSequence>
   </Product>
 </Wix>

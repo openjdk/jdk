@@ -920,3 +920,13 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    gener
 # jdk_internal
 
 ############################################################################
+
+# jdk_jpackage
+
+tools/jpackage/share/EmptyFolderPackageTest.java                8248059 macosx-all
+tools/jpackage/share/IconTest.java                              8248059 macosx-all
+tools/jpackage/share/AppImagePackageTest.java                   8248059 macosx-all
+tools/jpackage/share/SimplePackageTest.java                     8248059 macosx-all
+tools/jpackage/share/jdk/jpackage/tests/BasicTest.java          8248059 macosx-all
+
+############################################################################

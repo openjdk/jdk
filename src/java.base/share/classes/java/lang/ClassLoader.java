@@ -133,11 +133,12 @@ import sun.security.util.SecurityConstants;
  *     It is the virtual machine's built-in class loader, typically represented
  *     as {@code null}, and does not have a parent.</li>
  * <li><p>{@linkplain #getPlatformClassLoader() Platform class loader}.
- *     All <em>platform classes</em> are visible to the platform class loader
- *     that can be used as the parent of a {@code ClassLoader} instance.
- *     Platform classes include Java SE platform APIs, their implementation
- *     classes and JDK-specific run-time classes that are defined by the
- *     platform class loader or its ancestors.
+ *     The platform class loader is responsible for loading the
+ *     <em>platform classes</em>.  Platform classes include Java SE platform APIs,
+ *     their implementation classes and JDK-specific run-time classes that are
+ *     defined by the platform class loader or its ancestors.
+ *     The platform class loader can be used as the parent of a {@code ClassLoader}
+ *     instance.
  *     <p> To allow for upgrading/overriding of modules defined to the platform
  *     class loader, and where upgraded modules read modules defined to class
  *     loaders other than the platform class loader and its ancestors, then
@@ -151,8 +152,9 @@ import sun.security.util.SecurityConstants;
  *     from the platform class loader.
  *     The system class loader is typically used to define classes on the
  *     application class path, module path, and JDK-specific tools.
- *     The platform class loader is a parent or an ancestor of the system class
- *     loader that all platform classes are visible to it.</li>
+ *     The platform class loader is the parent or an ancestor of the system class
+ *     loader, so the system class loader can load platform classes by delegating
+ *     to its parent.</li>
  * </ul>
  *
  * <p> Normally, the Java virtual machine loads classes from the local file
