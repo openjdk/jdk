@@ -1955,16 +1955,20 @@ void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg    = ra_->get_encode(this);
 
-  if (Assembler::operand_valid_for_add_sub_immediate(offset)) {
-    __ add(as_Register(reg), sp, offset);
-  } else {
-    ShouldNotReachHere();
-  }
+  // This add will handle any 24-bit signed offset. 24 bits allows an
+  // 8 megabyte stack frame.
+  __ add(as_Register(reg), sp, offset);
 }
 
 uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
   // BoxLockNode is not a MachNode, so we can't just call MachNode::size(ra_).
-  return 4;
+  int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
+
+  if (Assembler::operand_valid_for_add_sub_immediate(offset)) {
+    return NativeInstruction::instruction_size;
+  } else {
+    return 2 * NativeInstruction::instruction_size;
+  }
 }
 
 //=============================================================================
