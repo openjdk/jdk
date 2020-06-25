@@ -2139,11 +2139,6 @@ public class ObjectInputStream
         return result;
     }
 
-    @SuppressWarnings("preview")
-    private static boolean isRecord(Class<?> cls) {
-        return cls.isRecord();
-    }
-
     /**
      * Reads and returns "ordinary" (i.e., not a String, Class,
      * ObjectStreamClass, array, or enum constant) object, or null if object's
@@ -2182,7 +2177,7 @@ public class ObjectInputStream
             handles.markException(passHandle, resolveEx);
         }
 
-        final boolean isRecord = cl != null && isRecord(cl);
+        final boolean isRecord = desc.isRecord();
         if (isRecord) {
             assert obj == null;
             obj = readRecord(desc);
