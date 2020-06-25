@@ -630,6 +630,8 @@ java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc6
 
 java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
 
+sun/nio/ch/TestMaxCachedBufferSize.java                         8212812 macosx-all
+
 ############################################################################
 
 # jdk_rmi
