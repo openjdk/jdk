@@ -818,8 +818,8 @@ public class Bytecodes {
     // CDS specific. Bytecodes rewritten at CDS dump time
     def(_nofast_getfield     , "_nofast_getfield"    , "bJJ"  , null    , BasicType.getTIllegal() , 0, true,  _getfield );
     def(_nofast_putfield     , "_nofast_putfield"    , "bJJ"  , null    , BasicType.getTIllegal() ,-2, true,  _putfield );
-    def(_nofast_aload_0      , "_nofast_aload_0"     , "b"    , null    , BasicType.getTIllegal() , 1, true,  _aload_0  );
-    def(_nofast_iload        , "_nofast_iload"       , "bi"   , null    , BasicType.getTIllegal() , 1, false, _iload    );
+    def(_nofast_aload_0      , "_nofast_aload_0"     , "b"    , null    , BasicType.getTObject()  , 1, true,  _aload_0  );
+    def(_nofast_iload        , "_nofast_iload"       , "bi"   , null    , BasicType.getTInt()     , 1, false, _iload    );
 
     def(_shouldnotreachhere  , "_shouldnotreachhere" , "b"    , null    , BasicType.getTVoid()   ,  0, false);
 
