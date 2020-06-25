@@ -593,6 +593,8 @@ java/io/pathNames/GeneralWin32.java                             8180264 windows-
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
+java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
+
 sun/management/jdp/JdpDefaultsTest.java                         8241865 macosx-all
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
 sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
