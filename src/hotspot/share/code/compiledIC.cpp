@@ -756,7 +756,9 @@ void CompiledDirectStaticCall::verify_mt_safe(const methodHandle& callee, addres
          "a) MT-unsafe modification of inline cache");
 
   address destination = jump->jump_destination();
-  assert(destination == (address)-1 || destination == entry,
+  assert(destination == (address)-1 || destination == entry
+         || old_method == NULL || !old_method->method_holder()->is_loader_alive() // may have a race due to class unloading.
+         || old_method->is_old(),  // may be race patching deoptimized nmethod due to redefinition.
          "b) MT-unsafe modification of inline cache");
 }
 #endif // !PRODUCT
