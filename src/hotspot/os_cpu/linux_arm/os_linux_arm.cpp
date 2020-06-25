@@ -37,7 +37,6 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/extendedPC.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -142,34 +141,19 @@ bool is_safe_for_fp(address pc) {
 #endif
 }
 
-// For Forte Analyzer AsyncGetCallTrace profiling support - thread
-// is currently interrupted by SIGPROF.
-// os::Solaris::fetch_frame_from_ucontext() tries to skip nested signal
-// frames. Currently we don't do that on Linux, so it's the same as
-// os::fetch_frame_from_context().
-ExtendedPC os::Linux::fetch_frame_from_ucontext(Thread* thread,
-  const ucontext_t* uc, intptr_t** ret_sp, intptr_t** ret_fp) {
-
-  assert(thread != NULL, "just checking");
-  assert(ret_sp != NULL, "just checking");
-  assert(ret_fp != NULL, "just checking");
-
-  return os::fetch_frame_from_context(uc, ret_sp, ret_fp);
-}
-
-ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
+address os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
 
-  ExtendedPC  epc;
+  address epc;
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
-    epc = ExtendedPC(os::Linux::ucontext_get_pc(uc));
+    epc = os::Linux::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Linux::ucontext_get_sp(uc);
     if (ret_fp) {
       intptr_t* fp = os::Linux::ucontext_get_fp(uc);
 #ifndef __thumb__
-      if (CodeCache::find_blob(epc.pc()) == NULL) {
+      if (CodeCache::find_blob(epc) == NULL) {
         // It's a C frame. We need to adjust the fp.
         fp += os::C_frame_offset;
       }
@@ -178,15 +162,14 @@ ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
       // the frame created will not be walked.
       // However, ensure FP is set correctly when reliable and
       // potentially necessary.
-      if (!is_safe_for_fp(epc.pc())) {
+      if (!is_safe_for_fp(epc)) {
         // FP unreliable
         fp = (intptr_t *)NULL;
       }
       *ret_fp = fp;
     }
   } else {
-    // construct empty ExtendedPC for return value checking
-    epc = ExtendedPC(NULL);
+    epc = NULL;
     if (ret_sp) *ret_sp = (intptr_t *)NULL;
     if (ret_fp) *ret_fp = (intptr_t *)NULL;
   }
@@ -197,8 +180,8 @@ ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
 frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
-  ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, &fp);
-  return frame(sp, fp, epc.pc());
+  address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  return frame(sp, fp, epc);
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {

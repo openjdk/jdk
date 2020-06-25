@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/extendedPC.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -430,19 +429,18 @@ bool os::platform_print_native_stack(outputStream* st, const void* context,
 }
 #endif // AMD64
 
-ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
+address os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
 
-  ExtendedPC  epc;
+  address  epc;
   CONTEXT* uc = (CONTEXT*)ucVoid;
 
   if (uc != NULL) {
-    epc = ExtendedPC((address)uc->REG_PC);
+    epc = (address)uc->REG_PC;
     if (ret_sp) *ret_sp = (intptr_t*)uc->REG_SP;
     if (ret_fp) *ret_fp = (intptr_t*)uc->REG_FP;
   } else {
-    // construct empty ExtendedPC for return value checking
-    epc = ExtendedPC(NULL);
+    epc = NULL;
     if (ret_sp) *ret_sp = (intptr_t *)NULL;
     if (ret_fp) *ret_fp = (intptr_t *)NULL;
   }
@@ -453,8 +451,8 @@ ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
 frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
-  ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, &fp);
-  return frame(sp, fp, epc.pc());
+  address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  return frame(sp, fp, epc);
 }
 
 // VC++ does not save frame pointer on stack in optimized build. It

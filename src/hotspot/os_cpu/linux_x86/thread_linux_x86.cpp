@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,24 +65,23 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
 
     intptr_t* ret_fp;
     intptr_t* ret_sp;
-    ExtendedPC addr = os::Linux::fetch_frame_from_ucontext(this, uc,
-      &ret_sp, &ret_fp);
-    if (addr.pc() == NULL || ret_sp == NULL ) {
+    address addr = os::fetch_frame_from_context(uc, &ret_sp, &ret_fp);
+    if (addr == NULL || ret_sp == NULL ) {
       // ucontext wasn't useful
       return false;
     }
 
-    if (MetaspaceShared::is_in_trampoline_frame(addr.pc())) {
+    if (MetaspaceShared::is_in_trampoline_frame(addr)) {
       // In the middle of a trampoline call. Bail out for safety.
       // This happens rarely so shouldn't affect profiling.
       return false;
     }
 
-    frame ret_frame(ret_sp, ret_fp, addr.pc());
+    frame ret_frame(ret_sp, ret_fp, addr);
     if (!ret_frame.safe_for_sender(jt)) {
 #if COMPILER2_OR_JVMCI
       // C2 and JVMCI use ebp as a general register see if NULL fp helps
-      frame ret_frame2(ret_sp, NULL, addr.pc());
+      frame ret_frame2(ret_sp, NULL, addr);
       if (!ret_frame2.safe_for_sender(jt)) {
         // nothing else to try if the frame isn't good
         return false;
