@@ -984,7 +984,7 @@ void G1Policy::update_ihop_prediction(double mutator_time_s,
     // restrained by the heap reserve. Using the actual length would make the
     // prediction too small and the limit the young gen every time we get to the
     // predicted target occupancy.
-    uint young_gen_size = young_list_desired_length() * HeapRegion::GrainBytes;
+    size_t young_gen_size = young_list_desired_length() * HeapRegion::GrainBytes;
     _ihop_control->update_allocation_info(mutator_time_s, mutator_alloc_bytes, young_gen_size);
     report = true;
   }
