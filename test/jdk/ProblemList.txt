@@ -914,6 +914,7 @@ javax/script/Test7.java                                         8239361 generic-
 
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
+jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 
 ############################################################################
 
