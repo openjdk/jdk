@@ -149,18 +149,14 @@ void G1Analytics::report_alloc_rate_ms(double alloc_rate) {
   _alloc_rate_ms_seq->add(alloc_rate);
 }
 
-void G1Analytics::compute_pause_time_ratio(double interval_ms, double pause_time_ms) {
-  _long_term_pause_time_ratio = _recent_gc_times_ms->sum() / interval_ms;
-  // Filter out nonsensical results due to bad input.
+void G1Analytics::compute_pause_time_ratios(double end_time_sec, double pause_time_ms) {
+  double long_interval_ms = (end_time_sec - oldest_known_gc_end_time_sec()) * 1000.0;
+  _long_term_pause_time_ratio = _recent_gc_times_ms->sum() / long_interval_ms;
   _long_term_pause_time_ratio = clamp(_long_term_pause_time_ratio, 0.0, 1.0);
 
-  // Compute the ratio of just this last pause time to the entire time range stored
-  // in the vectors. Comparing this pause to the entire range, rather than only the
-  // most recent interval, has the effect of smoothing over a possible transient 'burst'
-  // of more frequent pauses that don't really reflect a change in heap occupancy.
-  // This reduces the likelihood of a needless heap expansion being triggered.
-  _short_term_pause_time_ratio =
-    (pause_time_ms * _recent_prev_end_times_for_all_gcs_sec->num()) / interval_ms;
+  double short_interval_ms = (end_time_sec - most_recent_gc_end_time_sec()) * 1000.0;
+  _short_term_pause_time_ratio = pause_time_ms / short_interval_ms;
+  _short_term_pause_time_ratio = clamp(_short_term_pause_time_ratio, 0.0, 1.0);
 }
 
 void G1Analytics::report_concurrent_refine_rate_ms(double cards_per_ms) {
@@ -311,8 +307,12 @@ size_t G1Analytics::predict_pending_cards() const {
   return predict_size(_pending_cards_seq);
 }
 
-double G1Analytics::last_known_gc_end_time_sec() const {
+double G1Analytics::oldest_known_gc_end_time_sec() const {
   return _recent_prev_end_times_for_all_gcs_sec->oldest();
+}
+
+double G1Analytics::most_recent_gc_end_time_sec() const {
+  return _recent_prev_end_times_for_all_gcs_sec->last();
 }
 
 void G1Analytics::update_recent_gc_times(double end_time_sec,
