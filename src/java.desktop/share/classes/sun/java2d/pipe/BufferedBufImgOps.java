@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package sun.java2d.pipe;
 
 import java.awt.color.ColorSpace;
-import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
-import java.awt.image.BufferedImageOp;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ByteLookupTable;
 import java.awt.image.ColorModel;
@@ -40,7 +38,6 @@ import java.awt.image.LookupTable;
 import java.awt.image.RescaleOp;
 import java.awt.image.ShortLookupTable;
 import sun.java2d.SurfaceData;
-import sun.java2d.loops.CompositeType;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 
 public class BufferedBufImgOps {
@@ -137,7 +134,7 @@ public class BufferedBufImgOps {
         {
             throw new IllegalArgumentException("Number of scaling constants "+
                                                "does not equal the number of"+
-                                               " of color or color/alpha "+
+                                               " color or color/alpha"+
                                                " components");
         }
 
