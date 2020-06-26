@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,23 +61,27 @@ template <class E, MEMFLAGS F>
 void Stack<E, F>::push(E item)
 {
   assert(!is_full(), "pushing onto a full stack");
-  if (this->_cur_seg_size == this->_seg_size) {
+  size_t index = this->_cur_seg_size;
+  if (index == this->_seg_size) {
     push_segment();
+    index = 0;                  // Instead of fetching known zero _cur_seg_size.
   }
-  this->_cur_seg[this->_cur_seg_size] = item;
-  ++this->_cur_seg_size;
+  this->_cur_seg[index] = item;
+  this->_cur_seg_size = index + 1;
 }
 
 template <class E, MEMFLAGS F>
 E Stack<E, F>::pop()
 {
   assert(!is_empty(), "popping from an empty stack");
-  if (this->_cur_seg_size == 1) {
-    E tmp = _cur_seg[--this->_cur_seg_size];
-    pop_segment();
-    return tmp;
-  }
-  return this->_cur_seg[--this->_cur_seg_size];
+  // _cur_seg_size is never 0 if not empty.  pop that empties a
+  // segment also pops the segment.  push that adds a segment always
+  // adds an entry to the new segment.
+  assert(this->_cur_seg_size != 0, "invariant");
+  size_t index = --this->_cur_seg_size;
+  E result = _cur_seg[index];
+  if (index == 0) pop_segment();
+  return result;
 }
 
 template <class E, MEMFLAGS F>
@@ -145,9 +149,8 @@ void Stack<E, F>::free(E* addr, size_t bytes)
 
 // Stack is used by the GC code and in some hot paths a lot of the Stack
 // code gets inlined. This is generally good, but when too much code has
-// been inlined, no further inlining is allowed by GCC. Therefore we need
-// to prevent parts of the slow path in Stack to be inlined to allow other
-// code to be.
+// been inlined, further inlining in the caller might be inhibited. So
+// prevent infrequent slow path segment manipulation from being inlined.
 template <class E, MEMFLAGS F>
 NOINLINE void Stack<E, F>::push_segment()
 {
@@ -170,7 +173,7 @@ NOINLINE void Stack<E, F>::push_segment()
 }
 
 template <class E, MEMFLAGS F>
-void Stack<E, F>::pop_segment()
+NOINLINE void Stack<E, F>::pop_segment()
 {
   assert(this->_cur_seg_size == 0, "current segment is not empty");
   E* const prev = get_link(_cur_seg);
