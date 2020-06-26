@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2013, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "interpreter/templateTable.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
