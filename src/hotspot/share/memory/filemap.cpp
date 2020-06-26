@@ -749,6 +749,11 @@ bool FileMapInfo::validate_boot_class_paths() {
         num = rp_len;
       }
       mismatch = check_paths(1, num, rp_array);
+    } else {
+      // create_path_array() ignores non-existing paths. Although the dump time and runtime boot classpath lengths
+      // are the same initially, after the call to create_path_array(), the runtime boot classpath length could become
+      // shorter. We consider boot classpath mismatch in this case.
+      mismatch = true;
     }
   }
 
@@ -774,6 +779,12 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
     if (rp_array->length() == 0) {
       // None of the jar file specified in the runtime -cp exists.
       return classpath_failure("None of the jar file specified in the runtime -cp exists: -Djava.class.path=", appcp);
+    }
+    if (rp_array->length() < shared_app_paths_len) {
+      // create_path_array() ignores non-existing paths. Although the dump time and runtime app classpath lengths
+      // are the same initially, after the call to create_path_array(), the runtime app classpath length could become
+      // shorter. We consider app classpath mismatch in this case.
+      return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
     }
 
     // Handling of non-existent entries in the classpath: we eliminate all the non-existent
