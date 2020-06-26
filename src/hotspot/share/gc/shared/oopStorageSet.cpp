@@ -49,13 +49,13 @@ static OopStorage* make_oopstorage(const char* name) {
 }
 
 void OopStorageSet::initialize() {
-  storages[jni_global_index]        = make_oopstorage("JNI global");
-  storages[vm_global_index]         = make_oopstorage("VM global");
-  storages[jni_weak_index]          = make_oopstorage("JNI weak");
-  storages[vm_weak_index]           = make_oopstorage("VM weak");
-  storages[string_table_weak_index] = make_oopstorage("StringTable weak");
+  storages[jni_global_index]        = make_oopstorage("JNI Global");
+  storages[vm_global_index]         = make_oopstorage("VM Global");
+  storages[jni_weak_index]          = make_oopstorage("JNI Weak");
+  storages[vm_weak_index]           = make_oopstorage("VM Weak");
+  storages[string_table_weak_index] = make_oopstorage("StringTable Weak");
   storages[resolved_method_table_weak_index] =
-    make_oopstorage("ResolvedMethodTable weak");
+    make_oopstorage("ResolvedMethodTable Weak");
 
   // Ensure we have all of them.
   STATIC_ASSERT(all_count == 6);

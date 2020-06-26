@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1GCPHASETIMES_HPP
 #define SHARE_GC_G1_G1GCPHASETIMES_HPP
 
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "logging/logLevel.hpp"
@@ -48,15 +49,16 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ExtRootScan,
     ThreadRoots,
     UniverseRoots,
-    JNIRoots,
     ObjectSynchronizerRoots,
     ManagementRoots,
-    VMGlobalRoots,
     CLDGRoots,
     JVMTIRoots,
     AOT_ONLY(AOTCodeRoots COMMA)
     CMRefRoots,
-    MergeER,
+    // For every OopStorage there will be one element in the enum, starting with
+    // StrongOopStorageSetRoots.
+    StrongOopStorageSetRoots,
+    MergeER = StrongOopStorageSetRoots + OopStorageSet::strong_count,
     MergeRS,
     OptMergeRS,
     MergeLB,
@@ -84,7 +86,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   };
 
   static const GCParPhases ExtRootScanSubPhasesFirst = ThreadRoots;
-  static const GCParPhases ExtRootScanSubPhasesLast = CMRefRoots;
+  static const GCParPhases ExtRootScanSubPhasesLast = GCParPhases(MergeER - 1);
 
   enum GCMergeRSWorkTimes {
     MergeRSMergedSparse,

@@ -38,14 +38,15 @@ public:
 private:
   T*          _data;
   uint        _length;
-  const char* _title;
+  const char* _short_name; // Short name for JFR
+  const char* _title; // Title for logging.
 
   bool _is_serial;
 
   WorkerDataArray<size_t>* _thread_work_items[MaxThreadWorkItems];
 
  public:
-  WorkerDataArray(const char* title, uint length, bool is_serial = false);
+  WorkerDataArray(const char* short_name, const char* title, uint length, bool is_serial = false);
   ~WorkerDataArray();
 
   // Create an integer sub-item at the given index to this WorkerDataArray. If length_override
@@ -76,6 +77,10 @@ private:
 
   const char* title() const {
     return _title;
+  }
+
+  const char* short_name() const {
+    return _short_name;
   }
 
   void reset();

@@ -41,6 +41,9 @@ public:
 
   template <typename Closure>
   void oops_do(Closure* cl);
+
+  ParStateType* par_state(int i) const { return _par_states.at(i); }
+  int par_state_count() const { return _par_states.count(); }
 };
 
 #endif // SHARE_GC_SHARED_OOPSTORAGESETPARSTATE_HPP

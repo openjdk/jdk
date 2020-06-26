@@ -177,9 +177,9 @@ ReferenceProcessorPhaseTimes::ReferenceProcessorPhaseTimes(GCTimer* gc_timer, ui
   _processing_is_mt(false), _gc_timer(gc_timer) {
 
   for (uint i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
-    _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(SubPhasesParWorkTitle[i], max_gc_threads);
+    _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(NULL, SubPhasesParWorkTitle[i], max_gc_threads);
   }
-  _phase2_worker_time_sec = new WorkerDataArray<double>(Phase2ParWorkTitle, max_gc_threads);
+  _phase2_worker_time_sec = new WorkerDataArray<double>(NULL, Phase2ParWorkTitle, max_gc_threads);
 
   reset();
 }

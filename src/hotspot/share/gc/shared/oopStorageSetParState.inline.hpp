@@ -42,5 +42,4 @@ void OopStorageSetStrongParState<concurrent, is_const>::oops_do(Closure* cl) {
   }
 }
 
-
 #endif // SHARE_GC_SHARED_OOPSTORAGESETPARSTATE_INLINE_HPP
