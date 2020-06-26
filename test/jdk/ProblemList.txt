@@ -593,6 +593,8 @@ java/io/pathNames/GeneralWin32.java                             8180264 windows-
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
+java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
+
 sun/management/jdp/JdpDefaultsTest.java                         8241865 macosx-all
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
 sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
@@ -627,6 +629,8 @@ java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
 java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
+
+sun/nio/ch/TestMaxCachedBufferSize.java                         8212812 macosx-all
 
 ############################################################################
 
@@ -914,6 +918,7 @@ javax/script/Test7.java                                         8239361 generic-
 
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
+jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 
 ############################################################################
 

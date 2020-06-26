@@ -747,13 +747,6 @@ public class ObjectStreamClass implements Serializable {
         }
 
         this.cl = cl;
-        if (cl != null) {
-            this.isRecord = isRecord(cl);
-            // canonical record constructor is shared
-            this.canonicalCtr = osc.canonicalCtr;
-            // cache of deserialization constructors is shared
-            this.deserializationCtrs = osc.deserializationCtrs;
-        }
         this.resolveEx = resolveEx;
         this.superDesc = superDesc;
         name = model.name;
@@ -770,6 +763,11 @@ public class ObjectStreamClass implements Serializable {
 
         if (osc != null) {
             localDesc = osc;
+            isRecord = localDesc.isRecord;
+            // canonical record constructor is shared
+            canonicalCtr = localDesc.canonicalCtr;
+            // cache of deserialization constructors is shared
+            deserializationCtrs = localDesc.deserializationCtrs;
             writeObjectMethod = localDesc.writeObjectMethod;
             readObjectMethod = localDesc.readObjectMethod;
             readObjectNoDataMethod = localDesc.readObjectNoDataMethod;
