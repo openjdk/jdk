@@ -23,13 +23,13 @@
 
 // package planets;
 //
-// sealed public class OuterPlanets permits Neptune, asteroids.Pluto { }
+// sealed public class OuterPlanets permits Neptune, asteroids.Pluto, asteroids.Charon { }
 
 class planets/OuterPlanets {
   0xCAFEBABE;
   65535; // minor version
   60; // version
-  [18] { // Constant Pool
+  [20] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
     class #4; // #2     at 0x0F
@@ -48,6 +48,8 @@ class planets/OuterPlanets {
     Utf8 "planets/Neptune"; // #15     at 0xA4
     class #17; // #16     at 0xB6
     Utf8 "asteroids/Pluto"; // #17     at 0xB9
+    class #19; // #18     at 0xB6
+    Utf8 "asteroids/Charon"; // #19
   } // Constant Pool
 
   0x0021; // access [ ACC_PUBLIC ACC_SUPER ]
@@ -91,8 +93,8 @@ class planets/OuterPlanets {
       #12;
     } // end SourceFile
     ;
-    Attr(#13, 6) { // PermittedSubclasses at 0x010C
-      0x0002000E0010;
+    Attr(#13, 8) { // PermittedSubclasses at 0x010C
+      0x0003000E00100012;
     } // end PermittedSubclasses
   } // Attributes
 } // end class planets/OuterPlanets

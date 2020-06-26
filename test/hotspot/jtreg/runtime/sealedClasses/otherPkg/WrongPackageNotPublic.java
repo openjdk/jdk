@@ -21,9 +21,6 @@
  * questions.
  */
 
-// Small class used by SealedModuleTest
-package sealedP3;
+package otherPkg;
 
-public final class C3 extends sealedP1.SuperClass implements sealedP1.SuperInterface {
-    public void method3() { }
-}
+final class WrongPackageNotPublic implements Pkg.SealedInterface { }

@@ -21,9 +21,7 @@
  * questions.
  */
 
-// Small class used by SealedModuleTest
-package sealedP3;
+package asteroids;
 
-public final class C3 extends sealedP1.SuperClass implements sealedP1.SuperInterface {
-    public void method3() { }
-}
+public final class Charon extends planets.OuterPlanets { }
+

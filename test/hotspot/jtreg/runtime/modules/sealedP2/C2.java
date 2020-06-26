@@ -24,6 +24,6 @@
 // Small class used by SealedModuleTest
 package sealedP2;
 
-final class C2 extends sealedP1.SuperClass {
+final class C2 extends sealedP1.SuperClass implements sealedP1.SuperInterface {
     public void method2() { }
 }
