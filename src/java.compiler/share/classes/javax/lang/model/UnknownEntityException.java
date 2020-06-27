@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,6 @@ package javax.lang.model;
  * evolves and new kinds of constructs are introduced.  Subclasses of
  * this exception may be thrown by visitors to indicate that the
  * visitor was created for a prior version of the language.
- *
- * @apiNote A common superclass for exceptions specific to different
- * kinds of unknown entities allows a single catch block to easily
- * provide uniform handling of those related conditions.
  *
  * @author Joseph D. Darcy
  * @see javax.lang.model.element.UnknownElementException

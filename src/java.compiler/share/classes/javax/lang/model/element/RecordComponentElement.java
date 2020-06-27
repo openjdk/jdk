@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public interface RecordComponentElement extends Element {
      * Returns the simple name of this record component.
      *
      * <p>The name of each record component must be distinct from the
-     * names of all other record components.
+     * names of all other record components of the same record.
      *
      * @return the simple name of this record component
      *
