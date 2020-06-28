@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3642,10 +3642,21 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
     for (SimpleDUIterator iter(n); iter.has_next(); iter.next()) {
       Node* use = iter.get();
       if (!lpt->_body.contains(use)) {
-        msg = "node is used outside loop";
-        // lpt->_body.dump();
-        msg_node = n;
-        break;
+        if (n->is_CountedLoop() && n->as_CountedLoop()->is_strip_mined()) {
+          // In strip-mined counted loops, the CountedLoopNode may be
+          // used by the address polling node of the outer safepoint.
+          // Skip this use because it's safe.
+#ifdef ASSERT
+          Node* sfpt = n->as_CountedLoop()->outer_safepoint();
+          Node* polladr = sfpt->in(TypeFunc::Parms+0);
+          assert(use == polladr, "the use should be a safepoint polling");
+#endif
+          continue;
+        } else {
+          msg = "node is used outside loop";
+          msg_node = n;
+          break;
+        }
       }
     }
   }
