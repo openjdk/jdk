@@ -25,6 +25,7 @@
 #ifndef SHARE_SERVICES_THREADSERVICE_HPP
 #define SHARE_SERVICES_THREADSERVICE_HPP
 
+#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/init.hpp"
@@ -140,8 +141,8 @@ private:
   bool         _timer_pending_reset;
 
   // Keep accurate times for potentially recursive class operations
-  int           _perf_recursion_counts[6];
-  elapsedTimer  _perf_timers[6];
+  int           _perf_recursion_counts[PerfClassTraceTime::EVENT_TYPE_COUNT];
+  elapsedTimer  _perf_timers[PerfClassTraceTime::EVENT_TYPE_COUNT];
 
   // utility functions
   void  check_and_reset_count()            {
