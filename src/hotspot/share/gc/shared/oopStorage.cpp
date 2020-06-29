@@ -731,15 +731,21 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
 
 const size_t initial_active_array_size = 8;
 
-OopStorage::OopStorage(const char* name,
-                       Mutex* allocation_mutex,
-                       Mutex* active_mutex) :
+static Mutex* make_oopstorage_mutex(const char* storage_name,
+                                    const char* kind,
+                                    int rank) {
+  char name[256];
+  os::snprintf(name, sizeof(name), "%s %s lock", storage_name, kind);
+  return new PaddedMutex(rank, name, true, Mutex::_safepoint_check_never);
+}
+
+OopStorage::OopStorage(const char* name) :
   _name(os::strdup(name)),
   _active_array(ActiveArray::create(initial_active_array_size)),
   _allocation_list(),
   _deferred_updates(NULL),
-  _allocation_mutex(allocation_mutex),
-  _active_mutex(active_mutex),
+  _allocation_mutex(make_oopstorage_mutex(name, "alloc", Mutex::oopstorage)),
+  _active_mutex(make_oopstorage_mutex(name, "active", Mutex::oopstorage - 1)),
   _allocation_count(0),
   _concurrent_iteration_count(0),
   _needs_cleanup(false)

@@ -25,8 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -34,28 +32,14 @@
 // +1 for NULL singular entry.
 OopStorage* OopStorageSet::storages[all_count + 1] = {};
 
-static Mutex* make_oopstorage_mutex(const char* storage_name,
-                                    const char* kind,
-                                    int rank) {
-  char name[256];
-  os::snprintf(name, sizeof(name), "%s %s lock", storage_name, kind);
-  return new PaddedMutex(rank, name, true, Mutex::_safepoint_check_never);
-}
-
-static OopStorage* make_oopstorage(const char* name) {
-  Mutex* alloc = make_oopstorage_mutex(name, "alloc", Mutex::oopstorage);
-  Mutex* active = make_oopstorage_mutex(name, "active", Mutex::oopstorage - 1);
-  return new OopStorage(name, alloc, active);
-}
-
 void OopStorageSet::initialize() {
-  storages[jni_global_index]        = make_oopstorage("JNI Global");
-  storages[vm_global_index]         = make_oopstorage("VM Global");
-  storages[jni_weak_index]          = make_oopstorage("JNI Weak");
-  storages[vm_weak_index]           = make_oopstorage("VM Weak");
-  storages[string_table_weak_index] = make_oopstorage("StringTable Weak");
+  storages[jni_global_index]        = new OopStorage("JNI Global");
+  storages[vm_global_index]         = new OopStorage("VM Global");
+  storages[jni_weak_index]          = new OopStorage("JNI Weak");
+  storages[vm_weak_index]           = new OopStorage("VM Weak");
+  storages[string_table_weak_index] = new OopStorage("StringTable Weak");
   storages[resolved_method_table_weak_index] =
-    make_oopstorage("ResolvedMethodTable Weak");
+    new OopStorage("ResolvedMethodTable Weak");
 
   // Ensure we have all of them.
   STATIC_ASSERT(all_count == 6);
