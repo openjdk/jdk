@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  * Results of running the JstatGcTool ("jstat -gccapacity <pid>")
  *
  * Output example:
- * NGCMN    NGCMX     NGC     S0C   S1C       EC      OGCMN      OGCMX       OGC         OC       MCMN     MCMX      MC     YGC    FGC
- * 41984.0 671744.0  41984.0 5248.0 5248.0  31488.0    83968.0  1343488.0    83968.0    83968.0    512.0 110592.0   4480.0      0     0
-
+ *   NGCMN        NGCMX         NGC          S0C     S1C              EC         OGCMN        OGCMX         OGC           OC         MCMN       MCMX        MC       CCSMN     CCSMX     CCSC     YGC    FGC   CGC
+ *         0.0    4194304.0       6144.0         0.0      2048.0       4096.0          0.0    4194304.0       2048.0       2048.0        0.0  1056768.0     7680.0       0.0 1048576.0     768.0      4     0     0
+ *
  * Output description:
  * NGCMN   Minimum new generation capacity (KB).
  * NGCMX   Maximum new generation capacity (KB).

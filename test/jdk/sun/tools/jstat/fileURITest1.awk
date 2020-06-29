@@ -3,18 +3,20 @@
 # that the numerical values conform to a specific pattern, rather than
 # specific values.
 #
-#  S0     S1     E      O      P     YGC     YGCT    FGC    FGCT     GCT   
-#  0.00 100.00  68.87   1.24  27.75      1    0.044     0    0.000    0.044
+# -gcutil
+#
+#  S0     S1     E      O      M     CCS    YGC     YGCT     FGC    FGCT     CGC    CGCT       GCT   
+#  0.00   0.00   0.00  47.17  97.15  92.31     20     0.335   696   334.382     2     0.069   334.786
 
 BEGIN	{
 	    headerlines=0; datalines=0; totallines=0
 	}
 
-/^  S0     S1     E      O      P     YGC     YGCT    FGC    FGCT     GCT   $/	{
+/^  S0     S1     E      O      M     CCS    YGC     YGCT     FGC    FGCT     CGC    CGCT       GCT   $/	{
 	    headerlines++;
 	}
 
-/^[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+$/	{
+/^[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+$/	{
 	    datalines++;
 	}
 

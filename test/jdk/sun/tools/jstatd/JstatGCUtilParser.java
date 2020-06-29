@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,8 @@ import jdk.test.lib.Utils;
 /**
  * The helper class for parsing following output from command 'jstat -gcutil':
  *
- *  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT    CGC    CGCT     GCT
- *  0.00   0.00  86.67   0.00   -      -      0      0.000     0    0.000     0    0.000    0.000
- *  0.00   0.00  86.67   0.00   -      -      0      0.000     0    0.000     0    0.000    0.000
+ *  S0     S1     E      O      M     CCS    YGC     YGCT     FGC    FGCT     CGC    CGCT       GCT
+ *  0.00   0.00   0.00  52.39  97.76  92.71      4     0.286    28    28.006     2     0.086    28.378
  *
  *  It will be verified that numerical values have defined types and are reasonable,
  *  for example percentage should fit within 0-100 interval.
