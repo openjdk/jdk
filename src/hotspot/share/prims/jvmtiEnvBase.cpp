@@ -1507,12 +1507,24 @@ VM_SetFramePop::doit() {
 
 void
 GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
-  _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread, (JavaThread *)target, _owned_monitors_list);
+  assert(target->is_Java_thread(), "just checking");
+  JavaThread *jt = (JavaThread *)target;
+  if (!jt->is_exiting() && (jt->threadObj() != NULL)) {
+    _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread,
+                                                         jt,
+                                                         _owned_monitors_list);
+  }
 }
 
 void
 GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
-  _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor(_calling_thread, (JavaThread *)target, _owned_monitor_ptr);
+  assert(target->is_Java_thread(), "just checking");
+  JavaThread *jt = (JavaThread *)target;
+  if (!jt->is_exiting() && (jt->threadObj() != NULL)) {
+    _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor(_calling_thread,
+                                                                    jt,
+                                                                    _owned_monitor_ptr);
+  }
 }
 
 void

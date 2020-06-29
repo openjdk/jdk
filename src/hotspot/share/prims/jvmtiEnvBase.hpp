@@ -387,7 +387,7 @@ public:
     : HandshakeClosure("GetOwnedMonitorInfo"),
       _calling_thread(calling_thread),
       _env(env),
-      _result(JVMTI_ERROR_NONE),
+      _result(JVMTI_ERROR_THREAD_NOT_ALIVE),
       _owned_monitors_list(owned_monitor_list) {}
   jvmtiError result() { return _result; }
   void do_thread(Thread *target);
