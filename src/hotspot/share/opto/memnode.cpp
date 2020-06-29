@@ -2187,7 +2187,6 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
       // See if we can become precise: no subklasses and no interface
       // (Note:  We need to support verified interfaces.)
       if (!ik->is_interface() && !ik->has_subklass()) {
-        //assert(!UseExactTypes, "this code should be useless with exact types");
         // Add a dependence; if any subclass added we need to recompile
         if (!ik->is_final()) {
           // %%% should use stronger assert_unique_concrete_subtype instead
@@ -2221,7 +2220,6 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
           ciInstanceKlass* ik = base_k->as_instance_klass();
           // See if we can become precise: no subklasses and no interface
           if (!ik->is_interface() && !ik->has_subklass()) {
-            //assert(!UseExactTypes, "this code should be useless with exact types");
             // Add a dependence; if any subclass added we need to recompile
             if (!ik->is_final()) {
               phase->C->dependencies()->assert_leaf_type(ik);
@@ -2232,7 +2230,6 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
         }
         return TypeKlassPtr::make(TypePtr::NotNull, ak, 0/*offset*/);
       } else {                  // Found a type-array?
-        //assert(!UseExactTypes, "this code should be useless with exact types");
         assert( ak->is_type_array_klass(), "" );
         return TypeKlassPtr::make(ak); // These are always precise
       }

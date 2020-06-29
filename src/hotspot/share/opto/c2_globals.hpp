@@ -246,9 +246,6 @@
   develop(bool, UseUniqueSubclasses, true,                                  \
           "Narrow an abstract reference to the unique concrete subclass")   \
                                                                             \
-  develop(bool, UseExactTypes, true,                                        \
-          "Use exact types to eliminate array store checks and v-calls")    \
-                                                                            \
   product(intx, TrackedInitializationLimit, 50,                             \
           "When initializing fields, track up to this many words")          \
           range(0, 65535)                                                   \
