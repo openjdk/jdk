@@ -83,8 +83,6 @@
 #include "services/mallocTracker.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-ShenandoahHeap* ShenandoahHeap::_heap = NULL;
-
 #ifdef ASSERT
 template <class T>
 void ShenandoahAssertToSpaceClosure::do_oop_work(T* p) {
@@ -497,8 +495,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _liveness_cache(NULL),
   _collection_set(NULL)
 {
-  _heap = this;
-
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this));
 
   _max_workers = MAX2(_max_workers, 1U);

@@ -49,8 +49,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 inline ShenandoahHeap* ShenandoahHeap::heap() {
-  assert(_heap != NULL, "Heap is not initialized yet");
-  return _heap;
+  return named_heap<ShenandoahHeap>(CollectedHeap::Shenandoah);
 }
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {

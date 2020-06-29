@@ -141,9 +141,6 @@ public:
 
 // ---------- Initialization, termination, identification, printing routines
 //
-private:
-  static ShenandoahHeap* _heap;
-
 public:
   static ShenandoahHeap* heap();
 
