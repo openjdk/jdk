@@ -464,6 +464,8 @@ public class WinMsiBundler  extends AbstractBundler {
         boolean enableLicenseUI = (LICENSE_FILE.fetchFrom(params) != null);
         boolean enableInstalldirUI = INSTALLDIR_CHOOSER.fetchFrom(params);
 
+        wixPipeline.addLightOptions("-sice:ICE27");
+
         if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
             wixPipeline.addLightOptions("-sice:ICE91");
         }
