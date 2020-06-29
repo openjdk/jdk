@@ -53,7 +53,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_CTW,              // Compile the world
       Reason_Replay,           // ciReplay
       Reason_Whitebox,         // Whitebox API
-      Reason_MustBeCompiled,   // Java callHelper, LinkResolver
+      Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
       Reason_Bootstrap,        // JVMCI bootstrap
       Reason_Count
   };
@@ -140,7 +140,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
         case Reason_CTW:
         case Reason_Replay:
         case Reason_Whitebox:
-        case Reason_MustBeCompiled:
         case Reason_Bootstrap:
           return _is_blocking;
         default:
