@@ -1328,7 +1328,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
   if( dead->is_Con() ) return;
 
   ResourceMark rm;
-  Node_List  nstack(Thread::current()->resource_area());
+  Node_List nstack;
 
   Node *top = igvn->C->top();
   nstack.push(dead);
@@ -1601,20 +1601,18 @@ Node* find_node(int idx) {
 
 //------------------------------find-------------------------------------------
 Node* Node::find(int idx) const {
-  ResourceArea *area = Thread::current()->resource_area();
-  VectorSet old_space(area), new_space(area);
+  VectorSet old_space, new_space;
   Node* result = NULL;
-  find_recur(Compile::current(), result, (Node*) this, idx, false, &old_space, &new_space );
+  find_recur(Compile::current(), result, (Node*) this, idx, false, &old_space, &new_space);
   return result;
 }
 
 //------------------------------find_ctrl--------------------------------------
 // Find an ancestor to this node in the control history with given _idx
 Node* Node::find_ctrl(int idx) const {
-  ResourceArea *area = Thread::current()->resource_area();
-  VectorSet old_space(area), new_space(area);
+  VectorSet old_space, new_space;
   Node* result = NULL;
-  find_recur(Compile::current(), result, (Node*) this, idx, true, &old_space, &new_space );
+  find_recur(Compile::current(), result, (Node*)this, idx, true, &old_space, &new_space);
   return result;
 }
 #endif
@@ -2156,10 +2154,9 @@ void Node::verify_edges(Unique_Node_List &visited) {
 void Node::verify(Node* n, int verify_depth) {
   assert(verify_depth != 0, "depth should not be 0");
   ResourceMark rm;
-  ResourceArea* area = Thread::current()->resource_area();
-  VectorSet old_space(area);
-  VectorSet new_space(area);
-  Node_List worklist(area);
+  VectorSet old_space;
+  VectorSet new_space;
+  Node_List worklist;
   worklist.push(n);
   Compile* C = Compile::current();
   uint last_index_on_current_depth = 0;
@@ -2228,7 +2225,7 @@ void Node::verify(Node* n, int verify_depth) {
 //------------------------------walk-------------------------------------------
 // Graph walk, with both pre-order and post-order functions
 void Node::walk(NFunc pre, NFunc post, void *env) {
-  VectorSet visited(Thread::current()->resource_area()); // Setup for local walk
+  VectorSet visited; // Setup for local walk
   walk_(pre, post, env, visited);
 }
 

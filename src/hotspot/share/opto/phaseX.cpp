@@ -401,8 +401,7 @@ void NodeHash::operator=(const NodeHash& nh) {
 //=============================================================================
 //------------------------------PhaseRemoveUseless-----------------------------
 // 1) Use a breadthfirst walk to collect useful nodes reachable from root.
-PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN *gvn, Unique_Node_List *worklist, PhaseNumber phase_num) : Phase(phase_num),
-  _useful(Thread::current()->resource_area()) {
+PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist, PhaseNumber phase_num) : Phase(phase_num) {
 
   // Implementation requires 'UseLoopSafepoints == true' and an edge from root
   // to each SafePointNode at a backward branch.  Inserted in add_safepoint().
@@ -456,7 +455,6 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
   PhaseRemoveUseless(gvn, worklist, Remove_Useless_And_Renumber_Live),
   _new_type_array(C->comp_arena()),
   _old2new_map(C->unique(), C->unique(), -1),
-  _delayed(Thread::current()->resource_area()),
   _is_pass_finished(false),
   _live_node_count(C->live_nodes())
 {
@@ -662,9 +660,9 @@ void PhaseTransform::dump_types( ) const {
 }
 
 //------------------------------dump_nodes_and_types---------------------------
-void PhaseTransform::dump_nodes_and_types(const Node *root, uint depth, bool only_ctrl) {
-  VectorSet visited(Thread::current()->resource_area());
-  dump_nodes_and_types_recur( root, depth, only_ctrl, visited );
+void PhaseTransform::dump_nodes_and_types(const Node* root, uint depth, bool only_ctrl) {
+  VectorSet visited;
+  dump_nodes_and_types_recur(root, depth, only_ctrl, visited);
 }
 
 //------------------------------dump_nodes_and_types_recur---------------------

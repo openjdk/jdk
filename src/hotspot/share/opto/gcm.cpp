@@ -1396,15 +1396,14 @@ void PhaseCFG::global_code_motion() {
   }
 
   // Set the basic block for Nodes pinned into blocks
-  Arena* arena = Thread::current()->resource_area();
-  VectorSet visited(arena);
+  VectorSet visited;
   schedule_pinned_nodes(visited);
 
   // Find the earliest Block any instruction can be placed in.  Some
   // instructions are pinned into Blocks.  Unpinned instructions can
   // appear in last block in which all their inputs occur.
   visited.clear();
-  Node_Stack stack(arena, (C->live_nodes() >> 2) + 16); // pre-grow
+  Node_Stack stack((C->live_nodes() >> 2) + 16); // pre-grow
   if (!schedule_early(visited, stack)) {
     // Bailout without retry
     C->record_method_not_compilable("early schedule failed");

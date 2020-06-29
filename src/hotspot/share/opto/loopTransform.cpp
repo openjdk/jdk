@@ -1463,9 +1463,8 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   outer_main_head->set_req(LoopNode::EntryControl, min_taken);
   set_idom(outer_main_head, min_taken, dd_main_head);
 
-  Arena *a = Thread::current()->resource_area();
-  VectorSet visited(a);
-  Node_Stack clones(a, main_head->back_control()->outcnt());
+  VectorSet visited;
+  Node_Stack clones(main_head->back_control()->outcnt());
   // Step B3: Make the fall-in values to the main-loop come from the
   // fall-out values of the pre-loop.
   for (DUIterator_Fast i2max, i2 = main_head->fast_outs(i2max); i2 < i2max; i2++) {
@@ -1751,9 +1750,8 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree *loop, Node_List &old_new,
   post_head->set_req(LoopNode::EntryControl, zer_taken);
   set_idom(post_head, zer_taken, dd_main_exit);
 
-  Arena *a = Thread::current()->resource_area();
-  VectorSet visited(a);
-  Node_Stack clones(a, main_head->back_control()->outcnt());
+  VectorSet visited;
+  Node_Stack clones(main_head->back_control()->outcnt());
   // Step A3: Make the fall-in values to the post-loop come from the
   // fall-out values of the main-loop.
   for (DUIterator_Fast imax, i = main_head->fast_outs(imax); i < imax; i++) {
@@ -1848,10 +1846,9 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   }
 
   if (C->do_vector_loop() && (PrintOpto && (VerifyLoopOptimizations || TraceLoopOpts))) {
-    Arena* arena = Thread::current()->resource_area();
-    Node_Stack stack(arena, C->live_nodes() >> 2);
+    Node_Stack stack(C->live_nodes() >> 2);
     Node_List rpo_list;
-    VectorSet visited(arena);
+    VectorSet visited;
     visited.set(loop_head->_idx);
     rpo(loop_head, stack, visited, rpo_list);
     dump(loop, rpo_list.size(), rpo_list);
@@ -3598,7 +3595,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   }
 
   // No make sure all the other nodes in the loop can be handled
-  VectorSet ok(Thread::current()->resource_area());
+  VectorSet ok;
 
   // store related values are ok
   ok.set(store->_idx);

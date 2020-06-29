@@ -455,9 +455,8 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
     // Check all control edges of 'dom'.
 
     ResourceMark rm;
-    Arena* arena = Thread::current()->resource_area();
-    Node_List nlist(arena);
-    Unique_Node_List dom_list(arena);
+    Node_List nlist;
+    Unique_Node_List dom_list;
 
     dom_list.push(dom);
     bool only_dominating_controls = false;
@@ -3242,7 +3241,7 @@ void MemBarNode::set_load_store_pair(MemBarNode* leading, MemBarNode* trailing) 
 MemBarNode* MemBarNode::trailing_membar() const {
   ResourceMark rm;
   Node* trailing = (Node*)this;
-  VectorSet seen(Thread::current()->resource_area());
+  VectorSet seen;
   Node_Stack multis(0);
   do {
     Node* c = trailing;
@@ -3286,7 +3285,7 @@ MemBarNode* MemBarNode::trailing_membar() const {
 
 MemBarNode* MemBarNode::leading_membar() const {
   ResourceMark rm;
-  VectorSet seen(Thread::current()->resource_area());
+  VectorSet seen;
   Node_Stack regions(0);
   Node* leading = in(0);
   while (leading != NULL && (!leading->is_MemBar() || !leading->as_MemBar()->leading())) {

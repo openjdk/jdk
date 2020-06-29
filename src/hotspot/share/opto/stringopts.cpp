@@ -584,8 +584,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
 
 PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
   Phase(StringOpts),
-  _gvn(gvn),
-  _visited(Thread::current()->resource_area()) {
+  _gvn(gvn) {
 
   assert(OptimizeStringConcat, "shouldn't be here");
 

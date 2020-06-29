@@ -404,7 +404,7 @@ void PhaseIdealLoop::Dominators() {
 
   // Tarjan's algorithm, almost verbatim:
   // Step 1:
-  VectorSet visited(Thread::current()->resource_area());
+  VectorSet visited;
   int dfsnum = NTarjan::DFS( ntarjan, visited, this, dfsorder);
 
   // Tarjan is using 1-based arrays, so these are some initialize flags

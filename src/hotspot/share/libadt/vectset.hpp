@@ -47,10 +47,12 @@ private:
   uint       _data_size;
   Arena*     _set_arena;
 
+  void init(Arena* arena);
   // Grow vector to required word capacity
   void grow(uint new_word_capacity);
 public:
-  VectorSet(Arena *arena);
+  VectorSet();
+  VectorSet(Arena* arena);
   ~VectorSet() {}
 
   void insert(uint elem);

@@ -2942,8 +2942,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
 
   _created_loop_node = false;
 
-  Arena *a = Thread::current()->resource_area();
-  VectorSet visited(a);
+  VectorSet visited;
   // Pre-grow the mapping from Nodes to IdealLoopTrees.
   _nodes.map(C->unique(), NULL);
   memset(_nodes.adr(), 0, wordSize * C->unique());
@@ -3044,7 +3043,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     // Given dominators, try to find inner loops with calls that must
     // always be executed (call dominates loop tail).  These loops do
     // not need a separate safepoint.
-    Node_List cisstack(a);
+    Node_List cisstack;
     _ltree_root->check_safepts(visited, cisstack);
   }
 
@@ -3055,10 +3054,10 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
 
   // Allocate stack with enough space to avoid frequent realloc
   int stack_size = (C->live_nodes() >> 1) + 16; // (live_nodes>>1)+16 from Java2D stats
-  Node_Stack nstack( a, stack_size );
+  Node_Stack nstack(stack_size);
 
   visited.clear();
-  Node_List worklist(a);
+  Node_List worklist;
   // Don't need C->root() on worklist since
   // it will be processed among C->top() inputs
   worklist.push(C->top());
@@ -3327,12 +3326,12 @@ static int fail;                // debug only, so its multi-thread dont care
 void PhaseIdealLoop::verify() const {
   int old_progress = C->major_progress();
   ResourceMark rm;
-  PhaseIdealLoop loop_verify( _igvn, this );
-  VectorSet visited(Thread::current()->resource_area());
+  PhaseIdealLoop loop_verify(_igvn, this);
+  VectorSet visited;
 
   fail = 0;
-  verify_compare( C->root(), &loop_verify, visited );
-  assert( fail == 0, "verify loops failed" );
+  verify_compare(C->root(), &loop_verify, visited);
+  assert(fail == 0, "verify loops failed");
   // Verify loop structure is the same
   _ltree_root->verify_tree(loop_verify._ltree_root, NULL);
   // Reset major-progress.  It was cleared by creating a verify version of
@@ -4681,10 +4680,9 @@ void PhaseIdealLoop::dump_bad_graph(const char* msg, Node* n, Node* early, Node*
 //------------------------------dump-------------------------------------------
 void PhaseIdealLoop::dump() const {
   ResourceMark rm;
-  Arena* arena = Thread::current()->resource_area();
-  Node_Stack stack(arena, C->live_nodes() >> 2);
+  Node_Stack stack(C->live_nodes() >> 2);
   Node_List rpo_list;
-  VectorSet visited(arena);
+  VectorSet visited;
   visited.set(C->top()->_idx);
   rpo(C->root(), stack, visited, rpo_list);
   // Dump root loop indexed by last element in PO order

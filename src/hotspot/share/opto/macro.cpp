@@ -533,8 +533,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
   Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
   Node *alloc_ctrl = alloc->in(TypeFunc::Control);
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
-  Arena *a = Thread::current()->resource_area();
-  VectorSet visited(a);
+  VectorSet visited;
 
   bool done = sfpt_mem == alloc_mem;
   Node *mem = sfpt_mem;
@@ -598,8 +597,8 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
       return n;
     } else if (mem->is_Phi()) {
       // attempt to produce a Phi reflecting the values on the input paths of the Phi
-      Node_Stack value_phis(a, 8);
-      Node * phi = value_from_mem_phi(mem, ft, ftype, adr_t, alloc, &value_phis, ValueSearchLimit);
+      Node_Stack value_phis(8);
+      Node* phi = value_from_mem_phi(mem, ft, ftype, adr_t, alloc, &value_phis, ValueSearchLimit);
       if (phi != NULL) {
         return phi;
       } else {

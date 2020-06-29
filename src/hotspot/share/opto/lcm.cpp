@@ -153,7 +153,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 
   // Search the successor block for a load or store who's base value is also
   // the tested value.  There may be several.
-  Node_List *out = new Node_List(Thread::current()->resource_area());
   MachNode *best = NULL;        // Best found so far
   for (DUIterator i = val->outs(); val->has_out(i); i++) {
     Node *m = val->out(i);
@@ -1231,7 +1230,7 @@ Node* PhaseCFG::catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *
   if( j == def_blk->_num_succs ) {
     // Block at same level in dom-tree is not a successor.  It needs a
     // PhiNode, the PhiNode uses from the def and IT's uses need fixup.
-    Node_Array inputs = new Node_List(Thread::current()->resource_area());
+    Node_Array inputs = new Node_List();
     for(uint k = 1; k < use_blk->num_preds(); k++) {
       Block* block = get_block_for_node(use_blk->pred(k));
       inputs.map(k, catch_cleanup_find_cloned_def(block, def, def_blk, n_clone_idx));
@@ -1342,7 +1341,7 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
     uint n_clone_idx = i2-beg+1; // Index of clone of n in each successor block
     Node *n = block->get_node(i2);        // Node that got cloned
     // Need DU safe iterator because of edge manipulation in calls.
-    Unique_Node_List *out = new Unique_Node_List(Thread::current()->resource_area());
+    Unique_Node_List* out = new Unique_Node_List();
     for (DUIterator_Fast j1max, j1 = n->fast_outs(j1max); j1 < j1max; j1++) {
       out->push(n->fast_out(j1));
     }

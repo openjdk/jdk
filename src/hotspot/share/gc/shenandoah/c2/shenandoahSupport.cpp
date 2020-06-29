@@ -279,7 +279,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
   GrowableArray<Node*> barriers;
   Unique_Node_List barriers_used;
   Node_Stack phis(0);
-  VectorSet visited(Thread::current()->resource_area());
+  VectorSet visited;
   const bool trace = false;
   const bool verify_no_useless_barrier = false;
 
@@ -766,7 +766,7 @@ Node* ShenandoahBarrierC2Support::no_branches(Node* c, Node* dom, bool allow_one
 
 Node* ShenandoahBarrierC2Support::dom_mem(Node* mem, Node* ctrl, int alias, Node*& mem_ctrl, PhaseIdealLoop* phase) {
   ResourceMark rm;
-  VectorSet wq(Thread::current()->resource_area());
+  VectorSet wq;
   wq.set(mem->_idx);
   mem_ctrl = phase->ctrl_or_self(mem);
   while (!phase->is_dominator(mem_ctrl, ctrl) || mem_ctrl == ctrl) {
@@ -1184,7 +1184,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       call->extract_projections(&projs, false, false);
 
 #ifdef ASSERT
-      VectorSet cloned(Thread::current()->resource_area());
+      VectorSet cloned;
 #endif
       Node* lrb_clone = lrb->clone();
       phase->register_new_node(lrb_clone, projs.catchall_catchproj);
@@ -1354,7 +1354,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
     Node* addr;
     if (ShenandoahSelfFixing) {
-      VectorSet visited(Thread::current()->resource_area());
+      VectorSet visited;
       addr = get_load_addr(phase, visited, lrb);
     } else {
       addr = phase->igvn().zerocon(T_OBJECT);
@@ -1818,7 +1818,7 @@ void ShenandoahBarrierC2Support::optimize_after_expansion(VectorSet &visited, No
   }
 
   if (!phase->C->major_progress()) {
-    VectorSet seen(Thread::current()->resource_area());
+    VectorSet seen;
     for (uint i = 0; i < heap_stable_tests.size(); i++) {
       Node* n = heap_stable_tests.at(i);
       IdealLoopTree* loop = phase->get_loop(n);
@@ -2090,7 +2090,7 @@ static bool has_never_branch(Node* root) {
 
 void MemoryGraphFixer::collect_memory_nodes() {
   Node_Stack stack(0);
-  VectorSet visited(Thread::current()->resource_area());
+  VectorSet visited;
   Node_List regions;
 
   // Walk the raw memory graph and create a mapping from CFG node to

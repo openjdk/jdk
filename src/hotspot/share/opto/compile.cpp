@@ -2684,8 +2684,7 @@ struct Final_Reshape_Counts : public StackObj {
 
   Final_Reshape_Counts() :
     _call_count(0), _float_count(0), _double_count(0),
-    _java_call_count(0), _inner_loop_count(0),
-    _visited( Thread::current()->resource_area() ) { }
+    _java_call_count(0), _inner_loop_count(0) { }
 
   void inc_call_count  () { _call_count  ++; }
   void inc_float_count () { _float_count ++; }
@@ -3505,8 +3504,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 // Replacing Opaque nodes with their input in final_graph_reshaping_impl(),
 // requires that the walk visits a node's inputs before visiting the node.
 void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc ) {
-  ResourceArea *area = Thread::current()->resource_area();
-  Unique_Node_List sfpt(area);
+  Unique_Node_List sfpt;
 
   frc._visited.set(root->_idx); // first, mark node as visited
   uint cnt = root->req();
@@ -3868,14 +3866,13 @@ bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_
 // between Use-Def edges and Def-Use edges in the graph.
 void Compile::verify_graph_edges(bool no_dead_code) {
   if (VerifyGraphEdges) {
-    ResourceArea *area = Thread::current()->resource_area();
-    Unique_Node_List visited(area);
+    Unique_Node_List visited;
     // Call recursive graph walk to check edges
     _root->verify_edges(visited);
     if (no_dead_code) {
       // Now make sure that no visited node is used by an unvisited node.
       bool dead_nodes = false;
-      Unique_Node_List checked(area);
+      Unique_Node_List checked;
       while (visited.size() > 0) {
         Node* n = visited.pop();
         checked.push(n);

@@ -403,11 +403,10 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
 // The RootNode both starts and ends it's own block.  Do this with a recursive
 // backwards walk over the control edges.
 uint PhaseCFG::build_cfg() {
-  Arena *a = Thread::current()->resource_area();
-  VectorSet visited(a);
+  VectorSet visited;
 
   // Allocate stack with enough space to avoid frequent realloc
-  Node_Stack nstack(a, C->live_nodes() >> 1);
+  Node_Stack nstack(C->live_nodes() >> 1);
   nstack.push(_root, 0);
   uint sum = 0;                 // Counter for blocks
 
