@@ -316,6 +316,7 @@ public class WinMsiBundler  extends AbstractBundler {
                     .launchersDirectory()
                     .resolve(APP_NAME.fetchFrom(params) + ".exe");
         }
+        installerIcon = installerIcon.toAbsolutePath();
 
         params.put(WIN_APP_IMAGE.getID(), appDir);
 
