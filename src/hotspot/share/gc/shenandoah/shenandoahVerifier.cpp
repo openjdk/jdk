@@ -690,7 +690,10 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
   }
 
   OrderAccess::fence();
-  _heap->make_parsable(false);
+
+  if (UseTLAB) {
+    _heap->labs_make_parsable();
+  }
 
   // Allocate temporary bitmap for storing marking wavefront:
   _verification_bit_map->clear();

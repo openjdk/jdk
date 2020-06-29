@@ -60,11 +60,10 @@ class outputStream;
                                                                                        \
   f(init_mark_gross,                                "Pause Init Mark (G)")             \
   f(init_mark,                                      "Pause Init Mark (N)")             \
-  f(make_parsable,                                  "  Make Parsable")                 \
+  f(init_manage_tlabs,                              "  Manage TLABs")                  \
   f(init_update_region_states,                      "  Update Region States")          \
   f(scan_roots,                                     "  Scan Roots")                    \
   SHENANDOAH_PAR_PHASE_DO(scan_,                    "    S: ", f)                      \
-  f(resize_tlabs,                                   "  Resize TLABs")                  \
                                                                                        \
   f(conc_mark,                                      "Concurrent Marking")              \
   f(conc_mark_roots,                                "  Roots ")                        \
@@ -86,7 +85,7 @@ class outputStream;
   SHENANDOAH_PAR_PHASE_DO(purge_weak_par_,          "      WR: ", f)                   \
   f(purge_cldg,                                     "    CLDG")                        \
   f(final_update_region_states,                     "  Update Region States")          \
-  f(retire_tlabs,                                   "  Retire TLABs")                  \
+  f(final_manage_labs,                              "  Manage GC/TLABs")               \
   f(choose_cset,                                    "  Choose Collection Set")         \
   f(final_rebuild_freeset,                          "  Rebuild Free Set")              \
   f(init_evac,                                      "  Initial Evacuation")            \
@@ -113,7 +112,7 @@ class outputStream;
                                                                                        \
   f(init_update_refs_gross,                         "Pause Init  Update Refs (G)")     \
   f(init_update_refs,                               "Pause Init  Update Refs (N)")     \
-  f(init_update_refs_retire_gclabs,                 "  Retire GCLABs")                 \
+  f(init_update_refs_manage_gclabs,                 "  Manage GCLABs")                 \
                                                                                        \
   f(conc_update_refs,                               "Concurrent Update Refs")          \
                                                                                        \
@@ -166,7 +165,6 @@ class outputStream;
   f(full_gc_copy_objects_humong,                    "    Humongous Objects")           \
   f(full_gc_copy_objects_reset_complete,            "    Reset Complete Bitmap")       \
   f(full_gc_copy_objects_rebuild,                   "    Rebuild Region Sets")         \
-  f(full_gc_resize_tlabs,                           "  Resize TLABs")                  \
   f(full_gc_heapdump_post,                          "  Post Heap Dump")                \
                                                                                        \
   f(conc_uncommit,                                  "Concurrent Uncommit")             \
