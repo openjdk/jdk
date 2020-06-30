@@ -1204,7 +1204,7 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-      new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, true);
+      new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
@@ -1213,8 +1213,8 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
   } else {
     // get owned monitors info with handshake
     GetOwnedMonitorInfoClosure op(calling_thread, this, owned_monitors_list);
-    Handshake::execute_direct(&op, java_thread);
-    err = op.result();
+    bool executed = Handshake::execute_direct(&op, java_thread);
+    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
   jint owned_monitor_count = owned_monitors_list->length();
   if (err == JVMTI_ERROR_NONE) {
@@ -1249,7 +1249,7 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-         new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, true);
+         new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
@@ -1258,8 +1258,8 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
   } else {
     // get owned monitors info with handshake
     GetOwnedMonitorInfoClosure op(calling_thread, this, owned_monitors_list);
-    Handshake::execute_direct(&op, java_thread);
-    err = op.result();
+    bool executed = Handshake::execute_direct(&op, java_thread);
+    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
 
   jint owned_monitor_count = owned_monitors_list->length();
@@ -1302,8 +1302,8 @@ JvmtiEnv::GetCurrentContendedMonitor(JavaThread* java_thread, jobject* monitor_p
   } else {
     // get contended monitor information with handshake
     GetCurrentContendedMonitorClosure op(calling_thread, this, monitor_ptr);
-    Handshake::execute_direct(&op, java_thread);
-    err = op.result();
+    bool executed = Handshake::execute_direct(&op, java_thread);
+    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
   return err;
 } /* end GetCurrentContendedMonitor */
@@ -2839,15 +2839,11 @@ JvmtiEnv::GetObjectHashCode(jobject object, jint* hash_code_ptr) {
 // info_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::GetObjectMonitorUsage(jobject object, jvmtiMonitorUsage* info_ptr) {
-  JavaThread* calling_thread = JavaThread::current();
-  jvmtiError err = get_object_monitor_usage(calling_thread, object, info_ptr);
-  if (err == JVMTI_ERROR_THREAD_NOT_SUSPENDED) {
-    // Some of the critical threads were not suspended. go to a safepoint and try again
-    VM_GetObjectMonitorUsage op(this, calling_thread, object, info_ptr);
-    VMThread::execute(&op);
-    err = op.result();
-  }
-  return err;
+  // This needs to be performed at a safepoint to gather stable data
+  // because monitor owner / waiters might not be suspended.
+  VM_GetObjectMonitorUsage op(this, JavaThread::current(), object, info_ptr);
+  VMThread::execute(&op);
+  return op.result();
 } /* end GetObjectMonitorUsage */
 
 

@@ -130,7 +130,7 @@ class Method : public Metadata {
   // CDS and vtbl checking can create an empty Method to get vtbl pointer.
   Method(){}
 
-  bool is_method() const volatile { return true; }
+  virtual bool is_method() const { return true; }
 
   void restore_unshareable_info(TRAPS);
 

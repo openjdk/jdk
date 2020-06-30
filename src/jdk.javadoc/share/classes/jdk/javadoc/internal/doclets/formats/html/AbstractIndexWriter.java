@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -105,8 +106,12 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         addHeading(uc, contentTree);
 
         HtmlTree dl = HtmlTree.DL(HtmlStyle.index);
+        Map<String,Integer> duplicateLabelCheck = new HashMap<>();
+        memberlist.forEach(e -> duplicateLabelCheck.compute(e.getFullyQualifiedLabel(utils),
+                (k, v) -> v == null ? 1 : v + 1));
         for (IndexItem indexItem : memberlist) {
-            addDescription(indexItem, dl);
+            addDescription(indexItem, dl,
+                    duplicateLabelCheck.get(indexItem.getFullyQualifiedLabel(utils)) > 1);
         }
         contentTree.add(dl);
     }
@@ -120,14 +125,14 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         contentTree.add(heading);
     }
 
-    protected void addDescription(IndexItem indexItem, Content dl) {
+    protected void addDescription(IndexItem indexItem, Content dl, boolean addModuleInfo) {
         SearchIndexItem si = indexItem.getSearchTag();
         if (si != null) {
             addDescription(si, dl);
         } else {
             si = new SearchIndexItem();
             si.setLabel(indexItem.getLabel());
-            addElementDescription(indexItem, dl, si);
+            addElementDescription(indexItem, dl, si, addModuleInfo);
             searchItems.add(si);
         }
     }
@@ -138,8 +143,10 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param indexItem the element to be documented
      * @param dlTree the content tree to which the description will be added
      * @param si the search index item
+     * @param addModuleInfo whether to include module information
      */
-    protected void addElementDescription(IndexItem indexItem, Content dlTree, SearchIndexItem si) {
+    protected void addElementDescription(IndexItem indexItem, Content dlTree, SearchIndexItem si,
+                                         boolean addModuleInfo) {
         Content dt;
         Element element = indexItem.getElement();
         String label = indexItem.getLabel();
@@ -159,11 +166,15 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                 break;
             case CLASS:
             case ENUM:
+            case RECORD:
             case ANNOTATION_TYPE:
             case INTERFACE:
                 dt = HtmlTree.DT(getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.INDEX, (TypeElement)element).strong(true)));
                 si.setContainingPackage(utils.getPackageName(utils.containingPackage(element)));
+                if (configuration.showModules && addModuleInfo) {
+                    si.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
+                }
                 si.setCategory(Category.TYPES);
                 dt.add(" - ");
                 addClassInfo((TypeElement)element, dt);
@@ -174,6 +185,9 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                         getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element, new StringContent(label))));
                 si.setContainingPackage(utils.getPackageName(utils.containingPackage(element)));
                 si.setContainingClass(utils.getSimpleName(containingType));
+                if (configuration.showModules && addModuleInfo) {
+                    si.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
+                }
                 if (utils.isExecutableElement(element)) {
                     String url = HtmlTree.encodeURL(links.getName(getAnchor((ExecutableElement)element)));
                     if (!label.equals(url)) {

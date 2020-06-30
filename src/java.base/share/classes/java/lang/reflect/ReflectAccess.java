@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,10 @@ class ReflectAccess implements jdk.internal.access.JavaLangReflectAccess {
     @SuppressWarnings("unchecked")
     public <T extends AccessibleObject> T getRoot(T obj) {
         return (T) obj.getRoot();
+    }
+
+    public boolean isTrustedFinalField(Field f) {
+        return f.isTrustedFinal();
     }
 
     public <T> T newInstance(Constructor<T> ctor, Object[] args, Class<?> caller)

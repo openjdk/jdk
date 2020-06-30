@@ -250,7 +250,7 @@ JVMFlagConstraint::ConstraintType JVMFlagConstraintList::_validating_type = JVMF
 
 // Check the ranges of all flags that have them or print them out and exit if requested
 void JVMFlagConstraintList::init(void) {
-  _constraints = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JVMFlagConstraint*>(INITIAL_CONSTRAINTS_SIZE, true);
+  _constraints = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JVMFlagConstraint*>(INITIAL_CONSTRAINTS_SIZE, mtArguments);
 
   EMIT_CONSTRAINT_START
 

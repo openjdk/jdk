@@ -126,7 +126,9 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   static PSGCAdaptivePolicyCounters* gc_policy_counters() { return _gc_policy_counters; }
 
-  static ParallelScavengeHeap* heap();
+  static ParallelScavengeHeap* heap() {
+    return named_heap<ParallelScavengeHeap>(CollectedHeap::Parallel);
+  }
 
   CardTableBarrierSet* barrier_set();
   PSCardTable* card_table();

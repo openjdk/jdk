@@ -429,6 +429,8 @@ public class Resources extends java.util.ListResourceBundle {
 
         {"warning.not.verified.make.sure.keystore.is.correct",
             "WARNING: not verified. Make sure -keystore is correct."},
+        {"warning.not.verified.make.sure.keystore.is.correct.or.specify.trustcacerts",
+            "WARNING: not verified. Make sure -keystore is correct or specify -trustcacerts."},
 
         {"Extensions.", "Extensions: "},
         {".Empty.value.", "(Empty value)"},

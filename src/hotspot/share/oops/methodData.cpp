@@ -245,7 +245,7 @@ private:
   ArgumentOffsetComputer(Symbol* signature, int max)
     : SignatureIterator(signature),
       _max(max), _offset(0),
-      _offsets(Thread::current(), max) {
+      _offsets(max) {
     do_parameters_on(this);  // non-virtual template execution
   }
 

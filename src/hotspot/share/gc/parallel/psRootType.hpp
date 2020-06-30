@@ -35,10 +35,8 @@ public:
   // We do not want any holes in the enum as we enumerate these values by incrementing them.
   enum Value {
     universe,
-    jni_handles,
     object_synchronizer,
     management,
-    vm_global,
     class_loader_data,
     jvmti,
     code_cache,

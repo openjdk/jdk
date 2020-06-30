@@ -64,7 +64,6 @@ class VMOperationQueue : public CHeapObj<mtInternal> {
   bool queue_empty                (int prio);
   void queue_add                  (int prio, VM_Operation *op);
   VM_Operation* queue_remove_front(int prio);
-  VM_Operation* queue_drain(int prio);
   // lock-free query: may return the wrong answer but must not break
   bool queue_peek(int prio) { return _queue_length[prio] > 0; }
 
@@ -74,7 +73,6 @@ class VMOperationQueue : public CHeapObj<mtInternal> {
   // Highlevel operations. Encapsulates policy
   void add(VM_Operation *op);
   VM_Operation* remove_next();                        // Returns next or null
-  VM_Operation* drain_at_safepoint_priority() { return queue_drain(SafepointPriority); }
   bool peek_at_safepoint_priority() { return queue_peek(SafepointPriority); }
 };
 
@@ -113,7 +111,6 @@ class VMThread: public NamedThread {
   static bool _terminated;
   static Monitor * _terminate_lock;
   static PerfCounter* _perf_accumulated_vm_operation_time;
-  static uint64_t _coalesced_count;
 
   static VMOperationTimeoutTask* _timeout_task;
 
@@ -148,7 +145,6 @@ class VMThread: public NamedThread {
   // Returns the current vm operation if any.
   static VM_Operation* vm_operation()             { return _cur_vm_operation; }
   static VM_Operation::VMOp_Type vm_op_type()     { return _cur_vm_operation->type(); }
-  static uint64_t get_coalesced_count()           { return _coalesced_count; }
 
   // Returns the single instance of VMThread.
   static VMThread* vm_thread()                    { return _vm_thread; }

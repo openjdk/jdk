@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 package gc.whitebox;
 
 /*
- * @test TestWBGC
+ * @test
  * @bug 8055098
- * @summary Test verify that WB methods isObjectInOldGen and youngGC works correctly.
+ * @summary Test to verify that WB methods isObjectInOldGen and youngGC work correctly.
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

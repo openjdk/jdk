@@ -548,6 +548,9 @@ public class TypeAnnotations {
          */
         private Type rewriteArrayType(ArrayType type, List<TypeCompound> annotations, TypeAnnotationPosition pos) {
             ArrayType tomodify = new ArrayType(type);
+            if (type.isVarargs()) {
+                tomodify = tomodify.makeVarargs();
+            }
             ArrayType res = tomodify;
 
             List<TypePathEntry> loc = List.nil();

@@ -1025,7 +1025,7 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
   nmethodLocker locker;
   nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror, locker);
-  if (nm == NULL) {
+  if (nm == NULL || !nm->is_in_use()) {
     JVMCI_THROW_NULL(InvalidInstalledCodeException);
   }
   methodHandle mh(THREAD, nm->method());
@@ -1034,7 +1034,7 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
 
   JavaArgumentUnboxer jap(signature, &jca, (arrayOop) JNIHandles::resolve(args), mh->is_static());
   JavaValue result(jap.return_type());
-  jca.set_alternative_target(nm);
+  jca.set_alternative_target(Handle(THREAD, JNIHandles::resolve(nmethod_mirror.as_jobject())));
   JavaCalls::call(&result, mh, &jca, CHECK_NULL);
 
   if (jap.return_type() == T_VOID) {
@@ -1765,6 +1765,18 @@ C2V_VMENTRY(void, ensureInitialized, (JNIEnv* env, jobject, jobject jvmci_type))
   if (klass != NULL && klass->should_be_initialized()) {
     InstanceKlass* k = InstanceKlass::cast(klass);
     k->initialize(CHECK);
+  }
+C2V_END
+
+C2V_VMENTRY(void, ensureLinked, (JNIEnv* env, jobject, jobject jvmci_type))
+  if (jvmci_type == NULL) {
+    JVMCI_THROW(NullPointerException);
+  }
+
+  Klass* klass = JVMCIENV->asKlass(jvmci_type);
+  if (klass != NULL && klass->is_instance_klass()) {
+    InstanceKlass* k = InstanceKlass::cast(klass);
+    k->link_class(CHECK);
   }
 C2V_END
 
@@ -2775,6 +2787,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getInterfaces",                                CC "(" HS_RESOLVED_KLASS ")[" HS_RESOLVED_KLASS,                                      FN_PTR(getInterfaces)},
   {CC "getComponentType",                             CC "(" HS_RESOLVED_KLASS ")" HS_RESOLVED_TYPE,                                        FN_PTR(getComponentType)},
   {CC "ensureInitialized",                            CC "(" HS_RESOLVED_KLASS ")V",                                                        FN_PTR(ensureInitialized)},
+  {CC "ensureLinked",                                 CC "(" HS_RESOLVED_KLASS ")V",                                                        FN_PTR(ensureLinked)},
   {CC "getIdentityHashCode",                          CC "(" OBJECTCONSTANT ")I",                                                           FN_PTR(getIdentityHashCode)},
   {CC "isInternedString",                             CC "(" OBJECTCONSTANT ")Z",                                                           FN_PTR(isInternedString)},
   {CC "unboxPrimitive",                               CC "(" OBJECTCONSTANT ")" OBJECT,                                                     FN_PTR(unboxPrimitive)},

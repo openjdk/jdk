@@ -46,7 +46,6 @@
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -71,17 +70,14 @@
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #include "symbolengine.hpp"
 #include "windbghelp.hpp"
 
-
 #ifdef _DEBUG
 #include <crtdbg.h>
 #endif
-
 
 #include <windows.h>
 #include <sys/types.h>

@@ -51,7 +51,7 @@ CompactHashtableWriter::CompactHashtableWriter(int num_entries,
   _num_entries_written = 0;
   _buckets = NEW_C_HEAP_ARRAY(GrowableArray<Entry>*, _num_buckets, mtSymbol);
   for (int i=0; i<_num_buckets; i++) {
-    _buckets[i] = new (ResourceObj::C_HEAP, mtSymbol) GrowableArray<Entry>(0, true, mtSymbol);
+    _buckets[i] = new (ResourceObj::C_HEAP, mtSymbol) GrowableArray<Entry>(0, mtSymbol);
   }
 
   _stats = stats;

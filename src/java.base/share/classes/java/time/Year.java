@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,8 @@ public final class Year
      * Parser.
      */
     private static final DateTimeFormatter PARSER = new DateTimeFormatterBuilder()
-        .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+        .parseLenient()
+        .appendValue(YEAR, 1, 10, SignStyle.NORMAL)
         .toFormatter();
 
     /**
@@ -268,7 +269,6 @@ public final class Year
      * Obtains an instance of {@code Year} from a text string such as {@code 2007}.
      * <p>
      * The string must represent a valid year.
-     * Years outside the range 0000 to 9999 must be prefixed by the plus or minus symbol.
      *
      * @param text  the text to parse such as "2007", not null
      * @return the parsed year, not null

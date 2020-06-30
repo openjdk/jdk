@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 // This file contains the platform-independent parts
 // of the template interpreter and the template interpreter generator.
 
-#ifndef CC_INTERP
+#ifndef ZERO
 
 class InterpreterMacroAssembler;
 class InterpreterCodelet;
@@ -195,6 +195,6 @@ class TemplateInterpreter: public AbstractInterpreter {
   static int InterpreterCodeSize;
 };
 
-#endif // !CC_INTERP
+#endif // !ZERO
 
 #endif // SHARE_INTERPRETER_TEMPLATEINTERPRETER_HPP

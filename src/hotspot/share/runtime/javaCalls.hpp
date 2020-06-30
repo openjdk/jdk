@@ -88,7 +88,10 @@ class JavaCallArguments : public StackObj {
   int         _size;
   int         _max_size;
   bool        _start_at_zero;      // Support late setting of receiver
-  JVMCI_ONLY(nmethod*    _alternative_target;) // Nmethod that should be called instead of normal target
+#if INCLUDE_JVMCI
+  Handle      _alternative_target; // HotSpotNmethod wrapping an nmethod whose verified entry point
+                                   // should be called instead of the normal target
+#endif
 
   void initialize() {
     // Starts at first element to support set_receiver.
@@ -98,7 +101,6 @@ class JavaCallArguments : public StackObj {
     _max_size = _default_size;
     _size = 0;
     _start_at_zero = false;
-    JVMCI_ONLY(_alternative_target = NULL;)
   }
 
   // Helper for push_oop and the like.  The value argument is a
@@ -138,18 +140,17 @@ class JavaCallArguments : public StackObj {
       _max_size = max_size;
       _size = 0;
       _start_at_zero = false;
-      JVMCI_ONLY(_alternative_target = NULL;)
     } else {
       initialize();
     }
   }
 
 #if INCLUDE_JVMCI
-  void set_alternative_target(nmethod* target) {
+  void set_alternative_target(Handle target) {
     _alternative_target = target;
   }
 
-  nmethod* alternative_target() {
+  Handle alternative_target() {
     return _alternative_target;
   }
 #endif

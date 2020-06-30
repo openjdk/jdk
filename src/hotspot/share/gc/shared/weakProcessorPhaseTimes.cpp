@@ -91,7 +91,7 @@ WeakProcessorPhaseTimes::WeakProcessorPhaseTimes(uint max_threads) :
   for ( ; !it.is_end(); ++it) {
     assert(size_t(wpt - _worker_data) < ARRAY_SIZE(_worker_data), "invariant");
     const char* description = it->name();
-    *wpt = new WorkerDataArray<double>(description, _max_threads);
+    *wpt = new WorkerDataArray<double>(NULL, description, _max_threads);
     (*wpt)->create_thread_work_items("Dead", DeadItems);
     (*wpt)->create_thread_work_items("Total", TotalItems);
     wpt++;

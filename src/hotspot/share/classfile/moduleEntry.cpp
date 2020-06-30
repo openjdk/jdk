@@ -29,6 +29,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "logging/log.hpp"
+#include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -55,6 +56,9 @@ void ModuleEntry::set_location(Symbol* location) {
 
   if (location != NULL) {
     location->increment_refcount();
+    CDS_ONLY(if (UseSharedSpaces) {
+        _shared_path_index = FileMapInfo::get_module_shared_path_index(location);
+      });
   }
 }
 
@@ -161,7 +165,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   } else {
     if (_reads == NULL) {
       // Lazily create a module's reads list
-      _reads = new (ResourceObj::C_HEAP, mtModule)GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, true);
+      _reads = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
     }
 
     // Determine, based on this newly established read edge to module m,

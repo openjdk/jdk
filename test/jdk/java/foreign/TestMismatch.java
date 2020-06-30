@@ -117,12 +117,28 @@ public class TestMismatch {
             assertEquals(s1.mismatch(s2), -1);
             assertEquals(s2.mismatch(s1), -1);
 
-            for (long i = s2.byteSize() -1 ; i >= Integer.MAX_VALUE - 10L; i--) {
-                BYTE_HANDLE.set(s2.baseAddress().addOffset(i), (byte) 0xFF);
-                long expectedMismatchOffset = i;
-                assertEquals(s1.mismatch(s2), expectedMismatchOffset);
-                assertEquals(s2.mismatch(s1), expectedMismatchOffset);
-            }
+            testLargeAcrossMaxBoundary(s1, s2);
+
+            testLargeMismatchAcrossMaxBoundary(s1, s2);
+        }
+    }
+
+    private void testLargeAcrossMaxBoundary(MemorySegment s1, MemorySegment s2) {
+        for (long i = s2.byteSize() -1 ; i >= Integer.MAX_VALUE - 10L; i--) {
+            var s3 = s1.asSlice(0, i);
+            var s4 = s2.asSlice(0, i);
+            assertEquals(s3.mismatch(s3), -1);
+            assertEquals(s3.mismatch(s4), -1);
+            assertEquals(s4.mismatch(s3), -1);
+        }
+    }
+
+    private void testLargeMismatchAcrossMaxBoundary(MemorySegment s1, MemorySegment s2) {
+        for (long i = s2.byteSize() -1 ; i >= Integer.MAX_VALUE - 10L; i--) {
+            BYTE_HANDLE.set(s2.baseAddress().addOffset(i), (byte) 0xFF);
+            long expectedMismatchOffset = i;
+            assertEquals(s1.mismatch(s2), expectedMismatchOffset);
+            assertEquals(s2.mismatch(s1), expectedMismatchOffset);
         }
     }
 

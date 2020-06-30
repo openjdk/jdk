@@ -62,17 +62,10 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 [
   # Setup basic LDFLAGS
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    # If this is a --hash-style=gnu system, use --hash-style=both, why?
-    # We have previously set HAS_GNU_HASH if this is the case
-    if test -n "$HAS_GNU_HASH"; then
-      BASIC_LDFLAGS="-Wl,--hash-style=both"
-      LIBJSIG_HASHSTYLE_LDFLAGS="-Wl,--hash-style=both"
-    fi
-
     # Add -z,defs, to forbid undefined symbols in object files.
     # add -z,relro (mark relocations read only) for all libs
     # add -z,now ("full relro" - more of the Global Offset Table GOT is marked read only)
-    BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-z,defs -Wl,-z,relro -Wl,-z,now"
+    BASIC_LDFLAGS="-Wl,--hash-style=gnu -Wl,-z,defs -Wl,-z,relro -Wl,-z,now"
     # Linux : remove unused code+data in link step
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       if test "x$OPENJDK_TARGET_CPU" = xs390x; then
@@ -152,8 +145,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   # Export some intermediate variables for compatibility
   LDFLAGS_CXX_JDK="$BASIC_LDFLAGS_ONLYCXX $BASIC_LDFLAGS_ONLYCXX_JDK_ONLY $DEBUGLEVEL_LDFLAGS_JDK_ONLY"
   AC_SUBST(LDFLAGS_CXX_JDK)
-  AC_SUBST(LIBJSIG_HASHSTYLE_LDFLAGS)
-  AC_SUBST(LIBJSIG_NOEXECSTACK_LDFLAGS)
 ])
 
 ################################################################################

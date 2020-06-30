@@ -13845,7 +13845,7 @@ instruct MoveL2D_reg_reg(vRegD dst, iRegL src) %{
 instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlagsReg cr)
 %{
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base);
+  effect(USE_KILL cnt, USE_KILL base, KILL cr);
 
   ins_cost(4 * INSN_COST);
   format %{ "ClearArray $cnt, $base" %}

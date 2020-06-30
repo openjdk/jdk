@@ -29,6 +29,7 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
+#include "memory/universe.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
@@ -176,6 +177,20 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     Z,
     Shenandoah
   };
+
+ protected:
+  // Get a pointer to the derived heap object.  Used to implement
+  // derived class heap() functions rather than being called directly.
+  template<typename T>
+  static T* named_heap(Name kind) {
+    CollectedHeap* heap = Universe::heap();
+    assert(heap != NULL, "Uninitialized heap");
+    assert(kind == heap->kind(), "Heap kind %u should be %u",
+           static_cast<uint>(heap->kind()), static_cast<uint>(kind));
+    return static_cast<T*>(heap);
+  }
+
+ public:
 
   static inline size_t filler_array_max_size() {
     return _filler_array_max_size;

@@ -30,7 +30,7 @@ package pkg1;
 /**
  * Arithmetic operations.
  */
-public abstract enum Operation {
+public enum Operation {
     /** Addition */
     plus {
         /** Add 'em up. */

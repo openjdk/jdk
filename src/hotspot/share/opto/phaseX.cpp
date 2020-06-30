@@ -401,8 +401,7 @@ void NodeHash::operator=(const NodeHash& nh) {
 //=============================================================================
 //------------------------------PhaseRemoveUseless-----------------------------
 // 1) Use a breadthfirst walk to collect useful nodes reachable from root.
-PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN *gvn, Unique_Node_List *worklist, PhaseNumber phase_num) : Phase(phase_num),
-  _useful(Thread::current()->resource_area()) {
+PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist, PhaseNumber phase_num) : Phase(phase_num) {
 
   // Implementation requires 'UseLoopSafepoints == true' and an edge from root
   // to each SafePointNode at a backward branch.  Inserted in add_safepoint().
@@ -456,7 +455,6 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
   PhaseRemoveUseless(gvn, worklist, Remove_Useless_And_Renumber_Live),
   _new_type_array(C->comp_arena()),
   _old2new_map(C->unique(), C->unique(), -1),
-  _delayed(Thread::current()->resource_area()),
   _is_pass_finished(false),
   _live_node_count(C->live_nodes())
 {
@@ -662,9 +660,9 @@ void PhaseTransform::dump_types( ) const {
 }
 
 //------------------------------dump_nodes_and_types---------------------------
-void PhaseTransform::dump_nodes_and_types(const Node *root, uint depth, bool only_ctrl) {
-  VectorSet visited(Thread::current()->resource_area());
-  dump_nodes_and_types_recur( root, depth, only_ctrl, visited );
+void PhaseTransform::dump_nodes_and_types(const Node* root, uint depth, bool only_ctrl) {
+  VectorSet visited;
+  dump_nodes_and_types_recur(root, depth, only_ctrl, visited);
 }
 
 //------------------------------dump_nodes_and_types_recur---------------------
@@ -1005,24 +1003,22 @@ void PhaseIterGVN::verify_step(Node* n) {
   if (VerifyIterativeGVN) {
     _verify_window[_verify_counter % _verify_window_size] = n;
     ++_verify_counter;
-    ResourceMark rm;
-    ResourceArea* area = Thread::current()->resource_area();
-    VectorSet old_space(area), new_space(area);
-    if (C->unique() < 1000 ||
-        0 == _verify_counter % (C->unique() < 10000 ? 10 : 100)) {
+    if (C->unique() < 1000 || 0 == _verify_counter % (C->unique() < 10000 ? 10 : 100)) {
       ++_verify_full_passes;
-      Node::verify_recur(C->root(), -1, old_space, new_space);
+      Node::verify(C->root(), -1);
     }
-    const int verify_depth = 4;
-    for ( int i = 0; i < _verify_window_size; i++ ) {
+    for (int i = 0; i < _verify_window_size; i++) {
       Node* n = _verify_window[i];
-      if ( n == NULL )  continue;
-      if( n->in(0) == NodeSentinel ) {  // xform_idom
+      if (n == NULL) {
+        continue;
+      }
+      if (n->in(0) == NodeSentinel) { // xform_idom
         _verify_window[i] = n->in(1);
-        --i; continue;
+        --i;
+        continue;
       }
       // Typical fanout is 1-2, so this call visits about 6 nodes.
-      Node::verify_recur(n, verify_depth, old_space, new_space);
+      Node::verify(n, 4);
     }
   }
 }

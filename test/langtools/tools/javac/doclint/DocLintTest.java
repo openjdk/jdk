@@ -135,7 +135,7 @@ public class DocLintTest {
                     Main.Result.OK,
                     EnumSet.of(Message.DL_WRN12));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:syntax"),
+            test(Arrays.asList(rawDiags, "-Xdoclint:syntax,missing"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.DL_ERR6, Message.DL_WRN12));
 

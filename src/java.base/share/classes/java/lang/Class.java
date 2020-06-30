@@ -4393,9 +4393,11 @@ public final class Class<T> implements java.io.Serializable,
      *           features of the Java language.}
      *
      * Returns an array containing {@code ClassDesc} objects representing all the
-     * direct subclasses or direct implementation classes permitted to extend or implement this class or interface
-     * if it is sealed. If this {@code Class} object represents a primitive type, {@code void}, an array type,
-     * or a class or interface that is not sealed, an empty array is returned.
+     * direct subclasses or direct implementation classes permitted to extend or
+     * implement this class or interface if it is sealed. The order of such elements
+     * is unspecified. If this {@code Class} object represents a primitive type,
+     * {@code void}, an array type, or a class or interface that is not sealed,
+     * an empty array is returned.
      *
      * @return an array of class descriptors of all the permitted subclasses of this class or interface
      *

@@ -95,7 +95,7 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   assert(ParallelScavengeHeap::heap()->workers().total_workers() != 0,
     "Not initialized?");
 
-  _shadow_region_array = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<size_t >(10, true);
+  _shadow_region_array = new (ResourceObj::C_HEAP, mtGC) GrowableArray<size_t >(10, mtGC);
 
   _shadow_region_monitor = new Monitor(Mutex::barrier, "CompactionManager monitor",
                                        Mutex::_allow_vm_block_flag, Monitor::_safepoint_check_never);

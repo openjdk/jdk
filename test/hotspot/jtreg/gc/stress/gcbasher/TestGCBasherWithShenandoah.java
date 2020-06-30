@@ -84,6 +84,15 @@ import java.io.IOException;
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
  *      gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
+ */
+
+/*
+ * @test TestGCBasherDeoptWithShenandoah
+ * @key stress
+ * @library /
+ * @requires vm.gc.Shenandoah
+ * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled & vm.opt.ClassUnloading != false
+ * @summary Stress Shenandoah GC with nmethod barrier forced deoptimization enabled.
  *
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
@@ -196,6 +205,15 @@ import java.io.IOException;
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
  *      -XX:+DeoptimizeNMethodBarriersALot -XX:-Inline
  *      gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
+ */
+
+/*
+ * @test TestGCBasherDeoptWithShenandoah
+ * @key stress
+ * @library /
+ * @requires vm.gc.Shenandoah
+ * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled & vm.opt.ClassUnloading != false
+ * @summary Stress Shenandoah GC with nmethod barrier forced deoptimization enabled.
  *
  * @run main/othervm/timeout=200 -Xlog:gc*=info,nmethod+barrier=trace -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact

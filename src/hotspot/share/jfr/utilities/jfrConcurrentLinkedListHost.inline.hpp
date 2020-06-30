@@ -63,8 +63,8 @@ Node* find_adjacent(Node* head, const Node* tail, Node** predecessor, VersionHan
   assert(head != NULL, "invariant");
   assert(tail != NULL, "invariant");
   assert(head != tail, "invariant");
+  Node* predecessor_next = NULL;
   while (true) {
-    Node* predecessor_next;
     Node* current = head;
     version_handle.checkout();
     assert(version_handle.is_tracked(), "invariant");

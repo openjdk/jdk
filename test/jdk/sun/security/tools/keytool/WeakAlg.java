@@ -259,8 +259,8 @@ public class WeakAlg {
                 .shouldContain("JKS keystore uses a proprietary format");
         kt("-exportcert -alias a -file a.crt")
                 .shouldContain("JKS keystore uses a proprietary format");
-        kt("-printcert -file a.crt") // no warning if keystore not touched
-                .shouldNotContain("Warning:");
+        kt("-printcert -file a.crt") // warning since -keystore option is supported
+                .shouldContain("JKS keystore uses a proprietary format");
         kt("-certreq -alias a -file a.req")
                 .shouldContain("JKS keystore uses a proprietary format");
         kt("-printcertreq -file a.req") // no warning if keystore not touched
@@ -283,8 +283,8 @@ public class WeakAlg {
                 .shouldContain("JCEKS keystore uses a proprietary format");
         kt("-exportcert -alias a -file a.crt")
                 .shouldContain("JCEKS keystore uses a proprietary format");
-        kt("-printcert -file a.crt")
-                .shouldNotContain("Warning:");
+        kt("-printcert -file a.crt") // warning since -keystore option is supported
+                .shouldContain("JCEKS keystore uses a proprietary format");
         kt("-certreq -alias a -file a.req")
                 .shouldContain("JCEKS keystore uses a proprietary format");
         kt("-printcertreq -file a.req")

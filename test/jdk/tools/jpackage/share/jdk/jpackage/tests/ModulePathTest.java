@@ -28,12 +28,17 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Annotations.*;
-import jdk.jpackage.test.*;
+import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.JavaAppDesc;
+import jdk.jpackage.test.HelloApp;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.Test;
 
 
 /*

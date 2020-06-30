@@ -34,7 +34,7 @@
 #include "utilities/align.hpp"
 
 MutableNUMASpace::MutableNUMASpace(size_t alignment) : MutableSpace(alignment), _must_use_large_pages(false) {
-  _lgrp_spaces = new (ResourceObj::C_HEAP, mtGC) GrowableArray<LGRPSpace*>(0, true);
+  _lgrp_spaces = new (ResourceObj::C_HEAP, mtGC) GrowableArray<LGRPSpace*>(0, mtGC);
   _page_size = os::vm_page_size();
   _adaptation_cycles = 0;
   _samples_count = 0;

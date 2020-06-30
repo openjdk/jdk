@@ -32,6 +32,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "utilities/tribool.hpp"
 #include "utilities/xmlstream.hpp"
 
 
@@ -460,43 +461,7 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   }
 }
 
-bool vmIntrinsics::is_intrinsic_available(vmIntrinsics::ID id) {
-  return !vmIntrinsics::is_intrinsic_disabled(id) &&
-    !vmIntrinsics::is_disabled_by_flags(id);
-}
-
-bool vmIntrinsics::is_intrinsic_disabled(vmIntrinsics::ID id) {
-  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
-
-  // Canonicalize DisableIntrinsic to contain only ',' as a separator.
-  // Note, DirectiveSet may not be created at this point yet since this code
-  // is called from initial stub geenration code.
-  char* local_list = (char*)DirectiveSet::canonicalize_disableintrinsic(DisableIntrinsic);
-  char* save_ptr;
-  bool found = false;
-
-  char* token = strtok_r(local_list, ",", &save_ptr);
-  while (token != NULL) {
-    if (strcmp(token, vmIntrinsics::name_at(id)) == 0) {
-      found = true;
-      break;
-    } else {
-      token = strtok_r(NULL, ",", &save_ptr);
-    }
-  }
-
-  FREE_C_HEAP_ARRAY(char, local_list);
-  return found;
-}
-
-
-bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
-  vmIntrinsics::ID id = method->intrinsic_id();
-  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
-  return is_disabled_by_flags(id);
-}
-
-bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
+bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   // -XX:-InlineNatives disables nearly all intrinsics except the ones listed in
@@ -861,23 +826,84 @@ static const char* vm_intrinsic_name_bodies =
                    VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
 
 static const char* vm_intrinsic_name_table[vmIntrinsics::ID_LIMIT];
+static TriBoolArray<vmIntrinsics::ID_LIMIT, int> vm_intrinsic_control_words;
+
+static void init_vm_intrinsic_name_table() {
+  const char** nt = &vm_intrinsic_name_table[0];
+  char* string = (char*) &vm_intrinsic_name_bodies[0];
+  for (int index = vmIntrinsics::FIRST_ID; index < vmIntrinsics::ID_LIMIT; index++) {
+    nt[index] = string;
+    string += strlen(string); // skip string body
+    string += 1;              // skip trailing null
+  }
+  assert(!strcmp(nt[vmIntrinsics::_hashCode], "_hashCode"), "lined up");
+  nt[vmIntrinsics::_none] = "_none";
+}
 
 const char* vmIntrinsics::name_at(vmIntrinsics::ID id) {
   const char** nt = &vm_intrinsic_name_table[0];
   if (nt[_none] == NULL) {
-    char* string = (char*) &vm_intrinsic_name_bodies[0];
-    for (int index = FIRST_ID; index < ID_LIMIT; index++) {
-      nt[index] = string;
-      string += strlen(string); // skip string body
-      string += 1;              // skip trailing null
-    }
-    assert(!strcmp(nt[_hashCode], "_hashCode"), "lined up");
-    nt[_none] = "_none";
+    init_vm_intrinsic_name_table();
   }
+
   if ((uint)id < (uint)ID_LIMIT)
     return vm_intrinsic_name_table[(uint)id];
   else
     return "(unknown intrinsic)";
+}
+
+vmIntrinsics::ID vmIntrinsics::find_id(const char* name) {
+  const char** nt = &vm_intrinsic_name_table[0];
+  if (nt[_none] == NULL) {
+    init_vm_intrinsic_name_table();
+  }
+
+  for (int index = FIRST_ID; index < ID_LIMIT; ++index) {
+    if (0 == strcmp(name, nt[index])) {
+      return ID_from(index);
+    }
+  }
+
+  return _none;
+}
+
+bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
+  vmIntrinsics::ID id = method->intrinsic_id();
+  return is_disabled_by_flags(id);
+}
+
+bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
+  assert(id > _none && id < ID_LIMIT, "must be a VM intrinsic");
+
+  // not initialized yet, process Control/DisableIntrinsic
+  if (vm_intrinsic_control_words[_none].is_default()) {
+    for (ControlIntrinsicIter iter(ControlIntrinsic); *iter != NULL; ++iter) {
+      vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
+
+      if (id != vmIntrinsics::_none) {
+        vm_intrinsic_control_words[id] = iter.is_enabled() && !disabled_by_jvm_flags(id);
+      }
+    }
+
+    // Order matters, DisableIntrinsic can overwrite ControlIntrinsic
+    for (ControlIntrinsicIter iter(DisableIntrinsic, true/*disable_all*/); *iter != NULL; ++iter) {
+      vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
+
+      if (id != vmIntrinsics::_none) {
+        vm_intrinsic_control_words[id] = false;
+      }
+    }
+
+    vm_intrinsic_control_words[_none] = true;
+  }
+
+  TriBool b = vm_intrinsic_control_words[id];
+  if (b.is_default()) {
+    // unknown yet, query and cache it
+    b = vm_intrinsic_control_words[id] = !disabled_by_jvm_flags(id);
+  }
+
+  return !b;
 }
 
 // These are flag-matching functions:

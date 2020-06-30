@@ -121,7 +121,6 @@ static volatile intptr_t gInflationLocks[NINFLATIONLOCKS];
 // global list of blocks of monitors
 PaddedObjectMonitor* ObjectSynchronizer::g_block_list = NULL;
 bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
-bool volatile ObjectSynchronizer::_is_special_deflation_requested = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
 
 struct ObjectMonitorListGlobals {
@@ -1309,30 +1308,60 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // are too many monitors in use. We don't deflate more frequently
     // than AsyncDeflationInterval (unless is_async_deflation_requested)
     // in order to not swamp the ServiceThread.
-    _last_async_deflation_time_ns = os::javaTimeNanos();
     return true;
   }
   return false;
 }
 
 bool ObjectSynchronizer::is_safepoint_deflation_needed() {
-  if (!AsyncDeflateIdleMonitors) {
-    if (monitors_used_above_threshold()) {
-      // Too many monitors in use.
-      return true;
+  return !AsyncDeflateIdleMonitors &&
+         monitors_used_above_threshold();  // Too many monitors in use.
+}
+
+bool ObjectSynchronizer::request_deflate_idle_monitors() {
+  bool is_JavaThread = Thread::current()->is_Java_thread();
+  bool ret_code = false;
+
+  if (AsyncDeflateIdleMonitors) {
+    jlong last_time = last_async_deflation_time_ns();
+    set_is_async_deflation_requested(true);
+    {
+      MonitorLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+      ml.notify_all();
     }
-    return false;
+    const int N_CHECKS = 5;
+    for (int i = 0; i < N_CHECKS; i++) {  // sleep for at most 5 seconds
+      if (last_async_deflation_time_ns() > last_time) {
+        log_info(monitorinflation)("Async Deflation happened after %d check(s).", i);
+        ret_code = true;
+        break;
+      }
+      if (is_JavaThread) {
+        // JavaThread has to honor the blocking protocol.
+        ThreadBlockInVM tbivm(JavaThread::current());
+        os::naked_short_sleep(999);  // sleep for almost 1 second
+      } else {
+        os::naked_short_sleep(999);  // sleep for almost 1 second
+      }
+    }
+    if (!ret_code) {
+      log_info(monitorinflation)("Async Deflation DID NOT happen after %d checks.", N_CHECKS);
+    }
+  } else {
+    // Only need to force this safepoint if we are not using async
+    // deflation. The VMThread won't call this function before the
+    // final safepoint if we are not using async deflation so we
+    // don't have to reason about the VMThread executing a VM-op here.
+    VM_ForceSafepoint force_safepoint_op;
+    VMThread::execute(&force_safepoint_op);
+    ret_code = true;
   }
-  if (is_special_deflation_requested()) {
-    // For AsyncDeflateIdleMonitors only do a safepoint deflation
-    // if there is a special deflation request.
-    return true;
-  }
-  return false;
+
+  return ret_code;
 }
 
 jlong ObjectSynchronizer::time_since_last_async_deflation_ms() {
-  return (os::javaTimeNanos() - _last_async_deflation_time_ns) / (NANOUNITS / MILLIUNITS);
+  return (os::javaTimeNanos() - last_async_deflation_time_ns()) / (NANOUNITS / MILLIUNITS);
 }
 
 void ObjectSynchronizer::oops_do(OopClosure* f) {
@@ -2017,9 +2046,8 @@ void ObjectSynchronizer::do_safepoint_work(DeflateMonitorCounters* counters) {
   // The per-thread in-use lists are handled in
   // ParallelSPCleanupThreadClosure::do_thread().
 
-  if (!AsyncDeflateIdleMonitors || is_special_deflation_requested()) {
-    // Use the older mechanism for the global in-use list or if a
-    // special deflation has been requested before the safepoint.
+  if (!AsyncDeflateIdleMonitors) {
+    // Use the older mechanism for the global in-use list.
     ObjectSynchronizer::deflate_idle_monitors(counters);
     return;
   }
@@ -2438,10 +2466,8 @@ void ObjectSynchronizer::deflate_idle_monitors(DeflateMonitorCounters* counters)
 
   if (AsyncDeflateIdleMonitors) {
     // Nothing to do when global idle ObjectMonitors are deflated using
-    // a JavaThread unless a special deflation has been requested.
-    if (!is_special_deflation_requested()) {
-      return;
-    }
+    // a JavaThread.
+    return;
   }
 
   bool deflated = false;
@@ -2534,6 +2560,7 @@ void ObjectSynchronizer::deflate_idle_monitors_using_JT() {
                              Atomic::load(&om_list_globals._wait_count));
 
   // The ServiceThread's async deflation request has been processed.
+  _last_async_deflation_time_ns = os::javaTimeNanos();
   set_is_async_deflation_requested(false);
 
   if (Atomic::load(&om_list_globals._wait_count) > 0) {
@@ -2609,16 +2636,6 @@ void ObjectSynchronizer::deflate_common_idle_monitors_using_JT(bool is_global, J
   }
 
   do {
-    if (saved_mid_in_use_p != NULL) {
-      // We looped around because deflate_monitor_list_using_JT()
-      // detected a pending safepoint. Honoring the safepoint is good,
-      // but as long as is_special_deflation_requested() is supported,
-      // we can't safely restart using saved_mid_in_use_p. That saved
-      // ObjectMonitor could have been deflated by safepoint based
-      // deflation and would no longer be on the in-use list where we
-      // originally found it.
-      saved_mid_in_use_p = NULL;
-    }
     int local_deflated_count;
     if (is_global) {
       local_deflated_count =
@@ -2701,10 +2718,9 @@ void ObjectSynchronizer::finish_deflate_idle_monitors(DeflateMonitorCounters* co
   // than a beginning to end measurement of the phase.
   log_info(safepoint, cleanup)("deflating per-thread idle monitors, %3.7f secs, monitors=%d", counters->per_thread_times, counters->per_thread_scavenged);
 
-  bool needs_special_deflation = is_special_deflation_requested();
-  if (AsyncDeflateIdleMonitors && !needs_special_deflation) {
+  if (AsyncDeflateIdleMonitors) {
     // Nothing to do when idle ObjectMonitors are deflated using
-    // a JavaThread unless a special deflation has been requested.
+    // a JavaThread.
     return;
   }
 
@@ -2729,17 +2745,14 @@ void ObjectSynchronizer::finish_deflate_idle_monitors(DeflateMonitorCounters* co
 
   GVars.stw_random = os::random();
   GVars.stw_cycle++;
-
-  if (needs_special_deflation) {
-    set_is_special_deflation_requested(false);  // special deflation is done
-  }
 }
 
 void ObjectSynchronizer::deflate_thread_local_monitors(Thread* thread, DeflateMonitorCounters* counters) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
-  if (AsyncDeflateIdleMonitors && !is_special_deflation_requested()) {
-    // Nothing to do if a special deflation has NOT been requested.
+  if (AsyncDeflateIdleMonitors) {
+    // Nothing to do when per-thread idle ObjectMonitors are deflated
+    // using a JavaThread.
     return;
   }
 

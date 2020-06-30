@@ -25,11 +25,29 @@ import javax.tools.Diagnostic;
 
 import org.testng.annotations.Test;
 import jdk.jshell.VarSnippet;
+import java.net.InetAddress;
 
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.SubKind.*;
 
 public class ExecutionControlTestBase extends KullaTesting {
+
+    String standardListenSpec() {
+        String loopback = InetAddress.getLoopbackAddress().getHostAddress();
+        return "jdi:hostname(" + loopback + ")";
+    }
+
+    String standardLaunchSpec() {
+        return "jdi:launch(true)";
+    }
+
+    String standardJdiSpec() {
+        return "jdi";
+    }
+
+    String standardSpecs() {
+        return "5(" + standardListenSpec() + "), 6(" + standardLaunchSpec() + "), 7(" + standardJdiSpec() + ")";
+    }
 
     @Test
     public void classesDeclaration() {

@@ -41,7 +41,23 @@ public class TestClass {
     public TestClass() {}
 
     /**
-     * @deprecated class_test4 passes. This is the second sentence of deprecated description for a method.
+     * @deprecated class_test4 passes. Overloaded constructor.
+     */
+    @Deprecated(forRemoval=true)
+    public TestClass(String s) {}
+
+    /**
+     * @deprecated class_test5 passes. This is the second sentence of deprecated description for a method.
      */
     public void method() {}
+
+    /**
+     * @deprecated class_test6 passes. Overloaded method 1.
+     */
+    public void overloadedMethod(String s) {}
+
+    /**
+     * @deprecated class_test7 passes. Overloaded method 2.
+     */
+    public void overloadedMethod(int i) {}
 }

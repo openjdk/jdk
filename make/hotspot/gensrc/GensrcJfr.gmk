@@ -24,39 +24,23 @@
 #
 
 ################################################################################
-# Build tools needed for the JFR source code generation
-
-JFR_TOOLS_SRCDIR := $(TOPDIR)/make/src/classes
-JFR_TOOLS_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/buildtools/tools_classes
-
-$(eval $(call SetupJavaCompilation, BUILD_JFR_TOOLS, \
-    COMPILER := bootjdk, \
-    SMALL_JAVA := false, \
-    SRC := $(JFR_TOOLS_SRCDIR), \
-    BIN := $(JFR_TOOLS_OUTPUTDIR), \
-    DISABLED_WARNINGS := try, \
-))
-
-TARGETS += $(BUILD_JFR_TOOLS)
-
-################################################################################
 # Setup make rules for JFR gensrc file generation.
 #
-TOOL_JFR_GEN := $(JAVA_SMALL) -cp $(JFR_TOOLS_OUTPUTDIR) build.tools.jfr.GenerateJfrFiles
 
-JFR_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jfrfiles
+include $(TOPDIR)/make/ToolsHotspot.gmk
+
 JFR_SRCDIR := $(TOPDIR)/src/hotspot/share/jfr/metadata
+JFR_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jfrfiles
 
 # Changing these will trigger a rebuild of generated jfr files.
 METADATA_XML := $(JFR_SRCDIR)/metadata.xml
 METADATA_XSD := $(JFR_SRCDIR)/metadata.xsd
 
-$(eval $(call SetupExecute, jfr_gen, \
+$(eval $(call SetupExecute, jfr_gen_headers, \
     INFO := Generating JFR header files, \
-    DEPS := $(METADATA_XML) $(METADATA_XSD) $(BUILD_JFR_TOOLS), \
+    DEPS := $(METADATA_XML) $(METADATA_XSD) $(BUILD_TOOLS_HOTSPOT), \
     OUTPUT_DIR := $(JFR_OUTPUTDIR), \
-    COMMAND := $(TOOL_JFR_GEN) $(METADATA_XML) $(METADATA_XSD) $(JFR_OUTPUTDIR), \
+    COMMAND := $(TOOL_JFR_GEN) --mode headers --xml $(METADATA_XML) --xsd $(METADATA_XSD) --output $(JFR_OUTPUTDIR), \
 ))
 
-JFR_FILES := $(jfr_gen_TARGET)
-TARGETS += $(JFR_FILES)
+TARGETS += $(jfr_gen_headers)

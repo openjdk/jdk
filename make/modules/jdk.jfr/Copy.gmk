@@ -27,14 +27,6 @@ include CopyCommon.gmk
 
 ################################################################################
 
-$(eval $(call SetupCopyFiles, COPY_JFR_METADATA, \
-    SRC := $(TOPDIR)/src/hotspot/share/jfr/metadata, \
-    DEST := $(JDK_OUTPUTDIR)/modules/jdk.jfr/jdk/jfr/internal/types, \
-    FILES := metadata.xml \
-))
-
-TARGETS += $(COPY_JFR_METADATA)
-
 JFR_CONF_DIR := $(TOPDIR)/src/jdk.jfr/share/conf/jfr
 $(eval $(call SetupCopyFiles, COPY_JFR_CONF, \
     DEST := $(LIB_DST_DIR)/jfr, \

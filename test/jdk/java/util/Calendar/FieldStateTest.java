@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ public class FieldStateTest extends IntlTest {
                 + "Then, getTime and set week of year to 43.");
 
         @SuppressWarnings("deprecation")
-        Date d = new Date(2003 - 1990, OCTOBER, 31);
+        Date d = new Date(2003 - 1900, OCTOBER, 31);
         cal.setTime(d);
         cal.set(DAY_OF_WEEK, SUNDAY);
         cal.set(2003, OCTOBER, 31); // 2003/10/31 is Friday.

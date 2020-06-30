@@ -36,6 +36,24 @@ TARGETS :=
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, hotspot/CompileTools.gmk))
 
+################################################################################
+# Build tools needed for the JFR source code generation
+
+HOTSPOT_TOOLS_SRCDIR := $(TOPDIR)/make/src/classes
+
+HOTSPOT_TOOLS_OUTPUTDIR := $(BUILDTOOLS_OUTPUTDIR)/buildtools/hotspot_tools_classes
+
+$(eval $(call SetupJavaCompilation, BUILD_TOOLS_HOTSPOT, \
+    COMPILER := bootjdk, \
+    SRC := $(HOTSPOT_TOOLS_SRCDIR), \
+    BIN := $(HOTSPOT_TOOLS_OUTPUTDIR), \
+))
+
+TARGETS += $(BUILD_TOOLS_HOTSPOT)
+
+
+################################################################################
+# Graal build tools
 ifeq ($(INCLUDE_GRAAL), true)
   VM_CI_SRC_DIR := $(TOPDIR)/src/jdk.internal.vm.ci/share/classes
 

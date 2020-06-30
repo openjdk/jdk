@@ -6522,21 +6522,21 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
 
   switch (predicate) {
   case 0:
-    if (UseSHA1Intrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress)) {
       klass_SHA_name = "sun/security/provider/SHA";
       stub_name = "sha1_implCompressMB";
       stub_addr = StubRoutines::sha1_implCompressMB();
     }
     break;
   case 1:
-    if (UseSHA256Intrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha2_implCompress)) {
       klass_SHA_name = "sun/security/provider/SHA2";
       stub_name = "sha256_implCompressMB";
       stub_addr = StubRoutines::sha256_implCompressMB();
     }
     break;
   case 2:
-    if (UseSHA512Intrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha5_implCompress)) {
       klass_SHA_name = "sun/security/provider/SHA5";
       stub_name = "sha512_implCompressMB";
       stub_addr = StubRoutines::sha512_implCompressMB();

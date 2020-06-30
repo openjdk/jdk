@@ -207,8 +207,7 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
 }
 
 #ifdef ASSERT
-void ShenandoahNMethod::assert_alive_and_correct() {
-  assert(_nm->is_alive(), "only alive nmethods here");
+void ShenandoahNMethod::assert_correct() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   for (int c = 0; c < _oops_count; c++) {
     oop *loc = _oops[c];
@@ -490,14 +489,14 @@ void ShenandoahNMethodTable::log_flush_nmethod(nmethod* nm) {
 }
 
 #ifdef ASSERT
-void ShenandoahNMethodTable::assert_nmethods_alive_and_correct() {
+void ShenandoahNMethodTable::assert_nmethods_correct() {
   assert_locked_or_safepoint(CodeCache_lock);
 
   for (int index = 0; index < length(); index ++) {
     ShenandoahNMethod* m = _list->at(index);
     // Concurrent unloading may have dead nmethods to be cleaned by sweeper
     if (m->is_unregistered()) continue;
-    m->assert_alive_and_correct();
+    m->assert_correct();
   }
 }
 #endif
@@ -563,8 +562,11 @@ void ShenandoahNMethodTableSnapshot::parallel_blobs_do(CodeBlobClosure *f) {
         continue;
       }
 
-      nmr->assert_alive_and_correct();
-      f->do_code_blob(nmr->nm());
+      // A nmethod can become a zombie before it is unregistered.
+      if (nmr->nm()->is_alive()) {
+        nmr->assert_correct();
+        f->do_code_blob(nmr->nm());
+      }
     }
   }
 }

@@ -197,7 +197,7 @@ ifeq ($(HAS_SPEC),)
 	            COMPARE_BUILD="$(COMPARE_BUILD)" pre-compare-build && \
 	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -j 1 -f $(topdir)/make/Init.gmk \
 	            SPEC=$(spec) HAS_SPEC=true $(MAKE_INIT_WITH_SPEC_ARGUMENTS) \
-	            COMPARE_BUILD="$(COMPARE_BUILD)" main && \
+	            COMPARE_BUILD="$(COMPARE_BUILD):NODRYRUN=true" main && \
 	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/Init.gmk \
 	            SPEC=$(spec) HAS_SPEC=true ACTUAL_TOPDIR=$(topdir) \
 	            COMPARE_BUILD="$(COMPARE_BUILD)" post-compare-build && \

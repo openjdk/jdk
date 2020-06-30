@@ -30,7 +30,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -38,6 +46,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.incubator.jpackage.internal.AppImageFile;
 import jdk.incubator.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
@@ -235,9 +244,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
             Files.createDirectories(fakeRuntimeDir);
 
-            if (TKit.isWindows() || TKit.isLinux()) {
-                // Needed to make WindowsAppBundler happy as it copies MSVC dlls
-                // from `bin` directory.
+            if (TKit.isLinux()) {
                 // Need to make the code in rpm spec happy as it assumes there is
                 // always something in application image.
                 fakeRuntimeDir.resolve("bin").toFile().mkdir();
@@ -246,7 +253,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             if (TKit.isOSX()) {
                 // Make MacAppImageBuilder happy
                 createBulkFile.accept(fakeRuntimeDir.resolve(Path.of(
-                        "Contents/Home/lib/jli/libjli.dylib")));
+                        "lib/jli/libjli.dylib")));
             }
 
             // Mak sure fake runtime takes some disk space.
@@ -680,11 +687,54 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand assertImageCreated() {
         verifyIsOfType(PackageType.IMAGE);
+        assertAppLayout();
+        return this;
+    }
+
+    JPackageCommand assertAppLayout() {
+        if (isPackageUnpacked() || isImagePackageType()) {
+            final Path rootDir = isPackageUnpacked() ? pathToUnpackedPackageFile(
+                    appInstallationDirectory()) : outputBundle();
+            final Path appImageFileName = AppImageFile.getPathInAppImage(
+                    Path.of("")).getFileName();
+            try (Stream<Path> walk = ThrowingSupplier.toSupplier(
+                    () -> Files.walk(rootDir)).get()) {
+                List<String> appImageFiles = walk
+                        .filter(path -> path.getFileName().equals(appImageFileName))
+                        .map(Path::toString)
+                        .collect(Collectors.toList());
+                if (isImagePackageType() || TKit.isOSX()) {
+                    List<String> expected = List.of(
+                            AppImageFile.getPathInAppImage(rootDir).toString());
+                    TKit.assertStringListEquals(expected, appImageFiles,
+                            String.format(
+                                    "Check there is only one file with [%s] name in the package",
+                                    appImageFileName));
+                } else {
+                    TKit.assertStringListEquals(List.of(), appImageFiles,
+                            String.format(
+                                    "Check there are no files with [%s] name in the package",
+                                    appImageFileName));
+                }
+            }
+        } else if (TKit.isOSX()) {
+            TKit.assertFileExists(AppImageFile.getPathInAppImage(
+                    appInstallationDirectory()));
+        } else {
+            TKit.assertPathExists(AppImageFile.getPathInAppImage(
+                    appInstallationDirectory()), false);
+        }
+
         TKit.assertDirectoryExists(appRuntimeDirectory());
 
         if (!isRuntime()) {
             TKit.assertExecutableFileExists(appLauncherPath());
             TKit.assertFileExists(appLauncherCfgPath(null));
+        }
+
+        if (TKit.isOSX()) {
+            TKit.assertFileExists(appRuntimeDirectory().resolve(
+                    "Contents/MacOS/libjli.dylib"));
         }
 
         return this;
@@ -783,14 +833,6 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
             return str;
         }).collect(Collectors.joining(" "));
-    }
-
-    public static Path relativePathInRuntime(JavaTool tool) {
-        Path path = tool.relativePathInJavaHome();
-        if (TKit.isOSX()) {
-            path = Path.of("Contents/Home").resolve(path);
-        }
-        return path;
     }
 
     public static Stream<String> filterOutput(Stream<String> jpackageOutput) {

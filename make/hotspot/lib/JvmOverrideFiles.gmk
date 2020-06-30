@@ -62,6 +62,7 @@ ifeq ($(call isTargetOs, linux), true)
     JVM_PRECOMPILED_HEADER_EXCLUDE := \
 	sharedRuntimeTrig.cpp \
 	sharedRuntimeTrans.cpp \
+        $(OPT_SPEED_SRC) \
 	#
   endif
 
@@ -91,9 +92,6 @@ else ifeq ($(call isTargetOs, macosx), true)
     # NOTE: The old build tested clang version to make sure this workaround
     # for the clang bug was still needed.
     BUILD_LIBJVM_loopTransform.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
-    ifneq ($(DEBUG_LEVEL), slowdebug)
-      BUILD_LIBJVM_unsafe.cpp_CXXFLAGS := -O1
-    endif
 
     # The following files are compiled at various optimization
     # levels due to optimization issues encountered at the
@@ -109,8 +107,8 @@ else ifeq ($(call isTargetOs, macosx), true)
         sharedRuntimeTrig.cpp \
         sharedRuntimeTrans.cpp \
         loopTransform.cpp \
-        unsafe.cpp \
         jvmciCompilerToVM.cpp \
+        $(OPT_SPEED_SRC) \
         #
   endif
 

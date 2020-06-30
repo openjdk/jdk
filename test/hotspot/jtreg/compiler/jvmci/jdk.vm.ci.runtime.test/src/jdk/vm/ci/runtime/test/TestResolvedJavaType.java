@@ -49,6 +49,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.AccessibleObject;
@@ -64,6 +67,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import jdk.internal.org.objectweb.asm.*;
@@ -333,6 +337,111 @@ public class TestResolvedJavaType extends TypeUniverse {
                 }
             }
         }
+    }
+
+    @Test
+    public void linkTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            type.link();
+        }
+    }
+
+    private class HidingClassLoader extends ClassLoader {
+        @Override
+        protected Class<?> findClass(final String name) throws ClassNotFoundException {
+            if (name.endsWith("MissingInterface")) {
+                throw new ClassNotFoundException("missing");
+            }
+            byte[] classData = null;
+            try {
+                InputStream is = HidingClassLoader.class.getResourceAsStream("/" + name.replace('.', '/') + ".class");
+                classData = new byte[is.available()];
+                new DataInputStream(is).readFully(classData);
+            } catch (IOException e) {
+                Assert.fail("can't access class: " + name);
+            }
+
+            return defineClass(null, classData, 0, classData.length);
+        }
+
+        ResolvedJavaType lookupJavaType(String name) throws ClassNotFoundException {
+            return metaAccess.lookupJavaType(loadClass(name));
+        }
+
+        HidingClassLoader() {
+            super(null);
+        }
+
+    }
+
+    interface MissingInterface {
+    }
+
+    static class MissingInterfaceImpl implements MissingInterface {
+    }
+
+    interface SomeInterface {
+        default MissingInterface someMethod() {
+            return new MissingInterfaceImpl();
+        }
+    }
+
+    static class Wrapper implements SomeInterface {
+    }
+
+    @Test
+    public void linkExceptionTest() throws ClassNotFoundException {
+        HidingClassLoader cl = new HidingClassLoader();
+        ResolvedJavaType inner = cl.lookupJavaType(Wrapper.class.getName());
+        assertTrue("expected default methods", inner.hasDefaultMethods());
+        try {
+            inner.link();
+            assertFalse("link should throw an exception", true);
+        } catch (NoClassDefFoundError e) {
+        }
+    }
+
+    @Test
+    public void hasDefaultMethodsTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            assertEquals(hasDefaultMethods(type), type.hasDefaultMethods());
+        }
+    }
+
+    @Test
+    public void declaresDefaultMethodsTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            assertEquals(declaresDefaultMethods(type), type.declaresDefaultMethods());
+        }
+    }
+
+    private static boolean hasDefaultMethods(ResolvedJavaType type) {
+        if (!type.isInterface() && type.getSuperclass() != null && hasDefaultMethods(type.getSuperclass())) {
+            return true;
+        }
+        for (ResolvedJavaType iface : type.getInterfaces()) {
+            if (hasDefaultMethods(iface)) {
+                return true;
+            }
+        }
+        return declaresDefaultMethods(type);
+    }
+
+    static boolean declaresDefaultMethods(ResolvedJavaType type) {
+        if (!type.isInterface()) {
+            /* Only interfaces can declare default methods. */
+            return false;
+        }
+        for (ResolvedJavaMethod method : type.getDeclaredMethods()) {
+            if (method.isDefault()) {
+                assert !Modifier.isStatic(method.getModifiers()) : "Default method that is static?";
+                return true;
+            }
+        }
+        return false;
     }
 
     private static class Base {

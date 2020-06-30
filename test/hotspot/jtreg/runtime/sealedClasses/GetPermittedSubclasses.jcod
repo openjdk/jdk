@@ -30,7 +30,7 @@
 class NoLoadSubclasses {
   0xCAFEBABE;
   65535; // minor version
-  59; // version
+  60; // version
   [18] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
@@ -106,7 +106,7 @@ class NoLoadSubclasses {
 class NoSubclasses {
   0xCAFEBABE;
   65535; // minor version
-  59; // version
+  60; // version
   [14] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
@@ -257,7 +257,7 @@ class OldClassFile {
 class BadPermittedAttr {
   0xCAFEBABE;
   65535; // minor version
-  59; // version
+  60; // version
   [18] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
@@ -335,7 +335,7 @@ class BadPermittedAttr {
 class SealedButFinal {
   0xCAFEBABE;
   65535; // minor version
-  59; // version
+  60; // version
   [18] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
@@ -413,7 +413,7 @@ class SealedButFinal {
 class BadPermittedSubclassEntry {
   0xCAFEBABE;
   65535; // minor version
-  59; // version
+  60; // version
   [18] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A
@@ -490,7 +490,7 @@ class BadPermittedSubclassEntry {
 class EmptyPermittedSubclassEntry {
   0xCAFEBABE;
   65535; // minor version
-  59; // version
+  60; // version
   [18] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A

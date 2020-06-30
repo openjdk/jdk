@@ -1507,6 +1507,12 @@ void VM_Version::get_processor_features() {
     // Modern processors allow misaligned memory operations for vectors.
     AlignVector = !UseUnalignedLoadStores;
   }
+  if (FLAG_IS_DEFAULT(OptimizeFill)) {
+    // 8247307: On x86, the auto-vectorized loop array fill code shows
+    // better performance than the array fill stubs. We should reenable
+    // this after the x86 stubs get improved.
+    OptimizeFill = false;
+  }
 #endif // COMPILER2
 
   if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {

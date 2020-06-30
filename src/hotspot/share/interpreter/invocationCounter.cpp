@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,33 +79,4 @@ void InvocationCounter::print() {
   tty->print_cr("invocation count: up = %d, limit = %d, carry = %s",
                                    extract_count(counter), limit(),
                                    extract_carry(counter) ? "true" : "false");
-}
-
-#ifdef CC_INTERP
-int                       InvocationCounter::InterpreterInvocationLimit;
-int                       InvocationCounter::InterpreterBackwardBranchLimit;
-#endif
-
-void invocationCounter_init() {
-#ifdef CC_INTERP
-  InvocationCounter::InterpreterInvocationLimit =
-    CompileThreshold << InvocationCounter::count_shift;
-
-  // When methodData is collected, the backward branch limit is compared against a
-  // methodData counter, rather than an InvocationCounter.  In the former case, we
-  // don't need the shift by number_of_noncount_bits, but we do need to adjust
-  // the factor by which we scale the threshold.
-  if (ProfileInterpreter) {
-    InvocationCounter::InterpreterBackwardBranchLimit =
-      (int)((int64_t)CompileThreshold
-            * (OnStackReplacePercentage - InterpreterProfilePercentage) / 100);
-  } else {
-    InvocationCounter::InterpreterBackwardBranchLimit =
-      (int)(((int64_t)CompileThreshold * OnStackReplacePercentage / 100)
-            << InvocationCounter::count_shift);
-  }
-
-  assert(0 <= InvocationCounter::InterpreterBackwardBranchLimit,
-         "OSR threshold should be non-negative");
-#endif
 }

@@ -32,11 +32,16 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.*;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Annotations.*;
+import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JavaAppDesc;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.HelloApp;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameter;
 
 /*
  * @test
@@ -301,50 +306,6 @@ public final class BasicTest {
         // Verify output of jpackage command.
         cmd.assertImageCreated();
         HelloApp.executeLauncherAndVerifyOutput(cmd);
-    }
-
-    @Parameter("Hello")
-    @Parameter("com.foo/com.foo.main.Aloha")
-    @Test
-    public void testJLinkRuntime(String javaAppDesc) throws IOException {
-        JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
-
-        JPackageCommand cmd = JPackageCommand.helloAppImage(appDesc);
-
-        final String moduleName = appDesc.moduleName();
-
-        if (moduleName != null) {
-            // Build module jar.
-            cmd.executePrerequisiteActions();
-        }
-
-        final Path runtimeDir = TKit.createTempDirectory("runtime").resolve("data");
-
-        // List of modules required for test app.
-        final var modules = new String[] {
-            "java.base",
-            "java.desktop"
-        };
-
-        Executor jlink = getToolProvider(JavaTool.JLINK)
-        .saveOutput(false)
-        .addArguments(
-                "--add-modules", String.join(",", modules),
-                "--output", runtimeDir.toString(),
-                "--strip-debug",
-                "--no-header-files",
-                "--no-man-pages");
-
-        if (moduleName != null) {
-            jlink.addArguments("--add-modules", moduleName, "--module-path",
-                    Path.of(cmd.getArgumentValue("--module-path")).resolve(
-                            "hello.jar").toString());
-        }
-
-        jlink.execute();
-
-        cmd.addArguments("--runtime-image", runtimeDir);
-        cmd.executeAndAssertHelloAppImageCreated();
     }
 
     private static Executor getJPackageToolProvider() {

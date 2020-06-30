@@ -78,8 +78,8 @@ class oopDesc {
   inline void init_mark_raw();
 
   inline Klass* klass() const;
-  inline Klass* klass_or_null() const volatile;
-  inline Klass* klass_or_null_acquire() const volatile;
+  inline Klass* klass_or_null() const;
+  inline Klass* klass_or_null_acquire() const;
   static inline Klass** klass_addr(HeapWord* mem);
   static inline narrowKlass* compressed_klass_addr(HeapWord* mem);
   inline Klass** klass_addr();

@@ -27,6 +27,7 @@
 #include "classfile/dictionary.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
@@ -45,7 +46,7 @@ int ProtectionDomainCacheTable::index_for(Handle protection_domain) {
 }
 
 ProtectionDomainCacheTable::ProtectionDomainCacheTable(int table_size)
-  : Hashtable<WeakHandle<vm_weak_data>, mtClass>(table_size, sizeof(ProtectionDomainCacheEntry))
+  : Hashtable<WeakHandle, mtClass>(table_size, sizeof(ProtectionDomainCacheEntry))
 {   _dead_entries = false;
     _total_oops_removed = 0;
 }
@@ -93,7 +94,7 @@ void ProtectionDomainCacheTable::unlink() {
           LogStream ls(lt);
           ls.print_cr("protection domain unlinked at %d", i);
         }
-        entry->literal().release();
+        entry->literal().release(OopStorageSet::vm_weak());
         *p = entry->next();
         free_entry(entry);
       }
@@ -180,8 +181,8 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, uns
     protection_domain->print_value_on(&ls);
     ls.cr();
   }
-  WeakHandle<vm_weak_data> w = WeakHandle<vm_weak_data>::create(protection_domain);
+  WeakHandle w(OopStorageSet::vm_weak(), protection_domain);
   ProtectionDomainCacheEntry* p = new_entry(hash, w);
-  Hashtable<WeakHandle<vm_weak_data>, mtClass>::add_entry(index, p);
+  Hashtable<WeakHandle, mtClass>::add_entry(index, p);
   return p;
 }

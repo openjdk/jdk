@@ -95,6 +95,9 @@ public:
   static OopStorage* resolved_method_table_weak() {
     return storage(resolved_method_table_weak_index);
   }
+
+  template <typename Closure>
+  static void strong_oops_do(Closure* cl);
 };
 
 class OopStorageSet::Iterator {

@@ -2296,10 +2296,13 @@ const bool Matcher::match_rule_supported(int opcode) {
   case Op_FmaVD:
     return (SuperwordUseVSX && UseFMA);
   case Op_Digit:
+    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
   case Op_LowerCase:
+    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isLowerCase);
   case Op_UpperCase:
+    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isUpperCase);
   case Op_Whitespace:
-    return UseCharacterCompareIntrinsics;
+    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isWhitespace);
 
   case Op_CacheWB:
   case Op_CacheWBPreSync:

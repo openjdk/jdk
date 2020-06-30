@@ -44,7 +44,7 @@ public interface ClassUnloadEvent extends Event {
     /**
      * Returns the {@linkplain com.sun.jdi.Type#name() name of the class}
      * that has been unloaded. The returned string may not be a
-     * <a href="${docRoot}/java.base/java/lang/ClassLoader.html#binary-name">binary name</a>.
+     * <a href="{@docRoot}/java.base/java/lang/ClassLoader.html#binary-name">binary name</a>.
      *
      * @see Class#getName()
      */

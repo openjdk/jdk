@@ -30,7 +30,7 @@
 #include "services/diagnosticArgument.hpp"
 
 StringArrayArgument::StringArrayArgument() {
-  _array = new(ResourceObj::C_HEAP, mtInternal)GrowableArray<char *>(32, true);
+  _array = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<char *>(32, mtServiceability);
   assert(_array != NULL, "Sanity check");
 }
 

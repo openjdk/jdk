@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,3 +34,4 @@ verify_os
 JSTAT="${TESTJAVA}/bin/jstat"
 
 ${JSTAT} ${COMMON_JSTAT_FLAGS} -gc 0 2>&1 | awk -f ${TESTSRC}/gcOutput1.awk
+${JSTAT} ${COMMON_JSTAT_FLAGS} -J-XX:+UseParallelGC -gc 0 2>&1 | awk -f ${TESTSRC}/gcOutput1.awk

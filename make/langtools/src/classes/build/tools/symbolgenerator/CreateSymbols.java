@@ -1067,10 +1067,23 @@ public class CreateSymbols {
     }
 
     private Annotation createAnnotation(List<CPInfo> constantPool, AnnotationDescription desc) {
+        String annotationType = desc.annotationType;
+
+        if (PREVIEW_FEATURE_ANNOTATION.equals(annotationType)) {
+            //the non-public PreviewFeature annotation will not be available in ct.sym,
+            //replace with purely synthetic javac-internal annotation:
+            annotationType = PREVIEW_FEATURE_ANNOTATION_INTERNAL;
+        }
+
         return new Annotation(null,
-                              addString(constantPool, desc.annotationType),
+                              addString(constantPool, annotationType),
                               createElementPairs(constantPool, desc.values));
     }
+    //where:
+        private static final String PREVIEW_FEATURE_ANNOTATION =
+                "Ljdk/internal/PreviewFeature;";
+        private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
+                "Ljdk/internal/PreviewFeature+Annotation;";
 
     private element_value_pair[] createElementPairs(List<CPInfo> constantPool, Map<String, Object> annotationAttributes) {
         element_value_pair[] pairs = new element_value_pair[annotationAttributes.size()];

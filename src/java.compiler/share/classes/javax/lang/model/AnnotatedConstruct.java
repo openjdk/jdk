@@ -81,8 +81,8 @@ import javax.lang.model.type.*;
  * <i>C</i>, then if <i>AT</i> is repeatable annotation type, an
  * annotation of type <i>ATC</i> is {@linkplain javax.lang.model.util.Elements#getOrigin(AnnotatedConstruct, AnnotationMirror) implicitly declared} on <i>C</i>.
  * <li> A representation of <i>A</i> appears in the executable output
- * for <i>C</i>, such as the {@code RuntimeVisibleAnnotations} or
- * {@code RuntimeVisibleParameterAnnotations} attributes of a class
+ * for <i>C</i>, such as the {@code RuntimeVisibleAnnotations} (JVMS {@jvms 4.7.16}) or
+ * {@code RuntimeVisibleParameterAnnotations} (JVMS {@jvms 4.7.17}) attributes of a class
  * file.
  *
  * </ul>

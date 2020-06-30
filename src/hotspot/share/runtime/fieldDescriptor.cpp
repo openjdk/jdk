@@ -58,6 +58,11 @@ Symbol* fieldDescriptor::generic_signature() const {
   return NULL;
 }
 
+bool fieldDescriptor::is_trusted_final() const {
+  InstanceKlass* ik = field_holder();
+  return is_final() && (is_static() || ik->is_hidden() || ik->is_record());
+}
+
 AnnotationArray* fieldDescriptor::annotations() const {
   InstanceKlass* ik = field_holder();
   Array<AnnotationArray*>* md = ik->fields_annotations();

@@ -28,6 +28,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
@@ -186,6 +187,25 @@ void HeapShared::archive_klass_objects(Thread* THREAD) {
   }
 }
 
+void HeapShared::run_full_gc_in_vm_thread() {
+  if (is_heap_object_archiving_allowed()) {
+    // Avoid fragmentation while archiving heap objects.
+    // We do this inside a safepoint, so that no further allocation can happen after GC
+    // has finished.
+    if (GCLocker::is_active()) {
+      // Just checking for safety ...
+      // This should not happen during -Xshare:dump. If you see this, probably the Java core lib
+      // has been modified such that JNI code is executed in some clean up threads after
+      // we have finished class loading.
+      log_warning(cds)("GC locker is held, unable to start extra compacting GC. This may produce suboptimal results.");
+    } else {
+      log_info(cds)("Run GC ...");
+      Universe::heap()->collect_as_vm_thread(GCCause::_archive_time_gc);
+      log_info(cds)("Run GC done");
+    }
+  }
+}
+
 void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion> *closed,
                                            GrowableArray<MemRegion> *open) {
   if (!is_heap_object_archiving_allowed()) {
@@ -289,7 +309,7 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
   assert(DumpSharedSpaces, "dump time only");
   if (_subgraph_entry_fields == NULL) {
     _subgraph_entry_fields =
-      new(ResourceObj::C_HEAP, mtClass) GrowableArray<juint>(10, true);
+      new(ResourceObj::C_HEAP, mtClass) GrowableArray<juint>(10, mtClass);
   }
   _subgraph_entry_fields->append((juint)static_field_offset);
   _subgraph_entry_fields->append(CompressedOops::encode(v));
@@ -305,7 +325,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass *relocate
 
   if (_subgraph_object_klasses == NULL) {
     _subgraph_object_klasses =
-      new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(50, true);
+      new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(50, mtClass);
   }
 
   assert(relocated_k->is_shared(), "must be a shared class");

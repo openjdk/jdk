@@ -62,7 +62,7 @@ ClassListParser::ClassListParser(const char* file) {
     vm_exit_during_initialization("Loading classlist failed", errmsg);
   }
   _line_no = 0;
-  _interfaces = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, true);
+  _interfaces = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, mtClass);
 }
 
 ClassListParser::~ClassListParser() {

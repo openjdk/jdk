@@ -768,8 +768,14 @@ public class SealedCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testParameterizedPermitted() {
+    private static String[] PRIMITIVES_VOID_AND_PRIMITIVE_ARRAYS = new String[] {
+        "byte", "short", "int", "long", "float", "double", "char", "boolean", "void",
+        "byte[]", "short[]", "int[]", "long[]", "float[]", "double[]", "char[]", "boolean[]"
+    };
+
+    public void testPermitsClause() {
         for (String s : List.of(
+            // can't include a parameterized type
             """
             sealed class C<T> permits Sub<T> {}
             final class Sub<T> extends C<T> {}
@@ -777,9 +783,51 @@ public class SealedCompilationTests extends CompilationTestCase {
             """
             sealed class C permits Sub<String> {}
             final class Sub<T> extends C {}
+            """,
+            """
+            sealed class C permits Sub<String> {}
+            non-sealed class Sub<T> extends C {}
+            """,
+            """
+            sealed interface IC permits ID<String> {}
+            non-sealed interface ID<T> extends IC {}
+            """,
+
+            // can't include an array type
+            """
+            sealed class C<T> permits Sub[] {}
+            final class Sub<T> extends C<T> {}
+            """,
+            """
+            sealed class C permits Sub[] {}
+            non-sealed class Sub<T> extends C {}
+            """,
+            """
+            sealed interface IC permits ID[] {}
+            non-sealed interface ID<T> extends IC {}
             """
             )) {
             assertFail("compiler.err.expected", s);
+        }
+
+        for (String s : List.of(
+            // can't include primitives, void or primitive arrays
+            """
+            sealed class C<T> permits # {}
+            final class Sub<T> extends C<T> {}
+            """,
+            """
+            sealed class C permits # {}
+            non-sealed class Sub<T> extends C {}
+            """,
+            """
+            sealed interface IC permits # {}
+            non-sealed interface ID<T> extends IC {}
+            """
+            )) {
+            for (String t: PRIMITIVES_VOID_AND_PRIMITIVE_ARRAYS){
+                assertFail("compiler.err.expected", s, t);
+            }
         }
     }
 

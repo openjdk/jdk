@@ -965,11 +965,11 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
 // Statically allocate fixup lists because they always get created.
 void java_lang_Class::allocate_fixup_lists() {
   GrowableArray<Klass*>* mirror_list =
-    new (ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(40, true);
+    new (ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(40, mtClass);
   set_fixup_mirror_list(mirror_list);
 
   GrowableArray<Klass*>* module_list =
-    new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, true);
+    new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, mtModule);
   set_fixup_module_field_list(module_list);
 }
 
@@ -3141,6 +3141,7 @@ int java_lang_reflect_Field::_name_offset;
 int java_lang_reflect_Field::_type_offset;
 int java_lang_reflect_Field::_slot_offset;
 int java_lang_reflect_Field::_modifiers_offset;
+int java_lang_reflect_Field::_trusted_final_offset;
 int java_lang_reflect_Field::_signature_offset;
 int java_lang_reflect_Field::_annotations_offset;
 
@@ -3150,6 +3151,7 @@ int java_lang_reflect_Field::_annotations_offset;
   macro(_type_offset,      k, vmSymbols::type_name(),      class_signature,  false); \
   macro(_slot_offset,      k, vmSymbols::slot_name(),      int_signature,    false); \
   macro(_modifiers_offset, k, vmSymbols::modifiers_name(), int_signature,    false); \
+  macro(_trusted_final_offset,    k, vmSymbols::trusted_final_name(),    bool_signature,       false); \
   macro(_signature_offset,        k, vmSymbols::signature_name(),        string_signature,     false); \
   macro(_annotations_offset,      k, vmSymbols::annotations_name(),      byte_array_signature, false);
 
@@ -3212,6 +3214,10 @@ int java_lang_reflect_Field::modifiers(oop field) {
 
 void java_lang_reflect_Field::set_modifiers(oop field, int value) {
   field->int_field_put(_modifiers_offset, value);
+}
+
+void java_lang_reflect_Field::set_trusted_final(oop field) {
+  field->bool_field_put(_trusted_final_offset, true);
 }
 
 void java_lang_reflect_Field::set_signature(oop field, oop value) {

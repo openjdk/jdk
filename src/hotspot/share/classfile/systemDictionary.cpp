@@ -46,6 +46,7 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -175,7 +176,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
                          vmSymbols::void_classloader_signature(),
                          CHECK);
 
-  _java_system_loader = OopHandle::create((oop)result.get_jobject());
+  _java_system_loader = OopHandle(OopStorageSet::vm_global(), (oop)result.get_jobject());
 
   JavaCalls::call_static(&result,
                          class_loader_klass,
@@ -183,7 +184,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
                          vmSymbols::void_classloader_signature(),
                          CHECK);
 
-  _java_platform_loader = OopHandle::create((oop)result.get_jobject());
+  _java_platform_loader = OopHandle(OopStorageSet::vm_global(), (oop)result.get_jobject());
 }
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool create_mirror_cld) {
@@ -1240,104 +1241,92 @@ InstanceKlass* SystemDictionary::load_shared_boot_class(Symbol* class_name,
   return NULL;
 }
 
-// Check if a shared class can be loaded by the specific classloader:
-//
-// NULL classloader:
-//   - Module class from "modules" jimage. ModuleEntry must be defined in the classloader.
-//   - Class from -Xbootclasspath/a. The class has no defined PackageEntry, or must
-//     be defined in an unnamed module.
+// Check if a shared class can be loaded by the specific classloader.
 bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
                                                InstanceKlass* ik,
                                                PackageEntry* pkg_entry,
                                                Handle class_loader, TRAPS) {
   assert(!ModuleEntryTable::javabase_moduleEntry()->is_patched(),
          "Cannot use sharing if java.base is patched");
-  if (ik->shared_classpath_index() < 0) {
-    // path_index < 0 indicates that the class is intended for a custom loader
-    // and should not be loaded by boot/platform/app loaders
-    if (is_builtin_class_loader(class_loader())) {
+
+  // (1) Check if we are loading into the same loader as in dump time.
+
+  if (ik->is_shared_boot_class()) {
+    if (class_loader() != NULL) {
+      return false;
+    }
+  } else if (ik->is_shared_platform_class()) {
+    if (class_loader() != java_platform_loader()) {
+      return false;
+    }
+  } else if (ik->is_shared_app_class()) {
+    if (class_loader() != java_system_loader()) {
+      return false;
+    }
+  } else {
+    // ik was loaded by a custom loader during dump time
+    if (class_loader_data(class_loader)->is_builtin_class_loader_data()) {
       return false;
     } else {
       return true;
     }
   }
 
-  // skip class visibility check
+  // (2) Check if we are loading into the same module from the same location as in dump time.
+
   if (MetaspaceShared::use_optimized_module_handling()) {
-    assert(SystemDictionary::is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader, THREAD), "Optimizing module handling failed.");
+    // Class visibility has not changed between dump time and run time, so a class
+    // that was visible (and thus archived) during dump time is always visible during runtime.
+    assert(SystemDictionary::is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader, THREAD),
+           "visibility cannot change between dump time and runtime");
     return true;
   }
   return is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader, THREAD);
 }
 
 bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
-                                               InstanceKlass* ik,
-                                               PackageEntry* pkg_entry,
-                                               Handle class_loader, TRAPS) {
-  int path_index = ik->shared_classpath_index();
-  ClassLoaderData* loader_data = class_loader_data(class_loader);
-  SharedClassPathEntry* ent =
-            (SharedClassPathEntry*)FileMapInfo::shared_path(path_index);
+                                                    InstanceKlass* ik,
+                                                    PackageEntry* pkg_entry,
+                                                    Handle class_loader, TRAPS) {
+  int scp_index = ik->shared_classpath_index();
+  assert(!ik->is_shared_unregistered_class(), "this function should be called for built-in classes only");
+  assert(scp_index >= 0, "must be");
+  SharedClassPathEntry* scp_entry = FileMapInfo::shared_path(scp_index);
   if (!Universe::is_module_initialized()) {
-    assert(ent != NULL && ent->is_modules_image(),
+    assert(scp_entry != NULL && scp_entry->is_modules_image(),
            "Loading non-bootstrap classes before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
     return true;
   }
-  // Get the pkg_entry from the classloader
-  ModuleEntry* mod_entry = NULL;
-  TempNewSymbol pkg_name = pkg_entry != NULL ? pkg_entry->name() :
-                                               ClassLoader::package_from_class_name(class_name);
-  if (pkg_name != NULL) {
-    if (loader_data != NULL) {
-      if (pkg_entry != NULL) {
-        mod_entry = pkg_entry->module();
-        // If the archived class is from a module that has been patched at runtime,
-        // the class cannot be loaded from the archive.
-        if (mod_entry != NULL && mod_entry->is_patched()) {
-          return false;
-        }
-      }
-    }
-  }
 
-  if (class_loader.is_null()) {
-    assert(ent != NULL, "Shared class for NULL classloader must have valid SharedClassPathEntry");
-    // The NULL classloader can load archived class originated from the
-    // "modules" jimage and the -Xbootclasspath/a. For class from the
-    // "modules" jimage, the PackageEntry/ModuleEntry must be defined
-    // by the NULL classloader.
-    if (mod_entry != NULL) {
-      // PackageEntry/ModuleEntry is found in the classloader. Check if the
-      // ModuleEntry's location agrees with the archived class' origination.
-      if (ent->is_modules_image() && mod_entry->location()->starts_with("jrt:")) {
-        return true; // Module class from the "module" jimage
-      }
-    }
+  ModuleEntry* mod_entry = (pkg_entry == NULL) ? NULL : pkg_entry->module();
+  bool should_be_in_named_module = (mod_entry != NULL && mod_entry->is_named());
+  bool was_archived_from_named_module = scp_entry->in_named_module();
+  bool visible;
 
-    // If the archived class is not from the "module" jimage, the class can be
-    // loaded by the NULL classloader if
-    //
-    // 1. the class is from the unamed package
-    // 2. or, the class is not from a module defined in the NULL classloader
-    // 3. or, the class is from an unamed module
-    if (!ent->is_modules_image() && ik->is_shared_boot_class()) {
-      // the class is from the -Xbootclasspath/a
-      if (pkg_name == NULL ||
-          pkg_entry == NULL ||
-          pkg_entry->in_unnamed_module()) {
-        assert(mod_entry == NULL ||
-               mod_entry == loader_data->unnamed_module(),
-               "the unnamed module is not defined in the classloader");
-        return true;
+  if (was_archived_from_named_module) {
+    if (should_be_in_named_module) {
+      // Is the module loaded from the same location as during dump time?
+      visible = mod_entry->shared_path_index() == scp_index;
+      if (visible) {
+        assert(!mod_entry->is_patched(), "cannot load archived classes for patched module");
       }
+    } else {
+      // During dump time, this class was in a named module, but at run time, this class should be
+      // in an unnamed module.
+      visible = false;
     }
-    return false;
   } else {
-    bool res = SystemDictionaryShared::is_shared_class_visible_for_classloader(
-              ik, class_loader, pkg_name, pkg_entry, mod_entry, CHECK_(false));
-    return res;
+    if (should_be_in_named_module) {
+      // During dump time, this class was in an unnamed, but at run time, this class should be
+      // in a named module.
+      visible = false;
+    } else {
+      visible = true;
+    }
   }
+
+  return visible;
 }
 
 bool SystemDictionary::check_shared_class_super_type(InstanceKlass* child, InstanceKlass* super_type,
@@ -2041,7 +2030,7 @@ void SystemDictionary::initialize(TRAPS) {
 
   // Allocate private object used as system class loader lock
   oop lock_obj = oopFactory::new_intArray(0, CHECK);
-  _system_loader_lock_obj = OopHandle::create(lock_obj);
+  _system_loader_lock_obj = OopHandle(OopStorageSet::vm_global(), lock_obj);
 
   // Initialize basic classes
   resolve_well_known_classes(CHECK);

@@ -34,8 +34,8 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/timerTrace.hpp"
 
-GrowableArray<AOTCodeHeap*>* AOTLoader::_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<AOTCodeHeap*> (2, true);
-GrowableArray<AOTLib*>* AOTLoader::_libraries = new(ResourceObj::C_HEAP, mtCode) GrowableArray<AOTLib*> (2, true);
+GrowableArray<AOTCodeHeap*>* AOTLoader::_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<AOTCodeHeap*> (2, mtCode);
+GrowableArray<AOTLib*>* AOTLoader::_libraries = new(ResourceObj::C_HEAP, mtCode) GrowableArray<AOTLib*> (2, mtCode);
 
 // Iterate over all AOT CodeHeaps
 #define FOR_ALL_AOT_HEAPS(heap) for (GrowableArrayIterator<AOTCodeHeap*> heap = heaps()->begin(); heap != heaps()->end(); ++heap)

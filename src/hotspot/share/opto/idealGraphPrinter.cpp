@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,10 +75,6 @@ const char *IdealGraphPrinter::ASSEMBLY_ELEMENT = "assembly";
 int IdealGraphPrinter::_file_count = 0;
 
 IdealGraphPrinter *IdealGraphPrinter::printer() {
-  if (!PrintIdealGraph) {
-    return NULL;
-  }
-
   JavaThread *thread = JavaThread::current();
   if (!thread->is_Compiler_thread()) return NULL;
 
@@ -593,7 +589,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set) {
 
 
-  VectorSet visited(Thread::current()->resource_area());
+  VectorSet visited;
   GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, NULL);
   nodeStack.push(start);
   visited.test_set(start->_idx);
@@ -633,7 +629,7 @@ void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set)
 }
 
 void IdealGraphPrinter::print_method(const char *name, int level) {
-  if (should_print(level)) {
+  if (C->should_print(level)) {
     print(name, (Node *) C->root());
   }
 }
@@ -650,7 +646,7 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
   print_attr(GRAPH_NAME_PROPERTY, (const char *)name);
   end_head();
 
-  VectorSet temp_set(Thread::current()->resource_area());
+  VectorSet temp_set;
 
   head(NODES_ELEMENT);
   walk_nodes(node, false, &temp_set);
@@ -689,11 +685,6 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
   }
   tail(GRAPH_ELEMENT);
   _xml->flush();
-}
-
-// Should method be printed?
-bool IdealGraphPrinter::should_print(int level) {
-  return C->directive()->IGVPrintLevelOption >= level;
 }
 
 void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multiple_files, bool append) {

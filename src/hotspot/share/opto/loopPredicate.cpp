@@ -1337,17 +1337,17 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   ConNode* zero = _igvn.intcon(0);
   set_ctrl(zero, C->root());
 
-  ResourceArea *area = Thread::current()->resource_area();
+  ResourceArea* area = Thread::current()->resource_area();
   Invariance invar(area, loop);
 
   // Create list of if-projs such that a newer proj dominates all older
   // projs in the list, and they all dominate loop->tail()
-  Node_List if_proj_list(area);
-  Node_List regions(area);
-  Node *current_proj = loop->tail(); //start from tail
+  Node_List if_proj_list;
+  Node_List regions;
+  Node* current_proj = loop->tail(); // start from tail
 
 
-  Node_List controls(area);
+  Node_List controls;
   while (current_proj != head) {
     if (loop == get_loop(current_proj) && // still in the loop ?
         current_proj->is_Proj()        && // is a projection  ?
@@ -1416,7 +1416,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
 
     // And look into all branches
     Node_Stack stack(0);
-    VectorSet seen(Thread::current()->resource_area());
+    VectorSet seen;
     Node_List if_proj_list_freq(area);
     while (regions.size() > 0) {
       Node* c = regions.pop();

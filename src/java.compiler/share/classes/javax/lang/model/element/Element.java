@@ -37,7 +37,7 @@ import javax.lang.model.util.*;
 
 /**
  * Represents a program element such as a module, package, class, or method.
- * Each element represents a static, language-level construct
+ * Each element represents a compile-time language-level construct
  * (and not, for example, a runtime construct of the virtual machine).
  *
  * <p> Elements should be compared using the {@link #equals(Object)}

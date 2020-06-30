@@ -132,6 +132,20 @@ public class BasicRecordSer {
         assertEquals(objDeserialized, objToSerialize);
     }
 
+    /** Tests serializing and deserializing of local records. */
+    @Test
+    public void testLocalRecord() throws Exception {
+        out.println("\n---");
+        record Point(int x, int y) implements Serializable { }
+        record Rectangle(Point bottomLeft, Point topRight) implements Serializable { }
+        var objToSerialize = new Rectangle(new Point(0, 1), new Point (5, 6));
+        out.println("serializing : " + objToSerialize);
+        var objDeserialized = serializeDeserialize(objToSerialize);
+        out.println("deserialized: " + objDeserialized);
+        assertEquals(objToSerialize, objDeserialized);
+        assertEquals(objDeserialized, objToSerialize);
+    }
+
     /** Tests back references of Serializable record objects in the stream. */
     @Test
     public void testSerializableBackRefs() throws Exception {

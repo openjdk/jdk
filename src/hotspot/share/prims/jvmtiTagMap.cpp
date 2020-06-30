@@ -821,8 +821,8 @@ class ClassFieldMap: public CHeapObj<mtInternal> {
 };
 
 ClassFieldMap::ClassFieldMap() {
-  _fields = new (ResourceObj::C_HEAP, mtInternal)
-    GrowableArray<ClassFieldDescriptor*>(initial_field_count, true);
+  _fields = new (ResourceObj::C_HEAP, mtServiceability)
+    GrowableArray<ClassFieldDescriptor*>(initial_field_count, mtServiceability);
 }
 
 ClassFieldMap::~ClassFieldMap() {
@@ -958,8 +958,8 @@ bool ClassFieldMapCacheMark::_is_active;
 // record that the given InstanceKlass is caching a field map
 void JvmtiCachedClassFieldMap::add_to_class_list(InstanceKlass* ik) {
   if (_class_list == NULL) {
-    _class_list = new (ResourceObj::C_HEAP, mtInternal)
-      GrowableArray<InstanceKlass*>(initial_class_count, true);
+    _class_list = new (ResourceObj::C_HEAP, mtServiceability)
+      GrowableArray<InstanceKlass*>(initial_class_count, mtServiceability);
   }
   _class_list->push(ik);
 }
@@ -1531,8 +1531,8 @@ class TagObjectCollector : public JvmtiTagHashmapEntryClosure {
     _env = env;
     _tags = (jlong*)tags;
     _tag_count = tag_count;
-    _object_results = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jobject>(1,true);
-    _tag_results = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<uint64_t>(1,true);
+    _object_results = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jobject>(1, mtServiceability);
+    _tag_results = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<uint64_t>(1, mtServiceability);
   }
 
   ~TagObjectCollector() {
@@ -1674,8 +1674,8 @@ void ObjectMarker::init() {
   Universe::heap()->ensure_parsability(false);  // no need to retire TLABs
 
   // create stacks for interesting headers
-  _saved_mark_stack = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<markWord>(4000, true);
-  _saved_oop_stack = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<oop>(4000, true);
+  _saved_mark_stack = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<markWord>(4000, mtServiceability);
+  _saved_oop_stack = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(4000, mtServiceability);
 
   if (UseBiasedLocking) {
     BiasedLocking::preserve_marks();
@@ -2663,7 +2663,7 @@ class VM_HeapWalkOperation: public VM_Operation {
   bool _reporting_string_values;
 
   GrowableArray<oop>* create_visit_stack() {
-    return new (ResourceObj::C_HEAP, mtInternal) GrowableArray<oop>(initial_visit_stack_size, true);
+    return new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(initial_visit_stack_size, mtServiceability);
   }
 
   // accessors

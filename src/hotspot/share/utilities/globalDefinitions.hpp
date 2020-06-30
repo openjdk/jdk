@@ -432,6 +432,11 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 #define CAST_TO_FN_PTR(func_type, value) (reinterpret_cast<func_type>(value))
 #define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((address_word)(func_ptr)))
 
+// Need the correct linkage to call qsort without warnings
+extern "C" {
+  typedef int (*_sort_Fn)(const void *, const void *);
+}
+
 // Unsigned byte types for os and stream.hpp
 
 // Unsigned one, two, four and eigth byte quantities used for describing

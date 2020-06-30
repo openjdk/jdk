@@ -96,6 +96,8 @@ public class FailOverExecutionControlProvider  implements ExecutionControlProvid
     public ExecutionControl generate(ExecutionEnv env, Map<String, String> parameters)
             throws Throwable {
         Throwable thrown = null;
+        StringWriter dumpsw = new StringWriter();
+        PrintWriter dump = new PrintWriter(dumpsw);
         for (int i = 0; i <= 9; ++i) {
             String param = parameters.get("" + i);
             if (param != null && !param.isEmpty()) {
@@ -115,10 +117,17 @@ public class FailOverExecutionControlProvider  implements ExecutionControlProvid
                     ex.printStackTrace(log);
                     log.flush();
                     logger().fine(writer.toString());
-                    // only care about the first, and only if they all fail
-                    if (thrown == null) {
-                        thrown = ex;
+                    // if they all fail, use the last as cause and include info about prior in message
+                    dump.printf("FailOverExecutionControlProvider: FAILED: %d:%s --%n", i, param);
+                    dump.printf("  Exception: %s%n", ex);
+                    var st = ex.getStackTrace();
+                    for (int k = 0; k < 5 && k < st.length; ++k) {
+                        dump.printf("                  %s%n", st[k]);
                     }
+                    if (ex.getCause() != null) {
+                        dump.printf("      cause: %s%n", ex.getCause());
+                    }
+                    thrown = ex;
                 }
             }
 
@@ -127,7 +136,7 @@ public class FailOverExecutionControlProvider  implements ExecutionControlProvid
         if (thrown == null) {
             throw new IllegalArgumentException("All least one parameter must be set to a provider.");
         }
-        throw thrown;
+        throw new RuntimeException(dumpsw.toString(), thrown);
     }
 
     private Logger logger() {

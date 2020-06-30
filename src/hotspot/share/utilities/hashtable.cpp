@@ -67,7 +67,7 @@ template <MEMFLAGS F> BasicHashtableEntry<F>* BasicHashtable<F>::new_entry(unsig
       len = 1 << log2_int(len); // round down to power of 2
       assert(len >= _entry_size, "");
       _first_free_entry = NEW_C_HEAP_ARRAY2(char, len, F, CURRENT_PC);
-      _entry_blocks->append(_first_free_entry);
+      _entry_blocks.append(_first_free_entry);
       _end_block = _first_free_entry + len;
     }
     entry = (BasicHashtableEntry<F>*)_first_free_entry;
@@ -128,7 +128,7 @@ static int literal_size(oop obj) {
   }
 }
 
-static int literal_size(WeakHandle<vm_weak_data> v) {
+static int literal_size(WeakHandle v) {
   return literal_size(v.peek());
 }
 
@@ -223,7 +223,7 @@ template <class T> void print_literal(T l) {
   l->print();
 }
 
-static void print_literal(WeakHandle<vm_weak_data> l) {
+static void print_literal(WeakHandle l) {
   l.print();
 }
 
@@ -287,14 +287,13 @@ template class Hashtable<ConstantPool*, mtClass>;
 template class Hashtable<Symbol*, mtSymbol>;
 template class Hashtable<Klass*, mtClass>;
 template class Hashtable<InstanceKlass*, mtClass>;
-template class Hashtable<WeakHandle<vm_weak_data>, mtClass>;
+template class Hashtable<WeakHandle, mtClass>;
 template class Hashtable<Symbol*, mtModule>;
 template class Hashtable<oop, mtSymbol>;
 template class Hashtable<Symbol*, mtClass>;
 template class HashtableEntry<Symbol*, mtSymbol>;
 template class HashtableEntry<Symbol*, mtClass>;
 template class HashtableEntry<oop, mtSymbol>;
-template class HashtableEntry<WeakHandle<vm_weak_data>, mtClass>;
 template class HashtableBucket<mtClass>;
 template class BasicHashtableEntry<mtSymbol>;
 template class BasicHashtableEntry<mtCode>;

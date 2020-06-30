@@ -24,12 +24,10 @@
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.Functional;
-import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Parameter;
 
 /**

@@ -26,10 +26,6 @@
 #ifndef CPU_PPC_GLOBALDEFINITIONS_PPC_HPP
 #define CPU_PPC_GLOBALDEFINITIONS_PPC_HPP
 
-#ifdef CC_INTERP
-#error "CC_INTERP is no longer supported. Removed in change 8145117."
-#endif
-
 #ifndef FILE_AND_LINE
 #define FILE_AND_LINE __FILE__ ":" XSTR(__LINE__)
 #endif

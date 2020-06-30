@@ -1150,8 +1150,7 @@ public:
   void collect_nodes_out_all_ctrl_boundary(GrowableArray<Node*> *ns) const;
 
   void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
-  void verify() const;               // Check Def-Use info for my subgraph
-  static void verify_recur(const Node *n, int verify_depth, VectorSet &old_space, VectorSet &new_space);
+  static void verify(Node* n, int verify_depth);
 
   // This call defines a class-unique string used to identify class instances
   virtual const char *Name() const;
@@ -1521,7 +1520,7 @@ class Unique_Node_List : public Node_List {
   VectorSet _in_worklist;
   uint _clock_index;            // Index in list where to pop from next
 public:
-  Unique_Node_List() : Node_List(), _in_worklist(Thread::current()->resource_area()), _clock_index(0) {}
+  Unique_Node_List() : Node_List(), _clock_index(0) {}
   Unique_Node_List(Arena *a) : Node_List(a), _in_worklist(a), _clock_index(0) {}
 
   void remove( Node *n );

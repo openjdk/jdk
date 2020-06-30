@@ -25,14 +25,10 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.jar.Attributes;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
 
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
+import java.util.HashMap;
+import java.util.Map;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
 
 public class BundleParams {
 

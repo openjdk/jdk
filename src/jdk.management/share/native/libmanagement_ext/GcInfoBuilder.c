@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ JNIEXPORT jint JNICALL Java_com_sun_management_internal_GcInfoBuilder_getNumGcEx
     jlong value;
 
     if (gc == NULL) {
-        JNU_ThrowNullPointerException(env, "Invalid GarbageCollectorMBean");
+        JNU_ThrowNullPointerException(env, "Invalid GarbageCollectorMXBean");
         return 0;
     }
     value = jmm_interface->GetLongAttribute(env, gc,
@@ -55,7 +55,7 @@ JNIEXPORT void JNICALL Java_com_sun_management_internal_GcInfoBuilder_fillGcAttr
     jint i;
 
     if (gc == NULL) {
-        JNU_ThrowNullPointerException(env, "Invalid GarbageCollectorMBean");
+        JNU_ThrowNullPointerException(env, "Invalid GarbageCollectorMXBean");
         return;
     }
 
@@ -207,7 +207,7 @@ JNIEXPORT jobject JNICALL Java_com_sun_management_internal_GcInfoBuilder_getLast
     jvalue      v;
 
     if (gc == NULL) {
-        JNU_ThrowNullPointerException(env, "Invalid GarbageCollectorMBean");
+        JNU_ThrowNullPointerException(env, "Invalid GarbageCollectorMXBean");
         return 0;
     }
 

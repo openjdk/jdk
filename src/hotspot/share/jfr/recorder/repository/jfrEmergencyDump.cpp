@@ -296,7 +296,7 @@ RepositoryIterator::RepositoryIterator(const char* repository_path) :
     if (_path_buffer_file_name_offset == -1) {
       return;
     }
-    _file_names = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<const char*>(10, true, mtTracing);
+    _file_names = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<const char*>(10, mtTracing);
     if (_file_names == NULL) {
       log_error(jfr, system)("Unable to malloc memory during jfr emergency dump");
       return;

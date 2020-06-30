@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@ import java.util.*;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.text.*;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 import com.sun.net.httpserver.*;
 
@@ -55,16 +58,12 @@ class ExchangeImpl {
     boolean http10 = false;
 
     /* for formatting the Date: header */
-    private static final String pattern = "EEE, dd MMM yyyy HH:mm:ss zzz";
-    private static final TimeZone gmtTZ = TimeZone.getTimeZone("GMT");
-    private static final ThreadLocal<DateFormat> dateFormat =
-         new ThreadLocal<DateFormat>() {
-             @Override protected DateFormat initialValue() {
-                 DateFormat df = new SimpleDateFormat(pattern, Locale.US);
-                 df.setTimeZone(gmtTZ);
-                 return df;
-         }
-     };
+    private static final DateTimeFormatter FORMATTER;
+    static {
+        String pattern = "EEE, dd MMM yyyy HH:mm:ss zzz";
+        FORMATTER = DateTimeFormatter.ofPattern(pattern, Locale.US)
+                                     .withZone(ZoneId.of("GMT"));
+    }
 
     private static final String HEAD = "HEAD";
 
@@ -212,7 +211,7 @@ class ExchangeImpl {
         tmpout.write (bytes(statusLine, 0), 0, statusLine.length());
         boolean noContentToSend = false; // assume there is content
         boolean noContentLengthHeader = false; // must not send Content-length is set
-        rspHdrs.set ("Date", dateFormat.get().format (new Date()));
+        rspHdrs.set("Date", FORMATTER.format(Instant.now()));
 
         /* check for response type that is not allowed to send a body */
 

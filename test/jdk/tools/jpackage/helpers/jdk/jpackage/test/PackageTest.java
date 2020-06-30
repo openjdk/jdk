@@ -48,7 +48,6 @@ import jdk.incubator.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingRunnable;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
 
 
 
@@ -553,30 +552,14 @@ public final class PackageTest extends RunnablePackageTest {
             }
             TKit.trace(String.format(formatString, cmd.getPrintableCommandLine()));
 
-            TKit.assertDirectoryExists(cmd.appRuntimeDirectory());
             if (!cmd.isRuntime()) {
-                TKit.assertExecutableFileExists(cmd.appLauncherPath());
-
                 if (PackageType.WINDOWS.contains(cmd.packageType())
                         && !cmd.isPackageUnpacked(
                                 "Not verifying desktop integration")) {
                     new WindowsHelper.DesktopIntegrationVerifier(cmd);
                 }
             }
-
-            if (cmd.isPackageUnpacked()) {
-                final Path appImageFile = AppImageFile.getPathInAppImage(
-                        Path.of(""));
-                try (Stream<Path> walk = ThrowingSupplier.toSupplier(
-                        () -> Files.walk(cmd.unpackedPackageDirectory())).get()) {
-                    walk.filter(path -> path.getFileName().equals(appImageFile))
-                        .findFirst()
-                        .ifPresent(path -> TKit.assertPathExists(path, false));
-                }
-            } else {
-                TKit.assertPathExists(AppImageFile.getPathInAppImage(
-                        cmd.appInstallationDirectory()), false);
-            }
+            cmd.assertAppLayout();
 
             installVerifiers.forEach(v -> v.accept(cmd));
         }

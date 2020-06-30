@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,11 @@ import java.security.*;
  * @see KeyManager
  */
 public abstract class KeyManagerFactorySpi {
+    /**
+     * Constructor for subclasses to call.
+     */
+    public KeyManagerFactorySpi() {}
+
     /**
      * Initializes this factory with a source of key material.
      *

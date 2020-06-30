@@ -260,7 +260,7 @@ class nmethod : public CompiledMethod {
   // The _hotness_counter indicates the hotness of a method. The higher
   // the value the hotter the method. The hotness counter of a nmethod is
   // set to [(ReservedCodeCacheSize / (1024 * 1024)) * 2] each time the method
-  // is active while stack scanning (mark_active_nmethods()). The hotness
+  // is active while stack scanning (do_stack_scanning()). The hotness
   // counter is decreased (by 1) while sweeping.
   int _hotness_counter;
 

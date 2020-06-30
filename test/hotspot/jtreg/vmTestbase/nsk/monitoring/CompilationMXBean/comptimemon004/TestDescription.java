@@ -31,7 +31,7 @@
  * VM Testbase readme:
  * DESCRIPTION
  *     The test checks that
- *         CompilationMBean.isCompilationTimeMonitoringSupported()
+ *         CompilationMXBean.isCompilationTimeMonitoringSupported()
  *     method returns true. The test performs access to management metrics
  *     through default MBeanServer proxy.
  *     Note, that the test is correct ONLY against Sun's Hotspot VM. This
@@ -50,4 +50,3 @@
  *      nsk.monitoring.CompilationMXBean.comptimemon001.comptimemon001
  *      -testMode=proxy
  */
-

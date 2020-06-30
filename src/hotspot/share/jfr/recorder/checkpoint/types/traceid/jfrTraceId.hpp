@@ -106,6 +106,7 @@ class JfrTraceId : public AllStatic {
   static traceid load_raw(const ClassLoaderData* cld);
 
   static void remove(const Klass* klass);
+  static void remove(const Method* method);
   static void restore(const Klass* klass);
 
   // set of event classes made visible to java

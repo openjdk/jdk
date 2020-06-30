@@ -27,7 +27,7 @@ package jdk.internal.module;
 
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Provides;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -94,19 +94,24 @@ public final class ServicesCatalog {
     }
 
     /**
-     * Returns the list of service providers for the given service type
-     * name, creating it if needed.
+     * Adds service providers for the given service type.
      */
-    private List<ServiceProvider> providers(String service) {
-        // avoid computeIfAbsent here
+    private void addProviders(String service, ServiceProvider ... providers) {
         List<ServiceProvider> list = map.get(service);
         if (list == null) {
-            list = new CopyOnWriteArrayList<>();
+            list = new CopyOnWriteArrayList<>(providers);
             List<ServiceProvider> prev = map.putIfAbsent(service, list);
-            if (prev != null)
-                list = prev;  // someone else got there
+            if (prev != null) {
+                // someone else got there
+                prev.addAll(list);
+            }
+        } else {
+            if (providers.length == 1) {
+                list.add(providers[0]);
+            } else {
+                list.addAll(Arrays.asList(providers));
+            }
         }
-        return list;
     }
 
     /**
@@ -118,16 +123,11 @@ public final class ServicesCatalog {
             String service = provides.service();
             List<String> providerNames = provides.providers();
             int count = providerNames.size();
-            if (count == 1) {
-                String pn = providerNames.get(0);
-                providers(service).add(new ServiceProvider(module, pn));
-            } else {
-                List<ServiceProvider> list = new ArrayList<>(count);
-                for (String pn : providerNames) {
-                    list.add(new ServiceProvider(module, pn));
-                }
-                providers(service).addAll(list);
+            ServiceProvider[] providers = new ServiceProvider[count];
+            for (int i = 0; i < count; i++) {
+                providers[i] = new ServiceProvider(module, providerNames.get(i));
             }
+            addProviders(service, providers);
         }
     }
 
@@ -137,8 +137,7 @@ public final class ServicesCatalog {
      * @apiNote This method is for use by java.lang.instrument
      */
     public void addProvider(Module module, Class<?> service, Class<?> impl) {
-        List<ServiceProvider> list = providers(service.getName());
-        list.add(new ServiceProvider(module, impl.getName()));
+        addProviders(service.getName(), new ServiceProvider(module, impl.getName()));
     }
 
     /**

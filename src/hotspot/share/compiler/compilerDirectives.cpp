@@ -33,9 +33,9 @@
 
 CompilerDirectives::CompilerDirectives() : _next(NULL), _match(NULL), _ref_count(0) {
   _c1_store = new DirectiveSet(this);
-  _c1_store->init_disableintrinsic();
+  _c1_store->init_control_intrinsic();
   _c2_store = new DirectiveSet(this);
-  _c2_store->init_disableintrinsic();
+  _c2_store->init_control_intrinsic();
 };
 
 CompilerDirectives::~CompilerDirectives() {
@@ -179,14 +179,14 @@ DirectiveSet* CompilerDirectives::get_for(AbstractCompiler *comp) {
   }
 }
 
-// In the list of disabled intrinsics, the ID of the disabled intrinsics can separated:
-// - by ',' (if -XX:DisableIntrinsic is used once when invoking the VM) or
-// - by '\n' (if -XX:DisableIntrinsic is used multiple times when invoking the VM) or
-// - by ' ' (if DisableIntrinsic is used on a per-method level, e.g., with CompileCommand).
+// In the list of Control/disabled intrinsics, the ID of the control intrinsics can separated:
+// - by ',' (if -XX:Control/DisableIntrinsic is used once when invoking the VM) or
+// - by '\n' (if -XX:Control/DisableIntrinsic is used multiple times when invoking the VM) or
+// - by ' ' (if Control/DisableIntrinsic is used on a per-method level, e.g., with CompileCommand).
 //
-// To simplify the processing of the list, the canonicalize_disableintrinsic() method
+// To simplify the processing of the list, the canonicalize_control_intrinsic() method
 // returns a new copy of the list in which '\n' and ' ' is replaced with ','.
-ccstrlist DirectiveSet::canonicalize_disableintrinsic(ccstrlist option_value) {
+ccstrlist DirectiveSet::canonicalize_control_intrinsic(ccstrlist option_value) {
   char* canonicalized_list = NEW_C_HEAP_ARRAY(char, strlen(option_value) + 1, mtCompiler);
   int i = 0;
   char current;
@@ -202,9 +202,57 @@ ccstrlist DirectiveSet::canonicalize_disableintrinsic(ccstrlist option_value) {
   return canonicalized_list;
 }
 
-void DirectiveSet::init_disableintrinsic() {
-  // Canonicalize DisableIntrinsic to contain only ',' as a separator.
-  this->DisableIntrinsicOption = canonicalize_disableintrinsic(DisableIntrinsic);
+ControlIntrinsicIter::ControlIntrinsicIter(ccstrlist option_value, bool disable_all)
+  : _disableIntrinsic(disable_all) {
+  _list = (char*)DirectiveSet::canonicalize_control_intrinsic(option_value);
+  _saved_ptr = _list;
+  _enabled = false;
+
+  _token = strtok_r(_saved_ptr, ",", &_saved_ptr);
+  next_token();
+}
+
+ControlIntrinsicIter::~ControlIntrinsicIter() {
+  FREE_C_HEAP_ARRAY(char, _list);
+}
+
+// pre-increment
+ControlIntrinsicIter& ControlIntrinsicIter::operator++() {
+  _token = strtok_r(NULL, ",", &_saved_ptr);
+  next_token();
+  return *this;
+}
+
+void ControlIntrinsicIter::next_token() {
+  if (_token && !_disableIntrinsic) {
+    char ch = _token[0];
+
+    if (ch != '+' && ch != '-') {
+      warning("failed to parse %s. must start with +/-!", _token);
+    } else {
+      _enabled = ch == '+';
+      _token++;
+    }
+  }
+}
+
+void DirectiveSet::init_control_intrinsic() {
+  for (ControlIntrinsicIter iter(ControlIntrinsic); *iter != NULL; ++iter) {
+    vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
+
+    if (id != vmIntrinsics::_none) {
+      _intrinsic_control_words[id] = iter.is_enabled();
+    }
+  }
+
+  // Order matters, DisableIntrinsic can overwrite ControlIntrinsic
+  for (ControlIntrinsicIter iter(DisableIntrinsic, true/*disable_all*/); *iter != NULL; ++iter) {
+    vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
+
+    if (id != vmIntrinsics::_none) {
+      _intrinsic_control_words[id] = false;
+    }
+  }
 }
 
 DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(NULL), _directive(d) {
@@ -213,6 +261,7 @@ DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(NULL), _direc
   compilerdirectives_c2_flags(init_defaults_definition)
   compilerdirectives_c1_flags(init_defaults_definition)
   memset(_modified, 0, sizeof(_modified));
+  _intrinsic_control_words.fill_in(/*default value*/TriBool());
 }
 
 DirectiveSet::~DirectiveSet() {
@@ -223,12 +272,6 @@ DirectiveSet::~DirectiveSet() {
     delete tmp;
     tmp = next;
   }
-
-  // When constructed, DirectiveSet canonicalizes the DisableIntrinsic flag
-  // into a new string. Therefore, that string is deallocated when
-  // the DirectiveSet is destroyed.
-  assert(this->DisableIntrinsicOption != NULL, "");
-  FREE_C_HEAP_ARRAY(char, (void *)this->DisableIntrinsicOption);
 }
 
 // Backward compatibility for CompileCommands
@@ -280,10 +323,6 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       }
     }
 
-    // Read old value of DisableIntrinsicOption, in case we need to free it
-    // and overwrite it with a new value.
-    ccstrlist old_disable_intrinsic_value = set->DisableIntrinsicOption;
-
     // inline and dontinline (including exclude) are implemented in the directiveset accessors
 #define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompilerOracle::has_option_value(method, #cc_flag, v) && v != this->name##Option) { set->name##Option = v; changed = true;} }
     compilerdirectives_common_flags(init_default_cc)
@@ -292,11 +331,45 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
 
     // Canonicalize DisableIntrinsic to contain only ',' as a separator.
     ccstrlist option_value;
+    bool need_reset = true; // if Control/DisableIntrinsic redefined, only need to reset control_words once
+
+    if (!_modified[ControlIntrinsicIndex] &&
+        CompilerOracle::has_option_value(method, "ControlIntrinsic", option_value)) {
+      ControlIntrinsicIter iter(option_value);
+
+      if (need_reset) {
+        set->_intrinsic_control_words.fill_in(TriBool());
+        need_reset = false;
+      }
+
+      while (*iter != NULL) {
+        vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
+        if (id != vmIntrinsics::_none) {
+          set->_intrinsic_control_words[id] = iter.is_enabled();
+        }
+
+        ++iter;
+      }
+    }
+
+
     if (!_modified[DisableIntrinsicIndex] &&
         CompilerOracle::has_option_value(method, "DisableIntrinsic", option_value)) {
-      set->DisableIntrinsicOption = canonicalize_disableintrinsic(option_value);
-      assert(old_disable_intrinsic_value != NULL, "");
-      FREE_C_HEAP_ARRAY(char, (void *)old_disable_intrinsic_value);
+      ControlIntrinsicIter iter(option_value, true/*disable_all*/);
+
+      if (need_reset) {
+        set->_intrinsic_control_words.fill_in(TriBool());
+        need_reset = false;
+      }
+
+      while (*iter != NULL) {
+        vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
+        if (id != vmIntrinsics::_none) {
+          set->_intrinsic_control_words[id] = false;
+        }
+
+        ++iter;
+      }
     }
 
 
@@ -397,38 +470,23 @@ void DirectiveSet::print_inline(outputStream* st) {
 
 bool DirectiveSet::is_intrinsic_disabled(const methodHandle& method) {
   vmIntrinsics::ID id = method->intrinsic_id();
-  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  assert(id > vmIntrinsics::_none && id < vmIntrinsics::ID_LIMIT, "invalid intrinsic_id!");
 
-  ResourceMark rm;
-
-  // Create a copy of the string that contains the list of disabled
-  // intrinsics. The copy is created because the string
-  // will be modified by strtok(). Then, the list is tokenized with
-  // ',' as a separator.
-  size_t length = strlen(DisableIntrinsicOption);
-  char* local_list = NEW_RESOURCE_ARRAY(char, length + 1);
-  strncpy(local_list, DisableIntrinsicOption, length + 1);
-  char* save_ptr;
-
-  char* token = strtok_r(local_list, ",", &save_ptr);
-  while (token != NULL) {
-    if (strcmp(token, vmIntrinsics::name_at(id)) == 0) {
-      return true;
-    } else {
-      token = strtok_r(NULL, ",", &save_ptr);
-    }
+  TriBool b = _intrinsic_control_words[id];
+  if (b.is_default()) {
+    return false; // if unset, every intrinsic is enabled.
+  } else {
+    return !b;
   }
-
-  return false;
 }
 
 DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
   DirectiveSet* set = new DirectiveSet(NULL);
-  // Ordinary allocations of DirectiveSet would call init_disableintrinsic()
-  // immediately to create a new copy for set->DisableIntrinsicOption.
+  // Ordinary allocations of DirectiveSet would call init_control_intrinsic()
+  // immediately to create a new copy for set->Control/DisableIntrinsicOption.
   // However, here it does not need to because the code below creates
-  // a copy of src->DisableIntrinsicOption that initializes
-  // set->DisableIntrinsicOption.
+  // a copy of src->Control/DisableIntrinsicOption that initializes
+  // set->Control/DisableIntrinsicOption.
 
   memcpy(set->_modified, src->_modified, sizeof(src->_modified));
 
@@ -443,13 +501,7 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
     compilerdirectives_c2_flags(copy_members_definition)
     compilerdirectives_c1_flags(copy_members_definition)
 
-  // Create a local copy of the DisableIntrinsicOption.
-  assert(src->DisableIntrinsicOption != NULL, "");
-  size_t len = strlen(src->DisableIntrinsicOption) + 1;
-  char* s = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
-  strncpy(s, src->DisableIntrinsicOption, len);
-  assert(s[len-1] == '\0', "");
-  set->DisableIntrinsicOption = s;
+  set->_intrinsic_control_words = src->_intrinsic_control_words;
   return set;
 }
 

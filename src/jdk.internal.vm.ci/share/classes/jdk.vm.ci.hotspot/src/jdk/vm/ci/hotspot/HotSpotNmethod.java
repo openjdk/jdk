@@ -146,6 +146,18 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * It's possible for the HotSpot runtime to sweep nmethods at any point in time. As a result,
+     * there is no guarantee that calling this method will execute the wrapped nmethod. Instead, it
+     * may end up executing the bytecode of the associated {@link #getMethod() Java method}. Only if
+     * {@link #isValid()} is {@code true} after returning can the caller be sure that the nmethod
+     * was executed. If {@link #isValid()} is {@code false}, then the only way to determine if the
+     * nmethod was executed is to test for some side-effect specific to the nmethod (e.g., update to
+     * a field) that is not performed by the bytecode of the associated {@link #getMethod() Java
+     * method}.
+     */
     @Override
     public Object executeVarargs(Object... args) throws InvalidInstalledCodeException {
         if (IS_IN_NATIVE_IMAGE) {

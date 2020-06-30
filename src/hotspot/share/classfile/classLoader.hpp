@@ -441,12 +441,11 @@ class PerfClassTraceTime {
  public:
   enum {
     CLASS_LOAD   = 0,
-    PARSE_CLASS  = 1,
-    CLASS_LINK   = 2,
-    CLASS_VERIFY = 3,
-    CLASS_CLINIT = 4,
-    DEFINE_CLASS = 5,
-    EVENT_TYPE_COUNT = 6
+    CLASS_LINK   = 1,
+    CLASS_VERIFY = 2,
+    CLASS_CLINIT = 3,
+    DEFINE_CLASS = 4,
+    EVENT_TYPE_COUNT = 5
   };
  protected:
   // _t tracks time from initialization to destruction of this timer instance
@@ -483,9 +482,6 @@ class PerfClassTraceTime {
       _timep(timep), _selftimep(NULL), _eventp(NULL), _recursion_counters(NULL), _timers(timers), _event_type(type) {
     initialize();
   }
-
-  inline void suspend() { _t.stop(); _timers[_event_type].stop(); }
-  inline void resume()  { _t.start(); _timers[_event_type].start(); }
 
   ~PerfClassTraceTime();
   void initialize();

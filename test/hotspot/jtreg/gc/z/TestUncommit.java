@@ -28,7 +28,19 @@ package gc.z;
  * @requires vm.gc.Z & !vm.graal.enabled
  * @summary Test ZGC uncommit unused memory
  * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit true 2
+ */
+
+/*
+ * @test TestUncommit
+ * @requires vm.gc.Z & !vm.graal.enabled
+ * @summary Test ZGC uncommit unused memory
  * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms512M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit false 1
+ */
+
+/*
+ * @test TestUncommit
+ * @requires vm.gc.Z & !vm.graal.enabled
+ * @summary Test ZGC uncommit unused memory
  * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 -XX:-ZUncommit gc.z.TestUncommit false 1
  */
 

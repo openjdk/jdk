@@ -22,7 +22,7 @@
  */
 
 /*
- * A simple way to test JVMTI ClassFileLoadHook. See ../testlibrary_tests/SimpleClassFileLoadHookTest.java
+ * A simple way to test JVMTI ClassFileLoadHook. See ../testlibrary_tests/jvmti/SimpleClassFileLoadHookTest.java
  * for an example.
  */
 #include <stdio.h>

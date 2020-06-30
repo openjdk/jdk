@@ -52,7 +52,7 @@ import jdk.internal.foreign.MemoryAddressImpl;
  * explicitly permitted types.
  *
  * @implSpec
- * Implementations of this interface are immutable and thread-safe.
+ * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
 public interface MemoryAddress {
     /**

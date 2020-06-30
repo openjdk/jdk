@@ -202,8 +202,6 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
 #endif
        )
   , _live(0)
-  , _spilled_once(Thread::current()->resource_area())
-  , _spilled_twice(Thread::current()->resource_area())
   , _lo_degree(0), _lo_stk_degree(0), _hi_degree(0), _simplified(0)
   , _oldphi(unique)
 #ifndef PRODUCT

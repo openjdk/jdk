@@ -687,7 +687,7 @@ void CompileBroker::compilation_init_phase1(Thread* THREAD) {
   // Start the compiler thread(s) and the sweeper thread
   init_compiler_sweeper_threads();
   // totalTime performance counter is always created as it is required
-  // by the implementation of java.lang.management.CompilationMBean.
+  // by the implementation of java.lang.management.CompilationMXBean.
   {
     // Ensure OOM leads to vm_exit_during_initialization.
     EXCEPTION_MARK;
@@ -1655,7 +1655,7 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   bool free_task;
 #if INCLUDE_JVMCI
   AbstractCompiler* comp = compiler(task->comp_level());
-  if (comp->is_jvmci() && !task->should_wait_for_compilation()) {
+  if (!UseJVMCINativeLibrary && comp->is_jvmci() && !task->should_wait_for_compilation()) {
     // It may return before compilation is completed.
     free_task = wait_for_jvmci_completion((JVMCICompiler*) comp, task, thread);
   } else
@@ -2478,7 +2478,7 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
     // Compilation succeeded
 
     // update compilation ticks - used by the implementation of
-    // java.lang.management.CompilationMBean
+    // java.lang.management.CompilationMXBean
     _perf_total_compilation->inc(time.ticks());
     _peak_compilation_time = time.milliseconds() > _peak_compilation_time ? time.milliseconds() : _peak_compilation_time;
 

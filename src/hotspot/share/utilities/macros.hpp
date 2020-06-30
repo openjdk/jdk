@@ -367,14 +367,6 @@
 #define NOT_CHECK_UNHANDLED_OOPS(code)  code
 #endif // CHECK_UNHANDLED_OOPS
 
-#ifdef CC_INTERP
-#define CC_INTERP_ONLY(code) code
-#define NOT_CC_INTERP(code)
-#else
-#define CC_INTERP_ONLY(code)
-#define NOT_CC_INTERP(code) code
-#endif // CC_INTERP
-
 #ifdef ASSERT
 #define DEBUG_ONLY(code) code
 #define NOT_DEBUG(code)
@@ -450,9 +442,11 @@
 #if defined(ZERO)
 #define ZERO_ONLY(code) code
 #define NOT_ZERO(code)
+#define NOT_ZERO_RETURN {}
 #else
 #define ZERO_ONLY(code)
 #define NOT_ZERO(code) code
+#define NOT_ZERO_RETURN
 #endif
 
 #if defined(IA32) || defined(AMD64)

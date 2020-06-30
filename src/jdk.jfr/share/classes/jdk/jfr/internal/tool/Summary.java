@@ -120,6 +120,10 @@ final class Summary extends Command {
                     int size = input.readInt();
                     long eventTypeId = input.readLong();
                     Statistics s = stats.get(eventTypeId);
+                    if (s == null) {
+                        s = new Statistics(eventTypeId + " (missing event metadata)");
+                        stats.put(eventTypeId, s);
+                    }
                     if (s != null) {
                         s.count++;
                         s.size += size;
@@ -138,7 +142,6 @@ final class Summary extends Command {
             println(" Chunks: " + chunks);
             println(" Start: " + DATE_FORMAT.format(Instant.ofEpochSecond(epochSeconds, adjustNanos)) + " (UTC)");
             println(" Duration: " + (totalDuration + 500_000_000) / 1_000_000_000 + " s");
-
             List<Statistics> statsList = new ArrayList<>(stats.values());
             Collections.sort(statsList, (u, v) -> Long.compare(v.count, u.count));
             println();

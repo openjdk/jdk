@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,7 +480,8 @@ final class MemberName implements Member, Cloneable {
             IS_CONSTRUCTOR   = MN_IS_CONSTRUCTOR,   // constructor
             IS_FIELD         = MN_IS_FIELD,         // field
             IS_TYPE          = MN_IS_TYPE,          // nested type
-            CALLER_SENSITIVE = MN_CALLER_SENSITIVE; // @CallerSensitive annotation detected
+            CALLER_SENSITIVE = MN_CALLER_SENSITIVE, // @CallerSensitive annotation detected
+            TRUSTED_FINAL    = MN_TRUSTED_FINAL;    // trusted final field
 
     static final int ALL_ACCESS = Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED;
     static final int ALL_KINDS = IS_METHOD | IS_CONSTRUCTOR | IS_FIELD | IS_TYPE;
@@ -520,6 +521,8 @@ final class MemberName implements Member, Cloneable {
     public boolean isCallerSensitive() {
         return testAllFlags(CALLER_SENSITIVE);
     }
+    /** Query whether this member is a trusted final field. */
+    public boolean isTrustedFinalField() { return testAllFlags(TRUSTED_FINAL|IS_FIELD); }
 
     /** Utility method to query whether this member is accessible from a given lookup class. */
     public boolean isAccessibleFrom(Class<?> lookupClass) {

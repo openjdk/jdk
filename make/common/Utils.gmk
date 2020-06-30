@@ -220,6 +220,10 @@ define ParseKeywordVariableBody
       $$(eval mangled_part_eval := $$(call DoubleDollar, $$(mangled_part))) \
       $$(eval part := $$$$(subst ||||,$$$$(SPACE),$$$$(mangled_part_eval))) \
       $$(eval $1_NO_MATCH := true) \
+      $$(if $$(filter help, $$(part)), \
+        $$(info Valid keywords for $1:) \
+        $$(info $$($1_SINGLE_KEYWORDS) $$($1_STRING_KEYWORDS).) \
+        $$(error Re-run without 'help' to continue)) \
       $$(foreach keyword, $$($1_SINGLE_KEYWORDS), \
         $$(eval keyword_eval := $$(call DoubleDollar, $$(keyword))) \
         $$(if $$(filter $$(keyword)=%, $$(part)), \

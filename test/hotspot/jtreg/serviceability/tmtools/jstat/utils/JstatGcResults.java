@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * Results of running the JstatGcTool ("jstat -gc <pid>")
  *
  * Output example:
- * S0C    S1C    S0U    S1U      EC       EU        OC         OU       MC     MU    CCSC   CCSU   YGC     YGCT    FGC    FGCT    CGC    CGCT     GCT
- * 512.0  512.0   32.0   0.0   288768.0 168160.6  83968.0     288.1    4864.0 2820.3 512.0  279.7   18510 1559.208   0      0.000    0     0.0  1559.208
+ *    S0C         S1C         S0U         S1U          EC           EU           OC           OU          MC         MU       CCSC      CCSU     YGC     YGCT     FGC    FGCT     CGC    CGCT       GCT
+ *        0.0      2048.0         0.0      1079.5       4096.0          0.0       2048.0          0.0     7680.0     7378.6     768.0     664.7      4     0.140     0     0.000     0     0.000     0.140
  *
  * Output description:
  * S0C     Current survivor space 0 capacity (KB).

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ JNIEXPORT void JNICALL Java_com_sun_management_internal_GarbageCollectorExtImpl_
 (JNIEnv *env, jobject dummy, jobject gc,jboolean enabled) {
 
     if (gc == NULL) {
-        JNU_ThrowNullPointerException(env, "Invalid GarbageCollectorMBean");
+        JNU_ThrowNullPointerException(env, "Invalid GarbageCollectorMXBean");
         return;
     }
     if((jmm_version > JMM_VERSION_1_2)

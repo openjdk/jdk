@@ -172,7 +172,7 @@ void CodeBlobCollector::collect() {
   assert(_global_code_blobs == NULL, "checking");
 
   // create the global list
-  _global_code_blobs = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<JvmtiCodeBlobDesc*>(50,true);
+  _global_code_blobs = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(50, mtServiceability);
 
   // iterate over the stub code descriptors and put them in the list first.
   for (StubCodeDesc* desc = StubCodeDesc::first(); desc != NULL; desc = StubCodeDesc::next(desc)) {

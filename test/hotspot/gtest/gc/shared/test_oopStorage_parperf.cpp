@@ -67,11 +67,6 @@ public:
 
   static WorkGang* _workers;
 
-  static const int _active_rank = Mutex::leaf - 1;
-  static const int _allocate_rank = Mutex::leaf;
-
-  Mutex _allocate_mutex;
-  Mutex _active_mutex;
   OopStorage _storage;
   oop* _entries[_storage_entries];
 };
@@ -92,15 +87,7 @@ WorkGang* OopStorageParIterPerf::workers() const {
 }
 
 OopStorageParIterPerf::OopStorageParIterPerf() :
-  _allocate_mutex(_allocate_rank,
-                  "test_OopStorage_parperf_allocate",
-                  false,
-                  Mutex::_safepoint_check_never),
-  _active_mutex(_active_rank,
-                "test_OopStorage_parperf_active",
-                false,
-                Mutex::_safepoint_check_never),
-  _storage("Test Storage", &_allocate_mutex, &_active_mutex)
+  _storage("Test Storage")
 {
   for (size_t i = 0; i < _storage_entries; ++i) {
     _entries[i] = _storage.allocate();

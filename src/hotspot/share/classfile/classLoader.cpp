@@ -583,7 +583,7 @@ void ClassLoader::setup_patch_mod_entries() {
   int num_of_entries = patch_mod_args->length();
 
   // Set up the boot loader's _patch_mod_entries list
-  _patch_mod_entries = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, true);
+  _patch_mod_entries = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, mtModule);
 
   for (int i = 0; i < num_of_entries; i++) {
     const char* module_name = (patch_mod_args->at(i))->module_name();
@@ -1609,7 +1609,7 @@ void ClassLoader::classLoader_init2(TRAPS) {
     // subsequently do the first class load. So, no lock is needed for this.
     assert(_exploded_entries == NULL, "Should only get initialized once");
     _exploded_entries = new (ResourceObj::C_HEAP, mtModule)
-      GrowableArray<ModuleClassPathList*>(EXPLODED_ENTRY_SIZE, true);
+      GrowableArray<ModuleClassPathList*>(EXPLODED_ENTRY_SIZE, mtModule);
     add_to_exploded_build_list(vmSymbols::java_base(), CHECK);
   }
 }

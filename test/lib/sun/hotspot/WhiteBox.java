@@ -110,6 +110,8 @@ public class WhiteBox {
 
   public  native int getSymbolRefcount(String name);
 
+  public native boolean deflateIdleMonitors();
+
   private native boolean isMonitorInflated0(Object obj);
   public         boolean isMonitorInflated(Object obj) {
     Objects.requireNonNull(obj);

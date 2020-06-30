@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8241950
+ * @bug 8241950 8247932
  * @summary Check the UI behavior of indentation
  * @library /tools/lib
  * @modules
@@ -70,6 +70,11 @@ public class IndentUITest extends UITesting {
             waitOutput(out, "^void test2\\(\\) \\{\n" +
                             CONTINUATION_PROMPT + "  System.err.println\\(1\\);\n" +
                             CONTINUATION_PROMPT + "\\}");
+            inputSink.write(INTERRUPT);
+            waitOutput(out, "\u001B\\[\\?2004h" + PROMPT);
+            inputSink.write("\"\"\"\n");
+            waitOutput(out, "^\"\"\"\n" +
+                            CONTINUATION_PROMPT);
         });
     }
 

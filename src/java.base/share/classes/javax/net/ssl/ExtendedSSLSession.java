@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,11 @@ import java.util.List;
  * @since 1.7
  */
 public abstract class ExtendedSSLSession implements SSLSession {
+    /**
+     * Constructor for subclasses to call.
+     */
+    public ExtendedSSLSession() {}
+
     /**
      * Obtains an array of supported signature algorithms that the local side
      * is willing to use.

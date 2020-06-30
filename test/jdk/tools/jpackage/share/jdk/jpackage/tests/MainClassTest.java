@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,14 @@ import java.util.stream.Stream;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
+import jdk.jpackage.test.JavaAppDesc;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.HelloApp;
+import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.*;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import static jdk.jpackage.tests.MainClassTest.Script.MainClassType.*;
 

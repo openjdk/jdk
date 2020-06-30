@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package sun.security.util;
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Date;
 
 import static java.nio.charset.StandardCharsets.*;
@@ -360,8 +362,9 @@ public class DerValue {
         case tag_UTF8String:
             charset = UTF_8;
             break;
-            // TBD: Need encoder for UniversalString before it can
-            // be handled.
+        case tag_UniversalString:
+            charset = Charset.forName("UTF_32BE");
+            break;
         default:
             throw new IllegalArgumentException("Unsupported DER string type");
         }
@@ -598,10 +601,8 @@ public class DerValue {
             return getT61String();
         else if (tag == tag_IA5String)
             return getIA5String();
-        /*
-          else if (tag == tag_UniversalString)
+        else if (tag == tag_UniversalString)
           return getUniversalString();
-        */
         else if (tag == tag_BMPString)
             return getBMPString();
         else if (tag == tag_GeneralString)
@@ -738,6 +739,25 @@ public class DerValue {
                 "DerValue.getGeneralString, not GeneralString " + tag);
 
         return new String(getDataBytes(), US_ASCII);
+    }
+
+    /**
+     * Returns the ASN.1 UNIVERSAL (UTF-32) STRING value as a Java String.
+     *
+     * @return a string corresponding to the encoded UniversalString held in
+     * this value or an empty string if UTF_32BE is not a supported character
+     * set.
+     */
+    public String getUniversalString() throws IOException {
+        if (tag != tag_UniversalString)
+            throw new IOException(
+                "DerValue.getUniversalString, not UniversalString " + tag);
+        try {
+            Charset cset = Charset.forName("UTF_32BE");
+            return new String(getDataBytes(), cset);
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
+            return "";
+        }
     }
 
     /**

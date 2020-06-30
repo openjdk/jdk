@@ -522,7 +522,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(12), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "PrintVMQWaitTime",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseNewFieldLayout",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "ForceNUMA",                    JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
@@ -548,24 +547,11 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SharedReadOnlySize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
-  { "BindGCTaskThreadsToCPUs",       JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
-  { "UseGCTaskAffinity",             JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
-  { "GCTaskTimeStampEntries",        JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
-  { "G1RSetScanBlockSize",           JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "UseParallelOldGC",              JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "CompactFields",                 JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "FieldsAllocationStyle",         JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
-#ifndef X86
-  { "UseSSE",                        JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-#endif // !X86
-  { "UseAdaptiveGCBoundary",         JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "MonitorBound",                  JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
-#ifdef AARCH64
-  { "UseBarriersForVolatile",        JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+#ifdef BSD
+  { "UseBsdPosixThreadCPUClocks",    JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "UseOprofile",                   JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 #endif
-  { "UseLWPSynchronization",         JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "BranchOnRegister",              JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "LIRFillDelaySlots",             JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+  { "PrintVMQWaitTime",              JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
@@ -1467,11 +1453,13 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     value = &prop[key_len + 1];
   }
 
+#if INCLUDE_CDS
   if (is_internal_module_property(key) ||
       strcmp(key, "jdk.module.main") == 0) {
     MetaspaceShared::disable_optimized_module_handling();
     log_info(cds)("Using optimized module handling disabled due to incompatible property: %s=%s", key, value);
   }
+#endif
 
   if (strcmp(key, "java.compiler") == 0) {
     process_java_compiler_argument(value);
@@ -2516,8 +2504,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -bootclasspath/a:
     } else if (match_option(option, "-Xbootclasspath/a:", &tail)) {
       Arguments::append_sysclasspath(tail);
+#if INCLUDE_CDS
       MetaspaceShared::disable_optimized_module_handling();
       log_info(cds)("Using optimized module handling disabled due to bootclasspath was appended");
+#endif
     // -bootclasspath/p:
     } else if (match_option(option, "-Xbootclasspath/p:", &tail)) {
         jio_fprintf(defaultStream::output_stream(),
@@ -3120,7 +3110,7 @@ void Arguments::add_patch_mod_prefix(const char* module_name, const char* path, 
 
   // Create GrowableArray lazily, only if --patch-module has been specified
   if (_patch_mod_prefix == NULL) {
-    _patch_mod_prefix = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<ModulePatchPath*>(10, true);
+    _patch_mod_prefix = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<ModulePatchPath*>(10, mtArguments);
   }
 
   _patch_mod_prefix->push(new ModulePatchPath(module_name, path));
@@ -3317,7 +3307,7 @@ class ScopedVMInitArgs : public StackObj {
   // allocated memory is deleted by the destructor.  If this method
   // returns anything other than JNI_OK, then this object is in a
   // partially constructed state, and should be abandoned.
-  jint set_args(GrowableArray<JavaVMOption>* options) {
+  jint set_args(const GrowableArrayView<JavaVMOption>* options) {
     _is_set = true;
     JavaVMOption* options_arr = NEW_C_HEAP_ARRAY_RETURN_NULL(
         JavaVMOption, options->length(), mtArguments);
@@ -3375,23 +3365,21 @@ class ScopedVMInitArgs : public StackObj {
     assert(vm_options_file_pos != -1, "vm_options_file_pos should be set");
 
     int length = args->nOptions + args_to_insert->nOptions - 1;
-    GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtArguments)
-              GrowableArray<JavaVMOption>(length, true);    // Construct new option array
+    // Construct new option array
+    GrowableArrayCHeap<JavaVMOption, mtArguments> options(length);
     for (int i = 0; i < args->nOptions; i++) {
       if (i == vm_options_file_pos) {
         // insert the new options starting at the same place as the
         // -XX:VMOptionsFile option
         for (int j = 0; j < args_to_insert->nOptions; j++) {
-          options->push(args_to_insert->options[j]);
+          options.push(args_to_insert->options[j]);
         }
       } else {
-        options->push(args->options[i]);
+        options.push(args->options[i]);
       }
     }
     // make into options array
-    jint result = set_args(options);
-    delete options;
-    return result;
+    return set_args(&options);
   }
 };
 
@@ -3488,7 +3476,8 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
 }
 
 jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args) {
-  GrowableArray<JavaVMOption> *options = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JavaVMOption>(2, true);    // Construct option array
+  // Construct option array
+  GrowableArrayCHeap<JavaVMOption, mtArguments> options(2);
 
   // some pointers to help with parsing
   char *buffer_end = buffer + buf_len;
@@ -3528,7 +3517,6 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
                                             // did not see closing quote
           jio_fprintf(defaultStream::error_stream(),
                       "Unmatched quote in %s\n", name);
-          delete options;
           return JNI_ERR;
         }
       } else {
@@ -3544,16 +3532,13 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
     option.optionString = opt_hd;
     option.extraInfo = NULL;
 
-    options->append(option);                // Fill in option
+    options.append(option);                // Fill in option
 
     rd++;  // Advance to next character
   }
 
   // Fill out JavaVMInitArgs structure.
-  jint status = vm_args->set_args(options);
-
-  delete options;
-  return status;
+  return vm_args->set_args(&options);
 }
 
 jint Arguments::set_shared_spaces_flags_and_archive_paths() {
@@ -4158,13 +4143,13 @@ jint Arguments::apply_ergo() {
     UseBiasedLocking = false;
   }
 
-#ifdef CC_INTERP
+#ifdef ZERO
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
   FLAG_SET_DEFAULT(UseBiasedLocking, false);
   LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedOops, false));
   LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedClassPointers, false));
-#endif // CC_INTERP
+#endif // ZERO
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
     warning("PrintAssembly is enabled; turning on DebugNonSafepoints to gain additional output");

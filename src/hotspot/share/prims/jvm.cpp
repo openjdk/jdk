@@ -493,11 +493,6 @@ JVM_END
 JVM_ENTRY_NO_ENV(void, JVM_GC(void))
   JVMWrapper("JVM_GC");
   if (!DisableExplicitGC) {
-    if (AsyncDeflateIdleMonitors) {
-      // AsyncDeflateIdleMonitors needs to know when System.gc() is
-      // called so any special deflation can be done at a safepoint.
-      ObjectSynchronizer::set_is_special_deflation_requested(true);
-    }
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
   }
 JVM_END

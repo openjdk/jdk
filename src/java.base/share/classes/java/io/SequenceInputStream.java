@@ -121,7 +121,7 @@ public class SequenceInputStream extends InputStream {
      *           skipped over) from the current underlying input stream
      *           without blocking or {@code 0} if this input stream
      *           has been closed by invoking its {@link #close()} method
-     * @throw    IOException  if an I/O error occurs.
+     * @throws   IOException  if an I/O error occurs.
      *
      * @since    1.1
      */

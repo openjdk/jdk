@@ -406,6 +406,14 @@ final class StringConcatHelper {
     static String simpleConcat(Object first, Object second) {
         String s1 = stringOf(first);
         String s2 = stringOf(second);
+        if (s1.isEmpty()) {
+            // newly created string required, see JLS 15.18.1
+            return new String(s2);
+        }
+        if (s2.isEmpty()) {
+            // newly created string required, see JLS 15.18.1
+            return new String(s1);
+        }
         // start "mixing" in length and coder or arguments, order is not
         // important
         long indexCoder = mix(initialCoder(), s1);
@@ -416,6 +424,22 @@ final class StringConcatHelper {
         indexCoder = prepend(indexCoder, buf, s2);
         indexCoder = prepend(indexCoder, buf, s1);
         return newString(buf, indexCoder);
+    }
+
+    /**
+     * Produce a String from a concatenation of single argument, which we
+     * end up using for trivial concatenations like {@code "" + arg}.
+     *
+     * This will always create a new Object to comply with JLS 15.18.1:
+     * "The String object is newly created unless the expression is a
+     * compile-time constant expression".
+     *
+     * @param arg           the only argument
+     * @return String       resulting string
+     */
+    @ForceInline
+    static String newStringOf(Object arg) {
+        return new String(stringOf(arg));
     }
 
     /**

@@ -897,6 +897,9 @@ oop Reflection::new_field(fieldDescriptor* fd, TRAPS) {
   java_lang_reflect_Field::set_slot(rh(), fd->index());
   java_lang_reflect_Field::set_name(rh(), name());
   java_lang_reflect_Field::set_type(rh(), type());
+  if (fd->is_trusted_final()) {
+    java_lang_reflect_Field::set_trusted_final(rh());
+  }
   // Note the ACC_ANNOTATION bit, which is a per-class access flag, is never set here.
   java_lang_reflect_Field::set_modifiers(rh(), fd->access_flags().as_int() & JVM_RECOGNIZED_FIELD_MODIFIERS);
   java_lang_reflect_Field::set_override(rh(), false);

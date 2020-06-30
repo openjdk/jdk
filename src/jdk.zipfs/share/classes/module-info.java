@@ -234,9 +234,9 @@ import java.util.Set;
  *   <td>null/unset</td>
  *   <td>
  *       A value representing the version entry to use when accessing a
- *       <a href=="{@docRoot}/../specs/jar/jar.html#multi-release-jar-files">
+ *       <a href="{@docRoot}/../specs/jar/jar.html#multi-release-jar-files">
  *       multi-release JAR</a>. If the JAR is not a
- *       <a href=="{@docRoot}/../specs/jar/jar.html#multi-release-jar-files">
+ *       <a href="{@docRoot}/../specs/jar/jar.html#multi-release-jar-files">
  *       multi-release JAR</a>, the value will be ignored and the JAR will be
  *       considered un-versioned.
  *       <p>

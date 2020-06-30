@@ -350,6 +350,9 @@ else # $(HAS_SPEC)=true
           $$(if $$(filter FAIL=%, $$(part)), \
             $$(eval COMPARE_BUILD_FAIL=$$(strip $$(subst +, , $$(patsubst FAIL=%, %, $$(part))))) \
           ) \
+          $$(if $$(filter NODRYRUN=%, $$(part)), \
+            $$(eval COMPARE_BUILD_NODRYRUN=$$(strip $$(subst +, , $$(patsubst NODRYRUN=%, %, $$(part))))) \
+          ) \
         )
       else
         # Separate handling for single field case, to allow for spaces in values.
@@ -372,9 +375,11 @@ else # $(HAS_SPEC)=true
         else ifeq ($$(wildcard $$(COMPARE_BUILD_PATCH)), )
           $$(error Patch file $$(COMPARE_BUILD_PATCH) does not exist)
         endif
-        PATCH_DRY_RUN := $$(shell cd $$(topdir) && $$(PATCH) --dry-run -p1 < $$(COMPARE_BUILD_PATCH) > /dev/null 2>&1 || $$(ECHO) FAILED)
-        ifeq ($$(PATCH_DRY_RUN), FAILED)
-          $$(error Patch file $$(COMPARE_BUILD_PATCH) does not apply cleanly)
+        ifneq ($$(COMPARE_BUILD_NODRYRUN), true)
+          PATCH_DRY_RUN := $$(shell cd $$(topdir) && $$(PATCH) --dry-run -p1 < $$(COMPARE_BUILD_PATCH) > /dev/null 2>&1 || $$(ECHO) FAILED)
+          ifeq ($$(PATCH_DRY_RUN), FAILED)
+            $$(error Patch file $$(COMPARE_BUILD_PATCH) does not apply cleanly)
+          endif
         endif
       endif
       ifneq ($$(COMPARE_BUILD_FAIL), true)

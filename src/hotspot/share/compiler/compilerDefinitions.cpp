@@ -507,8 +507,8 @@ void CompilerConfig::ergo_initialize() {
   if (!IncrementalInline) {
     AlwaysIncrementalInline = false;
   }
-  if (PrintIdealGraphLevel > 0) {
-    FLAG_SET_ERGO(PrintIdealGraph, true);
+  if (FLAG_IS_CMDLINE(PrintIdealGraph) && !PrintIdealGraph) {
+    FLAG_SET_ERGO(PrintIdealGraphLevel, -1);
   }
 #endif
   if (!UseTypeSpeculation && FLAG_IS_DEFAULT(TypeProfileLevel)) {

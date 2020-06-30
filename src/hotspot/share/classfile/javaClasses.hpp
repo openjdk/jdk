@@ -696,6 +696,7 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int _type_offset;
   static int _slot_offset;
   static int _modifiers_offset;
+  static int _trusted_final_offset;
   static int _signature_offset;
   static int _annotations_offset;
 
@@ -722,6 +723,8 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
 
   static int modifiers(oop field);
   static void set_modifiers(oop field, int value);
+
+  static void set_trusted_final(oop field);
 
   static void set_signature(oop constructor, oop value);
   static void set_annotations(oop constructor, oop value);
@@ -1121,6 +1124,7 @@ class java_lang_invoke_MemberName: AllStatic {
     MN_IS_FIELD              = 0x00040000, // field
     MN_IS_TYPE               = 0x00080000, // nested type
     MN_CALLER_SENSITIVE      = 0x00100000, // @CallerSensitive annotation detected
+    MN_TRUSTED_FINAL         = 0x00200000, // trusted final field
     MN_REFERENCE_KIND_SHIFT  = 24, // refKind
     MN_REFERENCE_KIND_MASK   = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
     // The SEARCH_* bits are not for MN.flags but for the matchFlags argument of MHN.getMembers:

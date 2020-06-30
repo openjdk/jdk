@@ -27,6 +27,7 @@
 #include "classfile/dictionary.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
@@ -406,14 +407,14 @@ oop SymbolPropertyEntry::method_type() const {
 }
 
 void SymbolPropertyEntry::set_method_type(oop p) {
-  _method_type = OopHandle::create(p);
+  _method_type = OopHandle(OopStorageSet::vm_global(), p);
 }
 
 void SymbolPropertyEntry::free_entry() {
   // decrement Symbol refcount here because hashtable doesn't.
   literal()->decrement_refcount();
   // Free OopHandle
-  _method_type.release();
+  _method_type.release(OopStorageSet::vm_global());
 }
 
 SymbolPropertyTable::SymbolPropertyTable(int table_size)

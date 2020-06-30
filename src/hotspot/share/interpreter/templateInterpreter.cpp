@@ -35,8 +35,6 @@
 #include "runtime/timerTrace.hpp"
 #include "utilities/copy.hpp"
 
-#ifndef CC_INTERP
-
 # define __ _masm->
 
 void TemplateInterpreter::initialize_stub() {
@@ -369,5 +367,3 @@ bool TemplateInterpreter::bytecode_should_reexecute(Bytecodes::Code code) {
 InterpreterCodelet* TemplateInterpreter::codelet_containing(address pc) {
   return (InterpreterCodelet*)_code->stub_containing(pc);
 }
-
-#endif // !CC_INTERP

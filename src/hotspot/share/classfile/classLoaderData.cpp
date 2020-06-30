@@ -55,6 +55,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -487,7 +488,7 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
 void ClassLoaderData::initialize_holder(Handle loader_or_mirror) {
   if (loader_or_mirror() != NULL) {
     assert(_holder.is_null(), "never replace holders");
-    _holder = WeakHandle<vm_weak_data>::create(loader_or_mirror);
+    _holder = WeakHandle(OopStorageSet::vm_weak(), loader_or_mirror);
   }
 }
 
@@ -654,7 +655,7 @@ ClassLoaderData::~ClassLoaderData() {
   ClassLoaderDataGraph::dec_instance_classes(cl.instance_class_released());
 
   // Release the WeakHandle
-  _holder.release();
+  _holder.release(OopStorageSet::vm_weak());
 
   // Release C heap allocated hashtable for all the packages.
   if (_packages != NULL) {
@@ -804,7 +805,7 @@ void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
   if (!m->is_shared()) {
     MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
     if (_deallocate_list == NULL) {
-      _deallocate_list = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(100, true);
+      _deallocate_list = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(100, mtClass);
     }
     _deallocate_list->append_if_missing(m);
     log_debug(class, loader, data)("deallocate added for %s", m->print_value_string());

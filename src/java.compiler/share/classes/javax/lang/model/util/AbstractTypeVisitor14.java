@@ -47,7 +47,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractTypeVisitor9
  * @since 14
  */
-@SupportedSourceVersion(RELEASE_15)
+@SupportedSourceVersion(RELEASE_16)
 public abstract class AbstractTypeVisitor14<R, P> extends AbstractTypeVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses to call.

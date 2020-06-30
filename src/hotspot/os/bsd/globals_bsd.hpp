@@ -36,15 +36,7 @@
                          diagnostic_pd, \
                          notproduct, \
                          range, \
-                         constraint) \
-                                                                                \
-  product(bool, UseOprofile, false,                                             \
-        "enable support for Oprofile profiler")                                 \
-                                                                                \
-  /*  NB: The default value of UseBsdPosixThreadCPUClocks may be  */            \
-  /*  overridden in Arguments::parse_each_vm_init_arg.            */            \
-  product(bool, UseBsdPosixThreadCPUClocks, true,                               \
-          "enable fast Bsd Posix clocks where available")                       \
+                         constraint)
 
 //
 // Defines Bsd-specific default values. The flags are available on all

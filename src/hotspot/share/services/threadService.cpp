@@ -589,7 +589,7 @@ StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
     GrowableArray<MonitorInfo*>* list = jvf->locked_monitors();
     int length = list->length();
     if (length > 0) {
-      _locked_monitors = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<oop>(length, true);
+      _locked_monitors = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(length, mtServiceability);
       for (int i = 0; i < length; i++) {
         MonitorInfo* monitor = list->at(i);
         assert(monitor->owner() != NULL, "This monitor must have an owning object");
@@ -646,11 +646,11 @@ public:
 
 ThreadStackTrace::ThreadStackTrace(JavaThread* t, bool with_locked_monitors) {
   _thread = t;
-  _frames = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<StackFrameInfo*>(INITIAL_ARRAY_SIZE, true);
+  _frames = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<StackFrameInfo*>(INITIAL_ARRAY_SIZE, mtServiceability);
   _depth = 0;
   _with_locked_monitors = with_locked_monitors;
   if (_with_locked_monitors) {
-    _jni_locked_monitors = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<oop>(INITIAL_ARRAY_SIZE, true);
+    _jni_locked_monitors = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(INITIAL_ARRAY_SIZE, mtServiceability);
   } else {
     _jni_locked_monitors = NULL;
   }
@@ -776,7 +776,7 @@ void ConcurrentLocksDump::dump_at_safepoint() {
   // dump all locked concurrent locks
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
 
-  GrowableArray<oop>* aos_objects = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<oop>(INITIAL_ARRAY_SIZE, true /* C_heap */);
+  GrowableArray<oop>* aos_objects = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(INITIAL_ARRAY_SIZE, mtServiceability);
 
   // Find all instances of AbstractOwnableSynchronizer
   HeapInspection::find_instances_at_safepoint(SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass(),
@@ -850,7 +850,7 @@ void ConcurrentLocksDump::print_locks_on(JavaThread* t, outputStream* st) {
 
 ThreadConcurrentLocks::ThreadConcurrentLocks(JavaThread* thread) {
   _thread = thread;
-  _owned_locks = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<instanceOop>(INITIAL_ARRAY_SIZE, true);
+  _owned_locks = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<instanceOop>(INITIAL_ARRAY_SIZE, mtServiceability);
   _next = NULL;
 }
 
@@ -962,7 +962,7 @@ void ThreadSnapshot::metadata_do(void f(Metadata*)) {
 
 DeadlockCycle::DeadlockCycle() {
   _is_deadlock = false;
-  _threads = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<JavaThread*>(INITIAL_ARRAY_SIZE, true);
+  _threads = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JavaThread*>(INITIAL_ARRAY_SIZE, mtServiceability);
   _next = NULL;
 }
 

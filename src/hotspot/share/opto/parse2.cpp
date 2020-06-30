@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2842,8 +2842,8 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
-  IdealGraphPrinter *printer = C->printer();
-  if (printer && printer->should_print(1)) {
+  if (C->should_print(1)) {
+    IdealGraphPrinter* printer = C->printer();
     char buffer[256];
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();

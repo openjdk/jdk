@@ -146,7 +146,7 @@ GrowableCache::~GrowableCache() {
 void GrowableCache::initialize(void *this_obj, void listener_fun(void *, address*) ) {
   _this_obj       = this_obj;
   _listener_fun   = listener_fun;
-  _elements       = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<GrowableElement*>(5,true);
+  _elements       = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<GrowableElement*>(5, mtServiceability);
   recache();
 }
 

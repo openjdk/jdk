@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,11 @@ import java.security.cert.CertificateException;
  * @since 1.7
  */
 public abstract class X509ExtendedTrustManager implements X509TrustManager {
+    /**
+     * Constructor for subclasses to call.
+     */
+    public X509ExtendedTrustManager() {}
+
     /**
      * Given the partial or complete certificate chain provided by the
      * peer, build and validate the certificate path based on the

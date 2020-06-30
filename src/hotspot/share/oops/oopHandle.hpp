@@ -25,7 +25,9 @@
 #ifndef SHARE_OOPS_OOPHANDLE_HPP
 #define SHARE_OOPS_OOPHANDLE_HPP
 
-#include "oops/oop.hpp"
+#include "oops/oopsHierarchy.hpp"
+
+class OopStorage;
 
 // Simple class for encapsulating oop pointers stored in metadata.
 // These are different from Handle.  The Handle class stores pointers
@@ -43,13 +45,12 @@ private:
 public:
   OopHandle() : _obj(NULL) {}
   explicit OopHandle(oop* w) : _obj(w) {}
-
-  inline static OopHandle create(oop obj);
+  OopHandle(OopStorage* storage, oop obj);
 
   inline oop resolve() const;
   inline oop peek() const;
 
-  inline void release();
+  inline void release(OopStorage* storage);
 
   // Used only for removing handle.
   oop* ptr_raw() const { return _obj; }

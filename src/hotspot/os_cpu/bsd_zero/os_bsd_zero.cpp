@@ -43,7 +43,6 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/extendedPC.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -103,11 +102,11 @@ void os::Bsd::ucontext_set_pc(ucontext_t * uc, address pc) {
   ShouldNotCallThis();
 }
 
-ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
-                                        intptr_t** ret_sp,
-                                        intptr_t** ret_fp) {
+address os::fetch_frame_from_context(const void* ucVoid,
+                                     intptr_t** ret_sp,
+                                     intptr_t** ret_fp) {
   ShouldNotCallThis();
-  return ExtendedPC();
+  return NULL;
 }
 
 frame os::fetch_frame_from_context(const void* ucVoid) {

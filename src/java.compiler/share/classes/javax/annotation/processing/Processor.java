@@ -234,7 +234,7 @@ public interface Processor {
      * in which case it may wish to report a warning.
      *
      * @return the options recognized by this processor or an
-     *         empty collection if none
+     *         empty set if none
      * @see javax.annotation.processing.SupportedOptions
      */
     Set<String> getSupportedOptions();
@@ -286,7 +286,8 @@ public interface Processor {
      * </blockquote>
      *
      * where <i>TypeName</i> and <i>ModuleName</i> are as defined in
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java&trade; Language Specification</cite>
+     * ({@jls 6.5 Determining the Meaning of a Name}).
      *
      * @apiNote When running in an environment which supports modules,
      * processors are encouraged to include the module prefix when
@@ -297,9 +298,9 @@ public interface Processor {
      * environment without modules.
      *
      * @return the names of the annotation types supported by this processor
+     *          or an empty set if none
      * @see javax.annotation.processing.SupportedAnnotationTypes
      * @jls 3.8 Identifiers
-     * @jls 6.5 Determining the Meaning of a Name
      */
     Set<String> getSupportedAnnotationTypes();
 
@@ -390,14 +391,14 @@ public interface Processor {
     * <pre>
     * import static javax.annotation.processing.Completions.*;
     * ...
-    * return Arrays.asList({@link Completions#of(String) of}(&quot;3&quot;),
-    *                      of(&quot;7&quot;),
-    *                      of(&quot;31&quot;),
-    *                      of(&quot;127&quot;),
-    *                      of(&quot;8191&quot;),
-    *                      of(&quot;131071&quot;),
-    *                      of(&quot;524287&quot;),
-    *                      of(&quot;2147483647&quot;));
+    * return List.of({@link Completions#of(String) of}(&quot;3&quot;),
+    *                of(&quot;7&quot;),
+    *                of(&quot;31&quot;),
+    *                of(&quot;127&quot;),
+    *                of(&quot;8191&quot;),
+    *                of(&quot;131071&quot;),
+    *                of(&quot;524287&quot;),
+    *                of(&quot;2147483647&quot;));
     * </pre>
     * </blockquote>
     *
@@ -406,14 +407,14 @@ public interface Processor {
     *
     * <blockquote>
     * <pre>
-    * return Arrays.asList({@link Completions#of(String, String) of}(&quot;3&quot;,          &quot;M2&quot;),
-    *                      of(&quot;7&quot;,          &quot;M3&quot;),
-    *                      of(&quot;31&quot;,         &quot;M5&quot;),
-    *                      of(&quot;127&quot;,        &quot;M7&quot;),
-    *                      of(&quot;8191&quot;,       &quot;M13&quot;),
-    *                      of(&quot;131071&quot;,     &quot;M17&quot;),
-    *                      of(&quot;524287&quot;,     &quot;M19&quot;),
-    *                      of(&quot;2147483647&quot;, &quot;M31&quot;));
+    * return List.of({@link Completions#of(String, String) of}(&quot;3&quot;,          &quot;M2&quot;),
+    *                of(&quot;7&quot;,          &quot;M3&quot;),
+    *                of(&quot;31&quot;,         &quot;M5&quot;),
+    *                of(&quot;127&quot;,        &quot;M7&quot;),
+    *                of(&quot;8191&quot;,       &quot;M13&quot;),
+    *                of(&quot;131071&quot;,     &quot;M17&quot;),
+    *                of(&quot;524287&quot;,     &quot;M19&quot;),
+    *                of(&quot;2147483647&quot;, &quot;M31&quot;));
     * </pre>
     * </blockquote>
     *

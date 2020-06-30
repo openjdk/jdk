@@ -183,27 +183,14 @@ public:
   OopStorageTest();
   ~OopStorageTest();
 
-  Mutex _allocation_mutex;
-  Mutex _active_mutex;
   OopStorage _storage;
-
-  static const int _active_rank = Mutex::leaf - 1;
-  static const int _allocate_rank = Mutex::leaf;
 
   class CountingIterateClosure;
   template<bool is_const> class VM_CountAtSafepoint;
 };
 
 OopStorageTest::OopStorageTest() :
-  _allocation_mutex(_allocate_rank,
-                    "test_OopStorage_allocation",
-                    false,
-                    Mutex::_safepoint_check_never),
-  _active_mutex(_active_rank,
-                "test_OopStorage_active",
-                false,
-                Mutex::_safepoint_check_never),
-  _storage("Test Storage", &_allocation_mutex, &_active_mutex)
+  _storage("Test Storage")
 { }
 
 OopStorageTest::~OopStorageTest() {

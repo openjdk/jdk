@@ -33,9 +33,19 @@
 
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Locale;
+import java.util.Map;
 
 import javadoc.tester.JavadocTester;
 
+/**
+ * Tests IO Exception handling.
+ *
+ * Update: Windows does not permit setting folder to be readonly.
+ * https://support.microsoft.com/en-us/help/326549/you-cannot-view-or-change-the-read-only-or-the-system-attributes-of-fo
+ */
 public class TestIOException extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -43,21 +53,29 @@ public class TestIOException extends JavadocTester {
         tester.runTests();
     }
 
+    /**
+     * Tests a read-only directory.
+     * On Windows, this test may be skipped.
+     */
     @Test
     public void testReadOnlyDirectory() {
         File outDir = new File("out1");
         if (!outDir.mkdir()) {
-            throw new Error("Cannot create directory");
+            throw error(outDir, "Cannot create directory");
         }
         if (!outDir.setReadOnly()) {
-            throw new Error("could not set directory read-only");
+            if (skip(outDir)) {
+                return;
+            }
+            throw error(outDir, "could not set directory read-only");
         }
         if (outDir.canWrite()) {
-            throw new Error("directory is writable");
+            throw error(outDir, "directory is writable");
         }
 
         try {
             javadoc("-d", outDir.toString(),
+                    "-Xdoclint:-missing",
                     new File(testSrc, "TestIOException.java").getPath());
             checkExit(Exit.ERROR);
             checkOutput(Output.OUT, true,
@@ -67,24 +85,29 @@ public class TestIOException extends JavadocTester {
         }
     }
 
+    /**
+     * Tests a read-only file.
+     * @throws Exception if an error occurred
+     */
     @Test
     public void testReadOnlyFile() throws Exception {
         File outDir = new File("out2");
         if (!outDir.mkdir()) {
-            throw new Error("Cannot create directory");
+            throw error(outDir, "Cannot create directory");
         }
         File index = new File(outDir, "index.html");
         try (FileWriter fw = new FileWriter(index)) { }
         if (!index.setReadOnly()) {
-            throw new Error("could not set index read-only");
+            throw error(index, "could not set index read-only");
         }
         if (index.canWrite()) {
-            throw new Error("index is writable");
+            throw error(index, "index is writable");
         }
 
         try {
             setOutputDirectoryCheck(DirectoryCheck.NONE);
             javadoc("-d", outDir.toString(),
+                    "-Xdoclint:-missing",
                     new File(testSrc, "TestIOException.java").getPath());
 
             checkExit(Exit.ERROR);
@@ -96,6 +119,11 @@ public class TestIOException extends JavadocTester {
         }
     }
 
+    /**
+     * Tests a read-only subdirectory.
+     * On Windows, this test may be skipped.
+     * @throws Exception if an error occurred
+     */
     @Test
     public void testReadOnlySubdirectory() throws Exception {
         // init source file
@@ -111,19 +139,23 @@ public class TestIOException extends JavadocTester {
         File outDir = new File("out3");
         File pkgOutDir = new File(outDir, "p");
         if (!pkgOutDir.mkdirs()) {
-            throw new Error("Cannot create directory");
+            throw error(pkgOutDir, "Cannot create directory");
         }
         if (!pkgOutDir.setReadOnly()) {
-            throw new Error("could not set directory read-only");
+            if (skip(pkgOutDir)) {
+                return;
+            }
+            throw error(pkgOutDir, "could not set directory read-only");
         }
         if (pkgOutDir.canWrite()) {
-            throw new Error("directory is writable");
+            throw error(pkgOutDir, "directory is writable");
         }
 
         // run javadoc and check results
         try {
             setOutputDirectoryCheck(DirectoryCheck.NONE);
             javadoc("-d", outDir.toString(),
+                    "-Xdoclint:-missing",
                     src_p_C.getPath());
             checkExit(Exit.ERROR);
             checkOutput(Output.OUT, true,
@@ -134,6 +166,11 @@ public class TestIOException extends JavadocTester {
         }
     }
 
+    /**
+     * Tests a read-only doc-files directory.
+     * On Windows, this test may be skipped.
+     * @throws Exception if an error occurred
+     */
     @Test
     public void testReadOnlyDocFilesDir() throws Exception {
         // init source files
@@ -155,18 +192,22 @@ public class TestIOException extends JavadocTester {
         File pkgOutDir = new File(outDir, "p");
         File docFilesOutDir = new File(pkgOutDir, "doc-files");
         if (!docFilesOutDir.mkdirs()) {
-            throw new Error("Cannot create directory");
+            throw error(docFilesOutDir, "Cannot create directory");
         }
         if (!docFilesOutDir.setReadOnly()) {
-            throw new Error("could not set directory read-only");
+            if (skip(docFilesOutDir)) {
+                return;
+            }
+            throw error(docFilesOutDir, "could not set directory read-only");
         }
         if (docFilesOutDir.canWrite()) {
-            throw new Error("directory is writable");
+            throw error(docFilesOutDir, "directory is writable");
         }
 
         try {
             setOutputDirectoryCheck(DirectoryCheck.NONE);
             javadoc("-d", outDir.toString(),
+                    "-Xdoclint:-missing",
                     "-sourcepath", srcDir.getPath(),
                     "p");
             checkExit(Exit.ERROR);
@@ -176,6 +217,45 @@ public class TestIOException extends JavadocTester {
             setOutputDirectoryCheck(DirectoryCheck.EMPTY);
             docFilesOutDir.setWritable(true);
         }
+    }
+
+    private Error error(File f, String message) {
+        out.println(f + ": " + message);
+        showAllAttributes(f.toPath());
+        throw new Error(f + ": " + message);
+    }
+
+    private void showAllAttributes(Path p) {
+        showAttributes(p, "*");
+        showAttributes(p, "posix:*");
+        showAttributes(p, "dos:*");
+    }
+
+    private void showAttributes(Path p, String attributes) {
+        out.println("Attributes: " + attributes);
+        try {
+            Map<String, Object> map = Files.readAttributes(p, attributes);
+            map.forEach((n, v) -> out.format("  %-10s: %s%n", n, v));
+        } catch (UnsupportedOperationException e) {
+            out.println("Attributes not available " + attributes);
+        } catch (Throwable t) {
+            out.println("Error accessing attributes " + attributes + ": " + t);
+        }
+    }
+
+    private boolean skip(File dir) {
+        if (isWindows()) {
+            showAllAttributes(dir.toPath());
+            out.println("Windows: cannot set directory read only:" + dir);
+            out.println("TEST CASE SKIPPED");
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase(Locale.US).startsWith("windows");
     }
 }
 

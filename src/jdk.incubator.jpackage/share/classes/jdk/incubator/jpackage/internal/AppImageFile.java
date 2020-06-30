@@ -27,8 +27,8 @@ package jdk.incubator.jpackage.internal;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -41,7 +41,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
 
 public class AppImageFile {
 
@@ -95,7 +97,10 @@ public class AppImageFile {
      * @param appImageDir - path to application image
      */
     public static Path getPathInAppImage(Path appImageDir) {
-        return appImageDir.resolve(FILENAME);
+        return ApplicationLayout.platformAppImage()
+                .resolveAt(appImageDir)
+                .appDirectory()
+                .resolve(FILENAME);
     }
 
     /**
@@ -149,7 +154,7 @@ public class AppImageFile {
                 return new AppImageFile();
             }
 
-            List<String> addLaunchers = new ArrayList<String>();
+            List<String> addLaunchers = new ArrayList<>();
 
             String platform = xpathQueryNullable(xPath,
                     "/jpackage-state/@platform", doc);

@@ -34,6 +34,7 @@ var searchPattern = "";
 var RANKING_THRESHOLD = 2;
 var NO_MATCH = 0xffff;
 var MAX_RESULTS_PER_CATEGORY = 500;
+var UNNAMED = "<Unnamed>";
 function escapeHtml(str) {
     return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -48,14 +49,16 @@ function getURLPrefix(ui) {
         return ui.item.l + slash;
     } else if (ui.item.category === catPackages && ui.item.m) {
         return ui.item.m + slash;
-    } else if ((ui.item.category === catTypes && ui.item.p) || ui.item.category === catMembers) {
-        $.each(packageSearchIndex, function(index, item) {
-            if (item.m && ui.item.p == item.l) {
-                urlPrefix = item.m + slash;
-            }
-        });
-        return urlPrefix;
-    } else {
+    } else if (ui.item.category === catTypes || ui.item.category === catMembers) {
+        if (ui.item.m) {
+            urlPrefix = ui.item.m + slash;
+        } else {
+            $.each(packageSearchIndex, function(index, item) {
+                if (item.m && ui.item.p === item.l) {
+                    urlPrefix = item.m + slash;
+                }
+            });
+        }
         return urlPrefix;
     }
     return urlPrefix;
@@ -121,7 +124,7 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
         rMenu.menu.bindings = $();
         $.each(items, function(index, item) {
             var li;
-            if (item.l !== noResult.l && item.category !== currentCategory) {
+            if (item.category && item.category !== currentCategory) {
                 ul.append("<li class=\"ui-autocomplete-category\">" + item.category + "</li>");
                 currentCategory = item.category;
             }
@@ -141,15 +144,15 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
         if (item.category === catModules) {
             label = getHighlightedText(item.l, matcher);
         } else if (item.category === catPackages) {
-            label = (item.m)
-                    ? getHighlightedText(item.m + "/" + item.l, matcher)
-                    : getHighlightedText(item.l, matcher);
+            label = getHighlightedText(item.l, matcher);
         } else if (item.category === catTypes) {
-            label = (item.p)
+            label = (item.p && item.p !== UNNAMED)
                     ? getHighlightedText(item.p + "." + item.l, matcher)
                     : getHighlightedText(item.l, matcher);
         } else if (item.category === catMembers) {
-            label = getHighlightedText(item.p + "." + (item.c + "." + item.l), matcher);
+            label = (item.p && item.p !== UNNAMED)
+                    ? getHighlightedText(item.p + "." + item.c + "." + item.l, matcher)
+                    : getHighlightedText(item.c + "." + item.l, matcher);
         } else if (item.category === catSearchTags) {
             label = getHighlightedText(item.l, matcher);
         } else {
@@ -165,7 +168,11 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
                 div.html(label + "<span class=\"search-tag-holder-result\"> (" + item.h + ")</span>");
             }
         } else {
-            div.html(label);
+            if (item.m) {
+                div.html(item.m + "/" + label);
+            } else {
+                div.html(label);
+            }
         }
         return li;
     }
@@ -317,7 +324,7 @@ $(function() {
             collision: "flip"
         },
         select: function(event, ui) {
-            if (ui.item.l !== noResult.l) {
+            if (ui.item.category) {
                 var url = getURLPrefix(ui);
                 if (ui.item.category === catModules) {
                     url += "module-summary.html";
@@ -330,13 +337,13 @@ $(function() {
                 } else if (ui.item.category === catTypes) {
                     if (ui.item.u) {
                         url = ui.item.u;
-                    } else if (ui.item.p === "<Unnamed>") {
+                    } else if (ui.item.p === UNNAMED) {
                         url += ui.item.l + ".html";
                     } else {
                         url += ui.item.p.replace(/\./g, '/') + "/" + ui.item.l + ".html";
                     }
                 } else if (ui.item.category === catMembers) {
-                    if (ui.item.p === "<Unnamed>") {
+                    if (ui.item.p === UNNAMED) {
                         url += ui.item.c + ".html" + "#";
                     } else {
                         url += ui.item.p.replace(/\./g, '/') + "/" + ui.item.c + ".html" + "#";

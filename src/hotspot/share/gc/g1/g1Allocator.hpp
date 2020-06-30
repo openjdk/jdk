@@ -257,7 +257,7 @@ public:
     _allocation_region(NULL),
     _allocated_regions((ResourceObj::set_allocation_type((address) &_allocated_regions,
                                                          ResourceObj::C_HEAP),
-                        2), true /* C_Heap */),
+                        2), mtGC),
     _summary_bytes_used(0),
     _bottom(NULL),
     _top(NULL),

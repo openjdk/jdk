@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class Classfile {
     private final List<ClassfileBytecode> codeAttributes;
 
     private static final int MAJOR_VERSION_JAVA_MIN = 51; // JDK7
-    private static final int MAJOR_VERSION_JAVA_MAX = 59; // JDK15
+    private static final int MAJOR_VERSION_JAVA_MAX = 60; // JDK16
     private static final int MAGIC = 0xCAFEBABE;
 
     /**

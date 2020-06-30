@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
 import jdk.incubator.foreign.MemorySegment;
+import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
@@ -59,6 +60,36 @@ public class BulkOps {
     static final int[] bytes = new int[ELEM_SIZE];
     static final MemorySegment bytesSegment = MemorySegment.ofArray(bytes);
     static final int UNSAFE_INT_OFFSET = unsafe.arrayBaseOffset(int[].class);
+
+    // large(ish) segments/buffers with same content, 0, for mismatch, non-multiple-of-8 sized
+    static final int SIZE_WITH_TAIL = (1024 * 1024) + 7;
+    static final MemorySegment mismatchSegmentLarge1 = MemorySegment.allocateNative(SIZE_WITH_TAIL);
+    static final MemorySegment mismatchSegmentLarge2 = MemorySegment.allocateNative(SIZE_WITH_TAIL);
+    static final ByteBuffer mismatchBufferLarge1 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
+    static final ByteBuffer mismatchBufferLarge2 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
+
+    // mismatch at first byte
+    static final MemorySegment mismatchSegmentSmall1 = MemorySegment.allocateNative(7);
+    static final MemorySegment mismatchSegmentSmall2 = MemorySegment.allocateNative(7);
+    static final ByteBuffer mismatchBufferSmall1 = ByteBuffer.allocateDirect(7);
+    static final ByteBuffer mismatchBufferSmall2 = ByteBuffer.allocateDirect(7);
+    static {
+        mismatchSegmentSmall1.fill((byte) 0xFF);
+        mismatchBufferSmall1.put((byte) 0xFF).clear();
+        // verify expected mismatch indices
+        long si = mismatchSegmentLarge1.mismatch(mismatchSegmentLarge2);
+        if (si != -1)
+            throw new AssertionError("Unexpected mismatch index:" + si);
+        int bi = mismatchBufferLarge1.mismatch(mismatchBufferLarge2);
+        if (bi != -1)
+            throw new AssertionError("Unexpected mismatch index:" + bi);
+        si = mismatchSegmentSmall1.mismatch(mismatchSegmentSmall2);
+        if (si != 0)
+            throw new AssertionError("Unexpected mismatch index:" + si);
+        bi = mismatchBufferSmall1.mismatch(mismatchBufferSmall2);
+        if (bi != 0)
+            throw new AssertionError("Unexpected mismatch index:" + bi);
+    }
 
     static {
         for (int i = 0 ; i < bytes.length ; i++) {
@@ -88,5 +119,29 @@ public class BulkOps {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void segment_copy() {
         segment.copyFrom(bytesSegment);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public long mismatch_large_segment() {
+        return mismatchSegmentLarge1.mismatch(mismatchSegmentLarge2);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public int mismatch_large_bytebuffer() {
+        return mismatchBufferLarge1.mismatch(mismatchBufferLarge2);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public long mismatch_small_segment() {
+        return mismatchSegmentSmall1.mismatch(mismatchSegmentSmall2);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public int mismatch_small_bytebuffer() {
+        return mismatchBufferSmall1.mismatch(mismatchBufferSmall2);
     }
 }
