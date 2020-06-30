@@ -106,6 +106,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang) \
         undef switch format-nonliteral tautological-undefined-compare \
         self-assign-overloaded, \
+    DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     LDFLAGS := $(JVM_LDFLAGS), \
     LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/libgtest, \
     LIBS := $(JVM_LIBS), \
