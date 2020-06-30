@@ -75,8 +75,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   else
     EXE_SUFFIX=""
   fi
-  PATH_SEP=":"
-  AC_SUBST(PATH_SEP)
   AC_SUBST(EXE_SUFFIX)
 
   # We get the top-level directory from the supporting wrappers.

@@ -278,7 +278,7 @@ FindExecutableDirForModule = \
 # param 1 : A space separated list of classpath entries
 # The surrounding strip is needed to keep additional whitespace out
 PathList = \
-  "$(subst $(SPACE),$(PATH_SEP),$(strip $(subst $(DQUOTE),,$1)))"
+  "$(subst $(SPACE),:,$(strip $(subst $(DQUOTE),,$1)))"
 
 ################################################################################
 # Check if a specified hotspot variant is being built, or at least one of a

@@ -220,9 +220,6 @@ JDKOPT_SETUP_ADDRESS_SANITIZER
 #
 ###############################################################################
 
-# After we have toolchain, we can compile fixpath. It's needed by the lib checks.
-BASIC_COMPILE_FIXPATH
-
 LIB_DETERMINE_DEPENDENCIES
 LIB_SETUP_LIBRARIES
 

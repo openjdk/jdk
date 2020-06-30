@@ -197,7 +197,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 else
   FIXPATH :=
 endif
-PATH_SEP:=:
 
 # Check number of cores and memory in MB
 ifeq ($(OPENJDK_TARGET_OS), linux)
@@ -279,7 +278,6 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     BASH := $(BASH), \
     JIB_JAR := $(JIB_JAR), \
     FIXPATH := $(FIXPATH), \
-    PATH_SEP := $(PATH_SEP), \
     OPENJDK_TARGET_OS := $(OPENJDK_TARGET_OS), \
     OPENJDK_TARGET_OS_TYPE := $(OPENJDK_TARGET_OS_TYPE), \
     OPENJDK_TARGET_OS_ENV := $(OPENJDK_TARGET_OS_ENV), \

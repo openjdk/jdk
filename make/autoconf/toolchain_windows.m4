@@ -106,6 +106,16 @@ VS_TOOLSET_SUPPORTED_2019=true
 
 ################################################################################
 
+AC_DEFUN([UTIL_REWRITE_AS_WINDOWS_MIXED_PATH],
+[
+  unix_path="[$]$1"
+  win_path=`$BASH $TOPDIR/make/scripts/fixpath.sh print "$unix_path"`
+  echo converting from $unix_path to $win_path
+  $1="$win_path"
+])
+
+################################################################################
+
 AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
 [
   if test "x$VS_ENV_CMD" = x; then
