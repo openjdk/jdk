@@ -493,14 +493,14 @@ inline bool ReleaseOp<Mspace>::process(typename Mspace::NodePtr node) {
 }
 
 template <typename Mspace, typename List>
-class ReleaseOpWithExcision : public ReleaseOp<Mspace> {
+class ReleaseWithExcisionOp : public ReleaseOp<Mspace> {
  private:
   List& _list;
   typename List::NodePtr _prev;
   size_t _count;
   size_t _amount;
  public:
-  ReleaseOpWithExcision(Mspace* mspace, List& list) :
+  ReleaseWithExcisionOp(Mspace* mspace, List& list) :
     ReleaseOp<Mspace>(mspace), _list(list), _prev(NULL), _count(0), _amount(0) {}
   bool process(typename List::NodePtr node);
   size_t processed() const { return _count; }
@@ -508,7 +508,7 @@ class ReleaseOpWithExcision : public ReleaseOp<Mspace> {
 };
 
 template <typename Mspace, typename List>
-inline bool ReleaseOpWithExcision<Mspace, List>::process(typename List::NodePtr node) {
+inline bool ReleaseWithExcisionOp<Mspace, List>::process(typename List::NodePtr node) {
   assert(node != NULL, "invariant");
   if (node->transient()) {
     _prev = _list.excise(_prev, node);
@@ -569,20 +569,49 @@ inline bool ScavengingReleaseOp<Mspace, List>::excise_with_release(typename List
 }
 
 template <typename Mspace, typename FromList>
-class ReleaseRetiredToFreeListOp : public StackObj {
+class ReleaseRetiredOp : public StackObj {
+private:
+  Mspace* _mspace;
+  FromList& _list;
+  typename Mspace::NodePtr _prev;
+public:
+  typedef typename Mspace::Node Node;
+  ReleaseRetiredOp(Mspace* mspace, FromList& list) :
+    _mspace(mspace), _list(list), _prev(NULL) {}
+  bool process(Node* node);
+};
+
+template <typename Mspace, typename FromList>
+inline bool ReleaseRetiredOp<Mspace, FromList>::process(typename Mspace::Node* node) {
+  assert(node != NULL, "invariant");
+  if (node->retired()) {
+    _prev = _list.excise(_prev, node);
+    node->reinitialize();
+    assert(node->empty(), "invariant");
+    assert(!node->retired(), "invariant");
+    node->release();
+    mspace_release(node, _mspace);
+  } else {
+    _prev = node;
+  }
+  return true;
+}
+
+template <typename Mspace, typename FromList>
+class ReinitializeAllReleaseRetiredOp : public StackObj {
 private:
   Mspace* _mspace;
   FromList& _list;
   typename Mspace::NodePtr _prev;
  public:
   typedef typename Mspace::Node Node;
-  ReleaseRetiredToFreeListOp(Mspace* mspace, FromList& list) :
+  ReinitializeAllReleaseRetiredOp(Mspace* mspace, FromList& list) :
     _mspace(mspace), _list(list), _prev(NULL) {}
   bool process(Node* node);
 };
 
 template <typename Mspace, typename FromList>
-inline bool ReleaseRetiredToFreeListOp<Mspace, FromList>::process(typename Mspace::Node* node) {
+inline bool ReinitializeAllReleaseRetiredOp<Mspace, FromList>::process(typename Mspace::Node* node) {
   assert(node != NULL, "invariant");
   // assumes some means of exclusive access to node
   const bool retired = node->retired();

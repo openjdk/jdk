@@ -34,7 +34,7 @@
 
 /*
  * The removal marker (i.e. the excision bit) is represented by '( )' as part of state description comments:
- * node --> next becomes (node) --> next, when node is logically deleted.
+ * "node --> next" becomes "(node) --> next", when node is logically deleted.
  */
 template <typename Node>
 inline Node* mark_for_removal(Node* node) {
@@ -47,7 +47,7 @@ inline Node* mark_for_removal(Node* node) {
 
 /*
  * The insertion marker (i.e. the insertion bit) is represented by '[ ]' as part of state description comments:
- * "node --> next" becomes "[node} --> next", in an attempt to convey node as being exlusively reserved.
+ * "node --> next" becomes "[node] --> next", in an attempt to convey node as being exlusively reserved.
  */
 template <typename Node>
 inline bool mark_for_insertion(Node* node, const Node* tail) {

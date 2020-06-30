@@ -32,9 +32,10 @@ JfrBuffer::JfrBuffer() : _next(NULL),
                          _identity(NULL),
                          _pos(NULL),
                          _top(NULL),
-                         _flags(0),
+                         _size(0),
                          _header_size(0),
-                         _size(0) {}
+                         _flags(0),
+                         _context(0) {}
 
 bool JfrBuffer::initialize(size_t header_size, size_t size) {
   assert(_next == NULL, "invariant");
@@ -52,7 +53,6 @@ bool JfrBuffer::initialize(size_t header_size, size_t size) {
 
 void JfrBuffer::reinitialize(bool exclusion /* false */) {
   acquire_critical_section_top();
-  assert(!lease(), "invariant");
   if (exclusion != excluded()) {
     // update
     if (exclusion) {
@@ -185,25 +185,25 @@ enum FLAG {
   EXCLUDED = 8
 };
 
-inline u2 load(const volatile u2* flags) {
-  assert(flags != NULL, "invariant");
-  return Atomic::load_acquire(flags);
+inline u1 load(const volatile u1* dest) {
+  assert(dest != NULL, "invariant");
+  return Atomic::load_acquire(dest);
 }
 
-inline void set(u2* flags, FLAG flag) {
-  assert(flags != NULL, "invariant");
+inline void set(u1* dest, u1 data) {
+  assert(dest != NULL, "invariant");
   OrderAccess::storestore();
-  *flags |= (u1)flag;
+  *dest |= data;
 }
 
-inline void clear(u2* flags, FLAG flag) {
-  assert(flags != NULL, "invariant");
+inline void clear(u1* dest, u1 data) {
+  assert(dest != NULL, "invariant");
   OrderAccess::storestore();
-  *flags ^= (u1)flag;
+  *dest ^= data;
 }
 
-inline bool test(const u2* flags, FLAG flag) {
-  return (u1)flag == (load(flags) & (u1)flag);
+inline bool test(const u1* dest, u1 data) {
+  return data == (load(dest) & data);
 }
 
 bool JfrBuffer::transient() const {
@@ -272,4 +272,16 @@ void JfrBuffer::clear_retired() {
   if (retired()) {
     clear(&_flags, RETIRED);
   }
+}
+
+u1 JfrBuffer::context() const {
+  return load(&_context);
+}
+
+void JfrBuffer::set_context(u1 context) {
+  set(&_context, context);
+}
+
+void JfrBuffer::clear_context() {
+  set(&_context, 0);
 }
