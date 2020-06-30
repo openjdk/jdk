@@ -38,7 +38,6 @@ endif
 
 ################################################################################
 
-# Disabling all warnings in gtest source code
 
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
     NAME := gtest, \
@@ -50,8 +49,9 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
         $(GTEST_FRAMEWORK_SRC)/googletest/src \
         $(GTEST_FRAMEWORK_SRC)/googlemock/src, \
     INCLUDE_FILES := gtest-all.cc gmock-all.cc, \
-    CFLAGS := $(filter-out $(WARNING_CFLAGS_JVM), $(JVM_CFLAGS)) \
-        -w \
+    DISABLED_WARNINGS_gcc := undef unused-result format-nonliteral, \
+    DISABLED_WARNINGS_clang := undef unused-result format-nonliteral, \
+    CFLAGS := $(JVM_CFLAGS) \
         -I$(GTEST_FRAMEWORK_SRC)/googletest \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock \
@@ -81,8 +81,7 @@ else
 	$(call create-mapfile)
 endif
 
-# Disabling undef, switch, format-nonliteral and tautological-undefined-compare
-# warnings for clang because of test source.
+# Additional disabled warnings are due to code in the test source.
 
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     NAME := jvm, \
