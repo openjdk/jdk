@@ -308,7 +308,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public static JPackageCommand helloAppImage(JavaAppDesc javaAppDesc) {
         JPackageCommand cmd = new JPackageCommand();
         cmd.setDefaultInputOutput().setDefaultAppName();
-        PackageType.IMAGE.applyTo(cmd);
+        cmd.setPackageType(PackageType.IMAGE);
         new HelloApp(javaAppDesc).addTo(cmd);
         return cmd;
     }

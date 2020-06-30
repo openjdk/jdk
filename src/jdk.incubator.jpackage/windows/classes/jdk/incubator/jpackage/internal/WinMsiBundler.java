@@ -314,6 +314,7 @@ public class WinMsiBundler  extends AbstractBundler {
                     .launchersDirectory()
                     .resolve(APP_NAME.fetchFrom(params) + ".exe");
         }
+        installerIcon = installerIcon.toAbsolutePath();
 
         params.put(WIN_APP_IMAGE.getID(), appDir);
 
@@ -460,6 +461,8 @@ public class WinMsiBundler  extends AbstractBundler {
 
         boolean enableLicenseUI = (LICENSE_FILE.fetchFrom(params) != null);
         boolean enableInstalldirUI = INSTALLDIR_CHOOSER.fetchFrom(params);
+
+        wixPipeline.addLightOptions("-sice:ICE27");
 
         if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
             wixPipeline.addLightOptions("-sice:ICE91");

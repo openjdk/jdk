@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,19 @@
 
 /*
  * Provides storage as a function of an epoch, with iteration capabilities for the current and previous epoch.
- * Iteration over the current epoch is incremental while iteration over the previous epoch is complete,
- * including storage reclamation. The design caters to use cases having multiple incremental iterations
- * over the current epoch, and a single, complete, iteration over the previous epoch.
+ *
+ * When iterating the previous epoch, where exclusive access to buffers is assumed,
+ * all buffers will be reinitialized post-callback, with retired buffers reclaimed
+ * and moved onto the free list and non-retired buffers left in-place.
+ *
+ * When iterating the current epoch, where concurrent access to buffers is assumed,
+ * there exist two modes, controlled by the EagerReclaim parameter.
+ * By default, EagerReclaim is false, meaning no retired buffers are reclaimed during the current epoch.
+ * Setting EagerReclaim to true, retired buffers will be reclaimed post-callback, by reinitialization
+ * and by moving them onto the free list, just like is done when iterating the previous epoch.
+ *
+ * The design caters to use cases having multiple incremental iterations over the current epoch,
+ * and a single iteration over the previous epoch.
  *
  * The JfrEpochStorage can be specialized by the following policies:
  *
@@ -43,10 +53,12 @@
  *
  * RetrievalPolicy   see jfrMemorySpace.hpp for a description.
  *
+ * EagerReclaim      should retired buffers be reclaimed also during the current epoch (i.e. eagerly)
+ *
  */
-template <typename NodeType, template <typename> class RetrievalPolicy>
+template <typename NodeType, template <typename> class RetrievalPolicy, bool EagerReclaim = false>
 class JfrEpochStorageHost : public JfrCHeapObj {
-  typedef JfrMemorySpace<JfrEpochStorageHost<NodeType, RetrievalPolicy>,
+  typedef JfrMemorySpace<JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>,
                          RetrievalPolicy,
                          JfrConcurrentQueue<NodeType>,
                          JfrLinkedList<NodeType>,

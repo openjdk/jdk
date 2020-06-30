@@ -28,6 +28,7 @@
 #include "jfr/recorder/checkpoint/types/jfrType.hpp"
 #include "jfr/recorder/checkpoint/types/jfrTypeManager.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrIterator.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -105,7 +106,7 @@ void JfrTypeManager::create_thread_blob(Thread* t) {
   ResourceMark rm(t);
   HandleMark hm(t);
   JfrThreadConstant type_thread(t);
-  JfrCheckpointWriter writer(t, true, THREADS);
+  JfrCheckpointWriter writer(t, true, THREADS, false);
   writer.write_type(TYPE_THREAD);
   type_thread.serialize(writer);
   // create and install a checkpoint blob
@@ -115,12 +116,11 @@ void JfrTypeManager::create_thread_blob(Thread* t) {
 
 void JfrTypeManager::write_thread_checkpoint(Thread* t) {
   assert(t != NULL, "invariant");
-  ResourceMark rm(t);
-  HandleMark hm(t);
-  JfrThreadConstant type_thread(t);
-  JfrCheckpointWriter writer(t, true, THREADS);
-  writer.write_type(TYPE_THREAD);
-  type_thread.serialize(writer);
+  if (!t->jfr_thread_local()->has_thread_blob()) {
+    create_thread_blob(t);
+  }
+  JfrCheckpointWriter writer(t, false, THREADS, false);
+  t->jfr_thread_local()->thread_blob()->write(writer);
 }
 
 class SerializerRegistrationGuard : public StackObj {
