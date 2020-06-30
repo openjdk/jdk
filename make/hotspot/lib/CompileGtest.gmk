@@ -40,7 +40,7 @@ endif
 
 # Disabling all warnings in gtest source code
 
-$(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBGTEST, \
+$(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
     NAME := gtest, \
     TYPE := STATIC_LIBRARY, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
@@ -84,7 +84,7 @@ endif
 # Disabling undef, switch, format-nonliteral and tautological-undefined-compare
 # warnings for clang because of test source.
 
-$(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
+$(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     NAME := jvm, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
@@ -127,7 +127,7 @@ TARGETS += $(BUILD_GTEST_LIBJVM)
 
 ################################################################################
 
-$(eval $(call SetupNativeCompilation, BUILD_GTEST_LAUNCHER, \
+$(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     NAME := gtestLauncher, \
     TYPE := EXECUTABLE, \

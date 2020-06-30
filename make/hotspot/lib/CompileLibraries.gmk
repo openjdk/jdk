@@ -27,7 +27,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include NativeCompilation.gmk
+include JdkNativeCompilation.gmk
 
 include HotspotCommon.gmk
 
