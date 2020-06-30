@@ -158,14 +158,6 @@ public abstract class BaseConfiguration {
     public abstract Runtime.Version getDocletVersion();
 
     /**
-     * Returns a short string representation of the version returned by
-     * {@linkplain #getDocletVersion()}.
-     *
-     * @return a short string representation of the version
-     */
-    public abstract String getDocletVersionString();
-
-    /**
      * This method should be defined in all those doclets (configurations),
      * which want to derive themselves from this BaseConfiguration. This method
      * can be used to finish up the options setup.
