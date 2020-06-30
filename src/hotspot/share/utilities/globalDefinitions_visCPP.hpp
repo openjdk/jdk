@@ -119,11 +119,6 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 #define unlink _unlink
 #define strdup _strdup
 
-#ifdef CHECK_UNHANDLED_OOPS
-#pragma warning( disable : 4521 ) // class has multiple copy ctors of a single type
-#pragma warning( disable : 4522 ) // class has multiple assignment operators of a single type
-#endif // CHECK_UNHANDLED_OOPS
-
 // Formatting.
 #define FORMAT64_MODIFIER "I64"
 
