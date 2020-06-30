@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -150,10 +150,10 @@ AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
     fi
     FIXPATH_SRC_W="$FIXPATH_SRC"
     FIXPATH_BIN_W="$FIXPATH_BIN"
-    UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([FIXPATH_SRC_W])
-    UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([FIXPATH_BIN_W])
     $RM -rf $FIXPATH_BIN $FIXPATH_DIR
     $MKDIR -p $FIXPATH_DIR $CONFIGURESUPPORT_OUTPUTDIR/bin
+    UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([FIXPATH_SRC_W])
+    UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([FIXPATH_BIN_W])
     cd $FIXPATH_DIR
     $CC $FIXPATH_SRC_W -Fe$FIXPATH_BIN_W > $FIXPATH_DIR/fixpath1.log 2>&1
     cd $CONFIGURE_START_DIR

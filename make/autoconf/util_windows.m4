@@ -52,7 +52,15 @@ AC_DEFUN([UTIL_REWRITE_AS_WINDOWS_MIXED_PATH],
     windows_path=`cmd //c echo $unix_path`
     $1="$windows_path"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-    windows_path=`$WSLPATH -m "$unix_path"`
+    windows_path=`$WSLPATH -m "$unix_path" 2>/dev/null`
+    if test $? -ne 0; then
+      dir=`dirname "$unix_path"`
+      base=`basename "$unix_path"`
+      windows_path=`$WSLPATH -m "$dir"`/"$base"
+      if test $? -ne 0; then
+        AC_MSG_ERROR([Cannot convert \"$unix_path\" to Windows path])
+      fi
+    fi
     $1="$windows_path"
   fi
 ])
