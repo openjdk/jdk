@@ -58,7 +58,7 @@ AC_DEFUN([UTIL_REWRITE_AS_WINDOWS_MIXED_PATH],
       base=`basename "$unix_path"`
       windows_path=`$WSLPATH -m "$dir"`/"$base"
       if test $? -ne 0; then
-        AC_MSG_ERROR([Cannot convert \"$unix_path\" to Windows path])
+        AC_MSG_ERROR([Cannot convert "$unix_path" to Windows path])
       fi
     fi
     $1="$windows_path"
