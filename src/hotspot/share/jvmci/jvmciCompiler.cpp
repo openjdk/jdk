@@ -99,39 +99,39 @@ void JVMCICompiler::bootstrap(TRAPS) {
                   (jlong)nanos_to_millis(os::javaTimeNanos() - start), _methods_compiled);
   }
   _bootstrapping = false;
-  JVMCI::compiler_runtime()->bootstrap_finished(CHECK);
+  JVMCI::java_runtime()->bootstrap_finished(CHECK);
 }
 
 bool JVMCICompiler::force_comp_at_level_simple(const methodHandle& method) {
-  if (UseJVMCINativeLibrary) {
-    // This mechanism exists to force compilation of a JVMCI compiler by C1
-    // to reduces the compilation time spent on the JVMCI compiler itself. In
-    // +UseJVMCINativeLibrary mode, the JVMCI compiler is AOT compiled.
-    return false;
-  }
-
   if (_bootstrapping) {
     // When bootstrapping, the JVMCI compiler can compile its own methods.
     return false;
   }
-
-  JVMCIRuntime* runtime = JVMCI::compiler_runtime();
-  if (runtime != NULL && runtime->is_HotSpotJVMCIRuntime_initialized()) {
-    JavaThread* thread = JavaThread::current();
-    HandleMark hm(thread);
-    THREAD_JVMCIENV(thread);
-    JVMCIObject receiver = runtime->get_HotSpotJVMCIRuntime(JVMCIENV);
-    objArrayHandle excludeModules(thread, HotSpotJVMCI::HotSpotJVMCIRuntime::excludeFromJVMCICompilation(JVMCIENV, HotSpotJVMCI::resolve(receiver)));
-    if (excludeModules.not_null()) {
-      ModuleEntry* moduleEntry = method->method_holder()->module();
-      for (int i = 0; i < excludeModules->length(); i++) {
-        if (excludeModules->obj_at(i) == moduleEntry->module()) {
-          return true;
+  if (UseJVMCINativeLibrary) {
+    // This mechanism exists to force compilation of a JVMCI compiler by C1
+    // to reduce the compilation time spent on the JVMCI compiler itself. In
+    // +UseJVMCINativeLibrary mode, the JVMCI compiler is AOT compiled.
+    return false;
+  } else {
+    JVMCIRuntime* runtime = JVMCI::java_runtime();
+    if (runtime != NULL) {
+      JVMCIObject receiver = runtime->probe_HotSpotJVMCIRuntime();
+      if (receiver.is_null()) {
+        return false;
+      }
+      JVMCIEnv* ignored_env = NULL;
+      objArrayHandle excludeModules(JavaThread::current(), HotSpotJVMCI::HotSpotJVMCIRuntime::excludeFromJVMCICompilation(ignored_env, HotSpotJVMCI::resolve(receiver)));
+      if (excludeModules.not_null()) {
+        ModuleEntry* moduleEntry = method->method_holder()->module();
+        for (int i = 0; i < excludeModules->length(); i++) {
+          if (excludeModules->obj_at(i) == moduleEntry->module()) {
+            return true;
+          }
         }
       }
     }
+    return false;
   }
-  return false;
 }
 
 // Compilation entry point for methods

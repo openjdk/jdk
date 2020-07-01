@@ -24,17 +24,19 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/oopStorage.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-#include "jvmci/metadataHandleBlock.hpp"
+#include "jvmci/metadataHandles.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 
-MetadataHandleBlock* JVMCI::_metadata_handles = NULL;
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
 JVMCIRuntime* JVMCI::_java_runtime = NULL;
+volatile bool JVMCI::_is_initialized = false;
+void* JVMCI::_shared_library_handle = NULL;
+char* JVMCI::_shared_library_path = NULL;
+volatile bool JVMCI::_in_shutdown = false;
 
 void jvmci_vmStructs_init() NOT_DEBUG_RETURN;
 
@@ -50,6 +52,40 @@ bool JVMCI::can_initialize_JVMCI() {
   return true;
 }
 
+void* JVMCI::get_shared_library(char*& path, bool load) {
+  void* sl_handle = _shared_library_handle;
+  if (sl_handle != NULL || !load) {
+    path = _shared_library_path;
+    return sl_handle;
+  }
+  assert(JVMCI_lock->owner() == Thread::current(), "must be");
+  path = NULL;
+  if (_shared_library_handle == NULL) {
+    char path[JVM_MAXPATHLEN];
+    char ebuf[1024];
+    if (JVMCILibPath != NULL) {
+      if (!os::dll_locate_lib(path, sizeof(path), JVMCILibPath, JVMCI_SHARED_LIBRARY_NAME)) {
+        vm_exit_during_initialization("Unable to locate JVMCI shared library in path specified by -XX:JVMCILibPath value", JVMCILibPath);
+      }
+    } else {
+      if (!os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
+        vm_exit_during_initialization("Unable to create path to JVMCI shared library");
+      }
+    }
+
+    void* handle = os::dll_load(path, ebuf, sizeof ebuf);
+    if (handle == NULL) {
+      vm_exit_during_initialization("Unable to load JVMCI shared library", ebuf);
+    }
+    _shared_library_handle = handle;
+    _shared_library_path = strdup(path);
+
+    TRACE_jvmci_1("loaded JVMCI shared library from %s", path);
+  }
+  path = _shared_library_path;
+  return _shared_library_handle;
+}
+
 void JVMCI::initialize_compiler(TRAPS) {
   if (JVMCILibDumpJNIConfig) {
     JNIJVMCI::initialize_ids(NULL);
@@ -61,93 +97,57 @@ void JVMCI::initialize_compiler(TRAPS) {
 
 void JVMCI::initialize_globals() {
   jvmci_vmStructs_init();
-  _metadata_handles = MetadataHandleBlock::allocate_block();
   if (UseJVMCINativeLibrary) {
     // There are two runtimes.
-    _compiler_runtime = new JVMCIRuntime();
-    _java_runtime = new JVMCIRuntime();
+    _compiler_runtime = new JVMCIRuntime(0);
+    _java_runtime = new JVMCIRuntime(-1);
   } else {
     // There is only a single runtime
-    _java_runtime = _compiler_runtime = new JVMCIRuntime();
+    _java_runtime = _compiler_runtime = new JVMCIRuntime(0);
   }
 }
 
-// Handles to objects in the Hotspot heap.
-static OopStorage* object_handles() {
-  return OopStorageSet::vm_global();
-}
-
-jobject JVMCI::make_global(const Handle& obj) {
-  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
-  assert(oopDesc::is_oop(obj()), "not an oop");
-  oop* ptr = object_handles()->allocate();
-  jobject res = NULL;
-  if (ptr != NULL) {
-    assert(*ptr == NULL, "invariant");
-    NativeAccess<>::oop_store(ptr, obj());
-    res = reinterpret_cast<jobject>(ptr);
-  } else {
-    vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR,
-                          "Cannot create JVMCI oop handle");
-  }
-  return res;
-}
-
-void JVMCI::destroy_global(jobject handle) {
-  // Assert before nulling out, for better debugging.
-  assert(is_global_handle(handle), "precondition");
-  oop* oop_ptr = reinterpret_cast<oop*>(handle);
-  NativeAccess<>::oop_store(oop_ptr, (oop)NULL);
-  object_handles()->release(oop_ptr);
-}
-
-bool JVMCI::is_global_handle(jobject handle) {
-  const oop* ptr = reinterpret_cast<oop*>(handle);
-  return object_handles()->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
-}
-
-jmetadata JVMCI::allocate_handle(const methodHandle& handle) {
-  assert(_metadata_handles != NULL, "uninitialized");
-  MutexLocker ml(JVMCI_lock);
-  return _metadata_handles->allocate_handle(handle);
-}
-
-jmetadata JVMCI::allocate_handle(const constantPoolHandle& handle) {
-  assert(_metadata_handles != NULL, "uninitialized");
-  MutexLocker ml(JVMCI_lock);
-  return _metadata_handles->allocate_handle(handle);
-}
-
-void JVMCI::release_handle(jmetadata handle) {
-  MutexLocker ml(JVMCI_lock);
-  _metadata_handles->chain_free_list(handle);
-}
 
 void JVMCI::metadata_do(void f(Metadata*)) {
-  if (_metadata_handles != NULL) {
-    _metadata_handles->metadata_do(f);
+  if (_java_runtime != NULL) {
+    _java_runtime->_metadata_handles->metadata_do(f);
+  }
+  if (_compiler_runtime != NULL && _compiler_runtime != _java_runtime) {
+    _compiler_runtime->_metadata_handles->metadata_do(f);
   }
 }
 
 void JVMCI::do_unloading(bool unloading_occurred) {
-  if (_metadata_handles != NULL && unloading_occurred) {
-    _metadata_handles->do_unloading();
+  if (unloading_occurred) {
+    if (_java_runtime != NULL) {
+      _java_runtime->_metadata_handles->do_unloading();
+    }
+    if (_compiler_runtime != NULL && _compiler_runtime != _java_runtime) {
+      _compiler_runtime->_metadata_handles->do_unloading();
+    }
   }
 }
 
 bool JVMCI::is_compiler_initialized() {
-  return compiler_runtime()->is_HotSpotJVMCIRuntime_initialized();
+  return _is_initialized;
 }
 
 void JVMCI::shutdown() {
+  ResourceMark rm;
+  {
+    MutexLocker locker(JVMCI_lock);
+    _in_shutdown = true;
+    TRACE_jvmci_1("shutting down JVMCI");
+  }
+  JVMCIRuntime* java_runtime = _java_runtime;
+  if (java_runtime != compiler_runtime()) {
+    java_runtime->shutdown();
+  }
   if (compiler_runtime() != NULL) {
     compiler_runtime()->shutdown();
   }
 }
 
-bool JVMCI::shutdown_called() {
-  if (compiler_runtime() != NULL) {
-    return compiler_runtime()->shutdown_called();
-  }
-  return false;
+bool JVMCI::in_shutdown() {
+  return _in_shutdown;
 }

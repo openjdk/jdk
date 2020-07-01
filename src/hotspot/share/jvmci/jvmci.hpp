@@ -45,15 +45,24 @@ class JVMCI : public AllStatic {
   friend class JVMCIEnv;
 
  private:
-  // Handles to Metadata objects.
-  static MetadataHandleBlock* _metadata_handles;
-
   // Access to the HotSpotJVMCIRuntime used by the CompileBroker.
   static JVMCIRuntime* _compiler_runtime;
 
-  // Access to the HotSpotJVMCIRuntime used by Java code running on the
-  // HotSpot heap. It will be the same as _compiler_runtime if
-  // UseJVMCINativeLibrary is false
+  // True when at least one JVMCIRuntime::initialize_HotSpotJVMCIRuntime()
+  // execution has completed successfully.
+  static volatile bool _is_initialized;
+
+  // Handle created when loading the JVMCI shared library with os::dll_load.
+  // Must hold JVMCI_lock when initializing.
+  static void* _shared_library_handle;
+
+  // Argument to os::dll_load when loading JVMCI shared library
+  static char* _shared_library_path;
+
+  // Records whether JVMCI::shutdown has been called.
+  static volatile bool _in_shutdown;
+
+  // Access to the HotSpot heap based JVMCIRuntime
   static JVMCIRuntime* _java_runtime;
 
  public:
@@ -64,13 +73,20 @@ class JVMCI : public AllStatic {
      code_too_large
   };
 
+  // Gets the handle to the loaded JVMCI shared library, loading it
+  // first if not yet loaded and `load` is true. The path from
+  // which the library is loaded is returned in `path`. If
+  // `load` is true then JVMCI_lock must be locked.
+  static void* get_shared_library(char*& path, bool load);
+
   static void do_unloading(bool unloading_occurred);
 
   static void metadata_do(void f(Metadata*));
 
   static void shutdown();
 
-  static bool shutdown_called();
+  // Returns whether JVMCI::shutdown has been called.
+  static bool in_shutdown();
 
   static bool is_compiler_initialized();
 
@@ -83,16 +99,9 @@ class JVMCI : public AllStatic {
 
   static void initialize_compiler(TRAPS);
 
-  static jobject make_global(const Handle& obj);
-  static void destroy_global(jobject handle);
-  static bool is_global_handle(jobject handle);
-
-  static jmetadata allocate_handle(const methodHandle& handle);
-  static jmetadata allocate_handle(const constantPoolHandle& handle);
-
-  static void release_handle(jmetadata handle);
-
   static JVMCIRuntime* compiler_runtime() { return _compiler_runtime; }
+  // Gets the single runtime for JVMCI on the Java heap. This is the only
+  // JVMCI runtime available when !UseJVMCINativeLibrary.
   static JVMCIRuntime* java_runtime()     { return _java_runtime; }
 };
 
