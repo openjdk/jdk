@@ -199,7 +199,8 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
     fi
     if test "x$complete" != "x$new_complete"; then
       $1="$new_complete"
-      AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
+# FIXME: this is just noise.
+#      AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
     fi
   fi
 ])

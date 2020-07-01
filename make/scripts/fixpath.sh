@@ -266,12 +266,14 @@ cygwin_import_pathlist() {
   old_ifs="$IFS"
   IFS=";"
   for arg in $1; do
-    cygwin_import_to_unix "$arg"
+    if ! [[ $arg =~ ^" "+$ ]]; then
+      cygwin_import_to_unix "$arg"
 
-    if [[ "$converted" = "" ]]; then
-      converted="$result"
-    else
-      converted="$converted:$result"
+      if [[ "$converted" = "" ]]; then
+        converted="$result"
+      else
+        converted="$converted:$result"
+      fi
     fi
   done
   IFS="$old_ifs"

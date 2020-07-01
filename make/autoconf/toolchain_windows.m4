@@ -399,43 +399,14 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
 
       # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment).
       # Instead create a shell script which will set the relevant variables when run.
-      WINPATH_VS_ENV_CMD="$VS_ENV_CMD"
-      UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([WINPATH_VS_ENV_CMD])
+      # Make sure we only capture additions to PATH needed by VS.
 
-      # Generate a DOS batch file which runs $VS_ENV_CMD, and then creates a shell
-      # script (executable by bash) that will setup the important variables.
-      EXTRACT_VC_ENV_BAT_FILE="$VS_ENV_TMP_DIR/extract-vs-env.bat"
-      $ECHO "@echo off" >  $EXTRACT_VC_ENV_BAT_FILE
-      # This will end up something like:
-      # call C:/progra~2/micros~2.0/vc/bin/amd64/vcvars64.bat
-      $ECHO "call \"$WINPATH_VS_ENV_CMD\" $VS_ENV_ARGS" >> $EXTRACT_VC_ENV_BAT_FILE
-      # These will end up something like:
-      # echo VS_PATH=\"$PATH\" > set-vs-env.sh
-      # The trailing space for everyone except PATH is no typo, but is needed due
-      # to trailing \ in the Windows paths. These will be stripped later.
-      # Trying pure CMD extract. This results in windows paths that need to
-      # be converted post extraction, but a simpler script.
-      $ECHO 'echo VS_PATH="%PATH%" > %~dp0\\set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-      $ECHO 'echo VS_INCLUDE="%INCLUDE% " >> %~dp0\\set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-      $ECHO 'echo VS_LIB="%LIB% " >> %~dp0\\set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-      $ECHO 'echo VCINSTALLDIR="%VCINSTALLDIR% " >> %~dp0\\set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-      $ECHO 'echo VCToolsRedistDir="%VCToolsRedistDir% " >> %~dp0\\set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-      $ECHO 'echo WindowsSdkDir="%WindowsSdkDir% " >> %~dp0\\set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-      $ECHO 'echo WINDOWSSDKDIR="%WINDOWSSDKDIR% " >> %~dp0\\set-vs-env.sh' \
-          >> $EXTRACT_VC_ENV_BAT_FILE
-
-      # Now execute the newly created bat file.
-      # Change directory so we don't need to mess with Windows paths in redirects.
-      BATPATH=$VS_ENV_TMP_DIR/extract-vs-env.bat
-      UTIL_REWRITE_AS_WINDOWS_MIXED_PATH(BATPATH)
+      OLDPATH="$PATH"
+      export PATH=
       # The "| cat" is to stop SetEnv.Cmd to mess with system colors on some systems
-      $CMD /c "$BATPATH" > extract-vs-env.log | $CAT 2>&1
+      $FIXPATH $CMD /c "$TOPDIR/make/scripts/extract-vs-env.cmd" "$VS_ENV_CMD" \
+          "$VS_ENV_TMP_DIR/set-vs-env.sh" $VS_ENV_ARGS > $VS_ENV_TMP_DIR/extract-vs-env.log | $CAT 2>&1
+      PATH="$OLDPATH"
 
       if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
         AC_MSG_NOTICE([Could not succesfully extract the environment variables needed for the VS setup.])
@@ -451,6 +422,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # the configure script to find and run the compiler in the proper way.
       AC_MSG_NOTICE([Setting extracted environment variables])
       . $VS_ENV_TMP_DIR/set-vs-env.sh
+
       # Now we have VS_PATH, VS_INCLUDE, VS_LIB. For further checking, we
       # also define VCINSTALLDIR, WindowsSdkDir and WINDOWSSDKDIR.
 
