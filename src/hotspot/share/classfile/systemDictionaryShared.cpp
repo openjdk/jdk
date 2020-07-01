@@ -872,7 +872,19 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
       //   the corresponding SystemDictionaryShared::get_shared_xxx() function.
       Handle manifest = get_shared_jar_manifest(index, CHECK_(pd));
       Handle url = get_shared_jar_url(index, CHECK_(pd));
-      define_shared_package(class_name, class_loader, manifest, url, CHECK_(pd));
+      int index_offset = index - ClassLoaderExt::app_class_paths_start_index();
+      if (index_offset < PackageEntry::max_index_for_defined_in_class_path()) {
+        if (pkg_entry == NULL || !pkg_entry->is_defined_by_cds_in_class_path(index_offset)) {
+          // define_shared_package only needs to be called once for each package in a jar specified
+          // in the shared class path.
+          define_shared_package(class_name, class_loader, manifest, url, CHECK_(pd));
+          if (pkg_entry != NULL) {
+            pkg_entry->set_defined_by_cds_in_class_path(index_offset);
+          }
+        }
+      } else {
+        define_shared_package(class_name, class_loader, manifest, url, CHECK_(pd));
+      }
       pd = get_shared_protection_domain(class_loader, index, url, CHECK_(pd));
     }
   }
