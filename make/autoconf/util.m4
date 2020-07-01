@@ -24,7 +24,6 @@
 #
 
 m4_include([util_paths.m4])
-m4_include([util_windows.m4])
 
 ###############################################################################
 # Create a function/macro that takes a series of named arguments. The call is
