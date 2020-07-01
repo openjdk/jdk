@@ -32,7 +32,7 @@
 # compilers and related tools that are used.
 ########################################################################
 
-m4_include([toolchain_windows.m4])
+m4_include([toolchain_microsoft.m4])
 
 # All valid toolchains, regardless of platform (used by help.m4)
 VALID_TOOLCHAINS_all="gcc clang xlc microsoft"
