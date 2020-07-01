@@ -1255,8 +1255,9 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
                                                             Node* init, Node* limit, jint stride,
                                                             Node* rng, bool &overflow,
                                                             Deoptimization::DeoptReason reason) {
+  // First predicate for the initial value on first loop iteration
   assert(proj->_con && predicate_proj->_con, "not a range check?");
-  Node* opaque_init = new Opaque1Node(C, init);
+  Node* opaque_init = new OpaqueLoopInitNode(C, init);
   register_new_node(opaque_init, upper_bound_proj);
   BoolNode* bol = rc_predicate(loop, upper_bound_proj, scale, offset, opaque_init, limit, stride, rng, (stride > 0) != (scale > 0), overflow);
   Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1)); // This will go away once loop opts are over
@@ -1264,6 +1265,24 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
   ProjNode* new_proj = create_new_if_for_predicate(predicate_proj, NULL, reason, overflow ? Op_If : iff->Opcode());
   _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   assert(opaque_init->outcnt() > 0, "should be used");
+
+  // Second predicate for init + (current stride - initial stride)
+  // This is identical to the previous predicate initially but as
+  // unrolling proceeds current stride is updated.
+  Node* init_stride = loop->_head->as_CountedLoop()->stride();
+  Node* opaque_stride = new OpaqueLoopStrideNode(C, init_stride);
+  register_new_node(opaque_stride, new_proj);
+  Node* max_value = new SubINode(opaque_stride, init_stride);
+  register_new_node(max_value, new_proj);
+  max_value = new AddINode(opaque_init, max_value);
+  register_new_node(max_value, new_proj);
+  bol = rc_predicate(loop, new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0), overflow);
+  opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
+  register_new_node(opaque_bol, new_proj);
+  new_proj = create_new_if_for_predicate(predicate_proj, NULL, reason, overflow ? Op_If : iff->Opcode());
+  _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
+  assert(max_value->outcnt() > 0, "should be used");
+
   return new_proj;
 }
 

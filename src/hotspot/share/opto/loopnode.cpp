@@ -2580,7 +2580,7 @@ uint IdealLoopTree::est_loop_clone_sz(uint factor) const {
 
   uint const bc = 13;
   uint const cc = 17;
-  uint const sz = _body.size() + (_body.size() + 7) / 8;
+  uint const sz = _body.size() + (_body.size() + 7) / 2;
   uint estimate = factor * (sz + bc) + cc;
 
   assert((estimate - cc) / factor == sz + bc, "overflow");
