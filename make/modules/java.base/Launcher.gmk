@@ -30,14 +30,13 @@ $(eval $(call IncludeCustomExtension, modules/java.base/Launcher.gmk))
 
 JAVA_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/launcher/java.rc
 
-JAVA_RC_FLAGS += -I$(TOPDIR)/src/java.base/windows/native/common
-JAVA_RC_FLAGS += -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
+JAVA_RCFLAGS ?= -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
 
 ################################################################################
 
 $(eval $(call SetupBuildLauncher, java, \
     CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
-    EXTRA_RC_FLAGS := $(JAVA_RC_FLAGS), \
+    EXTRA_RCFLAGS := $(JAVA_RCFLAGS), \
     VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
     OPTIMIZATION := HIGH, \
 ))
@@ -45,7 +44,7 @@ $(eval $(call SetupBuildLauncher, java, \
 ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupBuildLauncher, javaw, \
       CFLAGS := -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
-      EXTRA_RC_FLAGS := $(JAVA_RC_FLAGS), \
+      EXTRA_RCFLAGS := $(JAVA_RCFLAGS), \
       VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
   ))
 endif

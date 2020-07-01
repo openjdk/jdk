@@ -52,7 +52,6 @@ TARGETS =
 # READMEs and other files.
 
 DEMO_SHARE_SRC := $(TOPDIR)/src/demo/share
-GLOBAL_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/common/version.rc
 
 DEMO_MANIFEST := $(SUPPORT_OUTPUTDIR)/demos/java-main-manifest.mf
 

@@ -494,7 +494,6 @@ JVM_CFLAGS := @JVM_CFLAGS@
 JVM_LDFLAGS := @JVM_LDFLAGS@
 JVM_ASFLAGS := @JVM_ASFLAGS@
 JVM_LIBS := @JVM_LIBS@
-JVM_RCFLAGS := @JVM_RCFLAGS@
 
 # These flags might contain variables set by a custom extension that is included later.
 EXTRA_CFLAGS = @EXTRA_CFLAGS@
@@ -665,12 +664,7 @@ NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) $(JAVADOC_MAIN_CLASS)
 
 JLINK_KEEP_PACKAGED_MODULES:=@JLINK_KEEP_PACKAGED_MODULES@
 
-# Base flags for RC
-# Guarding this against resetting value. Legacy make files include spec multiple
-# times.
-ifndef RC_FLAGS
-  RC_FLAGS:=@RC_FLAGS@
-endif
+RCFLAGS := @RCFLAGS@
 
 # Tools adhering to a minimal and common standard of posix compliance.
 AWK:=@AWK@

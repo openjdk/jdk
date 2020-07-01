@@ -27,8 +27,6 @@ include JdkNativeCompilation.gmk
 
 ################################################################################
 
-GLOBAL_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/common/version.rc
-
 # Absolute paths to lib files on windows for use in LIBS. Should figure out a more
 # elegant solution to this.
 WIN_JAVA_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
