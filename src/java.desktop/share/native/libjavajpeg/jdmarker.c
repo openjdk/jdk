@@ -238,7 +238,7 @@ get_soi (j_decompress_ptr cinfo)
 
 
 LOCAL(boolean)
-get_sof (j_decompress_ptr cinfo, boolean is_prog, boolean is_arith)
+get_sof (j_decompress_ptr cinfo, boolean is_baseline, boolean is_prog, boolean is_arith)
 /* Process a SOFn marker */
 {
   INT32 length;
@@ -246,6 +246,7 @@ get_sof (j_decompress_ptr cinfo, boolean is_prog, boolean is_arith)
   jpeg_component_info * compptr;
   INPUT_VARS(cinfo);
 
+  cinfo->is_baseline = is_baseline;
   cinfo->progressive_mode = is_prog;
   cinfo->arith_code = is_arith;
 
@@ -998,23 +999,27 @@ read_markers (j_decompress_ptr cinfo)
       break;
 
     case M_SOF0:                /* Baseline */
+      if (! get_sof(cinfo, TRUE, FALSE, FALSE))
+        return JPEG_SUSPENDED;
+      break;
+
     case M_SOF1:                /* Extended sequential, Huffman */
-      if (! get_sof(cinfo, FALSE, FALSE))
+      if (! get_sof(cinfo, FALSE, FALSE, FALSE))
         return JPEG_SUSPENDED;
       break;
 
     case M_SOF2:                /* Progressive, Huffman */
-      if (! get_sof(cinfo, TRUE, FALSE))
+      if (! get_sof(cinfo, FALSE, TRUE, FALSE))
         return JPEG_SUSPENDED;
       break;
 
     case M_SOF9:                /* Extended sequential, arithmetic */
-      if (! get_sof(cinfo, FALSE, TRUE))
+      if (! get_sof(cinfo, FALSE, FALSE, TRUE))
         return JPEG_SUSPENDED;
       break;
 
     case M_SOF10:               /* Progressive, arithmetic */
-      if (! get_sof(cinfo, TRUE, TRUE))
+      if (! get_sof(cinfo, FALSE, TRUE, TRUE))
         return JPEG_SUSPENDED;
       break;
 
