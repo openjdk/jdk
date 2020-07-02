@@ -24,7 +24,7 @@
 #
 
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
-AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
+AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
 [
   SRC_ROOT_LENGTH=`$THEPWDCMD -L|$WC -m`
   if test $SRC_ROOT_LENGTH -gt 100; then
@@ -117,9 +117,15 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     export WSLENV
   fi
 
-  FIXPATH="$BASH $TOPDIR/make/scripts/fixpath.sh exec"
+  # Chicken and egg: FIXPATH is needed for UTIL_FIXUP_PATH to work
+  FIXPATH_DIR="$TOPDIR/make/scripts"
+  FIXPATH="$BASH $FIXPATH_DIR/fixpath.sh exec"
+  UTIL_FIXUP_PATH(FIXPATH_DIR)
+
+  # Now that we can, use fixed path
+  FIXPATH="$BASH $FIXPATH_DIR/fixpath.sh exec"
   AC_SUBST(FIXPATH)
-  FIXPATH_PRINT="$BASH $TOPDIR/make/scripts/fixpath.sh print"
+  FIXPATH_PRINT="$BASH $FIXPATH_DIR/fixpath.sh print"
   AC_SUBST(FIXPATH_PRINT)
 
   # Test if windows or unix "find" is first in path.

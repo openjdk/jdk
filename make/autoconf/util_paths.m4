@@ -62,7 +62,7 @@ AC_DEFUN([UTIL_FIXUP_PATH],
 [
   # Only process if variable expands to non-empty
   if test "x[$]$1" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" != "x"; then
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
       path="[$]$1"
       imported_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path"`
       $BASH $TOPDIR/make/scripts/fixpath.sh verify "$imported_path"
@@ -165,7 +165,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
       new_path="$path"
     fi
 
-    if test "x$OPENJDK_BUILD_OS_ENV" != "x"; then
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
       ## FIXME: should do something about .exe..?
       new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$new_path"`
       $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
