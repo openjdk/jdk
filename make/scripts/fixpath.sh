@@ -25,7 +25,7 @@
 #
 
 # FIXME: hack for WSL
-PATH=$PATH:/usr/bin
+PATH=$PATH:/usr/bin:/bin
 
 setup() {
   if [[ $PATHTOOL == "" ]]; then
@@ -334,7 +334,12 @@ cygwin_exec_command_line() {
   if [[ -v DEBUG_FIXPATH ]]; then
     echo fixpath: debug: "$command" "${collected_args[@]}" 1>&2
   fi
-  "$command" "${collected_args[@]}"
+  if [[ $ENVROOT != "" ]]; then
+    "$command" "${collected_args[@]}"
+  else
+    # For WSL1, automatically strip away warnings from WSLENV=PATH/l
+    "$command" "${collected_args[@]}" 2> >(grep -v "ERROR: UtilTranslatePathList" 1>&2)
+  fi
 }
 
 #### MAIN FUNCTION
