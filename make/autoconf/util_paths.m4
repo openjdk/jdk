@@ -90,9 +90,7 @@ AC_DEFUN([UTIL_FIXUP_PATH],
   if test "x[$]$1" != x; then
     if test "x$OPENJDK_BUILD_OS_ENV" != "x"; then
       path="[$]$1"
-      echo testin path $path
       imported_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path"`
-      echo we got imported_path="$imported_path"
       $BASH $TOPDIR/make/scripts/fixpath.sh verify "$imported_path"
       if test $? -ne 0; then
         echo failed to import $path
@@ -101,7 +99,6 @@ AC_DEFUN([UTIL_FIXUP_PATH],
         echo rewriting $path to "$imported_path".
         $1="$imported_path"
       else
-        echo not rewrite
         $1="$path"
       fi
     else
@@ -136,16 +133,21 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
   # Only process if variable expands to non-empty
 
   if test "x[$]$1" != x; then
-        # First separate the path from the arguments. This will split at the first
-      # space.
+    # First separate the path from the arguments. This will split at the first
+    # space.
     complete="[$]$1"
+    [ if [[ $complete =~ ^$FIXPATH ]]; then
+      complete="${complete#$FIXPATH }"
+      prefix="$FIXPATH "
+    else
+      prefix=""
+    fi ]
     path="${complete%% *}"
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
     # Cannot rely on the command "which" here since it doesn't always work.
     contains_slash=`$ECHO "$path" | $GREP -e / -e \\`
-    echo contains_slash=$contains_slash.
     if test -z "$contains_slash"; then
       # Executable has no directories. Look in $PATH.
       IFS_save="$IFS"
@@ -172,17 +174,13 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
 
     if test "x$OPENJDK_BUILD_OS_ENV" != "x"; then
       ## FIXME: should do something about .exe..?
-      echo testing exec :$new_path:
       new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$new_path"`
-      echo exec we got new_path="$new_path"
       $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
       if test $? -ne 0; then
-        echo failed to import exec $new_path
         # retry but assume spaces are part of filename
         path="$complete"
 
         new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path"`
-        echo exec we got new_path="$new_path"
         $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
         if test $? -ne 0; then
           echo failed to import exec $new_path FINAL
@@ -193,9 +191,9 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
 
     # Now join together the path and the arguments once again
     if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
+      new_complete="$prefix$new_path ${arguments% *}"
     else
-      new_complete="$new_path"
+      new_complete="$prefix$new_path"
     fi
     if test "x$complete" != "x$new_complete"; then
       $1="$new_complete"
