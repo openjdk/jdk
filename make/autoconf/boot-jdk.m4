@@ -102,7 +102,7 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
             AC_MSG_CHECKING([for Boot JDK])
             AC_MSG_RESULT([$BOOT_JDK])
             AC_MSG_CHECKING([Boot JDK version])
-            BOOT_JDK_VERSION=`$FIXPATH "$BOOT_JDK/bin/java$EXE_SUFFIX" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $TR '\n\r' '  '`
+            BOOT_JDK_VERSION=`$FIXPATH "$BOOT_JDK/bin/java$EXE_SUFFIX" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $TR -d '\r'`
             AC_MSG_RESULT([$BOOT_JDK_VERSION])
           fi # end check jdk version
         fi # end check javac
