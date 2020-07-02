@@ -51,7 +51,7 @@ else #with SPEC
 	$(ECHO) "MODULE_NAMES=\"$(strip $(foreach mod, $(SEL_MODULES), $(mod)))\"" >> $(OUT)
 	$(ECHO) "SEL_MODULES=\"$(SEL_MODULES)\"" >> $(OUT)
 	$(ECHO) "BOOT_JDK=\"$(BOOT_JDK)\"" >> $(OUT)
-	$(ECHO) "CYGPATH=\"$(CYGPATH)\"" >> $(OUT)
+	$(ECHO) "CYGPATH=\"$(PATHTOOL)\"" >> $(OUT)
 	$(ECHO) "SPEC=\"$(SPEC)\"" >> $(OUT)
 	$(ECHO) "JT_HOME=\"$(JT_HOME)\"" >> $(OUT)
 

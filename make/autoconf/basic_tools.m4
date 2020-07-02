@@ -90,7 +90,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   THEPWDCMD=pwd
 
   # These are not required on all platforms
-  UTIL_PATH_PROGS(CYGPATH, cygpath wslpath)
+  UTIL_PATH_PROGS(PATHTOOL, cygpath wslpath)
   UTIL_PATH_PROGS(DF, df)
   UTIL_PATH_PROGS(CPIO, [cpio bsdcpio])
   UTIL_PATH_PROGS(NICE, nice)

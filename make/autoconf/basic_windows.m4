@@ -32,7 +32,7 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   fi
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
     # Clarify if it is wsl1 or wsl2, and use that as OS_ENV from this point forward
-    $CYGPATH -w / > /dev/null 2>&1
+    $PATHTOOL -w / > /dev/null 2>&1
     if test $? -eq 0; then
       OPENJDK_BUILD_OS_ENV=windows.wsl2
     else
@@ -53,13 +53,13 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     export MSYS2_ARG_CONV_EXCL="*"
   fi
 
-  if test "x$CYGPATH" = x; then
+  if test "x$PATHTOOL" = x; then
     AC_MSG_ERROR([Something is wrong with your $WINENV_VENDOR installation since I cannot find cygpath or wslpath in your path])
   fi
 
   AC_MSG_CHECKING([$WINENV_VENDOR root directory as Windows path])
   if test "x$OPENJDK_BUILD_OS_ENV" != "xwindows.wsl1"; then
-    WINENV_ROOT=`$CYGPATH -w / 2> /dev/null`
+    WINENV_ROOT=`$PATHTOOL -w / 2> /dev/null`
     # msys2 has a trailing backslash; strip it
     WINENV_ROOT=${WINENV_ROOT%\\}
   else
@@ -69,12 +69,12 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   AC_SUBST(WINENV_ROOT)
 
   AC_MSG_CHECKING([$WINENV_VENDOR drive prefix])
-  WINENV_PREFIX=`$CYGPATH -u c:/ | $SED -e 's!/c/!!'`
+  WINENV_PREFIX=`$PATHTOOL -u c:/ | $SED -e 's!/c/!!'`
   AC_MSG_RESULT(['$WINENV_PREFIX'])
   AC_SUBST(WINENV_PREFIX)
 
   AC_MSG_CHECKING([$WINENV_VENDOR temp directory])
-  WINENV_TEMP_DIR=$($CYGPATH -u $($CMD /q /c echo %TEMP% 2> /dev/null) | $TR -d '\r\n')
+  WINENV_TEMP_DIR=$($PATHTOOL -u $($CMD /q /c echo %TEMP% 2> /dev/null) | $TR -d '\r\n')
   AC_MSG_RESULT([$WINENV_TEMP_DIR])
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then

@@ -175,7 +175,7 @@ HG := hg
 ULIMIT := ulimit
 
 ifeq ($(OPENJDK_BUILD_OS), windows)
-  CYGPATH := cygpath
+  PATHTOOL := cygpath
 endif
 
 ################################################################################
