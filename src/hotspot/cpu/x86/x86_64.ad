@@ -1645,10 +1645,7 @@ bool Matcher::const_oop_prefer_decode() {
 }
 
 bool Matcher::const_klass_prefer_decode() {
-  // TODO: Either support matching DecodeNKlass (heap-based) in operand
-  //       or condisider the following:
-  // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-  //return CompressedKlassPointers::base() == NULL;
+  // Prefer ConP over ConNKlass+DecodeNKlass.
   return true;
 }
 
