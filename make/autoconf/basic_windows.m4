@@ -140,3 +140,12 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   FIXPATH_PRINT="$BASH $TOPDIR/make/scripts/fixpath.sh print"
   AC_SUBST(FIXPATH_PRINT)
 ])
+
+# Platform-specific finalization
+AC_DEFUN([BASIC_WINDOWS_FINALIZE],
+[
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
+    # Change back from temp dir
+    cd $CONFIGURE_START_DIR
+  fi
+])

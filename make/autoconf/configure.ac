@@ -175,7 +175,6 @@ TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE
 
 # The global flags are needed for configure to be able to run the compilers
 # correctly.
-TOOLCHAIN_PRE_FLAGS
 FLAGS_PRE_TOOLCHAIN
 
 # Then detect the actual binaries needed
@@ -293,8 +292,7 @@ BASIC_CHECK_LEFTOVER_OVERRIDDEN
 CONFIG_STATUS="$CONFIGURESUPPORT_OUTPUTDIR/config.status"
 
 # Create the actual output files. Now the main work of configure is done.
-# FIXME: hack for WSL
-cd $CONFIGURE_START_DIR
+BASIC_WINDOWS_FINALIZE
 AC_OUTPUT
 
 # After AC_OUTPUT, we need to do final work

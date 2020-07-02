@@ -224,6 +224,14 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
     $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -F [$]$1SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
   fi
 
+  # For the microsoft toolchain, we need to get the SYSROOT flags from the
+  # Visual Studio environment. Currently we cannot handle this as a separate
+  # build toolchain.
+  if test "x$1" = x && test "x$OPENJDK_BUILD_OS" = "xwindows" \
+      && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+    TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
+  fi
+
   AC_SUBST($1SYSROOT_CFLAGS)
   AC_SUBST($1SYSROOT_LDFLAGS)
 ])
@@ -232,6 +240,7 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
 [
   # We should always include user supplied flags
   FLAGS_SETUP_USER_SUPPLIED_FLAGS
+
   # The sysroot flags are needed for configure to be able to run the compilers
   FLAGS_SETUP_SYSROOT_FLAGS
 

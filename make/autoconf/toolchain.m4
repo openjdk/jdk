@@ -323,18 +323,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
 
 # Before we start detecting the toolchain executables, we might need some
 # special setup, e.g. additional paths etc.
-AC_DEFUN_ONCE([TOOLCHAIN_PRE_FLAGS],
-[
-  # On Windows, we need to detect the visual studio installation first.
-  if test "x$OPENJDK_BUILD_OS" = "xwindows" \
-      && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
-    TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
-    # We now got SYSROOT flags
-  fi
-])
-
-# Before we start detecting the toolchain executables, we might need some
-# special setup, e.g. additional paths etc.
 AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
 [
   # Store the CFLAGS etc passed to the configure script.
