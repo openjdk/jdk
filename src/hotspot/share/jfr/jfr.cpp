@@ -90,12 +90,6 @@ bool Jfr::is_excluded(Thread* t) {
   return t != NULL && t->jfr_thread_local()->is_excluded();
 }
 
-void Jfr::on_java_thread_dismantle(JavaThread* jt) {
-  if (JfrRecorder::is_recording()) {
-    JfrCheckpointManager::write_thread_checkpoint(jt);
-  }
-}
-
 void Jfr::on_vm_shutdown(bool exception_handler) {
   if (JfrRecorder::is_recording()) {
     JfrEmergencyDump::on_vm_shutdown(exception_handler);

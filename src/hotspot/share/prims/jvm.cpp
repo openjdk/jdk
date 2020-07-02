@@ -95,9 +95,11 @@
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 #include <errno.h>
-#include <jfr/recorder/jfrRecorder.hpp>
 
 /*
   NOTE about use of any ctor or function call that can trigger a safepoint/GC:
@@ -3071,7 +3073,7 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
   }
 
 #if INCLUDE_JFR
-  if (JfrRecorder::is_recording() && EventThreadStart::is_enabled() &&
+  if (Jfr::is_recording() && EventThreadStart::is_enabled() &&
       EventThreadStart::is_stacktrace_enabled()) {
     JfrThreadLocal* tl = native_thread->jfr_thread_local();
     // skip Thread.start() and Thread.start0()

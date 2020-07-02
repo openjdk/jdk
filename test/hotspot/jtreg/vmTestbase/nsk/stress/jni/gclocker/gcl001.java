@@ -24,11 +24,10 @@
 
 /*
  * @test
- * @key stress
+ * @key stress randomness
  *
  * @summary converted from VM testbase nsk/stress/jni/gclocker/gcl001.
- * VM testbase keywords: [stress, quick, feature_283, nonconcurrent, exclude]
- * VM testbase comments: 8208207
+ * VM testbase keywords: [stress, quick, feature_283, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     Check compatibility of GC Locker improvements with JNI CS
@@ -37,9 +36,8 @@
  *    1. Create primitive array and string with random data
  *    2. Pass it to native method
  *    3. Sort/Hash data in JNI CS mixing string and array critical sections
- *    4. Check isCopy == false
- *    5. Return from native
- *    6. Check data to be processed correctly
+ *    4. Return from native
+ *    5. Check data to be processed correctly
  * B) Create M ' Garbage producer/memory allocation' threads. Each of them will:
  *    1. Allocate memory blocks and make them garbage.
  *    2. Check for OOM errors.
@@ -47,7 +45,6 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @ignore 8208207
  * @run main/othervm/native/timeout=480
  *      -XX:-UseGCOverheadLimit
  *      nsk.stress.jni.gclocker.gcl001
@@ -228,6 +225,7 @@ public class gcl001 extends ThreadedGCTest {
             for (int i = 0; i < str.length(); ++i) {
                 javaHash += (int) str.charAt(i);
             }
+            javaHash += javaHash;
             check(array[0] == false && array[array.length - 1] == true
                     && javaHash == nativeHash, "Data validation failure");
 
@@ -261,7 +259,7 @@ public class gcl001 extends ThreadedGCTest {
             for (int i = 0; i < str.length(); ++i) {
                 javaHash += (int) str.charAt(i);
             }
-
+            javaHash += javaHash;
             check(array[0] == min && array[array.length - 1] == max
                     && javaHash == nativeHash, "Data validation failure");
 
@@ -296,7 +294,7 @@ public class gcl001 extends ThreadedGCTest {
             for (int i = 0; i < str.length(); ++i) {
                 javaHash += (int) str.charAt(i);
             }
-
+            javaHash += javaHash;
             check(array[0] == min && array[array.length - 1] == max
                     && javaHash == nativeHash, "Data validation failure");
 
@@ -331,7 +329,7 @@ public class gcl001 extends ThreadedGCTest {
             for (int i = 0; i < str.length(); ++i) {
                 javaHash += (int) str.charAt(i);
             }
-
+            javaHash += javaHash;
             check(array[0] == min && array[array.length - 1] == max
                     && javaHash == nativeHash, "Data validation failure");
         }
@@ -364,7 +362,7 @@ public class gcl001 extends ThreadedGCTest {
             for (int i = 0; i < str.length(); ++i) {
                 javaHash += (int) str.charAt(i);
             }
-
+            javaHash += javaHash;
             check(array[0] == min && array[array.length - 1] == max
                     && javaHash == nativeHash, "Data validation failure");
 
@@ -399,7 +397,7 @@ public class gcl001 extends ThreadedGCTest {
             for (int i = 0; i < str.length(); ++i) {
                 javaHash += (int) str.charAt(i);
             }
-
+            javaHash += javaHash;
             check(array[0] == min && array[array.length - 1] == max
                     && javaHash == nativeHash, "Data validation failure");
 
@@ -434,7 +432,7 @@ public class gcl001 extends ThreadedGCTest {
             for (int i = 0; i < str.length(); ++i) {
                 javaHash += (int) str.charAt(i);
             }
-
+            javaHash += javaHash;
             check(array[0] == min && array[array.length - 1] == max
                     && javaHash == nativeHash, "Data validation failure");
         }
@@ -468,7 +466,7 @@ public class gcl001 extends ThreadedGCTest {
             for (int i = 0; i < str.length(); ++i) {
                 javaHash += (int) str.charAt(i);
             }
-
+            javaHash += javaHash;
             check(array[0] == min && array[array.length - 1] == max
                     && javaHash == nativeHash, "Data validation failure");
         }
