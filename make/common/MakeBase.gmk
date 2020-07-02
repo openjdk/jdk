@@ -436,6 +436,8 @@ endif
 # On Windows, converts a path from cygwin/unix style (e.g. /bin/foo) into
 # "mixed mode" (e.g. c:/cygwin/bin/foo). On other platforms, return the path
 # unchanged.
+# This also converts a colon-separated list of paths to a semicolon-separated
+# list.
 # This is normally not needed since we use the FIXPATH prefix for command lines,
 # but might be needed in certain circumstances.
 ifeq ($(call isTargetOs, windows), true)
@@ -443,22 +445,6 @@ ifeq ($(call isTargetOs, windows), true)
     $(strip $(subst \,\\, $(shell $(FIXPATH_PRINT) $(patsubst $(FIXPATH), , $1))))
 else
   FixPath = \
-      $1
-endif
-
-################################################################################
-# FixPathList
-#
-# On Windows, converts a cygwin/unix style path list (colon-separated) into
-# the native format (mixed mode, semicolon-separated). On other platforms,
-# return the path list unchanged.
-################################################################################
-ifeq ($(call isTargetOs, windows), true)
-  FixPathList = \
-      $(subst @,$(SPACE),$(subst $(SPACE),;,$(foreach entry,$(subst :,$(SPACE),\
-      $(subst $(SPACE),@,$(strip $1))),$(call FixPath, $(entry)))))
-else
-  FixPathList = \
       $1
 endif
 
