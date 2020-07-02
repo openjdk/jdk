@@ -245,14 +245,14 @@ void* CodeInstaller::record_metadata_reference(CodeSection* section, address des
     assert(!jvmci_env()->get_HotSpotMetaspaceConstantImpl_compressed(constant), "unexpected compressed klass pointer %s @ " INTPTR_FORMAT, klass->name()->as_C_string(), p2i(klass));
     int index = _oop_recorder->find_index(klass);
     section->relocate(dest, metadata_Relocation::spec(index));
-    TRACE_jvmci_3("metadata[%d of %d] = %s", index, _oop_recorder->metadata_count(), klass->name()->as_C_string());
+    JVMCI_event_3("metadata[%d of %d] = %s", index, _oop_recorder->metadata_count(), klass->name()->as_C_string());
     return klass;
   } else if (jvmci_env()->isa_HotSpotResolvedJavaMethodImpl(obj)) {
     Method* method = jvmci_env()->asMethod(obj);
     assert(!jvmci_env()->get_HotSpotMetaspaceConstantImpl_compressed(constant), "unexpected compressed method pointer %s @ " INTPTR_FORMAT, method->name()->as_C_string(), p2i(method));
     int index = _oop_recorder->find_index(method);
     section->relocate(dest, metadata_Relocation::spec(index));
-    TRACE_jvmci_3("metadata[%d of %d] = %s", index, _oop_recorder->metadata_count(), method->name()->as_C_string());
+    JVMCI_event_3("metadata[%d of %d] = %s", index, _oop_recorder->metadata_count(), method->name()->as_C_string());
     return method;
   } else {
     JVMCI_ERROR_NULL("unexpected metadata reference for constant of type %s", jvmci_env()->klass_name(obj));
@@ -271,7 +271,7 @@ narrowKlass CodeInstaller::record_narrow_metadata_reference(CodeSection* section
   Klass* klass = JVMCIENV->asKlass(obj);
   int index = _oop_recorder->find_index(klass);
   section->relocate(dest, metadata_Relocation::spec(index));
-  TRACE_jvmci_3("narrowKlass[%d of %d] = %s", index, _oop_recorder->metadata_count(), klass->name()->as_C_string());
+  JVMCI_event_3("narrowKlass[%d of %d] = %s", index, _oop_recorder->metadata_count(), klass->name()->as_C_string());
   return CompressedKlassPointers::encode(klass);
 }
 #endif
@@ -690,7 +690,7 @@ void CodeInstaller::initialize_fields(JVMCIObject target, JVMCIObject compiled_c
     Thread* thread = Thread::current();
     methodHandle method(thread, jvmci_env()->asMethod(hotspotJavaMethod));
     _parameter_count = method->size_of_parameters();
-    TRACE_jvmci_2("installing code for %s", method->name_and_sig_as_C_string());
+    JVMCI_event_2("installing code for %s", method->name_and_sig_as_C_string());
   } else {
     // Must be a HotSpotCompiledRuntimeStub.
     // Only used in OopMap constructor for non-product builds
@@ -883,7 +883,7 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bo
     jint pc_offset = jvmci_env()->get_site_Site_pcOffset(site);
 
     if (jvmci_env()->isa_site_Call(site)) {
-      TRACE_jvmci_4("call at %i", pc_offset);
+      JVMCI_event_4("call at %i", pc_offset);
       site_Call(buffer, pc_offset, site, JVMCI_CHECK_OK);
     } else if (jvmci_env()->isa_site_Infopoint(site)) {
       // three reasons for infopoints denote actual safepoints
@@ -891,27 +891,27 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bo
       if (JVMCIENV->equals(reason, jvmci_env()->get_site_InfopointReason_SAFEPOINT()) ||
           JVMCIENV->equals(reason, jvmci_env()->get_site_InfopointReason_CALL()) ||
           JVMCIENV->equals(reason, jvmci_env()->get_site_InfopointReason_IMPLICIT_EXCEPTION())) {
-        TRACE_jvmci_4("safepoint at %i", pc_offset);
+        JVMCI_event_4("safepoint at %i", pc_offset);
         site_Safepoint(buffer, pc_offset, site, JVMCI_CHECK_OK);
         if (_orig_pc_offset < 0) {
           JVMCI_ERROR_OK("method contains safepoint, but has no deopt rescue slot");
         }
         if (JVMCIENV->equals(reason, jvmci_env()->get_site_InfopointReason_IMPLICIT_EXCEPTION())) {
-          TRACE_jvmci_4("implicit exception at %i", pc_offset);
+          JVMCI_event_4("implicit exception at %i", pc_offset);
           _implicit_exception_table.add_deoptimize(pc_offset);
         }
       } else {
-        TRACE_jvmci_4("infopoint at %i", pc_offset);
+        JVMCI_event_4("infopoint at %i", pc_offset);
         site_Infopoint(buffer, pc_offset, site, JVMCI_CHECK_OK);
       }
     } else if (jvmci_env()->isa_site_DataPatch(site)) {
-      TRACE_jvmci_4("datapatch at %i", pc_offset);
+      JVMCI_event_4("datapatch at %i", pc_offset);
       site_DataPatch(buffer, pc_offset, site, JVMCI_CHECK_OK);
     } else if (jvmci_env()->isa_site_Mark(site)) {
-      TRACE_jvmci_4("mark at %i", pc_offset);
+      JVMCI_event_4("mark at %i", pc_offset);
       site_Mark(buffer, pc_offset, site, JVMCI_CHECK_OK);
     } else if (jvmci_env()->isa_site_ExceptionHandler(site)) {
-      TRACE_jvmci_4("exceptionhandler at %i", pc_offset);
+      JVMCI_event_4("exceptionhandler at %i", pc_offset);
       site_ExceptionHandler(pc_offset, site);
     } else {
       JVMCI_ERROR_OK("unexpected site subclass: %s", jvmci_env()->klass_name(site));
@@ -1100,7 +1100,7 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
     bci = SynchronizationEntryBCI;
   }
 
-  TRACE_jvmci_2("Recording scope pc_offset=%d bci=%d method=%s", pc_offset, bci, method->name_and_sig_as_C_string());
+  JVMCI_event_2("Recording scope pc_offset=%d bci=%d method=%s", pc_offset, bci, method->name_and_sig_as_C_string());
 
   bool reexecute = false;
   if (frame.is_non_null()) {
@@ -1141,8 +1141,8 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
     GrowableArray<ScopeValue*>* expressions = expression_count > 0 ? new GrowableArray<ScopeValue*> (expression_count) : NULL;
     GrowableArray<MonitorValue*>* monitors = monitor_count > 0 ? new GrowableArray<MonitorValue*> (monitor_count) : NULL;
 
-    TRACE_jvmci_2("Scope at bci %d with %d values", bci, JVMCIENV->get_length(values));
-    TRACE_jvmci_2("%d locals %d expressions, %d monitors", local_count, expression_count, monitor_count);
+    JVMCI_event_2("Scope at bci %d with %d values", bci, JVMCIENV->get_length(values));
+    JVMCI_event_2("%d locals %d expressions, %d monitors", local_count, expression_count, monitor_count);
 
     for (jint i = 0; i < JVMCIENV->get_length(values); i++) {
       // HandleMark hm(THREAD);
@@ -1253,7 +1253,7 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
       JVMCI_ERROR("debug info expected at call at %i", pc_offset);
     }
 
-    TRACE_jvmci_3("method call");
+    JVMCI_event_3("method call");
     CodeInstaller::pd_relocate_JavaMethod(buffer, hotspot_method, pc_offset, JVMCI_CHECK);
     if (_next_call_type == INVOKESTATIC || _next_call_type == INVOKESPECIAL) {
       // Need a static call stub for transitions from compiled to interpreted.

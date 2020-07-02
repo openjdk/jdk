@@ -25,6 +25,7 @@
 #define SHARE_JVMCI_JVMCI_HPP
 
 #include "compiler/compilerDefinitions.hpp"
+#include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
 
 class BoolObjectClosure;
@@ -65,6 +66,16 @@ class JVMCI : public AllStatic {
   // Access to the HotSpot heap based JVMCIRuntime
   static JVMCIRuntime* _java_runtime;
 
+  // JVMCI event log (shows up in hs_err crash logs).
+  static StringEventLog* _events;
+  static StringEventLog* _verbose_events;
+  enum {
+    max_EventLog_level = 4
+  };
+
+  // Gets the Thread* value for the current thread or NULL if it's not available.
+  static Thread* current_thread_or_null();
+
  public:
   enum CodeInstallResult {
      ok,
@@ -103,6 +114,26 @@ class JVMCI : public AllStatic {
   // Gets the single runtime for JVMCI on the Java heap. This is the only
   // JVMCI runtime available when !UseJVMCINativeLibrary.
   static JVMCIRuntime* java_runtime()     { return _java_runtime; }
+
+  // Appends an event to the JVMCI event log if JVMCIEventLogLevel >= `level`
+  static void vlog(int level, const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
+
+  // Traces an event to tty if JVMCITraceLevel >= `level`
+  static void vtrace(int level, const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
+
+ public:
+  // Log/trace a JVMCI event
+  static void event(int level, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  static void event1(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
+  static void event2(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
+  static void event3(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
+  static void event4(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
 };
+
+// JVMCI event macros.
+#define JVMCI_event_1 if (JVMCITraceLevel < 1 && JVMCIEventLogLevel < 1) ; else ::JVMCI::event1
+#define JVMCI_event_2 if (JVMCITraceLevel < 2 && JVMCIEventLogLevel < 2) ; else ::JVMCI::event2
+#define JVMCI_event_3 if (JVMCITraceLevel < 3 && JVMCIEventLogLevel < 3) ; else ::JVMCI::event3
+#define JVMCI_event_4 if (JVMCITraceLevel < 4 && JVMCIEventLogLevel < 4) ; else ::JVMCI::event4
 
 #endif // SHARE_JVMCI_JVMCI_HPP

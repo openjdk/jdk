@@ -146,6 +146,6 @@ void JVMCICompiler::print_timers() {
 
 // Print compilation timers and statistics
 void JVMCICompiler::print_compilation_timers() {
-  TRACE_jvmci_1("JVMCICompiler::print_timers");
+  JVMCI_event_1("JVMCICompiler::print_timers");
   tty->print_cr("       JVMCI code install time:        %6.3f s",    _codeInstallTimer.seconds());
 }

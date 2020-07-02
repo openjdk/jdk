@@ -376,8 +376,20 @@ public:
 
   // These are analagous to the JNI routines
   JVMCIObject make_local(JVMCIObject object);
-  JVMCIObject make_global(JVMCIObject object);
   void destroy_local(JVMCIObject object);
+
+  // Makes a JNI global handle that is not scoped by the
+  // lifetime of a JVMCIRuntime (cf JVMCIRuntime::make_global).
+  // These JNI handles are used when translating an object
+  // between the HotSpot and JVMCI shared library heap via
+  // HotSpotJVMCIRuntime.translate(Object) and
+  // HotSpotJVMCIRuntime.unhand(Class<T>, long). Translation
+  // can happen in either direction so the referenced object
+  // can reside in either heap which is why JVMCIRuntime scoped
+  // handles cannot be used (they are specific to HotSpot heap objects).
+  JVMCIObject make_global(JVMCIObject object);
+
+  // Destroys a JNI global handle created by JVMCIEnv::make_global.
   void destroy_global(JVMCIObject object);
 
   // Deoptimizes the nmethod (if any) in the HotSpotNmethod.address
