@@ -67,21 +67,27 @@ extern int nodes_created;
 void Node::verify_construction() {
   _debug_orig = NULL;
   int old_debug_idx = Compile::debug_idx();
-  int new_debug_idx = old_debug_idx+1;
+  int new_debug_idx = old_debug_idx + 1;
   if (new_debug_idx > 0) {
     // Arrange that the lowest five decimal digits of _debug_idx
     // will repeat those of _idx. In case this is somehow pathological,
     // we continue to assign negative numbers (!) consecutively.
     const int mod = 100000;
     int bump = (int)(_idx - new_debug_idx) % mod;
-    if (bump < 0)  bump += mod;
+    if (bump < 0) {
+      bump += mod;
+    }
     assert(bump >= 0 && bump < mod, "");
     new_debug_idx += bump;
   }
   Compile::set_debug_idx(new_debug_idx);
-  set_debug_idx( new_debug_idx );
-  assert(Compile::current()->unique() < (INT_MAX - 1), "Node limit exceeded INT_MAX");
-  assert(Compile::current()->live_nodes() < Compile::current()->max_node_limit(), "Live Node limit exceeded limit");
+  set_debug_idx(new_debug_idx);
+  Compile* C = Compile::current();
+  assert(C->unique() < (INT_MAX - 1), "Node limit exceeded INT_MAX");
+  if (!C->phase_optimize_finished()) {
+    // Only check assert during parsing and optimization phase. Skip it while generating code.
+    assert(C->live_nodes() <= C->max_node_limit(), "Live Node limit exceeded limit");
+  }
   if (BreakAtNode != 0 && (_debug_idx == BreakAtNode || (int)_idx == BreakAtNode)) {
     tty->print_cr("BreakAtNode: _idx=%d _debug_idx=%d", _idx, _debug_idx);
     BREAKPOINT;

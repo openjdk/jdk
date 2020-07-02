@@ -70,9 +70,12 @@ public abstract class CiReplayBase {
     private static final String[] REPLAY_OPTIONS = new String[]{DISABLE_COREDUMP_ON_CRASH,
         "-XX:+ReplayCompiles", REPLAY_FILE_OPTION};
     protected final Optional<Boolean> runServer;
+    private static int dummy;
 
-    public static class EmptyMain {
+    public static class TestMain {
         public static void main(String[] args) {
+            // Do something because empty methods might not be called/compiled.
+            dummy = 42;
         }
     }
 
@@ -140,7 +143,7 @@ public abstract class CiReplayBase {
             options.addAll(Arrays.asList(REPLAY_GENERATION_OPTIONS));
             options.addAll(Arrays.asList(vmopts));
             options.add(needCoreDump ? ENABLE_COREDUMP_ON_CRASH : DISABLE_COREDUMP_ON_CRASH);
-            options.add(EmptyMain.class.getName());
+            options.add(TestMain.class.getName());
             if (needCoreDump) {
                 crashOut = ProcessTools.executeProcess(getTestJvmCommandlineWithPrefix(
                         RUN_SHELL_NO_LIMIT, options.toArray(new String[0])));

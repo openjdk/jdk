@@ -40,6 +40,11 @@
  *
  * @library /vmTestbase
  *          /test/lib
+ * @comment some of the tests from mixed002.tests need WhiteBox
+ * @modules java.base/jdk.internal.misc:+open
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *
  * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build classes required for tests from mixed002.tests
@@ -66,7 +71,8 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xmx256M ${test.vm.opts} ${test.java.opts}"
+ *      "-debugee.vmkeys=-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                       -XX:+WhiteBoxAPI -Xmx256M ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
  *      -configFile ./mixed002.tests
  *      -testWorkDir .

@@ -2133,20 +2133,34 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
       regs[count++] = reg;
     bitset >>= 1;
   }
-  regs[count++] = zr->encoding_nocheck();
-  count &= ~1;  // Only push an even number of regs
+
+  if (count == 0) {
+    return 0;
+  }
+
+  if (count == 1) {
+    strq(as_FloatRegister(regs[0]), Address(pre(stack, -wordSize * 2)));
+    return 1;
+  }
+
+  bool odd = (count & 1) == 1;
+  int push_slots = count + (odd ? 1 : 0);
 
   // Always pushing full 128 bit registers.
-  if (count) {
-    stpq(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(pre(stack, -count * wordSize * 2)));
-    words_pushed += 2;
-  }
-  for (int i = 2; i < count; i += 2) {
+  stpq(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(pre(stack, -push_slots * wordSize * 2)));
+  words_pushed += 2;
+
+  for (int i = 2; i + 1 < count; i += 2) {
     stpq(as_FloatRegister(regs[i]), as_FloatRegister(regs[i+1]), Address(stack, i * wordSize * 2));
     words_pushed += 2;
   }
 
-  assert(words_pushed == count, "oops, pushed != count");
+  if (odd) {
+    strq(as_FloatRegister(regs[count - 1]), Address(stack, (count - 1) * wordSize * 2));
+    words_pushed++;
+  }
+
+  assert(words_pushed == count, "oops, pushed(%d) != count(%d)", words_pushed, count);
   return count;
 }
 
@@ -2161,19 +2175,33 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
       regs[count++] = reg;
     bitset >>= 1;
   }
-  regs[count++] = zr->encoding_nocheck();
-  count &= ~1;
 
-  for (int i = 2; i < count; i += 2) {
+  if (count == 0) {
+    return 0;
+  }
+
+  if (count == 1) {
+    ldrq(as_FloatRegister(regs[0]), Address(post(stack, wordSize * 2)));
+    return 1;
+  }
+
+  bool odd = (count & 1) == 1;
+  int push_slots = count + (odd ? 1 : 0);
+
+  if (odd) {
+    ldrq(as_FloatRegister(regs[count - 1]), Address(stack, (count - 1) * wordSize * 2));
+    words_pushed++;
+  }
+
+  for (int i = 2; i + 1 < count; i += 2) {
     ldpq(as_FloatRegister(regs[i]), as_FloatRegister(regs[i+1]), Address(stack, i * wordSize * 2));
     words_pushed += 2;
   }
-  if (count) {
-    ldpq(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(post(stack, count * wordSize * 2)));
-    words_pushed += 2;
-  }
 
-  assert(words_pushed == count, "oops, pushed != count");
+  ldpq(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(post(stack, push_slots * wordSize * 2)));
+  words_pushed += 2;
+
+  assert(words_pushed == count, "oops, pushed(%d) != count(%d)", words_pushed, count);
 
   return count;
 }

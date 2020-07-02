@@ -44,6 +44,10 @@
 // e.g. the delta must always be fully parsable.
 // _top can move concurrently by other threads but is always <= _pos.
 //
+// The _flags field holds generic tags applicable to all subsystems.
+//
+// The _context field can be used to set subsystem specific tags onto a buffer.
+//
 // Memory ordering:
 //
 //  Method                 Owner thread             Other threads
@@ -66,9 +70,10 @@ class JfrBuffer {
   const void* _identity;
   u1* _pos;
   mutable const u1* _top;
-  u2 _flags;
-  u2 _header_size;
   u4 _size;
+  u2 _header_size;
+  u1 _flags;
+  u1 _context;
 
   const u1* stable_top() const;
 
@@ -168,6 +173,10 @@ class JfrBuffer {
   bool excluded() const;
   void set_excluded();
   void clear_excluded();
+
+  u1 context() const;
+  void set_context(u1 context);
+  void clear_context();
 };
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRBUFFER_HPP

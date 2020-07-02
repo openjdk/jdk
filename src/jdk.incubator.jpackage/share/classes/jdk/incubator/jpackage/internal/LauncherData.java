@@ -26,7 +26,9 @@ package jdk.incubator.jpackage.internal;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleReference;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -34,7 +36,9 @@ import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.jar.Attributes;
@@ -42,13 +46,14 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 
 /**
  * Extracts data needed to run application from parameters.
  */
 final class LauncherData {
     boolean isModular() {
-        return moduleDescriptor != null;
+        return moduleInfo != null;
     }
 
     String qualifiedClassName() {
@@ -65,7 +70,7 @@ final class LauncherData {
 
     String moduleName() {
         verifyIsModular(true);
-        return moduleDescriptor.name();
+        return moduleInfo.name;
     }
 
     List<Path> modulePath() {
@@ -84,11 +89,7 @@ final class LauncherData {
 
     String getAppVersion() {
         if (isModular()) {
-            ModuleDescriptor.Version ver = moduleDescriptor.version().orElse(null);
-            if (ver != null) {
-                return ver.toString();
-            }
-            return moduleDescriptor.rawVersion().orElse(null);
+            return moduleInfo.version;
         }
 
         return null;
@@ -98,7 +99,7 @@ final class LauncherData {
     }
 
     private void verifyIsModular(boolean isModular) {
-        if ((moduleDescriptor != null) != isModular) {
+        if ((moduleInfo != null) != isModular) {
             throw new IllegalStateException();
         }
     }
@@ -107,9 +108,19 @@ final class LauncherData {
             ConfigException, IOException {
 
         final String mainModule = getMainModule(params);
+        final LauncherData result;
         if (mainModule == null) {
-            return createNonModular(params);
+            result = createNonModular(params);
+        } else {
+            result = createModular(mainModule, params);
         }
+        result.initClasspath(params);
+        return result;
+    }
+
+    private static LauncherData createModular(String mainModule,
+            Map<String, ? super Object> params) throws ConfigException,
+            IOException {
 
         LauncherData launcherData = new LauncherData();
 
@@ -123,18 +134,34 @@ final class LauncherData {
         }
         launcherData.modulePath = getModulePath(params);
 
-        launcherData.moduleDescriptor = JLinkBundlerHelper.createModuleFinder(
-                launcherData.modulePath).find(moduleName).orElseThrow(
-                () -> new ConfigException(MessageFormat.format(I18N.getString(
-                        "error.no-module-in-path"), moduleName), null)).descriptor();
+        // Try to find module in the specified module path list.
+        ModuleReference moduleRef = JLinkBundlerHelper.createModuleFinder(
+                launcherData.modulePath).find(moduleName).orElse(null);
 
-        if (launcherData.qualifiedClassName == null) {
-            launcherData.qualifiedClassName = launcherData.moduleDescriptor.mainClass().orElseThrow(
-                    () -> new ConfigException(I18N.getString("ERR_NoMainClass"),
-                            null));
+        if (moduleRef != null) {
+            launcherData.moduleInfo = ModuleInfo.fromModuleDescriptor(
+                    moduleRef.descriptor());
+        } else if (params.containsKey(PREDEFINED_RUNTIME_IMAGE.getID())) {
+            // Failed to find module in the specified module path list and
+            // there is external runtime given to jpackage.
+            // Lookup module in this runtime.
+            Path cookedRuntime = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params).toPath();
+            launcherData.moduleInfo = ModuleInfo.fromCookedRuntime(moduleName,
+                    cookedRuntime);
         }
 
-        launcherData.initClasspath(params);
+        if (launcherData.moduleInfo == null) {
+            throw new ConfigException(MessageFormat.format(I18N.getString(
+                    "error.no-module-in-path"), moduleName), null);
+        }
+
+        if (launcherData.qualifiedClassName == null) {
+            launcherData.qualifiedClassName = launcherData.moduleInfo.mainClass;
+            if (launcherData.qualifiedClassName == null) {
+                throw new ConfigException(I18N.getString("ERR_NoMainClass"), null);
+            }
+        }
+
         return launcherData;
     }
 
@@ -195,7 +222,6 @@ final class LauncherData {
                             launcherData.mainJarName));
         }
 
-        launcherData.initClasspath(params);
         return launcherData;
     }
 
@@ -263,8 +289,17 @@ final class LauncherData {
 
     private static List<Path> getModulePath(Map<String, ? super Object> params)
             throws ConfigException {
-        return getPathListParameter(Arguments.CLIOptions.MODULE_PATH.getId(),
-                params);
+        List<Path> modulePath = getPathListParameter(Arguments.CLIOptions.MODULE_PATH.getId(), params);
+
+        if (params.containsKey(PREDEFINED_RUNTIME_IMAGE.getID())) {
+            Path runtimePath = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params).toPath();
+            runtimePath = runtimePath.resolve("lib");
+            modulePath = Stream.of(modulePath, List.of(runtimePath))
+                    .flatMap(List::stream)
+                    .collect(Collectors.toUnmodifiableList());
+        }
+
+        return modulePath;
     }
 
     private static List<Path> getPathListParameter(String paramName,
@@ -281,5 +316,77 @@ final class LauncherData {
     private Path mainJarName;
     private List<Path> classPath;
     private List<Path> modulePath;
-    private ModuleDescriptor moduleDescriptor;
+    private ModuleInfo moduleInfo;
+
+    private static final class ModuleInfo {
+        String name;
+        String version;
+        String mainClass;
+
+        static ModuleInfo fromModuleDescriptor(ModuleDescriptor md) {
+            ModuleInfo result = new ModuleInfo();
+            result.name = md.name();
+            result.mainClass = md.mainClass().orElse(null);
+
+            ModuleDescriptor.Version ver = md.version().orElse(null);
+            if (ver != null) {
+                result.version = ver.toString();
+            } else {
+                result.version = md.rawVersion().orElse(null);
+            }
+
+            return result;
+        }
+
+        static ModuleInfo fromCookedRuntime(String moduleName,
+                Path cookedRuntime) {
+            Objects.requireNonNull(moduleName);
+
+            // We can't extract info about version and main class of a module
+            // linked in external runtime without running ModuleFinder in that
+            // runtime. But this is too much work as the runtime might have been
+            // coocked without native launchers. So just make sure the module
+            // is linked in the runtime by simply analysing the data
+            // of `release` file.
+
+            final Path releaseFile;
+            if (!Platform.isMac()) {
+                releaseFile = cookedRuntime.resolve("release");
+            } else {
+                // On Mac `cookedRuntime` can be runtime root or runtime home.
+                Path runtimeHome = cookedRuntime.resolve("Contents/Home");
+                if (!Files.isDirectory(runtimeHome)) {
+                    runtimeHome = cookedRuntime;
+                }
+                releaseFile = runtimeHome.resolve("release");
+            }
+
+            try (Reader reader = Files.newBufferedReader(releaseFile)) {
+                Properties props = new Properties();
+                props.load(reader);
+                String moduleList = props.getProperty("MODULES");
+                if (moduleList == null) {
+                    return null;
+                }
+
+                if ((moduleList.startsWith("\"") && moduleList.endsWith("\""))
+                        || (moduleList.startsWith("\'") && moduleList.endsWith(
+                        "\'"))) {
+                    moduleList = moduleList.substring(1, moduleList.length() - 1);
+                }
+
+                if (!List.of(moduleList.split("\\s+")).contains(moduleName)) {
+                    return null;
+                }
+            } catch (IOException|IllegalArgumentException ex) {
+                Log.verbose(ex);
+                return null;
+            }
+
+            ModuleInfo result = new ModuleInfo();
+            result.name = moduleName;
+
+            return result;
+        }
+    }
 }
