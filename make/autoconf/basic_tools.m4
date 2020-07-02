@@ -133,7 +133,7 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
             MAKE_EXPECTED_ENV='cygwin'
           elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
             MAKE_EXPECTED_ENV='msys'
-          elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+          elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1" || test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
             MAKE_EXPECTED_ENV='x86_64-.*-linux-gnu'
           else
             AC_MSG_ERROR([Unknown Windows environment])

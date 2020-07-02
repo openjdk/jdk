@@ -127,7 +127,7 @@ LIBDL:=@LIBDL@
 WINENV_ROOT := @WINENV_ROOT@
 WINENV_PREFIX := @WINENV_PREFIX@
 
-ifeq (@OPENJDK_TARGET_OS_ENV@, windows.wsl)
+ifneq ($(findstring windows.wsl, @OPENJDK_TARGET_OS_ENV@), )
   # Tell WSL to convert PATH between linux and windows
   export WSLENV := $(WSLENV):PATH/l
 else ifeq (@OPENJDK_TARGET_OS_ENV@, windows.msys2)

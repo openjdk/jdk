@@ -87,7 +87,7 @@ else
 fi
 
 if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-  if [ "$OPENJDK_BUILD_OS_ENV" = "windows.wsl" ]; then
+  if [[ $OPENJDK_BUILD_OS_ENV =~ ^windows.wsl ]]; then
     export WSLENV="$WSLENV:PATH/l"
   fi
   export PATH="$PATH:@TOOLCHAIN_PATH@"

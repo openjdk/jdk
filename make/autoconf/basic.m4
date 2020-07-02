@@ -411,8 +411,8 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
     # is the same. On older AIXes we just continue to live with a "not local build" warning.
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       DF_LOCAL_ONLY_OPTION='-T local'
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-      # In WSL, we can only build on a drvfs file system (that is, a mounted real Windows drive)
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1"; then
+      # In WSL1, we can only build on a drvfs file system (that is, a mounted real Windows drive)
       DF_LOCAL_ONLY_OPTION='-t drvfs'
     else
       DF_LOCAL_ONLY_OPTION='-l'

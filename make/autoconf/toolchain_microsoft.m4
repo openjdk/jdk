@@ -371,9 +371,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
 
       # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment).
       # Instead create a shell script which will set the relevant variables when run.
-      # Make sure we only capture additions to PATH needed by VS.
 
       OLDPATH="$PATH"
+      # Make sure we only capture additions to PATH needed by VS.
       # Clear out path, but need system dir present for vsvars cmd file to be able to run
       export PATH=$WINENV_PREFIX/c/windows/system32
       # The "| cat" is to stop SetEnv.Cmd to mess with system colors on some systems
@@ -424,6 +424,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       [ VS_PATH=`$ECHO "$VS_PATH" | $SED 's/[^:#]*#[^:]*://g'` ]
 
       # Now convert the Windows env variables to standard devkit flags
+
+      # Turn VS_PATH into TOOLCHAIN_PATH
       TOOLCHAIN_PATH="$TOOLCHAIN_PATH:$VS_PATH"
 
       # Convert VS_INCLUDE into SYSROOT_CFLAGS

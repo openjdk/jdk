@@ -413,7 +413,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
     # but the compiler name may vary depending on locale.
-    COMPILER_VERSION_OUTPUT=`"$COMPILER" 2>&1 1>/dev/null | $GREP -v UtilTranslatePathList | $HEAD -n 1 | $TR -d '\r'`
+    COMPILER_VERSION_OUTPUT=`"$COMPILER" 2>&1 1>/dev/null | $GREP -v 'ERROR.*UtilTranslatePathList' | $HEAD -n 1 | $TR -d '\r'`
     # Check that this is likely to be Microsoft CL.EXE.
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Microsoft" > /dev/null
     if test $? -ne 0; then
@@ -927,8 +927,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
   # Check for extra potential brokenness.
   if test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # On Windows, double-check that we got the right compiler.
-    # FIXME: already done this?
-    CC_VERSION_OUTPUT=`"$COMPILER" 2>&1 1>/dev/null | $GREP -v UtilTranslatePathList | $HEAD -n 1 | $TR -d '\r'`
+    CC_VERSION_OUTPUT=`"$COMPILER" 2>&1 1>/dev/null | $GREP -v 'ERROR.*UtilTranslatePathList' | $HEAD -n 1 | $TR -d '\r'`
     COMPILER_CPU_TEST=`$ECHO $CC_VERSION_OUTPUT | $SED -n "s/^.* \(.*\)$/\1/p"`
     if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
       if test "x$COMPILER_CPU_TEST" != "x80x86" -a "x$COMPILER_CPU_TEST" != "xx86"; then

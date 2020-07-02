@@ -30,6 +30,15 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   if test $SRC_ROOT_LENGTH -gt 100; then
     AC_MSG_ERROR([Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported])
   fi
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+    # Clarify if it is wsl1 or wsl2, and use that as OS_ENV from this point forward
+    $CYGPATH -w / > /dev/null 2>&1
+    if test $? -eq 0; then
+      OPENJDK_BUILD_OS_ENV=windows.wsl2
+    else
+      OPENJDK_BUILD_OS_ENV=windows.wsl1
+    fi
+  fi
 
   AC_MSG_CHECKING([Windows environment type])
   WINENV_VENDOR=${OPENJDK_BUILD_OS_ENV#windows.}
@@ -49,16 +58,12 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   fi
 
   AC_MSG_CHECKING([$WINENV_VENDOR root directory as Windows path])
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-    # On WSL2, we get an UNC path which do not work well in mixed mode
+  if test "x$OPENJDK_BUILD_OS_ENV" != "xwindows.wsl1"; then
     WINENV_ROOT=`$CYGPATH -w / 2> /dev/null`
-    if test $? -ne 0; then
-      WINENV_ROOT='[[unavailable]]'
-    fi
+    # msys2 has a trailing backslash; strip it
+    WINENV_ROOT=${WINENV_ROOT%\\}
   else
-    WINENV_ROOT=`$CYGPATH -m /`
-    # msys2 has a trailing slash; strip it
-    WINENV_ROOT=${WINENV_ROOT%/}
+    WINENV_ROOT='[[unavailable]]'
   fi
   AC_MSG_RESULT([$WINENV_ROOT])
   AC_SUBST(WINENV_ROOT)
@@ -72,8 +77,8 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   WINENV_TEMP_DIR=$($CYGPATH -u $($CMD /q /c echo %TEMP% 2> /dev/null) | $TR -d '\r\n')
   AC_MSG_RESULT([$WINENV_TEMP_DIR])
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-    # Don't trust the current directory for WSL, but change to an OK temp dir
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
+    # Don't trust the current directory for WSL2, but change to an OK temp dir
     cd "$WINENV_TEMP_DIR"
     cp "$CONFIGURE_START_DIR/confdefs.h" "$WINENV_TEMP_DIR"
   fi
@@ -93,7 +98,6 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   [ WINDOWS_VERSION=`cd $WINENV_TEMP_DIR && $CMD /c ver | $EGREP -o '([0-9]+\.)+[0-9]+'` ]
   AC_MSG_RESULT([$WINDOWS_VERSION])
 
-
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     # Additional [] needed to keep m4 from mangling shell constructs.
     [ CYGWIN_VERSION_OLD=`$ECHO $WINENV_UNAME_RELEASE | $GREP -e '^1\.[0-6]'` ]
@@ -101,7 +105,7 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
       AC_MSG_NOTICE([Your cygwin is too old. You are running $CYGWIN_RELEASE, but at least cygwin 1.7 is required. Please upgrade.])
       AC_MSG_ERROR([Cannot continue])
     fi
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1" || test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
     AC_MSG_CHECKING([wsl distribution])
     WSL_DISTRIBUTION=`$LSB_RELEASE -d | sed 's/Description:\t//'`
     AC_MSG_RESULT([$WSL_DISTRIBUTION])

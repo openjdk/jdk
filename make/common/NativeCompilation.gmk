@@ -1140,7 +1140,9 @@ define SetupNativeCompilationBody
 		          test "$$$$?" = "1" ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
 		  $$($1_STRIP_CMD)
-		  $$(CHMOD) +x $$($1_TARGET)
+                 ifeq ($(call isBuildOsEnv, windows.wsl2), true)
+		    $$(CHMOD) +x $$($1_TARGET)
+                 endif
                 else
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 		      $$(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \

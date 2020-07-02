@@ -51,7 +51,7 @@ ifeq ($(call isTargetOs, windows), true)
         $(strip $(subst \,\\,$(shell $(CYGPATH) -w $1)))
     FixLinuxExecutable = \
         $(call FixPath, $1)
-  else ifeq ($(call isBuildOsEnv, windows.wsl), true)
+  else ifeq ($(call isBuildOsEnv, windows.wsl1 windows.wsl2), true)
     FixPath = \
         $(strip $(subst \,\\,$(shell $(WSLPATH) -w $1)))
     FixLinuxExecutable = \
