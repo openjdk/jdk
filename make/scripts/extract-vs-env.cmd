@@ -16,5 +16,5 @@ call :extract "%WINDOWSSDKDIR%", WINDOWSSDKDIR
 exit /b 0
 
 :extract
-echo %~2=$($BASH $TOPDIR/make/scripts/fixpath.sh import "%~1 ") >> %output%
+echo %~2=$($BASH $TOPDIR/make/scripts/fixpath.sh import '%~1 ') >> %output%
 exit /b 0

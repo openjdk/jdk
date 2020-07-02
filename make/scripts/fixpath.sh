@@ -202,8 +202,10 @@ cygwin_convert_at_file() {
 
 cygwin_import_to_unix() {
   path="$1"
+  path="${path#"${path%%[![:space:]]*}"}"
+  path="${path%"${path##*[![:space:]]}"}"
 
-  if [[ $path =~ ^.:[/\\].*$ ]] ; then
+  if [[ $path =~ ^.:[/\\].*$ ]] || [[ "$path" =~ ^"$ENVROOT"\\.*$ ]] ; then
     # We really don't want windows paths as input, but try to handle them anyway
     path="$($PATHTOOL -u "$path")"
     # Path will now be absolute
