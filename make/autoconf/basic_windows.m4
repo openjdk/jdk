@@ -115,10 +115,12 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     # Tell WSL to automatically translate the PATH variable
     UTIL_APPEND_TO_PATH(WSLENV, "PATH/l")
     export WSLENV
-    # Don't trust the current directory for WSL, but change to an OK temp dir
-    cd "$WINENV_TEMP_DIR"
-    cp "$CONFIGURE_START_DIR/confdefs.h" "$WINENV_TEMP_DIR"
   fi
+
+  FIXPATH="$BASH $TOPDIR/make/scripts/fixpath.sh exec"
+  AC_SUBST(FIXPATH)
+  FIXPATH_PRINT="$BASH $TOPDIR/make/scripts/fixpath.sh print"
+  AC_SUBST(FIXPATH_PRINT)
 
   # Test if windows or unix "find" is first in path.
   AC_MSG_CHECKING([what kind of 'find' is first on the PATH])
@@ -134,11 +136,18 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     AC_MSG_RESULT([unknown])
     AC_MSG_WARN([It seems that your find utility is non-standard.])
   fi
+])
 
-  FIXPATH="$BASH $TOPDIR/make/scripts/fixpath.sh exec"
-  AC_SUBST(FIXPATH)
-  FIXPATH_PRINT="$BASH $TOPDIR/make/scripts/fixpath.sh print"
-  AC_SUBST(FIXPATH_PRINT)
+# Verify that the directory is usable on Windows
+AC_DEFUN([BASIC_WINDOWS_VERIFY_DIR],
+[
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1"; then
+    OUTPUTDIR_WIN=`$FIXPATH_PRINT $1`
+    if test "x$OUTPUTDIR_WIN" = x; then
+      AC_MSG_NOTICE([For wsl1, the $2 dir must be located on a Windows drive. Please see doc/building.md for details.])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+  fi
 ])
 
 # Platform-specific finalization
