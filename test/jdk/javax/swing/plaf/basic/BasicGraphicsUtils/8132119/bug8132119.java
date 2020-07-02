@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.io.File;
+import javax.imageio.ImageIO;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -151,18 +153,23 @@ public class bug8132119 {
 
         FontMetrics fontMetrices = comp.getFontMetrics(comp.getFont());
         float width = BasicGraphicsUtils.getStringWidth(comp, fontMetrices, str);
-        float x = (WIDTH - width) / 2;
         int y = 3 * HEIGHT / 4;
 
         if (underlined) {
-            BasicGraphicsUtils.drawStringUnderlineCharAt(comp, g2, str, 1, x, y);
+            BasicGraphicsUtils.drawStringUnderlineCharAt(comp, g2, str, 1, 0, y);
         } else {
-            BasicGraphicsUtils.drawString(comp, g2, str, x, y);
+            BasicGraphicsUtils.drawString(comp, g2, str, 0, y);
         }
         g2.dispose();
 
-        float xx = BasicGraphicsUtils.getStringWidth(comp, fontMetrices, "A") +
-                BasicGraphicsUtils.getStringWidth(comp, fontMetrices, "O")/2 -  10;
+        float xx = 0;
+        if (underlined) {
+            xx = BasicGraphicsUtils.getStringWidth(comp, fontMetrices, "A") +
+                BasicGraphicsUtils.getStringWidth(comp, fontMetrices, "O")/2  - 5;
+        } else {
+            xx = BasicGraphicsUtils.getStringWidth(comp, fontMetrices, "A") +
+                BasicGraphicsUtils.getStringWidth(comp, fontMetrices, "O")/2;
+        }
 
         checkImageContainsSymbol(buffImage, (int) xx, underlined ? 3 : 2);
     }
@@ -347,7 +354,11 @@ public class bug8132119 {
             }
         }
 
+
         if (backgroundChangesCount != intersections * 2) {
+            try {
+                ImageIO.write(buffImage, "png", new File("image.png"));
+            } catch (Exception e) {}
             throw new RuntimeException("String is not properly drawn!");
         }
     }
