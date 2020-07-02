@@ -23,6 +23,7 @@
 # questions.
 #
 
+###############################################################################
 # Appends a string to a path variable, only adding the : when needed.
 AC_DEFUN([UTIL_APPEND_TO_PATH],
 [
@@ -35,6 +36,7 @@ AC_DEFUN([UTIL_APPEND_TO_PATH],
   fi
 ])
 
+###############################################################################
 # Prepends a string to a path variable, only adding the : when needed.
 AC_DEFUN([UTIL_PREPEND_TO_PATH],
 [
@@ -43,34 +45,6 @@ AC_DEFUN([UTIL_PREPEND_TO_PATH],
       $1="$2"
     else
       $1="$2:[$]$1"
-    fi
-  fi
-])
-
-################################################################################
-# This will make a path absolute. Assumes it's already a unix path. Also
-# resolves ~ to homedir.
-AC_DEFUN([UTIL_ABSOLUTE_PATH],
-[
-  if test "x[$]$1" != x; then
-    new_path="[$]$1"
-
-    # Use eval to expand a potential ~. This technique does not work if there
-    # are spaces in the path (which is valid at this point on Windows), so only
-    # try to apply it if there is an actual ~ first in the path.
-    if [ [[ "$new_path" = "~"* ]] ]; then
-      eval new_path="$new_path"
-      if test ! -f "$new_path" && test ! -d "$new_path"; then
-        AC_MSG_ERROR([The new_path of $1, which resolves as "$new_path", is not found.])
-      fi
-    fi
-
-    if test -d "$new_path"; then
-      $1="`cd "$new_path"; $THEPWDCMD -L`"
-    else
-      dir="`$DIRNAME "$new_path"`"
-      base="`$BASENAME "$new_path"`"
-      $1="`cd "$dir"; $THEPWDCMD -L`/$base"
     fi
   fi
 ])
@@ -96,7 +70,6 @@ AC_DEFUN([UTIL_FIXUP_PATH],
         echo failed to import $path
       fi
       if test "x$imported_path" != "x$path"; then
-        echo rewriting $path to "$imported_path".
         $1="$imported_path"
       else
         $1="$path"
@@ -111,6 +84,27 @@ AC_DEFUN([UTIL_FIXUP_PATH],
       fi
 
       UTIL_ABSOLUTE_PATH(path)
+      # Make the path absolute
+      new_path="$path"
+
+      # Use eval to expand a potential ~. This technique does not work if there
+      # are spaces in the path (which is valid at this point on Windows), so only
+      # try to apply it if there is an actual ~ first in the path.
+      if [ [[ "$new_path" = "~"* ]] ]; then
+        eval new_path="$new_path"
+        if test ! -f "$new_path" && test ! -d "$new_path"; then
+          AC_MSG_ERROR([The new_path of $1, which resolves as "$new_path", is not found.])
+        fi
+      fi
+
+      if test -d "$new_path"; then
+        path="`cd "$new_path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$new_path"`"
+        base="`$BASENAME "$new_path"`"
+        path="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+
       $1="$path"
     fi
   fi

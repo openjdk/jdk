@@ -283,6 +283,14 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   CXXFLAGS="$GLOBAL_CXXFLAGS"
   LDFLAGS="$GLOBAL_LDFLAGS"
   CPPFLAGS="$GLOBAL_CPPFLAGS"
+
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    # When autoconf sends both compiler and linker flags to cl.exe at the same
+    # time, linker flags must be last at the command line. Achieve this by
+    # moving them to LIBS.
+    LIBS="$LIBS -link $LDFLAGS"
+    LDFLAGS=""
+  fi
 ])
 
 AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],

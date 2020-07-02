@@ -617,10 +617,9 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   TOOLCHAIN_FIND_COMPILER([CC], [C], $TOOLCHAIN_CC_BINARY)
   # Now that we have resolved CC ourself, let autoconf have its go at it
-  LIBS="-link $LDFLAGS"
-  LDFLAGS=
   UTIL_ADD_FIXPATH([CC])
   AC_PROG_CC([$CC])
+
   TOOLCHAIN_FIND_COMPILER([CXX], [C++], $TOOLCHAIN_CXX_BINARY)
   # Now that we have resolved CXX ourself, let autoconf have its go at it
   UTIL_ADD_FIXPATH([CXX])
