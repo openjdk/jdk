@@ -42,6 +42,7 @@
 
 #include <limits.h>
 #include <windows.h>
+#include <inttypes.h>
 
 #define DEBUG_NO_IMPLEMENTATION
 #include <dbgeng.h>
@@ -764,9 +765,16 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_windbg_WindbgDebuggerLocal
   CHECK_EXCEPTION_(0);
 
   ULONG id = 0;
-  COM_VERIFY_OK_(ptrIDebugSystemObjects->GetThreadIdBySystemId((ULONG)sysId, &id),
-                 "Windbg Error: GetThreadIdBySystemId failed!", 0);
-
+  HRESULT hr = ptrIDebugSystemObjects->GetThreadIdBySystemId((ULONG)sysId, &id);
+  if (hr != S_OK) {
+    // This is not considered fatal and does happen on occassion, usually with an
+    // 0x80004002 "No such interface supported". The root cause is not fully understood,
+    // but by ignoring this error and returning NULL, stacking walking code will get
+    // null registers and fallback to using the "last java frame" if setup.
+   printf("WARNING: GetThreadIdBySystemId failed with 0x%x for sysId (%" PRIu64 ")\n",
+           hr, sysId);
+    return -1;
+  }
   return (jlong) id;
 }
 
