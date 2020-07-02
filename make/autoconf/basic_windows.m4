@@ -72,9 +72,11 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   WINENV_TEMP_DIR=$($CYGPATH -u $($CMD /q /c echo %TEMP% 2> /dev/null) | $TR -d '\r\n')
   AC_MSG_RESULT([$WINENV_TEMP_DIR])
 
-  # FIXME: WSL hack
-#  cd "$WINENV_TEMP_DIR"
-#  cp "$CONFIGURE_START_DIR/confdefs.h" "$WINENV_TEMP_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
+    # Don't trust the current directory for WSL, but change to an OK temp dir
+    cd "$WINENV_TEMP_DIR"
+    cp "$CONFIGURE_START_DIR/confdefs.h" "$WINENV_TEMP_DIR"
+  fi
 
   AC_MSG_CHECKING([$WINENV_VENDOR release])
   WINENV_UNAME_RELEASE=`$UNAME -r`
@@ -109,6 +111,9 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     # Tell WSL to automatically translate the PATH variable
     UTIL_APPEND_TO_PATH(WSLENV, "PATH/l")
     export WSLENV
+    # Don't trust the current directory for WSL, but change to an OK temp dir
+    cd "$WINENV_TEMP_DIR"
+    cp "$CONFIGURE_START_DIR/confdefs.h" "$WINENV_TEMP_DIR"
   fi
 
   # Test if windows or unix "find" is first in path.
