@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package org.graalvm.compiler.replacements.processor;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -122,40 +123,47 @@ public class PluginGenerator {
                 out.printf("// GENERATORS: %s, %s\n", ReplacementsAnnotationProcessor.class.getName(), PluginGenerator.class.getName());
                 out.printf("package %s;\n", pkg.getQualifiedName());
                 out.printf("\n");
-                createImports(out, plugins);
+                createImports(out, processor, plugins);
                 out.printf("\n");
                 for (GeneratedPlugin plugin : plugins) {
                     plugin.generate(processor, out);
                     out.printf("\n");
                 }
-                out.printf("public class %s implements NodeIntrinsicPluginFactory {\n", genClassName);
+                out.printf("public class %s implements GeneratedPluginFactory {\n", genClassName);
                 createPluginFactoryMethod(out, plugins);
                 out.printf("}\n");
             }
         } catch (IOException e) {
             processor.env().getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage());
         }
-        processor.createProviderFile(qualifiedGenClassName, "org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory", topLevelClass);
+        processor.createProviderFile(qualifiedGenClassName, "org.graalvm.compiler.nodes.graphbuilderconf.GeneratedPluginFactory", topLevelClass);
     }
 
-    protected static void createImports(PrintWriter out, List<GeneratedPlugin> plugins) {
-        out.printf("import jdk.vm.ci.meta.ResolvedJavaMethod;\n");
-        out.printf("\n");
-        out.printf("import java.lang.annotation.Annotation;\n");
-        out.printf("import org.graalvm.compiler.nodes.ValueNode;\n");
-        out.printf("import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;\n");
-        out.printf("import org.graalvm.compiler.nodes.graphbuilderconf.GeneratedInvocationPlugin;\n");
-        out.printf("import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;\n");
-        out.printf("import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;\n");
-        out.printf("import org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory;\n");
-
+    protected static void createImports(PrintWriter out, AbstractProcessor processor, List<GeneratedPlugin> plugins) {
         HashSet<String> extra = new HashSet<>();
+
+        extra.add("jdk.vm.ci.meta.ResolvedJavaMethod");
+        extra.add("java.lang.annotation.Annotation");
+        extra.add("org.graalvm.compiler.nodes.ValueNode");
+        extra.add("org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext");
+        extra.add("org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin");
+        extra.add("org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins");
+        extra.add("org.graalvm.compiler.nodes.graphbuilderconf.GeneratedPluginFactory");
+        extra.add("org.graalvm.compiler.nodes.graphbuilderconf.GeneratedPluginInjectionProvider");
+
         for (GeneratedPlugin plugin : plugins) {
-            plugin.extraImports(extra);
+            plugin.extraImports(processor, extra);
+            extra.add("org.graalvm.compiler.nodes.graphbuilderconf." + plugin.pluginSuperclass());
+            if (plugin.needsReplacement(processor)) {
+                extra.add("org.graalvm.compiler.graph.NodeInputList");
+                extra.add("org.graalvm.compiler.nodes.PluginReplacementNode");
+            }
         }
         if (!extra.isEmpty()) {
             out.printf("\n");
-            for (String i : extra) {
+            String[] imports = extra.toArray(new String[extra.size()]);
+            Arrays.sort(imports);
+            for (String i : imports) {
                 out.printf("import %s;\n", i);
             }
         }
@@ -163,7 +171,7 @@ public class PluginGenerator {
 
     private static void createPluginFactoryMethod(PrintWriter out, List<GeneratedPlugin> plugins) {
         out.printf("    @Override\n");
-        out.printf("    public void registerPlugins(InvocationPlugins plugins, NodeIntrinsicPluginFactory.InjectionProvider injection) {\n");
+        out.printf("    public void registerPlugins(InvocationPlugins plugins, GeneratedPluginInjectionProvider injection) {\n");
         for (GeneratedPlugin plugin : plugins) {
             plugin.register(out);
         }

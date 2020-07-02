@@ -106,7 +106,7 @@ public class DynamicNewArrayNode extends AbstractNewArrayNode implements Canonic
                 return this;
             }
             ResolvedJavaType type = tool.getConstantReflection().asJavaType(elementType.asConstant());
-            if (type != null && !throwsIllegalArgumentException(type) && tool.getMetaAccessExtensionProvider().canConstantFoldDynamicAllocation(type)) {
+            if (type != null && !throwsIllegalArgumentException(type) && tool.getMetaAccessExtensionProvider().canConstantFoldDynamicAllocation(type.getArrayClass())) {
                 return createNewArrayNode(type);
             }
         }

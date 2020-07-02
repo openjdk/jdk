@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package org.graalvm.util;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A stream that can write (trivial) values together with their data type, for use with
@@ -90,13 +91,18 @@ public class TypedDataOutputStream extends DataOutputStream {
             this.writeByte('D');
             this.writeDouble((Double) value);
         } else if (valueClz == String.class) {
-            this.writeByte('U');
-            this.writeUTF((String) value);
+            writeStringValue((String) value);
         } else if (valueClz.isEnum()) {
-            this.writeByte('U');
-            this.writeUTF(((Enum<?>) value).name());
+            writeStringValue(((Enum<?>) value).name());
         } else {
             throw new IllegalArgumentException(String.format("Unsupported type: Value: %s, Value type: %s", value, valueClz));
         }
+    }
+
+    private void writeStringValue(String value) throws IOException {
+        this.writeByte('U');
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        this.writeInt(bytes.length);
+        this.write(bytes);
     }
 }

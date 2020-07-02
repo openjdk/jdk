@@ -35,6 +35,7 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
 
 import jdk.vm.ci.amd64.AMD64;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 
@@ -65,6 +66,9 @@ final class AMD64HotspotDirectVirtualCallOp extends DirectCallOp {
             crb.recordMark(invokeKind == InvokeKind.Virtual ? HotSpotMarkId.INVOKEVIRTUAL : HotSpotMarkId.INVOKEINTERFACE);
             // This must be emitted exactly like this to ensure it's patchable
             masm.movq(AMD64.rax, config.nonOopBits);
+            if (config.supportsMethodHandleDeoptimizationEntry() && config.isMethodHandleCall((HotSpotResolvedJavaMethod) callTarget)) {
+                crb.setNeedsMHDeoptHandler();
+            }
             super.emitCall(crb, masm);
         }
     }

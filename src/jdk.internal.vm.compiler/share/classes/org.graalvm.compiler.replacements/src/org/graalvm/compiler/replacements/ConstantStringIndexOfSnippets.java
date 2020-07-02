@@ -26,10 +26,11 @@ package org.graalvm.compiler.replacements;
 
 import static org.graalvm.compiler.nodes.util.ConstantReflectionUtil.loadByteArrayConstant;
 import static org.graalvm.compiler.nodes.util.ConstantReflectionUtil.loadCharArrayConstant;
+import static org.graalvm.compiler.replacements.ReplacementsUtil.byteArrayBaseOffset;
+import static org.graalvm.compiler.replacements.ReplacementsUtil.charArrayBaseOffset;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
 import static org.graalvm.compiler.serviceprovider.GraalUnsafeAccess.getUnsafe;
 
-import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
@@ -189,16 +190,6 @@ public class ConstantStringIndexOfSnippets implements Snippets {
             cache |= (1 << (currChar & 63));
         }
         return cache;
-    }
-
-    @Fold
-    static int byteArrayBaseOffset(@InjectedParameter MetaAccessProvider metaAccess) {
-        return metaAccess.getArrayBaseOffset(JavaKind.Byte);
-    }
-
-    @Fold
-    static int charArrayBaseOffset(@InjectedParameter MetaAccessProvider metaAccess) {
-        return metaAccess.getArrayBaseOffset(JavaKind.Char);
     }
 
     /** Marker value for the {@link InjectedParameter} injected parameter. */

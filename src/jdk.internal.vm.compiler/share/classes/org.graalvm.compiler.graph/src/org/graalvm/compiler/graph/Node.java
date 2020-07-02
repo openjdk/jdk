@@ -154,14 +154,18 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     /**
      * Annotates a method that can be replaced by a compiler intrinsic. A (resolved) call to the
      * annotated method will be processed by a generated {@code InvocationPlugin} that calls either
-     * a factory method or a constructor corresponding with the annotated method.
+     * a factory method or a constructor corresponding with the annotated method. By default the
+     * intrinsics are implemented by invoking the constructor but a factory method may be used
+     * instead. To use a factory method the class implementing the intrinsic must be annotated with
+     * {@link NodeIntrinsicFactory}. To ease error checking of NodeIntrinsics all intrinsics are
+     * expected to be implemented in the same way, so it's not possible to mix constructor and
+     * factory intrinsification in the same class.
      * <p>
      * A factory method corresponding to an annotated method is a static method named
      * {@code intrinsify} defined in the class denoted by {@link #value()}. In order, its signature
      * is as follows:
      * <ol>
      * <li>A {@code GraphBuilderContext} parameter.</li>
-     * <li>A {@code ResolvedJavaMethod} parameter.</li>
      * <li>A sequence of zero or more {@linkplain InjectedNodeParameter injected} parameters.</li>
      * <li>Remaining parameters that match the declared parameters of the annotated method.</li>
      * </ol>
@@ -197,6 +201,15 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
          * If {@code true} then this is lowered into a node that has side effects.
          */
         boolean hasSideEffect() default false;
+    }
+
+    /**
+     * Marker annotation indicating that the class uses factory methods instead of constructors for
+     * intrinsification.
+     */
+    @java.lang.annotation.Retention(RetentionPolicy.RUNTIME)
+    @java.lang.annotation.Target(ElementType.TYPE)
+    public @interface NodeIntrinsicFactory {
     }
 
     /**

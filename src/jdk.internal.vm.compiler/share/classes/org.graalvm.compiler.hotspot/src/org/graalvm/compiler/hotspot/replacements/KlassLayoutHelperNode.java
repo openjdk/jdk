@@ -31,6 +31,7 @@ import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.Node.NodeIntrinsicFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
@@ -49,7 +50,6 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
@@ -57,6 +57,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * information in {@code klass}.
  */
 @NodeInfo(cycles = CYCLES_1, size = SIZE_1)
+@NodeIntrinsicFactory
 public final class KlassLayoutHelperNode extends FloatingNode implements Canonicalizable, Lowerable {
 
     public static final NodeClass<KlassLayoutHelperNode> TYPE = NodeClass.create(KlassLayoutHelperNode.class);
@@ -74,8 +75,7 @@ public final class KlassLayoutHelperNode extends FloatingNode implements Canonic
         return canonical(null, config, klass, stamp, constantReflection, metaAccess);
     }
 
-    @SuppressWarnings("unused")
-    public static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod method, @InjectedNodeParameter GraalHotSpotVMConfig config, ValueNode klass) {
+    public static boolean intrinsify(GraphBuilderContext b, @InjectedNodeParameter GraalHotSpotVMConfig config, ValueNode klass) {
         ValueNode valueNode = create(config, klass, b.getConstantReflection(), b.getMetaAccess());
         b.push(JavaKind.Int, b.append(valueNode));
         return true;

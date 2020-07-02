@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -442,6 +442,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
             assert nodeToBlock.get(cur) == null;
             nodeToBlock.set(cur, block);
             FixedNode next = cur.next();
+            assert next != null : cur;
             if (next instanceof AbstractBeginNode) {
                 block.endNode = cur;
                 return;

@@ -33,6 +33,7 @@ import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64BinaryArithmeti
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMOp.MOVSX;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMOp.MOVSXB;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMOp.MOVSXD;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64Shift.ROL;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexRVMOp.VADDSD;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexRVMOp.VADDSS;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexRVMOp.VMULSD;
@@ -449,8 +450,15 @@ public class AMD64NodeMatchRules extends NodeMatchRules {
 
     @MatchRule("(Or (LeftShift=lshift value Constant) (UnsignedRightShift=rshift value Constant))")
     public ComplexMatchResult rotateLeftConstant(LeftShiftNode lshift, UnsignedRightShiftNode rshift) {
-        if ((lshift.getShiftAmountMask() & (lshift.getY().asJavaConstant().asInt() + rshift.getY().asJavaConstant().asInt())) == 0) {
-            return builder -> getArithmeticLIRGenerator().emitRol(operand(lshift.getX()), operand(lshift.getY()));
+        JavaConstant lshiftConst = lshift.getY().asJavaConstant();
+        JavaConstant rshiftConst = rshift.getY().asJavaConstant();
+        if ((lshift.getShiftAmountMask() & (lshiftConst.asInt() + rshiftConst.asInt())) == 0) {
+            return builder -> {
+                Value a = operand(lshift.getX());
+                OperandSize size = OperandSize.get(a.getPlatformKind());
+                assert size == OperandSize.DWORD || size == OperandSize.QWORD;
+                return getArithmeticLIRGenerator().emitShiftConst(ROL, size, a, lshiftConst);
+            };
         }
         return null;
     }

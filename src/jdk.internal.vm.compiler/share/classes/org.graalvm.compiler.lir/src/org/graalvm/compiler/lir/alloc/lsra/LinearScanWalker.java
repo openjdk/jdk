@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -673,9 +673,20 @@ class LinearScanWalker extends IntervalWalker {
         splitBeforeUsage(interval, minSplitPos, registerAvailableUntil);
     }
 
-    void splitAndSpillInterval(Interval interval) {
+    /**
+     * Split and spill the given interval. The interval is unconditionally split into a left and
+     * right part. However, if the {@code mustHaveRegUsePos} of the supplied (selected in the
+     * caller) register is later than the entire range of the left interval after splitting, we can
+     * allocate the interval to register {@code reg} without spilling it eagerly.
+     *
+     * @param interval the {@linkplain Interval} to split and spill
+     * @param reg a register selected in the caller most suitable for allocating {@code interval}
+     *            to, only used if the left interval after splitting can be allocated to reg since
+     *            the first {@code mustHaveRegUsePos} of {@code reg} is later
+     * @param mustHaveRegUsePos the first must have usage of the register
+     */
+    void splitAndSpillInterval(Interval interval, Register reg, int mustHaveRegUsePos) {
         assert interval.state == State.Active || interval.state == State.Inactive : "other states not allowed";
-
         int currentPos = currentPosition;
         if (interval.state == State.Inactive) {
             // the interval is currently inactive, so no spill slot is needed for now.
@@ -695,7 +706,40 @@ class LinearScanWalker extends IntervalWalker {
             splitBeforeUsage(interval, minSplitPos, maxSplitPos);
 
             assert interval.nextUsage(RegisterPriority.MustHaveRegister, currentPos) == Integer.MAX_VALUE : "the remaining part is spilled to stack and therefore has no register";
-            splitForSpilling(interval);
+
+            if (interval.to() >= mustHaveRegUsePos) {
+                splitForSpilling(interval);
+            } else {
+                /*
+                 * Only need to split'n'spill if the register selected has a usage in the current
+                 * interval's range.
+                 *
+                 * Special case loop phi inputs: if we have a loop phi that has no usage inside the
+                 * loop (and the phi has a usage far away in range) we are tempted to spill the left
+                 * interval at definition of the loop phi, however this can cause move resolution to
+                 * insert spill moves to the stack (phi resolve) inside the body of the loop for
+                 * loop end phi inputs.
+                 *
+                 * In this special scenario we have an interval (loop phi forward end input) that
+                 * has no usage inside the loop just far away from the loop, but the register we
+                 * selected has its first usage outside of the range, so instead of eagerly spilling
+                 * here we use the register and hope it suffices to keep the loop phi in register
+                 * altogether, if not possible we can still spill the register and re-use it
+                 * (hopefully at a better position).
+                 */
+                assert reg != null;
+                boolean needSplit = blockPos[reg.number] <= interval.to();
+                int splitPos = blockPos[reg.number];
+                assert splitPos > 0 : "invalid splitPos";
+                assert needSplit || splitPos > interval.from() : "splitting interval at from";
+                interval.assignLocation(reg.asValue(interval.kind()));
+                if (needSplit) {
+                    // register not available for full interval : so split it
+                    splitWhenPartialRegisterAvailable(interval, splitPos);
+                }
+                // perform splitting and spilling for all affected intervals
+                splitAndSpillIntersectingIntervals(reg);
+            }
         }
     }
 
@@ -789,11 +833,10 @@ class LinearScanWalker extends IntervalWalker {
 
     void splitAndSpillIntersectingIntervals(Register reg) {
         assert reg != null : "no register assigned";
-
         for (int i = 0; i < spillIntervals[reg.number].size(); i++) {
             Interval interval = spillIntervals[reg.number].get(i);
             removeFromList(interval);
-            splitAndSpillInterval(interval);
+            splitAndSpillInterval(interval, null, -1/* unconditionally split and spill */);
         }
     }
 
@@ -872,8 +915,12 @@ class LinearScanWalker extends IntervalWalker {
                         throw new OutOfRegistersException("LinearScan: no register found", description);
                     }
 
-                    splitAndSpillInterval(interval);
+                    splitAndSpillInterval(interval, reg, regUsePos);
                     return;
+                } else {
+                    if (debug.isLogEnabled()) {
+                        debug.log("not able to spill current interval. firstUsage(register): %d, usePos: %d", firstUsage, regUsePos);
+                    }
                 }
                 break;
             }
