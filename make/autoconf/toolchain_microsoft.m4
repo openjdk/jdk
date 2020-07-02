@@ -106,16 +106,6 @@ VS_TOOLSET_SUPPORTED_2019=true
 
 ################################################################################
 
-AC_DEFUN([UTIL_REWRITE_AS_WINDOWS_MIXED_PATH],
-[
-  unix_path="[$]$1"
-  win_path=`$BASH $TOPDIR/make/scripts/fixpath.sh print "$unix_path"`
-  echo converting from $unix_path to $win_path
-  $1="$win_path"
-])
-
-################################################################################
-
 AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
 [
   if test "x$VS_ENV_CMD" = x; then
@@ -316,6 +306,9 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
     eval VS_SUPPORTED="\${VS_SUPPORTED_${VS_VERSION}}"
     eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
 
+    VS_INCLUDE=${DEVKIT_VS_INCLUDE//;/:}
+    VS_LIB=${DEVKIT_VS_LIB//;/:}
+
     AC_MSG_NOTICE([Found devkit $VS_DESCRIPTION])
 
   elif test "x$with_toolchain_version" != x; then
@@ -431,7 +424,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       [ VS_PATH=`$ECHO "$VS_PATH" | $SED 's/[^:#]*#[^:]*://g'` ]
 
       # Now convert the Windows env variables to standard devkit flags
-      TOOLCHAIN_PATH="$VS_PATH"
+      TOOLCHAIN_PATH="$TOOLCHAIN_PATH:$VS_PATH"
 
       # Convert VS_INCLUDE into SYSROOT_CFLAGS
       OLDIFS="$IFS"
