@@ -126,17 +126,19 @@ LIBDL:=@LIBDL@
 
 WINENV_ROOT := @WINENV_ROOT@
 WINENV_PREFIX := @WINENV_PREFIX@
-ifeq ($(OPENJDK_TARGET_OS_ENV), windows.wsl)
+
+ifeq (@OPENJDK_TARGET_OS_ENV@, windows.wsl)
   # Tell WSL to convert PATH between linux and windows
   export WSLENV := $(WSLENV):PATH/l
-elifeq ($(OPENJDK_TARGET_OS_ENV), windows.msys2)
+elifeq (@OPENJDK_TARGET_OS_ENV@, windows.msys2)
   # Prohibit msys2 from attemping any path wrangling
   export MSYS2_ARG_CONV_EXCL := "*"
 endif
 
 # Save the original path before replacing it with the Visual Studio tools
-ORIGINAL_PATH:=@ORIGINAL_PATH@
-ifeq ($(OPENJDK_TOOLCHAIN_TYPE), microsoft)
+ORIGINAL_PATH := @ORIGINAL_PATH@
+
+ifeq (@TOOLCHAIN_TYPE@, microsoft)
   # The Visual Studio toolchain needs the PATH to be adjusted to include
   # Visual Studio tools.
   export PATH := $(PATH):@TOOLCHAIN_PATH@
