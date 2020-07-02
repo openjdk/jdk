@@ -316,27 +316,6 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
     eval VS_SUPPORTED="\${VS_SUPPORTED_${VS_VERSION}}"
     eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
 
-    # The TOOLCHAIN_PATH from a devkit is in Unix format. In WSL we need a
-    # windows version of the complete VS_PATH as VS_PATH_WINDOWS
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-    ### FIXME
-      # Convert the toolchain path
-      OLDIFS="$IFS"
-      IFS=":"
-      VS_PATH_WINDOWS=""
-      for i in $TOOLCHAIN_PATH; do
-        path=$i
-        UTIL_REWRITE_AS_WINDOWS_MIXED_PATH([path])
-        VS_PATH_WINDOWS="$VS_PATH_WINDOWS;$path"
-      done
-      IFS="$OLDIFS"
-      # Append the current path from Windows env
-      WINDOWS_PATH="`$CMD /c echo %PATH%`"
-      VS_PATH_WINDOWS="$VS_PATH_WINDOWS;$WINDOWS_PATH"
-    else
-      VS_PATH="$TOOLCHAIN_PATH:$PATH"
-    fi
-
     AC_MSG_NOTICE([Found devkit $VS_DESCRIPTION])
 
   elif test "x$with_toolchain_version" != x; then
@@ -402,7 +381,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # Make sure we only capture additions to PATH needed by VS.
 
       OLDPATH="$PATH"
-      export PATH=
+      # Clear out path, but need system dir present for vsvars cmd file to be able to run
+      export PATH=$WINENV_PREFIX/c/windows/system32
       # The "| cat" is to stop SetEnv.Cmd to mess with system colors on some systems
       $FIXPATH $CMD /c "$TOPDIR/make/scripts/extract-vs-env.cmd" "$VS_ENV_CMD" \
           "$VS_ENV_TMP_DIR/set-vs-env.sh" $VS_ENV_ARGS > $VS_ENV_TMP_DIR/extract-vs-env.log | $CAT 2>&1
@@ -418,42 +398,15 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # Remove windows line endings
       $SED -i -e 's|\r||g' $VS_ENV_TMP_DIR/set-vs-env.sh
 
-      # Now set all paths and other env variables. This will allow the rest of
-      # the configure script to find and run the compiler in the proper way.
+      # Now set all paths and other env variables by executing the generated
+      # shell script. This will allow the rest of the configure script to find
+      # and run the compiler in the proper way.
       AC_MSG_NOTICE([Setting extracted environment variables])
       . $VS_ENV_TMP_DIR/set-vs-env.sh
 
       # Now we have VS_PATH, VS_INCLUDE, VS_LIB. For further checking, we
-      # also define VCINSTALLDIR, WindowsSdkDir and WINDOWSSDKDIR.
-
-      # In WSL, the extracted VS_PATH is Windows style. This needs to be
-      # rewritten as Unix style and the Windows style version is saved
-      # in VS_PATH_WINDOWS.
-#      if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-  if test x = x; then
-        OLDIFS="$IFS"
-        IFS=";"
-        # Convert VS_PATH to unix style
-        VS_PATH_WINDOWS="$VS_PATH"
-        VS_PATH=""
-        for i in $VS_PATH_WINDOWS; do
-          path=$i
-          # Only process non-empty elements
-          if test "x$path" != x; then
-            IFS="$OLDIFS"
-            # Check that directory exists before calling fixup_path
-            # FIXME: Is this still a problem???
-            testpath=$path
-            UTIL_FIXUP_PATH([testpath])
-            if test -d "$testpath"; then
-              UTIL_APPEND_TO_PATH(VS_PATH, $testpath)
-            fi
-            IFS=";"
-          fi
-        done
-        IFS="$OLDIFS"
-      fi
-
+      # also define VCINSTALLDIR, WindowsSdkDir and WINDOWSSDKDIR. All are in
+      # unix style.
     else
       # We did not find a vsvars bat file, let's hope we are run from a VS command prompt.
       AC_MSG_NOTICE([Cannot locate a valid Visual Studio installation, checking current environment])
@@ -470,61 +423,30 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       AC_MSG_ERROR([Your VC command prompt seems broken, INCLUDE and/or LIB is missing.])
     else
       AC_MSG_RESULT([ok])
-      # Remove any trailing "\" ";" and " " from the variables.
-      VS_INCLUDE=`$ECHO "$VS_INCLUDE" | $SED -e 's/\\\\*;* *$//'`
-      VS_LIB=`$ECHO "$VS_LIB" | $SED 's/\\\\*;* *$//'`
-      VCINSTALLDIR=`$ECHO "$VCINSTALLDIR" | $SED 's/\\\\* *$//'`
-      VCToolsRedistDir=`$ECHO "$VCToolsRedistDir" | $SED 's/\\\\* *$//'`
-      WindowsSdkDir=`$ECHO "$WindowsSdkDir" | $SED 's/\\\\* *$//'`
-      WINDOWSSDKDIR=`$ECHO "$WINDOWSSDKDIR" | $SED 's/\\\\* *$//'`
       if test -z "$WINDOWSSDKDIR"; then
         WINDOWSSDKDIR="$WindowsSdkDir"
       fi
       # Remove any paths containing # (typically F#) as that messes up make. This
       # is needed if visual studio was installed with F# support.
-      VS_PATH=`$ECHO "$VS_PATH" | $SED 's/[[^:#]]*#[^:]*://g'`
+      [ VS_PATH=`$ECHO "$VS_PATH" | $SED 's/[^:#]*#[^:]*://g'` ]
 
-      AC_SUBST(VS_PATH)
-      AC_SUBST(VS_INCLUDE)
-      AC_SUBST(VS_LIB)
+      # Now convert the Windows env variables to standard devkit flags
+      TOOLCHAIN_PATH="$VS_PATH"
 
       # Convert VS_INCLUDE into SYSROOT_CFLAGS
       OLDIFS="$IFS"
-      IFS=";"
-      for i in $VS_INCLUDE; do
-        ipath=$i
-        # Only process non-empty elements
-        if test "x$ipath" != x; then
-          IFS="$OLDIFS"
-          # Check that directory exists before calling fixup_path
-          # FIXME: is this still a problem?
-          testpath=$ipath
-          UTIL_FIXUP_PATH([testpath])
-          if test -d "$testpath"; then
-            SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$testpath"
-          fi
-          IFS=";"
-        fi
-      done
-      # Convert VS_LIB into SYSROOT_LDFLAGS
-      for i in $VS_LIB; do
-        libpath=$i
-        # Only process non-empty elements
-        if test "x$libpath" != x; then
-          IFS="$OLDIFS"
-          # Check that directory exists before calling fixup_path
-          # FIXME
-          testpath=$libpath
-          UTIL_FIXUP_PATH([testpath])
-          if test -d "$testpath"; then
-            SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$testpath"
-          fi
-          IFS=";"
-        fi
-      done
-      IFS="$OLDIFS"
+      IFS=":"
 
-      AC_SUBST(VS_PATH_WINDOWS)
+      for ipath in $VS_INCLUDE; do
+        SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$ipath"
+      done
+
+      # Convert VS_LIB into SYSROOT_LDFLAGS
+      for libpath in $VS_LIB; do
+        SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$libpath"
+      done
+
+      IFS="$OLDIFS"
     fi
   else
     AC_MSG_RESULT([not found])

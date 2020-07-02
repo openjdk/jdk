@@ -73,8 +73,8 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
   AC_MSG_RESULT([$WINENV_TEMP_DIR])
 
   # FIXME: WSL hack
-  cd "$WINENV_TEMP_DIR"
-  cp "$CONFIGURE_START_DIR/confdefs.h" "$WINENV_TEMP_DIR"
+#  cd "$WINENV_TEMP_DIR"
+#  cp "$CONFIGURE_START_DIR/confdefs.h" "$WINENV_TEMP_DIR"
 
   AC_MSG_CHECKING([$WINENV_VENDOR release])
   WINENV_UNAME_RELEASE=`$UNAME -r`
@@ -105,6 +105,10 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
     AC_MSG_RESULT([$WSL_DISTRIBUTION])
 
     WINENV_VERSION="$WINENV_VERSION ($WSL_DISTRIBUTION)"
+
+    # Tell WSL to automatically translate the PATH variable
+    UTIL_APPEND_TO_PATH(WSLENV, "PATH/l")
+    export WSLENV
   fi
 
   # Test if windows or unix "find" is first in path.

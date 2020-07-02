@@ -337,9 +337,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_FLAGS],
 # special setup, e.g. additional paths etc.
 AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
 [
-  # FIXME: Is this needed?
-  AC_LANG(C++)
-
   # Store the CFLAGS etc passed to the configure script.
   ORG_CFLAGS="$CFLAGS"
   ORG_CXXFLAGS="$CXXFLAGS"
@@ -347,46 +344,29 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # autoconf magic only relies on PATH, so update it if tools dir is specified
   OLD_PATH="$PATH"
 
-  # On Windows, we need to detect the visual studio installation first.
-  # This will change the PATH, but we need to keep that new PATH even
-  # after toolchain detection is done, since the compiler (on x86) uses
-  # it for DLL resolution in runtime.
-  if test "x$OPENJDK_BUILD_OS" = "xwindows" \
-      && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
-    # Append VS_PATH. In WSL, VS_PATH will not contain the WSL env path needed
-    # for using basic Unix tools, so need to keep the original PATH.
-    NEW_PATH="$VS_PATH"
-    UTIL_APPEND_TO_PATH(NEW_PATH, $PATH)
-    PATH="$NEW_PATH"
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
-      UTIL_APPEND_TO_PATH(WSLENV, "PATH/l")
-      export WSLENV
-    fi
+  if test "x$XCODE_VERSION_OUTPUT" != x; then
+    # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
+    TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
+    TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
   else
-    if test "x$XCODE_VERSION_OUTPUT" != x; then
-      # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
-      TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
-      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
-    else
-      # Currently we do not define this for other toolchains. This might change as the need arise.
-      TOOLCHAIN_VERSION=
-    fi
+    # Currently we do not define this for other toolchains. This might change as the need arise.
+    TOOLCHAIN_VERSION=
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
 
-  # Finally add TOOLCHAIN_PATH at the beginning, to allow --with-tools-dir to
+  # Finally prepend TOOLCHAIN_PATH to the PATH, to allow --with-tools-dir to
   # override all other locations.
   if test "x$TOOLCHAIN_PATH" != x; then
-    PATH=$TOOLCHAIN_PATH:$PATH
+    export PATH=$TOOLCHAIN_PATH:$PATH
   fi
 ])
 
 # Restore path, etc
 AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
 [
-  # Restore old path, except for the microsoft toolchain, which requires VS_PATH
-  # to remain in place. Otherwise the compiler will not work in some siutations
-  # in later configure checks.
+  # Restore old path, except for the microsoft toolchain, which requires the
+  # toolchain path to remain in place. Otherwise the compiler will not work in
+  # some siutations in later configure checks.
   if test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
     PATH="$OLD_PATH"
   fi
@@ -534,27 +514,10 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     # If we are not cross compiling, then the default compiler name will be
     # used.
 
-    $1=
-    # If TOOLCHAIN_PATH is set, check for all compiler names in there first
-    # before checking the rest of the PATH.
-    # FIXME: Now that we prefix the TOOLS_DIR to the PATH in the PRE_DETECTION
-    # step, this should not be necessary.
-    if test -n "$TOOLCHAIN_PATH"; then
-      PATH_save="$PATH"
-      PATH="$TOOLCHAIN_PATH"
-      AC_PATH_TOOL(TOOLCHAIN_PATH_$1, $SEARCH_LIST)
-      $1=$TOOLCHAIN_PATH_$1
-      PATH="$PATH_save"
-    fi
-
-    # AC_PATH_TOOL can't be run multiple times with the same variable,
-    # so create a new name for this run.
-    if test "x[$]$1" = x; then
-      AC_PATH_TOOL(POTENTIAL_$1, $SEARCH_LIST)
+    AC_PATH_TOOL(POTENTIAL_$1, $SEARCH_LIST)
+    if test "x$POTENTIAL_$1" != x; then
       $1=$POTENTIAL_$1
-    fi
-
-    if test "x[$]$1" = x; then
+    else
       HELP_MSG_MISSING_DEPENDENCY([devkit])
       AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
     fi

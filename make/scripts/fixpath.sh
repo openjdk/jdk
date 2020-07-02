@@ -174,7 +174,7 @@ cygwin_verify_current_dir() {
   arg="$PWD"
   if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     return 0
-  elif [[ $arg =~ ^(/[^/]+/[^/]+.*$) ]] ; then
+  elif [[ $arg =~ ^(/[^/]+.*$) ]] ; then
     if [[ $ENVROOT == "" || $ENVROOT =~ ^\\\\.* ]]; then
       return 1
     fi
