@@ -215,6 +215,17 @@ class ZipUtils {
         return LG(b, 0);
     }
 
+    /*
+     * File attribute compatibility types of CEN field "version made by"
+     */
+    static final int FILE_ATTRIBUTES_UNIX = 3; // Unix
+
+    /*
+     * Base values for CEN field "version made by"
+     */
+    static final int VERSION_MADE_BY_BASE_UNIX = FILE_ATTRIBUTES_UNIX << 8; // Unix
+
+
     // local file (LOC) header fields
     static final long LOCSIG(byte[] b) { return LG(b, 0); } // signature
     static final int  LOCVER(byte[] b) { return SH(b, 4); } // version needed to extract
@@ -250,6 +261,7 @@ class ZipUtils {
     // central directory header (CEN) fields
     static final long CENSIG(byte[] b, int pos) { return LG(b, pos + 0); }
     static final int  CENVEM(byte[] b, int pos) { return SH(b, pos + 4); }
+    static final int  CENVEM_FA(byte[] b, int pos) { return CH(b, pos + 5); } // file attribute compatibility
     static final int  CENVER(byte[] b, int pos) { return SH(b, pos + 6); }
     static final int  CENFLG(byte[] b, int pos) { return SH(b, pos + 8); }
     static final int  CENHOW(byte[] b, int pos) { return SH(b, pos + 10);}
@@ -263,6 +275,7 @@ class ZipUtils {
     static final int  CENDSK(byte[] b, int pos) { return SH(b, pos + 34);}
     static final int  CENATT(byte[] b, int pos) { return SH(b, pos + 36);}
     static final long CENATX(byte[] b, int pos) { return LG(b, pos + 38);}
+    static final int  CENATX_PERMS(byte[] b, int pos) { return SH(b, pos + 40);} // posix permission data
     static final long CENOFF(byte[] b, int pos) { return LG(b, pos + 42);}
 
     // The END header is followed by a variable length comment of size < 64k.

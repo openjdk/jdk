@@ -170,6 +170,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"key.bit.weak", "%d-bit key (weak)"},
         {"key.bit.disabled", "%d-bit key (disabled)"},
         {"unknown.size", "unknown size"},
+        {"posix.attributes.detected", "POSIX file permission attributes detected. These attributes are ignored when signing and are not protected by the signature."},
 
         {"jarsigner.", "jarsigner: "},
         {"signature.filename.must.consist.of.the.following.characters.A.Z.0.9.or.",
