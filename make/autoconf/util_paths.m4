@@ -83,7 +83,6 @@ AC_DEFUN([UTIL_FIXUP_PATH],
         AC_MSG_ERROR([Spaces are not allowed in this path.])
       fi
 
-      UTIL_ABSOLUTE_PATH(path)
       # Make the path absolute
       new_path="$path"
 
