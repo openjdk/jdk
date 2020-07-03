@@ -164,7 +164,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
     # First separate the path from the arguments. This will split at the first
     # space.
     [ if [[ $input =~ ^$FIXPATH ]]; then
-      line="${complete#$FIXPATH }"
+      line="${input#$FIXPATH }"
       prefix="$FIXPATH "
     else
       line="$input"
@@ -222,7 +222,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
         # make absolute
         new_path="$path"
 
-        if test ! -x $new_path;
+        if test ! -x $new_path; then
           AC_MSG_NOTICE([The command for $1, which resolves as "$input", is not found or not executable.])
           AC_MSG_ERROR([Cannot locate $path])
           has_space=`$ECHO "$input" | $GREP " "`
