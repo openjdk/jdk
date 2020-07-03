@@ -204,35 +204,23 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
       if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
         # fixpath.sh import will do all heavy lifting for us
         new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path"`
-        $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
-        if test $? -ne 0; then
-          # It failed. Try again with a .exe.
-          new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path.exe"`
-          $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
 
-          if test $? -ne 0; then
-            # It failed, but maybe spaces were part of the path and not separating
-            # the command and argument. Retry using that assumption.
-            new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$input"`
-            $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
-            if test $? -ne 0; then
-              # It failed. Try again with a .exe.
-              new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path.exe"`
-              $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
-
-              if test $? -ne 0; then
-                # Time to give up...
-                AC_MSG_NOTICE([Thecommand for $1, which resolves as "$input", can not be found.])
-                AC_MSG_ERROR([Cannot locate $input])
-              fi
-            fi
+        if test ! -e $new_path; then
+          # It failed, but maybe spaces were part of the path and not separating
+          # the command and argument. Retry using that assumption.
+          new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$input"`
+          if test ! -e $new_path; then
+            AC_MSG_NOTICE([The command for $1, which resolves as "$input", can not be found.])
+            AC_MSG_ERROR([Cannot locate $input])
           fi
           # It worked, clear all "arguments"
           arguments="EOL"
         fi
       else # on unix
-        # make absolute
-        new_path="$path"
+        # Make absolute
+        $1="$path"
+        UTIL_FIXUP_PATH($1)
+        new_path="[$]$1"
 
         if test ! -x $new_path; then
           AC_MSG_NOTICE([The command for $1, which resolves as "$input", is not found or not executable.])
@@ -253,7 +241,6 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
         if test "x$RESULT" = xwindows; then
           prefix="$FIXPATH "
           # make sure we have an .exe suffix
-
         else
           # If we have gotten a .exe suffix, remove it
           :
