@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,11 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.interpreter.*;
+import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.runtime.x86.*;
+import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.*;
 
 /** <P> Should be able to be used on all amd64 platforms we support
     (Linux/amd64) to implement JavaThread's
@@ -62,25 +65,135 @@ public class AMD64CurrentFrameGuess {
     this.thread  = thread;
   }
 
+  private boolean validateInterpreterFrame(Address sp, Address fp, Address pc) {
+    VM vm = VM.getVM();
+    X86Frame f = new X86Frame(sp, fp, pc);
+
+    // First validate that frame->method is really a Method*
+    Method method = null;
+    try {
+      method = f.getInterpreterFrameMethod();
+    } catch (WrongTypeException | AddressException | NullPointerException e) {
+      // This just means frame->method is not valid.
+      if (DEBUG) {
+        System.out.println("CurrentFrameGuess: frame->method is invalid");
+      }
+    }
+
+    // Next make sure frame->bcp is really in the method's bytecodes
+    if (method != null && f.getInterpreterFrameBCP() != null) {
+      if (method.getConstMethod().isAddressInMethod(f.getInterpreterFrameBCP())) {
+        // All's good. This is the normal path when the PC is in the interpreter.
+        // The cases below are all exceptionally rare.
+        setValues(sp, fp, pc);
+        return true;
+      } else {
+        if (DEBUG) {
+          System.out.println("CurrentFrameGuess: frame->bcp is invalid");
+        }
+      }
+    }
+
+    // Either frame->method is not a Method* or frame->bcp is not valid. That means either
+    // we have pushed the new interpreter frame, but have not intialized it yet, or
+    // we have yet to push the new interpreter frame, and the "current" frame is not an
+    // interpreter frame. Figure out which is the case.
+
+    // Try to find the return address in RAX or on the stack. If we can't
+    // find what appears to be a valid codecache address in either of these
+    // two locations, then we cannot determine the frame.
+    Address returnAddress = context.getRegisterAsAddress(AMD64ThreadContext.RAX);
+    CodeCache c = VM.getVM().getCodeCache();
+    if (returnAddress == null || !c.contains(returnAddress)) {
+      returnAddress = sp.getAddressAt(0);  // check top of stack
+      if (returnAddress == null || !c.contains(returnAddress)) {
+        if (DEBUG) {
+          System.out.println("CurrentFrameGuess: Cannot find valid returnAddress");
+        }
+        setValues(sp, fp, pc);
+        return false; // couldn't find a valid PC for frame.
+      } else {
+        if (DEBUG) {
+          System.out.println("CurrentFrameGuess: returnAddress found on stack: " + returnAddress);
+        }
+      }
+    } else {
+      if (DEBUG) {
+        System.out.println("CurrentFrameGuess: returnAddress found in RAX: " + returnAddress);
+      }
+    }
+
+    // See what return address is stored in the frame. Most likely it is not valid, but
+    // its validity will help us determine the state of the new frame push.
+    Address returnAddress2 = null;
+    try {
+      returnAddress2 = f.getSenderPC();
+    } catch (AddressException e) {
+      // Just ignore. This is expected sometimes.
+      if (DEBUG) {
+        System.out.println("CurrentFrameGuess: senderPC is invalid");
+      }
+    }
+    if (DEBUG) {
+      System.out.println("CurrentFrameGuess: returnAddress2: " + returnAddress2);
+    }
+
+    if (returnAddress.equals(returnAddress2)) {
+      // If these two ways of fetching the return address produce the same address,
+      // then that means we have pushed the new frame, but have not finished
+      // initializing it yet. Otherwise we would also have found a valid frame->method
+      // and frame->bcp. Because this frame is incomplete, we instead use
+      // the previous frame as the current frame.
+      if (DEBUG) {
+        System.out.println("CurrentFrameGuess: frame pushed but not initialized.");
+      }
+      sp = f.getSenderSP();
+      fp = f.getLink();
+      setValues(sp, fp, returnAddress);
+      // If this previous frame is interpreted, then we are done and setValues() has been
+      // called with a valid interpreter frame. Otherwise return false and the caller will
+      // need to determine frame.
+      if (vm.getInterpreter().contains(returnAddress)) {
+        if (DEBUG) {
+          System.out.println("CurrentFrameGuess: Interpreted: using previous frame.");
+        }
+        return true;
+      } else {
+        if (DEBUG) {
+          System.out.println("CurrentFrameGuess: Not Interpreted: using previous frame.");
+        }
+        return false;
+      }
+    } else {
+      // We haven't even pushed the new frame yet. sp and fp are for the previous
+      // frame that is making the call to the interpreter. Since this frame is
+      // not a valid interpreter frame (we know either frame->method or frame->bcp
+      // are not valid), it must be something else. Assume compiled or native and
+      // let the  caller figure it out.
+      setValues(sp, fp, returnAddress);
+      if (DEBUG) {
+        System.out.println("CurrentFrameGuess: Frame not yet pushed. Previous frame not interpreted.");
+      }
+      return false;
+    }
+  }
+
   /** Returns false if not able to find a frame within a reasonable range. */
   public boolean run(long regionInBytesToSearch) {
     Address sp  = context.getRegisterAsAddress(AMD64ThreadContext.RSP);
     Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
     Address fp  = context.getRegisterAsAddress(AMD64ThreadContext.RBP);
     if (sp == null) {
-      // Bail out if no last java frame either
-      if (thread.getLastJavaSP() != null) {
-        setValues(thread.getLastJavaSP(), thread.getLastJavaFP(), null);
-        return true;
-      }
-      return false;
+      return checkLastJavaSP();
     }
     Address end = sp.addOffsetTo(regionInBytesToSearch);
     VM vm       = VM.getVM();
 
     setValues(null, null, null); // Assume we're not going to find anything
 
-    if (vm.isJavaPCDbg(pc)) {
+    if (!vm.isJavaPCDbg(pc)) {
+      return checkLastJavaSP();
+    } else {
       if (vm.isClientCompiler()) {
         // If the topmost frame is a Java frame, we are (pretty much)
         // guaranteed to have a viable EBP. We should be more robust
@@ -96,12 +209,35 @@ public class AMD64CurrentFrameGuess {
         return true;
       } else {
         if (vm.getInterpreter().contains(pc)) {
-          if (DEBUG) {
-            System.out.println("CurrentFrameGuess: choosing interpreter frame: sp = " +
-                               sp + ", fp = " + fp + ", pc = " + pc);
+          // pc points into the interpreter, but that doesn't necessarily mean the current
+          // frame is interpreted. We may be in interpreter method entry code before the frame
+          // has been pushed, or possibly after it has been pushed but before it has been
+          // initialized. See TemplateInterpreterGenerator::generate_normal_entry(). So we
+          // need to do a few sanity checks here, and try to correct the situation if
+          // we are in the middle of a frame push.
+          if (validateInterpreterFrame(sp, fp, pc)) {
+            if (DEBUG) {
+              System.out.println("CurrentFrameGuess: choosing interpreter frame: sp = " +
+                                 spFound + ", fp = " + fpFound + ", pc = " + pcFound);
+            }
+            return true; // We're done. setValues() has been called for valid interpreter frame.
+          } else {
+            // This does not appear to be a valid interpreter frame. Possibly we are in the
+            // middle of pushing a new frame. Update the frame values to those suggested
+            // by validateInterpreterFrame() and then fall through to check if it is compiled.
+            sp = spFound;
+            fp = fpFound;
+            pc = pcFound;
+            setValues(null, null, null);
+            if (pcFound == null) {
+              return false;
+            }
+            // pc may have changed, so we need to redo the isJavaPCDbg(pc) check before
+            // falling into code below that assumes the frame is compiled.
+            if (!vm.isJavaPCDbg(pc)) {
+              return checkLastJavaSP();
+            }
           }
-          setValues(sp, fp, pc);
-          return true;
         }
 
         // For the server compiler, EBP is not guaranteed to be valid
@@ -119,6 +255,9 @@ public class AMD64CurrentFrameGuess {
         // adapter frames...this is likely to be the root cause of the
         // failure with the simpler algorithm below.
 
+        if (DEBUG) {
+          System.out.println("CurrentFrameGuess: sp = " + sp + ", pc = " + pc);
+        }
         for (long offset = 0;
              offset < regionInBytesToSearch;
              offset += vm.getAddressSize()) {
@@ -143,7 +282,7 @@ public class AMD64CurrentFrameGuess {
                   // Frame points to itself or to a location in the wrong direction.
                   // Break the loop and move on to next offset.
                   if (DEBUG) {
-                      System.out.println("AMD64CurrentFrameGuess.run: frame <= oldFrame: " + frame);
+                    System.out.println("CurrentFrameGuess: frame <= oldFrame: " + frame);
                   }
                   break;
               }
@@ -188,26 +327,28 @@ public class AMD64CurrentFrameGuess {
         }
         */
       }
-    } else {
-      // If the current program counter was not known to us as a Java
-      // PC, we currently assume that we are in the run-time system
-      // and attempt to look to thread-local storage for saved ESP and
-      // EBP. Note that if these are null (because we were, in fact,
-      // in Java code, i.e., vtable stubs or similar, and the SA
-      // didn't have enough insight into the target VM to understand
-      // that) then we are going to lose the entire stack trace for
-      // the thread, which is sub-optimal. FIXME.
-
-      if (DEBUG) {
-        System.out.println("CurrentFrameGuess: choosing last Java frame: sp = " +
-                           thread.getLastJavaSP() + ", fp = " + thread.getLastJavaFP());
-      }
-      if (thread.getLastJavaSP() == null) {
-        return false; // No known Java frames on stack
-      }
-      setValues(thread.getLastJavaSP(), thread.getLastJavaFP(), null);
-      return true;
     }
+  }
+
+  private boolean checkLastJavaSP() {
+    // If the current program counter was not known to us as a Java
+    // PC, we currently assume that we are in the run-time system
+    // and attempt to look to thread-local storage for saved ESP and
+    // EBP. Note that if these are null (because we were, in fact,
+    // in Java code, i.e., vtable stubs or similar, and the SA
+    // didn't have enough insight into the target VM to understand
+    // that) then we are going to lose the entire stack trace for
+    // the thread, which is sub-optimal. FIXME.
+
+    if (DEBUG) {
+      System.out.println("CurrentFrameGuess: choosing last Java frame: sp = " +
+                         thread.getLastJavaSP() + ", fp = " + thread.getLastJavaFP());
+    }
+    if (thread.getLastJavaSP() == null) {
+      return false; // No known Java frames on stack
+    }
+    setValues(thread.getLastJavaSP(), thread.getLastJavaFP(), null);
+    return true;
   }
 
   public Address getSP() { return spFound; }

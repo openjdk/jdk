@@ -440,13 +440,12 @@ public class X86Frame extends Frame {
     return addressOfStackSlot(INTERPRETER_FRAME_BCX_OFFSET);
   }
 
-  public int getInterpreterFrameBCI() {
+  public Address getInterpreterFrameBCP() {
     // FIXME: this is not atomic with respect to GC and is unsuitable
     // for use in a non-debugging, or reflective, system. Need to
     // figure out how to express this.
 
-    Address methodHandle = addressOfInterpreterFrameMethod().getAddressAt(0);
-    Method method = (Method)Metadata.instantiateWrapperFor(methodHandle);
+    Method method = getInterpreterFrameMethod();
     Address bcp = addressOfInterpreterFrameBCX().getAddressAt(0);
 
     // If we are in the top level frame then the bcp may have been set for us. If so then let it
@@ -461,6 +460,12 @@ public class X86Frame extends Frame {
         }
     }
 
+    return bcp;
+  }
+
+  public int getInterpreterFrameBCI() {
+    Address bcp = getInterpreterFrameBCP();
+    Method method = getInterpreterFrameMethod();
     return bcpToBci(bcp, method);
   }
 
