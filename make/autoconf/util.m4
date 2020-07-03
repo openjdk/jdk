@@ -570,17 +570,23 @@ AC_DEFUN([UTIL_PATH_PROGS],
 ])
 
 ###############################################################################
-# Call UTIL_SETUP_TOOL with AC_CHECK_TOOLS to locate the tool
+# Call UTIL_SETUP_TOOL with AC_CHECK_TOOLS to locate the tool. This will look
+# first for cross-compilation tools.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
-AC_DEFUN([UTIL_CHECK_TOOLS],
+AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
 [
   if test "x$OPENJDK_BUILD_OS" = xwindows; then
     all_names=$(for i in $2; do echo ${i}.exe $i; done)
   else
     all_names="$2"
   fi
+  # Unfortunately, there is no AC_PATH_TOOLS. :(
   UTIL_SETUP_TOOL($1, [AC_CHECK_TOOLS($1, $all_names)])
+  # So instead we expand the path afterwards
+  if test "x[$]$1" != x; then
+    UTIL_FIXUP_EXECUTABLE($1)
+  fi
 ])
 
 ###############################################################################

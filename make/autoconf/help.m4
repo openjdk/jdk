@@ -25,7 +25,7 @@
 
 AC_DEFUN_ONCE([HELP_SETUP_DEPENDENCY_HELP],
 [
-  AC_CHECK_PROGS(PKGHANDLER, zypper apt-get yum brew port pkgutil pkgadd pacman)
+  UTIL_PATH_PROGS(PKGHANDLER, zypper apt-get yum brew port pkgutil pkgadd pacman)
 ])
 
 AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],

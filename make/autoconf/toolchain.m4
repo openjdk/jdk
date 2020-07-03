@@ -676,8 +676,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     LD="$CC"
     LDCXX="$CXX"
     # jaotc expects 'ld' as the linker rather than the compiler.
-    UTIL_CHECK_TOOLS([LD_JAOTC], ld)
-    UTIL_FIXUP_EXECUTABLE(LD_JAOTC)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS([LD_JAOTC], ld)
   fi
   AC_SUBST(LD)
   AC_SUBST(LD_JAOTC)
@@ -711,14 +710,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The corresponding ar tool is lib.exe (used to create static libraries)
-    UTIL_PATH_PROGS(AR, lib)
-    UTIL_FIXUP_EXECUTABLE(AR)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, lib)
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
-    UTIL_CHECK_TOOLS(AR, ar gcc-ar)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, ar gcc-ar)
   else
-    UTIL_CHECK_TOOLS(AR, ar)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, ar)
   fi
-  UTIL_FIXUP_EXECUTABLE(AR)
 ])
 
 # Setup additional tools that is considered a part of the toolchain, but not the
@@ -748,14 +745,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   fi
 
   if test "x$OPENJDK_TARGET_OS" != xwindows; then
-    UTIL_CHECK_TOOLS(STRIP, strip)
-    UTIL_FIXUP_EXECUTABLE(STRIP)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(STRIP, strip)
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
-      UTIL_CHECK_TOOLS(NM, nm gcc-nm)
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(NM, nm gcc-nm)
     else
-      UTIL_CHECK_TOOLS(NM, nm)
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(NM, nm)
     fi
-    UTIL_FIXUP_EXECUTABLE(NM)
     GNM="$NM"
     AC_SUBST(GNM)
   fi
@@ -763,25 +758,15 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   # objcopy is used for moving debug symbols to separate files when
   # full debug symbols are enabled.
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    UTIL_CHECK_TOOLS(OBJCOPY, [gobjcopy objcopy])
-    # Only call fixup if objcopy was found.
-    if test -n "$OBJCOPY"; then
-      UTIL_FIXUP_EXECUTABLE(OBJCOPY)
-    fi
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(OBJCOPY, [gobjcopy objcopy])
   fi
 
-  UTIL_CHECK_TOOLS(OBJDUMP, [gobjdump objdump])
-  if test "x$OBJDUMP" != x; then
-    # Only used for compare.sh; we can live without it. UTIL_FIXUP_EXECUTABLE
-    # bails if argument is missing.
-    UTIL_FIXUP_EXECUTABLE(OBJDUMP)
-  fi
+  UTIL_LOOKUP_TOOLCHAIN_PROGS(OBJDUMP, [gobjdump objdump])
 
   case $TOOLCHAIN_TYPE in
     gcc|clang)
-      UTIL_CHECK_TOOLS(CXXFILT, [c++filt])
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(CXXFILT, [c++filt])
       UTIL_CHECK_NONEMPTY(CXXFILT)
-      UTIL_FIXUP_EXECUTABLE(CXXFILT)
       ;;
   esac
 ])
