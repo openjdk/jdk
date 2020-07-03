@@ -32,7 +32,7 @@ include Modules.gmk
 ################################################################################
 
 # Use this file inside the image as target for make rule
-JIMAGE_TARGET_FILE := bin/java$(EXE_SUFFIX)
+JIMAGE_TARGET_FILE := bin/java$(EXECUTABLE_SUFFIX)
 
 INTERIM_MODULES_LIST := $(call CommaList, $(INTERIM_IMAGE_MODULES))
 

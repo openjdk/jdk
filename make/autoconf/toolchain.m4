@@ -179,6 +179,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
     SHARED_LIBRARY='[$]1.dll'
     STATIC_LIBRARY='[$]1.lib'
     OBJ_SUFFIX='.obj'
+    EXECUTABLE_SUFFIX='.exe'
   else
     LIBRARY_PREFIX=lib
     SHARED_LIBRARY_SUFFIX='.so'
@@ -186,6 +187,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
     SHARED_LIBRARY='lib[$]1.so'
     STATIC_LIBRARY='lib[$]1.a'
     OBJ_SUFFIX='.o'
+    EXECUTABLE_SUFFIX=''
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       # For full static builds, we're overloading the SHARED_LIBRARY
       # variables in order to limit the amount of changes required.
@@ -209,6 +211,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
   AC_SUBST(SHARED_LIBRARY)
   AC_SUBST(STATIC_LIBRARY)
   AC_SUBST(OBJ_SUFFIX)
+  AC_SUBST(EXECUTABLE_SUFFIX)
 ])
 
 # Determine which toolchain type to use, and make sure it is valid for this

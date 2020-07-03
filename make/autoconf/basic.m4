@@ -71,11 +71,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     BASIC_SETUP_PATHS_WINDOWS
-    EXE_SUFFIX=".exe"
-  else
-    EXE_SUFFIX=""
   fi
-  AC_SUBST(EXE_SUFFIX)
 
   # We get the top-level directory from the supporting wrappers.
   BASIC_WINDOWS_VERIFY_DIR($TOPDIR, source)

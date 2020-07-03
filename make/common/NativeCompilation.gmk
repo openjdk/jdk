@@ -521,7 +521,7 @@ define SetupNativeCompilationBody
   ifeq ($$($1_TYPE), EXECUTABLE)
     $1_PREFIX :=
     ifeq ($$($1_SUFFIX), )
-      $1_SUFFIX := $(EXE_SUFFIX)
+      $1_SUFFIX := $(EXECUTABLE_SUFFIX)
     endif
   else
     $1_PREFIX := $(LIBRARY_PREFIX)
