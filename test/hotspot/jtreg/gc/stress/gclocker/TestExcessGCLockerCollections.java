@@ -174,9 +174,7 @@ public class TestExcessGCLockerCollections {
         finalArgs.addAll(Arrays.asList(args));
 
         // GC and other options obtained from test framework.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            true, finalArgs);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeTestJvm(finalArgs);
         output.shouldHaveExitValue(0);
         //System.out.println("------------- begin stdout ----------------");
         //System.out.println(output.getStdout());
