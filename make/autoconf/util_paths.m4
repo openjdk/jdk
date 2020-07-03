@@ -139,7 +139,7 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
   elif test "x$OPENJDK_BUILD_OS" = "xwindows"; then
     # On WSL, we can check if it is a PE file
     file_type=`$FILE -b $1 2>&1`
-    [ if [[ "$file_type" =~ "PE.*Windows" ]]; then ]
+    [ if [[ $file_type =~ PE.*Windows ]]; then ]
       RESULT=windows
     else
       RESULT=unix
