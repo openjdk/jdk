@@ -509,7 +509,6 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
       fi
       # In case any of the above finds more than one file, loop over them.
       for possible_msvc_dll in $POSSIBLE_MSVC_DLL; do
-        $ECHO "POSSIBLE_MSVC_DLL $possible_msvc_dll"
         TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$possible_msvc_dll],
             [well-known location in VCINSTALLDIR])
       done
