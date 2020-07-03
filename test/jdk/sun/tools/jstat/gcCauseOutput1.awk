@@ -3,16 +3,21 @@
 # that the numerical values conform to a specific pattern, rather than
 # specific values.
 #
-#  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     CGC    CGCT     GCT    LGCC                 GCC
-#  0.00   0.00   0.00   9.97  90.94  87.70      2    0.013     0    0.000     0    0.000    0.013 Allocation Failure   No GC      
-#  0.00   0.00  82.15   0.00      -      -      0    0.000     0    0.000     -        -    0.000 No GC                No GC         
-
+# -gccause 0
+#
+#  S0     S1     E      O      M     CCS    YGC     YGCT     FGC    FGCT     CGC    CGCT       GCT    LGCC                 GCC                 
+#  0.00  54.68   0.00   0.00  94.02  84.11      4     0.269     0     0.000     0     0.000     0.269 G1 Evacuation Pause  No GC               
+#
+# -J-XX:+UseSerialGC -gccause 0
+#
+#  S0     S1     E      O      M     CCS    YGC     YGCT     FGC    FGCT     CGC    CGCT       GCT    LGCC                 GCC                 
+# 78.14   0.00  68.23  15.57  94.69  88.17      4     0.204     0     0.000     -         -     0.204 Allocation Failure   No GC               
 
 BEGIN	{
 	    headerlines=0; datalines=0; totallines=0
 	}
 
-/^  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT    CGC    CGCT     GCT    LGCC                 GCC                 $/	{
+/^  S0     S1     E      O      M     CCS    YGC     YGCT     FGC    FGCT     CGC    CGCT       GCT    LGCC                 GCC                 $/	{
 	    headerlines++;
 	}
 

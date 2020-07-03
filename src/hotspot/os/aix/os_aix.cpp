@@ -53,7 +53,6 @@
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -2704,7 +2703,7 @@ OSReturn os::get_native_priority(const Thread* const thread, int *priority_ptr) 
 //  The SR_lock is, however, used by JavaThread::java_suspend()/java_resume() APIs.
 //
 //  Note that resume_clear_context() and suspend_save_context() are needed
-//  by SR_handler(), so that fetch_frame_from_ucontext() works,
+//  by SR_handler(), so that fetch_frame_from_context() works,
 //  which in part is used by:
 //    - Forte Analyzer: AsyncGetCallTrace()
 //    - StackBanging: get_frame_at_stack_banging_point()

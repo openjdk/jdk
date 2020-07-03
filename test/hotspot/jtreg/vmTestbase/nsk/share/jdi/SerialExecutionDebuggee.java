@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.StreamTokenizer;
 import java.io.StringReader;
 import nsk.share.Consts;
+import sun.hotspot.WhiteBox;
 
 /*
  * This class is intended for execution several JDI tests in single VM and used together with nsk.share.jdi.SerialExecutionDebugger
@@ -41,6 +42,8 @@ import nsk.share.Consts;
  *  For more detailed description of serial test execution see SerialExecutionDebugger
  */
 public class SerialExecutionDebuggee extends AbstractJDIDebuggee {
+    private final WhiteBox WB = WhiteBox.getWhiteBox();
+
     public static void main(String args[]) {
         new SerialExecutionDebuggee().doTest(args);
     }
@@ -128,6 +131,15 @@ public class SerialExecutionDebuggee extends AbstractJDIDebuggee {
             }
         } else if (command.equals(COMMAND_CLEAR_DEBUGGEE)) {
             currentDebuggee = null;
+
+            // The debuggee can intentionally create inflated monitors.
+            // With async deflation, this can pin a StateTestThread object
+            // until the next deflation cycle. This can confuse tests run
+            // by nsk/jdi/stress/serial/mixed002/TestDescription.java that
+            // expect only one StateTestThread object to exist in each
+            // of the debugger tests that mixed002 runs serially in the
+            // same VM.
+            WB.deflateIdleMonitors();
 
             return true;
         }

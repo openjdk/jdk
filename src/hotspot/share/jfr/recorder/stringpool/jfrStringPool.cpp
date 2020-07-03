@@ -208,7 +208,7 @@ typedef StringPoolOp<UnBufferedWriteToChunk> WriteOperation;
 typedef StringPoolOp<StringPoolDiscarderStub> DiscardOperation;
 typedef ExclusiveOp<WriteOperation> ExclusiveWriteOperation;
 typedef ExclusiveOp<DiscardOperation> ExclusiveDiscardOperation;
-typedef ReleaseOpWithExcision<JfrStringPoolMspace, JfrStringPoolMspace::LiveList> ReleaseOperation;
+typedef ReleaseWithExcisionOp<JfrStringPoolMspace, JfrStringPoolMspace::LiveList> ReleaseOperation;
 typedef CompositeOperation<ExclusiveWriteOperation, ReleaseOperation> WriteReleaseOperation;
 typedef CompositeOperation<ExclusiveDiscardOperation, ReleaseOperation> DiscardReleaseOperation;
 

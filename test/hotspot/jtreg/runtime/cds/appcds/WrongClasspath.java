@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,11 @@
  * @requires vm.cds
  * @library /test/lib
  * @compile test-classes/Hello.java
+ * @compile test-classes/C2.java
  * @run driver WrongClasspath
  */
 
+import java.io.File;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class WrongClasspath {
@@ -46,6 +48,17 @@ public class WrongClasspath {
         /* "-cp", appJar, */ // <- uncomment this and the execution should succeed
         "-Xlog:cds",
         "Hello")
+        .assertAbnormalExit("Unable to use shared archive",
+                            "shared class paths mismatch");
+
+    // Dump CDS archive with 2 jars: -cp hello.jar:jar2.jar
+    // Run with 2 jars but the second jar doesn't exist: -cp hello.jarjar2.jarx
+    // Shared class paths mismatch should be detected.
+    String jar2 = ClassFileInstaller.writeJar("jar2.jar", "pkg/C2");
+    String jars = appJar + File.pathSeparator + jar2;
+    TestCommon.testDump(jars, TestCommon.list("Hello", "pkg/C2"));
+    TestCommon.run(
+        "-cp", jars + "x", "Hello")
         .assertAbnormalExit("Unable to use shared archive",
                             "shared class paths mismatch");
   }

@@ -170,6 +170,13 @@ void JfrTraceId::remove(const Klass* k) {
   k->set_trace_id(EVENT_KLASS_MASK(k));
 }
 
+// used by CDS / APPCDS as part of "remove_unshareable_info"
+void JfrTraceId::remove(const Method* method) {
+  assert(method != NULL, "invariant");
+  // Clear all bits.
+  method->set_trace_flags(0);
+}
+
 // used by CDS / APPCDS as part of "restore_unshareable_info"
 void JfrTraceId::restore(const Klass* k) {
   assert(k != NULL, "invariant");

@@ -431,7 +431,7 @@ public class HtmlDocletWriter {
         Content htmlComment = contents.newPage;
         List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
         additionalStylesheets.addAll(localStylesheets);
-        Head head = new Head(path, configuration.getDocletVersionString(), configuration.startTime)
+        Head head = new Head(path, configuration.getDocletVersion(), configuration.startTime)
                 .setTimestamp(!options.noTimestamp())
                 .setDescription(description)
                 .setGenerator(getGenerator(getClass()))

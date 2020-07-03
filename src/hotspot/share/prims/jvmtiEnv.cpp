@@ -1213,8 +1213,8 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
   } else {
     // get owned monitors info with handshake
     GetOwnedMonitorInfoClosure op(calling_thread, this, owned_monitors_list);
-    Handshake::execute_direct(&op, java_thread);
-    err = op.result();
+    bool executed = Handshake::execute_direct(&op, java_thread);
+    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
   jint owned_monitor_count = owned_monitors_list->length();
   if (err == JVMTI_ERROR_NONE) {
@@ -1258,8 +1258,8 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
   } else {
     // get owned monitors info with handshake
     GetOwnedMonitorInfoClosure op(calling_thread, this, owned_monitors_list);
-    Handshake::execute_direct(&op, java_thread);
-    err = op.result();
+    bool executed = Handshake::execute_direct(&op, java_thread);
+    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
 
   jint owned_monitor_count = owned_monitors_list->length();
@@ -1302,8 +1302,8 @@ JvmtiEnv::GetCurrentContendedMonitor(JavaThread* java_thread, jobject* monitor_p
   } else {
     // get contended monitor information with handshake
     GetCurrentContendedMonitorClosure op(calling_thread, this, monitor_ptr);
-    Handshake::execute_direct(&op, java_thread);
-    err = op.result();
+    bool executed = Handshake::execute_direct(&op, java_thread);
+    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
   return err;
 } /* end GetCurrentContendedMonitor */

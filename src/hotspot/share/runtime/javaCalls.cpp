@@ -30,6 +30,9 @@
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciJavaClasses.hpp"
+#endif
 #include "memory/universe.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -346,27 +349,15 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   assert(!SafepointSynchronize::is_at_safepoint(), "call to Java code during VM operation");
   assert(!thread->handle_area()->no_handle_mark_active(), "cannot call out to Java here");
 
-#if INCLUDE_JVMCI
-  // Gets the nmethod (if any) that should be called instead of normal target
-  nmethod* alternative_target = args->alternative_target();
-  if (alternative_target == NULL) {
-#endif
-// Verify the arguments
-
-  if (CheckJNICalls)  {
+  // Verify the arguments
+  if (JVMCI_ONLY(args->alternative_target().is_null() &&) (DEBUG_ONLY(true ||) CheckJNICalls)) {
     args->verify(method, result->get_type());
   }
-  else debug_only(args->verify(method, result->get_type()));
-#if INCLUDE_JVMCI
-  }
-#else
-
   // Ignore call if method is empty
-  if (method->is_empty_method()) {
+  if (JVMCI_ONLY(args->alternative_target().is_null() &&) method->is_empty_method()) {
     assert(result->get_type() == T_VOID, "an empty method must return a void value");
     return;
   }
-#endif
 
 #ifdef ASSERT
   { InstanceKlass* holder = method->method_holder();
@@ -414,17 +405,6 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
     os::map_stack_shadow_pages(sp);
   }
 
-#if INCLUDE_JVMCI
-  if (alternative_target != NULL) {
-    if (alternative_target->is_alive() && !alternative_target->is_unloading()) {
-      thread->set_jvmci_alternate_call_target(alternative_target->verified_entry_point());
-      entry_point = method->adapter()->get_i2c_entry();
-    } else {
-      THROW(vmSymbols::jdk_vm_ci_code_InvalidInstalledCodeException());
-    }
-  }
-#endif
-
   // do call
   { JavaCallWrapper link(method, receiver, result, CHECK);
     { HandleMark hm(thread);  // HandleMark used by HandleMarkCleaner
@@ -433,7 +413,20 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
       // the call to call_stub, the optimizer produces wrong code.
       intptr_t* result_val_address = (intptr_t*)(result->get_value_addr());
       intptr_t* parameter_address = args->parameters();
-
+#if INCLUDE_JVMCI
+      // Gets the alternative target (if any) that should be called
+      Handle alternative_target = args->alternative_target();
+      if (!alternative_target.is_null()) {
+        // Must extract verified entry point from HotSpotNmethod after VM to Java
+        // transition in JavaCallWrapper constructor so that it is safe with
+        // respect to nmethod sweeping.
+        address verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(NULL, alternative_target());
+        if (verified_entry_point != NULL) {
+          thread->set_jvmci_alternate_call_target(verified_entry_point);
+          entry_point = method->adapter()->get_i2c_entry();
+        }
+      }
+#endif
       StubRoutines::call_stub()(
         (address)&link,
         // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)

@@ -45,11 +45,17 @@ else
 endif
 
 ifeq ($(call check-jvm-feature, zero), true)
-  JVM_CFLAGS_FEATURES += -DZERO -DCC_INTERP -DZERO_LIBARCH='"$(OPENJDK_TARGET_CPU_LEGACY_LIB)"' $(LIBFFI_CFLAGS)
+  JVM_EXCLUDES += opto libadt
+  JVM_EXCLUDE_PATTERNS += c1_ c1/ c2_ runtime_ /c2/
+  JVM_EXCLUDE_FILES += templateInterpreter.cpp templateInterpreterGenerator.cpp \
+                       bcEscapeAnalyzer.cpp ciTypeFlow.cpp
+  JVM_CFLAGS_FEATURES += -DZERO -DZERO_LIBARCH='"$(OPENJDK_TARGET_CPU_LEGACY_LIB)"' $(LIBFFI_CFLAGS)
   JVM_LIBS_FEATURES += $(LIBFFI_LIBS)
   ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
     JVM_LDFLAGS_FEATURES += $(call SET_EXECUTABLE_ORIGIN,/..)
   endif
+else
+  JVM_EXCLUDE_PATTERNS += /zero/
 endif
 
 ifeq ($(JVM_VARIANT), custom)

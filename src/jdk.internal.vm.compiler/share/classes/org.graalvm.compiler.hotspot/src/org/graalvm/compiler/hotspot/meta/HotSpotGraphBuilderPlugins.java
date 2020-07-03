@@ -84,13 +84,13 @@ import org.graalvm.compiler.nodes.calc.IntegerConvertNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.ForeignCallPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.GeneratedPluginFactory;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory;
 import org.graalvm.compiler.nodes.java.DynamicNewInstanceNode;
 import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.ReadNode;
@@ -152,8 +152,8 @@ public class HotSpotGraphBuilderPlugins {
         InvocationPlugins invocationPlugins = new HotSpotInvocationPlugins(graalRuntime, config, compilerConfiguration);
 
         Plugins plugins = new Plugins(invocationPlugins);
-        NodeIntrinsificationProvider nodeIntrinsificationProvider = new NodeIntrinsificationProvider(metaAccess, snippetReflection, foreignCalls, wordTypes, target);
         if (!IS_IN_NATIVE_IMAGE) {
+            // In libgraal all word related operations have been fully processed so this is unneeded
             HotSpotWordOperationPlugin wordOperationPlugin = new HotSpotWordOperationPlugin(snippetReflection, wordTypes);
             HotSpotNodePlugin nodePlugin = new HotSpotNodePlugin(wordOperationPlugin, config, wordTypes);
 
@@ -161,7 +161,7 @@ public class HotSpotGraphBuilderPlugins {
             plugins.appendNodePlugin(nodePlugin);
         }
         if (!GeneratePIC.getValue(options)) {
-            plugins.appendNodePlugin(new MethodHandlePlugin(constantReflection.getMethodHandleAccess(), true));
+            plugins.appendNodePlugin(new MethodHandlePlugin(constantReflection.getMethodHandleAccess(), !config.supportsMethodHandleDeoptimizationEntry()));
         }
         plugins.appendInlineInvokePlugin(replacements);
         if (InlineDuringParsing.getValue(options)) {
@@ -205,12 +205,24 @@ public class HotSpotGraphBuilderPlugins {
                 registerArrayPlugins(invocationPlugins, replacements);
                 registerStringPlugins(invocationPlugins, replacements);
                 registerArraysSupportPlugins(invocationPlugins, config, replacements);
-
-                for (NodeIntrinsicPluginFactory factory : GraalServices.load(NodeIntrinsicPluginFactory.class)) {
-                    factory.registerPlugins(invocationPlugins, nodeIntrinsificationProvider);
-                }
             }
         });
+        if (!IS_IN_NATIVE_IMAGE) {
+            // In libgraal all NodeIntrinsics been converted into special nodes so the plugins
+            // aren't needed.
+            NodeIntrinsificationProvider nodeIntrinsificationProvider = new NodeIntrinsificationProvider(metaAccess, snippetReflection, foreignCalls, wordTypes, target);
+            invocationPlugins.defer(new Runnable() {
+
+                @Override
+                public void run() {
+
+                    for (GeneratedPluginFactory factory : GraalServices.load(GeneratedPluginFactory.class)) {
+                        factory.registerPlugins(invocationPlugins, nodeIntrinsificationProvider);
+                    }
+
+                }
+            });
+        }
         return plugins;
     }
 

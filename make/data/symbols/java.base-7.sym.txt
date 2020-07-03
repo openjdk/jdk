@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -632,10 +632,37 @@ class name java/security/cert/X509CRL
 class name java/security/cert/X509Certificate
 -method name verify descriptor (Ljava/security/PublicKey;Ljava/security/Provider;)V
 
+class name java/security/interfaces/RSAKey
+-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+
 -class name java/security/spec/DSAGenParameterSpec
 
 class name java/security/spec/MGF1ParameterSpec
 -field name SHA224 descriptor Ljava/security/spec/MGF1ParameterSpec;
+-field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec;
+-field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec;
+
+class name java/security/spec/PSSParameterSpec
+-field name TRAILER_FIELD_BC descriptor I
+-method name toString descriptor ()Ljava/lang/String;
+
+class name java/security/spec/RSAKeyGenParameterSpec
+-method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
+-method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+
+class name java/security/spec/RSAMultiPrimePrivateCrtKeySpec
+-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V
+
+class name java/security/spec/RSAPrivateCrtKeySpec
+-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
+
+class name java/security/spec/RSAPrivateKeySpec
+-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
+-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+
+class name java/security/spec/RSAPublicKeySpec
+-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
+-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
 
 class name java/text/Collator
 -method name getInstance descriptor (Ljava/util/Locale;)Ljava/text/Collator;
@@ -1457,6 +1484,14 @@ method name newUpdater descriptor (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/
 
 -class name java/util/function/UnaryOperator
 
+class name java/util/jar/Attributes$Name
+-field name EXTENSION_INSTALLATION descriptor Ljava/util/jar/Attributes$Name;
+-field name IMPLEMENTATION_VENDOR_ID descriptor Ljava/util/jar/Attributes$Name;
+-field name IMPLEMENTATION_URL descriptor Ljava/util/jar/Attributes$Name;
+field name EXTENSION_INSTALLATION descriptor Ljava/util/jar/Attributes$Name; flags 19
+field name IMPLEMENTATION_VENDOR_ID descriptor Ljava/util/jar/Attributes$Name; flags 19
+field name IMPLEMENTATION_URL descriptor Ljava/util/jar/Attributes$Name; flags 19
+
 class name java/util/jar/JarFile
 -method name stream descriptor ()Ljava/util/stream/Stream;
 
@@ -1535,6 +1570,9 @@ class name java/util/zip/ZipEntry
 class name java/util/zip/ZipFile
 -method name stream descriptor ()Ljava/util/stream/Stream;
 
+class name javax/crypto/SealedObject
+header extends java/lang/Object implements java/io/Serializable flags 21
+
 class name javax/crypto/SecretKey
 header extends java/lang/Object implements java/security/Key flags 601
 
@@ -1559,6 +1597,12 @@ class name javax/net/ssl/ExtendedSSLSession
 
 -class name javax/net/ssl/SNIServerName
 
+class name javax/net/ssl/SSLEngine
+-method name getApplicationProtocol descriptor ()Ljava/lang/String;
+-method name getHandshakeApplicationProtocol descriptor ()Ljava/lang/String;
+-method name setHandshakeApplicationProtocolSelector descriptor (Ljava/util/function/BiFunction;)V
+-method name getHandshakeApplicationProtocolSelector descriptor ()Ljava/util/function/BiFunction;
+
 class name javax/net/ssl/SSLParameters
 -method name setServerNames descriptor (Ljava/util/List;)V
 -method name getServerNames descriptor ()Ljava/util/List;
@@ -1566,6 +1610,14 @@ class name javax/net/ssl/SSLParameters
 -method name getSNIMatchers descriptor ()Ljava/util/Collection;
 -method name setUseCipherSuitesOrder descriptor (Z)V
 -method name getUseCipherSuitesOrder descriptor ()Z
+-method name getApplicationProtocols descriptor ()[Ljava/lang/String;
+-method name setApplicationProtocols descriptor ([Ljava/lang/String;)V
+
+class name javax/net/ssl/SSLSocket
+-method name getApplicationProtocol descriptor ()Ljava/lang/String;
+-method name getHandshakeApplicationProtocol descriptor ()Ljava/lang/String;
+-method name setHandshakeApplicationProtocolSelector descriptor (Ljava/util/function/BiFunction;)V
+-method name getHandshakeApplicationProtocolSelector descriptor ()Ljava/util/function/BiFunction;
 
 class name javax/net/ssl/SSLSocketFactory
 -method name createSocket descriptor (Ljava/net/Socket;Ljava/io/InputStream;Z)Ljava/net/Socket;

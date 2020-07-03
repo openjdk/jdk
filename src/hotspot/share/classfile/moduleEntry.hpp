@@ -69,6 +69,7 @@ private:
   GrowableArray<ModuleEntry*>* _reads; // list of modules that are readable by this module
   Symbol* _version;                    // module version number
   Symbol* _location;                   // module location
+  CDS_ONLY(int _shared_path_index;)    // >=0 if classes in this module are in CDS archive
   bool _can_read_all_unnamed;
   bool _has_default_read_edges;        // JVMTI redefine/retransform support
   bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
@@ -90,6 +91,7 @@ public:
     _must_walk_reads = false;
     _is_patched = false;
     _is_open = false;
+    CDS_ONLY(_shared_path_index = -1);
   }
 
   Symbol*          name() const                        { return literal(); }
@@ -154,6 +156,7 @@ public:
 
   void set_is_patched() {
       _is_patched = true;
+      CDS_ONLY(_shared_path_index = -1); // Mark all shared classes in this module invisible.
   }
   bool is_patched() {
       return _is_patched;
@@ -181,6 +184,8 @@ public:
 
   void print(outputStream* st = tty);
   void verify();
+
+  CDS_ONLY(int shared_path_index() { return _shared_path_index;})
 
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 };

@@ -771,17 +771,12 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
   address target_pc = NULL;
 
   if (Interpreter::contains(pc)) {
-#ifdef CC_INTERP
-    // C++ interpreter doesn't throw implicit exceptions
-    ShouldNotReachHere();
-#else
     switch (exception_kind) {
       case IMPLICIT_NULL:           return Interpreter::throw_NullPointerException_entry();
       case IMPLICIT_DIVIDE_BY_ZERO: return Interpreter::throw_ArithmeticException_entry();
       case STACK_OVERFLOW:          return Interpreter::throw_StackOverflowError_entry();
       default:                      ShouldNotReachHere();
     }
-#endif // !CC_INTERP
   } else {
     switch (exception_kind) {
       case STACK_OVERFLOW: {

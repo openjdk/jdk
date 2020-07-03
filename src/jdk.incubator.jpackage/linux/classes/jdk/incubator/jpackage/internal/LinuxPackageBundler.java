@@ -24,19 +24,29 @@
  */
 package jdk.incubator.jpackage.internal;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static jdk.incubator.jpackage.internal.DesktopIntegration.*;
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
-
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.RELEASE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VENDOR;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.DESCRIPTION;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 
 abstract class LinuxPackageBundler extends AbstractBundler {
 

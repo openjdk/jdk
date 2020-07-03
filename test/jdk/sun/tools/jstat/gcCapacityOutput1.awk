@@ -3,15 +3,21 @@
 # that the numerical values conform to a specific pattern, rather than
 # specific values.
 #
-# NGCMN    NGCMX     NGC     S0C   S1C       EC      OGCMN      OGCMX       OGC         OC       MCMN     MCMX      MC     CCSMN    CCSMX     CCSC    YGC    FGC   CGC
-#  4096.0 657408.0   8192.0  512.0  512.0   3072.0     6144.0  1312768.0     6144.0     6144.0    512.0 132096.0   5120.0    512.0 131072.0    512.0      1     0    0
-
+# -gccapacity 0
+#
+#   NGCMN        NGCMX         NGC          S0C     S1C              EC         OGCMN        OGCMX         OGC           OC         MCMN       MCMX        MC       CCSMN     CCSMX     CCSC     YGC    FGC   CGC 
+#         0.0    4194304.0       6144.0         0.0      2048.0       4096.0          0.0    4194304.0       2048.0       2048.0        0.0  1056768.0     7680.0       0.0 1048576.0     768.0      4     0     0
+#
+# -J-XX:+UseParallelGC -gccapacity 0
+#
+#   NGCMN        NGCMX         NGC          S0C     S1C              EC         OGCMN        OGCMX         OGC           OC         MCMN       MCMX        MC       CCSMN     CCSMX     CCSC     YGC    FGC   CGC 
+#      1536.0    1397760.0       8192.0      1024.0       512.0       3072.0        512.0    2796544.0       5632.0       5632.0        0.0  1056768.0     8320.0       0.0 1048576.0     896.0      5     0     -
 
 BEGIN	{
 	    headerlines=0; datalines=0; totallines=0
 	}
 
-/^ NGCMN    NGCMX     NGC     S0C   S1C       EC      OGCMN      OGCMX       OGC         OC       MCMN     MCMX      MC     CCSMN    CCSMX     CCSC    YGC    FGC   CGC $/	{
+/^   NGCMN        NGCMX         NGC          S0C     S1C              EC         OGCMN        OGCMX         OGC           OC         MCMN       MCMX        MC       CCSMN     CCSMX     CCSC     YGC    FGC   CGC $/	{
 	    headerlines++;
 	}
 

@@ -29,6 +29,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"

@@ -54,17 +54,21 @@ public class TestParallel {
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
 
-        try (Recording r = new Recording()) {
-            r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
-            r.start();
-            allocateFindMe();
-            System.gc();
-            r.stop();
-            List<RecordedEvent> events = Events.fromRecording(r);
-            System.out.println(events);
-            if (OldObjects.countMatchingEvents(events, FindMe[].class, null, null, -1, "allocateFindMe") == 0) {
-                throw new Exception("Could not find leak with " + FindMe[].class);
+        while (true) {
+            try (Recording r = new Recording()) {
+                r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
+                r.start();
+                allocateFindMe();
+                System.gc();
+                r.stop();
+                List<RecordedEvent> events = Events.fromRecording(r);
+                System.out.println(events);
+                if (OldObjects.countMatchingEvents(events, FindMe[].class, null, null, -1, "allocateFindMe") > 0) {
+                    return;
+                }
+                System.out.println("Could not find leaking object, retrying...");
             }
+            list.clear();
         }
     }
 

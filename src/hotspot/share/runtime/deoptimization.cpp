@@ -596,16 +596,9 @@ void Deoptimization::cleanup_deopt_info(JavaThread *thread,
 
 
   if (JvmtiExport::can_pop_frame()) {
-#ifndef CC_INTERP
     // Regardless of whether we entered this routine with the pending
     // popframe condition bit set, we should always clear it now
     thread->clear_popframe_condition();
-#else
-    // C++ interpreter will clear has_pending_popframe when it enters
-    // with method_resume. For deopt_resume2 we clear it now.
-    if (thread->popframe_forcing_deopt_reexecution())
-        thread->clear_popframe_condition();
-#endif /* CC_INTERP */
   }
 
   // unpack_frames() is called at the end of the deoptimization handler

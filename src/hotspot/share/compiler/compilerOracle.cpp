@@ -490,12 +490,12 @@ static void scan_flag_and_value(const char* type, const char* line, int& total_b
       ResourceMark rm;
       char* value = NEW_RESOURCE_ARRAY(char, strlen(line) + 1);
       char* next_value = value;
-      if (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9]%n", next_value, &bytes_read) == 1) {
+      if (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9+\\-]%n", next_value, &bytes_read) == 1) {
         total_bytes_read += bytes_read;
         line += bytes_read;
         next_value += bytes_read;
         char* end_value = next_value-1;
-        while (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9]%n", next_value, &bytes_read) == 1) {
+        while (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9+\\-]%n", next_value, &bytes_read) == 1) {
           total_bytes_read += bytes_read;
           line += bytes_read;
           *end_value = ' '; // override '\0'

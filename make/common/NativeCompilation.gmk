@@ -457,7 +457,7 @@ endef
 #   EXTRA_OBJECT_FILES List of extra object files to include when linking
 #   EXTRA_DEPS List of extra dependencies to be added to each compiled file
 #   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
-#   RC_FLAGS flags for RC.
+#   RCFLAGS flags for RC.
 #   EMBED_MANIFEST if true, embed manifest on Windows.
 #   MAPFILE mapfile
 #   USE_MAPFILE_FOR_SYMBOLS if true and this is a STATIC_BUILD, just copy the
@@ -860,7 +860,7 @@ define SetupNativeCompilationBody
       -include $$($1_RES_DEPS_FILE)
       -include $$($1_RES_DEPS_TARGETS_FILE)
 
-      $1_RES_VARDEPS := $$($1_RC) $$($1_RC_FLAGS)
+      $1_RES_VARDEPS := $$($1_RC) $$($1_RCFLAGS)
       $1_RES_VARDEPS_FILE := $$(call DependOnVariable, $1_RES_VARDEPS, \
           $$($1_RES).vardeps)
 
@@ -868,7 +868,7 @@ define SetupNativeCompilationBody
 		$$(call LogInfo, Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$($1_BASENAME)))
 		$$(call MakeDir, $$(@D) $$($1_OBJECT_DIR))
 		$$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
-		    $$($1_RC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
+		    $$($1_RC) $$($1_RCFLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
 		    $$($1_VERSIONINFO_RESOURCE) 2>&1 ))
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL
                 # for this. Filter out RC specific arguments that are unknown to CL.
@@ -876,7 +876,7 @@ define SetupNativeCompilationBody
                 # includes to stderr so need to redirect it to hide the output from the
                 # main log.
 		$$(call ExecuteWithLog, $$($1_RES_DEPS_FILE).obj, \
-		    $$($1_CC) $$(filter-out -l%, $$($1_RC_FLAGS)) \
+		    $$($1_CC) $$(filter-out -l%, $$($1_RCFLAGS)) \
 		        $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
 		        $(CC_OUT_OPTION)$$($1_RES_DEPS_FILE).obj -P -Fi$$($1_RES_DEPS_FILE).pp \
 		        $$($1_VERSIONINFO_RESOURCE)) 2>&1 \

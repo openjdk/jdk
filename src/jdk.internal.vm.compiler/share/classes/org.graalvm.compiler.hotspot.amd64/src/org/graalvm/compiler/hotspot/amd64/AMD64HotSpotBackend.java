@@ -331,6 +331,10 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
             AMD64Call.directCall(crb, asm, foreignCalls.lookupForeignCall(EXCEPTION_HANDLER), null, false, null);
             crb.recordMark(HotSpotMarkId.DEOPT_HANDLER_ENTRY);
             AMD64Call.directCall(crb, asm, foreignCalls.lookupForeignCall(DEOPT_BLOB_UNPACK), null, false, null);
+            if (config.supportsMethodHandleDeoptimizationEntry() && crb.needsMHDeoptHandler()) {
+                crb.recordMark(HotSpotMarkId.DEOPT_MH_HANDLER_ENTRY);
+                AMD64Call.directCall(crb, asm, foreignCalls.lookupForeignCall(DEOPT_BLOB_UNPACK), null, false, null);
+            }
         } else {
             // No need to emit the stubs for entries back into the method since
             // it has no calls that can cause such "return" entries

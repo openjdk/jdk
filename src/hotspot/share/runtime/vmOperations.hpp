@@ -110,7 +110,6 @@
   template(ClassLoaderHierarchyOperation)         \
   template(DumpHashtable)                         \
   template(DumpTouchedMethods)                    \
-  template(MarkActiveNMethods)                    \
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
   template(ThreadSuspend)                         \

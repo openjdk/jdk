@@ -3,15 +3,22 @@
 # that the numerical values conform to a specific pattern, rather than
 # specific values.
 #
-#Timestamp         S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT    CGC    CGCT     GCT
-#            0.3   0.00 100.00  68.74   1.95  77.73  68.02      1    0.004     0    0.000     0    0.000    0.004
-#            0.3   0.00   0.00  37.50   0.00      -      -      0    0.000     0    0.000     0    0.000    0.000
+# -gcutil -t 0
+#
+#Timestamp         S0     S1     E      O      M     CCS    YGC     YGCT     FGC    FGCT     CGC    CGCT       GCT   
+#            3.4   0.00  63.85   0.00   0.00  93.83  81.78      5     0.203     0     0.000     0     0.000     0.203
+#            3.7   0.00  63.85   0.00   0.00  93.83  81.78      5     0.203     0     0.000     0     0.000     0.203
+#
+# -J-XX:+UseParallelGC -gcutil -t 0
+#
+#Timestamp         S0     S1     E      O      M     CCS    YGC     YGCT     FGC    FGCT     CGC    CGCT       GCT   
+#            2.6 100.00   0.00  22.51  10.16  94.74  88.88      4     0.100     0     0.000     -         -     0.100
 
 BEGIN	{
 	    headerlines=0; datalines=0; totallines=0
 	}
 
-/^Timestamp         S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT    CGC    CGCT     GCT   $/	{
+/^Timestamp         S0     S1     E      O      M     CCS    YGC     YGCT     FGC    FGCT     CGC    CGCT       GCT   $/	{
 	    headerlines++;
 	}
 

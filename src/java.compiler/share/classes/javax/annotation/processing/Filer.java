@@ -164,7 +164,7 @@ public interface Filer {
      * An implementation may use information about the configuration of
      * the annotation processing tool as part of the inference.
      *
-     * <p>Creating a source file in or for an unnamed package in a named
+     * <p>Creating a source file in or for an <em>unnamed</em> package in a <em>named</em>
      * module is <em>not</em> supported.
      *
      * @apiNote To use a particular {@linkplain
@@ -240,7 +240,7 @@ public interface Filer {
      * An implementation may use information about the configuration of
      * the annotation processing tool as part of the inference.
      *
-     * <p>Creating a class file in or for an unnamed package in a named
+     * <p>Creating a class file in or for an <em>unnamed</em> package in a <em>named</em>
      * module is <em>not</em> supported.
      *
      * @apiNote To avoid subsequent errors, the contents of the class

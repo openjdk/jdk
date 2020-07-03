@@ -25,15 +25,24 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.RELEASE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
 
 /**

@@ -208,7 +208,7 @@ class TestProtectedAssembler extends AArch64Assembler {
     }
 
     @Override
-    protected void sbfm(int size, Register dst, Register src, int r, int s) {
+    public void sbfm(int size, Register dst, Register src, int r, int s) {
         super.sbfm(size, dst, src, r, s);
     }
 

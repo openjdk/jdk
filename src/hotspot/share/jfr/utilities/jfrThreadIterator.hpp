@@ -34,7 +34,7 @@ class JfrThreadIterator : public AP {
  private:
   Adapter _adapter;
  public:
-  JfrThreadIterator() : _adapter() {}
+  JfrThreadIterator(bool live_only = true) : _adapter(live_only) {}
   typename Adapter::Type* next() {
     assert(has_next(), "invariant");
     return _adapter.next();
@@ -48,9 +48,10 @@ class JfrJavaThreadIteratorAdapter {
  private:
   JavaThreadIteratorWithHandle _iter;
   JavaThread* _next;
+  bool _live_only;
  public:
   typedef JavaThread Type;
-  JfrJavaThreadIteratorAdapter();
+  JfrJavaThreadIteratorAdapter(bool live_only = true);
   bool has_next() const {
     return _next != NULL;
   }
@@ -63,7 +64,7 @@ class JfrNonJavaThreadIteratorAdapter {
   NonJavaThread* _next;
  public:
   typedef NonJavaThread Type;
-  JfrNonJavaThreadIteratorAdapter();
+  JfrNonJavaThreadIteratorAdapter(bool live_only = true);
   bool has_next() const;
   Type* next();
 };

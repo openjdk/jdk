@@ -27,7 +27,6 @@ package org.graalvm.compiler.hotspot.replacements;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
 
 import org.graalvm.compiler.debug.DebugHandlersFactory;
-import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.GraalHotSpotVMConfigNode;
 import org.graalvm.compiler.nodes.gc.SerialArrayRangeWriteBarrier;
@@ -45,10 +44,8 @@ import jdk.internal.vm.compiler.word.WordFactory;
 import jdk.vm.ci.code.TargetDescription;
 
 public class HotSpotSerialWriteBarrierSnippets extends SerialWriteBarrierSnippets {
-    private final GraalHotSpotVMConfig config;
 
-    public HotSpotSerialWriteBarrierSnippets(GraalHotSpotVMConfig config) {
-        this.config = config;
+    public HotSpotSerialWriteBarrierSnippets() {
     }
 
     @Override
@@ -63,12 +60,12 @@ public class HotSpotSerialWriteBarrierSnippets extends SerialWriteBarrierSnippet
 
     @Override
     public boolean verifyBarrier() {
-        return ReplacementsUtil.REPLACEMENTS_ASSERTIONS_ENABLED || config.verifyBeforeGC || config.verifyAfterGC;
+        return ReplacementsUtil.REPLACEMENTS_ASSERTIONS_ENABLED || HotSpotReplacementsUtil.verifyBeforeOrAfterGC(INJECTED_VMCONFIG);
     }
 
     @Override
     protected byte dirtyCardValue() {
-        return config.dirtyCardValue;
+        return HotSpotReplacementsUtil.dirtyCardValue(INJECTED_VMCONFIG);
     }
 
     public static class Templates extends AbstractTemplates {
@@ -78,11 +75,11 @@ public class HotSpotSerialWriteBarrierSnippets extends SerialWriteBarrierSnippet
 
         private final SerialWriteBarrierLowerer lowerer;
 
-        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, Group.Factory factory, HotSpotProviders providers, TargetDescription target, GraalHotSpotVMConfig config) {
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, Group.Factory factory, HotSpotProviders providers, TargetDescription target) {
             super(options, factories, providers, providers.getSnippetReflection(), target);
             this.lowerer = new SerialWriteBarrierLowerer(factory);
 
-            HotSpotSerialWriteBarrierSnippets receiver = new HotSpotSerialWriteBarrierSnippets(config);
+            HotSpotSerialWriteBarrierSnippets receiver = new HotSpotSerialWriteBarrierSnippets();
             serialImpreciseWriteBarrier = snippet(SerialWriteBarrierSnippets.class, "serialImpreciseWriteBarrier", null, receiver, GC_CARD_LOCATION);
             serialPreciseWriteBarrier = snippet(SerialWriteBarrierSnippets.class, "serialPreciseWriteBarrier", null, receiver, GC_CARD_LOCATION);
             serialArrayRangeWriteBarrier = snippet(SerialWriteBarrierSnippets.class, "serialArrayRangeWriteBarrier", null, receiver, GC_CARD_LOCATION);

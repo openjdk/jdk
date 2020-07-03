@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,6 @@ protected:
   size_t       _full_seg_size;  // Number of items in already-filled segments.
   size_t       _cache_size;     // Number of segments in the cache.
 };
-
-#ifdef __GNUC__
-#define inline
-#endif // __GNUC__
 
 template <class E, MEMFLAGS F>
 class Stack:  public StackBase<F>
@@ -206,9 +202,5 @@ private:
   E*        _cur_seg;
   size_t    _full_seg_size;
 };
-
-#ifdef __GNUC__
-#undef inline
-#endif // __GNUC__
 
 #endif // SHARE_UTILITIES_STACK_HPP

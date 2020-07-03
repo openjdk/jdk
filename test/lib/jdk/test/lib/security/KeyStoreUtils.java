@@ -23,12 +23,15 @@
 
 package jdk.test.lib.security;
 
+import java.io.*;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -288,5 +291,26 @@ public class KeyStoreUtils {
         entries.add(new KeyEntry("DSA", CertUtils.DSA_KEY,
                 new String[] { CertUtils.DSA_CERT }));
         return createKeyStore(entries.toArray(new KeyEntry[entries.size()]));
+    }
+
+    /**
+     * Creates cacerts keystore with the trusted certificate(s)
+     * @param args arguments to cacerts keystore name and trusted certificates
+     * @throws Exception if there is an error
+     *
+     */
+    public static void createCacerts(String ks, String... crts) throws Exception {
+        try (OutputStream os = new FileOutputStream(ks)) {
+            KeyStore k = KeyStore.getInstance("JKS");
+            k.load(null, null);
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            for (int pos = 0; pos < crts.length; pos++) {
+                try (InputStream is = new FileInputStream(crts[pos])) {
+                    k.setCertificateEntry("root" + pos,
+                            cf.generateCertificate(is));
+                }
+            }
+            k.store(os, "changeit".toCharArray());
+        }
     }
 }

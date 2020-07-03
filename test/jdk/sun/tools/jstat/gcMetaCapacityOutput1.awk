@@ -3,14 +3,21 @@
 # that the numerical values conform to a specific pattern, rather than
 # specific values.
 #
-#   MCMN       MCMX        MC       CCSMN      CCSMX       CCSC     YGC   FGC    FGCT    CGC    CGCT     GCT
-#     512.0   132096.0     5120.0      512.0   131072.0      512.0     1     0    0.000    0    0.000    0.004
+# -gcmetacapacity 0
+#
+#   MCMN       MCMX        MC       CCSMN     CCSMX     CCSC     YGC    FGC    FGCT     CGC    CGCT       GCT   
+#       0.0  1056768.0     8832.0       0.0 1048576.0     896.0      5     0     0.000     0     0.000     0.245
+#
+# -J-XX:+UseParallelGC -gcmetacapacity 0
+#
+#   MCMN       MCMX        MC       CCSMN     CCSMX     CCSC     YGC    FGC    FGCT     CGC    CGCT       GCT   
+#       0.0  1056768.0     8064.0       0.0 1048576.0     896.0      4     0     0.000     -         -     0.113
 
 BEGIN	{
 	    headerlines=0; datalines=0; totallines=0
 	}
 
-/^   MCMN       MCMX        MC       CCSMN      CCSMX       CCSC     YGC   FGC    FGCT    CGC    CGCT     GCT   $/	{
+/^   MCMN       MCMX        MC       CCSMN     CCSMX     CCSC     YGC    FGC    FGCT     CGC    CGCT       GCT   $/	{
 	    headerlines++;
 	}
 

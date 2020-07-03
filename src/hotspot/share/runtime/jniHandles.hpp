@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ class JNIHandles : AllStatic {
 
 class JNIHandleBlock : public CHeapObj<mtInternal> {
   friend class VMStructs;
-  friend class CppInterpreter;
+  friend class ZeroInterpreter;
 
  private:
   enum SomeConstants {

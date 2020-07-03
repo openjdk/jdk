@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,14 @@ import javax.lang.model.util.Types;
  * type, method, or constructor.
  * A type variable may also be declared implicitly, as by
  * the capture conversion of a wildcard type argument
- * (see chapter 5 of
+ * (see chapter {@jls 5} of
  * <cite>The Java&trade; Language Specification</cite>).
  *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @author Peter von der Ah&eacute;
  * @see TypeParameterElement
+ * @jls 4.4 Type Variables
  * @since 1.6
  */
 public interface TypeVariable extends ReferenceType {
@@ -67,6 +68,7 @@ public interface TypeVariable extends ReferenceType {
      * {@linkplain IntersectionType#getBounds() bounds}.
      *
      * @return the upper bound of this type variable
+     * @jls 4.9 Intersection Types
      */
     TypeMirror getUpperBound();
 
@@ -78,6 +80,7 @@ public interface TypeVariable extends ReferenceType {
      * lower bound of {@link NullType}.
      *
      * @return the lower bound of this type variable
+     * @jls 18.1.3. Bounds
      */
     TypeMirror getLowerBound();
 }

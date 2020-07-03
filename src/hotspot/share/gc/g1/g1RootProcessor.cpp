@@ -40,6 +40,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
@@ -189,13 +190,6 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
   }
 
   {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::JNIRoots, worker_id);
-    if (_process_strong_tasks.try_claim_task(G1RP_PS_JNIHandles_oops_do)) {
-      JNIHandles::oops_do(strong_roots);
-    }
-  }
-
-  {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ObjectSynchronizerRoots, worker_id);
     if (_process_strong_tasks.try_claim_task(G1RP_PS_ObjectSynchronizer_oops_do)) {
       ObjectSynchronizer::oops_do(strong_roots);
@@ -225,11 +219,10 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
   }
 #endif
 
-  {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::VMGlobalRoots, worker_id);
-    if (_process_strong_tasks.try_claim_task(G1RP_PS_VMGlobal_oops_do)) {
-      OopStorageSet::vm_global()->oops_do(strong_roots);
-    }
+  for (int i = 0; i < _oop_storage_set_strong_par_state.par_state_count(); ++i) {
+    G1GCPhaseTimes::GCParPhases phase = G1GCPhaseTimes::GCParPhases(G1GCPhaseTimes::StrongOopStorageSetRoots + i);
+    G1GCParPhaseTimesTracker x(phase_times, phase, worker_id);
+    _oop_storage_set_strong_par_state.par_state(i)->oops_do(closures->strong_oops());
   }
 }
 

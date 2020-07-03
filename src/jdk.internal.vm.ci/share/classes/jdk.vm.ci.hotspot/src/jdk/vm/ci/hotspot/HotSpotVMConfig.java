@@ -137,6 +137,9 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int jvmAccEnum = getConstant("JVM_ACC_ENUM", Integer.class);
     final int jvmAccInterface = getConstant("JVM_ACC_INTERFACE", Integer.class);
 
+    final int jvmMiscFlagsHasDefaultMethods = getConstant("InstanceKlass::_misc_has_nonstatic_concrete_methods", Integer.class);
+    final int jvmMiscFlagsDeclaresDefaultMethods = getConstant("InstanceKlass::_misc_declares_nonstatic_concrete_methods", Integer.class);
+
     // This is only valid on AMD64.
     final int runtimeCallStackSize = getConstant("frame::arg_reg_save_area_bytes", Integer.class, osArch.equals("amd64") ? null : 0);
 

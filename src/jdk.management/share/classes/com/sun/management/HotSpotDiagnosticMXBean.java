@@ -25,6 +25,7 @@
 
 package com.sun.management;
 
+import java.io.IOException;
 import java.lang.management.PlatformManagedObject;
 
 /**
@@ -72,7 +73,7 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      *         method denies write access to the named file
      *         or the caller does not have ManagmentPermission("control").
      */
-    public void dumpHeap(String outputFile, boolean live) throws java.io.IOException;
+    public void dumpHeap(String outputFile, boolean live) throws IOException;
 
     /**
      * Returns a list of {@code VMOption} objects for all diagnostic options.

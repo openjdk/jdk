@@ -74,7 +74,7 @@ class outputStream;
 
 class OopStorage : public CHeapObj<mtGC> {
 public:
-  OopStorage(const char* name, Mutex* allocation_mutex, Mutex* active_mutex);
+  explicit OopStorage(const char* name);
   ~OopStorage();
 
   // These count and usage accessors are racy unless at a safepoint.

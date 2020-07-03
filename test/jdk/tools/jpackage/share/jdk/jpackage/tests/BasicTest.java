@@ -32,11 +32,16 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.*;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Annotations.*;
+import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JavaAppDesc;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.HelloApp;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameter;
 
 /*
  * @test

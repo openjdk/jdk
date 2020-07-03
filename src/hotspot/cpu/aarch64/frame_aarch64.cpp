@@ -749,7 +749,7 @@ extern "C" void npf() {
 extern "C" void pf(unsigned long sp, unsigned long fp, unsigned long pc,
                    unsigned long bcx, unsigned long thread) {
   if (!reg_map) {
-    reg_map = NEW_C_HEAP_OBJ(RegisterMap, mtNone);
+    reg_map = NEW_C_HEAP_OBJ(RegisterMap, mtInternal);
     ::new (reg_map) RegisterMap((JavaThread*)thread, false);
   } else {
     *reg_map = RegisterMap((JavaThread*)thread, false);

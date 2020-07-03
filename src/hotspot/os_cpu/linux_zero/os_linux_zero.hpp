@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2018, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,6 +33,19 @@
   // Used to register dynamic code cache area with the OS
   // Note: Currently only used in 64 bit Windows implementations
   static bool register_code_area(char *low, char *high) { return true; }
+
+  /*
+   * Work-around for broken NX emulation using CS limit, Red Hat patch "Exec-Shield"
+   * (IA32 only).
+   *
+   * Map and execute at a high VA to prevent CS lazy updates race with SMP MM
+   * invalidation.Further code generation by the JVM will no longer cause CS limit
+   * updates.
+   *
+   * Affects IA32: RHEL 5 & 6, Ubuntu 10.04 (LTS), 10.10, 11.04, 11.10, 12.04.
+   * @see JDK-8023956
+   */
+  static void workaround_expand_exec_shield_cs_limit();
 
   // Atomically copy 64 bits of data
   static void atomic_copy64(const volatile void *src, volatile void *dst) {

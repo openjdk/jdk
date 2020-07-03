@@ -353,28 +353,6 @@ void InterpreterRuntime::note_trap(JavaThread* thread, int reason, TRAPS) {
   note_trap_inner(thread, reason, trap_method, trap_bci, THREAD);
 }
 
-#ifdef CC_INTERP
-// As legacy note_trap, but we have more arguments.
-JRT_ENTRY(void, InterpreterRuntime::note_trap(JavaThread* thread, int reason, Method *method, int trap_bci))
-  methodHandle trap_method(thread, method);
-  note_trap_inner(thread, reason, trap_method, trap_bci, THREAD);
-JRT_END
-
-// Class Deoptimization is not visible in BytecodeInterpreter, so we need a wrapper
-// for each exception.
-void InterpreterRuntime::note_nullCheck_trap(JavaThread* thread, Method *method, int trap_bci)
-  { if (ProfileTraps) note_trap(thread, Deoptimization::Reason_null_check, method, trap_bci); }
-void InterpreterRuntime::note_div0Check_trap(JavaThread* thread, Method *method, int trap_bci)
-  { if (ProfileTraps) note_trap(thread, Deoptimization::Reason_div0_check, method, trap_bci); }
-void InterpreterRuntime::note_rangeCheck_trap(JavaThread* thread, Method *method, int trap_bci)
-  { if (ProfileTraps) note_trap(thread, Deoptimization::Reason_range_check, method, trap_bci); }
-void InterpreterRuntime::note_classCheck_trap(JavaThread* thread, Method *method, int trap_bci)
-  { if (ProfileTraps) note_trap(thread, Deoptimization::Reason_class_check, method, trap_bci); }
-void InterpreterRuntime::note_arrayCheck_trap(JavaThread* thread, Method *method, int trap_bci)
-  { if (ProfileTraps) note_trap(thread, Deoptimization::Reason_array_check, method, trap_bci); }
-#endif // CC_INTERP
-
-
 static Handle get_preinitialized_exception(Klass* k, TRAPS) {
   // get klass
   InstanceKlass* klass = InstanceKlass::cast(k);
@@ -501,11 +479,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     // during deoptimization so the interpreter needs to skip it when
     // the frame is popped.
     thread->set_do_not_unlock_if_synchronized(true);
-#ifdef CC_INTERP
-    return (address) -1;
-#else
     return Interpreter::remove_activation_entry();
-#endif
   }
 
   // Need to do this check first since when _do_not_unlock_if_synchronized
@@ -516,11 +490,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     ResourceMark rm;
     assert(current_bci == 0,  "bci isn't zero for do_not_unlock_if_synchronized");
     thread->set_vm_result(exception);
-#ifdef CC_INTERP
-    return (address) -1;
-#else
     return Interpreter::remove_activation_entry();
-#endif
   }
 
   do {
@@ -590,19 +560,13 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     JvmtiExport::post_exception_throw(thread, h_method(), last_frame.bcp(), h_exception());
   }
 
-#ifdef CC_INTERP
-  address continuation = (address)(intptr_t) handler_bci;
-#else
   address continuation = NULL;
-#endif
   address handler_pc = NULL;
   if (handler_bci < 0 || !thread->reguard_stack((address) &continuation)) {
     // Forward exception to callee (leaving bci/bcp untouched) because (a) no
     // handler in this method, or (b) after a stack overflow there is not yet
     // enough stack space available to reprotect the stack.
-#ifndef CC_INTERP
     continuation = Interpreter::remove_activation_entry();
-#endif
 #if COMPILER2_OR_JVMCI
     // Count this for compilation purposes
     h_method->interpreter_throwout_increment(THREAD);
@@ -610,11 +574,14 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   } else {
     // handler in this method => change bci/bcp to handler bci/bcp and continue there
     handler_pc = h_method->code_base() + handler_bci;
-#ifndef CC_INTERP
+#ifndef ZERO
     set_bcp_and_mdp(handler_pc, thread);
     continuation = Interpreter::dispatch_table(vtos)[*handler_pc];
+#else
+    continuation = (address)(intptr_t) handler_bci;
 #endif
   }
+
   // notify debugger of an exception catch
   // (this is good for exceptions caught in native methods as well)
   if (JvmtiExport::can_post_on_exceptions()) {

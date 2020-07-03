@@ -27,11 +27,8 @@ package jdk.incubator.jpackage.internal;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleDescriptor.Version;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,15 +37,9 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.jar.Attributes;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -500,8 +491,7 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                 appLayout.runtimeHomeDirectory(), excludes);
 
         // if module-path given - copy modules to appDir/mods
-        List<Path> modulePath =
-                StandardBundlerParam.MODULE_PATH.fetchFrom(params);
+        List<Path> modulePath = MODULE_PATH.fetchFrom(params);
         List<Path> defaultModulePath = getDefaultModulePath();
         Path dest = appLayout.appModsDirectory();
 

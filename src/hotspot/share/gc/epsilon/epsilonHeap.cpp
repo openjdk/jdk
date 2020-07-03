@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,10 +101,7 @@ size_t EpsilonHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 }
 
 EpsilonHeap* EpsilonHeap::heap() {
-  CollectedHeap* heap = Universe::heap();
-  assert(heap != NULL, "Uninitialized access to EpsilonHeap::heap()");
-  assert(heap->kind() == CollectedHeap::Epsilon, "Not an Epsilon heap");
-  return (EpsilonHeap*)heap;
+  return named_heap<EpsilonHeap>(CollectedHeap::Epsilon);
 }
 
 HeapWord* EpsilonHeap::allocate_work(size_t size) {

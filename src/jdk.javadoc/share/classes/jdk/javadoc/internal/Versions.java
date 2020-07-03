@@ -26,6 +26,7 @@
 package jdk.javadoc.internal;
 
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 import static java.util.ResourceBundle.getBundle;
 
@@ -77,15 +78,18 @@ public final class Versions {
     /**
      * Returns a short string representation of the provided version.
      *
-     * <p> Examples of strings returned from this method are: "15" and
-     * "15-internal".
+     * <p> The string contains the dotted representation of the version number,
+     * followed by the prerelease info, if any.
+     * For example, "15", "15.1", "15.0.1", "15-internal".
      *
      * @return a short string representation of the provided version
      *
      * @throws NullPointerException if {@code v == null}
      */
     public static String shortVersionStringOf(Runtime.Version v) {
-        String svstr = String.valueOf(v.feature());
+        String svstr = v.version().stream()
+                .map(Object::toString)
+                .collect(Collectors.joining("."));
         if (v.pre().isPresent()) {
             svstr += "-" + v.pre().get();
         }

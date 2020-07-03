@@ -3,15 +3,21 @@
 # that the numerical values conform to a specific pattern, rather than
 # specific values.
 #
-#   MC       MU      CCSC     CCSU       OC          OU       YGC    FGC    FGCT    CGC    CGCT     GCT
-#  5120.0   4152.0    512.0    397.9      6144.0       200.0      1     0    0.000    0.005
-
+# -gcold 0
+#
+#    MC         MU       CCSC      CCSU         OC           OU       YGC    FGC    FGCT     CGC    CGCT       GCT   
+#    7680.0     7202.3     768.0     638.6       2048.0          0.0      4     0     0.000     0     0.000     0.240
+#
+# -J-XX:+UseParallelGC -gcold 0
+#
+#    MC         MU       CCSC      CCSU         OC           OU       YGC    FGC    FGCT     CGC    CGCT       GCT   
+#    8320.0     7759.4     896.0     718.3       5632.0        904.1      5     0     0.000     -         -     0.175
 
 BEGIN	{
 	    headerlines=0; datalines=0; totallines=0
 	}
 
-/^   MC       MU      CCSC     CCSU       OC          OU       YGC    FGC    FGCT    CGC    CGCT     GCT   $/	{
+/^    MC         MU       CCSC      CCSU         OC           OU       YGC    FGC    FGCT     CGC    CGCT       GCT   $/	{
 	    headerlines++;
 	}
 

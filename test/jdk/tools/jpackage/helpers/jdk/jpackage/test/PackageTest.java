@@ -48,7 +48,6 @@ import jdk.incubator.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingRunnable;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
 
 
 

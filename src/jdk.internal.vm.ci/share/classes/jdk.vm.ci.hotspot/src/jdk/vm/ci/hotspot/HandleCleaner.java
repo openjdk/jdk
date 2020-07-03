@@ -65,8 +65,8 @@ final class HandleCleaner extends Cleaner {
             CompilerToVM.compilerToVM().deleteGlobalHandle(handle);
         } else {
             // Setting the target of a jmetadata handle to 0 enables
-            // the handle to be reused. See MetadataHandleBlock in
-            // jvmciRuntime.cpp for more info.
+            // the handle to be reused. See MetadataHandles in
+            // metadataHandles.hpp for more info.
             long value = UNSAFE.getLong(null, handle);
             UNSAFE.compareAndSetLong(null, handle, value, 0);
         }

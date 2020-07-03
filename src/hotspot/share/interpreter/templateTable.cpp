@@ -27,7 +27,7 @@
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 
-#ifdef CC_INTERP
+#ifdef ZERO
 
 void templateTable_init() {
 }
@@ -505,4 +505,4 @@ void TemplateTable::initialize() {
 void TemplateTable::unimplemented_bc() {
   _masm->unimplemented( Bytecodes::name(_desc->bytecode()));
 }
-#endif /* !CC_INTERP */
+#endif /* !ZERO */

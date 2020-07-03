@@ -30,9 +30,10 @@
 #include "utilities/ostream.hpp"
 
 template <typename T>
-WorkerDataArray<T>::WorkerDataArray(const char* title, uint length, bool is_serial) :
+WorkerDataArray<T>::WorkerDataArray(const char* short_name, const char* title, uint length, bool is_serial) :
  _data(NULL),
  _length(length),
+ _short_name(short_name),
  _title(title),
  _is_serial(is_serial) {
   assert(length > 0, "Must have some workers to store data for");
@@ -70,7 +71,7 @@ void WorkerDataArray<T>::create_thread_work_items(const char* title, uint index,
   assert(index < MaxThreadWorkItems, "Tried to access thread work item %u (max %u)", index, MaxThreadWorkItems);
   assert(_thread_work_items[index] == NULL, "Tried to overwrite existing thread work item");
   uint length = length_override != 0 ? length_override : _length;
-  _thread_work_items[index] = new WorkerDataArray<size_t>(title, length);
+  _thread_work_items[index] = new WorkerDataArray<size_t>(NULL, title, length);
 }
 
 template <typename T>

@@ -95,9 +95,7 @@ DISABLED_WARNINGS_clang := tautological-compare \
 
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
-DISABLED_WARNINGS_microsoft :=
-
-
+DISABLED_WARNINGS_microsoft := 4100 4127 4201 4244 4291 4351 4511 4512 4514 4996
 
 ################################################################################
 # Platform specific setup
@@ -126,13 +124,6 @@ else ifeq ($(call isTargetCpu, x86_64), true)
   JVM_EXCLUDE_PATTERNS += x86_32
 endif
 
-ifeq ($(call isTargetOs, windows), true)
-  ifeq ($(call isTargetCpuBits, 64), true)
-    RC_DESC := 64-Bit$(SPACE)
-  endif
-  JVM_RCFLAGS += -D"HS_FILEDESC=$(HOTSPOT_VM_DISTRO) $(RC_DESC)$(JVM_VARIANT) VM"
-endif
-
 JVM_OPTIMIZATION ?= HIGHEST_JVM
 
 # Need to set JVM_STRIPFLAGS to the default value from SPEC since the STRIPFLAGS
@@ -146,7 +137,7 @@ $(call FillFindCache, $(JVM_SRC_DIRS))
 ################################################################################
 # Now set up the actual compilation of the main hotspot native library
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     NAME := jvm, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
@@ -170,8 +161,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     USE_MAPFILE_FOR_SYMBOLS := true, \
     STRIPFLAGS := $(JVM_STRIPFLAGS), \
     EMBED_MANIFEST := true, \
-    RC_FLAGS := $(JVM_RCFLAGS), \
-    VERSIONINFO_RESOURCE := $(TOPDIR)/src/hotspot/os/windows/version.rc, \
+    RC_FILEDESC := $(HOTSPOT_VM_DISTRO) $(OPENJDK_TARGET_CPU_BITS)-Bit $(JVM_VARIANT) VM, \
     PRECOMPILED_HEADER := $(JVM_PRECOMPILED_HEADER), \
     PRECOMPILED_HEADER_EXCLUDE := $(JVM_PRECOMPILED_HEADER_EXCLUDE), \
 ))

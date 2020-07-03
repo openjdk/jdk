@@ -37,11 +37,11 @@ Note that this option should point to the JTReg home, i.e. the top directory,
 containing `lib/jtreg.jar` etc. (An alternative is to set the `JT_HOME`
 environment variable to point to the JTReg home before running `configure`.)
 
-To be able to run microbenchmarks, `configure` needs to know where to find
-the JMH dependency. Use `--with-jmh=<path to JMH jars>` to point to a directory
-containing the core JMH and transitive dependencies. The recommended dependencies
-can be retrieved by running `sh make/devkit/createJMHBundle.sh`, after which
-`--with-jmh=build/jmh/jars` should work.
+To be able to run microbenchmarks, `configure` needs to know where to find the
+JMH dependency. Use `--with-jmh=<path to JMH jars>` to point to a directory
+containing the core JMH and transitive dependencies. The recommended
+dependencies can be retrieved by running `sh make/devkit/createJMHBundle.sh`,
+after which `--with-jmh=build/jmh/jars` should work.
 
 ## Test selection
 
@@ -182,10 +182,10 @@ variables.
 These variables use a keyword=value approach to allow multiple values to be
 set. So, for instance, `JTREG="JOBS=1;TIMEOUT_FACTOR=8"` will set the JTReg
 concurrency level to 1 and the timeout factor to 8. This is equivalent to
-setting `JTREG_JOBS=1 JTREG_TIMEOUT_FACTOR=8`, but using the keyword format means that
-the `JTREG` variable is parsed and verified for correctness, so
-`JTREG="TMIEOUT_FACTOR=8"` would give an error, while `JTREG_TMIEOUT_FACTOR=8` would just
-pass unnoticed.
+setting `JTREG_JOBS=1 JTREG_TIMEOUT_FACTOR=8`, but using the keyword format
+means that the `JTREG` variable is parsed and verified for correctness, so
+`JTREG="TMIEOUT_FACTOR=8"` would give an error, while `JTREG_TMIEOUT_FACTOR=8`
+would just pass unnoticed.
 
 To separate multiple keyword=value pairs, use `;` (semicolon). Since the shell
 normally eats `;`, the recommended usage is to write the assignment inside
@@ -203,9 +203,10 @@ test suites.
 
 ### General keywords (TEST_OPTS)
 
-Some keywords are valid across different test suites. If you want to run
-tests from multiple test suites, or just don't want to care which test suite specific
-control variable to use, then you can use the general TEST_OPTS control variable.
+Some keywords are valid across different test suites. If you want to run tests
+from multiple test suites, or just don't want to care which test suite specific
+control variable to use, then you can use the general TEST_OPTS control
+variable.
 
 There are also some keywords that applies globally to the test runner system,
 not to any specific test suites. These are also available as TEST_OPTS keywords.
@@ -252,12 +253,13 @@ for only recently changed code. JCOV_DIFF_CHANGESET specifies a source
 revision. A textual report will be generated showing coverage of the diff
 between the specified revision and the repository tip.
 
-The report is stored in `build/$BUILD/test-results/jcov-output/diff_coverage_report`
-file.
+The report is stored in
+`build/$BUILD/test-results/jcov-output/diff_coverage_report` file.
 
 ### JTReg keywords
 
 #### JOBS
+
 The test concurrency (`-concurrency`).
 
 Defaults to TEST_JOBS (if set by `--with-test-jobs=`), otherwise it defaults to
@@ -265,32 +267,43 @@ JOBS, except for Hotspot, where the default is *number of CPU cores/2*,
 but never more than *memory size in GB/2*.
 
 #### TIMEOUT_FACTOR
+
 The timeout factor (`-timeoutFactor`).
 
 Defaults to 4.
 
+#### FAILURE_HANDLER_TIMEOUT
+
+Sets the argument `-timeoutHandlerTimeout` for JTReg. The default value is 0.
+This is only valid if the failure handler is built.
+
 #### TEST_MODE
+
 The test mode (`agentvm` or `othervm`).
 
 Defaults to `agentvm`.
 
 #### ASSERT
+
 Enable asserts (`-ea -esa`, or none).
 
 Set to `true` or `false`. If true, adds `-ea -esa`. Defaults to true, except
 for hotspot.
 
 #### VERBOSE
+
 The verbosity level (`-verbose`).
 
 Defaults to `fail,error,summary`.
 
 #### RETAIN
+
 What test data to retain (`-retain`).
 
 Defaults to `fail,error`.
 
 #### MAX_MEM
+
 Limit memory consumption (`-Xmx` and `-vmoption:-Xmx`, or none).
 
 Limit memory consumption for JTReg test framework and VM under test. Set to 0
@@ -298,9 +311,14 @@ to disable the limits.
 
 Defaults to 512m, except for hotspot, where it defaults to 0 (no limit).
 
+#### MAX_OUTPUT
+
+Set the property `javatest.maxOutputSize` for the launcher, to change the
+default JTReg log limit.
+
 #### KEYWORDS
 
-JTReg kewords sent to JTReg using `-k`. Please be careful in making sure that
+JTReg keywords sent to JTReg using `-k`. Please be careful in making sure that
 spaces and special characters (like `!`) are properly quoted. To avoid some
 issues, the special value `%20` can be used instead of space.
 
@@ -323,22 +341,29 @@ Set to `true` or `false`.
 If `true`, JTReg will use `-match:` option, otherwise `-exclude:` will be used.
 Default is `false`.
 
-
 #### OPTIONS
+
 Additional options to the JTReg test framework.
 
 Use `JTREG="OPTIONS=--help all"` to see all available JTReg options.
 
 #### JAVA_OPTIONS
+
 Additional Java options for running test classes (sent to JTReg as
 `-javaoption`).
 
 #### VM_OPTIONS
+
 Additional Java options to be used when compiling and running classes (sent to
 JTReg as `-vmoption`).
 
 This option is only needed in special circumstances. To pass Java options to
 your test classes, use `JAVA_OPTIONS`.
+
+#### LAUNCHER_OPTIONS
+
+Additional Java options that are sent to the java launcher that starts the
+JTReg harness.
 
 #### AOT_MODULES
 
@@ -353,6 +378,7 @@ Retry failed tests up to a set number of times. Defaults to 0.
 ### Gtest keywords
 
 #### REPEAT
+
 The number of times to repeat the tests (`--gtest_repeat`).
 
 Default is 1. Set to -1 to repeat indefinitely. This can be especially useful
@@ -360,6 +386,7 @@ combined with `OPTIONS=--gtest_break_on_failure` to reproduce an intermittent
 problem.
 
 #### OPTIONS
+
 Additional options to the Gtest test framework.
 
 Use `GTEST="OPTIONS=--help"` to see all available Gtest options.
@@ -373,98 +400,127 @@ modules. If multiple modules are specified, they should be separated by space
 ### Microbenchmark keywords
 
 #### FORK
+
 Override the number of benchmark forks to spawn. Same as specifying `-f <num>`.
 
 #### ITER
+
 Number of measurement iterations per fork. Same as specifying `-i <num>`.
 
 #### TIME
+
 Amount of time to spend in each measurement iteration, in seconds. Same as
 specifying `-r <num>`
 
 #### WARMUP_ITER
+
 Number of warmup iterations to run before the measurement phase in each fork.
 Same as specifying `-wi <num>`.
 
 #### WARMUP_TIME
+
 Amount of time to spend in each warmup iteration. Same as specifying `-w <num>`.
 
 #### RESULTS_FORMAT
+
 Specify to have the test run save a log of the values. Accepts the same values
 as `-rff`, i.e., `text`, `csv`, `scsv`, `json`, or `latex`.
 
 #### VM_OPTIONS
+
 Additional VM arguments to provide to forked off VMs. Same as `-jvmArgs <args>`
 
 #### OPTIONS
+
 Additional arguments to send to JMH.
 
 ## Notes for Specific Tests
 
 ### Docker Tests
 
-Docker tests with default parameters may fail on systems with glibc versions not
-compatible with the one used in the default docker image (e.g., Oracle Linux 7.6 for x86).
-For example, they pass on Ubuntu 16.04 but fail on Ubuntu 18.04 if run like this on x86:
+Docker tests with default parameters may fail on systems with glibc versions
+not compatible with the one used in the default docker image (e.g., Oracle
+Linux 7.6 for x86). For example, they pass on Ubuntu 16.04 but fail on Ubuntu
+18.04 if run like this on x86:
 
-    $ make test TEST="jtreg:test/hotspot/jtreg/containers/docker"
+```
+$ make test TEST="jtreg:test/hotspot/jtreg/containers/docker"
+```
 
-To run these tests correctly, additional parameters for the correct docker image are
-required on Ubuntu 18.04 by using `JAVA_OPTIONS`.
+To run these tests correctly, additional parameters for the correct docker
+image are required on Ubuntu 18.04 by using `JAVA_OPTIONS`.
 
-    $ make test TEST="jtreg:test/hotspot/jtreg/containers/docker" JTREG="JAVA_OPTIONS=-Djdk.test.docker.image.name=ubuntu -Djdk.test.docker.image.version=latest"
+```
+$ make test TEST="jtreg:test/hotspot/jtreg/containers/docker" \
+    JTREG="JAVA_OPTIONS=-Djdk.test.docker.image.name=ubuntu
+    -Djdk.test.docker.image.version=latest"
+```
 
 ### Non-US locale
 
-If your locale is non-US, some tests are likely to fail. To work around this you can
-set the locale to US. On Unix platforms simply setting `LANG="en_US"` in the
-environment before running tests should work. On Windows, setting
-`JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US"` helps for most, but not all test cases.
+If your locale is non-US, some tests are likely to fail. To work around this
+you can set the locale to US. On Unix platforms simply setting `LANG="en_US"`
+in the environment before running tests should work. On Windows, setting
+`JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US"` helps for most, but
+not all test cases.
+
 For example:
 
-    $ export LANG="en_US" && make test TEST=...
-    $ make test JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US" TEST=...
+```
+$ export LANG="en_US" && make test TEST=...
+$ make test JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US" TEST=...
+```
 
 ### PKCS11 Tests
 
-It is highly recommended to use the latest NSS version when running PKCS11 tests.
-Improper NSS version may lead to unexpected failures which are hard to diagnose.
-For example, sun/security/pkcs11/Secmod/AddTrustedCert.java may fail on Ubuntu
-18.04 with the default NSS version in the system.
-To run these tests correctly, the system property `test.nss.lib.paths` is required
-on Ubuntu 18.04 to specify the alternative NSS lib directories.
+It is highly recommended to use the latest NSS version when running PKCS11
+tests. Improper NSS version may lead to unexpected failures which are hard to
+diagnose. For example, sun/security/pkcs11/Secmod/AddTrustedCert.java may fail
+on Ubuntu 18.04 with the default NSS version in the system. To run these tests
+correctly, the system property `test.nss.lib.paths` is required on Ubuntu 18.04
+to specify the alternative NSS lib directories.
+
 For example:
 
-    $ make test TEST="jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java" JTREG="JAVA_OPTIONS=-Dtest.nss.lib.paths=/path/to/your/latest/NSS-libs"
+```
+$ make test TEST="jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java" \
+    JTREG="JAVA_OPTIONS=-Dtest.nss.lib.paths=/path/to/your/latest/NSS-libs"
+```
 
-For more notes about the PKCS11 tests, please refer to test/jdk/sun/security/pkcs11/README.
+For more notes about the PKCS11 tests, please refer to
+test/jdk/sun/security/pkcs11/README.
 
 ### Client UI Tests
 
 Some Client UI tests use key sequences which may be reserved by the operating
-system. Usually that causes the test failure. So it is highly recommended to disable
-system key shortcuts prior testing. The steps to access and disable system key shortcuts
-for various platforms are provided below.
+system. Usually that causes the test failure. So it is highly recommended to
+disable system key shortcuts prior testing. The steps to access and disable
+system key shortcuts for various platforms are provided below.
 
 #### MacOS
+
 Choose Apple menu; System Preferences, click Keyboard, then click Shortcuts;
 select or deselect desired shortcut.
 
-For example, test/jdk/javax/swing/TooltipManager/JMenuItemToolTipKeyBindingsTest/JMenuItemToolTipKeyBindingsTest.java fails
-on MacOS because it uses `CTRL + F1` key sequence to show or hide tooltip message
-but the key combination is reserved by the operating system. To run the test correctly
-the default global key shortcut should be disabled using the steps described above, and then deselect
-"Turn keyboard access on or off" option which is responsible for `CTRL + F1` combination.
+For example,
+test/jdk/javax/swing/TooltipManager/JMenuItemToolTipKeyBindingsTest/JMenuItemToolTipKeyBindingsTest.java
+fails on MacOS because it uses `CTRL + F1` key sequence to show or hide tooltip
+message but the key combination is reserved by the operating system. To run the
+test correctly the default global key shortcut should be disabled using the
+steps described above, and then deselect "Turn keyboard access on or off"
+option which is responsible for `CTRL + F1` combination.
 
 #### Linux
-Open the Activities overview and start typing Settings; Choose Settings, click Devices,
-then click Keyboard; set or override desired shortcut.
+
+Open the Activities overview and start typing Settings; Choose Settings, click
+Devices, then click Keyboard; set or override desired shortcut.
 
 #### Windows
-Type `gpedit` in the Search and then click Edit group policy; navigate to
-User Configuration -> Administrative Templates -> Windows Components -> File Explorer;
-in the right-side pane look for "Turn off Windows key hotkeys" and double click on it;
-enable or disable hotkeys.
+
+Type `gpedit` in the Search and then click Edit group policy; navigate to User
+Configuration -> Administrative Templates -> Windows Components -> File
+Explorer; in the right-side pane look for "Turn off Windows key hotkeys" and
+double click on it; enable or disable hotkeys.
 
 Note: restart is required to make the settings take effect.
 

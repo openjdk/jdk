@@ -188,15 +188,26 @@ public class GraalCompiler {
                 }
             }
             if (crashLabel != null) {
+                String crashMessage = "Forced crash after compiling " + crashLabel;
+                notifyCrash(crashMessage);
                 if (permanentBailout) {
-                    throw new PermanentBailoutException("Forced crash after compiling " + crashLabel);
+                    throw new PermanentBailoutException(crashMessage);
                 }
                 if (bailout) {
-                    throw new RetryableBailoutException("Forced crash after compiling " + crashLabel);
+                    throw new RetryableBailoutException(crashMessage);
                 }
-                throw new RuntimeException("Forced crash after compiling " + crashLabel);
+                throw new RuntimeException(crashMessage);
             }
         }
+    }
+
+    /**
+     * Substituted by {@code com.oracle.svm.graal.hotspot.libgraal.
+     * Target_org_graalvm_compiler_core_GraalCompiler} to optionally test routing fatal error
+     * handling from libgraal to HotSpot.
+     */
+    @SuppressWarnings("unused")
+    private static void notifyCrash(String crashMessage) {
     }
 
     /**

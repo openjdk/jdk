@@ -24,15 +24,24 @@
 
 #include "precompiled.hpp"
 #include "libadt/vectset.hpp"
-#include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
+#include "memory/resourceArea.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-VectorSet::VectorSet(Arena *arena) : _size(2),
-    _data(NEW_ARENA_ARRAY(arena, uint32_t, 2)),
-    _data_size(2),
-    _set_arena(arena) {
+VectorSet::VectorSet() {
+  init(Thread::current()->resource_area());
+}
+
+VectorSet::VectorSet(Arena* arena) {
+  init(arena);
+}
+
+void VectorSet::init(Arena* arena) {
+  _size = 2;
+  _data = NEW_ARENA_ARRAY(arena, uint32_t, 2);
+  _data_size = 2;
+  _set_arena = arena;
   _data[0] = 0;
   _data[1] = 0;
 }

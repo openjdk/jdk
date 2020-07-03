@@ -120,8 +120,22 @@ public class Misc {
          * Test: toRealPath() should resolve links
          */
         if (supportsLinks) {
-            Files.createSymbolicLink(link, file.toAbsolutePath());
-            assertTrue(link.toRealPath().equals(file.toRealPath()));
+            Path resolvedFile = file;
+            if (isWindows) {
+                // Path::toRealPath does not work with environments using the
+                // legacy subst mechanism. This is a workaround to keep the
+                // test working if 'dir' points to a location on a subst drive.
+                // See JDK-8213216.
+                //
+                Path tempLink = dir.resolve("tempLink");
+                Files.createSymbolicLink(tempLink, dir.toAbsolutePath());
+                Path resolvedDir = tempLink.toRealPath();
+                Files.delete(tempLink);
+                resolvedFile = resolvedDir.resolve(file.getFileName());
+            }
+
+            Files.createSymbolicLink(link, resolvedFile.toAbsolutePath());
+            assertTrue(link.toRealPath().equals(resolvedFile.toRealPath()));
             Files.delete(link);
         }
 

@@ -103,3 +103,46 @@ class sealedP1/SuperClass {
     } // end PermittedSubclasses
   } // Attributes
 } // end class sealedP1/SuperClass
+
+
+// This is an empty interface that is needed because the subtypes used by test
+// SealedModuleTest are also used by test SealedInterfaceModuleTest, which
+// tests a sealed interface with this same name.
+//
+// package sealedP1;
+// public interface SuperInterface { }
+//
+class sealedP1/SuperInterface {
+  0xCAFEBABE;
+  0; // minor version
+  60; // version
+  [7] { // Constant Pool
+    ; // first element is empty
+    class #2; // #1     at 0x0A
+    Utf8 "sealedP1/SuperInterface"; // #2     at 0x0D
+    class #4; // #3     at 0x27
+    Utf8 "java/lang/Object"; // #4     at 0x2A
+    Utf8 "SourceFile"; // #5     at 0x3D
+    Utf8 "SuperInterface.java"; // #6     at 0x4A
+  } // Constant Pool
+
+  0x0601; // access [ ACC_PUBLIC ACC_INTERFACE ]
+  #1;// this_cpx
+  #3;// super_cpx
+
+  [0] { // Interfaces
+  } // Interfaces
+
+  [0] { // fields
+  } // fields
+
+  [0] { // methods
+  } // methods
+
+  [1] { // Attributes
+    Attr(#5, 2) { // SourceFile at 0x6E
+      #6;
+    } // end SourceFile
+  } // Attributes
+} // end class sealedP1/SuperInterface
+

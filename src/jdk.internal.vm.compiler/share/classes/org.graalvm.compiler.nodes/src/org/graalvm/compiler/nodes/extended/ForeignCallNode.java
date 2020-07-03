@@ -36,6 +36,7 @@ import org.graalvm.compiler.core.common.spi.ForeignCallSignature;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.Node.NodeIntrinsicFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -47,8 +48,6 @@ import org.graalvm.compiler.nodes.memory.AbstractMemoryCheckpoint;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * Node for a {@linkplain ForeignCallDescriptor foreign} call.
@@ -61,6 +60,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
           size = SIZE_2,
           sizeRationale = "Rough estimation of the call operation itself.")
 // @formatter:on
+@NodeIntrinsicFactory
 public class ForeignCallNode extends AbstractMemoryCheckpoint implements ForeignCall {
     public static final NodeClass<ForeignCallNode> TYPE = NodeClass.create(ForeignCallNode.class);
 
@@ -70,17 +70,17 @@ public class ForeignCallNode extends AbstractMemoryCheckpoint implements Foreign
     protected final ForeignCallDescriptor descriptor;
     protected int bci = BytecodeFrame.UNKNOWN_BCI;
 
-    public static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod targetMethod, @InjectedNodeParameter Stamp returnStamp, @InjectedNodeParameter ForeignCallsProvider foreignCalls,
+    public static boolean intrinsify(GraphBuilderContext b, @InjectedNodeParameter Stamp returnStamp, @InjectedNodeParameter ForeignCallsProvider foreignCalls,
                     ForeignCallSignature signature, ValueNode... arguments) {
         ForeignCallDescriptor descriptor = foreignCalls.getDescriptor(signature);
-        return doIntrinsify(b, targetMethod, returnStamp, descriptor, arguments, false);
+        return doIntrinsify(b, returnStamp, descriptor, arguments, false);
     }
 
-    public static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod targetMethod, @InjectedNodeParameter Stamp returnStamp, ForeignCallDescriptor descriptor, ValueNode... arguments) {
-        return doIntrinsify(b, targetMethod, returnStamp, descriptor, arguments, false);
+    public static boolean intrinsify(GraphBuilderContext b, @InjectedNodeParameter Stamp returnStamp, ForeignCallDescriptor descriptor, ValueNode... arguments) {
+        return doIntrinsify(b, returnStamp, descriptor, arguments, false);
     }
 
-    static boolean doIntrinsify(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Stamp returnStamp, ForeignCallDescriptor descriptor, ValueNode[] arguments, boolean withException) {
+    static boolean doIntrinsify(GraphBuilderContext b, Stamp returnStamp, ForeignCallDescriptor descriptor, ValueNode[] arguments, boolean withException) {
         ForeignCall node;
         if (withException) {
             node = new ForeignCallWithExceptionNode(descriptor, arguments);
@@ -88,8 +88,6 @@ public class ForeignCallNode extends AbstractMemoryCheckpoint implements Foreign
             node = new ForeignCallNode(descriptor, arguments);
         }
         node.asNode().setStamp(returnStamp);
-
-        assert verifyDescriptor(b, targetMethod, descriptor);
 
         /*
          * Need to update the BCI of a ForeignCallNode so that it gets the stateDuring in the case
@@ -101,24 +99,13 @@ public class ForeignCallNode extends AbstractMemoryCheckpoint implements Foreign
             node.setBci(nonIntrinsicAncestor.bci());
         }
 
-        JavaKind returnKind = targetMethod.getSignature().getReturnKind();
+        JavaKind returnKind = returnStamp.getStackKind();
         if (returnKind == JavaKind.Void) {
             b.add(node.asNode());
         } else {
             b.addPush(returnKind, node.asNode());
         }
 
-        return true;
-    }
-
-    static boolean verifyDescriptor(GraphBuilderContext b, ResolvedJavaMethod targetMethod, ForeignCallDescriptor descriptor) {
-        int parameters = 1;
-        for (Class<?> arg : descriptor.getArgumentTypes()) {
-            ResolvedJavaType res = b.getMetaAccess().lookupJavaType(arg);
-            ResolvedJavaType parameterType = (ResolvedJavaType) targetMethod.getSignature().getParameterType(parameters, targetMethod.getDeclaringClass());
-            assert parameterType.equals(res) : descriptor + ": parameter " + parameters + " mismatch: " + res + " != " + parameterType;
-            parameters++;
-        }
         return true;
     }
 

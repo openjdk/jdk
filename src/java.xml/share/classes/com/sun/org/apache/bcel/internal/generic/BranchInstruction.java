@@ -30,7 +30,7 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * LOOKUPSWITCH and TABLESWITCH.
  *
  * @see InstructionList
- * @LastModified: Jan 2020
+ * @LastModified: July 2020
  */
 public abstract class BranchInstruction extends Instruction implements InstructionTargeter {
 
@@ -230,6 +230,23 @@ public abstract class BranchInstruction extends Instruction implements Instructi
         return target == ih;
     }
 
+    /**
+     * Updates the opcode. Before changing the opcode, reset the target so that
+     * the old instruction is removed from the HashSet and the new one then added.
+     * @param opcode the opcode
+     */
+    @Override
+    void setOpcode( final short opcode ) {
+        if (target == null) {
+            super.setOpcode(opcode);
+        } else {
+            // reset target before changing the opcode
+            InstructionHandle t = target;
+            setTarget(null);
+            super.setOpcode(opcode);
+            setTarget(t);
+        }
+    }
 
     /**
      * Inform target that it's not targeted anymore.

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, Arm Limited and affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Arm Limited and affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
  */
 public class AArch64BitFieldOp extends AArch64LIRInstruction {
     public enum BitFieldOpCode {
+        SBFX,
+        SBFIZ,
         UBFX,
         UBFIZ,
     }
@@ -68,8 +70,14 @@ public class AArch64BitFieldOp extends AArch64LIRInstruction {
     protected void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
         Register dst = asRegister(result);
         Register src = asRegister(input);
-        final int size = input.getPlatformKind().getSizeInBytes() * Byte.SIZE;
+        final int size = result.getPlatformKind().getSizeInBytes() * Byte.SIZE;
         switch (opcode) {
+            case SBFX:
+                masm.sbfm(size, dst, src, lsb, lsb + width - 1);
+                break;
+            case SBFIZ:
+                masm.sbfm(size, dst, src, size - lsb, width - 1);
+                break;
             case UBFX:
                 masm.ubfm(size, dst, src, lsb, lsb + width - 1);
                 break;

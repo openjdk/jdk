@@ -72,7 +72,7 @@ class JfrCheckpointWriter : public JfrCheckpointWriterBase {
   JfrCheckpointWriter(bool previous_epoch, Thread* thread, JfrCheckpointType type = GENERIC);
  public:
   JfrCheckpointWriter(JfrCheckpointType type = GENERIC);
-  JfrCheckpointWriter(Thread* thread, bool header = true, JfrCheckpointType mode = GENERIC);
+  JfrCheckpointWriter(Thread* thread, bool header = true, JfrCheckpointType mode = GENERIC, bool global_lease = true);
   ~JfrCheckpointWriter();
   void write_type(JfrTypeId type_id);
   void write_count(u4 nof_entries);

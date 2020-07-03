@@ -24,20 +24,22 @@
 
 package org.graalvm.compiler.hotspot;
 
-import static jdk.vm.ci.common.InitTimer.timer;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
-import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigAccess.JDK;
-
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
-
+import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.stack.StackIntrospection;
+import jdk.vm.ci.common.InitTimer;
+import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
+import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.runtime.JVMCI;
+import jdk.vm.ci.runtime.JVMCIBackend;
+import jdk.vm.ci.services.Services;
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.EconomicSet;
 import jdk.internal.vm.compiler.collections.Equivalence;
@@ -78,22 +80,19 @@ import org.graalvm.compiler.replacements.SnippetCounter.Group;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.graalvm.compiler.serviceprovider.GraalServices;
 
-import jdk.vm.ci.code.Architecture;
-import jdk.vm.ci.code.stack.StackIntrospection;
-import jdk.vm.ci.common.InitTimer;
-import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.runtime.JVMCI;
-import jdk.vm.ci.runtime.JVMCIBackend;
-import jdk.vm.ci.services.Services;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+
+import static jdk.vm.ci.common.InitTimer.timer;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
+import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigAccess.JDK;
 
 //JaCoCo Exclude
 
@@ -138,6 +137,8 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
 
     private final GraalHotSpotVMConfig config;
 
+    private final Instrumentation instrumentation;
+
     /**
      * The options can be {@linkplain #setOptionValues(String[], String[]) updated} by external
      * interfaces such as JMX. This comes with the risk that inconsistencies can arise as an
@@ -177,6 +178,8 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         snippetCounterGroups = GraalOptions.SnippetCounters.getValue(options) ? new ArrayList<>() : null;
         CompilerConfiguration compilerConfiguration = compilerConfigurationFactory.createCompilerConfiguration();
         compilerConfigurationName = compilerConfigurationFactory.getName();
+
+        this.instrumentation = compilerConfigurationFactory.createInstrumentation(options);
 
         if (IS_AOT) {
             management = AOT_INJECTED_MANAGEMENT == null ? null : AOT_INJECTED_MANAGEMENT.get();
@@ -427,6 +430,11 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         return compilerConfigurationName;
     }
 
+    @Override
+    public Instrumentation getInstrumentation() {
+        return instrumentation;
+    }
+
     private long runtimeStartTime;
 
     /**
@@ -492,7 +500,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     /**
      * Substituted by
      * {@code com.oracle.svm.graal.hotspot.libgraal.Target_org_graalvm_compiler_hotspot_HotSpotGraalRuntime}
-     * to call {@code org.graalvm.nativeimage.VMRuntime.shutdown()}.
+     * to call {@code jdk.internal.vm.compiler.nativeimage.VMRuntime.shutdown()}.
      */
     private static void shutdownLibGraal() {
     }

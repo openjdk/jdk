@@ -203,6 +203,10 @@ public class TestHumongousClassLoader {
 
         gc.provoke();
 
+        boolean did_deflation = WB.deflateIdleMonitors();
+        Asserts.assertEQ(did_deflation, true,
+                         "deflateIdleMonitors() should have worked.");
+
         // Test checks
         Asserts.assertEquals(WB.isClassAlive(HUMONGOUS_CLASSLOADER_NAME), false,
                 String.format("Classloader class %s is loaded after we forget all references to it",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package org.graalvm.util;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A stream that can read (trivial) values using their in-band data type information, intended for
@@ -72,7 +73,10 @@ public class TypedDataInputStream extends DataInputStream {
                 value = readDouble();
                 break;
             case 'U':
-                value = readUTF();
+                int len = readInt();
+                byte[] bytes = new byte[len];
+                readFully(bytes);
+                value = new String(bytes, StandardCharsets.UTF_8);
                 break;
             default:
                 throw new IOException("Unsupported type: " + Integer.toHexString(type));

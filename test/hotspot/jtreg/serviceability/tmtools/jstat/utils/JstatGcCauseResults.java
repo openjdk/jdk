@@ -25,9 +25,9 @@
  * Results of running the JstatGcTool ("jstat -gccause <pid>")
  *
  * Output example:
- * S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT    CGC    CGCT     GCT    LGCC                 GCC
- * 0.00   6.25  46.19   0.34  57.98  54.63  15305 1270.551     0    0.000     0    0.00  1270.551 Allocation Failure   No GC
-
+ *  S0     S1     E      O      M     CCS    YGC     YGCT     FGC    FGCT     CGC    CGCT       GCT    LGCC                 GCC
+ *  0.00   0.00   0.00  53.70  97.40  92.67      4     0.286    19    17.890     2     0.086    18.263 System.gc()          No GC
+ *
  * Output description:
  * S0      Survivor space 0 utilization as a percentage of the space's current capacity.
  * S1      Survivor space 1 utilization as a percentage of the space's current capacity.

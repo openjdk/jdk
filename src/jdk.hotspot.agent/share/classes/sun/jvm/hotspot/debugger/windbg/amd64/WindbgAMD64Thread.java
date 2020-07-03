@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@ import sun.jvm.hotspot.debugger.windbg.*;
 
 class WindbgAMD64Thread implements ThreadProxy {
   private WindbgDebugger debugger;
-  private long           sysId;
+  private long           sysId; // SystemID for Windows thread, stored in OSThread::_thread_id
   private boolean        gotID;
-  private long           id;
+  private long           id;    // ThreadID for Windows thread,  returned by GetThreadIdBySystemId
 
   // The address argument must be the address of the OSThread::_thread_id
   WindbgAMD64Thread(WindbgDebugger debugger, Address addr) {
@@ -50,8 +50,12 @@ class WindbgAMD64Thread implements ThreadProxy {
   public ThreadContext getContext() throws IllegalThreadStateException {
     long[] data = debugger.getThreadIntegerRegisterSet(getThreadID());
     WindbgAMD64ThreadContext context = new WindbgAMD64ThreadContext(debugger);
-    for (int i = 0; i < data.length; i++) {
-      context.setRegister(i, data[i]);
+    // null means we failed to get the register set for some reason. The caller
+    // is responsible for dealing with the set of null registers in that case.
+    if (data != null) {
+        for (int i = 0; i < data.length; i++) {
+            context.setRegister(i, data[i]);
+        }
     }
     return context;
   }
@@ -86,6 +90,7 @@ class WindbgAMD64Thread implements ThreadProxy {
   private long getThreadID() {
     if (!gotID) {
        id = debugger.getThreadIdFromSysId(sysId);
+       gotID = true;
     }
 
     return id;

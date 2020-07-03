@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public interface JavaUtilZipFileAccess {
@@ -40,5 +41,7 @@ public interface JavaUtilZipFileAccess {
     public Enumeration<JarEntry> entries(ZipFile zip);
     public Stream<JarEntry> stream(ZipFile zip);
     public Stream<String> entryNameStream(ZipFile zip);
+    public void setPosixPerms(ZipEntry ze, int posixPerms);
+    public int getPosixPerms(ZipEntry ze);
 }
 

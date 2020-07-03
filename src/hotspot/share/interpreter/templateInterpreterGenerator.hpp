@@ -28,7 +28,7 @@
 // This file contains the platform-independent parts
 // of the template interpreter generator.
 
-#ifndef CC_INTERP
+#ifndef ZERO
 
 class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
  protected:
@@ -123,6 +123,6 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   TemplateInterpreterGenerator(StubQueue* _code);
 };
 
-#endif // !CC_INTERP
+#endif // !ZERO
 
 #endif // SHARE_INTERPRETER_TEMPLATEINTERPRETERGENERATOR_HPP

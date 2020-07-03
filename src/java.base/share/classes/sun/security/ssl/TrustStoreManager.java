@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import sun.security.action.*;
+import sun.security.util.FilePaths;
 import sun.security.validator.TrustStoreUtil;
 
 /**
@@ -76,8 +77,7 @@ final class TrustStoreManager {
         private static final String defaultStorePath =
                 GetPropertyAction.privilegedGetProperty("java.home") +
                 fileSep + "lib" + fileSep + "security";
-        private static final String defaultStore =
-                defaultStorePath + fileSep + "cacerts";
+        private static final String defaultStore = FilePaths.cacerts();
         private static final String jsseDefaultStore =
                 defaultStorePath + fileSep + "jssecacerts";
 

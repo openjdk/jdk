@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-import jdk.internal.util.StaticProperty;
 import sun.security.x509.X509CertImpl;
 
 /**
@@ -53,10 +52,9 @@ public class AnchorCertificates {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
             public Void run() {
-                File f = new File(StaticProperty.javaHome(),
-                        "lib/security/cacerts");
-                KeyStore cacerts;
+                File f = new File(FilePaths.cacerts());
                 try {
+                    KeyStore cacerts;
                     cacerts = KeyStore.getInstance("JKS");
                     try (FileInputStream fis = new FileInputStream(f)) {
                         cacerts.load(fis, null);

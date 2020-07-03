@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,26 +24,16 @@
  */
 
 #include "precompiled.hpp"
-#include "code/scopeDesc.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/javaCalls.hpp"
-#include "runtime/monitorChunk.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/stubCodeGenerator.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "vmreg_zero.inline.hpp"
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#include "runtime/vframeArray.hpp"
-#endif
 
 #ifdef ASSERT
 void RegisterMap::check_location_valid() {
@@ -87,7 +77,6 @@ frame frame::sender(RegisterMap* map) const {
     return sender_for_nonentry_frame(map);
 }
 
-#ifdef CC_INTERP
 BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
   return get_interpreterState()->monitor_base();
 }
@@ -95,7 +84,6 @@ BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
   return (BasicObjectLock*) get_interpreterState()->stack_base();
 }
-#endif // CC_INTERP
 
 void frame::patch_pc(Thread* thread, address pc) {
   if (pc != NULL) {

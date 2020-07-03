@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.jfr.internal.tool;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -92,9 +93,10 @@ final class Print extends Command {
         stream.println();
         stream.println(" jfr print --events CPULoad,GarbageCollection recording.jfr");
         stream.println();
-        stream.println(" jfr print --categories \"GC,JVM,Java*\" recording.jfr");
+        char q = quoteCharacter();
+        stream.println(" jfr print --categories " + q + "GC,JVM,Java*" + q + " recording.jfr");
         stream.println();
-        stream.println(" jfr print --events \"jdk.*\" --stack-depth 64 recording.jfr");
+        stream.println(" jfr print --events "+ q + "jdk.*" + q +" --stack-depth 64 recording.jfr");
         stream.println();
         stream.println(" jfr print --json --events CPULoad recording.jfr");
     }
@@ -278,5 +280,9 @@ final class Print extends Command {
             }
         }
         return list;
+    }
+
+    static char quoteCharacter() {
+        return File.pathSeparatorChar == ';' ? '"' : '\'';
     }
 }

@@ -160,11 +160,6 @@ public class HtmlConfiguration extends BaseConfiguration {
     }
 
     @Override
-    public String getDocletVersionString() {
-        return Versions.shortVersionStringOf(docletVersion);
-    }
-
-    @Override
     public Resources getDocResources() {
         return docResources;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,10 @@ public final class Main {
             System.out.println();
             System.out.println(" jfr print --json --events CPULoad recording.jfr");
             System.out.println();
-            System.out.println(" jfr print --categories \"GC,JVM,Java*\" recording.jfr");
+            char q = Print.quoteCharacter();
+            System.out.println(" jfr print --categories " + q + "GC,JVM,Java*" + q + " recording.jfr");
             System.out.println();
-            System.out.println(" jfr print --events \"jdk.*\" --stack-depth 64 recording.jfr");
+            System.out.println(" jfr print --events " + q + "jdk.*" + q + " --stack-depth 64 recording.jfr");
             System.out.println();
             System.out.println(" jfr summary recording.jfr");
             System.out.println();

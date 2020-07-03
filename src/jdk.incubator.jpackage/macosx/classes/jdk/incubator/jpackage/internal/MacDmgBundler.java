@@ -91,7 +91,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 return buildDMG(params, appLocation, outdir);
             }
             return null;
-        } catch (IOException ex) {
+        } catch (IOException | PackagerException ex) {
             Log.verbose(ex);
             throw new PackagerException(ex);
         }
@@ -262,7 +262,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
     }
 
     private File buildDMG( Map<String, ? super Object> params,
-            File appLocation, File outdir) throws IOException {
+            File appLocation, File outdir) throws IOException, PackagerException {
+        boolean copyAppImage = false;
         File imagesRoot = IMAGES_ROOT.fetchFrom(params);
         if (!imagesRoot.exists()) imagesRoot.mkdirs();
 
@@ -322,7 +323,31 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 "-ov", protoDMG.getAbsolutePath(),
                 "-fs", "HFS+",
                 "-format", "UDRW");
-        IOUtils.exec(pb);
+        try {
+            IOUtils.exec(pb);
+        } catch (IOException ex) {
+            Log.verbose(ex); // Log exception
+
+            // Creating DMG from entire app image failed, so lets try to create empty
+            // DMG and copy files manually. See JDK-8248059.
+            copyAppImage = true;
+
+            long size = new PathGroup(Map.of(new Object(), srcFolder.toPath()))
+                    .sizeInBytes();
+            size += 50 * 1024 * 1024; // Add extra 50 megabytes. Actually DMG size will
+            // not be bigger, but it will able to hold additional 50 megabytes of data.
+            // We need extra room for icons and background image. When we providing
+            // actual files to hdiutil, it will create DMG with ~50 megabytes extra room.
+            pb = new ProcessBuilder(
+                hdiutil,
+                "create",
+                hdiUtilVerbosityFlag,
+                "-size", String.valueOf(size),
+                "-volname", APP_NAME.fetchFrom(params),
+                "-ov", protoDMG.getAbsolutePath(),
+                "-fs", "HFS+");
+            IOUtils.exec(pb);
+        }
 
         // mount temp image
         pb = new ProcessBuilder(
@@ -335,6 +360,23 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         File mountedRoot = new File(imagesRoot.getAbsolutePath(),
                     APP_NAME.fetchFrom(params));
+
+        // Copy app image, since we did not create DMG with it, but instead we created
+        // empty one.
+        if (copyAppImage) {
+            // In case of predefine app image srcFolder will point to app bundle, so if
+            // we use it as is we will copy content of app bundle, but we need app bundle
+            // folder as well.
+            if (srcFolder.toPath().toString().toLowerCase().endsWith(".app")) {
+                Path destPath = mountedRoot.toPath()
+                        .resolve(srcFolder.toPath().getFileName());
+                Files.createDirectory(destPath);
+                IOUtils.copyRecursive(srcFolder.toPath(), destPath);
+            } else {
+                IOUtils.copyRecursive(srcFolder.toPath(), mountedRoot.toPath());
+            }
+        }
+
         try {
             // background image
             File bgdir = new File(mountedRoot, BACKGROUND_IMAGE_FOLDER);

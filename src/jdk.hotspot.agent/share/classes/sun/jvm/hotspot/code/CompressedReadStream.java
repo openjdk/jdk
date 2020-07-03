@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public class CompressedReadStream extends CompressedStream {
     int rl = readInt();
     int h = reverseInt(rh);
     int l = reverseInt(rl);
-    return Double.longBitsToDouble((h << 32) | ((long)l & 0x00000000FFFFFFFFL));
+    return Double.longBitsToDouble(((long)h << 32) | ((long)l & 0x00000000FFFFFFFFL));
   }
 
   public long readLong() {

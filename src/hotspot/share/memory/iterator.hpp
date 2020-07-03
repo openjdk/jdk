@@ -347,6 +347,12 @@ class SymbolClosure : public StackObj {
   }
 };
 
+template <typename E>
+class CompareClosure : public Closure {
+public:
+    virtual int do_compare(const E&, const E&) = 0;
+};
+
 // Dispatches to the non-virtual functions if OopClosureType has
 // a concrete implementation, otherwise a virtual call is taken.
 class Devirtualizer {

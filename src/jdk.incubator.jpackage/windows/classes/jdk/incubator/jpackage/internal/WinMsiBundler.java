@@ -48,8 +48,6 @@ import static jdk.incubator.jpackage.internal.OverridableResource.createResource
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_CONTENT_TYPE;
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.VENDOR;
@@ -307,13 +305,16 @@ public class WinMsiBundler  extends AbstractBundler {
             // Ignore custom icon if any as we don't want to copy anything in
             // Java Runtime image.
             installerIcon = ApplicationLayout.javaRuntime()
+                    .resolveAt(appDir.toPath())
                     .runtimeDirectory()
                     .resolve(Path.of("bin", "java.exe"));
         } else {
             installerIcon = ApplicationLayout.windowsAppImage()
+                    .resolveAt(appDir.toPath())
                     .launchersDirectory()
                     .resolve(APP_NAME.fetchFrom(params) + ".exe");
         }
+        installerIcon = installerIcon.toAbsolutePath();
 
         params.put(WIN_APP_IMAGE.getID(), appDir);
 
@@ -460,6 +461,8 @@ public class WinMsiBundler  extends AbstractBundler {
 
         boolean enableLicenseUI = (LICENSE_FILE.fetchFrom(params) != null);
         boolean enableInstalldirUI = INSTALLDIR_CHOOSER.fetchFrom(params);
+
+        wixPipeline.addLightOptions("-sice:ICE27");
 
         if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
             wixPipeline.addLightOptions("-sice:ICE91");

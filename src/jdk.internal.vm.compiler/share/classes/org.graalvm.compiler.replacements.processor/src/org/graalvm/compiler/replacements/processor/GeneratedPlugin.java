@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package org.graalvm.compiler.replacements.processor;
 
 import java.io.PrintWriter;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -38,7 +39,6 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 
 import org.graalvm.compiler.processor.AbstractProcessor;
-import org.graalvm.compiler.replacements.processor.InjectedDependencies.Dependency;
 import org.graalvm.compiler.replacements.processor.InjectedDependencies.WellKnownDependency;
 
 public abstract class GeneratedPlugin {
@@ -65,27 +65,55 @@ public abstract class GeneratedPlugin {
         this.pluginName = pluginName;
     }
 
+    protected String pluginSuperclass() {
+        return "GeneratedInvocationPlugin";
+    }
+
     public void generate(AbstractProcessor processor, PrintWriter out) {
         out.printf("//        class: %s\n", intrinsicMethod.getEnclosingElement());
         out.printf("//       method: %s\n", intrinsicMethod);
         out.printf("// generated-by: %s\n", getClass().getName());
-        out.printf("final class %s extends GeneratedInvocationPlugin {\n", pluginName);
+        out.printf("final class %s extends %s {\n", pluginName, pluginSuperclass());
         out.printf("\n");
         out.printf("    @Override\n");
         out.printf("    public boolean execute(GraphBuilderContext b, ResolvedJavaMethod targetMethod, InvocationPlugin.Receiver receiver, ValueNode[] args) {\n");
         out.printf("        if (!b.isPluginEnabled(this)) {\n");
         out.printf("            return false;\n");
         out.printf("        }\n");
-        InjectedDependencies deps = createExecute(processor, out);
+        InjectedDependencies deps = new InjectedDependencies(true, intrinsicMethod);
+        createExecute(processor, out, deps);
         out.printf("    }\n");
         out.printf("    @Override\n");
         out.printf("    public Class<? extends Annotation> getSource() {\n");
         out.printf("        return %s.class;\n", getAnnotationClass(processor).getQualifiedName().toString().replace('$', '.'));
         out.printf("    }\n");
 
-        createPrivateMembers(processor, out, deps);
+        createPrivateMembers(processor, out, deps, pluginName);
 
         out.printf("}\n");
+
+        createOtherClasses(processor, out);
+
+    }
+
+    protected void createOtherClasses(AbstractProcessor processor, PrintWriter out) {
+        String name = getReplacementName();
+        out.printf("final class %s implements PluginReplacementNode.ReplacementFunction {\n", name);
+        out.printf("    static PluginReplacementNode.ReplacementFunction FUNCTION = new %s();\n", name);
+        InjectedDependencies deps = new InjectedDependencies(false, intrinsicMethod);
+        createHelpers(processor, out, deps);
+        out.printf("}\n");
+    }
+
+    protected abstract void createHelpers(AbstractProcessor processor, PrintWriter out, InjectedDependencies deps);
+
+    protected String getReplacementName() {
+        return "PluginReplacementNode_" + getBaseName();
+    }
+
+    private String getBaseName() {
+        assert getPluginName().startsWith("Plugin_");
+        return getPluginName().substring("Plugin_".length());
     }
 
     public void register(PrintWriter out) {
@@ -103,9 +131,9 @@ public abstract class GeneratedPlugin {
         out.printf(");\n");
     }
 
-    public abstract void extraImports(Set<String> imports);
+    public abstract void extraImports(AbstractProcessor processor, Set<String> imports);
 
-    protected abstract InjectedDependencies createExecute(AbstractProcessor processor, PrintWriter out);
+    protected abstract void createExecute(AbstractProcessor processor, PrintWriter out, InjectedDependencies deps);
 
     static String getErasedType(TypeMirror type) {
         switch (type.getKind()) {
@@ -161,22 +189,30 @@ public abstract class GeneratedPlugin {
         }
     }
 
-    private void createPrivateMembers(AbstractProcessor processor, PrintWriter out, InjectedDependencies deps) {
+    protected void createPrivateMembers(AbstractProcessor processor, PrintWriter out, InjectedDependencies deps, String constructorName) {
         if (!deps.isEmpty()) {
             out.printf("\n");
-            for (Dependency dep : deps) {
-                out.printf("    private final %s %s;\n", dep.type, dep.name);
+            for (InjectedDependencies.Dependency dep : deps) {
+                out.printf("    private final %s %s;\n", dep.getType(), dep.getName(processor, intrinsicMethod));
             }
 
             out.printf("\n");
-            out.printf("    %s(NodeIntrinsicPluginFactory.InjectionProvider injection) {\n", pluginName);
-            for (Dependency dep : deps) {
-                out.printf("        this.%s = %s;\n", dep.name, dep.inject(processor, intrinsicMethod));
+            out.printf("    %s(GeneratedPluginInjectionProvider injection) {\n", constructorName);
+            for (InjectedDependencies.Dependency dep : deps) {
+                out.printf("        this.%s = %s;\n", dep.getName(processor, intrinsicMethod), dep.getExpression(processor, intrinsicMethod));
             }
             out.printf("    }\n");
 
             needInjectionProvider = true;
         }
+    }
+
+    /**
+     * @param processor
+     * @return true if this plugin needs support for {@code PluginReplacementNode}
+     */
+    protected boolean needsReplacement(AbstractProcessor processor) {
+        return true;
     }
 
     protected static String getReturnKind(ExecutableElement method) {
@@ -204,55 +240,77 @@ public abstract class GeneratedPlugin {
         }
     }
 
-    protected static void constantArgument(AbstractProcessor processor, PrintWriter out, InjectedDependencies deps, int argIdx, TypeMirror type, int nodeIdx) {
+    protected String constantArgument(AbstractProcessor processor,
+                    PrintWriter out,
+                    InjectedDependencies deps,
+                    int argIdx,
+                    TypeMirror type,
+                    int nodeIdx,
+                    boolean isReplacement) {
+        Function<Integer, String> argFormatter;
+        if (isReplacement) {
+            argFormatter = (i) -> String.format("args.get(%d)", i);
+        } else {
+            argFormatter = (i) -> String.format("args[%d]", i);
+        }
         if (hasRawtypeWarning(type)) {
             out.printf("        @SuppressWarnings({\"rawtypes\"})\n");
         }
-        out.printf("        %s arg%d;\n", getErasedType(type), argIdx);
-        out.printf("        if (args[%d].isConstant()) {\n", nodeIdx);
+        String argName = "arg" + argIdx;
+        out.printf("        %s %s;\n", getErasedType(type), argName);
+        out.printf("        if (%s.isConstant()) {\n", argFormatter.apply(nodeIdx));
         if (type.equals(processor.getType("jdk.vm.ci.meta.ResolvedJavaType"))) {
-            out.printf("            jdk.vm.ci.meta.JavaConstant cst = args[%d].asJavaConstant();\n", nodeIdx);
-            out.printf("            arg%d = %s.asJavaType(cst);\n", argIdx, deps.use(WellKnownDependency.CONSTANT_REFLECTION));
-            out.printf("            if (arg%d == null) {\n", argIdx);
-            out.printf("                arg%d = %s.asObject(jdk.vm.ci.meta.ResolvedJavaType.class, cst);\n", argIdx, deps.use(WellKnownDependency.SNIPPET_REFLECTION));
+            out.printf("            jdk.vm.ci.meta.JavaConstant cst = %s.asJavaConstant();\n", argFormatter.apply(nodeIdx));
+            out.printf("            %s = %s.asJavaType(cst);\n", argName, deps.use(processor, WellKnownDependency.CONSTANT_REFLECTION));
+            out.printf("            if (%s == null) {\n", argName);
+            out.printf("                %s = %s.asObject(jdk.vm.ci.meta.ResolvedJavaType.class, cst);\n", argName, deps.use(processor, WellKnownDependency.SNIPPET_REFLECTION));
             out.printf("            }\n");
         } else {
             switch (type.getKind()) {
                 case BOOLEAN:
-                    out.printf("            arg%d = args[%d].asJavaConstant().asInt() != 0;\n", argIdx, nodeIdx);
+                    out.printf("            %s = %s.asJavaConstant().asInt() != 0;\n", argName, argFormatter.apply(nodeIdx));
                     break;
                 case BYTE:
-                    out.printf("            arg%d = (byte) args[%d].asJavaConstant().asInt();\n", argIdx, nodeIdx);
+                    out.printf("            %s = (byte) %s.asJavaConstant().asInt();\n", argName, argFormatter.apply(nodeIdx));
                     break;
                 case CHAR:
-                    out.printf("            arg%d = (char) args[%d].asJavaConstant().asInt();\n", argIdx, nodeIdx);
+                    out.printf("            %s = (char) %s.asJavaConstant().asInt();\n", argName, argFormatter.apply(nodeIdx));
                     break;
                 case SHORT:
-                    out.printf("            arg%d = (short) args[%d].asJavaConstant().asInt();\n", argIdx, nodeIdx);
+                    out.printf("            %s = (short) %s.asJavaConstant().asInt();\n", argName, argFormatter.apply(nodeIdx));
                     break;
                 case INT:
-                    out.printf("            arg%d = args[%d].asJavaConstant().asInt();\n", argIdx, nodeIdx);
+                    out.printf("            %s = %s.asJavaConstant().asInt();\n", argName, argFormatter.apply(nodeIdx));
                     break;
                 case LONG:
-                    out.printf("            arg%d = args[%d].asJavaConstant().asLong();\n", argIdx, nodeIdx);
+                    out.printf("            %s = %s.asJavaConstant().asLong();\n", argName, argFormatter.apply(nodeIdx));
                     break;
                 case FLOAT:
-                    out.printf("            arg%d = args[%d].asJavaConstant().asFloat();\n", argIdx, nodeIdx);
+                    out.printf("            %s = %s.asJavaConstant().asFloat();\n", argName, argFormatter.apply(nodeIdx));
                     break;
                 case DOUBLE:
-                    out.printf("            arg%d = args[%d].asJavaConstant().asDouble();\n", argIdx, nodeIdx);
+                    out.printf("            %s = %s.asJavaConstant().asDouble();\n", argName, argFormatter.apply(nodeIdx));
                     break;
                 case ARRAY:
                 case DECLARED:
-                    out.printf("            arg%d = %s.asObject(%s.class, args[%d].asJavaConstant());\n", argIdx, deps.use(WellKnownDependency.SNIPPET_REFLECTION), getErasedType(type), nodeIdx);
+                    out.printf("            %s = %s.asObject(%s.class, %s.asJavaConstant());\n", argName, deps.use(processor, WellKnownDependency.SNIPPET_REFLECTION), getErasedType(type),
+                                    argFormatter.apply(nodeIdx));
                     break;
                 default:
                     throw new IllegalArgumentException(type.toString());
             }
         }
         out.printf("        } else {\n");
-        out.printf("            assert b.canDeferPlugin(this) : b.getClass().toString();\n");
+        if (!isReplacement) {
+            out.printf("            if (b.shouldDeferPlugin(this)) {\n");
+            out.printf("                b.replacePlugin(this, targetMethod, args, %s.FUNCTION);\n", getReplacementName());
+            out.printf("                return true;\n");
+            out.printf("            }\n");
+            out.printf("            assert b.canDeferPlugin(this) : b.getClass().toString();\n");
+        }
         out.printf("            return false;\n");
+
         out.printf("        }\n");
+        return argName;
     }
 }

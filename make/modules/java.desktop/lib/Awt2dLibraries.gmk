@@ -116,7 +116,7 @@ ifeq ($(call isTargetOs, windows), true)
     LIBAWT_CFLAGS += -DMLIB_OS64BIT
   endif
 
-  LIBAWT_RC_FLAGS ?= -I $(TOPDIR)/src/java.base/windows/native/launcher/icons
+  LIBAWT_RCFLAGS ?= -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
   LIBAWT_VERSIONINFO_RESOURCE := $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
 endif
 
@@ -169,10 +169,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
         comdlg32.lib winmm.lib comctl32.lib shlwapi.lib \
         delayimp.lib jvm.lib $(WIN_JAVA_LIB) advapi32.lib, \
     VERSIONINFO_RESOURCE := $(LIBAWT_VERSIONINFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) $(LIBAWT_RC_FLAGS) \
-        -D "JDK_FNAME=awt.dll" \
-        -D "JDK_INTERNAL_NAME=awt" \
-        -D "JDK_FTYPE=0x2L", \
+    EXTRA_RCFLAGS := $(LIBAWT_RCFLAGS), \
 ))
 
 $(BUILD_LIBAWT): $(call FindLib, java.base, java)

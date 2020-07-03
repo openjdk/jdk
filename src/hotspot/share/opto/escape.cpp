@@ -2935,8 +2935,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   GrowableArray<PhiNode *>  orig_phis;
   PhaseIterGVN  *igvn = _igvn;
   uint new_index_start = (uint) _compile->num_alias_types();
-  Arena* arena = Thread::current()->resource_area();
-  VectorSet visited(arena);
+  VectorSet visited;
   ideal_nodes.clear(); // Reset for use with set_map/get_map.
   uint unique_old = _compile->unique();
 

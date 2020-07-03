@@ -1742,22 +1742,19 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
         if (!split_if_set) {
-          ResourceArea *area = Thread::current()->resource_area();
-          split_if_set = new Node_List(area);
+          split_if_set = new Node_List();
         }
         split_if_set->push(use);
       }
       if (use->is_Bool()) {
         if (!split_bool_set) {
-          ResourceArea *area = Thread::current()->resource_area();
-          split_bool_set = new Node_List(area);
+          split_bool_set = new Node_List();
         }
         split_bool_set->push(use);
       }
       if (use->Opcode() == Op_CreateEx) {
         if (!split_cex_set) {
-          ResourceArea *area = Thread::current()->resource_area();
-          split_cex_set = new Node_List(area);
+          split_cex_set = new Node_List();
         }
         split_cex_set->push(use);
       }
@@ -2090,8 +2087,7 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
     _igvn.hash_find_insert(nnn);
   }
 
-  ResourceArea *area = Thread::current()->resource_area();
-  Node_List extra_data_nodes(area); // data nodes in the outer strip mined loop
+  Node_List extra_data_nodes; // data nodes in the outer strip mined loop
   clone_outer_loop(head, mode, loop, outer_loop, dd, old_new, extra_data_nodes);
 
   // Step 3: Now fix control uses.  Loop varying control uses have already
@@ -2099,7 +2095,7 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   // control uses must be either an IfFalse or an IfTrue.  Make a merge
   // point to merge the old and new IfFalse/IfTrue nodes; make the use
   // refer to this.
-  Node_List worklist(area);
+  Node_List worklist;
   uint new_counter = C->unique();
   for( i = 0; i < loop->_body.size(); i++ ) {
     Node* old = loop->_body.at(i);
@@ -2580,9 +2576,8 @@ void PhaseIdealLoop::remove_cmpi_loop_exit(IfNode* if_cmp, IdealLoopTree *loop) 
 void PhaseIdealLoop::scheduled_nodelist( IdealLoopTree *loop, VectorSet& member, Node_List &sched ) {
 
   assert(member.test(loop->_head->_idx), "loop head must be in member set");
-  Arena *a = Thread::current()->resource_area();
-  VectorSet visited(a);
-  Node_Stack nstack(a, loop->_body.size());
+  VectorSet visited;
+  Node_Stack nstack(loop->_body.size());
 
   Node* n  = loop->_head;  // top of stack is cached in "n"
   uint idx = 0;
@@ -3158,12 +3153,11 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     }
   }
 #endif
-  ResourceArea *area = Thread::current()->resource_area();
-  VectorSet peel(area);
-  VectorSet not_peel(area);
-  Node_List peel_list(area);
-  Node_List worklist(area);
-  Node_List sink_list(area);
+  VectorSet peel;
+  VectorSet not_peel;
+  Node_List peel_list;
+  Node_List worklist;
+  Node_List sink_list;
 
   uint estimate = loop->est_loop_clone_sz(1);
   if (exceeding_node_budget(estimate)) {
@@ -3430,7 +3424,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 #ifndef PRODUCT
   if (TracePartialPeeling) {
     tty->print_cr("\nafter partial peel one iteration");
-    Node_List wl(area);
+    Node_List wl;
     Node* t = last_peel;
     while (true) {
       wl.push(t);

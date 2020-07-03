@@ -40,7 +40,6 @@
 #include "prims/jvm_misc.hpp"
 #include "porting_aix.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/extendedPC.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -110,19 +109,18 @@ static address ucontext_get_lr(const ucontext_t * uc) {
   return (address)uc->uc_mcontext.jmp_context.lr;
 }
 
-ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
-                                        intptr_t** ret_sp, intptr_t** ret_fp) {
+address os::fetch_frame_from_context(const void* ucVoid,
+                                     intptr_t** ret_sp, intptr_t** ret_fp) {
 
-  ExtendedPC  epc;
+  address epc;
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
-    epc = ExtendedPC(os::Aix::ucontext_get_pc(uc));
+    epc = os::Aix::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Aix::ucontext_get_sp(uc);
     if (ret_fp) *ret_fp = os::Aix::ucontext_get_fp(uc);
   } else {
-    // construct empty ExtendedPC for return value checking
-    epc = ExtendedPC(NULL);
+    epc = NULL;
     if (ret_sp) *ret_sp = (intptr_t *)NULL;
     if (ret_fp) *ret_fp = (intptr_t *)NULL;
   }
@@ -133,10 +131,10 @@ ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
 frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
-  ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
   // Avoid crash during crash if pc broken.
-  if (epc.pc()) {
-    frame fr(sp, epc.pc());
+  if (epc) {
+    frame fr(sp, epc);
     return fr;
   }
   frame fr(sp);

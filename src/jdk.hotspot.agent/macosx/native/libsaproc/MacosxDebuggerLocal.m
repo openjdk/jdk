@@ -600,7 +600,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
   JNIEnv *env, jobject this_obj,
   jlong thread_id)
 {
-  print_debug("getThreadRegisterSet0 called\n");
+  print_debug("getThreadIntegerRegisterSet0 called\n");
 
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
   if (ph != NULL && ph->core != NULL) {
@@ -620,7 +620,13 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
   result = thread_get_state(tid, HSDB_THREAD_STATE, (thread_state_t)&state, &count);
 
   if (result != KERN_SUCCESS) {
-    print_error("getregs: thread_get_state(%d) failed (%d)\n", tid, result);
+    // This is not considered fatal. Unlike on Linux and Windows, we haven't seen a
+    // failure to get thread registers, but if it were to fail the response should
+    // be the same. By ignoring this error and returning NULL, stacking walking code
+    // will get null registers and fallback to using the "last java frame" if setup.
+    fprintf(stdout, "WARNING: getThreadIntegerRegisterSet0: thread_get_state failed (%d) for thread (%d)\n",
+            result, tid);
+    fflush(stdout);
     return NULL;
   }
 
@@ -681,25 +687,25 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
  */
 JNIEXPORT jint JNICALL
 Java_sun_jvm_hotspot_debugger_macosx_MacOSXDebuggerLocal_translateTID0(
-  JNIEnv *env, jobject this_obj, jint tid) 
+  JNIEnv *env, jobject this_obj, jint tid)
 {
   print_debug("translateTID0 called on tid = 0x%x\n", (int)tid);
 
   kern_return_t result;
   thread_t foreign_tid, usable_tid;
   mach_msg_type_name_t type;
-  
+
   foreign_tid = tid;
-    
+
   task_t gTask = getTask(env, this_obj);
-  result = mach_port_extract_right(gTask, foreign_tid, 
-				   MACH_MSG_TYPE_COPY_SEND, 
+  result = mach_port_extract_right(gTask, foreign_tid,
+				   MACH_MSG_TYPE_COPY_SEND,
 				   &usable_tid, &type);
   if (result != KERN_SUCCESS)
     return -1;
-    
+
   print_debug("translateTID0: 0x%x -> 0x%x\n", foreign_tid, usable_tid);
-    
+
   return (jint) usable_tid;
 }
 

@@ -129,7 +129,9 @@ public class FailOverDirectExecutionControlTest extends ExecutionControlTestBase
         Map<String, String> pm = provider.defaultParameters();
         pm.put("0", "alwaysFailing");
         pm.put("1", "alwaysFailing");
-        pm.put("2", "jdi");
+        pm.put("2", standardListenSpec());
+        pm.put("3", standardLaunchSpec());
+        pm.put("4", standardJdiSpec());
         setUp(builder -> builder.executionEngine(provider, pm));
     }
 
@@ -156,6 +158,10 @@ public class FailOverDirectExecutionControlTest extends ExecutionControlTestBase
         assertTrue(log.contains("Failure failover -- 1 = alwaysFailing"), log);
         assertTrue(log.contains("This operation intentionally broken"), log);
         log = logged.get(Level.FINEST).get(0);
-        assertTrue(log.contains("Success failover -- 2 = jdi"), log);
+        assertTrue(
+                log.contains("Success failover -- 2 = " + standardListenSpec())
+                || log.contains("Success failover -- 3 = " + standardLaunchSpec())
+                || log.contains("Success failover -- 4 = " + standardJdiSpec()),
+                log);
     }
 }

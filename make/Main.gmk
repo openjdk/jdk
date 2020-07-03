@@ -640,6 +640,20 @@ $(eval $(call SetupTarget, test-image-jdk-jtreg-native, \
     DEPS := build-test-jdk-jtreg-native, \
 ))
 
+# Native files needed by the testlib
+$(eval $(call SetupTarget, build-test-lib-native, \
+    MAKEFILE := test/BuildTestLibNative, \
+    TARGET := build-test-lib-native, \
+    DEPS := buildtools-jdk java.base-libs, \
+))
+
+$(eval $(call SetupTarget, test-image-lib-native, \
+    MAKEFILE := test/BuildTestLibNative, \
+    TARGET := test-image-lib-native, \
+    DEPS := build-test-lib-native, \
+))
+
+# Native files needed when testing the testlib itself
 $(eval $(call SetupTarget, build-test-libtest-jtreg-native, \
     MAKEFILE := test/JtregNativeLibTest, \
     TARGET := build-test-libtest-jtreg-native, \
@@ -1118,7 +1132,9 @@ endif
 docs-image: docs-jdk
 
 # This target builds the test image
-test-image: prepare-test-image test-image-jdk-jtreg-native test-image-demos-jdk test-image-libtest-jtreg-native
+test-image: prepare-test-image test-image-jdk-jtreg-native \
+    test-image-demos-jdk test-image-libtest-jtreg-native \
+    test-image-lib-native
 
 ifneq ($(JVM_TEST_IMAGE_TARGETS), )
   # If JVM_TEST_IMAGE_TARGETS is externally defined, use it instead of the

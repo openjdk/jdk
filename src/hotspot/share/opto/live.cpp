@@ -89,7 +89,7 @@ void PhaseLive::compute(uint maxlrg) {
   _free_IndexSet = NULL;
 
   // Blocks having done pass-1
-  VectorSet first_pass(Thread::current()->resource_area());
+  VectorSet first_pass;
 
   // Outer loop: must compute local live-in sets and push into predecessors.
   for (uint j = _cfg.number_of_blocks(); j > 0; j--) {

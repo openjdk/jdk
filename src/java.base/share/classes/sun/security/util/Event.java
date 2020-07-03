@@ -35,21 +35,27 @@ package sun.security.util;
 public final class Event {
     private Event() {}
 
+    public enum ReporterCategory {
+        CRLCHECK(),
+        POSIXPERMS();
+
+        private Reporter reporter;
+    }
+
     public interface Reporter {
         public void handle(String type, Object... args);
     }
 
-    private static Reporter reporter;
-    public static void setReportListener(Reporter re) {
-        reporter = re;
+    public static void setReportListener(ReporterCategory cat, Reporter re) {
+        cat.reporter = re;
     }
 
-    public static void clearReportListener() {
-        reporter = null;
+    public static void clearReportListener(ReporterCategory cat) {
+        cat.reporter = null;
     }
 
-    public static void report(String type, Object... args) {
-        Reporter currentReporter = reporter;
+    public static void report(ReporterCategory cat, String type, Object... args) {
+        Reporter currentReporter = cat.reporter;
 
         if (currentReporter != null) {
             currentReporter.handle(type, args);

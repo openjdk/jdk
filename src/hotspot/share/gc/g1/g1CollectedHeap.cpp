@@ -2668,13 +2668,6 @@ void G1CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   gc_tracer->report_metaspace_summary(when, metaspace_summary);
 }
 
-G1CollectedHeap* G1CollectedHeap::heap() {
-  CollectedHeap* heap = Universe::heap();
-  assert(heap != NULL, "Uninitialized access to G1CollectedHeap::heap()");
-  assert(heap->kind() == CollectedHeap::G1, "Invalid name");
-  return (G1CollectedHeap*)heap;
-}
-
 void G1CollectedHeap::gc_prologue(bool full) {
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
 

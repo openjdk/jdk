@@ -3,16 +3,21 @@
 # that the numerical values conform to a specific pattern, rather than
 # specific values.
 #
-# S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT  
-#  64.0   64.0    0.0   64.0  1  31   32.0   2048.0     41.4      1    0.031
-
-
+# -gcnew 0
+#
+#    S0C         S1C         S0U         S1U     TT MTT     DSS          EC           EU       YGC     YGCT   
+#        0.0      2048.0         0.0      1113.5 15  15      1024.0       4096.0          0.0      4     0.228
+#
+# -J-XX:+UseParallelGC -gcnew 0
+#
+#    S0C         S1C         S0U         S1U     TT MTT     DSS          EC           EU       YGC     YGCT   
+#     1024.0       512.0         0.0       512.0  6  15      1024.0       3072.0        830.1      5     0.164
 
 BEGIN	{
 	    headerlines=0; datalines=0; totallines=0
 	}
 
-/^ S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT  $/	{
+/^    S0C         S1C         S0U         S1U     TT MTT     DSS          EC           EU       YGC     YGCT   $/	{
 
 	    headerlines++;
 	}

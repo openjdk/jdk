@@ -589,7 +589,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set) {
 
 
-  VectorSet visited(Thread::current()->resource_area());
+  VectorSet visited;
   GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, NULL);
   nodeStack.push(start);
   visited.test_set(start->_idx);
@@ -646,7 +646,7 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
   print_attr(GRAPH_NAME_PROPERTY, (const char *)name);
   end_head();
 
-  VectorSet temp_set(Thread::current()->resource_area());
+  VectorSet temp_set;
 
   head(NODES_ELEMENT);
   walk_nodes(node, false, &temp_set);

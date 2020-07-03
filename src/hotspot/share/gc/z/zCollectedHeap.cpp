@@ -41,10 +41,7 @@
 #include "utilities/align.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {
-  CollectedHeap* heap = Universe::heap();
-  assert(heap != NULL, "Uninitialized access to ZCollectedHeap::heap()");
-  assert(heap->kind() == CollectedHeap::Z, "Invalid name");
-  return (ZCollectedHeap*)heap;
+  return named_heap<ZCollectedHeap>(CollectedHeap::Z);
 }
 
 ZCollectedHeap::ZCollectedHeap() :

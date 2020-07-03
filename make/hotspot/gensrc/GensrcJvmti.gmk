@@ -106,14 +106,16 @@ $(eval $(call SetupJvmtiGeneration, jvmti.h, jvmtiH.xsl, \
 $(eval $(call SetupJvmtiGeneration, jvmti.html, jvmti.xsl, \
     -PARAM majorversion $(VERSION_FEATURE)))
 
-JVMTI_BC_SRCDIR := $(TOPDIR)/src/hotspot/share/interpreter
+JVMTI_BC_SRCDIR := $(TOPDIR)/src/hotspot/share/interpreter/zero
 
-$(eval $(call SetupXslTransform, bytecodeInterpreterWithChecks.cpp, \
-    XML_FILE := $(JVMTI_BC_SRCDIR)/bytecodeInterpreterWithChecks.xml, \
-    XSL_FILE := $(JVMTI_BC_SRCDIR)/bytecodeInterpreterWithChecks.xsl, \
-    OUTPUT_DIR := $(JVMTI_OUTPUTDIR), \
-    DEPS := $(JVMTI_BC_SRCDIR)/bytecodeInterpreter.cpp, \
-))
+ifeq ($(call check-jvm-feature, zero), true)
+  $(eval $(call SetupXslTransform, bytecodeInterpreterWithChecks.cpp, \
+      XML_FILE := $(JVMTI_BC_SRCDIR)/bytecodeInterpreterWithChecks.xml, \
+      XSL_FILE := $(JVMTI_BC_SRCDIR)/bytecodeInterpreterWithChecks.xsl, \
+      OUTPUT_DIR := $(JVMTI_OUTPUTDIR), \
+      DEPS := $(JVMTI_BC_SRCDIR)/bytecodeInterpreter.cpp, \
+  ))
+endif
 
 ################################################################################
 # Copy jvmti.h to include dir

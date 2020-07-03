@@ -38,9 +38,8 @@ endif
 
 ################################################################################
 
-# Disabling all warnings in gtest source code
 
-$(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBGTEST, \
+$(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
     NAME := gtest, \
     TYPE := STATIC_LIBRARY, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
@@ -50,8 +49,9 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBGTEST, \
         $(GTEST_FRAMEWORK_SRC)/googletest/src \
         $(GTEST_FRAMEWORK_SRC)/googlemock/src, \
     INCLUDE_FILES := gtest-all.cc gmock-all.cc, \
-    CFLAGS := $(filter-out $(WARNING_CFLAGS_JVM), $(JVM_CFLAGS)) \
-        -w \
+    DISABLED_WARNINGS_gcc := undef unused-result format-nonliteral, \
+    DISABLED_WARNINGS_clang := undef unused-result format-nonliteral, \
+    CFLAGS := $(JVM_CFLAGS) \
         -I$(GTEST_FRAMEWORK_SRC)/googletest \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock \
@@ -81,10 +81,9 @@ else
 	$(call create-mapfile)
 endif
 
-# Disabling undef, switch, format-nonliteral and tautological-undefined-compare
-# warnings for clang because of test source.
+# Additional disabled warnings are due to code in the test source.
 
-$(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
+$(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     NAME := jvm, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
@@ -106,6 +105,7 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang) \
         undef switch format-nonliteral tautological-undefined-compare \
         self-assign-overloaded, \
+    DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     LDFLAGS := $(JVM_LDFLAGS), \
     LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/libgtest, \
     LIBS := $(JVM_LIBS), \
@@ -127,7 +127,7 @@ TARGETS += $(BUILD_GTEST_LIBJVM)
 
 ################################################################################
 
-$(eval $(call SetupNativeCompilation, BUILD_GTEST_LAUNCHER, \
+$(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     NAME := gtestLauncher, \
     TYPE := EXECUTABLE, \

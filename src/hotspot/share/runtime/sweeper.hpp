@@ -37,8 +37,10 @@ class CodeBlobClosure;
 //    - reclamation of nmethods
 // Removing nmethods from the code cache includes two operations
 //  1) mark active nmethods
-//     Is done in 'mark_active_nmethods()'. This function is called at a
-//     safepoint and marks all nmethods that are active on a thread's stack.
+//     Is done in 'do_stack_scanning()'. This function invokes a thread-local handshake
+//     that marks all nmethods that are active on a thread's stack, and resets their
+//     hotness counters. This allows the sweeper to assume that a decayed hotness counter
+//     of an nmethod implies that it is seemingly not used actively.
 //  2) sweep nmethods
 //     Is done in sweep_code_cache(). This function is the only place in the
 //     sweeper where memory is reclaimed. Note that sweep_code_cache() is not
@@ -110,8 +112,6 @@ class NMethodSweeper : public AllStatic {
 #endif
 
   static CodeBlobClosure* prepare_mark_active_nmethods();
-  static CodeBlobClosure* prepare_reset_hotness_counters();
-
   static void sweeper_loop();
   static bool should_start_aggressive_sweep(int code_blob_type);
   static void force_sweep();

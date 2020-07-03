@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
  * @run driver Simple
  */
 
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -76,5 +77,22 @@ public class Simple {
             "-Xlog:class+path=info",
             "PatchMain", "javax.naming.spi.NamingManager")
             .assertSilentlyDisabledCDS(0, "I pass!");
+
+        // ========================================
+        if (!CDSTestUtils.DYNAMIC_DUMP) {
+            System.out.println("Dump again without --patch-module");
+            output =
+                TestCommon.dump(null,
+                    TestCommon.list("javax/naming/spi/NamingManager"));
+            output.shouldHaveExitValue(0);
+
+            TestCommon.run(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "--patch-module=java.naming=" + moduleJar,
+                "-Xlog:class+load",
+                "-Xlog:class+path=info",
+                "PatchMain", "javax.naming.spi.NamingManager")
+                .assertSilentlyDisabledCDS(0, "I pass!");
+        }
     }
 }

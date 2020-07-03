@@ -1,0 +1,4 @@
+AccessibilityTest5.java:21: error: no summary or caption for table
+     * <table><tr><th>head<tr><td>data</table>
+                                      ^
+1 error

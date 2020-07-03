@@ -105,7 +105,7 @@ public class UnschedulableGraphTest extends GraalCompilerTest {
         try (AutoCloseable c = new TTY.Filter();
                         DebugContext debug = getDebugContext(method);
                         DebugCloseable s = debug.disableIntercept()) {
-            test("snippet01", 0, 1, 2);
+            test(debug.getOptions(), "snippet01", 0, 1, 2);
             Assert.fail("Compilation should not reach this point, must throw an exception before");
         } catch (Throwable t) {
             if (t.getMessage().contains("liveIn set of first block must be empty")) {

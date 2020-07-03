@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -13524,6 +13524,7 @@ method name getItemAt descriptor (I)Ljava/lang/Object; flags 1 signature (I)TE;
 method name createDefaultKeySelectionManager descriptor ()Ljavax/swing/JComboBox$KeySelectionManager; flags 4
 method name paramString descriptor ()Ljava/lang/String; flags 4
 method name getAccessibleContext descriptor ()Ljavax/accessibility/AccessibleContext; flags 1
+method name processKeyBinding descriptor (Ljavax/swing/KeyStroke;Ljava/awt/event/KeyEvent;IZ)Z flags 4
 
 class name javax/swing/JComboBox$AccessibleJComboBox
 header extends javax/swing/JComponent$AccessibleJComponent implements javax/accessibility/AccessibleAction,javax/accessibility/AccessibleSelection flags 21
@@ -14604,7 +14605,6 @@ method name getAccessibleChild descriptor (I)Ljavax/accessibility/Accessible; fl
 method name getLocale descriptor ()Ljava/util/Locale; flags 1
 method name addPropertyChangeListener descriptor (Ljava/beans/PropertyChangeListener;)V flags 1
 method name removePropertyChangeListener descriptor (Ljava/beans/PropertyChangeListener;)V flags 1
-method name getAccessibleAction descriptor ()Ljavax/accessibility/AccessibleAction; flags 1
 method name getAccessibleComponent descriptor ()Ljavax/accessibility/AccessibleComponent; flags 1
 method name getAccessibleSelection descriptor ()Ljavax/accessibility/AccessibleSelection; flags 1
 method name getAccessibleText descriptor ()Ljavax/accessibility/AccessibleText; flags 1
@@ -16720,7 +16720,6 @@ method name updateUI descriptor ()V flags 1
 method name getUIClassID descriptor ()Ljava/lang/String; flags 1
 method name addImpl descriptor (Ljava/awt/Component;Ljava/lang/Object;I)V flags 4
 method name remove descriptor (Ljava/awt/Component;)V flags 1
-method name addNotify descriptor ()V flags 1
 method name scrollRectToVisible descriptor (Ljava/awt/Rectangle;)V flags 1
 method name setBorder descriptor (Ljavax/swing/border/Border;)V flags 11
 method name getInsets descriptor ()Ljava/awt/Insets; flags 11
@@ -20281,6 +20280,8 @@ method name getDefaultIcon descriptor ()Ljavax/swing/Icon; flags 1
 method name paint descriptor (Ljava/awt/Graphics;Ljavax/swing/JComponent;)V flags 21
 method name paintFocus descriptor (Ljava/awt/Graphics;Ljava/awt/Rectangle;Ljava/awt/Dimension;)V flags 4
 method name getPreferredSize descriptor (Ljavax/swing/JComponent;)Ljava/awt/Dimension; flags 1
+method name installListeners descriptor (Ljavax/swing/AbstractButton;)V flags 4
+method name uninstallListeners descriptor (Ljavax/swing/AbstractButton;)V flags 4
 
 class name javax/swing/plaf/basic/BasicRootPaneUI
 header extends javax/swing/plaf/RootPaneUI implements java/beans/PropertyChangeListener flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I4)

@@ -34,7 +34,7 @@ class WorkerDataArrayTest : public ::testing::Test {
  protected:
   WorkerDataArrayTest() :
     title("Test array"),
-    array(title, 3),
+    array(NULL, title, 3),
     sub_item_title("Sub item array") {
 
     array.create_thread_work_items(sub_item_title);

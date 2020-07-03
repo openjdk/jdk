@@ -213,6 +213,8 @@ class MetaspaceShared : AllStatic {
                              TRAPS) NOT_CDS_RETURN_(0);
 
   static GrowableArray<Klass*>* collected_klasses();
+  static GrowableArray<Symbol*>* collected_symbols();
+  static void add_symbol(Symbol* sym) NOT_CDS_RETURN;
 
   static ReservedSpace* shared_rs() {
     CDS_ONLY(return &_shared_rs);

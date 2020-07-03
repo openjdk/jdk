@@ -2139,11 +2139,6 @@ public class ObjectInputStream
         return result;
     }
 
-    @SuppressWarnings("preview")
-    private static boolean isRecord(Class<?> cls) {
-        return cls.isRecord();
-    }
-
     /**
      * Reads and returns "ordinary" (i.e., not a String, Class,
      * ObjectStreamClass, array, or enum constant) object, or null if object's
@@ -2182,7 +2177,7 @@ public class ObjectInputStream
             handles.markException(passHandle, resolveEx);
         }
 
-        final boolean isRecord = cl != null && isRecord(cl) ? true : false;
+        final boolean isRecord = desc.isRecord();
         if (isRecord) {
             assert obj == null;
             obj = readRecord(desc);
@@ -2289,14 +2284,14 @@ public class ObjectInputStream
 
         FieldValues fieldValues = defaultReadFields(null, desc);
 
-        // retrieve the canonical constructor
-        MethodHandle ctrMH = desc.getRecordConstructor();
-
-        // bind the stream field values
-        ctrMH = RecordSupport.bindCtrValues(ctrMH, desc, fieldValues);
+        // get canonical record constructor adapted to take two arguments:
+        // - byte[] primValues
+        // - Object[] objValues
+        // and return Object
+        MethodHandle ctrMH = RecordSupport.deserializationCtr(desc);
 
         try {
-            return ctrMH.invoke();
+            return (Object) ctrMH.invokeExact(fieldValues.primValues, fieldValues.objValues);
         } catch (Exception e) {
             InvalidObjectException ioe = new InvalidObjectException(e.getMessage());
             ioe.initCause(e);

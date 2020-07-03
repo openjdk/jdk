@@ -27,8 +27,11 @@ package jdk.security.jarsigner;
 
 import com.sun.jarsigner.ContentSigner;
 import com.sun.jarsigner.ContentSignerParameters;
+import jdk.internal.access.JavaUtilZipFileAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.security.tools.PathList;
 import sun.security.tools.jarsigner.TimestampedSigner;
+import sun.security.util.Event;
 import sun.security.util.ManifestDigester;
 import sun.security.util.SignatureFileVerifier;
 import sun.security.x509.AlgorithmId;
@@ -81,6 +84,8 @@ import java.util.zip.ZipOutputStream;
  * @since 9
  */
 public final class JarSigner {
+
+    static final JavaUtilZipFileAccess JUZFA = SharedSecrets.getJavaUtilZipFileAccess();
 
     /**
      * A mutable builder class that can create an immutable {@code JarSigner}
@@ -500,6 +505,7 @@ public final class JarSigner {
     private final boolean externalSF; // leave the .SF out of the PKCS7 block
     private final String altSignerPath;
     private final String altSigner;
+    private boolean posixPermsDetected;
 
     private JarSigner(JarSigner.Builder builder) {
 
@@ -943,6 +949,12 @@ public final class JarSigner {
         ze2.setTime(ze.getTime());
         ze2.setComment(ze.getComment());
         ze2.setExtra(ze.getExtra());
+        int perms = JUZFA.getPosixPerms(ze);
+        if (!posixPermsDetected && perms != -1) {
+            posixPermsDetected = true;
+            Event.report(Event.ReporterCategory.POSIXPERMS, "detected");
+        }
+        JUZFA.setPosixPerms(ze2, perms);
         if (ze.getMethod() == ZipEntry.STORED) {
             ze2.setSize(ze.getSize());
             ze2.setCrc(ze.getCrc());

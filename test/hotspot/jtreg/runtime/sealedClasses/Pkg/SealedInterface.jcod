@@ -26,13 +26,13 @@
 //
 // package Pkg;
 //
-// sealed public interface SealedInterface permits Permitted, otherPkg.WrongPackage { }
+// sealed public interface SealedInterface permits Permitted, otherPkg.WrongPackage, otherPkg.WrongPackageNotPublic { }
 
 class Pkg/SealedInterface {
   0xCAFEBABE;
   65535; // minor version
   60; // version
-  [12] { // Constant Pool
+  [14] { // Constant Pool
     ; // first element is empty
     class #2; // #1     at 0x0A
     Utf8 "Pkg/SealedInterface"; // #2     at 0x0D
@@ -45,6 +45,8 @@ class Pkg/SealedInterface {
     Utf8 "Pkg/Permitted"; // #9     at 0x74
     class #11; // #10     at 0x84
     Utf8 "otherPkg/WrongPackage"; // #11     at 0x87
+    class #13; // #12
+    Utf8 "otherPkg/WrongPackageNotPublic"; // #13
   } // Constant Pool
 
   0x0601; // access [ ACC_PUBLIC ACC_INTERFACE ]
@@ -65,8 +67,8 @@ class Pkg/SealedInterface {
       #6;
     } // end SourceFile
     ;
-    Attr(#7, 6) { // PermittedSubtclasses at 0xB5
-      0x00020008000A;
+    Attr(#7, 8) { // PermittedSubtclasses at 0xB5
+      0x00030008000A000C;
     } // end PermittedSubclasses
   } // Attributes
 } // end class Pkg/SealedInterface

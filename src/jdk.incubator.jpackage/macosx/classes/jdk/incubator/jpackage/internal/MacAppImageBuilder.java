@@ -67,6 +67,7 @@ import static jdk.incubator.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 
 public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
@@ -259,7 +260,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
         // create additional app launcher(s) and config file(s)
         List<Map<String, ? super Object>> entryPoints =
-                StandardBundlerParam.ADD_LAUNCHERS.fetchFrom(params);
+                ADD_LAUNCHERS.fetchFrom(params);
         for (Map<String, ? super Object> entryPoint : entryPoints) {
             Map<String, ? super Object> tmp =
                     AddLauncherArguments.merge(originalParams, entryPoint);

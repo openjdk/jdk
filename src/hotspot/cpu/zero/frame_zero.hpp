@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +26,6 @@
 #ifndef CPU_ZERO_FRAME_ZERO_HPP
 #define CPU_ZERO_FRAME_ZERO_HPP
 
-#include "runtime/synchronizer.hpp"
-
 // A frame represents a physical stack frame on the Zero stack.
 
  public:
@@ -51,9 +49,7 @@
     return (intptr_t *) zeroframe();
   }
 
-#ifdef CC_INTERP
   inline interpreterState get_interpreterState() const;
-#endif // CC_INTERP
 
  public:
   const EntryFrame *zero_entryframe() const {

@@ -55,6 +55,7 @@ import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.gc.G1WriteBarrierSnippets;
 import org.graalvm.compiler.word.Word;
+import jdk.internal.vm.compiler.word.Pointer;
 import jdk.internal.vm.compiler.word.WordFactory;
 
 import jdk.vm.ci.code.Register;
@@ -68,11 +69,9 @@ public final class HotSpotG1WriteBarrierSnippets extends G1WriteBarrierSnippets 
     public static final HotSpotForeignCallDescriptor VALIDATE_OBJECT = new HotSpotForeignCallDescriptor(LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS, "validate_object", boolean.class, Word.class,
                     Word.class);
 
-    private final GraalHotSpotVMConfig config;
     private final Register threadRegister;
 
-    public HotSpotG1WriteBarrierSnippets(GraalHotSpotVMConfig config, HotSpotRegistersProvider registers) {
-        this.config = config;
+    public HotSpotG1WriteBarrierSnippets(HotSpotRegistersProvider registers) {
         this.threadRegister = registers.getThreadRegister();
     }
 
@@ -127,13 +126,10 @@ public final class HotSpotG1WriteBarrierSnippets extends G1WriteBarrierSnippets 
     }
 
     @Override
-    protected Word cardTableAddress() {
-        return WordFactory.unsigned(GraalHotSpotVMConfigNode.cardTableAddress());
-    }
-
-    @Override
-    protected int cardTableShift() {
-        return HotSpotReplacementsUtil.cardTableShift(INJECTED_VMCONFIG);
+    protected Word cardTableAddress(Pointer oop) {
+        Word cardTable = WordFactory.unsigned(GraalHotSpotVMConfigNode.cardTableAddress());
+        int cardTableShift = HotSpotReplacementsUtil.cardTableShift(INJECTED_VMCONFIG);
+        return cardTable.add(oop.unsignedShiftRight(cardTableShift));
     }
 
     @Override
@@ -158,7 +154,7 @@ public final class HotSpotG1WriteBarrierSnippets extends G1WriteBarrierSnippets 
 
     @Override
     protected boolean verifyBarrier() {
-        return ReplacementsUtil.REPLACEMENTS_ASSERTIONS_ENABLED || config.verifyBeforeGC || config.verifyAfterGC;
+        return ReplacementsUtil.REPLACEMENTS_ASSERTIONS_ENABLED || HotSpotReplacementsUtil.verifyBeforeOrAfterGC(INJECTED_VMCONFIG);
     }
 
     @Override
@@ -204,7 +200,7 @@ public final class HotSpotG1WriteBarrierSnippets extends G1WriteBarrierSnippets 
             super(options, factories, providers, providers.getSnippetReflection(), target);
             this.lowerer = new HotspotG1WriteBarrierLowerer(config, factory);
 
-            HotSpotG1WriteBarrierSnippets receiver = new HotSpotG1WriteBarrierSnippets(config, providers.getRegisters());
+            HotSpotG1WriteBarrierSnippets receiver = new HotSpotG1WriteBarrierSnippets(providers.getRegisters());
             g1PreWriteBarrier = snippet(G1WriteBarrierSnippets.class, "g1PreWriteBarrier", null, receiver, GC_INDEX_LOCATION, GC_LOG_LOCATION, SATB_QUEUE_MARKING_LOCATION, SATB_QUEUE_INDEX_LOCATION,
                             SATB_QUEUE_BUFFER_LOCATION);
             g1ReferentReadBarrier = snippet(G1WriteBarrierSnippets.class, "g1ReferentReadBarrier", null, receiver, GC_INDEX_LOCATION, GC_LOG_LOCATION, SATB_QUEUE_MARKING_LOCATION,

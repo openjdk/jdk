@@ -30,6 +30,7 @@
 #include "compiler/methodMatcher.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/tribool.hpp"
 
   //      Directives flag name,    type, default value, compile command name
   #define compilerdirectives_common_flags(cflags) \
@@ -46,7 +47,8 @@
     cflags(DumpReplay,              bool, false, DumpReplay) \
     cflags(DumpInline,              bool, false, DumpInline) \
     cflags(CompilerDirectivesIgnoreCompileCommands, bool, CompilerDirectivesIgnoreCompileCommands, X) \
-    cflags(DisableIntrinsic,        ccstrlist, DisableIntrinsic, DisableIntrinsic)
+    cflags(DisableIntrinsic,        ccstrlist, DisableIntrinsic, DisableIntrinsic) \
+    cflags(ControlIntrinsic,        ccstrlist, ControlIntrinsic, ControlIntrinsic)
 
 #ifdef COMPILER1
   #define compilerdirectives_c1_flags(cflags)
@@ -99,11 +101,12 @@ class DirectiveSet : public CHeapObj<mtCompiler> {
 private:
   InlineMatcher* _inlinematchers;
   CompilerDirectives* _directive;
+  TriBoolArray<vmIntrinsics::ID_LIMIT, int> _intrinsic_control_words;
 
 public:
   DirectiveSet(CompilerDirectives* directive);
   ~DirectiveSet();
-  void init_disableintrinsic();
+  void init_control_intrinsic();
   CompilerDirectives* directive();
   bool parse_and_add_inline(char* str, const char*& error_msg);
   void append_inline(InlineMatcher* m);
@@ -115,7 +118,7 @@ public:
   bool matches_inline(const methodHandle& method, int inline_action);
   static DirectiveSet* clone(DirectiveSet const* src);
   bool is_intrinsic_disabled(const methodHandle& method);
-  static ccstrlist canonicalize_disableintrinsic(ccstrlist option_value);
+  static ccstrlist canonicalize_control_intrinsic(ccstrlist option_value);
   void finalize(outputStream* st);
 
   typedef enum {
@@ -126,8 +129,10 @@ public:
     number_of_flags
   } flags;
 
+ private:
   bool _modified[number_of_flags]; // Records what options where set by a directive
 
+ public:
 #define flag_store_definition(name, type, dvalue, cc_flag) type name##Option;
   compilerdirectives_common_flags(flag_store_definition)
   compilerdirectives_c2_flags(flag_store_definition)
@@ -155,6 +160,28 @@ void print(outputStream* st) {
     compilerdirectives_c1_flags(print_function_definition)
     st->cr();
   }
+};
+
+// Iterator of ControlIntrinsic
+// if disable_all is true, it accepts DisableIntrinsic(deprecated) and all intrinsics
+// appear in the list are to disable
+class ControlIntrinsicIter {
+ private:
+  bool _enabled;
+  char* _token;
+  char* _saved_ptr;
+  char* _list;
+  const bool _disableIntrinsic;
+  void next_token();
+
+ public:
+  ControlIntrinsicIter(ccstrlist option, bool disable_all = false);
+  ~ControlIntrinsicIter();
+
+  bool is_enabled() const { return _enabled; }
+  const char* operator*() const { return _token; }
+
+  ControlIntrinsicIter& operator++();
 };
 
 class CompilerDirectives : public CHeapObj<mtCompiler> {

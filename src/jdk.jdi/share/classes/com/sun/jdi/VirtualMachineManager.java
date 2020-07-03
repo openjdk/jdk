@@ -185,6 +185,7 @@ import com.sun.jdi.event.VMStartEvent;
  * </UL>
  * </TD>
  * </TR>
+ * </TBODY>
  * </TABLE>
  *
  * <p> Connectors are created at start-up time. That is, they

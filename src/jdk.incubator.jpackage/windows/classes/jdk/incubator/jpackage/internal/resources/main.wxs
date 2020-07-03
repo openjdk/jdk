@@ -12,6 +12,17 @@
   <?define JpInstallerVersion=200 ?>
   <?define JpCompressedMsi=yes ?>
 
+  <?ifdef JpAllowUpgrades ?>
+    <?define JpUpgradeVersionOnlyDetectUpgrade="no"?>
+  <?else?>
+    <?define JpUpgradeVersionOnlyDetectUpgrade="yes"?>
+  <?endif?>
+  <?ifdef JpAllowDowngrades ?>
+    <?define JpUpgradeVersionOnlyDetectDowngrade="no"?>
+  <?else?>
+    <?define JpUpgradeVersionOnlyDetectDowngrade="yes"?>
+  <?endif?>
+
   <?include $(var.JpConfigDir)/overrides.wxi ?>
 
   <Product
@@ -32,44 +43,26 @@
 
     <Media Id="1" Cabinet="Data.cab" EmbedCab="yes" />
 
-    <?ifdef JpAllowDowngrades ?>
-    <?ifdef JpAllowUpgrades ?>
-    <MajorUpgrade
-      AllowDowngrades="yes"
-      Disallow="no"
-    />
-    <?endif?>
-    <?endif?>
+    <Upgrade Id="$(var.JpProductUpgradeCode)">
+      <UpgradeVersion
+        OnlyDetect="$(var.JpUpgradeVersionOnlyDetectUpgrade)"
+        Property="JP_UPGRADABLE_FOUND"
+        Maximum="$(var.JpAppVersion)"
+        MigrateFeatures="yes"
+        IncludeMaximum="$(var.JpUpgradeVersionOnlyDetectUpgrade)" />
+      <UpgradeVersion
+        OnlyDetect="$(var.JpUpgradeVersionOnlyDetectDowngrade)"
+        Property="JP_DOWNGRADABLE_FOUND"
+        Minimum="$(var.JpAppVersion)"
+        MigrateFeatures="yes"
+        IncludeMinimum="$(var.JpUpgradeVersionOnlyDetectDowngrade)" />
+    </Upgrade>
 
-    <?ifdef JpAllowDowngrades ?>
     <?ifndef JpAllowUpgrades ?>
-    <MajorUpgrade
-      AllowDowngrades="yes"
-      Disallow="yes"
-      DisallowUpgradeErrorMessage="!(loc.DisallowUpgradeErrorMessage)"
-    />
+    <CustomAction Id="JpDisallowUpgrade" Error="!(loc.DisallowUpgradeErrorMessage)" />
     <?endif?>
-    <?endif?>
-
     <?ifndef JpAllowDowngrades ?>
-    <?ifdef JpAllowUpgrades ?>
-    <MajorUpgrade
-      AllowDowngrades="no"
-      Disallow="no"
-      DowngradeErrorMessage="!(loc.DowngradeErrorMessage)"
-    />
-    <?endif?>
-    <?endif?>
-
-    <?ifndef JpAllowDowngrades ?>
-    <?ifndef JpAllowUpgrades ?>
-    <MajorUpgrade
-      AllowDowngrades="no"
-      Disallow="yes"
-      DowngradeErrorMessage="!(loc.DowngradeErrorMessage)"
-      DisallowUpgradeErrorMessage="!(loc.DisallowUpgradeErrorMessage)"
-    />
-    <?endif?>
+    <CustomAction Id="JpDisallowDowngrade" Error="!(loc.DowngradeErrorMessage)" />
     <?endif?>
 
     <!-- Standard required root -->
@@ -87,8 +80,10 @@
     <?endif?>
 
     <CustomAction Id="JpSetARPINSTALLLOCATION" Property="ARPINSTALLLOCATION" Value="[INSTALLDIR]" />
+
     <?ifdef JpIcon ?>
-    <CustomAction Id="JpSetARPPRODUCTICON" Property="ARPPRODUCTICON" Value="[INSTALLDIR]$(var.JpIcon)" />
+    <Property Id="ARPPRODUCTICON" Value="JpARPPRODUCTICON"/>
+    <Icon Id="JpARPPRODUCTICON" SourceFile="$(var.JpIcon)"/>
     <?endif?>
 
     <UI>
@@ -140,9 +135,14 @@
 
     <InstallExecuteSequence>
       <Custom Action="JpSetARPINSTALLLOCATION" After="CostFinalize">Not Installed</Custom>
-      <?ifdef JpIcon ?>
-      <Custom Action="JpSetARPPRODUCTICON" After="JpSetARPINSTALLLOCATION">Not Installed</Custom>
+      <?ifndef JpAllowUpgrades ?>
+      <Custom Action="JpDisallowUpgrade" After="FindRelatedProducts">JP_UPGRADABLE_FOUND</Custom>
       <?endif?>
+      <?ifndef JpAllowDowngrades ?>
+      <Custom Action="JpDisallowDowngrade" After="FindRelatedProducts">JP_DOWNGRADABLE_FOUND</Custom>
+      <?endif?>
+      <RemoveExistingProducts Before="CostInitialize"/>
     </InstallExecuteSequence>
+
   </Product>
 </Wix>

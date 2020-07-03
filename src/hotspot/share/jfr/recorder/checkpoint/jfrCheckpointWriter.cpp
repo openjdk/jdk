@@ -45,8 +45,8 @@ JfrCheckpointWriter::JfrCheckpointWriter(JfrCheckpointType type /* GENERIC */) :
   }
 }
 
-JfrCheckpointWriter::JfrCheckpointWriter(Thread* thread, bool header /* true */, JfrCheckpointType type /* GENERIC */) :
-  JfrCheckpointWriterBase(JfrCheckpointManager::lease(thread), thread),
+JfrCheckpointWriter::JfrCheckpointWriter(Thread* thread, bool header /* true */, JfrCheckpointType type /* GENERIC */, bool global_lease /* true */) :
+  JfrCheckpointWriterBase(global_lease ? JfrCheckpointManager::lease(thread) : JfrCheckpointManager::lease_thread_local(thread), thread),
   _time(JfrTicks::now()),
   _offset(0),
   _count(0),

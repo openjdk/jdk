@@ -455,9 +455,8 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
     // Check all control edges of 'dom'.
 
     ResourceMark rm;
-    Arena* arena = Thread::current()->resource_area();
-    Node_List nlist(arena);
-    Unique_Node_List dom_list(arena);
+    Node_List nlist;
+    Unique_Node_List dom_list;
 
     dom_list.push(dom);
     bool only_dominating_controls = false;
@@ -2187,7 +2186,6 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
       // See if we can become precise: no subklasses and no interface
       // (Note:  We need to support verified interfaces.)
       if (!ik->is_interface() && !ik->has_subklass()) {
-        //assert(!UseExactTypes, "this code should be useless with exact types");
         // Add a dependence; if any subclass added we need to recompile
         if (!ik->is_final()) {
           // %%% should use stronger assert_unique_concrete_subtype instead
@@ -2221,7 +2219,6 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
           ciInstanceKlass* ik = base_k->as_instance_klass();
           // See if we can become precise: no subklasses and no interface
           if (!ik->is_interface() && !ik->has_subklass()) {
-            //assert(!UseExactTypes, "this code should be useless with exact types");
             // Add a dependence; if any subclass added we need to recompile
             if (!ik->is_final()) {
               phase->C->dependencies()->assert_leaf_type(ik);
@@ -2232,7 +2229,6 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
         }
         return TypeKlassPtr::make(TypePtr::NotNull, ak, 0/*offset*/);
       } else {                  // Found a type-array?
-        //assert(!UseExactTypes, "this code should be useless with exact types");
         assert( ak->is_type_array_klass(), "" );
         return TypeKlassPtr::make(ak); // These are always precise
       }
@@ -3245,7 +3241,7 @@ void MemBarNode::set_load_store_pair(MemBarNode* leading, MemBarNode* trailing) 
 MemBarNode* MemBarNode::trailing_membar() const {
   ResourceMark rm;
   Node* trailing = (Node*)this;
-  VectorSet seen(Thread::current()->resource_area());
+  VectorSet seen;
   Node_Stack multis(0);
   do {
     Node* c = trailing;
@@ -3289,7 +3285,7 @@ MemBarNode* MemBarNode::trailing_membar() const {
 
 MemBarNode* MemBarNode::leading_membar() const {
   ResourceMark rm;
-  VectorSet seen(Thread::current()->resource_area());
+  VectorSet seen;
   Node_Stack regions(0);
   Node* leading = in(0);
   while (leading != NULL && (!leading->is_MemBar() || !leading->as_MemBar()->leading())) {

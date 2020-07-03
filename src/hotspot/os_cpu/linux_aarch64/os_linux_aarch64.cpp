@@ -39,7 +39,6 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/extendedPC.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -108,34 +107,18 @@ intptr_t* os::Linux::ucontext_get_fp(const ucontext_t * uc) {
   return (intptr_t*)uc->uc_mcontext.regs[REG_FP];
 }
 
-// For Forte Analyzer AsyncGetCallTrace profiling support - thread
-// is currently interrupted by SIGPROF.
-// os::Solaris::fetch_frame_from_ucontext() tries to skip nested signal
-// frames. Currently we don't do that on Linux, so it's the same as
-// os::fetch_frame_from_context().
-ExtendedPC os::Linux::fetch_frame_from_ucontext(Thread* thread,
-  const ucontext_t* uc, intptr_t** ret_sp, intptr_t** ret_fp) {
-
-  assert(thread != NULL, "just checking");
-  assert(ret_sp != NULL, "just checking");
-  assert(ret_fp != NULL, "just checking");
-
-  return os::fetch_frame_from_context(uc, ret_sp, ret_fp);
-}
-
-ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
+address os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
 
-  ExtendedPC  epc;
+  address epc;
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
-    epc = ExtendedPC(os::Linux::ucontext_get_pc(uc));
+    epc = os::Linux::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Linux::ucontext_get_sp(uc);
     if (ret_fp) *ret_fp = os::Linux::ucontext_get_fp(uc);
   } else {
-    // construct empty ExtendedPC for return value checking
-    epc = ExtendedPC(NULL);
+    epc = NULL;
     if (ret_sp) *ret_sp = (intptr_t *)NULL;
     if (ret_fp) *ret_fp = (intptr_t *)NULL;
   }
@@ -146,8 +129,8 @@ ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
 frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
-  ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, &fp);
-  return frame(sp, fp, epc.pc());
+  address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  return frame(sp, fp, epc);
 }
 
 bool os::Linux::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr) {

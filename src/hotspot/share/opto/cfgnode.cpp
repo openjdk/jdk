@@ -346,9 +346,8 @@ bool RegionNode::is_unreachable_region(PhaseGVN *phase) const {
   // Unsafe case - check if the Region node is reachable from root.
   ResourceMark rm;
 
-  Arena *a = Thread::current()->resource_area();
-  Node_List nstack(a);
-  VectorSet visited(a);
+  Node_List nstack;
+  VectorSet visited;
 
   // Mark all control nodes reachable from root outputs
   Node *n = (Node*)phase->C->root();
@@ -1040,7 +1039,7 @@ void PhiNode::verify_adr_type(bool recursive) const {
          "Phi::adr_type must be pre-normalized");
 
   if (recursive) {
-    VectorSet visited(Thread::current()->resource_area());
+    VectorSet visited;
     verify_adr_type(visited, _adr_type);
   }
 }
@@ -1780,9 +1779,8 @@ bool PhiNode::is_unsafe_data_reference(Node *in) const {
 
   ResourceMark rm;
 
-  Arena *a = Thread::current()->resource_area();
-  Node_List nstack(a);
-  VectorSet visited(a);
+  Node_List nstack;
+  VectorSet visited;
 
   nstack.push(in); // Start with unique input.
   visited.set(in->_idx);

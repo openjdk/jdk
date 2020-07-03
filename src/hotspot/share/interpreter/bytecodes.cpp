@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -532,8 +532,8 @@ void Bytecodes::initialize() {
   def(_nofast_getfield     , "nofast_getfield"     , "bJJ"  , NULL    , T_ILLEGAL,  0, true,  _getfield       );
   def(_nofast_putfield     , "nofast_putfield"     , "bJJ"  , NULL    , T_ILLEGAL, -2, true , _putfield       );
 
-  def(_nofast_aload_0      , "nofast_aload_0"      , "b"    , NULL    , T_ILLEGAL,  1, true , _aload_0        );
-  def(_nofast_iload        , "nofast_iload"        , "bi"   , NULL    , T_ILLEGAL,  1, false, _iload          );
+  def(_nofast_aload_0      , "nofast_aload_0"      , "b"    , NULL    , T_OBJECT,   1, true , _aload_0        );
+  def(_nofast_iload        , "nofast_iload"        , "bi"   , NULL    , T_INT,      1, false, _iload          );
 
   def(_shouldnotreachhere  , "_shouldnotreachhere" , "b"    , NULL    , T_VOID   ,  0, false);
 

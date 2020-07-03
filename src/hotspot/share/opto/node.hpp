@@ -1520,7 +1520,7 @@ class Unique_Node_List : public Node_List {
   VectorSet _in_worklist;
   uint _clock_index;            // Index in list where to pop from next
 public:
-  Unique_Node_List() : Node_List(), _in_worklist(Thread::current()->resource_area()), _clock_index(0) {}
+  Unique_Node_List() : Node_List(), _clock_index(0) {}
   Unique_Node_List(Arena *a) : Node_List(a), _in_worklist(a), _clock_index(0) {}
 
   void remove( Node *n );

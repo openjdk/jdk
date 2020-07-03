@@ -64,7 +64,7 @@ typedef ConcurrentHashTable<ResolvedMethodTableConfig,
 class ResolvedMethodTableConfig : public AllStatic {
  private:
  public:
-  typedef WeakHandle<vm_resolved_method_table_data> Value;
+  typedef WeakHandle Value;
 
   static uintx get_hash(Value const& value, bool* is_dead) {
     oop val_oop = value.peek();
@@ -83,7 +83,7 @@ class ResolvedMethodTableConfig : public AllStatic {
     return AllocateHeap(size, mtClass);
   }
   static void free_node(void* memory, Value const& value) {
-    value.release();
+    value.release(OopStorageSet::resolved_method_table_weak());
     FreeHeap(memory);
     ResolvedMethodTable::item_removed();
   }
@@ -121,7 +121,7 @@ class ResolvedMethodTableLookup : StackObj {
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(WeakHandle<vm_resolved_method_table_data>* value, bool* is_dead) {
+  bool equals(WeakHandle* value, bool* is_dead) {
     oop val_oop = value->peek();
     if (val_oop == NULL) {
       // dead oop, mark this hash dead for cleaning
@@ -145,7 +145,7 @@ class ResolvedMethodGet : public StackObj {
   Handle        _return;
 public:
   ResolvedMethodGet(Thread* thread, const Method* method) : _thread(thread), _method(method) {}
-  void operator()(WeakHandle<vm_resolved_method_table_data>* val) {
+  void operator()(WeakHandle* val) {
     oop result = val->resolve();
     assert(result != NULL, "Result should be reachable");
     _return = Handle(_thread, result);
@@ -193,7 +193,7 @@ oop ResolvedMethodTable::add_method(const Method* method, Handle rmethod_name) {
     if (_local_table->get(thread, lookup, rmg)) {
       return rmg.get_res_oop();
     }
-    WeakHandle<vm_resolved_method_table_data> wh = WeakHandle<vm_resolved_method_table_data>::create(rmethod_name);
+    WeakHandle wh(OopStorageSet::resolved_method_table_weak(), rmethod_name);
     // The hash table takes ownership of the WeakHandle, even if it's not inserted.
     if (_local_table->insert(thread, lookup, wh)) {
       log_insert(method);
@@ -282,7 +282,7 @@ void ResolvedMethodTable::grow(JavaThread* jt) {
 }
 
 struct ResolvedMethodTableDoDelete : StackObj {
-  void operator()(WeakHandle<vm_resolved_method_table_data>* val) {
+  void operator()(WeakHandle* val) {
     /* do nothing */
   }
 };
@@ -291,7 +291,7 @@ struct ResolvedMethodTableDeleteCheck : StackObj {
   long _count;
   long _item;
   ResolvedMethodTableDeleteCheck() : _count(0), _item(0) {}
-  bool operator()(WeakHandle<vm_resolved_method_table_data>* val) {
+  bool operator()(WeakHandle* val) {
     ++_item;
     oop tmp = val->peek();
     if (tmp == NULL) {
@@ -345,7 +345,7 @@ class AdjustMethodEntries : public StackObj {
   bool* _trace_name_printed;
 public:
   AdjustMethodEntries(bool* trace_name_printed) : _trace_name_printed(trace_name_printed) {};
-  bool operator()(WeakHandle<vm_resolved_method_table_data>* entry) {
+  bool operator()(WeakHandle* entry) {
     oop mem_name = entry->peek();
     if (mem_name == NULL) {
       // Removed
@@ -387,7 +387,7 @@ void ResolvedMethodTable::adjust_method_entries(bool * trace_name_printed) {
 // Verification
 class VerifyResolvedMethod : StackObj {
  public:
-  bool operator()(WeakHandle<vm_resolved_method_table_data>* val) {
+  bool operator()(WeakHandle* val) {
     oop obj = val->peek();
     if (obj != NULL) {
       Method* method = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(obj);

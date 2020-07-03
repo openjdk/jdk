@@ -103,7 +103,7 @@ uintx hash_string(const jchar* s, int len, bool useAlt) {
 class StringTableConfig : public StackObj {
  private:
  public:
-  typedef WeakHandle<vm_string_table_data> Value;
+  typedef WeakHandle Value;
 
   static uintx get_hash(Value const& value, bool* is_dead) {
     EXCEPTION_MARK;
@@ -129,7 +129,7 @@ class StringTableConfig : public StackObj {
     return AllocateHeap(size, mtSymbol);
   }
   static void free_node(void* memory, Value const& value) {
-    value.release();
+    value.release(OopStorageSet::string_table_weak());
     FreeHeap(memory);
     StringTable::item_removed();
   }
@@ -150,7 +150,7 @@ class StringTableLookupJchar : StackObj {
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(WeakHandle<vm_string_table_data>* value, bool* is_dead) {
+  bool equals(WeakHandle* value, bool* is_dead) {
     oop val_oop = value->peek();
     if (val_oop == NULL) {
       // dead oop, mark this hash dead for cleaning
@@ -182,7 +182,7 @@ class StringTableLookupOop : public StackObj {
     return _hash;
   }
 
-  bool equals(WeakHandle<vm_string_table_data>* value, bool* is_dead) {
+  bool equals(WeakHandle* value, bool* is_dead) {
     oop val_oop = value->peek();
     if (val_oop == NULL) {
       // dead oop, mark this hash dead for cleaning
@@ -272,7 +272,7 @@ class StringTableGet : public StackObj {
   Handle  _return;
  public:
   StringTableGet(Thread* thread) : _thread(thread) {}
-  void operator()(WeakHandle<vm_string_table_data>* val) {
+  void operator()(WeakHandle* val) {
     oop result = val->resolve();
     assert(result != NULL, "Result should be reachable");
     _return = Handle(_thread, result);
@@ -368,7 +368,7 @@ oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
   bool rehash_warning;
   do {
     // Callers have already looked up the String using the jchar* name, so just go to add.
-    WeakHandle<vm_string_table_data> wh = WeakHandle<vm_string_table_data>::create(string_h);
+    WeakHandle wh(OopStorageSet::string_table_weak(), string_h);
     // The hash table takes ownership of the WeakHandle, even if it's not inserted.
     if (_local_table->insert(THREAD, lookup, wh, &rehash_warning)) {
       update_needs_rehash(rehash_warning);
@@ -406,7 +406,7 @@ void StringTable::grow(JavaThread* jt) {
 }
 
 struct StringTableDoDelete : StackObj {
-  void operator()(WeakHandle<vm_string_table_data>* val) {
+  void operator()(WeakHandle* val) {
     /* do nothing */
   }
 };
@@ -415,7 +415,7 @@ struct StringTableDeleteCheck : StackObj {
   long _count;
   long _item;
   StringTableDeleteCheck() : _count(0), _item(0) {}
-  bool operator()(WeakHandle<vm_string_table_data>* val) {
+  bool operator()(WeakHandle* val) {
     ++_item;
     oop tmp = val->peek();
     if (tmp == NULL) {
@@ -551,7 +551,7 @@ static int literal_size(oop obj) {
 }
 
 struct SizeFunc : StackObj {
-  size_t operator()(WeakHandle<vm_string_table_data>* val) {
+  size_t operator()(WeakHandle* val) {
     oop s = val->peek();
     if (s == NULL) {
       // Dead
@@ -577,7 +577,7 @@ void StringTable::print_table_statistics(outputStream* st,
 // Verification
 class VerifyStrings : StackObj {
  public:
-  bool operator()(WeakHandle<vm_string_table_data>* val) {
+  bool operator()(WeakHandle* val) {
     oop s = val->peek();
     if (s != NULL) {
       assert(java_lang_String::length(s) >= 0, "Length on string must work.");
@@ -601,7 +601,7 @@ class VerifyCompStrings : StackObj {
  public:
   size_t _errors;
   VerifyCompStrings(GrowableArray<oop>* oops) : _oops(oops), _errors(0) {}
-  bool operator()(WeakHandle<vm_string_table_data>* val) {
+  bool operator()(WeakHandle* val) {
     oop s = val->resolve();
     if (s == NULL) {
       return true;
@@ -639,7 +639,7 @@ class PrintString : StackObj {
   outputStream* _st;
  public:
   PrintString(Thread* thr, outputStream* st) : _thr(thr), _st(st) {}
-  bool operator()(WeakHandle<vm_string_table_data>* val) {
+  bool operator()(WeakHandle* val) {
     oop s = val->peek();
     if (s == NULL) {
       return true;
@@ -744,7 +744,7 @@ oop StringTable::create_archived_string(oop s, Thread* THREAD) {
 struct CopyToArchive : StackObj {
   CompactHashtableWriter* _writer;
   CopyToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
-  bool operator()(WeakHandle<vm_string_table_data>* val) {
+  bool operator()(WeakHandle* val) {
     oop s = val->peek();
     if (s == NULL) {
       return true;

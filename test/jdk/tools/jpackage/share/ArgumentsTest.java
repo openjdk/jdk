@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 import java.nio.file.Path;
 import java.util.List;
-import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.Annotations.*;
+import jdk.jpackage.test.Annotations.BeforeEach;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameter;
 
 
 /*

@@ -404,7 +404,7 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
 
     switch (c) {
       case Bytecodes::_lookupswitch   : {
-#ifndef CC_INTERP
+#ifndef ZERO
         Bytecode_lookupswitch bc(method, bcp);
         (*bcp) = (
           bc.number_of_pairs() < BinarySwitchThreshold
@@ -416,7 +416,7 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
       }
       case Bytecodes::_fast_linearswitch:
       case Bytecodes::_fast_binaryswitch: {
-#ifndef CC_INTERP
+#ifndef ZERO
         (*bcp) = Bytecodes::_lookupswitch;
 #endif
         break;

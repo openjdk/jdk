@@ -65,25 +65,21 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     @Override
     public abstract int getIdentityHashCode();
 
-    static class Fields {
-        // Initializing these too early causes a hang, so do it here in a subclass
-        static final HotSpotResolvedJavaField callSiteTargetField         = HotSpotMethodHandleAccessProvider.Internals.instance().callSiteTargetField;
-        static final HotSpotResolvedJavaField constantCallSiteFrozenField = HotSpotMethodHandleAccessProvider.Internals.instance().constantCallSiteFrozenField;
-    }
-
     private boolean isFullyInitializedConstantCallSite() {
         if (!runtime().getConstantCallSite().isInstance(this)) {
             return false;
         }
         // read ConstantCallSite.isFrozen as a volatile field
-        boolean isFrozen = readFieldValue(Fields.constantCallSiteFrozenField, true /* volatile */).asBoolean();
+        HotSpotResolvedJavaField field = HotSpotMethodHandleAccessProvider.Internals.instance().constantCallSiteFrozenField;
+        boolean isFrozen = readFieldValue(field, true /* volatile */).asBoolean();
         // isFrozen true implies fully-initialized
         return isFrozen;
     }
 
     private HotSpotObjectConstantImpl readTarget() {
         // read CallSite.target as a volatile field
-        return (HotSpotObjectConstantImpl) readFieldValue(Fields.callSiteTargetField, true /* volatile */);
+        HotSpotResolvedJavaField field = HotSpotMethodHandleAccessProvider.Internals.instance().callSiteTargetField;
+        return (HotSpotObjectConstantImpl) readFieldValue(field, true /* volatile */);
     }
 
     @Override
