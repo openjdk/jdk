@@ -179,14 +179,15 @@ public abstract class HotSpotForeignCallsProviderImpl implements HotSpotForeignC
                     HotSpotForeignCallDescriptor descriptor,
                     long address,
                     boolean prependThread) {
-        if (address != 0) {
-            ForeignCallStub stub = new ForeignCallStub(options, jvmciRuntime, providers, address, descriptor, prependThread);
-            HotSpotForeignCallLinkage linkage = stub.getLinkage();
-            HotSpotForeignCallLinkage targetLinkage = stub.getTargetLinkage();
-            linkage.setCompiledStub(stub);
-            register(linkage);
-            register(targetLinkage);
+        if (address == 0) {
+            throw new IllegalArgumentException("Can't link foreign call with zero address");
         }
+        ForeignCallStub stub = new ForeignCallStub(options, jvmciRuntime, providers, address, descriptor, prependThread);
+        HotSpotForeignCallLinkage linkage = stub.getLinkage();
+        HotSpotForeignCallLinkage targetLinkage = stub.getTargetLinkage();
+        linkage.setCompiledStub(stub);
+        register(linkage);
+        register(targetLinkage);
     }
 
     public static final boolean PREPEND_THREAD = true;

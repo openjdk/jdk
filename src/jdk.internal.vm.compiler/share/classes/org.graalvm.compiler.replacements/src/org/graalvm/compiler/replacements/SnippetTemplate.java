@@ -703,18 +703,6 @@ public class SnippetTemplate {
     private static final Object UNUSED_PARAMETER = "UNUSED_PARAMETER";
     private static final Object CONSTANT_PARAMETER = "CONSTANT_PARAMETER";
 
-    /**
-     * Determines if any parameter of a given method is annotated with {@link ConstantParameter}.
-     */
-    public static boolean hasConstantParameter(ResolvedJavaMethod method) {
-        for (ConstantParameter p : method.getParameterAnnotations(ConstantParameter.class)) {
-            if (p != null) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private final SnippetReflectionProvider snippetReflection;
 
     /**

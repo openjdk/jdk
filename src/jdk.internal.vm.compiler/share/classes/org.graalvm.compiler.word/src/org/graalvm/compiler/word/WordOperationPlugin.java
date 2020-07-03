@@ -511,7 +511,7 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
             return b.add(new NarrowNode(value, 32));
         } else {
             assert toKind == JavaKind.Long;
-            assert value.getStackKind() == JavaKind.Int;
+            assert value.getStackKind() == JavaKind.Int : value;
             if (unsigned) {
                 return b.add(new ZeroExtendNode(value, 64));
             } else {

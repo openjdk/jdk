@@ -82,6 +82,7 @@ import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PluginReplacementNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.SimplifyingGraphDecoder;
 import org.graalvm.compiler.nodes.StateSplit;
@@ -568,6 +569,66 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
         }
     }
 
+    protected class PEPluginGraphBuilderContext extends PENonAppendGraphBuilderContext {
+        protected FixedWithNextNode insertBefore;
+        protected ValueNode pushedNode;
+
+        public PEPluginGraphBuilderContext(PEMethodScope inlineScope, FixedWithNextNode insertBefore) {
+            super(inlineScope, inlineScope.invokeData != null ? inlineScope.invokeData.invoke : null);
+            this.insertBefore = insertBefore;
+        }
+
+        @Override
+        public void push(JavaKind kind, ValueNode value) {
+            if (pushedNode != null) {
+                throw unimplemented("Only one push is supported");
+            }
+            pushedNode = value;
+        }
+
+        @Override
+        public void setStateAfter(StateSplit sideEffect) {
+            assert sideEffect.hasSideEffect();
+            FrameState stateAfter = getGraph().add(new FrameState(BytecodeFrame.BEFORE_BCI));
+            sideEffect.setStateAfter(stateAfter);
+        }
+
+        @SuppressWarnings("try")
+        @Override
+        public <T extends ValueNode> T append(T v) {
+            if (v.graph() != null) {
+                return v;
+            }
+            try (DebugCloseable position = withNodeSoucePosition()) {
+                T added = getGraph().addOrUniqueWithInputs(v);
+                if (added == v) {
+                    updateLastInstruction(v);
+                }
+                return added;
+            }
+        }
+
+        private DebugCloseable withNodeSoucePosition() {
+            if (getGraph().trackNodeSourcePosition()) {
+                NodeSourcePosition callerBytecodePosition = methodScope.getCallerBytecodePosition();
+                if (callerBytecodePosition != null) {
+                    return getGraph().withNodeSourcePosition(callerBytecodePosition);
+                }
+            }
+            return null;
+        }
+
+        private <T extends ValueNode> void updateLastInstruction(T value) {
+            if (value instanceof FixedWithNextNode) {
+                FixedWithNextNode fixed = (FixedWithNextNode) value;
+                graph.addBeforeFixed(insertBefore, fixed);
+            } else if (value instanceof FixedNode) {
+                // Block terminating fixed nodes shouldn't be inserted
+                throw GraalError.shouldNotReachHere();
+            }
+        }
+    }
+
     @NodeInfo(cycles = CYCLES_IGNORED, size = SIZE_IGNORED, allowedUsageTypes = {InputType.Value, InputType.Guard, InputType.Anchor})
     static class ExceptionPlaceholderNode extends ValueNode {
         public static final NodeClass<ExceptionPlaceholderNode> TYPE = NodeClass.create(ExceptionPlaceholderNode.class);
@@ -670,7 +731,7 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
             /* Check that the control flow graph can be computed, to catch problems early. */
             assert CFGVerifier.verify(ControlFlowGraph.compute(graph, true, true, true, true));
         } catch (Throwable ex) {
-            throw GraalError.shouldNotReachHere("Control flow graph not valid after partial evaluation");
+            throw GraalError.shouldNotReachHere(ex, "Control flow graph not valid after partial evaluation");
         }
     }
 
@@ -778,6 +839,7 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
             if (methodCall.invokeKind().hasReceiver()) {
                 invokeData.constantReceiver = methodCall.arguments().get(0).asJavaConstant();
             }
+            callTarget = trySimplifyCallTarget(methodScope, invokeData, (MethodCallTargetNode) callTarget);
             LoopScope inlineLoopScope = trySimplifyInvoke(methodScope, loopScope, invokeData, (MethodCallTargetNode) callTarget);
             if (inlineLoopScope != null) {
                 return inlineLoopScope;
@@ -790,14 +852,23 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
         return super.handleInvoke(methodScope, loopScope, invokeData);
     }
 
-    protected LoopScope trySimplifyInvoke(PEMethodScope methodScope, LoopScope loopScope, InvokeData invokeData, MethodCallTargetNode callTarget) {
+    protected MethodCallTargetNode trySimplifyCallTarget(PEMethodScope methodScope, InvokeData invokeData, MethodCallTargetNode callTarget) {
         // attempt to devirtualize the call
         ResolvedJavaMethod specialCallTarget = getSpecialCallTarget(invokeData, callTarget);
         if (specialCallTarget != null) {
             callTarget.setTargetMethod(specialCallTarget);
             callTarget.setInvokeKind(InvokeKind.Special);
+            return callTarget;
         }
+        if (callTarget.invokeKind().isInterface()) {
+            Invoke invoke = invokeData.invoke;
+            ResolvedJavaType contextType = methodScope.method.getDeclaringClass();
+            return MethodCallTargetNode.tryDevirtualizeInterfaceCall(callTarget.receiver(), callTarget.targetMethod(), null, graph.getAssumptions(), contextType, callTarget, invoke.asNode());
+        }
+        return callTarget;
+    }
 
+    protected LoopScope trySimplifyInvoke(PEMethodScope methodScope, LoopScope loopScope, InvokeData invokeData, MethodCallTargetNode callTarget) {
         if (tryInvocationPlugin(methodScope, loopScope, invokeData, callTarget)) {
             /*
              * The invocation plugin handled the call, so decoding continues in the calling method.
@@ -1318,8 +1389,23 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
                 }
             }
         }
+        if (node instanceof PluginReplacementNode) {
+            PluginReplacementNode pluginReplacementNode = (PluginReplacementNode) node;
+            PEPluginGraphBuilderContext graphBuilderContext = new PEPluginGraphBuilderContext(methodScope,
+                            pluginReplacementNode);
+            boolean success = pluginReplacementNode.replace(graphBuilderContext, providers.getReplacements());
+            if (success) {
+                replacedNode = graphBuilderContext.pushedNode;
+            } else if (pluginReplacementMustSucceed()) {
+                throw new GraalError("Plugin failed:" + node);
+            }
+        }
 
         return super.canonicalizeFixedNode(methodScope, replacedNode);
+    }
+
+    protected boolean pluginReplacementMustSucceed() {
+        return false;
     }
 
     @Override

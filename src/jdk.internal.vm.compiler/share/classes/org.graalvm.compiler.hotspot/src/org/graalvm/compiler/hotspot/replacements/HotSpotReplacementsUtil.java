@@ -605,6 +605,11 @@ public class HotSpotReplacementsUtil {
         return WordFactory.unsigned(ComputeObjectAddressNode.get(a, ReplacementsUtil.getArrayBaseOffset(INJECTED_METAACCESS, JavaKind.Int)));
     }
 
+    @Fold
+    public static boolean verifyBeforeOrAfterGC(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.verifyBeforeGC || config.verifyAfterGC;
+    }
+
     /**
      * Idiom for making {@link GraalHotSpotVMConfig} a constant.
      */

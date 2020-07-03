@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 
 package java.awt.image;
 
-import java.awt.color.ColorSpace;
 import java.awt.geom.Rectangle2D;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.geom.Point2D;
 import java.awt.RenderingHints;
 import sun.awt.image.ImagingLib;
@@ -379,7 +377,7 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
         {
             throw new IllegalArgumentException("Number of scaling constants "+
                                                "does not equal the number of"+
-                                               " of color or color/alpha "+
+                                               " color or color/alpha"+
                                                " components");
         }
 
@@ -512,7 +510,7 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
         if (sCheck && scaleConst != 1 && scaleConst != src.getNumBands()) {
             throw new IllegalArgumentException("Number of scaling constants "+
                                                "does not equal the number of"+
-                                               " of bands in the src raster");
+                                               " bands in the src raster");
         }
 
         //

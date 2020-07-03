@@ -77,4 +77,24 @@ public final class ReplacementsUtil {
         return metaAccessProvider.getArrayBaseOffset(elementKind);
     }
 
+    @Fold
+    public static int charArrayBaseOffset(@InjectedParameter MetaAccessProvider metaAccess) {
+        return metaAccess.getArrayBaseOffset(JavaKind.Char);
+    }
+
+    @Fold
+    public static int charArrayIndexScale(@InjectedParameter MetaAccessProvider metaAccess) {
+        return metaAccess.getArrayIndexScale(JavaKind.Char);
+    }
+
+    @Fold
+    public static int byteArrayBaseOffset(@InjectedParameter MetaAccessProvider metaAccess) {
+        return metaAccess.getArrayBaseOffset(JavaKind.Byte);
+    }
+
+    @Fold
+    public static int byteArrayIndexScale(@InjectedParameter MetaAccessProvider metaAccess) {
+        return metaAccess.getArrayIndexScale(JavaKind.Byte);
+    }
+
 }

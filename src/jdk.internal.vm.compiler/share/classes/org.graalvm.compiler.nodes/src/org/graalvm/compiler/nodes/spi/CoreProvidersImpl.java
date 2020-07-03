@@ -100,4 +100,20 @@ public class CoreProvidersImpl implements CoreProviders {
     public MetaAccessExtensionProvider getMetaAccessExtensionProvider() {
         return metaAccessExtensionProvider;
     }
+
+    public CoreProvidersImpl copyWith(ConstantReflectionProvider substitution) {
+        assert this.getClass() == CoreProvidersImpl.class : "must override in " + getClass();
+        return new CoreProvidersImpl(metaAccess, substitution, constantFieldProvider, lowerer, replacements, stampProvider, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider);
+    }
+
+    public CoreProvidersImpl copyWith(ConstantFieldProvider substitution) {
+        assert this.getClass() == CoreProvidersImpl.class : "must override in " + getClass();
+        return new CoreProvidersImpl(metaAccess, constantReflection, substitution, lowerer, replacements, stampProvider, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider);
+    }
+
+    public CoreProvidersImpl copyWith(Replacements substitution) {
+        assert this.getClass() == CoreProvidersImpl.class : "must override in " + getClass();
+        return new CoreProvidersImpl(metaAccess, constantReflection, constantFieldProvider, lowerer, substitution, stampProvider, foreignCalls, platformConfigurationProvider,
+                        metaAccessExtensionProvider);
+    }
 }

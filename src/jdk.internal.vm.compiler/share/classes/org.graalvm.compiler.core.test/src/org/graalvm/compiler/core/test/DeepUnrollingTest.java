@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.core.test;
 
 import java.io.IOException;
@@ -59,6 +59,8 @@ public class DeepUnrollingTest extends SubprocessTest {
         return v;
     }
 
+    private static final int ACCEPTABLE_FACTOR = 50;
+
     public void loopTest() {
         // warmup
         time("reference");
@@ -66,7 +68,9 @@ public class DeepUnrollingTest extends SubprocessTest {
         long reference = time("reference");
         long loops = time("loops");
         // observed ratio is ~20-30x. Pathological case before fix was ~300x
-        assertTrue("Compilation of the loop nest is too slow", loops < reference * 45);
+        if (loops > reference * ACCEPTABLE_FACTOR) {
+            fail("Compilation of the loop nest is too slow. loops: %dms > %d * reference: %dms", loops, ACCEPTABLE_FACTOR, reference);
+        }
     }
 
     public long time(String methodName) {

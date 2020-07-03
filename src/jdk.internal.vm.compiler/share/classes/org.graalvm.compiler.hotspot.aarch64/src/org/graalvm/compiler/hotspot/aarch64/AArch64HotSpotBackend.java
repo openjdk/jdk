@@ -395,6 +395,11 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend implements LIRGene
             ForeignCallLinkage linkage = foreignCalls.lookupForeignCall(DEOPT_BLOB_UNPACK);
             masm.adr(lr, 0); // Warning: the argument is an offset from the instruction!
             AArch64Call.directJmp(crb, masm, linkage);
+            if (config.supportsMethodHandleDeoptimizationEntry() && crb.needsMHDeoptHandler()) {
+                crb.recordMark(HotSpotMarkId.DEOPT_MH_HANDLER_ENTRY);
+                masm.adr(lr, 0);
+                AArch64Call.directJmp(crb, masm, linkage);
+            }
         } else {
             // No need to emit the stubs for entries back into the method since
             // it has no calls that can cause such "return" entries

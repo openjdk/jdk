@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
 import org.graalvm.compiler.phases.common.inlining.info.elem.Inlineable;
 import org.graalvm.compiler.phases.util.Providers;
@@ -101,7 +102,7 @@ public class TypeGuardInlineInfo extends AbstractInlineInfo {
     }
 
     @Override
-    public EconomicSet<Node> inline(Providers providers, String reason) {
+    public EconomicSet<Node> inline(CoreProviders providers, String reason) {
         createGuard(graph(), providers);
         return inline(invoke, concrete, inlineableElement, false, reason);
     }
@@ -113,7 +114,7 @@ public class TypeGuardInlineInfo extends AbstractInlineInfo {
     }
 
     @SuppressWarnings("try")
-    private void createGuard(StructuredGraph graph, Providers providers) {
+    private void createGuard(StructuredGraph graph, CoreProviders providers) {
         try (DebugCloseable context = invoke.asNode().withNodeSourcePosition()) {
             ValueNode nonNullReceiver = InliningUtil.nonNullReceiver(invoke);
             LoadHubNode receiverHub = graph.unique(new LoadHubNode(providers.getStampProvider(), nonNullReceiver));

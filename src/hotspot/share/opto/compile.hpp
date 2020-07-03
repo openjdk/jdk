@@ -246,6 +246,7 @@ class Compile : public Phase {
   const bool            _save_argument_registers; // save/restore arg regs for trampolines
   const bool            _subsume_loads;         // Load can be matched as part of a larger op.
   const bool            _do_escape_analysis;    // Do escape analysis.
+  const bool            _install_code;          // Install the code that was compiled
   const bool            _eliminate_boxing;      // Do boxing elimination.
   ciMethod*             _method;                // The method being compiled.
   int                   _entry_bci;             // entry bci for osr methods.
@@ -507,7 +508,7 @@ class Compile : public Phase {
   /** Do aggressive boxing elimination. */
   bool              aggressive_unboxing() const { return _eliminate_boxing && AggressiveUnboxing; }
   bool              save_argument_registers() const { return _save_argument_registers; }
-
+  bool              should_install_code() const { return _install_code; }
 
   // Other fixed compilation parameters.
   ciMethod*         method() const              { return _method; }
@@ -1008,7 +1009,7 @@ class Compile : public Phase {
   // continuation.
   Compile(ciEnv* ci_env, ciMethod* target,
           int entry_bci, bool subsume_loads, bool do_escape_analysis,
-          bool eliminate_boxing, DirectiveSet* directive);
+          bool eliminate_boxing, bool install_code, DirectiveSet* directive);
 
   // Second major entry point.  From the TypeFunc signature, generate code
   // to pass arguments from the Java calling convention to the C calling

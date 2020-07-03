@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,9 @@ class name javax/swing/ImageIcon
 field name component descriptor Ljava/awt/Component; flags 1c
 field name tracker descriptor Ljava/awt/MediaTracker; flags 1c
 
+class name javax/swing/JComboBox
+-method name processKeyBinding descriptor (Ljavax/swing/KeyStroke;Ljava/awt/event/KeyEvent;IZ)Z
+
 class name javax/swing/JComponent
 field name accessibleContext descriptor Ljavax/accessibility/AccessibleContext; flags 4
 -method name hide descriptor ()V
@@ -90,8 +93,12 @@ field name accessibleFocusHandler descriptor Ljava/awt/event/FocusListener; flag
 class name javax/swing/JDesktopPane
 -method name remove descriptor (Ljava/awt/Component;)V
 
-class name javax/swing/JViewport
--method name addNotify descriptor ()V
+class name javax/swing/JList$AccessibleJList$AccessibleJListChild
+method name getAccessibleAction descriptor ()Ljavax/accessibility/AccessibleAction; flags 1
+
+class name javax/swing/plaf/basic/BasicRadioButtonUI
+-method name installListeners descriptor (Ljavax/swing/AbstractButton;)V
+-method name uninstallListeners descriptor (Ljavax/swing/AbstractButton;)V
 
 class name javax/swing/tree/DefaultMutableTreeNode
 -method name setParent descriptor (Ljavax/swing/tree/MutableTreeNode;)V

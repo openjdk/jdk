@@ -1102,7 +1102,7 @@ public final class CompileTheWorld {
         public static final OptionKey<String> Config = new OptionKey<>(null);
         public static final OptionKey<Boolean> MultiThreaded = new OptionKey<>(false);
         public static final OptionKey<Integer> Threads = new OptionKey<>(0);
-        public static final OptionKey<Boolean> InvalidateInstalledCode = new OptionKey<>(false);
+        public static final OptionKey<Boolean> InvalidateInstalledCode = new OptionKey<>(true);
 
         // @formatter:off
         static final ReflectionOptionDescriptors DESCRIPTORS = new ReflectionOptionDescriptors(Options.class,

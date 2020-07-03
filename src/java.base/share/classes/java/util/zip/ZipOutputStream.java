@@ -506,6 +506,15 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         }
     }
 
+    /**
+     * Adds information about compatibility of file attribute information
+     * to a version value.
+     */
+    private int versionMadeBy(ZipEntry e, int version) {
+        return (e.posixPerms < 0) ? version :
+                VERSION_MADE_BY_BASE_UNIX | (version & 0xff);
+    }
+
     /*
      * Write central directory (CEN) header for specified entry.
      * REMIND: add support for file attributes
@@ -537,10 +546,10 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         }
         writeInt(CENSIG);           // CEN header signature
         if (hasZip64) {
-            writeShort(45);         // ver 4.5 for zip64
+            writeShort(versionMadeBy(e,45));         // ver 4.5 for zip64
             writeShort(45);
         } else {
-            writeShort(version);    // version made by
+            writeShort(versionMadeBy(e, version));    // version made by
             writeShort(version);    // version needed to extract
         }
         writeShort(flag);           // general purpose bit flag
@@ -597,7 +606,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         }
         writeShort(0);              // starting disk number
         writeShort(0);              // internal file attributes (unused)
-        writeInt(0);                // external file attributes (unused)
+        // external file attributes, used for storing posix permissions
+        writeInt(e.posixPerms > 0 ? e.posixPerms << 16 : 0);
         writeInt(offset);           // relative offset of local header
         writeBytes(nameBytes, 0, nameBytes.length);
 

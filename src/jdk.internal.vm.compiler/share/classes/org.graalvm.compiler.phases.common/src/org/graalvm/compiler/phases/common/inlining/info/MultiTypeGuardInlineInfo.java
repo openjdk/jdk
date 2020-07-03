@@ -53,6 +53,7 @@ import org.graalvm.compiler.nodes.extended.LoadHubNode;
 import org.graalvm.compiler.nodes.java.ExceptionObjectNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.TypeSwitchNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
@@ -158,7 +159,7 @@ public class MultiTypeGuardInlineInfo extends AbstractInlineInfo {
     }
 
     @Override
-    public EconomicSet<Node> inline(Providers providers, String reason) {
+    public EconomicSet<Node> inline(CoreProviders providers, String reason) {
         if (hasSingleMethod()) {
             return inlineSingleMethod(graph(), providers.getStampProvider(), providers.getConstantReflection(), reason);
         } else {
@@ -184,7 +185,7 @@ public class MultiTypeGuardInlineInfo extends AbstractInlineInfo {
         return notRecordedTypeProbability > 0;
     }
 
-    private EconomicSet<Node> inlineMultipleMethods(StructuredGraph graph, Providers providers, String reason) {
+    private EconomicSet<Node> inlineMultipleMethods(StructuredGraph graph, CoreProviders providers, String reason) {
         int numberOfMethods = concretes.size();
         FixedNode continuation = invoke.next();
 

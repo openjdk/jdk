@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -2083,12 +2083,41 @@ method name equals descriptor (Ljava/lang/Object;)Z flags 1
 method name toString descriptor ()Ljava/lang/String; flags 1
 method name clone descriptor ()Ljava/lang/Object; thrownTypes java/lang/CloneNotSupportedException flags 1041
 
+class name java/security/interfaces/RSAKey
+-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+
 class name java/security/spec/EncodedKeySpec
 method name <init> descriptor ([BLjava/lang/String;)V flags 4
 method name getAlgorithm descriptor ()Ljava/lang/String; flags 1
 
+class name java/security/spec/MGF1ParameterSpec
+-field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec;
+-field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec;
+
 class name java/security/spec/PKCS8EncodedKeySpec
 method name <init> descriptor ([BLjava/lang/String;)V flags 1
+
+class name java/security/spec/PSSParameterSpec
+-field name TRAILER_FIELD_BC descriptor I
+-method name toString descriptor ()Ljava/lang/String;
+
+class name java/security/spec/RSAKeyGenParameterSpec
+-method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
+-method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+
+class name java/security/spec/RSAMultiPrimePrivateCrtKeySpec
+-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V
+
+class name java/security/spec/RSAPrivateCrtKeySpec
+-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
+
+class name java/security/spec/RSAPrivateKeySpec
+-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
+-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+
+class name java/security/spec/RSAPublicKeySpec
+-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
+-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
 
 class name java/security/spec/X509EncodedKeySpec
 method name <init> descriptor ([BLjava/lang/String;)V flags 1
@@ -2223,9 +2252,6 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 
 class name java/time/chrono/IsoChronology
 method name epochSecond descriptor (IIIIIILjava/time/ZoneOffset;)J flags 1
-
-class name java/time/chrono/JapaneseEra
-method name getDisplayName descriptor (Ljava/time/format/TextStyle;Ljava/util/Locale;)Ljava/lang/String; flags 1
 
 class name java/time/format/DateTimeFormatter
 header extends java/lang/Object flags 31
@@ -3221,12 +3247,6 @@ header extends java/lang/Object implements java/util/function/Function flags 601
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name java/util/jar/Attributes$Name
--field name EXTENSION_INSTALLATION descriptor Ljava/util/jar/Attributes$Name;
--field name IMPLEMENTATION_VENDOR_ID descriptor Ljava/util/jar/Attributes$Name;
--field name IMPLEMENTATION_URL descriptor Ljava/util/jar/Attributes$Name;
-field name EXTENSION_INSTALLATION descriptor Ljava/util/jar/Attributes$Name; flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;
-field name IMPLEMENTATION_VENDOR_ID descriptor Ljava/util/jar/Attributes$Name; flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;
-field name IMPLEMENTATION_URL descriptor Ljava/util/jar/Attributes$Name; flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;
 field name MULTI_RELEASE descriptor Ljava/util/jar/Attributes$Name; flags 19
 
 class name java/util/jar/JarFile
@@ -3381,18 +3401,15 @@ method name finalize descriptor ()V thrownTypes java/io/IOException flags 4 depr
 class name javax/crypto/ExemptionMechanism
 -method name finalize descriptor ()V
 
+class name javax/crypto/SealedObject
+header extends java/lang/Object implements java/io/Serializable flags 21
+
 class name javax/net/ssl/ExtendedSSLSession
 method name getStatusResponses descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<[B>;
 
 class name javax/net/ssl/HandshakeCompletedEvent
 -method name getPeerCertificateChain descriptor ()[Ljavax/security/cert/X509Certificate;
 method name getPeerCertificateChain descriptor ()[Ljavax/security/cert/X509Certificate; thrownTypes javax/net/ssl/SSLPeerUnverifiedException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
-
-class name javax/net/ssl/SSLEngine
-method name getApplicationProtocol descriptor ()Ljava/lang/String; flags 1
-method name getHandshakeApplicationProtocol descriptor ()Ljava/lang/String; flags 1
-method name setHandshakeApplicationProtocolSelector descriptor (Ljava/util/function/BiFunction;)V flags 1 signature (Ljava/util/function/BiFunction<Ljavax/net/ssl/SSLEngine;Ljava/util/List<Ljava/lang/String;>;Ljava/lang/String;>;)V
-method name getHandshakeApplicationProtocolSelector descriptor ()Ljava/util/function/BiFunction; flags 1 signature ()Ljava/util/function/BiFunction<Ljavax/net/ssl/SSLEngine;Ljava/util/List<Ljava/lang/String;>;Ljava/lang/String;>;
 
 class name javax/net/ssl/SSLEngineResult
 header extends java/lang/Object flags 21
@@ -3409,18 +3426,10 @@ method name setEnableRetransmissions descriptor (Z)V flags 1
 method name getEnableRetransmissions descriptor ()Z flags 1
 method name setMaximumPacketSize descriptor (I)V flags 1
 method name getMaximumPacketSize descriptor ()I flags 1
-method name getApplicationProtocols descriptor ()[Ljava/lang/String; flags 1
-method name setApplicationProtocols descriptor ([Ljava/lang/String;)V flags 1
 
 class name javax/net/ssl/SSLSession
 -method name getPeerCertificateChain descriptor ()[Ljavax/security/cert/X509Certificate;
 method name getPeerCertificateChain descriptor ()[Ljavax/security/cert/X509Certificate; thrownTypes javax/net/ssl/SSLPeerUnverifiedException flags 401 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
-
-class name javax/net/ssl/SSLSocket
-method name getApplicationProtocol descriptor ()Ljava/lang/String; flags 1
-method name getHandshakeApplicationProtocol descriptor ()Ljava/lang/String; flags 1
-method name setHandshakeApplicationProtocolSelector descriptor (Ljava/util/function/BiFunction;)V flags 1 signature (Ljava/util/function/BiFunction<Ljavax/net/ssl/SSLSocket;Ljava/util/List<Ljava/lang/String;>;Ljava/lang/String;>;)V
-method name getHandshakeApplicationProtocolSelector descriptor ()Ljava/util/function/BiFunction; flags 1 signature ()Ljava/util/function/BiFunction<Ljavax/net/ssl/SSLSocket;Ljava/util/List<Ljava/lang/String;>;Ljava/lang/String;>;
 
 class name javax/security/auth/Policy
 header extends java/lang/Object flags 421 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="1.4")

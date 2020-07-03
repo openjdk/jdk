@@ -224,11 +224,7 @@ void G1Analytics::report_rs_length(double rs_length) {
 }
 
 double G1Analytics::predict_alloc_rate_ms() const {
-  if (enough_samples_available(_alloc_rate_ms_seq)) {
-    return predict_zero_bounded(_alloc_rate_ms_seq);
-  } else {
-    return 0.0;
-  }
+  return predict_zero_bounded(_alloc_rate_ms_seq);
 }
 
 double G1Analytics::predict_concurrent_refine_rate_ms() const {

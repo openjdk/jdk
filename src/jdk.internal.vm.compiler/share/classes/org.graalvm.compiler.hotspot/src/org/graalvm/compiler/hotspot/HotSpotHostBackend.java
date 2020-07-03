@@ -101,7 +101,7 @@ public abstract class HotSpotHostBackend extends HotSpotBackend implements LIRGe
     @SuppressWarnings("try")
     public void completeInitialization(HotSpotJVMCIRuntime jvmciRuntime, OptionValues options) {
         final HotSpotProviders providers = getProviders();
-        HotSpotHostForeignCallsProvider foreignCalls = (HotSpotHostForeignCallsProvider) providers.getForeignCalls();
+        HotSpotHostForeignCallsProvider foreignCalls = providers.getForeignCalls();
         final HotSpotLoweringProvider lowerer = (HotSpotLoweringProvider) providers.getLowerer();
 
         try (InitTimer st = timer("foreignCalls.initialize")) {

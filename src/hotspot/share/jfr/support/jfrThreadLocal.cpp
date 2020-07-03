@@ -92,8 +92,8 @@ void JfrThreadLocal::on_start(Thread* t) {
   assert(Thread::current() == t, "invariant");
   JfrJavaSupport::on_thread_start(t);
   if (JfrRecorder::is_recording()) {
+    JfrCheckpointManager::write_thread_checkpoint(t);
     if (!t->jfr_thread_local()->is_excluded()) {
-      JfrCheckpointManager::write_thread_checkpoint(t);
       if (t->is_Java_thread()) {
         send_java_thread_start_event((JavaThread*)t);
       }

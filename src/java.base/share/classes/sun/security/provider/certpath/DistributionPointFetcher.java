@@ -248,7 +248,7 @@ public class DistributionPointFetcher {
             debug.println("Trying to fetch CRL from DP " + uri);
         }
 
-        Event.report("event.crl.check", uri.toString());
+        Event.report(Event.ReporterCategory.CRLCHECK, "event.crl.check", uri.toString());
         CertStore ucs = null;
         try {
             ucs = URICertStore.getInstance(new URICertStoreParameters(uri));

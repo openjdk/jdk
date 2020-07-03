@@ -149,6 +149,7 @@ module java.base {
         java.management,
         java.naming,
         java.rmi,
+        jdk.jartool,
         jdk.jlink,
         jdk.net,
         jdk.incubator.foreign;

@@ -38,7 +38,7 @@ module jdk.internal.vm.compiler {
     uses org.graalvm.compiler.hotspot.HotSpotBackendFactory;
     uses org.graalvm.compiler.hotspot.HotSpotCodeCacheListener;
     uses org.graalvm.compiler.hotspot.HotSpotGraalManagementRegistration;
-    uses org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory;
+    uses org.graalvm.compiler.nodes.graphbuilderconf.GeneratedPluginFactory;
     uses org.graalvm.compiler.phases.common.jmx.HotSpotMBeanOperationProvider;
     uses org.graalvm.compiler.serviceprovider.JMXService;
 

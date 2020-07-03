@@ -42,6 +42,7 @@ public enum HotSpotMarkId implements CompilationResult.MarkId {
     OSR_ENTRY(false),
     EXCEPTION_HANDLER_ENTRY(false),
     DEOPT_HANDLER_ENTRY(false),
+    DEOPT_MH_HANDLER_ENTRY(false),
     FRAME_COMPLETE(true, true),
     INVOKEINTERFACE(false),
     INVOKEVIRTUAL(false),

@@ -400,8 +400,8 @@ static RecorderState recorder_state = STOPPED;
 
 static void set_recorder_state(RecorderState from, RecorderState to) {
   assert(from == recorder_state, "invariant");
-  OrderAccess::storestore();
   recorder_state = to;
+  OrderAccess::fence();
 }
 
 static void start_recorder() {
@@ -417,18 +417,16 @@ static void stop_recorder() {
 }
 
 bool JfrRecorderService::is_recording() {
-  const bool is_running = recorder_state == RUNNING;
-  OrderAccess::loadload();
-  return is_running;
+  return recorder_state == RUNNING;
 }
 
 void JfrRecorderService::start() {
   JfrRotationLock lock;
   assert(!is_recording(), "invariant");
   clear();
-  open_new_chunk();
   start_recorder();
   assert(is_recording(), "invariant");
+  open_new_chunk();
 }
 
 static void stop() {

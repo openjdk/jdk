@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,12 @@ import static org.graalvm.compiler.api.directives.GraalDirectives.LIKELY_PROBABI
 import static org.graalvm.compiler.api.directives.GraalDirectives.UNLIKELY_PROBABILITY;
 import static org.graalvm.compiler.api.directives.GraalDirectives.SLOWPATH_PROBABILITY;
 import static org.graalvm.compiler.api.directives.GraalDirectives.injectBranchProbability;
+import static org.graalvm.compiler.replacements.ReplacementsUtil.byteArrayBaseOffset;
+import static org.graalvm.compiler.replacements.ReplacementsUtil.byteArrayIndexScale;
+import static org.graalvm.compiler.replacements.ReplacementsUtil.charArrayBaseOffset;
+import static org.graalvm.compiler.replacements.ReplacementsUtil.charArrayIndexScale;
 
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
-import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
@@ -53,26 +56,6 @@ import jdk.vm.ci.meta.MetaAccessProvider;
  */
 @ClassSubstitution(className = "java.lang.StringLatin1", optional = true)
 public class AMD64StringLatin1Substitutions {
-
-    @Fold
-    static int byteArrayBaseOffset(@InjectedParameter MetaAccessProvider metaAccess) {
-        return metaAccess.getArrayBaseOffset(JavaKind.Byte);
-    }
-
-    @Fold
-    static int byteArrayIndexScale(@InjectedParameter MetaAccessProvider metaAccess) {
-        return metaAccess.getArrayIndexScale(JavaKind.Byte);
-    }
-
-    @Fold
-    static int charArrayBaseOffset(@InjectedParameter MetaAccessProvider metaAccess) {
-        return metaAccess.getArrayBaseOffset(JavaKind.Char);
-    }
-
-    @Fold
-    static int charArrayIndexScale(@InjectedParameter MetaAccessProvider metaAccess) {
-        return metaAccess.getArrayIndexScale(JavaKind.Char);
-    }
 
     /** Marker value for the {@link InjectedParameter} injected parameter. */
     static final MetaAccessProvider INJECTED = null;

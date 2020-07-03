@@ -353,6 +353,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
                 String[] fontInfo = getDefaultPlatformFont();
                 defaultFontName = fontInfo[0];
+                if (defaultFontName == null && FontUtilities.debugFonts()) {
+                    FontUtilities.getLogger().warning("defaultFontName is null");
+                }
                 defaultFontFileName = fontInfo[1];
 
                 String extraFontPath = fontConfig.getExtraFontPath();
@@ -1888,6 +1891,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * may be able to emulate the required style.
      */
     public Font2D findFont2D(String name, int style, int fallback) {
+        if (name == null) return null;
         String lowerCaseName = name.toLowerCase(Locale.ENGLISH);
         String mapName = lowerCaseName + dotStyleStr(style);
 

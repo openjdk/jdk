@@ -48,7 +48,6 @@ LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli \
     #
-GLOBAL_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/common/version.rc
 MACOSX_PLIST_DIR := $(TOPDIR)/src/java.base/macosx/native/launcher
 JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 
@@ -71,7 +70,7 @@ JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 #     compile time defines exceeding Visual Studio 2013 limitations.
 # CFLAGS   Additional CFLAGS
 # CFLAGS_windows   Additional CFLAGS_windows
-# EXTRA_RC_FLAGS   Additional EXTRA_RC_FLAGS
+# EXTRA_RCFLAGS   Additional EXTRA_RCFLAGS
 # MACOSX_PRIVILEGED   On macosx, allow to access other processes
 # OPTIMIZATION   Override default optimization level (LOW)
 # OUTPUT_DIR   Override default output directory
@@ -160,7 +159,7 @@ define SetupBuildLauncherBody
           $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib, \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
       VERSIONINFO_RESOURCE := $$($1_VERSION_INFO_RESOURCE), \
-      EXTRA_RC_FLAGS := $$($1_EXTRA_RC_FLAGS), \
+      EXTRA_RCFLAGS := $$($1_EXTRA_RCFLAGS), \
       MANIFEST := $(JAVA_MANIFEST), \
       MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS), \
   ))

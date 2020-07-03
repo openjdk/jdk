@@ -30,6 +30,7 @@ import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.core.common.GraalOptions.MatchExpressions;
 import static org.graalvm.compiler.core.common.SpeculativeExecutionAttacksMitigations.AllTargets;
 import static org.graalvm.compiler.core.common.SpeculativeExecutionAttacksMitigations.Options.MitigateSpeculativeExecutionAttacks;
+import static org.graalvm.compiler.core.match.ComplexMatchValue.INTERIOR_MATCH;
 import static org.graalvm.compiler.debug.DebugOptions.LogVerbose;
 import static org.graalvm.compiler.lir.LIR.verifyBlock;
 
@@ -137,6 +138,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
 
     private final NodeMatchRules nodeMatchRules;
     private EconomicMap<Class<? extends Node>, List<MatchStatement>> matchRules;
+    private EconomicMap<Node, Integer> sharedMatchCounts;
 
     public NodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool gen, NodeMatchRules nodeMatchRules) {
         this.gen = (LIRGenerator) gen;
@@ -146,6 +148,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
         OptionValues options = graph.getOptions();
         if (MatchExpressions.getValue(options)) {
             matchRules = MatchRuleRegistry.lookup(nodeMatchRules.getClass(), options, graph.getDebug());
+            sharedMatchCounts = EconomicMap.create();
         }
         traceLIRGeneratorLevel = TTY.isSuppressed() ? 0 : Options.TraceLIRGeneratorLevel.getValue(options);
 
@@ -219,11 +222,28 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
      * ValueNodes.
      */
     public void setMatchResult(Node x, Value operand) {
-        assert operand.equals(ComplexMatchValue.INTERIOR_MATCH) || operand instanceof ComplexMatchValue;
+        assert operand.equals(INTERIOR_MATCH) || operand instanceof ComplexMatchValue;
         assert operand instanceof ComplexMatchValue || MatchPattern.isSingleValueUser(x) : "interior matches must be single user";
         assert nodeOperands != null && nodeOperands.get(x) == null : "operand cannot be set twice";
         assert !(x instanceof VirtualObjectNode);
         nodeOperands.set(x, operand);
+    }
+
+    /**
+     * Track how many users have consumed a sharedable match and disable emission of the value if
+     * all users have consumed it.
+     */
+    public void incrementSharedMatchCount(Node node) {
+        assert nodeOperands != null && nodeOperands.get(node) == null : "operand cannot be set twice";
+        Integer matchValue = sharedMatchCounts.get(node);
+        if (matchValue == null) {
+            matchValue = 0;
+        }
+        matchValue = matchValue + 1;
+        sharedMatchCounts.put(node, matchValue);
+        if (node.getUsageCount() == matchValue) {
+            nodeOperands.set(node, INTERIOR_MATCH);
+        }
     }
 
     public LabelRef getLIRBlock(FixedNode b) {
@@ -384,7 +404,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
                                 throw new GraalGraphError(e).addContext(valueNode);
                             }
                         }
-                    } else if (ComplexMatchValue.INTERIOR_MATCH.equals(operand)) {
+                    } else if (INTERIOR_MATCH.equals(operand)) {
                         // Doesn't need to be evaluated
                         debug.log("interior match for %s", valueNode);
                     } else if (operand instanceof ComplexMatchValue) {

@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.hotspot.amd64;
 
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.Options.GraalArithmeticStubs;
 
 import org.graalvm.compiler.core.amd64.AMD64LoweringProviderMixin;
@@ -70,10 +71,8 @@ public class AMD64HotSpotLoweringProvider extends DefaultHotSpotLoweringProvider
     @Override
     public void initialize(OptionValues options, Iterable<DebugHandlersFactory> factories, HotSpotProviders providers, GraalHotSpotVMConfig config) {
         convertSnippets = new AMD64ConvertSnippets.Templates(options, factories, providers, providers.getSnippetReflection(), providers.getCodeCache().getTarget());
-        if (JavaVersionUtil.JAVA_SPEC <= 8) {
+        if (JavaVersionUtil.JAVA_SPEC >= 11 && GeneratePIC.getValue(options)) {
             // AOT only introduced in JDK 9
-            profileSnippets = null;
-        } else {
             profileSnippets = new ProbabilisticProfileSnippets.Templates(options, factories, providers, providers.getCodeCache().getTarget());
         }
         mathSnippets = new AMD64X87MathSnippets.Templates(options, factories, providers, providers.getSnippetReflection(), providers.getCodeCache().getTarget());
