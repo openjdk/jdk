@@ -275,9 +275,9 @@ AC_DEFUN([BOOTJDK_CHECK_WELL_KNOWN_LOCATIONS],
 AC_DEFUN([BOOTJDK_CHECK_TOOL_IN_BOOTJDK],
 [
   # Use user overridden value if available, otherwise locate tool in the Boot JDK.
-  UTIL_SETUP_TOOL($1,
+  UTIL_REQUIRE_SPECIAL($1,
     [
-      AC_MSG_CHECKING([for $2 in Boot JDK])
+      AC_MSG_CHECKING([for $2 [[Boot JDK]]])
       $1=$BOOT_JDK/bin/$2
       if test ! -x [$]$1 && test ! -x [$]$1.exe; then
         AC_MSG_RESULT(not found)

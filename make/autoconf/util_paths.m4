@@ -274,16 +274,6 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
 ])
 
 ###############################################################################
-# Test that variable $1 denoting a program is not empty. If empty, exit with an error.
-# $1: variable to check
-AC_DEFUN([UTIL_CHECK_NONEMPTY],
-[
-  if test "x[$]$1" = x; then
-    AC_MSG_ERROR([Could not find required tool for $1])
-  fi
-])
-
-###############################################################################
 # Setup a tool for the given variable. If correctly specified by the user,
 # use that value, otherwise search for the tool using the supplied code snippet.
 # $1: variable to set
@@ -452,6 +442,16 @@ AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
 ])
 
 ###############################################################################
+# Test that variable $1 denoting a program is not empty. If empty, exit with an error.
+# $1: variable to check
+AC_DEFUN([UTIL_CHECK_NONEMPTY],
+[
+  if test "x[$]$1" = x; then
+    AC_MSG_ERROR([Could not find required tool for $1])
+  fi
+])
+
+###############################################################################
 # Like UTIL_LOOKUP_PROGS but fails if no tool was found.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
@@ -463,6 +463,18 @@ AC_DEFUN([UTIL_REQUIRE_PROGS],
 ])
 
 ###############################################################################
+# Like UTIL_LOOKUP_PROGS but fails if no tool was found.
+# $1: variable to set
+# $2: executable name (or list of names) to look for
+# $3: [path]
+AC_DEFUN([UTIL_REQUIRE_TOOLCHAIN_PROGS],
+[
+  UTIL_LOOKUP_TOOLCHAIN_PROGS($1, $2, , $3)
+  UTIL_CHECK_NONEMPTY($1)
+])
+
+
+###############################################################################
 # Like UTIL_SETUP_TOOL but fails if no tool was found.
 # $1: variable to set
 # $2: autoconf macro to call to look for the special tool
@@ -470,6 +482,8 @@ AC_DEFUN([UTIL_REQUIRE_SPECIAL],
 [
   UTIL_SETUP_TOOL($1, [$2])
   UTIL_CHECK_NONEMPTY($1)
+  # The special macro will return an absolute path, and is only used for
+  # unix tools. No further processing needed.
 ])
 
 ###############################################################################
