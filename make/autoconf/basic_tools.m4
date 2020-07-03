@@ -190,11 +190,11 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
   UTIL_SETUP_TOOL([MAKE],
   [
     # Try our hardest to locate a correct version of GNU make
-    AC_PATH_PROGS(CHECK_GMAKE, gmake)
+    UTIL_PATH_PROGS(CHECK_GMAKE, gmake)
     BASIC_CHECK_MAKE_VERSION("$CHECK_GMAKE", [gmake in PATH])
 
     if test "x$FOUND_MAKE" = x; then
-      AC_PATH_PROGS(CHECK_MAKE, make)
+      UTIL_PATH_PROGS(CHECK_MAKE, make)
       BASIC_CHECK_MAKE_VERSION("$CHECK_MAKE", [make in PATH])
     fi
 
@@ -203,10 +203,10 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
         # We have a toolchain path, check that as well before giving up.
         OLD_PATH=$PATH
         PATH=$TOOLCHAIN_PATH:$PATH
-        AC_PATH_PROGS(CHECK_TOOLSDIR_GMAKE, gmake)
+        UTIL_PATH_PROGS(CHECK_TOOLSDIR_GMAKE, gmake)
         BASIC_CHECK_MAKE_VERSION("$CHECK_TOOLSDIR_GMAKE", [gmake in tools-dir])
         if test "x$FOUND_MAKE" = x; then
-          AC_PATH_PROGS(CHECK_TOOLSDIR_MAKE, make)
+          UTIL_PATH_PROGS(CHECK_TOOLSDIR_MAKE, make)
           BASIC_CHECK_MAKE_VERSION("$CHECK_TOOLSDIR_MAKE", [make in tools-dir])
         fi
         PATH=$OLD_PATH

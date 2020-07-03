@@ -483,7 +483,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     if test "x`basename [$]$1`" = "x[$]$1"; then
       # A command without a complete path is provided, search $PATH.
 
-      AC_PATH_PROGS(POTENTIAL_$1, [$]$1)
+      UTIL_PATH_PROGS(POTENTIAL_$1, [$]$1)
       if test "x$POTENTIAL_$1" != x; then
         $1=$POTENTIAL_$1
       else

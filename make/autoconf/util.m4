@@ -525,7 +525,7 @@ AC_DEFUN([UTIL_SETUP_TOOL],
         if test "x$tool_basename" = "x$tool_command"; then
           # A command without a complete path is provided, search $PATH.
           AC_MSG_NOTICE([Will search for user supplied tool "$tool_basename"])
-          AC_PATH_PROG($1, $tool_basename ${tool_basename}.exe)
+          AC_PATH_PROGS($1, $tool_basename ${tool_basename}.exe)
           if test "x[$]$1" = x; then
             AC_MSG_ERROR([User supplied tool $1="$tool_basename" could not be found])
           fi
@@ -561,7 +561,6 @@ AC_DEFUN([UTIL_SETUP_TOOL],
 # $3: [path]
 AC_DEFUN([UTIL_PATH_PROGS],
 [
- echo enter with $2
   if test "x$OPENJDK_BUILD_OS" = xwindows; then
     all_names=$(for i in $2; do echo ${i}.exe $i; done)
   else

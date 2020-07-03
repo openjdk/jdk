@@ -170,8 +170,8 @@ AC_DEFUN([BOOTJDK_CHECK_JAVA_HOME],
 # Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
 AC_DEFUN([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK],
 [
-  AC_PATH_PROG(JAVAC_CHECK, javac)
-  AC_PATH_PROG(JAVA_CHECK, java)
+  UTIL_PATH_PROGS(JAVAC_CHECK, javac)
+  UTIL_PATH_PROGS(JAVA_CHECK, java)
   BINARY="$JAVAC_CHECK"
   if test "x$JAVAC_CHECK" = x; then
     BINARY="$JAVA_CHECK"

@@ -220,7 +220,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
     if test "x$DEVKIT_ROOT" != x || /usr/bin/xcodebuild -version >/dev/null 2>&1; then
       # We need to use xcodebuild in the toolchain dir provided by the user, this will
       # fall back on the stub binary in /usr/bin/xcodebuild
-      AC_PATH_PROG([XCODEBUILD], [xcodebuild], [/usr/bin/xcodebuild], [$TOOLCHAIN_PATH])
+      AC_PATH_PROGS([XCODEBUILD], [xcodebuild], [/usr/bin/xcodebuild], [$TOOLCHAIN_PATH])
     else
       # this should result in SYSROOT being empty, unless --with-sysroot is provided
       # when only the command line tools are installed there are no SDKs, so headers
