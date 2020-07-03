@@ -87,24 +87,6 @@ PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET
 # Continue setting up basic stuff. Most remaining code require fundamental tools.
 BASIC_SETUP_PATHS
 
-echo testingg make
-UTIL_CHECK_WINENV_EXEC_TYPE(/usr/bin/make)
-echo result: $RESULT
-
-echo testingg make.exe
-UTIL_CHECK_WINENV_EXEC_TYPE(/usr/bin/make.exe)
-echo result: $RESULT
-
-echo testingg pandoc
-UTIL_CHECK_WINENV_EXEC_TYPE($WINENV_PREFIX/c/CygWin64/var/tmp/jib-magnusi/install/jpg/infra/builddeps/pandoc-windows_x64/2.3.1+1.0/pandoc-windows_x64-2.3.1+1.0.tar.gz/pandoc/pandoc)
-echo result: $RESULT
-
-echo testingg pandoc.exe
-UTIL_CHECK_WINENV_EXEC_TYPE($WINENV_PREFIX/c/CygWin64/var/tmp/jib-magnusi/install/jpg/infra/builddeps/pandoc-windows_x64/2.3.1+1.0/pandoc-windows_x64-2.3.1+1.0.tar.gz/pandoc/pandoc.exe)
-echo result: $RESULT
-
-exit 0
-
 # Check if it's a pure open build or if custom sources are to be used.
 JDKOPT_SETUP_OPEN_OR_CUSTOM
 
