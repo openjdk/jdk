@@ -126,11 +126,17 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
   # accept unix paths
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin" || \
       test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
-    $LDD $1 2>&1 | $GREP -q $WINENV_MARKER_DLL
-    if test $? -eq 0; then
+    linked_libs=`$LDD $1 2>&1`
+    if test $? -ne 0; then
+      # Non-binary files (e.g. shell scripts) are unix files
       RESULT=unix
     else
-      RESULT=windows
+      $ECHO "$linked_libs" | $GREP -q $WINENV_MARKER_DLL
+      if test $? -eq 0; then
+        RESULT=unix
+      else
+        RESULT=windows
+      fi
     fi
   elif test "x$OPENJDK_BUILD_OS" = "xwindows"; then
     # On WSL, we can check if it is a PE file
