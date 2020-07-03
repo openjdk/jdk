@@ -505,7 +505,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     # If we are not cross compiling, then the default compiler name will be
     # used.
 
-    AC_PATH_TOOL(POTENTIAL_$1, $SEARCH_LIST)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(POTENTIAL_$1, $SEARCH_LIST)
     if test "x$POTENTIAL_$1" != x; then
       $1=$POTENTIAL_$1
     else
@@ -515,7 +515,6 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
   fi
 
   # Now we have a compiler binary in $1. Make sure it's okay.
-  UTIL_FIXUP_EXECUTABLE($1)
   TEST_COMPILER="[$]$1"
 
   AC_MSG_CHECKING([resolved symbolic links for $1])
