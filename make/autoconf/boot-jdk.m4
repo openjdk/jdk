@@ -277,7 +277,7 @@ AC_DEFUN([BOOTJDK_CHECK_TOOL_IN_BOOTJDK],
     [
       AC_MSG_CHECKING([for $2 in Boot JDK])
       $1=$BOOT_JDK/bin/$2
-      if test ! -x [$]$1; then
+      if test ! -x [$]$1 && test ! -x [$]$1.exe; then
         AC_MSG_RESULT(not found)
         AC_MSG_NOTICE([Your Boot JDK seems broken. This might be fixed by explicitly setting --with-boot-jdk])
         AC_MSG_ERROR([Could not find $2 in the Boot JDK])

@@ -214,7 +214,7 @@ cygwin_import_to_unix() {
     dirpart="$(dirname "$path")"
     dirpart="$(cd "$dirpart" 2>&1 > /dev/null && pwd)"
     if [[ $? -ne 0 ]]; then
-      echo fixpath: failure: Path "'"$path"'" does not exist 1>&2
+      echo fixpath: failure: Directory containing path "'"$path"'" does not exist 1>&2
       exit 1
     fi
     basepart="$(basename "$path")"
@@ -249,8 +249,12 @@ cygwin_import_to_unix() {
     # exists, we assume that $path is a valid unix path.
 
     if [[ ! -e $path ]]; then
-      echo fixpath: failure: Path "'"$path"'" does not exist 1>&2
-      exit 1
+      if [[ -e $path.exe ]]; then
+        path="$path.exe"
+      else
+        echo fixpath: failure: Path "'"$path"'" does not exist 1>&2
+        exit 1
+      fi
     fi
   fi
 
