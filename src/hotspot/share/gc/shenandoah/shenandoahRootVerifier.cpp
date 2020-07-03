@@ -46,6 +46,7 @@
 STATIC_ASSERT((static_cast<uint>(ShenandoahRootVerifier::AllRoots) + 1) > static_cast<uint>(ShenandoahRootVerifier::AllRoots));
 
 ShenandoahRootVerifier::ShenandoahRootVerifier(RootTypes types) : _types(types) {
+  Threads::change_thread_claim_token();
 }
 
 void ShenandoahRootVerifier::excludes(RootTypes types) {
