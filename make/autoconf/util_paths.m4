@@ -155,6 +155,7 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
 # If the input variable does not have a directory specification, then
 # it need to be in the PATH.
 # $1: The name of the variable to fix
+# $2: Where to look for the command (replaces $PATH)
 AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
 [
   input="[$]$1"
@@ -163,7 +164,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
   if test "x$input" != x; then
     # First separate the path from the arguments. This will split at the first
     # space.
-    [ if [[ $input =~ ^$FIXPATH ]]; then
+    [ if [[ "$OPENJDK_BUILD_OS" = "windows" && input =~ ^$FIXPATH ]]; then
       line="${input#$FIXPATH }"
       prefix="$FIXPATH "
     else
@@ -176,16 +177,27 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
 
     contains_slash=`$ECHO "$path" | $GREP -e / -e \\`
     if test -z "$contains_slash"; then
-      # Command part has no slash, so search in $PATH using bash built-in 'type -p'.
-      new_path=`type -p "$path"`
-      if test "x$new_path" = x && test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-        # Try again with .exe
-        new_path=`type -p "$path.exe"`
-      fi
+      command_type=`type -t "$path"`
+      if test "x$command_type" = xbuiltin || test "x$command_type" = xkeyword; then
+        # Shell builtin or keyword; we're done here
+        new_path="$path"
+      else
+        # Search in $PATH using bash built-in 'type -p'.
+        old_path="$PATH"
+        if test "x$2" != x; then
+          PATH="$2"
+        fi
+        new_path=`type -p "$path"`
+        if test "x$new_path" = x && test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+          # Try again with .exe
+          new_path=`type -p "$path.exe"`
+        fi
+        PATH="$old_path"
 
-      if test "x$new_path" = x; then
-        AC_MSG_NOTICE([The command for $1, which resolves as "$input", is not found in the PATH.])
-        AC_MSG_ERROR([Cannot locate $path])
+        if test "x$new_path" = x; then
+          AC_MSG_NOTICE([The command for $1, which resolves as "$input", is not found in the PATH.])
+          AC_MSG_ERROR([Cannot locate $path])
+        fi
       fi
     else
       # This is a path with slashes, don't look at $PATH

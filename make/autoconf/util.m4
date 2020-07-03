@@ -571,21 +571,59 @@ AC_DEFUN([UTIL_LOOKUP_FUNDAMENTAL_PROGS],
 ])
 
 ###############################################################################
-# Call UTIL_SETUP_TOOL with AC_PATH_PROGS to locate the tool
+# Locate a tool using proper methods.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
 # $3: [path]
 AC_DEFUN([UTIL_LOOKUP_PROGS],
 [
-  if test "x$OPENJDK_BUILD_OS" = xwindows; then
-    all_names=$(for i in $2; do echo ${i}.exe $i; done)
-  else
-    all_names="$2"
-  fi
-  UTIL_SETUP_TOOL($1, [AC_CHECK_PROGS($1, $all_names, , $3)])
-  # Expand the path afterwards
+  UTIL_SETUP_TOOL($1, [
+    $1=""
+
+    if test "x$3" != x; then
+      old_path="$PATH"
+      PATH="$3"
+    fi
+
+    for name in $2; do
+      AC_MSG_CHECKING(for $name)
+
+      command_type=`type -t "$name"`
+      if test "x$command_type" = xbuiltin || test "x$command_type" = xkeyword; then
+        # Shell builtin or keyword; we're done here
+        $1="$full_path"
+        full_path="$name"
+        AC_MSG_RESULT([[$full_path [builtin]]])
+        break
+      else
+        # Search in $PATH using bash built-in 'type -p'.
+        full_path=`type -p "$name"`
+        if test "x$full_path" != x; then
+          $1="$full_path"
+          AC_MSG_RESULT($full_path)
+          break;
+        fi
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+          # Try again with .exe
+          full_path=`type -p "$name.exe"`
+          if test "x$full_path" != x; then
+            $1="$full_path"
+            AC_MSG_RESULT($full_path)
+            break;
+          fi
+        fi
+      fi
+      AC_MSG_RESULT([[[not found]]])
+    done
+
+    if test "x$3" != x; then
+      PATH="$old_path"
+    fi
+  ])
+
+  # Fixup the path afterwards
   if test "x[$]$1" != x; then
-    UTIL_FIXUP_EXECUTABLE($1)
+    UTIL_FIXUP_EXECUTABLE($1, $3)
   fi
 ])
 
@@ -630,8 +668,6 @@ AC_DEFUN([UTIL_REQUIRE_FUNTAMENTAL_PROGS],
   UTIL_CHECK_NONEMPTY($1)
 ])
 
-
-
 ###############################################################################
 # Like UTIL_SETUP_TOOL but fails if no tool was found.
 # $1: variable to set
@@ -639,26 +675,6 @@ AC_DEFUN([UTIL_REQUIRE_FUNTAMENTAL_PROGS],
 AC_DEFUN([UTIL_REQUIRE_SPECIAL],
 [
   UTIL_SETUP_TOOL($1, [$2])
-  UTIL_CHECK_NONEMPTY($1)
-])
-
-###############################################################################
-# Like UTIL_REQUIRE_PROGS but also allows for bash built-ins
-# $1: variable to set
-# $2: executable name (or list of names) to look for
-# $3: [path]
-AC_DEFUN([UTIL_REQUIRE_BUILTIN_PROGS],
-[
-  UTIL_SETUP_TOOL($1, [AC_PATH_PROGS($1, $2, , $3)])
-  if test "x[$]$1" = x; then
-    AC_MSG_NOTICE([Required tool $2 not found in PATH, checking built-in])
-    if command -v $2 > /dev/null 2>&1; then
-      AC_MSG_NOTICE([Found $2 as shell built-in. Using it])
-      $1="$2"
-    else
-      AC_MSG_ERROR([Required tool $2 also not found as built-in.])
-    fi
-  fi
   UTIL_CHECK_NONEMPTY($1)
 ])
 
