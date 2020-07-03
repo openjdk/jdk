@@ -360,12 +360,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
   if test "x$DEVKIT_VS_VERSION" = x; then
     if test "x$VS_ENV_CMD" != x; then
       # We have found a Visual Studio environment on disk, let's extract variables from the vsvars bat file.
-      UTIL_FIXUP_EXECUTABLE(VS_ENV_CMD)
-
-      # Lets extract the variables that are set by vcvarsall.bat/vsvars32.bat/vsvars64.bat
       AC_MSG_NOTICE([Trying to extract Visual Studio environment variables])
 
-      # We need to create a couple of temporary files.
       VS_ENV_TMP_DIR="$CONFIGURESUPPORT_OUTPUTDIR/vs-env"
       $MKDIR -p $VS_ENV_TMP_DIR
 
