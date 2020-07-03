@@ -249,9 +249,12 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
         if test "x$RESULT" = xwindows; then
           prefix="$FIXPATH "
           # make sure we have an .exe suffix
+
+#FIXME
         else
           # If we have gotten a .exe suffix, remove it
           :
+#FIXME
         fi
       fi
     fi

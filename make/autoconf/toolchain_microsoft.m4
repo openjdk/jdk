@@ -400,8 +400,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # also define VCINSTALLDIR, WindowsSdkDir and WINDOWSSDKDIR. All are in
       # unix style.
     else
-      # We did not find a vsvars bat file, let's hope we are run from a VS command prompt.
-      AC_MSG_NOTICE([Cannot locate a valid Visual Studio installation, checking current environment])
+      # We did not find a vsvars bat file.
+      AC_MSG_ERROR([Cannot locate a valid Visual Studio installation])
     fi
   fi
 
@@ -446,13 +446,11 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
     AC_MSG_RESULT([not found])
 
     if test "x$VS_ENV_CMD" = x; then
-      AC_MSG_NOTICE([Cannot locate a valid Visual Studio or Windows SDK installation on disk,])
-      AC_MSG_NOTICE([nor is this script run from a Visual Studio command prompt.])
+      AC_MSG_NOTICE([Cannot locate a valid Visual Studio or Windows SDK installation on disk])
     else
-      AC_MSG_NOTICE([Running the extraction script failed.])
+      AC_MSG_NOTICE([Running the extraction script failed])
     fi
     AC_MSG_NOTICE([Try setting --with-tools-dir to the VC/bin directory within the VS installation])
-    AC_MSG_NOTICE([or run "bash.exe -l" from a VS command prompt and then run configure from there.])
     AC_MSG_ERROR([Cannot continue])
   fi
 ])
