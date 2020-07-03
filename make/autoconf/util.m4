@@ -618,15 +618,15 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
 # $2: executable name (or list of names) to look for
 AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
 [
-  if test "x$OPENJDK_BUILD_OS" = xwindows; then
-    all_names=$(for i in $2; do echo ${i}.exe $i; done)
+  if test "x$ac_tool_prefix" = x; then
+    UTIL_LOOKUP_PROGS($1, $2)
   else
-    all_names="$2"
-  fi
-  UTIL_SETUP_TOOL($1, [AC_CHECK_TOOLS($1, $all_names)])
-  # Expand the path afterwards
-  if test "x[$]$1" != x; then
-    UTIL_FIXUP_EXECUTABLE($1)
+    prefixed_names=$(for name in $2; do echo ${ac_tool_prefix}${name}.exe $i; done)
+    UTIL_LOOKUP_PROGS($1, $prefixed_names)
+    if test "x[$]$1" = x; then
+      AC_MSG_WARN([using cross tools not prefixed with host triplet])
+      UTIL_LOOKUP_PROGS($1, $2)
+    fi
   fi
 ])
 
