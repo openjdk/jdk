@@ -75,7 +75,9 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
         else
           # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
           # Additional [] needed to keep m4 from mangling shell constructs.
-          [ BOOT_JDK_VERSION=`$FIXPATH "$BOOT_JDK/bin/java$EXE_SUFFIX" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $AWK '/version \"[0-9a-zA-Z\._\-]+\"/{print $ 0; exit;}'` ]
+          java_to_test="$BOOT_JDK/bin/java$EXE_SUFFIX"
+          UTIL_FIXUP_EXECUTABLE(java_to_test)
+          [ BOOT_JDK_VERSION=`$java_to_test $USER_BOOT_JDK_OPTIONS -version 2>&1 | $AWK '/version \"[0-9a-zA-Z\._\-]+\"/{print $ 0; exit;}'` ]
           if [ [[ "$BOOT_JDK_VERSION" =~ "Picked up" ]] ]; then
             AC_MSG_NOTICE([You have _JAVA_OPTIONS or JAVA_TOOL_OPTIONS set. This can mess up the build. Please use --with-boot-jdk-jvmargs instead.])
             AC_MSG_NOTICE([Java reports: "$BOOT_JDK_VERSION".])
@@ -102,7 +104,7 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
             AC_MSG_CHECKING([for Boot JDK])
             AC_MSG_RESULT([$BOOT_JDK])
             AC_MSG_CHECKING([Boot JDK version])
-            BOOT_JDK_VERSION=`$FIXPATH "$BOOT_JDK/bin/java$EXE_SUFFIX" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $TR -d '\r'`
+            BOOT_JDK_VERSION=`$java_to_test $USER_BOOT_JDK_OPTIONS -version 2>&1 | $TR -d '\r'`
             BOOT_JDK_VERSION=`$ECHO $BOOT_JDK_VERSION`
             AC_MSG_RESULT([$BOOT_JDK_VERSION])
           fi # end check jdk version
@@ -281,7 +283,7 @@ AC_DEFUN([BOOTJDK_CHECK_TOOL_IN_BOOTJDK],
         AC_MSG_ERROR([Could not find $2 in the Boot JDK])
       fi
       AC_MSG_RESULT(ok)
-      UTIL_ADD_FIXPATH($1)
+      UTIL_FIXUP_EXECUTABLE($1)
       AC_SUBST($1)
     ])
 ])
@@ -575,6 +577,8 @@ AC_DEFUN([BOOTJDK_SETUP_BUILD_JDK],
     fi
   fi
 
+  # Since these tools do not yet exist, we cannot use UTIL_FIXUP_EXECUTABLE to
+  # detect the need of fixpath
   JMOD="$BUILD_JDK/bin/jmod"
   UTIL_ADD_FIXPATH(JMOD)
   JLINK="$BUILD_JDK/bin/jlink"

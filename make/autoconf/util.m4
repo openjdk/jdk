@@ -611,9 +611,13 @@ AC_DEFUN([UTIL_REQUIRE_BUILTIN_PROGS],
 ])
 
 ###############################################################################
-# Add FIXPATH prefix to variable, if needed on the current platform
+# Add FIXPATH prefix to variable. Normally this is done by UTIL_FIXUP_EXECUTABLE
+# but in some circumstances this have to be done explicitly.
+#
 # $1: variable to add fixpath to
 AC_DEFUN([UTIL_ADD_FIXPATH],
 [
-  $1="$FIXPATH [$]$1"
+  if test "x$FIXPATH" != x; then
+    $1="$FIXPATH [$]$1"
+  fi
 ])

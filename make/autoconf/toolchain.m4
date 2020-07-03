@@ -617,12 +617,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   TOOLCHAIN_FIND_COMPILER([CC], [C], $TOOLCHAIN_CC_BINARY)
   # Now that we have resolved CC ourself, let autoconf have its go at it
-  UTIL_ADD_FIXPATH([CC])
+  UTIL_FIXUP_EXECUTABLE([CC])
   AC_PROG_CC([$CC])
 
   TOOLCHAIN_FIND_COMPILER([CXX], [C++], $TOOLCHAIN_CXX_BINARY)
   # Now that we have resolved CXX ourself, let autoconf have its go at it
-  UTIL_ADD_FIXPATH([CXX])
+  UTIL_FIXUP_EXECUTABLE([CXX])
   AC_PROG_CXX([$CXX])
 
   # This is the compiler version number on the form X.Y[.Z]
@@ -654,7 +654,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # In the Microsoft toolchain we have a separate LD command "link".
     UTIL_PATH_PROGS(LD, link$EXE_SUFFIX)
     UTIL_FIXUP_EXECUTABLE(LD)
-    UTIL_ADD_FIXPATH([LD])
 
     # Make sure we did not pick up /usr/bin/link, which is the unix-style
     # link executable.
@@ -702,7 +701,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   else
     UTIL_PATH_PROGS(AS, ml$EXE_SUFFIX)
     UTIL_FIXUP_EXECUTABLE(AS)
-    UTIL_ADD_FIXPATH([AS])
   fi
   AC_SUBST(AS)
 
@@ -713,7 +711,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # The corresponding ar tool is lib.exe (used to create static libraries)
     UTIL_PATH_PROGS(AR, lib$EXE_SUFFIX)
     UTIL_FIXUP_EXECUTABLE(AR)
-    UTIL_ADD_FIXPATH([AR])
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     UTIL_CHECK_TOOLS(AR, ar gcc-ar)
   else
@@ -739,16 +736,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     UTIL_PATH_PROGS(MT, mt$EXE_SUFFIX)
     UTIL_FIXUP_EXECUTABLE(MT)
-    UTIL_ADD_FIXPATH(MT)
 
     # Setup the resource compiler (RC)
     UTIL_PATH_PROGS(RC, rc$EXE_SUFFIX)
     UTIL_FIXUP_EXECUTABLE(RC)
-    UTIL_ADD_FIXPATH(RC)
 
     UTIL_PATH_PROGS(DUMPBIN, dumpbin$EXE_SUFFIX)
     UTIL_FIXUP_EXECUTABLE(DUMPBIN)
-    UTIL_ADD_FIXPATH(DUMPBIN)
   fi
 
   if test "x$OPENJDK_TARGET_OS" != xwindows; then

@@ -207,6 +207,13 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
         fi
         arguments="EOL"
       fi
+
+      if test "x$prefix" != "x"; then
+        UTIL_CHECK_WINENV_EXEC_TYPE("$new_path")
+        if test "x$RESULT" = xwindows; then
+          prefix="$FIXPATH "
+        fi
+      fi
     fi
 
     # Now join together the path and the arguments once again
