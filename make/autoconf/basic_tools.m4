@@ -28,7 +28,7 @@
 # but is used by much of the early bootstrap code.
 AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 [
-  # These tools are needed by UTIL_LOOKUP_PROGS
+  # Bootstrapping: These tools are needed by UTIL_LOOKUP_PROGS
   AC_PATH_PROGS(BASENAME, basename)
   UTIL_CHECK_NONEMPTY(BASENAME)
   AC_PATH_PROGS(DIRNAME, dirname)
