@@ -157,60 +157,91 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
 # $1: The name of the variable to fix
 AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
 [
-  # Only process if variable expands to non-empty
+  input="[$]$1"
 
-  if test "x[$]$1" != x; then
+  # Only process if variable expands to non-empty
+  if test "x$input" != x; then
     # First separate the path from the arguments. This will split at the first
     # space.
-    complete="[$]$1"
-    [ if [[ $complete =~ ^$FIXPATH ]]; then
-      complete="${complete#$FIXPATH }"
+    [ if [[ $input =~ ^$FIXPATH ]]; then
+      line="${complete#$FIXPATH }"
       prefix="$FIXPATH "
     else
+      line="$input"
       prefix=""
     fi ]
-    path="${complete%% *}"
-    tmp="$complete EOL"
+    path="${line%% *}"
+    tmp="$line EOL"
     arguments="${tmp#* }"
 
-    # Cannot rely on the command "which" here since it doesn't always work.
     contains_slash=`$ECHO "$path" | $GREP -e / -e \\`
     if test -z "$contains_slash"; then
-      # Executable has no directories. Look in $PATH.
+      # Command part has no slash, so search in $PATH using bash built-in 'type -p'.
       new_path=`type -p "$path"`
+      if test "x$new_path" = x && test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+        # Try again with .exe
+        new_path=`type -p "$path.exe"`
+      fi
+
       if test "x$new_path" = x; then
-        AC_MSG_NOTICE([The path of $1, which resolves as "$complete", is not found.])
-        has_space=`$ECHO "$complete" | $GREP " "`
-        if test "x$has_space" != x; then
-          AC_MSG_NOTICE([This might be caused by spaces in the path, which is not allowed.])
-        fi
-        AC_MSG_ERROR([Cannot locate the the path of $1])
+        AC_MSG_NOTICE([The command for $1, which resolves as "$input", is not found in the PATH.])
+        AC_MSG_ERROR([Cannot locate $path])
       fi
     else
       # This is a path with slashes, don't look at $PATH
-      new_path="$path"
-    fi
-
-    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-      ## FIXME: should do something about .exe..?
-      new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$new_path"`
-      $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
-      if test $? -ne 0; then
-        # retry but assume spaces are part of filename
-        path="$complete"
-
+      if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+        # fixpath.sh import will do all heavy lifting for us
         new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path"`
         $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
         if test $? -ne 0; then
-          echo failed to import exec $new_path FINAL
-        fi
-        arguments="EOL"
-      fi
+          # It failed. Try again with a .exe.
+          new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path.exe"`
+          $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
 
-      if test "x$prefix" = "x"; then
+          if test $? -ne 0; then
+            # It failed, but maybe spaces were part of the path and not separating
+            # the command and argument. Retry using that assumption.
+            new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$input"`
+            $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
+            if test $? -ne 0; then
+              # It failed. Try again with a .exe.
+              new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path.exe"`
+              $BASH $TOPDIR/make/scripts/fixpath.sh verify "$new_path"
+
+              if test $? -ne 0; then
+                # Time to give up...
+                AC_MSG_NOTICE([Thecommand for $1, which resolves as "$input", can not be found.])
+                AC_MSG_ERROR([Cannot locate $input])
+              fi
+            fi
+          fi
+          # It worked, clear all "arguments"
+          arguments="EOL"
+        fi
+      else # on unix
+        # make absolute
+        new_path="$path"
+
+        if test ! -x $new_path;
+          AC_MSG_NOTICE([The command for $1, which resolves as "$input", is not found or not executable.])
+          AC_MSG_ERROR([Cannot locate $path])
+          has_space=`$ECHO "$input" | $GREP " "`
+          if test "x$has_space" != x; then
+            AC_MSG_NOTICE([This might be caused by spaces in the path, which is not allowed.])
+          fi
+        fi
+      fi # end on unix
+    fi # end with or without slashes
+
+    # Now we have a usable command as new_path, with arguments in arguments
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+      if test "x$prefix" = x; then
+        # Only mess around if prefix was not given
         UTIL_CHECK_WINENV_EXEC_TYPE("$new_path")
         if test "x$RESULT" = xwindows; then
           prefix="$FIXPATH "
+          # make sure we have an .exe suffix
+
         else
           # If we have gotten a .exe suffix, remove it
           :
@@ -224,10 +255,10 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
     else
       new_complete="$prefix$new_path"
     fi
-    if test "x$complete" != "x$new_complete"; then
+    if test "x$input" != "x$new_complete"; then
       $1="$new_complete"
-# FIXME: this is just noise.
-#      AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
+# FIXME: remove this.
+      AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
     fi
   fi
 ])
