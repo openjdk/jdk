@@ -26,10 +26,6 @@
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
 AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
 [
-  SRC_ROOT_LENGTH=`$THEPWDCMD -L|$WC -m`
-  if test $SRC_ROOT_LENGTH -gt 100; then
-    AC_MSG_ERROR([Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported])
-  fi
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
     # Clarify if it is wsl1 or wsl2, and use that as OS_ENV from this point forward
     $PATHTOOL -w / > /dev/null 2>&1
@@ -54,8 +50,13 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   fi
 
   if test "x$PATHTOOL" = x; then
-    AC_MSG_ERROR([Something is wrong with your $WINENV_VENDOR installation since I cannot find cygpath or wslpath in your path])
+    AC_MSG_ERROR([Incorrect $WINENV_VENDOR installation. Neither cygpath nor wslpath was found])
   fi
+
+  AC_MSG_CHECKING([$WINENV_VENDOR drive prefix])
+  WINENV_PREFIX=`$PATHTOOL -u c:/ | $SED -e 's!/c/!!'`
+  AC_MSG_RESULT(['$WINENV_PREFIX'])
+  AC_SUBST(WINENV_PREFIX)
 
   AC_MSG_CHECKING([$WINENV_VENDOR root directory as Windows path])
   if test "x$OPENJDK_BUILD_OS_ENV" != "xwindows.wsl1"; then
@@ -67,11 +68,6 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   fi
   AC_MSG_RESULT([$WINENV_ROOT])
   AC_SUBST(WINENV_ROOT)
-
-  AC_MSG_CHECKING([$WINENV_VENDOR drive prefix])
-  WINENV_PREFIX=`$PATHTOOL -u c:/ | $SED -e 's!/c/!!'`
-  AC_MSG_RESULT(['$WINENV_PREFIX'])
-  AC_SUBST(WINENV_PREFIX)
 
   AC_MSG_CHECKING([$WINENV_VENDOR temp directory])
   WINENV_TEMP_DIR=$($PATHTOOL -u $($CMD /q /c echo %TEMP% 2> /dev/null) | $TR -d '\r\n')
@@ -98,12 +94,20 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   [ WINDOWS_VERSION=`cd $WINENV_TEMP_DIR && $CMD /c ver | $EGREP -o '([0-9]+\.)+[0-9]+'` ]
   AC_MSG_RESULT([$WINDOWS_VERSION])
 
+  # Additional handling per specific env
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     # Additional [] needed to keep m4 from mangling shell constructs.
     [ CYGWIN_VERSION_OLD=`$ECHO $WINENV_UNAME_RELEASE | $GREP -e '^1\.[0-6]'` ]
     if test "x$CYGWIN_VERSION_OLD" != x; then
       AC_MSG_NOTICE([Your cygwin is too old. You are running $CYGWIN_RELEASE, but at least cygwin 1.7 is required. Please upgrade.])
       AC_MSG_ERROR([Cannot continue])
+    fi
+    if test "x$LDD" = x; then
+      AC_MSG_ERROR([ldd is missing, which is needed on cygwin])
+    fi
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
+    if test "x$LDD" = x; then
+      AC_MSG_ERROR([ldd is missing, which is needed on msys2])
     fi
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1" || test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
     AC_MSG_CHECKING([wsl distribution])
@@ -122,11 +126,16 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   FIXPATH="$BASH $FIXPATH_DIR/fixpath.sh exec"
   UTIL_FIXUP_PATH(FIXPATH_DIR)
 
-  # Now that we can, use fixed path
+  # Now that we can, use fixed-up path to rewrite path to fixpath.sh properly
   FIXPATH="$BASH $FIXPATH_DIR/fixpath.sh exec"
   AC_SUBST(FIXPATH)
   FIXPATH_PRINT="$BASH $FIXPATH_DIR/fixpath.sh print"
   AC_SUBST(FIXPATH_PRINT)
+
+  SRC_ROOT_LENGTH=`$THEPWDCMD -L|$WC -m`
+  if test $SRC_ROOT_LENGTH -gt 100; then
+    AC_MSG_ERROR([Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported])
+  fi
 
   # Test if windows or unix "find" is first in path.
   AC_MSG_CHECKING([what kind of 'find' is first on the PATH])

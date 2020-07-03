@@ -91,6 +91,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 
   # These are not required on all platforms
   UTIL_PATH_PROGS(PATHTOOL, cygpath wslpath)
+  UTIL_PATH_PROGS(LDD, ldd)
   UTIL_PATH_PROGS(DF, df)
   UTIL_PATH_PROGS(CPIO, [cpio bsdcpio])
   UTIL_PATH_PROGS(NICE, nice)
@@ -335,13 +336,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 
   # Non-required basic tools
 
-  UTIL_PATH_PROGS(LDD, ldd)
-  if test "x$LDD" = "x"; then
-    # List shared lib dependencies is used for
-    # debug output and checking for forbidden dependencies.
-    # We can build without it.
-    LDD="true"
-  fi
   UTIL_PATH_PROGS(READELF, [greadelf readelf])
   UTIL_PATH_PROGS(DOT, dot)
   UTIL_PATH_PROGS(HG, hg)

@@ -110,6 +110,33 @@ AC_DEFUN([UTIL_FIXUP_PATH],
 ])
 
 ###############################################################################
+# Check if the given file is a unix-style or windows-style executable, that is,
+# if it expects paths in unix-style or windows-style.
+# Returns "windows" or "unix" in $RESULT.
+AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
+[
+    # For cygwin and msys2, if it's linked with the correct helper lib, it
+    # accept unix paths
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygin"; then
+      $LDD $1 2>&1 | $GREP -q cygwin1.dll
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
+      $LDD $1 2>&1 | $GREP -q msys-2.0.dll
+    elif test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+      # On WSL, we can differentiate between ELF and PE files
+      $FILE $1 2>&1 | $GREP -q ELF
+    else
+      true
+    fi
+
+    if test $? -eq 0; then
+      RESULT=unix
+    else
+      RESULT=linux
+    fi
+
+])
+
+###############################################################################
 # This will make sure the given variable points to a executable
 # with a full and proper path. This means:
 # 1) There will be no spaces in the path. On unix platforms,
