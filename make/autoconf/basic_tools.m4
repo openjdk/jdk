@@ -28,52 +28,46 @@
 # but is used by much of the early bootstrap code.
 AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 [
-  # Start with tools that do not need have cross compilation support
-  # and can be expected to be found in the default PATH. These tools are
-  # used by configure.
+  # These tools are needed by UTIL_LOOKUP_PROGS
+  AC_PATH_PROGS(BASENAME, basename)
+  AC_PATH_PROGS(DIRNAME, dirname)
+  AC_PATH_PROGS(FILE, file)
+  AC_PATH_PROGS(LDD, ldd)
 
-  # First are all the simple required tools.
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(BASENAME, basename)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(BASH, bash)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(CAT, cat)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(CHMOD, chmod)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(CMP, cmp)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(COMM, comm)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(CP, cp)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(CUT, cut)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(DATE, date)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(DIFF, [gdiff diff])
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(DIRNAME, dirname)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(ECHO, echo)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(EXPR, expr)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(FILE, file)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(FIND, find)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(HEAD, head)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(GUNZIP, gunzip)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(GZIP, pigz gzip)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(LN, ln)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(LS, ls)
+  # First are all the fundamental required tools.
+  UTIL_REQUIRE_PROGS(BASH, bash)
+  UTIL_REQUIRE_PROGS(CAT, cat)
+  UTIL_REQUIRE_PROGS(CHMOD, chmod)
+  UTIL_REQUIRE_PROGS(CP, cp)
+  UTIL_REQUIRE_PROGS(CUT, cut)
+  UTIL_REQUIRE_PROGS(DATE, date)
+  UTIL_REQUIRE_PROGS(DIFF, gdiff diff)
+  UTIL_REQUIRE_PROGS(ECHO, echo)
+  UTIL_REQUIRE_PROGS(EXPR, expr)
+  UTIL_REQUIRE_PROGS(FIND, find)
+  UTIL_REQUIRE_PROGS(GUNZIP, gunzip)
+  UTIL_REQUIRE_PROGS(GZIP, pigz gzip)
+  UTIL_REQUIRE_PROGS(HEAD, head)
+  UTIL_REQUIRE_PROGS(LN, ln)
+  UTIL_REQUIRE_PROGS(LS, ls)
   # gmkdir is known to be safe for concurrent invocations with -p flag.
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(MKDIR, [gmkdir mkdir])
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(MKTEMP, mktemp)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(MV, mv)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(NAWK, [nawk gawk awk])
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(PRINTF, printf)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(READLINK, [greadlink readlink])
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(RM, rm)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(RMDIR, rmdir)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(SH, sh)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(SORT, sort)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(TAIL, tail)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(TAR, gtar tar)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(TEE, tee)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(TOUCH, touch)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(TR, tr)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(UNAME, uname)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(UNIQ, uniq)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(WC, wc)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(WHICH, which)
-  UTIL_REQUIRE_FUNTAMENTAL_PROGS(XARGS, xargs)
+  UTIL_REQUIRE_PROGS(MKDIR, gmkdir mkdir)
+  UTIL_REQUIRE_PROGS(MKTEMP, mktemp)
+  UTIL_REQUIRE_PROGS(MV, mv)
+  UTIL_REQUIRE_PROGS(NAWK, nawk gawk awk)
+  UTIL_REQUIRE_PROGS(PRINTF, printf)
+  UTIL_REQUIRE_PROGS(RM, rm)
+  UTIL_REQUIRE_PROGS(RMDIR, rmdir)
+  UTIL_REQUIRE_PROGS(SH, sh)
+  UTIL_REQUIRE_PROGS(SORT, sort)
+  UTIL_REQUIRE_PROGS(TAIL, tail)
+  UTIL_REQUIRE_PROGS(TAR, gtar tar)
+  UTIL_REQUIRE_PROGS(TEE, tee)
+  UTIL_REQUIRE_PROGS(TOUCH, touch)
+  UTIL_REQUIRE_PROGS(TR, tr)
+  UTIL_REQUIRE_PROGS(UNAME, uname)
+  UTIL_REQUIRE_PROGS(WC, wc)
+  UTIL_REQUIRE_PROGS(XARGS, xargs)
 
   # Then required tools that require some special treatment.
   UTIL_REQUIRE_SPECIAL(AWK, [AC_PROG_AWK])
@@ -82,22 +76,22 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_REQUIRE_SPECIAL(FGREP, [AC_PROG_FGREP])
   UTIL_REQUIRE_SPECIAL(SED, [AC_PROG_SED])
 
+  # Optional tools, we can do without them
+  UTIL_LOOKUP_PROGS(DF, df)
+  UTIL_LOOKUP_PROGS(NICE, nice)
+  UTIL_LOOKUP_PROGS(READLINK, greadlink readlink)
+
+  # These are only needed on some platforms
+  UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
+  UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
+  UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system3:/c/windows/system32)
+
+  # For compare.sh only
+  UTIL_LOOKUP_PROGS(CMP, cmp)
+  UTIL_LOOKUP_PROGS(UNIQ, uniq)
+
   # Always force rm.
   RM="$RM -f"
-
-  # pwd behaves differently on various platforms and some don't support the -L flag.
-  # Always use the bash builtin pwd to get uniform behavior.
-  THEPWDCMD=pwd
-
-  # These are not required on all platforms
-  UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
-  UTIL_LOOKUP_PROGS(LDD, ldd)
-  UTIL_LOOKUP_PROGS(DF, df)
-  UTIL_LOOKUP_PROGS(CPIO, [cpio bsdcpio])
-  UTIL_LOOKUP_PROGS(NICE, nice)
-
-  UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
-  UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH /cygdrive/c/windows/system32 /mnt/c/windows/system32 /c/windows/system32)
 ])
 
 ###############################################################################

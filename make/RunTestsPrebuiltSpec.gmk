@@ -164,7 +164,6 @@ TAIL := tail
 TEE := tee
 TR := tr
 TOUCH := touch
-UNIQ := uniq
 WC := wc
 XARGS := xargs
 ZIPEXE := zip

@@ -78,8 +78,7 @@ AC_DEFUN([UTIL_FIXUP_PATH],
         $1="$imported_path"
       fi
     else
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
+      [ if [[ "$path" =~ " " ]]; then ]
         if test "x$2" != "xNOFAIL"; then
           AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
           AC_MSG_ERROR([Spaces are not allowed in this path.])
@@ -131,8 +130,7 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
       # Non-binary files (e.g. shell scripts) are unix files
       RESULT=unix
     else
-      $ECHO "$linked_libs" | $GREP -q $WINENV_MARKER_DLL
-      if test $? -eq 0; then
+      [ if [[ "$linked_libs" =~ $WINENV_MARKER_DLL ]]; then ]
         RESULT=unix
       else
         RESULT=windows
@@ -140,8 +138,8 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
     fi
   elif test "x$OPENJDK_BUILD_OS" = "xwindows"; then
     # On WSL, we can check if it is a PE file
-    $FILE -b $1 2>&1 | $GREP -q "PE.*Windows"
-    if test $? -eq 0; then
+    file_type=`$FILE -b $1 2>&1`
+    [ if [[ "$file_type" =~ "PE.*Windows" ]]; then ]
       RESULT=windows
     else
       RESULT=unix
@@ -183,8 +181,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
     tmp="$line EOL"
     arguments="${tmp#* }"
 
-    contains_slash=`$ECHO "$path" | $GREP -e / -e \\`
-    if test -z "$contains_slash"; then
+    [ if ! [[ "$path" =~ /|\\ ]]; then ]
       command_type=`type -t "$path"`
       if test "x$command_type" = xbuiltin || test "x$command_type" = xkeyword; then
         # Shell builtin or keyword; we're done here
@@ -227,16 +224,19 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
       else # on unix
         # Make absolute
         $1="$path"
-        UTIL_FIXUP_PATH($1)
+        UTIL_FIXUP_PATH($1, NOFAIL)
         new_path="[$]$1"
 
-        if test ! -x $new_path; then
-          AC_MSG_NOTICE([The command for $1, which resolves as "$input", is not found or not executable.])
-          AC_MSG_ERROR([Cannot locate $path])
-          has_space=`$ECHO "$input" | $GREP " "`
-          if test "x$has_space" != x; then
+        if test ! -e $new_path; then
+          AC_MSG_NOTICE([The command for $1, which resolves as "$input", is not found])
+          [ if [[ "$path" =~ " " ]]; then ]
             AC_MSG_NOTICE([This might be caused by spaces in the path, which is not allowed.])
           fi
+          AC_MSG_ERROR([Cannot locate $path])
+        fi
+        if test ! -x $new_path; then
+          AC_MSG_NOTICE([The command for $1, which resolves as "$input", is not executable.])
+          AC_MSG_ERROR([Cannot execute command at $path])
         fi
       fi # end on unix
     fi # end with or without slashes
@@ -295,8 +295,8 @@ AC_DEFUN([UTIL_REMOVE_SYMBOLIC_LINKS],
       sym_link_file=`$BASENAME [$]$1`
       cd $sym_link_dir
       # Use -P flag to resolve symlinks in directories.
-      cd `$THEPWDCMD -P`
-      sym_link_dir=`$THEPWDCMD -P`
+      cd `pwd -P`
+      sym_link_dir=`pwd -P`
       # Resolve file symlinks
       while test $COUNTER -lt 20; do
         ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
@@ -307,7 +307,7 @@ AC_DEFUN([UTIL_REMOVE_SYMBOLIC_LINKS],
         # Again resolve directory symlinks since the target of the just found
         # link could be in a different directory
         cd `$DIRNAME $ISLINK`
-        sym_link_dir=`$THEPWDCMD -P`
+        sym_link_dir=`pwd -P`
         sym_link_file=`$BASENAME $ISLINK`
         let COUNTER=COUNTER+1
       done

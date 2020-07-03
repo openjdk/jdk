@@ -554,22 +554,6 @@ AC_DEFUN([UTIL_SETUP_TOOL],
   fi
 ])
 
-
-###############################################################################
-# Call UTIL_SETUP_TOOL with AC_PATH_PROGS to locate the tool
-# $1: variable to set
-# $2: executable name (or list of names) to look for
-# $3: [path]
-AC_DEFUN([UTIL_LOOKUP_FUNDAMENTAL_PROGS],
-[
-  if test "x$OPENJDK_BUILD_OS" = xwindows; then
-    all_names=$(for i in $2; do echo ${i}.exe $i; done)
-  else
-    all_names="$2"
-  fi
-  UTIL_SETUP_TOOL($1, [AC_PATH_PROGS($1, $all_names, , $3)])
-])
-
 ###############################################################################
 # Locate a tool using proper methods.
 # $1: variable to set
@@ -591,8 +575,8 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
       command_type=`type -t "$name"`
       if test "x$command_type" = xbuiltin || test "x$command_type" = xkeyword; then
         # Shell builtin or keyword; we're done here
-        $1="$full_path"
         full_path="$name"
+        $1="$full_path"
         AC_MSG_RESULT([[$full_path [builtin]]])
         break
       else
@@ -654,17 +638,6 @@ AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
 AC_DEFUN([UTIL_REQUIRE_PROGS],
 [
   UTIL_LOOKUP_PROGS($1, $2, , $3)
-  UTIL_CHECK_NONEMPTY($1)
-])
-
-###############################################################################
-# Like UTIL_LOOKUP_PROGS but fails if no tool was found.
-# $1: variable to set
-# $2: executable name (or list of names) to look for
-# $3: [path]
-AC_DEFUN([UTIL_REQUIRE_FUNTAMENTAL_PROGS],
-[
-  UTIL_LOOKUP_FUNDAMENTAL_PROGS($1, $2, , $3)
   UTIL_CHECK_NONEMPTY($1)
 ])
 
