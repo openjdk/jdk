@@ -117,7 +117,7 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
 [
     # For cygwin and msys2, if it's linked with the correct helper lib, it
     # accept unix paths
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygin"; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
       $LDD $1 2>&1 | $GREP -q cygwin1.dll
     elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
       $LDD $1 2>&1 | $GREP -q msys-2.0.dll
