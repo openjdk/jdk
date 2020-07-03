@@ -525,7 +525,7 @@ AC_DEFUN([UTIL_SETUP_TOOL],
         if test "x$tool_basename" = "x$tool_command"; then
           # A command without a complete path is provided, search $PATH.
           AC_MSG_NOTICE([Will search for user supplied tool "$tool_basename"])
-          AC_PATH_PROG($1, $tool_basename)
+          AC_PATH_PROG($1, $tool_basename ${tool_basename}.exe)
           if test "x[$]$1" = x; then
             AC_MSG_ERROR([User supplied tool $1="$tool_basename" could not be found])
           fi
@@ -533,11 +533,15 @@ AC_DEFUN([UTIL_SETUP_TOOL],
           # Otherwise we believe it is a complete path. Use it as it is.
           AC_MSG_NOTICE([Will use user supplied tool "$tool_command"])
           AC_MSG_CHECKING([for $tool_command])
-          if test ! -x "$tool_command" && test ! -x "$tool_command.exe"; then
+          if test ! -x "$tool_command" && test ! -x "${tool_command}.exe"; then
             AC_MSG_RESULT([not found])
             AC_MSG_ERROR([User supplied tool $1="$tool_command" does not exist or is not executable])
           fi
-           $1="$tool_command"
+          if test -x "$tool_command"; then
+            $1="$tool_command"
+          else
+            $1="${tool_command}.exe"
+          fi
           AC_MSG_RESULT([found])
         fi
         if test "x$tool_args" != x; then
@@ -557,7 +561,13 @@ AC_DEFUN([UTIL_SETUP_TOOL],
 # $3: [path]
 AC_DEFUN([UTIL_PATH_PROGS],
 [
-  UTIL_SETUP_TOOL($1, [AC_PATH_PROGS($1, $2, , $3)])
+ echo enter with $2
+  if test "x$OPENJDK_BUILD_OS" = xwindows; then
+    all_names=$(for i in $2; do echo ${i}.exe $i; done)
+  else
+    all_names="$2"
+  fi
+  UTIL_SETUP_TOOL($1, [AC_PATH_PROGS($1, $all_names, , $3)])
 ])
 
 ###############################################################################
@@ -566,7 +576,12 @@ AC_DEFUN([UTIL_PATH_PROGS],
 # $2: executable name (or list of names) to look for
 AC_DEFUN([UTIL_CHECK_TOOLS],
 [
-  UTIL_SETUP_TOOL($1, [AC_CHECK_TOOLS($1, $2)])
+  if test "x$OPENJDK_BUILD_OS" = xwindows; then
+    all_names=$(for i in $2; do echo ${i}.exe $i; done)
+  else
+    all_names="$2"
+  fi
+  UTIL_SETUP_TOOL($1, [AC_CHECK_TOOLS($1, $all_names)])
 ])
 
 ###############################################################################

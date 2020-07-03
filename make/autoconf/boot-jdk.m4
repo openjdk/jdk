@@ -63,19 +63,19 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
     # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
     if test "x$BOOT_JDK_FOUND" = xmaybe; then
       # Do we have a bin/java?
-      if test ! -x "$BOOT_JDK/bin/java$EXE_SUFFIX"; then
+      if test ! -x "$BOOT_JDK/bin/java" && test ! -x "$BOOT_JDK/bin/java.exe"; then
         AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring])
         BOOT_JDK_FOUND=no
       else
         # Do we have a bin/javac?
-        if test ! -x "$BOOT_JDK/bin/javac$EXE_SUFFIX"; then
+        if test ! -x "$BOOT_JDK/bin/javac" && test ! -x "$BOOT_JDK/bin/javac.exe"; then
           AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring])
           AC_MSG_NOTICE([(This might be an JRE instead of an JDK)])
           BOOT_JDK_FOUND=no
         else
           # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
           # Additional [] needed to keep m4 from mangling shell constructs.
-          java_to_test="$BOOT_JDK/bin/java$EXE_SUFFIX"
+          java_to_test="$BOOT_JDK/bin/java"
           UTIL_FIXUP_EXECUTABLE(java_to_test)
           [ BOOT_JDK_VERSION=`$java_to_test $USER_BOOT_JDK_OPTIONS -version 2>&1 | $AWK '/version \"[0-9a-zA-Z\._\-]+\"/{print $ 0; exit;}'` ]
           if [ [[ "$BOOT_JDK_VERSION" =~ "Picked up" ]] ]; then
@@ -340,10 +340,10 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   AC_SUBST(BOOT_JDK)
 
   # Setup tools from the Boot JDK.
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVA, java$EXE_SUFFIX)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAC, javac$EXE_SUFFIX)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVADOC, javadoc$EXE_SUFFIX)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR, jar$EXE_SUFFIX)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVA, java)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAC, javac)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVADOC, javadoc)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR, jar)
 
   # Finally, set some other options...
 

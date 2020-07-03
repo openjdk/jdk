@@ -292,12 +292,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
 
   TOOLCHAIN_CC_BINARY_clang="clang"
   TOOLCHAIN_CC_BINARY_gcc="gcc"
-  TOOLCHAIN_CC_BINARY_microsoft="cl$EXE_SUFFIX"
+  TOOLCHAIN_CC_BINARY_microsoft="cl"
   TOOLCHAIN_CC_BINARY_xlc="xlclang"
 
   TOOLCHAIN_CXX_BINARY_clang="clang++"
   TOOLCHAIN_CXX_BINARY_gcc="g++"
-  TOOLCHAIN_CXX_BINARY_microsoft="cl$EXE_SUFFIX"
+  TOOLCHAIN_CXX_BINARY_microsoft="cl"
   TOOLCHAIN_CXX_BINARY_xlc="xlclang++"
 
   # Use indirect variable referencing
@@ -650,7 +650,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # In the Microsoft toolchain we have a separate LD command "link".
-    UTIL_PATH_PROGS(LD, link$EXE_SUFFIX)
+    UTIL_PATH_PROGS(LD, link)
     UTIL_FIXUP_EXECUTABLE(LD)
 
     # Make sure we did not pick up /usr/bin/link, which is the unix-style
@@ -665,8 +665,9 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     fi
 
     LDCXX="$LD"
-    # jaotc being a windows program expects the linker to be supplied with exe suffix.
-    LD_JAOTC="$LD$EXE_SUFFIX"
+    # jaotc being a windows program expects the linker to be supplied with exe suffix.but without
+    # fixpath
+    LD_JAOTC="${LD##$FIXPATH }"
   else
     # All other toolchains use the compiler to link.
     LD="$CC"
@@ -697,7 +698,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
     AS="$CC -c"
   else
-    UTIL_PATH_PROGS(AS, ml$EXE_SUFFIX)
+    UTIL_PATH_PROGS(AS, ml)
     UTIL_FIXUP_EXECUTABLE(AS)
   fi
   AC_SUBST(AS)
@@ -707,7 +708,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The corresponding ar tool is lib.exe (used to create static libraries)
-    UTIL_PATH_PROGS(AR, lib$EXE_SUFFIX)
+    UTIL_PATH_PROGS(AR, lib)
     UTIL_FIXUP_EXECUTABLE(AR)
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     UTIL_CHECK_TOOLS(AR, ar gcc-ar)
@@ -732,14 +733,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    UTIL_PATH_PROGS(MT, mt$EXE_SUFFIX)
+    UTIL_PATH_PROGS(MT, mt)
     UTIL_FIXUP_EXECUTABLE(MT)
 
     # Setup the resource compiler (RC)
-    UTIL_PATH_PROGS(RC, rc$EXE_SUFFIX)
+    UTIL_PATH_PROGS(RC, rc)
     UTIL_FIXUP_EXECUTABLE(RC)
 
-    UTIL_PATH_PROGS(DUMPBIN, dumpbin$EXE_SUFFIX)
+    UTIL_PATH_PROGS(DUMPBIN, dumpbin)
     UTIL_FIXUP_EXECUTABLE(DUMPBIN)
   fi
 
