@@ -580,22 +580,31 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
         AC_MSG_RESULT([[$full_path [builtin]]])
         break
       else
-        # Search in $PATH using bash built-in 'type -p'.
-        full_path=`type -p "$name"`
-        if test "x$full_path" != x; then
-          $1="$full_path"
-          AC_MSG_RESULT($full_path)
-          break;
-        fi
-        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-          # Try again with .exe
-          full_path=`type -p "$name.exe"`
-          if test "x$full_path" != x; then
+        # Search in $PATH
+        old_ifs="$IFS"
+        IFS=":"
+        for elem in $PATH; do
+          IFS="$old_ifs"
+          if test "x$elem" = x; then
+            continue
+          fi
+          full_path="$elem/$name"
+          if test -e $full_path; then
             $1="$full_path"
             AC_MSG_RESULT($full_path)
-            break;
+            break 2;
           fi
-        fi
+          if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # Try again with .exe
+            full_path="$elem/$name.exe"
+            if test "x$full_path" != x; then
+              $1="$full_path"
+              AC_MSG_RESULT($full_path)
+              break 2;
+            fi
+          fi
+        done
+        IFS="$old_ifs"
       fi
       AC_MSG_RESULT([[[not found]]])
     done
