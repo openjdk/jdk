@@ -576,7 +576,13 @@ public final class NetworkInterface {
      * as this object.
      * <p>
      * Two instances of {@code NetworkInterface} represent the same
-     * NetworkInterface if both name and addrs are the same for both.
+     * NetworkInterface if both the name and the set of {@code InetAddress}es
+     * bound to the interfaces are equal.
+     *
+     * @apiNote two {@code NetworkInterface} objects referring to the same
+     * underlying interface may not compare equal if the addresses
+     * of the underlying interface are being dynamically updated by
+     * the system.
      *
      * @param   obj   the object to compare against.
      * @return  {@code true} if the objects are the same;
