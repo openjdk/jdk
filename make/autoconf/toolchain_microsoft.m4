@@ -115,7 +115,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
 
     UTIL_FIXUP_PATH(VS_BASE, NOFAIL)
 
-    if test "x$VS_BASE" =! x && test -d "$VS_BASE"; then
+    if test "x$VS_BASE" != x && test -d "$VS_BASE"; then
       # In VS 2017 and VS 2019, the default installation is in a subdir named after the edition.
       # Find the first one present and use that.
       if test "x$VS_EDITIONS" != x; then
