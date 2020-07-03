@@ -85,6 +85,7 @@ AC_DEFUN([UTIL_FIXUP_PATH],
           AC_MSG_ERROR([Spaces are not allowed in this path.])
         else
           path=""
+        fi
       fi
 
       # Use eval to expand a potential ~.
@@ -212,6 +213,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
           prefix="$FIXPATH "
         else
           # If we have gotten a .exe suffix, remove it
+          :
         fi
       fi
     fi

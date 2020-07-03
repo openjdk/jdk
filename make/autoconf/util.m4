@@ -569,6 +569,7 @@ AC_DEFUN([UTIL_LOOKUP_FUNDAMENTAL_PROGS],
   fi
   UTIL_SETUP_TOOL($1, [AC_PATH_PROGS($1, $all_names, , $3)])
 ])
+
 ###############################################################################
 # Call UTIL_SETUP_TOOL with AC_PATH_PROGS to locate the tool
 # $1: variable to set
