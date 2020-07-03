@@ -2223,7 +2223,15 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
           locker.wait();
         }
       }
-      comp->compile_method(&ci_env, target, osr_bci, directive);
+      comp->compile_method(&ci_env, target, osr_bci, true, directive);
+
+      /* Repeat compilation without installing code for profiling purposes */
+      int repeat_compilation_count = directive->RepeatCompilationOption;
+      while (repeat_compilation_count > 0) {
+        task->print_ul("NO CODE INSTALLED");
+        comp->compile_method(&ci_env, target, osr_bci, false , directive);
+        repeat_compilation_count--;
+      }
     }
 
     if (!ci_env.failing() && task->code() == NULL) {

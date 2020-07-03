@@ -135,7 +135,7 @@ bool JVMCICompiler::force_comp_at_level_simple(const methodHandle& method) {
 }
 
 // Compilation entry point for methods
-void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive) {
+void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
   ShouldNotReachHere();
 }
 
