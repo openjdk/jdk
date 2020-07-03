@@ -399,7 +399,7 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
           if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
             # Try again with .exe
             full_path="$elem/$name.exe"
-            if test "x$full_path" != x; then
+            if test -e $full_path; then
               $1="$full_path"
               AC_MSG_RESULT($full_path)
               break 2;
