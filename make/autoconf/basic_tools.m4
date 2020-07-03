@@ -87,7 +87,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   # These are only needed on some platforms
   UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
   UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
-  UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system3:/c/windows/system32)
+  UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system32:/c/windows/system32)
 
   # For compare.sh only
   UTIL_LOOKUP_PROGS(CMP, cmp)

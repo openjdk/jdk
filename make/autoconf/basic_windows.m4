@@ -53,6 +53,10 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
     AC_MSG_ERROR([Incorrect $WINENV_VENDOR installation. Neither cygpath nor wslpath was found])
   fi
 
+  if test "x$CMD" = x; then
+    AC_MSG_ERROR([Incorrect Windows/$WINENV_VENDOR setup. Could not locate cmd.exe])
+  fi
+
   AC_MSG_CHECKING([$WINENV_VENDOR drive prefix])
   WINENV_PREFIX=`$PATHTOOL -u c:/ | $SED -e 's!/c/!!'`
   AC_MSG_RESULT(['$WINENV_PREFIX'])
