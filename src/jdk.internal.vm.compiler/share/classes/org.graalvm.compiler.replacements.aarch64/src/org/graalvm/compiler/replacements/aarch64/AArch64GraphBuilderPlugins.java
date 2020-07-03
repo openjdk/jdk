@@ -34,6 +34,8 @@ import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.Una
 
 import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticLIRGeneratorTool.RoundingMode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AbsNode;
+import org.graalvm.compiler.nodes.calc.IntegerMulHighNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
@@ -147,6 +149,17 @@ public class AArch64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
         if (useFMAIntrinsics && JavaVersionUtil.JAVA_SPEC > 8) {
             registerFMA(r);
         }
+        registerIntegerAbs(r);
+
+        if (JavaVersionUtil.JAVA_SPEC >= 10) {
+            r.register2("multiplyHigh", Long.TYPE, Long.TYPE, new InvocationPlugin() {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
+                    b.push(JavaKind.Long, b.append(new IntegerMulHighNode(x, y)));
+                    return true;
+                }
+            });
+        }
     }
 
     private static void registerFMA(Registration r) {
@@ -171,6 +184,25 @@ public class AArch64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
                             ValueNode nb,
                             ValueNode nc) {
                 b.push(JavaKind.Float, b.append(new FusedMultiplyAddNode(na, nb, nc)));
+                return true;
+            }
+        });
+    }
+
+    private static void registerIntegerAbs(Registration r) {
+        r.register1("abs", Integer.TYPE, new InvocationPlugin() {
+
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Int, b.append(new AbsNode(value).canonical(null)));
+                return true;
+            }
+        });
+        r.register1("abs", Long.TYPE, new InvocationPlugin() {
+
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Long, b.append(new AbsNode(value).canonical(null)));
                 return true;
             }
         });

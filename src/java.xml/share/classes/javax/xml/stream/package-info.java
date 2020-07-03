@@ -41,8 +41,8 @@
  * <p>
  * StAX supports plugability with {@link XMLInputFactory} and
  * {@link XMLOutputFactory} that define how an implementation is
- * located through a process as described in the {@link newFactory}
- * method.
+ * located through a process as described in the {@code newFactory}
+ * methods.
  *
  *
  * @since 1.6

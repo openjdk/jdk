@@ -112,8 +112,9 @@ private:
   bool finish_transform(PhaseGVN *phase, bool can_reshape,
                         Node* ctl, Node *mem);
   static bool may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase, CallNode*& call);
-
+public:
   static Node* load(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* addr, const TypePtr* adr_type, const Type *type, BasicType bt);
+private:
   void store(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* addr, const TypePtr* adr_type, Node* val, const Type *type, BasicType bt);
 
 public:
@@ -153,7 +154,7 @@ public:
   bool is_clone_array()           const  { assert(_kind != None, "should bet set"); return _kind == CloneArray; }
   // is_clone_oop_array is used when oop arrays need GC barriers
   bool is_clone_oop_array()       const  { assert(_kind != None, "should bet set"); return _kind == CloneOopArray; }
-  // is_clonebasic - is true for any type of clone that doesn't need a barrier.
+  // is_clonebasic - is true for any type of clone that doesn't need a writebarrier.
   bool is_clonebasic()            const  { assert(_kind != None, "should bet set"); return _kind == CloneInst || _kind == CloneArray; }
   bool is_copyof()                const  { assert(_kind != None, "should bet set"); return _kind == CopyOf; }
   bool is_copyof_validated()      const  { assert(_kind != None, "should bet set"); return _kind == CopyOf && _arguments_validated; }

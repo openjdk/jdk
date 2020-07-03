@@ -51,12 +51,12 @@ import org.graalvm.compiler.nodes.StructuredGraph.Builder;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.OpaqueNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GeneratedPluginInjectionProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
@@ -322,7 +322,7 @@ public class ReplacementsParseTest extends ReplacementsTest {
     protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
         BytecodeProvider replacementBytecodeProvider = getSystemClassLoaderBytecodeProvider();
         Registration r = new Registration(invocationPlugins, TestObject.class, getReplacements(), replacementBytecodeProvider);
-        NodeIntrinsicPluginFactory.InjectionProvider injections = new DummyInjectionProvider();
+        GeneratedPluginInjectionProvider injections = new DummyInjectionProvider();
         new PluginFactory_ReplacementsParseTest().registerPlugins(invocationPlugins, injections);
         r.registerMethodSubstitution(TestObjectSubstitutions.class, "nextAfter", double.class, double.class);
         r.registerMethodSubstitution(TestObjectSubstitutions.class, "stringize", Object.class);
@@ -649,7 +649,7 @@ public class ReplacementsParseTest extends ReplacementsTest {
         }
     }
 
-    private class DummyInjectionProvider implements NodeIntrinsicPluginFactory.InjectionProvider {
+    private class DummyInjectionProvider implements GeneratedPluginInjectionProvider {
         @SuppressWarnings("unchecked")
         @Override
         public <T> T getInjectedArgument(Class<T> type) {

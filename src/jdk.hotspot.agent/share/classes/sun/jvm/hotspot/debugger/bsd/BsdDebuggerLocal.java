@@ -167,7 +167,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
                 } catch (InterruptedException x) {}
              }
              if (lastException != null) {
-                throw new DebuggerException(lastException);
+                throw new DebuggerException(lastException.getMessage(), lastException);
              } else {
                 return task;
              }

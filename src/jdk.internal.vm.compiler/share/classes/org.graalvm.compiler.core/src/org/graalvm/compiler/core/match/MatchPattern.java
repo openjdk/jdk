@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,8 @@ public class MatchPattern {
      */
     private final boolean singleUser;
 
+    private final boolean consumable;
+
     /**
      * Can this node be subsumed into a match even if there are side effecting nodes between this
      * node and the match.
@@ -166,41 +168,47 @@ public class MatchPattern {
 
     private static final MatchPattern[] EMPTY_PATTERNS = new MatchPattern[0];
 
-    public MatchPattern(String name, boolean singleUser, boolean ignoresSideEffects) {
-        this(null, name, singleUser, ignoresSideEffects);
+    public MatchPattern(String name, boolean singleUser, boolean consumable, boolean ignoresSideEffects) {
+        this(null, name, singleUser, consumable, ignoresSideEffects);
     }
 
-    public MatchPattern(Class<? extends Node> nodeClass, String name, boolean singleUser, boolean ignoresSideEffects) {
+    public MatchPattern(Class<? extends Node> nodeClass, String name, boolean singleUser, boolean consumable, boolean ignoresSideEffects) {
         this.nodeClass = nodeClass;
         this.name = name;
         this.singleUser = singleUser;
+        this.consumable = consumable;
         this.ignoresSideEffects = ignoresSideEffects;
         this.patterns = EMPTY_PATTERNS;
         this.inputs = null;
         assert !ignoresSideEffects || FloatingNode.class.isAssignableFrom(nodeClass);
     }
 
-    private MatchPattern(Class<? extends Node> nodeClass, String name, boolean singleUser, boolean ignoresSideEffects, MatchPattern[] patterns, Position[] inputs) {
+    private MatchPattern(Class<? extends Node> nodeClass, String name, boolean singleUser, boolean consumable,
+                    boolean ignoresSideEffects, MatchPattern[] patterns, Position[] inputs) {
         assert inputs == null || inputs.length == patterns.length;
         this.nodeClass = nodeClass;
         this.name = name;
         this.singleUser = singleUser;
+        this.consumable = consumable;
         this.ignoresSideEffects = ignoresSideEffects;
         this.patterns = patterns;
         this.inputs = inputs;
         assert !ignoresSideEffects || FloatingNode.class.isAssignableFrom(nodeClass);
     }
 
-    public MatchPattern(Class<? extends Node> nodeClass, String name, MatchPattern first, Position[] inputs, boolean singleUser, boolean ignoresSideEffects) {
-        this(nodeClass, name, singleUser, ignoresSideEffects, new MatchPattern[]{first}, inputs);
+    public MatchPattern(Class<? extends Node> nodeClass, String name, MatchPattern first, Position[] inputs,
+                    boolean singleUser, boolean consumable, boolean ignoresSideEffects) {
+        this(nodeClass, name, singleUser, consumable, ignoresSideEffects, new MatchPattern[]{first}, inputs);
     }
 
-    public MatchPattern(Class<? extends Node> nodeClass, String name, MatchPattern first, MatchPattern second, Position[] inputs, boolean singleUser, boolean ignoresSideEffects) {
-        this(nodeClass, name, singleUser, ignoresSideEffects, new MatchPattern[]{first, second}, inputs);
+    public MatchPattern(Class<? extends Node> nodeClass, String name, MatchPattern first, MatchPattern second,
+                    Position[] inputs, boolean singleUser, boolean consumable, boolean ignoresSideEffects) {
+        this(nodeClass, name, singleUser, consumable, ignoresSideEffects, new MatchPattern[]{first, second}, inputs);
     }
 
-    public MatchPattern(Class<? extends Node> nodeClass, String name, MatchPattern first, MatchPattern second, MatchPattern third, Position[] inputs, boolean singleUser, boolean ignoresSideEffects) {
-        this(nodeClass, name, singleUser, ignoresSideEffects, new MatchPattern[]{first, second, third}, inputs);
+    public MatchPattern(Class<? extends Node> nodeClass, String name, MatchPattern first, MatchPattern second, MatchPattern third,
+                    Position[] inputs, boolean singleUser, boolean consumable, boolean ignoresSideEffects) {
+        this(nodeClass, name, singleUser, consumable, ignoresSideEffects, new MatchPattern[]{first, second, third}, inputs);
     }
 
     Class<? extends Node> nodeClass() {
@@ -234,8 +242,9 @@ public class MatchPattern {
         if (result != Result.OK) {
             return result;
         }
-        if (singleUser) {
-            result = context.consume(node, ignoresSideEffects, atRoot);
+
+        if (consumable) {
+            result = context.consume(node, ignoresSideEffects, atRoot, singleUser);
             if (result != Result.OK) {
                 return result;
             }

@@ -87,6 +87,20 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBFFI],
           [LIBFFI_FOUND=no]
       )
     fi
+    # on macos we need a special case for system's libffi as
+    # headers are located only in sdk in $SYSROOT and in ffi subfolder
+    if test "x$LIBFFI_FOUND" = xno; then
+      if test "x$SYSROOT" != "x"; then
+        AC_CHECK_HEADER([$SYSROOT/usr/include/ffi/ffi.h],
+            [
+              LIBFFI_FOUND=yes
+              LIBFFI_CFLAGS="-I${SYSROOT}/usr/include/ffi"
+              LIBFFI_LIBS=-lffi
+            ],
+            [LIBFFI_FOUND=no]
+        )
+      fi
+    fi
     if test "x$LIBFFI_FOUND" = xno; then
       HELP_MSG_MISSING_DEPENDENCY([ffi])
       AC_MSG_ERROR([Could not find libffi! $HELP_MSG])

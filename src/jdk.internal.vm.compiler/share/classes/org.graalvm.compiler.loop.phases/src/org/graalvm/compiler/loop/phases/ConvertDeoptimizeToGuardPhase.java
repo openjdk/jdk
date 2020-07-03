@@ -64,7 +64,6 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.LazyValue;
-import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.DeoptimizationAction;
@@ -82,8 +81,6 @@ import jdk.vm.ci.meta.DeoptimizationAction;
  *
  */
 public class ConvertDeoptimizeToGuardPhase extends BasePhase<CoreProviders> {
-
-    private static final Providers EMPTY_PROVIDERS = new Providers(null, null, null, null, null, null, null, null, null, null);
 
     @Override
     @SuppressWarnings("try")
@@ -228,7 +225,8 @@ public class ConvertDeoptimizeToGuardPhase extends BasePhase<CoreProviders> {
                             FixedNode next = pred.next();
                             pred.setNext(guard);
                             guard.setNext(next);
-                            SimplifierTool simplifierTool = GraphUtil.getDefaultSimplifier(providers != null ? providers : EMPTY_PROVIDERS, false, graph.getAssumptions(), graph.getOptions());
+                            assert providers != null;
+                            SimplifierTool simplifierTool = GraphUtil.getDefaultSimplifier(providers, false, graph.getAssumptions(), graph.getOptions());
                             survivingSuccessor.simplify(simplifierTool);
                         }
                     }

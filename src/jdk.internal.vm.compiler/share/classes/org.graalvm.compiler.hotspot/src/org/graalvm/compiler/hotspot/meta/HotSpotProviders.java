@@ -26,14 +26,19 @@ package org.graalvm.compiler.hotspot.meta;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
+import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.word.HotSpotWordTypes;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
+import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
 import org.graalvm.compiler.nodes.spi.Replacements;
+import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import org.graalvm.compiler.phases.util.Providers;
 
+import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -46,20 +51,40 @@ public class HotSpotProviders extends Providers {
 
     private final SuitesProvider suites;
     private final HotSpotRegistersProvider registers;
-    private final SnippetReflectionProvider snippetReflection;
-    private final HotSpotWordTypes wordTypes;
     private final Plugins graphBuilderPlugins;
+    private final GraalHotSpotVMConfig config;
 
-    public HotSpotProviders(MetaAccessProvider metaAccess, HotSpotCodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantField,
-                    HotSpotForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, SuitesProvider suites, HotSpotRegistersProvider registers,
-                    SnippetReflectionProvider snippetReflection, HotSpotWordTypes wordTypes, Plugins graphBuilderPlugins, HotSpotPlatformConfigurationProvider platformConfigurationProvider,
-                    MetaAccessExtensionProvider metaAccessExtensionProvider) {
-        super(metaAccess, codeCache, constantReflection, constantField, foreignCalls, lowerer, replacements, new HotSpotStampProvider(), platformConfigurationProvider, metaAccessExtensionProvider);
+    public HotSpotProviders(MetaAccessProvider metaAccess,
+                    HotSpotCodeCacheProvider codeCache,
+                    ConstantReflectionProvider constantReflection,
+                    ConstantFieldProvider constantField,
+                    HotSpotHostForeignCallsProvider foreignCalls,
+                    LoweringProvider lowerer,
+                    Replacements replacements,
+                    SuitesProvider suites,
+                    HotSpotRegistersProvider registers,
+                    SnippetReflectionProvider snippetReflection,
+                    HotSpotWordTypes wordTypes,
+                    Plugins graphBuilderPlugins,
+                    PlatformConfigurationProvider platformConfigurationProvider,
+                    MetaAccessExtensionProvider metaAccessExtensionProvider,
+                    GraalHotSpotVMConfig config) {
+        super(metaAccess, codeCache, constantReflection, constantField, foreignCalls, lowerer, replacements, new HotSpotStampProvider(), platformConfigurationProvider, metaAccessExtensionProvider,
+                        snippetReflection, wordTypes);
         this.suites = suites;
         this.registers = registers;
-        this.snippetReflection = snippetReflection;
-        this.wordTypes = wordTypes;
         this.graphBuilderPlugins = graphBuilderPlugins;
+        this.config = config;
+    }
+
+    public HotSpotProviders(MetaAccessProvider metaAccess, CodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantField,
+                    ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, StampProvider stampProvider, PlatformConfigurationProvider platformConfigurationProvider,
+                    MetaAccessExtensionProvider metaAccessExtensionProvider) {
+        super(metaAccess, codeCache, constantReflection, constantField, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider, metaAccessExtensionProvider, null, null);
+        this.suites = null;
+        this.registers = null;
+        this.graphBuilderPlugins = null;
+        this.config = null;
     }
 
     @Override
@@ -68,8 +93,8 @@ public class HotSpotProviders extends Providers {
     }
 
     @Override
-    public HotSpotForeignCallsProvider getForeignCalls() {
-        return (HotSpotForeignCallsProvider) super.getForeignCalls();
+    public HotSpotHostForeignCallsProvider getForeignCalls() {
+        return (HotSpotHostForeignCallsProvider) super.getForeignCalls();
     }
 
     public SuitesProvider getSuites() {
@@ -80,47 +105,46 @@ public class HotSpotProviders extends Providers {
         return registers;
     }
 
-    public SnippetReflectionProvider getSnippetReflection() {
-        return snippetReflection;
-    }
-
     public Plugins getGraphBuilderPlugins() {
         return graphBuilderPlugins;
     }
 
+    @Override
     public HotSpotWordTypes getWordTypes() {
-        return wordTypes;
+        return (HotSpotWordTypes) super.getWordTypes();
+    }
+
+    public GraalHotSpotVMConfig getConfig() {
+        return config;
     }
 
     @Override
     public HotSpotPlatformConfigurationProvider getPlatformConfigurationProvider() {
-        return (HotSpotPlatformConfigurationProvider) super.getPlatformConfigurationProvider();
+        return (HotSpotPlatformConfigurationProvider) platformConfigurationProvider;
     }
 
     @Override
-    public Providers copyWith(ConstantReflectionProvider substitution) {
-        assert this.getClass() == HotSpotProviders.class : "must override in " + getClass();
+    public HotSpotProviders copyWith(ConstantReflectionProvider substitution) {
         return new HotSpotProviders(getMetaAccess(), getCodeCache(), substitution, getConstantFieldProvider(), getForeignCalls(), getLowerer(), getReplacements(), getSuites(),
-                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider(), getMetaAccessExtensionProvider());
+                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider(), getMetaAccessExtensionProvider(), config);
     }
 
     @Override
-    public Providers copyWith(ConstantFieldProvider substitution) {
-        assert this.getClass() == HotSpotProviders.class : "must override in " + getClass();
-        return new HotSpotProviders(getMetaAccess(), getCodeCache(), getConstantReflection(), substitution, getForeignCalls(), getLowerer(), getReplacements(), getSuites(),
-                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider(), getMetaAccessExtensionProvider());
+    public HotSpotProviders copyWith(ConstantFieldProvider substitution) {
+        return new HotSpotProviders(getMetaAccess(), getCodeCache(), getConstantReflection(), substitution, getForeignCalls(), getLowerer(), getReplacements(),
+                        getSuites(),
+                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider(), getMetaAccessExtensionProvider(), config);
     }
 
     @Override
-    public Providers copyWith(Replacements substitution) {
-        assert this.getClass() == HotSpotProviders.class : "must override in " + getClass();
-        return new HotSpotProviders(getMetaAccess(), getCodeCache(), getConstantReflection(), getConstantFieldProvider(), getForeignCalls(), getLowerer(), substitution, getSuites(),
-                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider(), getMetaAccessExtensionProvider());
+    public HotSpotProviders copyWith(Replacements substitution) {
+        return new HotSpotProviders(getMetaAccess(), getCodeCache(), getConstantReflection(), getConstantFieldProvider(), getForeignCalls(), getLowerer(), substitution,
+                        getSuites(), getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider(), getMetaAccessExtensionProvider(), config);
     }
 
-    public Providers copyWith(Plugins substitution) {
-        assert this.getClass() == HotSpotProviders.class : "must override in " + getClass();
-        return new HotSpotProviders(getMetaAccess(), getCodeCache(), getConstantReflection(), getConstantFieldProvider(), getForeignCalls(), getLowerer(), getReplacements(), getSuites(),
-                        getRegisters(), getSnippetReflection(), getWordTypes(), substitution, getPlatformConfigurationProvider(), getMetaAccessExtensionProvider());
+    public HotSpotProviders copyWith(Plugins substitution) {
+        return new HotSpotProviders(getMetaAccess(), getCodeCache(), getConstantReflection(), getConstantFieldProvider(), getForeignCalls(), getLowerer(), getReplacements(),
+                        getSuites(), getRegisters(), getSnippetReflection(), getWordTypes(), substitution, getPlatformConfigurationProvider(), getMetaAccessExtensionProvider(), config);
     }
+
 }

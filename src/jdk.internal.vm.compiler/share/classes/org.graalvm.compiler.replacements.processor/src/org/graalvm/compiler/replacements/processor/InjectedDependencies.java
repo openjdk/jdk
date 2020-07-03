@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,50 +36,69 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import org.graalvm.compiler.processor.AbstractProcessor;
-import org.graalvm.compiler.replacements.processor.InjectedDependencies.Dependency;
 
-public class InjectedDependencies implements Iterable<Dependency> {
+public class InjectedDependencies implements Iterable<InjectedDependencies.Dependency> {
 
-    public abstract static class Dependency {
+    public interface Dependency {
 
-        public final String name;
-        public final String type;
+        String getName(AbstractProcessor processor, ExecutableElement inject);
 
-        private Dependency(String name, String type) {
+        String getExpression(AbstractProcessor processor, ExecutableElement inject);
+
+        String getType();
+    }
+
+    private abstract static class DependencyImpl implements Dependency {
+
+        private final String name;
+        private final String type;
+
+        private DependencyImpl(String name, String type) {
             this.name = name;
             this.type = type;
         }
 
-        public abstract String inject(AbstractProcessor processor, ExecutableElement inject);
+        @Override
+        public abstract String getExpression(AbstractProcessor processor, ExecutableElement inject);
+
+        @Override
+        public String getName(AbstractProcessor processor, ExecutableElement inject) {
+            return name;
+        }
+
+        @Override
+        public String getType() {
+            return type;
+        }
     }
 
-    private static final class InjectedDependency extends Dependency {
+    protected static final class InjectedDependency extends DependencyImpl {
 
-        private InjectedDependency(String name, String type) {
+        protected InjectedDependency(String name, String type) {
             super(name, type);
         }
 
         @Override
-        public String inject(AbstractProcessor processor, ExecutableElement inject) {
-            return String.format("injection.getInjectedArgument(%s.class)", type);
+        public String getExpression(AbstractProcessor processor, ExecutableElement inject) {
+            return String.format("injection.getInjectedArgument(%s.class)", getType());
         }
     }
 
-    private static final class InjectedStampDependency extends Dependency {
+    private static final class InjectedStampDependency extends DependencyImpl {
 
         private InjectedStampDependency() {
             super("stamp", "org.graalvm.compiler.core.common.type.Stamp");
         }
 
         @Override
-        public String inject(AbstractProcessor processor, ExecutableElement inject) {
+        public String getExpression(AbstractProcessor processor, ExecutableElement inject) {
             AnnotationMirror nodeIntrinsic = processor.getAnnotation(inject, processor.getType(NODE_INTRINSIC_CLASS_NAME));
             boolean nonNull = nodeIntrinsic != null && getAnnotationValue(nodeIntrinsic, "injectedStampIsNonNull", Boolean.class);
             return String.format("injection.getInjectedStamp(%s.class, %s)", GeneratedPlugin.getErasedType(inject.getReturnType()), nonNull);
         }
     }
 
-    public enum WellKnownDependency {
+    public enum WellKnownDependency implements Dependency {
         CONSTANT_REFLECTION("b.getConstantReflection()", "jdk.vm.ci.meta.ConstantReflectionProvider"),
         META_ACCESS("b.getMetaAccess()", "jdk.vm.ci.meta.MetaAccessProvider"),
         ASSUMPTIONS("b.getAssumptions()", "jdk.vm.ci.meta.Assumptions"),
@@ -92,7 +111,7 @@ public class InjectedDependencies implements Iterable<Dependency> {
 
         private final String expr;
         private final String type;
-        private final Dependency generateMember;
+        protected final DependencyImpl generateMember;
 
         WellKnownDependency(String expr, String type) {
             this.expr = expr;
@@ -100,34 +119,67 @@ public class InjectedDependencies implements Iterable<Dependency> {
             this.generateMember = null;
         }
 
-        WellKnownDependency(Dependency generateMember) {
-            this.expr = generateMember.name;
-            this.type = generateMember.type;
+        WellKnownDependency(DependencyImpl generateMember) {
+            this.expr = null;
+            this.type = generateMember.getType();
             this.generateMember = generateMember;
         }
 
-        private TypeMirror getType(AbstractProcessor processor) {
+        protected TypeMirror getType(AbstractProcessor processor) {
             return processor.getType(type);
+        }
+
+        @Override
+        public String getExpression(AbstractProcessor processor, ExecutableElement inject) {
+            if (generateMember != null) {
+                return generateMember.getExpression(processor, inject);
+            }
+            return expr;
+        }
+
+        @Override
+        public String getName(AbstractProcessor processor, ExecutableElement inject) {
+            if (generateMember != null) {
+                return generateMember.getName(processor, inject);
+            }
+            return expr;
+        }
+
+        @Override
+        public String getType() {
+            if (generateMember != null) {
+                return generateMember.getType();
+            }
+            return type;
         }
     }
 
-    private final HashMap<String, Dependency> deps;
+    protected final HashMap<String, Dependency> deps;
+    protected final boolean useVariables;
+    protected final ExecutableElement intrinsicMethod;
 
-    public InjectedDependencies() {
+    public InjectedDependencies(boolean useVariables, ExecutableElement intrinsicMethod) {
+        this.useVariables = useVariables;
+        this.intrinsicMethod = intrinsicMethod;
         deps = new HashMap<>();
     }
 
-    public String use(WellKnownDependency wellKnown) {
+    public String use(AbstractProcessor processor, WellKnownDependency wellKnown) {
         if (wellKnown.generateMember != null) {
             deps.put(wellKnown.type, wellKnown.generateMember);
         }
-        return wellKnown.expr;
+        if (useVariables) {
+            return wellKnown.getName(processor, intrinsicMethod) + "/* A " + wellKnown + " */";
+        } else {
+            return wellKnown.getExpression(processor, intrinsicMethod) + "/* B " + wellKnown + " */";
+        }
     }
 
-    public String use(AbstractProcessor processor, DeclaredType type) {
+    public Dependency find(AbstractProcessor processor, DeclaredType type) {
         for (WellKnownDependency wellKnown : WellKnownDependency.values()) {
             if (processor.env().getTypeUtils().isAssignable(wellKnown.getType(processor), type)) {
-                return use(wellKnown);
+                use(processor, wellKnown);
+                return wellKnown;
             }
         }
 
@@ -137,7 +189,15 @@ public class InjectedDependencies implements Iterable<Dependency> {
             ret = new InjectedDependency("injected" + type.asElement().getSimpleName(), typeName);
             deps.put(typeName, ret);
         }
-        return ret.name;
+        return ret;
+    }
+
+    public String use(AbstractProcessor processor, DeclaredType type) {
+        return find(processor, type).getName(processor, intrinsicMethod);
+    }
+
+    public String inject(AbstractProcessor processor, DeclaredType type) {
+        return find(processor, type).getExpression(processor, intrinsicMethod);
     }
 
     @Override

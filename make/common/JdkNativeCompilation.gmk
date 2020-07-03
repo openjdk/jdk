@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,16 @@ ProcessDir = \
     ) \
   )
 
+GLOBAL_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/common/version.rc
+
+JDK_RCFLAGS=$(RCFLAGS) \
+    -D"JDK_VERSION_STRING=$(VERSION_STRING)" \
+    -D"JDK_COMPANY=$(COMPANY_NAME)" \
+    -D"JDK_VER=$(VERSION_NUMBER_FOUR_POSITIONS)" \
+    -D"JDK_COPYRIGHT=Copyright \xA9 $(COPYRIGHT_YEAR)" \
+    -D"JDK_NAME=$(JDK_RC_NAME) $(VERSION_SHORT)" \
+    -D"JDK_FVER=$(subst .,$(COMMA),$(VERSION_NUMBER_FOUR_POSITIONS))"
+
 # Setup make rules for creating a native shared library with suitable defaults
 # for the OpenJDK project.
 #
@@ -100,7 +110,7 @@ ProcessDir = \
 #
 # Remaining parameters are named arguments. These are all passed on to
 # SetupNativeCompilation, except for
-#   EXTRA_RC_FLAGS -- additional RC_FLAGS to append.
+#   EXTRA_RCFLAGS -- additional RCFLAGS to append.
 #   EXTRA_HEADER_DIRS -- additional directories to look for headers in
 #   EXTRA_SRC -- additional directories to look for source in
 #   EXCLUDE_SRC_PATTERNS -- exclude source dirs matching these patterns from
@@ -108,6 +118,7 @@ ProcessDir = \
 #   HEADERS_FROM_SRC -- if false, does not add source dirs automatically as
 #     header include dirs. (Defaults to true.)
 #   SRC -- this is passed on, but preprocessed to accept source dir designations
+#   RC_FILEDESC -- override the default FILEDESC for Windows version.rc
 #     such as "java.base:headers".
 SetupJdkLibrary = $(NamedParamsMacroTemplate)
 define SetupJdkLibraryBody
@@ -137,18 +148,19 @@ define SetupJdkLibraryBody
 
   ifeq ($$($1_VERSIONINFO_RESOURCE), )
     $1_VERSIONINFO_RESOURCE := $$(GLOBAL_VERSION_INFO_RESOURCE)
-  else ifeq ($$($1_VERSIONINFO_RESOURCE), DISABLE)
-    $1_VERSIONINFO_RESOURCE :=
   endif
 
-  ifeq ($$($1_RC_FLAGS), )
-    $1_RC_FLAGS :=  $(RC_FLAGS) \
-        -D "JDK_FNAME=$$($1_NAME).dll" \
-        -D "JDK_INTERNAL_NAME=$$($1_NAME)" \
-        -D "JDK_FTYPE=0x2L"
-  else ifeq ($$($1_RC_FLAGS), DISABLE)
-    $1_RC_FLAGS :=
+  ifeq ($$($1_RC_FILEDESC), )
+    $1_RC_FILEDESC := $(JDK_RC_NAME) binary
   endif
+
+  $1_RCFLAGS := $(JDK_RCFLAGS) \
+      -D"JDK_FILEDESC=$$(strip $$($1_RC_FILEDESC))" \
+      -D"JDK_FNAME=$$($1_NAME).dll" \
+      -D"JDK_INTERNAL_NAME=$$($1_NAME)" \
+      -D"JDK_FTYPE=0x2L" \
+      -I$(TOPDIR)/src/java.base/windows/native/common \
+      $$($1_EXTRA_RCFLAGS)
 
   ifneq ($$($1_HEADERS_FROM_SRC), false)
     $1_SRC_HEADER_FLAGS := $$(addprefix -I, $$(wildcard $$($1_SRC)))
@@ -171,7 +183,6 @@ define SetupJdkLibraryBody
   ifeq ($$($1_CFLAGS)$$($1_CXXFLAGS), )
     $1_CFLAGS += $$($1_SRC_HEADER_FLAGS) $$($1_EXTRA_HEADER_FLAGS)
   endif
-  $1_RC_FLAGS += $$($1_EXTRA_RC_FLAGS)
 
   # Since we reuse the rule name ($1), all our arguments will pass through.
   # We lose in transparency, but gain in brevity in this call...
@@ -186,7 +197,7 @@ endef
 #
 # Remaining parameters are named arguments. These are all passed on to
 # SetupNativeCompilation, except for
-#   EXTRA_RC_FLAGS -- additional RC_FLAGS to append.
+#   EXTRA_RCFLAGS -- additional RCFLAGS to append.
 SetupJdkExecutable = $(NamedParamsMacroTemplate)
 define SetupJdkExecutableBody
   $1_TYPE := EXECUTABLE
@@ -201,20 +212,15 @@ define SetupJdkExecutableBody
 
   ifeq ($$($1_VERSIONINFO_RESOURCE), )
     $1_VERSIONINFO_RESOURCE := $$(GLOBAL_VERSION_INFO_RESOURCE)
-  else ifeq ($$($1_VERSIONINFO_RESOURCE), DISABLE)
-    $1_VERSIONINFO_RESOURCE :=
   endif
 
-  ifeq ($$($1_RC_FLAGS), )
-    $1_RC_FLAGS :=  $(RC_FLAGS) \
-        -D "JDK_FNAME=$$($1_NAME).exe" \
-        -D "JDK_INTERNAL_NAME=$$($1_NAME)" \
-        -D "JDK_FTYPE=0x01L"
-  else ifeq ($$($1_RC_FLAGS), DISABLE)
-    $1_RC_FLAGS :=
-  endif
-
-  $1_RC_FLAGS += $$($1_EXTRA_RC_FLAGS)
+  $1_RCFLAGS := $(JDK_RCFLAGS) \
+      -D"JDK_FILEDESC=$(JDK_RC_NAME) binary" \
+      -D"JDK_FNAME=$$($1_NAME).exe" \
+      -D"JDK_INTERNAL_NAME=$$($1_NAME)" \
+      -D"JDK_FTYPE=0x1L" \
+      -I$(TOPDIR)/src/java.base/windows/native/common \
+      $$($1_EXTRA_RCFLAGS)
 
   # Since we reuse the rule name ($1), all our arguments will pass through.
   # We lose in transparency, but gain in brevity in this call...

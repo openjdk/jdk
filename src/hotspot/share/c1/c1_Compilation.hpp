@@ -81,6 +81,7 @@ class Compilation: public StackObj {
   bool               _would_profile;
   bool               _has_method_handle_invokes;  // True if this method has MethodHandle invokes.
   bool               _has_reserved_stack_access;
+  bool               _install_code;
   const char*        _bailout_msg;
   ExceptionInfoList* _exception_info_list;
   ExceptionHandlerTable _exception_handler_table;
@@ -120,7 +121,7 @@ class Compilation: public StackObj {
  public:
   // creation
   Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* method,
-              int osr_bci, BufferBlob* buffer_blob, DirectiveSet* directive);
+              int osr_bci, BufferBlob* buffer_blob, bool install_code, DirectiveSet* directive);
   ~Compilation();
 
 
@@ -148,6 +149,7 @@ class Compilation: public StackObj {
   CodeOffsets* offsets()                         { return &_offsets; }
   Arena* arena()                                 { return _arena; }
   bool has_access_indexed()                      { return _has_access_indexed; }
+  bool should_install_code()                     { return _install_code && InstallMethods; }
 
   // Instruction ids
   int get_next_id()                              { return _next_id++; }

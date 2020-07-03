@@ -108,6 +108,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   }
   JVMCI_FLAG_CHECKED(EagerJVMCI)
 
+  CHECK_NOT_SET(JVMCIEventLogLevel,           EnableJVMCI)
   CHECK_NOT_SET(JVMCITraceLevel,              EnableJVMCI)
   CHECK_NOT_SET(JVMCICounterSize,             EnableJVMCI)
   CHECK_NOT_SET(JVMCICountersExcludeCompiler, EnableJVMCI)
@@ -166,6 +167,8 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlag::Flags origin) {
     "JVMCICounterSize",
     "JVMCICountersExcludeCompiler",
     "JVMCINMethodSizeLimit",
+    "JVMCIEventLogLevel",
+    "JVMCITraceLevel",
     "JVMCILibPath",
     "JVMCILibDumpJNIConfig",
     "UseJVMCINativeLibrary",

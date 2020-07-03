@@ -235,7 +235,7 @@ public class ClassfileBytecodeProviderTest extends GraalCompilerTest {
     }
 
     private static boolean isInNativeImage(String className) {
-        return className.startsWith("org.graalvm.nativeimage");
+        return className.startsWith("jdk.internal.vm.compiler.nativeimage");
     }
 
     private static boolean isGSON(String className) {

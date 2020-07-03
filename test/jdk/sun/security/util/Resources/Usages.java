@@ -75,7 +75,7 @@ public class Usages {
             "(?m)rb[ \\n]*\\.getString[ \\n]*\\([ \\n]*\"(.*?)\"\\)");
 
     static Pattern EVENT_OCSP_CRL = Pattern.compile(
-            "Event\\.report\\(\"(.*?)\",");
+            "Event\\.report\\(.*, \"(.*?)\",");
 
     // Command and Option enums in keytool
     static Pattern KT_ENUM = Pattern.compile("\\n +[A-Z]+\\(.*\"(.*)\"");

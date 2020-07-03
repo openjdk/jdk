@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,9 +145,6 @@ class RawNativeInstruction {
   bool is_movt()           const { return (encoding() & 0x0ff00000) == 0x03400000; }
   // c2 doesn't use fixed registers for safepoint poll address
   bool is_safepoint_poll() const { return (encoding() & 0xfff0ffff) == 0xe590c000; }
-  // For unit tests
-  static void test() {}
-
 };
 
 inline RawNativeInstruction* rawNativeInstruction_at(address address) {

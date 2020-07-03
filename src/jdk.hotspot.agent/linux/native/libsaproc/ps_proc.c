@@ -140,7 +140,8 @@ static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct use
 
 #ifdef PTRACE_GETREGS_REQ
  if (ptrace_getregs(PTRACE_GETREGS_REQ, pid, user, NULL) < 0) {
-   print_debug("ptrace(PTRACE_GETREGS, ...) failed for lwp %d\n", pid);
+   print_debug("ptrace(PTRACE_GETREGS, ...) failed for lwp(%d) errno(%d) \"%s\"\n", pid,
+               errno, strerror(errno));
    return false;
  }
  return true;

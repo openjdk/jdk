@@ -64,39 +64,12 @@ AC_DEFUN([FLAGS_SETUP_RCFLAGS],
 [
   # On Windows, we need to set RC flags.
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    RC_FLAGS="-nologo -l0x409"
-    JVM_RCFLAGS="-nologo"
+    RCFLAGS="-nologo"
     if test "x$DEBUG_LEVEL" = xrelease; then
-      RC_FLAGS="$RC_FLAGS -DNDEBUG"
-      JVM_RCFLAGS="$JVM_RCFLAGS -DNDEBUG"
+      RCFLAGS="$RCFLAGS -DNDEBUG"
     fi
-
-    # The version variables used to create RC_FLAGS may be overridden
-    # in a custom configure script, or possibly the command line.
-    # Let those variables be expanded at make time in spec.gmk.
-    # The \$ are escaped to the shell, and the $(...) variables
-    # are evaluated by make.
-    RC_FLAGS="$RC_FLAGS \
-        -D\"JDK_VERSION_STRING=\$(VERSION_STRING)\" \
-        -D\"JDK_COMPANY=\$(COMPANY_NAME)\" \
-        -D\"JDK_FILEDESC=\$(JDK_RC_NAME) binary\" \
-        -D\"JDK_VER=\$(VERSION_NUMBER)\" \
-        -D\"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
-        -D\"JDK_NAME=\$(JDK_RC_NAME) \$(VERSION_FEATURE)\" \
-        -D\"JDK_FVER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\""
-
-    JVM_RCFLAGS="$JVM_RCFLAGS \
-        -D\"HS_VERSION_STRING=\$(VERSION_STRING)\" \
-        -D\"HS_COMPANY=\$(COMPANY_NAME)\" \
-        -D\"HS_VER=\$(VERSION_NUMBER_FOUR_POSITIONS)\" \
-        -D\"HS_INTERNAL_NAME=jvm\" \
-        -D\"HS_COPYRIGHT=Copyright $COPYRIGHT_YEAR\" \
-        -D\"HS_FNAME=jvm.dll\" \
-        -D\"HS_NAME=\$(PRODUCT_NAME) \$(VERSION_SHORT)\" \
-        -D\"HS_FVER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\""
   fi
-  AC_SUBST(RC_FLAGS)
-  AC_SUBST(JVM_RCFLAGS)
+  AC_SUBST(RCFLAGS)
 ])
 
 ################################################################################

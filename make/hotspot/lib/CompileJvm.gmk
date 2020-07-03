@@ -124,13 +124,6 @@ else ifeq ($(call isTargetCpu, x86_64), true)
   JVM_EXCLUDE_PATTERNS += x86_32
 endif
 
-ifeq ($(call isTargetOs, windows), true)
-  ifeq ($(call isTargetCpuBits, 64), true)
-    RC_DESC := 64-Bit$(SPACE)
-  endif
-  JVM_RCFLAGS += -D"HS_FILEDESC=$(HOTSPOT_VM_DISTRO) $(RC_DESC)$(JVM_VARIANT) VM"
-endif
-
 JVM_OPTIMIZATION ?= HIGHEST_JVM
 
 # Need to set JVM_STRIPFLAGS to the default value from SPEC since the STRIPFLAGS
@@ -168,8 +161,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     USE_MAPFILE_FOR_SYMBOLS := true, \
     STRIPFLAGS := $(JVM_STRIPFLAGS), \
     EMBED_MANIFEST := true, \
-    RC_FLAGS := $(JVM_RCFLAGS), \
-    VERSIONINFO_RESOURCE := $(TOPDIR)/src/hotspot/os/windows/version.rc, \
+    RC_FILEDESC := $(HOTSPOT_VM_DISTRO) $(OPENJDK_TARGET_CPU_BITS)-Bit $(JVM_VARIANT) VM, \
     PRECOMPILED_HEADER := $(JVM_PRECOMPILED_HEADER), \
     PRECOMPILED_HEADER_EXCLUDE := $(JVM_PRECOMPILED_HEADER_EXCLUDE), \
 ))

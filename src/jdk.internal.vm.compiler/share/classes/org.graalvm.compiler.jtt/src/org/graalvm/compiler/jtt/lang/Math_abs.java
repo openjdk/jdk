@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,11 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 /*
  */
 public class Math_abs extends UnaryMath {
-
     @SuppressWarnings("serial")
     public static class NaN extends Throwable {
     }
 
-    public static double test(double arg) throws NaN {
+    public static double testAbsD(double arg) throws NaN {
         double v = Math.abs(arg);
         if (Double.isNaN(v)) {
             // NaN can't be tested against itself
@@ -48,43 +47,73 @@ public class Math_abs extends UnaryMath {
 
     @Test
     public void run0() throws Throwable {
-        runTest("test", 5.0d);
+        runTest("testAbsD", 5.0d);
     }
 
     @Test
     public void run1() throws Throwable {
-        runTest("test", -5.0d);
+        runTest("testAbsD", -5.0d);
     }
 
     @Test
     public void run2() throws Throwable {
-        runTest("test", 0.0d);
+        runTest("testAbsD", 0.0d);
     }
 
     @Test
     public void run3() throws Throwable {
-        runTest("test", -0.0d);
+        runTest("testAbsD", -0.0d);
     }
 
     @Test
     public void run4() throws Throwable {
-        runTest("test", java.lang.Double.NEGATIVE_INFINITY);
+        runTest("testAbsD", java.lang.Double.NEGATIVE_INFINITY);
     }
 
     @Test
     public void run5() throws Throwable {
-        runTest("test", java.lang.Double.POSITIVE_INFINITY);
+        runTest("testAbsD", java.lang.Double.POSITIVE_INFINITY);
     }
 
     @Test
     public void run6() throws Throwable {
-        runTest("test", java.lang.Double.NaN);
+        runTest("testAbsD", java.lang.Double.NaN);
     }
 
     @Test
     public void run7() {
         OptionValues options = getInitialOptions();
-        ResolvedJavaMethod method = getResolvedJavaMethod("test");
+        ResolvedJavaMethod method = getResolvedJavaMethod("testAbsD");
         testManyValues(options, method);
+    }
+
+    public static int testAbsI(int arg) {
+        return Math.abs(arg);
+    }
+
+    public static long testAbsL(long arg) {
+        return Math.abs(arg);
+    }
+
+    @Test
+    public void run8() {
+        runTest("testAbsI", Integer.MIN_VALUE);
+        runTest("testAbsI", -326543323);
+        runTest("testAbsI", -21325);
+        runTest("testAbsI", -0);
+        runTest("testAbsI", 5432);
+        runTest("testAbsI", 352438548);
+        runTest("testAbsI", Integer.MAX_VALUE);
+    }
+
+    @Test
+    public void run9() {
+        runTest("testAbsL", Long.MIN_VALUE);
+        runTest("testAbsL", -425423654342L);
+        runTest("testAbsL", -21543224L);
+        runTest("testAbsL", -0L);
+        runTest("testAbsL", 1325488L);
+        runTest("testAbsL", 313567897765L);
+        runTest("testAbsL", Long.MAX_VALUE);
     }
 }

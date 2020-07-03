@@ -44,7 +44,7 @@ import javadoc.tester.JavadocTester;
 public class TestHeadTag extends JavadocTester {
 
     final ToolBox tb;
-    final String version = System.getProperty("java.version");
+    final String version = System.getProperty("java.specification.version");
 
     public static void main(String... args) throws Exception {
         TestHeadTag tester = new TestHeadTag();

@@ -378,8 +378,10 @@ public class CheckGraalIntrinsics extends GraalTest {
         }
 
         if (isJDK10OrHigher()) {
-            add(toBeInvestigated,
-                            "java/lang/Math.multiplyHigh(JJ)J");
+            if (!(arch instanceof AArch64)) {
+                add(toBeInvestigated,
+                                "java/lang/Math.multiplyHigh(JJ)J");
+            }
         }
 
         if (isJDK11OrHigher()) {
@@ -397,9 +399,12 @@ public class CheckGraalIntrinsics extends GraalTest {
         }
 
         if (isJDK13OrHigher()) {
+            if (!(arch instanceof AArch64)) {
+                add(toBeInvestigated,
+                                "java/lang/Math.abs(I)I",
+                                "java/lang/Math.abs(J)J");
+            }
             add(toBeInvestigated,
-                            "java/lang/Math.abs(I)I",
-                            "java/lang/Math.abs(J)J",
                             "java/lang/Math.max(DD)D",
                             "java/lang/Math.max(FF)F",
                             "java/lang/Math.min(DD)D",

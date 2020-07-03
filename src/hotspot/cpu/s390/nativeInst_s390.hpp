@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -137,9 +137,6 @@ class NativeInstruction {
 
   void verify();
 
-  // unit test stuff
-  static void test() {}                        // Override for testing.
-
   friend NativeInstruction* nativeInstruction_at(address address) {
     NativeInstruction* inst = (NativeInstruction*)address;
     #ifdef ASSERT
@@ -273,9 +270,6 @@ class NativeCall: public NativeInstruction {
 
   void verify_alignment() {} // Yet another real do nothing guy :)
   void verify();
-
-  // unit test stuff
-  static void test();
 
   // Creation.
   friend NativeCall* nativeCall_at(address instr) {
@@ -443,9 +437,6 @@ class NativeFarCall: public NativeInstruction {
 
   void verify();
 
-  // Unit tests
-  static void test();
-
   // Instantiates a NativeFarCall object starting at the given instruction
   // address and returns the NativeFarCall object.
   inline friend NativeFarCall* nativeFarCall_at(address instr) {
@@ -499,9 +490,6 @@ class NativeMovConstReg: public NativeInstruction {
   void set_pcrel_data(intptr_t data, CompiledMethod *nm = NULL);
 
   void verify();
-
-  // unit test stuff
-  static void test();
 
   // Creation.
   friend NativeMovConstReg* nativeMovConstReg_at(address address) {
@@ -617,9 +605,6 @@ class NativeJump: public NativeInstruction {
   }
 
   void verify();
-
-  // Unit testing stuff
-  static void test();
 
   // Insertion of native jump instruction.
   static void insert(address code_pos, address entry);

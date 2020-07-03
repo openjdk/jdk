@@ -538,6 +538,10 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, PrintCompilation, false,                                    \
           "Print compilations")                                             \
                                                                             \
+  diagnostic(intx, RepeatCompilation, 0,                                    \
+          "Repeat compilation without installing code (number of times)")   \
+          range(0, max_jint)                                                 \
+                                                                            \
   product(bool, PrintExtendedThreadInfo, false,                             \
           "Print more information in thread dump")                          \
                                                                             \

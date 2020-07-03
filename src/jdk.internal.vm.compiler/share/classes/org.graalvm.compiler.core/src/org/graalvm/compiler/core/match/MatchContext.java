@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,10 +68,12 @@ public class MatchContext {
     static final class ConsumedNode {
         final Node node;
         final boolean ignoresSideEffects;
+        final boolean singleUser;
 
-        ConsumedNode(Node node, boolean ignoresSideEffects) {
+        ConsumedNode(Node node, boolean ignoresSideEffects, boolean singleUser) {
             this.node = node;
             this.ignoresSideEffects = ignoresSideEffects;
+            this.singleUser = singleUser;
         }
     }
 
@@ -85,11 +87,11 @@ public class MatchContext {
             this.nodes = null;
         }
 
-        public void add(Node node, boolean ignoresSideEffects) {
+        public void add(Node node, boolean ignoresSideEffects, boolean singlerUser) {
             if (nodes == null) {
                 nodes = new ArrayList<>(2);
             }
-            nodes.add(new ConsumedNode(node, ignoresSideEffects));
+            nodes.add(new ConsumedNode(node, ignoresSideEffects, singlerUser));
         }
 
         public boolean contains(Node node) {
@@ -373,10 +375,7 @@ public class MatchContext {
             if (cn.node == root || cn.node == emitNode) {
                 continue;
             }
-            // All the interior nodes should be skipped during the normal doRoot calls in
-            // NodeLIRBuilder so mark them as interior matches. The root of the match will get a
-            // closure which will be evaluated to produce the final LIR.
-            builder.setMatchResult(cn.node, ComplexMatchValue.INTERIOR_MATCH);
+            setResult(cn);
         }
         builder.setMatchResult(emitNode, value);
         if (root != emitNode) {
@@ -387,23 +386,34 @@ public class MatchContext {
         }
     }
 
+    private void setResult(ConsumedNode consumedNode) {
+        Node node = consumedNode.node;
+        if (consumedNode.singleUser) {
+            // All the interior nodes should be skipped during the normal doRoot calls in
+            // NodeLIRBuilder so mark them as interior matches. The root of the match will get a
+            // closure which will be evaluated to produce the final LIR.
+            builder.setMatchResult(node, ComplexMatchValue.INTERIOR_MATCH);
+            return;
+        }
+        builder.incrementSharedMatchCount(node);
+    }
+
     /**
      * Mark a node as consumed by the match. Consumed nodes will never be evaluated.
      *
      * @return Result.OK if the node can be safely consumed.
      */
-    public Result consume(Node node, boolean ignoresSideEffects, boolean atRoot) {
+    public Result consume(Node node, boolean ignoresSideEffects, boolean atRoot, boolean singleUser) {
         if (atRoot) {
-            consumed.add(node, ignoresSideEffects);
+            consumed.add(node, ignoresSideEffects, singleUser);
             return Result.OK;
         }
-        assert MatchPattern.isSingleValueUser(node) : "should have already been checked";
 
         if (builder.hasOperand(node)) {
             return Result.alreadyUsed(node, rule.getPattern());
         }
 
-        consumed.add(node, ignoresSideEffects);
+        consumed.add(node, ignoresSideEffects, singleUser);
         return Result.OK;
     }
 

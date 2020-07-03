@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,10 @@ package org.graalvm.compiler.replacements.amd64;
 import static org.graalvm.compiler.api.directives.GraalDirectives.LIKELY_PROBABILITY;
 import static org.graalvm.compiler.api.directives.GraalDirectives.UNLIKELY_PROBABILITY;
 import static org.graalvm.compiler.api.directives.GraalDirectives.injectBranchProbability;
+import static org.graalvm.compiler.replacements.ReplacementsUtil.charArrayBaseOffset;
+import static org.graalvm.compiler.replacements.ReplacementsUtil.charArrayIndexScale;
 
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
-import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.core.common.SuppressFBWarnings;
@@ -50,16 +51,6 @@ import jdk.vm.ci.meta.MetaAccessProvider;
  */
 @ClassSubstitution(String.class)
 public class AMD64StringSubstitutions {
-
-    @Fold
-    static int charArrayBaseOffset(@InjectedParameter MetaAccessProvider metaAccess) {
-        return metaAccess.getArrayBaseOffset(JavaKind.Char);
-    }
-
-    @Fold
-    static int charArrayIndexScale(@InjectedParameter MetaAccessProvider metaAccess) {
-        return metaAccess.getArrayIndexScale(JavaKind.Char);
-    }
 
     /** Marker value for the {@link InjectedParameter} injected parameter. */
     static final MetaAccessProvider INJECTED = null;

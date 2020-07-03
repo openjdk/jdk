@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,7 +458,9 @@ public class Desktop {
         checkActionSupport(Action.EDIT);
         file.canWrite();
         checkFileValidation(file);
-
+        if (file.isDirectory()) {
+            throw new IOException(file.getPath() + " is a directory");
+        }
         peer.edit(file);
     }
 
@@ -491,7 +493,9 @@ public class Desktop {
         }
         checkActionSupport(Action.PRINT);
         checkFileValidation(file);
-
+        if (file.isDirectory()) {
+            throw new IOException(file.getPath() + " is a directory");
+        }
         peer.print(file);
     }
 

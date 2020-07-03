@@ -270,7 +270,7 @@ public class BasicScrollBarUI
             } else if ("small".equals(scaleKey)){
                 scrollBarWidth *= 0.857;
                 incrGap *= 0.857;
-                decrGap *= 0.714;
+                decrGap *= 0.857;
             } else if ("mini".equals(scaleKey)){
                 scrollBarWidth *= 0.714;
                 incrGap *= 0.714;

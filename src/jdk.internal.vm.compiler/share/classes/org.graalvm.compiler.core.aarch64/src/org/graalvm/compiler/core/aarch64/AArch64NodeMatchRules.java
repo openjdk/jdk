@@ -42,6 +42,7 @@ import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticOp;
 import org.graalvm.compiler.lir.aarch64.AArch64BitFieldOp;
+import org.graalvm.compiler.lir.aarch64.AArch64BitFieldOp.BitFieldOpCode;
 import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -73,6 +74,7 @@ import org.graalvm.compiler.nodes.memory.MemoryAccess;
 import jdk.vm.ci.aarch64.AArch64Kind;
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 
@@ -96,8 +98,8 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
         binaryOpMap.put(UnsignedRightShiftNode.class, AArch64ArithmeticOp.LSHR);
 
         bitFieldOpMap = EconomicMap.create(Equivalence.IDENTITY, 2);
-        bitFieldOpMap.put(UnsignedRightShiftNode.class, AArch64BitFieldOp.BitFieldOpCode.UBFX);
-        bitFieldOpMap.put(LeftShiftNode.class, AArch64BitFieldOp.BitFieldOpCode.UBFIZ);
+        bitFieldOpMap.put(UnsignedRightShiftNode.class, BitFieldOpCode.UBFX);
+        bitFieldOpMap.put(LeftShiftNode.class, BitFieldOpCode.UBFIZ);
 
         logicalNotOpMap = EconomicMap.create(Equivalence.IDENTITY, 3);
         logicalNotOpMap.put(AndNode.class, AArch64ArithmeticOp.BIC);
@@ -161,19 +163,6 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
         return getLIRGeneratorTool().moveSp(value);
     }
 
-    private ComplexMatchResult emitBitField(AArch64BitFieldOp.BitFieldOpCode op, ValueNode value, int lsb, int width) {
-        assert op != null;
-        assert value.getStackKind().isNumericInteger();
-
-        return builder -> {
-            Value a = operand(value);
-            Variable result = gen.newVariable(LIRKind.combine(a));
-            AllocatableValue src = moveSp(gen.asAllocatable(a));
-            gen.append(new AArch64BitFieldOp(op, result, src, lsb, width));
-            return result;
-        };
-    }
-
     private ComplexMatchResult emitBinaryShift(AArch64ArithmeticOp op, ValueNode value, BinaryNode shift) {
         AArch64MacroAssembler.ShiftType shiftType = shiftTypeMap.get(shift.getClass());
         assert shiftType != null;
@@ -203,6 +192,51 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
                             trueProbability, nbits));
             return null;
         };
+    }
+
+    private ComplexMatchResult emitBitField(JavaKind kind, AArch64BitFieldOp.BitFieldOpCode op, ValueNode value, int lsb, int width) {
+        assert op != null;
+        assert value.getStackKind().isNumericInteger();
+
+        return builder -> {
+            Value a = operand(value);
+            LIRKind resultKind = LIRKind.fromJavaKind(gen.target().arch, kind);
+            Variable result = gen.newVariable(resultKind);
+            AllocatableValue src = moveSp(gen.asAllocatable(a));
+            gen.append(new AArch64BitFieldOp(op, result, src, lsb, width));
+            return result;
+        };
+    }
+
+    private ComplexMatchResult emitUnsignedBitField(JavaKind kind, BinaryNode shift, ValueNode value, ConstantNode scale, ConstantNode mask) {
+        assert kind.isNumericInteger();
+        BitFieldOpCode op = bitFieldOpMap.get(shift.getClass());
+        assert op != null;
+        JavaKind srcKind = shift.getStackKind();
+        // The Java(R) Language Specification CHAPTER 15.19 Shift Operators says:
+        // "If the promoted type of the left-hand operand is int(long), then only the five(six)
+        // lowest-order bits of the right-hand operand are used as the shift distance."
+        int distance = scale.asJavaConstant().asInt();
+        int lsb = distance & (srcKind == JavaKind.Int ? 0x1F : 0x3F);
+
+        long maskValue = mask.asJavaConstant().asLong();
+        // Constraint 1: Mask plus one should be a power-of-2 integer.
+        if (!CodeUtil.isPowerOf2(maskValue + 1)) {
+            return null;
+        }
+        int width = CodeUtil.log2(maskValue + 1);
+        int srcBits = srcKind.getBitCount();
+        // Constraint 2: Bit field width is less than 31(63) for int(long) as any bit field move
+        // operations can be done by a single shift instruction if the width is 31(63).
+        if (width >= srcBits - 1) {
+            return null;
+        }
+        // Constraint 3: Sum of bit field width and the shift distance is less or equal to 32(64)
+        // for int(long) as the specification of AArch64 bit field instructions.
+        if (width + distance > srcBits) {
+            return null;
+        }
+        return emitBitField(kind, op, value, lsb, width);
     }
 
     private static boolean isNarrowingLongToInt(NarrowNode narrow) {
@@ -325,38 +359,68 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
         return null;
     }
 
-    @MatchRule("(And (UnsignedRightShift=shift a Constant=b) Constant=c)")
-    @MatchRule("(LeftShift=shift (And a Constant=c) Constant=b)")
-    public ComplexMatchResult unsignedBitField(BinaryNode shift, ValueNode a, ConstantNode b, ConstantNode c) {
-        JavaKind srcKind = a.getStackKind();
+    @MatchRule("(And (UnsignedRightShift=shift value Constant=a) Constant=b)")
+    @MatchRule("(LeftShift=shift (And value Constant=b) Constant=a)")
+    public ComplexMatchResult unsignedBitField(BinaryNode shift, ValueNode value, ConstantNode a, ConstantNode b) {
+        JavaKind kind = shift.getStackKind();
+        return emitUnsignedBitField(kind, shift, value, a, b);
+    }
+
+    @MatchRule("(LeftShift=shift (ZeroExtend=extend (And value Constant=b)) Constant=a)")
+    @MatchRule("(ZeroExtend=extend (And (UnsignedRightShift=shift value Constant=a) Constant=b))")
+    @MatchRule("(ZeroExtend=extend (LeftShift=shift (And value Constant=b) Constant=a))")
+    public ComplexMatchResult unsignedExtBitField(ZeroExtendNode extend, BinaryNode shift, ValueNode value, ConstantNode a, ConstantNode b) {
+        JavaKind kind = extend.getStackKind();
+        return emitUnsignedBitField(kind, shift, value, a, b);
+    }
+
+    @MatchRule("(LeftShift=shift (SignExtend value) Constant)")
+    public ComplexMatchResult signedBitField(LeftShiftNode shift) {
+        JavaKind kind = shift.getStackKind();
+        assert kind.isNumericInteger();
+
+        SignExtendNode extend = (SignExtendNode) shift.getX();
+        int srcBits = extend.getInputBits();
+        int resultBits = extend.getResultBits();
+        assert kind.getBitCount() == resultBits;
+
+        int lsb = shift.getY().asJavaConstant().asInt() & (resultBits - 1);
+        // Get the min value of the srcBits and (resultBits - lsb) as the bitfield width.
+        int width = Math.min(srcBits, resultBits - lsb);
+        assert width >= 1 && width <= resultBits - lsb;
+
+        ValueNode value = extend.getValue();
+        return emitBitField(kind, BitFieldOpCode.SBFIZ, value, lsb, width);
+    }
+
+    @MatchRule("(RightShift=rshift (LeftShift=lshift value Constant) Constant)")
+    @MatchRule("(UnsignedRightShift=rshift (LeftShift=lshift value Constant) Constant)")
+    public ComplexMatchResult bitFieldMove(BinaryNode rshift, LeftShiftNode lshift) {
+        JavaKind srcKind = rshift.getStackKind();
         assert srcKind.isNumericInteger();
-        AArch64BitFieldOp.BitFieldOpCode op = bitFieldOpMap.get(shift.getClass());
-        assert op != null;
-        int distance = b.asJavaConstant().asInt();
-        long mask = c.asJavaConstant().asLong();
-
-        // The Java(R) Language Specification CHAPTER 15.19 Shift Operators says:
-        // "If the promoted type of the left-hand operand is int(long), then only the five(six)
-        // lowest-order bits of the right-hand operand are used as the shift distance."
-        distance = distance & (srcKind == JavaKind.Int ? 0x1f : 0x3f);
-
-        // Constraint 1: Mask plus one should be a power-of-2 integer.
-        if (!CodeUtil.isPowerOf2(mask + 1)) {
-            return null;
-        }
-        int width = CodeUtil.log2(mask + 1);
         int srcBits = srcKind.getBitCount();
-        // Constraint 2: Bit field width is less than 31(63) for int(long) as any bit field move
-        // operations can be done by a single shift instruction if the width is 31(63).
-        if (width >= srcBits - 1) {
+        int lshiftNum = lshift.getY().asJavaConstant().asInt() & (srcBits - 1);
+        int rshiftNum = rshift.getY().asJavaConstant().asInt() & (srcBits - 1);
+        int lsb = Math.abs(lshiftNum - rshiftNum);
+        assert lsb >= 0 && lsb <= (srcBits - 1);
+
+        // Get the width of the bitField. It should be in the range 1 to 32(64)-<lsb>.
+        int width = srcBits - Math.max(lshiftNum, rshiftNum);
+        if (width > (srcBits - lsb) || width < 1) {
             return null;
         }
-        // Constraint 3: Sum of bit field width and the shift distance is less or equal to 32(64)
-        // for int(long) as the specification of AArch64 bit field instructions.
-        if (width + distance > srcBits) {
-            return null;
+
+        // Use bitfield insert (SBFIZ/UBFIZ) if left shift number is larger than right shift number,
+        // otherwise use bitfield extract (SBFX/UBFX).
+        boolean bitFieldInsert = lshiftNum > rshiftNum;
+        BitFieldOpCode op;
+        if (rshift instanceof RightShiftNode) {
+            op = bitFieldInsert ? BitFieldOpCode.SBFIZ : BitFieldOpCode.SBFX;
+        } else {
+            assert rshift instanceof UnsignedRightShiftNode;
+            op = bitFieldInsert ? BitFieldOpCode.UBFIZ : BitFieldOpCode.UBFX;
         }
-        return emitBitField(op, a, distance, width);
+        return emitBitField(srcKind, op, lshift.getX(), lsb, width);
     }
 
     @MatchRule("(Or=op (LeftShift=x src Constant=shiftAmt1) (UnsignedRightShift src Constant=shiftAmt2))")
@@ -375,9 +439,11 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
         }
         if ((0 == shift1 + shift2) || (src.getStackKind().getBitCount() == shift1 + shift2)) {
             return builder -> {
-                Value a = operand(src);
-                Value b = x instanceof LeftShiftNode ? operand(shiftAmt2) : operand(shiftAmt1);
-                return getArithmeticLIRGenerator().emitBinary(LIRKind.combine(a, b), AArch64ArithmeticOp.ROR, false, a, b);
+                AllocatableValue a = gen.asAllocatable(operand(src));
+                JavaConstant b = x instanceof LeftShiftNode ? shiftAmt2.asJavaConstant() : shiftAmt1.asJavaConstant();
+                Variable result = gen.newVariable(LIRKind.combine(a));
+                getArithmeticLIRGenerator().emitBinaryConst(result, AArch64ArithmeticOp.ROR, a, b);
+                return result;
             };
         }
         return null;

@@ -50,6 +50,8 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.TrustAnchor;
 import java.util.Map.Entry;
 
+import jdk.internal.access.JavaUtilZipFileAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.security.jarsigner.JarSigner;
 import jdk.security.jarsigner.JarSignerException;
 import sun.security.pkcs.PKCS7;
@@ -108,12 +110,16 @@ public class Main {
     private static final Set<CryptoPrimitive> SIG_PRIMITIVE_SET = Collections
             .unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
+    private static boolean permsDetected;
+
     static final String VERSION = "1.0";
 
     static final int IN_KEYSTORE = 0x01;        // signer is in keystore
     static final int NOT_ALIAS = 0x04;          // alias list is NOT empty and
     // signer is not in alias list
     static final int SIGNED_BY_ALIAS = 0x08;    // signer is in alias list
+
+    static final JavaUtilZipFileAccess JUZFA = SharedSecrets.getJavaUtilZipFileAccess();
 
     // Attention:
     // This is the entry that get launched by the security tool jarsigner.
@@ -294,7 +300,7 @@ public class Main {
                 Arrays.fill(storepass, ' ');
                 storepass = null;
             }
-            Event.clearReportListener();
+            Event.clearReportListener(Event.ReporterCategory.CRLCHECK);
         }
 
         if (strict) {
@@ -776,6 +782,9 @@ public class Main {
                     JarEntry je = e.nextElement();
                     String name = je.getName();
 
+                    if (!permsDetected && JUZFA.getPosixPerms(je) != -1) {
+                        permsDetected = true;
+                    }
                     hasSignature = hasSignature
                             || SignatureFileVerifier.isBlockOrSF(name);
 
@@ -1217,7 +1226,8 @@ public class Main {
         if (hasExpiringCert ||
                 (hasExpiringTsaCert  && expireDate != null) ||
                 (noTimestamp && expireDate != null) ||
-                (hasExpiredTsaCert && signerNotExpired)) {
+                (hasExpiredTsaCert && signerNotExpired) ||
+                permsDetected) {
 
             if (hasExpiredTsaCert && signerNotExpired) {
                 if (expireDate != null) {
@@ -1253,6 +1263,9 @@ public class Main {
                             ? rb.getString("no.timestamp.signing")
                             : rb.getString("no.timestamp.verifying"), expireDate));
                 }
+            }
+            if (permsDetected) {
+                warnings.add(rb.getString("posix.attributes.detected"));
             }
         }
 
@@ -1771,6 +1784,8 @@ public class Main {
         String failedMessage = null;
 
         try {
+            Event.setReportListener(Event.ReporterCategory.POSIXPERMS,
+                    (t, o) -> permsDetected = true);
             builder.build().sign(zipFile, fos);
         } catch (JarSignerException e) {
             failedCause = e.getCause();
@@ -1805,6 +1820,7 @@ public class Main {
                 fos.close();
             }
 
+            Event.clearReportListener(Event.ReporterCategory.POSIXPERMS);
         }
 
         if (failedCause != null) {
@@ -2064,7 +2080,8 @@ public class Main {
                     if (revocationCheck) {
                         Security.setProperty("ocsp.enable", "true");
                         System.setProperty("com.sun.security.enableCRLDP", "true");
-                        Event.setReportListener((t, o) -> System.out.println(String.format(rb.getString(t), o)));
+                        Event.setReportListener(Event.ReporterCategory.CRLCHECK,
+                                (t, o) -> System.out.println(String.format(rb.getString(t), o)));
                     }
                     pkixParameters.setRevocationEnabled(revocationCheck);
                 } catch (InvalidAlgorithmParameterException ex) {
