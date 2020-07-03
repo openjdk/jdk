@@ -61,9 +61,9 @@ AC_DEFUN([UTIL_PREPEND_TO_PATH],
 AC_DEFUN([UTIL_FIXUP_PATH],
 [
   # Only process if variable expands to non-empty
-  if test "x[$]$1" != x; then
+  path="[$]$1"
+  if test "x$path" != x; then
     if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-      path="[$]$1"
       imported_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path"`
       $BASH $TOPDIR/make/scripts/fixpath.sh verify "$imported_path"
       if test $? -ne 0; then
@@ -71,12 +71,8 @@ AC_DEFUN([UTIL_FIXUP_PATH],
       fi
       if test "x$imported_path" != "x$path"; then
         $1="$imported_path"
-      else
-        $1="$path"
       fi
     else
-      # We're on a unix platform. Hooray! :)
-      path="[$]$1"
       has_space=`$ECHO "$path" | $GREP " "`
       if test "x$has_space" != x; then
         AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
@@ -86,22 +82,18 @@ AC_DEFUN([UTIL_FIXUP_PATH],
       # Make the path absolute
       new_path="$path"
 
-      # Use eval to expand a potential ~. This technique does not work if there
-      # are spaces in the path (which is valid at this point on Windows), so only
-      # try to apply it if there is an actual ~ first in the path.
-      if [ [[ "$new_path" = "~"* ]] ]; then
-        eval new_path="$new_path"
-        if test ! -f "$new_path" && test ! -d "$new_path"; then
-          AC_MSG_ERROR([The new_path of $1, which resolves as "$new_path", is not found.])
-        fi
+      # Use eval to expand a potential ~.
+      eval new_path="$path"
+      if test ! -e "$new_path"; then
+        AC_MSG_ERROR([The path of $1, which resolves as "$new_path", is not found.])
       fi
 
       if test -d "$new_path"; then
-        path="`cd "$new_path"; $THEPWDCMD -L`"
+        path="`cd "$new_path"; pwd -L`"
       else
         dir="`$DIRNAME "$new_path"`"
         base="`$BASENAME "$new_path"`"
-        path="`cd "$dir"; $THEPWDCMD -L`/$base"
+        path="`cd "$dir"; pwd -L`/$base"
       fi
 
       $1="$path"
@@ -170,15 +162,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
     contains_slash=`$ECHO "$path" | $GREP -e / -e \\`
     if test -z "$contains_slash"; then
       # Executable has no directories. Look in $PATH.
-      IFS_save="$IFS"
-      IFS=:
-      for p in $PATH; do
-        if test -f "$p/$path" && test -x "$p/$path"; then
-          new_path="$p/$path"
-          break
-        fi
-      done
-      IFS="$IFS_save"
+      new_path=`type -p "$path"`
       if test "x$new_path" = x; then
         AC_MSG_NOTICE([The path of $1, which resolves as "$complete", is not found.])
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -212,6 +196,8 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
         UTIL_CHECK_WINENV_EXEC_TYPE("$new_path")
         if test "x$RESULT" = xwindows; then
           prefix="$FIXPATH "
+        else
+          # If we have gotten a .exe suffix, remove it
         fi
       fi
     fi
