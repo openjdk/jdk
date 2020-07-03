@@ -58,6 +58,7 @@ AC_DEFUN([UTIL_PREPEND_TO_PATH],
 # 2) The path will be absolute, and it will be in unix-style (on
 #     cygwin).
 # $1: The name of the variable to fix
+# $2: if NOFAIL, errors will be silently ignored
 AC_DEFUN([UTIL_FIXUP_PATH],
 [
   # Only process if variable expands to non-empty
@@ -67,7 +68,11 @@ AC_DEFUN([UTIL_FIXUP_PATH],
       imported_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path"`
       $BASH $TOPDIR/make/scripts/fixpath.sh verify "$imported_path"
       if test $? -ne 0; then
-        echo failed to import $path
+        if test "x$2" != "xNOFAIL"; then
+          AC_MSG_ERROR([The path of $1, which resolves as "$path", could not be imported.])
+        else
+          imported_path=""
+        fi
       fi
       if test "x$imported_path" != "x$path"; then
         $1="$imported_path"
@@ -75,25 +80,34 @@ AC_DEFUN([UTIL_FIXUP_PATH],
     else
       has_space=`$ECHO "$path" | $GREP " "`
       if test "x$has_space" != x; then
-        AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
-        AC_MSG_ERROR([Spaces are not allowed in this path.])
+        if test "x$2" != "xNOFAIL"; then
+          AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
+          AC_MSG_ERROR([Spaces are not allowed in this path.])
+        else
+          path=""
       fi
-
-      # Make the path absolute
-      new_path="$path"
 
       # Use eval to expand a potential ~.
       eval new_path="$path"
       if test ! -e "$new_path"; then
-        AC_MSG_ERROR([The path of $1, which resolves as "$new_path", is not found.])
+        if test "x$2" != "xNOFAIL"; then
+          AC_MSG_ERROR([The path of $1, which resolves as "$new_path", is not found.])
+        else
+          new_path=""
+        fi
       fi
 
-      if test -d "$new_path"; then
-        path="`cd "$new_path"; pwd -L`"
+      # Make the path absolute
+      if test "x$new_path" != x; then
+        if test -d "$new_path"; then
+          path="`cd "$new_path"; pwd -L`"
+        else
+          dir="`$DIRNAME "$new_path"`"
+          base="`$BASENAME "$new_path"`"
+          path="`cd "$dir"; pwd -L`/$base"
+        fi
       else
-        dir="`$DIRNAME "$new_path"`"
-        base="`$BASENAME "$new_path"`"
-        path="`cd "$dir"; pwd -L`/$base"
+        path=""
       fi
 
       $1="$path"

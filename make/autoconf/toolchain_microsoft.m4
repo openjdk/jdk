@@ -113,19 +113,20 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
     VS_BASE="$2"
     METHOD="$3"
 
-    UTIL_FIXUP_PATH(VS_BASE)
-    # In VS 2017 and VS 2019, the default installation is in a subdir named after the edition.
-    # Find the first one present and use that.
-    if test "x$VS_EDITIONS" != x; then
-      for edition in $VS_EDITIONS; do
-        if test -d "$VS_BASE/$edition"; then
-          VS_BASE="$VS_BASE/$edition"
-          break
-        fi
-      done
-    fi
+    UTIL_FIXUP_PATH(VS_BASE, NOFAIL)
 
-    if test -d "$VS_BASE"; then
+    if test "x$VS_BASE" =! x && test -d "$VS_BASE"; then
+      # In VS 2017 and VS 2019, the default installation is in a subdir named after the edition.
+      # Find the first one present and use that.
+      if test "x$VS_EDITIONS" != x; then
+        for edition in $VS_EDITIONS; do
+          if test -d "$VS_BASE/$edition"; then
+            VS_BASE="$VS_BASE/$edition"
+            break
+          fi
+        done
+      fi
+
       AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
       if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
         VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
@@ -161,8 +162,10 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
     VS_VERSION="$1"
     WIN_SDK_BASE="$2"
     METHOD="$3"
-    UTIL_FIXUP_PATH(WIN_SDK_BASE)
-    if test -d "$WIN_SDK_BASE"; then
+
+    UTIL_FIXUP_PATH(WIN_SDK_BASE, NOFAIL)
+
+    if test "x$WIN_SDK_BASE" != x && test -d "$WIN_SDK_BASE"; then
       # There have been cases of partial or broken SDK installations. A missing
       # lib dir is not going to work.
       if test ! -d "$WIN_SDK_BASE/lib"; then
@@ -489,23 +492,19 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
 
   if test "x$MSVC_DLL" = x; then
     if test "x$VCINSTALLDIR" != x; then
-      CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
-      UTIL_FIXUP_PATH(CYGWIN_VC_INSTALL_DIR)
       if test "$VS_VERSION" -lt 2017; then
         # Probe: Using well-known location from Visual Studio 12.0 and older
         if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME"
+          POSSIBLE_MSVC_DLL="$VCINSTALLDIR/redist/x64/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME"
         else
-          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME"
+          POSSIBLE_MSVC_DLL="$VCINSTALLDIR/redist/x86/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME"
         fi
       else
-        CYGWIN_VC_TOOLS_REDIST_DIR="$VCToolsRedistDir"
-        UTIL_FIXUP_PATH(CYGWIN_VC_TOOLS_REDIST_DIR)
         # Probe: Using well-known location from VS 2017 and VS 2019
         if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_TOOLS_REDIST_DIR/x64/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME`"
+          POSSIBLE_MSVC_DLL="`ls $VCToolsRedistDir/x64/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME`"
         else
-          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_TOOLS_REDIST_DIR/x86/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME`"
+          POSSIBLE_MSVC_DLL="`ls $VCToolsRedistDir/x86/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME`"
         fi
       fi
       # In case any of the above finds more than one file, loop over them.
@@ -526,43 +525,47 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
 
   if test "x$MSVC_DLL" = x; then
     # Probe: Look in the Windows system32 directory
-    CYGWIN_SYSTEMROOT="$SYSTEMROOT"
-    UTIL_FIXUP_PATH(CYGWIN_SYSTEMROOT)
-    POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
-    TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
-        [well-known location in SYSTEMROOT])
+    WIN_SYSTEMROOT="$SYSTEMROOT"
+    UTIL_FIXUP_PATH(WIN_SYSTEMROOT, NOFAIL)
+    if test "x$WIN_SYSTEMROOT" != x; then
+      POSSIBLE_MSVC_DLL="$WIN_SYSTEMROOT/system32/$DLL_NAME"
+      TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
+          [well-known location in SYSTEMROOT])
+    fi
   fi
 
   if test "x$MSVC_DLL" = x; then
     # Probe: If Visual Studio Express is installed, there is usually one with the debugger
     if test "x$VS100COMNTOOLS" != x; then
-      CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
-      UTIL_FIXUP_PATH(CYGWIN_VS_TOOLS_DIR)
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
-        | $GREP -i /x64/ | $HEAD --lines 1`
-      else
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
-        | $GREP -i /x86/ | $HEAD --lines 1`
+      WIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
+      UTIL_FIXUP_PATH(WIN_VS_TOOLS_DIR, NOFAIL)
+      if test "x$WIN_VS_TOOLS_DIR" != x; then
+        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          POSSIBLE_MSVC_DLL=`$FIND "$WIN_VS_TOOLS_DIR" -name $DLL_NAME \
+          | $GREP -i /x64/ | $HEAD --lines 1`
+        else
+          POSSIBLE_MSVC_DLL=`$FIND "$WIN_VS_TOOLS_DIR" -name $DLL_NAME \
+          | $GREP -i /x86/ | $HEAD --lines 1`
+        fi
+        TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
+            [search of VS100COMNTOOLS])
       fi
-      TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
-          [search of VS100COMNTOOLS])
     fi
   fi
 
   if test "x$MSVC_DLL" = x; then
     # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
     # (This was the original behaviour; kept since it might turn something up)
-    if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
+    if test "x$VCINSTALLDIR" != x; then
       if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+        POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
         | $GREP x64 | $HEAD --lines 1`
       else
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+        POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
         | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
         if test "x$POSSIBLE_MSVC_DLL" = x; then
           # We're grasping at straws now...
-          POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+          POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
           | $HEAD --lines 1`
         fi
       fi
@@ -670,16 +673,14 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
       UCRT_DLL_DIR="$DEVKIT_UCRT_DLL_DIR"
       AC_MSG_RESULT($UCRT_DLL_DIR)
     else
-      CYGWIN_WINDOWSSDKDIR="${WINDOWSSDKDIR}"
-      UTIL_FIXUP_PATH([CYGWIN_WINDOWSSDKDIR])
       dll_subdir=$OPENJDK_TARGET_CPU
       if test "x$dll_subdir" = "xx86_64"; then
         dll_subdir="x64"
       fi
-      UCRT_DLL_DIR="$CYGWIN_WINDOWSSDKDIR/redist/ucrt/dlls/$dll_subdir"
+      UCRT_DLL_DIR="$WINDOWSSDKDIR/redist/ucrt/dlls/$dll_subdir"
       if test -z "$(ls -d "$UCRT_DLL_DIR/"*.dll 2> /dev/null)"; then
         # Try with version subdir
-        UCRT_DLL_DIR="`ls -d $CYGWIN_WINDOWSSDKDIR/redist/*/ucrt/dlls/$dll_subdir \
+        UCRT_DLL_DIR="`ls -d $WINDOWSSDKDIR/redist/*/ucrt/dlls/$dll_subdir \
             2> /dev/null | $SORT -d | $HEAD -n1`"
         if test -z "$UCRT_DLL_DIR" \
             || test -z "$(ls -d "$UCRT_DLL_DIR/"*.dll 2> /dev/null)"; then

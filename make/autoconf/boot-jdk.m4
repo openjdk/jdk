@@ -154,8 +154,8 @@ AC_DEFUN([BOOTJDK_CHECK_JAVA_HOME],
 [
   if test "x$JAVA_HOME" != x; then
     JAVA_HOME_PROCESSED="$JAVA_HOME"
-    UTIL_FIXUP_PATH(JAVA_HOME_PROCESSED)
-    if test ! -d "$JAVA_HOME_PROCESSED"; then
+    UTIL_FIXUP_PATH(JAVA_HOME_PROCESSED, NOFAIL)
+    if test "x$JAVA_HOME_PROCESSED" = x || test ! -d "$JAVA_HOME_PROCESSED"; then
       AC_MSG_NOTICE([Your JAVA_HOME points to a non-existing directory!])
     else
       # Aha, the user has set a JAVA_HOME
@@ -245,8 +245,10 @@ AC_DEFUN([BOOTJDK_FIND_BEST_JDK_IN_WINDOWS_VIRTUAL_DIRECTORY],
 [
   if test "x[$]$1" != x; then
     VIRTUAL_DIR="[$]$1/Java"
-    UTIL_FIXUP_PATH(VIRTUAL_DIR)
-    BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY($VIRTUAL_DIR)
+    UTIL_FIXUP_PATH(VIRTUAL_DIR, NOFAIL)
+    if test "x$VIRTUAL_DIR" != x; then
+      BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY($VIRTUAL_DIR)
+    fi
   fi
 ])
 
