@@ -692,21 +692,26 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
     }
 
     private Variable emitShift(AMD64Shift op, OperandSize size, Value a, Value b) {
+        if (isJavaConstant(b)) {
+            return emitShiftConst(op, size, a, asJavaConstant(b));
+        }
         Variable result = getLIRGen().newVariable(LIRKind.combine(a, b).changeType(a.getPlatformKind()));
         AllocatableValue input = asAllocatable(a);
-        if (isJavaConstant(b)) {
-            JavaConstant c = asJavaConstant(b);
-            if (c.asLong() == 1) {
-                getLIRGen().append(new AMD64Unary.MOp(op.m1Op, size, result, input));
-            } else {
-                /*
-                 * c needs to be masked here, because shifts with immediate expect a byte.
-                 */
-                getLIRGen().append(new AMD64Binary.ConstOp(op.miOp, size, result, input, (byte) c.asLong()));
-            }
+        getLIRGen().emitMove(RCX_I, b);
+        getLIRGen().append(new AMD64ShiftOp(op.mcOp, size, result, input, RCX_I));
+        return result;
+    }
+
+    public Variable emitShiftConst(AMD64Shift op, OperandSize size, Value a, JavaConstant b) {
+        Variable result = getLIRGen().newVariable(LIRKind.combine(a).changeType(a.getPlatformKind()));
+        AllocatableValue input = asAllocatable(a);
+        if (b.asLong() == 1) {
+            getLIRGen().append(new AMD64Unary.MOp(op.m1Op, size, result, input));
         } else {
-            getLIRGen().emitMove(RCX_I, b);
-            getLIRGen().append(new AMD64ShiftOp(op.mcOp, size, result, input, RCX_I));
+            /*
+             * c needs to be masked here, because shifts with immediate expect a byte.
+             */
+            getLIRGen().append(new AMD64Binary.ConstOp(op.miOp, size, result, input, (byte) b.asLong()));
         }
         return result;
     }

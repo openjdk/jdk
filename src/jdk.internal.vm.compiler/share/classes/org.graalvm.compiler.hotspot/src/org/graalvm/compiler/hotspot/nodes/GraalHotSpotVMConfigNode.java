@@ -32,13 +32,13 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.Node.NodeIntrinsicFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
 import org.graalvm.compiler.hotspot.HotSpotMarkId;
-import org.graalvm.compiler.hotspot.HotSpotReplacementsImpl;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
@@ -47,13 +47,13 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 
 /**
  * Represents {@link GraalHotSpotVMConfig} values that may change after compilation.
  */
 @NodeInfo(cycles = CYCLES_1, size = SIZE_1)
+@NodeIntrinsicFactory
 public class GraalHotSpotVMConfigNode extends FloatingNode implements LIRLowerable, Canonicalizable {
     public static final NodeClass<GraalHotSpotVMConfigNode> TYPE = NodeClass.create(GraalHotSpotVMConfigNode.class);
 
@@ -109,11 +109,8 @@ public class GraalHotSpotVMConfigNode extends FloatingNode implements LIRLowerab
         return loadIntConfigValue(HotSpotMarkId.LOG_OF_HEAP_REGION_GRAIN_BYTES);
     }
 
-    @SuppressWarnings("unused")
-    public static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod method, @InjectedNodeParameter Stamp returnStamp, @InjectedNodeParameter GraalHotSpotVMConfig config,
-                    HotSpotMarkId mark) {
-        HotSpotReplacementsImpl replacements = (HotSpotReplacementsImpl) b.getReplacements();
-        if (replacements.isEncodingSnippets()) {
+    public static boolean intrinsify(GraphBuilderContext b, @InjectedNodeParameter Stamp returnStamp, @InjectedNodeParameter GraalHotSpotVMConfig config, HotSpotMarkId mark) {
+        if (b.getReplacements().isEncodingSnippets()) {
             // This plugin must be deferred so that these constants aren't embedded in libgraal
             return false;
         }

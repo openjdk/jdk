@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -8200,6 +8200,7 @@ method name getW descriptor ()Ljava/security/spec/ECPoint; flags 401
 class name java/security/interfaces/RSAKey
 header extends java/lang/Object flags 601 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
 method name getModulus descriptor ()Ljava/math/BigInteger; flags 401
+method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/security/interfaces/RSAMultiPrimePrivateCrtKey
 header extends java/lang/Object implements java/security/interfaces/RSAPrivateKey flags 601 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
@@ -8363,6 +8364,8 @@ field name SHA224 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 field name SHA256 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 field name SHA384 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 field name SHA512 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
+field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
+field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 method name <init> descriptor (Ljava/lang/String;)V flags 1
 method name getDigestAlgorithm descriptor ()Ljava/lang/String; flags 1
 
@@ -8375,6 +8378,7 @@ method name getFormat descriptor ()Ljava/lang/String; flags 11
 class name java/security/spec/PSSParameterSpec
 header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
 field name DEFAULT descriptor Ljava/security/spec/PSSParameterSpec; flags 19
+field name TRAILER_FIELD_BC descriptor I constantValue 1 flags 19
 method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;Ljava/security/spec/AlgorithmParameterSpec;II)V flags 1
 method name <init> descriptor (I)V flags 1
 method name getDigestAlgorithm descriptor ()Ljava/lang/String; flags 1
@@ -8382,6 +8386,7 @@ method name getMGFAlgorithm descriptor ()Ljava/lang/String; flags 1
 method name getMGFParameters descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 method name getSaltLength descriptor ()I flags 1
 method name getTrailerField descriptor ()I flags 1
+method name toString descriptor ()Ljava/lang/String; flags 1
 
 class name java/security/spec/RSAKeyGenParameterSpec
 header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
@@ -8390,6 +8395,8 @@ field name F4 descriptor Ljava/math/BigInteger; flags 19
 method name <init> descriptor (ILjava/math/BigInteger;)V flags 1
 method name getKeysize descriptor ()I flags 1
 method name getPublicExponent descriptor ()Ljava/math/BigInteger; flags 1
+method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
+method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/security/spec/RSAMultiPrimePrivateCrtKeySpec
 header extends java/security/spec/RSAPrivateKeySpec flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
@@ -8401,6 +8408,7 @@ method name getPrimeExponentP descriptor ()Ljava/math/BigInteger; flags 1
 method name getPrimeExponentQ descriptor ()Ljava/math/BigInteger; flags 1
 method name getCrtCoefficient descriptor ()Ljava/math/BigInteger; flags 1
 method name getOtherPrimeInfo descriptor ()[Ljava/security/spec/RSAOtherPrimeInfo; flags 1
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
 
 class name java/security/spec/RSAOtherPrimeInfo
 header extends java/lang/Object flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
@@ -8418,18 +8426,23 @@ method name getPrimeQ descriptor ()Ljava/math/BigInteger; flags 1
 method name getPrimeExponentP descriptor ()Ljava/math/BigInteger; flags 1
 method name getPrimeExponentQ descriptor ()Ljava/math/BigInteger; flags 1
 method name getCrtCoefficient descriptor ()Ljava/math/BigInteger; flags 1
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
 
 class name java/security/spec/RSAPrivateKeySpec
 header extends java/lang/Object implements java/security/spec/KeySpec flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
 method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;)V flags 1
 method name getModulus descriptor ()Ljava/math/BigInteger; flags 1
 method name getPrivateExponent descriptor ()Ljava/math/BigInteger; flags 1
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
+method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/security/spec/RSAPublicKeySpec
 header extends java/lang/Object implements java/security/spec/KeySpec flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
 method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;)V flags 1
 method name getModulus descriptor ()Ljava/math/BigInteger; flags 1
 method name getPublicExponent descriptor ()Ljava/math/BigInteger; flags 1
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
+method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/security/spec/X509EncodedKeySpec
 header extends java/security/spec/EncodedKeySpec flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
@@ -10429,6 +10442,7 @@ method name values descriptor ()[Ljava/time/chrono/JapaneseEra; flags 9
 method name getValue descriptor ()I flags 1
 method name range descriptor (Ljava/time/temporal/TemporalField;)Ljava/time/temporal/ValueRange; flags 1
 method name toString descriptor ()Ljava/lang/String; flags 1
+method name getDisplayName descriptor (Ljava/time/format/TextStyle;Ljava/util/Locale;)Ljava/lang/String; flags 1
 
 class name java/time/chrono/MinguoChronology
 header extends java/time/chrono/AbstractChronology implements java/io/Serializable flags 31 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
@@ -15563,15 +15577,15 @@ field name MAIN_CLASS descriptor Ljava/util/jar/Attributes$Name; flags 19
 field name SEALED descriptor Ljava/util/jar/Attributes$Name; flags 19
 field name EXTENSION_LIST descriptor Ljava/util/jar/Attributes$Name; flags 19
 field name EXTENSION_NAME descriptor Ljava/util/jar/Attributes$Name; flags 19
-field name EXTENSION_INSTALLATION descriptor Ljava/util/jar/Attributes$Name; flags 19
 field name IMPLEMENTATION_TITLE descriptor Ljava/util/jar/Attributes$Name; flags 19
 field name IMPLEMENTATION_VERSION descriptor Ljava/util/jar/Attributes$Name; flags 19
 field name IMPLEMENTATION_VENDOR descriptor Ljava/util/jar/Attributes$Name; flags 19
-field name IMPLEMENTATION_VENDOR_ID descriptor Ljava/util/jar/Attributes$Name; flags 19
-field name IMPLEMENTATION_URL descriptor Ljava/util/jar/Attributes$Name; flags 19
 field name SPECIFICATION_TITLE descriptor Ljava/util/jar/Attributes$Name; flags 19
 field name SPECIFICATION_VERSION descriptor Ljava/util/jar/Attributes$Name; flags 19
 field name SPECIFICATION_VENDOR descriptor Ljava/util/jar/Attributes$Name; flags 19
+field name EXTENSION_INSTALLATION descriptor Ljava/util/jar/Attributes$Name; flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;
+field name IMPLEMENTATION_VENDOR_ID descriptor Ljava/util/jar/Attributes$Name; flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;
+field name IMPLEMENTATION_URL descriptor Ljava/util/jar/Attributes$Name; flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;
 method name <init> descriptor (Ljava/lang/String;)V flags 1
 method name equals descriptor (Ljava/lang/Object;)Z flags 1
 method name hashCode descriptor ()I flags 1
@@ -16698,6 +16712,7 @@ method name <init> descriptor ()V flags 1
 
 class name javax/crypto/SealedObject
 header extends java/lang/Object implements java/io/Serializable flags 21
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 field name encodedParams descriptor [B flags 4
 method name <init> descriptor (Ljava/io/Serializable;Ljavax/crypto/Cipher;)V thrownTypes java/io/IOException,javax/crypto/IllegalBlockSizeException flags 1
 method name <init> descriptor (Ljavax/crypto/SealedObject;)V flags 4
@@ -17086,6 +17101,10 @@ method name setEnableSessionCreation descriptor (Z)V flags 401
 method name getEnableSessionCreation descriptor ()Z flags 401
 method name getSSLParameters descriptor ()Ljavax/net/ssl/SSLParameters; flags 1
 method name setSSLParameters descriptor (Ljavax/net/ssl/SSLParameters;)V flags 1
+method name getApplicationProtocol descriptor ()Ljava/lang/String; flags 1
+method name getHandshakeApplicationProtocol descriptor ()Ljava/lang/String; flags 1
+method name setHandshakeApplicationProtocolSelector descriptor (Ljava/util/function/BiFunction;)V flags 1 signature (Ljava/util/function/BiFunction<Ljavax/net/ssl/SSLEngine;Ljava/util/List<Ljava/lang/String;>;Ljava/lang/String;>;)V
+method name getHandshakeApplicationProtocolSelector descriptor ()Ljava/util/function/BiFunction; flags 1 signature ()Ljava/util/function/BiFunction<Ljavax/net/ssl/SSLEngine;Ljava/util/List<Ljava/lang/String;>;Ljava/lang/String;>;
 
 class name javax/net/ssl/SSLEngineResult
 header extends java/lang/Object flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
@@ -17156,6 +17175,8 @@ method name setSNIMatchers descriptor (Ljava/util/Collection;)V flags 11 signatu
 method name getSNIMatchers descriptor ()Ljava/util/Collection; flags 11 signature ()Ljava/util/Collection<Ljavax/net/ssl/SNIMatcher;>;
 method name setUseCipherSuitesOrder descriptor (Z)V flags 11
 method name getUseCipherSuitesOrder descriptor ()Z flags 11
+method name getApplicationProtocols descriptor ()[Ljava/lang/String; flags 1
+method name setApplicationProtocols descriptor ([Ljava/lang/String;)V flags 1
 
 class name javax/net/ssl/SSLPeerUnverifiedException
 header extends javax/net/ssl/SSLException flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
@@ -17272,6 +17293,10 @@ method name setEnableSessionCreation descriptor (Z)V flags 401
 method name getEnableSessionCreation descriptor ()Z flags 401
 method name getSSLParameters descriptor ()Ljavax/net/ssl/SSLParameters; flags 1
 method name setSSLParameters descriptor (Ljavax/net/ssl/SSLParameters;)V flags 1
+method name getApplicationProtocol descriptor ()Ljava/lang/String; flags 1
+method name getHandshakeApplicationProtocol descriptor ()Ljava/lang/String; flags 1
+method name setHandshakeApplicationProtocolSelector descriptor (Ljava/util/function/BiFunction;)V flags 1 signature (Ljava/util/function/BiFunction<Ljavax/net/ssl/SSLSocket;Ljava/util/List<Ljava/lang/String;>;Ljava/lang/String;>;)V
+method name getHandshakeApplicationProtocolSelector descriptor ()Ljava/util/function/BiFunction; flags 1 signature ()Ljava/util/function/BiFunction<Ljavax/net/ssl/SSLSocket;Ljava/util/List<Ljava/lang/String;>;Ljava/lang/String;>;
 
 class name javax/net/ssl/SSLSocketFactory
 header extends javax/net/SocketFactory flags 421 classAnnotations @Ljdk/Profile+Annotation;(value=I1)

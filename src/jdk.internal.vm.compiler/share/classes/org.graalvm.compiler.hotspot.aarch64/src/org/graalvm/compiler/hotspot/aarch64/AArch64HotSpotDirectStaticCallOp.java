@@ -36,6 +36,7 @@ import org.graalvm.compiler.lir.aarch64.AArch64Call.DirectCallOp;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
 
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 
@@ -69,6 +70,9 @@ final class AArch64HotSpotDirectStaticCallOp extends DirectCallOp {
             // correct inline cache value here.
             crb.recordMark(invokeKind == InvokeKind.Static ? HotSpotMarkId.INVOKESTATIC : HotSpotMarkId.INVOKESPECIAL);
             masm.movNativeAddress(inlineCacheRegister, config.nonOopBits);
+            if (config.supportsMethodHandleDeoptimizationEntry() && config.isMethodHandleCall((HotSpotResolvedJavaMethod) callTarget) && invokeKind != InvokeKind.Static) {
+                crb.setNeedsMHDeoptHandler();
+            }
             super.emitCode(crb, masm);
         }
     }

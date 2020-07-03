@@ -189,6 +189,12 @@ public class CompilationResultBuilder {
         return !uncompressedNullRegister.equals(Register.None) && JavaConstant.NULL_POINTER.equals(nullConstant);
     }
 
+    /**
+     * This flag indicates whether the assembler should emit a separate deoptimization handler for
+     * method handle invocations.
+     */
+    private boolean needsMHDeoptHandler = false;
+
     public CompilationResultBuilder(CodeCacheProvider codeCache,
                     ForeignCallsProvider foreignCalls,
                     FrameMap frameMap,
@@ -728,5 +734,13 @@ public class CompilationResultBuilder {
             currentCallContext = new CallContext();
         }
         return currentCallContext;
+    }
+
+    public void setNeedsMHDeoptHandler() {
+        this.needsMHDeoptHandler = true;
+    }
+
+    public boolean needsMHDeoptHandler() {
+        return needsMHDeoptHandler;
     }
 }

@@ -477,6 +477,7 @@ jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.options.test \
     org.graalvm.compiler.phases.common.test \
     org.graalvm.compiler.processor \
+    org.graalvm.compiler.replacements.jdk10.test \
     org.graalvm.compiler.replacements.jdk12.test \
     org.graalvm.compiler.replacements.jdk9.test \
     org.graalvm.compiler.replacements.processor \

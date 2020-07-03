@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
@@ -33,6 +32,7 @@ import java.util.concurrent.Callable;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
@@ -48,25 +48,30 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JToolTip;
 import javax.swing.JTree;
+import javax.swing.Popup;
+import javax.swing.PopupFactory;
 import javax.swing.SpinnerListModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import sun.swing.MenuItemLayoutHelper;
+
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
 /**
  * @test
  * @key headful
- * @bug 8201552 8213843
+ * @bug 8201552 8213843 8213535
  * @summary Initial layout of the component should use correct graphics config.
  *          It is checked by SwingUtilities.updateComponentTreeUI(), if layout
  *          was correct the call to updateComponentTreeUI() will be no-op.
+ * @modules java.desktop/sun.swing
  * @compile -encoding utf-8 StalePreferredSize.java
- * @run main/othervm/timeout=200 StalePreferredSize
- * @run main/othervm/timeout=200 -Dsun.java2d.uiScale=1 StalePreferredSize
- * @run main/othervm/timeout=200 -Dsun.java2d.uiScale=2.25 StalePreferredSize
+ * @run main/othervm/timeout=400 StalePreferredSize
+ * @run main/othervm/timeout=400 -Dsun.java2d.uiScale=1 StalePreferredSize
+ * @run main/othervm/timeout=400 -Dsun.java2d.uiScale=2.25 StalePreferredSize
  */
 public final class StalePreferredSize {
 
@@ -82,20 +87,26 @@ public final class StalePreferredSize {
             "Съешь ещё этих мягких французских булок да выпей же чаю"};
 
     static JFrame frame;
-    static Component component;
+    static Popup popup;
+    static JComponent component;
     static int typeFont = 0; // 0 - default, 1 - bold, 2 - italic
+    static boolean addViaPopup;
 
     public static void main(final String[] args) throws Exception {
         for (final UIManager.LookAndFeelInfo laf : getInstalledLookAndFeels()) {
             EventQueue.invokeAndWait(() -> setLookAndFeel(laf));
             for (typeFont = 0; typeFont < 3; typeFont++) {
                 System.err.println("typeFont = " + typeFont);
-                for (final boolean html : new boolean[]{true, false}) {
-                    for (String text : TEXT) {
-                        if (html) {
-                            text = "<html>" + text + "</html>";
+                for (boolean usePopup : new boolean[]{true, false}) {
+                    addViaPopup = usePopup;
+                    System.err.println("Use popup: " + usePopup);
+                    for (final boolean html : new boolean[]{true, false}) {
+                        for (String text : TEXT) {
+                            if (html) {
+                                text = "<html>" + text + "</html>";
+                            }
+                            test(text);
                         }
-                        test(text);
                     }
                 }
             }
@@ -105,7 +116,7 @@ public final class StalePreferredSize {
     private static void test(String text) throws Exception {
         System.err.println("text = " + text);
         // Each Callable create a component to be tested
-        final List<Callable<Component>> comps = List.of(
+        final List<Callable<JComponent>> comps = List.of(
                 () -> new JLabel(text),
                 () -> new JButton(text),
                 () -> new JMenuItem(text),
@@ -136,12 +147,12 @@ public final class StalePreferredSize {
                     }
         );
 
-        for (final Callable<Component> creator : comps) {
+        for (final Callable<JComponent> creator : comps) {
             checkComponent(creator);
         }
     }
 
-    static void checkComponent(Callable<Component> creator) throws Exception {
+    static void checkComponent(Callable<JComponent> creator) throws Exception {
         EventQueue.invokeAndWait(() -> {
 
             try {
@@ -150,6 +161,7 @@ public final class StalePreferredSize {
                 throw new RuntimeException(e);
             }
 
+            component.setEnabled(false); // minimize paint/focus events amount
             Font font = component.getFont();
             if (typeFont == 1) {
                 component.setFont(new Font(font.deriveFont(Font.BOLD).getAttributes()));
@@ -159,14 +171,35 @@ public final class StalePreferredSize {
             }
 
             frame = new JFrame();
+            // incorrect initial insets may ruin our size calculation
+            frame.setUndecorated(true); // TODO JDK-8244388
             frame.setLayout(new FlowLayout());
-            frame.add(new JScrollPane(component));
-            frame.setSize(300, 100);
+            frame.setSize(700, 400);
             frame.setLocationRelativeTo(null);
+            if (addViaPopup) {
+                // doing our best to show lightweight or mediumweight popup
+                int x = frame.getX() + 50;
+                int y = frame.getY() + 200;
+                PopupFactory factory = PopupFactory.getSharedInstance();
+                popup = factory.getPopup(frame, component, x, y);
+                if (component instanceof JMenuItem) {
+                    // TODO JDK-8244400
+                    MenuItemLayoutHelper.clearUsedParentClientProperties((JMenuItem)component);
+                }
+            } else {
+                frame.add(new JScrollPane(component));
+            }
             frame.setVisible(true);
+            if (popup != null) {
+                popup.show();
+            }
         });
 
         EventQueue.invokeAndWait(() -> {
+            if (!component.isValid()) {
+                dispose();
+                throw new RuntimeException("Component must be valid");
+            }
 
             // After the frame was shown we change nothing, so current layout
             // should be optimal and updateComponentTreeUI() should be no-op
@@ -179,7 +212,7 @@ public final class StalePreferredSize {
             component.setFont(component.getFont().deriveFont(35f));
             Dimension last = component.getPreferredSize();
 
-            frame.dispose();
+            dispose();
 
             if (!Objects.equals(before, after)) {
                 System.err.println("Component: " + component);
@@ -195,6 +228,14 @@ public final class StalePreferredSize {
 //                throw new RuntimeException("Wrong PreferredSize");
 //            }
         });
+    }
+
+    private static void dispose() {
+        if (popup != null) {
+            popup.hide();
+            popup = null;
+        }
+        frame.dispose();
     }
 
     private static void setLookAndFeel(final UIManager.LookAndFeelInfo laf) {

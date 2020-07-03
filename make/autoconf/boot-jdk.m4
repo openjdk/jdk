@@ -373,7 +373,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
 
   if test "x$boot_jdk_cds_args" != x; then
     # Try creating a CDS archive
-    "$JAVA" $boot_jdk_cds_args -Xshare:dump > /dev/null 2>&1
+    $JAVA $boot_jdk_cds_args -Xshare:dump > /dev/null 2>&1
     if test $? -eq 0; then
       BOOTJDK_USE_LOCAL_CDS=true
       AC_MSG_RESULT([yes, created])

@@ -129,12 +129,26 @@ public class OptionsParser {
                     msg.format("%n    %s=<value>", match.getName());
                 }
             }
-            throw new IllegalArgumentException(msg.toString());
+            IllegalArgumentException iae = new IllegalArgumentException(msg.toString());
+            if (isFromLibGraal(iae)) {
+                msg.format("%nIf %s is a libgraal option, it must be specified with '-Dlibgraal.%s' as opposed to '-Dgraal.%s'.", name, name, name);
+                iae = new IllegalArgumentException(msg.toString());
+            }
+            throw iae;
         }
 
         Object value = parseOptionValue(desc, uncheckedValue);
 
         desc.getOptionKey().update(values, value);
+    }
+
+    private static boolean isFromLibGraal(Throwable t) {
+        for (StackTraceElement frame : t.getStackTrace()) {
+            if ("jdk.internal.vm.compiler.libgraal.LibGraal".equals(frame.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Parses a given option value with a known descriptor. */

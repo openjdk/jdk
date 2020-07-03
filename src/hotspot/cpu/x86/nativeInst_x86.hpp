@@ -94,9 +94,6 @@ class NativeInstruction {
 
  public:
 
-  // unit test stuff
-  static void test() {}                 // override for testing
-
   inline friend NativeInstruction* nativeInstruction_at(address address);
 };
 
@@ -277,9 +274,6 @@ class NativeMovConstReg: public NativeInstruction {
   void  verify();
   void  print();
 
-  // unit test stuff
-  static void test() {}
-
   // Creation
   inline friend NativeMovConstReg* nativeMovConstReg_at(address address);
   inline friend NativeMovConstReg* nativeMovConstReg_before(address address);
@@ -393,9 +387,6 @@ class NativeMovRegMem: public NativeInstruction {
   void verify();
   void print ();
 
-  // unit test stuff
-  static void test() {}
-
  private:
   int patch_offset() const;
   inline friend NativeMovRegMem* nativeMovRegMem_at (address address);
@@ -431,9 +422,6 @@ class NativeLoadAddress: public NativeMovRegMem {
 
   void verify();
   void print ();
-
-  // unit test stuff
-  static void test() {}
 
  private:
   friend NativeLoadAddress* nativeLoadAddress_at (address address) {
@@ -536,9 +524,6 @@ class NativeJump: public NativeInstruction {
 
   void verify();
 
-  // Unit testing stuff
-  static void test() {}
-
   // Insertion of native jump instruction
   static void insert(address code_pos, address entry);
   // MT-safe insertion of native jump at verified method entry
@@ -563,9 +548,6 @@ class NativeFarJump: public NativeInstruction {
   inline friend NativeFarJump* nativeFarJump_at(address address);
 
   void verify();
-
-  // Unit testing stuff
-  static void test() {}
 
 };
 

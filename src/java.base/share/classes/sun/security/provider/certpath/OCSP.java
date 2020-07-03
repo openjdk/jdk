@@ -234,7 +234,7 @@ public final class OCSP {
                 debug.println("connecting to OCSP service at: " + url);
             }
 
-            Event.report("event.ocsp.check", url.toString());
+            Event.report(Event.ReporterCategory.CRLCHECK, "event.ocsp.check", url.toString());
             HttpURLConnection con = (HttpURLConnection)url.openConnection();
             con.setConnectTimeout(CONNECT_TIMEOUT);
             con.setReadTimeout(CONNECT_TIMEOUT);

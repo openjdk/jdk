@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.util.logging;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.io.*;
 import java.security.AccessController;
@@ -76,21 +75,6 @@ public class LogRecord implements java.io.Serializable {
         = new AtomicLong(0);
 
     /**
-     * The default value of threadID will be the current thread's
-     * thread id, for ease of correlation, unless it is greater than
-     * MIN_SEQUENTIAL_THREAD_ID, in which case we try harder to keep
-     * our promise to keep threadIDs unique by avoiding collisions due
-     * to 32-bit wraparound.  Unfortunately, LogRecord.getThreadID()
-     * returns int, while Thread.getId() returns long.
-     */
-    private static final int MIN_SEQUENTIAL_THREAD_ID = Integer.MAX_VALUE / 2;
-
-    private static final AtomicInteger nextThreadId
-        = new AtomicInteger(MIN_SEQUENTIAL_THREAD_ID);
-
-    private static final ThreadLocal<Integer> threadIds = new ThreadLocal<>();
-
-    /**
      * Logging message level
      */
     private Level level;
@@ -121,6 +105,11 @@ public class LogRecord implements java.io.Serializable {
     private int threadID;
 
     /**
+     * long value of Thread ID for thread that issued logging call.
+     */
+    private long longThreadID;
+
+    /**
      * The Throwable (if any) associated with log message
      */
     private Throwable thrown;
@@ -147,7 +136,10 @@ public class LogRecord implements java.io.Serializable {
      * @serialField sourceClassName String Class that issued logging call
      * @serialField sourceMethodName String Method that issued logging call
      * @serialField message String Non-localized raw message text
-     * @serialField threadID int Thread ID for thread that issued logging call
+     * @serialField threadID int this is deprecated and is available for backward compatibility.
+     *              Values may have been synthesized. If present, {@code longThreadID} represents
+     *              the actual thread id.
+     * @serialField longThreadID long Thread ID for thread that issued logging call
      * @serialField millis long Truncated event time in milliseconds since 1970
      *              - calculated as getInstant().toEpochMilli().
      *               The event time instant can be reconstructed using
@@ -164,6 +156,7 @@ public class LogRecord implements java.io.Serializable {
      * @serialField resourceBundleName String Resource bundle name to localized
      *              log message
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields =
         new ObjectStreamField[] {
             new ObjectStreamField("level", Level.class),
@@ -172,6 +165,7 @@ public class LogRecord implements java.io.Serializable {
             new ObjectStreamField("sourceMethodName", String.class),
             new ObjectStreamField("message", String.class),
             new ObjectStreamField("threadID", int.class),
+            new ObjectStreamField("longThreadID", long.class),
             new ObjectStreamField("millis", long.class),
             new ObjectStreamField("nanoAdjustment", int.class),
             new ObjectStreamField("thrown", Throwable.class),
@@ -184,20 +178,22 @@ public class LogRecord implements java.io.Serializable {
     private transient ResourceBundle resourceBundle;
 
     /**
-     * Returns the default value for a new LogRecord's threadID.
+     * Synthesizes a pseudo unique integer value from a long {@code id} value.
+     * For backward compatibility with previous releases,the returned integer is
+     * such that for any positive long less than or equals to {@code Integer.MAX_VALUE},
+     * the returned integer is equal to the original value.
+     * Otherwise - it is synthesized with a best effort hashing algorithm,
+     * and the returned value is negative.
+     * Calling this method multiple times with the same value always yields the same result.
+     *
+     * @return thread id
      */
-    private int defaultThreadID() {
-        long tid = Thread.currentThread().getId();
-        if (tid < MIN_SEQUENTIAL_THREAD_ID) {
-            return (int) tid;
-        } else {
-            Integer id = threadIds.get();
-            if (id == null) {
-                id = nextThreadId.getAndIncrement();
-                threadIds.set(id);
-            }
-            return id;
-        }
+
+    private int shortThreadID(long id) {
+        if (id >= 0 && id <= Integer.MAX_VALUE)
+            return (int) id;
+        int hash = Long.hashCode(id);
+        return hash < 0 ? hash : (-1 - hash);
     }
 
     /**
@@ -225,10 +221,13 @@ public class LogRecord implements java.io.Serializable {
         message = msg;
         // Assign a thread ID and a unique sequence number.
         sequenceNumber = globalSequenceNumber.getAndIncrement();
-        threadID = defaultThreadID();
+        long id = Thread.currentThread().getId();
+        // threadID is deprecated and this value is synthesised for backward compatibility
+        threadID = shortThreadID(id);
+        longThreadID = id;
         instant = Instant.now();
         needToInferCaller = true;
-   }
+    }
 
     /**
      * Get the source Logger's name.
@@ -447,8 +446,12 @@ public class LogRecord implements java.io.Serializable {
      * This is a thread identifier within the Java VM and may or
      * may not map to any operating system ID.
      *
+     * @deprecated  Values returned by this method may be synthesized,
+     *              and may not correspond to the actual {@linkplain Thread#getId() thread id},
+     *              use {@link #getLongThreadID()} instead.
      * @return thread ID
      */
+    @Deprecated(since = "16")
     public int getThreadID() {
         return threadID;
     }
@@ -456,9 +459,41 @@ public class LogRecord implements java.io.Serializable {
     /**
      * Set an identifier for the thread where the message originated.
      * @param threadID  the thread ID
+     *
+     * @deprecated  This method doesn't allow to pass a long {@linkplain Thread#getId() thread id},
+     *              use {@link #setLongThreadID(long)} instead.
      */
+    @Deprecated(since = "16")
     public void setThreadID(int threadID) {
         this.threadID = threadID;
+        this.longThreadID = threadID;
+    }
+
+    /**
+     * Get a thread identifier for the thread where message originated
+     *
+     * <p>
+     * This is a thread identifier within the Java VM and may or
+     * may not map to any operating system ID.
+     *
+     * @return thread ID
+     * @since 16
+     */
+    public long getLongThreadID() {
+        return longThreadID;
+    }
+
+    /**
+     * Set an identifier for the thread where the message originated.
+     *
+     * @param longThreadID the thread ID
+     * @return this LogRecord
+     * @since 16
+     */
+    public LogRecord setLongThreadID(long longThreadID) {
+        this.threadID = shortThreadID(longThreadID);
+        this.longThreadID = longThreadID;
+        return this;
     }
 
     /**
@@ -552,6 +587,7 @@ public class LogRecord implements java.io.Serializable {
         this.thrown = thrown;
     }
 
+    @Serial
     private static final long serialVersionUID = 5372048053134512534L;
 
     /**
@@ -564,6 +600,7 @@ public class LogRecord implements java.io.Serializable {
      * a null String is written.  Otherwise the output of Object.toString()
      * is written.
      */
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         // We have to write serialized fields first.
         ObjectOutputStream.PutField pf = out.putFields();
@@ -573,6 +610,7 @@ public class LogRecord implements java.io.Serializable {
         pf.put("sourceMethodName", sourceMethodName);
         pf.put("message", message);
         pf.put("threadID", threadID);
+        pf.put("longThreadID", longThreadID);
         pf.put("millis", instant.toEpochMilli());
         pf.put("nanoAdjustment", instant.getNano() % 1000_000);
         pf.put("thrown", thrown);
@@ -594,8 +632,25 @@ public class LogRecord implements java.io.Serializable {
         }
     }
 
+    /**
+     * Initializes the LogRecord from deserialized data.
+     * <ul>
+     * <li>If {@code longThreadID} is present in the serial form, its value
+     * takes precedence over {@code threadID} and a value for {@code threadID}
+     * is synthesized from it, such that for {@code longThreadID} values between
+     * {@code 0} and {@code Integer.MAX_VALUE} inclusive, {@code longThreadID}
+     * and {@code threadID} will have the same value. For values outside of this
+     * range a negative synthesized value will be deterministically derived
+     * from {@code longThreadID}.
+     * <li>Otherwise, when only {@code threadID} is
+     * present, {@code longThreadID} is initialized with the value of
+     * {@code threadID} which may be anything between {@code Integer.MIN_VALUE}
+     * and {Integer.MAX_VALUE}.
+     * </ul>
+     */
+    @Serial
     private void readObject(ObjectInputStream in)
-                        throws IOException, ClassNotFoundException {
+        throws IOException, ClassNotFoundException {
         // We have to read serialized fields first.
         ObjectInputStream.GetField gf = in.readFields();
         level = (Level) gf.get("level", null);
@@ -603,7 +658,14 @@ public class LogRecord implements java.io.Serializable {
         sourceClassName = (String) gf.get("sourceClassName", null);
         sourceMethodName = (String) gf.get("sourceMethodName", null);
         message = (String) gf.get("message", null);
-        threadID = gf.get("threadID", 0);
+        // If longthreadID is not present, it will be initialised with threadID value
+        // If longthreadID is present, threadID might have a synthesized value
+        int threadID = gf.get("threadID", 0);
+        long longThreadID = gf.get("longThreadID", (long)threadID);
+        if (threadID != longThreadID)
+            threadID = shortThreadID(longThreadID);
+        this.threadID = threadID;
+        this.longThreadID = longThreadID;
         long millis = gf.get("millis", 0L);
         int nanoOfMilli = gf.get("nanoAdjustment", 0);
         instant = Instant.ofEpochSecond(
@@ -641,9 +703,9 @@ public class LogRecord implements java.io.Serializable {
                 // use system class loader to ensure the ResourceBundle
                 // instance is a different instance than null loader uses
                 final ResourceBundle bundle =
-                        ResourceBundle.getBundle(resourceBundleName,
-                                Locale.getDefault(),
-                                ClassLoader.getSystemClassLoader());
+                    ResourceBundle.getBundle(resourceBundleName,
+                        Locale.getDefault(),
+                        ClassLoader.getSystemClassLoader());
                 resourceBundle = bundle;
             } catch (MissingResourceException ex) {
                 // This is not a good place to throw an exception,
@@ -697,7 +759,7 @@ public class LogRecord implements java.io.Serializable {
         private static final StackWalker WALKER;
         static {
             final PrivilegedAction<StackWalker> action =
-                    () -> StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+                () -> StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
             WALKER = AccessController.doPrivileged(action);
         }
 
@@ -736,7 +798,7 @@ public class LogRecord implements java.io.Serializable {
 
         private boolean isLoggerImplFrame(String cname) {
             return (cname.equals("java.util.logging.Logger") ||
-                    cname.startsWith("sun.util.logging.PlatformLogger"));
+                cname.startsWith("sun.util.logging.PlatformLogger"));
         }
     }
 }

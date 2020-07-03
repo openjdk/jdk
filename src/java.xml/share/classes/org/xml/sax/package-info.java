@@ -27,7 +27,6 @@
  * Provides the interfaces for the Simple API for XML (SAX). Supports both
  * the SAX1 and SAX2 APIs.
  *
- * <p>
  * <h2> SAX2 Standard Feature Flags </h2>
  *
  * <p>

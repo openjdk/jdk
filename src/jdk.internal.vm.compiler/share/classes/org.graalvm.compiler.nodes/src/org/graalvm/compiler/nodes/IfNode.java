@@ -732,12 +732,12 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
      * Check it these two blocks end up at the same place. Meeting at the same merge, or
      * deoptimizing in the same way.
      */
-    private static boolean sameDestination(AbstractBeginNode succ1, AbstractBeginNode succ2) {
+    public static boolean sameDestination(AbstractBeginNode succ1, AbstractBeginNode succ2) {
         Node next1 = succ1.next();
         Node next2 = succ2.next();
-        if (next1 instanceof EndNode && next2 instanceof EndNode) {
-            EndNode end1 = (EndNode) next1;
-            EndNode end2 = (EndNode) next2;
+        if (next1 instanceof AbstractEndNode && next2 instanceof AbstractEndNode) {
+            AbstractEndNode end1 = (AbstractEndNode) next1;
+            AbstractEndNode end2 = (AbstractEndNode) next2;
             if (end1.merge() == end2.merge()) {
                 for (PhiNode phi : end1.merge().phis()) {
                     if (phi.valueAt(end1) != phi.valueAt(end2)) {
@@ -1052,17 +1052,25 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
      */
     private boolean isSafeConditionalInput(ValueNode value, AbstractBeginNode successor) {
         assert successor.hasNoUsages();
-        if (value.isConstant() || value instanceof ParameterNode || condition.inputs().contains(value)) {
-            // Assume constants are cheap to evaluate and Parameters are always evaluated. Any input
-            // to the condition itself is also unconditionally evaluated.
+        if (value.isConstant() || condition.inputs().contains(value)) {
+            // Assume constants are cheap to evaluate. Any input to the condition itself is also
+            // unconditionally evaluated.
             return true;
         }
 
-        if (value instanceof FixedNode && graph().isAfterFixedReadPhase()) {
-            List<Node> nodes = getNodesForBlock(successor);
-            // The successor block is empty so assume that this input evaluated before the
-            // condition.
-            return nodes != null && nodes.size() == 2;
+        if (graph().isAfterFixedReadPhase()) {
+            if (value instanceof ParameterNode) {
+                // Assume Parameters are always evaluated but only apply this logic to graphs after
+                // inlining. Checking for ParameterNode causes it to apply to graphs which are going
+                // to be inlined into other graphs which is incorrect.
+                return true;
+            }
+            if (value instanceof FixedNode) {
+                List<Node> nodes = getNodesForBlock(successor);
+                // The successor block is empty so assume that this input evaluated before the
+                // condition.
+                return nodes != null && nodes.size() == 2;
+            }
         }
         return false;
     }

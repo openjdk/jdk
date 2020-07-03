@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -2524,7 +2524,6 @@ method name getPopupMenuListeners descriptor ()[Ljavax/swing/event/PopupMenuList
 method name setAction descriptor (Ljavax/swing/Action;)V flags 1 runtimeAnnotations @Ljava/beans/BeanProperty;(visualUpdate=Ztrue,description="the\u005C;u0020;Action\u005C;u0020;instance\u005C;u0020;connected\u005C;u0020;with\u005C;u0020;this\u005C;u0020;ActionEvent\u005C;u0020;source")
 method name getSelectedObjects descriptor ()[Ljava/lang/Object; flags 1 runtimeAnnotations @Ljava/beans/BeanProperty;(bound=Zfalse)
 method name setEnabled descriptor (Z)V flags 1 runtimeAnnotations @Ljava/beans/BeanProperty;(description="The\u005C;u0020;enabled\u005C;u0020;state\u005C;u0020;of\u005C;u0020;the\u005C;u0020;component.",preferred=Ztrue)
-method name processKeyBinding descriptor (Ljavax/swing/KeyStroke;Ljava/awt/event/KeyEvent;IZ)Z flags 4
 method name setKeySelectionManager descriptor (Ljavax/swing/JComboBox$KeySelectionManager;)V flags 1 runtimeAnnotations @Ljava/beans/BeanProperty;(expert=Ztrue,bound=Zfalse,description="The\u005C;u0020;objects\u005C;u0020;that\u005C;u0020;changes\u005C;u0020;the\u005C;u0020;selection\u005C;u0020;when\u005C;u0020;a\u005C;u0020;key\u005C;u0020;is\u005C;u0020;pressed.")
 method name getItemCount descriptor ()I flags 1 runtimeAnnotations @Ljava/beans/BeanProperty;(bound=Zfalse)
 method name getAccessibleContext descriptor ()Ljavax/accessibility/AccessibleContext; flags 1 runtimeAnnotations @Ljava/beans/BeanProperty;(bound=Zfalse)
@@ -3039,6 +3038,7 @@ class name javax/swing/JList$AccessibleJList$AccessibleJListChild
 header extends javax/accessibility/AccessibleContext implements javax/accessibility/Accessible,javax/accessibility/AccessibleComponent,javax/accessibility/AccessibleAction flags 21
 innerclass innerClass javax/swing/JList$AccessibleJList outerClass javax/swing/JList innerClassName AccessibleJList flags 4
 innerclass innerClass javax/swing/JList$AccessibleJList$AccessibleJListChild outerClass javax/swing/JList$AccessibleJList innerClassName AccessibleJListChild flags 4
+method name getAccessibleAction descriptor ()Ljavax/accessibility/AccessibleAction; flags 1
 method name doAccessibleAction descriptor (I)Z flags 1
 method name getAccessibleActionDescription descriptor (I)Ljava/lang/String; flags 1
 method name getAccessibleActionCount descriptor ()I flags 1
@@ -3907,7 +3907,6 @@ innerclass innerClass javax/swing/JViewport$AccessibleJViewport outerClass javax
 innerclass innerClass javax/swing/JViewport$ViewListener outerClass javax/swing/JViewport innerClassName ViewListener flags 4
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 -method name setUI descriptor (Ljavax/swing/plaf/ViewportUI;)V
--method name addNotify descriptor ()V
 -method name getInsets descriptor (Ljava/awt/Insets;)Ljava/awt/Insets;
 -method name setScrollMode descriptor (I)V
 method name setUI descriptor (Ljavax/swing/plaf/ViewportUI;)V flags 1 runtimeAnnotations @Ljava/beans/BeanProperty;(hidden=Ztrue,visualUpdate=Ztrue,description="The\u005C;u0020;UI\u005C;u0020;object\u005C;u0020;that\u005C;u0020;implements\u005C;u0020;the\u005C;u0020;Component's\u005C;u0020;LookAndFeel.")
@@ -4402,8 +4401,6 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 class name javax/swing/plaf/basic/BasicRadioButtonUI
 header extends javax/swing/plaf/basic/BasicToggleButtonUI flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-method name installListeners descriptor (Ljavax/swing/AbstractButton;)V flags 4
-method name uninstallListeners descriptor (Ljavax/swing/AbstractButton;)V flags 4
 
 class name javax/swing/plaf/basic/BasicScrollBarUI
 header extends javax/swing/plaf/ScrollBarUI implements java/awt/LayoutManager,javax/swing/SwingConstants flags 21

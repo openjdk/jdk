@@ -3260,7 +3260,9 @@ uint PhaseOutput::scratch_emit_size(const Node* n) {
 }
 
 void PhaseOutput::install() {
-  if (C->stub_function() != NULL) {
+  if (!C->should_install_code()) {
+    return;
+  } else if (C->stub_function() != NULL) {
     install_stub(C->stub_name(),
                  C->save_argument_registers());
   } else {

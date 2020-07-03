@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package org.graalvm.compiler.phases.common.inlining.info;
 import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.common.inlining.info.elem.Inlineable;
 import org.graalvm.compiler.phases.util.Providers;
 
@@ -53,7 +54,7 @@ public class ExactInlineInfo extends AbstractInlineInfo {
     }
 
     @Override
-    public EconomicSet<Node> inline(Providers providers, String reason) {
+    public EconomicSet<Node> inline(CoreProviders providers, String reason) {
         return inline(invoke, concrete, inlineableElement, !suppressNullCheck, reason);
     }
 

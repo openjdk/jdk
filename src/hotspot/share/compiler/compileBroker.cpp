@@ -1201,7 +1201,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
       // Don't allow blocking compilation requests if we are in JVMCIRuntime::shutdown
       // to avoid deadlock between compiler thread(s) and threads run at shutdown
       // such as the DestroyJavaVM thread.
-      if (JVMCI::shutdown_called()) {
+      if (JVMCI::in_shutdown()) {
         blocking = false;
       }
     }
@@ -2150,16 +2150,22 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     TraceTime t1("compilation", &time);
     EventCompilation event;
     JVMCICompileState compile_state(task);
+    JVMCIRuntime *runtime = NULL;
 
-    // Skip redefined methods
-    if (compile_state.target_method_is_old()) {
+    if (JVMCI::in_shutdown()) {
+      failure_reason = "in JVMCI shutdown";
+      retry_message = "not retryable";
+      compilable = ciEnv::MethodCompilable_never;
+    } else if (compile_state.target_method_is_old()) {
+      // Skip redefined methods
       failure_reason = "redefined method";
       retry_message = "not retryable";
       compilable = ciEnv::MethodCompilable_never;
     } else {
       JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
       methodHandle method(thread, target_handle);
-      env.runtime()->compile_method(&env, jvmci, method, osr_bci);
+      runtime = env.runtime();
+      runtime->compile_method(&env, jvmci, method, osr_bci);
 
       failure_reason = compile_state.failure_reason();
       failure_reason_on_C_heap = compile_state.failure_reason_on_C_heap();
@@ -2217,7 +2223,15 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
           locker.wait();
         }
       }
-      comp->compile_method(&ci_env, target, osr_bci, directive);
+      comp->compile_method(&ci_env, target, osr_bci, true, directive);
+
+      /* Repeat compilation without installing code for profiling purposes */
+      int repeat_compilation_count = directive->RepeatCompilationOption;
+      while (repeat_compilation_count > 0) {
+        task->print_ul("NO CODE INSTALLED");
+        comp->compile_method(&ci_env, target, osr_bci, false , directive);
+        repeat_compilation_count--;
+      }
     }
 
     if (!ci_env.failing() && task->code() == NULL) {

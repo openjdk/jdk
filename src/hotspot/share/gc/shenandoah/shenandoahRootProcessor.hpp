@@ -93,9 +93,11 @@ private:
   JVMTI_ONLY(ShenandoahJVMTIWeakRoot _jvmti_weak_roots;)
   JFR_ONLY(ShenandoahJFRWeakRoot     _jfr_weak_roots;)
 public:
-  ShenandoahSerialWeakRoots(ShenandoahPhaseTimings::Phase phase) :
-  JVMTI_ONLY(_jvmti_weak_roots(phase))
-  JFR_ONLY(JVMTI_ONLY(COMMA)_jfr_weak_roots(phase)) {};
+  ShenandoahSerialWeakRoots(ShenandoahPhaseTimings::Phase phase)
+  JVMTI_ONLY(: _jvmti_weak_roots(phase))
+  JFR_ONLY(NOT_JVMTI(:) JVMTI_ONLY(COMMA) _jfr_weak_roots(phase))
+  {};
+
   void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
   void weak_oops_do(OopClosure* cl, uint worker_id);
 };

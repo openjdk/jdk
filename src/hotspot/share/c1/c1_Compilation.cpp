@@ -463,7 +463,7 @@ void Compilation::compile_method() {
   // Note: make sure we mark the method as not compilable!
   CHECK_BAILOUT();
 
-  if (InstallMethods) {
+  if (should_install_code()) {
     // install code
     PhaseTraceTime timeit(_t_codeinstall);
     install_code(frame_size);
@@ -539,7 +539,7 @@ void Compilation::generate_exception_handler_table() {
 }
 
 Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* method,
-                         int osr_bci, BufferBlob* buffer_blob, DirectiveSet* directive)
+                         int osr_bci, BufferBlob* buffer_blob, bool install_code, DirectiveSet* directive)
 : _next_id(0)
 , _next_block_id(0)
 , _compiler(compiler)
@@ -558,6 +558,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _would_profile(false)
 , _has_method_handle_invokes(false)
 , _has_reserved_stack_access(method->has_reserved_stack_access())
+, _install_code(install_code)
 , _bailout_msg(NULL)
 , _exception_info_list(NULL)
 , _allocator(NULL)

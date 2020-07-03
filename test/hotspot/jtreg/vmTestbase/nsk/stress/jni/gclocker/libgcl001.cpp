@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,87 +20,60 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 #include <jni.h>
 #include <stdlib.h>
 #include "jnihelper.h"
 
-extern "C" {
+/*
+  basic routine: provide critical sections and calculations
+    enter array CS
+    enter first string CS
+    leave first string CS
+    enter second string CS
+    leave array CS
+    leave second string CS
+*/
+#define BODY(type)                                                          \
+  int hash = 0;                                                             \
+  jsize i, arraySize, stringSize;                                           \
+  jchar *nativeStr = NULL;                                                  \
+  type *nativeArray = NULL;                                                 \
+                                                                            \
+  arraySize = env->GetArrayLength(array); CE                                \
+  stringSize = env->GetStringLength(str); CE                                \
+                                                                            \
+  nativeArray = (type *)env->GetPrimitiveArrayCritical(array, NULL); CE     \
+  qsort(nativeArray, arraySize, sizeof(type), *type##comp);                 \
+                                                                            \
+  nativeStr = (jchar *)env->GetStringCritical(str, NULL); CE                \
+                                                                            \
+  for (i = 0; i < stringSize; ++i)                                          \
+    hash += (int)nativeStr[i];                                              \
+  env->ReleaseStringCritical(str, nativeStr); CE                            \
+                                                                            \
+  nativeStr = (jchar *)env->GetStringCritical(str, NULL); CE                \
+                                                                            \
+  env->ReleasePrimitiveArrayCritical(array, nativeArray, 0); CE             \
+                                                                            \
+  for (i = 0; i < stringSize; ++i)                                          \
+    hash += (int)nativeStr[i];                                              \
+  env->ReleaseStringCritical(str, nativeStr); CE                            \
+                                                                            \
+  return hash;
 
 // compare most java primitive value types
-#define COMP(type) \
-int type##comp(const void *s1, const void *s2)\
-{\
-    type st1 = *((type *)s1);\
-    type st2 = *((type *)s2);\
-    if (st1 < st2)\
-        return -1;\
-    else if (st1 > st2)\
-        return 1;\
-    else\
-        return 0;\
-}
-
-// basic routine: provide critical sections and calculations
-    // enter array CS
-    // check isCopy for native referencing
-    // enter first string CS
-    // leave first string CS
-    // enter second string CS
-    // leave array CS
-    // enter second string CS
-
-#define BODY(type) \
-int hash = 0; int i; jboolean isCopy = JNI_FALSE; jchar *nativeStr; jsize size; type *nativeArray; \
-size = env->GetArrayLength(array); CE \
-nativeArray = (type *)env->GetPrimitiveArrayCritical(array, &isCopy); CE \
-EnterCS(env); \
-if (isCopy == JNI_TRUE) return 0;\
-qsort(nativeArray, size, sizeof(type), *type##comp);\
-\
-size = env->GetStringLength(str); CE \
-nativeStr = (jchar *)env->GetStringCritical(str, &isCopy); CE \
-if (isCopy == JNI_TRUE) return 0;\
-for (i = 0; i < size; ++i)\
-    hash += (int)nativeStr[i];\
-\
-env->ReleasePrimitiveArrayCritical(array, nativeArray, 0); CE \
-LeaveCS(env); \
-env->ReleaseStringCritical(str, nativeStr); CE \
-\
-hash = 0;\
-size = env->GetStringLength(str); CE \
-nativeStr = (jchar *)env->GetStringCritical(str, &isCopy); CE \
-EnterCS(env); \
-if (isCopy == JNI_TRUE) return 0;\
-for (i = 0; i < size; ++i)\
-    hash += (int)nativeStr[i];\
-LeaveCS(env); \
-env->ReleaseStringCritical(str, nativeStr); CE \
-return hash;
-
-static int CSEntered = 0;
-static int CSLeft = 0;
-
-void EnterCS(JNIEnv *env)
-{
-    // unsafe but where are no better ideas
-    //++CSEntered;
-    //printf("CS Entered -> Entered: %d\n", CSEntered);
-//    jclass trace = 0; jmethodID method = 0;
-//    trace = env->FindClass("nsk/stress/jni/gclocker/Trace"); CE
-//    method = env->GetStaticMethodID(trace, "EnterCS", "()V"); CE
-//    env->CallStaticVoidMethod(trace, method); CE
-}
-
-void LeaveCS(JNIEnv *env)
-{
-    // unsafe but where are no better ideas
-    //++CSLeft;
-    //printf("CS Left -> Completed: %d\tActive: %d\n", CSLeft, CSEntered - CSLeft);
-//    jclass trace = 0; jmethodID method = 0;
-//    trace = env->FindClass("nsk/stress/jni/gclocker/Trace"); CE
-//    method = env->GetStaticMethodID(trace, "LeaveCS", "()V"); CE
-//    env->CallStaticVoidMethod(trace, method); CE
+#define COMP(type)                                                          \
+int type##comp(const void *s1, const void *s2)                              \
+{                                                                           \
+  type st1 = *((type *)s1);                                                 \
+  type st2 = *((type *)s2);                                                 \
+  if (st1 < st2)                                                            \
+    return -1;                                                              \
+  else if (st1 > st2)                                                       \
+    return 1;                                                               \
+  else                                                                      \
+    return 0;                                                               \
 }
 
 COMP(jint)
@@ -111,6 +84,8 @@ COMP(jbyte)
 COMP(jdouble)
 COMP(jfloat)
 COMP(jlong)
+
+extern "C" {
 
 /*
  * Class:     JNIWorker

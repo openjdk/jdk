@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,7 @@
 
 package org.graalvm.compiler.nodes.graphbuilderconf;
 
-import org.graalvm.compiler.core.common.type.Stamp;
+public interface GeneratedPluginFactory {
 
-public interface NodeIntrinsicPluginFactory {
-
-    public interface InjectionProvider {
-
-        <T> T getInjectedArgument(Class<T> type);
-
-        /**
-         * Gets a stamp denoting a given type and non-nullness property.
-         *
-         * @param type the type the returned stamp represents
-         * @param nonNull specifies if the returned stamp denotes a value that is guaranteed to be
-         *            non-null
-         */
-        Stamp getInjectedStamp(Class<?> type, boolean nonNull);
-    }
-
-    void registerPlugins(InvocationPlugins plugins, InjectionProvider injection);
+    void registerPlugins(InvocationPlugins plugins, GeneratedPluginInjectionProvider injection);
 }

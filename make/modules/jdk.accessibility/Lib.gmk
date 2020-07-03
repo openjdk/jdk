@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ include LibCommon.gmk
 
 ifeq ($(call isTargetOs, windows), true)
 
-  ROOT_SRCDIR := $(TOPDIR)/src/jdk.accessibility/windows/native
+  ACCESSIBILITY_SRCDIR := $(TOPDIR)/src/jdk.accessibility/windows/native
 
   define SetupJavaDLL
     # Parameter 1 Suffix
@@ -52,7 +52,7 @@ ifeq ($(call isTargetOs, windows), true)
             winspool.lib comdlg32.lib advapi32.lib shell32.lib \
             $(SUPPORT_OUTPUTDIR)/native/java.desktop/libjawt/jawt.lib \
             ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib, \
-        VERSIONINFO_RESOURCE := $(ROOT_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
+        VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
     )
 
     $$(BUILD_JAVAACCESSBRIDGE$1): $(call FindStaticLib, java.desktop, jawt, /libjawt)
@@ -75,11 +75,11 @@ ifeq ($(call isTargetOs, windows), true)
             include/bridge \
             java.base:include, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
-            -def:$(ROOT_SRCDIR)/libwindowsaccessbridge/WinAccessBridge.DEF, \
+            -def:$(ACCESSIBILITY_SRCDIR)/libwindowsaccessbridge/WinAccessBridge.DEF, \
         LIBS := kernel32.lib user32.lib gdi32.lib \
             winspool.lib comdlg32.lib advapi32.lib shell32.lib \
             ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib, \
-        VERSIONINFO_RESOURCE := $(ROOT_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
+        VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
     )
 
     TARGETS += $$(BUILD_WINDOWSACCESSBRIDGE$1)
@@ -93,7 +93,7 @@ ifeq ($(call isTargetOs, windows), true)
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB), \
         LDFLAGS := $(LDFLAGS_JDKLIB), \
-        VERSIONINFO_RESOURCE := $(ROOT_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
+        VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
     )
 
     TARGETS += $$(BUILD_ACCESSBRIDGESYSINFO)

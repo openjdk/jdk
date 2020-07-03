@@ -431,7 +431,9 @@ void before_exit(JavaThread* thread) {
   }
 
 #if INCLUDE_JVMCI
-  JVMCI::shutdown();
+  if (EnableJVMCI) {
+    JVMCI::shutdown();
+  }
 #endif
 
   // Hang forever on exit if we're reporting an error.

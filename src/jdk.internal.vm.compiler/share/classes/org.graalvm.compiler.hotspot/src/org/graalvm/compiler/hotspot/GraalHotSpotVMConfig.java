@@ -886,6 +886,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
     public final int OSR_ENTRY = getConstant("CodeInstaller::OSR_ENTRY", Integer.class);
     public final int EXCEPTION_HANDLER_ENTRY = getConstant("CodeInstaller::EXCEPTION_HANDLER_ENTRY", Integer.class);
     public final int DEOPT_HANDLER_ENTRY = getConstant("CodeInstaller::DEOPT_HANDLER_ENTRY", Integer.class);
+    public final int DEOPT_MH_HANDLER_ENTRY = getConstant("CodeInstaller::DEOPT_MH_HANDLER_ENTRY", Integer.class, -1, (JVMCI ? jvmciGE(JVMCI_20_2_b01) : false));
     public final int FRAME_COMPLETE = getConstant("CodeInstaller::FRAME_COMPLETE", Integer.class, -1, (JVMCI ? jvmciGE(JVMCI_20_1_b01) : JDK_8245443));
     public final int INVOKEINTERFACE = getConstant("CodeInstaller::INVOKEINTERFACE", Integer.class);
     public final int INVOKEVIRTUAL = getConstant("CodeInstaller::INVOKEVIRTUAL", Integer.class);
@@ -899,6 +900,10 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
     public final int CARD_TABLE_SHIFT = getConstant("CodeInstaller::CARD_TABLE_SHIFT", Integer.class);
     public final int CARD_TABLE_ADDRESS = getConstant("CodeInstaller::CARD_TABLE_ADDRESS", Integer.class);
     public final int INVOKE_INVALID = getConstant("CodeInstaller::INVOKE_INVALID", Integer.class);
+    public final int VMINTRINSIC_FIRST_MH_SIG_POLY = getConstant("vmIntrinsics::FIRST_MH_SIG_POLY", Integer.class, -1, (JVMCI ? jvmciGE(JVMCI_20_2_b01) : false));
+    public final int VMINTRINSIC_LAST_MH_SIG_POLY = getConstant("vmIntrinsics::LAST_MH_SIG_POLY", Integer.class, -1, (JVMCI ? jvmciGE(JVMCI_20_2_b01) : false));
+    public final int VMINTRINSIC_INVOKE_GENERIC = getConstant("vmIntrinsics::_invokeGeneric", Integer.class, -1, (JVMCI ? jvmciGE(JVMCI_20_2_b01) : false));
+    public final int VMINTRINSIC_COMPILED_LAMBDA_FORM = getConstant("vmIntrinsics::_compiledLambdaForm", Integer.class, -1, (JVMCI ? jvmciGE(JVMCI_20_2_b01) : false));
 
     public final boolean CPU_HAS_INTEL_JCC_ERRATUM = getFieldValue("VM_Version::_has_intel_jcc_erratum", Boolean.class, "bool",
                     true, "amd64".equals(osArch) && (JVMCI ? jvmciGE(JVMCI_20_1_b01) : JDK >= 15));
@@ -926,4 +931,17 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
         assert checkNullAllocationStubs();
         return true;
     }
+
+    public boolean isMethodHandleCall(HotSpotResolvedJavaMethod targetMethod) {
+        int intrinsicId = targetMethod.intrinsicId();
+        return ((intrinsicId >= VMINTRINSIC_FIRST_MH_SIG_POLY && intrinsicId <= VMINTRINSIC_LAST_MH_SIG_POLY) // MethodHandles::is_signature_polymorphic
+                        && intrinsicId != VMINTRINSIC_INVOKE_GENERIC) // MethodHandles::is_signature_polymorphic_intrinsic
+                        || intrinsicId == VMINTRINSIC_COMPILED_LAMBDA_FORM; // ciMethod::is_compiled_lambda_form
+    }
+
+    public boolean supportsMethodHandleDeoptimizationEntry() {
+        return DEOPT_MH_HANDLER_ENTRY != -1 && VMINTRINSIC_FIRST_MH_SIG_POLY != -1 && VMINTRINSIC_LAST_MH_SIG_POLY != -1 && VMINTRINSIC_INVOKE_GENERIC != -1 &&
+                        VMINTRINSIC_COMPILED_LAMBDA_FORM != -1;
+    }
+
 }

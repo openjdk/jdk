@@ -235,7 +235,7 @@ public class StubAVXTest extends LIRTest {
     @Test
     public void test() {
         HotSpotProviders providers = (HotSpotProviders) getProviders();
-        HotSpotForeignCallsProviderImpl foreignCalls = (HotSpotForeignCallsProviderImpl) providers.getForeignCalls();
+        HotSpotForeignCallsProviderImpl foreignCalls = providers.getForeignCalls();
         HotSpotForeignCallLinkage linkage = foreignCalls.registerStubCall(TEST_STUB, HotSpotForeignCallDescriptor.Transition.LEAF_NO_VZERO,
                         HotSpotForeignCallDescriptor.Reexecutability.REEXECUTABLE,
                         COMPUTES_REGISTERS_KILLED);

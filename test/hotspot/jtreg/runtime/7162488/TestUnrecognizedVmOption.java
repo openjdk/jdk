@@ -35,8 +35,8 @@ public class TestUnrecognizedVmOption {
     static final String OPTION="this_is_not_an_option";
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb =
-            ProcessTools.createTestJvm("-showversion", "-XX:" + OPTION);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-showversion", "-XX:" + OPTION);
         new OutputAnalyzer(pb.start())
             .shouldNotHaveExitValue(0)
             .shouldContain("Unrecognized VM option")
