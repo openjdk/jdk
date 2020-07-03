@@ -483,7 +483,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     if test "x`basename [$]$1`" = "x[$]$1"; then
       # A command without a complete path is provided, search $PATH.
 
-      UTIL_PATH_PROGS(POTENTIAL_$1, [$]$1)
+      UTIL_LOOKUP_PROGS(POTENTIAL_$1, [$]$1)
       if test "x$POTENTIAL_$1" != x; then
         $1=$POTENTIAL_$1
       else
@@ -653,7 +653,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # In the Microsoft toolchain we have a separate LD command "link".
-    UTIL_PATH_PROGS(LD, link)
+    UTIL_LOOKUP_PROGS(LD, link)
     UTIL_FIXUP_EXECUTABLE(LD)
 
     # Make sure we did not pick up /usr/bin/link, which is the unix-style
@@ -700,7 +700,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
     AS="$CC -c"
   else
-    UTIL_PATH_PROGS(AS, ml)
+    UTIL_LOOKUP_PROGS(AS, ml)
     UTIL_FIXUP_EXECUTABLE(AS)
   fi
   AC_SUBST(AS)
@@ -724,7 +724,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
 AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
 [
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    UTIL_PATH_PROGS(LIPO, lipo)
+    UTIL_LOOKUP_PROGS(LIPO, lipo)
     UTIL_FIXUP_EXECUTABLE(LIPO)
     UTIL_REQUIRE_PROGS(OTOOL, otool)
     UTIL_FIXUP_EXECUTABLE(OTOOL)
@@ -733,14 +733,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    UTIL_PATH_PROGS(MT, mt)
+    UTIL_LOOKUP_PROGS(MT, mt)
     UTIL_FIXUP_EXECUTABLE(MT)
 
     # Setup the resource compiler (RC)
-    UTIL_PATH_PROGS(RC, rc)
+    UTIL_LOOKUP_PROGS(RC, rc)
     UTIL_FIXUP_EXECUTABLE(RC)
 
-    UTIL_PATH_PROGS(DUMPBIN, dumpbin)
+    UTIL_LOOKUP_PROGS(DUMPBIN, dumpbin)
     UTIL_FIXUP_EXECUTABLE(DUMPBIN)
   fi
 
@@ -842,13 +842,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     UTIL_FIXUP_EXECUTABLE(BUILD_CC)
     UTIL_REQUIRE_PROGS(BUILD_CXX, [cl CC g++])
     UTIL_FIXUP_EXECUTABLE(BUILD_CXX)
-    UTIL_PATH_PROGS(BUILD_NM, nm gcc-nm)
+    UTIL_LOOKUP_PROGS(BUILD_NM, nm gcc-nm)
     UTIL_FIXUP_EXECUTABLE(BUILD_NM)
-    UTIL_PATH_PROGS(BUILD_AR, ar gcc-ar)
+    UTIL_LOOKUP_PROGS(BUILD_AR, ar gcc-ar)
     UTIL_FIXUP_EXECUTABLE(BUILD_AR)
-    UTIL_PATH_PROGS(BUILD_OBJCOPY, objcopy)
+    UTIL_LOOKUP_PROGS(BUILD_OBJCOPY, objcopy)
     UTIL_FIXUP_EXECUTABLE(BUILD_OBJCOPY)
-    UTIL_PATH_PROGS(BUILD_STRIP, strip)
+    UTIL_LOOKUP_PROGS(BUILD_STRIP, strip)
     UTIL_FIXUP_EXECUTABLE(BUILD_STRIP)
     # Assume the C compiler is the assembler
     BUILD_AS="$BUILD_CC -c"
@@ -987,7 +987,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
     if test "x$JT_HOME" = x; then
       # JT_HOME is not set in environment, or was deemed invalid.
       # Try to find jtreg on path
-      UTIL_PATH_PROGS(JTREGEXE, jtreg)
+      UTIL_LOOKUP_PROGS(JTREGEXE, jtreg)
       if test "x$JTREGEXE" != x; then
         # That's good, now try to derive JT_HOME
         JT_HOME=`(cd $($DIRNAME $JTREGEXE)/.. && pwd)`

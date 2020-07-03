@@ -559,7 +559,7 @@ AC_DEFUN([UTIL_SETUP_TOOL],
 # $1: variable to set
 # $2: executable name (or list of names) to look for
 # $3: [path]
-AC_DEFUN([UTIL_PATH_PROGS],
+AC_DEFUN([UTIL_LOOKUP_PROGS],
 [
   if test "x$OPENJDK_BUILD_OS" = xwindows; then
     all_names=$(for i in $2; do echo ${i}.exe $i; done)
@@ -590,13 +590,13 @@ AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
 ])
 
 ###############################################################################
-# Like UTIL_PATH_PROGS but fails if no tool was found.
+# Like UTIL_LOOKUP_PROGS but fails if no tool was found.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
 # $3: [path]
 AC_DEFUN([UTIL_REQUIRE_PROGS],
 [
-  UTIL_PATH_PROGS($1, $2, , $3)
+  UTIL_LOOKUP_PROGS($1, $2, , $3)
   UTIL_CHECK_NONEMPTY($1)
 ])
 

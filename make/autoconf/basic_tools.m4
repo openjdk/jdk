@@ -90,14 +90,14 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   THEPWDCMD=pwd
 
   # These are not required on all platforms
-  UTIL_PATH_PROGS(PATHTOOL, cygpath wslpath)
-  UTIL_PATH_PROGS(LDD, ldd)
-  UTIL_PATH_PROGS(DF, df)
-  UTIL_PATH_PROGS(CPIO, [cpio bsdcpio])
-  UTIL_PATH_PROGS(NICE, nice)
+  UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
+  UTIL_LOOKUP_PROGS(LDD, ldd)
+  UTIL_LOOKUP_PROGS(DF, df)
+  UTIL_LOOKUP_PROGS(CPIO, [cpio bsdcpio])
+  UTIL_LOOKUP_PROGS(NICE, nice)
 
-  UTIL_PATH_PROGS(LSB_RELEASE, lsb_release)
-  UTIL_PATH_PROGS(CMD, cmd.exe, $PATH /cygdrive/c/windows/system32 /mnt/c/windows/system32 /c/windows/system32)
+  UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
+  UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH /cygdrive/c/windows/system32 /mnt/c/windows/system32 /c/windows/system32)
 ])
 
 ###############################################################################
@@ -190,11 +190,11 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
   UTIL_SETUP_TOOL([MAKE],
   [
     # Try our hardest to locate a correct version of GNU make
-    UTIL_PATH_PROGS(CHECK_GMAKE, gmake)
+    UTIL_LOOKUP_PROGS(CHECK_GMAKE, gmake)
     BASIC_CHECK_MAKE_VERSION("$CHECK_GMAKE", [gmake in PATH])
 
     if test "x$FOUND_MAKE" = x; then
-      UTIL_PATH_PROGS(CHECK_MAKE, make)
+      UTIL_LOOKUP_PROGS(CHECK_MAKE, make)
       BASIC_CHECK_MAKE_VERSION("$CHECK_MAKE", [make in PATH])
     fi
 
@@ -203,10 +203,10 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
         # We have a toolchain path, check that as well before giving up.
         OLD_PATH=$PATH
         PATH=$TOOLCHAIN_PATH:$PATH
-        UTIL_PATH_PROGS(CHECK_TOOLSDIR_GMAKE, gmake)
+        UTIL_LOOKUP_PROGS(CHECK_TOOLSDIR_GMAKE, gmake)
         BASIC_CHECK_MAKE_VERSION("$CHECK_TOOLSDIR_GMAKE", [gmake in tools-dir])
         if test "x$FOUND_MAKE" = x; then
-          UTIL_PATH_PROGS(CHECK_TOOLSDIR_MAKE, make)
+          UTIL_LOOKUP_PROGS(CHECK_TOOLSDIR_MAKE, make)
           BASIC_CHECK_MAKE_VERSION("$CHECK_TOOLSDIR_MAKE", [make in tools-dir])
         fi
         PATH=$OLD_PATH
@@ -336,17 +336,17 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 
   # Non-required basic tools
 
-  UTIL_PATH_PROGS(READELF, [greadelf readelf])
-  UTIL_PATH_PROGS(DOT, dot)
-  UTIL_PATH_PROGS(HG, hg)
-  UTIL_PATH_PROGS(GIT, git)
-  UTIL_PATH_PROGS(STAT, stat)
-  UTIL_PATH_PROGS(TIME, time)
-  UTIL_PATH_PROGS(FLOCK, flock)
+  UTIL_LOOKUP_PROGS(READELF, [greadelf readelf])
+  UTIL_LOOKUP_PROGS(DOT, dot)
+  UTIL_LOOKUP_PROGS(HG, hg)
+  UTIL_LOOKUP_PROGS(GIT, git)
+  UTIL_LOOKUP_PROGS(STAT, stat)
+  UTIL_LOOKUP_PROGS(TIME, time)
+  UTIL_LOOKUP_PROGS(FLOCK, flock)
   # Dtrace is usually found in /usr/sbin, but that directory may not
   # be in the user path.
-  UTIL_PATH_PROGS(DTRACE, dtrace, $PATH:/usr/sbin)
-  UTIL_PATH_PROGS(PATCH, [gpatch patch])
+  UTIL_LOOKUP_PROGS(DTRACE, dtrace, $PATH:/usr/sbin)
+  UTIL_LOOKUP_PROGS(PATCH, [gpatch patch])
   # Check if it's GNU time
   IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
   if test "x$IS_GNU_TIME" != x; then
@@ -360,7 +360,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
     UTIL_REQUIRE_PROGS(DSYMUTIL, dsymutil)
     UTIL_REQUIRE_PROGS(MIG, mig)
     UTIL_REQUIRE_PROGS(XATTR, xattr)
-    UTIL_PATH_PROGS(CODESIGN, codesign)
+    UTIL_LOOKUP_PROGS(CODESIGN, codesign)
 
     if test "x$CODESIGN" != "x"; then
       # Check for user provided code signing identity.
@@ -447,7 +447,7 @@ AC_DEFUN_ONCE([BASIC_CHECK_BASH_OPTIONS],
 #
 AC_DEFUN_ONCE([BASIC_SETUP_PANDOC],
 [
-  UTIL_PATH_PROGS(PANDOC, pandoc)
+  UTIL_LOOKUP_PROGS(PANDOC, pandoc)
   UTIL_FIXUP_EXECUTABLE(PANDOC)
 
   PANDOC_MARKDOWN_FLAG="markdown"
