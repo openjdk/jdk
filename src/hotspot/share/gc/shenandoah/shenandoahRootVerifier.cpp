@@ -138,7 +138,7 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
   // dangling reference from the thread root.
-  Threads::possibly_parallel_oops_do(false, oops, &blobs);
+  Threads::possibly_parallel_oops_do(true, oops, &blobs);
 }
 
 void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
@@ -159,7 +159,7 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
   // dangling reference from the thread root.
-  Threads::possibly_parallel_oops_do(false, oops, &blobs);
+  Threads::possibly_parallel_oops_do(true, oops, &blobs);
 }
 
 void ShenandoahRootVerifier::serial_weak_roots_do(OopClosure* cl) {
