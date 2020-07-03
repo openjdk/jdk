@@ -131,7 +131,7 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
     if test $? -eq 0; then
       RESULT=unix
     else
-      RESULT=linux
+      RESULT=windows
     fi
 
 ])
