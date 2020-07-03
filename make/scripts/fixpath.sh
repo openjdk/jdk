@@ -24,9 +24,6 @@
 # questions.
 #
 
-# FIXME: hack for WSL
-PATH=$PATH:/usr/bin:/bin
-
 setup() {
   if [[ $PATHTOOL == "" ]]; then
     PATHTOOL="$(type -p cygpath)"
