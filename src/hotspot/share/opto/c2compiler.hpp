@@ -43,6 +43,7 @@ public:
   void compile_method(ciEnv* env,
                       ciMethod* target,
                       int entry_bci,
+                      bool install_code,
                       DirectiveSet* directive);
 
   // sentinel value used to trigger backtracking in compile_method().

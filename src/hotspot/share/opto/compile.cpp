@@ -499,12 +499,13 @@ debug_only( int Compile::_debug_idx = 100000; )
 
 
 Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
-                  bool subsume_loads, bool do_escape_analysis, bool eliminate_boxing, DirectiveSet* directive)
+                  bool subsume_loads, bool do_escape_analysis, bool eliminate_boxing, bool install_code, DirectiveSet* directive)
                 : Phase(Compiler),
                   _compile_id(ci_env->compile_id()),
                   _save_argument_registers(false),
                   _subsume_loads(subsume_loads),
                   _do_escape_analysis(do_escape_analysis),
+                  _install_code(install_code),
                   _eliminate_boxing(eliminate_boxing),
                   _method(target),
                   _entry_bci(osr_bci),
@@ -791,6 +792,7 @@ Compile::Compile( ciEnv* ci_env,
     _save_argument_registers(save_arg_registers),
     _subsume_loads(true),
     _do_escape_analysis(false),
+    _install_code(true),
     _eliminate_boxing(false),
     _method(NULL),
     _entry_bci(InvocationEntryBci),

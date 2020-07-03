@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,8 @@ public class FcFontManager extends SunFontManager {
          */
         if (info[0] == null) {
             if (fontConfigFonts != null && fontConfigFonts.length > 0 &&
-                fontConfigFonts[0].firstFont.fontFile != null) {
+                fontConfigFonts[0].firstFont.fontFile != null &&
+                fontConfigFonts[0].firstFont.fullName != null) {
                 info[0] = fontConfigFonts[0].firstFont.fullName;
                 info[1] = fontConfigFonts[0].firstFont.fontFile;
             } else {
