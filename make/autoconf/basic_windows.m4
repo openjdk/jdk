@@ -105,10 +105,12 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
     if test "x$LDD" = x; then
       AC_MSG_ERROR([ldd is missing, which is needed on cygwin])
     fi
+    WINENV_MARKER_DLL=cygwin1.dll
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
     if test "x$LDD" = x; then
       AC_MSG_ERROR([ldd is missing, which is needed on msys2])
     fi
+    WINENV_MARKER_DLL=msys-2.0.dll
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1" || test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
     AC_MSG_CHECKING([wsl distribution])
     WSL_DISTRIBUTION=`$LSB_RELEASE -d | sed 's/Description:\t//'`

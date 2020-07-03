@@ -122,25 +122,27 @@ AC_DEFUN([UTIL_FIXUP_PATH],
 # Returns "windows" or "unix" in $RESULT.
 AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
 [
-    # For cygwin and msys2, if it's linked with the correct helper lib, it
-    # accept unix paths
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-      $LDD $1 2>&1 | $GREP -q cygwin1.dll
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
-      $LDD $1 2>&1 | $GREP -q msys-2.0.dll
-    elif test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-      # On WSL, we can differentiate between ELF and PE files
-      $FILE $1 2>&1 | $GREP -q ELF
-    else
-      true
-    fi
-
+  # For cygwin and msys2, if it's linked with the correct helper lib, it
+  # accept unix paths
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin" || \
+      test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
+    $LDD $1 2>&1 | $GREP -q $WINENV_MARKER_DLL
     if test $? -eq 0; then
       RESULT=unix
     else
       RESULT=windows
     fi
-
+  elif test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+    # On WSL, we can check if it is a PE file
+    $FILE -b $1 2>&1 | $GREP -q "PE.*Windows"
+    if test $? -eq 0; then
+      RESULT=windows
+    else
+      RESULT=unix
+    fi
+  else
+    RESULT=unix
+  fi
 ])
 
 ###############################################################################
