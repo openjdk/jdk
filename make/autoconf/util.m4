@@ -554,6 +554,21 @@ AC_DEFUN([UTIL_SETUP_TOOL],
   fi
 ])
 
+
+###############################################################################
+# Call UTIL_SETUP_TOOL with AC_PATH_PROGS to locate the tool
+# $1: variable to set
+# $2: executable name (or list of names) to look for
+# $3: [path]
+AC_DEFUN([UTIL_LOOKUP_FUNDAMENTAL_PROGS],
+[
+  if test "x$OPENJDK_BUILD_OS" = xwindows; then
+    all_names=$(for i in $2; do echo ${i}.exe $i; done)
+  else
+    all_names="$2"
+  fi
+  UTIL_SETUP_TOOL($1, [AC_PATH_PROGS($1, $all_names, , $3)])
+])
 ###############################################################################
 # Call UTIL_SETUP_TOOL with AC_PATH_PROGS to locate the tool
 # $1: variable to set
@@ -566,7 +581,11 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
   else
     all_names="$2"
   fi
-  UTIL_SETUP_TOOL($1, [AC_PATH_PROGS($1, $all_names, , $3)])
+  UTIL_SETUP_TOOL($1, [AC_CHECK_PROGS($1, $all_names, , $3)])
+  # Expand the path afterwards
+  if test "x[$]$1" != x; then
+    UTIL_FIXUP_EXECUTABLE($1)
+  fi
 ])
 
 ###############################################################################
@@ -581,9 +600,8 @@ AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
   else
     all_names="$2"
   fi
-  # Unfortunately, there is no AC_PATH_TOOLS. :(
   UTIL_SETUP_TOOL($1, [AC_CHECK_TOOLS($1, $all_names)])
-  # So instead we expand the path afterwards
+  # Expand the path afterwards
   if test "x[$]$1" != x; then
     UTIL_FIXUP_EXECUTABLE($1)
   fi
@@ -599,6 +617,19 @@ AC_DEFUN([UTIL_REQUIRE_PROGS],
   UTIL_LOOKUP_PROGS($1, $2, , $3)
   UTIL_CHECK_NONEMPTY($1)
 ])
+
+###############################################################################
+# Like UTIL_LOOKUP_PROGS but fails if no tool was found.
+# $1: variable to set
+# $2: executable name (or list of names) to look for
+# $3: [path]
+AC_DEFUN([UTIL_REQUIRE_FUNTAMENTAL_PROGS],
+[
+  UTIL_LOOKUP_FUNDAMENTAL_PROGS($1, $2, , $3)
+  UTIL_CHECK_NONEMPTY($1)
+])
+
+
 
 ###############################################################################
 # Like UTIL_SETUP_TOOL but fails if no tool was found.

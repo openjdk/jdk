@@ -652,8 +652,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # In the Microsoft toolchain we have a separate LD command "link".
-    UTIL_LOOKUP_PROGS(LD, link)
-    UTIL_FIXUP_EXECUTABLE(LD)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(LD, link)
 
     # Make sure we did not pick up /usr/bin/link, which is the unix-style
     # link executable.
@@ -699,8 +698,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
     AS="$CC -c"
   else
-    UTIL_LOOKUP_PROGS(AS, ml)
-    UTIL_FIXUP_EXECUTABLE(AS)
+    # On windows, the assember is "ml.exe"
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml)
   fi
   AC_SUBST(AS)
 
@@ -732,15 +731,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    UTIL_LOOKUP_PROGS(MT, mt)
-    UTIL_FIXUP_EXECUTABLE(MT)
-
+    # Setup the manifest tool (MT)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(MT, mt)
     # Setup the resource compiler (RC)
-    UTIL_LOOKUP_PROGS(RC, rc)
-    UTIL_FIXUP_EXECUTABLE(RC)
-
-    UTIL_LOOKUP_PROGS(DUMPBIN, dumpbin)
-    UTIL_FIXUP_EXECUTABLE(DUMPBIN)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(RC, rc)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(DUMPBIN, dumpbin)
   fi
 
   if test "x$OPENJDK_TARGET_OS" != xwindows; then
