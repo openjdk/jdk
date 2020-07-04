@@ -178,8 +178,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
       prefix=""
     fi ]
     path="${line%% *}"
-    tmp="$line EOL"
-    arguments="${tmp#* }"
+    arguments="${line#$path}"
 
     [ if ! [[ "$path" =~ /|\\ ]]; then ]
       command_type=`type -t "$path"`
@@ -219,7 +218,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
             AC_MSG_ERROR([Cannot locate $input])
           fi
           # It worked, clear all "arguments"
-          arguments="EOL"
+          arguments=""
         fi
       else # on unix
         # Make absolute
@@ -260,13 +259,9 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
     fi
 
     # Now join together the path and the arguments once again
-    if test "x$arguments" != xEOL; then
-      new_complete="$prefix$new_path ${arguments% *}"
-    else
-      new_complete="$prefix$new_path"
-    fi
+    new_complete="$prefix$new_path$arguments"
+    $1="$new_complete"
     if test "x$input" != "x$new_complete"; then
-      $1="$new_complete"
 # FIXME: remove this.
       AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
     fi
