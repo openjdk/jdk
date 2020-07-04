@@ -261,10 +261,6 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
     # Now join together the path and the arguments once again
     new_complete="$prefix$new_path$arguments"
     $1="$new_complete"
-    if test "x$input" != "x$new_complete"; then
-# FIXME: remove this.
-      AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
-    fi
   fi
 ])
 
@@ -386,19 +382,16 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
             continue
           fi
           full_path="$elem/$name"
-          if test -e $full_path; then
-            $1="$full_path"
-            AC_MSG_RESULT($full_path)
-            break 2;
-          fi
-          if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+          if test ! -e $full_path && test "x$OPENJDK_BUILD_OS" = "xwindows"; then
             # Try again with .exe
             full_path="$elem/$name.exe"
-            if test -e $full_path; then
-              $1="$full_path"
-              AC_MSG_RESULT($full_path)
-              break 2;
-            fi
+          fi
+          if test -e $full_path; then
+            $1="$full_path"
+            UTIL_FIXUP_EXECUTABLE($1, $3)
+            result="[$]$1"
+            AC_MSG_RESULT([$result])
+            break 2;
           fi
         done
         IFS="$old_ifs"
@@ -410,11 +403,6 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
       PATH="$old_path"
     fi
   ])
-
-  # Fixup the path afterwards
-  if test "x[$]$1" != x; then
-    UTIL_FIXUP_EXECUTABLE($1, $3)
-  fi
 ])
 
 ###############################################################################
@@ -482,8 +470,9 @@ AC_DEFUN([UTIL_REQUIRE_SPECIAL],
 ])
 
 ###############################################################################
-# Add FIXPATH prefix to variable. Normally this is done by UTIL_FIXUP_EXECUTABLE
-# but in some circumstances this have to be done explicitly.
+# Add FIXPATH prefix to variable. Normally this is done by UTIL_LOOKUP_PROGS
+# or UTIL_FIXUP_EXECUTABLE, but in some circumstances this have to be done
+# explicitly, such as when the command in question does not exist yet.
 #
 # $1: variable to add fixpath to
 AC_DEFUN([UTIL_ADD_FIXPATH],

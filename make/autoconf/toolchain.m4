@@ -723,11 +723,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
 [
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     UTIL_LOOKUP_PROGS(LIPO, lipo)
-    UTIL_FIXUP_EXECUTABLE(LIPO)
     UTIL_REQUIRE_PROGS(OTOOL, otool)
-    UTIL_FIXUP_EXECUTABLE(OTOOL)
     UTIL_REQUIRE_PROGS(INSTALL_NAME_TOOL, install_name_tool)
-    UTIL_FIXUP_EXECUTABLE(INSTALL_NAME_TOOL)
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -832,17 +829,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     # If we do that, we can do this detection before POST_DETECTION, and still
     # find the build compilers in the tools dir, if needed.
     UTIL_REQUIRE_PROGS(BUILD_CC, [cl cc gcc])
-    UTIL_FIXUP_EXECUTABLE(BUILD_CC)
     UTIL_REQUIRE_PROGS(BUILD_CXX, [cl CC g++])
-    UTIL_FIXUP_EXECUTABLE(BUILD_CXX)
     UTIL_LOOKUP_PROGS(BUILD_NM, nm gcc-nm)
-    UTIL_FIXUP_EXECUTABLE(BUILD_NM)
     UTIL_LOOKUP_PROGS(BUILD_AR, ar gcc-ar)
-    UTIL_FIXUP_EXECUTABLE(BUILD_AR)
     UTIL_LOOKUP_PROGS(BUILD_OBJCOPY, objcopy)
-    UTIL_FIXUP_EXECUTABLE(BUILD_OBJCOPY)
     UTIL_LOOKUP_PROGS(BUILD_STRIP, strip)
-    UTIL_FIXUP_EXECUTABLE(BUILD_STRIP)
     # Assume the C compiler is the assembler
     BUILD_AS="$BUILD_CC -c"
     # Just like for the target compiler, use the compiler as linker
