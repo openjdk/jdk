@@ -660,7 +660,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     $LD --version > /dev/null
     if test $? -eq 0 ; then
       AC_MSG_RESULT([no])
-      AC_MSG_ERROR([This is the Cygwin link tool. Please check your PATH and rerun configure.])
+      AC_MSG_ERROR([This is the winenv link tool. Please check your PATH and rerun configure.])
     else
       AC_MSG_RESULT([yes])
     fi
