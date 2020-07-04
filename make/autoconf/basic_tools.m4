@@ -37,12 +37,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_CHECK_NONEMPTY(FILE)
   AC_PATH_PROGS(LDD, ldd)
 
-CPP="/usr/bin/clang -E"
-UTIL_FIXUP_EXECUTABLE(CPP)
-echo now CPP is $CPP
-exit 0
-
-
   # First are all the fundamental required tools.
   UTIL_REQUIRE_PROGS(BASH, bash)
   UTIL_REQUIRE_PROGS(CAT, cat)
