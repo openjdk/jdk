@@ -133,7 +133,7 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   UTIL_FIXUP_PATH(FIXPATH_DIR)
 
   # Now that we can, use fixed-up path to rewrite path to fixpath.sh properly
-  FIXPATH_ARGS="-e \"$PATHTOOL\" -p \"$WINENV_PREFIX\" -r \"$WINENV_PREFIX\"  -t \"$WINENV_TEMP_DIR\" -c \"$CMD\""
+  FIXPATH_ARGS="-e $PATHTOOL -p $WINENV_PREFIX -r ${WINENV_ROOT/\\/\\\\}  -t $WINENV_TEMP_DIR -c $CMD"
   FIXPATH_BASE="$BASH $FIXPATH_DIR/fixpath.sh $FIXPATH_ARGS"
   FIXPATH="$FIXPATH_BASE exec"
   AC_SUBST(FIXPATH)

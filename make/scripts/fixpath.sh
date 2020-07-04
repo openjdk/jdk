@@ -39,8 +39,6 @@ function setup() {
     esac
   done
 
-  echo ENVROOT is $ENVROOT
-
   shift $((OPTIND-1))
   ACTION="$1"
 
@@ -87,7 +85,6 @@ function setup() {
 TEMPDIRS=""
 trap "cleanup" EXIT
 function cleanup() {
-  echo AT CLEANUP
   if [[ "$TEMPDIRS" != "" ]]; then
     rm -rf $TEMPDIRS
   fi
