@@ -116,7 +116,7 @@ function import_path() {
     dirpart="$(cd "$dirpart" 2>&1 > /dev/null && pwd)"
     if [[ $? -ne 0 ]]; then
       if [[ $QUIET != true ]]; then
-        echo fixpath: failure: Directory containing path "'"$path"'" does not exist 1>&2
+        echo fixpath: failure: Directory containing path "'"$path"'" does not exist >&2
       fi
       exit 1
     fi
@@ -158,7 +158,7 @@ function import_path() {
         path="$path.exe"
       else
         if [[ $QUIET != true ]]; then
-          echo fixpath: failure: Path "'"$path"'" does not exist 1>&2
+          echo fixpath: failure: Path "'"$path"'" does not exist >&2
         fi
         exit 1
       fi
@@ -169,7 +169,7 @@ function import_path() {
     # Our conversion attempts failed. Perhaps the path did not exists, and thus
     # we could not convert it to short name.
     if [[ $QUIET != true ]]; then
-      echo fixpath: failure: Path "'"$path"'" contains space 1>&2
+      echo fixpath: failure: Path "'"$path"'" contains space >&2
     fi
     exit 1
   fi
@@ -222,7 +222,7 @@ function convert_pathlist() {
       pathmatch="${BASH_REMATCH[1]}"
       if [[ $ENVROOT == "" ]]; then
         if [[ $QUIET != true ]]; then
-          echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
+          echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path >&2
         fi
         exit 1
       fi
@@ -275,7 +275,7 @@ function convert_path() {
     suffix="${BASH_REMATCH[4]}"
     if [[ $ENVROOT == "" ]]; then
       if [[ $QUIET != true ]]; then
-        echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
+        echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path >&2
       fi
       exit 1
     fi
@@ -359,7 +359,7 @@ function exec_command_line() {
     # we prefer to take control.
     cd "$WINTEMP"
     if [[ $QUIET != true ]]; then
-      echo fixpath: warning: Changing directory to $WINTEMP 1>&2
+      echo fixpath: warning: Changing directory to $WINTEMP >&2
     fi
   fi
 
@@ -395,7 +395,7 @@ function exec_command_line() {
 
   # Now execute it
   if [[ -v DEBUG_FIXPATH ]]; then
-    echo fixpath: debug: "$command" "${collected_args[@]}" 1>&2
+    echo fixpath: debug: "$command" "${collected_args[@]}" >&2
   fi
 
   if [[ $ENVROOT != "" || ! -x /bin/grep ]]; then
@@ -440,8 +440,8 @@ elif [[ "$ACTION" == "verify" ]] ; then
   exit $?
 else
   if [[ $QUIET != true ]]; then
-    echo Unknown operation: "$ACTION" 1>&2
-    echo Supported operations: import print exec verify 1>&2
+    echo Unknown operation: "$ACTION" >&2
+    echo Supported operations: import print exec verify >&2
   fi
   exit 2
 fi
