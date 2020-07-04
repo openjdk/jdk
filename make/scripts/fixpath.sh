@@ -25,16 +25,17 @@
 #
 
 function setup() {
-  while getopts "e:p:r:t:c:" opt; do
+  while getopts "e:p:r:t:c:q" opt; do
     case "$opt" in
     e) PATHTOOL="$OPTARG" ;;
     p) DRIVEPREFIX="$OPTARG" ;;
     r) ENVROOT="$OPTARG" ;;
     t) WINTEMP="$OPTARG" ;;
     c) CMD="$OPTARG" ;;
+    q) QUIET=true ;;
     ?)
       # optargs found argument error
-      exit 1
+      exit 2
       ;;
     esac
   done
@@ -48,7 +49,9 @@ function setup() {
     if [[ $PATHTOOL == "" ]]; then
       PATHTOOL="$(type -p wslpath)"
       if [[ $PATHTOOL == "" ]]; then
-        echo fixpath: failure: Cannot locate cygpath or wslpath >&2
+        if [[ $QUIET != true ]]; then
+          echo fixpath: failure: Cannot locate cygpath or wslpath >&2
+        fi
         exit 2
       fi
     fi
@@ -92,6 +95,110 @@ function cleanup() {
   fi
 }
 
+# Import a single path
+# Result: imported path returned in $result
+function import_path() {
+  path="$1"
+  # Strip trailing and leading space
+  path="${path#"${path%%[![:space:]]*}"}"
+  path="${path%"${path##*[![:space:]]}"}"
+
+  if [[ $path =~ ^.:[/\\].*$ ]] || [[ "$path" =~ ^"$ENVROOT"\\.*$ ]] ; then
+    # We got a Windows path as input; use pathtool to convert to unix path
+    path="$($PATHTOOL -u "$path")"
+    # Path will now be absolute
+  else
+    # Make path absolute, and resolve embedded '..' in path
+    dirpart="$(dirname "$path")"
+    dirpart="$(cd "$dirpart" 2>&1 > /dev/null && pwd)"
+    if [[ $? -ne 0 ]]; then
+      if [[ $QUIET != true ]]; then
+        echo fixpath: failure: Directory containing path "'"$path"'" does not exist 1>&2
+      fi
+      exit 1
+    fi
+    basepart="$(basename "$path")"
+    if [[ $dirpart == / ]]; then
+      # Avoid double leading /
+      dirpart=""
+    fi
+    if [[ $basepart == / ]]; then
+      # Avoid trailing /
+      basepart=""
+    fi
+    path="$dirpart/$basepart"
+  fi
+
+  # Now turn it into a windows path
+  winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
+
+  if [[ $? -eq 0 ]]; then
+    if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
+      # If it is not in envroot, it's a generic windows path
+      if [[ ! $winpath =~ ^[-_.:\\a-zA-Z0-9]*$ ]] ; then
+        # Path has forbidden characters, rewrite as short name
+        # This monster of a command uses the %~s support from cmd.exe to
+        # reliably convert to short paths on all winenvs.
+        shortpath="$($CMD /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
+        path="$($PATHTOOL -u "$shortpath")"
+        # Path is now unix style, based on short name
+      fi
+      # Make it lower case
+      path="$(echo "$path" | tr [:upper:] [:lower:])"
+    fi
+  else
+    # On WSL1, PATHTOOL will fail for files in envroot. If the unix path
+    # exists, we assume that $path is a valid unix path.
+
+    if [[ ! -e $path ]]; then
+      if [[ -e $path.exe ]]; then
+        path="$path.exe"
+      else
+        if [[ $QUIET != true ]]; then
+          echo fixpath: failure: Path "'"$path"'" does not exist 1>&2
+        fi
+        exit 1
+      fi
+    fi
+  fi
+
+  if [[ "$path" =~ " " ]]; then
+    # Our conversion attempts failed. Perhaps the path did not exists, and thus
+    # we could not convert it to short name.
+    if [[ $QUIET != true ]]; then
+      echo fixpath: failure: Path "'"$path"'" contains space 1>&2
+    fi
+    exit 1
+  fi
+
+  result="$path"
+}
+
+# Import a single path, or a pathlist in Windows style (i.e. ; separated)
+# Incoming paths can be in Windows or unix style.
+# Returns in $result a converted path or path list
+function import_command_line() {
+  converted=""
+
+  old_ifs="$IFS"
+  IFS=";"
+  for arg in $1; do
+    if ! [[ $arg =~ ^" "+$ ]]; then
+      import_path "$arg"
+
+      if [[ "$converted" = "" ]]; then
+        converted="$result"
+      else
+        converted="$converted:$result"
+      fi
+    fi
+  done
+  IFS="$old_ifs"
+
+  result="$converted"
+}
+
+
 function convert_pathlist_to_win() {
     # If argument seems to be colon separated path list, and all elements
     # are possible to convert to paths, make a windows path list
@@ -111,7 +218,9 @@ function convert_pathlist_to_win() {
         # Does arg contain a potential unix path? Check for /foo/bar
         pathmatch="${BASH_REMATCH[1]}"
         if [[ $ENVROOT == "" ]]; then
-          echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
+          if [[ $QUIET != true ]]; then
+            echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
+          fi
           exit 1
         fi
         # If it was a converted path, change slash to backslash
@@ -162,7 +271,9 @@ function convert_to_win() {
     pathmatch="${BASH_REMATCH[2]}"
     suffix="${BASH_REMATCH[4]}"
     if [[ $ENVROOT == "" ]]; then
-      echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
+      if [[ $QUIET != true ]]; then
+        echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
+      fi
       exit 1
     fi
     # If it was a converted path, change slash to backslash
@@ -218,92 +329,8 @@ function convert_at_file() {
   fi
 }
 
-function import_to_unix() {
-  path="$1"
-  path="${path#"${path%%[![:space:]]*}"}"
-  path="${path%"${path##*[![:space:]]}"}"
 
-  if [[ $path =~ ^.:[/\\].*$ ]] || [[ "$path" =~ ^"$ENVROOT"\\.*$ ]] ; then
-    # We really don't want windows paths as input, but try to handle them anyway
-    path="$($PATHTOOL -u "$path")"
-    # Path will now be absolute
-  else
-    # Make path absolute, and resolve '..' in path
-    dirpart="$(dirname "$path")"
-    dirpart="$(cd "$dirpart" 2>&1 > /dev/null && pwd)"
-    if [[ $? -ne 0 ]]; then
-      echo fixpath: failure: Directory containing path "'"$path"'" does not exist 1>&2
-      exit 1
-    fi
-    basepart="$(basename "$path")"
-    if [[ $dirpart == / ]]; then
-      # Avoid double leading /
-      dirpart=""
-    fi
-    if [[ $basepart == / ]]; then
-      # Avoid trailing /
-      basepart=""
-    fi
-    path="$dirpart/$basepart"
-  fi
 
-  # Now turn it into a windows path
-  winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
-
-  if [[ $? -eq 0 ]]; then
-    if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
-      # If it is not in envroot, it's a generic windows path
-      if [[ ! $winpath =~ ^[-_.:\\a-zA-Z0-9]*$ ]] ; then
-        # Path has forbidden characters, rewrite as short name
-        shortpath="$($CMD /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
-        path="$($PATHTOOL -u "$shortpath")"
-        # Path is now unix style, based on short name
-      fi
-      # Make it lower case
-      path="$(echo "$path" | tr [:upper:] [:lower:])"
-    fi
-  else
-    # On WSL1, PATHTOOL will fail for files in envroot. If the unix path
-    # exists, we assume that $path is a valid unix path.
-
-    if [[ ! -e $path ]]; then
-      if [[ -e $path.exe ]]; then
-        path="$path.exe"
-      else
-        echo fixpath: failure: Path "'"$path"'" does not exist 1>&2
-        exit 1
-      fi
-    fi
-  fi
-
-  if [[ "$path" =~ " " ]]; then
-    echo fixpath: failure: Path "'"$path"'" contains space 1>&2
-    exit 1
-  fi
-
-  result="$path"
-}
-
-function import_pathlist() {
-  converted=""
-
-  old_ifs="$IFS"
-  IFS=";"
-  for arg in $1; do
-    if ! [[ $arg =~ ^" "+$ ]]; then
-      import_to_unix "$arg"
-
-      if [[ "$converted" = "" ]]; then
-        converted="$result"
-      else
-        converted="$converted:$result"
-      fi
-    fi
-  done
-  IFS="$old_ifs"
-
-  result="$converted"
-}
 
 function convert_command_line() {
   converted_args=""
@@ -326,7 +353,9 @@ function exec_command_line() {
     # a unix directory. WSL2 will do the same, and print a warning. In both cases,
     # we prefer to take control.
     cd $DRIVEPREFIX/c
-    echo fixpath: warning: Changing directory to $DRIVEPREFIX/c 1>&2
+    if [[ $QUIET != true ]]; then
+      echo fixpath: warning: Changing directory to $DRIVEPREFIX/c 1>&2
+    fi
   fi
   collected_args=()
   command=""
@@ -370,7 +399,7 @@ setup "$@"
 shift $((OPTIND))
 
 if [[ "$ACTION" == "import" ]] ; then
-  import_pathlist "$@"
+  import_command_line "$@"
   echo "$result"
 elif [[ "$ACTION" == "print" ]] ; then
   convert_command_line "$@"
@@ -383,6 +412,9 @@ elif [[ "$ACTION" == "verify" ]] ; then
   verify_conversion "$@"
   exit $?
 else
-  echo Unknown operation: "$ACTION" 1>&2
-  echo Supported operations: import print exec verify 1>&2
+  if [[ $QUIET != true ]]; then
+    echo Unknown operation: "$ACTION" 1>&2
+    echo Supported operations: import print exec verify 1>&2
+  fi
+  exit 2
 fi
