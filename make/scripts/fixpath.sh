@@ -24,8 +24,28 @@
 # questions.
 #
 
-setup() {
-  if [[ $PATHTOOL == "" ]]; then
+function setup() {
+  while getopts "e:p:r:t:c:" opt; do
+    case "$opt" in
+    e) PATHTOOL="$OPTARG" ;;
+    p) DRIVEPREFIX="$OPTARG" ;;
+    r) ENVROOT="$OPTARG" ;;
+    t) WINTEMP="$OPTARG" ;;
+    c) CMD="$OPTARG" ;;
+    ?)
+      # optargs found argument error
+      exit 1
+      ;;
+    esac
+  done
+
+  echo ENVROOT is $ENVROOT
+
+  shift $((OPTIND-1))
+  ACTION="$1"
+
+  # Locate variables ourself if not giving from caller
+  if [[ -z ${PATHTOOL+x} ]]; then
     PATHTOOL="$(type -p cygpath)"
     if [[ $PATHTOOL == "" ]]; then
       PATHTOOL="$(type -p wslpath)"
@@ -36,42 +56,44 @@ setup() {
     fi
   fi
 
-  if [[ $ENVROOT == "" ]]; then
+  if [[ -z ${DRIVEPREFIX+x} ]]; then
+    winroot="$($PATHTOOL -u c:/)"
+    DRIVEPREFIX="${winroot%/c/}"
+  fi
+
+  if [[ -z ${ENVROOT+x} ]]; then
     unixroot="$($PATHTOOL -w / 2> /dev/null)"
     # Remove trailing backslash
-    ENVROOT=${unixroot%\\}
+    ENVROOT="${unixroot%\\}"
   fi
 
-  if [[ $DRIVEPREFIX == "" ]]; then
-    winroot=$($PATHTOOL -u c:/)
-    DRIVEPREFIX=${winroot%/c/}
+  if [[ -z ${CMD+x} ]]; then
+    CMD="$DRIVEPREFIX/c/windows/system32/cmd.exe"
   fi
 
-  if [[ $CMD == "" ]]; then
-    CMD=$DRIVEPREFIX/c/windows/system32/cmd.exe
-  fi
-
-  if [[ $WINTEMP == "" ]]; then
+  if [[ -z ${WINTEMP+x} ]]; then
     wintemp_win="$($CMD /q /c echo %TEMP% 2>/dev/null | tr -d \\n\\r)"
     WINTEMP="$($PATHTOOL -u "$wintemp_win")"
   fi
+
+  # Make regexp tests case insensitive
+  shopt -s nocasematch
+  # Prohibit msys2 from meddling with paths
+  export MSYS2_ARG_CONV_EXCL="*"
+
 }
 
+# Cleanup handling
 TEMPDIRS=""
 trap "cleanup" EXIT
-
-# Make regexp tests case insensitive
-shopt -s nocasematch
-# Prohibit msys2 from meddling with paths
-export MSYS2_ARG_CONV_EXCL="*"
-
-cleanup() {
+function cleanup() {
+  echo AT CLEANUP
   if [[ "$TEMPDIRS" != "" ]]; then
     rm -rf $TEMPDIRS
   fi
 }
 
-cygwin_convert_pathlist_to_win() {
+function cygwin_convert_pathlist_to_win() {
     # If argument seems to be colon separated path list, and all elements
     # are possible to convert to paths, make a windows path list
     converted=""
@@ -116,7 +138,7 @@ cygwin_convert_pathlist_to_win() {
     return 0
 }
 
-cygwin_convert_to_win() {
+function cygwin_convert_to_win() {
   arg="$1"
   if [[ $arg =~ : ]]; then
     cygwin_convert_pathlist_to_win "$arg"
@@ -155,7 +177,7 @@ cygwin_convert_to_win() {
   result="$arg"
 }
 
-cygwin_verify_conversion() {
+function cygwin_verify_conversion() {
   arg="$1"
   if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     return 0
@@ -167,7 +189,7 @@ cygwin_verify_conversion() {
   return 1
 }
 
-cygwin_verify_current_dir() {
+function cygwin_verify_current_dir() {
   arg="$PWD"
   if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     return 0
@@ -180,7 +202,7 @@ cygwin_verify_current_dir() {
   return 1
 }
 
-cygwin_convert_at_file() {
+function cygwin_convert_at_file() {
   infile="$1"
   if [[ -e $infile ]] ; then
     tempdir=$(mktemp -dt fixpath.XXXXXX -p "$WINTEMP")
@@ -197,7 +219,7 @@ cygwin_convert_at_file() {
   fi
 }
 
-cygwin_import_to_unix() {
+function cygwin_import_to_unix() {
   path="$1"
   path="${path#"${path%%[![:space:]]*}"}"
   path="${path%"${path##*[![:space:]]}"}"
@@ -263,7 +285,7 @@ cygwin_import_to_unix() {
   result="$path"
 }
 
-cygwin_import_pathlist() {
+function cygwin_import_pathlist() {
   converted=""
 
   old_ifs="$IFS"
@@ -284,7 +306,7 @@ cygwin_import_pathlist() {
   result="$converted"
 }
 
-cygwin_convert_command_line() {
+function cygwin_convert_command_line() {
   converted_args=""
   for arg in "$@" ; do
     if [[ $arg =~ ^@(.*$) ]] ; then
@@ -298,7 +320,7 @@ cygwin_convert_command_line() {
   result="$converted_args"
 }
 
-cygwin_exec_command_line() {
+function cygwin_exec_command_line() {
   cygwin_verify_current_dir
   if [[ $? -ne 0 ]]; then
     # WSL1 will just forcefully put us in C:\Windows\System32 if we execute this from
@@ -345,26 +367,23 @@ cygwin_exec_command_line() {
 
 #### MAIN FUNCTION
 
-setup
+setup "$@"
+shift $((OPTIND))
 
-action="$1"
-shift
-
-if [[ "$action" == "print" ]] ; then
+if [[ "$ACTION" == "import" ]] ; then
+  cygwin_import_pathlist "$@"
+  echo "$result"
+elif [[ "$ACTION" == "print" ]] ; then
   cygwin_convert_command_line "$@"
   echo "$result"
-elif [[ "$action" == "verify" ]] ; then
-  orig="$1"
-  cygwin_verify_conversion "$orig"
-  exit $?
-elif [[ "$action" == "import" ]] ; then
-  orig="$1"
-  cygwin_import_pathlist "$orig"
-  echo "$result"
-elif [[ "$action" == "exec" ]] ; then
+elif [[ "$ACTION" == "exec" ]] ; then
   cygwin_exec_command_line "$@"
   # Propagate exit code
   exit $?
+elif [[ "$ACTION" == "verify" ]] ; then
+  cygwin_verify_conversion "$@"
+  exit $?
 else
-  echo Unknown operation: "$action"
+  echo Unknown operation: "$ACTION" 1>&2
+  echo Supported operations: import print exec verify 1>&2
 fi
