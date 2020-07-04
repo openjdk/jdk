@@ -397,5 +397,7 @@ AC_DEFUN_ONCE([BPERF_SETUP_JAVAC_SERVER],
       RESULT: ENABLE_JAVAC_SERVER,
       DESC: [enable javac server],
       CHECKING_MSG: [whether to use javac server])
+  # FIXME: hack - always override this
+  ENABLE_JAVAC_SERVER=false
   AC_SUBST(ENABLE_JAVAC_SERVER)
 ])
