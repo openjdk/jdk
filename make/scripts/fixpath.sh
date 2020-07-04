@@ -92,7 +92,7 @@ function cleanup() {
   fi
 }
 
-function cygwin_convert_pathlist_to_win() {
+function convert_pathlist_to_win() {
     # If argument seems to be colon separated path list, and all elements
     # are possible to convert to paths, make a windows path list
     converted=""
@@ -137,10 +137,10 @@ function cygwin_convert_pathlist_to_win() {
     return 0
 }
 
-function cygwin_convert_to_win() {
+function convert_to_win() {
   arg="$1"
   if [[ $arg =~ : ]]; then
-    cygwin_convert_pathlist_to_win "$arg"
+    convert_pathlist_to_win "$arg"
     if [[ $? -eq 0 ]]; then
       return 0
     fi
@@ -176,7 +176,7 @@ function cygwin_convert_to_win() {
   result="$arg"
 }
 
-function cygwin_verify_conversion() {
+function verify_conversion() {
   arg="$1"
   if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     return 0
@@ -188,7 +188,7 @@ function cygwin_verify_conversion() {
   return 1
 }
 
-function cygwin_verify_current_dir() {
+function verify_current_dir() {
   arg="$PWD"
   if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     return 0
@@ -201,24 +201,24 @@ function cygwin_verify_current_dir() {
   return 1
 }
 
-function cygwin_convert_at_file() {
+function convert_at_file() {
   infile="$1"
   if [[ -e $infile ]] ; then
     tempdir=$(mktemp -dt fixpath.XXXXXX -p "$WINTEMP")
     TEMPDIRS="$TEMPDIRS $tempdir"
 
     while read line; do
-      cygwin_convert_to_win "$line"
+      convert_to_win "$line"
       echo "$result" >> $tempdir/atfile
     done < $infile
-    cygwin_convert_to_win "$tempdir/atfile"
+    convert_to_win "$tempdir/atfile"
     result="@$result"
   else
     result="@$infile"
   fi
 }
 
-function cygwin_import_to_unix() {
+function import_to_unix() {
   path="$1"
   path="${path#"${path%%[![:space:]]*}"}"
   path="${path%"${path##*[![:space:]]}"}"
@@ -284,14 +284,14 @@ function cygwin_import_to_unix() {
   result="$path"
 }
 
-function cygwin_import_pathlist() {
+function import_pathlist() {
   converted=""
 
   old_ifs="$IFS"
   IFS=";"
   for arg in $1; do
     if ! [[ $arg =~ ^" "+$ ]]; then
-      cygwin_import_to_unix "$arg"
+      import_to_unix "$arg"
 
       if [[ "$converted" = "" ]]; then
         converted="$result"
@@ -305,13 +305,13 @@ function cygwin_import_pathlist() {
   result="$converted"
 }
 
-function cygwin_convert_command_line() {
+function convert_command_line() {
   converted_args=""
   for arg in "$@" ; do
     if [[ $arg =~ ^@(.*$) ]] ; then
-      cygwin_convert_at_file "${BASH_REMATCH[1]}"
+      convert_at_file "${BASH_REMATCH[1]}"
     else
-      cygwin_convert_to_win "$arg"
+      convert_to_win "$arg"
     fi
     converted_args="$converted_args$result "
   done
@@ -319,8 +319,8 @@ function cygwin_convert_command_line() {
   result="$converted_args"
 }
 
-function cygwin_exec_command_line() {
-  cygwin_verify_current_dir
+function exec_command_line() {
+  verify_current_dir
   if [[ $? -ne 0 ]]; then
     # WSL1 will just forcefully put us in C:\Windows\System32 if we execute this from
     # a unix directory. WSL2 will do the same, and print a warning. In both cases,
@@ -336,7 +336,7 @@ function cygwin_exec_command_line() {
         # It's a leading env variable assignment
         key="${BASH_REMATCH[1]}"
         arg="${BASH_REMATCH[2]}"
-        cygwin_convert_to_win "$arg"
+        convert_to_win "$arg"
         export $key="$result"
         export WSLENV=$WSLENV:$key/w
       else
@@ -345,9 +345,9 @@ function cygwin_exec_command_line() {
       fi
     else
       if [[ $arg =~ ^@(.*$) ]] ; then
-        cygwin_convert_at_file "${BASH_REMATCH[1]}"
+        convert_at_file "${BASH_REMATCH[1]}"
       else
-        cygwin_convert_to_win "$arg"
+        convert_to_win "$arg"
       fi
       collected_args=("${collected_args[@]}" "$result")
     fi
@@ -370,17 +370,17 @@ setup "$@"
 shift $((OPTIND))
 
 if [[ "$ACTION" == "import" ]] ; then
-  cygwin_import_pathlist "$@"
+  import_pathlist "$@"
   echo "$result"
 elif [[ "$ACTION" == "print" ]] ; then
-  cygwin_convert_command_line "$@"
+  convert_command_line "$@"
   echo "$result"
 elif [[ "$ACTION" == "exec" ]] ; then
-  cygwin_exec_command_line "$@"
+  exec_command_line "$@"
   # Propagate exit code
   exit $?
 elif [[ "$ACTION" == "verify" ]] ; then
-  cygwin_verify_conversion "$@"
+  verify_conversion "$@"
   exit $?
 else
   echo Unknown operation: "$ACTION" 1>&2
