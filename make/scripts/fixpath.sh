@@ -63,6 +63,8 @@ function setup() {
     unixroot="$($PATHTOOL -w / 2> /dev/null)"
     # Remove trailing backslash
     ENVROOT="${unixroot%\\}"
+  elif [[ "$ENVROOT" == "[unavailable]" ]]; then
+    ENVROOT=""
   fi
 
   if [[ -z ${CMD+x} ]]; then
@@ -354,11 +356,11 @@ function cygwin_exec_command_line() {
   if [[ -v DEBUG_FIXPATH ]]; then
     echo fixpath: debug: "$command" "${collected_args[@]}" 1>&2
   fi
-  if [[ $ENVROOT != "" ]]; then
+  if [[ $ENVROOT != "" || ! -x /bin/grep ]]; then
     "$command" "${collected_args[@]}"
   else
     # For WSL1, automatically strip away warnings from WSLENV=PATH/l
-    "$command" "${collected_args[@]}" 2> >(grep -v "ERROR: UtilTranslatePathList" 1>&2)
+    "$command" "${collected_args[@]}" 2> >(/bin/grep -v "ERROR: UtilTranslatePathList" 1>&2)
   fi
 }
 
