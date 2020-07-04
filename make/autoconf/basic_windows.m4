@@ -36,17 +36,17 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
     fi
   fi
 
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
+    # Must be done prior to calling any commands to avoid mangling of command line
+    export MSYS2_ARG_CONV_EXCL="*"
+  fi
+
   AC_MSG_CHECKING([Windows environment type])
   WINENV_VENDOR=${OPENJDK_BUILD_OS_ENV#windows.}
   AC_MSG_RESULT([$WINENV_VENDOR])
 
   if test "x$WINENV_VENDOR" = x; then
     AC_MSG_ERROR([Unknown Windows environment. Neither cygwin, msys2, wsl1 nor wsl2 was detected.])
-  fi
-
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
-    # Must be done prior to calling any commands to avoid mangling of command line
-    export MSYS2_ARG_CONV_EXCL="*"
   fi
 
   if test "x$PATHTOOL" = x; then
@@ -80,6 +80,7 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
     # Don't trust the current directory for WSL2, but change to an OK temp dir
     cd "$WINENV_TEMP_DIR"
+    # Bring along confdefs.h or autoconf gets all confused
     cp "$CONFIGURE_START_DIR/confdefs.h" "$WINENV_TEMP_DIR"
   fi
 

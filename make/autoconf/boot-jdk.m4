@@ -319,11 +319,11 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
     AC_MSG_ERROR([The path given by --with-boot-jdk does not contain a valid Boot JDK])
   fi
 
-  # Test: On MacOS X, can we find a boot jdk using /usr/libexec/java_home?
-  BOOTJDK_DO_CHECK([BOOTJDK_CHECK_MACOSX_JAVA_LOCATOR])
-
   # Test: Is $JAVA_HOME set?
   BOOTJDK_DO_CHECK([BOOTJDK_CHECK_JAVA_HOME])
+
+  # Test: On MacOS X, can we find a boot jdk using /usr/libexec/java_home?
+  BOOTJDK_DO_CHECK([BOOTJDK_CHECK_MACOSX_JAVA_LOCATOR])
 
   # Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
   BOOTJDK_DO_CHECK([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK])
