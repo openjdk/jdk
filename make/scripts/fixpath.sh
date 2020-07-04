@@ -178,7 +178,7 @@ function import_path() {
 # Incoming paths can be in Windows or unix style.
 # Returns in $result a converted path or path list
 function import_command_line() {
-  converted=""
+  imported=""
 
   old_ifs="$IFS"
   IFS=";"
@@ -186,87 +186,90 @@ function import_command_line() {
     if ! [[ $arg =~ ^" "+$ ]]; then
       import_path "$arg"
 
-      if [[ "$converted" = "" ]]; then
-        converted="$result"
+      if [[ "$imported" = "" ]]; then
+        imported="$result"
       else
-        converted="$converted:$result"
+        imported="$imported:$result"
       fi
     fi
   done
   IFS="$old_ifs"
 
-  result="$converted"
+  result="$imported"
 }
-
 
 function convert_pathlist_to_win() {
-    # If argument seems to be colon separated path list, and all elements
-    # are possible to convert to paths, make a windows path list
-    converted=""
-    old_ifs="$IFS"
-    IFS=":"
-    pathlist_args="$1"
-    IFS=':' read -r -a arg_array <<< "$pathlist_args"
-    for arg in "${arg_array[@]}"; do
-      mixedpath=""
-      if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
-        # Start looking for drive prefix
-        mixedpath="${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
-        # If it was a converted path, change slash to backslash
-        mixedpath="${mixedpath//'/'/'\'}"
-      elif [[ "$arg" =~ ^(/[-_.*a-zA-Z0-9]+(/[-_.*a-zA-Z0-9]+)+.*$) ]] ; then
-        # Does arg contain a potential unix path? Check for /foo/bar
-        pathmatch="${BASH_REMATCH[1]}"
-        if [[ $ENVROOT == "" ]]; then
-          if [[ $QUIET != true ]]; then
-            echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
-          fi
-          exit 1
+  # If argument seems to be colon separated path list, and all elements
+  # are possible to convert to paths, make a windows path list
+  converted=""
+  old_ifs="$IFS"
+  IFS=":"
+  pathlist_args="$1"
+  IFS=':' read -r -a arg_array <<< "$pathlist_args"
+  for arg in "${arg_array[@]}"; do
+    mixedpath=""
+    if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
+      # Start looking for drive prefix
+      mixedpath="${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
+      # If it was a converted path, change slash to backslash
+      mixedpath="${mixedpath//'/'/'\'}"
+    elif [[ "$arg" =~ ^(/[-_.*a-zA-Z0-9]+(/[-_.*a-zA-Z0-9]+)+.*$) ]] ; then
+      # Does arg contain a potential unix path? Check for /foo/bar
+      pathmatch="${BASH_REMATCH[1]}"
+      if [[ $ENVROOT == "" ]]; then
+        if [[ $QUIET != true ]]; then
+          echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path 1>&2
         fi
-        # If it was a converted path, change slash to backslash
-        mixedpath="${pathmatch//'/'/'\'}"
-        mixedpath="$ENVROOT$mixedpath"
-      else
-        result=""
-        return 1
+        exit 1
       fi
-      if [[ $mixedpath != "" ]]; then
-        arg="$mixedpath"
-      fi
+      # If it was a converted path, change slash to backslash
+      mixedpath="${pathmatch//'/'/'\'}"
+      mixedpath="$ENVROOT$mixedpath"
+    else
+      result=""
+      return 1
+    fi
+    if [[ $mixedpath != "" ]]; then
+      arg="$mixedpath"
+    fi
 
-      if [[ "$converted" = "" ]]; then
-        converted="$arg"
-      else
-        converted="$converted;$arg"
-      fi
-    done
-    IFS="$old_ifs"
+    if [[ "$converted" = "" ]]; then
+      converted="$arg"
+    else
+      converted="$converted;$arg"
+    fi
+  done
+  IFS="$old_ifs"
 
-    result="$converted"
-    return 0
+  result="$converted"
+  return 0
 }
 
-function convert_to_win() {
+
+# The central conversion function. Convert a single argument, so that any
+# contained paths are converted to Windows style paths. Result is returned
+# in $result.
+function convert_path() {
   arg="$1"
   if [[ $arg =~ : ]]; then
     convert_pathlist_to_win "$arg"
     if [[ $? -eq 0 ]]; then
       return 0
     fi
+    # Not all elements was possible to convert to Windows paths, so we
+    # presume it is not a pathlist. Continue using normal conversion.
+    arg="$1"
   fi
-  arg="$1"
 
-  # Arg did not contain ":", or not all elements was possible to convert to
-  # Windows paths, so it was not presumed to be a pathlist.
-  mixedpath=""
+  winpath=""
+  # Start looking for drive prefix
   if [[ $arg =~ (^[^/]*)($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
-    # Start looking for drive prefix
     prefix="${BASH_REMATCH[1]}"
-    mixedpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
-    # If it was a converted path, change slash to backslash
-    mixedpath="${mixedpath//'/'/'\'}"
+    winpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
+    # Change slash to backslash
+    winpath="${winpath//'/'/'\'}"
   elif [[ $arg =~ (^[^/]*)(/[-_.a-zA-Z0-9]+(/[-_.a-zA-Z0-9]+)+)(.*)?$ ]] ; then
-    # Does arg contain a potential unix path? Check for /foo/bar
+    # This looks like a unix path, like /foo/bar
     prefix="${BASH_REMATCH[1]}"
     pathmatch="${BASH_REMATCH[2]}"
     suffix="${BASH_REMATCH[4]}"
@@ -276,16 +279,57 @@ function convert_to_win() {
       fi
       exit 1
     fi
-    # If it was a converted path, change slash to backslash
-    mixedpath="${pathmatch//'/'/'\'}"
-    mixedpath="$ENVROOT$mixedpath$suffix"
-  fi
-  if [[ $mixedpath != "" ]]; then
-    arg="$prefix$mixedpath"
+    # Change slash to backslash
+    winpath="${pathmatch//'/'/'\'}"
+    winpath="$ENVROOT$winpath$suffix"
   fi
 
-  result="$arg"
+  if [[ $winpath != "" ]]; then
+    result="$prefix$winpath"
+  else
+    # Return the arg unchanged
+    result="$arg"
+  fi
 }
+
+# Treat $1 as name of a file containg paths. Convert those paths to Windows style,
+# in a new temporary file, and return a string "@<temp file>" pointing to that
+# new file.
+function convert_at_file() {
+  infile="$1"
+  if [[ -e $infile ]] ; then
+    tempdir=$(mktemp -dt fixpath.XXXXXX -p "$WINTEMP")
+    TEMPDIRS="$TEMPDIRS $tempdir"
+
+    while read line; do
+      convert_path "$line"
+      echo "$result" >> $tempdir/atfile
+    done < $infile
+    convert_path "$tempdir/atfile"
+    result="@$result"
+  else
+    result="@$infile"
+  fi
+}
+
+# Convert an entire command line, replacing all unix paths with Windows paths,
+# and all unix-style path lists (colon separated) with Windows-style (semicolon
+# separated).
+function print_command_line() {
+  converted_args=""
+  for arg in "$@" ; do
+    if [[ $arg =~ ^@(.*$) ]] ; then
+      # This is an @-file with paths that need converting
+      convert_at_file "${BASH_REMATCH[1]}"
+    else
+      convert_path "$arg"
+    fi
+    converted_args="$converted_args$result "
+  done
+  # FIXME: fix quoting?
+  result="$converted_args"
+}
+
 
 function verify_conversion() {
   arg="$1"
@@ -312,39 +356,6 @@ function verify_current_dir() {
   return 1
 }
 
-function convert_at_file() {
-  infile="$1"
-  if [[ -e $infile ]] ; then
-    tempdir=$(mktemp -dt fixpath.XXXXXX -p "$WINTEMP")
-    TEMPDIRS="$TEMPDIRS $tempdir"
-
-    while read line; do
-      convert_to_win "$line"
-      echo "$result" >> $tempdir/atfile
-    done < $infile
-    convert_to_win "$tempdir/atfile"
-    result="@$result"
-  else
-    result="@$infile"
-  fi
-}
-
-
-
-
-function convert_command_line() {
-  converted_args=""
-  for arg in "$@" ; do
-    if [[ $arg =~ ^@(.*$) ]] ; then
-      convert_at_file "${BASH_REMATCH[1]}"
-    else
-      convert_to_win "$arg"
-    fi
-    converted_args="$converted_args$result "
-  done
-  # FIXME: fix quoting?
-  result="$converted_args"
-}
 
 function exec_command_line() {
   verify_current_dir
@@ -365,7 +376,7 @@ function exec_command_line() {
         # It's a leading env variable assignment
         key="${BASH_REMATCH[1]}"
         arg="${BASH_REMATCH[2]}"
-        convert_to_win "$arg"
+        convert_path "$arg"
         export $key="$result"
         export WSLENV=$WSLENV:$key/w
       else
@@ -374,9 +385,10 @@ function exec_command_line() {
       fi
     else
       if [[ $arg =~ ^@(.*$) ]] ; then
+        # This is an @-file with paths that need converting
         convert_at_file "${BASH_REMATCH[1]}"
       else
-        convert_to_win "$arg"
+        convert_path "$arg"
       fi
       collected_args=("${collected_args[@]}" "$result")
     fi
@@ -402,7 +414,7 @@ if [[ "$ACTION" == "import" ]] ; then
   import_command_line "$@"
   echo "$result"
 elif [[ "$ACTION" == "print" ]] ; then
-  convert_command_line "$@"
+  print_command_line "$@"
   echo "$result"
 elif [[ "$ACTION" == "exec" ]] ; then
   exec_command_line "$@"
