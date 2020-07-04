@@ -247,13 +247,11 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
         UTIL_CHECK_WINENV_EXEC_TYPE("$new_path")
         if test "x$RESULT" = xwindows; then
           prefix="$FIXPATH "
-          # make sure we have an .exe suffix
-
-#FIXME
+          # make sure we have an .exe suffix (but not two)
+          new_path="${new_path%.exe}.exe"
         else
           # If we have gotten a .exe suffix, remove it
-          :
-#FIXME
+          new_path="${new_path%.exe}"
         fi
       fi
     fi
@@ -387,7 +385,14 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
             $1="$full_path"
             UTIL_FIXUP_EXECUTABLE($1, $3)
             result="[$]$1"
+            [ if [[ result =~ ^$FIXPATH ]]; then ]
+              result="\$FIXPATH ${result##$FIXPATH }"
+              foo=true
+            fi
             AC_MSG_RESULT([$result])
+            if test x$foo != x; then
+              exit 1
+            fi
             break 2;
           fi
         done
