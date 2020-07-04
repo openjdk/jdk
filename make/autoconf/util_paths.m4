@@ -385,14 +385,11 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
             $1="$full_path"
             UTIL_FIXUP_EXECUTABLE($1, $3)
             result="[$]$1"
-            [ if [[ result =~ ^$FIXPATH ]]; then ]
-              result="\$FIXPATH ${result##$FIXPATH }"
-              foo=true
+
+            [ if [[ $FIXPATH != "" && $result =~ ^"$FIXPATH " ]]; then ]
+              result="\$FIXPATH ${result#"$FIXPATH "}"
             fi
             AC_MSG_RESULT([$result])
-            if test x$foo != x; then
-              exit 1
-            fi
             break 2;
           fi
         done

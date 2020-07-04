@@ -262,8 +262,8 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
   printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
-  printf "* C Compiler:     Version $CC_VERSION_NUMBER (at ${CC##$FIXPATH })\n"
-  printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at ${CXX##$FIXPATH })\n"
+  printf "* C Compiler:     Version $CC_VERSION_NUMBER (at ${CC#"$FIXPATH "})\n"
+  printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at ${CXX#"$FIXPATH "})\n"
 
   printf "\n"
   printf "Build performance summary:\n"
