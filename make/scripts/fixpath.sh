@@ -198,23 +198,24 @@ function import_command_line() {
   result="$imported"
 }
 
-function convert_pathlist_to_win() {
-  # If argument seems to be colon separated path list, and all elements
-  # are possible to convert to paths, make a windows path list
-  converted=""
-  old_ifs="$IFS"
-  IFS=":"
+# If argument seems to be colon separated path list, and all elements
+# are possible to convert to paths, make a windows path list
+# Return 0 if successful with converted path list in $result, or
+# 1 if it was not a path list.
+function convert_pathlist() {
+  converted_list=""
   pathlist_args="$1"
+
   IFS=':' read -r -a arg_array <<< "$pathlist_args"
   for arg in "${arg_array[@]}"; do
-    mixedpath=""
+    winpath=""
+    # Start looking for drive prefix
     if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
-      # Start looking for drive prefix
-      mixedpath="${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
-      # If it was a converted path, change slash to backslash
-      mixedpath="${mixedpath//'/'/'\'}"
-    elif [[ "$arg" =~ ^(/[-_.*a-zA-Z0-9]+(/[-_.*a-zA-Z0-9]+)+.*$) ]] ; then
-      # Does arg contain a potential unix path? Check for /foo/bar
+      winpath="${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
+      # Change slash to backslash
+      winpath="${winpath//'/'/'\'}"
+    elif [[ $arg =~ ^(/[-_.*a-zA-Z0-9]+(/[-_.*a-zA-Z0-9]+)+.*$) ]] ; then
+      # This looks like a unix path, like /foo/bar
       pathmatch="${BASH_REMATCH[1]}"
       if [[ $ENVROOT == "" ]]; then
         if [[ $QUIET != true ]]; then
@@ -222,45 +223,41 @@ function convert_pathlist_to_win() {
         fi
         exit 1
       fi
-      # If it was a converted path, change slash to backslash
-      mixedpath="${pathmatch//'/'/'\'}"
-      mixedpath="$ENVROOT$mixedpath"
+      # Change slash to backslash
+      winpath="${pathmatch//'/'/'\'}"
+      winpath="$ENVROOT$winpath"
     else
+      # This does not look like a path, so assume this is not a proper pathlist.
+      # Flag this to caller.
       result=""
       return 1
     fi
-    if [[ $mixedpath != "" ]]; then
-      arg="$mixedpath"
-    fi
 
-    if [[ "$converted" = "" ]]; then
-      converted="$arg"
+    if [[ "$converted_list" = "" ]]; then
+      converted_list="$winpath"
     else
-      converted="$converted;$arg"
+      converted_list="$converted_list;$winpath"
     fi
   done
-  IFS="$old_ifs"
 
-  result="$converted"
+  result="$converted_list"
   return 0
 }
 
-
 # The central conversion function. Convert a single argument, so that any
 # contained paths are converted to Windows style paths. Result is returned
-# in $result.
+# in $result. If it is a path list, convert it as one.
 function convert_path() {
-  arg="$1"
-  if [[ $arg =~ : ]]; then
-    convert_pathlist_to_win "$arg"
+  if [[ $1 =~ : ]]; then
+    convert_pathlist "$1"
     if [[ $? -eq 0 ]]; then
       return 0
     fi
     # Not all elements was possible to convert to Windows paths, so we
     # presume it is not a pathlist. Continue using normal conversion.
-    arg="$1"
   fi
 
+  arg="$1"
   winpath=""
   # Start looking for drive prefix
   if [[ $arg =~ (^[^/]*)($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
@@ -330,8 +327,85 @@ function print_command_line() {
   result="$converted_args"
 }
 
+# Check if the winenv will allow us to start a Windows program when we are
+# standing in the current directory
+function verify_current_dir() {
+  arg="$PWD"
+  if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
+    return 0
+  elif [[ $arg =~ ^(/[^/]+.*$) ]] ; then
+    if [[ $ENVROOT == "" || $ENVROOT =~ ^\\\\.* ]]; then
+      # This is a WSL1 or WSL2 environment
+      return 1
+    fi
+    return 0
+  fi
+  # This should not happen
+  return 1
+}
 
-function verify_conversion() {
+# The core functionality of fixpath. Take the given command line, and convert
+# it and execute it, so that all paths are converted to Windows style.
+# The return code is the return code of the executed command.
+function exec_command_line() {
+  # Check that Windows can handle our current directory (only an issue for WSL)
+  verify_current_dir
+
+  if [[ $? -ne 0 ]]; then
+    # WSL1 will just forcefully put us in C:\Windows\System32 if we execute this from
+    # a unix directory. WSL2 will do the same, and print a warning. In both cases,
+    # we prefer to take control.
+    cd "$WINTEMP"
+    if [[ $QUIET != true ]]; then
+      echo fixpath: warning: Changing directory to $WINTEMP 1>&2
+    fi
+  fi
+
+  collected_args=()
+  command=""
+  for arg in "$@" ; do
+    if [[ $command == "" ]]; then
+      # We have not yet located the command to run
+      if [[ $arg =~ ^(.*)=(.*)$ ]]; then
+        # It's a leading env variable assignment (FOO=bar)
+        key="${BASH_REMATCH[1]}"
+        arg="${BASH_REMATCH[2]}"
+        convert_path "$arg"
+        # Set the variable to the converted result
+        export $key="$result"
+        # While this is only needed on WSL, it does not hurt to do everywhere
+        export WSLENV=$WSLENV:$key/w
+      else
+        # The actual command will be executed by bash, so don't convert it
+        command="$arg"
+      fi
+    else
+      # Now we are collecting arguments; they all need converting
+      if [[ $arg =~ ^@(.*$) ]] ; then
+        # This is an @-file with paths that need converting
+        convert_at_file "${BASH_REMATCH[1]}"
+      else
+        convert_path "$arg"
+      fi
+      collected_args=("${collected_args[@]}" "$result")
+    fi
+  done
+
+  # Now execute it
+  if [[ -v DEBUG_FIXPATH ]]; then
+    echo fixpath: debug: "$command" "${collected_args[@]}" 1>&2
+  fi
+
+  if [[ $ENVROOT != "" || ! -x /bin/grep ]]; then
+    "$command" "${collected_args[@]}"
+  else
+    # For WSL1, automatically strip away warnings from WSLENV=PATH/l
+    "$command" "${collected_args[@]}" 2> >(/bin/grep -v "ERROR: UtilTranslatePathList" 1>&2)
+  fi
+}
+
+# Check that the input represents a path that is reachable from Windows
+function verify_command_line() {
   arg="$1"
   if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     return 0
@@ -343,71 +417,10 @@ function verify_conversion() {
   return 1
 }
 
-function verify_current_dir() {
-  arg="$PWD"
-  if [[ $arg =~ ^($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
-    return 0
-  elif [[ $arg =~ ^(/[^/]+.*$) ]] ; then
-    if [[ $ENVROOT == "" || $ENVROOT =~ ^\\\\.* ]]; then
-      return 1
-    fi
-    return 0
-  fi
-  return 1
-}
-
-
-function exec_command_line() {
-  verify_current_dir
-  if [[ $? -ne 0 ]]; then
-    # WSL1 will just forcefully put us in C:\Windows\System32 if we execute this from
-    # a unix directory. WSL2 will do the same, and print a warning. In both cases,
-    # we prefer to take control.
-    cd $DRIVEPREFIX/c
-    if [[ $QUIET != true ]]; then
-      echo fixpath: warning: Changing directory to $DRIVEPREFIX/c 1>&2
-    fi
-  fi
-  collected_args=()
-  command=""
-  for arg in "$@" ; do
-    if [[ $command == "" ]]; then
-      if [[ $arg =~ ^(.*)=(.*)$ ]]; then
-        # It's a leading env variable assignment
-        key="${BASH_REMATCH[1]}"
-        arg="${BASH_REMATCH[2]}"
-        convert_path "$arg"
-        export $key="$result"
-        export WSLENV=$WSLENV:$key/w
-      else
-        # The actual command will be executed by bash, so don't convert it
-        command="$arg"
-      fi
-    else
-      if [[ $arg =~ ^@(.*$) ]] ; then
-        # This is an @-file with paths that need converting
-        convert_at_file "${BASH_REMATCH[1]}"
-      else
-        convert_path "$arg"
-      fi
-      collected_args=("${collected_args[@]}" "$result")
-    fi
-  done
-  # Now execute it
-  if [[ -v DEBUG_FIXPATH ]]; then
-    echo fixpath: debug: "$command" "${collected_args[@]}" 1>&2
-  fi
-  if [[ $ENVROOT != "" || ! -x /bin/grep ]]; then
-    "$command" "${collected_args[@]}"
-  else
-    # For WSL1, automatically strip away warnings from WSLENV=PATH/l
-    "$command" "${collected_args[@]}" 2> >(/bin/grep -v "ERROR: UtilTranslatePathList" 1>&2)
-  fi
-}
-
 #### MAIN FUNCTION
 
 setup "$@"
+# Shift away the options processed in setup
 shift $((OPTIND))
 
 if [[ "$ACTION" == "import" ]] ; then
@@ -421,7 +434,7 @@ elif [[ "$ACTION" == "exec" ]] ; then
   # Propagate exit code
   exit $?
 elif [[ "$ACTION" == "verify" ]] ; then
-  verify_conversion "$@"
+  verify_command_line "$@"
   exit $?
 else
   if [[ $QUIET != true ]]; then
