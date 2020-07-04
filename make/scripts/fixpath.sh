@@ -24,6 +24,9 @@
 # questions.
 #
 
+# Setup the environment fixpath assumes. Read from command line options if
+# available, or extract values automatically from the environment if missing.
+# This is robust, but slower.
 function setup() {
   while getopts "e:p:r:t:c:q" opt; do
     case "$opt" in
@@ -323,7 +326,6 @@ function print_command_line() {
     fi
     converted_args="$converted_args$result "
   done
-  # FIXME: fix quoting?
   result="$converted_args"
 }
 
