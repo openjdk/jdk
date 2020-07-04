@@ -414,7 +414,7 @@ AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
   if test "x$ac_tool_prefix" = x; then
     UTIL_LOOKUP_PROGS($1, $2)
   else
-    prefixed_names=$(for name in $2; do echo ${ac_tool_prefix}${name}.exe $i; done)
+    prefixed_names=$(for name in $2; do echo ${ac_tool_prefix}${name} $name; done)
     UTIL_LOOKUP_PROGS($1, $prefixed_names)
     if test "x[$]$1" = x; then
       AC_MSG_WARN([using cross tools not prefixed with host triplet])
