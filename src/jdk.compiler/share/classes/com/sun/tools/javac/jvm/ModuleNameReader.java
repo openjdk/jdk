@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package com.sun.tools.javac.jvm;
 
 import com.sun.tools.javac.util.ByteBuffer;
+import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.Name.NameMapper;
 
 import java.io.IOException;
@@ -147,8 +148,9 @@ public class ModuleNameReader {
 
     NameMapper<String> utf8Mapper(boolean internalize) {
         return internalize ?
-                (buf, offset, len) -> new String(ClassFile.internalize(buf, offset, len)) :
-                String::new;
+                (buf, offset, len) ->
+                    Convert.utf2string(ClassFile.internalize(buf, offset, len)) :
+                Convert::utf2string;
     }
 
 }
