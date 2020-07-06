@@ -216,7 +216,7 @@ int ConstantTable::calculate_table_base_offset() const {
   // flds, fldd: 8-bit  offset multiplied by 4: +/- 1024
   // ldr, ldrb : 12-bit offset:                 +/- 4096
   if (!Assembler::is_simm10(offset)) {
-    offset = Assembler::min_simm10();
+    offset = Assembler::min_simm10;
   }
   return offset;
 }
