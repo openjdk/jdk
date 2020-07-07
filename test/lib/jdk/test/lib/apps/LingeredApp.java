@@ -44,6 +44,7 @@ import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputBuffer;
 import jdk.test.lib.process.StreamPumper;
+import jdk.test.lib.util.CoreUtils;
 
 /**
  * This is a framework to launch an app that could be synchronized with caller
@@ -93,6 +94,8 @@ public class LingeredApp {
     protected static final int appWaitTime = 100;
     protected final String lockFileName;
 
+    protected boolean forceCrash = false; // set true to force a crash and core file
+
     /**
      * Create LingeredApp object on caller side. Lock file have be a valid filename
      * at writable location
@@ -107,6 +110,12 @@ public class LingeredApp {
         final String lockName = UUID.randomUUID().toString() + ".lck";
         this.lockFileName = lockName;
     }
+
+    public void setForceCrash(boolean forceCrash) {
+        this.forceCrash = forceCrash;
+    }
+
+    native private static int crash();
 
     /**
      *
@@ -263,7 +272,11 @@ public class LingeredApp {
 
             // Make sure process didn't already exit
             if (!appProcess.isAlive()) {
-                throw new IOException("App exited unexpectedly with " + appProcess.exitValue());
+                if (forceCrash) {
+                    return; // This is expected. Just return.
+                } else {
+                    throw new IOException("App exited unexpectedly with " + appProcess.exitValue());
+                }
             }
 
             try {
@@ -289,6 +302,11 @@ public class LingeredApp {
         List<String> cmd = new ArrayList<>();
         cmd.add(JDKToolFinder.getTestJDKTool("java"));
         Collections.addAll(cmd, vmArguments);
+        if (forceCrash) {
+            cmd.add("-XX:+CreateCoredumpOnCrash");
+            // We need to find libLingeredApp.so for the crash() native method
+            cmd.add("-Djava.library.path=" + System.getProperty("java.library.path"));
+        }
 
         // Make sure we set correct classpath to run the app
         cmd.add("-cp");
@@ -329,10 +347,17 @@ public class LingeredApp {
 
         runAddAppName(cmd);
         cmd.add(lockFileName);
+        if (forceCrash) {
+            cmd.add("forceCrash"); // Let the subprocess know to force a crash
+        }
 
         printCommandLine(cmd);
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
+        if (forceCrash) {
+            // If we are going to force a core dump, apply "ulimit -c unlimited" if we can.
+            pb = CoreUtils.addCoreUlimitCommand(pb);
+        }
         // ProcessBuilder.start can throw IOException
         appProcess = pb.start();
 
@@ -470,19 +495,37 @@ public class LingeredApp {
     }
 
     /**
-     * This part is the application it self
+     * This part is the application itself. First arg is optional "forceCrash".
+     * Following arg is the lock file name.
      */
     public static void main(String args[]) {
+        boolean forceCrash = false;
 
-        if (args.length != 1) {
+        if (args.length == 0) {
             System.err.println("Lock file name is not specified");
             System.exit(7);
+        } else if (args.length > 2) {
+            System.err.println("Too many arguments specified: "  + args.length);
+            System.exit(7);
+        }
+
+        if (args.length == 2) {
+            if (args[1].equals("forceCrash")) {
+                forceCrash = true;
+            } else {
+                System.err.println("Invalid 1st argment: " + args[1]);
+                System.exit(7);
+            }
         }
 
         String theLockFileName = args[0];
         Path path = Paths.get(theLockFileName);
 
         try {
+            if (forceCrash) {
+                System.loadLibrary("LingeredApp"); // location of native crash() method
+                crash();
+            }
             while (Files.exists(path)) {
                 // Touch the lock to indicate our readiness
                 setLastModified(theLockFileName, epoch());

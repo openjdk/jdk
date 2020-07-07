@@ -27,7 +27,6 @@
  * @summary Test the clhsdb commands 'printmdo', 'printall', 'jstack' on a CDS enabled corefile.
  * @requires vm.cds
  * @requires vm.hasSA
- * @requires os.family != "windows"
  * @requires vm.flavor == "server"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -37,16 +36,12 @@
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jdk.internal.misc.Unsafe;
 
@@ -56,7 +51,7 @@ import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.SA.SATestUtils;
+import jdk.test.lib.util.CoreUtils;
 
 import jtreg.SkippedException;
 
@@ -67,12 +62,8 @@ class CrashApp {
 }
 
 public class ClhsdbCDSCore {
-
-    private static final String TEST_CDS_CORE_FILE_NAME = "cds_core_file";
-    private static final String LOCATIONS_STRING = "location: ";
-    private static final String RUN_SHELL_NO_LIMIT = "ulimit -c unlimited && ";
     private static final String SHARED_ARCHIVE_NAME = "ArchiveForClhsdbCDSCore.jsa";
-    private static final String CORE_PATTERN_FILE_NAME = "/proc/sys/kernel/core_pattern";
+    private static String coreFileName;
 
     public static void main(String[] args) throws Exception {
         System.out.println("Starting ClhsdbCDSCore test");
@@ -93,60 +84,23 @@ public class ClhsdbCDSCore {
                 CrashApp.class.getName()
             };
 
-            OutputAnalyzer crashOut;
+            OutputAnalyzer crashOutput;
             try {
                List<String> options = new ArrayList<>();
                options.addAll(Arrays.asList(jArgs));
-               crashOut =
-                   ProcessTools.executeProcess(getTestJvmCommandlineWithPrefix(
-                   RUN_SHELL_NO_LIMIT, options.toArray(new String[0])));
+               ProcessBuilder pb = ProcessTools.createTestJvm(options);
+               // Add "ulimit -c unlimited" if we can since we are generating a core file.
+               pb = CoreUtils.addCoreUlimitCommand(pb);
+               crashOutput = ProcessTools.executeProcess(pb);
             } catch (Throwable t) {
                throw new Error("Can't execute the java cds process.", t);
             }
 
-            System.out.println(crashOut.getOutput());
-            String crashOutputString = crashOut.getOutput();
-            SATestUtils.unzipCores(new File("."));
-            String coreFileLocation = getCoreFileLocation(crashOutputString);
-            if (coreFileLocation == null) {
-                if (Platform.isOSX()) {
-                    File coresDir = new File("/cores");
-                    if (!coresDir.isDirectory()) {
-                        cleanup();
-                        throw new Error(coresDir + " is not a directory");
-                    }
-                    // the /cores directory is usually not writable on macOS 10.15
-                    if (!coresDir.canWrite()) {
-                        cleanup();
-                        throw new SkippedException("Directory \"" + coresDir +
-                            "\" is not writable");
-                    }
-                } else if (Platform.isLinux()) {
-                    // Check if a crash report tool is installed.
-                    File corePatternFile = new File(CORE_PATTERN_FILE_NAME);
-                    try (Scanner scanner = new Scanner(corePatternFile)) {
-                        while (scanner.hasNextLine()) {
-                            String line = scanner.nextLine();
-                            line = line.trim();
-                            System.out.println(line);
-                            if (line.startsWith("|")) {
-                                System.out.println(
-                                    "\nThis system uses a crash report tool ($cat /proc/sys/kernel/core_pattern).\n" +
-                                    "Core files might not be generated. Please reset /proc/sys/kernel/core_pattern\n" +
-                                    "to enable core generation. Skipping this test.");
-                                cleanup();
-                                throw new SkippedException("This system uses a crash report tool");
-                            }
-                        }
-                    }
-                }
-                throw new Error("Couldn't find core file location in: '" + crashOutputString + "'");
-            }
             try {
-                Asserts.assertGT(new File(coreFileLocation).length(), 0L, "Unexpected core size");
-                Files.move(Paths.get(coreFileLocation), Paths.get(TEST_CDS_CORE_FILE_NAME));
-            } catch (IOException ioe) {
-                throw new Error("Can't move core file: " + ioe, ioe);
+                coreFileName = CoreUtils.getCoreFileLocation(crashOutput.getStdout());
+            } catch (Exception e) {
+                cleanup();
+                throw e;
             }
 
             ClhsdbLauncher test = new ClhsdbLauncher();
@@ -154,8 +108,7 @@ public class ClhsdbCDSCore {
             // Ensure that UseSharedSpaces is turned on.
             List<String> cmds = List.of("flags UseSharedSpaces");
 
-            String useSharedSpacesOutput = test.runOnCore(TEST_CDS_CORE_FILE_NAME, cmds,
-                                                          null, null);
+            String useSharedSpacesOutput = test.runOnCore(coreFileName, cmds, null, null);
 
             if (useSharedSpacesOutput == null) {
                 // Output could be null due to attach permission issues.
@@ -200,7 +153,7 @@ public class ClhsdbCDSCore {
                 "Method*"));
             unExpStrMap.put("jstack -v", List.of(
                 "sun.jvm.hotspot.debugger.UnmappedAddressException"));
-            test.runOnCore(TEST_CDS_CORE_FILE_NAME, cmds, expStrMap, unExpStrMap);
+            test.runOnCore(coreFileName, cmds, expStrMap, unExpStrMap);
         } catch (SkippedException e) {
             throw e;
         } catch (Exception ex) {
@@ -210,60 +163,8 @@ public class ClhsdbCDSCore {
         System.out.println("Test PASSED");
     }
 
-    // lets search for a few possible locations using process output and return existing location
-    private static String getCoreFileLocation(String crashOutputString) {
-        Asserts.assertTrue(crashOutputString.contains(LOCATIONS_STRING),
-            "Output doesn't contain the location of core file.");
-        String stringWithLocation = Arrays.stream(crashOutputString.split("\\r?\\n"))
-            .filter(str -> str.contains(LOCATIONS_STRING))
-            .findFirst()
-            .get();
-        stringWithLocation = stringWithLocation.substring(stringWithLocation
-            .indexOf(LOCATIONS_STRING) + LOCATIONS_STRING.length());
-        System.out.println("getCoreFileLocation found stringWithLocation = " + stringWithLocation);
-        String coreWithPid;
-        if (stringWithLocation.contains("or ")) {
-            Matcher m = Pattern.compile("or.* ([^ ]+[^\\)])\\)?").matcher(stringWithLocation);
-            if (!m.find()) {
-                throw new Error("Couldn't find path to core inside location string");
-            }
-            coreWithPid = m.group(1);
-        } else {
-            coreWithPid = stringWithLocation.trim();
-        }
-        if (new File(coreWithPid).exists()) {
-            return coreWithPid;
-        }
-        String justCore = Paths.get("core").toString();
-        if (new File(justCore).exists()) {
-            return justCore;
-        }
-        Path coreWithPidPath = Paths.get(coreWithPid);
-        String justFile = coreWithPidPath.getFileName().toString();
-        if (new File(justFile).exists()) {
-            return justFile;
-        }
-        Path parent = coreWithPidPath.getParent();
-        if (parent != null) {
-            String coreWithoutPid = parent.resolve("core").toString();
-            if (new File(coreWithoutPid).exists()) {
-                return coreWithoutPid;
-            }
-        }
-        return null;
-    }
-
-    private static String[] getTestJvmCommandlineWithPrefix(String prefix, String... args) {
-        try {
-            String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJvm(args));
-            return new String[]{"sh", "-c", prefix + cmd};
-        } catch (Throwable t) {
-            throw new Error("Can't create process builder: " + t, t);
-        }
-    }
-
     private static void cleanup() {
-        remove(TEST_CDS_CORE_FILE_NAME);
+        if (coreFileName != null) remove(coreFileName);
         remove(SHARED_ARCHIVE_NAME);
     }
 
