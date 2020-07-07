@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8076188 8246153
+ * @bug 8076188 8246153 8248226
  * @summary arraycopy to non escaping destination may be eliminated
  * @library /
  *
@@ -32,6 +32,11 @@
  *                   compiler.arraycopy.TestEliminateArrayCopy
  * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
+ *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestEliminateArrayCopy*::m*
+ *                   compiler.arraycopy.TestEliminateArrayCopy
+ * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
+ *                   -XX:-ReduceInitialCardMarks -XX:-ReduceBulkZeroing
  *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestEliminateArrayCopy*::m*
  *                   compiler.arraycopy.TestEliminateArrayCopy
  */
