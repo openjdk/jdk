@@ -1334,6 +1334,30 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
     if (id != NULL)  return id;
   }
 
+  // Looking for phis with identical inputs.  If we find one that has
+  // type TypePtr::BOTTOM, replace the current phi with the bottom phi.
+  if (phase->is_IterGVN() && type() == Type::MEMORY && adr_type() !=
+      TypePtr::BOTTOM && !adr_type()->is_known_instance()) {
+    uint phi_len = req();
+    Node* phi_reg = region();
+    for (DUIterator_Fast imax, i = phi_reg->fast_outs(imax); i < imax; i++) {
+      Node* u = phi_reg->fast_out(i);
+      if (u->is_Phi() && u->as_Phi()->type() == Type::MEMORY &&
+          u->adr_type() == TypePtr::BOTTOM && u->in(0) == phi_reg &&
+          u->req() == phi_len) {
+        for (uint j = 1; j < phi_len; j++) {
+          if (in(j) != u->in(j)) {
+            u = NULL;
+            break;
+          }
+        }
+        if (u != NULL) {
+          return u;
+        }
+      }
+    }
+  }
+
   return this;                     // No identity
 }
 

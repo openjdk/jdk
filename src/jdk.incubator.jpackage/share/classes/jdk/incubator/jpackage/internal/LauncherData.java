@@ -231,10 +231,11 @@ final class LauncherData {
         if (inputDir == null) {
             classPath = Collections.emptyList();
         } else {
-            try (Stream<Path> walk = Files.walk(inputDir, 1)) {
+            try (Stream<Path> walk = Files.walk(inputDir, Integer.MAX_VALUE)) {
                 Set<Path> jars = walk.filter(Files::isRegularFile)
                         .filter(file -> file.toString().endsWith(".jar"))
-                        .map(Path::getFileName)
+                        .map(p -> inputDir.toAbsolutePath()
+                                  .relativize(p.toAbsolutePath()))
                         .collect(Collectors.toSet());
                 jars.remove(mainJarName);
                 classPath = jars.stream().sorted().collect(Collectors.toList());
