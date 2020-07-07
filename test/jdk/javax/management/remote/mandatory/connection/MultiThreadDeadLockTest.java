@@ -125,7 +125,7 @@ public class MultiThreadDeadLockTest {
         StateMachine.setState(CREATE_SOCKET);
 
         print("Check whether the user thread gets free to call the mbean.");
-        if (!ut.waitDone(5000)) {
+        if (!ut.waitDone(Utils.adjustTimeout(5000))) {
             throw new RuntimeException("Possible deadlock!");
         }
 
