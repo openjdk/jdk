@@ -449,9 +449,64 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ bind(done);
 }
 
-
-void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
-                                                bool acquire, bool release, bool weak, bool is_cae,
+// Special Shenandoah CAS implementation that handles false negatives due
+// to concurrent evacuation.  The service is more complex than a
+// traditional CAS operation because the CAS operation is intended to
+// succeed if the reference at addr exactly matches expected or if the
+// reference at addr holds a pointer to a from-space object that has
+// been relocated to the location named by expected.  There are two
+// races that must be addressed:
+//  a) A parallel thread may mutate the contents of addr so that it points
+//     to a different object.  In this case, the CAS operation should fail.
+//  b) A parallel thread may heal the contents of addr, replacing a
+//     from-space pointer held in addr with the to-space pointer
+//     representing the new location of the object.
+// Upon entry to cmpxchg_oop, it is assured that new_val equals NULL
+// or it refers to an object that is not being evacuated out of
+// from-space, or it refers to the to-space version of an object that
+// is being evacuated out of from-space.
+//
+// By default, this operation implements sequential consistency and the
+// value held in the result register following execution of the
+// generated code sequence is 0 to indicate failure of CAS, non-zero
+// to indicate success.  Arguments support variations on this theme:
+//
+//  acquire: Allow relaxation of the memory ordering on CAS from
+//           sequential consistency.  This can be useful when
+//           sequential consistency is not required, such as when
+//           another sequentially consistent operation is already
+//           present in the execution stream.  If acquire, successful
+//           execution has the side effect of assuring that memory
+//           values updated by other threads and "released" will be
+//           visible to any read operations perfomed by this thread
+//           which follow this operation in program order.  This is a
+//           special optimization that should not be enabled by default.
+//  release: Allow relaxation of the memory ordering on CAS from
+//           sequential consistency.  This can be useful when
+//           sequential consistency is not required, such as when
+//           another sequentially consistent operation is already
+//           present in the execution stream.  If release, successful
+//           completion of this operation has the side effect of
+//           assuring that all writes to memory performed by this
+//           thread that precede this operation in program order are
+//           visible to all other threads that subsequently "acquire"
+//           before reading the respective memory values.  This is a
+//           special optimization that should not be enabled by default.
+//  is_cae:  This turns CAS (compare and swap) into CAE (compare and
+//           exchange).  This HotSpot convention is that CAE makes
+//           available to the caller the "failure witness", which is
+//           the value that was stored in memory which did not match
+//           the expected value.  If is_cae, the result is the value
+//           most recently fetched from addr rather than a boolean
+//           success indicator.
+//
+// Clobbers rscratch1, rscratch2
+void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
+                                                Register addr,
+                                                Register expected,
+                                                Register new_val,
+                                                bool acquire, bool release,
+                                                bool is_cae,
                                                 Register result) {
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
@@ -460,48 +515,124 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm, Register a
 
   assert_different_registers(addr, expected, new_val, tmp1, tmp2);
 
-  Label retry, done, fail;
+  Label step4, done;
 
-  // CAS, using LL/SC pair.
-  __ bind(retry);
-  __ load_exclusive(tmp1, addr, size, acquire);
-  if (is_narrow) {
-    __ cmpw(tmp1, expected);
-  } else {
-    __ cmp(tmp1, expected);
-  }
-  __ br(Assembler::NE, fail);
-  __ store_exclusive(tmp2, new_val, addr, size, release);
-  if (weak) {
-    __ cmpw(tmp2, 0u); // If the store fails, return NE to our caller
-  } else {
-    __ cbnzw(tmp2, retry);
-  }
-  __ b(done);
+  // There are two ways to reach this label.  Initial entry into the
+  // cmpxchg_oop code expansion starts at step1 (which is equivalent
+  // to label step4).  Additionally, in the rare case that four steps
+  // are required to perform the requested operation, the fourth step
+  // is the same as the first.  On a second pass through step 1,
+  // control may flow through step 2 on its way to failure.  It will
+  // not flow from step 2 to step 3 since we are assured that the
+  // memory at addr no longer holds a from-space pointer.
+  //
+  // The comments that immediately follow the step4 label apply only
+  // to the case in which control reaches this label by branch from
+  // step 3.
 
- __  bind(fail);
-  // Check if rb(expected)==rb(tmp1)
-  // Shuffle registers so that we have memory value ready for next expected.
-  __ mov(tmp2, expected);
-  __ mov(expected, tmp1);
+  __ bind (step4);
+
+  // Step 4. CAS has failed because the value most recently fetched
+  // from addr (which is now held in tmp1) is no longer the from-space
+  // pointer held in tmp2.  If a different thread replaced the
+  // in-memory value with its equivalent to-space pointer, then CAS
+  // may still be able to succeed.  The value held in the expected
+  // register has not changed.
+  //
+  // It is extremely rare we reach this point.  For this reason, the
+  // implementation opts for smaller rather than potentially faster
+  // code.  Ultimately, smaller code for this rare case most likely
+  // delivers higher overall throughput by enabling improved icache
+  // performance.
+
+  // Step 1. Fast-path.
+  //
+  // Try to CAS with given arguments.  If successful, then we are done.
+  //
+  // No label required for step 1.
+
+  __ cmpxchg(addr, expected, new_val, size, acquire, release, false, tmp2);
+  // EQ flag set iff success.  tmp2 holds value fetched.
+
+  // If expected equals null but tmp2 does not equal null, the
+  // following branches to done to report failure of CAS.  If both
+  // expected and tmp2 equal null, the following branches to done to
+  // report success of CAS.  There's no need for a special test of
+  // expected equal to null.
+
+  __ br(Assembler::EQ, done);
+  // if CAS failed, fall through to step 2
+
+  // Step 2. CAS has failed because the value held at addr does not
+  // match expected.  This may be a false negative because the value fetched
+  // from addr (now held in tmp2) may be a from-space pointer to the
+  // original copy of same object referenced by to-space pointer expected.
+  //
+  // To resolve this, it suffices to find the forward pointer associated
+  // with fetched value.  If this matches expected, retry CAS with new
+  // parameters.  If this mismatches, then we have a legitimate
+  // failure, and we're done.
+  //
+  // No need for step2 label.
+
+  // overwrite tmp1 with from-space pointer fetched from memory
+  __ mov(tmp1, tmp2);
+
   if (is_narrow) {
+    // Decode tmp1 in order to resolve its forward pointer
     __ decode_heap_oop(tmp1, tmp1);
-    __ decode_heap_oop(tmp2, tmp2);
   }
   resolve_forward_pointer(masm, tmp1);
-  resolve_forward_pointer(masm, tmp2);
-  __ cmp(tmp1, tmp2);
-  // Retry with expected now being the value we just loaded from addr.
-  __ br(Assembler::EQ, retry);
-  if (is_cae && is_narrow) {
-    // For cmp-and-exchange and narrow oops, we need to restore
-    // the compressed old-value. We moved it to 'expected' a few lines up.
-    __ mov(tmp1, expected);
-  }
-  __ bind(done);
+  // Encode tmp1 to compare against expected.
+  __ encode_heap_oop(tmp1, tmp1);
+
+  // Does forwarded value of fetched from-space pointer match original
+  // value of expected?  If tmp1 holds null, this comparison will fail
+  // because we know from step1 that expected is not null.  There is
+  // no need for a separate test for tmp1 (the value originally held
+  // in memory) equal to null.
+  __ cmp(tmp1, expected);
+
+  // If not, then the failure was legitimate and we're done.
+  // Branching to done with NE condition denotes failure.
+  __ br(Assembler::NE, done);
+
+  // Fall through to step 3.  No need for step3 label.
+
+  // Step 3.  We've confirmed that the value originally held in memory
+  // (now held in tmp2) pointed to from-space version of original
+  // expected value.  Try the CAS again with the from-space expected
+  // value.  If it now succeeds, we're good.
+  //
+  // Note: tmp2 holds encoded from-space pointer that matches to-space
+  // object residing at expected.  tmp2 is the new "expected".
+
+  // Note that macro implementation of __cmpxchg cannot use same register
+  // tmp2 for result and expected since it overwrites result before it
+  // compares result with expected.
+  __ cmpxchg(addr, tmp2, new_val, size, acquire, release, false, tmp1);
+  // EQ flag set iff success.  tmp2 holds value fetched.
+
+  // If fetched value did not equal the new expected, this could
+  // still be a false negative because some other thread may have
+  // newly overwritten the memory value with its to-space equivalent.
+  __ br(Assembler::NE, step4);
 
   if (is_cae) {
-    __ mov(result, tmp1);
+    // We're falling through to done to indicate success.  Success
+    // with is_cae is denoted by returning the value of expected as
+    // result.
+    __ mov(tmp2, expected);
+  }
+
+  __ bind(done);
+  // At entry to done, the Z (EQ) flag is on iff if the CAS
+  // operation was successful.  Additionally, if is_cae, tmp2 holds
+  // the value most recently fetched from addr. In this case, success
+  // is denoted by tmp2 matching expected.
+
+  if (is_cae) {
+    __ mov(result, tmp2);
   } else {
     __ cset(result, Assembler::EQ);
   }
