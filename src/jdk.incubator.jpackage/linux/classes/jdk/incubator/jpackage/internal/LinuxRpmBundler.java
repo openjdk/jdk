@@ -25,7 +25,6 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
@@ -147,9 +146,9 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
     }
 
     @Override
-    protected File buildPackageBundle(
+    protected Path buildPackageBundle(
             Map<String, String> replacementData,
-            Map<String, ? super Object> params, File outputParentDir) throws
+            Map<String, ? super Object> params, Path outputParentDir) throws
             PackagerException, IOException {
 
         Path specFile = specFile(params);
@@ -160,7 +159,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
                 .setSubstitutionData(replacementData)
                 .saveToFile(specFile);
 
-        return buildRPM(params, outputParentDir.toPath()).toFile();
+        return buildRPM(params, outputParentDir);
     }
 
     @Override
@@ -275,7 +274,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
     }
 
     private Path specFile(Map<String, ? super Object> params) {
-        return TEMP_ROOT.fetchFrom(params).toPath().resolve(Path.of("SPECS",
+        return TEMP_ROOT.fetchFrom(params).resolve(Path.of("SPECS",
                 PACKAGE_NAME.fetchFrom(params) + ".spec"));
     }
 
@@ -302,7 +301,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
                 "--define", String.format("%%_rpmdir %s", rpmFile.getParent()),
                 // do not use other system directories to build as current user
                 "--define", String.format("%%_topdir %s",
-                        TEMP_ROOT.fetchFrom(params).toPath().toAbsolutePath()),
+                        TEMP_ROOT.fetchFrom(params).toAbsolutePath()),
                 "--define", String.format("%%_rpmfilename %s", rpmFile.getFileName())
         ).executeExpectSuccess();
 

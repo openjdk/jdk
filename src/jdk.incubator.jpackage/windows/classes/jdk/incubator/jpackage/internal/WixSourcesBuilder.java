@@ -28,6 +28,7 @@ package jdk.incubator.jpackage.internal;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -160,7 +161,7 @@ class WixSourcesBuilder {
         fa.launcherPath = addExeSuffixToPath(
                 installedAppImage.launchersDirectory().resolve(fa.launcherPath));
 
-        if (fa.iconPath != null && !fa.iconPath.toFile().exists()) {
+        if (fa.iconPath != null && !Files.exists(fa.iconPath)) {
             fa.iconPath = null;
         }
 

@@ -25,7 +25,6 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Collections;
@@ -86,9 +85,9 @@ final class FileAssociation {
                     assoc.mimeTypes = Optional.ofNullable(
                             FA_CONTENT_TYPE.fetchFrom(fa)).orElse(Collections.emptyList());
 
-                    File icon = FA_ICON.fetchFrom(fa);
+                    Path icon = FA_ICON.fetchFrom(fa);
                     if (icon != null) {
-                        assoc.iconPath = icon.toPath();
+                        assoc.iconPath = icon;
                     }
 
                     return assoc;

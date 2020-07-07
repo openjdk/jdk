@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -103,21 +104,21 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
             params -> "-MacAppStore",
             (s, p) -> s);
 
-    public File bundle(Map<String, ? super Object> params,
-            File outdir) throws PackagerException {
+    public Path bundle(Map<String, ? super Object> params,
+            Path outdir) throws PackagerException {
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.building-bundle"), APP_NAME.fetchFrom(params)));
 
-        IOUtils.writableOutputDir(outdir.toPath());
+        IOUtils.writableOutputDir(outdir);
 
         // first, load in some overrides
         // icns needs @2 versions, so load in the @2 default
         params.put(DEFAULT_ICNS_ICON.getID(), TEMPLATE_BUNDLE_ICON_HIDPI);
 
         // now we create the app
-        File appImageDir = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
+        Path appImageDir = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
         try {
-            appImageDir.mkdirs();
+            Files.createDirectories(appImageDir);
 
             try {
                 MacAppImageBuilder.addNewKeychain(params);
@@ -126,7 +127,7 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
             }
             // first, make sure we don't use the local signing key
             params.put(DEVELOPER_ID_APP_SIGNING_KEY.getID(), null);
-            File appLocation = prepareAppBundle(params);
+            Path appLocation = prepareAppBundle(params);
 
             String signingIdentity =
                     MAC_APP_STORE_APP_SIGNING_KEY.fetchFrom(params);
@@ -134,7 +135,7 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
                     BUNDLE_ID_SIGNING_PREFIX.fetchFrom(params);
             MacAppImageBuilder.prepareEntitlements(params);
 
-            MacAppImageBuilder.signAppBundle(params, appLocation.toPath(),
+            MacAppImageBuilder.signAppBundle(params, appLocation,
                     signingIdentity, identifierPrefix,
                     MacAppImageBuilder.getConfig_Entitlements(params));
             MacAppImageBuilder.restoreKeychainList(params);
@@ -142,10 +143,10 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
             ProcessBuilder pb;
 
             // create the final pkg file
-            File finalPKG = new File(outdir, INSTALLER_NAME.fetchFrom(params)
+            Path finalPKG = outdir.resolve(INSTALLER_NAME.fetchFrom(params)
                     + INSTALLER_SUFFIX.fetchFrom(params)
                     + ".pkg");
-            outdir.mkdirs();
+            Files.createDirectories(outdir);
 
             String installIdentify =
                     MAC_APP_STORE_PKG_SIGNING_KEY.fetchFrom(params);
@@ -164,7 +165,7 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
                 buildOptions.add("--keychain");
                 buildOptions.add(keychainName);
             }
-            buildOptions.add(finalPKG.getAbsolutePath());
+            buildOptions.add(finalPKG.toAbsolutePath().toString());
 
             pb = new ProcessBuilder(buildOptions);
 
@@ -243,8 +244,8 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
     }
 
     @Override
-    public File execute(Map<String, ? super Object> params,
-            File outputParentDir) throws PackagerException {
+    public Path execute(Map<String, ? super Object> params,
+            Path outputParentDir) throws PackagerException {
         return bundle(params, outputParentDir);
     }
 

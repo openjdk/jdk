@@ -76,7 +76,7 @@ class ScriptRunner {
     public void run(Map<String, ? super Object> params) throws IOException {
         String scriptName = String.format("%s-%s%s", APP_NAME.fetchFrom(params),
                 scriptNameSuffix, scriptSuffix());
-        Path scriptPath = CONFIG_ROOT.fetchFrom(params).toPath().resolve(
+        Path scriptPath = CONFIG_ROOT.fetchFrom(params).resolve(
                 scriptName);
         createResource(null, params)
                 .setCategory(I18N.getString(resourceCategoryId))

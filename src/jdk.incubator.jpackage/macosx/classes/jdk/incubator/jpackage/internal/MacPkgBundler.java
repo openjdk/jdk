@@ -25,7 +25,6 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
@@ -64,30 +63,38 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     private static final String TEMPLATE_POSTINSTALL_SCRIPT =
             "postinstall.template";
 
-    private static final BundlerParamInfo<File> PACKAGES_ROOT =
+    private static final BundlerParamInfo<Path> PACKAGES_ROOT =
             new StandardBundlerParam<>(
             "mac.pkg.packagesRoot",
-            File.class,
+            Path.class,
             params -> {
-                File packagesRoot =
-                        new File(TEMP_ROOT.fetchFrom(params), "packages");
-                packagesRoot.mkdirs();
+                Path packagesRoot =
+                        TEMP_ROOT.fetchFrom(params).resolve("packages");
+                try {
+                    Files.createDirectories(packagesRoot);
+                } catch (IOException ioe) {
+                    return null;
+                }
                 return packagesRoot;
             },
-            (s, p) -> new File(s));
+            (s, p) -> Path.of(s));
 
 
-    protected final BundlerParamInfo<File> SCRIPTS_DIR =
+    protected final BundlerParamInfo<Path> SCRIPTS_DIR =
             new StandardBundlerParam<>(
             "mac.pkg.scriptsDir",
-            File.class,
+            Path.class,
             params -> {
-                File scriptsDir =
-                        new File(CONFIG_ROOT.fetchFrom(params), "scripts");
-                scriptsDir.mkdirs();
+                Path scriptsDir =
+                        CONFIG_ROOT.fetchFrom(params).resolve("scripts");
+                try {
+                    Files.createDirectories(scriptsDir);
+                } catch (IOException ioe) {
+                    return null;
+                }
                 return scriptsDir;
             },
-            (s, p) -> new File(s));
+            (s, p) -> Path.of(s));
 
     public static final
             BundlerParamInfo<String> DEVELOPER_ID_INSTALLER_SIGNING_KEY =
@@ -121,23 +128,23 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             params -> "",
             (s, p) -> s);
 
-    public File bundle(Map<String, ? super Object> params,
-            File outdir) throws PackagerException {
+    public Path bundle(Map<String, ? super Object> params,
+            Path outdir) throws PackagerException {
         Log.verbose(MessageFormat.format(I18N.getString("message.building-pkg"),
                 APP_NAME.fetchFrom(params)));
 
-        IOUtils.writableOutputDir(outdir.toPath());
+        IOUtils.writableOutputDir(outdir);
 
         try {
-            File appImageDir = prepareAppBundle(params);
+            Path appImageDir = prepareAppBundle(params);
 
             if (appImageDir != null && prepareConfigFiles(params)) {
 
-                File configScript = getConfig_Script(params);
-                if (configScript.exists()) {
+                Path configScript = getConfig_Script(params);
+                if (IOUtils.exists(configScript)) {
                     Log.verbose(MessageFormat.format(I18N.getString(
                             "message.running-script"),
-                            configScript.getAbsolutePath()));
+                            configScript.toAbsolutePath().toString()));
                     IOUtils.run("bash", configScript);
                 }
 
@@ -150,33 +157,33 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         }
     }
 
-    private File getPackages_AppPackage(Map<String, ? super Object> params) {
-        return new File(PACKAGES_ROOT.fetchFrom(params),
+    private Path getPackages_AppPackage(Map<String, ? super Object> params) {
+        return PACKAGES_ROOT.fetchFrom(params).resolve(
                 APP_NAME.fetchFrom(params) + "-app.pkg");
     }
 
-    private File getConfig_DistributionXMLFile(
+    private Path getConfig_DistributionXMLFile(
             Map<String, ? super Object> params) {
-        return new File(CONFIG_ROOT.fetchFrom(params), "distribution.dist");
+        return CONFIG_ROOT.fetchFrom(params).resolve("distribution.dist");
     }
 
-    private File getConfig_BackgroundImage(Map<String, ? super Object> params) {
-        return new File(CONFIG_ROOT.fetchFrom(params),
+    private Path getConfig_BackgroundImage(Map<String, ? super Object> params) {
+        return CONFIG_ROOT.fetchFrom(params).resolve(
                 APP_NAME.fetchFrom(params) + "-background.png");
     }
 
-    private File getConfig_BackgroundImageDarkAqua(Map<String, ? super Object> params) {
-        return new File(CONFIG_ROOT.fetchFrom(params),
+    private Path getConfig_BackgroundImageDarkAqua(Map<String, ? super Object> params) {
+        return CONFIG_ROOT.fetchFrom(params).resolve(
                 APP_NAME.fetchFrom(params) + "-background-darkAqua.png");
     }
 
-    private File getScripts_PreinstallFile(Map<String, ? super Object> params) {
-        return new File(SCRIPTS_DIR.fetchFrom(params), "preinstall");
+    private Path getScripts_PreinstallFile(Map<String, ? super Object> params) {
+        return SCRIPTS_DIR.fetchFrom(params).resolve("preinstall");
     }
 
-    private File getScripts_PostinstallFile(
+    private Path getScripts_PostinstallFile(
             Map<String, ? super Object> params) {
-        return new File(SCRIPTS_DIR.fetchFrom(params), "postinstall");
+        return SCRIPTS_DIR.fetchFrom(params).resolve("postinstall");
     }
 
     private String getAppIdentifier(Map<String, ? super Object> params) {
@@ -199,13 +206,13 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 .setCategory(I18N.getString("resource.pkg-preinstall-script"))
                 .setSubstitutionData(data)
                 .saveToFile(getScripts_PreinstallFile(params));
-        getScripts_PreinstallFile(params).setExecutable(true, false);
+        getScripts_PreinstallFile(params).toFile().setExecutable(true, false);
 
         createResource(TEMPLATE_POSTINSTALL_SCRIPT, params)
                 .setCategory(I18N.getString("resource.pkg-postinstall-script"))
                 .setSubstitutionData(data)
                 .saveToFile(getScripts_PostinstallFile(params));
-        getScripts_PostinstallFile(params).setExecutable(true, false);
+        getScripts_PostinstallFile(params).toFile().setExecutable(true, false);
     }
 
     private static String URLEncoding(String pkgName) throws URISyntaxException {
@@ -215,12 +222,12 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
     private void prepareDistributionXMLFile(Map<String, ? super Object> params)
             throws IOException {
-        File f = getConfig_DistributionXMLFile(params);
+        Path f = getConfig_DistributionXMLFile(params);
 
         Log.verbose(MessageFormat.format(I18N.getString(
-                "message.preparing-distribution-dist"), f.getAbsolutePath()));
+                "message.preparing-distribution-dist"), f.toAbsolutePath().toString()));
 
-        IOUtils.createXml(f.toPath(), xml -> {
+        IOUtils.createXml(f, xml -> {
             xml.writeStartElement("installer-gui-script");
             xml.writeAttribute("minSpecVersion", "1");
 
@@ -229,14 +236,16 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             xml.writeEndElement();
 
             xml.writeStartElement("background");
-            xml.writeAttribute("file", getConfig_BackgroundImage(params).getName());
+            xml.writeAttribute("file",
+                    getConfig_BackgroundImage(params).getFileName().toString());
             xml.writeAttribute("mime-type", "image/png");
             xml.writeAttribute("alignment", "bottomleft");
             xml.writeAttribute("scaling", "none");
             xml.writeEndElement();
 
             xml.writeStartElement("background-darkAqua");
-            xml.writeAttribute("file", getConfig_BackgroundImageDarkAqua(params).getName());
+            xml.writeAttribute("file",
+                    getConfig_BackgroundImageDarkAqua(params).getFileName().toString());
             xml.writeAttribute("mime-type", "image/png");
             xml.writeAttribute("alignment", "bottomleft");
             xml.writeAttribute("scaling", "none");
@@ -244,9 +253,9 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
             String licFileStr = LICENSE_FILE.fetchFrom(params);
             if (licFileStr != null) {
-                File licFile = new File(licFileStr);
+                Path licFile = Path.of(licFileStr);
                 xml.writeStartElement("license");
-                xml.writeAttribute("file", licFile.getAbsolutePath());
+                xml.writeAttribute("file", licFile.toAbsolutePath().toString());
                 xml.writeAttribute("mime-type", "text/rtf");
                 xml.writeEndElement();
             }
@@ -288,7 +297,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             xml.writeAttribute("onConclusion", "none");
             try {
                 xml.writeCharacters(URLEncoding(
-                        getPackages_AppPackage(params).getName()));
+                        getPackages_AppPackage(params).getFileName().toString()));
             } catch (URISyntaxException ex) {
                 throw new IOException(ex);
             }
@@ -319,16 +328,15 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     }
 
     // name of post-image script
-    private File getConfig_Script(Map<String, ? super Object> params) {
-        return new File(CONFIG_ROOT.fetchFrom(params),
+    private Path getConfig_Script(Map<String, ? super Object> params) {
+        return CONFIG_ROOT.fetchFrom(params).resolve(
                 APP_NAME.fetchFrom(params) + "-post-image.sh");
     }
 
-    private void patchCPLFile(File cpl) throws IOException {
-        String cplData = Files.readString(cpl.toPath());
+    private void patchCPLFile(Path cpl) throws IOException {
+        String cplData = Files.readString(cpl);
         String[] lines = cplData.split("\n");
-        try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(
-                cpl.toPath()))) {
+        try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(cpl))) {
             int skip = 0;
             // Used to skip Java.runtime bundle, since
             // pkgbuild with --root will find two bundles app and Java runtime.
@@ -360,35 +368,34 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     // So easy aproach will be to copy user provided app-image into temp folder
     // if root path contains other files.
     private String getRoot(Map<String, ? super Object> params,
-            File appLocation) throws IOException {
-        String root = appLocation.getParent() == null ?
-                "." : appLocation.getParent();
-        File rootDir = new File(root);
+            Path appLocation) throws IOException {
+        Path rootDir = appLocation.getParent() == null ?
+                Path.of(".") : appLocation.getParent();
 
-        File[] list = rootDir.listFiles();
+        Path[] list = Files.list(rootDir).toArray(Path[]::new);
         if (list != null) { // Should not happend
             // We should only have app image and/or .DS_Store
             if (list.length == 1) {
-                return root;
+                return rootDir.toString();
             } else if (list.length == 2) {
                 // Check case with app image and .DS_Store
                 if (list[0].toString().toLowerCase().endsWith(".ds_store") ||
                     list[1].toString().toLowerCase().endsWith(".ds_store")) {
-                    return root; // Only app image and .DS_Store
+                    return rootDir.toString(); // Only app image and .DS_Store
                 }
             }
         }
 
         // Copy to new root
         Path newRoot = Files.createTempDirectory(
-                TEMP_ROOT.fetchFrom(params).toPath(), "root-");
+                TEMP_ROOT.fetchFrom(params), "root-");
 
         Path source, dest;
 
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
             // firs, is this already a runtime with
             // <runtime>/Contents/Home - if so we need the Home dir
-            Path original = appLocation.toPath();
+            Path original = appLocation;
             Path home = original.resolve("Contents/Home");
             source = (Files.exists(home)) ? home : original;
 
@@ -396,32 +403,31 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             dest = newRoot.resolve(
                 MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params) + "/Contents/Home");
         } else {
-            source = appLocation.toPath();
-            dest = newRoot.resolve(appLocation.getName());
+            source = appLocation;
+            dest = newRoot.resolve(appLocation.getFileName());
         }
         IOUtils.copyRecursive(source, dest);
 
         return newRoot.toString();
     }
 
-    private File createPKG(Map<String, ? super Object> params,
-            File outdir, File appLocation) {
+    private Path createPKG(Map<String, ? super Object> params,
+            Path outdir, Path appLocation) {
         // generic find attempt
         try {
-            File appPKG = getPackages_AppPackage(params);
+            Path appPKG = getPackages_AppPackage(params);
 
             String root = getRoot(params, appLocation);
 
             // Generate default CPL file
-            File cpl = new File(CONFIG_ROOT.fetchFrom(params).getAbsolutePath()
-                    + File.separator + "cpl.plist");
+            Path cpl = CONFIG_ROOT.fetchFrom(params).resolve("cpl.plist");
             ProcessBuilder pb = new ProcessBuilder("pkgbuild",
                     "--root",
                     root,
                     "--install-location",
                     getInstallDir(params),
                     "--analyze",
-                    cpl.getAbsolutePath());
+                    cpl.toAbsolutePath().toString());
 
             IOUtils.exec(pb);
 
@@ -436,25 +442,25 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     "--install-location",
                     getInstallDir(params),
                     "--component-plist",
-                    cpl.getAbsolutePath(),
+                    cpl.toAbsolutePath().toString(),
                     "--scripts",
-                    SCRIPTS_DIR.fetchFrom(params).getAbsolutePath(),
+                    SCRIPTS_DIR.fetchFrom(params).toAbsolutePath().toString(),
                     "--identifier",
                      MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params),
-                    appPKG.getAbsolutePath());
+                    appPKG.toAbsolutePath().toString());
             IOUtils.exec(pb);
 
             // build final package
-            File finalPKG = new File(outdir, INSTALLER_NAME.fetchFrom(params)
+            Path finalPKG = outdir.resolve(INSTALLER_NAME.fetchFrom(params)
                     + INSTALLER_SUFFIX.fetchFrom(params)
                     + ".pkg");
-            outdir.mkdirs();
+            Files.createDirectories(outdir);
 
             List<String> commandLine = new ArrayList<>();
             commandLine.add("productbuild");
 
             commandLine.add("--resources");
-            commandLine.add(CONFIG_ROOT.fetchFrom(params).getAbsolutePath());
+            commandLine.add(CONFIG_ROOT.fetchFrom(params).toAbsolutePath().toString());
 
             // maybe sign
             if (Optional.ofNullable(MacAppImageBuilder.
@@ -482,11 +488,11 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
             commandLine.add("--distribution");
             commandLine.add(
-                    getConfig_DistributionXMLFile(params).getAbsolutePath());
+                    getConfig_DistributionXMLFile(params).toAbsolutePath().toString());
             commandLine.add("--package-path");
-            commandLine.add(PACKAGES_ROOT.fetchFrom(params).getAbsolutePath());
+            commandLine.add(PACKAGES_ROOT.fetchFrom(params).toAbsolutePath().toString());
 
-            commandLine.add(finalPKG.getAbsolutePath());
+            commandLine.add(finalPKG.toAbsolutePath().toString());
 
             pb = new ProcessBuilder(commandLine);
             IOUtils.exec(pb);
@@ -577,8 +583,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     }
 
     @Override
-    public File execute(Map<String, ? super Object> params,
-            File outputParentDir) throws PackagerException {
+    public Path execute(Map<String, ? super Object> params,
+            Path outputParentDir) throws PackagerException {
         return bundle(params, outputParentDir);
     }
 

@@ -84,7 +84,7 @@ public enum WixTool {
 
         for (var dir : findWixInstallDirs()) {
             Path path = dir.resolve(toolFileName);
-            if (path.toFile().exists()) {
+            if (Files.exists(path)) {
                 reason = createToolValidator(path, version).get();
                 if (reason != null) {
                     throw reason;

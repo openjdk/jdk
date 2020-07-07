@@ -27,11 +27,11 @@ package jdk.incubator.jpackage.internal;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -52,8 +52,8 @@ public final class MacCertificate {
         return verifyCertificate(this.certificate);
     }
 
-    private static File findCertificate(String certificate) {
-        File result = null;
+    private static Path findCertificate(String certificate) {
+        Path result = null;
 
         List<String> args = new ArrayList<>();
         args.add("security");
@@ -68,10 +68,10 @@ public final class MacCertificate {
             ProcessBuilder security = new ProcessBuilder(args);
             IOUtils.exec(security, false, ps);
 
-            File output = File.createTempFile("tempfile", ".tmp");
+            Path output = Files.createTempFile("tempfile", ".tmp");
 
             Files.copy(new ByteArrayInputStream(baos.toByteArray()),
-                    output.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    output, StandardCopyOption.REPLACE_EXISTING);
 
             result = output;
         }
@@ -111,7 +111,7 @@ public final class MacCertificate {
         boolean result = false;
 
         try {
-            File file = null;
+            Path file = null;
             Date certificateDate = null;
 
             try {
@@ -119,12 +119,12 @@ public final class MacCertificate {
 
                 if (file != null) {
                     certificateDate = findCertificateDate(
-                            file.getCanonicalPath());
+                            file.toFile().getCanonicalPath());
                 }
             }
             finally {
                 if (file != null) {
-                    file.delete();
+                    Files.delete(file);
                 }
             }
 

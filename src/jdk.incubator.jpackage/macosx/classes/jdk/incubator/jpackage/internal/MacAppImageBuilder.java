@@ -25,8 +25,6 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
@@ -120,20 +118,21 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     },
                     (s, p) -> s);
 
-    public static final BundlerParamInfo<File> ICON_ICNS =
+    public static final BundlerParamInfo<Path> ICON_ICNS =
             new StandardBundlerParam<>(
             "icon.icns",
-            File.class,
+            Path.class,
             params -> {
-                File f = ICON.fetchFrom(params);
-                if (f != null && !f.getName().toLowerCase().endsWith(".icns")) {
+                Path f = ICON.fetchFrom(params);
+                if (f != null && f.getFileName() != null && !f.getFileName()
+                        .toString().toLowerCase().endsWith(".icns")) {
                     Log.error(MessageFormat.format(
                             I18N.getString("message.icon-not-icns"), f));
                     return null;
                 }
                 return f;
             },
-            (s, p) -> new File(s));
+            (s, p) -> Path.of(s));
 
     public static final StandardBundlerParam<Boolean> SIGN_BUNDLE  =
             new StandardBundlerParam<>(
@@ -242,8 +241,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
         Map<String, ? super Object> originalParams = new HashMap<>(params);
         // Generate PkgInfo
-        File pkgInfoFile = new File(contentsDir.toFile(), "PkgInfo");
-        pkgInfoFile.createNewFile();
+        Path pkgInfoFile = contentsDir.resolve("PkgInfo");
+        Files.createFile(pkgInfoFile);
         writePkgInfo(pkgInfoFile);
 
         Path executable = macOSDir.resolve(getLauncherName(params));
@@ -290,11 +289,9 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         // copy file association icons
         for (Map<String, ?
                 super Object> fa : FILE_ASSOCIATIONS.fetchFrom(params)) {
-            File f = FA_ICON.fetchFrom(fa);
-            if (f != null && f.exists()) {
-                try (InputStream in2 = new FileInputStream(f)) {
-                    Files.copy(in2, resourcesDir.resolve(f.getName()));
-                }
+            Path f = FA_ICON.fetchFrom(fa);
+            if (IOUtils.exists(f)) {
+                IOUtils.copyFile(f, resourcesDir.resolve(f.getFileName()));
 
             }
         }
@@ -306,11 +303,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     private void copyRuntimeFiles(Map<String, ? super Object> params)
             throws IOException {
         // Generate Info.plist
-        writeInfoPlist(contentsDir.resolve("Info.plist").toFile(), params);
+        writeInfoPlist(contentsDir.resolve("Info.plist"), params);
 
         // generate java runtime info.plist
         writeRuntimeInfoPlist(
-                runtimeDir.resolve("Contents/Info.plist").toFile(), params);
+                runtimeDir.resolve("Contents/Info.plist"), params);
 
         // copy library
         Path runtimeMacOSDir = Files.createDirectories(
@@ -346,8 +343,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
     }
 
-    static File getConfig_Entitlements(Map<String, ? super Object> params) {
-        return new File(CONFIG_ROOT.fetchFrom(params),
+    static Path getConfig_Entitlements(Map<String, ? super Object> params) {
+        return CONFIG_ROOT.fetchFrom(params).resolve(
                 getLauncherName(params) + ".entitlements");
     }
 
@@ -382,7 +379,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
     }
 
-    private void writeRuntimeInfoPlist(File file,
+    private void writeRuntimeInfoPlist(Path file,
             Map<String, ? super Object> params) throws IOException {
         Map<String, String> data = new HashMap<>();
         String identifier = StandardBundlerParam.isRuntimeInstaller(params) ?
@@ -427,10 +424,10 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
          }
     }
 
-    private void writeInfoPlist(File file, Map<String, ? super Object> params)
+    private void writeInfoPlist(Path file, Map<String, ? super Object> params)
             throws IOException {
         Log.verbose(MessageFormat.format(I18N.getString(
-                "message.preparing-info-plist"), file.getAbsolutePath()));
+                "message.preparing-info-plist"), file.toAbsolutePath()));
 
         //prepare config for exe
         //Note: do not need CFBundleDisplayName if we don't support localization
@@ -460,7 +457,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     + "." + ((extensions == null || extensions.isEmpty())
                     ? "mime" : extensions.get(0));
             String description = FA_DESCRIPTION.fetchFrom(fileAssociation);
-            File icon = FA_ICON.fetchFrom(fileAssociation);
+            Path icon = FA_ICON.fetchFrom(fileAssociation);
 
             bundleDocumentTypes.append(" <dict>\n");
             writeStringArrayPlist(bundleDocumentTypes, "LSItemContentTypes",
@@ -482,9 +479,9 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     FA_MAC_LSDOCINPLACE.fetchFrom(fileAssociation));
             writeBoolPlist(bundleDocumentTypes, "UISupportsDocumentBrowser",
                     FA_MAC_UIDOCBROWSER.fetchFrom(fileAssociation));
-            if (icon != null && icon.exists()) {
+            if (IOUtils.exists(icon)) {
                 writeStringPlist(bundleDocumentTypes, "CFBundleTypeIconFile",
-                        icon.getName());
+                        icon.getFileName().toString());
             }
             bundleDocumentTypes.append("  </dict>\n");
 
@@ -496,8 +493,9 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             writeStringArrayPlist(exportedTypes, "UTTypeConformsTo",
                     FA_MAC_UTTYPECONFORMSTO.fetchFrom(fileAssociation));
 
-            if (icon != null && icon.exists()) {
-                writeStringPlist(exportedTypes, "UTTypeIconFile", icon.getName());
+            if (IOUtils.exists(icon)) {
+                writeStringPlist(exportedTypes, "UTTypeIconFile",
+                        icon.getFileName().toString());
             }
             exportedTypes.append("\n")
                     .append("  <key>UTTypeTagSpecification</key>\n")
@@ -532,11 +530,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 .saveToFile(file);
     }
 
-    private void writePkgInfo(File file) throws IOException {
+    private void writePkgInfo(Path file) throws IOException {
         //hardcoded as it does not seem we need to change it ever
         String signature = "????";
 
-        try (Writer out = Files.newBufferedWriter(file.toPath())) {
+        try (Writer out = Files.newBufferedWriter(file)) {
             out.write(OS_TYPE_CODE + signature);
             out.flush();
         }
@@ -557,7 +555,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
 
         // get current keychain list
-        String keyChainPath = new File (keyChain).getAbsolutePath().toString();
+        String keyChainPath = Path.of(keyChain).toAbsolutePath().toString();
         List<String> keychainList = new ArrayList<>();
         int ret = IOUtils.getProcessOutput(
                 keychainList, "security", "list-keychains");
@@ -621,7 +619,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     static void signAppBundle(
             Map<String, ? super Object> params, Path appLocation,
-            String signingIdentity, String identifierPrefix, File entitlements)
+            String signingIdentity, String identifierPrefix, Path entitlements)
             throws IOException {
         AtomicReference<IOException> toThrow = new AtomicReference<>();
         String appExecutable = "/Contents/MacOS/" + APP_NAME.fetchFrom(params);
@@ -683,8 +681,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     try {
                         Set<PosixFilePermission> oldPermissions =
                                 Files.getPosixFilePermissions(p);
-                        File f = p.toFile();
-                        f.setWritable(true, true);
+                        p.toFile().setWritable(true, true);
 
                         ProcessBuilder pb = new ProcessBuilder(args);
 
@@ -798,17 +795,15 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
 
         try {
-            File infoPList = new File(PREDEFINED_APP_IMAGE.fetchFrom(params) +
-                                      File.separator + "Contents" +
-                                      File.separator + "Info.plist");
+            Path infoPList = PREDEFINED_APP_IMAGE.fetchFrom(params).resolve("Contents").
+                    resolve("Info.plist");
 
             DocumentBuilderFactory dbf
                     = DocumentBuilderFactory.newDefaultInstance();
             dbf.setFeature("http://apache.org/xml/features/" +
                            "nonvalidating/load-external-dtd", false);
             DocumentBuilder b = dbf.newDocumentBuilder();
-            org.w3c.dom.Document doc = b.parse(new FileInputStream(
-                    infoPList.getAbsolutePath()));
+            org.w3c.dom.Document doc = b.parse(Files.newInputStream(infoPList));
 
             XPath xPath = XPathFactory.newInstance().newXPath();
             // Query for the value of <string> element preceding <key>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package jdk.incubator.jpackage.internal;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.File;
 import java.util.List;
 import jdk.incubator.jpackage.internal.Arguments.CLIOptions;
 
@@ -116,7 +116,7 @@ class AddLauncherArguments {
 
         String value = getOptionValue(CLIOptions.ICON);
         Arguments.putUnlessNull(bundleParams, CLIOptions.ICON.getId(),
-                (value == null) ? null : new File(value));
+                (value == null) ? null : Path.of(value));
 
         // "arguments" and "java-options" even if value is null:
         if (allArgs.containsKey(CLIOptions.ARGUMENTS.getId())) {

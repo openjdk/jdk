@@ -26,6 +26,7 @@
 package jdk.incubator.jpackage.internal;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.InvalidPathException;
@@ -37,6 +38,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * DeployParams
@@ -48,20 +51,20 @@ public class DeployParams {
 
     String targetFormat = null; // means default type for this platform
 
-    File outdir = null;
+    Path outdir = null;
 
     // raw arguments to the bundler
     Map<String, ? super Object> bundlerArguments = new LinkedHashMap<>();
 
-    public void setOutput(File output) {
+    public void setOutput(Path output) {
         outdir = output;
     }
 
     static class Template {
-        File in;
-        File out;
+        Path in;
+        Path out;
 
-        Template(File in, File out) {
+        Template(Path in, Path out) {
             this.in = in;
             this.out = out;
         }
@@ -72,15 +75,19 @@ public class DeployParams {
     // we may get "." as filename and assumption is we include
     // everything in the given folder
     // (IOUtils.copyfiles() have recursive behavior)
-    List<File> expandFileset(File root) {
-        List<File> files = new LinkedList<>();
-        if (!Files.isSymbolicLink(root.toPath())) {
-            if (root.isDirectory()) {
-                File[] children = root.listFiles();
-                if (children != null && children.length > 0) {
-                    for (File f : children) {
-                        files.addAll(expandFileset(f));
-                    }
+    List<Path> expandFileset(Path root) throws IOException {
+        List<Path> files = new LinkedList<>();
+        if (!Files.isSymbolicLink(root)) {
+            if (Files.isDirectory(root)) {
+                List<Path> children = Files.list(root).collect(Collectors.toList());
+                if (children != null && children.size() > 0) {
+                    children.forEach(f -> {
+                        try {
+                            files.addAll(expandFileset(f));
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    });
                 } else {
                     // Include empty folders
                     files.add(root);
@@ -110,7 +117,7 @@ public class DeployParams {
         }
         try {
             // name must be valid path element for this file system
-            Path p = (new File(s)).toPath();
+            Path p = Path.of(s);
             // and it must be a single name element in a path
             if (p.getNameCount() != 1) {
                 throw new PackagerException(exceptionKey, s);
@@ -198,8 +205,8 @@ public class DeployParams {
         String appImage = (String)bundlerArguments.get(
                 Arguments.CLIOptions.PREDEFINED_APP_IMAGE.getId());
         if (appImage != null) {
-            File appImageDir = new File(appImage);
-            if (!appImageDir.exists() || appImageDir.list().length == 0) {
+            Path appImageDir = Path.of(appImage);
+            if (!Files.exists(appImageDir) || appImageDir.toFile().list().length == 0) {
                 throw new PackagerException("ERR_AppImageNotExist", appImage);
             }
         }
@@ -208,10 +215,15 @@ public class DeployParams {
         String root = (String)bundlerArguments.get(
                 Arguments.CLIOptions.TEMP_ROOT.getId());
         if (root != null) {
-            String [] contents = (new File(root)).list();
+            try {
+                String [] contents = Files.list(Path.of(root))
+                        .toArray(String[]::new);
 
-            if (contents != null && contents.length > 0) {
-                throw new PackagerException("ERR_BuildRootInvalid", root);
+                if (contents != null && contents.length > 0) {
+                    throw new PackagerException("ERR_BuildRootInvalid", root);
+                }
+            } catch (IOException ioe) {
+                throw new PackagerException(ioe);
             }
         }
 
@@ -219,7 +231,7 @@ public class DeployParams {
         String resources = (String)bundlerArguments.get(
                 Arguments.CLIOptions.RESOURCE_DIR.getId());
         if (resources != null) {
-            if (!(new File(resources)).exists()) {
+            if (!(Files.exists(Path.of(resources)))) {
                 throw new PackagerException(
                     "message.resource-dir-does-not-exist",
                     Arguments.CLIOptions.RESOURCE_DIR.getId(), resources);
@@ -230,7 +242,7 @@ public class DeployParams {
         String runtime = (String)bundlerArguments.get(
                 Arguments.CLIOptions.PREDEFINED_RUNTIME_IMAGE.getId());
         if (runtime != null) {
-            if (!(new File(runtime)).exists()) {
+            if (!(Files.exists(Path.of(runtime)))) {
                 throw new PackagerException(
                     "message.runtime-image-dir-does-not-exist",
                     Arguments.CLIOptions.PREDEFINED_RUNTIME_IMAGE.getId(),
@@ -243,8 +255,7 @@ public class DeployParams {
         String license = (String)bundlerArguments.get(
                 Arguments.CLIOptions.LICENSE_FILE.getId());
         if (license != null) {
-            File licenseFile = new File(license);
-            if (!licenseFile.exists()) {
+            if (!(Files.exists(Path.of(license)))) {
                 throw new PackagerException("ERR_LicenseFileNotExit");
             }
         }
@@ -253,10 +264,9 @@ public class DeployParams {
         String icon = (String)bundlerArguments.get(
                 Arguments.CLIOptions.ICON.getId());
         if (icon != null) {
-            File iconFile = new File(icon);
-            if (!iconFile.exists()) {
+            if (!(Files.exists(Path.of(icon)))) {
                 throw new PackagerException("ERR_IconFileNotExit",
-                        iconFile.getAbsolutePath());
+                        Path.of(icon).toAbsolutePath().toString());
             }
         }
     }

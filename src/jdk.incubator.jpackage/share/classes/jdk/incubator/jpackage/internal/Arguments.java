@@ -24,9 +24,10 @@
  */
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -89,7 +90,7 @@ public class Arguments {
     private List<CLIOptions> allOptions = null;
 
     private String input = null;
-    private String output = null;
+    private Path output = null;
 
     private boolean hasMainJar = false;
     private boolean hasMainClass = false;
@@ -130,8 +131,8 @@ public class Arguments {
 
         addLaunchers = new ArrayList<>();
 
-        output = Paths.get("").toAbsolutePath().toString();
-        deployParams.setOutput(new File(output));
+        output = Paths.get("").toAbsolutePath();
+        deployParams.setOutput(output);
     }
 
     // CLIOptions is public for DeployParamsTest
@@ -146,8 +147,8 @@ public class Arguments {
         }),
 
         OUTPUT ("dest", "d", OptionCategories.PROPERTY, () -> {
-            context().output = popArg();
-            context().deployParams.setOutput(new File(context().output));
+            context().output = Path.of(popArg());
+            context().deployParams.setOutput(context().output);
         }),
 
         DESCRIPTION ("description", OptionCategories.PROPERTY),
@@ -670,7 +671,7 @@ public class Arguments {
         Map<String, ? super Object> localParams = new HashMap<>(params);
         try {
             bundler.validate(localParams);
-            File result = bundler.execute(localParams, deployParams.outdir);
+            Path result = bundler.execute(localParams, deployParams.outdir);
             if (result == null) {
                 throw new PackagerException("MSG_BundlerFailed",
                         bundler.getID(), bundler.getName());
@@ -696,7 +697,7 @@ public class Arguments {
             if (userProvidedBuildRoot) {
                 Log.verbose(MessageFormat.format(
                         I18N.getString("message.debug-working-directory"),
-                        (new File(buildRoot)).getAbsolutePath()));
+                        (Path.of(buildRoot)).toAbsolutePath().toString()));
             } else {
                 // always clean up the temporary directory created
                 // when --temp option not used.
@@ -716,10 +717,9 @@ public class Arguments {
     static Map<String, String> getPropertiesFromFile(String filename) {
         Map<String, String> map = new HashMap<>();
         // load properties file
-        File file = new File(filename);
         Properties properties = new Properties();
-        try (FileInputStream in = new FileInputStream(file)) {
-            properties.load(in);
+        try (Reader reader = Files.newBufferedReader(Path.of(filename))) {
+            properties.load(reader);
         } catch (IOException e) {
             Log.error("Exception: " + e.getMessage());
         }
@@ -808,11 +808,11 @@ public class Arguments {
 
         JarFile jf;
         try {
-            File file = new File(input, mainJarPath);
-            if (!file.exists()) {
+            Path file = Path.of(input, mainJarPath);
+            if (!Files.exists(file)) {
                 return null;
             }
-            jf = new JarFile(file);
+            jf = new JarFile(file.toFile());
             Manifest m = jf.getManifest();
             Attributes attrs = (m != null) ? m.getMainAttributes() : null;
             if (attrs != null) {
