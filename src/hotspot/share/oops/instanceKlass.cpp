@@ -1169,7 +1169,9 @@ void InstanceKlass::initialize_impl(TRAPS) {
       call_class_initializer(THREAD);
     } else {
       // The elapsed time is so small it's not worth counting.
-      ClassLoader::perf_classes_inited()->inc();
+      if (UsePerfData) {
+        ClassLoader::perf_classes_inited()->inc();
+      }
       call_class_initializer(THREAD);
     }
   }
