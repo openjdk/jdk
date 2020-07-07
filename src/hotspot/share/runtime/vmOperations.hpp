@@ -25,12 +25,10 @@
 #ifndef SHARE_RUNTIME_VMOPERATIONS_HPP
 #define SHARE_RUNTIME_VMOPERATIONS_HPP
 
-#include "classfile/javaClasses.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
-#include "code/codeCache.hpp"
 
 // The following classes are used for operations
 // initiated by a Java thread but that must

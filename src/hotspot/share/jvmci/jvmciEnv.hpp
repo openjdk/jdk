@@ -35,6 +35,7 @@ class JVMCIObjectArray;
 class JVMCIPrimitiveArray;
 class JVMCICompiler;
 class JVMCIRuntime;
+class nmethodLocker;
 
 #define JVMCI_EXCEPTION_CONTEXT \
   JavaThread* thread=JavaThread::current(); \

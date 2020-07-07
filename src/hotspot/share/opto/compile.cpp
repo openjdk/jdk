@@ -26,7 +26,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/javaClasses.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"

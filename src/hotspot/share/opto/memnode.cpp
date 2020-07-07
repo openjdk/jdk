@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"

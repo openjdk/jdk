@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"

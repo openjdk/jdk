@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "adfiles", get_basename(AD._VM_file._name));
   AD.addInclude(AD._CPP_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_file, "memory/allocation.inline.hpp");
+  AD.addInclude(AD._CPP_file, "code/codeCache.hpp");
   AD.addInclude(AD._CPP_file, "code/compiledIC.hpp");
   AD.addInclude(AD._CPP_file, "code/nativeInst.hpp");
   AD.addInclude(AD._CPP_file, "code/vmreg.inline.hpp");

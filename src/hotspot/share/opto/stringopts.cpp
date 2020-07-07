@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"

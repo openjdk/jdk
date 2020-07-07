@@ -36,6 +36,7 @@
 #include "oops/symbol.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
+#include "runtime/signature.hpp"
 #include "utilities/utf8.hpp"
 
 uint32_t Symbol::pack_hash_and_refcount(short hash, int refcount) {

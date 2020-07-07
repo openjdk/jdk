@@ -30,6 +30,7 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "classfile/javaClasses.hpp"
 #include "nativeInst_ppc.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"

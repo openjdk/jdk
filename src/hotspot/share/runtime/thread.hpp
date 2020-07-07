@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_THREAD_HPP
 
 #include "jni.h"
-#include "code/compiledMethod.hpp"
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
@@ -68,6 +67,7 @@ class ParkEvent;
 class Parker;
 class MonitorInfo;
 
+class AbstractCompiler;
 class ciEnv;
 class CompileThread;
 class CompileLog;
