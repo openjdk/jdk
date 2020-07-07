@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,16 @@
  * @bug 4927217
  * @summary test to reconnect
  * @author Shanliang JIANG
- *
+ * @library /test/lib
  * @run clean ReconnectTest
  * @run build ReconnectTest
  * @run main ReconnectTest
  */
 
+import jdk.test.lib.Utils;
+
 import java.util.*;
 import java.net.MalformedURLException;
-import java.io.IOException;
 
 import javax.management.*;
 import javax.management.remote.*;
@@ -46,7 +47,7 @@ public class ReconnectTest {
     private static HashMap env = new HashMap(2);
 
     static {
-        String timeout = "1000";
+        String timeout = Long.toString(Utils.adjustTimeout(1000));
         env.put("jmx.remote.x.server.connection.timeout", timeout);
         env.put("jmx.remote.x.client.connection.check.period", timeout);
     }
@@ -104,7 +105,7 @@ public class ReconnectTest {
 
         for (int i=0; i<3; i++) {
             System.out.println("************** Sleeping ...... "+i);
-            Thread.sleep(2000);
+            Thread.sleep(Utils.adjustTimeout(2000));
             System.out.println("Sleep done.");
 
             System.out.println("The default domain is "
