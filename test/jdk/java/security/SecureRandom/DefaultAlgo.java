@@ -26,19 +26,21 @@ import java.security.Provider;
 import java.security.Security;
 import java.security.SecureRandom;
 import java.security.Provider.Service;
-import java.util.Objects;
 import java.util.Arrays;
 import sun.security.provider.SunEntries;
 
 /**
  * @test
- * @bug 8228613 8246613
+ * @bug 8228613 8246613 8248505
  * @summary Ensure that the default SecureRandom algo used is based
  *     on the registration ordering, and falls to next provider
  *     if none are found
  * @modules java.base/sun.security.provider
  */
 public class DefaultAlgo {
+
+    private static final String SR_IMPLCLASS =
+            "sun.security.provider.SecureRandom";
 
     public static void main(String[] args) throws Exception {
         String[] algos = { "A", "B", "C" };
@@ -51,7 +53,8 @@ public class DefaultAlgo {
     private static void test3rdParty(String[] algos) {
         Provider[] provs = {
             new SampleLegacyProvider(algos),
-            new SampleServiceProvider(algos)
+            new SampleServiceProvider(algos),
+            new CustomProvider(algos)
         };
         for (Provider p : provs) {
             checkDefault(p, algos);
@@ -72,9 +75,10 @@ public class DefaultAlgo {
     }
 
     private static void checkDefault(Provider p, String ... algos) {
-        out.println(p.getName() + " with " + Arrays.toString(algos));
-        int pos = Security.insertProviderAt(p, 1);
         String pName = p.getName();
+        out.println(pName + " with " + Arrays.toString(algos));
+        int pos = Security.insertProviderAt(p, 1);
+
         boolean isLegacy = pName.equals("SampleLegacy");
         try {
             if (isLegacy) {
@@ -91,7 +95,13 @@ public class DefaultAlgo {
             out.println("=> Test Passed");
         } finally {
             if (pos != -1) {
-                Security.removeProvider(p.getName());
+                Security.removeProvider(pName);
+            }
+            if (isLegacy) {
+                // add back the removed algos
+                for (String s : algos) {
+                    p.put("SecureRandom." + s, SR_IMPLCLASS);
+                }
             }
         }
     }
@@ -100,7 +110,7 @@ public class DefaultAlgo {
         SampleLegacyProvider(String[] listOfSupportedRNGs) {
             super("SampleLegacy", "1.0", "test provider using legacy put");
             for (String s : listOfSupportedRNGs) {
-                put("SecureRandom." + s, "sun.security.provider.SecureRandom");
+                put("SecureRandom." + s, SR_IMPLCLASS);
             }
         }
     }
@@ -110,8 +120,37 @@ public class DefaultAlgo {
             super("SampleService", "1.0", "test provider using putService");
             for (String s : listOfSupportedRNGs) {
                 putService(new Provider.Service(this, "SecureRandom", s,
-                        "sun.security.provider.SecureRandom", null, null));
+                        SR_IMPLCLASS, null, null));
             }
+        }
+    }
+
+    // custom provider which overrides putService(...)/getService() and uses
+    // its own Service impl
+    private static class CustomProvider extends Provider {
+        private static class CustomService extends Provider.Service {
+            CustomService(Provider p, String type, String algo, String cName) {
+                super(p, type, algo, cName, null, null);
+            }
+        }
+
+        CustomProvider(String[] listOfSupportedRNGs) {
+            super("Custom", "1.0", "test provider overrides putService with " +
+                    " custom service with legacy registration");
+            for (String s : listOfSupportedRNGs) {
+                putService(new CustomService(this, "SecureRandom", s ,
+                        SR_IMPLCLASS));
+            }
+        }
+        @Override
+        protected void putService(Provider.Service s) {
+            // convert to legacy puts
+            put(s.getType() + "." + s.getAlgorithm(), s.getClassName());
+            put(s.getType() + ":" + s.getAlgorithm(), s);
+        }
+        @Override
+        public Provider.Service getService(String type, String algo) {
+            return (Provider.Service) get(type + ":" + algo);
         }
     }
 }
