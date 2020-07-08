@@ -25,10 +25,11 @@
 
 package jdk.jfr;
 
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.Set;
 
-import jdk.jfr.internal.Control;
+import jdk.jfr.internal.settings.JDKSettingControl;
 
 /**
  * Base class to extend to create setting controls.
@@ -139,14 +140,29 @@ import jdk.jfr.internal.Control;
  * @since 9
  */
 @MetadataDefinition
-public abstract class SettingControl extends Control {
+public abstract class SettingControl {
+
+    private final AccessControlContext context;
+    private final boolean initialized;
 
     /**
      * Constructor for invocation by subclass constructors.
      */
     protected SettingControl() {
-        super(AccessController.getContext());
+        context = this instanceof JDKSettingControl ? null : AccessController.getContext();
+        initialized = true;
+    }
 
+    final AccessControlContext getContext() {
+        // Ensure object state is safe
+        if (!initialized) {
+            throw new InternalError("Object must be initialized before security context can be retrieved");
+        }
+        AccessControlContext c = this.context;
+        if (c == null && !(this instanceof JDKSettingControl)) {
+            throw new InternalError("Security context can only be null for trusted setting controls");
+        }
+        return c;
     }
 
     /**
@@ -181,7 +197,6 @@ public abstract class SettingControl extends Control {
      *
      * @return the value to use, not {@code null}
      */
-    @Override
     public abstract String combine(Set<String> settingValues);
 
     /**
@@ -192,7 +207,6 @@ public abstract class SettingControl extends Control {
      *
      * @param settingValue the string value, not {@code null}
      */
-    @Override
     public abstract void setValue(String settingValue);
 
     /**
@@ -208,6 +222,5 @@ public abstract class SettingControl extends Control {
      *
      * @return the setting value, not {@code null}
      */
-    @Override
     public abstract String getValue();
 }

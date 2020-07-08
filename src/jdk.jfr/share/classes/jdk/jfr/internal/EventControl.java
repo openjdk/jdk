@@ -167,9 +167,9 @@ public final class EventControl {
             int index = settingInfos.size();
             SettingInfo si = new SettingInfo(FIELD_SETTING_PREFIX + index, index);
             si.settingControl = instantiateSettingControl(settingsClass);
-            Control c = si.settingControl;
+            Control c = new Control(si.settingControl, null);
             c.setDefault();
-            String defaultValue = c.getValueSafe();
+            String defaultValue = c.getValue();
             if (defaultValue != null) {
                 Type settingType = TypeLibrary.createType(settingsClass);
                 ArrayList<AnnotationElement> aes = new ArrayList<>();
@@ -180,7 +180,7 @@ public final class EventControl {
                     }
                 }
                 aes.trimToSize();
-                addControl(settingName, si.settingControl);
+                addControl(settingName, c);
                 eventType.add(PrivateAccess.getInstance().newSettingDescriptor(settingType, settingName, defaultValue, aes));
                 settingInfos.add(si);
             }
@@ -205,7 +205,7 @@ public final class EventControl {
         try {
             return (SettingControl) cc.newInstance();
         } catch (IllegalArgumentException | InvocationTargetException e) {
-            throw (Error) new InternalError("Could not instantiate setting for class " + settingControlClass.getName());
+            throw new InternalError("Could not instantiate setting for class " + settingControlClass.getName());
         }
     }
 
@@ -219,7 +219,7 @@ public final class EventControl {
             def = Boolean.toString(enabled.value());
         }
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_ENABLED, Enabled.NAME, def, Collections.emptyList()));
-        return new EnabledSetting(type, def);
+        return new Control(new EnabledSetting(type, def), def);
     }
 
     private static Control defineThreshold(PlatformEventType type) {
@@ -229,7 +229,7 @@ public final class EventControl {
             def = threshold.value();
         }
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THRESHOLD, Threshold.NAME, def, Collections.emptyList()));
-        return new ThresholdSetting(type, def);
+        return new Control(new ThresholdSetting(type), def);
     }
 
     private static Control defineStackTrace(PlatformEventType type) {
@@ -239,7 +239,7 @@ public final class EventControl {
             def = Boolean.toString(stackTrace.value());
         }
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_STACK_TRACE, StackTrace.NAME, def, Collections.emptyList()));
-        return new StackTraceSetting(type, def);
+        return new Control(new StackTraceSetting(type, def), def);
     }
 
     private static Control defineCutoff(PlatformEventType type) {
@@ -249,7 +249,7 @@ public final class EventControl {
             def = cutoff.value();
         }
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_CUTOFF, Cutoff.NAME, def, Collections.emptyList()));
-        return new CutoffSetting(type, def);
+        return new Control(new CutoffSetting(type), def);
     }
 
 
@@ -260,13 +260,13 @@ public final class EventControl {
             def = period.value();
         }
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_PERIOD, PeriodSetting.NAME, def, Collections.emptyList()));
-        return new PeriodSetting(type, def);
+        return new Control(new PeriodSetting(type), def);
     }
 
     void disable() {
         for (NamedControl nc : namedControls) {
-            if (nc.control instanceof EnabledSetting) {
-                nc.control.setValueSafe("false");
+            if (nc.control.isType(EnabledSetting.class)) {
+                nc.control.setValue("false");
                 return;
             }
         }

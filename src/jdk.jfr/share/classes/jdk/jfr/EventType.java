@@ -67,6 +67,8 @@ public final class EventType {
      * Returns the field with the specified name, or {@code null} if it doesn't
      * exist.
      *
+     * @param name of the field to get, not {@code null}
+     *
      * @return a value descriptor that describes the field, or {@code null} if
      *         the field with the specified name doesn't exist
      */

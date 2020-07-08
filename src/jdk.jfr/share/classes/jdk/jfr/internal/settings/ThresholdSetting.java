@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
 import jdk.jfr.Timespan;
 import jdk.jfr.internal.PlatformEventType;
-import jdk.jfr.internal.Control;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.Utils;
 @MetadataDefinition
@@ -42,13 +41,12 @@ import jdk.jfr.internal.Utils;
 @Name(Type.SETTINGS_PREFIX + "Threshold")
 @Description("Record event with duration above or equal to threshold")
 @Timespan
-public final class ThresholdSetting extends Control {
+public final class ThresholdSetting extends JDKSettingControl {
     private final static long typeId = Type.getTypeId(ThresholdSetting.class);
     private String value = "0 ns";
     private final PlatformEventType eventType;
 
-    public ThresholdSetting(PlatformEventType eventType, String defaultValue) {
-       super(defaultValue);
+    public ThresholdSetting(PlatformEventType eventType) {
        this.eventType = Objects.requireNonNull(eventType);
     }
 
