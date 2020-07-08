@@ -813,10 +813,11 @@ public:
   }
 };
 
+static inline intptr_t* vtable_of(Metadata* m) {
+  return *((intptr_t**)m);
+}
+
 template <class T> class CppVtableCloner : public T {
-  static intptr_t* vtable_of(Metadata& m) {
-    return *((intptr_t**)&m);
-  }
   static CppVtableInfo* _info;
 
   static int get_vtable_length(const char* name);
@@ -837,6 +838,8 @@ public:
     intptr_t* vptr = *(intptr_t**)obj;
     return vptr == _info->cloned_vtable();
   }
+
+  static void init_orig_cpp_vtptr(int kind);
 };
 
 template <class T> CppVtableInfo* CppVtableCloner<T>::_info = NULL;
@@ -862,7 +865,7 @@ intptr_t* CppVtableCloner<T>::clone_vtable(const char* name, CppVtableInfo* info
   }
   T tmp; // Allocate temporary dummy metadata object to get to the original vtable.
   int n = info->vtable_size();
-  intptr_t* srcvtable = vtable_of(tmp);
+  intptr_t* srcvtable = vtable_of(&tmp);
   intptr_t* dstvtable = info->cloned_vtable();
 
   // We already checked (and, if necessary, adjusted n) when the vtables were allocated, so we are
@@ -908,8 +911,8 @@ int CppVtableCloner<T>::get_vtable_length(const char* name) {
   CppVtableTesterA<T> a;
   CppVtableTesterB<T> b;
 
-  intptr_t* avtable = vtable_of(a);
-  intptr_t* bvtable = vtable_of(b);
+  intptr_t* avtable = vtable_of(&a);
+  intptr_t* bvtable = vtable_of(&b);
 
   // Start at slot 1, because slot 0 may be RTTI (on Solaris/Sparc)
   int vtable_len = 1;
@@ -933,14 +936,31 @@ int CppVtableCloner<T>::get_vtable_length(const char* name) {
 #define ZERO_CPP_VTABLE(c) \
  CppVtableCloner<c>::zero_vtable_clone();
 
-//------------------------------ for DynamicDumpSharedSpaces - start
+#define INIT_ORIG_CPP_VTPTRS(c) \
+  CppVtableCloner<c>::init_orig_cpp_vtptr(c##_Kind);
+
 #define DECLARE_CLONED_VTABLE_KIND(c) c ## _Kind,
 
-enum {
-  // E.g., ConstantPool_Kind == 0, InstanceKlass == 1, etc.
+enum ClonedVtableKind {
+  // E.g., ConstantPool_Kind == 0, InstanceKlass_Kind == 1, etc.
   CPP_VTABLE_PATCH_TYPES_DO(DECLARE_CLONED_VTABLE_KIND)
   _num_cloned_vtable_kinds
 };
+
+// This is a map of all the original vtptrs. E.g., for
+//     ConstantPool *cp = new (...) ConstantPool(...) ; // a dynamically allocated constant pool
+// the following holds true:
+//     _orig_cpp_vtptrs[ConstantPool_Kind] ==  ((intptr_t**)cp)[0]
+static intptr_t* _orig_cpp_vtptrs[_num_cloned_vtable_kinds];
+static bool _orig_cpp_vtptrs_inited = false;
+
+template <class T>
+void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
+  assert(kind < _num_cloned_vtable_kinds, "sanity");
+  T tmp; // Allocate temporary dummy metadata object to get to the original vtable.
+  intptr_t* srcvtable = vtable_of(&tmp);
+  _orig_cpp_vtptrs[kind] = srcvtable;
+}
 
 // This is the index of all the cloned vtables. E.g., for
 //     ConstantPool* cp = ....; // an archived constant pool
@@ -960,7 +980,12 @@ void MetaspaceShared::serialize_cloned_cpp_vtptrs(SerializeClosure* soc) {
   soc->do_ptr((void**)&_cloned_cpp_vtptrs);
 }
 
-intptr_t* MetaspaceShared::fix_cpp_vtable_for_dynamic_archive(MetaspaceObj::Type msotype, address obj) {
+intptr_t* MetaspaceShared::get_archived_cpp_vtable(MetaspaceObj::Type msotype, address obj) {
+  if (!_orig_cpp_vtptrs_inited) {
+    CPP_VTABLE_PATCH_TYPES_DO(INIT_ORIG_CPP_VTPTRS);
+    _orig_cpp_vtptrs_inited = true;
+  }
+
   Arguments::assert_is_dumping_archive();
   int kind = -1;
   switch (msotype) {
@@ -977,53 +1002,21 @@ intptr_t* MetaspaceShared::fix_cpp_vtable_for_dynamic_archive(MetaspaceObj::Type
   case MetaspaceObj::RecordComponentType:
     // These have no vtables.
     break;
-  case MetaspaceObj::ClassType:
-    {
-      Klass* k = (Klass*)obj;
-      assert(k->is_klass(), "must be");
-      if (k->is_instance_klass()) {
-        InstanceKlass* ik = InstanceKlass::cast(k);
-        if (ik->is_class_loader_instance_klass()) {
-          kind = InstanceClassLoaderKlass_Kind;
-        } else if (ik->is_reference_instance_klass()) {
-          kind = InstanceRefKlass_Kind;
-        } else if (ik->is_mirror_instance_klass()) {
-          kind = InstanceMirrorKlass_Kind;
-        } else {
-          kind = InstanceKlass_Kind;
-        }
-      } else if (k->is_typeArray_klass()) {
-        kind = TypeArrayKlass_Kind;
-      } else {
-        assert(k->is_objArray_klass(), "must be");
-        kind = ObjArrayKlass_Kind;
-      }
-    }
-    break;
-
-  case MetaspaceObj::MethodType:
-    {
-      Method* m = (Method*)obj;
-      assert(m->is_method(), "must be");
-      kind = Method_Kind;
-    }
-    break;
-
   case MetaspaceObj::MethodDataType:
     // We don't archive MethodData <-- should have been removed in removed_unsharable_info
     ShouldNotReachHere();
     break;
-
-  case MetaspaceObj::ConstantPoolType:
-    {
-      ConstantPool *cp = (ConstantPool*)obj;
-      assert(cp->is_constantPool(), "must be");
-      kind = ConstantPool_Kind;
-    }
-    break;
-
   default:
-    ShouldNotReachHere();
+    for (kind = 0; kind < _num_cloned_vtable_kinds; kind ++) {
+      if (vtable_of((Metadata*)obj) == _orig_cpp_vtptrs[kind]) {
+        break;
+      }
+    }
+    if (kind >= _num_cloned_vtable_kinds) {
+      fatal("Cannot find C++ vtable for " INTPTR_FORMAT " -- you probably added"
+            " a new subtype of Klass or MetaData without updating CPP_VTABLE_PATCH_TYPES_DO",
+            p2i(obj));
+    }
   }
 
   if (kind >= 0) {
@@ -1033,8 +1026,6 @@ intptr_t* MetaspaceShared::fix_cpp_vtable_for_dynamic_archive(MetaspaceObj::Type
     return NULL;
   }
 }
-
-//------------------------------ for DynamicDumpSharedSpaces - end
 
 // This can be called at both dump time and run time:
 // - clone the contents of the c++ vtables into the space
@@ -1334,9 +1325,9 @@ public:
     }
     memcpy(p, obj, bytes);
 
-    intptr_t* cloned_vtable = MetaspaceShared::fix_cpp_vtable_for_dynamic_archive(ref->msotype(), (address)p);
-    if (cloned_vtable != NULL) {
-      *(address*)p = (address)cloned_vtable;
+    intptr_t* archived_vtable = MetaspaceShared::get_archived_cpp_vtable(ref->msotype(), (address)p);
+    if (archived_vtable != NULL) {
+      *(address*)p = (address)archived_vtable;
       ArchivePtrMarker::mark_pointer((address*)p);
     }
 
