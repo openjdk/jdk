@@ -52,9 +52,7 @@ Symbol::Symbol(const u1* name, int length, int refcount) {
   _hash_and_refcount =  pack_hash_and_refcount((short)os::random(), refcount);
   _length = length;
   _body[0] = 0;  // in case length == 0
-  for (int i = 0; i < length; i++) {
-    byte_at_put(i, name[i]);
-  }
+  memcpy(_body, name, length);
 }
 
 void* Symbol::operator new(size_t sz, int len) throw() {
