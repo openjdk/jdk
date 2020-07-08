@@ -98,7 +98,7 @@ final class Linker {
                         objectFileName = name.substring(0, name.length() - ".dll".length());
                     }
                     objectFileName = objectFileName + ".obj";
-                    linkerPath = (options.linkerpath != null) ? options.linkerpath : getWindowsLinkPath();
+                    linkerPath = (options.linkerpath != null) ? options.linkerpath : getWindowsLinkPath(main);
                     if (linkerPath == null) {
                         throw new InternalError("Can't locate Microsoft Visual Studio amd64 link.exe");
                     }
@@ -118,6 +118,8 @@ final class Linker {
                 throw new InternalError(getString(p.getErrorStream()));
             }
         }
+
+        main.printer.printlnVerbose("Found linker: " + linkerPath);
     }
 
     void link() throws Exception {
@@ -150,14 +152,17 @@ final class Linker {
     /**
      * Search for Visual Studio link.exe Search Order is: VS2017+, VS2013, VS2015, VS2012.
      */
-    private static String getWindowsLinkPath() throws Exception {
+    private static String getWindowsLinkPath(Main main) throws Exception {
         try {
             Path vc141NewerLinker = getVC141AndNewerLinker();
             if (vc141NewerLinker != null) {
                 return vc141NewerLinker.toString();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            main.printer.printlnVerbose("Could not find VC14 or newer version of linker: " + e.getMessage());
+            if (main.options.debug) {
+                e.printStackTrace();
+            }
         }
 
         String link = "\\VC\\bin\\amd64\\link.exe";
@@ -193,11 +198,12 @@ final class Linker {
     private static Path getVC141AndNewerLinker() throws Exception {
         String programFilesX86 = System.getenv("ProgramFiles(x86)");
         if (programFilesX86 == null) {
-            throw new InternalError("Could not read the ProgramFiles(x86) environment variable");
+            throw new IllegalStateException("Could not read the ProgramFiles(x86) environment variable");
         }
-        Path vswhere = Paths.get(programFilesX86 + "\\Microsoft Visual Studio\\Installer\\vswhere.exe");
+        String vswherePath = programFilesX86 + "\\Microsoft Visual Studio\\Installer\\vswhere.exe";
+        Path vswhere = Paths.get(vswherePath);
         if (!Files.exists(vswhere)) {
-            return null;
+            throw new IllegalStateException("Could not find " + vswherePath);
         }
 
         ProcessBuilder processBuilder = new ProcessBuilder(vswhere.toString(), "-requires",
@@ -211,19 +217,19 @@ final class Linker {
             if (errorMessage.isEmpty()) {
                 errorMessage = getString(process.getInputStream());
             }
-            throw new InternalError(errorMessage);
+            throw new IllegalStateException("vswhere error: " + errorMessage);
         }
 
-        String installationPath = getLines(process.getInputStream()).findFirst().orElseThrow(() -> new InternalError("Unexpected empty output from vswhere"));
+        String installationPath = getLines(process.getInputStream()).findFirst().orElseThrow(() -> new IllegalStateException("Unexpected empty output from vswhere"));
         Path vcToolsVersionFilePath = Paths.get(installationPath, "VC\\Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt");
         List<String> vcToolsVersionFileLines = Files.readAllLines(vcToolsVersionFilePath);
         if (vcToolsVersionFileLines.isEmpty()) {
-            throw new InternalError(vcToolsVersionFilePath.toString() + " is empty");
+            throw new IllegalStateException(vcToolsVersionFilePath.toString() + " is empty");
         }
         String vcToolsVersion = vcToolsVersionFileLines.get(0);
         Path linkPath = Paths.get(installationPath, "VC\\Tools\\MSVC", vcToolsVersion, "bin\\Hostx64\\x64\\link.exe");
         if (!Files.exists(linkPath)) {
-            throw new InternalError("Linker at path " + linkPath.toString() + " does not exist");
+            throw new IllegalStateException("Linker at path " + linkPath.toString() + " does not exist");
         }
 
         return linkPath;
