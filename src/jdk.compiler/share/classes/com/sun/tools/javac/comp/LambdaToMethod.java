@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2425,7 +2425,8 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         protected void append(byte[] ba) {
-            sb.append(new String(ba));
+            Name name = names.fromUtf(ba);
+            sb.append(name.toString());
         }
 
         @Override
