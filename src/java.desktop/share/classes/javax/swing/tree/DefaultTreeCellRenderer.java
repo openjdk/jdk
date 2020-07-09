@@ -32,6 +32,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import javax.swing.plaf.BorderUIResource.EmptyBorderUIResource;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.UIResource;
@@ -245,10 +246,13 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
                 this, ui, "Tree.drawDashedFocusIndicator", false);
 
         fillBackground = DefaultLookup.getBoolean(this, ui, "Tree.rendererFillBackground", true);
-        Insets margins = DefaultLookup.getInsets(this, ui, "Tree.rendererMargins");
-        if (margins != null) {
-            setBorder(new EmptyBorder(margins.top, margins.left,
-                    margins.bottom, margins.right));
+        if (!inited || getBorder() instanceof UIResource)  {
+            Insets margins = DefaultLookup.getInsets(this, ui, "Tree.rendererMargins");
+            if (margins != null) {
+                setBorder(new EmptyBorderUIResource(margins));
+            } else {
+                setBorder(new EmptyBorderUIResource(0, 0, 0, 0));
+            }
         }
 
         setName("Tree.cellRenderer");
