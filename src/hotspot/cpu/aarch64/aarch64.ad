@@ -3118,7 +3118,7 @@ encode %{
 
   enc_class aarch64_enc_movw_imm(iRegI dst, immI src) %{
     C2_MacroAssembler _masm(&cbuf);
-    u_int32_t con = (u_int32_t)$src$$constant;
+    uint32_t con = (uint32_t)$src$$constant;
     Register dst_reg = as_Register($dst$$reg);
     if (con == 0) {
       __ movw(dst_reg, zr);
@@ -3130,7 +3130,7 @@ encode %{
   enc_class aarch64_enc_mov_imm(iRegL dst, immL src) %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
-    u_int64_t con = (u_int64_t)$src$$constant;
+    uint64_t con = (uint64_t)$src$$constant;
     if (con == 0) {
       __ mov(dst_reg, zr);
     } else {
@@ -3172,7 +3172,7 @@ encode %{
   enc_class aarch64_enc_mov_p1(iRegP dst, immP_1 src) %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
-    __ mov(dst_reg, (u_int64_t)1);
+    __ mov(dst_reg, (uint64_t)1);
   %}
 
   enc_class aarch64_enc_mov_byte_map_base(iRegP dst, immByteMapBase src) %{
@@ -3297,7 +3297,7 @@ encode %{
   enc_class aarch64_enc_cmpw_imm(iRegI src1, immI src2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register reg1 = as_Register($src1$$reg);
-    u_int32_t val = (u_int32_t)$src2$$constant;
+    uint32_t val = (uint32_t)$src2$$constant;
     __ movw(rscratch1, val);
     __ cmpw(reg1, rscratch1);
   %}
@@ -3319,7 +3319,7 @@ encode %{
       __ adds(zr, reg, -val);
     } else {
     // aargh, Long.MIN_VALUE is a special case
-      __ orr(rscratch1, zr, (u_int64_t)val);
+      __ orr(rscratch1, zr, (uint64_t)val);
       __ subs(zr, reg, rscratch1);
     }
   %}
@@ -3327,7 +3327,7 @@ encode %{
   enc_class aarch64_enc_cmp_imm(iRegL src1, immL src2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register reg1 = as_Register($src1$$reg);
-    u_int64_t val = (u_int64_t)$src2$$constant;
+    uint64_t val = (uint64_t)$src2$$constant;
     __ mov(rscratch1, val);
     __ cmp(reg1, rscratch1);
   %}
@@ -13859,8 +13859,8 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
 
 instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, Universe dummy, rFlagsReg cr)
 %{
-  predicate((u_int64_t)n->in(2)->get_long()
-            < (u_int64_t)(BlockZeroingLowLimit >> LogBytesPerWord));
+  predicate((uint64_t)n->in(2)->get_long()
+            < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord));
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL base);
 
@@ -13868,7 +13868,7 @@ instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, Universe dummy, rFlagsReg 
   format %{ "ClearArray $cnt, $base" %}
 
   ins_encode %{
-    __ zero_words($base$$Register, (u_int64_t)$cnt$$constant);
+    __ zero_words($base$$Register, (uint64_t)$cnt$$constant);
   %}
 
   ins_pipe(pipe_class_memory);

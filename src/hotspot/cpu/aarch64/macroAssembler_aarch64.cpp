@@ -93,7 +93,7 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
     offset = target-branch;
     int shift = Instruction_aarch64::extract(insn, 31, 31);
     if (shift) {
-      u_int64_t dest = (u_int64_t)target;
+      uint64_t dest = (uint64_t)target;
       uint64_t pc_page = (uint64_t)branch >> 12;
       uint64_t adr_page = (uint64_t)target >> 12;
       unsigned offset_lo = dest & 0xfff;
@@ -146,7 +146,7 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
     Instruction_aarch64::spatch(branch, 23, 5, offset);
     Instruction_aarch64::patch(branch, 30, 29, offset_lo);
   } else if (Instruction_aarch64::extract(insn, 31, 21) == 0b11010010100) {
-    u_int64_t dest = (u_int64_t)target;
+    uint64_t dest = (uint64_t)target;
     // Move wide constant
     assert(nativeInstruction_at(branch+4)->is_movk(), "wrong insns in patch");
     assert(nativeInstruction_at(branch+8)->is_movk(), "wrong insns in patch");
@@ -272,13 +272,13 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
       ShouldNotReachHere();
     }
   } else if (Instruction_aarch64::extract(insn, 31, 23) == 0b110100101) {
-    u_int32_t *insns = (u_int32_t *)insn_addr;
+    uint32_t *insns = (uint32_t *)insn_addr;
     // Move wide constant: movz, movk, movk.  See movptr().
     assert(nativeInstruction_at(insns+1)->is_movk(), "wrong insns in patch");
     assert(nativeInstruction_at(insns+2)->is_movk(), "wrong insns in patch");
-    return address(u_int64_t(Instruction_aarch64::extract(insns[0], 20, 5))
-                   + (u_int64_t(Instruction_aarch64::extract(insns[1], 20, 5)) << 16)
-                   + (u_int64_t(Instruction_aarch64::extract(insns[2], 20, 5)) << 32));
+    return address(uint64_t(Instruction_aarch64::extract(insns[0], 20, 5))
+                   + (uint64_t(Instruction_aarch64::extract(insns[1], 20, 5)) << 16)
+                   + (uint64_t(Instruction_aarch64::extract(insns[2], 20, 5)) << 32));
   } else if (Instruction_aarch64::extract(insn, 31, 22) == 0b1011100101 &&
              Instruction_aarch64::extract(insn, 4, 0) == 0b11111) {
     return 0;
@@ -1491,7 +1491,7 @@ void MacroAssembler::null_check(Register reg, int offset) {
 
 void MacroAssembler::mov(Register r, Address dest) {
   code_section()->relocate(pc(), dest.rspec());
-  u_int64_t imm64 = (u_int64_t)dest.target();
+  uint64_t imm64 = (uint64_t)dest.target();
   movptr(r, imm64);
 }
 
@@ -1524,20 +1524,20 @@ void MacroAssembler::movptr(Register r, uintptr_t imm64) {
 //   imm32 == hex abcdefgh  T2S:  Vd = abcdefghabcdefgh
 //   imm32 == hex abcdefgh  T4S:  Vd = abcdefghabcdefghabcdefghabcdefgh
 //   T1D/T2D: invalid
-void MacroAssembler::mov(FloatRegister Vd, SIMD_Arrangement T, u_int32_t imm32) {
+void MacroAssembler::mov(FloatRegister Vd, SIMD_Arrangement T, uint32_t imm32) {
   assert(T != T1D && T != T2D, "invalid arrangement");
   if (T == T8B || T == T16B) {
     assert((imm32 & ~0xff) == 0, "extraneous bits in unsigned imm32 (T8B/T16B)");
     movi(Vd, T, imm32 & 0xff, 0);
     return;
   }
-  u_int32_t nimm32 = ~imm32;
+  uint32_t nimm32 = ~imm32;
   if (T == T4H || T == T8H) {
     assert((imm32  & ~0xffff) == 0, "extraneous bits in unsigned imm32 (T4H/T8H)");
     imm32 &= 0xffff;
     nimm32 &= 0xffff;
   }
-  u_int32_t x = imm32;
+  uint32_t x = imm32;
   int movi_cnt = 0;
   int movn_cnt = 0;
   while (x) { if (x & 0xff) movi_cnt++; x >>= 8; }
@@ -1561,7 +1561,7 @@ void MacroAssembler::mov(FloatRegister Vd, SIMD_Arrangement T, u_int32_t imm32) 
   }
 }
 
-void MacroAssembler::mov_immediate64(Register dst, u_int64_t imm64)
+void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
 {
 #ifndef PRODUCT
   {
@@ -1575,7 +1575,7 @@ void MacroAssembler::mov_immediate64(Register dst, u_int64_t imm64)
   } else {
     // we can use a combination of MOVZ or MOVN with
     // MOVK to build up the constant
-    u_int64_t imm_h[4];
+    uint64_t imm_h[4];
     int zero_count = 0;
     int neg_count = 0;
     int i;
@@ -1596,7 +1596,7 @@ void MacroAssembler::mov_immediate64(Register dst, u_int64_t imm64)
     } else if (zero_count == 3) {
       for (i = 0; i < 4; i++) {
         if (imm_h[i] != 0L) {
-          movz(dst, (u_int32_t)imm_h[i], (i << 4));
+          movz(dst, (uint32_t)imm_h[i], (i << 4));
           break;
         }
       }
@@ -1604,7 +1604,7 @@ void MacroAssembler::mov_immediate64(Register dst, u_int64_t imm64)
       // one MOVN will do
       for (int i = 0; i < 4; i++) {
         if (imm_h[i] != 0xffffL) {
-          movn(dst, (u_int32_t)imm_h[i] ^ 0xffffL, (i << 4));
+          movn(dst, (uint32_t)imm_h[i] ^ 0xffffL, (i << 4));
           break;
         }
       }
@@ -1612,69 +1612,69 @@ void MacroAssembler::mov_immediate64(Register dst, u_int64_t imm64)
       // one MOVZ and one MOVK will do
       for (i = 0; i < 3; i++) {
         if (imm_h[i] != 0L) {
-          movz(dst, (u_int32_t)imm_h[i], (i << 4));
+          movz(dst, (uint32_t)imm_h[i], (i << 4));
           i++;
           break;
         }
       }
       for (;i < 4; i++) {
         if (imm_h[i] != 0L) {
-          movk(dst, (u_int32_t)imm_h[i], (i << 4));
+          movk(dst, (uint32_t)imm_h[i], (i << 4));
         }
       }
     } else if (neg_count == 2) {
       // one MOVN and one MOVK will do
       for (i = 0; i < 4; i++) {
         if (imm_h[i] != 0xffffL) {
-          movn(dst, (u_int32_t)imm_h[i] ^ 0xffffL, (i << 4));
+          movn(dst, (uint32_t)imm_h[i] ^ 0xffffL, (i << 4));
           i++;
           break;
         }
       }
       for (;i < 4; i++) {
         if (imm_h[i] != 0xffffL) {
-          movk(dst, (u_int32_t)imm_h[i], (i << 4));
+          movk(dst, (uint32_t)imm_h[i], (i << 4));
         }
       }
     } else if (zero_count == 1) {
       // one MOVZ and two MOVKs will do
       for (i = 0; i < 4; i++) {
         if (imm_h[i] != 0L) {
-          movz(dst, (u_int32_t)imm_h[i], (i << 4));
+          movz(dst, (uint32_t)imm_h[i], (i << 4));
           i++;
           break;
         }
       }
       for (;i < 4; i++) {
         if (imm_h[i] != 0x0L) {
-          movk(dst, (u_int32_t)imm_h[i], (i << 4));
+          movk(dst, (uint32_t)imm_h[i], (i << 4));
         }
       }
     } else if (neg_count == 1) {
       // one MOVN and two MOVKs will do
       for (i = 0; i < 4; i++) {
         if (imm_h[i] != 0xffffL) {
-          movn(dst, (u_int32_t)imm_h[i] ^ 0xffffL, (i << 4));
+          movn(dst, (uint32_t)imm_h[i] ^ 0xffffL, (i << 4));
           i++;
           break;
         }
       }
       for (;i < 4; i++) {
         if (imm_h[i] != 0xffffL) {
-          movk(dst, (u_int32_t)imm_h[i], (i << 4));
+          movk(dst, (uint32_t)imm_h[i], (i << 4));
         }
       }
     } else {
       // use a MOVZ and 3 MOVKs (makes it easier to debug)
-      movz(dst, (u_int32_t)imm_h[0], 0);
+      movz(dst, (uint32_t)imm_h[0], 0);
       for (i = 1; i < 4; i++) {
-        movk(dst, (u_int32_t)imm_h[i], (i << 4));
+        movk(dst, (uint32_t)imm_h[i], (i << 4));
       }
     }
   }
 }
 
-void MacroAssembler::mov_immediate32(Register dst, u_int32_t imm32)
+void MacroAssembler::mov_immediate32(Register dst, uint32_t imm32)
 {
 #ifndef PRODUCT
     {
@@ -1688,7 +1688,7 @@ void MacroAssembler::mov_immediate32(Register dst, u_int32_t imm32)
   } else {
     // we can use MOVZ, MOVN or two calls to MOVK to build up the
     // constant
-    u_int32_t imm_h[2];
+    uint32_t imm_h[2];
     imm_h[0] = imm32 & 0xffff;
     imm_h[1] = ((imm32 >> 16) & 0xffff);
     if (imm_h[0] == 0) {
@@ -4835,7 +4835,7 @@ void MacroAssembler::zero_words(Register ptr, Register cnt)
 // base:         Address of a buffer to be zeroed, 8 bytes aligned.
 // cnt:          Immediate count in HeapWords.
 #define SmallArraySize (18 * BytesPerLong)
-void MacroAssembler::zero_words(Register base, u_int64_t cnt)
+void MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
   BLOCK_COMMENT("zero_words {");
   int i = cnt & 1;  // store any odd word to start

@@ -456,8 +456,8 @@ class MacroAssembler: public Assembler {
   // first two private routines for loading 32 bit or 64 bit constants
 private:
 
-  void mov_immediate64(Register dst, u_int64_t imm64);
-  void mov_immediate32(Register dst, u_int32_t imm32);
+  void mov_immediate64(Register dst, uint64_t imm64);
+  void mov_immediate32(Register dst, uint32_t imm32);
 
   int push(unsigned int bitset, Register stack);
   int pop(unsigned int bitset, Register stack);
@@ -486,22 +486,22 @@ public:
 
   inline void mov(Register dst, address addr)
   {
-    mov_immediate64(dst, (u_int64_t)addr);
+    mov_immediate64(dst, (uint64_t)addr);
   }
 
-  inline void mov(Register dst, u_int64_t imm64)
+  inline void mov(Register dst, uint64_t imm64)
   {
     mov_immediate64(dst, imm64);
   }
 
-  inline void movw(Register dst, u_int32_t imm32)
+  inline void movw(Register dst, uint32_t imm32)
   {
     mov_immediate32(dst, imm32);
   }
 
   inline void mov(Register dst, long l)
   {
-    mov(dst, (u_int64_t)l);
+    mov(dst, (uint64_t)l);
   }
 
   inline void mov(Register dst, int i)
@@ -518,7 +518,7 @@ public:
 
   void movptr(Register r, uintptr_t imm64);
 
-  void mov(FloatRegister Vd, SIMD_Arrangement T, u_int32_t imm32);
+  void mov(FloatRegister Vd, SIMD_Arrangement T, uint32_t imm32);
 
   void mov(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
     orr(Vd, T, Vn, Vn);
@@ -1237,7 +1237,7 @@ public:
                      int elem_size);
 
   void fill_words(Register base, Register cnt, Register value);
-  void zero_words(Register base, u_int64_t cnt);
+  void zero_words(Register base, uint64_t cnt);
   void zero_words(Register ptr, Register cnt);
   void zero_dcache_blocks(Register base, Register cnt);
 
