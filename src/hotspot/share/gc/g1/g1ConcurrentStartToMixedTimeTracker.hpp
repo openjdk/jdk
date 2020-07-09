@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,33 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1INITIALMARKTOMIXEDTIMETRACKER_HPP
-#define SHARE_GC_G1_G1INITIALMARKTOMIXEDTIMETRACKER_HPP
+#ifndef SHARE_GC_G1_G1CONCURRENTSTARTTOMIXEDTIMETRACKER_HPP
+#define SHARE_GC_G1_G1CONCURRENTSTARTTOMIXEDTIMETRACKER_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-// Used to track time from the end of initial mark to the first mixed GC.
-// After calling the initial mark/mixed gc notifications, the result can be
+// Used to track time from the end of concurrent start to the first mixed GC.
+// After calling the concurrent start/mixed gc notifications, the result can be
 // obtained in last_marking_time() once, after which the tracking resets.
 // Any pauses recorded by add_pause() will be subtracted from that results.
-class G1InitialMarkToMixedTimeTracker {
+class G1ConcurrentStartToMixedTimeTracker {
 private:
   bool _active;
-  double _initial_mark_end_time;
+  double _concurrent_start_end_time;
   double _mixed_start_time;
   double _total_pause_time;
 
   double wall_time() const {
-    return _mixed_start_time - _initial_mark_end_time;
+    return _mixed_start_time - _concurrent_start_end_time;
   }
 public:
-  G1InitialMarkToMixedTimeTracker() { reset(); }
+  G1ConcurrentStartToMixedTimeTracker() { reset(); }
 
-  // Record initial mark pause end, starting the time tracking.
-  void record_initial_mark_end(double end_time) {
-    assert(!_active, "Initial mark out of order.");
-    _initial_mark_end_time = end_time;
+  // Record concurrent start pause end, starting the time tracking.
+  void record_concurrent_start_end(double end_time) {
+    assert(!_active, "Concurrent start out of order.");
+    _concurrent_start_end_time = end_time;
     _active = true;
   }
 
@@ -62,7 +62,7 @@ public:
 
   double last_marking_time() {
     assert(has_result(), "Do not have all measurements yet.");
-    double result = (_mixed_start_time - _initial_mark_end_time) - _total_pause_time;
+    double result = (_mixed_start_time - _concurrent_start_end_time) - _total_pause_time;
     reset();
     return result;
   }
@@ -70,7 +70,7 @@ public:
   void reset() {
     _active = false;
     _total_pause_time = 0.0;
-    _initial_mark_end_time = -1.0;
+    _concurrent_start_end_time = -1.0;
     _mixed_start_time = -1.0;
   }
 
@@ -81,7 +81,7 @@ public:
   }
 
   // Returns whether we have a result that can be retrieved.
-  bool has_result() const { return _mixed_start_time > 0.0 && _initial_mark_end_time > 0.0; }
+  bool has_result() const { return _mixed_start_time > 0.0 && _concurrent_start_end_time > 0.0; }
 };
 
-#endif // SHARE_GC_G1_G1INITIALMARKTOMIXEDTIMETRACKER_HPP
+#endif // SHARE_GC_G1_G1CONCURRENTSTARTTOMIXEDTIMETRACKER_HPP

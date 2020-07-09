@@ -26,9 +26,9 @@
 #define SHARE_GC_G1_G1POLICY_HPP
 
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentStartToMixedTimeTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
-#include "gc/g1/g1InitialMarkToMixedTimeTracker.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1OldGenAllocationTracker.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
@@ -107,7 +107,7 @@ class G1Policy: public CHeapObj<mtGC> {
   // two GCs.
   G1OldGenAllocationTracker _old_gen_alloc_tracker;
 
-  G1InitialMarkToMixedTimeTracker _initial_mark_to_mixed;
+  G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 
   bool should_update_surv_rate_group_predictors() {
     return collector_state()->in_young_only_phase() && !collector_state()->mark_or_rebuild_in_progress();
@@ -271,11 +271,15 @@ private:
     YoungOnlyGC,
     MixedGC,
     LastYoungGC,
-    InitialMarkGC,
+    ConcurrentStartGC,
     Cleanup,
     Remark
   };
 
+  static bool is_young_only_pause(PauseKind kind);
+  static bool is_mixed_pause(PauseKind kind);
+  static bool is_last_young_pause(PauseKind kind);
+  static bool is_concurrent_start_pause(PauseKind kind);
   // Calculate PauseKind from internal state.
   PauseKind young_gc_pause_kind() const;
   // Record the given STW pause with the given start and end times (in s).
@@ -364,14 +368,14 @@ public:
   // new cycle, as long as we are not already in one. It's best if it
   // is called during a safepoint when the test whether a cycle is in
   // progress or not is stable.
-  bool force_initial_mark_if_outside_cycle(GCCause::Cause gc_cause);
+  bool force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause);
 
   // This is called at the very beginning of an evacuation pause (it
   // has to be the first thing that the pause does). If
   // initiate_conc_mark_if_possible() is true, and the concurrent
   // marking thread has completed its work during the previous cycle,
-  // it will set in_initial_mark_gc() to so that the pause does
-  // the initial-mark work and start a marking cycle.
+  // it will set in_concurrent_start_gc() to so that the pause does
+  // the concurrent start work and start a marking cycle.
   void decide_on_conc_mark_initiation();
 
   size_t young_list_target_length() const { return _young_list_target_length; }

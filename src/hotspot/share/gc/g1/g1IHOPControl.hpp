@@ -51,7 +51,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // occupancy will be updated at the first heap expansion.
   G1IHOPControl(double initial_ihop_percent);
 
-  // Most recent time from the end of the initial mark to the start of the first
+  // Most recent time from the end of the concurrent start to the start of the first
   // mixed gc.
   virtual double last_marking_length_s() const = 0;
  public:
@@ -71,7 +71,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // difference between old gen size and total heap size at the start of reclamation,
   // and space required for that reclamation.
   virtual void update_allocation_info(double allocation_time_s, size_t allocated_bytes, size_t additional_buffer_size);
-  // Update the time spent in the mutator beginning from the end of initial mark to
+  // Update the time spent in the mutator beginning from the end of concurrent start to
   // the first mixed gc.
   virtual void update_marking_length(double marking_length_s) = 0;
 
@@ -82,7 +82,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
 // The returned concurrent mark starting occupancy threshold is a fixed value
 // relative to the maximum heap size.
 class G1StaticIHOPControl : public G1IHOPControl {
-  // Most recent mutator time between the end of initial mark to the start of the
+  // Most recent mutator time between the end of concurrent mark to the start of the
   // first mixed gc.
   double _last_marking_length_s;
  protected:
@@ -104,7 +104,7 @@ class G1StaticIHOPControl : public G1IHOPControl {
 // This algorithm tries to return a concurrent mark starting occupancy value that
 // makes sure that during marking the given target occupancy is never exceeded,
 // based on predictions of current allocation rate and time periods between
-// initial mark and the first mixed gc.
+// concurrent start and the first mixed gc.
 class G1AdaptiveIHOPControl : public G1IHOPControl {
   size_t _heap_reserve_percent; // Percentage of maximum heap capacity we should avoid to touch
   size_t _heap_waste_percent;   // Percentage of free heap that should be considered as waste.

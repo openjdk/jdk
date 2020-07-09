@@ -1806,7 +1806,7 @@ void G1CollectedHeap::ref_processing_init() {
   //   the regions in the collection set may be dotted around.
   //
   // * For the concurrent marking ref processor:
-  //   * Reference discovery is enabled at initial marking.
+  //   * Reference discovery is enabled at concurrent start.
   //   * Reference discovery is disabled and the discovered
   //     references processed etc during remarking.
   //   * Reference discovery is MT (see below).
@@ -2047,7 +2047,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
          "Non-concurrent cause %s", GCCause::to_string(cause));
 
   for (uint i = 1; true; ++i) {
-    // Try to schedule an initial-mark evacuation pause that will
+    // Try to schedule concurrent start evacuation pause that will
     // start a concurrent cycle.
     LOG_COLLECT_CONCURRENTLY(cause, "attempt %u", i);
     VM_G1TryInitiateConcMark op(gc_counter,
@@ -2116,7 +2116,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       //
       // Note that (1) does not imply (4).  If we're still in the mixed
       // phase of an earlier concurrent collection, the request to make the
-      // collection an initial-mark won't be honored.  If we don't check for
+      // collection a concurrent start won't be honored.  If we don't check for
       // both conditions we'll spin doing back-to-back collections.
       if (op.gc_succeeded() ||
           op.cycle_already_in_progress() ||
@@ -2614,7 +2614,7 @@ void G1CollectedHeap::gc_prologue(bool full) {
 
   // Update common counters.
   increment_total_collections(full /* full gc */);
-  if (full || collector_state()->in_initial_mark_gc()) {
+  if (full || collector_state()->in_concurrent_start_gc()) {
     increment_old_marking_cycles_started();
   }
 
@@ -2845,7 +2845,7 @@ void G1CollectedHeap::calculate_collection_set(G1EvacuationInfo& evacuation_info
 }
 
 G1HeapVerifier::G1VerifyType G1CollectedHeap::young_collection_verify_type() const {
-  if (collector_state()->in_initial_mark_gc()) {
+  if (collector_state()->in_concurrent_start_gc()) {
     return G1HeapVerifier::G1VerifyConcurrentStart;
   } else if (collector_state()->in_young_only_phase()) {
     return G1HeapVerifier::G1VerifyYoungNormal;
@@ -2890,7 +2890,7 @@ void G1CollectedHeap::expand_heap_after_young_collection(){
 }
 
 const char* G1CollectedHeap::young_gc_name() const {
-  if (collector_state()->in_initial_mark_gc()) {
+  if (collector_state()->in_concurrent_start_gc()) {
     return "Pause Young (Concurrent Start)";
   } else if (collector_state()->in_young_only_phase()) {
     if (collector_state()->in_young_gc_before_mixed()) {
@@ -2943,24 +2943,24 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   _verifier->verify_region_sets_optional();
   _verifier->verify_dirty_young_regions();
 
-  // We should not be doing initial mark unless the conc mark thread is running
+  // We should not be doing concurrent start unless the concurrent mark thread is running
   if (!_cm_thread->should_terminate()) {
-    // This call will decide whether this pause is an initial-mark
-    // pause. If it is, in_initial_mark_gc() will return true
+    // This call will decide whether this pause is a concurrent start
+    // pause. If it is, in_concurrent_start_gc() will return true
     // for the duration of this pause.
     policy()->decide_on_conc_mark_initiation();
   }
 
-  // We do not allow initial-mark to be piggy-backed on a mixed GC.
-  assert(!collector_state()->in_initial_mark_gc() ||
+  // We do not allow concurrent start to be piggy-backed on a mixed GC.
+  assert(!collector_state()->in_concurrent_start_gc() ||
          collector_state()->in_young_only_phase(), "sanity");
   // We also do not allow mixed GCs during marking.
   assert(!collector_state()->mark_or_rebuild_in_progress() || collector_state()->in_young_only_phase(), "sanity");
 
-  // Record whether this pause is an initial mark. When the current
+  // Record whether this pause is a concurrent start. When the current
   // thread has completed its logging output and it's safe to signal
   // the CM thread, the flag's value in the policy has been reset.
-  bool should_start_conc_mark = collector_state()->in_initial_mark_gc();
+  bool should_start_conc_mark = collector_state()->in_concurrent_start_gc();
   if (should_start_conc_mark) {
     _cm->gc_tracer_cm()->set_gc_cause(gc_cause());
   }
@@ -3044,7 +3044,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
           // We have to do this before we notify the CM threads that
           // they can start working to make sure that all the
           // appropriate initialization is done on the CM object.
-          concurrent_mark()->post_initial_mark();
+          concurrent_mark()->post_concurrent_start();
           // Note that we don't actually trigger the CM thread at
           // this point. We do that later when we're sure that
           // the current thread has completed its logging output.
@@ -3525,7 +3525,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
 }
 
 void G1CollectedHeap::make_pending_list_reachable() {
-  if (collector_state()->in_initial_mark_gc()) {
+  if (collector_state()->in_concurrent_start_gc()) {
     oop pll_head = Universe::reference_pending_list();
     if (pll_head != NULL) {
       // Any valid worker id is fine here as we are in the VM thread and single-threaded.
@@ -3714,9 +3714,9 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
   DerivedPointerTable::clear();
 #endif
 
-  // InitialMark needs claim bits to keep track of the marked-through CLDs.
-  if (collector_state()->in_initial_mark_gc()) {
-    concurrent_mark()->pre_initial_mark();
+  // Concurrent start needs claim bits to keep track of the marked-through CLDs.
+  if (collector_state()->in_concurrent_start_gc()) {
+    concurrent_mark()->pre_concurrent_start();
 
     double start_clear_claimed_marks = os::elapsedTime();
 
@@ -4784,7 +4784,7 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
     _survivor.add_used_bytes(allocated_bytes);
   }
 
-  bool const during_im = collector_state()->in_initial_mark_gc();
+  bool const during_im = collector_state()->in_concurrent_start_gc();
   if (during_im && allocated_bytes > 0) {
     _cm->root_regions()->add(alloc_region->next_top_at_mark_start(), alloc_region->top());
   }

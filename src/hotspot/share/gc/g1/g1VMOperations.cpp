@@ -57,11 +57,11 @@ VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
 bool VM_G1TryInitiateConcMark::doit_prologue() {
   bool result = VM_GC_Operation::doit_prologue();
   // The prologue can fail for a couple of reasons. The first is that another GC
-  // got scheduled and prevented the scheduling of the initial mark GC. The
+  // got scheduled and prevented the scheduling of the concurrent start GC. The
   // second is that the GC locker may be active and the heap can't be expanded.
-  // In both cases we want to retry the GC so that the initial mark pause is
+  // In both cases we want to retry the GC so that the concurrent start pause is
   // actually scheduled. In the second case, however, we should stall until
-  // until the GC locker is no longer active and then retry the initial mark GC.
+  // until the GC locker is no longer active and then retry the concurrent start GC.
   if (!result) _transient_failure = true;
   return result;
 }
@@ -80,15 +80,15 @@ void VM_G1TryInitiateConcMark::doit() {
     // a young-only or mixed GC (depending on phase).  For a user request
     // there's no point in even doing that much, so done.  For some non-user
     // requests the alternative GC might still be needed.
-  } else if (!g1h->policy()->force_initial_mark_if_outside_cycle(_gc_cause)) {
-    // Failure to force the next GC pause to be an initial mark indicates
+  } else if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
+    // Failure to force the next GC pause to be a concurrent start indicates
     // there is already a concurrent marking cycle in progress.  Set flag
     // to notify the caller and return immediately.
     _cycle_already_in_progress = true;
   } else if ((_gc_cause != GCCause::_wb_breakpoint) &&
              ConcurrentGCBreakpoints::is_controlled()) {
     // WhiteBox wants to be in control of concurrent cycles, so don't try to
-    // start one.  This check is after the force_initial_mark_xxx so that a
+    // start one.  This check is after the force_concurrent_start_xxx so that a
     // request will be remembered for a later partial collection, even though
     // we've rejected this request.
     _whitebox_attached = true;

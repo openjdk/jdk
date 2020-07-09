@@ -198,7 +198,7 @@ bool VM_CollectForMetadataAllocation::initiate_concurrent_GC() {
 
     // At this point we are supposed to start a concurrent cycle. We
     // will do so if one is not already in progress.
-    bool should_start = g1h->policy()->force_initial_mark_if_outside_cycle(_gc_cause);
+    bool should_start = g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause);
 
     if (should_start) {
       double pause_target = g1h->policy()->max_pause_time_ms();

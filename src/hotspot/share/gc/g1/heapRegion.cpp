@@ -285,15 +285,15 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             used());
 }
 
-void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,
+void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start,
                                                     bool during_conc_mark) {
   // We always recreate the prev marking info and we'll explicitly
   // mark all objects we find to be self-forwarded on the prev
   // bitmap. So all objects need to be below PTAMS.
   _prev_marked_bytes = 0;
 
-  if (during_initial_mark) {
-    // During initial-mark, we'll also explicitly mark all objects
+  if (during_concurrent_start) {
+    // During concurrent start, we'll also explicitly mark all objects
     // we find to be self-forwarded on the next bitmap. So all
     // objects need to be below NTAMS.
     _next_top_at_mark_start = top();

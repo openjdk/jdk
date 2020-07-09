@@ -187,7 +187,7 @@ public class TestGCLogMessages {
         new TestGCLogMessages().testNormalLogs();
         new TestGCLogMessages().testConcurrentRefinementLogs();
         new TestGCLogMessages().testWithToSpaceExhaustionLogs();
-        new TestGCLogMessages().testWithInitialMark();
+        new TestGCLogMessages().testWithConcurrentStart();
         new TestGCLogMessages().testExpandHeap();
     }
 
@@ -266,14 +266,14 @@ public class TestGCLogMessages {
         output.shouldHaveExitValue(0);
     }
 
-    private void testWithInitialMark() throws Exception {
+    private void testWithConcurrentStart() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                                   "-Xmx10M",
                                                                   "-Xbootclasspath/a:.",
                                                                   "-Xlog:gc*=debug",
                                                                   "-XX:+UnlockDiagnosticVMOptions",
                                                                   "-XX:+WhiteBoxAPI",
-                                                                  GCTestWithInitialMark.class.getName());
+                                                                  GCTestWithConcurrentStart.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Clear Claimed Marks");
@@ -323,7 +323,7 @@ public class TestGCLogMessages {
         }
     }
 
-    static class GCTestWithInitialMark {
+    static class GCTestWithConcurrentStart {
         public static void main(String [] args) {
             sun.hotspot.WhiteBox WB = sun.hotspot.WhiteBox.getWhiteBox();
             WB.g1StartConcMarkCycle();

@@ -193,14 +193,14 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
 
 inline bool
 G1CollectedHeap::evacuation_failure_alot_for_gc_type(bool for_young_gc,
-                                                     bool during_initial_mark,
+                                                     bool during_concurrent_start,
                                                      bool mark_or_rebuild_in_progress) {
   bool res = false;
   if (mark_or_rebuild_in_progress) {
     res |= G1EvacuationFailureALotDuringConcMark;
   }
-  if (during_initial_mark) {
-    res |= G1EvacuationFailureALotDuringInitialMark;
+  if (during_concurrent_start) {
+    res |= G1EvacuationFailureALotDuringConcurrentStart;
   }
   if (for_young_gc) {
     res |= G1EvacuationFailureALotDuringYoungGC;
@@ -227,12 +227,12 @@ G1CollectedHeap::set_evacuation_failure_alot_for_current_gc() {
 
     // Now check if G1EvacuationFailureALot is enabled for the current GC type.
     const bool in_young_only_phase = collector_state()->in_young_only_phase();
-    const bool in_initial_mark_gc = collector_state()->in_initial_mark_gc();
+    const bool in_concurrent_start_gc = collector_state()->in_concurrent_start_gc();
     const bool mark_or_rebuild_in_progress = collector_state()->mark_or_rebuild_in_progress();
 
     _evacuation_failure_alot_for_current_gc &=
       evacuation_failure_alot_for_gc_type(in_young_only_phase,
-                                          in_initial_mark_gc,
+                                          in_concurrent_start_gc,
                                           mark_or_rebuild_in_progress);
   }
 }
