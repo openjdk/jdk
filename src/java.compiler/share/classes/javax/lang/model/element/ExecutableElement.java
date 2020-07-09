@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,8 @@ public interface ExecutableElement extends Element, Parameterizable {
      * initializer.  For a constructor, the name {@code "<init>"} is
      * returned, for a static initializer, the name {@code "<clinit>"}
      * is returned, and for an anonymous class or instance
-     * initializer, an empty name is returned.
+     * initializer, an <a href=Name.html#empty_name>empty name</a> is
+     * returned.
      *
      * @return the simple name of a constructor, method, or
      * initializer

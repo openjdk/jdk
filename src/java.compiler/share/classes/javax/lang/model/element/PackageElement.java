@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,10 @@ public interface PackageElement extends Element, QualifiedNameable {
     TypeMirror asType();
 
     /**
-     * Returns the fully qualified name of this package.
-     * This is also known as the package's <i>canonical</i> name.
-     * For an {@linkplain #isUnnamed() unnamed package}, an empty name is returned.
+     * Returns the fully qualified name of this package.  This is also
+     * known as the package's <i>canonical</i> name.  For an
+     * {@linkplain #isUnnamed() unnamed package}, an <a
+     * href=Name.html#empty_name>empty name</a> is returned.
      *
      * @apiNote The fully qualified name of a named package that is
      * not a subpackage of a named package is its simple name. The
@@ -70,7 +71,8 @@ public interface PackageElement extends Element, QualifiedNameable {
 
     /**
      * Returns the simple name of this package.  For an {@linkplain
-     * #isUnnamed() unnamed package}, an empty name is returned.
+     * #isUnnamed() unnamed package}, an <a
+     * href=Name.html#empty_name>empty name</a> is returned.
      *
      * @return the simple name of this package or an empty name if
      * this is an unnamed package
