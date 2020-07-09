@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
  * @test
  * @bug 8144355 8144062 8176709 8194070 8193802 8231093
  * @summary Test aliasing additions to ZipFileSystem for multi-release jar files
- * @library /lib/testlibrary/java/util/jar
+ * @library /lib/testlibrary/java/util/jar /test/lib/
  * @modules jdk.compiler
  *          jdk.jartool
  *          jdk.zipfs
- * @build Compiler JarBuilder CreateMultiReleaseTestJars
+ * @build CreateMultiReleaseTestJars
+ *        jdk.test.lib.util.JarBuilder
+ *        jdk.test.lib.compiler.Compiler
  * @run testng MultiReleaseJarTest
  */
 
@@ -47,6 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.testng.Assert;
 import org.testng.annotations.*;
+import jdk.test.lib.util.JarBuilder;
 
 public class MultiReleaseJarTest {
     final private int MAJOR_VERSION = Runtime.version().feature();

@@ -35,7 +35,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build debuggee class
  * @build vm.mlvm.share.jdi.MHDebuggee
