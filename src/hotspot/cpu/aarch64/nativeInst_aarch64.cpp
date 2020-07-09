@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,7 +305,7 @@ void NativeMovRegMem::set_offset(int x) {
   unsigned insn = *(unsigned*)pc;
   if (maybe_cpool_ref(pc)) {
     address addr = MacroAssembler::target_addr_for_insn(pc);
-    *(long*)addr = x;
+    *(int64_t*)addr = x;
   } else {
     MacroAssembler::pd_patch_instruction(pc, (address)intptr_t(x));
     ICache::invalidate_range(instruction_address(), instruction_size);

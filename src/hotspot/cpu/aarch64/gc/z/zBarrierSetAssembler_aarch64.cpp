@@ -206,7 +206,7 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
   BarrierSetAssembler::try_resolve_jobject_in_native(masm, jni_env, robj, tmp, slowpath);
 
   // The Address offset is too large to direct load - -784. Our range is +127, -128.
-  __ mov(tmp, (long int)(in_bytes(ZThreadLocalData::address_bad_mask_offset()) -
+  __ mov(tmp, (int64_t)(in_bytes(ZThreadLocalData::address_bad_mask_offset()) -
               in_bytes(JavaThread::jni_environment_offset())));
 
   // Load address bad mask

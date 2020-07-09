@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1352,7 +1352,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ load_klass(klass_RInfo, obj);
     if (k->is_loaded()) {
       // See if we get an immediate positive hit
-      __ ldr(rscratch1, Address(klass_RInfo, long(k->super_check_offset())));
+      __ ldr(rscratch1, Address(klass_RInfo, int64_t(k->super_check_offset())));
       __ cmp(k_RInfo, rscratch1);
       if ((juint)in_bytes(Klass::secondary_super_cache_offset()) != k->super_check_offset()) {
         __ br(Assembler::NE, *failure_target);
@@ -2675,7 +2675,7 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   Register res = op->result_opr()->as_register();
 
   assert_different_registers(val, crc, res);
-  unsigned long offset;
+  uint64_t offset;
   __ adrp(res, ExternalAddress(StubRoutines::crc_table_addr()), offset);
   if (offset) __ add(res, res, offset);
 

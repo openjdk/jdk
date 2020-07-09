@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class RegisterImpl: public AbstractRegisterImpl {
 
   // Return the bit which represents this register.  This is intended
   // to be ORed into a bitmask: for usage see class RegSet below.
-  unsigned long bit(bool should_set = true) const { return should_set ? 1 << encoding() : 0; }
+  uint64_t bit(bool should_set = true) const { return should_set ? 1 << encoding() : 0; }
 };
 
 // The integer registers of the aarch64 architecture
