@@ -1143,77 +1143,15 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
 void G1CollectedHeap::resize_heap_if_necessary() {
   assert_at_safepoint_on_vm_thread();
 
-  // Capacity, free and used after the GC counted as full regions to
-  // include the waste in the following calculations.
-  const size_t capacity_after_gc = capacity();
-  const size_t used_after_gc = capacity_after_gc - unused_committed_regions_in_bytes();
+  bool should_expand;
+  size_t resize_amount = _heap_sizing_policy->full_collection_resize_amount(should_expand);
 
-  // This is enforced in arguments.cpp.
-  assert(MinHeapFreeRatio <= MaxHeapFreeRatio,
-         "otherwise the code below doesn't make sense");
-
-  // We don't have floating point command-line arguments
-  const double minimum_free_percentage = (double) MinHeapFreeRatio / 100.0;
-  const double maximum_used_percentage = 1.0 - minimum_free_percentage;
-  const double maximum_free_percentage = (double) MaxHeapFreeRatio / 100.0;
-  const double minimum_used_percentage = 1.0 - maximum_free_percentage;
-
-  // We have to be careful here as these two calculations can overflow
-  // 32-bit size_t's.
-  double used_after_gc_d = (double) used_after_gc;
-  double minimum_desired_capacity_d = used_after_gc_d / maximum_used_percentage;
-  double maximum_desired_capacity_d = used_after_gc_d / minimum_used_percentage;
-
-  // Let's make sure that they are both under the max heap size, which
-  // by default will make them fit into a size_t.
-  double desired_capacity_upper_bound = (double) MaxHeapSize;
-  minimum_desired_capacity_d = MIN2(minimum_desired_capacity_d,
-                                    desired_capacity_upper_bound);
-  maximum_desired_capacity_d = MIN2(maximum_desired_capacity_d,
-                                    desired_capacity_upper_bound);
-
-  // We can now safely turn them into size_t's.
-  size_t minimum_desired_capacity = (size_t) minimum_desired_capacity_d;
-  size_t maximum_desired_capacity = (size_t) maximum_desired_capacity_d;
-
-  // This assert only makes sense here, before we adjust them
-  // with respect to the min and max heap size.
-  assert(minimum_desired_capacity <= maximum_desired_capacity,
-         "minimum_desired_capacity = " SIZE_FORMAT ", "
-         "maximum_desired_capacity = " SIZE_FORMAT,
-         minimum_desired_capacity, maximum_desired_capacity);
-
-  // Should not be greater than the heap max size. No need to adjust
-  // it with respect to the heap min size as it's a lower bound (i.e.,
-  // we'll try to make the capacity larger than it, not smaller).
-  minimum_desired_capacity = MIN2(minimum_desired_capacity, MaxHeapSize);
-  // Should not be less than the heap min size. No need to adjust it
-  // with respect to the heap max size as it's an upper bound (i.e.,
-  // we'll try to make the capacity smaller than it, not greater).
-  maximum_desired_capacity =  MAX2(maximum_desired_capacity, MinHeapSize);
-
-  if (capacity_after_gc < minimum_desired_capacity) {
-    // Don't expand unless it's significant
-    size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
-
-    log_debug(gc, ergo, heap)("Attempt heap expansion (capacity lower than min desired capacity). "
-                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
-                              "min_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
-                              capacity_after_gc, used_after_gc, used(), minimum_desired_capacity, MinHeapFreeRatio);
-
-    expand(expand_bytes, _workers);
-
-    // No expansion, now see if we want to shrink
-  } else if (capacity_after_gc > maximum_desired_capacity) {
-    // Capacity too large, compute shrinking size
-    size_t shrink_bytes = capacity_after_gc - maximum_desired_capacity;
-
-    log_debug(gc, ergo, heap)("Attempt heap shrinking (capacity higher than max desired capacity). "
-                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
-                              "maximum_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
-                              capacity_after_gc, used_after_gc, used(), maximum_desired_capacity, MaxHeapFreeRatio);
-
-    shrink(shrink_bytes);
+  if (resize_amount == 0) {
+    return;
+  } else if (should_expand) {
+    expand(resize_amount, _workers);
+  } else {
+    shrink(resize_amount);
   }
 }
 
@@ -2939,7 +2877,7 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
 }
 
 void G1CollectedHeap::expand_heap_after_young_collection(){
-  size_t expand_bytes = _heap_sizing_policy->expansion_amount();
+  size_t expand_bytes = _heap_sizing_policy->young_collection_expansion_amount();
   if (expand_bytes > 0) {
     // No need for an ergo logging here,
     // expansion_amount() does this when it returns a value > 0.

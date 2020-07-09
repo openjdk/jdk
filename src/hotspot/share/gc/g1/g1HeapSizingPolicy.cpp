@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ static void log_expansion(double short_term_pause_time_ratio,
                             resize_bytes);
 }
 
-size_t G1HeapSizingPolicy::expansion_amount() {
+size_t G1HeapSizingPolicy::young_collection_expansion_amount() {
   assert(GCTimeRatio > 0, "must be");
 
   double long_term_pause_time_ratio = _analytics->long_term_pause_time_ratio();
@@ -195,3 +195,74 @@ size_t G1HeapSizingPolicy::expansion_amount() {
 
   return expand_bytes;
 }
+
+static size_t target_heap_capacity(size_t used_bytes, uintx free_ratio) {
+  const double desired_free_percentage = (double) free_ratio / 100.0;
+  const double desired_used_percentage = 1.0 - desired_free_percentage;
+
+  // We have to be careful here as these two calculations can overflow
+  // 32-bit size_t's.
+  double used_bytes_d = (double) used_bytes;
+  double desired_capacity_d = used_bytes_d / desired_used_percentage;
+  // Let's make sure that they are both under the max heap size, which
+  // by default will make it fit into a size_t.
+  double desired_capacity_upper_bound = (double) MaxHeapSize;
+  desired_capacity_d = MIN2(desired_capacity_d, desired_capacity_upper_bound);
+  // We can now safely turn it into size_t's.
+  return (size_t) desired_capacity_d;
+}
+
+size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
+  // Capacity, free and used after the GC counted as full regions to
+  // include the waste in the following calculations.
+  const size_t capacity_after_gc = _g1h->capacity();
+  const size_t used_after_gc = capacity_after_gc - _g1h->unused_committed_regions_in_bytes();
+
+  size_t minimum_desired_capacity = target_heap_capacity(used_after_gc, MinHeapFreeRatio);
+  size_t maximum_desired_capacity = target_heap_capacity(used_after_gc, MaxHeapFreeRatio);
+
+  // This assert only makes sense here, before we adjust them
+  // with respect to the min and max heap size.
+  assert(minimum_desired_capacity <= maximum_desired_capacity,
+         "minimum_desired_capacity = " SIZE_FORMAT ", "
+         "maximum_desired_capacity = " SIZE_FORMAT,
+         minimum_desired_capacity, maximum_desired_capacity);
+
+  // Should not be greater than the heap max size. No need to adjust
+  // it with respect to the heap min size as it's a lower bound (i.e.,
+  // we'll try to make the capacity larger than it, not smaller).
+  minimum_desired_capacity = MIN2(minimum_desired_capacity, MaxHeapSize);
+  // Should not be less than the heap min size. No need to adjust it
+  // with respect to the heap max size as it's an upper bound (i.e.,
+  // we'll try to make the capacity smaller than it, not greater).
+  maximum_desired_capacity =  MAX2(maximum_desired_capacity, MinHeapSize);
+
+  // Don't expand unless it's significant; prefer expansion to shrinking.
+  if (capacity_after_gc < minimum_desired_capacity) {
+    size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
+
+    log_debug(gc, ergo, heap)("Attempt heap expansion (capacity lower than min desired capacity). "
+                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
+                              "min_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
+                              capacity_after_gc, used_after_gc, _g1h->used(), minimum_desired_capacity, MinHeapFreeRatio);
+
+    expand = true;
+    return expand_bytes;
+    // No expansion, now see if we want to shrink
+  } else if (capacity_after_gc > maximum_desired_capacity) {
+    // Capacity too large, compute shrinking size
+    size_t shrink_bytes = capacity_after_gc - maximum_desired_capacity;
+
+    log_debug(gc, ergo, heap)("Attempt heap shrinking (capacity higher than max desired capacity). "
+                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
+                              "maximum_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
+                              capacity_after_gc, used_after_gc, _g1h->used(), maximum_desired_capacity, MaxHeapFreeRatio);
+
+    expand = false;
+    return shrink_bytes;
+  }
+
+  expand = true; // Does not matter.
+  return 0;
+}
+
