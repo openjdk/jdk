@@ -30,7 +30,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build jit.FloatingPoint.gen_math.Loops02.Loops02
  * @run driver ExecDriver --java jit.FloatingPoint.gen_math.Loops02.Loops02
  */
