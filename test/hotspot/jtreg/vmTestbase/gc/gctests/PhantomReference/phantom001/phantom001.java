@@ -54,7 +54,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm gc.gctests.PhantomReference.phantom001.phantom001 -ms low
  */
 

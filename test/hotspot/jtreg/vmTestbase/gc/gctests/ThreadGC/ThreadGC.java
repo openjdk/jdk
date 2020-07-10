@@ -37,7 +37,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm gc.gctests.ThreadGC.ThreadGC -gp random(arrays) -ms low
  */
 

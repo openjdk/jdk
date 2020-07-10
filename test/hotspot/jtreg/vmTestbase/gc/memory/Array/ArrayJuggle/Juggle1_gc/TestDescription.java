@@ -31,7 +31,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm -Xlog:gc=debug:gc.log gc.memory.Array.ArrayJuggle.Juggle1.Juggle1 -tg
  */
 

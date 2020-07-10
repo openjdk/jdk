@@ -50,7 +50,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native gc.gctests.mallocWithGC2.mallocWithGC2
  */
 

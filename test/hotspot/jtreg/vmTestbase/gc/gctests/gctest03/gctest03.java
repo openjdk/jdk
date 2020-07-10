@@ -43,7 +43,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @compile Tree.java appthread.java
  * @run main/othervm gc.gctests.gctest03.gctest03 10000
  */
