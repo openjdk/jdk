@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @requires vm.gc.Z & !vm.graal.enabled
+ * @requires vm.gc.Z
  * @bug 8237859
  * @summary A LoadP node has a wrong control input (too early) which results in an out-of-bounds read of an object array with ZGC.
  *
