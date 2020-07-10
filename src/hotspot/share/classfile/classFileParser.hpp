@@ -533,13 +533,6 @@ class ClassFileParser {
                                int annotation_default_length,
                                TRAPS);
 
-  // lays out fields in class and returns the total oopmap count
-  void layout_fields(ConstantPool* cp,
-                     const FieldAllocationCount* fac,
-                     const ClassAnnotationCollector* parsed_annotations,
-                     FieldLayoutInfo* info,
-                     TRAPS);
-
   void update_class_name(Symbol* new_name);
 
  public:
