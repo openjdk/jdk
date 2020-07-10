@@ -203,26 +203,19 @@ public:
   }
 
   void do_buffer(void **buffer, size_t size) {
-    if (_heap->has_forwarded_objects()) {
-      if (ShenandoahStringDedup::is_enabled()) {
-        do_buffer_impl<RESOLVE, ENQUEUE_DEDUP>(buffer, size);
-      } else {
-        do_buffer_impl<RESOLVE, NO_DEDUP>(buffer, size);
-      }
+    assert(size == 0 || !_heap->has_forwarded_objects(), "Forwarded objects are not expected here");
+    if (ShenandoahStringDedup::is_enabled()) {
+      do_buffer_impl<ENQUEUE_DEDUP>(buffer, size);
     } else {
-      if (ShenandoahStringDedup::is_enabled()) {
-        do_buffer_impl<NONE, ENQUEUE_DEDUP>(buffer, size);
-      } else {
-        do_buffer_impl<NONE, NO_DEDUP>(buffer, size);
-      }
+      do_buffer_impl<NO_DEDUP>(buffer, size);
     }
   }
 
-  template<UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
+  template<StringDedupMode STRING_DEDUP>
   void do_buffer_impl(void **buffer, size_t size) {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahConcurrentMark::mark_through_ref<oop, UPDATE_REFS, STRING_DEDUP>(p, _heap, _queue, _mark_context);
+      ShenandoahConcurrentMark::mark_through_ref<oop, NONE, STRING_DEDUP>(p, _heap, _queue, _mark_context);
     }
   }
 };

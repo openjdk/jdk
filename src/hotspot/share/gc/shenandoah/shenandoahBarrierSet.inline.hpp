@@ -82,7 +82,7 @@ inline void ShenandoahBarrierSet::enqueue(oop obj) {
   // Filter marked objects before hitting the SATB queues. The same predicate would
   // be used by SATBMQ::filter to eliminate already marked objects downstream, but
   // filtering here helps to avoid wasteful SATB queueing work to begin with.
-  if (!_heap->requires_marking<false>(obj)) return;
+  if (!_heap->requires_marking(obj)) return;
 
   ShenandoahThreadLocalData::satb_mark_queue(Thread::current()).enqueue_known_active(obj);
 }
