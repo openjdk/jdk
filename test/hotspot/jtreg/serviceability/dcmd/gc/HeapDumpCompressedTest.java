@@ -72,7 +72,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
- * @requires vm.gc.Z & !vm.graal.enabled
+ * @requires vm.gc.Z
  * @summary Test of diagnostic command GC.heap_dump with gzipped output (Z GC)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -84,7 +84,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @summary Test of diagnostic command GC.heap_dump with gzipped output (Shenandoah GC)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -96,7 +96,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
- * @requires vm.gc.Epsilon & !vm.graal.enabled
+ * @requires vm.gc.Epsilon
  * @summary Test of diagnostic command GC.heap_dump with gzipped output (Epsilon GC)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

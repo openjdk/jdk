@@ -24,7 +24,7 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
  *                   -XX:+UseShenandoahGC
@@ -50,7 +50,7 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
  *                   -XX:+UseShenandoahGC
@@ -81,7 +81,7 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
@@ -107,7 +107,8 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
+ * @requires vm.gc.Shenandoah
+ * @requires vm.bits == "64"
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
  *                   -XX:-UseCompressedOops
@@ -138,7 +139,8 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
+ * @requires vm.gc.Shenandoah
+ * @requires vm.bits == "64"
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
  *                   -XX:-UseCompressedOops
@@ -174,7 +176,8 @@
 /*
  * @test TestClone
  * @summary Test clone barriers work correctly
- * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
+ * @requires vm.gc.Shenandoah
+ * @requires vm.bits == "64"
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
  *                   -XX:-UseCompressedOops

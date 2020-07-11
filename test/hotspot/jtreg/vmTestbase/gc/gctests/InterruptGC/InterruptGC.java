@@ -36,7 +36,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm gc.gctests.InterruptGC.InterruptGC -gp random(arrays) -ms low
  */
 

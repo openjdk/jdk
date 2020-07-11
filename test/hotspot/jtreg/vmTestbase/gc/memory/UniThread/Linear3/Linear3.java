@@ -30,7 +30,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm gc.memory.UniThread.Linear3.Linear3 -iterations 5
  */
 

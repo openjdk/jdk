@@ -472,7 +472,9 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                 outFile.toAbsolutePath().toString()));
 
         // run dpkg
-        Executor.of(cmdline.toArray(String[]::new)).executeExpectSuccess();
+        RetryExecutor.retryOnKnownErrorMessage(
+                "semop(1): encountered an error: Invalid argument").execute(
+                        cmdline.toArray(String[]::new));
 
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.output-to-location"), outFile.toAbsolutePath().toString()));

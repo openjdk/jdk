@@ -49,7 +49,7 @@ package gc;
 
 /*
  * @test TestSystemGCShenandoah
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC gc.TestSystemGC
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ExplicitGCInvokesConcurrent gc.TestSystemGC
