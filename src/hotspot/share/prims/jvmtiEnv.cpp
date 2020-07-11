@@ -1535,15 +1535,14 @@ JvmtiEnv::GetStackTrace(JavaThread* java_thread, jint start_depth, jint max_fram
   jvmtiError err = JVMTI_ERROR_NONE;
 
   // It is only safe to perform the direct operation on the current
-  // thread. All other usage needs to use a vm-safepoint-op for safety.
+  // thread. All other usage needs to use a direct handshake for safety.
   if (java_thread == JavaThread::current()) {
     err = get_stack_trace(java_thread, start_depth, max_frame_count, frame_buffer, count_ptr);
   } else {
-    // JVMTI get stack trace at safepoint. Do not require target thread to
-    // be suspended.
-    VM_GetStackTrace op(this, java_thread, start_depth, max_frame_count, frame_buffer, count_ptr);
-    VMThread::execute(&op);
-    err = op.result();
+    // Get stack trace with handshake.
+    GetStackTraceClosure op(this, start_depth, max_frame_count, frame_buffer, count_ptr);
+    bool executed = Handshake::execute_direct(&op, java_thread);
+    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
 
   return err;
@@ -1575,12 +1574,31 @@ JvmtiEnv::GetAllStackTraces(jint max_frame_count, jvmtiStackInfo** stack_info_pt
 jvmtiError
 JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list, jint max_frame_count, jvmtiStackInfo** stack_info_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
-  // JVMTI get stack traces at safepoint.
-  VM_GetThreadListStackTraces op(this, thread_count, thread_list, max_frame_count);
-  VMThread::execute(&op);
-  err = op.result();
-  if (err == JVMTI_ERROR_NONE) {
-    *stack_info_ptr = op.stack_info();
+
+  if (thread_count == 1) {
+    // Use direct handshake if we need to get only one stack trace.
+    JavaThread *current_thread = JavaThread::current();
+    ThreadsListHandle tlh(current_thread);
+    JavaThread *java_thread;
+    err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), *thread_list, &java_thread, NULL);
+    if (err != JVMTI_ERROR_NONE) {
+      return err;
+    }
+
+    GetSingleStackTraceClosure op(this, current_thread, *thread_list, max_frame_count);
+    bool executed = Handshake::execute_direct(&op, java_thread);
+    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
+    if (err == JVMTI_ERROR_NONE) {
+      *stack_info_ptr = op.stack_info();
+    }
+  } else {
+    // JVMTI get stack traces at safepoint.
+    VM_GetThreadListStackTraces op(this, thread_count, thread_list, max_frame_count);
+    VMThread::execute(&op);
+    err = op.result();
+    if (err == JVMTI_ERROR_NONE) {
+      *stack_info_ptr = op.stack_info();
+    }
   }
   return err;
 } /* end GetThreadListStackTraces */

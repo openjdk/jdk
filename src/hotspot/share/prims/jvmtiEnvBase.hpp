@@ -437,11 +437,10 @@ public:
   void do_thread(Thread *target);
 };
 
-// VM operation to get stack trace at safepoint.
-class VM_GetStackTrace : public VM_Operation {
+// HandshakeClosure to get stack trace.
+class GetStackTraceClosure : public HandshakeClosure {
 private:
   JvmtiEnv *_env;
-  JavaThread *_java_thread;
   jint _start_depth;
   jint _max_count;
   jvmtiFrameInfo *_frame_buffer;
@@ -449,26 +448,25 @@ private:
   jvmtiError _result;
 
 public:
-  VM_GetStackTrace(JvmtiEnv *env, JavaThread *java_thread,
-                   jint start_depth, jint max_count,
-                   jvmtiFrameInfo* frame_buffer, jint* count_ptr) {
-    _env = env;
-    _java_thread = java_thread;
-    _start_depth = start_depth;
-    _max_count = max_count;
-    _frame_buffer = frame_buffer;
-    _count_ptr = count_ptr;
+  GetStackTraceClosure(JvmtiEnv *env, jint start_depth, jint max_count,
+                       jvmtiFrameInfo* frame_buffer, jint* count_ptr)
+    : HandshakeClosure("GetStackTrace"),
+      _env(env),
+      _start_depth(start_depth),
+      _max_count(max_count),
+      _frame_buffer(frame_buffer),
+      _count_ptr(count_ptr),
+      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {
   }
   jvmtiError result() { return _result; }
-  VMOp_Type type() const { return VMOp_GetStackTrace; }
-  void doit();
+  void do_thread(Thread *target);
 };
 
 // forward declaration
 struct StackInfoNode;
 
-// VM operation to get stack trace at safepoint.
-class VM_GetMultipleStackTraces : public VM_Operation {
+// Get stack trace at safepoint or at direct handshake.
+class MultipleStackTracesCollector {
 private:
   JvmtiEnv *_env;
   jint _max_frame_count;
@@ -482,58 +480,82 @@ private:
   struct StackInfoNode *head()        { return _head; }
   void set_head(StackInfoNode *head)  { _head = head; }
 
-protected:
+public:
+  MultipleStackTracesCollector(JvmtiEnv *env, jint max_frame_count)
+    : _env(env),
+      _max_frame_count(max_frame_count),
+      _stack_info(NULL),
+      _result(JVMTI_ERROR_NONE),
+      _frame_count_total(0),
+      _head(NULL) {
+  }
   void set_result(jvmtiError result)  { _result = result; }
   void fill_frames(jthread jt, JavaThread *thr, oop thread_oop);
   void allocate_and_fill_stacks(jint thread_count);
-
-public:
-  VM_GetMultipleStackTraces(JvmtiEnv *env, jint max_frame_count) {
-    _env = env;
-    _max_frame_count = max_frame_count;
-    _frame_count_total = 0;
-    _head = NULL;
-    _result = JVMTI_ERROR_NONE;
-  }
-  VMOp_Type type() const             { return VMOp_GetMultipleStackTraces; }
   jvmtiStackInfo *stack_info()       { return _stack_info; }
   jvmtiError result()                { return _result; }
 };
 
 
 // VM operation to get stack trace at safepoint.
-class VM_GetAllStackTraces : public VM_GetMultipleStackTraces {
+class VM_GetAllStackTraces : public VM_Operation {
 private:
   JavaThread *_calling_thread;
   jint _final_thread_count;
+  MultipleStackTracesCollector _collector;
 
 public:
   VM_GetAllStackTraces(JvmtiEnv *env, JavaThread *calling_thread,
                        jint max_frame_count)
-      : VM_GetMultipleStackTraces(env, max_frame_count) {
-    _calling_thread = calling_thread;
+      : _calling_thread(calling_thread),
+        _final_thread_count(0),
+        _collector(env, max_frame_count) {
   }
   VMOp_Type type() const          { return VMOp_GetAllStackTraces; }
   void doit();
   jint final_thread_count()       { return _final_thread_count; }
+  jvmtiStackInfo *stack_info()    { return _collector.stack_info(); }
+  jvmtiError result()             { return _collector.result(); }
 };
 
 // VM operation to get stack trace at safepoint.
-class VM_GetThreadListStackTraces : public VM_GetMultipleStackTraces {
+class VM_GetThreadListStackTraces : public VM_Operation {
 private:
   jint _thread_count;
   const jthread* _thread_list;
+  MultipleStackTracesCollector _collector;
 
 public:
   VM_GetThreadListStackTraces(JvmtiEnv *env, jint thread_count, const jthread* thread_list, jint max_frame_count)
-      : VM_GetMultipleStackTraces(env, max_frame_count) {
-    _thread_count = thread_count;
-    _thread_list = thread_list;
+      : _thread_count(thread_count),
+        _thread_list(thread_list),
+        _collector(env, max_frame_count) {
   }
   VMOp_Type type() const { return VMOp_GetThreadListStackTraces; }
   void doit();
+  jvmtiStackInfo *stack_info()    { return _collector.stack_info(); }
+  jvmtiError result()             { return _collector.result(); }
 };
 
+// HandshakeClosure to get single stack trace.
+class GetSingleStackTraceClosure : public HandshakeClosure {
+private:
+  JavaThread *_calling_thread;
+  jthread _jthread;
+  MultipleStackTracesCollector _collector;
+
+public:
+  GetSingleStackTraceClosure(JvmtiEnv *env, JavaThread *calling_thread,
+                             jthread thread, jint max_frame_count)
+    : HandshakeClosure("GetSingleStackTrace"),
+      _calling_thread(calling_thread),
+      _jthread(thread),
+      _collector(env, max_frame_count) {
+  }
+  void do_thread(Thread *target);
+  jvmtiStackInfo *stack_info()    { return _collector.stack_info(); }
+  jvmtiError result()             { return _collector.result(); }
+};
 
 // VM operation to count stack frames at safepoint.
 class VM_GetFrameCount : public VM_Operation {
