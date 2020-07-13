@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,34 +24,30 @@
  */
 package com.sun.org.apache.xml.internal.utils;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
- * This is a combination of ThreadControllerWrapper's inner class SafeThread
- * that was introduced as a fix for CR 6607339
- * and sun.misc.ManagedLocalsThread, a thread that has it's thread locals, and
- * inheritable thread locals erased on construction. Except the run method,
- * it is identical to sun.misc.ManagedLocalsThread.
+ * Represents a safe thread that does not inherit thread-locals and runs only
+ * once.
  */
 public class SafeThread extends Thread {
-
-    private static final jdk.internal.misc.Unsafe UNSAFE;
-    private static final long THREAD_LOCALS;
-    private static final long INHERITABLE_THREAD_LOCALS;
-
     private volatile boolean ran = false;
 
+    private static final AtomicInteger threadNumber = new AtomicInteger(1);
+    private static String threadName() {
+        return "SafeThread-" + threadNumber.getAndIncrement();
+    }
+
     public SafeThread(Runnable target) {
-        super(target);
-        eraseThreadLocals();
+        this(null, target, threadName());
     }
 
     public SafeThread(Runnable target, String name) {
-        super(target, name);
-        eraseThreadLocals();
+        this(null, target, name);
     }
 
     public SafeThread(ThreadGroup group, Runnable target, String name) {
-        super(group, target, name);
-        eraseThreadLocals();
+        super(group, target, name, 0, false);
     }
 
     public final void run() {
@@ -69,24 +65,4 @@ public class SafeThread extends Thread {
         }
         super.run();
     }
-
-    /**
-     * Drops all thread locals (and inherited thread locals).
-     */
-    public final void eraseThreadLocals() {
-        UNSAFE.putReference(this, THREAD_LOCALS, null);
-        UNSAFE.putReference(this, INHERITABLE_THREAD_LOCALS, null);
-    }
-
-    static {
-        UNSAFE = jdk.internal.misc.Unsafe.getUnsafe();
-        Class<?> t = Thread.class;
-        try {
-            THREAD_LOCALS = UNSAFE.objectFieldOffset(t.getDeclaredField("threadLocals"));
-            INHERITABLE_THREAD_LOCALS = UNSAFE.objectFieldOffset(t.getDeclaredField("inheritableThreadLocals"));
-        } catch (Exception e) {
-            throw new Error(e);
-        }
-    }
-
 }
