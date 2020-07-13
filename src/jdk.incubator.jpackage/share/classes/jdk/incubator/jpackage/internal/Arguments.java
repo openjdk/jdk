@@ -296,11 +296,6 @@ public class Arguments {
 
         MODULE_PATH ("module-path", "p", OptionCategories.MODULAR),
 
-        BIND_SERVICES ("bind-services", OptionCategories.PROPERTY, () -> {
-            showDeprecation("bind-services");
-            setOptionValue("bind-services", true);
-        }),
-
         MAC_SIGN ("mac-sign", "s", OptionCategories.PLATFORM_MAC, () -> {
             setOptionValue("mac-sign", true);
         }),
@@ -606,11 +601,6 @@ public class Arguments {
                         CLIOptions.PREDEFINED_RUNTIME_IMAGE.getIdWithPrefix(),
                         CLIOptions.ADD_MODULES.getIdWithPrefix());
             }
-            if (allOptions.contains(CLIOptions.BIND_SERVICES)) {
-                throw new PackagerException("ERR_MutuallyExclusiveOptions",
-                        CLIOptions.PREDEFINED_RUNTIME_IMAGE.getIdWithPrefix(),
-                        CLIOptions.BIND_SERVICES.getIdWithPrefix());
-            }
             if (allOptions.contains(CLIOptions.JLINK_OPTIONS)) {
                 throw new PackagerException("ERR_MutuallyExclusiveOptions",
                         CLIOptions.PREDEFINED_RUNTIME_IMAGE.getIdWithPrefix(),
@@ -822,8 +812,4 @@ public class Arguments {
         return null;
     }
 
-    private static void showDeprecation(String option) {
-        Log.error(MessageFormat.format(I18N.getString("warning.deprecation"),
-                option));
-    }
 }
