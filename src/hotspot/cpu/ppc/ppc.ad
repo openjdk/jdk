@@ -9203,6 +9203,19 @@ instruct signmask64L_regL(iRegLdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct absL_reg_Ex(iRegLdst dst, iRegLsrc src) %{
+  match(Set dst (AbsL src));
+  ins_cost(DEFAULT_COST*3);
+
+  expand %{
+    iRegLdst tmp1;
+    iRegLdst tmp2;
+    signmask64L_regL(tmp1, src);
+    xorL_reg_reg(tmp2, tmp1, src);
+    subL_reg_reg(dst, tmp2, tmp1);
+  %}
+%}
+
 // Long negation
 instruct negL_reg_reg(iRegLdst dst, immL_0 zero, iRegLsrc src2) %{
   match(Set dst (SubL zero src2));
