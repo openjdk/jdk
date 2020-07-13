@@ -717,7 +717,7 @@ Handle SystemDictionaryShared::get_shared_jar_url(int shared_path_index, TRAPS) 
 Handle SystemDictionaryShared::get_package_name(Symbol* class_name, TRAPS) {
   ResourceMark rm(THREAD);
   Handle pkgname_string;
-  Symbol* pkg = ClassLoader::package_from_class_name(class_name);
+  TempNewSymbol pkg = ClassLoader::package_from_class_name(class_name);
   if (pkg != NULL) { // Package prefix found
     const char* pkgname = pkg->as_klass_external_name();
     pkgname_string = java_lang_String::create_from_str(pkgname,

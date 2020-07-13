@@ -2825,7 +2825,17 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
     check_prohibited_package(name(), loader_data, CHECK);
   }
 
-  TempNewSymbol pkg_name = pkg_entry != NULL ? pkg_entry->name() : ClassLoader::package_from_class_name(name());
+  // ClassLoader::package_from_class_name has already incremented the refcount of the symbol
+  // it returns, so we need to decrement it when the current function exits.
+  TempNewSymbol from_class_name =
+      (pkg_entry != NULL) ? NULL : ClassLoader::package_from_class_name(name());
+
+  Symbol* pkg_name;
+  if (pkg_entry != NULL) {
+    pkg_name = pkg_entry->name();
+  } else {
+    pkg_name = from_class_name;
+  }
 
   if (pkg_name != NULL && loader_data != NULL) {
 
