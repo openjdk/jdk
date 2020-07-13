@@ -67,7 +67,7 @@ inline bool ObjectMonitor::owner_is_DEFLATER_MARKER() {
 
 // Returns true if 'this' is being async deflated and false otherwise.
 inline bool ObjectMonitor::is_being_async_deflated() {
-  return AsyncDeflateIdleMonitors && contentions() < 0;
+  return contentions() < 0;
 }
 
 inline void ObjectMonitor::clear() {
@@ -80,17 +80,15 @@ inline void ObjectMonitor::clear() {
 }
 
 inline void ObjectMonitor::clear_common() {
-  if (AsyncDeflateIdleMonitors) {
-    // Async deflation protocol uses the header, owner and contentions
-    // fields. While the ObjectMonitor being deflated is on the global
-    // free list, we leave those three fields alone; contentions < 0
-    // will force any racing threads to retry. The header field is used
-    // by install_displaced_markword_in_object() to restore the object's
-    // header so we cannot check its value here.
-    guarantee(_owner == NULL || _owner == DEFLATER_MARKER,
-              "must be NULL or DEFLATER_MARKER: owner=" INTPTR_FORMAT,
-              p2i(_owner));
-  }
+  // Async deflation protocol uses the header, owner and contentions
+  // fields. While the ObjectMonitor being deflated is on the global
+  // free list, we leave those three fields alone; contentions < 0
+  // will force any racing threads to retry. The header field is used
+  // by install_displaced_markword_in_object() to restore the object's
+  // header so we cannot check its value here.
+  guarantee(_owner == NULL || _owner == DEFLATER_MARKER,
+            "must be NULL or DEFLATER_MARKER: owner=" INTPTR_FORMAT,
+            p2i(_owner));
   assert(contentions() <= 0, "must not be positive: contentions=%d", contentions());
   assert(_waiters == 0, "must be 0: waiters=%d", _waiters);
   assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
@@ -124,9 +122,11 @@ inline void ObjectMonitor::add_to_contentions(jint value) {
 
 // Clear _owner field; current value must match old_value.
 inline void ObjectMonitor::release_clear_owner(void* old_value) {
+#ifdef ASSERT
   void* prev = Atomic::load(&_owner);
-  ADIM_guarantee(prev == old_value, "unexpected prev owner=" INTPTR_FORMAT
-                 ", expected=" INTPTR_FORMAT, p2i(prev), p2i(old_value));
+  assert(prev == old_value, "unexpected prev owner=" INTPTR_FORMAT
+         ", expected=" INTPTR_FORMAT, p2i(prev), p2i(old_value));
+#endif
   Atomic::release_store(&_owner, (void*)NULL);
   log_trace(monitorinflation, owner)("release_clear_owner(): mid="
                                      INTPTR_FORMAT ", old_value=" INTPTR_FORMAT,
@@ -136,9 +136,11 @@ inline void ObjectMonitor::release_clear_owner(void* old_value) {
 // Simply set _owner field to new_value; current value must match old_value.
 // (Simple means no memory sync needed.)
 inline void ObjectMonitor::set_owner_from(void* old_value, void* new_value) {
+#ifdef ASSERT
   void* prev = Atomic::load(&_owner);
-  ADIM_guarantee(prev == old_value, "unexpected prev owner=" INTPTR_FORMAT
-                 ", expected=" INTPTR_FORMAT, p2i(prev), p2i(old_value));
+  assert(prev == old_value, "unexpected prev owner=" INTPTR_FORMAT
+         ", expected=" INTPTR_FORMAT, p2i(prev), p2i(old_value));
+#endif
   Atomic::store(&_owner, new_value);
   log_trace(monitorinflation, owner)("set_owner_from(): mid="
                                      INTPTR_FORMAT ", old_value=" INTPTR_FORMAT
@@ -150,10 +152,10 @@ inline void ObjectMonitor::set_owner_from(void* old_value, void* new_value) {
 // (Simple means no memory sync needed.)
 inline void ObjectMonitor::set_owner_from(void* old_value1, void* old_value2, void* new_value) {
   void* prev = Atomic::load(&_owner);
-  ADIM_guarantee(prev == old_value1 || prev == old_value2,
-                 "unexpected prev owner=" INTPTR_FORMAT ", expected1="
-                 INTPTR_FORMAT " or expected2=" INTPTR_FORMAT, p2i(prev),
-                 p2i(old_value1), p2i(old_value2));
+  assert(prev == old_value1 || prev == old_value2,
+         "unexpected prev owner=" INTPTR_FORMAT ", expected1="
+         INTPTR_FORMAT " or expected2=" INTPTR_FORMAT, p2i(prev),
+         p2i(old_value1), p2i(old_value2));
   _owner = new_value;
   log_trace(monitorinflation, owner)("set_owner_from(old1=" INTPTR_FORMAT
                                      ", old2=" INTPTR_FORMAT "): mid="
@@ -165,9 +167,11 @@ inline void ObjectMonitor::set_owner_from(void* old_value1, void* old_value2, vo
 
 // Simply set _owner field to self; current value must match basic_lock_p.
 inline void ObjectMonitor::set_owner_from_BasicLock(void* basic_lock_p, Thread* self) {
+#ifdef ASSERT
   void* prev = Atomic::load(&_owner);
-  ADIM_guarantee(prev == basic_lock_p, "unexpected prev owner=" INTPTR_FORMAT
-                 ", expected=" INTPTR_FORMAT, p2i(prev), p2i(basic_lock_p));
+  assert(prev == basic_lock_p, "unexpected prev owner=" INTPTR_FORMAT
+         ", expected=" INTPTR_FORMAT, p2i(prev), p2i(basic_lock_p));
+#endif
   // Non-null owner field to non-null owner field is safe without
   // cmpxchg() as long as all readers can tolerate either flavor.
   Atomic::store(&_owner, self);

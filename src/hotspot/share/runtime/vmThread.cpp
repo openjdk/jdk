@@ -260,10 +260,10 @@ void VMThread::run() {
     assert(should_terminate(), "termination flag must be set");
   }
 
-  if (AsyncDeflateIdleMonitors && log_is_enabled(Info, monitorinflation)) {
-    // AsyncDeflateIdleMonitors does a special deflation in order
-    // to reduce the in-use monitor population that is reported by
-    // ObjectSynchronizer::log_in_use_monitor_details() at VM exit.
+  if (log_is_enabled(Info, monitorinflation)) {
+    // Do a deflation in order to reduce the in-use monitor population
+    // that is reported by ObjectSynchronizer::log_in_use_monitor_details()
+    // at VM exit.
     ObjectSynchronizer::request_deflate_idle_monitors();
   }
 

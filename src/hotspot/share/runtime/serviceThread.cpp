@@ -142,10 +142,9 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (deflate_idle_monitors = ObjectSynchronizer::is_async_deflation_needed())
              ) == 0) {
         // Wait until notified that there is some work to do.
-        // If AsyncDeflateIdleMonitors, then we wait for
-        // GuaranteedSafepointInterval so that is_async_deflation_needed()
-        // is checked at the same interval.
-        ml.wait(AsyncDeflateIdleMonitors ? GuaranteedSafepointInterval : 0);
+        // We wait for GuaranteedSafepointInterval so that
+        // is_async_deflation_needed() is checked at the same interval.
+        ml.wait(GuaranteedSafepointInterval);
       }
 
       if (has_jvmti_events) {

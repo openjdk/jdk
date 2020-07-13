@@ -222,13 +222,11 @@ Handle ThreadService::get_current_contended_monitor(JavaThread* thread) {
   if (wait_obj != NULL) {
     // thread is doing an Object.wait() call
     obj = (oop) wait_obj->object();
-    assert(AsyncDeflateIdleMonitors || obj != NULL, "Object.wait() should have an object");
   } else {
     ObjectMonitor *enter_obj = thread->current_pending_monitor();
     if (enter_obj != NULL) {
       // thread is trying to enter() an ObjectMonitor.
       obj = (oop) enter_obj->object();
-      assert(AsyncDeflateIdleMonitors || obj != NULL, "ObjectMonitor should have an associated object!");
     }
   }
 
