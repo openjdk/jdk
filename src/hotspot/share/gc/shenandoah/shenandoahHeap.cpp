@@ -2538,7 +2538,7 @@ void ShenandoahHeap::op_init_updaterefs() {
   // for future GCLABs here.
   if (UseTLAB) {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_refs_manage_gclabs);
-    gclabs_retire(true);
+    gclabs_retire(ResizeTLAB);
   }
 
   if (ShenandoahVerify) {
