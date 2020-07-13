@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.test.lib.compiler;
 
 import javax.tools.*;
 import java.io.ByteArrayOutputStream;
@@ -31,15 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-class Compiler {
+public class Compiler {
     final private Map<String,String> input;
     private List<String> options;
 
-    Compiler(Map<String,String> input) {
+    public Compiler(Map<String,String> input) {
         this.input = input;
     }
 
-    Compiler setRelease(int release) {
+    public Compiler setRelease(int release) {
         // Setting the -release option does not work for some reason
         // so do it the old fashioned way
         // options = Arrays.asList("-release", String.valueOf(release));
@@ -48,7 +49,7 @@ class Compiler {
         return this;
     }
 
-    Map<String,byte[]> compile() {
+    public Map<String,byte[]> compile() {
         List<SourceFileObject> cunits = createCompilationUnits();
         Map<String,ClassFileObject> cfos = createClassFileObjects();
         JavaCompiler jc = ToolProvider.getSystemJavaCompiler();

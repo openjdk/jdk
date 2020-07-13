@@ -25,7 +25,7 @@
 /*
  * @test TestRefprocSanity
  * @summary Test that null references/referents work fine
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC
@@ -44,7 +44,7 @@
 /*
  * @test TestRefprocSanity
  * @summary Test that null references/referents work fine
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu

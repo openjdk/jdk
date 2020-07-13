@@ -25,7 +25,7 @@
 /* @test TestSelectiveBarrierFlags
  * @summary Test selective barrier enabling works, by aggressively compiling HelloWorld with combinations
  *          of barrier flags
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run driver TestSelectiveBarrierFlags -Xint
  * @run driver TestSelectiveBarrierFlags -Xbatch -XX:CompileThreshold=100 -XX:TieredStopAtLevel=1

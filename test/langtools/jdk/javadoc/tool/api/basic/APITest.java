@@ -213,6 +213,7 @@ class APITest {
             "script-dir/images/ui-icons_222222_256x240.png",
             "script-dir/images/ui-bg_glass_75_e6e6e6_1x400.png",
             "member-search-index.js",
+            "module-search-index.js",
             "overview-tree.html",
             "element-list",
             "package-search-index.js",
@@ -225,6 +226,7 @@ class APITest {
             "search.js",
             "jquery-ui.overrides.css",
             "stylesheet.css",
+            "tag-search-index.js",
             "type-search-index.js"
     ));
 

@@ -28,8 +28,6 @@
  * @requires vm.gc.Z
  * @requires vm.gc.Serial
  * @requires vm.gc == null
- * @comment Graal does not support ZGC
- * @requires !vm.graal.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile test-classes/Hello.java
  * @run driver TestZGCWithCDS

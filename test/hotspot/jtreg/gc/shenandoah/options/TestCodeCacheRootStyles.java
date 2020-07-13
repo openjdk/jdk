@@ -23,7 +23,7 @@
  */
 
 /* @test TestCodeCacheRootStyles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+UseShenandoahGC -XX:ShenandoahCodeRootsStyle=0 TestCodeCacheRootStyles
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions

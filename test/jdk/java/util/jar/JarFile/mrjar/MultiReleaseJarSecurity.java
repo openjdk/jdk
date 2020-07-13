@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
  * @test
  * @bug 8132734 8144062
  * @summary Test potential security related issues
- * @library /lib/testlibrary/java/util/jar
- * @build Compiler JarBuilder CreateMultiReleaseTestJars
+ * @library /lib/testlibrary/java/util/jar /test/lib/
+ * @build CreateMultiReleaseTestJars
+ *        jdk.test.lib.compiler.Compiler
+ *        jdk.test.lib.util.JarBuilder
  * @run testng MultiReleaseJarSecurity
  */
 

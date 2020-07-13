@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 // key: compiler.misc.kindname.record.component
 // key: compiler.misc.kindname.record
-// key: compiler.misc.count.error
+// key: compiler.misc.count.error.plural
+// key: compiler.misc.kindname.method
 // key: compiler.err.already.defined
 // key: compiler.err.error
 // key: compiler.note.preview.filename

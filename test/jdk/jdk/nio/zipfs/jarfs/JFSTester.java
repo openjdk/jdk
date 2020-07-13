@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
  * @test
  * @bug 8164389 8222440
  * @summary walk entries in a multi-release jar file via jdk.zipfs
- * @library /lib/testlibrary/java/util/jar
  * @modules jdk.jartool
  *          jdk.zipfs
- * @build Compiler JarBuilder
+ * @library /test/lib/
+ * @build jdk.test.lib.util.JarBuilder
+ *        jdk.test.lib.compiler.Compiler
  * @run testng JFSTester
  */
 
@@ -48,6 +49,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import jdk.test.lib.util.JarBuilder;
 
 public class JFSTester {
     private URI jarURI;

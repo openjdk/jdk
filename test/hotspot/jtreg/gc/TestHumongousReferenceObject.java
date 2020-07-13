@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import jdk.internal.vm.annotation.Contended;
 /*
  * @test TestHumongousReferenceObjectShenandoah
  * @summary Test that verifies that iteration over large, plain Java objects, that potentially cross region boundaries, with references in them works.
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @bug 8151499 8153734
  * @modules java.base/jdk.internal.vm.annotation
  * @run main/othervm -XX:+EnableContended -XX:-RestrictContended -Xms128m -Xmx128m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahRegionSize=8M -XX:ContendedPaddingWidth=8192 gc.TestHumongousReferenceObject

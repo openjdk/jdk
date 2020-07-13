@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,16 +48,19 @@ import jdk.test.lib.jfr.Events;
  */
 
 /**
- * Starts and stops a number of threads in order.
- * Verifies that events are in the same order.
+ * Starts a number of threads in order and verifies
+ * that Thread Start events are in that same order.
+ * The order of Thread End events is non-deterministic.
  */
 public class TestThreadStartEndEvents {
     private final static String EVENT_NAME_THREAD_START = EventNames.ThreadStart;
     private final static String EVENT_NAME_THREAD_END = EventNames.ThreadEnd;
     private static final String THREAD_NAME_PREFIX = "TestThread-";
+    private static int currentThreadIndex = 0;
+    private static int numberOfThreadStartEvents = 0;
+    private static int numberOfThreadEndEvents = 0;
 
     public static void main(String[] args) throws Throwable {
-        // Test Java Thread Start event
         Recording recording = new Recording();
         recording.enable(EVENT_NAME_THREAD_START).withThreshold(Duration.ofMillis(0));
         recording.enable(EVENT_NAME_THREAD_END).withThreshold(Duration.ofMillis(0));
@@ -65,8 +68,6 @@ public class TestThreadStartEndEvents {
         LatchedThread[] threads = startThreads();
         stopThreads(threads);
         recording.stop();
-
-        int currThreadIndex = 0;
         List<RecordedEvent> events = Events.fromRecording(recording);
         events.sort((e1, e2) -> e1.getStartTime().compareTo(e2.getStartTime()));
         Events.hasEvents(events);
@@ -75,22 +76,37 @@ public class TestThreadStartEndEvents {
                 continue;
             }
             System.out.println("Event:" + event);
-            // Threads should be started and stopped in the correct order.
-            Events.assertEventThread(event, threads[currThreadIndex % threads.length]);
-            String eventName = currThreadIndex < threads.length ? EVENT_NAME_THREAD_START : EVENT_NAME_THREAD_END;
-            if (!eventName.equals(event.getEventType().getName())) {
-                throw new Exception("Expected event of type " + eventName + " but got " + event.getEventType().getName());
+            String eventType = event.getEventType().getName();
+            switch (eventType) {
+                case EVENT_NAME_THREAD_START:
+                    validateThreadStartEvent(event, threads);
+                break;
+                case EVENT_NAME_THREAD_END:
+                    validateThreadEndEvent(event);
+                break;
+                default:
+                   throw new RuntimeException("Test encountered an invalid event: " + eventType);
             }
-
-            if (eventName == EVENT_NAME_THREAD_START) {
-                Events.assertEventThread(event, "parentThread", Thread.currentThread());
-                RecordedStackTrace stackTrace = event.getValue("stackTrace");
-                assertNotNull(stackTrace);
-                RecordedMethod topMethod = stackTrace.getFrames().get(0).getMethod();
-                assertEQ(topMethod.getName(), "startThread");
-            }
-            currThreadIndex++;
         }
+        assertEQ(numberOfThreadStartEvents, threads.length);
+        assertEQ(numberOfThreadEndEvents, threads.length);
+    }
+
+    // The order of Thread Start events should corresponding to their start order.
+    private static void validateThreadStartEvent(RecordedEvent event, LatchedThread[] threads) {
+        Events.assertEventThread(event, threads[currentThreadIndex++]);
+        Events.assertEventThread(event, "parentThread", Thread.currentThread());
+        RecordedStackTrace stackTrace = event.getValue("stackTrace");
+        assertNotNull(stackTrace);
+        RecordedMethod topMethod = stackTrace.getFrames().get(0).getMethod();
+        assertEQ(topMethod.getName(), "startThread");
+        numberOfThreadStartEvents++;
+    }
+
+    // The order of Thread End events is non-deterministic. This is because the event
+    // is committed as part of dismantling the JavaThread in the VM, post thread.isAlive().
+    private static void validateThreadEndEvent(RecordedEvent event) {
+        numberOfThreadEndEvents++;
     }
 
     private static LatchedThread[] startThreads() {
@@ -147,5 +163,4 @@ public class TestThreadStartEndEvents {
             stop.countDown();
         }
     }
-
 }
