@@ -542,11 +542,11 @@ public class Arguments {
                 Log.verbose(e);
             } else {
                 String msg1 = e.getMessage();
-                Log.error(msg1);
+                Log.fatalError(msg1);
                 if (e.getCause() != null && e.getCause() != e) {
                     String msg2 = e.getCause().getMessage();
                     if (msg2 != null && !msg1.contains(msg2)) {
-                        Log.error(msg2);
+                        Log.fatalError(msg2);
                     }
                 }
             }

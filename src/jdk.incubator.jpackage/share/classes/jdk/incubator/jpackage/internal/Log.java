@@ -26,6 +26,8 @@
 package jdk.incubator.jpackage.internal;
 
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Log
@@ -77,7 +79,16 @@ public class Log {
             }
         }
 
+        public void fatalError(String msg) {
+            if (err != null) {
+                err.println(msg);
+            } else {
+                System.err.println(msg);
+            }
+        }
+
         public void error(String msg) {
+            msg = addTimestamp(msg);
             if (err != null) {
                 err.println(msg);
             } else {
@@ -87,18 +98,27 @@ public class Log {
 
         public void verbose(Throwable t) {
             if (out != null && verbose) {
+                out.print(addTimestamp(""));
                 t.printStackTrace(out);
             } else if (verbose) {
+                System.out.print(addTimestamp(""));
                 t.printStackTrace(System.out);
             }
         }
 
         public void verbose(String msg) {
+            msg = addTimestamp(msg);
             if (out != null && verbose) {
                 out.println(msg);
             } else if (verbose) {
                 System.out.println(msg);
             }
+        }
+
+        private String addTimestamp(String msg) {
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
+            Date time = new Date(System.currentTimeMillis());
+            return String.format("[%s] %s", sdf.format(time), msg);
         }
     }
 
@@ -117,6 +137,12 @@ public class Log {
     public static void info(String msg) {
         if (delegate != null) {
            delegate.info(msg);
+        }
+    }
+
+    public static void fatalError(String msg) {
+        if (delegate != null) {
+            delegate.fatalError(msg);
         }
     }
 

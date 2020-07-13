@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,11 +76,11 @@ public class Main {
             try {
                 newArgs = CommandLine.parse(args);
             } catch (FileNotFoundException fnfe) {
-                Log.error(MessageFormat.format(I18N.getString(
+                Log.fatalError(MessageFormat.format(I18N.getString(
                         "ERR_CannotParseOptions"), fnfe.getMessage()));
                 return 1;
             } catch (IOException ioe) {
-                Log.error(ioe.getMessage());
+                Log.fatalError(ioe.getMessage());
                 return 1;
             }
 
