@@ -387,7 +387,7 @@ WB_END
 
 WB_ENTRY(jlong, WB_GetObjectSize(JNIEnv* env, jobject o, jobject obj))
   oop p = JNIHandles::resolve(obj);
-  return Universe::heap()->obj_size(p) * HeapWordSize;
+  return p->size() * HeapWordSize;
 WB_END
 
 WB_ENTRY(jlong, WB_GetHeapSpaceAlignment(JNIEnv* env, jobject o))
