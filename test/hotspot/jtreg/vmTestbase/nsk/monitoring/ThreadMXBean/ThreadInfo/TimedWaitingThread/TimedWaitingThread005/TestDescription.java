@@ -31,7 +31,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm
  *      nsk.monitoring.ThreadMXBean.ThreadInfo.RunningThread.RunningThread001.RunningThread001
  *      -scenarioType=timedWaiting
