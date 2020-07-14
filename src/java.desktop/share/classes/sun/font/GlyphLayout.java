@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,8 +478,7 @@ public final class GlyphLayout {
         if (_gvdata._count < 0) {
             gv = new StandardGlyphVector(font, text, offset, count, frc);
             if (FontUtilities.debugFonts()) {
-               FontUtilities.getLogger().warning("OpenType layout failed on font: " +
-                                                 font);
+               FontUtilities.logWarning("OpenType layout failed on font: " + font);
             }
         } else {
             gv = _gvdata.createGlyphVector(font, frc, result);

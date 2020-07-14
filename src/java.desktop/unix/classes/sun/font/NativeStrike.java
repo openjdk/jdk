@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,9 +116,8 @@ class NativeStrike extends PhysicalStrike {
              pScalerContext = createNullScalerContext();
              numGlyphs = 0;
              if (FontUtilities.isLogging()) {
-                 FontUtilities.getLogger()
-                                   .severe("Could not create native strike " +
-                                           new String(nameBytes));
+                 FontUtilities.logSevere("Could not create native strike " +
+                                         new String(nameBytes));
              }
              return;
          }

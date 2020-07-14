@@ -224,15 +224,13 @@ public final class X11FontManager extends FcFontManager {
             if (fontPath == null &&
                 (fileName == null || !fileName.startsWith("/"))) {
                 if (FontUtilities.debugFonts()) {
-                    FontUtilities.getLogger()
-                          .warning("** Registering all font paths because " +
-                                   "can't find file for " + platName);
+                    FontUtilities.logWarning("** Registering all font paths because " +
+                                             "can't find file for " + platName);
                 }
                 fontPath = getPlatformFontPath(noType1Font);
                 registerFontDirs(fontPath);
                 if (FontUtilities.debugFonts()) {
-                    FontUtilities.getLogger()
-                            .warning("** Finished registering all font paths");
+                    FontUtilities.logWarning("** Finished registering all font paths");
                 }
                 fileName = fontNameMap.get(fontID);
             }
@@ -289,7 +287,7 @@ public final class X11FontManager extends FcFontManager {
          * ...
          */
         if (FontUtilities.debugFonts()) {
-            FontUtilities.getLogger().info("ParseFontDir " + path);
+            FontUtilities.logInfo("ParseFontDir " + path);
         }
         File fontsDotDir = new File(path + File.separator + "fonts.dir");
         FileReader fr = null;
@@ -368,10 +366,9 @@ public final class X11FontManager extends FcFontManager {
                             String sVal = fontNameMap.get(fontID);
 
                             if (FontUtilities.debugFonts()) {
-                                PlatformLogger logger = FontUtilities.getLogger();
-                                logger.info("file=" + fileName +
+                                FontUtilities.logInfo("file=" + fileName +
                                             " xlfd=" + fontPart);
-                                logger.info("fontID=" + fontID +
+                                FontUtilities.logInfo("fontID=" + fontID +
                                             " sVal=" + sVal);
                             }
                             String fullPath = null;
@@ -394,16 +391,14 @@ public final class X11FontManager extends FcFontManager {
                             }
                             Vector<String> xVal = xlfdMap.get(fullPath);
                             if (FontUtilities.debugFonts()) {
-                                FontUtilities.getLogger()
-                                      .info("fullPath=" + fullPath +
-                                            " xVal=" + xVal);
+                                FontUtilities.logInfo("fullPath=" + fullPath +
+                                                      " xVal=" + xVal);
                             }
                             if ((xVal == null || !xVal.contains(fontPart)) &&
                                 (sVal == null) || !sVal.startsWith("/")) {
                                 if (FontUtilities.debugFonts()) {
-                                    FontUtilities.getLogger()
-                                          .info("Map fontID:"+fontID +
-                                                "to file:" + fullPath);
+                                    FontUtilities.logInfo("Map fontID:"+fontID +
+                                                          "to file:" + fullPath);
                                 }
                                 fontNameMap.put(fontID, fullPath);
                                 if (xVal == null) {
@@ -481,8 +476,7 @@ public final class X11FontManager extends FcFontManager {
 
         if (hyphenCnt != 14) {
             if (FontUtilities.debugFonts()) {
-                FontUtilities.getLogger()
-                    .severe("Font Configuration Font ID is malformed:" + name);
+                FontUtilities.logSevere("Font Configuration Font ID is malformed:" + name);
             }
             return name; // what else can we do?
         }
@@ -511,8 +505,7 @@ public final class X11FontManager extends FcFontManager {
 
         if (hyphenCnt != 14) {
             if (FontUtilities.debugFonts()) {
-                FontUtilities.getLogger()
-                    .severe("Font Configuration Font ID is malformed:" + name);
+                FontUtilities.logSevere("Font Configuration Font ID is malformed:" + name);
             }
             return name; // what else can we do?
         }
@@ -675,7 +668,7 @@ public final class X11FontManager extends FcFontManager {
             if (FontUtilities.debugFonts() && fontConfigDirs != null) {
                 String[] names = fontConfigDirs.toArray(new String[0]);
                 for (int i=0;i<names.length;i++) {
-                    FontUtilities.getLogger().info("awtfontpath : " + names[i]);
+                    FontUtilities.logInfo("awtfontpath : " + names[i]);
                 }
             }
         }

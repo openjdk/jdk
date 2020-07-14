@@ -223,8 +223,7 @@ public class FileFontStrike extends PhysicalStrike {
             useNatives = true;
         }
         if (FontUtilities.isLogging() && FontUtilities.isWindows) {
-            FontUtilities.getLogger().info
-                ("Strike for " + fileFont + " at size = " + intPtSize +
+            FontUtilities.logInfo("Strike for " + fileFont + " at size = " + intPtSize +
                  " use natives = " + useNatives +
                  " useJavaRasteriser = " + fileFont.useJavaRasterizer +
                  " AAHint = " + desc.aaHint +
@@ -319,10 +318,9 @@ public class FileFontStrike extends PhysicalStrike {
             return ptr;
         } else {
             if (FontUtilities.isLogging()) {
-                FontUtilities.getLogger().warning(
-                        "Failed to render glyph using GDI: code=" + glyphCode
-                                + ", fontFamily=" + family + ", style=" + style
-                                + ", size=" + size);
+                FontUtilities.logWarning("Failed to render glyph using GDI: code=" + glyphCode
+                                    + ", fontFamily=" + family + ", style=" + style
+                                    + ", size=" + size);
             }
             return fileFont.getGlyphImage(pScalerContext, glyphCode);
         }
@@ -356,14 +354,13 @@ public class FileFontStrike extends PhysicalStrike {
             if (useNatives) {
                 glyphPtr = getGlyphImageFromNative(glyphCode);
                 if (glyphPtr == 0L && FontUtilities.isLogging()) {
-                    FontUtilities.getLogger().info
-                        ("Strike for " + fileFont +
+                    FontUtilities.logInfo("Strike for " + fileFont +
                          " at size = " + intPtSize +
                          " couldn't get native glyph for code = " + glyphCode);
-                 }
-            } if (glyphPtr == 0L) {
-                glyphPtr = fileFont.getGlyphImage(pScalerContext,
-                                                  glyphCode);
+                }
+            }
+            if (glyphPtr == 0L) {
+                glyphPtr = fileFont.getGlyphImage(pScalerContext, glyphCode);
             }
             return setCachedGlyphPtr(glyphCode, glyphPtr);
         }

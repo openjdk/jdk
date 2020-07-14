@@ -244,7 +244,7 @@ public class TrueTypeFont extends FileFont {
                                      throws FontFormatException {
         if (disposerRecord.channel == null) {
             if (FontUtilities.isLogging()) {
-                FontUtilities.getLogger().info("open TTF: " + platName);
+                FontUtilities.logInfo("open TTF: " + platName);
             }
             try {
                 RandomAccessFile raf = AccessController.doPrivileged(
@@ -310,9 +310,9 @@ public class TrueTypeFont extends FileFont {
                          */
                         if (FontUtilities.isLogging()) {
                             String msg = "Read offset is " + offset +
-                                " file size is " + fileSize+
-                                " file is " + platName;
-                            FontUtilities.getLogger().severe(msg);
+                                    " file size is " + fileSize+
+                                    " file is " + platName;
+                            FontUtilities.logSevere(msg);
                         }
                         return -1;
                     } else {
@@ -331,7 +331,7 @@ public class TrueTypeFont extends FileFont {
                                 " and now is " + currSize;
                         }
                         if (FontUtilities.isLogging()) {
-                            FontUtilities.getLogger().severe(msg);
+                            FontUtilities.logSevere(msg);
                         }
                         // We could still flip() the buffer here because
                         // it's possible that we did read some data in
@@ -346,9 +346,8 @@ public class TrueTypeFont extends FileFont {
                         if (bread > length/2 || bread > 16384) {
                             buffer.flip();
                             if (FontUtilities.isLogging()) {
-                                msg = "Returning " + bread +
-                                    " bytes instead of " + length;
-                                FontUtilities.getLogger().severe(msg);
+                                msg = "Returning " + bread + " bytes instead of " + length;
+                                FontUtilities.logSevere(msg);
                             }
                         } else {
                             bread = -1;
@@ -364,8 +363,7 @@ public class TrueTypeFont extends FileFont {
             }
         } catch (FontFormatException e) {
             if (FontUtilities.isLogging()) {
-                FontUtilities.getLogger().severe(
-                                       "While reading " + platName, e);
+                FontUtilities.getLogger().severe("While reading " + platName, e);
             }
             bread = -1; // signal EOF
             deregisterFontAndClearStrikeCache();
@@ -385,8 +383,7 @@ public class TrueTypeFont extends FileFont {
              * file are handled as a FontFormatException.
              */
             if (FontUtilities.isLogging()) {
-                FontUtilities.getLogger().severe(
-                                       "While reading " + platName, e);
+                FontUtilities.getLogger().severe("While reading " + platName, e);
             }
             if (bread == 0) {
                 bread = -1; // signal EOF
@@ -523,7 +520,7 @@ public class TrueTypeFont extends FileFont {
             initNames();
         } catch (Exception e) {
             if (FontUtilities.isLogging()) {
-                FontUtilities.getLogger().severe(e.toString());
+                FontUtilities.logSevere(e.toString());
             }
             if (e instanceof FontFormatException) {
                 throw (FontFormatException)e;
@@ -1073,7 +1070,7 @@ public class TrueTypeFont extends FileFont {
             return new String(bytes, 0, len, charset);
         } catch (UnsupportedEncodingException e) {
             if (FontUtilities.isLogging()) {
-                FontUtilities.getLogger().warning(e + " EncodingID=" + encoding);
+                FontUtilities.logWarning(e + " EncodingID=" + encoding);
             }
             return new String(bytes, 0, len);
         } catch (Throwable t) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,9 +195,7 @@ public class FontConfigManager {
             FcCompFont fci = fontArr[i];
             if (fci.firstFont == null) {
                 if (FontUtilities.isLogging()) {
-                    PlatformLogger logger = FontUtilities.getLogger();
-                    logger.info("Fontconfig returned no font for " +
-                                fontArr[i].fcName);
+                    FontUtilities.logInfo("Fontconfig returned no font for " + fontArr[i].fcName);
                 }
                 fontConfigFailed = true;
             } else if (anyFont == null) {
@@ -207,8 +205,7 @@ public class FontConfigManager {
 
         if (anyFont == null) {
             if (FontUtilities.isLogging()) {
-                PlatformLogger logger = FontUtilities.getLogger();
-                logger.info("Fontconfig returned no fonts at all.");
+                FontUtilities.logInfo("Fontconfig returned no fonts at all.");
             }
             fontConfigFailed = true;
             return;
@@ -223,22 +220,19 @@ public class FontConfigManager {
         fontConfigFonts = fontArr;
 
         if (FontUtilities.isLogging()) {
-
-            PlatformLogger logger = FontUtilities.getLogger();
-
             long t1 = System.nanoTime();
-            logger.info("Time spent accessing fontconfig="
+            FontUtilities.logInfo("Time spent accessing fontconfig="
                         + ((t1 - t0) / 1000000) + "ms.");
 
             for (int i = 0; i< fontConfigFonts.length; i++) {
                 FcCompFont fci = fontConfigFonts[i];
-                logger.info("FC font " + fci.fcName+" maps to family " +
+                FontUtilities.logInfo("FC font " + fci.fcName+" maps to family " +
                             fci.firstFont.familyName +
                             " in file " + fci.firstFont.fontFile);
                 if (fci.allFonts != null) {
                     for (int f=0;f<fci.allFonts.length;f++) {
                         FontConfigFont fcf = fci.allFonts[f];
-                        logger.info("Family=" + fcf.familyName +
+                        FontUtilities.logInfo("Family=" + fcf.familyName +
                                     " Style="+ fcf.styleStr +
                                     " Fullname="+fcf.fullName +
                                     " File="+fcf.fontFile);
@@ -360,10 +354,9 @@ public class FontConfigManager {
         }
 
         if (FontUtilities.isLogging()) {
-            FontUtilities.getLogger()
-                          .info("FC name=" + name + " style=" + style +
-                                " uses " + fcInfo.firstFont.familyName +
-                                " in file: " + fcInfo.firstFont.fontFile);
+            FontUtilities.logInfo("FC name=" + name + " style=" + style +
+                                  " uses " + fcInfo.firstFont.familyName +
+                                  " in file: " + fcInfo.firstFont.fontFile);
         }
 
         if (fcInfo.compFont != null) {
