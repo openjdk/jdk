@@ -27,7 +27,7 @@
 # ##########################################################
 #
 #command used to generate this file:
-#build.tools.symbolgenerator.CreateSymbols build-description-incremental-file symbols include.list 8 jdk8-updated.classes <none> --normalize-method-flags
+#build.tools.symbolgenerator.CreateSymbols build-description-incremental symbols include.list
 #
 generate platforms 7:8:9:A:B:C:D:E:F
 platform version 8 files java.activation-8.sym.txt:java.base-8.sym.txt:java.compiler-8.sym.txt:java.corba-8.sym.txt:java.datatransfer-8.sym.txt:java.desktop-8.sym.txt:java.instrument-8.sym.txt:java.logging-8.sym.txt:java.management-8.sym.txt:java.management.rmi-8.sym.txt:java.naming-8.sym.txt:java.prefs-8.sym.txt:java.rmi-8.sym.txt:java.scripting-8.sym.txt:java.security.jgss-8.sym.txt:java.security.sasl-8.sym.txt:java.sql-8.sym.txt:java.sql.rowset-8.sym.txt:java.transaction-8.sym.txt:java.xml-8.sym.txt:java.xml.bind-8.sym.txt:java.xml.crypto-8.sym.txt:java.xml.ws-8.sym.txt:java.xml.ws.annotation-8.sym.txt:jdk.httpserver-8.sym.txt:jdk.management-8.sym.txt:jdk.scripting.nashorn-8.sym.txt:jdk.sctp-8.sym.txt:jdk.security.auth-8.sym.txt:jdk.security.jgss-8.sym.txt
