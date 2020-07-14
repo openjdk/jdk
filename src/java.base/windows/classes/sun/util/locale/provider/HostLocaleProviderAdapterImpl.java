@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,6 +388,10 @@ public class HostLocaleProviderAdapterImpl {
                 int value, int style, Locale locale) {
                 String[] names = getCalendarDisplayStrings(removeExtensions(locale).toLanguageTag(),
                             getCalendarIDFromLDMLType(calendarType), field, style);
+                if (field == Calendar.DAY_OF_WEEK) {
+                    // Align value to array index
+                    value--;
+                }
                 if (names != null && value >= 0 && value < names.length) {
                     return names[value];
                 } else {
@@ -405,7 +409,9 @@ public class HostLocaleProviderAdapterImpl {
                     map = new HashMap<>();
                     for (int value = 0; value < names.length; value++) {
                         if (names[value] != null) {
-                            map.put(names[value], value);
+                            map.put(names[value],
+                                    // Align array index to field value
+                                    field == Calendar.DAY_OF_WEEK ? value + 1 : value);
                         }
                     }
                     map = map.isEmpty() ? null : map;
@@ -549,12 +555,10 @@ public class HostLocaleProviderAdapterImpl {
             @Override
             public String getJavaTimeDateTimePattern(int timeStyle, int dateStyle, String calType, Locale locale) {
                 AtomicReferenceArray<String> patterns = getDateTimePatterns(locale);
-                String pattern = new StringBuilder(patterns.get(dateStyle / 2))
-                        .append(" ")
-                        .append(patterns.get(timeStyle / 2 + 2))
-                        .toString();
-                return toJavaTimeDateTimePattern(calType, pattern);
-
+                String datePattern = dateStyle != - 1 ? patterns.get(dateStyle / 2) : "";
+                String timePattern = timeStyle != - 1 ? patterns.get(timeStyle / 2 + 2) : "";
+                String delim = dateStyle != -1 && timeStyle != - 1 ? " " : "";
+                return toJavaTimeDateTimePattern(calType, datePattern + delim + timePattern);
             }
 
             private AtomicReferenceArray<String> getDateTimePatterns(Locale locale) {
@@ -699,7 +703,7 @@ public class HostLocaleProviderAdapterImpl {
     private static String convertDateTimePattern(String winPattern) {
         String ret = winPattern.replaceAll("dddd", "EEEE");
         ret = ret.replaceAll("ddd", "EEE");
-        ret = ret.replaceAll("tt", "aa");
+        ret = ret.replaceAll("tt", "a");
         ret = ret.replaceAll("g", "GG");
         return ret;
     }
