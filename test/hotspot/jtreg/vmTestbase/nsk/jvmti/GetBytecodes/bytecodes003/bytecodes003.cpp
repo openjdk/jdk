@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -330,12 +330,14 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env,
         printf("(GetClassSignature#%d) unexpected error: %s (%d)\n",
                eventsCount, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti_env->GetClassMethods(cls, &mcount, &methods);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetClassMethods#%d) unexpected error: %s (%d)\n",
                eventsCount, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     if (printdump == JNI_TRUE) {
@@ -359,6 +361,7 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env,
                        TranslateError(err), err);
                 printf("  class: \"%s\"\n", sig);
                 result = STATUS_FAILED;
+                return;
             }
             isNative = JNI_TRUE;
             err = jvmti_env->IsMethodNative(methods[i], &isNative);
@@ -368,6 +371,7 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env,
                 printf("  class: \"%s\"\n", sig);
                 printf("  method = \"%s%s\"\n", name, msig);
                 result = STATUS_FAILED;
+                return;
             }
             if (isNative == JNI_TRUE) {
                 if (printdump == JNI_TRUE) {
@@ -380,6 +384,7 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env,
                     printf("(GetBytecodes#%d:%d) unexpected error: %s (%d)\n",
                            eventsCount, i, TranslateError(err), err);
                     result = STATUS_FAILED;
+                    return;
                 } else {
                     if (printdump == JNI_TRUE) {
                         printf(">>>     \"%s%s\", %d bytes\n",

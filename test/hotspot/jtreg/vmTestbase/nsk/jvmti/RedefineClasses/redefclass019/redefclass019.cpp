@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid, jint i) {
         printf("(GetClassSignature#%d) unexpected error: %s (%d)\n",
                i, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     err = jvmti_env->GetMethodDeclaringClass(mid, &cls);
@@ -123,6 +124,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid, jint i) {
         printf("(GetMethodDeclaringClass#%d) unexpected error: %s (%d)\n",
                i, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     err = jvmti_env->GetClassSignature(cls, &sigClass, &generic);
@@ -130,6 +132,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid, jint i) {
         printf("(GetClassSignature#%d) unexpected error: %s (%d)\n",
                i, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     if (sigClass == NULL || strcmp(sigClass, cls_exp) != 0) {
@@ -145,6 +148,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid, jint i) {
             printf("(GetMethodName#%d) unexpected error: %s (%d)\n",
                    i, TranslateError(err), err);
             result = STATUS_FAILED;
+            return;
         }
 
         err = jvmti_env->IsMethodObsolete(mid, &is_obsolete);
@@ -180,6 +184,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid, jint i) {
             printf("(GetClassSignature#%d) unexpected error: %s (%d)\n",
                    i, TranslateError(err), err);
             result = STATUS_FAILED;
+            return;
         }
 
         if (lines != NULL && entryCount > 0) {
@@ -202,6 +207,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid, jint i) {
             printf("(GetLocalVariableTable#%d) unexpected error: %s (%d)\n",
                    i, TranslateError(err), err);
             result = STATUS_FAILED;
+            return;
         }
 
         if (frames[i].count != entryCount) {
