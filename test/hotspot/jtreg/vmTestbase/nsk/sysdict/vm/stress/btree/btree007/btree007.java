@@ -45,7 +45,6 @@
  * @run driver nsk.sysdict.share.GenClassesBuilder btree
  * @comment build fats.jar
  * @run driver nsk.sysdict.share.GenClassesBuilder fats
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.sysdict.share.BTreeTest
  * @run main/othervm
  *      -XX:-UseGCOverheadLimit
