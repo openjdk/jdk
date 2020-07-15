@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  *
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment compile VM06Agent0[0-3].java to current directory
  * @build nsk.aod.VirtualMachine.VirtualMachine06.VM06Agent00
@@ -56,16 +55,24 @@
  * @comment create VM06Agent0[0-3].jar in current directory
  * @build ExecDriver
  * @run driver PropertyResolvingWrapper ExecDriver --cmd
- *      ${test.jdk}/bin/jar -cmf VM06Agent00.mf VM06Agent00.jar
+ *      ${test.jdk}/bin/jar
+ *      -cmf ${test.src}/VM06Agent00.mf
+ *      VM06Agent00.jar
  *      nsk/aod/VirtualMachine/VirtualMachine06/VM06Agent00.class
  * @run driver PropertyResolvingWrapper ExecDriver --cmd
- *      ${test.jdk}/bin/jar -cmf VM06Agent01.mf VM06Agent01.jar
+ *      ${test.jdk}/bin/jar
+ *      -cmf ${test.src}/VM06Agent01.mf
+ *      VM06Agent01.jar
  *      nsk/aod/VirtualMachine/VirtualMachine06/VM06Agent01.class
  * @run driver PropertyResolvingWrapper ExecDriver --cmd
- *      ${test.jdk}/bin/jar -cmf VM06Agent02.mf VM06Agent02.jar
+ *      ${test.jdk}/bin/jar
+ *      -cmf ${test.src}/VM06Agent02.mf
+ *      VM06Agent02.jar
  *      nsk/aod/VirtualMachine/VirtualMachine06/VM06Agent02.class
  * @run driver PropertyResolvingWrapper ExecDriver --cmd
- *      ${test.jdk}/bin/jar -cmf VM06Agent03.mf VM06Agent03.jar
+ *      ${test.jdk}/bin/jar
+ *      -cmf ${test.src}/VM06Agent03.mf
+ *      VM06Agent03.jar
  *      nsk/aod/VirtualMachine/VirtualMachine06/VM06Agent03.class
  *
  *
