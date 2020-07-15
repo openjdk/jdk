@@ -138,7 +138,7 @@ public interface Joinable {
      * object. A <code>JoinRowSet</code> object can now add this <code>RowSet</code>
      * object based on the match column.
      * <p>
-     * Sub-interfaces such as the <code>CachedRowSet</code>&trade;
+     * Sub-interfaces such as the <code>CachedRowSet</code>
      * interface define the method <code>CachedRowSet.setKeyColumns</code>, which allows
      * primary key semantics to be enforced on specific columns.
      * Implementations of the <code>setMatchColumn(int columnIdx)</code> method

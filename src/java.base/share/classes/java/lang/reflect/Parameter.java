@@ -112,7 +112,7 @@ public final class Parameter implements AnnotatedElement {
     /**
      * Returns a string describing this parameter.  The format is the
      * modifiers for the parameter, if any, in canonical order as
-     * recommended by <cite>The Java&trade; Language
+     * recommended by <cite>The Java Language
      * Specification</cite>, followed by the fully-qualified type of
      * the parameter (excluding the last [] if the parameter is
      * variable arity), followed by "..." if the parameter is variable
@@ -247,7 +247,7 @@ public final class Parameter implements AnnotatedElement {
      * in source code; returns {@code false} otherwise.
      *
      * @return true if and only if this parameter is implicitly
-     * declared as defined by <cite>The Java&trade; Language
+     * declared as defined by <cite>The Java Language
      * Specification</cite>.
      */
     public boolean isImplicit() {
@@ -262,7 +262,7 @@ public final class Parameter implements AnnotatedElement {
      * @jls 13.1 The Form of a Binary
      * @return true if and only if this parameter is a synthetic
      * construct as defined by
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      */
     public boolean isSynthetic() {
         return Modifier.isSynthetic(getModifiers());

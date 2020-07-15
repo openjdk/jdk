@@ -25,7 +25,7 @@
 
 /**
  * Provides the classes and interfaces of
- * the Java&trade; 2 platform's core logging facilities.
+ * the Java 2 platform's core logging facilities.
  * The central goal of the logging APIs is to support maintaining and servicing
  * software at customer sites.
  *

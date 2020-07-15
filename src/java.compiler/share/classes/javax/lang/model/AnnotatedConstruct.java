@@ -39,7 +39,7 @@ import javax.lang.model.type.*;
  * are on a <em>declaration</em>, whereas annotations on a type are on
  * a specific <em>use</em> of a type name.
  *
- * As defined by <cite>The Java&trade; Language Specification</cite>
+ * As defined by <cite>The Java Language Specification</cite>
  * section {@jls 9.7.4}, an annotation on an element is a
  * <em>declaration annotation</em> and an annotation on a type is a
  * <em>type annotation</em>.
@@ -74,7 +74,7 @@ import javax.lang.model.type.*;
  * down to affiliated mandated members. Type annotations modifying the
  * type of a record component can be also propagated to mandated
  * members. Propagation of the annotations to mandated members is
- * governed by rules given in the <cite>The Java&trade; Language
+ * governed by rules given in the <cite>The Java Language
  * Specification</cite>.
  *
  * If there are multiple annotations of type <i>AT</i> present on

@@ -51,7 +51,7 @@ public class ToolProvider {
     public ToolProvider() {}
 
     /**
-     * Returns the Java&trade; programming language compiler provided
+     * Returns the Java programming language compiler provided
      * with this platform.
      * <p>The file manager returned by calling
      * {@link JavaCompiler#getStandardFileManager getStandardFileManager}
@@ -72,7 +72,7 @@ public class ToolProvider {
     private static final String systemDocumentationToolName = "jdk.javadoc.internal.api.JavadocTool";
 
     /**
-     * Returns the Java&trade; programming language documentation tool provided
+     * Returns the Java programming language documentation tool provided
      * with this platform.
      * <p>The file manager returned by calling
      * {@link DocumentationTool#getStandardFileManager getStandardFileManager}

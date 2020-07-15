@@ -29,7 +29,7 @@ import java.io.InputStream;
 
 /**
  * The representation (mapping) in
- * the Java&trade; programming language of an SQL
+ * the Java programming language of an SQL
  * {@code BLOB} value.  An SQL {@code BLOB} is a built-in type
  * that stores a Binary Large Object as a column value in a row of
  * a database table. By default drivers implement {@code Blob} using

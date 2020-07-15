@@ -35,7 +35,7 @@ import java.util.Set;
 import static javax.tools.JavaFileObject.Kind;
 
 /**
- * File manager for tools operating on Java&trade; programming language
+ * File manager for tools operating on Java programming language
  * source and class files.  In this context, <em>file</em> means an
  * abstraction of regular files and other sources of data.
  *
@@ -52,14 +52,14 @@ import static javax.tools.JavaFileObject.Kind;
  * fully qualified class and interface names.  For convenience '.'
  * and '/' are interchangeable.  The internal form is defined in
  * chapter four of
- * <cite>The Java&trade; Virtual Machine Specification</cite>.
+ * <cite>The Java Virtual Machine Specification</cite>.
 
  * <blockquote><p>
  *   <i>Discussion:</i> this means that the names
  *   "java/lang.package-info", "java/lang/package-info",
  *   "java.lang.package-info", are valid and equivalent.  Compare to
  *   binary name as defined in
- *   <cite>The Java&trade; Language Specification</cite>,
+ *   <cite>The Java Language Specification</cite>,
  *   section 13.1 "The Form of a Binary".
  * </p></blockquote>
  *
@@ -222,7 +222,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
     /**
      * Infers a binary name of a file object based on a package-oriented location.
      * The binary name returned might not be a valid binary name according to
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      *
      * @param location a location
      * @param file a file object

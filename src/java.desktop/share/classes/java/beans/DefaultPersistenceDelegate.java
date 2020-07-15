@@ -36,7 +36,7 @@ import sun.reflect.misc.*;
  * is the delegate used by default for classes about
  * which no information is available. The {@code DefaultPersistenceDelegate}
  * provides, version resilient, public API-based persistence for
- * classes that follow the JavaBeans&trade; conventions without any class specific
+ * classes that follow the JavaBeans conventions without any class specific
  * configuration.
  * <p>
  * The key assumptions are that the class has a nullary constructor

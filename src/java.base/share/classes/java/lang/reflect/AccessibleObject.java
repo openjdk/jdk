@@ -440,7 +440,7 @@ public class AccessibleObject implements AnnotatedElement {
      * <p> This method returns {@code true} if the {@code accessible} flag
      * is set to {@code true}, i.e. the checks for Java language access control
      * are suppressed, or if the caller can access the member as
-     * specified in <cite>The Java&trade; Language Specification</cite>,
+     * specified in <cite>The Java Language Specification</cite>,
      * with the variation noted in the class description. </p>
      *
      * @param obj an instance object of the declaring class of this reflected

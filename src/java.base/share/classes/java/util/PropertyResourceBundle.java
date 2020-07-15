@@ -120,7 +120,7 @@ import sun.util.ResourceBundleEnumeration;
  * and throws the exception if it encounters an invalid sequence.
  * If "ISO-8859-1" is specified, characters that cannot be represented in
  * ISO-8859-1 encoding must be represented by Unicode Escapes as defined in section
- * 3.3 of <cite>The Java&trade; Language Specification</cite>
+ * 3.3 of <cite>The Java Language Specification</cite>
  * whereas the other constructor which takes a {@code Reader} does not have that limitation.
  * Other encoding values are ignored for this system property.
  * The system property is read and evaluated when initializing this class.

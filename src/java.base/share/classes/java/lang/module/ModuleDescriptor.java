@@ -1489,7 +1489,7 @@ public class ModuleDescriptor
      * <p> The module names, package names, and class names that are parameters
      * specified to the builder methods are the module names, package names,
      * and qualified names of classes (in named packages) as defined in the
-     * <cite>The Java&trade; Language Specification</cite>. </p>
+     * <cite>The Java Language Specification</cite>. </p>
      *
      * <p> Example usage: </p>
      * <pre>{@code    ModuleDescriptor descriptor = ModuleDescriptor.newModule("stats.core")

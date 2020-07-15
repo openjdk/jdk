@@ -40,7 +40,7 @@ package com.sun.source.tree;
  *
  * <p> <b>WARNING:</b> It is possible that methods will be added to
  * this interface to accommodate new, currently unknown, language
- * structures added to future versions of the Java&trade; programming
+ * structures added to future versions of the Java programming
  * language.  Therefore, visitor classes directly implementing this
  * interface may be source incompatible with future versions of the
  * platform.

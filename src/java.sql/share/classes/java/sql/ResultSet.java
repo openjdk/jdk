@@ -90,7 +90,7 @@ import java.io.InputStream;
  * the intended columns, which can be assured with the SQL <i>AS</i> clause.
  * <P>
  * A set of updater methods were added to this interface
- * in the JDBC 2.0 API (Java&trade; 2 SDK,
+ * in the JDBC 2.0 API (Java 2 SDK,
  * Standard Edition, version 1.2). The comments regarding parameters
  * to the getter methods also apply to parameters to the
  * updater methods.

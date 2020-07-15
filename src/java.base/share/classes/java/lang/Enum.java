@@ -44,7 +44,7 @@ import static java.util.Objects.requireNonNull;
  *
  * More information about enums, including descriptions of the
  * implicitly declared methods synthesized by the compiler, can be
- * found in section {@jls 8.9} of <cite>The Java&trade; Language
+ * found in section {@jls 8.9} of <cite>The Java Language
  * Specification</cite>.
  *
  * Enumeration types are all serializable and receive special handling

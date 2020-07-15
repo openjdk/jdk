@@ -362,7 +362,7 @@ public final class Float extends Number
      * <i>HexNumeral</i>, <i>HexDigits</i>, <i>SignedInteger</i> and
      * <i>FloatTypeSuffix</i> are as defined in the lexical structure
      * sections of
-     * <cite>The Java&trade; Language Specification</cite>,
+     * <cite>The Java Language Specification</cite>,
      * except that underscores are not accepted between digits.
      * If {@code s} does not have the form of
      * a <i>FloatValue</i>, then a {@code NumberFormatException}

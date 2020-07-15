@@ -54,7 +54,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * and a few other miscellaneous operations.
  *
  * <p>Semantics of arithmetic operations exactly mimic those of Java's integer
- * arithmetic operators, as defined in <i>The Java&trade; Language Specification</i>.
+ * arithmetic operators, as defined in <i>The Java Language Specification</i>.
  * For example, division by zero throws an {@code ArithmeticException}, and
  * division of a negative by a positive yields a negative (or zero) remainder.
  *
@@ -4152,7 +4152,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * conversion is analogous to a
      * <i>narrowing primitive conversion</i> from {@code long} to
      * {@code int} as defined in
-     * <cite>The Java&trade; Language Specification</cite>:
+     * <cite>The Java Language Specification</cite>:
      * if this BigInteger is too big to fit in an
      * {@code int}, only the low-order 32 bits are returned.
      * Note that this conversion can lose information about the
@@ -4174,7 +4174,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * conversion is analogous to a
      * <i>narrowing primitive conversion</i> from {@code long} to
      * {@code int} as defined in
-     * <cite>The Java&trade; Language Specification</cite>:
+     * <cite>The Java Language Specification</cite>:
      * if this BigInteger is too big to fit in a
      * {@code long}, only the low-order 64 bits are returned.
      * Note that this conversion can lose information about the
@@ -4198,7 +4198,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * conversion is similar to the
      * <i>narrowing primitive conversion</i> from {@code double} to
      * {@code float} as defined in
-     * <cite>The Java&trade; Language Specification</cite>:
+     * <cite>The Java Language Specification</cite>:
      * if this BigInteger has too great a magnitude
      * to represent as a {@code float}, it will be converted to
      * {@link Float#NEGATIVE_INFINITY} or {@link
@@ -4283,7 +4283,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * conversion is similar to the
      * <i>narrowing primitive conversion</i> from {@code double} to
      * {@code float} as defined in
-     * <cite>The Java&trade; Language Specification</cite>:
+     * <cite>The Java Language Specification</cite>:
      * if this BigInteger has too great a magnitude
      * to represent as a {@code double}, it will be converted to
      * {@link Double#NEGATIVE_INFINITY} or {@link
