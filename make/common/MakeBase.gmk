@@ -484,7 +484,7 @@ endif
 # Defines the sub directory structure to store variable value file in
 DependOnVariableDirName = \
     $(strip $(addsuffix $(if $(MODULE),/$(MODULE)), \
-        $(subst $(TOPDIR)/,, $(if $(filter /%, $(firstword $(MAKEFILE_LIST))), \
+        $(subst $(WORKSPACE_ROOT)/,, $(if $(filter /%, $(firstword $(MAKEFILE_LIST))), \
           $(firstword $(MAKEFILE_LIST)), \
           $(CURDIR)/$(firstword $(MAKEFILE_LIST))))))
 
@@ -496,6 +496,13 @@ DependOnVariableFileName = \
     $(strip $(if $(strip $2), $2, \
       $(MAKESUPPORT_OUTPUTDIR)/vardeps/$(DependOnVariableDirName)/$(strip $1).vardeps))
 
+# Writes the vardeps file. Assumes $1_filename has been setup
+# Param 1 - Name of variable
+DependOnVariableWriteFile = \
+    $(call MakeDir, $(dir $($1_filename))) \
+    $(call WriteFile, $1_old:=$(call DoubleDollar,$(call EscapeHash,$($1))), \
+         $($1_filename)) \
+
 # Does the actual work with parameters stripped.
 # If the file exists AND the contents is the same as the variable, do nothing
 # else print a new file.
@@ -505,14 +512,18 @@ DependOnVariableFileName = \
 DependOnVariableHelper = \
     $(strip \
         $(eval $1_filename := $(call DependOnVariableFileName, $1, $2)) \
-        $(if $(wildcard $($1_filename)), $(eval include $($1_filename))) \
-        $(if $(call equals, $(strip $($1)), $(strip $($1_old))),,\
-          $(call MakeDir, $(dir $($1_filename))) \
-          $(if $(findstring $(LOG_LEVEL), trace), \
-              $(info NewVariable $1: >$(strip $($1))<) \
-              $(info OldVariable $1: >$(strip $($1_old))<)) \
-          $(call WriteFile, $1_old:=$(call DoubleDollar,$(call EscapeHash,$($1))), \
-              $($1_filename))) \
+        $(if $(wildcard $($1_filename)), \
+          $(eval include $($1_filename)) \
+          $(if $(call equals, $(strip $($1)), $(strip $($1_old))),,\
+            $(if $(findstring $(LOG_LEVEL), trace), \
+                $(info NewVariable $1: >$(strip $($1))<) \
+                $(info OldVariable $1: >$(strip $($1_old))<) \
+            ) \
+            $(call DependOnVariableWriteFile,$1) \
+          ) \
+        , \
+          $(call DependOnVariableWriteFile,$1) \
+        ) \
         $($1_filename) \
     )
 

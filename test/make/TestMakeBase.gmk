@@ -179,11 +179,11 @@ VARDEP_SRC_FILE := $(VARDEP_DIR)/src-file
 VARDEP_TARGET_FILE := $(VARDEP_DIR)/target-file
 VARDEP_FLAG_FILE := $(VARDEP_DIR)/flag-file
 
-$(VARDEP_DIR)/src-file:
+$(VARDEP_SRC_FILE):
 	$(MKDIR) -p $(@D)
 	$(ECHO) "some string XXX" > $@
 
-$(VARDEP_TARGET_FILE): $(VARDEP_DIR)/src-file \
+$(VARDEP_TARGET_FILE): $(VARDEP_SRC_FILE) \
     $(call DependOnVariable, VARDEP_TEST_VAR)
 	$(MKDIR) -p $(@D)
 	$(SED) -e 's/XXX/$(VARDEP_TEST_VAR)/g' $< > $@
@@ -233,6 +233,31 @@ test-vardep:
 	$(RM) $(VARDEP_FLAG_FILE)
 	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR='value4 \$$ORIGIN' $(VARDEP_TARGET_FILE)
 	test ! -e $(VARDEP_FLAG_FILE)
+        #
+        # Test having the variable be empty, first from scratch, with even
+        # the vardep file deleted.
+	$(SLEEP_ON_MAC)
+	$(RM) $(VARDEP_FLAG_FILE) $(VARDEP_TARGET_FILE) \
+	    $(call DependOnVariableFileName,VARDEP_TEST_VAR)
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR="" $(VARDEP_TARGET_FILE)
+	$(PRINTF) "Expecting '': %s\n" "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test "some string " = "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test -e $(VARDEP_FLAG_FILE)
+        #
+        # Then rebuild with same empty value, nothing should happen
+	$(SLEEP_ON_MAC)
+	$(RM) $(VARDEP_FLAG_FILE)
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR="" $(VARDEP_TARGET_FILE)
+	$(PRINTF) "Expecting '': %s\n" "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test "some string " = "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test ! -e $(VARDEP_FLAG_FILE)
+        #
+        # Try setting a value again and verify that the target gets rebuilt
+	$(SLEEP_ON_MAC)
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR=value2 $(VARDEP_TARGET_FILE)
+	$(PRINTF) "Expecting value2: %s\n" "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test "some string value2" = "`$(CAT) $(VARDEP_DIR)/target-file`"
+	test -e $(VARDEP_FLAG_FILE)
 
 # Test specifying a specific value file to store variable in
 VARDEP_VALUE_FILE := $(VARDEP_DIR)/value-file
