@@ -195,6 +195,10 @@ inline void* ObjectMonitor::try_set_owner_from(void* old_value, void* new_value)
   return prev;
 }
 
+inline void ObjectMonitor::release_set_allocation_state(ObjectMonitor::AllocationState s) {
+  Atomic::release_store(&_allocation_state, s);
+}
+
 inline void ObjectMonitor::set_allocation_state(ObjectMonitor::AllocationState s) {
   _allocation_state = s;
 }
@@ -203,12 +207,16 @@ inline ObjectMonitor::AllocationState ObjectMonitor::allocation_state() const {
   return _allocation_state;
 }
 
+inline ObjectMonitor::AllocationState ObjectMonitor::allocation_state_acquire() const {
+  return Atomic::load_acquire(&_allocation_state);
+}
+
 inline bool ObjectMonitor::is_free() const {
   return _allocation_state == Free;
 }
 
 inline bool ObjectMonitor::is_old() const {
-  return _allocation_state == Old;
+  return allocation_state_acquire() == Old;
 }
 
 inline bool ObjectMonitor::is_new() const {
@@ -219,13 +227,24 @@ inline bool ObjectMonitor::is_new() const {
 // use Atomic operations to disable compiler optimizations that
 // might try to elide loading and/or storing this field.
 
+// Simply get _next_om field.
 inline ObjectMonitor* ObjectMonitor::next_om() const {
   return Atomic::load(&_next_om);
+}
+
+// Get _next_om field with acquire semantics.
+inline ObjectMonitor* ObjectMonitor::next_om_acquire() const {
+  return Atomic::load_acquire(&_next_om);
 }
 
 // Simply set _next_om field to new_value.
 inline void ObjectMonitor::set_next_om(ObjectMonitor* new_value) {
   Atomic::store(&_next_om, new_value);
+}
+
+// Set _next_om field to new_value with release semantics.
+inline void ObjectMonitor::release_set_next_om(ObjectMonitor* new_value) {
+  Atomic::release_store(&_next_om, new_value);
 }
 
 // Try to set _next_om field to new_value if the current value matches
