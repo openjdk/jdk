@@ -32,7 +32,7 @@ final public class FileAssociations {
     public FileAssociations(String faSuffixName) {
         suffixName = faSuffixName;
         setFilename("fa");
-        setDescription("jpackage test extention");
+        setDescription("jpackage test extension");
     }
 
     private void createFile() {

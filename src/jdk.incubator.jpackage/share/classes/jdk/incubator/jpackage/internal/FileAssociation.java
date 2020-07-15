@@ -49,7 +49,7 @@ final class FileAssociation {
     }
 
     static void verify(List<FileAssociation> associations) throws ConfigException {
-        // only one mime type per association, at least one file extention
+        // only one mime type per association, at least one file extension
         int assocIdx = 0;
         for (var assoc : associations) {
             ++assocIdx;
