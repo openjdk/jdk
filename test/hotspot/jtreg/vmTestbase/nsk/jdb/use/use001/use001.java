@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdb.use.use001.use001
  *        nsk.jdb.use.use001.use001a
  * @run main/othervm PropertyResolvingWrapper nsk.jdb.use.use001.use001
@@ -60,6 +59,7 @@ package nsk.jdb.use.use001;
 
 import nsk.share.*;
 import nsk.share.jdb.*;
+import jdk.test.lib.Utils;
 
 import java.io.*;
 import java.util.*;
@@ -91,7 +91,7 @@ public class use001 extends JdbTest {
         String found;
 
         String path = "";
-        String workdir = argumentHandler.getWorkDir();
+        String srcdir = Utils.TEST_SRC;
 
 //        jdb.setBreakpointInMethod(LAST_BREAK);
 //        reply = jdb.receiveReplyFor(JdbCommand.cont);
@@ -110,14 +110,14 @@ public class use001 extends JdbTest {
             }
 /*
             grep = new Paragrep(reply);
-            count = grep.find(workdir);
+            count = grep.find(srcdir);
             if (count == 0) {
-                log.complain("Not found current working directory in source file path");
+                log.complain("Not found current source directory in source file path");
                 success = false;
                 break;
             }
  */
-            reply = jdb.receiveReplyFor(JdbCommand.use + workdir + File.pathSeparator + path);
+            reply = jdb.receiveReplyFor(JdbCommand.use + srcdir + File.pathSeparator + path);
             if (reply.length == 0) {
                 log.complain("Empty reply on third 'use' command");
                 success = false;
@@ -126,8 +126,8 @@ public class use001 extends JdbTest {
 
             reply = jdb.receiveReplyFor(JdbCommand.use);
             grep = new Paragrep(reply);
-            if (grep.find(workdir) == 0) {
-                log.complain("Current working directory should be in source file path");
+            if (grep.find(srcdir) == 0) {
+                log.complain("Current source directory should be in source file path");
                 success = false;
                 break;
             }

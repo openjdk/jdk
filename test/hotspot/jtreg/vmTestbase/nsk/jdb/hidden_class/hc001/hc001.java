@@ -29,7 +29,6 @@
  *          /test/lib
  * @modules jdk.jdi
  *          jdk.jdwp.agent
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdb.hidden_class.hc001.hc001
  *        nsk.jdb.hidden_class.hc001.hc001a
  *
