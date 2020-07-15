@@ -503,8 +503,8 @@ public class TrueTypeFont extends FileFont {
                 tableDirectory[i] = table = new DirectoryEntry();
                 table.tag   =  ibuffer.get();
                 /* checksum */ ibuffer.get();
-                table.offset = ibuffer.get();
-                table.length = ibuffer.get();
+                table.offset = ibuffer.get() & 0x7FFFFFFF;
+                table.length = ibuffer.get() & 0x7FFFFFFF;
                 if (table.offset + table.length > fileSize) {
                     throw new FontFormatException("bad table, tag="+table.tag);
                 }

@@ -434,6 +434,7 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.util.ValueMergeUtil;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
@@ -1687,13 +1688,17 @@ public class BytecodeParser implements GraphBuilderContext {
 
     protected void genInvokeInterface(int cpi, int opcode) {
         JavaMethod target = lookupMethod(cpi, opcode);
-        genInvokeInterface(target);
+        JavaType referencedType = lookupReferencedTypeInPool(cpi, opcode);
+        genInvokeInterface(referencedType, target);
     }
 
-    protected void genInvokeInterface(JavaMethod target) {
-        if (callTargetIsResolved(target)) {
+    protected void genInvokeInterface(JavaType referencedType, JavaMethod target) {
+        if (callTargetIsResolved(target) && (referencedType == null || referencedType instanceof ResolvedJavaType)) {
             ValueNode[] args = frameState.popArguments(target.getSignature().getParameterCount(true));
-            appendInvoke(InvokeKind.Interface, (ResolvedJavaMethod) target, args);
+            Invoke invoke = appendInvoke(InvokeKind.Interface, (ResolvedJavaMethod) target, args);
+            if (invoke != null) {
+                invoke.callTarget().setReferencedType((ResolvedJavaType) referencedType);
+            }
         } else {
             handleUnresolvedInvoke(target, InvokeKind.Interface);
         }
@@ -4334,6 +4339,16 @@ public class BytecodeParser implements GraphBuilderContext {
 
     protected JavaMethod lookupMethodInPool(int cpi, int opcode) {
         return constantPool.lookupMethod(cpi, opcode);
+    }
+
+    protected JavaType lookupReferencedTypeInPool(int cpi, int opcode) {
+        if (GraalServices.hasLookupReferencedType()) {
+            return GraalServices.lookupReferencedType(constantPool, cpi, opcode);
+        }
+        // Returning null means that we should not attempt using CHA to devirtualize or inline
+        // interface calls. This is a normal behavior if the JVMCI doesn't support
+        // {@code ConstantPool.lookupReferencedType()}.
+        return null;
     }
 
     protected JavaField lookupField(int cpi, int opcode) {

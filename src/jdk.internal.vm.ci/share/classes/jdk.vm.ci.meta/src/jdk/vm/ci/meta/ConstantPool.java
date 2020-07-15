@@ -47,6 +47,16 @@ public interface ConstantPool {
     void loadReferencedType(int cpi, int opcode);
 
     /**
+     * Looks up the type referenced by the constant pool entry at {@code cpi} as referenced by the
+     * {@code opcode} bytecode instruction.
+     *
+     * @param cpi the index of a constant pool entry that references a type
+     * @param opcode the opcode of the instruction with {@code cpi} as an operand
+     * @return a reference to the compiler interface type
+     */
+    JavaType lookupReferencedType(int cpi, int opcode);
+
+    /**
      * Looks up a reference to a field. If {@code opcode} is non-negative, then resolution checks
      * specific to the bytecode it denotes are performed if the field is already resolved. Checks
      * for some bytecodes require the method that contains the bytecode to be specified. Should any

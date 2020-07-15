@@ -257,8 +257,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         }
         Object[] es = c.toArray();
         int n = es.length;
-        // If c.toArray incorrectly doesn't return Object[], copy it.
-        if (es.getClass() != Object[].class)
+        if (c.getClass() != java.util.ArrayList.class)
             es = Arrays.copyOf(es, n, Object[].class);
         if (screen && (n == 1 || this.comparator != null)) {
             for (Object e : es)

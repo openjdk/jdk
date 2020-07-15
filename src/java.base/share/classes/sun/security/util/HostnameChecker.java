@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Principal;
 import java.security.cert.*;
+import java.text.Normalizer;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
 import javax.net.ssl.SNIHostName;
@@ -217,8 +218,12 @@ public class HostnameChecker {
                                                     (X500Name.commonName_oid);
         if (derValue != null) {
             try {
-                if (isMatched(expectedName, derValue.getAsString(),
-                              chainsToPublicCA)) {
+                String cname = derValue.getAsString();
+                if (!Normalizer.isNormalized(cname, Normalizer.Form.NFKC)) {
+                    throw new CertificateException("Not a formal name "
+                            + cname);
+                }
+                if (isMatched(expectedName, cname, chainsToPublicCA)) {
                     return;
                 }
             } catch (IOException e) {

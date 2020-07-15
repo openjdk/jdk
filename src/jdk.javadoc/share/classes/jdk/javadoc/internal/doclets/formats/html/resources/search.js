@@ -24,6 +24,7 @@
  */
 
 var noResult = {l: "No results found"};
+var loading = {l: "Loading search index..."};
 var catModules = "Modules";
 var catPackages = "Packages";
 var catTypes = "Types";
@@ -219,96 +220,105 @@ function rankMatch(match, category) {
     return leftBoundaryMatch + periferalMatch + (delta / 200);
 
 }
+function doSearch(request, response) {
+    var result = [];
+    var newResults = [];
+
+    searchPattern = makeCamelCaseRegex(request.term);
+    if (searchPattern === "") {
+        return this.close();
+    }
+    var camelCaseMatcher = createMatcher(searchPattern, "");
+    var boundaryMatcher = createMatcher("\\b" + searchPattern, "");
+
+    function concatResults(a1, a2) {
+        a2.sort(function(e1, e2) {
+            return e1.ranking - e2.ranking;
+        });
+        a1 = a1.concat(a2.map(function(e) { return e.item; }));
+        a2.length = 0;
+        return a1;
+    }
+
+    if (moduleSearchIndex) {
+        $.each(moduleSearchIndex, function(index, item) {
+            item.category = catModules;
+            var ranking = rankMatch(boundaryMatcher.exec(item.l), catModules);
+            if (ranking < RANKING_THRESHOLD) {
+                newResults.push({ ranking: ranking, item: item });
+            }
+            return newResults.length < MAX_RESULTS_PER_CATEGORY;
+        });
+        result = concatResults(result, newResults);
+    }
+    if (packageSearchIndex) {
+        $.each(packageSearchIndex, function(index, item) {
+            item.category = catPackages;
+            var name = (item.m && request.term.indexOf("/") > -1)
+                ? (item.m + "/" + item.l)
+                : item.l;
+            var ranking = rankMatch(boundaryMatcher.exec(name), catPackages);
+            if (ranking < RANKING_THRESHOLD) {
+                newResults.push({ ranking: ranking, item: item });
+            }
+            return newResults.length < MAX_RESULTS_PER_CATEGORY;
+        });
+        result = concatResults(result, newResults);
+    }
+    if (typeSearchIndex) {
+        $.each(typeSearchIndex, function(index, item) {
+            item.category = catTypes;
+            var name = request.term.indexOf(".") > -1
+                ? item.p + "." + item.l
+                : item.l;
+            var ranking = rankMatch(camelCaseMatcher.exec(name), catTypes);
+            if (ranking < RANKING_THRESHOLD) {
+                newResults.push({ ranking: ranking, item: item });
+            }
+            return newResults.length < MAX_RESULTS_PER_CATEGORY;
+        });
+        result = concatResults(result, newResults);
+    }
+    if (memberSearchIndex) {
+        $.each(memberSearchIndex, function(index, item) {
+            item.category = catMembers;
+            var name = request.term.indexOf(".") > -1
+                ? item.p + "." + item.c + "." + item.l
+                : item.l;
+            var ranking = rankMatch(camelCaseMatcher.exec(name), catMembers);
+            if (ranking < RANKING_THRESHOLD) {
+                newResults.push({ ranking: ranking, item: item });
+            }
+            return newResults.length < MAX_RESULTS_PER_CATEGORY;
+        });
+        result = concatResults(result, newResults);
+    }
+    if (tagSearchIndex) {
+        $.each(tagSearchIndex, function(index, item) {
+            item.category = catSearchTags;
+            var ranking = rankMatch(boundaryMatcher.exec(item.l), catSearchTags);
+            if (ranking < RANKING_THRESHOLD) {
+                newResults.push({ ranking: ranking, item: item });
+            }
+            return newResults.length < MAX_RESULTS_PER_CATEGORY;
+        });
+        result = concatResults(result, newResults);
+    }
+    if (!indexFilesLoaded()) {
+        updateSearchResults = function() {
+            doSearch(request, response);
+        }
+        result.unshift(loading);
+    } else {
+        updateSearchResults = function() {};
+    }
+    response(result);
+}
 $(function() {
     $("#search").catcomplete({
         minLength: 1,
         delay: 300,
-        source: function(request, response) {
-            var result = [];
-            var newResults = [];
-
-            searchPattern = makeCamelCaseRegex(request.term);
-            if (searchPattern === "") {
-                return this.close();
-            }
-            var camelCaseMatcher = createMatcher(searchPattern, "");
-            var boundaryMatcher = createMatcher("\\b" + searchPattern, "");
-
-            function concatResults(a1, a2) {
-                a2.sort(function(e1, e2) {
-                    return e1.ranking - e2.ranking;
-                });
-                a1 = a1.concat(a2.map(function(e) { return e.item; }));
-                a2.length = 0;
-                return a1;
-            }
-
-            if (moduleSearchIndex) {
-                $.each(moduleSearchIndex, function(index, item) {
-                    item.category = catModules;
-                    var ranking = rankMatch(boundaryMatcher.exec(item.l), catModules);
-                    if (ranking < RANKING_THRESHOLD) {
-                        newResults.push({ ranking: ranking, item: item });
-                    }
-                    return newResults.length < MAX_RESULTS_PER_CATEGORY;
-                });
-                result = concatResults(result, newResults);
-            }
-            if (packageSearchIndex) {
-                $.each(packageSearchIndex, function(index, item) {
-                    item.category = catPackages;
-                    var name = (item.m && request.term.indexOf("/") > -1)
-                            ? (item.m + "/" + item.l)
-                            : item.l;
-                    var ranking = rankMatch(boundaryMatcher.exec(name), catPackages);
-                    if (ranking < RANKING_THRESHOLD) {
-                        newResults.push({ ranking: ranking, item: item });
-                    }
-                    return newResults.length < MAX_RESULTS_PER_CATEGORY;
-                });
-                result = concatResults(result, newResults);
-            }
-            if (typeSearchIndex) {
-                $.each(typeSearchIndex, function(index, item) {
-                    item.category = catTypes;
-                    var name = request.term.indexOf(".") > -1
-                        ? item.p + "." + item.l
-                        : item.l;
-                    var ranking = rankMatch(camelCaseMatcher.exec(name), catTypes);
-                    if (ranking < RANKING_THRESHOLD) {
-                        newResults.push({ ranking: ranking, item: item });
-                    }
-                    return newResults.length < MAX_RESULTS_PER_CATEGORY;
-                });
-                result = concatResults(result, newResults);
-            }
-            if (memberSearchIndex) {
-                $.each(memberSearchIndex, function(index, item) {
-                    item.category = catMembers;
-                    var name = request.term.indexOf(".") > -1
-                            ? item.p + "." + item.c + "." + item.l
-                            : item.l;
-                    var ranking = rankMatch(camelCaseMatcher.exec(name), catMembers);
-                    if (ranking < RANKING_THRESHOLD) {
-                        newResults.push({ ranking: ranking, item: item });
-                    }
-                    return newResults.length < MAX_RESULTS_PER_CATEGORY;
-                });
-                result = concatResults(result, newResults);
-            }
-            if (tagSearchIndex) {
-                $.each(tagSearchIndex, function(index, item) {
-                    item.category = catSearchTags;
-                    var ranking = rankMatch(boundaryMatcher.exec(item.l), catSearchTags);
-                    if (ranking < RANKING_THRESHOLD) {
-                        newResults.push({ ranking: ranking, item: item });
-                    }
-                    return newResults.length < MAX_RESULTS_PER_CATEGORY;
-                });
-                result = concatResults(result, newResults);
-            }
-            response(result);
-        },
+        source: doSearch,
         response: function(event, ui) {
             if (!ui.content.length) {
                 ui.content.push(noResult);

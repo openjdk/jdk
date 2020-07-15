@@ -186,7 +186,7 @@ public final class Punycode {
         for(j=0; j<srcLength; ++j) {
             if(srcCPCount==MAX_CP_COUNT) {
                 /* too many input code points */
-                throw new IndexOutOfBoundsException();
+                throw new ParseException("Too many input code points", -1);
             }
             c=src.charAt(j);
             if(isBasic(c)) {

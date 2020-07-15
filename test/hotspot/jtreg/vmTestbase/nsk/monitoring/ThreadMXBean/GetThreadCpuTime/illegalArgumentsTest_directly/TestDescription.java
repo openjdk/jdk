@@ -38,7 +38,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm
  *      nsk.monitoring.ThreadMXBean.GetThreadCpuTime.IllegalArgumentsTest
  *      -testMode=directly

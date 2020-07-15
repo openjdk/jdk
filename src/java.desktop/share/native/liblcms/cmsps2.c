@@ -1443,7 +1443,7 @@ int WriteNamedColorCRD(cmsIOHANDLER* m, cmsHPROFILE hNamedColor, cmsUInt32Number
     cmsUInt32Number i, nColors, nColorant;
     cmsUInt32Number OutputFormat;
     char ColorName[cmsMAX_PATH];
-    char Colorant[128];
+    char Colorant[512];
     cmsNAMEDCOLORLIST* NamedColorList;
 
 

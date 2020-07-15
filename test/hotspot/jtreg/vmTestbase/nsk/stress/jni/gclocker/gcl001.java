@@ -44,7 +44,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native/timeout=480
  *      -XX:-UseGCOverheadLimit
  *      nsk.stress.jni.gclocker.gcl001

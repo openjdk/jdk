@@ -49,6 +49,7 @@ import static java.io.ObjectStreamClass.processQueue;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import sun.reflect.misc.ReflectUtil;
+import sun.security.action.GetBooleanAction;
 
 /**
  * An ObjectInputStream deserializes primitive data and objects previously
@@ -294,6 +295,14 @@ public class ObjectInputStream
         /** queue for WeakReferences to audited subclasses */
         static final ReferenceQueue<Class<?>> subclassAuditsQueue =
             new ReferenceQueue<>();
+
+        /**
+         * Property to permit setting a filter after objects
+         * have been read.
+         * See {@link #setObjectInputFilter(ObjectInputFilter)}
+         */
+        static final boolean SET_FILTER_AFTER_READ = GetBooleanAction
+                .privilegedGetProperty("jdk.serialSetFilterAfterRead");
     }
 
     /*
@@ -1260,6 +1269,8 @@ public class ObjectInputStream
      * {@link ObjectInputFilter.Config#getSerialFilter() ObjectInputFilter.Config.getSerialFilter}
      * when the {@code  ObjectInputStream} is constructed and can be set
      * to a custom filter only once.
+     * The filter must be set before reading any objects from the stream;
+     * for example, by calling {@link #readObject} or {@link #readUnshared}.
      *
      * @implSpec
      * The filter, when not {@code null}, is invoked during {@link #readObject readObject}
@@ -1302,7 +1313,8 @@ public class ObjectInputStream
      * @throws SecurityException if there is security manager and the
      *       {@code SerializablePermission("serialFilter")} is not granted
      * @throws IllegalStateException if the {@linkplain #getObjectInputFilter() current filter}
-     *       is not {@code null} and is not the system-wide filter
+     *       is not {@code null} and is not the system-wide filter, or
+     *       if an object has been read
      * @since 9
      */
     public final void setObjectInputFilter(ObjectInputFilter filter) {
@@ -1314,6 +1326,10 @@ public class ObjectInputStream
         if (serialFilter != null &&
                 serialFilter != ObjectInputFilter.Config.getSerialFilter()) {
             throw new IllegalStateException("filter can not be set more than once");
+        }
+        if (totalObjectRefs > 0 && !Caches.SET_FILTER_AFTER_READ) {
+            throw new IllegalStateException(
+                    "filter can not be set after an object has been read");
         }
         this.serialFilter = filter;
     }

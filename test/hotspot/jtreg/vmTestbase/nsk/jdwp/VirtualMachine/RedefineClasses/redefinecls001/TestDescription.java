@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,16 +69,12 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build ExecDriver
  * @build nsk.jdwp.VirtualMachine.RedefineClasses.redefinecls001
  *        nsk.jdwp.VirtualMachine.RedefineClasses.redefinecls001a
  *        nsk.jdwp.VirtualMachine.RedefineClasses.redefinecls001b
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
- *      ${compile.jdk}/bin/javac
- *      -cp ${test.class.path}
- *      -d newclass
- *      newclass/redefinecls001b.java
+ * @run driver nsk.share.ExtraClassesBuilder
+ *      newclass
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdwp.VirtualMachine.RedefineClasses.redefinecls001
  *      .

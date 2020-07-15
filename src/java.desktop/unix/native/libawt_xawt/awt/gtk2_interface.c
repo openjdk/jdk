@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1012,45 +1012,46 @@ static gint gtk2_copy_image(gint *dst, gint width, gint height)
     black = (*fp_gdk_pixbuf_get_pixels)(gtk2_black_pixbuf);
     stride = (*fp_gdk_pixbuf_get_rowstride)(gtk2_black_pixbuf);
     padding = stride - width * 4;
+    if (padding >= 0 && stride > 0) {
+        for (i = 0; i < height; i++) {
+            for (j = 0; j < width; j++) {
+                int r1 = *white++;
+                int r2 = *black++;
+                int alpha = 0xff + r2 - r1;
 
-    for (i = 0; i < height; i++) {
-        for (j = 0; j < width; j++) {
-            int r1 = *white++;
-            int r2 = *black++;
-            int alpha = 0xff + r2 - r1;
+                switch (alpha) {
+                    case 0:       /* transparent pixel */
+                        r = g = b = 0;
+                        black += 3;
+                        white += 3;
+                        is_opaque = FALSE;
+                        break;
 
-            switch (alpha) {
-                case 0:       /* transparent pixel */
-                    r = g = b = 0;
-                    black += 3;
-                    white += 3;
-                    is_opaque = FALSE;
-                    break;
+                    case 0xff:    /* opaque pixel */
+                        r = r2;
+                        g = *black++;
+                        b = *black++;
+                        black++;
+                        white += 3;
+                        break;
 
-                case 0xff:    /* opaque pixel */
-                    r = r2;
-                    g = *black++;
-                    b = *black++;
-                    black++;
-                    white += 3;
-                    break;
+                    default:      /* translucent pixel */
+                        r = 0xff * r2 / alpha;
+                        g = 0xff * *black++ / alpha;
+                        b = 0xff * *black++ / alpha;
+                        black++;
+                        white += 3;
+                        is_opaque = FALSE;
+                        is_bitmask = FALSE;
+                        break;
+                }
 
-                default:      /* translucent pixel */
-                    r = 0xff * r2 / alpha;
-                    g = 0xff * *black++ / alpha;
-                    b = 0xff * *black++ / alpha;
-                    black++;
-                    white += 3;
-                    is_opaque = FALSE;
-                    is_bitmask = FALSE;
-                    break;
+                *dst++ = (alpha << 24 | r << 16 | g << 8 | b);
             }
 
-            *dst++ = (alpha << 24 | r << 16 | g << 8 | b);
+            white += padding;
+            black += padding;
         }
-
-        white += padding;
-        black += padding;
     }
     return is_opaque ? java_awt_Transparency_OPAQUE :
                        (is_bitmask ? java_awt_Transparency_BITMASK :
