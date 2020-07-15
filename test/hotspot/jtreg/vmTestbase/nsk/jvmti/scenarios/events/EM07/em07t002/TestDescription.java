@@ -54,7 +54,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jvmti.scenarios.events.EM07.em07t002
  *
  * @comment compile loadclassXX to bin/loadclassXX

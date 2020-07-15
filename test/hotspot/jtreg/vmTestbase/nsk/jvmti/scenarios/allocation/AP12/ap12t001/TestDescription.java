@@ -38,7 +38,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build ExecDriver
  *        nsk.jvmti.scenarios.allocation.AP12.ap12t001
  * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java

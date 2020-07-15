@@ -52,7 +52,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jvmti.scenarios.extension.EX03.ex03t001
  *
  * @comment compile loadclassXX to bin/loadclassXX

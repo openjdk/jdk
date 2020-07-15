@@ -42,7 +42,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.share.aod.AODTestRunner
  *        nsk.jvmti.AttachOnDemand.attach021.attach021Target
  * @run main/othervm/native PropertyResolvingWrapper
