@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
+#include "metaprogramming/isRegisteredEnum.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
@@ -330,8 +331,10 @@ class ObjectMonitor {
   void*     object() const;
   void*     object_addr();
   void      set_object(void* obj);
+  void      release_set_allocation_state(AllocationState s);
   void      set_allocation_state(AllocationState s);
   AllocationState allocation_state() const;
+  AllocationState allocation_state_acquire() const;
   bool      is_free() const;
   bool      is_old() const;
   bool      is_new() const;
@@ -373,6 +376,9 @@ class ObjectMonitor {
   bool      ExitSuspendEquivalent(JavaThread* self);
   void      install_displaced_markword_in_object(const oop obj);
 };
+
+// Register for atomic operations.
+template<> struct IsRegisteredEnum<ObjectMonitor::AllocationState> : public TrueType {};
 
 // Macro to use guarantee() for more strict AsyncDeflateIdleMonitors
 // checks and assert() otherwise.

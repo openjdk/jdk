@@ -1908,7 +1908,8 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* self, oop object,
       // Once ObjectMonitor is configured and the object is associated
       // with the ObjectMonitor, it is safe to allow async deflation:
       assert(m->is_new(), "freshly allocated monitor must be new");
-      m->set_allocation_state(ObjectMonitor::Old);
+      // Release semantics needed to keep allocation_state from floating up.
+      m->release_set_allocation_state(ObjectMonitor::Old);
 
       // Hopefully the performance counters are allocated on distinct cache lines
       // to avoid false sharing on MP systems ...
@@ -1965,6 +1966,8 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* self, oop object,
     // Once the ObjectMonitor is configured and object is associated
     // with the ObjectMonitor, it is safe to allow async deflation:
     assert(m->is_new(), "freshly allocated monitor must be new");
+    // Release semantics are not needed to keep allocation_state from
+    // floating up since cas_set_mark() takes care of it.
     m->set_allocation_state(ObjectMonitor::Old);
 
     // Hopefully the performance counters are allocated on distinct

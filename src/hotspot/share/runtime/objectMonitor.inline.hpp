@@ -191,6 +191,10 @@ inline void* ObjectMonitor::try_set_owner_from(void* old_value, void* new_value)
   return prev;
 }
 
+inline void ObjectMonitor::release_set_allocation_state(ObjectMonitor::AllocationState s) {
+  Atomic::release_store(&_allocation_state, s);
+}
+
 inline void ObjectMonitor::set_allocation_state(ObjectMonitor::AllocationState s) {
   _allocation_state = s;
 }
@@ -199,12 +203,16 @@ inline ObjectMonitor::AllocationState ObjectMonitor::allocation_state() const {
   return _allocation_state;
 }
 
+inline ObjectMonitor::AllocationState ObjectMonitor::allocation_state_acquire() const {
+  return Atomic::load_acquire(&_allocation_state);
+}
+
 inline bool ObjectMonitor::is_free() const {
   return _allocation_state == Free;
 }
 
 inline bool ObjectMonitor::is_old() const {
-  return _allocation_state == Old;
+  return allocation_state_acquire() == Old;
 }
 
 inline bool ObjectMonitor::is_new() const {
