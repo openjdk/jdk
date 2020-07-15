@@ -223,13 +223,24 @@ inline bool ObjectMonitor::is_new() const {
 // use Atomic operations to disable compiler optimizations that
 // might try to elide loading and/or storing this field.
 
+// Simply get _next_om field.
 inline ObjectMonitor* ObjectMonitor::next_om() const {
   return Atomic::load(&_next_om);
+}
+
+// Get _next_om field with acquire semantics.
+inline ObjectMonitor* ObjectMonitor::next_om_acquire() const {
+  return Atomic::load_acquire(&_next_om);
 }
 
 // Simply set _next_om field to new_value.
 inline void ObjectMonitor::set_next_om(ObjectMonitor* new_value) {
   Atomic::store(&_next_om, new_value);
+}
+
+// Set _next_om field to new_value with release semantics.
+inline void ObjectMonitor::release_set_next_om(ObjectMonitor* new_value) {
+  Atomic::release_store(&_next_om, new_value);
 }
 
 // Try to set _next_om field to new_value if the current value matches

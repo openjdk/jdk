@@ -278,9 +278,14 @@ class ObjectMonitor {
   // _owner field. Returns the prior value of the _owner field.
   void*     try_set_owner_from(void* old_value, void* new_value);
 
+  // Simply get _next_om field.
   ObjectMonitor* next_om() const;
+  // Get _next_om field with acquire semantics.
+  ObjectMonitor* next_om_acquire() const;
   // Simply set _next_om field to new_value.
   void set_next_om(ObjectMonitor* new_value);
+  // Set _next_om field to new_value with release semantics.
+  void release_set_next_om(ObjectMonitor* new_value);
   // Try to set _next_om field to new_value if the current value matches
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _next_om field. Returns the prior value of the _next_om field.
