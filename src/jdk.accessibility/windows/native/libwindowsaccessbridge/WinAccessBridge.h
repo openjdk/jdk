@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,14 +43,9 @@ extern "C" {
                         LPVOID lpvReserved);
     void AppendToCallOutput(char *s);
     BOOL CALLBACK AccessBridgeDialogProc(HWND hDlg, UINT message,
-                                         UINT wParam, LONG lParam);
+                                         WPARAM wParam, LPARAM lParam);
     HWND getTopLevelHWND(HWND descendent);
 }
-
-LRESULT CALLBACK WinAccessBridgeWindowProc(HWND hWnd, UINT message,
-                                           UINT wParam, LONG lParam);
-
-BOOL CALLBACK DeleteItemProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 /**
  * The WinAccessBridge class.  The core of the Windows AT AccessBridge dll
