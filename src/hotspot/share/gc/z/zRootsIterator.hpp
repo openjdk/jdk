@@ -112,7 +112,6 @@ private:
   void do_universe(ZRootsIteratorClosure* cl);
   void do_object_synchronizer(ZRootsIteratorClosure* cl);
   void do_management(ZRootsIteratorClosure* cl);
-  void do_jvmti_export(ZRootsIteratorClosure* cl);
   void do_jvmti_weak_export(ZRootsIteratorClosure* cl);
   void do_vm_thread(ZRootsIteratorClosure* cl);
   void do_java_threads(ZRootsIteratorClosure* cl);
@@ -121,7 +120,6 @@ private:
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_universe>            _universe;
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_object_synchronizer> _object_synchronizer;
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_management>          _management;
-  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_export>        _jvmti_export;
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_weak_export>   _jvmti_weak_export;
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_vm_thread>           _vm_thread;
   ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_java_threads>      _java_threads;

@@ -203,13 +203,6 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
     }
   }
 
-  {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::JVMTIRoots, worker_id);
-    if (_process_strong_tasks.try_claim_task(G1RP_PS_jvmti_oops_do)) {
-      JvmtiExport::oops_do(strong_roots);
-    }
-  }
-
 #if INCLUDE_AOT
   if (UseAOT) {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::AOTCodeRoots, worker_id);

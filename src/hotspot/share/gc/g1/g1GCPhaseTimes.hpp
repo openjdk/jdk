@@ -52,7 +52,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ObjectSynchronizerRoots,
     ManagementRoots,
     CLDGRoots,
-    JVMTIRoots,
     AOT_ONLY(AOTCodeRoots COMMA)
     CMRefRoots,
     // For every OopStorage there will be one element in the enum, starting with

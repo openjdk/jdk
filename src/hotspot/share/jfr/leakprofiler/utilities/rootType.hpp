@@ -39,7 +39,6 @@ class OldObjectRoot : public AllStatic {
     _object_synchronizer,
     _class_loader_data,
     _management,
-    _jvmti,
     _code_cache,
     _aot,
     JVMCI_ONLY(_jvmci COMMA)

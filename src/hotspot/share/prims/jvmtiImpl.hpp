@@ -159,10 +159,10 @@ class JvmtiBreakpoint : public GrowableElement {
 private:
   Method*               _method;
   int                   _bci;
-  oop*                  _class_holder;  // keeps _method memory from being deallocated
+  OopHandle             _class_holder;  // keeps _method memory from being deallocated
 
 public:
-  JvmtiBreakpoint() : _method(NULL), _bci(0), _class_holder(NULL) {}
+  JvmtiBreakpoint() : _method(NULL), _bci(0) {}
   JvmtiBreakpoint(Method* m_method, jlocation location);
   virtual ~JvmtiBreakpoint();
   bool equals(JvmtiBreakpoint& bp);

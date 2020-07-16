@@ -112,10 +112,6 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
       Management::oops_do(&roots_closure);
       break;
 
-    case ParallelRootType::jvmti:
-      JvmtiExport::oops_do(&roots_closure);
-      break;
-
     case ParallelRootType::code_cache:
       {
         MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations);

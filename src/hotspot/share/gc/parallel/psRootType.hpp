@@ -38,7 +38,6 @@ public:
     object_synchronizer,
     management,
     class_loader_data,
-    jvmti,
     code_cache,
     //"threads" are handled in parallel as a special case
     sentinel

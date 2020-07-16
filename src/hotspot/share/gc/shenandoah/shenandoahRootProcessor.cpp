@@ -57,15 +57,13 @@ void ShenandoahSerialRoot::oops_do(OopClosure* cl, uint worker_id) {
 ShenandoahSerialRoots::ShenandoahSerialRoots(ShenandoahPhaseTimings::Phase phase) :
   _universe_root(&Universe::oops_do, phase, ShenandoahPhaseTimings::UniverseRoots),
   _object_synchronizer_root(&ObjectSynchronizer::oops_do, phase, ShenandoahPhaseTimings::ObjectSynchronizerRoots),
-  _management_root(&Management::oops_do, phase, ShenandoahPhaseTimings::ManagementRoots),
-  _jvmti_root(&JvmtiExport::oops_do, phase, ShenandoahPhaseTimings::JVMTIRoots) {
+  _management_root(&Management::oops_do, phase, ShenandoahPhaseTimings::ManagementRoots) {
 }
 
 void ShenandoahSerialRoots::oops_do(OopClosure* cl, uint worker_id) {
   _universe_root.oops_do(cl, worker_id);
   _object_synchronizer_root.oops_do(cl, worker_id);
   _management_root.oops_do(cl, worker_id);
-  _jvmti_root.oops_do(cl, worker_id);
 }
 
 ShenandoahWeakSerialRoot::ShenandoahWeakSerialRoot(ShenandoahWeakSerialRoot::WeakOopsDo weak_oops_do,

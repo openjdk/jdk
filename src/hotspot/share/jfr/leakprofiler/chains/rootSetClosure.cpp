@@ -37,7 +37,6 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
 #include "services/management.hpp"
@@ -75,7 +74,6 @@ void RootSetClosure<Delegate>::process() {
   Threads::oops_do(this, NULL);
   ObjectSynchronizer::oops_do(this);
   Universe::oops_do(this);
-  JvmtiExport::oops_do(this);
   OopStorageSet::strong_oops_do(this);
   Management::oops_do(this);
   AOTLoader::oops_do(this);

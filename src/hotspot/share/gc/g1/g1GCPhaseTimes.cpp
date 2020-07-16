@@ -62,7 +62,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[ObjectSynchronizerRoots] = new WorkerDataArray<double>("ObjectSynchronizerRoots", "ObjectSynchronizer Roots (ms):", max_gc_threads);
   _gc_par_phases[ManagementRoots] = new WorkerDataArray<double>("ManagementRoots", "Management Roots (ms):", max_gc_threads);
   _gc_par_phases[CLDGRoots] = new WorkerDataArray<double>("CLDGRoots", "CLDG Roots (ms):", max_gc_threads);
-  _gc_par_phases[JVMTIRoots] = new WorkerDataArray<double>("JVMTIRoots", "JVMTI Roots (ms):", max_gc_threads);
   AOT_ONLY(_gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>("AOTCodeRoots", "AOT Root Scan (ms):", max_gc_threads);)
   _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>("CMRefRoots", "CM RefProcessor Roots (ms):", max_gc_threads);
 

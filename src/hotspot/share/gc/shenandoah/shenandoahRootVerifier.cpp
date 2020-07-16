@@ -78,7 +78,6 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
     shenandoah_assert_safepoint();
     Universe::oops_do(oops);
     Management::oops_do(oops);
-    JvmtiExport::oops_do(oops);
     ObjectSynchronizer::oops_do(oops);
   }
 
@@ -124,7 +123,6 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
 
   Universe::oops_do(oops);
   Management::oops_do(oops);
-  JvmtiExport::oops_do(oops);
   JNIHandles::oops_do(oops);
   ObjectSynchronizer::oops_do(oops);
   OopStorageSet::vm_global()->oops_do(oops);
@@ -152,7 +150,6 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
 
   Universe::oops_do(oops);
   Management::oops_do(oops);
-  JvmtiExport::oops_do(oops);
   JNIHandles::oops_do(oops);
   ObjectSynchronizer::oops_do(oops);
   OopStorageSet::vm_global()->oops_do(oops);

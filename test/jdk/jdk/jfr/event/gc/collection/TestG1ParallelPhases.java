@@ -97,7 +97,6 @@ public class TestG1ParallelPhases {
             "VM Global",
             "JNI Global",
             "CLDGRoots",
-            "JVMTIRoots",
             "CMRefRoots",
             "MergeER",
             "MergeHCC",
