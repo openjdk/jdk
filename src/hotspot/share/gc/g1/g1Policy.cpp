@@ -77,7 +77,8 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _concurrent_start_to_mixed(),
   _collection_set(NULL),
   _g1h(NULL),
-  _phase_times(new G1GCPhaseTimes(gc_timer, ParallelGCThreads)),
+  _phase_times_timer(gc_timer),
+  _phase_times(NULL),
   _mark_remark_start_sec(0),
   _mark_cleanup_start_sec(0),
   _tenuring_threshold(MaxTenuringThreshold),
@@ -399,6 +400,15 @@ double G1Policy::predict_survivor_regions_evac_time() const {
     survivor_regions_evac_time += predict_region_total_time_ms(*it, collector_state()->in_young_only_phase());
   }
   return survivor_regions_evac_time;
+}
+
+G1GCPhaseTimes* G1Policy::phase_times() const {
+  // Lazy allocation because it must follow initialization of all the
+  // OopStorage objects by various other subsystems.
+  if (_phase_times == NULL) {
+    _phase_times = new G1GCPhaseTimes(_phase_times_timer, ParallelGCThreads);
+  }
+  return _phase_times;
 }
 
 void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_length) {

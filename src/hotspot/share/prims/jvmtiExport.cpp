@@ -2829,7 +2829,7 @@ void JvmtiObjectAllocEventCollector::generate_call_for_allocated() {
       oop obj = _allocated->at(i).resolve();
       _post_callback(JavaThread::current(), obj);
       // Release OopHandle
-      _allocated->at(i).release(OopStorageSet::vm_global());
+      _allocated->at(i).release(Universe::vm_global());
 
     }
     delete _allocated, _allocated = NULL;
@@ -2841,7 +2841,7 @@ void JvmtiObjectAllocEventCollector::record_allocation(oop obj) {
   if (_allocated == NULL) {
     _allocated = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<OopHandle>(1, mtServiceability);
   }
-  _allocated->push(OopHandle(OopStorageSet::vm_global(), obj));
+  _allocated->push(OopHandle(Universe::vm_global(), obj));
 }
 
 // Disable collection of VMObjectAlloc events

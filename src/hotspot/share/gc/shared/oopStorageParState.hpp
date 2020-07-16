@@ -133,6 +133,7 @@ class OopStorage::BasicParState {
   volatile size_t _next_block;
   uint _estimated_thread_count;
   bool _concurrent;
+  volatile size_t _num_dead;
 
   NONCOPYABLE(BasicParState);
 
@@ -156,6 +157,10 @@ public:
   template<bool is_const, typename F> void iterate(F f);
 
   static uint default_estimated_thread_count(bool concurrent);
+
+  size_t num_dead() const;
+  void increment_num_dead(size_t num_dead);
+  void report_num_dead() const;
 };
 
 template<bool concurrent, bool is_const>
@@ -175,6 +180,10 @@ public:
   const OopStorage* storage() const { return _basic_state.storage(); }
   template<typename F> void iterate(F f);
   template<typename Closure> void oops_do(Closure* cl);
+
+  size_t num_dead() const { return _basic_state.num_dead(); }
+  void increment_num_dead(size_t num_dead) { _basic_state.increment_num_dead(num_dead); }
+  void report_num_dead() const { _basic_state.report_num_dead(); }
 };
 
 template<>
@@ -193,6 +202,10 @@ public:
   template<typename Closure> void weak_oops_do(Closure* cl);
   template<typename IsAliveClosure, typename Closure>
   void weak_oops_do(IsAliveClosure* is_alive, Closure* cl);
+
+  size_t num_dead() const { return _basic_state.num_dead(); }
+  void increment_num_dead(size_t num_dead) { _basic_state.increment_num_dead(num_dead); }
+  void report_num_dead() const { _basic_state.report_num_dead(); }
 };
 
 #endif // SHARE_GC_SHARED_OOPSTORAGEPARSTATE_HPP

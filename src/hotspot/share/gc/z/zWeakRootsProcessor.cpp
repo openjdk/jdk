@@ -62,6 +62,10 @@ public:
       ZTask("ZProcessConccurentWeakRootsTask"),
       _concurrent_weak_roots() {}
 
+  ~ZProcessConcurrentWeakRootsTask() {
+    _concurrent_weak_roots.report_num_dead();
+  }
+
   virtual void work() {
     ZPhantomCleanOopClosure cl;
     _concurrent_weak_roots.oops_do(&cl);

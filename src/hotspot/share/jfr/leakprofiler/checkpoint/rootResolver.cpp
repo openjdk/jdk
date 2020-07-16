@@ -151,7 +151,7 @@ bool ReferenceToRootClosure::do_oop_storage_roots() {
   for (OopStorageSet::Iterator it = OopStorageSet::strong_iterator(); !it.is_end(); ++it, ++i) {
     assert(!complete(), "invariant");
     OopStorage* oop_storage = *it;
-    OldObjectRoot::Type type = oop_storage == OopStorageSet::jni_global() ?
+    OldObjectRoot::Type type = JNIHandles::is_global_storage(oop_storage) ?
                                OldObjectRoot::_global_jni_handle :
                                OldObjectRoot::_global_oop_handle;
     OldObjectRoot::System system = OldObjectRoot::System(OldObjectRoot::_strong_oop_storage_set_first + i);

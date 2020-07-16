@@ -83,7 +83,7 @@ class ResolvedMethodTableConfig : public AllStatic {
     return AllocateHeap(size, mtClass);
   }
   static void free_node(void* memory, Value const& value) {
-    value.release(OopStorageSet::resolved_method_table_weak());
+    value.release(ResolvedMethodTable::_oop_storage);
     FreeHeap(memory);
     ResolvedMethodTable::item_removed();
   }
@@ -93,14 +93,16 @@ static ResolvedMethodTableHash* _local_table           = NULL;
 static size_t                   _current_size          = (size_t)1 << ResolvedMethodTableSizeLog;
 
 volatile bool            ResolvedMethodTable::_has_work              = false;
+OopStorage*              ResolvedMethodTable::_oop_storage;
 
 volatile size_t          _items_count           = 0;
-volatile size_t          _uncleaned_items_count = 0;
 
 void ResolvedMethodTable::create_table() {
   _local_table  = new ResolvedMethodTableHash(ResolvedMethodTableSizeLog, END_SIZE, GROW_HINT);
   log_trace(membername, table)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                                _current_size, ResolvedMethodTableSizeLog);
+  _oop_storage = OopStorageSet::create_weak("ResolvedMethodTable Weak");
+  _oop_storage->register_num_dead_callback(&gc_notification);
 }
 
 size_t ResolvedMethodTable::table_size() {
@@ -193,7 +195,7 @@ oop ResolvedMethodTable::add_method(const Method* method, Handle rmethod_name) {
     if (_local_table->get(thread, lookup, rmg)) {
       return rmg.get_res_oop();
     }
-    WeakHandle wh(OopStorageSet::resolved_method_table_weak(), rmethod_name);
+    WeakHandle wh(_oop_storage, rmethod_name);
     // The hash table takes ownership of the WeakHandle, even if it's not inserted.
     if (_local_table->insert(thread, lookup, wh)) {
       log_insert(method);
@@ -212,24 +214,26 @@ void ResolvedMethodTable::item_removed() {
 }
 
 double ResolvedMethodTable::get_load_factor() {
-  return (double)_items_count/_current_size;
+  return double(_items_count)/double(_current_size);
 }
 
-double ResolvedMethodTable::get_dead_factor() {
-  return (double)_uncleaned_items_count/_current_size;
+double ResolvedMethodTable::get_dead_factor(size_t num_dead) {
+  return double(num_dead)/double(_current_size);
 }
 
 static const double PREF_AVG_LIST_LEN = 2.0;
 // If we have as many dead items as 50% of the number of bucket
 static const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
-void ResolvedMethodTable::check_concurrent_work() {
-  if (_has_work) {
+void ResolvedMethodTable::gc_notification(size_t num_dead) {
+  log_trace(membername, table)("Uncleaned items:" SIZE_FORMAT, num_dead);
+
+  if (has_work()) {
     return;
   }
 
   double load_factor = get_load_factor();
-  double dead_factor = get_dead_factor();
+  double dead_factor = get_dead_factor(num_dead);
   // We should clean/resize if we have more dead than alive,
   // more items than preferred load factor or
   // more dead items than water mark.
@@ -244,12 +248,15 @@ void ResolvedMethodTable::check_concurrent_work() {
 
 void ResolvedMethodTable::trigger_concurrent_work() {
   MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  _has_work = true;
+  Atomic::store(&_has_work, true);
   Service_lock->notify_all();
 }
 
+bool ResolvedMethodTable::has_work() {
+  return Atomic::load_acquire(&_has_work);
+}
+
 void ResolvedMethodTable::do_concurrent_work(JavaThread* jt) {
-  _has_work = false;
   double load_factor = get_load_factor();
   log_debug(membername, table)("Concurrent work, live factor: %g", load_factor);
   // We prefer growing, since that also removes dead items
@@ -258,6 +265,7 @@ void ResolvedMethodTable::do_concurrent_work(JavaThread* jt) {
   } else {
     clean_dead_entries(jt);
   }
+  Atomic::release_store(&_has_work, false);
 }
 
 void ResolvedMethodTable::grow(JavaThread* jt) {
@@ -322,22 +330,6 @@ void ResolvedMethodTable::clean_dead_entries(JavaThread* jt) {
     bdt.done(jt);
   }
   log_info(membername, table)("Cleaned %ld of %ld", stdc._count, stdc._item);
-}
-void ResolvedMethodTable::reset_dead_counter() {
-  _uncleaned_items_count = 0;
-}
-
-void ResolvedMethodTable::inc_dead_counter(size_t ndead) {
-  size_t total = Atomic::add(&_uncleaned_items_count, ndead);
-  log_trace(membername, table)(
-     "Uncleaned items:" SIZE_FORMAT " added: " SIZE_FORMAT " total:" SIZE_FORMAT,
-     _uncleaned_items_count, ndead, total);
-}
-
-// After the parallel walk this method must be called to trigger
-// cleaning. Note it might trigger a resize instead.
-void ResolvedMethodTable::finish_dead_counter() {
-  check_concurrent_work();
 }
 
 #if INCLUDE_JVMTI

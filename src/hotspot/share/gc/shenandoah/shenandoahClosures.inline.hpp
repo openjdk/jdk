@@ -144,6 +144,35 @@ void ShenandoahEvacUpdateOopStorageRootsClosure::do_oop(narrowOop* p) {
   ShouldNotReachHere();
 }
 
+template <bool CONCURRENT, typename IsAlive, typename KeepAlive>
+ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive>::ShenandoahCleanUpdateWeakOopsClosure(IsAlive* is_alive, KeepAlive* keep_alive) :
+  _is_alive(is_alive), _keep_alive(keep_alive) {
+  if (!CONCURRENT) {
+    assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+  }
+}
+
+template <bool CONCURRENT, typename IsAlive, typename KeepAlive>
+void ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive>::do_oop(oop* p) {
+  oop obj = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(obj)) {
+    if (_is_alive->do_object_b(obj)) {
+      _keep_alive->do_oop(p);
+    } else {
+      if (CONCURRENT) {
+        Atomic::cmpxchg(p, obj, oop());
+      } else {
+        RawAccess<IS_NOT_NULL>::oop_store(p, oop());
+      }
+    }
+  }
+}
+
+template <bool CONCURRENT, typename IsAlive, typename KeepAlive>
+void ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive>::do_oop(narrowOop* p) {
+  ShouldNotReachHere();
+}
+
 ShenandoahCodeBlobAndDisarmClosure::ShenandoahCodeBlobAndDisarmClosure(OopClosure* cl) :
   CodeBlobToOopClosure(cl, true /* fix_relocations */),
    _bs(BarrierSet::barrier_set()->barrier_set_nmethod()) {

@@ -40,7 +40,7 @@
 
 class CollectedHeap;
 class DeferredObjAllocEvent;
-
+class OopStorage;
 
 // A helper class for caching a Method* when the user of the cache
 // only cares about the latest version of the Method*.  This cache safely
@@ -183,6 +183,9 @@ class Universe: AllStatic {
   // Historic gc information
   static size_t _heap_capacity_at_last_gc;
   static size_t _heap_used_at_last_gc;
+
+  static OopStorage* _vm_weak;
+  static OopStorage* _vm_global;
 
   static jint initialize_heap();
   static void initialize_tlab();
@@ -332,6 +335,11 @@ class Universe: AllStatic {
   static size_t get_heap_free_at_last_gc()             { return _heap_capacity_at_last_gc - _heap_used_at_last_gc; }
   static size_t get_heap_used_at_last_gc()             { return _heap_used_at_last_gc; }
   static void update_heap_info_at_gc();
+
+  // Global OopStorages
+  static OopStorage* vm_weak();
+  static OopStorage* vm_global();
+  static void oopstorage_init();
 
   // Testers
   static bool is_bootstrapping()                      { return _bootstrapping; }

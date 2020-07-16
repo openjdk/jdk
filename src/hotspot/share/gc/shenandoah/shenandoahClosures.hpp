@@ -94,6 +94,18 @@ public:
   inline void do_oop(narrowOop* p);
 };
 
+template <bool CONCURRENT, typename IsAlive, typename KeepAlive>
+class ShenandoahCleanUpdateWeakOopsClosure : public OopClosure {
+private:
+  IsAlive*    _is_alive;
+  KeepAlive*  _keep_alive;
+
+public:
+  inline ShenandoahCleanUpdateWeakOopsClosure(IsAlive* is_alive, KeepAlive* keep_alive);
+  inline void do_oop(oop* p);
+  inline void do_oop(narrowOop* p);
+};
+
 class ShenandoahCodeBlobAndDisarmClosure: public CodeBlobToOopClosure {
 private:
   BarrierSetNMethod* const _bs;

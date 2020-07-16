@@ -38,17 +38,13 @@ class outputStream;
   f(CNT_PREFIX ## ThreadRoots,              DESC_PREFIX "Thread Roots")                \
   f(CNT_PREFIX ## CodeCacheRoots,           DESC_PREFIX "Code Cache Roots")            \
   f(CNT_PREFIX ## UniverseRoots,            DESC_PREFIX "Universe Roots")              \
-  f(CNT_PREFIX ## JNIRoots,                 DESC_PREFIX "JNI Handles Roots")           \
-  f(CNT_PREFIX ## JVMTIWeakRoots,           DESC_PREFIX "JVMTI Weak Roots")            \
-  f(CNT_PREFIX ## JFRWeakRoots,             DESC_PREFIX "JFR Weak Roots")              \
-  f(CNT_PREFIX ## JNIWeakRoots,             DESC_PREFIX "JNI Weak Roots")              \
-  f(CNT_PREFIX ## StringTableRoots,         DESC_PREFIX "String Table Roots")          \
-  f(CNT_PREFIX ## ResolvedMethodTableRoots, DESC_PREFIX "Resolved Table Roots")        \
-  f(CNT_PREFIX ## VMGlobalRoots,            DESC_PREFIX "VM Global Roots")             \
+  f(CNT_PREFIX ## VMStrongRoots,            DESC_PREFIX "VM Strong Roots")             \
   f(CNT_PREFIX ## VMWeakRoots,              DESC_PREFIX "VM Weak Roots")               \
   f(CNT_PREFIX ## ObjectSynchronizerRoots,  DESC_PREFIX "Synchronizer Roots")          \
   f(CNT_PREFIX ## ManagementRoots,          DESC_PREFIX "Management Roots")            \
   f(CNT_PREFIX ## CLDGRoots,                DESC_PREFIX "CLDG Roots")                  \
+  f(CNT_PREFIX ## JVMTIWeakRoots,           DESC_PREFIX "JVMTI Weak Roots")            \
+  f(CNT_PREFIX ## JFRWeakRoots,             DESC_PREFIX "JFR Weak Roots")              \
   f(CNT_PREFIX ## StringDedupTableRoots,    DESC_PREFIX "Dedup Table Roots")           \
   f(CNT_PREFIX ## StringDedupQueueRoots,    DESC_PREFIX "Dedup Queue Roots")           \
   f(CNT_PREFIX ## FinishQueues,             DESC_PREFIX "Finish Queues")               \

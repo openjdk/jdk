@@ -94,7 +94,7 @@ void ProtectionDomainCacheTable::unlink() {
           LogStream ls(lt);
           ls.print_cr("protection domain unlinked at %d", i);
         }
-        entry->literal().release(OopStorageSet::vm_weak());
+        entry->literal().release(Universe::vm_weak());
         *p = entry->next();
         free_entry(entry);
       }
@@ -181,7 +181,7 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, uns
     protection_domain->print_value_on(&ls);
     ls.cr();
   }
-  WeakHandle w(OopStorageSet::vm_weak(), protection_domain);
+  WeakHandle w(Universe::vm_weak(), protection_domain);
   ProtectionDomainCacheEntry* p = new_entry(hash, w);
   Hashtable<WeakHandle, mtClass>::add_entry(index, p);
   return p;

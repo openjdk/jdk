@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_WEAKPROCESSOR_HPP
 
 #include "gc/shared/oopStorageParState.hpp"
+#include "gc/shared/oopStorageSetParState.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 
@@ -71,6 +72,8 @@ public:
 
 private:
   class GangTask;
+
+  static void do_serial_parts(BoolObjectClosure* is_alive, OopClosure* keep_alive);
 };
 
 class WeakProcessor::Task {
@@ -79,17 +82,18 @@ class WeakProcessor::Task {
   WeakProcessorPhaseTimes* _phase_times;
   uint _nworkers;
   SubTasksDone _serial_phases_done;
-  StorageState* _storage_states;
+  OopStorageSetWeakParState<false, false> _storage_states;
 
   void initialize();
 
 public:
   Task(uint nworkers);          // No time tracking.
   Task(WeakProcessorPhaseTimes* phase_times, uint nworkers);
-  ~Task();
 
   template<typename IsAlive, typename KeepAlive>
   void work(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive);
+
+  void report_num_dead();
 };
 
 #endif // SHARE_GC_SHARED_WEAKPROCESSOR_HPP

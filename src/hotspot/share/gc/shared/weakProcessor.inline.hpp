@@ -115,16 +115,11 @@ void WeakProcessor::Task::work(uint worker_id,
     CountingSkippedIsAliveClosure<IsAlive, KeepAlive> cl(is_alive, keep_alive);
     WeakProcessorPhaseTimeTracker pt(_phase_times, phase, worker_id);
     uint oopstorage_index = WeakProcessorPhases::oopstorage_index(phase);
-    StorageState& cur_state = _storage_states[oopstorage_index];
-    cur_state.oops_do(&cl);
+    StorageState* cur_state = _storage_states.par_state(oopstorage_index);
+    cur_state->oops_do(&cl);
+    cur_state->increment_num_dead(cl.num_skipped() + cl.num_dead());
     if (_phase_times != NULL) {
       _phase_times->record_worker_items(worker_id, phase, cl.num_dead(), cl.num_total());
-    }
-    const OopStorage* cur_storage = cur_state.storage();
-    if (cur_storage == OopStorageSet::string_table_weak()) {
-      StringTable::inc_dead_counter(cl.num_dead() + cl.num_skipped());
-    } else if (cur_storage == OopStorageSet::resolved_method_table_weak()) {
-      ResolvedMethodTable::inc_dead_counter(cl.num_dead() + cl.num_skipped());
     }
   }
 
@@ -159,6 +154,7 @@ public:
   {}
 
   virtual void work(uint worker_id);
+  void report_num_dead() { _task.report_num_dead(); }
 };
 
 template<typename IsAlive, typename KeepAlive>
@@ -173,6 +169,7 @@ void WeakProcessor::weak_oops_do(WorkGang* workers,
 
   GangTask task("Weak Processor", is_alive, keep_alive, phase_times, nworkers);
   workers->run_task(&task, nworkers);
+  task.report_num_dead();
 }
 
 template<typename IsAlive, typename KeepAlive>

@@ -182,7 +182,9 @@ private:
   // Stash a pointer to the g1 heap.
   G1CollectedHeap* _g1h;
 
-  G1GCPhaseTimes* _phase_times;
+  STWGCTimer*     _phase_times_timer;
+  // Lazily initialized
+  mutable G1GCPhaseTimes* _phase_times;
 
   // This set of variables tracks the collector efficiency, in order to
   // determine whether we should initiate a new marking.
@@ -300,7 +302,7 @@ public:
 
   G1CollectorState* collector_state() const;
 
-  G1GCPhaseTimes* phase_times() const { return _phase_times; }
+  G1GCPhaseTimes* phase_times() const;
 
   // Check the current value of the young list RSet length and
   // compare it against the last prediction. If the current value is

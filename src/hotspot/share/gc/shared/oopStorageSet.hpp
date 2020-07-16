@@ -33,30 +33,22 @@
 class OopStorage;
 
 class OopStorageSet : public AllStatic {
+  friend class OopStorageSetTest;
+
+public:
+  // Must be updated when new OopStorages are introduced
+  static const uint strong_count = 2;
+  static const uint weak_count = 4;
+  static const uint all_count = strong_count + weak_count;
+
 private:
-  friend void oopstorage_init();
-
-  enum {
-    singular_index,             // For singular iterator.
-
-    all_start,
-
-    // Strong
-    strong_start = all_start,
-    jni_global_index = strong_start,
-    vm_global_index,
-    strong_end,
-
-    // Weak
-    weak_start = strong_end,
-    jni_weak_index = weak_start,
-    vm_weak_index,
-    string_table_weak_index,
-    resolved_method_table_weak_index,
-    weak_end,
-
-    all_end = weak_end
-  };
+  static const uint singular_index = 0; // For singular iterator.
+  static const uint all_start = 1;
+  static const uint strong_start = all_start;
+  static const uint strong_end = strong_start + strong_count;
+  static const uint weak_start = strong_end;
+  static const uint weak_end = weak_start + weak_count;
+  static const uint all_end = weak_end;
 
   static OopStorage* storages[all_end];
 
@@ -67,34 +59,20 @@ private:
     return storages[index];
   }
 
-  static void initialize();
+  // Testing support
+  static void fill_strong(OopStorage* storage[strong_count]);
+  static void fill_weak(OopStorage* storage[weak_count]);
+  static void fill_all(OopStorage* storage[all_count]);
 
 public:
   class Iterator;
-
-  static const uint strong_count = (strong_end - strong_start);
-  static const uint weak_count = (weak_end - weak_start);
-  static const uint all_count = (all_end - all_start);
 
   static Iterator strong_iterator();
   static Iterator weak_iterator();
   static Iterator all_iterator();
 
-  // Strong
-  static OopStorage* jni_global() { return storage(jni_global_index); }
-  static OopStorage* vm_global()  { return storage(vm_global_index); }
-
-  // Weak
-  static OopStorage* jni_weak()   { return storage(jni_weak_index); }
-  static OopStorage* vm_weak()    { return storage(vm_weak_index); }
-
-  static OopStorage* string_table_weak() {
-    return storage(string_table_weak_index);
-  }
-
-  static OopStorage* resolved_method_table_weak() {
-    return storage(resolved_method_table_weak_index);
-  }
+  static OopStorage* create_strong(const char* name);
+  static OopStorage* create_weak(const char* name);
 
   template <typename Closure>
   static void strong_oops_do(Closure* cl);

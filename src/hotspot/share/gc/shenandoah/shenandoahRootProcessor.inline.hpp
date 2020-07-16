@@ -28,7 +28,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "gc/shared/oopStorageParState.inline.hpp"
+#include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
@@ -42,84 +42,40 @@
 #include "runtime/safepoint.hpp"
 
 template <bool CONCURRENT>
-inline ShenandoahVMRoot<CONCURRENT>::ShenandoahVMRoot(OopStorage* storage,
-        ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase) :
-  _itr(storage), _phase(phase), _par_phase(par_phase) {
+ShenandoahVMWeakRoots<CONCURRENT>::ShenandoahVMWeakRoots(ShenandoahPhaseTimings::Phase phase) :
+  _phase(phase) {
 }
 
 template <bool CONCURRENT>
-template <typename Closure>
-inline void ShenandoahVMRoot<CONCURRENT>::oops_do(Closure* cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, _par_phase, worker_id);
-  _itr.oops_do(cl);
+template <typename T>
+void ShenandoahVMWeakRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeakRoots, worker_id);
+  _weak_roots.oops_do(cl);
 }
 
 template <bool CONCURRENT>
-inline ShenandoahWeakRoot<CONCURRENT>::ShenandoahWeakRoot(OopStorage* storage,
-  ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase) :
-  ShenandoahVMRoot<CONCURRENT>(storage, phase, par_phase) {
-}
-
-inline ShenandoahWeakRoot<false>::ShenandoahWeakRoot(OopStorage* storage,
-  ShenandoahPhaseTimings::Phase phase,  ShenandoahPhaseTimings::ParPhase par_phase) :
-  _itr(storage), _phase(phase), _par_phase(par_phase) {
-}
-
-template <typename IsAliveClosure, typename KeepAliveClosure>
-void ShenandoahWeakRoot<false /* concurrent */>::weak_oops_do(IsAliveClosure* is_alive, KeepAliveClosure* keep_alive, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, _par_phase, worker_id);
-  _itr.weak_oops_do(is_alive, keep_alive);
+template <typename IsAlive, typename KeepAlive>
+void ShenandoahVMWeakRoots<CONCURRENT>::weak_oops_do(IsAlive* is_alive, KeepAlive* keep_alive, uint worker_id) {
+  ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive> cl(is_alive, keep_alive);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeakRoots, worker_id);
+  _weak_roots.oops_do(&cl);
 }
 
 template <bool CONCURRENT>
-ShenandoahWeakRoots<CONCURRENT>::ShenandoahWeakRoots() :
-  _jni_roots(OopStorageSet::jni_weak(), ShenandoahPhaseTimings::JNIWeakRoots),
-  _string_table_roots(OopStorageSet::string_table_weak(), ShenandoahPhaseTimings::StringTableRoots),
-  _resolved_method_table_roots(OopStorageSet::resolved_method_table_weak(), ShenandoahPhaseTimings::ResolvedMethodTableRoots),
-  _vm_roots(OopStorageSet::vm_weak(), ShenandoahPhaseTimings::VMWeakRoots) {
-}
-
-template <bool CONCURRENT>
-template <typename Closure>
-void ShenandoahWeakRoots<CONCURRENT>::oops_do(Closure* cl, uint worker_id) {
-  _jni_roots.oops_do(cl, worker_id);
-  _string_table_roots.oops_do(cl, worker_id);
-  _resolved_method_table_roots.oops_do(cl, worker_id);
-  _vm_roots.oops_do(cl, worker_id);
-}
-
-inline ShenandoahWeakRoots<false /* concurrent */>::ShenandoahWeakRoots(ShenandoahPhaseTimings::Phase phase) :
-  _jni_roots(OopStorageSet::jni_weak(), phase, ShenandoahPhaseTimings::JNIWeakRoots),
-  _string_table_roots(OopStorageSet::string_table_weak(), phase, ShenandoahPhaseTimings::StringTableRoots),
-  _resolved_method_table_roots(OopStorageSet::resolved_method_table_weak(), phase, ShenandoahPhaseTimings::ResolvedMethodTableRoots),
-  _vm_roots(OopStorageSet::vm_weak(), phase, ShenandoahPhaseTimings::VMWeakRoots) {
-}
-
-template <typename IsAliveClosure, typename KeepAliveClosure>
-void ShenandoahWeakRoots<false /* concurrent*/>::weak_oops_do(IsAliveClosure* is_alive, KeepAliveClosure* keep_alive, uint worker_id) {
-  _jni_roots.weak_oops_do(is_alive, keep_alive, worker_id);
-  _string_table_roots.weak_oops_do(is_alive, keep_alive, worker_id);
-  _resolved_method_table_roots.weak_oops_do(is_alive, keep_alive, worker_id);
-  _vm_roots.weak_oops_do(is_alive, keep_alive, worker_id);
-}
-
-template <typename Closure>
-void ShenandoahWeakRoots<false /* concurrent */>::oops_do(Closure* cl, uint worker_id) {
-  AlwaysTrueClosure always_true;
-  weak_oops_do<AlwaysTrueClosure, Closure>(&always_true, cl, worker_id);
+void ShenandoahVMWeakRoots<CONCURRENT>::report_num_dead() {
+  _weak_roots.report_num_dead();
 }
 
 template <bool CONCURRENT>
 ShenandoahVMRoots<CONCURRENT>::ShenandoahVMRoots(ShenandoahPhaseTimings::Phase phase) :
-  _jni_handle_roots(OopStorageSet::jni_global(), phase, ShenandoahPhaseTimings::JNIRoots),
-  _vm_global_roots(OopStorageSet::vm_global(), phase, ShenandoahPhaseTimings::VMGlobalRoots) {
+  _phase(phase) {
 }
 
 template <bool CONCURRENT>
 template <typename T>
 void ShenandoahVMRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
-  _jni_handle_roots.oops_do(cl, worker_id);
-  _vm_global_roots.oops_do(cl, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMStrongRoots, worker_id);
+  _strong_roots.oops_do(cl);
 }
 
 template <bool CONCURRENT, bool SINGLE_THREADED>
@@ -248,7 +204,7 @@ void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAliv
 
   // Process light-weight/limited parallel roots then
   _vm_roots.oops_do(keep_alive, worker_id);
-  _weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
+  _weak_roots.weak_oops_do<IsAlive, KeepAlive>(is_alive, keep_alive, worker_id);
   _dedup_roots.oops_do(is_alive, keep_alive, worker_id);
   _cld_roots.cld_do(&clds, worker_id);
 

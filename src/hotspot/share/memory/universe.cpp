@@ -39,6 +39,7 @@
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -159,6 +160,9 @@ bool            Universe::_fully_initialized = false;
 
 size_t          Universe::_heap_capacity_at_last_gc;
 size_t          Universe::_heap_used_at_last_gc = 0;
+
+OopStorage*     Universe::_vm_weak = NULL;
+OopStorage*     Universe::_vm_global = NULL;
 
 CollectedHeap*  Universe::_collectedHeap = NULL;
 
@@ -787,6 +791,23 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
 void Universe::update_heap_info_at_gc() {
   _heap_capacity_at_last_gc = heap()->capacity();
   _heap_used_at_last_gc     = heap()->used();
+}
+
+OopStorage* Universe::vm_weak() {
+  return Universe::_vm_weak;
+}
+
+OopStorage* Universe::vm_global() {
+  return Universe::_vm_global;
+}
+
+void Universe::oopstorage_init() {
+  Universe::_vm_global = OopStorageSet::create_strong("VM Global");
+  Universe::_vm_weak = OopStorageSet::create_weak("VM Weak");
+}
+
+void universe_oopstorage_init() {
+  Universe::oopstorage_init();
 }
 
 void initialize_known_method(LatestMethodCache* method_cache,

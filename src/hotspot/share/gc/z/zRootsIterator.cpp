@@ -79,10 +79,7 @@ static const ZStatSubPhase ZSubPhasePauseWeakRootsJVMTIWeakExport("Pause Weak Ro
 static const ZStatSubPhase ZSubPhasePauseWeakRootsJFRWeak("Pause Weak Roots JFRWeak");
 
 static const ZStatSubPhase ZSubPhaseConcurrentWeakRoots("Concurrent Weak Roots");
-static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsVMWeakHandles("Concurrent Weak Roots VMWeakHandles");
-static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsJNIWeakHandles("Concurrent Weak Roots JNIWeakHandles");
-static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsStringTable("Concurrent Weak Roots StringTable");
-static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsResolvedMethodTable("Concurrent Weak Roots ResolvedMethodTable");
+static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsOopStorageSet("Concurrent Weak Roots OopStorageSet");
 
 template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
 ZSerialOopsDo<T, F>::ZSerialOopsDo(T* iter) :
@@ -341,76 +338,20 @@ void ZWeakRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
 }
 
 ZConcurrentWeakRootsIterator::ZConcurrentWeakRootsIterator() :
-    _vm_weak_handles_iter(OopStorageSet::vm_weak()),
-    _jni_weak_handles_iter(OopStorageSet::jni_weak()),
-    _string_table_iter(OopStorageSet::string_table_weak()),
-    _resolved_method_table_iter(OopStorageSet::resolved_method_table_weak()),
-    _vm_weak_handles(this),
-    _jni_weak_handles(this),
-    _string_table(this),
-    _resolved_method_table(this) {
-  StringTable::reset_dead_counter();
-  ResolvedMethodTable::reset_dead_counter();
+    _oop_storage_set_iter(),
+    _oop_storage_set(this) {
 }
 
-ZConcurrentWeakRootsIterator::~ZConcurrentWeakRootsIterator() {
-  StringTable::finish_dead_counter();
-  ResolvedMethodTable::finish_dead_counter();
+void ZConcurrentWeakRootsIterator::report_num_dead() {
+  _oop_storage_set_iter.report_num_dead();
 }
 
-void ZConcurrentWeakRootsIterator::do_vm_weak_handles(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentWeakRootsVMWeakHandles);
-  _vm_weak_handles_iter.oops_do(cl);
-}
-
-void ZConcurrentWeakRootsIterator::do_jni_weak_handles(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentWeakRootsJNIWeakHandles);
-  _jni_weak_handles_iter.oops_do(cl);
-}
-
-template <class Container>
-class ZDeadCounterClosure : public ZRootsIteratorClosure  {
-private:
-  ZRootsIteratorClosure* const _cl;
-  size_t                       _ndead;
-
-public:
-  ZDeadCounterClosure(ZRootsIteratorClosure* cl) :
-      _cl(cl),
-      _ndead(0) {}
-
-  ~ZDeadCounterClosure() {
-    Container::inc_dead_counter(_ndead);
-  }
-
-  virtual void do_oop(oop* p) {
-    _cl->do_oop(p);
-    if (*p == NULL) {
-      _ndead++;
-    }
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-void ZConcurrentWeakRootsIterator::do_string_table(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentWeakRootsStringTable);
-  ZDeadCounterClosure<StringTable> counter_cl(cl);
-  _string_table_iter.oops_do(&counter_cl);
-}
-
-void ZConcurrentWeakRootsIterator::do_resolved_method_table(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentWeakRootsResolvedMethodTable);
-  ZDeadCounterClosure<ResolvedMethodTable> counter_cl(cl);
-  _resolved_method_table_iter.oops_do(&counter_cl);
+void ZConcurrentWeakRootsIterator::do_oop_storage_set(ZRootsIteratorClosure* cl) {
+  ZStatTimer timer(ZSubPhaseConcurrentWeakRootsOopStorageSet);
+  _oop_storage_set_iter.oops_do(cl);
 }
 
 void ZConcurrentWeakRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentWeakRoots);
-  _vm_weak_handles.oops_do(cl);
-  _jni_weak_handles.oops_do(cl);
-  _string_table.oops_do(cl);
-  _resolved_method_table.oops_do(cl);
+  _oop_storage_set.oops_do(cl);
 }

@@ -32,27 +32,39 @@
 // +1 for NULL singular entry.
 OopStorage* OopStorageSet::storages[all_count + 1] = {};
 
-void OopStorageSet::initialize() {
-  storages[jni_global_index]        = new OopStorage("JNI Global");
-  storages[vm_global_index]         = new OopStorage("VM Global");
-  storages[jni_weak_index]          = new OopStorage("JNI Weak");
-  storages[vm_weak_index]           = new OopStorage("VM Weak");
-  storages[string_table_weak_index] = new OopStorage("StringTable Weak");
-  storages[resolved_method_table_weak_index] =
-    new OopStorage("ResolvedMethodTable Weak");
-
-  // Ensure we have all of them.
-  STATIC_ASSERT(all_count == 6);
-  assert(storages[singular_index] == NULL, "postcondition");
-#ifdef ASSERT
-  for (uint i = all_start; i < all_end; ++i) {
-    assert(storages[i] != NULL, "postcondition");
-  }
-#endif // ASSERT
+OopStorage* OopStorageSet::create_strong(const char* name) {
+  static uint registered_strong = 0;
+  assert(registered_strong < strong_count, "More registered strong storages than slots");
+  OopStorage* storage = new OopStorage(name);
+  storages[strong_start + registered_strong++] = storage;
+  return storage;
 }
 
-void oopstorage_init() {
-  OopStorageSet::initialize();
+OopStorage* OopStorageSet::create_weak(const char* name) {
+  static uint registered_weak = 0;
+  assert(registered_weak < weak_count, "More registered strong storages than slots");
+  OopStorage* storage = new OopStorage(name);
+  storages[weak_start + registered_weak++] = storage;
+  return storage;
+}
+
+
+void OopStorageSet::fill_strong(OopStorage* to[strong_count]) {
+  for (uint i = 0; i < OopStorageSet::strong_count; i++) {
+    to[i] = storage(strong_start + i);
+  }
+}
+
+void OopStorageSet::fill_weak(OopStorage* to[weak_count]) {
+  for (uint i = 0; i < OopStorageSet::weak_count; i++) {
+    to[i] = storage(weak_start + i);
+  }
+}
+
+void OopStorageSet::fill_all(OopStorage* to[all_count]) {
+  for (uint i = 0; i < OopStorageSet::all_count; i++) {
+    to[i] = storage(all_start + i);
+  }
 }
 
 #ifdef ASSERT
