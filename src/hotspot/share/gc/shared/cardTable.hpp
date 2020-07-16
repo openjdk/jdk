@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,9 +105,8 @@ protected:
     clean_card                  = (CardValue)-1,
 
     dirty_card                  =  0,
-    precleaned_card             =  1,
-    last_card                   =  2,
-    CT_MR_BS_last_reserved      =  4
+    last_card                   =  1,
+    CT_MR_BS_last_reserved      =  2
   };
 
   // a word's worth (row) of clean card values
@@ -239,7 +238,6 @@ public:
 
   static CardValue clean_card_val()          { return clean_card; }
   static CardValue dirty_card_val()          { return dirty_card; }
-  static CardValue precleaned_card_val()     { return precleaned_card; }
   static intptr_t clean_card_row_val()   { return clean_card_row; }
 
   // Card marking array base (adjusted for heap low boundary)
