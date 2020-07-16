@@ -145,7 +145,7 @@ public interface Driver {
 
     /**
      * Reports whether this driver is a genuine JDBC
-     * Compliant&trade; driver.
+     * Compliant driver.
      * A driver may only report <code>true</code> here if it passes the JDBC
      * compliance tests; otherwise it is required to return <code>false</code>.
      * <P>

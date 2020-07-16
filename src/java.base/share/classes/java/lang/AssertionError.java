@@ -35,7 +35,7 @@ package java.lang;
  * </pre>
  * has as its detail message the <i>string conversion</i> of
  * <i>expression</i> (as defined in section 15.18.1.1 of
- * <cite>The Java&trade; Language Specification</cite>),
+ * <cite>The Java Language Specification</cite>),
  * regardless of the type of <i>expression</i>.
  *
  * @since   1.4
@@ -63,7 +63,7 @@ public class AssertionError extends Error {
      * Constructs an AssertionError with its detail message derived
      * from the specified object, which is converted to a string as
      * defined in section 15.18.1.1 of
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      *<p>
      * If the specified object is an instance of {@code Throwable}, it
      * becomes the <i>cause</i> of the newly constructed assertion error.
@@ -81,7 +81,7 @@ public class AssertionError extends Error {
      * Constructs an AssertionError with its detail message derived
      * from the specified {@code boolean}, which is converted to
      * a string as defined in section 15.18.1.1 of
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      *
      * @param detailMessage value to be used in constructing detail message
      */
@@ -93,7 +93,7 @@ public class AssertionError extends Error {
      * Constructs an AssertionError with its detail message derived
      * from the specified {@code char}, which is converted to a
      * string as defined in section 15.18.1.1 of
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      *
      * @param detailMessage value to be used in constructing detail message
      */
@@ -105,7 +105,7 @@ public class AssertionError extends Error {
      * Constructs an AssertionError with its detail message derived
      * from the specified {@code int}, which is converted to a
      * string as defined in section 15.18.1.1 of
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      *
      * @param detailMessage value to be used in constructing detail message
      */
@@ -117,7 +117,7 @@ public class AssertionError extends Error {
      * Constructs an AssertionError with its detail message derived
      * from the specified {@code long}, which is converted to a
      * string as defined in section 15.18.1.1 of
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      *
      * @param detailMessage value to be used in constructing detail message
      */
@@ -129,7 +129,7 @@ public class AssertionError extends Error {
      * Constructs an AssertionError with its detail message derived
      * from the specified {@code float}, which is converted to a
      * string as defined in section 15.18.1.1 of
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      *
      * @param detailMessage value to be used in constructing detail message
      */
@@ -141,7 +141,7 @@ public class AssertionError extends Error {
      * Constructs an AssertionError with its detail message derived
      * from the specified {@code double}, which is converted to a
      * string as defined in section 15.18.1.1 of
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      *
      * @param detailMessage value to be used in constructing detail message
      */

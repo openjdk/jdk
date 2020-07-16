@@ -30,7 +30,7 @@ import javax.lang.model.element.Modifier;
 import java.util.Objects;
 
 /**
- * File abstraction for tools operating on Java&trade; programming language
+ * File abstraction for tools operating on Java programming language
  * source and class files.
  *
  * <p>All methods in this interface might throw a SecurityException if
@@ -94,7 +94,7 @@ public interface JavaFileObject extends FileObject {
      * Checks if this file object is compatible with the specified
      * simple name and kind.  A simple name is a single identifier
      * (not qualified) as defined in
-     * <cite>The Java&trade; Language Specification</cite>,
+     * <cite>The Java Language Specification</cite>,
      * section 6.2 "Names and Identifiers".
      *
      * @param simpleName a simple name of a class

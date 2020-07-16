@@ -33,7 +33,7 @@ import java.sql.SQLFeatureNotSupportedException;
  * A factory for <code>PooledConnection</code>
  * objects.  An object that implements this interface will typically be
  * registered with a naming service that is based on the
- * Java&trade; Naming and Directory Interface
+ * Java Naming and Directory Interface
  * (JNDI).
  *
  * @since 1.4

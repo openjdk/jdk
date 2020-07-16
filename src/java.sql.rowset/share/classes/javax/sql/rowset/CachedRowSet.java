@@ -46,7 +46,7 @@ import javax.sql.rowset.spi.*;
  * A <code>CachedRowSet</code> object is a container for rows of data
  * that caches its rows in memory, which makes it possible to operate without always being
  * connected to its data source. Further, it is a
- * JavaBeans&trade; component and is scrollable,
+ * JavaBeans component and is scrollable,
  * updatable, and serializable. A <code>CachedRowSet</code> object typically
  * contains rows from a result set, but it can also contain rows from any file
  * with a tabular format, such as a spread sheet.  The reference implementation
@@ -410,7 +410,7 @@ import javax.sql.rowset.spi.*;
  * NOTE:  In order to use a <code>DataSource</code> object for making a
  * connection, the <code>DataSource</code> object must have been registered
  * with a naming service that uses the Java Naming and Directory
- * Interface&trade; (JNDI) API.  This registration
+ * Interface (JNDI) API.  This registration
  * is usually done by a person acting in the capacity of a system
  * administrator.
  * <P>

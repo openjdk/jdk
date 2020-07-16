@@ -34,7 +34,7 @@ import com.sun.jdi.event.VMDisconnectEvent;
 /**
  * The type of an object in a target VM. ReferenceType encompasses
  * classes, interfaces, and array types as defined in
- * <cite>The Java&trade; Language Specification</cite>.
+ * <cite>The Java Language Specification</cite>.
  * All ReferenceType objects belong to one of the following
  * subinterfaces:
  * {@link ClassType} for classes,
@@ -96,7 +96,7 @@ public interface ReferenceType
     /**
      * Gets the generic signature for this type if there is one.
      * Generic signatures are described in the
-     * <cite>The Java&trade; Virtual Machine Specification</cite>.
+     * <cite>The Java Virtual Machine Specification</cite>.
      *
      * @return a string containing the generic signature, or <code>null</code>
      * if there is no generic signature.

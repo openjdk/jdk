@@ -134,7 +134,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      *
      * <p>Note that it is possible additional directive kinds will be added
      * to accommodate new, currently unknown, language structures added to
-     * future versions of the Java&trade; programming language.
+     * future versions of the Java programming language.
      *
      * @since 9
      * @spec JPMS
@@ -213,7 +213,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      *
      * <p> <b>WARNING:</b> It is possible that methods will be added to
      * this interface to accommodate new, currently unknown, language
-     * structures added to future versions of the Java&trade; programming
+     * structures added to future versions of the Java programming
      * language. Methods to accommodate new language constructs will
      * be added in a source <em>compatible</em> way using
      * <em>default methods</em>.

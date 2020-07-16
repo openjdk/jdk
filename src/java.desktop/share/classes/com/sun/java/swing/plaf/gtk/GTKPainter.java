@@ -185,6 +185,21 @@ class GTKPainter extends SynthPainter {
         }
     }
 
+    //This is workaround used to draw the highlight
+    // when the MENU or MenuItem is selected on some platforms
+    //This should be properly fixed by reading color from css
+    private void paintComponentBackground(SynthContext context,
+                                          Graphics g, int x, int y,
+                                          int w, int h) {
+        GTKStyle style = (GTKStyle) context.getStyle();
+        Color highlightColor =
+                style.getGTKColor(GTKEngine.WidgetType.TEXT_AREA.ordinal(),
+                GTKLookAndFeel.synthStateToGTKStateType(SynthConstants.SELECTED).ordinal(),
+                ColorType.BACKGROUND.getID());
+        g.setColor(highlightColor);
+        g.fillRect(x, y, w, h);
+    }
+
     //
     // RADIO_BUTTON_MENU_ITEM
     //
@@ -196,6 +211,10 @@ class GTKPainter extends SynthPainter {
         int gtkState = GTKLookAndFeel.synthStateToGTKState(
                 id, context.getComponentState());
         if (gtkState == SynthConstants.MOUSE_OVER) {
+            if (GTKLookAndFeel.is3()) {
+                paintComponentBackground(context, g, x, y, w, h);
+                return;
+            }
             synchronized (UNIXToolkit.GTK_LOCK) {
                 if (! ENGINE.paintCachedImage(g, x, y, w, h, id)) {
                     ShadowType shadow = (GTKLookAndFeel.is2_2() ?
@@ -535,34 +554,6 @@ class GTKPainter extends SynthPainter {
         }
     }
 
-    private int getBrightness(Color c) {
-        return Math.max(c.getRed(), Math.max(c.getGreen(), c.getBlue()));
-    }
-
-    private int getMaxColorDiff(Color c1, Color c2) {
-        return Math.max(Math.abs(c1.getRed() - c2.getRed()),
-                Math.max(Math.abs(c1.getGreen() - c2.getGreen()),
-                        Math.abs(c1.getBlue() - c2.getBlue())));
-    }
-
-    private int scaleColorComponent(int color, double scaleFactor) {
-        return (int)(color + color * scaleFactor);
-    }
-    private Color deriveColor(Color originalColor, int originalBrightness,
-                              int targetBrightness) {
-        int r, g, b;
-        if (originalBrightness == 0) {
-            r = g = b = targetBrightness;
-        } else {
-            double scaleFactor = (targetBrightness - originalBrightness)
-                    / originalBrightness    ;
-            r = scaleColorComponent(originalColor.getRed(), scaleFactor);
-            g = scaleColorComponent(originalColor.getGreen(), scaleFactor);
-            b = scaleColorComponent(originalColor.getBlue(), scaleFactor);
-        }
-        return new Color(r, g, b);
-    }
-
     //
     // MENU
     //
@@ -579,56 +570,9 @@ class GTKPainter extends SynthPainter {
         int gtkState = GTKLookAndFeel.synthStateToGTKState(
                 context.getRegion(), context.getComponentState());
         if (gtkState == SynthConstants.MOUSE_OVER) {
-            if (GTKLookAndFeel.is3() && context.getRegion() == Region.MENU) {
-                GTKStyle style = (GTKStyle)context.getStyle();
-                Color highlightColor = style.getGTKColor(
-                        GTKEngine.WidgetType.MENU_ITEM.ordinal(),
-                        gtkState, ColorType.BACKGROUND.getID());
-                Color backgroundColor = style.getGTKColor(
-                        GTKEngine.WidgetType.MENU_BAR.ordinal(),
-                        SynthConstants.ENABLED, ColorType.BACKGROUND.getID());
-
-                int minBrightness = 0, maxBrightness = 255;
-                int minBrightnessDifference = 100;
-                int actualBrightnessDifference =
-                        getMaxColorDiff(highlightColor, backgroundColor);
-                if (actualBrightnessDifference < minBrightnessDifference) {
-                    int highlightBrightness =
-                            getBrightness(highlightColor);
-                    int backgroundBrightness =
-                            getBrightness(backgroundColor);
-                    int originalHighlightBrightness =
-                            highlightBrightness;
-                    if (highlightBrightness >= backgroundBrightness) {
-                        if (backgroundBrightness + minBrightnessDifference <=
-                                maxBrightness) {
-                            highlightBrightness =
-                                    backgroundBrightness +
-                                            minBrightnessDifference;
-                        } else {
-                            highlightBrightness =
-                                    backgroundBrightness -
-                                            minBrightnessDifference;
-                        }
-                    } else {
-                        if (backgroundBrightness - minBrightnessDifference >=
-                                minBrightness) {
-                            highlightBrightness =
-                                    backgroundBrightness -
-                                            minBrightnessDifference;
-                        } else {
-                            highlightBrightness =
-                                    backgroundBrightness +
-                                            minBrightnessDifference;
-                        }
-                    }
-
-                    g.setColor(deriveColor(highlightColor,
-                            originalHighlightBrightness,
-                            highlightBrightness));
-                    g.fillRect(x, y, w, h);
-                    return;
-                }
+            if (GTKLookAndFeel.is3()) {
+                paintComponentBackground(context, g, x, y, w, h);
+                return;
             }
             Region id = Region.MENU_ITEM;
             synchronized (UNIXToolkit.GTK_LOCK) {

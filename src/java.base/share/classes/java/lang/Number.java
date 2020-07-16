@@ -37,7 +37,7 @@ package java.lang;
  *
  * For platform classes, the conversion is often analogous to a
  * narrowing primitive conversion or a widening primitive conversion
- * as defined in <cite>The Java&trade; Language Specification</cite>
+ * as defined in <cite>The Java Language Specification</cite>
  * for converting between primitive types.  Therefore, conversions may
  * lose information about the overall magnitude of a numeric value, may
  * lose precision, and may even return a result of a different sign

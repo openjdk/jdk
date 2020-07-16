@@ -120,7 +120,7 @@ public final class RecordComponent implements AnnotatedElement {
      *         this record component
      * @throws GenericSignatureFormatError if the generic record component
      *         signature does not conform to the format specified in
-     *         <cite>The Java&trade; Virtual Machine Specification</cite>
+     *         <cite>The Java Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the generic type
      *         signature of the underlying record component refers to a non-existent
      *         type declaration

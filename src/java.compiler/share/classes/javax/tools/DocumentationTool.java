@@ -31,7 +31,7 @@ import java.util.Locale;
 import java.util.concurrent.Callable;
 
 /**
- * Interface to invoke Java&trade; programming language documentation tools from
+ * Interface to invoke Java programming language documentation tools from
  * programs.
  *
  * @since 1.8

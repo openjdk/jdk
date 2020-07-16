@@ -28,7 +28,7 @@
  * @summary Test extended NullPointerException message for
  *   classfiles generated with debug information. In this case the name
  *   of the variable containing the array is printed.
- * @bug 8218628
+ * @bug 8218628 8248476
  * @modules java.base/java.lang:open
  *          java.base/jdk.internal.org.objectweb.asm
  * @library /test/lib
@@ -41,7 +41,7 @@
  * @summary Test extended NullPointerException message for class
  *   files generated without debugging information. The message lists
  *   detailed information about the entity that is null.
- * @bug 8218628
+ * @bug 8218628 8248476
  * @modules java.base/java.lang:open
  *          java.base/jdk.internal.org.objectweb.asm
  * @library /test/lib
@@ -105,6 +105,9 @@ public class NullPointerExceptionTest {
                                     String obtainedMsg, String expectedMsg) {
         System.out.println("\nSource code:\n  " + expression + "\n\nOutput:");
         t.printStackTrace(System.out);
+        if (expectedMsg != null && obtainedMsg == null) {
+            Asserts.fail("Got null but expected this message: \"" + expectedMsg + "\".");
+        }
         if (obtainedMsg != expectedMsg && // E.g. both are null.
             !obtainedMsg.equals(expectedMsg)) {
             System.out.println("expected msg: " + expectedMsg);
@@ -1281,8 +1284,80 @@ public class NullPointerExceptionTest {
         String msg = new String("A pointless message");
         Asserts.assertTrue(new NullPointerException(msg).getMessage() == msg);
 
+        // If fillInStackTrace is called a second time (first call is in
+        // the constructor), the information to compute the extended
+        // message is lost. Check we deal with this correctly.
+
+        // On explicit construction no message should be computed, also
+        // after fillInStackTrace().
+        Asserts.assertNull(new NullPointerException().fillInStackTrace().getMessage());
+        Asserts.assertTrue(new NullPointerException(msg).fillInStackTrace().getMessage() == msg);
+
+        // Similar if the exception is assigned to a local.
+        NullPointerException ex = new NullPointerException();
+        Throwable t = ex.fillInStackTrace();
+        Asserts.assertNull(t.getMessage());
+
+        ex = new NullPointerException(msg);
+        t = ex.fillInStackTrace();
+        Asserts.assertTrue(t.getMessage() == msg);
+
+        // An implicit exception should have the right message.
+        F f = null;
+        String expectedMessage =
+            "Cannot assign field \"i\" because " +
+            (hasDebugInfo ? "\"f\"" : "\"<local4>\"") + " is null";
+        try {
+            f.i = 17;
+        } catch (NullPointerException e) {
+            checkMessage(e, "f.i = 17;", e.getMessage(), expectedMessage);
+            t = e.fillInStackTrace();
+        }
+        checkMessage(t, "e.fillInStackTrace()", t.getMessage(), expectedMessage);
+
+        // Make sure a new exception thrown while calling fillInStackTrace()
+        // gets the correct message.
+        ex = null;
+        try {
+            ex.fillInStackTrace();
+        } catch (NullPointerException e) {
+            checkMessage(e, "ex.fillInStackTrace()", e.getMessage(),
+                         "Cannot invoke \"java.lang.NullPointerException.fillInStackTrace()\" because " +
+                         (hasDebugInfo ? "\"ex\"" : "\"<local2>\"") + " is null");
+        }
+
+        // setStackTrace does not affect computing the message.
+        // Message and stack trace won't match, though.
+        F f1 = null;
+        F f2 = null;
+        NullPointerException e1 = null;
+        NullPointerException e2 = null;
+        try {
+            f1.i = 18;
+        } catch (NullPointerException e) {
+            checkMessage(e, "f1.i = 18;", e.getMessage(),
+                         "Cannot assign field \"i\" because " +
+                         (hasDebugInfo ? "\"f1\"" : "\"<local6>\"") + " is null");
+            e1 = e;
+        }
+        try {
+            f2.i = 19;
+        } catch (NullPointerException e) {
+            checkMessage(e, "f2.i = 19;", e.getMessage(),
+                         "Cannot assign field \"i\" because " +
+                         (hasDebugInfo ? "\"f2\"" : "\"<local7>\"") + " is null");
+            e2 = e;
+        }
+        e1.setStackTrace(e2.getStackTrace());
+        checkMessage(e1, "f1.i = 18;", e1.getMessage(),
+                     "Cannot assign field \"i\" because " +
+                     (hasDebugInfo ? "\"f1\"" : "\"<local6>\"") + " is null");
+        checkMessage(e2, "f1.i = 18;", e2.getMessage(),
+                     "Cannot assign field \"i\" because " +
+                     (hasDebugInfo ? "\"f2\"" : "\"<local7>\"") + " is null");
+
         // If created via reflection, the message should not be generated.
-        Exception ex = NullPointerException.class.getDeclaredConstructor().newInstance();
+        ex = NullPointerException.class.getDeclaredConstructor().newInstance();
         Asserts.assertNull(ex.getMessage());
     }
 
@@ -1295,7 +1370,6 @@ public class NullPointerExceptionTest {
         } catch (NullPointerException e) {
             Asserts.assertNull(e.getMessage());
         }
-
     }
 
     // Test we get the same message calling npe.getMessage() twice.
@@ -1314,10 +1388,7 @@ public class NullPointerExceptionTest {
             checkMessage(e, "null_o.hashCode()", msg1, expectedMsg);
             String msg2 = e.getMessage();
             Asserts.assertTrue(msg1.equals(msg2));
-            // It was decided that getMessage should generate the
-            // message anew on every call, so this does not hold.
-            //Asserts.assertTrue(msg1 == msg2);
-            Asserts.assertFalse(msg1 == msg2);
+            Asserts.assertTrue(msg1 == msg2);
         }
     }
 

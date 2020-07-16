@@ -31,7 +31,7 @@ package java.sql;
  * <P>
  * This interface is implemented by driver vendors to let users know the capabilities
  * of a Database Management System (DBMS) in combination with
- * the driver based on JDBC&trade; technology
+ * the driver based on JDBC technology
  * ("JDBC driver") that is used with it.  Different relational DBMSs often support
  * different features, implement features in different ways, and use different
  * data types.  In addition, a driver may implement a feature on top of what the

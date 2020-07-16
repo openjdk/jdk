@@ -3,7 +3,8 @@ ApiDirectives org.graalvm.compiler.api.directives.test
 Api           org.graalvm.compiler.api.test
 AsmAarch64    org.graalvm.compiler.asm.aarch64.test
 AsmAmd64      org.graalvm.compiler.asm.amd64.test
-Core          org.graalvm.compiler.core.test       --requires !vm.graal.enabled --vmargs --add-opens=java.base/java.lang=ALL-UNNAMED
+Core01         org.graalvm.compiler.core.test.[a-cA-C] --requires !vm.graal.enabled --vmargs --add-opens=java.base/java.lang=ALL-UNNAMED
+Core02         org.graalvm.compiler.core.test.[d-zD-Z] --requires !vm.graal.enabled --vmargs --add-opens=java.base/java.lang=ALL-UNNAMED
 EA            org.graalvm.compiler.core.test.ea
 CoreAmd64     org.graalvm.compiler.core.amd64.test
 CoreAarch64   org.graalvm.compiler.core.aarch64.test

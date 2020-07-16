@@ -116,6 +116,7 @@ class MulNode;
 class MultiNode;
 class MultiBranchNode;
 class NeverBranchNode;
+class Opaque1Node;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
 class Node;
@@ -609,9 +610,9 @@ public:
   // This enum is used only for C2 ideal and mach nodes with is_<node>() methods
   // so that it's values fits into 16 bits.
   enum NodeClasses {
-    Bit_Node   = 0x0000,
-    Class_Node = 0x0000,
-    ClassMask_Node = 0xFFFF,
+    Bit_Node   = 0x00000000,
+    Class_Node = 0x00000000,
+    ClassMask_Node = 0xFFFFFFFF,
 
     DEFINE_CLASS_ID(Multi, Node, 0)
       DEFINE_CLASS_ID(SafePoint, Multi, 0)
@@ -716,6 +717,7 @@ public:
     DEFINE_CLASS_ID(Vector,   Node, 13)
     DEFINE_CLASS_ID(ClearArray, Node, 14)
     DEFINE_CLASS_ID(Halt, Node, 15)
+    DEFINE_CLASS_ID(Opaque1, Node, 16)
 
     _max_classes  = ClassMask_Halt
   };
@@ -744,14 +746,14 @@ public:
   class PD;
 
 private:
-  jushort _class_id;
+  juint _class_id;
   jushort _flags;
 
   static juint max_flags();
 
 protected:
   // These methods should be called from constructors only.
-  void init_class_id(jushort c) {
+  void init_class_id(juint c) {
     _class_id = c; // cast out const
   }
   void init_flags(uint fl) {
@@ -764,7 +766,7 @@ protected:
   }
 
 public:
-  const jushort class_id() const { return _class_id; }
+  const juint class_id() const { return _class_id; }
 
   const jushort flags() const { return _flags; }
 
@@ -865,6 +867,7 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(Opaque1)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)

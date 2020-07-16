@@ -29,7 +29,7 @@ package com.sun.source.tree;
  * Common interface for all nodes in an abstract syntax tree.
  *
  * <p><b>WARNING:</b> This interface and its sub-interfaces are
- * subject to change as the Java&trade; programming language evolves.
+ * subject to change as the Java programming language evolves.
  * These interfaces are implemented by the JDK Java compiler (javac)
  * and should not be implemented either directly or indirectly by
  * other applications.

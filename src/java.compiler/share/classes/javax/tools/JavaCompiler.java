@@ -32,7 +32,7 @@ import java.util.concurrent.Callable;
 import javax.annotation.processing.Processor;
 
 /**
- * Interface to invoke Java&trade; programming language compilers from
+ * Interface to invoke Java programming language compilers from
  * programs.
  *
  * <p>The compiler might generate diagnostics during compilation (for
@@ -56,9 +56,9 @@ import javax.annotation.processing.Processor;
  * #getStandardFileManager getStandardFileManager}.
  *
  * <p>An instance implementing this interface must conform to
- * <cite>The Java&trade; Language Specification</cite>
+ * <cite>The Java Language Specification</cite>
  * and generate class files conforming to
- * <cite>The Java&trade; Virtual Machine Specification</cite>.
+ * <cite>The Java Virtual Machine Specification</cite>.
  * The versions of these
  * specifications are defined in the {@linkplain Tool} interface.
  *

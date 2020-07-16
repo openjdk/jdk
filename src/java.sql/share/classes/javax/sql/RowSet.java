@@ -32,7 +32,7 @@ import java.util.*;
 
 /**
  * The interface that adds support to the JDBC API for the
- * JavaBeans&trade; component model.
+ * JavaBeans component model.
  * A rowset, which can be used as a JavaBeans component in
  * a visual Bean development environment, can be created and
  * configured at design time and executed at run time.

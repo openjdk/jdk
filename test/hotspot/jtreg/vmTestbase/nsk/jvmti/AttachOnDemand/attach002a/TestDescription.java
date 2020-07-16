@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,16 +49,15 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.share.aod.AODTestRunner
  *
  * @comment compile newclassXX to bin/newclassXX
  * @build ExecDriver
  * @run driver PropertyResolvingWrapper ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
- *      --patch-module java.base=newclass00/java.base
+ *      --patch-module java.base=${test.src}/newclass00/java.base
  *      -d bin/newclass00
- *      newclass00/java.base/java/lang/InterruptedException.java
+ *      ${test.src}/newclass00/java.base/java/lang/InterruptedException.java
  *
  * @build nsk.jvmti.AttachOnDemand.attach002a.attach002aTarget
  * @run main/othervm/native PropertyResolvingWrapper

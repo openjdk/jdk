@@ -2636,9 +2636,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       case Node::Class_SubTypeCheck:
         break;
+      case Node::Class_Opaque1:
+        break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
-               n->Opcode() == Op_Opaque1   ||
                n->Opcode() == Op_Opaque2   ||
                n->Opcode() == Op_Opaque3   ||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
@@ -2674,7 +2675,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         C->remove_macro_node(n);
         _igvn._worklist.push(n);
         success = true;
-      } else if (n->Opcode() == Op_Opaque1 || n->Opcode() == Op_Opaque2) {
+      } else if (n->is_Opaque1() || n->Opcode() == Op_Opaque2) {
         _igvn.replace_node(n, n->in(1));
         success = true;
 #if INCLUDE_RTM_OPT

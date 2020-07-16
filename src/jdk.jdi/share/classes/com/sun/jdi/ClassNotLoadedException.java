@@ -45,7 +45,7 @@ package com.sun.jdi;
  * <li>There can be no guarantee that running the appropriate class
  * loader won't cause a deadlock in loading the
  * class. Class loaders can consist of arbitrary
- * Java&trade; programming language code and the
+ * Java programming language code and the
  * class loading methods are usually synchronized. Most of the work
  * done by a debugger happens when threads are suspended. If another
  * application thread is suspended within the same class loader,
@@ -61,7 +61,7 @@ package com.sun.jdi;
  * class loader of the enclosing class must be an <i>initiating</i> class
  * loader for the class in question.)
  * See
- * <cite>The Java&trade; Virtual Machine Specification</cite>
+ * <cite>The Java Virtual Machine Specification</cite>
  * for more details.
  *
  * @author Gordon Hirsch

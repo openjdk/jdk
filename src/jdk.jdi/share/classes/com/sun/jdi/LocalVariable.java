@@ -102,7 +102,7 @@ public interface LocalVariable extends Mirror, Comparable<LocalVariable> {
     /**
      * Gets the generic signature for this variable if there is one.
      * Generic signatures are described in the
-     * <cite>The Java&trade; Virtual Machine Specification</cite>.
+     * <cite>The Java Virtual Machine Specification</cite>.
      *
      * @return a string containing the generic signature, or <code>null</code>
      * if there is no generic signature.

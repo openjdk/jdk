@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdb.read.read001.read001
  *
  * @comment make sure read001a is compiled w/ full debug info
@@ -68,6 +67,7 @@ package nsk.jdb.read.read001;
 
 import nsk.share.*;
 import nsk.share.jdb.*;
+import jdk.test.lib.Utils;
 
 import java.io.*;
 import java.util.*;
@@ -96,7 +96,7 @@ public class read001 extends JdbTest {
 
     protected void runCases() {
         String[] reply;
-        String workdir = argumentHandler.getWorkDir();
+        String srcdir = Utils.TEST_SRC;
 
         // stop in lastBreak() method
         jdb.setBreakpointInMethod(LAST_BREAK);
@@ -105,7 +105,7 @@ public class read001 extends JdbTest {
         // return to testedInstanceMethod()
         reply = jdb.receiveReplyFor(JdbCommand.step);
 
-        String command = JdbCommand.read + workdir + File.separator + SCENARIO_FILE;
+        String command = JdbCommand.read + srcdir + File.separator + SCENARIO_FILE;
         int count = SCENARIO_COMMANDS_COUNT + 1;
         reply = jdb.receiveReplyFor(command, true, count);
 

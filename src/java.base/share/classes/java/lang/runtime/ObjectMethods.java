@@ -48,7 +48,7 @@ import java.util.Objects;
  * Bootstrap methods for state-driven implementations of core methods,
  * including {@link Object#equals(Object)}, {@link Object#hashCode()}, and
  * {@link Object#toString()}.  These methods may be used, for example, by
- * Java&trade; compiler implementations to implement the bodies of {@link Object}
+ * Java compiler implementations to implement the bodies of {@link Object}
  * methods for record classes.
  *
  * @since 14

@@ -107,7 +107,7 @@ public enum Modifier {
 
     /**
      * Returns this modifier's name as defined in <cite>The
-     * Java&trade; Language Specification</cite>.
+     * Java Language Specification</cite>.
      * The modifier name is the {@linkplain #name() name of the enum
      * constant} in lowercase and with any underscores ("{@code _}")
      * replaced with hyphens ("{@code -}").

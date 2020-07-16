@@ -24,7 +24,7 @@
  */
 
 /**
- * Provides a mechanism to launch an instance of a Java&trade; shell tool.
+ * Provides a mechanism to launch an instance of a Java shell tool.
  * Allows configuration of the tool before launching. A builder is used
  * to configure and launch the tool.
  * <p>

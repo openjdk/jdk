@@ -38,7 +38,7 @@ import java.sql.Wrapper;
  * is the preferred means of getting a connection. An object that implements
  * the {@code DataSource} interface will typically be
  * registered with a naming service based on the
- * Java&trade; Naming and Directory (JNDI) API.
+ * Java Naming and Directory (JNDI) API.
  * <P>
  * The {@code DataSource} interface is implemented by a driver vendor.
  * There are three types of implementations:

@@ -1677,7 +1677,7 @@ public class HtmlDocletWriter {
 
     /**
      * According to
-     * <cite>The Java&trade; Language Specification</cite>,
+     * <cite>The Java Language Specification</cite>,
      * all the outer classes and static nested classes are core classes.
      */
     public boolean isCoreClass(TypeElement typeElement) {

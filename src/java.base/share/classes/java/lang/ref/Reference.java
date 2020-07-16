@@ -419,7 +419,7 @@ public abstract class Reference<T> {
      * facilities are not possible or do not provide the desired control.  This
      * method is applicable only when reclamation may have visible effects,
      * which is possible for objects with finalizers (See Section 12.6
-     * of <cite>The Java&trade; Language Specification</cite>) that
+     * of <cite>The Java Language Specification</cite>) that
      * are implemented in ways that rely on ordering control for
      * correctness.
      *

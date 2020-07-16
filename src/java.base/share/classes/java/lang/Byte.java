@@ -290,7 +290,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      *
      * <i>DecimalNumeral</i>, <i>HexDigits</i>, and <i>OctalDigits</i>
      * are as defined in section 3.10.1 of
-     * <cite>The Java&trade; Language Specification</cite>,
+     * <cite>The Java Language Specification</cite>,
      * except that underscores are not accepted between digits.
      *
      * <p>The sequence of characters following an optional

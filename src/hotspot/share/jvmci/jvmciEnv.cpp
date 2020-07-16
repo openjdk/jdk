@@ -568,23 +568,10 @@ const char* JVMCIEnv::as_utf8_string(JVMCIObject str) {
   } else {
     JNIAccessMark jni(this);
     int length = jni()->GetStringLength(str.as_jstring());
-    char* result = NEW_RESOURCE_ARRAY(char, length + 1);
+    int utf8_length = jni()->GetStringUTFLength(str.as_jstring());
+    char* result = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
     jni()->GetStringUTFRegion(str.as_jstring(), 0, length, result);
     return result;
-  }
-}
-
-char* JVMCIEnv::as_utf8_string(JVMCIObject str, char* buf, int buflen) {
-  if (is_hotspot()) {
-    return java_lang_String::as_utf8_string(HotSpotJVMCI::resolve(str), buf, buflen);
-  } else {
-    JNIAccessMark jni(this);
-    int length = jni()->GetStringLength(str.as_jstring());
-    if (length >= buflen) {
-      length = buflen;
-    }
-    jni()->GetStringUTFRegion(str.as_jstring(), 0, length, buf);
-    return buf;
   }
 }
 
