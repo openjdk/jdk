@@ -79,18 +79,20 @@ public class DeployParams {
         List<Path> files = new LinkedList<>();
         if (!Files.isSymbolicLink(root)) {
             if (Files.isDirectory(root)) {
-                List<Path> children = Files.list(root).collect(Collectors.toList());
-                if (children != null && children.size() > 0) {
-                    children.forEach(f -> {
-                        try {
-                            files.addAll(expandFileset(f));
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    });
-                } else {
-                    // Include empty folders
-                    files.add(root);
+                try (Stream<Path> stream = Files.list(root)) {
+                    List<Path> children = stream.collect(Collectors.toList());
+                    if (children != null && children.size() > 0) {
+                        children.forEach(f -> {
+                            try {
+                                files.addAll(expandFileset(f));
+                            } catch (IOException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                        });
+                    } else {
+                        // Include empty folders
+                        files.add(root);
+                    }
                 }
             } else {
                 files.add(root);
@@ -214,13 +216,13 @@ public class DeployParams {
         // Validate temp dir
         String root = (String)bundlerArguments.get(
                 Arguments.CLIOptions.TEMP_ROOT.getId());
-        if (root != null) {
-            try {
-                String [] contents = Files.list(Path.of(root))
-                        .toArray(String[]::new);
-
-                if (contents != null && contents.length > 0) {
-                    throw new PackagerException("ERR_BuildRootInvalid", root);
+        if (root != null && Files.exists(Path.of(root))) {
+            try (Stream<Path> stream = Files.walk(Path.of(root), 1)) {
+                Path [] contents = stream.toArray(Path[]::new);
+                // contents.length > 1 because Files.walk(path) includes path
+                if (contents != null && contents.length > 1) {
+                    throw new PackagerException(
+                            "ERR_BuildRootInvalid", root);
                 }
             } catch (IOException ioe) {
                 throw new PackagerException(ioe);
