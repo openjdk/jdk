@@ -28,6 +28,7 @@
  * @library /test/lib /
  * @library ../common/patches
  * @ignore 8249621
+ * @ignore 8163894
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
