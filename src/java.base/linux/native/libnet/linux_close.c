@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -437,12 +437,16 @@ int NET_Timeout(JNIEnv *env, int s, long timeout, jlong nanoTimeStamp) {
          * has expired return 0 (indicating timeout expired).
          */
         if (rv < 0 && errno == EINTR) {
-            jlong newNanoTime = JVM_NanoTime(env, 0);
-            nanoTimeout -= newNanoTime - prevNanoTime;
-            if (nanoTimeout < NET_NSEC_PER_MSEC) {
-                return 0;
+            if (timeout > 0) {
+                jlong newNanoTime = JVM_NanoTime(env, 0);
+                nanoTimeout -= newNanoTime - prevNanoTime;
+                if (nanoTimeout < NET_NSEC_PER_MSEC) {
+                    return 0;
+                }
+                prevNanoTime = newNanoTime;
+            } else {
+                continue; // timeout is -1, so  loop again.
             }
-            prevNanoTime = newNanoTime;
         } else {
             return rv;
         }
