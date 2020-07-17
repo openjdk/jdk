@@ -151,8 +151,11 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         return "INSTALLER";
     }
 
-    public static String findKey(String key, String keychainName,
+    public static String findKey(String keyPrefix, String teamName, String keychainName,
             boolean verbose) {
+        String key = (teamName.startsWith(keyPrefix)
+                || teamName.startsWith("3rd Party Mac Developer"))
+                ? teamName : (keyPrefix + teamName);
         if (Platform.getPlatform() != Platform.MAC) {
             return null;
         }
@@ -183,7 +186,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             if (m.find()) {
                 Log.error(MessageFormat.format(I18N.getString(
                         "error.multiple.certs.found"), key, keychainName));
-                return null;
             }
             Log.verbose("Using key '" + matchedKey + "'");
             return matchedKey;

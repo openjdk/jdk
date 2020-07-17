@@ -54,7 +54,7 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
             String.class,
             params -> {
                 String result = MacBaseInstallerBundler.findKey(
-                        "3rd Party Mac Developer Application: " +
+                        "3rd Party Mac Developer Application: ",
                         SIGNING_KEY_USER.fetchFrom(params),
                         SIGNING_KEYCHAIN.fetchFrom(params),
                         VERBOSE.fetchFrom(params));
@@ -78,7 +78,7 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
             String.class,
             params -> {
                 String result = MacBaseInstallerBundler.findKey(
-                        "3rd Party Mac Developer Installer: " +
+                        "3rd Party Mac Developer Installer: ",
                         SIGNING_KEY_USER.fetchFrom(params),
                         SIGNING_KEYCHAIN.fetchFrom(params),
                         VERBOSE.fetchFrom(params));
