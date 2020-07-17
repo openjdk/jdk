@@ -25,7 +25,6 @@
 package javax.swing.plaf.nimbus;
 
 import javax.swing.UIManager;
-import javax.swing.plaf.UIResource;
 import java.awt.Color;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
@@ -40,7 +39,7 @@ import java.beans.PropertyChangeListener;
  * @author Jasper Potts
  */
 @SuppressWarnings("serial") // Same-version serialization only
-class DerivedColor extends Color implements UIResource {
+class DerivedColor extends Color {
     private final String uiDefaultParentName;
     private final float hOffset, sOffset, bOffset;
     private final int aOffset;
