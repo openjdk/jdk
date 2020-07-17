@@ -101,3 +101,26 @@ function indexFilesLoaded() {
         && memberSearchIndex
         && tagSearchIndex;
 }
+
+// Workaround for scroll position not being included in browser history (8249133)
+document.addEventListener("DOMContentLoaded", function() {
+    var contentDiv = document.querySelector("div.flex-content");
+    window.onpopstate = function(e) {
+        if (e.state !== null) {
+            contentDiv.scrollTop = e.state;
+        }
+    }
+    window.onhashchange = function(e) {
+        history.replaceState(contentDiv.scrollTop, document.title);
+    }
+    contentDiv.onscroll = function(e) {
+        var timeoutID;
+        if (!timeoutID) {
+            timeoutID = setTimeout(function() {
+                history.replaceState(contentDiv.scrollTop, document.title);
+                timeoutID = null;
+            }, 100);
+        }
+    }
+    history.replaceState(contentDiv.scrollTop, document.title);
+});
