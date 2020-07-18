@@ -2531,7 +2531,7 @@ public abstract class ClassLoader {
      *         The name of the package whose package default assertion status
      *         is to be set. A {@code null} value indicates the unnamed
      *         package that is "current"
-     *         (see section 7.4.2 of
+     *         (see section {@jls 7.4.2} of
      *         <cite>The Java Language Specification</cite>.)
      *
      * @param  enabled

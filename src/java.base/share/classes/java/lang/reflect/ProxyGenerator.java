@@ -392,7 +392,7 @@ final class ProxyGenerator extends ClassWriter {
     /**
      * Return the number of abstract "words", or consecutive local variable
      * indexes, required to contain a value of the given type.  See JVMS
-     * section 3.6.1.
+     * section {@jvms 3.6.1}.
      * <p>
      * Note that the original version of the JVMS contained a definition of
      * this abstract notion of a "word" in section 3.4, but that definition
