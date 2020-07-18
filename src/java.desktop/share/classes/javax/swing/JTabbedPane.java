@@ -174,7 +174,7 @@ public class JTabbedPane extends JComponent
      */
     protected ChangeListener changeListener = null;
 
-    private final java.util.List<Page> pages;
+    private java.util.List<Page> pages;
 
     /* The component that is currently visible */
     private Component visComp = null;
@@ -1827,6 +1827,7 @@ public class JTabbedPane extends JComponent
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
@@ -1841,6 +1842,7 @@ public class JTabbedPane extends JComponent
         model = (SingleSelectionModel) f.get("model", null);
         haveRegistered = f.get("haveRegistered", false);
         changeListener = (ChangeListener) f.get("changeListener", null);
+        pages = (java.util.List<JTabbedPane.Page>) f.get("pages", null);
         visComp = (Component) f.get("visComp", null);
 
         if ((ui != null) && (getUIClassID().equals(uiClassID))) {
