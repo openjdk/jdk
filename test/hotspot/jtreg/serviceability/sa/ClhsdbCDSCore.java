@@ -52,6 +52,7 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.CoreUtils;
+import jdk.test.lib.Utils;
 
 import jtreg.SkippedException;
 
@@ -122,7 +123,16 @@ public class ClhsdbCDSCore {
                 throw new SkippedException("The CDS archive is not mapped");
             }
 
-            cmds = List.of("printmdo -a", "printall", "jstack -v");
+            List testJavaOpts = Arrays.asList(Utils.getTestJavaOpts());
+
+            if (testJavaOpts.contains("-Xcomp") && testJavaOpts.contains("-XX:TieredStopAtLevel=1")) {
+                // No MDOs are allocated in -XX:TieredStopAtLevel=1 + -Xcomp mode
+                // The reason is methods being compiled aren't hot enough
+                // Let's not call printmdo in such scenario
+                cmds = List.of("printall", "jstack -v");
+            } else {
+                cmds = List.of("printmdo -a", "printall", "jstack -v");
+            }
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             Map<String, List<String>> unExpStrMap = new HashMap<>();
