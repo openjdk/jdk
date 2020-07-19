@@ -2601,7 +2601,7 @@ public class Font implements java.io.Serializable
             simple = ! FontUtilities.isComplexText(chars, beginIndex, limit);
         }
 
-        if (simple) {
+        if (simple || ((limit - beginIndex) == 0)) {
             FontDesignMetrics metrics = FontDesignMetrics.getMetrics(this, frc);
             return metrics.getSimpleBounds(chars, beginIndex, limit-beginIndex);
         } else {
