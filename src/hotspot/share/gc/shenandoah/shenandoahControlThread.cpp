@@ -252,6 +252,9 @@ void ShenandoahControlThread::run_service() {
 
       // Commit worker statistics to cycle data
       heap->phase_timings()->flush_par_workers_to_cycle();
+      if (ShenandoahPacing) {
+        heap->pacer()->flush_stats_to_cycle();
+      }
 
       // Print GC stats for current cycle
       {
@@ -260,6 +263,9 @@ void ShenandoahControlThread::run_service() {
           ResourceMark rm;
           LogStream ls(lt);
           heap->phase_timings()->print_cycle_on(&ls);
+          if (ShenandoahPacing) {
+            heap->pacer()->print_cycle_on(&ls);
+          }
         }
       }
 

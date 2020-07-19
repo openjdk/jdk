@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPacer.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
@@ -272,7 +273,7 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
       //     Breaking out and allocating anyway, which may mean we outpace GC,
       //     and start Degenerated GC cycle.
       //  b) The budget had been replenished, which means our claim is satisfied.
-      _delays.add(total_ms);
+      ShenandoahThreadLocalData::add_paced_time(JavaThread::current(), end - start);
       break;
     }
   }
@@ -294,41 +295,48 @@ void ShenandoahPacer::notify_waiters() {
   }
 }
 
-void ShenandoahPacer::print_on(outputStream* out) const {
-  out->print_cr("ALLOCATION PACING:");
-  out->cr();
-
-  out->print_cr("Max pacing delay is set for " UINTX_FORMAT " ms.", ShenandoahPacingMaxDelay);
-  out->cr();
-
-  out->print_cr("Higher delay would prevent application outpacing the GC, but it will hide the GC latencies");
-  out->print_cr("from the STW pause times. Pacing affects the individual threads, and so it would also be");
-  out->print_cr("invisible to the usual profiling tools, but would add up to end-to-end application latency.");
-  out->print_cr("Raise max pacing delay with care.");
-  out->cr();
-
-  out->print_cr("Actual pacing delays histogram:");
-  out->cr();
-
-  out->print_cr("%10s - %10s  %12s%12s", "From", "To", "Count", "Sum");
-
-  size_t total_count = 0;
-  size_t total_sum = 0;
-  for (int c = _delays.min_level(); c <= _delays.max_level(); c++) {
-    int l = (c == 0) ? 0 : 1 << (c - 1);
-    int r = 1 << c;
-    size_t count = _delays.level(c);
-    size_t sum   = count * (r - l) / 2;
-    total_count += count;
-    total_sum   += sum;
-
-    out->print_cr("%7d ms - %7d ms: " SIZE_FORMAT_W(12) SIZE_FORMAT_W(12) " ms", l, r, count, sum);
+void ShenandoahPacer::flush_stats_to_cycle() {
+  double sum = 0;
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
+    sum += ShenandoahThreadLocalData::paced_time(t);
   }
-  out->print_cr("%23s: " SIZE_FORMAT_W(12) SIZE_FORMAT_W(12) " ms", "Total", total_count, total_sum);
+  ShenandoahHeap::heap()->phase_timings()->record_phase_time(ShenandoahPhaseTimings::pacing, sum);
+}
+
+void ShenandoahPacer::print_cycle_on(outputStream* out) {
+  MutexLocker lock(Threads_lock);
+
+  double now = os::elapsedTime();
+  double total = now - _last_time;
+  _last_time = now;
+
   out->cr();
-  out->print_cr("Pacing delays are measured from entering the pacing code till exiting it. Therefore,");
-  out->print_cr("observed pacing delays may be higher than the threshold when paced thread spent more");
-  out->print_cr("time in the pacing code. It usually happens when thread is de-scheduled while paced,");
-  out->print_cr("OS takes longer to unblock the thread, or JVM experiences an STW pause.");
+  out->print_cr("Allocation pacing accrued:");
+
+  size_t threads_total = 0;
+  size_t threads_nz = 0;
+  double sum = 0;
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
+    double d = ShenandoahThreadLocalData::paced_time(t);
+    if (d > 0) {
+      threads_nz++;
+      sum += d;
+      out->print_cr("  %5.0f of %5.0f ms (%5.1f%%): %s",
+              d * 1000, total * 1000, d/total*100, t->name());
+    }
+    threads_total++;
+    ShenandoahThreadLocalData::reset_paced_time(t);
+  }
+  out->print_cr("  %5.0f of %5.0f ms (%5.1f%%): <total>",
+          sum * 1000, total * 1000, sum/total*100);
+
+  if (threads_total > 0) {
+    out->print_cr("  %5.0f of %5.0f ms (%5.1f%%): <average total>",
+            sum / threads_total * 1000, total * 1000, sum / threads_total / total * 100);
+  }
+  if (threads_nz > 0) {
+    out->print_cr("  %5.0f of %5.0f ms (%5.1f%%): <average non-zero>",
+            sum / threads_nz * 1000, total * 1000, sum / threads_nz / total * 100);
+  }
   out->cr();
 }
