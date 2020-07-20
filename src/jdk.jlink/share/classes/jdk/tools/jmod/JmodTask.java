@@ -259,19 +259,35 @@ public class JmodTask {
         }
     }
 
-    private boolean hashModules() {
+    private boolean hashModules() throws IOException {
+        String moduleName = null;
+        if (options.jmodFile != null) {
+            try (JmodFile jf = new JmodFile(options.jmodFile)) {
+                try (InputStream in = jf.getInputStream(Section.CLASSES, MODULE_INFO)) {
+                    ModuleInfo.Attributes attrs = ModuleInfo.read(in, null);
+                    moduleName = attrs.descriptor().name();
+                } catch (IOException e) {
+                    throw new CommandException("err.module.descriptor.not.found");
+                }
+            }
+        }
+        Hasher hasher = new Hasher(moduleName, options.moduleFinder);
+
         if (options.dryrun) {
             out.println("Dry run:");
         }
 
-        Hasher hasher = new Hasher(options.moduleFinder);
-        hasher.computeHashes().forEach((mn, hashes) -> {
+        Map<String, ModuleHashes> moduleHashes = hasher.computeHashes();
+        if (moduleHashes.isEmpty()) {
+            throw new CommandException("err.no.moduleToHash", "\"" + options.modulesToHash + "\"");
+        }
+        moduleHashes.forEach((mn, hashes) -> {
             if (options.dryrun) {
                 out.format("%s%n", mn);
                 hashes.names().stream()
-                    .sorted()
-                    .forEach(name -> out.format("  hashes %s %s %s%n",
-                        name, hashes.algorithm(), toHex(hashes.hashFor(name))));
+                      .sorted()
+                      .forEach(name -> out.format("  hashes %s %s %s%n",
+                            name, hashes.algorithm(), toHex(hashes.hashFor(name))));
             } else {
                 try {
                     hasher.updateModuleInfo(mn, hashes);
@@ -826,25 +842,19 @@ public class JmodTask {
         final String moduleName;  // a specific module to record hashes, if set
 
         /**
-         * This constructor is for jmod hash command.
-         *
-         * This Hasher will determine which modules to record hashes, i.e.
-         * the module in a subgraph of modules to be hashed and that
-         * has no outgoing edges.  It will record in each of these modules,
-         * say `M`, with the the hashes of modules that depend upon M
-         * directly or indirectly matching the specified --hash-modules pattern.
-         */
-        Hasher(ModuleFinder finder) {
-            this(null, finder);
-        }
-
-        /**
          * Constructs a Hasher to compute hashes.
          *
          * If a module name `M` is specified, it will compute the hashes of
          * modules that depend upon M directly or indirectly matching the
          * specified --hash-modules pattern and record in the ModuleHashes
          * attribute in M's module-info.class.
+         *
+         * If name is null, this Hasher will determine which modules to
+         * record hashes, i.e. the module in a subgraph of modules to be
+         * hashed and that has no outgoing edges.  It will record in each
+         * of these modules, say `M`, with the hashes of modules that
+         * depend upon M directly or indirectly matching the specified
+         * --hash-modules pattern.
          *
          * @param name    name of the module to record hashes
          * @param finder  module finder for the specified --module-path
@@ -1432,6 +1442,18 @@ public class JmodTask {
                 if (options.moduleFinder == null || options.modulesToHash == null)
                     throw new CommandException("err.modulepath.must.be.specified")
                             .showUsage(true);
+                // It's optional to specify jmod-file.  If not specified, then
+                // it will find all the modules that have no outgoing read edges
+                if (words.size() >= 2) {
+                    Path path = Paths.get(words.get(1));
+                    if (Files.notExists(path))
+                        throw new CommandException("err.jmod.not.found", path);
+
+                    options.jmodFile = path;
+                }
+                if (words.size() > 2)
+                    throw new CommandException("err.unknown.option",
+                            words.subList(2, words.size())).showUsage(true);
             } else {
                 if (words.size() <= 1)
                     throw new CommandException("err.jmod.must.be.specified").showUsage(true);

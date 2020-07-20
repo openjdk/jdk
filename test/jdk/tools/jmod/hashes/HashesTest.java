@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8160286 8243666
+ * @bug 8160286 8243666 8217527
  * @summary Test the recording and checking of module hashes
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -126,29 +126,29 @@ public class HashesTest {
 
         // hash m1 in m2
         ht.jmodHashModules("m2",  "m1");
-        ht.checkHashes("m2", "m1");
+        ht.checkHashes("m2", Set.of("m1"));
 
         // hash m1 in m2
         ht.jmodHashModules("m2",  ".*");
-        ht.checkHashes("m2", "m1");
+        ht.checkHashes("m2", Set.of("m1"));
 
         // create m2.jmod with no hash
         ht.makeJmod("m2");
         // run jmod hash command to hash m1 in m2 and m3
         runJmod(List.of("hash", "--module-path", ht.lib.toString(),
                         "--hash-modules", ".*"));
-        ht.checkHashes("m2", "m1");
-        ht.checkHashes("m3", "m1");
+        ht.checkHashes("m2", Set.of("m1"));
+        ht.checkHashes("m3", Set.of("m1"));
 
         // check transitive requires
         ht.makeJmod("org.bar");
         ht.makeJmod("org.foo");
 
         ht.jmodHashModules("org.bar", "org.*");
-        ht.checkHashes("org.bar", "org.foo");
+        ht.checkHashes("org.bar", Set.of("org.foo"));
 
         ht.jmodHashModules( "m3", ".*");
-        ht.checkHashes("m3", "org.foo", "org.bar", "m1");
+        ht.checkHashes("m3", Set.of("org.foo", "org.bar", "m1"));
     }
 
     @Test
@@ -187,8 +187,8 @@ public class HashesTest {
         /*
          * z1 and y1 are the modules with hashes recorded.
          */
-        ht.checkHashes("y1", "y2");
-        ht.checkHashes("z1", "z2", "z3", "y2");
+        ht.checkHashes("y1", Set.of("y2"));
+        ht.checkHashes("z1", Set.of("z2", "z3", "y2"));
         Stream.concat(ys.stream(), zs.stream())
               .filter(mn -> !mn.equals("y1") && !mn.equals("z1"))
               .forEach(mn -> assertTrue(ht.hashes(mn) == null));
@@ -232,8 +232,8 @@ public class HashesTest {
         /*
          * j1 and j2 are the modules with hashes recorded.
          */
-        ht.checkHashes("j2", "j3");
-        ht.checkHashes("j1", "m1", "m2", "m3", "j3");
+        ht.checkHashes("j2", Set.of("j3"));
+        ht.checkHashes("j1", Set.of("m1", "m2", "m3", "j3"));
         Stream.concat(jars.stream(), jmods.stream())
               .filter(mn -> !mn.equals("j1") && !mn.equals("j2"))
               .forEach(mn -> assertTrue(ht.hashes(mn) == null));
@@ -259,7 +259,7 @@ public class HashesTest {
                     ht.lib.toString() + File.pathSeparator + mpath,
                     "--hash-modules", "java\\.(?!se)|^m.*");
 
-        ht.checkHashes("java.compiler",  "m2");
+        ht.checkHashes("java.compiler",  Set.of("m2"));
     }
 
     @Test
@@ -330,11 +330,56 @@ public class HashesTest {
         assertEquals(hashes1, hashes2);
     }
 
+    @Test
+    public static void testHashModulesPattern() throws IOException {
+        Path dest = Paths.get("regex");
+        HashesTest ht = new HashesTest(dest);
+
+        // create modules for test cases
+        ht.makeModule("m1");
+        ht.makeModule("m2", "m1");
+        ht.makeModule("m3");
+        ht.makeModule("m4", "m1", "m3");
+        List.of("m1", "m2", "m3", "m4").forEach(ht::makeJmod);
+
+        // compute hash for the target jmod (m1.jmod) with different regex
+        // 1) --hash-module "m2"
+        Path jmod = ht.lib.resolve("m1.jmod");
+        runJmod("hash",
+                "--module-path", ht.lib.toString(),
+                "--hash-modules", "m2", jmod.toString());
+        assertEquals(ht.moduleHashes().keySet(), Set.of("m1"));
+        ht.checkHashes("m1", Set.of("m2"));
+
+        // 2) --hash-module "m2|m4"
+        runJmod("hash",
+                "--module-path", ht.lib.toString(),
+                "--hash-modules", "m2|m4", jmod.toString());
+        assertEquals(ht.moduleHashes().keySet(), Set.of("m1"));
+        ht.checkHashes("m1", Set.of("m2", "m4"));
+
+        // 3) --hash-module ".*"
+        runJmod("hash",
+                "--module-path", ht.lib.toString(),
+                "--hash-modules", ".*", jmod.toString());
+        assertEquals(ht.moduleHashes().keySet(), Set.of("m1"));
+        ht.checkHashes("m1", Set.of("m2", "m4"));
+
+        // target jmod is not specified
+        // compute hash for all modules in the library
+        runJmod("hash",
+                "--module-path", ht.lib.toString(),
+                "--hash-modules", ".*");
+        assertEquals(ht.moduleHashes().keySet(), Set.of("m1", "m3"));
+        ht.checkHashes("m1", Set.of("m2", "m4"));
+        ht.checkHashes("m3", Set.of("m4"));
+    }
+
     private static void validateImageJmodsTest(HashesTest ht, Path mpath)
         throws IOException
     {
         // hash is recorded in m1 and not any other packaged modules on module path
-        ht.checkHashes("m1", "m2");
+        ht.checkHashes("m1", Set.of("m2"));
         assertTrue(ht.hashes("m2") == null);
 
         // should not override any JDK packaged modules
@@ -343,9 +388,9 @@ public class HashesTest {
         assertTrue(ht.hashes(finder,"jdk.attach") == null);
     }
 
-    private void checkHashes(String mn, String... hashModules) throws IOException {
+    private void checkHashes(String mn, Set<String> hashModules) throws IOException {
         ModuleHashes hashes = hashes(mn);
-        assertTrue(hashes.names().equals(Set.of(hashModules)));
+        assertTrue(hashes.names().equals(hashModules));
     }
 
     private ModuleHashes hashes(String name) {
@@ -465,22 +510,29 @@ public class HashesTest {
      * a ModuleHashes class file attribute.
      */
     private Map<String, ModuleHashes> runJmodHash() {
-        runJmod(List.of("hash",
+        runJmod("hash",
                 "--module-path", lib.toString(),
-                "--hash-modules", ".*"));
-        HashesTest ht = this;
+                "--hash-modules", ".*");
+        return moduleHashes();
+    }
+
+    private Map<String, ModuleHashes> moduleHashes() {
         return ModulePath.of(Runtime.version(), true, lib)
                 .findAll()
                 .stream()
                 .map(ModuleReference::descriptor)
                 .map(ModuleDescriptor::name)
-                .filter(mn -> ht.hashes(mn) != null)
-                .collect(Collectors.toMap(mn -> mn, ht::hashes));
+                .filter(mn -> hashes(mn) != null)
+                .collect(Collectors.toMap(mn -> mn, this::hashes));
     }
 
     private static void runJmod(List<String> args) {
-        int rc = JMOD_TOOL.run(System.out, System.out, args.toArray(new String[args.size()]));
-        System.out.println("jmod " + args.stream().collect(Collectors.joining(" ")));
+        runJmod(args.toArray(new String[args.size()]));
+    }
+
+    private static void runJmod(String... args) {
+        int rc = JMOD_TOOL.run(System.out, System.out, args);
+        System.out.println("jmod " + Arrays.stream(args).collect(Collectors.joining(" ")));
         if (rc != 0) {
             throw new AssertionError("jmod failed: rc = " + rc);
         }
