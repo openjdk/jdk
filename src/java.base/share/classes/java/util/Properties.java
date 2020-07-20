@@ -1405,6 +1405,21 @@ public class Properties extends Hashtable<Object,Object> {
         }
 
         @Override
+        public boolean equals(Object o) {
+            return o == this || entrySet.equals(o);
+        }
+
+        @Override
+        public int hashCode() {
+            return entrySet.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return entrySet.toString();
+        }
+
+        @Override
         public boolean removeAll(Collection<?> c) {
             return entrySet.removeAll(c);
         }
