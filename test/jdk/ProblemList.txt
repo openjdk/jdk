@@ -586,6 +586,7 @@ javax/management/remote/mandatory/connection/MultiThreadDeadLockTest.java 822733
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
+java/io/File/GetXSpace.java                                     6501010,8249703 windows-all,macosx-all
 
 ############################################################################
 
