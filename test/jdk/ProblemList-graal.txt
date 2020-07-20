@@ -48,11 +48,6 @@ com/sun/jdi/RedefineCrossStart.java                                     8195635 
 com/sun/jdi/RedefineG.java                                              8195635   generic-all
 com/sun/jdi/RedefineTTYLineNumber.java                                  8195635   generic-all
 
-# Next JFR tests fail with Graal. Assuming 8193210.
-jdk/jfr/event/compiler/TestCodeSweeper.java              8193210   generic-all
-jdk/jfr/event/compiler/TestCompilerInlining.java         8193210   generic-all
-jdk/jfr/event/compiler/TestCompilerPhase.java            8193210   generic-all
-
 # Next tests should be re-enabled once libgraal is introduced
 java/lang/ref/ReachabilityFenceTest.java                 8207267   generic-all
 

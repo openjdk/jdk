@@ -525,13 +525,15 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   // comes very late in the already running cycle, it would miss lots of new
   // opportunities for cleanup that were made available before the caller
   // requested the GC.
-  size_t required_gc_id = get_gc_id() + 1;
 
   MonitorLocker ml(&_gc_waiters_lock);
-  while (get_gc_id() < required_gc_id) {
+  size_t current_gc_id = get_gc_id();
+  size_t required_gc_id = current_gc_id + 1;
+  while (current_gc_id < required_gc_id) {
     _gc_requested.set();
     _requested_gc_cause = cause;
     ml.wait();
+    current_gc_id = get_gc_id();
   }
 }
 

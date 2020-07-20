@@ -41,8 +41,8 @@ compiler/compilercontrol/mixed/RandomCommandsTest.java          8181753   generi
 
 compiler/graalunit/JttThreadsTest.java                          8207757   generic-all
 
-compiler/unsafe/UnsafeGetConstantField.java                     8181833   generic-all
-compiler/unsafe/UnsafeGetStableArrayElement.java                8181833   generic-all
+compiler/unsafe/UnsafeGetConstantField.java                     8207267   generic-all
+compiler/unsafe/UnsafeGetStableArrayElement.java                8207267   generic-all
 
 compiler/whitebox/ClearMethodStateTest.java                     8181831   generic-all
 compiler/whitebox/EnqueueMethodForCompilationTest.java          8181831   generic-all
@@ -86,8 +86,8 @@ serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java 819661
 serviceability/tmtools/jstat/GcTest02.java                      8196611 generic-all
 serviceability/tmtools/jstat/GcCapacityTest.java                8196611 generic-all
 
-serviceability/sa/ClhsdbInspect.java                            8230419 generic-all
-serviceability/sa/ClhsdbJstackXcompStress.java                  8244656 generic-all
+serviceability/sa/ClhsdbInspect.java                            8207267 generic-all
+serviceability/sa/ClhsdbJstackXcompStress.java                  8207267 generic-all
 
 gc/g1/ihop/TestIHOPErgo.java                                    8191048   generic-all
 gc/g1/plab/TestPLABEvacuationFailure.java                       8191048   generic-all
@@ -203,18 +203,18 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_none2indy_b/TestDescription.java     
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInTarget/TestDescription.java                     8195635 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/stepBreakPopReturn/INDIFY_Test.java                            8195635 generic-all
 
-compiler/stable/TestStableBoolean.java                           8204347   generic-all
-compiler/stable/TestStableByte.java                              8204347   generic-all
-compiler/stable/TestStableChar.java                              8204347   generic-all
-compiler/stable/TestStableDouble.java                            8204347   generic-all
-compiler/stable/TestStableFloat.java                             8204347   generic-all
-compiler/stable/TestStableInt.java                               8204347   generic-all
-compiler/stable/TestStableLong.java                              8204347   generic-all
-compiler/stable/TestStableMismatched.java                        8204347   generic-all
-compiler/stable/TestStableObject.java                            8204347   generic-all
-compiler/stable/TestStableShort.java                             8204347   generic-all
-compiler/stable/TestStableUByte.java                             8204347   generic-all
-compiler/stable/TestStableUShort.java                            8204347   generic-all
+compiler/stable/TestStableBoolean.java                           8207267   generic-all
+compiler/stable/TestStableByte.java                              8207267   generic-all
+compiler/stable/TestStableChar.java                              8207267   generic-all
+compiler/stable/TestStableDouble.java                            8207267   generic-all
+compiler/stable/TestStableFloat.java                             8207267   generic-all
+compiler/stable/TestStableInt.java                               8207267   generic-all
+compiler/stable/TestStableLong.java                              8207267   generic-all
+compiler/stable/TestStableMismatched.java                        8207267   generic-all
+compiler/stable/TestStableObject.java                            8207267   generic-all
+compiler/stable/TestStableShort.java                             8207267   generic-all
+compiler/stable/TestStableUByte.java                             8207267   generic-all
+compiler/stable/TestStableUShort.java                            8207267   generic-all
 
 
 vmTestbase/nsk/jdb/unmonitor/unmonitor001/unmonitor001.java                   8218701 generic-all
