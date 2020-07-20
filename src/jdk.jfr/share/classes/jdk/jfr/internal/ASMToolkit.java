@@ -155,6 +155,7 @@ final class ASMToolkit {
             PrintWriter w = new PrintWriter(baos);
             w.println("Bytecode:");
             cr.accept(new TraceClassVisitor(w), 0);
+            Logger.log(LogTag.JFR_SYSTEM_BYTECODE, LogLevel.TRACE, baos.toString());
         };
     }
 
