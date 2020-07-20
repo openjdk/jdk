@@ -960,6 +960,7 @@ public class RecordCompilationTests extends CompilationTestCase {
     }
 
     public void testAcceptRecordId() {
+        String[] previousOptions = getCompileOptions();
         String[] testOptions = {/* no options */};
         setCompileOptions(testOptions);
         assertOKWithWarning("compiler.warn.restricted.type.not.allowed.preview",
@@ -969,10 +970,11 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "    }\n" +
                 "    class record {}\n" +
                 "}");
-        setCompileOptions(PREVIEW_OPTIONS);
+        setCompileOptions(previousOptions);
     }
 
     public void testAnnos() throws Exception {
+        String[] previousOptions = getCompileOptions();
         String srcTemplate =
                 """
                     import java.lang.annotation.*;
@@ -1127,7 +1129,7 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
 
         // let's reset the default compiler options for other tests
-        setCompileOptions(PREVIEW_OPTIONS);
+        setCompileOptions(previousOptions);
     }
 
     private void checkTypeAnno(ClassFile classFile,
