@@ -75,7 +75,6 @@ void RootSetClosure<Delegate>::process() {
   ObjectSynchronizer::oops_do(this);
   Universe::oops_do(this);
   OopStorageSet::strong_oops_do(this);
-  Management::oops_do(this);
   AOTLoader::oops_do(this);
 }
 

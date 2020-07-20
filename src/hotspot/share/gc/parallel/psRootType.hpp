@@ -36,7 +36,6 @@ public:
   enum Value {
     universe,
     object_synchronizer,
-    management,
     class_loader_data,
     code_cache,
     //"threads" are handled in parallel as a special case

@@ -49,7 +49,6 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/management.hpp"
 #include "utilities/debug.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -60,7 +59,6 @@ static const ZStatSubPhase ZSubPhasePauseRoots("Pause Roots");
 static const ZStatSubPhase ZSubPhasePauseRootsTeardown("Pause Roots Teardown");
 static const ZStatSubPhase ZSubPhasePauseRootsUniverse("Pause Roots Universe");
 static const ZStatSubPhase ZSubPhasePauseRootsObjectSynchronizer("Pause Roots ObjectSynchronizer");
-static const ZStatSubPhase ZSubPhasePauseRootsManagement("Pause Roots Management");
 static const ZStatSubPhase ZSubPhasePauseRootsJVMTIWeakExport("Pause Roots JVMTIWeakExport");
 static const ZStatSubPhase ZSubPhasePauseRootsVMThread("Pause Roots VM Thread");
 static const ZStatSubPhase ZSubPhasePauseRootsJavaThreads("Pause Roots Java Threads");
@@ -193,7 +191,6 @@ ZRootsIterator::ZRootsIterator(bool visit_jvmti_weak_export) :
     _java_threads_iter(),
     _universe(this),
     _object_synchronizer(this),
-    _management(this),
     _jvmti_weak_export(this),
     _vm_thread(this),
     _java_threads(this),
@@ -230,11 +227,6 @@ void ZRootsIterator::do_object_synchronizer(ZRootsIteratorClosure* cl) {
   ObjectSynchronizer::oops_do(cl);
 }
 
-void ZRootsIterator::do_management(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseRootsManagement);
-  Management::oops_do(cl);
-}
-
 void ZRootsIterator::do_jvmti_weak_export(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRootsJVMTIWeakExport);
   AlwaysTrueClosure always_alive;
@@ -262,7 +254,6 @@ void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRoots);
   _universe.oops_do(cl);
   _object_synchronizer.oops_do(cl);
-  _management.oops_do(cl);
   _vm_thread.oops_do(cl);
   _java_threads.oops_do(cl);
   if (!ClassUnloading) {

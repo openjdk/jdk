@@ -67,7 +67,6 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
-#include "services/management.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -106,10 +105,6 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
         PSScavengeCLDClosure cld_closure(pm);
         ClassLoaderDataGraph::cld_do(&cld_closure);
       }
-      break;
-
-    case ParallelRootType::management:
-      Management::oops_do(&roots_closure);
       break;
 
     case ParallelRootType::code_cache:

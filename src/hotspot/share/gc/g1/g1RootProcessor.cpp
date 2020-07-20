@@ -45,7 +45,6 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
 #include "runtime/mutex.hpp"
-#include "services/management.hpp"
 #include "utilities/macros.hpp"
 
 G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, uint n_workers) :
@@ -193,13 +192,6 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ObjectSynchronizerRoots, worker_id);
     if (_process_strong_tasks.try_claim_task(G1RP_PS_ObjectSynchronizer_oops_do)) {
       ObjectSynchronizer::oops_do(strong_roots);
-    }
-  }
-
-  {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ManagementRoots, worker_id);
-    if (_process_strong_tasks.try_claim_task(G1RP_PS_Management_oops_do)) {
-      Management::oops_do(strong_roots);
     }
   }
 

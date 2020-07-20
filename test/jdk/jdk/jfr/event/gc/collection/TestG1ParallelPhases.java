@@ -93,7 +93,6 @@ public class TestG1ParallelPhases {
             "ThreadRoots",
             "UniverseRoots",
             "ObjectSynchronizerRoots",
-            "ManagementRoots",
             "VM Global",
             "JNI Global",
             "CLDGRoots",

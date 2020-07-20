@@ -38,7 +38,6 @@ class OldObjectRoot : public AllStatic {
     _strong_oop_storage_set_last = _strong_oop_storage_set_first + OopStorageSet::strong_count - 1,
     _object_synchronizer,
     _class_loader_data,
-    _management,
     _code_cache,
     _aot,
     JVMCI_ONLY(_jvmci COMMA)

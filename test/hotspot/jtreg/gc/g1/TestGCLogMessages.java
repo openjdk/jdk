@@ -123,7 +123,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Thread Roots", Level.TRACE),
         new LogMessageWithLevel("Universe Roots", Level.TRACE),
         new LogMessageWithLevel("ObjectSynchronizer Roots", Level.TRACE),
-        new LogMessageWithLevel("Management Roots", Level.TRACE),
         new LogMessageWithLevel("CLDG Roots", Level.TRACE),
         new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),
         new LogMessageWithLevel("JNI Global Roots", Level.TRACE),

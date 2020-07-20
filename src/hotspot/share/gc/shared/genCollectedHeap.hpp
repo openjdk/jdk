@@ -107,7 +107,6 @@ protected:
   enum GCH_strong_roots_tasks {
     GCH_PS_Universe_oops_do,
     GCH_PS_ObjectSynchronizer_oops_do,
-    GCH_PS_Management_oops_do,
     GCH_PS_OopStorageSet_oops_do,
     GCH_PS_ClassLoaderDataGraph_oops_do,
     GCH_PS_CodeCache_oops_do,

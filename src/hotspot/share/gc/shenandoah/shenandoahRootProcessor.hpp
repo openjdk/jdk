@@ -53,7 +53,6 @@ class ShenandoahSerialRoots {
 private:
   ShenandoahSerialRoot  _universe_root;
   ShenandoahSerialRoot  _object_synchronizer_root;
-  ShenandoahSerialRoot  _management_root;
 public:
   ShenandoahSerialRoots(ShenandoahPhaseTimings::Phase phase);
   void oops_do(OopClosure* cl, uint worker_id);

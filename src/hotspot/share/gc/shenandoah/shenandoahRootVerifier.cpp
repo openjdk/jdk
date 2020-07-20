@@ -39,7 +39,6 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "memory/universe.hpp"
 #include "runtime/thread.hpp"
-#include "services/management.hpp"
 #include "utilities/debug.hpp"
 
 // Check for overflow of number of root types.
@@ -77,7 +76,6 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
   if (verify(SerialRoots)) {
     shenandoah_assert_safepoint();
     Universe::oops_do(oops);
-    Management::oops_do(oops);
     ObjectSynchronizer::oops_do(oops);
   }
 
@@ -122,7 +120,6 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
   ClassLoaderDataGraph::cld_do(&clds);
 
   Universe::oops_do(oops);
-  Management::oops_do(oops);
   JNIHandles::oops_do(oops);
   ObjectSynchronizer::oops_do(oops);
   Universe::vm_global()->oops_do(oops);
@@ -149,7 +146,6 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   ClassLoaderDataGraph::roots_cld_do(&clds, NULL);
 
   Universe::oops_do(oops);
-  Management::oops_do(oops);
   JNIHandles::oops_do(oops);
   ObjectSynchronizer::oops_do(oops);
   Universe::vm_global()->oops_do(oops);

@@ -40,7 +40,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/thread.hpp"
-#include "services/management.hpp"
 
 ShenandoahSerialRoot::ShenandoahSerialRoot(ShenandoahSerialRoot::OopsDo oops_do,
   ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase) :
@@ -56,14 +55,12 @@ void ShenandoahSerialRoot::oops_do(OopClosure* cl, uint worker_id) {
 
 ShenandoahSerialRoots::ShenandoahSerialRoots(ShenandoahPhaseTimings::Phase phase) :
   _universe_root(&Universe::oops_do, phase, ShenandoahPhaseTimings::UniverseRoots),
-  _object_synchronizer_root(&ObjectSynchronizer::oops_do, phase, ShenandoahPhaseTimings::ObjectSynchronizerRoots),
-  _management_root(&Management::oops_do, phase, ShenandoahPhaseTimings::ManagementRoots) {
+  _object_synchronizer_root(&ObjectSynchronizer::oops_do, phase, ShenandoahPhaseTimings::ObjectSynchronizerRoots) {
 }
 
 void ShenandoahSerialRoots::oops_do(OopClosure* cl, uint worker_id) {
   _universe_root.oops_do(cl, worker_id);
   _object_synchronizer_root.oops_do(cl, worker_id);
-  _management_root.oops_do(cl, worker_id);
 }
 
 ShenandoahWeakSerialRoot::ShenandoahWeakSerialRoot(ShenandoahWeakSerialRoot::WeakOopsDo weak_oops_do,
