@@ -46,7 +46,6 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"

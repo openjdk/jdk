@@ -36,7 +36,6 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"

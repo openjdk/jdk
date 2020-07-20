@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"

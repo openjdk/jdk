@@ -26,8 +26,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/nmethod.hpp"
-#include "gc/shared/oopStorage.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
