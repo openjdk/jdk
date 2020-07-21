@@ -86,6 +86,7 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling) {
   args.version = JNI_VERSION_1_8;
   args.nOptions = num_jvm_options;
   args.options = options;
+  args.ignoreUnrecognized = JNI_FALSE;
 
   JavaVM* jvm;
   JNIEnv* env;
