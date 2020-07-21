@@ -174,8 +174,8 @@ void ShenandoahControlThread::run_service() {
     }
 
     // Blow all soft references on this cycle, if handling allocation failure,
-    // or we are requested to do so unconditionally.
-    if (alloc_failure_pending || ShenandoahAlwaysClearSoftRefs) {
+    // either implicit or explicit GC request,  or we are requested to do so unconditionally.
+    if (alloc_failure_pending || implicit_gc_requested || explicit_gc_requested || ShenandoahAlwaysClearSoftRefs) {
       heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
     }
 
