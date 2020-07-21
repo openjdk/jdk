@@ -620,6 +620,26 @@ bool os::supports_sse() {
 #endif // AMD64
 }
 
+juint os::cpu_microcode_revision() {
+  juint result = 0;
+  char data[2048] = {0}; // lines should fit in 2K buf
+  size_t len = sizeof(data);
+  FILE *fp = fopen("/proc/cpuinfo", "r");
+  if (fp) {
+    while (!feof(fp)) {
+      if (fgets(data, len, fp)) {
+        if (strstr(data, "microcode") != NULL) {
+          char* rev = strchr(data, ':');
+          if (rev != NULL) sscanf(rev + 1, "%x", &result);
+          break;
+        }
+      }
+    }
+    fclose(fp);
+  }
+  return result;
+}
+
 bool os::is_allocatable(size_t bytes) {
 #ifdef AMD64
   // unused on amd64?
