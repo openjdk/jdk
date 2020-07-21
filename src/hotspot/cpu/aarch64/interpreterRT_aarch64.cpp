@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,7 +346,7 @@ class SlowSignatureHandler
 
     if (_num_fp_args < Argument::n_float_register_parameters_c) {
       *_fp_args++ = from_obj;
-      *_fp_identifiers |= (1 << _num_fp_args); // mark as double
+      *_fp_identifiers |= (1ull << _num_fp_args); // mark as double
       _num_fp_args++;
     } else {
       *_to++ = from_obj;
@@ -382,7 +382,7 @@ JRT_ENTRY(address,
 
   // handle arguments
   SlowSignatureHandler ssh(m, (address)from, to);
-  ssh.iterate(UCONST64(-1));
+  ssh.iterate((uint64_t)CONST64(-1));
 
   // return result handler
   return Interpreter::result_handler(m->result_type());

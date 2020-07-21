@@ -63,7 +63,6 @@ public:
   static jlong ticks_to_ms(jlong ticks) NOT_MANAGEMENT_RETURN_(0L);
   static jlong timestamp() NOT_MANAGEMENT_RETURN_(0L);
 
-  static void  oops_do(OopClosure* f) NOT_MANAGEMENT_RETURN;
   static void* get_jmm_interface(int version);
   static void  get_optional_support(jmmOptionalSupport* support);
 

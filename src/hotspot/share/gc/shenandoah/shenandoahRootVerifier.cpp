@@ -39,7 +39,6 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "memory/universe.hpp"
 #include "runtime/thread.hpp"
-#include "services/management.hpp"
 #include "utilities/debug.hpp"
 
 // Check for overflow of number of root types.
@@ -77,15 +76,13 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
   if (verify(SerialRoots)) {
     shenandoah_assert_safepoint();
     Universe::oops_do(oops);
-    Management::oops_do(oops);
-    JvmtiExport::oops_do(oops);
     ObjectSynchronizer::oops_do(oops);
   }
 
   if (verify(JNIHandleRoots)) {
     shenandoah_assert_safepoint();
     JNIHandles::oops_do(oops);
-    OopStorageSet::vm_global()->oops_do(oops);
+    Universe::vm_global()->oops_do(oops);
   }
 
   if (verify(WeakRoots)) {
@@ -123,11 +120,9 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
   ClassLoaderDataGraph::cld_do(&clds);
 
   Universe::oops_do(oops);
-  Management::oops_do(oops);
-  JvmtiExport::oops_do(oops);
   JNIHandles::oops_do(oops);
   ObjectSynchronizer::oops_do(oops);
-  OopStorageSet::vm_global()->oops_do(oops);
+  Universe::vm_global()->oops_do(oops);
 
   AlwaysTrueClosure always_true;
   WeakProcessor::weak_oops_do(&always_true, oops);
@@ -151,11 +146,9 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   ClassLoaderDataGraph::roots_cld_do(&clds, NULL);
 
   Universe::oops_do(oops);
-  Management::oops_do(oops);
-  JvmtiExport::oops_do(oops);
   JNIHandles::oops_do(oops);
   ObjectSynchronizer::oops_do(oops);
-  OopStorageSet::vm_global()->oops_do(oops);
+  Universe::vm_global()->oops_do(oops);
 
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental

@@ -29,7 +29,7 @@
 
 enum G1YCType {
   Normal,
-  InitialMark,
+  ConcurrentStart,
   DuringMarkOrRebuild,
   Mixed,
   G1YCTypeEndSentinel
@@ -40,7 +40,7 @@ class G1YCTypeHelper {
   static const char* to_string(G1YCType type) {
     switch(type) {
       case Normal: return "Normal";
-      case InitialMark: return "Initial Mark";
+      case ConcurrentStart: return "Concurrent Start";
       case DuringMarkOrRebuild: return "During Mark";
       case Mixed: return "Mixed";
       default: ShouldNotReachHere(); return NULL;

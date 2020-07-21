@@ -31,7 +31,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm
  *      nsk.monitoring.RuntimeMXBean.RuntimeMXBean001.RuntimeMXBean001
  *      -testMode=directly

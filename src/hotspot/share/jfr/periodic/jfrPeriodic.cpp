@@ -54,6 +54,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
@@ -174,7 +175,13 @@ TRACE_REQUEST_FUNC(CPULoad) {
   double u = 0; // user time
   double s = 0; // kernel time
   double t = 0; // total time
-  int ret_val = JfrOSInterface::cpu_loads_process(&u, &s, &t);
+  int ret_val = OS_ERR;
+  {
+    // Can take some time on certain platforms, especially under heavy load.
+    // Transition to native to avoid unnecessary stalls for pending safepoint synchronizations.
+    ThreadToNativeFromVM transition((JavaThread*)Thread::current());
+    ret_val = JfrOSInterface::cpu_loads_process(&u, &s, &t);
+  }
   if (ret_val == OS_ERR) {
     log_debug(jfr, system)( "Unable to generate requestable event CPULoad");
     return;
@@ -248,7 +255,13 @@ TRACE_REQUEST_FUNC(SystemProcess) {
 
 TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
   double rate = 0.0;
-  int ret_val = JfrOSInterface::context_switch_rate(&rate);
+  int ret_val = OS_ERR;
+  {
+    // Can take some time on certain platforms, especially under heavy load.
+    // Transition to native to avoid unnecessary stalls for pending safepoint synchronizations.
+    ThreadToNativeFromVM transition((JavaThread*)Thread::current());
+    ret_val = JfrOSInterface::context_switch_rate(&rate);
+  }
   if (ret_val == OS_ERR) {
     log_debug(jfr, system)( "Unable to generate requestable event ThreadContextSwitchRate");
     return;

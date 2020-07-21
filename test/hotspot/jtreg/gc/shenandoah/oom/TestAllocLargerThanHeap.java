@@ -25,7 +25,7 @@
 /**
  * @test TestAllocLargerThanHeap
  * @summary Test that allocation of the object larger than heap fails predictably
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run driver TestAllocLargerThanHeap
  */

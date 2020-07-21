@@ -76,7 +76,7 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   bool in_progress()       { return _state == InProgress; }
 
   // Returns true from the moment a marking cycle is
-  // initiated (during the initial-mark pause when started() is set)
+  // initiated (during the concurrent start pause when started() is set)
   // to the moment when the cycle completes (just after the next
   // marking bitmap has been cleared and in_progress() is
   // cleared). While during_cycle() is true we will not start another cycle

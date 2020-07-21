@@ -27,7 +27,7 @@ package gc.stress.gcold;
  * @test TestGCOldWithShenandoah
  * @key stress randomness
  * @library / /test/lib
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
  *
  * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -55,7 +55,7 @@ package gc.stress.gcold;
  * @test TestGCOldWithShenandoah
  * @key stress randomness
  * @library / /test/lib
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
  *
  * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -106,7 +106,7 @@ package gc.stress.gcold;
  * @test TestGCOldWithShenandoah
  * @key stress randomness
  * @library / /test/lib
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
  *
  * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions

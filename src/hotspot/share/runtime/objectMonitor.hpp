@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
+#include "metaprogramming/isRegisteredEnum.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
@@ -175,7 +176,7 @@ class ObjectMonitor {
   jint  _contentions;               // Number of active contentions in enter(). It is used by is_busy()
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
-                                    // ObjectSynchronizer::deflate_monitor() and deflate_monitor_using_JT().
+                                    // ObjectSynchronizer::deflate_monitor_using_JT().
  protected:
   ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
   volatile jint  _waiters;          // number of waiting threads
@@ -243,15 +244,11 @@ class ObjectMonitor {
   intptr_t is_busy() const {
     // TODO-FIXME: assert _owner == null implies _recursions = 0
     intptr_t ret_code = _waiters | intptr_t(_cxq) | intptr_t(_EntryList);
-    if (!AsyncDeflateIdleMonitors) {
-      ret_code |= contentions() | intptr_t(_owner);
-    } else {
-      if (contentions() > 0) {
-        ret_code |= contentions();
-      }
-      if (_owner != DEFLATER_MARKER) {
-        ret_code |= intptr_t(_owner);
-      }
+    if (contentions() > 0) {
+      ret_code |= contentions();
+    }
+    if (_owner != DEFLATER_MARKER) {
+      ret_code |= intptr_t(_owner);
     }
     return ret_code;
   }
@@ -277,9 +274,14 @@ class ObjectMonitor {
   // _owner field. Returns the prior value of the _owner field.
   void*     try_set_owner_from(void* old_value, void* new_value);
 
+  // Simply get _next_om field.
   ObjectMonitor* next_om() const;
+  // Get _next_om field with acquire semantics.
+  ObjectMonitor* next_om_acquire() const;
   // Simply set _next_om field to new_value.
   void set_next_om(ObjectMonitor* new_value);
+  // Set _next_om field to new_value with release semantics.
+  void release_set_next_om(ObjectMonitor* new_value);
   // Try to set _next_om field to new_value if the current value matches
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _next_om field. Returns the prior value of the _next_om field.
@@ -315,9 +317,9 @@ class ObjectMonitor {
     // _recursions == 0 _WaitSet == NULL
 #ifdef ASSERT
     stringStream ss;
-#endif
     assert((is_busy() | _recursions) == 0, "freeing in-use monitor: %s, "
            "recursions=" INTX_FORMAT, is_busy_to_string(&ss), _recursions);
+#endif
     _succ          = NULL;
     _EntryList     = NULL;
     _cxq           = NULL;
@@ -330,8 +332,10 @@ class ObjectMonitor {
   void*     object() const;
   void*     object_addr();
   void      set_object(void* obj);
+  void      release_set_allocation_state(AllocationState s);
   void      set_allocation_state(AllocationState s);
   AllocationState allocation_state() const;
+  AllocationState allocation_state_acquire() const;
   bool      is_free() const;
   bool      is_old() const;
   bool      is_new() const;
@@ -374,15 +378,7 @@ class ObjectMonitor {
   void      install_displaced_markword_in_object(const oop obj);
 };
 
-// Macro to use guarantee() for more strict AsyncDeflateIdleMonitors
-// checks and assert() otherwise.
-#define ADIM_guarantee(p, ...)       \
-  do {                               \
-    if (AsyncDeflateIdleMonitors) {  \
-      guarantee(p, __VA_ARGS__);     \
-    } else {                         \
-      assert(p, __VA_ARGS__);        \
-    }                                \
-  } while (0)
+// Register for atomic operations.
+template<> struct IsRegisteredEnum<ObjectMonitor::AllocationState> : public TrueType {};
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP

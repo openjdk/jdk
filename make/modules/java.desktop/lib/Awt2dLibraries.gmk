@@ -277,6 +277,13 @@ else
   BUILD_LIBLCMS_INCLUDE_FILES :=
 endif
 
+ifeq ($(TOOLCHAIN_TYPE), clang)
+ ifeq ($(TOOLCHAIN_VERSION), 10.1)
+   # Work around an optimizer bug seen with Xcode 10.1, but fixed by 10.3
+   BUILD_LIBLCMS_cmsopt.c_CFLAGS := -O0
+ endif
+endif
+
 $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     NAME := lcms, \
     INCLUDE_FILES := $(BUILD_LIBLCMS_INCLUDE_FILES), \

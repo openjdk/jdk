@@ -368,7 +368,7 @@
       description="Mutator allocation during mutator operation in the most recent interval" />
     <Field type="long" contentType="millis" name="recentMutatorDuration" label="Recent Mutator Duration" description="Time the mutator ran in the most recent interval" />
     <Field type="double" contentType="bytes-per-second" name="recentAllocationRate" label="Recent Allocation Rate" description="Allocation rate of the mutator in the most recent interval in bytes/second" />
-    <Field type="long" contentType="millis" name="lastMarkingDuration" label="Last Marking Duration" description="Last time from the end of the last initial mark to the first mixed GC" />
+    <Field type="long" contentType="millis" name="lastMarkingDuration" label="Last Marking Duration" description="Last time from the end of the last concurrent start to the first mixed GC" />
   </Event>
 
   <Event name="G1AdaptiveIHOP" category="Java Virtual Machine, GC, Detailed" label="G1 Adaptive IHOP Statistics" startTime="false"
@@ -381,7 +381,7 @@
     <Field type="ulong" contentType="bytes" name="additionalBufferSize" label="Additional Buffer" description="Additional buffer size" experimental="true" />
     <Field type="double" contentType="bytes-per-second" name="predictedAllocationRate" label="Predicted Allocation Rate" description="Current predicted allocation rate for the mutator in bytes/second" />
     <Field type="long" contentType="millis" name="predictedMarkingDuration" label="Predicted Marking Duration"
-      description="Current predicted time from the end of the last initial mark to the first mixed GC" />
+      description="Current predicted time from the end of the last concurrent start to the first mixed GC" />
     <Field type="boolean" name="predictionActive" label="Prediction Active" description="Indicates whether the adaptive IHOP prediction is active" />
   </Event>
 

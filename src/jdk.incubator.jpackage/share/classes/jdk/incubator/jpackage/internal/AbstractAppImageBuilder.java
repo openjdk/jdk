@@ -25,7 +25,6 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -79,7 +78,7 @@ public abstract class AbstractAppImageBuilder {
     }
 
     public static OverridableResource createIconResource(String defaultIconName,
-            BundlerParamInfo<File> iconParam, Map<String, ? super Object> params,
+            BundlerParamInfo<Path> iconParam, Map<String, ? super Object> params,
             Map<String, ? super Object> mainParams) throws IOException {
 
         if (mainParams != null) {
@@ -119,12 +118,12 @@ public abstract class AbstractAppImageBuilder {
     private enum IconType { DefaultOrResourceDirIcon, CustomIcon, NoIcon };
 
     private static IconType getLauncherIconType(Map<String, ? super Object> params) {
-        File launcherIcon = ICON.fetchFrom(params);
+        Path launcherIcon = ICON.fetchFrom(params);
         if (launcherIcon == null) {
             return IconType.DefaultOrResourceDirIcon;
         }
 
-        if (launcherIcon.getName().isEmpty()) {
+        if (launcherIcon.toFile().getName().isEmpty()) {
             return IconType.NoIcon;
         }
 

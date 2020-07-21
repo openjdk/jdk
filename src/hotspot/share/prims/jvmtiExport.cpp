@@ -39,6 +39,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiCodeBlobEvents.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
@@ -1065,7 +1066,7 @@ class JvmtiObjectAllocEventMark : public JvmtiClassEventMark  {
  public:
    JvmtiObjectAllocEventMark(JavaThread *thread, oop obj) : JvmtiClassEventMark(thread, oop_to_klass(obj)) {
      _jobj = (jobject)to_jobject(obj);
-     _size = Universe::heap()->obj_size(obj) * wordSize;
+     _size = obj->size() * wordSize;
    };
    jobject jni_jobject() { return _jobj; }
    jlong size() { return _size; }
@@ -2599,10 +2600,6 @@ void JvmtiExport::clear_detected_exception(JavaThread* thread) {
   }
 }
 
-void JvmtiExport::oops_do(OopClosure* f) {
-  JvmtiObjectAllocEventCollector::oops_do_for_all_threads(f);
-}
-
 void JvmtiExport::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
   JvmtiTagMap::weak_oops_do(is_alive, f);
 }
@@ -2828,8 +2825,11 @@ void JvmtiObjectAllocEventCollector::generate_call_for_allocated() {
   if (_allocated) {
     set_enabled(false);
     for (int i = 0; i < _allocated->length(); i++) {
-      oop obj = _allocated->at(i);
+      oop obj = _allocated->at(i).resolve();
       _post_callback(JavaThread::current(), obj);
+      // Release OopHandle
+      _allocated->at(i).release(Universe::vm_global());
+
     }
     delete _allocated, _allocated = NULL;
   }
@@ -2838,47 +2838,10 @@ void JvmtiObjectAllocEventCollector::generate_call_for_allocated() {
 void JvmtiObjectAllocEventCollector::record_allocation(oop obj) {
   assert(is_enabled(), "Object alloc event collector is not enabled");
   if (_allocated == NULL) {
-    _allocated = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(1, mtServiceability);
+    _allocated = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<OopHandle>(1, mtServiceability);
   }
-  _allocated->push(obj);
+  _allocated->push(OopHandle(Universe::vm_global(), obj));
 }
-
-// GC support.
-void JvmtiObjectAllocEventCollector::oops_do(OopClosure* f) {
-  if (_allocated) {
-    for(int i = _allocated->length() - 1; i >= 0; i--) {
-      if (_allocated->at(i) != NULL) {
-        f->do_oop(_allocated->adr_at(i));
-      }
-    }
-  }
-}
-
-void JvmtiObjectAllocEventCollector::oops_do_for_all_threads(OopClosure* f) {
-  // no-op if jvmti not enabled
-  if (!JvmtiEnv::environments_might_exist()) {
-    return;
-  }
-
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jthr = jtiwh.next(); ) {
-    JvmtiThreadState *state = jthr->jvmti_thread_state();
-    if (state != NULL) {
-      JvmtiObjectAllocEventCollector *collector;
-      collector = state->get_vm_object_alloc_event_collector();
-      while (collector != NULL) {
-        collector->oops_do(f);
-        collector = (JvmtiObjectAllocEventCollector*) collector->get_prev();
-      }
-
-      collector = state->get_sampled_object_alloc_event_collector();
-      while (collector != NULL) {
-        collector->oops_do(f);
-        collector = (JvmtiObjectAllocEventCollector*) collector->get_prev();
-      }
-    }
-  }
-}
-
 
 // Disable collection of VMObjectAlloc events
 NoJvmtiVMObjectAllocMark::NoJvmtiVMObjectAllocMark() : _collector(NULL) {

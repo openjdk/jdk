@@ -31,7 +31,7 @@ import java.sql.*;
  * A factory for {@code XAConnection} objects that is used internally.
  * An object that implements the {@code XADataSource} interface is
  * typically registered with a naming service that uses the
- * Java Naming and Directory Interface&trade;
+ * Java Naming and Directory Interface
  * (JNDI).
  *  <p>
  * An implementation of {@code XADataSource} must include a public no-arg

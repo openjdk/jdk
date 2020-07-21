@@ -63,13 +63,12 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/management.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/autoRestore.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
@@ -566,7 +565,7 @@ void GenCollectedHeap::do_collection(bool           full,
 
   ClearedAllSoftRefs casr(do_clear_all_soft_refs, soft_ref_policy());
 
-  FlagSetting fl(_is_gc_active, true);
+  AutoModifyRestore<bool> temporarily(_is_gc_active, true);
 
   bool complete = full && (max_generation == OldGen);
   bool old_collects_young = complete && !ScavengeBeforeFullGC;
@@ -828,12 +827,6 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
 
   if (_process_strong_tasks->try_claim_task(GCH_PS_ObjectSynchronizer_oops_do)) {
     ObjectSynchronizer::oops_do(strong_roots);
-  }
-  if (_process_strong_tasks->try_claim_task(GCH_PS_Management_oops_do)) {
-    Management::oops_do(strong_roots);
-  }
-  if (_process_strong_tasks->try_claim_task(GCH_PS_jvmti_oops_do)) {
-    JvmtiExport::oops_do(strong_roots);
   }
 #if INCLUDE_AOT
   if (UseAOT && _process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {

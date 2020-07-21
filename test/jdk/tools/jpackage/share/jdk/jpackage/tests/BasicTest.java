@@ -245,11 +245,24 @@ public final class BasicTest {
      * @throws IOException
      */
     @Test
-    public void testTemp() throws IOException {
-        final Path tempRoot = TKit.createTempDirectory("temp-root");
-
+    @Parameter("true")
+    @Parameter("false")
+    public void testTemp(boolean withExistingTempDir) throws IOException {
+        final Path tempRoot = TKit.createTempDirectory("tmp");
+        // This Test has problems on windows where path in the temp dir are too long
+        // for the wix tools.  We can't use a tempDir outside the TKit's WorkDir, so
+        // we minimize both the tempRoot directory name (above) and the tempDir name
+        // (below) to the extension part (which is necessary to differenciate between
+        // the multiple PackageTypes that will be run for one JPackageCommand).
+        // It might be beter if the whole work dir name was shortened from:
+        // jtreg_open_test_jdk_tools_jpackage_share_jdk_jpackage_tests_BasicTest_java.
         Function<JPackageCommand, Path> getTempDir = cmd -> {
-            return tempRoot.resolve(cmd.outputBundle().getFileName());
+            String ext = cmd.outputBundle().getFileName().toString();
+            int i = ext.lastIndexOf(".");
+            if (i > 0 && i < (ext.length() - 1)) {
+                ext = ext.substring(i+1);
+            }
+            return tempRoot.resolve(ext);
         };
 
         Supplier<PackageTest> createTest = () -> {
@@ -259,7 +272,11 @@ public final class BasicTest {
             .addInitializer(JPackageCommand::setDefaultInputOutput)
             .addInitializer(cmd -> {
                 Path tempDir = getTempDir.apply(cmd);
-                Files.createDirectories(tempDir);
+                if (withExistingTempDir) {
+                    Files.createDirectories(tempDir);
+                } else {
+                    Files.createDirectories(tempDir.getParent());
+                }
                 cmd.addArguments("--temp", tempDir);
             });
         };

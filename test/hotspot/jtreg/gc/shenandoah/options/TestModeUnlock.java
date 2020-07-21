@@ -25,7 +25,7 @@
 /*
  * @test TestModeUnlock
  * @summary Test that Shenandoah modes are unlocked properly
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

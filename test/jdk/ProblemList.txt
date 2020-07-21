@@ -559,6 +559,12 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 ############################################################################
 
+# jdk_foreign
+
+java/foreign/TestMismatch.java 8249684 macosx-all
+
+############################################################################
+
 # jdk_lang
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
@@ -576,7 +582,6 @@ java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 
 javax/management/monitor/DerivedGaugeMonitorTest.java         8042211 generic-all
-javax/management/remote/mandatory/connection/MultiThreadDeadLockTest.java 8227337 generic-all
 
 ############################################################################
 
@@ -879,8 +884,6 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # jdk_util
 
-java/util/ServiceLoader/ReloadTest.java                     8242935 generic-all
-
 ############################################################################
 
 # jdk_instrument
@@ -921,5 +924,6 @@ jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-
 # jdk_jpackage
 
 tools/jpackage/share/jdk/jpackage/tests/ModulePathTest3.java#id0    8248418 generic-all
+tools/jpackage/share/EmptyFolderPackageTest.java                    8249201 macosx-all
 
 ############################################################################

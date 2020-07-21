@@ -24,20 +24,20 @@
 package gc.g1;
 
 /*
- * @test TestHumongousAllocInitialMark
+ * @test TestHumongousAllocConcurrentStart
  * @bug 7168848
  * @summary G1: humongous object allocations should initiate marking cycles when necessary
  * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver gc.g1.TestHumongousAllocInitialMark
+ * @run driver gc.g1.TestHumongousAllocConcurrentStart
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class TestHumongousAllocInitialMark {
+public class TestHumongousAllocConcurrentStart {
     // Heap sizes < 224 MB are increased to 224 MB if vm_page_size == 64K to
     // fulfill alignment constraints.
     private static final int heapSize                       = 224; // MB

@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2017, 2019 SAP SE. All rights reserved.
+// Copyright (c) 2017, 2020 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -9047,6 +9047,17 @@ instruct absI_reg(iRegI dst, iRegI src, flagsReg cr) %{
   format %{ "LPR     $dst, $src" %}
   opcode(LPR_ZOPC);
   ins_encode(z_rrform(dst, src));
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct absL_reg(iRegL dst, iRegL src, flagsReg cr) %{
+  match(Set dst (AbsL src));
+  effect(KILL cr);
+  ins_cost(DEFAULT_COST_LOW);
+  // TODO: s390 port size(FIXED_SIZE);
+  format %{ "LPGR     $dst, $src" %}
+  opcode(LPGR_ZOPC);
+  ins_encode(z_rreform(dst, src));
   ins_pipe(pipe_class_dummy);
 %}
 

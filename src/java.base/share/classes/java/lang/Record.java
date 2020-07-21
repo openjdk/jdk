@@ -38,10 +38,10 @@ package java.lang;
  * <p>More information about records, including descriptions of the
  * implicitly declared methods synthesized by the compiler, can be
  * found in section 8.10 of
- * <cite>The Java&trade; Language Specification</cite>.
+ * <cite>The Java Language Specification</cite>.
  *
  * <p>A <em>record class</em> is a shallowly immutable, transparent carrier for
- * a fixed set of values, called the <em>record components</em>.  The Java&trade;
+ * a fixed set of values, called the <em>record components</em>.  The Java
  * language provides concise syntax for declaring record classes, whereby the
  * record components are declared in the record header.  The list of record
  * components declared in the record header form the <em>record descriptor</em>.

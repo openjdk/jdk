@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_THREAD_HPP
 
 #include "jni.h"
-#include "code/compiledMethod.hpp"
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
@@ -68,6 +67,7 @@ class ParkEvent;
 class Parker;
 class MonitorInfo;
 
+class AbstractCompiler;
 class ciEnv;
 class CompileThread;
 class CompileLog;
@@ -2339,5 +2339,19 @@ class SignalHandlerMark: public StackObj {
   }
 };
 
+class UnlockFlagSaver {
+  private:
+    JavaThread* _thread;
+    bool _do_not_unlock;
+  public:
+    UnlockFlagSaver(JavaThread* t) {
+      _thread = t;
+      _do_not_unlock = t->do_not_unlock_if_synchronized();
+      t->set_do_not_unlock_if_synchronized(false);
+    }
+    ~UnlockFlagSaver() {
+      _thread->set_do_not_unlock_if_synchronized(_do_not_unlock);
+    }
+};
 
 #endif // SHARE_RUNTIME_THREAD_HPP

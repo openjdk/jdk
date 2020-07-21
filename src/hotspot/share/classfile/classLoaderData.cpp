@@ -55,12 +55,12 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -488,7 +488,7 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
 void ClassLoaderData::initialize_holder(Handle loader_or_mirror) {
   if (loader_or_mirror() != NULL) {
     assert(_holder.is_null(), "never replace holders");
-    _holder = WeakHandle(OopStorageSet::vm_weak(), loader_or_mirror);
+    _holder = WeakHandle(Universe::vm_weak(), loader_or_mirror);
   }
 }
 
@@ -655,7 +655,7 @@ ClassLoaderData::~ClassLoaderData() {
   ClassLoaderDataGraph::dec_instance_classes(cl.instance_class_released());
 
   // Release the WeakHandle
-  _holder.release(OopStorageSet::vm_weak());
+  _holder.release(Universe::vm_weak());
 
   // Release C heap allocated hashtable for all the packages.
   if (_packages != NULL) {

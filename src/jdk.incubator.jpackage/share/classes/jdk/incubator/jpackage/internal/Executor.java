@@ -25,10 +25,10 @@
 package jdk.incubator.jpackage.internal;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -82,12 +82,12 @@ final public class Executor {
         output = null;
 
         boolean needProcessOutput = outputConsumer != null || Log.isVerbose() || saveOutput;
-        File outputFile = null;
+        Path outputFile = null;
         if (needProcessOutput) {
             pb.redirectErrorStream(true);
             if (writeOutputToFile) {
-                outputFile = File.createTempFile("jpackageOutputTempFile", ".tmp");
-                pb.redirectOutput(outputFile);
+                outputFile = Files.createTempFile("jpackageOutputTempFile", ".tmp");
+                pb.redirectOutput(outputFile.toFile());
             }
         } else {
             // We are not going to read process output, so need to notify
@@ -115,8 +115,8 @@ final public class Executor {
             Supplier<Stream<String>> outputStream;
 
             if (writeOutputToFile) {
-                savedOutput = Files.readAllLines(outputFile.toPath());
-                outputFile.delete();
+                savedOutput = Files.readAllLines(outputFile);
+                Files.delete(outputFile);
                 outputStream = () -> {
                     if (savedOutput != null) {
                         return savedOutput.stream();

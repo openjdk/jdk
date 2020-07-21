@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,7 @@ JNIEXPORT void checkInfo(JNIEnv *env, int ind) {
         printf("Failed to get all threads (check): %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     for (i = 0; i < threadsCount; i++) {
@@ -205,6 +206,7 @@ JNIEXPORT void checkInfo(JNIEnv *env, int ind) {
         printf("Point %d: number of threads expected: %d, got: %d\n",
             ind, thrInfo[ind].cnt + sys_cnt, threadsCount - num_unexpected);
         result = STATUS_FAILED;
+        return;
     }
 
     for (i = 0; i < thrInfo[ind].cnt; i++) {
@@ -214,6 +216,7 @@ JNIEXPORT void checkInfo(JNIEnv *env, int ind) {
                 printf("Failed to get thread info: %s (%d)\n",
                        TranslateError(err), err);
                 result = STATUS_FAILED;
+                return;
             }
             if (printdump == JNI_TRUE) {
                 printf(" >>> %s", inf.name);
@@ -273,6 +276,7 @@ JNIEXPORT void JNICALL Java_nsk_jvmti_GetAllThreads_allthr001_setSysCnt(JNIEnv *
         printf("Failed to get all threads (count): %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     sys_cnt = threadsCount - 1;

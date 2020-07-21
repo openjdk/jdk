@@ -73,7 +73,7 @@ class MemoryPool : public CHeapObj<mtInternal> {
   SensorInfo*      _usage_sensor;
   SensorInfo*      _gc_usage_sensor;
 
-  volatile instanceOop _memory_pool_obj;
+  volatile OopHandle _memory_pool_obj;
 
   void add_manager(MemoryManager* mgr);
 
@@ -136,9 +136,6 @@ class MemoryPool : public CHeapObj<mtInternal> {
   virtual size_t      used_in_bytes() = 0;
   virtual bool        is_collected_pool()         { return false; }
   virtual MemoryUsage get_last_collection_usage() { return _after_gc_usage; }
-
-  // GC support
-  void oops_do(OopClosure* f);
 };
 
 class CollectedMemoryPool : public MemoryPool {

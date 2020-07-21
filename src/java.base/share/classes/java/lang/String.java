@@ -90,7 +90,7 @@ import static java.util.function.Predicate.not;
  * The Java language provides special support for the string
  * concatenation operator (&nbsp;+&nbsp;), and for conversion of
  * other objects to strings. For additional information on string
- * concatenation and conversion, see <i>The Java&trade; Language Specification</i>.
+ * concatenation and conversion, see <i>The Java Language Specification</i>.
  *
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
@@ -113,7 +113,7 @@ import static java.util.function.Predicate.not;
  *
  * @implNote The implementation of the string concatenation operator is left to
  * the discretion of a Java compiler, as long as the compiler ultimately conforms
- * to <i>The Java&trade; Language Specification</i>. For example, the {@code javac} compiler
+ * to <i>The Java Language Specification</i>. For example, the {@code javac} compiler
  * may implement the operator with {@code StringBuffer}, {@code StringBuilder},
  * or {@code java.lang.invoke.StringConcatFactory} depending on the JDK version. The
  * implementation of string conversion is typically through the method {@code toString},
@@ -3269,7 +3269,7 @@ public final class String
      *         extra arguments are ignored.  The number of arguments is
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         <cite>The Java Virtual Machine Specification</cite>.
      *         The behaviour on a
      *         {@code null} argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
@@ -3310,7 +3310,7 @@ public final class String
      *         extra arguments are ignored.  The number of arguments is
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         <cite>The Java Virtual Machine Specification</cite>.
      *         The behaviour on a
      *         {@code null} argument depends on the
      *         <a href="../util/Formatter.html#syntax">conversion</a>.
@@ -3533,12 +3533,11 @@ public final class String
      * if and only if {@code s.equals(t)} is {@code true}.
      * <p>
      * All literal strings and string-valued constant expressions are
-     * interned. String literals are defined in section 3.10.5 of the
-     * <cite>The Java&trade; Language Specification</cite>.
+     * interned. String literals are defined in section {@jls 3.10.5} of the
+     * <cite>The Java Language Specification</cite>.
      *
      * @return  a string that has the same contents as this string, but is
      *          guaranteed to be from a pool of unique strings.
-     * @jls 3.10.5 String Literals
      */
     public native String intern();
 

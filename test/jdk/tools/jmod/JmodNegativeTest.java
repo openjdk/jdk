@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,6 +504,34 @@ public class JmodNegativeTest {
                 .resultChecker(r -> {
                     assertContains(r.output, errMsg);
                 });
+    }
+
+    @Test
+    public void testNoMatchingHashModule() throws IOException {
+        Path lib = Paths.get("hashes");
+        Files.createDirectories(lib);
+        // create jmod file with no module depending on it
+        Path jmod = lib.resolve("foo.jmod");
+        jmod("create",
+             "--class-path", EXPLODED_DIR.resolve("foo").resolve("classes").toString(),
+             jmod.toString());
+
+        // jmod hash command should report no module found to record hashes
+        jmod("hash",
+             "--module-path", lib.toString(),
+             "--hash-modules", ".*",
+             jmod.toString())
+             .resultChecker(r ->
+                     assertContains(r.output, "No hashes recorded: " +
+                             "no module matching \".*\" found to record hashes")
+             );
+        jmod("hash",
+             "--module-path", lib.toString(),
+             "--hash-modules", "foo")
+             .resultChecker(r ->
+                     assertContains(r.output, "No hashes recorded: " +
+                             "no module matching \"foo\" found to record hashes")
+             );
     }
 
     // ---

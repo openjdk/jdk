@@ -58,10 +58,6 @@ const char* OldObjectRoot::system_description(System system) {
       return "Object Monitor";
     case _class_loader_data:
       return "Class Loader Data";
-    case _management:
-      return "Management";
-    case _jvmti:
-      return "JVMTI";
     case _code_cache:
       return "Code Cache";
     case _aot:

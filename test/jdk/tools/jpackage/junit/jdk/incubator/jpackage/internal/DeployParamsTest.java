@@ -22,7 +22,7 @@
  */
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.io.IOException;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -45,7 +45,7 @@ public class DeployParamsTest {
 
     @Before
     public void setUp() throws IOException {
-        testRoot = tempFolder.newFolder();
+        testRoot = tempFolder.newFolder().toPath();
     }
 
     @Test
@@ -131,6 +131,6 @@ public class DeployParamsTest {
         params.validate();
     }
 
-    private File testRoot = null;
+    private Path testRoot = null;
     private DeployParams params;
 }

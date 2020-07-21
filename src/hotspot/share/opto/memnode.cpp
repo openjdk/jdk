@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -532,11 +532,24 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
 Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const {
   if (mem->is_Proj() && mem->in(0) != NULL && (mem->in(0)->Opcode() == Op_MemBarStoreStore ||
                                                mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
-    Node* mb = mem->in(0);
-    if (mb->in(0) != NULL && mb->in(0)->is_Proj() &&
-        mb->in(0)->in(0) != NULL && mb->in(0)->in(0)->is_ArrayCopy()) {
-      ArrayCopyNode* ac = mb->in(0)->in(0)->as_ArrayCopy();
-      if (ac->is_clonebasic()) {
+    if (ld_alloc != NULL) {
+      // Check if there is an array copy for a clone
+      Node* mb = mem->in(0);
+      ArrayCopyNode* ac = NULL;
+      if (mb->in(0) != NULL && mb->in(0)->is_Proj() &&
+          mb->in(0)->in(0) != NULL && mb->in(0)->in(0)->is_ArrayCopy()) {
+        ac = mb->in(0)->in(0)->as_ArrayCopy();
+      } else {
+        // Step over GC barrier when ReduceInitialCardMarks is disabled
+        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+        Node* control_proj_ac = bs->step_over_gc_barrier(mb->in(0));
+
+        if (control_proj_ac->is_Proj() && control_proj_ac->in(0)->is_ArrayCopy()) {
+          ac = control_proj_ac->in(0)->as_ArrayCopy();
+        }
+      }
+
+      if (ac != NULL && ac->is_clonebasic()) {
         AllocateNode* alloc = AllocateNode::Ideal_allocation(ac->in(ArrayCopyNode::Dest), phase);
         if (alloc != NULL && alloc == ld_alloc) {
           return ac;
@@ -4600,24 +4613,6 @@ Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       new_mem = old_mmem->memory_at(i);
     }
     // else preceding memory was not a MergeMem
-
-    // replace equivalent phis (unfortunately, they do not GVN together)
-    if (new_mem != NULL && new_mem != new_base &&
-        new_mem->req() == phi_len && new_mem->in(0) == phi_reg) {
-      if (new_mem->is_Phi()) {
-        PhiNode* phi_mem = new_mem->as_Phi();
-        for (uint i = 1; i < phi_len; i++) {
-          if (phi_base->in(i) != phi_mem->in(i)) {
-            phi_mem = NULL;
-            break;
-          }
-        }
-        if (phi_mem != NULL) {
-          // equivalent phi nodes; revert to the def
-          new_mem = new_base;
-        }
-      }
-    }
 
     // maybe store down a new value
     Node* new_in = new_mem;

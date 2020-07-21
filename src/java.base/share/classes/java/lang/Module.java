@@ -85,7 +85,7 @@ import sun.security.util.SecurityConstants;
  *
  * <p> The package names that are parameters or returned by methods defined in
  * this class are the fully-qualified names of the packages as defined in
- * section 6.5.3 of <cite>The Java&trade; Language Specification</cite>, for
+ * section {@jls 6.5.3} of <cite>The Java Language Specification</cite>, for
  * example, {@code "java.lang"}. </p>
  *
  * <p> Unless otherwise specified, passing a {@code null} argument to a method
@@ -672,7 +672,7 @@ public final class Module implements AnnotatedElement {
      * <p> This method has no effect if the package is already exported (or
      * <em>open</em>) to the given module. </p>
      *
-     * @apiNote As specified in section 5.4.3 of the <cite>The Java&trade;
+     * @apiNote As specified in section {@jvms 5.4.3} of the <cite>The Java
      * Virtual Machine Specification </cite>, if an attempt to resolve a
      * symbolic reference fails because of a linkage error, then subsequent
      * attempts to resolve the reference always fail with the same error that

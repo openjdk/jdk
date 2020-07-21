@@ -95,13 +95,13 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
+#include "utilities/autoRestore.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
@@ -1143,77 +1143,15 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
 void G1CollectedHeap::resize_heap_if_necessary() {
   assert_at_safepoint_on_vm_thread();
 
-  // Capacity, free and used after the GC counted as full regions to
-  // include the waste in the following calculations.
-  const size_t capacity_after_gc = capacity();
-  const size_t used_after_gc = capacity_after_gc - unused_committed_regions_in_bytes();
+  bool should_expand;
+  size_t resize_amount = _heap_sizing_policy->full_collection_resize_amount(should_expand);
 
-  // This is enforced in arguments.cpp.
-  assert(MinHeapFreeRatio <= MaxHeapFreeRatio,
-         "otherwise the code below doesn't make sense");
-
-  // We don't have floating point command-line arguments
-  const double minimum_free_percentage = (double) MinHeapFreeRatio / 100.0;
-  const double maximum_used_percentage = 1.0 - minimum_free_percentage;
-  const double maximum_free_percentage = (double) MaxHeapFreeRatio / 100.0;
-  const double minimum_used_percentage = 1.0 - maximum_free_percentage;
-
-  // We have to be careful here as these two calculations can overflow
-  // 32-bit size_t's.
-  double used_after_gc_d = (double) used_after_gc;
-  double minimum_desired_capacity_d = used_after_gc_d / maximum_used_percentage;
-  double maximum_desired_capacity_d = used_after_gc_d / minimum_used_percentage;
-
-  // Let's make sure that they are both under the max heap size, which
-  // by default will make them fit into a size_t.
-  double desired_capacity_upper_bound = (double) MaxHeapSize;
-  minimum_desired_capacity_d = MIN2(minimum_desired_capacity_d,
-                                    desired_capacity_upper_bound);
-  maximum_desired_capacity_d = MIN2(maximum_desired_capacity_d,
-                                    desired_capacity_upper_bound);
-
-  // We can now safely turn them into size_t's.
-  size_t minimum_desired_capacity = (size_t) minimum_desired_capacity_d;
-  size_t maximum_desired_capacity = (size_t) maximum_desired_capacity_d;
-
-  // This assert only makes sense here, before we adjust them
-  // with respect to the min and max heap size.
-  assert(minimum_desired_capacity <= maximum_desired_capacity,
-         "minimum_desired_capacity = " SIZE_FORMAT ", "
-         "maximum_desired_capacity = " SIZE_FORMAT,
-         minimum_desired_capacity, maximum_desired_capacity);
-
-  // Should not be greater than the heap max size. No need to adjust
-  // it with respect to the heap min size as it's a lower bound (i.e.,
-  // we'll try to make the capacity larger than it, not smaller).
-  minimum_desired_capacity = MIN2(minimum_desired_capacity, MaxHeapSize);
-  // Should not be less than the heap min size. No need to adjust it
-  // with respect to the heap max size as it's an upper bound (i.e.,
-  // we'll try to make the capacity smaller than it, not greater).
-  maximum_desired_capacity =  MAX2(maximum_desired_capacity, MinHeapSize);
-
-  if (capacity_after_gc < minimum_desired_capacity) {
-    // Don't expand unless it's significant
-    size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
-
-    log_debug(gc, ergo, heap)("Attempt heap expansion (capacity lower than min desired capacity). "
-                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
-                              "min_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
-                              capacity_after_gc, used_after_gc, used(), minimum_desired_capacity, MinHeapFreeRatio);
-
-    expand(expand_bytes, _workers);
-
-    // No expansion, now see if we want to shrink
-  } else if (capacity_after_gc > maximum_desired_capacity) {
-    // Capacity too large, compute shrinking size
-    size_t shrink_bytes = capacity_after_gc - maximum_desired_capacity;
-
-    log_debug(gc, ergo, heap)("Attempt heap shrinking (capacity higher than max desired capacity). "
-                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
-                              "maximum_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
-                              capacity_after_gc, used_after_gc, used(), maximum_desired_capacity, MaxHeapFreeRatio);
-
-    shrink(shrink_bytes);
+  if (resize_amount == 0) {
+    return;
+  } else if (should_expand) {
+    expand(resize_amount, _workers);
+  } else {
+    shrink(resize_amount);
   }
 }
 
@@ -1868,7 +1806,7 @@ void G1CollectedHeap::ref_processing_init() {
   //   the regions in the collection set may be dotted around.
   //
   // * For the concurrent marking ref processor:
-  //   * Reference discovery is enabled at initial marking.
+  //   * Reference discovery is enabled at concurrent start.
   //   * Reference discovery is disabled and the discovered
   //     references processed etc during remarking.
   //   * Reference discovery is MT (see below).
@@ -2002,7 +1940,7 @@ void G1CollectedHeap::allocate_dummy_regions() {
 
   // _filler_array_max_size is set to humongous object threshold
   // but temporarily change it to use CollectedHeap::fill_with_object().
-  SizeTFlagSetting fs(_filler_array_max_size, word_size);
+  AutoModifyRestore<size_t> temporarily(_filler_array_max_size, word_size);
 
   for (uintx i = 0; i < G1DummyRegionsPerGC; ++i) {
     // Let's use the existing mechanism for the allocation
@@ -2109,7 +2047,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
          "Non-concurrent cause %s", GCCause::to_string(cause));
 
   for (uint i = 1; true; ++i) {
-    // Try to schedule an initial-mark evacuation pause that will
+    // Try to schedule concurrent start evacuation pause that will
     // start a concurrent cycle.
     LOG_COLLECT_CONCURRENTLY(cause, "attempt %u", i);
     VM_G1TryInitiateConcMark op(gc_counter,
@@ -2178,7 +2116,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       //
       // Note that (1) does not imply (4).  If we're still in the mixed
       // phase of an earlier concurrent collection, the request to make the
-      // collection an initial-mark won't be honored.  If we don't check for
+      // collection a concurrent start won't be honored.  If we don't check for
       // both conditions we'll spin doing back-to-back collections.
       if (op.gc_succeeded() ||
           op.cycle_already_in_progress() ||
@@ -2676,7 +2614,7 @@ void G1CollectedHeap::gc_prologue(bool full) {
 
   // Update common counters.
   increment_total_collections(full /* full gc */);
-  if (full || collector_state()->in_initial_mark_gc()) {
+  if (full || collector_state()->in_concurrent_start_gc()) {
     increment_old_marking_cycles_started();
   }
 
@@ -2907,7 +2845,7 @@ void G1CollectedHeap::calculate_collection_set(G1EvacuationInfo& evacuation_info
 }
 
 G1HeapVerifier::G1VerifyType G1CollectedHeap::young_collection_verify_type() const {
-  if (collector_state()->in_initial_mark_gc()) {
+  if (collector_state()->in_concurrent_start_gc()) {
     return G1HeapVerifier::G1VerifyConcurrentStart;
   } else if (collector_state()->in_young_only_phase()) {
     return G1HeapVerifier::G1VerifyYoungNormal;
@@ -2939,7 +2877,7 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
 }
 
 void G1CollectedHeap::expand_heap_after_young_collection(){
-  size_t expand_bytes = _heap_sizing_policy->expansion_amount();
+  size_t expand_bytes = _heap_sizing_policy->young_collection_expansion_amount();
   if (expand_bytes > 0) {
     // No need for an ergo logging here,
     // expansion_amount() does this when it returns a value > 0.
@@ -2952,7 +2890,7 @@ void G1CollectedHeap::expand_heap_after_young_collection(){
 }
 
 const char* G1CollectedHeap::young_gc_name() const {
-  if (collector_state()->in_initial_mark_gc()) {
+  if (collector_state()->in_concurrent_start_gc()) {
     return "Pause Young (Concurrent Start)";
   } else if (collector_state()->in_young_only_phase()) {
     if (collector_state()->in_young_gc_before_mixed()) {
@@ -3005,24 +2943,24 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   _verifier->verify_region_sets_optional();
   _verifier->verify_dirty_young_regions();
 
-  // We should not be doing initial mark unless the conc mark thread is running
+  // We should not be doing concurrent start unless the concurrent mark thread is running
   if (!_cm_thread->should_terminate()) {
-    // This call will decide whether this pause is an initial-mark
-    // pause. If it is, in_initial_mark_gc() will return true
+    // This call will decide whether this pause is a concurrent start
+    // pause. If it is, in_concurrent_start_gc() will return true
     // for the duration of this pause.
     policy()->decide_on_conc_mark_initiation();
   }
 
-  // We do not allow initial-mark to be piggy-backed on a mixed GC.
-  assert(!collector_state()->in_initial_mark_gc() ||
+  // We do not allow concurrent start to be piggy-backed on a mixed GC.
+  assert(!collector_state()->in_concurrent_start_gc() ||
          collector_state()->in_young_only_phase(), "sanity");
   // We also do not allow mixed GCs during marking.
   assert(!collector_state()->mark_or_rebuild_in_progress() || collector_state()->in_young_only_phase(), "sanity");
 
-  // Record whether this pause is an initial mark. When the current
+  // Record whether this pause is a concurrent start. When the current
   // thread has completed its logging output and it's safe to signal
   // the CM thread, the flag's value in the policy has been reset.
-  bool should_start_conc_mark = collector_state()->in_initial_mark_gc();
+  bool should_start_conc_mark = collector_state()->in_concurrent_start_gc();
   if (should_start_conc_mark) {
     _cm->gc_tracer_cm()->set_gc_cause(gc_cause());
   }
@@ -3106,7 +3044,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
           // We have to do this before we notify the CM threads that
           // they can start working to make sure that all the
           // appropriate initialization is done on the CM object.
-          concurrent_mark()->post_initial_mark();
+          concurrent_mark()->post_concurrent_start();
           // Note that we don't actually trigger the CM thread at
           // this point. We do that later when we're sure that
           // the current thread has completed its logging output.
@@ -3587,7 +3525,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
 }
 
 void G1CollectedHeap::make_pending_list_reachable() {
-  if (collector_state()->in_initial_mark_gc()) {
+  if (collector_state()->in_concurrent_start_gc()) {
     oop pll_head = Universe::reference_pending_list();
     if (pll_head != NULL) {
       // Any valid worker id is fine here as we are in the VM thread and single-threaded.
@@ -3776,9 +3714,9 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
   DerivedPointerTable::clear();
 #endif
 
-  // InitialMark needs claim bits to keep track of the marked-through CLDs.
-  if (collector_state()->in_initial_mark_gc()) {
-    concurrent_mark()->pre_initial_mark();
+  // Concurrent start needs claim bits to keep track of the marked-through CLDs.
+  if (collector_state()->in_concurrent_start_gc()) {
+    concurrent_mark()->pre_concurrent_start();
 
     double start_clear_claimed_marks = os::elapsedTime();
 
@@ -4846,7 +4784,7 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
     _survivor.add_used_bytes(allocated_bytes);
   }
 
-  bool const during_im = collector_state()->in_initial_mark_gc();
+  bool const during_im = collector_state()->in_concurrent_start_gc();
   if (during_im && allocated_bytes > 0) {
     _cm->root_regions()->add(alloc_region->next_top_at_mark_start(), alloc_region->top());
   }

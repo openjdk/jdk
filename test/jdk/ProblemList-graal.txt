@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 
 java/lang/String/concat/WithSecurityManager.java                        8207267   generic-all
 java/lang/System/LoggerFinder/LoggerFinderAPI/LoggerFinderAPI.java      8207267   generic-all
+java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java            8207267   generic-all
 
 java/util/concurrent/tck/JSR166TestCase.java                            8187486   generic-all
 
@@ -46,11 +47,6 @@ com/sun/jdi/PopSynchronousTest.java                                     8195635 
 com/sun/jdi/RedefineCrossStart.java                                     8195635   generic-all
 com/sun/jdi/RedefineG.java                                              8195635   generic-all
 com/sun/jdi/RedefineTTYLineNumber.java                                  8195635   generic-all
-
-# Next JFR tests fail with Graal. Assuming 8193210.
-jdk/jfr/event/compiler/TestCodeSweeper.java              8193210   generic-all
-jdk/jfr/event/compiler/TestCompilerInlining.java         8193210   generic-all
-jdk/jfr/event/compiler/TestCompilerPhase.java            8193210   generic-all
 
 # Next tests should be re-enabled once libgraal is introduced
 java/lang/ref/ReachabilityFenceTest.java                 8207267   generic-all

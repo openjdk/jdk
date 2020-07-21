@@ -217,7 +217,7 @@ public abstract class Executable extends AccessibleObject
      * @throws GenericSignatureFormatError if the generic
      *     signature of this generic declaration does not conform to
      *     the format specified in
-     *     <cite>The Java&trade; Virtual Machine Specification</cite>
+     *     <cite>The Java Virtual Machine Specification</cite>
      */
     public abstract TypeVariable<?>[] getTypeParameters();
 
@@ -276,7 +276,7 @@ public abstract class Executable extends AccessibleObject
      * @throws GenericSignatureFormatError
      *     if the generic method signature does not conform to the format
      *     specified in
-     *     <cite>The Java&trade; Virtual Machine Specification</cite>
+     *     <cite>The Java Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if any of the parameter
      *     types of the underlying executable refers to a non-existent type
      *     declaration
@@ -474,7 +474,7 @@ public abstract class Executable extends AccessibleObject
      * @throws GenericSignatureFormatError
      *     if the generic method signature does not conform to the format
      *     specified in
-     *     <cite>The Java&trade; Virtual Machine Specification</cite>
+     *     <cite>The Java Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the underlying executable's
      *     {@code throws} clause refers to a non-existent type declaration
      * @throws MalformedParameterizedTypeException if
@@ -515,7 +515,7 @@ public abstract class Executable extends AccessibleObject
      *
      * @return true if and only if this executable is a synthetic
      * construct as defined by
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      * @jls 13.1 The Form of a Binary
      */
     public boolean isSynthetic() {

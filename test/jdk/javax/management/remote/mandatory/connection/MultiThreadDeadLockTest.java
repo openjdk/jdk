@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,14 @@ import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 import javax.management.remote.rmi.RMIConnectorServer;
 
+import jdk.test.lib.Utils;
+
 /*
  * @test
  * @bug 6697180
  * @summary test on a client notification deadlock.
  * @author Shanliang JIANG
+ * @library /test/lib
  *
  * @run clean MultiThreadDeadLockTest
  * @run build MultiThreadDeadLockTest
@@ -53,7 +56,7 @@ import javax.management.remote.rmi.RMIConnectorServer;
 
 public class MultiThreadDeadLockTest {
 
-    private static long serverTimeout = 500L;
+    private static long serverTimeout = Utils.adjustTimeout(500);
 
     public static void main(String[] args) throws Exception {
         print("Create the MBean server");
@@ -122,7 +125,7 @@ public class MultiThreadDeadLockTest {
         StateMachine.setState(CREATE_SOCKET);
 
         print("Check whether the user thread gets free to call the mbean.");
-        if (!ut.waitDone(5000)) {
+        if (!ut.waitDone(Utils.adjustTimeout(5000))) {
             throw new RuntimeException("Possible deadlock!");
         }
 

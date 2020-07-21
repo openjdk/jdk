@@ -41,7 +41,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build jit.escape.LockElision.MatMul.MatMul
  * @run driver ExecDriver --java jit.escape.LockElision.MatMul.MatMul -dim 30 -threadCount 10
  */

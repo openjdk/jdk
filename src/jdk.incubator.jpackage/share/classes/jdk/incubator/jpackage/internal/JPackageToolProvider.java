@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class JPackageToolProvider implements ToolProvider {
         try {
             return new jdk.incubator.jpackage.main.Main().execute(out, err, args);
         } catch (RuntimeException re) {
-            Log.error(re.getMessage());
+            Log.fatalError(re.getMessage());
             Log.verbose(re);
             return 1;
         }

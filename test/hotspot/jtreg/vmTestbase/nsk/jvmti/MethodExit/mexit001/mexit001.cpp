@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,12 +69,14 @@ void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,
         printf("(GetMethodDeclaringClass) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti_env->GetClassSignature(cls, &cls_sig, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetClassSignature) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     if (cls_sig != NULL &&
             strcmp(cls_sig, "Lnsk/jvmti/MethodExit/mexit001a;") == 0) {
@@ -87,12 +89,14 @@ void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,
             printf("(GetMethodName) unexpected error: %s (%d)\n",
                    TranslateError(err), err);
             result = STATUS_FAILED;
+            return;
         }
         err = jvmti_env->GetFrameLocation(thr, 0, &mid, &loc);
         if (err != JVMTI_ERROR_NONE) {
             printf("(GetFrameLocation) unexpected error: %s (%d)\n",
                    TranslateError(err), err);
             result = STATUS_FAILED;
+            return;
         }
         if (printdump == JNI_TRUE) {
             printf(">>>      class: \"%s\"\n", cls_sig);

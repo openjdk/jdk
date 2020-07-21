@@ -120,7 +120,7 @@ public final class RecordedEvent extends RecordedObject {
         return objectContext.fields;
     }
 
-    protected final Object objectAt(int index) {
+    final Object objectAt(int index) {
         if (index == 0) {
             return startTimeTicks;
         }

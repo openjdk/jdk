@@ -25,7 +25,7 @@
 /**
  * @test TestMemoryMXBeans
  * @summary Test JMX memory beans
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC          -Xmx1g TestMemoryMXBeans   -1 1024

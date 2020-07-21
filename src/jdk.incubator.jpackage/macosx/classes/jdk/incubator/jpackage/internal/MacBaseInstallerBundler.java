@@ -26,10 +26,10 @@
 package jdk.incubator.jpackage.internal;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,21 +43,23 @@ import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
-    public final BundlerParamInfo<File> APP_IMAGE_TEMP_ROOT =
+    public final BundlerParamInfo<Path> APP_IMAGE_TEMP_ROOT =
             new StandardBundlerParam<>(
             "mac.app.imageRoot",
-            File.class,
+            Path.class,
             params -> {
-                File imageDir = IMAGES_ROOT.fetchFrom(params);
-                if (!imageDir.exists()) imageDir.mkdirs();
+                Path imageDir = IMAGES_ROOT.fetchFrom(params);
                 try {
+                    if (!IOUtils.exists(imageDir)) {
+                        Files.createDirectories(imageDir);
+                    }
                     return Files.createTempDirectory(
-                            imageDir.toPath(), "image-").toFile();
+                            imageDir, "image-");
                 } catch (IOException e) {
-                    return new File(imageDir, getID()+ ".image");
+                    return imageDir.resolve(getID()+ ".image");
                 }
             },
-            (s, p) -> new File(s));
+            (s, p) -> Path.of(s));
 
     public static final BundlerParamInfo<String> SIGNING_KEY_USER =
             new StandardBundlerParam<>(
@@ -110,8 +112,8 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
     protected void validateAppImageAndBundeler(
             Map<String, ? super Object> params) throws ConfigException {
         if (PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
-            File applicationImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
-            if (!applicationImage.exists()) {
+            Path applicationImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
+            if (!IOUtils.exists(applicationImage)) {
                 throw new ConfigException(
                         MessageFormat.format(I18N.getString(
                                 "message.app-image-dir-does-not-exist"),
@@ -132,14 +134,14 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         }
     }
 
-    protected File prepareAppBundle(Map<String, ? super Object> params)
+    protected Path prepareAppBundle(Map<String, ? super Object> params)
             throws PackagerException {
-        File predefinedImage =
+        Path predefinedImage =
                 StandardBundlerParam.getPredefinedAppImage(params);
         if (predefinedImage != null) {
             return predefinedImage;
         }
-        File appImageRoot = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
+        Path appImageRoot = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
 
         return appImageBundler.execute(params, appImageRoot);
     }
@@ -149,8 +151,11 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         return "INSTALLER";
     }
 
-    public static String findKey(String key, String keychainName,
+    public static String findKey(String keyPrefix, String teamName, String keychainName,
             boolean verbose) {
+        String key = (teamName.startsWith(keyPrefix)
+                || teamName.startsWith("3rd Party Mac Developer"))
+                ? teamName : (keyPrefix + teamName);
         if (Platform.getPlatform() != Platform.MAC) {
             return null;
         }
@@ -181,7 +186,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             if (m.find()) {
                 Log.error(MessageFormat.format(I18N.getString(
                         "error.multiple.certs.found"), key, keychainName));
-                return null;
             }
             Log.verbose("Using key '" + matchedKey + "'");
             return matchedKey;

@@ -99,8 +99,6 @@ class ReferenceToRootClosure : public StackObj {
   bool do_object_synchronizer_roots();
   bool do_universe_roots();
   bool do_oop_storage_roots();
-  bool do_jvmti_roots();
-  bool do_management_roots();
   bool do_string_table_roots();
   bool do_aot_loader_roots();
 
@@ -152,7 +150,7 @@ bool ReferenceToRootClosure::do_oop_storage_roots() {
   for (OopStorageSet::Iterator it = OopStorageSet::strong_iterator(); !it.is_end(); ++it, ++i) {
     assert(!complete(), "invariant");
     OopStorage* oop_storage = *it;
-    OldObjectRoot::Type type = oop_storage == OopStorageSet::jni_global() ?
+    OldObjectRoot::Type type = JNIHandles::is_global_storage(oop_storage) ?
                                OldObjectRoot::_global_jni_handle :
                                OldObjectRoot::_global_oop_handle;
     OldObjectRoot::System system = OldObjectRoot::System(OldObjectRoot::_strong_oop_storage_set_first + i);
@@ -163,20 +161,6 @@ bool ReferenceToRootClosure::do_oop_storage_roots() {
     }
   }
   return false;
-}
-
-bool ReferenceToRootClosure::do_jvmti_roots() {
-  assert(!complete(), "invariant");
-  ReferenceLocateClosure rlc(_callback, OldObjectRoot::_jvmti, OldObjectRoot::_global_jni_handle, NULL);
-  JvmtiExport::oops_do(&rlc);
-  return rlc.complete();
-}
-
-bool ReferenceToRootClosure::do_management_roots() {
-  assert(!complete(), "invariant");
-  ReferenceLocateClosure rlc(_callback, OldObjectRoot::_management, OldObjectRoot::_type_undetermined, NULL);
-  Management::oops_do(&rlc);
-  return rlc.complete();
 }
 
 bool ReferenceToRootClosure::do_aot_loader_roots() {
@@ -207,16 +191,6 @@ bool ReferenceToRootClosure::do_roots() {
   }
 
   if (do_oop_storage_roots()) {
-   _complete = true;
-    return true;
-  }
-
-  if (do_jvmti_roots()) {
-   _complete = true;
-    return true;
-  }
-
-  if (do_management_roots()) {
    _complete = true;
     return true;
   }

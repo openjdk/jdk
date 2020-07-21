@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -653,14 +653,14 @@ intptr_t* frame::real_fp() const {
 
 #define DESCRIBE_FP_OFFSET(name)                                        \
   {                                                                     \
-    unsigned long *p = (unsigned long *)fp;                             \
-    printf("0x%016lx 0x%016lx %s\n", (unsigned long)(p + frame::name##_offset), \
+    uintptr_t *p = (uintptr_t *)fp;                                     \
+    printf("0x%016lx 0x%016lx %s\n", (uintptr_t)(p + frame::name##_offset), \
            p[frame::name##_offset], #name);                             \
   }
 
-static __thread unsigned long nextfp;
-static __thread unsigned long nextpc;
-static __thread unsigned long nextsp;
+static __thread uintptr_t nextfp;
+static __thread uintptr_t nextpc;
+static __thread uintptr_t nextsp;
 static __thread RegisterMap *reg_map;
 
 static void printbc(Method *m, intptr_t bcx) {
@@ -679,7 +679,7 @@ static void printbc(Method *m, intptr_t bcx) {
   printf("%s : %s ==> %s\n", m->name_and_sig_as_C_string(), buf, name);
 }
 
-void internal_pf(unsigned long sp, unsigned long fp, unsigned long pc, unsigned long bcx) {
+void internal_pf(uintptr_t sp, uintptr_t fp, uintptr_t pc, uintptr_t bcx) {
   if (! fp)
     return;
 
@@ -693,7 +693,7 @@ void internal_pf(unsigned long sp, unsigned long fp, unsigned long pc, unsigned 
   DESCRIBE_FP_OFFSET(interpreter_frame_locals);
   DESCRIBE_FP_OFFSET(interpreter_frame_bcp);
   DESCRIBE_FP_OFFSET(interpreter_frame_initial_sp);
-  unsigned long *p = (unsigned long *)fp;
+  uintptr_t *p = (uintptr_t *)fp;
 
   // We want to see all frames, native and Java.  For compiled and
   // interpreted frames we have special information that allows us to
@@ -703,16 +703,16 @@ void internal_pf(unsigned long sp, unsigned long fp, unsigned long pc, unsigned 
   if (this_frame.is_compiled_frame() ||
       this_frame.is_interpreted_frame()) {
     frame sender = this_frame.sender(reg_map);
-    nextfp = (unsigned long)sender.fp();
-    nextpc = (unsigned long)sender.pc();
-    nextsp = (unsigned long)sender.unextended_sp();
+    nextfp = (uintptr_t)sender.fp();
+    nextpc = (uintptr_t)sender.pc();
+    nextsp = (uintptr_t)sender.unextended_sp();
   } else {
     nextfp = p[frame::link_offset];
     nextpc = p[frame::return_addr_offset];
-    nextsp = (unsigned long)&p[frame::sender_sp_offset];
+    nextsp = (uintptr_t)&p[frame::sender_sp_offset];
   }
 
-  if (bcx == -1ul)
+  if (bcx == -1ULL)
     bcx = p[frame::interpreter_frame_bcp_offset];
 
   if (Interpreter::contains((address)pc)) {
@@ -746,8 +746,8 @@ extern "C" void npf() {
   internal_pf (nextsp, nextfp, nextpc, -1);
 }
 
-extern "C" void pf(unsigned long sp, unsigned long fp, unsigned long pc,
-                   unsigned long bcx, unsigned long thread) {
+extern "C" void pf(uintptr_t sp, uintptr_t fp, uintptr_t pc,
+                   uintptr_t bcx, uintptr_t thread) {
   if (!reg_map) {
     reg_map = NEW_C_HEAP_OBJ(RegisterMap, mtInternal);
     ::new (reg_map) RegisterMap((JavaThread*)thread, false);
@@ -766,9 +766,9 @@ extern "C" void pf(unsigned long sp, unsigned long fp, unsigned long pc,
 // support for printing out where we are in a Java method
 // needs to be passed current fp and bcp register values
 // prints method name, bc index and bytecode name
-extern "C" void pm(unsigned long fp, unsigned long bcx) {
+extern "C" void pm(uintptr_t fp, uintptr_t bcx) {
   DESCRIBE_FP_OFFSET(interpreter_frame_method);
-  unsigned long *p = (unsigned long *)fp;
+  uintptr_t *p = (uintptr_t *)fp;
   Method* m = (Method*)p[frame::interpreter_frame_method_offset];
   printbc(m, bcx);
 }

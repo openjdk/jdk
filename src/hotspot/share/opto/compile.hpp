@@ -667,23 +667,20 @@ class Compile : public Phase {
     assert(!_macro_nodes->contains(n), "duplicate entry in expand list");
     _macro_nodes->append(n);
   }
-  void remove_macro_node(Node * n) {
-    // this function may be called twice for a node so check
-    // that the node is in the array before attempting to remove it
-    if (_macro_nodes->contains(n))
-      _macro_nodes->remove(n);
+  void remove_macro_node(Node* n) {
+    // this function may be called twice for a node so we can only remove it
+    // if it's still existing.
+    _macro_nodes->remove_if_existing(n);
     // remove from _predicate_opaqs list also if it is there
-    if (predicate_count() > 0 && _predicate_opaqs->contains(n)){
-      _predicate_opaqs->remove(n);
+    if (predicate_count() > 0) {
+      _predicate_opaqs->remove_if_existing(n);
     }
   }
-  void add_expensive_node(Node * n);
-  void remove_expensive_node(Node * n) {
-    if (_expensive_nodes->contains(n)) {
-      _expensive_nodes->remove(n);
-    }
+  void add_expensive_node(Node* n);
+  void remove_expensive_node(Node* n) {
+    _expensive_nodes->remove_if_existing(n);
   }
-  void add_predicate_opaq(Node * n) {
+  void add_predicate_opaq(Node* n) {
     assert(!_predicate_opaqs->contains(n), "duplicate entry in predicate opaque1");
     assert(_macro_nodes->contains(n), "should have already been in macro list");
     _predicate_opaqs->append(n);
@@ -692,9 +689,7 @@ class Compile : public Phase {
   // Range check dependent CastII nodes that can be removed after loop optimizations
   void add_range_check_cast(Node* n);
   void remove_range_check_cast(Node* n) {
-    if (_range_check_casts->contains(n)) {
-      _range_check_casts->remove(n);
-    }
+    _range_check_casts->remove_if_existing(n);
   }
   Node* range_check_cast_node(int idx) const { return _range_check_casts->at(idx);  }
   int   range_check_cast_count()       const { return _range_check_casts->length(); }
@@ -703,9 +698,7 @@ class Compile : public Phase {
 
   void add_opaque4_node(Node* n);
   void remove_opaque4_node(Node* n) {
-    if (_opaque4_nodes->contains(n)) {
-      _opaque4_nodes->remove(n);
-    }
+    _opaque4_nodes->remove_if_existing(n);
   }
   Node* opaque4_node(int idx) const { return _opaque4_nodes->at(idx);  }
   int   opaque4_count()       const { return _opaque4_nodes->length(); }

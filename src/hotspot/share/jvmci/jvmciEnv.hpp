@@ -35,6 +35,7 @@ class JVMCIObjectArray;
 class JVMCIPrimitiveArray;
 class JVMCICompiler;
 class JVMCIRuntime;
+class nmethodLocker;
 
 #define JVMCI_EXCEPTION_CONTEXT \
   JavaThread* thread=JavaThread::current(); \
@@ -254,7 +255,6 @@ public:
   JVMCIObject create_box(BasicType type, jvalue* value, JVMCI_TRAPS);
 
   const char* as_utf8_string(JVMCIObject str);
-  char* as_utf8_string(JVMCIObject str, char* buf, int buflen);
 
   JVMCIObject create_string(Symbol* str, JVMCI_TRAPS) {
     JVMCIObject s = create_string(str->as_C_string(), JVMCI_CHECK_(JVMCIObject()));

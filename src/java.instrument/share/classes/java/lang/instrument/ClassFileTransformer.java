@@ -156,7 +156,7 @@ import java.security.ProtectionDomain;
  *
  * <P>
  * Note the term <i>class file</i> is used as defined in section 3.1 of
- * <cite>The Java&trade; Virtual Machine Specification</cite>, to mean a
+ * <cite>The Java Virtual Machine Specification</cite>, to mean a
  * sequence of bytes in class file format, whether or not they reside in a
  * file.
  *

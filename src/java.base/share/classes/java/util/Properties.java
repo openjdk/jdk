@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,8 +94,8 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * methods work the same way as the load(Reader)/store(Writer, String) pair, except
  * the input/output stream is encoded in ISO 8859-1 character encoding.
  * Characters that cannot be directly represented in this encoding can be written using
- * Unicode escapes as defined in section 3.3 of
- * <cite>The Java&trade; Language Specification</cite>;
+ * Unicode escapes as defined in section {@jls 3.3} of
+ * <cite>The Java Language Specification</cite>;
  * only a single 'u' character is allowed in an escape
  * sequence.
  *
@@ -336,8 +336,8 @@ public class Properties extends Hashtable<Object,Object> {
      * <a id="unicodeescapes"></a>
      * Characters in keys and elements can be represented in escape
      * sequences similar to those used for character and string literals
-     * (see sections 3.3 and 3.10.6 of
-     * <cite>The Java&trade; Language Specification</cite>).
+     * (see sections {@jls 3.3} and {@jls 3.10.6} of
+     * <cite>The Java Language Specification</cite>).
      *
      * The differences from the character escape sequences and Unicode
      * escapes used for characters and strings are:
@@ -390,8 +390,8 @@ public class Properties extends Hashtable<Object,Object> {
      * the ISO 8859-1 character encoding; that is each byte is one Latin1
      * character. Characters not in Latin1, and certain special characters,
      * are represented in keys and elements using Unicode escapes as defined in
-     * section 3.3 of
-     * <cite>The Java&trade; Language Specification</cite>.
+     * section {@jls 3.3} of
+     * <cite>The Java Language Specification</cite>.
      * <p>
      * The specified stream remains open after this method returns.
      *
@@ -1402,6 +1402,21 @@ public class Properties extends Hashtable<Object,Object> {
         @Override
         public boolean containsAll(Collection<?> c) {
             return entrySet.containsAll(c);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o == this || entrySet.equals(o);
+        }
+
+        @Override
+        public int hashCode() {
+            return entrySet.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return entrySet.toString();
         }
 
         @Override

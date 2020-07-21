@@ -28,7 +28,7 @@
  * for example, compilers.
  *
  * <p>These interfaces and classes are required as part of the
- * Java&trade; Platform, Standard Edition (Java SE),
+ * Java Platform, Standard Edition (Java SE),
  * but there is no requirement to provide any tools implementing them.
  *
  * <p>Unless explicitly allowed, all methods in this package might

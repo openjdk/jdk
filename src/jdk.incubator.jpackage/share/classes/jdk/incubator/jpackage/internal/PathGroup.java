@@ -24,7 +24,6 @@
  */
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -200,7 +199,7 @@ final class PathGroup {
         for (var action: entries) {
             Path src = action.getKey();
             Path dst = action.getValue();
-            if (src.toFile().isDirectory()) {
+            if (Files.isDirectory(src)) {
                try (Stream<Path> stream = Files.walk(src)) {
                    stream.sequential().forEach(path -> actions.put(dst.resolve(
                             src.relativize(path)).normalize(), path));
@@ -222,7 +221,7 @@ final class PathGroup {
                 continue;
             }
 
-            if (src.toFile().isDirectory()) {
+            if (Files.isDirectory(src)) {
                 handler.createDirectory(dst);
             } else {
                 handler.copyFile(src, dst);
@@ -232,8 +231,8 @@ final class PathGroup {
         if (move) {
             // Delete source dirs.
             for (var entry: entries) {
-                File srcFile = entry.getKey().toFile();
-                if (srcFile.isDirectory()) {
+                Path srcFile = entry.getKey();
+                if (Files.isDirectory(srcFile)) {
                     IOUtils.deleteRecursive(srcFile);
                 }
             }

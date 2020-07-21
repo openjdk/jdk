@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Map;
 
 /**
@@ -104,8 +104,8 @@ public interface Bundler {
      *      forward slashes.</li>
      *  </ul>
      */
-    public File execute(Map<String, ? super Object> params,
-            File outputParentDir) throws PackagerException;
+    public Path execute(Map<String, ? super Object> params,
+            Path outputParentDir) throws PackagerException;
 
      /**
      * Removes temporary files that are used for bundling.

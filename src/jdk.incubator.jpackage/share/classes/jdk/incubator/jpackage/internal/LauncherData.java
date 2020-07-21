@@ -145,7 +145,7 @@ final class LauncherData {
             // Failed to find module in the specified module path list and
             // there is external runtime given to jpackage.
             // Lookup module in this runtime.
-            Path cookedRuntime = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params).toPath();
+            Path cookedRuntime = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
             launcherData.moduleInfo = ModuleInfo.fromCookedRuntime(moduleName,
                     cookedRuntime);
         }
@@ -231,10 +231,11 @@ final class LauncherData {
         if (inputDir == null) {
             classPath = Collections.emptyList();
         } else {
-            try (Stream<Path> walk = Files.walk(inputDir, 1)) {
+            try (Stream<Path> walk = Files.walk(inputDir, Integer.MAX_VALUE)) {
                 Set<Path> jars = walk.filter(Files::isRegularFile)
                         .filter(file -> file.toString().endsWith(".jar"))
-                        .map(Path::getFileName)
+                        .map(p -> inputDir.toAbsolutePath()
+                                  .relativize(p.toAbsolutePath()))
                         .collect(Collectors.toSet());
                 jars.remove(mainJarName);
                 classPath = jars.stream().sorted().collect(Collectors.toList());
@@ -292,7 +293,7 @@ final class LauncherData {
         List<Path> modulePath = getPathListParameter(Arguments.CLIOptions.MODULE_PATH.getId(), params);
 
         if (params.containsKey(PREDEFINED_RUNTIME_IMAGE.getID())) {
-            Path runtimePath = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params).toPath();
+            Path runtimePath = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
             runtimePath = runtimePath.resolve("lib");
             modulePath = Stream.of(modulePath, List.of(runtimePath))
                     .flatMap(List::stream)

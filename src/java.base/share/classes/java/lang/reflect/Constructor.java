@@ -436,8 +436,8 @@ public final class Constructor<T> extends Executable {
      *
      * <p>If the constructor's declaring class is an inner class in a
      * non-static context, the first argument to the constructor needs
-     * to be the enclosing instance; see section 15.9.3 of
-     * <cite>The Java&trade; Language Specification</cite>.
+     * to be the enclosing instance; see section {@jls 15.9.3} of
+     * <cite>The Java Language Specification</cite>.
      *
      * <p>If the required access and argument checks succeed and the
      * instantiation will proceed, the constructor's declaring class

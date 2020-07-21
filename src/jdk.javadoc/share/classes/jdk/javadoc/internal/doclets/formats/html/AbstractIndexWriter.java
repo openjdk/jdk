@@ -317,11 +317,9 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem creating any of the search index files
      */
     protected void createSearchIndexFiles() throws DocFileIOException {
-        if (configuration.showModules) {
-            createSearchIndexFile(DocPaths.MODULE_SEARCH_INDEX_JS,
-                                  searchItems.itemsOfCategories(Category.MODULES),
-                                  "moduleSearchIndex");
-        }
+        createSearchIndexFile(DocPaths.MODULE_SEARCH_INDEX_JS,
+                              searchItems.itemsOfCategories(Category.MODULES),
+                              "moduleSearchIndex");
         if (!configuration.packages.isEmpty()) {
             SearchIndexItem si = new SearchIndexItem();
             si.setCategory(Category.PACKAGES);
@@ -364,27 +362,26 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         // The file needs to be created even if there are no searchIndex items
         // File could be written straight-through, without an intermediate StringBuilder
         Iterator<SearchIndexItem> index = searchIndex.iterator();
-        if (index.hasNext()) {
-            StringBuilder searchVar = new StringBuilder("[");
-            boolean first = true;
-            while (index.hasNext()) {
-                SearchIndexItem item = index.next();
-                if (first) {
-                    searchVar.append(item.toString());
-                    first = false;
-                } else {
-                    searchVar.append(",").append(item.toString());
-                }
+        StringBuilder searchVar = new StringBuilder("[");
+        boolean first = true;
+        while (index.hasNext()) {
+            SearchIndexItem item = index.next();
+            if (first) {
+                searchVar.append(item.toString());
+                first = false;
+            } else {
+                searchVar.append(",").append(item.toString());
             }
-            searchVar.append("]");
-            DocFile jsFile = DocFile.createFileForOutput(configuration, searchIndexJS);
-            try (Writer wr = jsFile.openWriter()) {
-                wr.write(varName);
-                wr.write(" = ");
-                wr.write(searchVar.toString());
-            } catch (IOException ie) {
-                throw new DocFileIOException(jsFile, DocFileIOException.Mode.WRITE, ie);
-            }
+        }
+        searchVar.append("];");
+        DocFile jsFile = DocFile.createFileForOutput(configuration, searchIndexJS);
+        try (Writer wr = jsFile.openWriter()) {
+            wr.write(varName);
+            wr.write(" = ");
+            wr.write(searchVar.toString());
+            wr.write("updateSearchResults();");
+        } catch (IOException ie) {
+            throw new DocFileIOException(jsFile, DocFileIOException.Mode.WRITE, ie);
         }
     }
 

@@ -50,7 +50,7 @@
 void check_ThreadShadow();
 void eventlog_init();
 void mutex_init();
-void oopstorage_init();
+void universe_oopstorage_init();
 void chunkpool_init();
 void perfMemory_init();
 void SuspendibleThreadSet_init();
@@ -97,7 +97,7 @@ void vm_init_globals() {
   basic_types_init();
   eventlog_init();
   mutex_init();
-  oopstorage_init();
+  universe_oopstorage_init();
   chunkpool_init();
   perfMemory_init();
   SuspendibleThreadSet_init();
@@ -170,10 +170,8 @@ void exit_globals() {
     if (log_is_enabled(Info, monitorinflation)) {
       // The ObjectMonitor subsystem uses perf counters so
       // do this before perfMemory_exit().
-      // These other two audit_and_print_stats() calls are done at the
+      // This other audit_and_print_stats() call is done at the
       // Debug level at a safepoint:
-      // - for safepoint based deflation auditing:
-      //   ObjectSynchronizer::finish_deflate_idle_monitors()
       // - for async deflation auditing:
       //   ObjectSynchronizer::do_safepoint_work()
       ObjectSynchronizer::audit_and_print_stats(true /* on_exit */);

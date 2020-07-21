@@ -801,6 +801,18 @@ bool os::is_allocatable(size_t bytes) {
 #endif // AMD64
 }
 
+juint os::cpu_microcode_revision() {
+  juint result = 0;
+  char data[8];
+  size_t sz = sizeof(data);
+  int ret = sysctlbyname("machdep.cpu.microcode_version", data, &sz, NULL, 0);
+  if (ret == 0) {
+    if (sz == 4) result = *((juint*)data);
+    if (sz == 8) result = *((juint*)data + 1); // upper 32-bits
+  }
+  return result;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 

@@ -122,7 +122,7 @@ public interface ObjectReference extends Value {
      * either assignment compatible with the field type or must be
      * convertible to the field type without loss of information.
      * See section 5.2 of
-     * <cite>The Java&trade; Language Specification</cite>
+     * <cite>The Java Language Specification</cite>
      * for more information on assignment
      * compatibility.
      *
@@ -184,12 +184,12 @@ public interface ObjectReference extends Value {
      * Autoboxing is not supported.
      *
      * See section 5.2 of
-     * <cite>The Java&trade; Language Specification</cite>
+     * <cite>The Java Language Specification</cite>
      * for more information on assignment compatibility.
      * <p>
      * By default, the method is invoked using dynamic lookup as
      * documented in section 15.12.4.4 of
-     * <cite>The Java&trade; Language Specification</cite>
+     * <cite>The Java Language Specification</cite>
      * in particular, overriding based on the runtime type of the object
      * mirrored by this {@link ObjectReference} will occur. This
      * behavior can be changed by specifying the

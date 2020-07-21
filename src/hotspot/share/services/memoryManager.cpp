@@ -26,6 +26,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
@@ -39,7 +40,7 @@
 #include "utilities/dtrace.hpp"
 
 MemoryManager::MemoryManager(const char* name) :
-  _num_pools(0), _name(name), _memory_mgr_obj() {}
+  _num_pools(0), _name(name) {}
 
 int MemoryManager::add_pool(MemoryPool* pool) {
   int index = _num_pools;
@@ -53,7 +54,7 @@ int MemoryManager::add_pool(MemoryPool* pool) {
 }
 
 bool MemoryManager::is_manager(instanceHandle mh) const {
-  return mh() == Atomic::load(&_memory_mgr_obj);
+  return mh() == Atomic::load(&_memory_mgr_obj).resolve();
 }
 
 MemoryManager* MemoryManager::get_code_cache_memory_manager() {
@@ -67,7 +68,7 @@ MemoryManager* MemoryManager::get_metaspace_memory_manager() {
 instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
   // Must do an acquire so as to force ordering of subsequent
   // loads from anything _memory_mgr_obj points to or implies.
-  instanceOop mgr_obj = Atomic::load_acquire(&_memory_mgr_obj);
+  oop mgr_obj = Atomic::load_acquire(&_memory_mgr_obj).resolve();
   if (mgr_obj == NULL) {
     // It's ok for more than one thread to execute the code up to the locked region.
     // Extra manager instances will just be gc'ed.
@@ -117,12 +118,9 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
       // Check if another thread has created the management object.  We reload
       // _memory_mgr_obj here because some other thread may have initialized
       // it while we were executing the code before the lock.
-      //
-      // The lock has done an acquire, so the load can't float above it, but
-      // we need to do a load_acquire as above.
-      mgr_obj = Atomic::load_acquire(&_memory_mgr_obj);
+      mgr_obj = Atomic::load(&_memory_mgr_obj).resolve();
       if (mgr_obj != NULL) {
-         return mgr_obj;
+         return (instanceOop)mgr_obj;
       }
 
       // Get the address of the object we created via call_special.
@@ -132,15 +130,11 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
       // with creating the management object are visible before publishing
       // its address.  The unlock will publish the store to _memory_mgr_obj
       // because it does a release first.
-      Atomic::release_store(&_memory_mgr_obj, mgr_obj);
+      Atomic::release_store(&_memory_mgr_obj, OopHandle(Universe::vm_global(), mgr_obj));
     }
   }
 
-  return mgr_obj;
-}
-
-void MemoryManager::oops_do(OopClosure* f) {
-  f->do_oop((oop*) &_memory_mgr_obj);
+  return (instanceOop)mgr_obj;
 }
 
 GCStatInfo::GCStatInfo(int num_pools) {

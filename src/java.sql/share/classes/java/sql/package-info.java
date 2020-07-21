@@ -27,10 +27,10 @@
  *
  * Provides the API for accessing and processing data stored in a
  * data source (usually a relational database) using the
- * Java&trade; programming language.
+ * Java programming language.
  * This API includes a framework whereby different
  * drivers can be installed dynamically to access different data sources.
- * Although the JDBC&trade; API is mainly geared
+ * Although the JDBC API is mainly geared
  * to passing SQL statements to a database, it provides for reading and
  * writing data from any data source with a tabular format.
  * The reader/writer facility, available through the
@@ -38,16 +38,16 @@
  * use and update data from a spread sheet, flat file, or any other tabular
  * data source.
  *
- * <h2>What the JDBC&trade; 4.3 API Includes</h2>
- * The JDBC&trade; 4.3 API includes both
+ * <h2>What the JDBC 4.3 API Includes</h2>
+ * The JDBC 4.3 API includes both
  * the {@code java.sql} package, referred to as the JDBC core API,
  * and the {@code javax.sql} package, referred to as the JDBC Optional
  * Package API. This complete JDBC API
- * is included in the Java&trade; Standard Edition (Java SE&trade;), version 7.
+ * is included in the Java Standard Edition (Java SE), version 7.
  * The {@code javax.sql} package extends the functionality of the JDBC API
  * from a client-side API to a server-side API, and it is an essential part
- * of the Java&trade;  Enterprise Edition
- * (Java EE&trade;) technology.
+ * of the Java  Enterprise Edition
+ * (Java EE) technology.
  *
  * <h2>Versions</h2>
  * The JDBC 4.3 API incorporates all of the previous JDBC API versions:
@@ -67,7 +67,7 @@
  * Classes, interfaces, methods, fields, constructors, and exceptions
  * have the following "since" tags that indicate when they were introduced
  * into the Java platform. When these "since" tags are used in
- * Javadoc&trade; comments for the JDBC API,
+ * Javadoc comments for the JDBC API,
  * they indicate the following:
  * <UL>
  *     <LI>Since 9 -- new in the JDBC 4.3 API and part of the Java SE platform,
@@ -83,7 +83,7 @@
  *  <LI>Since 1.2 -- new in the JDBC 2.0 API and part of the J2SE platform,
  *      version 1.2</li>
  *  <LI>Since 1.1 or no "since" tag -- in the original JDBC 1.0 API and part of
- *      the JDK&trade;, version 1.1</li>
+ *      the JDK, version 1.1</li>
  * </UL>
  * <P>
  * <b>NOTE:</b> Many of the new features are optional; consequently, there is
@@ -92,7 +92,7 @@
  * you try to use it.
  * <P>
  * <b>NOTE:</b> The class {@code SQLPermission} was added in the
- * Java&trade; 2 SDK, Standard Edition,
+ * Java 2 SDK, Standard Edition,
  * version 1.3 release. This class is used to prevent unauthorized
  * access to the logging stream associated with the {@code DriverManager},
  * which may contain information such as table names, column data, and so on.
@@ -288,7 +288,7 @@
  * Package API</h3>
  * <UL>
  *   <LI>The {@code DataSource} interface as a means of making a connection.  The
- *       Java Naming and Directory Interface&trade;
+ *       Java Naming and Directory Interface
  *       (JNDI) is used for registering a {@code DataSource} object with a
  *       naming service and also for  retrieving it.
  *   <LI>Pooled connections -- allowing connections to be used and reused
@@ -334,9 +334,9 @@
  *
  * <ul>
  *   <li><a href="http://docs.oracle.com/javase/tutorial/jdbc/basics/index.html">
- *           Lesson:JDBC Basics(The Javaxx Tutorials &gt; JDBC&trade; Database Access)</a>
+ *           Lesson:JDBC Basics(The Javaxx Tutorials &gt; JDBC Database Access)</a>
  *
- *  <li>&ldquo;<i>JDBC&trade; API Tutorial and Reference, Third Edition</i>&rdquo;
+ *  <li>&ldquo;<i>JDBC API Tutorial and Reference, Third Edition</i>&rdquo;
  * </ul>
  */
 package java.sql;

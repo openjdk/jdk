@@ -51,7 +51,7 @@ import java.math.*;
  * <p>
  * A JDBC <code>FilteredRowSet</code> standard implementation implements the
  * <code>RowSet</code> interfaces and extends the
- * <code>CachedRowSet</code>&trade; class. The
+ * <code>CachedRowSet</code> class. The
  * <code>CachedRowSet</code> class provides a set of protected cursor manipulation
  * methods, which a <code>FilteredRowSet</code> implementation can override
  * to supply filtering support.

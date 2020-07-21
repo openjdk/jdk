@@ -174,8 +174,8 @@ void ShenandoahControlThread::run_service() {
     }
 
     // Blow all soft references on this cycle, if handling allocation failure,
-    // or we are requested to do so unconditionally.
-    if (alloc_failure_pending || ShenandoahAlwaysClearSoftRefs) {
+    // either implicit or explicit GC request,  or we are requested to do so unconditionally.
+    if (alloc_failure_pending || implicit_gc_requested || explicit_gc_requested || ShenandoahAlwaysClearSoftRefs) {
       heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
     }
 
@@ -252,6 +252,9 @@ void ShenandoahControlThread::run_service() {
 
       // Commit worker statistics to cycle data
       heap->phase_timings()->flush_par_workers_to_cycle();
+      if (ShenandoahPacing) {
+        heap->pacer()->flush_stats_to_cycle();
+      }
 
       // Print GC stats for current cycle
       {
@@ -260,6 +263,9 @@ void ShenandoahControlThread::run_service() {
           ResourceMark rm;
           LogStream ls(lt);
           heap->phase_timings()->print_cycle_on(&ls);
+          if (ShenandoahPacing) {
+            heap->pacer()->print_cycle_on(&ls);
+          }
         }
       }
 
@@ -519,13 +525,15 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   // comes very late in the already running cycle, it would miss lots of new
   // opportunities for cleanup that were made available before the caller
   // requested the GC.
-  size_t required_gc_id = get_gc_id() + 1;
 
   MonitorLocker ml(&_gc_waiters_lock);
-  while (get_gc_id() < required_gc_id) {
+  size_t current_gc_id = get_gc_id();
+  size_t required_gc_id = current_gc_id + 1;
+  while (current_gc_id < required_gc_id) {
     _gc_requested.set();
     _requested_gc_cause = cause;
     ml.wait();
+    current_gc_id = get_gc_id();
   }
 }
 

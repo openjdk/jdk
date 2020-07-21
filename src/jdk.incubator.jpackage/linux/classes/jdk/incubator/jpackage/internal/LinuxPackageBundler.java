@@ -24,7 +24,6 @@
  */
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -104,21 +103,21 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     }
 
     @Override
-    final public File execute(Map<String, ? super Object> params,
-            File outputParentDir) throws PackagerException {
-        IOUtils.writableOutputDir(outputParentDir.toPath());
+    final public Path execute(Map<String, ? super Object> params,
+            Path outputParentDir) throws PackagerException {
+        IOUtils.writableOutputDir(outputParentDir);
 
         PlatformPackage thePackage = createMetaPackage(params);
 
-        Function<File, ApplicationLayout> initAppImageLayout = imageRoot -> {
+        Function<Path, ApplicationLayout> initAppImageLayout = imageRoot -> {
             ApplicationLayout layout = appImageLayout(params);
             layout.pathGroup().setPath(new Object(),
                     AppImageFile.getPathInAppImage(Path.of("")));
-            return layout.resolveAt(imageRoot.toPath());
+            return layout.resolveAt(imageRoot);
         };
 
         try {
-            File appImage = StandardBundlerParam.getPredefinedAppImage(params);
+            Path appImage = StandardBundlerParam.getPredefinedAppImage(params);
 
             // we either have an application image or need to build one
             if (appImage != null) {
@@ -126,7 +125,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                         thePackage.sourceApplicationLayout());
             } else {
                 final Path srcAppImageRoot = thePackage.sourceRoot().resolve("src");
-                appImage = appImageBundler.execute(params, srcAppImageRoot.toFile());
+                appImage = appImageBundler.execute(params, srcAppImageRoot);
                 ApplicationLayout srcAppLayout = initAppImageLayout.apply(
                         appImage);
                 if (appImage.equals(PREDEFINED_RUNTIME_IMAGE.fetchFrom(params))) {
@@ -137,7 +136,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                     // Application image is a newly created directory tree.
                     // Move it.
                     srcAppLayout.move(thePackage.sourceApplicationLayout());
-                    IOUtils.deleteRecursive(srcAppImageRoot.toFile());
+                    IOUtils.deleteRecursive(srcAppImageRoot);
                 }
             }
 
@@ -153,10 +152,10 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
             data.putAll(createReplacementData(params));
 
-            File packageBundle = buildPackageBundle(Collections.unmodifiableMap(
+            Path packageBundle = buildPackageBundle(Collections.unmodifiableMap(
                     data), params, outputParentDir);
 
-            verifyOutputBundle(params, packageBundle.toPath()).stream()
+            verifyOutputBundle(params, packageBundle).stream()
                     .filter(Objects::nonNull)
                     .forEachOrdered(ex -> {
                 Log.verbose(ex.getLocalizedMessage());
@@ -240,9 +239,9 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     abstract protected Map<String, String> createReplacementData(
             Map<String, ? super Object> params) throws IOException;
 
-    abstract protected File buildPackageBundle(
+    abstract protected Path buildPackageBundle(
             Map<String, String> replacementData,
-            Map<String, ? super Object> params, File outputParentDir) throws
+            Map<String, ? super Object> params, Path outputParentDir) throws
             PackagerException, IOException;
 
     final protected PlatformPackage createMetaPackage(
@@ -266,7 +265,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
             @Override
             public Path sourceRoot() {
-                return IMAGES_ROOT.fetchFrom(params).toPath().toAbsolutePath();
+                return IMAGES_ROOT.fetchFrom(params).toAbsolutePath();
             }
 
             @Override

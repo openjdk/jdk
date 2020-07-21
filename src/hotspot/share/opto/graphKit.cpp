@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "ci/ciUtilities.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"

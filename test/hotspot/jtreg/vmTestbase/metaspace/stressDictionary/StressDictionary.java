@@ -29,7 +29,6 @@
  * VM Testbase keywords: [nonconcurrent, javac]
  *
  * @library /vmTestbase /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/timeout=420 metaspace.stressDictionary.StressDictionary -stressTime 30
  */
 

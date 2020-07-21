@@ -24,7 +24,7 @@
  */
 
 /**
- * Provides classes and interfaces that describe the types of Java&trade; Print
+ * Provides classes and interfaces that describe the types of Java Print
  * Service attributes and how they can be collected into attribute sets.
  *
  * <h2>What is an Attribute?</h2>

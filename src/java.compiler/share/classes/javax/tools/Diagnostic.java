@@ -71,7 +71,7 @@ public interface Diagnostic<S> {
         WARNING,
         /**
          * Problem similar to a warning, but is mandated by the tool's
-         * specification.  For example, the Java&trade; Language
+         * specification.  For example, the Java Language
          * Specification mandates warnings on certain
          * unchecked operations and the use of deprecated methods.
          */

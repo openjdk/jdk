@@ -271,6 +271,17 @@ void ShenandoahPhaseTimings::print_global_on(outputStream* out) const {
   out->print_cr("  all workers. Dividing the <total> over the root stage time estimates parallelism.");
   out->cr();
 
+  out->print_cr("  Pacing delays are measured from entering the pacing code till exiting it. Therefore,");
+  out->print_cr("  observed pacing delays may be higher than the threshold when paced thread spent more");
+  out->print_cr("  time in the pacing code. It usually happens when thread is de-scheduled while paced,");
+  out->print_cr("  OS takes longer to unblock the thread, or JVM experiences an STW pause.");
+  out->cr();
+  out->print_cr("  Higher delay would prevent application outpacing the GC, but it will hide the GC latencies");
+  out->print_cr("  from the STW pause times. Pacing affects the individual threads, and so it would also be");
+  out->print_cr("  invisible to the usual profiling tools, but would add up to end-to-end application latency.");
+  out->print_cr("  Raise max pacing delay with care.");
+  out->cr();
+
   for (uint i = 0; i < _num_phases; i++) {
     if (_global_data[i].maximum() != 0) {
       out->print_cr(SHENANDOAH_PHASE_NAME_FORMAT " = " SHENANDOAH_S_TIME_FORMAT " s "

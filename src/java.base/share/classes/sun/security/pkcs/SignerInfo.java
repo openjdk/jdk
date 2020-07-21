@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,9 @@ public class SignerInfo implements DerEncoder {
 
         // issuerAndSerialNumber
         DerValue[] issuerAndSerialNumber = derin.getSequence(2);
+        if (issuerAndSerialNumber.length != 2) {
+            throw new ParsingException("Invalid length for IssuerAndSerialNumber");
+        }
         byte[] issuerBytes = issuerAndSerialNumber[0].toByteArray();
         issuerName = new X500Name(new DerValue(DerValue.tag_Sequence,
                                                issuerBytes));

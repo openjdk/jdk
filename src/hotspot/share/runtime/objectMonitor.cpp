@@ -290,8 +290,6 @@ bool ObjectMonitor::enter(TRAPS) {
   JavaThread * jt = (JavaThread *) Self;
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(jt->thread_state() != _thread_blocked, "invariant");
-  assert(AsyncDeflateIdleMonitors || this->object() != NULL, "invariant");
-  assert(AsyncDeflateIdleMonitors || contentions() >= 0, "must not be negative: contentions=%d", contentions());
 
   // Keep track of contention for JVM/TI and M&M queries.
   add_to_contentions(1);
@@ -455,12 +453,12 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
     // deflation so we're done here.
     return;
   }
-  ADIM_guarantee(l_object == obj, "object=" INTPTR_FORMAT " must equal obj="
-                 INTPTR_FORMAT, p2i(l_object), p2i(obj));
+  assert(l_object == obj, "object=" INTPTR_FORMAT " must equal obj="
+         INTPTR_FORMAT, p2i(l_object), p2i(obj));
 
   markWord dmw = header();
   // The dmw has to be neutral (not NULL, not locked and not marked).
-  ADIM_guarantee(dmw.is_neutral(), "must be neutral: dmw=" INTPTR_FORMAT, dmw.value());
+  assert(dmw.is_neutral(), "must be neutral: dmw=" INTPTR_FORMAT, dmw.value());
 
   // Install displaced mark word if the object's header still points
   // to this ObjectMonitor. More than one racing caller to this function
@@ -487,22 +485,17 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
 // used for diagnostic output.
 const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   ss->print("is_busy: waiters=%d, ", _waiters);
-  if (!AsyncDeflateIdleMonitors) {
+  if (contentions() > 0) {
     ss->print("contentions=%d, ", contentions());
+  } else {
+    ss->print("contentions=0");
+  }
+  if (_owner != DEFLATER_MARKER) {
     ss->print("owner=" INTPTR_FORMAT, p2i(_owner));
   } else {
-    if (contentions() > 0) {
-      ss->print("contentions=%d, ", contentions());
-    } else {
-      ss->print("contentions=0");
-    }
-    if (_owner != DEFLATER_MARKER) {
-      ss->print("owner=" INTPTR_FORMAT, p2i(_owner));
-    } else {
-      // We report NULL instead of DEFLATER_MARKER here because is_busy()
-      // ignores DEFLATER_MARKER values.
-      ss->print("owner=" INTPTR_FORMAT, NULL);
-    }
+    // We report NULL instead of DEFLATER_MARKER here because is_busy()
+    // ignores DEFLATER_MARKER values.
+    ss->print("owner=" INTPTR_FORMAT, NULL);
   }
   ss->print(", cxq=" INTPTR_FORMAT ", EntryList=" INTPTR_FORMAT, p2i(_cxq),
             p2i(_EntryList));
@@ -524,8 +517,7 @@ void ObjectMonitor::EnterI(TRAPS) {
     return;
   }
 
-  if (AsyncDeflateIdleMonitors &&
-      try_set_owner_from(DEFLATER_MARKER, Self) == DEFLATER_MARKER) {
+  if (try_set_owner_from(DEFLATER_MARKER, Self) == DEFLATER_MARKER) {
     // Cancelled the in-progress async deflation by changing owner from
     // DEFLATER_MARKER to Self. As part of the contended enter protocol,
     // contentions was incremented to a positive value before EnterI()
@@ -659,8 +651,7 @@ void ObjectMonitor::EnterI(TRAPS) {
 
     if (TryLock(Self) > 0) break;
 
-    if (AsyncDeflateIdleMonitors &&
-        try_set_owner_from(DEFLATER_MARKER, Self) == DEFLATER_MARKER) {
+    if (try_set_owner_from(DEFLATER_MARKER, Self) == DEFLATER_MARKER) {
       // Cancelled the in-progress async deflation by changing owner from
       // DEFLATER_MARKER to Self. As part of the contended enter protocol,
       // contentions was incremented to a positive value before EnterI()
@@ -1007,8 +998,8 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
                     " is exiting an ObjectMonitor it does not own.", p2i(THREAD));
       lsh.print_cr("The imbalance is possibly caused by JNI locking.");
       print_debug_style_on(&lsh);
-#endif
       assert(false, "Non-balanced monitor enter/exit!");
+#endif
       return;
     }
   }

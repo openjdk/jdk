@@ -207,21 +207,31 @@ public:
     return -1;
   }
 
+  // Order preserving remove operations.
+
   void remove(const E& elem) {
-    for (int i = 0; i < _len; i++) {
-      if (_data[i] == elem) {
-        for (int j = i + 1; j < _len; j++) _data[j-1] = _data[j];
-        _len--;
-        return;
-      }
-    }
+    // Assuming that element does exist.
+    bool removed = remove_if_existing(elem);
+    if (removed) return;
     ShouldNotReachHere();
   }
 
-  // The order is preserved.
+  bool remove_if_existing(const E& elem) {
+    // Returns TRUE if elem is removed.
+    for (int i = 0; i < _len; i++) {
+      if (_data[i] == elem) {
+        remove_at(i);
+        return true;
+      }
+    }
+    return false;
+  }
+
   void remove_at(int index) {
     assert(0 <= index && index < _len, "illegal index");
-    for (int j = index + 1; j < _len; j++) _data[j-1] = _data[j];
+    for (int j = index + 1; j < _len; j++) {
+      _data[j-1] = _data[j];
+    }
     _len--;
   }
 

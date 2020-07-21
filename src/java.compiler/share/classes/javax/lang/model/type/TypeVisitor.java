@@ -44,7 +44,7 @@ import javax.lang.model.util.*;
  * @apiNote
  * <strong>WARNING:</strong> It is possible that methods will be added
  * to this interface to accommodate new, currently unknown, language
- * structures added to future versions of the Java&trade; programming
+ * structures added to future versions of the Java programming
  * language.
  *
  * Such additions have already occurred to support language features

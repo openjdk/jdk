@@ -57,7 +57,7 @@ private:
   const char* _name;
 
 protected:
-  volatile instanceOop _memory_mgr_obj;
+  volatile OopHandle _memory_mgr_obj;
 
 public:
   MemoryManager(const char* name);
@@ -76,9 +76,6 @@ public:
   virtual bool is_gc_memory_manager()    { return false; }
 
   const char* name() const { return _name; }
-
-  // GC support
-  void oops_do(OopClosure* f);
 
   // Static factory methods to get a memory manager of a specific type
   static MemoryManager*   get_code_cache_memory_manager();

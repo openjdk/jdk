@@ -952,29 +952,43 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // Cloning these guys is unlikely to win
   int n_op = n->Opcode();
-  if( n_op == Op_MergeMem ) return n;
-  if( n->is_Proj() ) return n;
+  if (n_op == Op_MergeMem) {
+    return n;
+  }
+  if (n->is_Proj()) {
+    return n;
+  }
   // Do not clone-up CmpFXXX variations, as these are always
   // followed by a CmpI
-  if( n->is_Cmp() ) return n;
-  // Attempt to use a conditional move instead of a phi/branch
-  if( ConditionalMoveLimit > 0 && n_op == Op_Region ) {
-    Node *cmov = conditional_move( n );
-    if( cmov ) return cmov;
-  }
-  if( n->is_CFG() || n->is_LoadStore() )
+  if (n->is_Cmp()) {
     return n;
-  if( n_op == Op_Opaque1 ||     // Opaque nodes cannot be mod'd
-      n_op == Op_Opaque2 ) {
-    if( !C->major_progress() )   // If chance of no more loop opts...
+  }
+  // Attempt to use a conditional move instead of a phi/branch
+  if (ConditionalMoveLimit > 0 && n_op == Op_Region) {
+    Node *cmov = conditional_move( n );
+    if (cmov) {
+      return cmov;
+    }
+  }
+  if (n->is_CFG() || n->is_LoadStore()) {
+    return n;
+  }
+  if (n->is_Opaque1() ||     // Opaque nodes cannot be mod'd
+      n_op == Op_Opaque2) {
+    if (!C->major_progress()) {   // If chance of no more loop opts...
       _igvn._worklist.push(n);  // maybe we'll remove them
+    }
     return n;
   }
 
-  if( n->is_Con() ) return n;   // No cloning for Con nodes
+  if (n->is_Con()) {
+    return n;   // No cloning for Con nodes
+  }
 
   Node *n_ctrl = get_ctrl(n);
-  if( !n_ctrl ) return n;       // Dead node
+  if (!n_ctrl) {
+    return n;       // Dead node
+  }
 
   Node* res = try_move_store_before_loop(n, n_ctrl);
   if (res != NULL) {

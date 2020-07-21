@@ -26,7 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
 
 #include "code/codeCache.hpp"
-#include "gc/shared/oopStorageParState.hpp"
+#include "gc/shared/oopStorageSetParState.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -53,8 +53,6 @@ class ShenandoahSerialRoots {
 private:
   ShenandoahSerialRoot  _universe_root;
   ShenandoahSerialRoot  _object_synchronizer_root;
-  ShenandoahSerialRoot  _management_root;
-  ShenandoahSerialRoot  _jvmti_root;
 public:
   ShenandoahSerialRoots(ShenandoahPhaseTimings::Phase phase);
   void oops_do(OopClosure* cl, uint worker_id);
@@ -103,78 +101,28 @@ public:
 };
 
 template <bool CONCURRENT>
-class ShenandoahVMRoot {
+class ShenandoahVMWeakRoots {
 private:
-  OopStorage::ParState<CONCURRENT, false /* is_const */> _itr;
-  const ShenandoahPhaseTimings::Phase    _phase;
-  const ShenandoahPhaseTimings::ParPhase _par_phase;
-public:
-  ShenandoahVMRoot(OopStorage* storage,
-          ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase);
-
-  template <typename Closure>
-  void oops_do(Closure* cl, uint worker_id);
-};
-
-template <bool CONCURRENT>
-class ShenandoahWeakRoot : public ShenandoahVMRoot<CONCURRENT> {
-public:
-  ShenandoahWeakRoot(OopStorage* storage,
-          ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase);
-};
-
-template <>
-class ShenandoahWeakRoot<false /*concurrent*/> {
-private:
-  OopStorage::ParState<false /*concurrent*/, false /*is_const*/> _itr;
-  const ShenandoahPhaseTimings::Phase    _phase;
-  const ShenandoahPhaseTimings::ParPhase _par_phase;
+  OopStorageSetWeakParState<CONCURRENT, false /* is_const */> _weak_roots;
+  ShenandoahPhaseTimings::Phase                               _phase;
 
 public:
-  ShenandoahWeakRoot(OopStorage* storage,
-          ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase);
+  ShenandoahVMWeakRoots(ShenandoahPhaseTimings::Phase phase);
 
-  template <typename IsAliveClosure, typename KeepAliveClosure>
-  void weak_oops_do(IsAliveClosure* is_alive, KeepAliveClosure* keep_alive, uint worker_id);
-};
+  template <typename T>
+  void oops_do(T* cl, uint worker_id);
 
-template <bool CONCURRENT>
-class ShenandoahWeakRoots {
-private:
-  ShenandoahWeakRoot<CONCURRENT>  _jni_roots;
-  ShenandoahWeakRoot<CONCURRENT>  _string_table_roots;
-  ShenandoahWeakRoot<CONCURRENT>  _resolved_method_table_roots;
-  ShenandoahWeakRoot<CONCURRENT>  _vm_roots;
+  template <typename IsAlive, typename KeepAlive>
+  void weak_oops_do(IsAlive* is_alive, KeepAlive* keep_alive, uint worker_id);
 
-public:
-  ShenandoahWeakRoots();
-
-  template <typename Closure>
-  void oops_do(Closure* cl, uint worker_id);
-};
-
-template <>
-class ShenandoahWeakRoots<false /*concurrent */> {
-private:
-  ShenandoahWeakRoot<false /*concurrent*/>  _jni_roots;
-  ShenandoahWeakRoot<false /*concurrent*/>  _string_table_roots;
-  ShenandoahWeakRoot<false /*concurrent*/>  _resolved_method_table_roots;
-  ShenandoahWeakRoot<false /*concurrent*/>  _vm_roots;
-public:
-  ShenandoahWeakRoots(ShenandoahPhaseTimings::Phase phase);
-
-  template <typename Closure>
-  void oops_do(Closure* cl, uint worker_id);
-
-  template <typename IsAliveClosure, typename KeepAliveClosure>
-  void weak_oops_do(IsAliveClosure* is_alive, KeepAliveClosure* keep_alive, uint worker_id);
+  void report_num_dead();
 };
 
 template <bool CONCURRENT>
 class ShenandoahVMRoots {
 private:
-  ShenandoahVMRoot<CONCURRENT>    _jni_handle_roots;
-  ShenandoahVMRoot<CONCURRENT>    _vm_global_roots;
+  OopStorageSetStrongParState<CONCURRENT, false /* is_const */> _strong_roots;
+  ShenandoahPhaseTimings::Phase                                 _phase;
 
 public:
   ShenandoahVMRoots(ShenandoahPhaseTimings::Phase phase);
@@ -306,7 +254,7 @@ private:
   ShenandoahClassLoaderDataRoots<false /*concurrent*/, true /*single threaded*/>
                                                            _cld_roots;
   ShenandoahSerialWeakRoots                                _serial_weak_roots;
-  ShenandoahWeakRoots<false /*concurrent*/>                _weak_roots;
+  ShenandoahVMWeakRoots<false /*concurrent*/>              _weak_roots;
   ShenandoahConcurrentStringDedupRoots                     _dedup_roots;
   ShenandoahCodeCacheRoots                                 _code_roots;
 
@@ -325,7 +273,7 @@ private:
                                                             _cld_roots;
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahSerialWeakRoots                                 _serial_weak_roots;
-  ShenandoahWeakRoots<false /*concurrent*/>                 _weak_roots;
+  ShenandoahVMWeakRoots<false /*concurrent*/>               _weak_roots;
   ShenandoahStringDedupRoots                                _dedup_roots;
   ShenandoahCodeCacheRoots                                  _code_roots;
   bool                                                      _stw_roots_processing;
@@ -346,7 +294,7 @@ private:
                                                             _cld_roots;
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahSerialWeakRoots                                 _serial_weak_roots;
-  ShenandoahWeakRoots<false /*concurrent*/>                 _weak_roots;
+  ShenandoahVMWeakRoots<false /*concurrent*/>               _weak_roots;
   ShenandoahStringDedupRoots                                _dedup_roots;
   ShenandoahCodeCacheRoots                                  _code_roots;
 
@@ -366,7 +314,7 @@ private:
                                                             _cld_roots;
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahSerialWeakRoots                                 _serial_weak_roots;
-  ShenandoahWeakRoots<false /*concurrent*/>                 _weak_roots;
+  ShenandoahVMWeakRoots<false /*concurrent*/>               _weak_roots;
   ShenandoahStringDedupRoots                                _dedup_roots;
   ShenandoahCodeCacheRoots                                  _code_roots;
 

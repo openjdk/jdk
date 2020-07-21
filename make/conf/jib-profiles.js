@@ -960,7 +960,7 @@ var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
         linux_x64: "gcc9.2.0-OL6.4+1.0",
-        macosx_x64: "Xcode10.1-MacOSX10.14+1.0",
+        macosx_x64: "Xcode11.3.1-MacOSX10.15+1.0",
         windows_x64: "VS2019-16.5.3+1.0",
         linux_aarch64: "gcc9.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",

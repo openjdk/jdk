@@ -26,7 +26,7 @@
  * @bug 8247824
  * @summary CTW: C2 (Shenandoah) compilation fails with SEGV in SBC2Support::pin_and_expand
  * @requires vm.flavor == "server"
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:-BackgroundCompilation -XX:+UseShenandoahGC -XX:LoopMaxUnroll=0 TestShenandoahLRBInOuterStripMinedLoop
  *

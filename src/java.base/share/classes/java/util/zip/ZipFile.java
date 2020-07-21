@@ -795,7 +795,6 @@ public class ZipFile implements ZipConstants, Closeable {
                 throw new UncheckedIOException(ioe);
             }
         }
-
     }
 
     /**
@@ -1311,6 +1310,44 @@ public class ZipFile implements ZipConstants, Closeable {
             }
         }
 
+        private static final void checkUTF8(byte[] a, int pos, int len) throws ZipException {
+            try {
+                int end = pos + len;
+                while (pos < end) {
+                    // ASCII fast-path: When checking that a range of bytes is
+                    // valid UTF-8, we can avoid some allocation by skipping
+                    // past bytes in the 0-127 range
+                    if (a[pos] < 0) {
+                        ZipCoder.toStringUTF8(a, pos, end - pos);
+                        break;
+                    }
+                    pos++;
+                }
+            } catch(Exception e) {
+                zerror("invalid CEN header (bad entry name)");
+            }
+        }
+
+        private final void checkEncoding(ZipCoder zc, byte[] a, int pos, int nlen) throws ZipException {
+            try {
+                zc.toString(a, pos, nlen);
+            } catch(Exception e) {
+                zerror("invalid CEN header (bad entry name)");
+            }
+        }
+
+        private static final int hashN(byte[] a, int off, int len) {
+            int h = 1;
+            while (len-- > 0) {
+                h = 31 * h + a[off++];
+            }
+            return h;
+        }
+
+        private static final int hash_append(int hash, byte b) {
+            return hash * 31 + b;
+        }
+
         private static class End {
             int  centot;     // 4 bytes
             long cenlen;     // 4 bytes
@@ -1489,12 +1526,18 @@ public class ZipFile implements ZipConstants, Closeable {
                 int nlen   = CENNAM(cen, pos);
                 int elen   = CENEXT(cen, pos);
                 int clen   = CENCOM(cen, pos);
-                if ((CENFLG(cen, pos) & 1) != 0)
+                int flag   = CENFLG(cen, pos);
+                if ((flag & 1) != 0)
                     zerror("invalid CEN header (encrypted entry)");
                 if (method != STORED && method != DEFLATED)
                     zerror("invalid CEN header (bad compression method: " + method + ")");
                 if (entryPos + nlen > limit)
                     zerror("invalid CEN header (bad header size)");
+                if (zc.isUTF8() || (flag & USE_UTF8) != 0) {
+                    checkUTF8(cen, pos + CENHDR, nlen);
+                } else {
+                    checkEncoding(zc, cen, pos + CENHDR, nlen);
+                }
                 // Record the CEN offset and the name hash in our hash cell.
                 hash = zipCoderForPos(pos).normalizedHash(cen, entryPos, nlen);
                 hsh = (hash & 0x7fffffff) % tablelen;

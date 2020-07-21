@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,17 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6398614 6705893
- * @summary Create a user defined ScriptContext and check
- * that script can access variables from non-standard scopes
- * @modules jdk.scripting.nashorn
- */
+public class NativeThread {
 
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
+    public static final int SIGPIPE;
 
-public class PluggableContextTest {
-    public static void main(String[] args) throws Exception {
-        ScriptEngineManager m = new ScriptEngineManager();
-        ScriptContext ctx = new MyContext();
-        ctx.setAttribute("x", "hello", MyContext.APP_SCOPE);
-        ScriptEngine e = Helper.getJsEngine(m);
-        if (e == null) {
-            System.out.println("Warning: No js engine found; test vacuously passes.");
-            return;
-        }
-        // the following reference to 'x' throws exception
-        // if APP_SCOPE is not searched.
-        e.eval("x", ctx);
+    static {
+        SIGPIPE = getSIGPIPE();
     }
+
+    public static native long getID();
+
+    public static native int signal(long threadId, int sig);
+
+    private static native int getSIGPIPE();
 }

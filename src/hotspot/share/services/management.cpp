@@ -218,11 +218,6 @@ jlong Management::timestamp() {
   return t.ticks() - _stamp.ticks();
 }
 
-void Management::oops_do(OopClosure* f) {
-  MemoryService::oops_do(f);
-  ThreadService::oops_do(f);
-}
-
 InstanceKlass* Management::java_lang_management_ThreadInfo_klass(TRAPS) {
   if (_threadInfo_klass == NULL) {
     _threadInfo_klass = load_and_initialize_klass(vmSymbols::java_lang_management_ThreadInfo(), CHECK_NULL);
@@ -1232,9 +1227,9 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       for (int depth = 0; depth < num_frames; depth++) {
         StackFrameInfo* frame = stacktrace->stack_frame_at(depth);
         int len = frame->num_locked_monitors();
-        GrowableArray<oop>* locked_monitors = frame->locked_monitors();
+        GrowableArray<OopHandle>* locked_monitors = frame->locked_monitors();
         for (j = 0; j < len; j++) {
-          oop monitor = locked_monitors->at(j);
+          oop monitor = locked_monitors->at(j).resolve();
           assert(monitor != NULL, "must be a Java object");
           monitors_array->obj_at_put(count, monitor);
           depths_array->int_at_put(count, depth);
@@ -1242,9 +1237,9 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
         }
       }
 
-      GrowableArray<oop>* jni_locked_monitors = stacktrace->jni_locked_monitors();
+      GrowableArray<OopHandle>* jni_locked_monitors = stacktrace->jni_locked_monitors();
       for (j = 0; j < jni_locked_monitors->length(); j++) {
-        oop object = jni_locked_monitors->at(j);
+        oop object = jni_locked_monitors->at(j).resolve();
         assert(object != NULL, "must be a Java object");
         monitors_array->obj_at_put(count, object);
         // Monitor locked via JNI MonitorEnter call doesn't have stack depth info
@@ -1258,7 +1253,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       // Create Object[] filled with locked JSR-166 synchronizers
       assert(ts->threadObj() != NULL, "Must be a valid JavaThread");
       ThreadConcurrentLocks* tcl = ts->get_concurrent_locks();
-      GrowableArray<instanceOop>* locks = (tcl != NULL ? tcl->owned_locks() : NULL);
+      GrowableArray<OopHandle>* locks = (tcl != NULL ? tcl->owned_locks() : NULL);
       int num_locked_synchronizers = (locks != NULL ? locks->length() : 0);
 
       objArrayOop array = oopFactory::new_objArray(SystemDictionary::Object_klass(), num_locked_synchronizers, CHECK_NULL);
@@ -1266,7 +1261,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       synchronizers_array = sh;
 
       for (int k = 0; k < num_locked_synchronizers; k++) {
-        synchronizers_array->obj_at_put(k, locks->at(k));
+        synchronizers_array->obj_at_put(k, locks->at(k).resolve());
       }
     }
 

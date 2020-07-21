@@ -37,7 +37,6 @@
  * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.share.gc.ClassChain
  * @run main/othervm
  *      -XX:MaxMetaspaceSize=64M

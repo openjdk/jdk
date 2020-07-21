@@ -25,8 +25,6 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
@@ -101,21 +99,27 @@ import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
  */
 public class WinMsiBundler  extends AbstractBundler {
 
-    public static final BundlerParamInfo<File> MSI_IMAGE_DIR =
+    public static final BundlerParamInfo<Path> MSI_IMAGE_DIR =
             new StandardBundlerParam<>(
             "win.msi.imageDir",
-            File.class,
+            Path.class,
             params -> {
-                File imagesRoot = IMAGES_ROOT.fetchFrom(params);
-                if (!imagesRoot.exists()) imagesRoot.mkdirs();
-                return new File(imagesRoot, "win-msi.image");
+                Path imagesRoot = IMAGES_ROOT.fetchFrom(params);
+                if (!Files.exists(imagesRoot)) {
+                    try {
+                        Files.createDirectories(imagesRoot);
+                    } catch (IOException ioe) {
+                        return null;
+                    }
+                }
+                return imagesRoot.resolve("win-msi.image");
             },
             (s, p) -> null);
 
-    public static final BundlerParamInfo<File> WIN_APP_IMAGE =
+    public static final BundlerParamInfo<Path> WIN_APP_IMAGE =
             new StandardBundlerParam<>(
             "win.app.image",
-            File.class,
+            Path.class,
             null,
             (s, p) -> null);
 
@@ -284,15 +288,14 @@ public class WinMsiBundler  extends AbstractBundler {
 
     private void prepareProto(Map<String, ? super Object> params)
                 throws PackagerException, IOException {
-        File appImage = StandardBundlerParam.getPredefinedAppImage(params);
-        File appDir = null;
+        Path appImage = StandardBundlerParam.getPredefinedAppImage(params);
+        Path appDir;
 
         // we either have an application image or need to build one
         if (appImage != null) {
-            appDir = new File(MSI_IMAGE_DIR.fetchFrom(params),
-                    APP_NAME.fetchFrom(params));
+            appDir = MSI_IMAGE_DIR.fetchFrom(params).resolve(APP_NAME.fetchFrom(params));
             // copy everything from appImage dir into appDir/name
-            IOUtils.copyRecursive(appImage.toPath(), appDir.toPath());
+            IOUtils.copyRecursive(appImage, appDir);
         } else {
             appDir = appImageBundler.execute(params, MSI_IMAGE_DIR.fetchFrom(
                     params));
@@ -305,12 +308,12 @@ public class WinMsiBundler  extends AbstractBundler {
             // Ignore custom icon if any as we don't want to copy anything in
             // Java Runtime image.
             installerIcon = ApplicationLayout.javaRuntime()
-                    .resolveAt(appDir.toPath())
+                    .resolveAt(appDir)
                     .runtimeDirectory()
                     .resolve(Path.of("bin", "java.exe"));
         } else {
             installerIcon = ApplicationLayout.windowsAppImage()
-                    .resolveAt(appDir.toPath())
+                    .resolveAt(appDir)
                     .launchersDirectory()
                     .resolve(APP_NAME.fetchFrom(params) + ".exe");
         }
@@ -322,31 +325,31 @@ public class WinMsiBundler  extends AbstractBundler {
         if (licenseFile != null) {
             // need to copy license file to the working directory
             // and convert to rtf if needed
-            File lfile = new File(licenseFile);
-            File destFile = new File(CONFIG_ROOT.fetchFrom(params),
-                    lfile.getName());
+            Path lfile = Path.of(licenseFile);
+            Path destFile = CONFIG_ROOT.fetchFrom(params)
+                    .resolve(lfile.getFileName());
 
             IOUtils.copyFile(lfile, destFile);
-            destFile.setWritable(true);
+            destFile.toFile().setWritable(true);
             ensureByMutationFileIsRTF(destFile);
         }
     }
 
     @Override
-    public File execute(Map<String, ? super Object> params,
-            File outputParentDir) throws PackagerException {
+    public Path execute(Map<String, ? super Object> params,
+            Path outputParentDir) throws PackagerException {
 
-        IOUtils.writableOutputDir(outputParentDir.toPath());
+        IOUtils.writableOutputDir(outputParentDir);
 
-        Path imageDir = MSI_IMAGE_DIR.fetchFrom(params).toPath();
+        Path imageDir = MSI_IMAGE_DIR.fetchFrom(params);
         try {
             Files.createDirectories(imageDir);
 
             prepareProto(params);
 
             wixSourcesBuilder
-            .initFromParams(WIN_APP_IMAGE.fetchFrom(params).toPath(), params)
-            .createMainFragment(CONFIG_ROOT.fetchFrom(params).toPath().resolve(
+            .initFromParams(WIN_APP_IMAGE.fetchFrom(params), params)
+            .createMainFragment(CONFIG_ROOT.fetchFrom(params).resolve(
                     "bundle.wxf"));
 
             Map<String, String> wixVars = prepareMainProjectFile(params);
@@ -389,7 +392,7 @@ public class WinMsiBundler  extends AbstractBundler {
         data.put("JpAppVersion", PRODUCT_VERSION.fetchFrom(params));
         data.put("JpIcon", installerIcon.toString());
 
-        final Path configDir = CONFIG_ROOT.fetchFrom(params).toPath();
+        final Path configDir = CONFIG_ROOT.fetchFrom(params);
 
         data.put("JpConfigDir", configDir.toAbsolutePath().toString());
 
@@ -399,9 +402,9 @@ public class WinMsiBundler  extends AbstractBundler {
 
         String licenseFile = LICENSE_FILE.fetchFrom(params);
         if (licenseFile != null) {
-            String lname = new File(licenseFile).getName();
-            File destFile = new File(CONFIG_ROOT.fetchFrom(params), lname);
-            data.put("JpLicenseRtf", destFile.getAbsolutePath());
+            String lname = Path.of(licenseFile).getFileName().toString();
+            Path destFile = CONFIG_ROOT.fetchFrom(params).resolve(lname);
+            data.put("JpLicenseRtf", destFile.toAbsolutePath().toString());
         }
 
         // Copy CA dll to include with installer
@@ -409,9 +412,7 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpInstallDirChooser", "yes");
             String fname = "wixhelper.dll";
             try (InputStream is = OverridableResource.readDefault(fname)) {
-                Files.copy(is, Paths.get(
-                        CONFIG_ROOT.fetchFrom(params).getAbsolutePath(),
-                        fname));
+                Files.copy(is, CONFIG_ROOT.fetchFrom(params).resolve(fname));
             }
         }
 
@@ -419,9 +420,7 @@ public class WinMsiBundler  extends AbstractBundler {
         for (String loc : Arrays.asList("en", "ja", "zh_CN")) {
             String fname = "MsiInstallerStrings_" + loc + ".wxl";
             try (InputStream is = OverridableResource.readDefault(fname)) {
-                Files.copy(is, Paths.get(
-                        CONFIG_ROOT.fetchFrom(params).getAbsolutePath(),
-                        fname));
+                Files.copy(is, CONFIG_ROOT.fetchFrom(params).resolve(fname));
             }
         }
 
@@ -436,28 +435,28 @@ public class WinMsiBundler  extends AbstractBundler {
         return data;
     }
 
-    private File buildMSI(Map<String, ? super Object> params,
-            Map<String, String> wixVars, File outdir)
+    private Path buildMSI(Map<String, ? super Object> params,
+            Map<String, String> wixVars, Path outdir)
             throws IOException {
 
-        File msiOut = new File(
-                outdir, INSTALLER_FILE_NAME.fetchFrom(params) + ".msi");
+        Path msiOut = outdir.resolve(INSTALLER_FILE_NAME.fetchFrom(params) + ".msi");
 
         Log.verbose(MessageFormat.format(I18N.getString(
-                "message.preparing-msi-config"), msiOut.getAbsolutePath()));
+                "message.preparing-msi-config"), msiOut.toAbsolutePath()
+                        .toString()));
 
         WixPipeline wixPipeline = new WixPipeline()
         .setToolset(wixToolset.entrySet().stream().collect(
                 Collectors.toMap(
                         entry -> entry.getKey(),
                         entry -> entry.getValue().path)))
-        .setWixObjDir(TEMP_ROOT.fetchFrom(params).toPath().resolve("wixobj"))
-        .setWorkDir(WIN_APP_IMAGE.fetchFrom(params).toPath())
-        .addSource(CONFIG_ROOT.fetchFrom(params).toPath().resolve("main.wxs"), wixVars)
-        .addSource(CONFIG_ROOT.fetchFrom(params).toPath().resolve("bundle.wxf"), null);
+        .setWixObjDir(TEMP_ROOT.fetchFrom(params).resolve("wixobj"))
+        .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
+        .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"), wixVars)
+        .addSource(CONFIG_ROOT.fetchFrom(params).resolve("bundle.wxf"), null);
 
         Log.verbose(MessageFormat.format(I18N.getString(
-                "message.generating-msi"), msiOut.getAbsolutePath()));
+                "message.generating-msi"), msiOut.toAbsolutePath().toString()));
 
         boolean enableLicenseUI = (LICENSE_FILE.fetchFrom(params) != null);
         boolean enableInstalldirUI = INSTALLDIR_CHOOSER.fetchFrom(params);
@@ -472,26 +471,27 @@ public class WinMsiBundler  extends AbstractBundler {
         }
 
         wixPipeline.addLightOptions("-loc",
-                CONFIG_ROOT.fetchFrom(params).toPath().resolve(I18N.getString(
+                CONFIG_ROOT.fetchFrom(params).resolve(I18N.getString(
                         "resource.wxl-file-name")).toAbsolutePath().toString());
 
         // Only needed if we using CA dll, so Wix can find it
         if (enableInstalldirUI) {
-            wixPipeline.addLightOptions("-b", CONFIG_ROOT.fetchFrom(params).getAbsolutePath());
+            wixPipeline.addLightOptions("-b", CONFIG_ROOT.fetchFrom(params)
+                    .toAbsolutePath().toString());
         }
 
-        wixPipeline.buildMsi(msiOut.toPath().toAbsolutePath());
+        wixPipeline.buildMsi(msiOut.toAbsolutePath());
 
         return msiOut;
     }
 
-    private static void ensureByMutationFileIsRTF(File f) {
-        if (f == null || !f.isFile()) return;
+    private static void ensureByMutationFileIsRTF(Path f) {
+        if (f == null || !Files.isRegularFile(f)) return;
 
         try {
             boolean existingLicenseIsRTF = false;
 
-            try (FileInputStream fin = new FileInputStream(f)) {
+            try (InputStream fin = Files.newInputStream(f)) {
                 byte[] firstBits = new byte[7];
 
                 if (fin.read(firstBits) == firstBits.length) {
@@ -501,9 +501,9 @@ public class WinMsiBundler  extends AbstractBundler {
             }
 
             if (!existingLicenseIsRTF) {
-                List<String> oldLicense = Files.readAllLines(f.toPath());
+                List<String> oldLicense = Files.readAllLines(f);
                 try (Writer w = Files.newBufferedWriter(
-                        f.toPath(), Charset.forName("Windows-1252"))) {
+                        f, Charset.forName("Windows-1252"))) {
                     w.write("{\\rtf1\\ansi\\ansicpg1252\\deff0\\deflang1033"
                             + "{\\fonttbl{\\f0\\fnil\\fcharset0 Arial;}}\n"
                             + "\\viewkind4\\uc1\\pard\\sa200\\sl276"

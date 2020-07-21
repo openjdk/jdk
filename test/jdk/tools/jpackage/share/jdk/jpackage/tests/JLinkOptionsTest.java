@@ -75,9 +75,8 @@ public final class JLinkOptionsTest {
                     null,
                     },
 
-            // bind-services and jpackage option --bind-services (deprecated)
+            // jlink-options --bind-services
             {"com.other/com.other.Hello", new String[]{
-                    "--bind-services",
                     "--jlink-options", "--bind-services",
                     },
                     // with bind-services should have some services
@@ -98,6 +97,7 @@ public final class JLinkOptionsTest {
 
             // bind-services and limit-options
             {"com.other/com.other.Hello", new String[]{
+                    "--jlink-options",
                     "--bind-services",
                     "--jlink-options",
                     "--limit-modules java.base,java.datatransfer,java.xml,java.prefs,java.desktop,com.other,java.smartcardio",

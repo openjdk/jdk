@@ -121,8 +121,8 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     /**
      * Return the name of this package.
      *
-     * @return  The fully-qualified name of this package as defined in section 6.5.3 of
-     *          <cite>The Java&trade; Language Specification</cite>,
+     * @return  The fully-qualified name of this package as defined in section {@jls 6.5.3} of
+     *          <cite>The Java Language Specification</cite>,
      *          for example, {@code java.lang}
      */
     public String getName() {

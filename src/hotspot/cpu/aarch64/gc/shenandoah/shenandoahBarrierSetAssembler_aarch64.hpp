@@ -84,7 +84,7 @@ public:
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
   void cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
-                   bool acquire, bool release, bool weak, bool is_cae, Register result);
+                   bool acquire, bool release, bool is_cae, Register result);
 
   virtual void barrier_stubs_init();
 };

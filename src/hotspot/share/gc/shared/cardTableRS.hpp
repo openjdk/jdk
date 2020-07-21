@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ public:
 
   // dirty and precleaned are equivalent wrt younger_refs_iter.
   static bool card_is_dirty_wrt_gen_iter(CardValue cv) {
-    return cv == dirty_card || cv == precleaned_card;
+    return cv == dirty_card;
   }
 
   // Returns "true" iff the value "cv" will cause the card containing it

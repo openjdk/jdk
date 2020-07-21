@@ -30,7 +30,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build jit.misctests.Pi.Pi
  * @run driver ExecDriver --java jit.misctests.Pi.Pi
  */

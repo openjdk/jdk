@@ -25,7 +25,6 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -39,20 +38,21 @@ import static jdk.incubator.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS
 
 public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
 
-    static final BundlerParamInfo<File> ICON_PNG =
+    static final BundlerParamInfo<Path> ICON_PNG =
             new StandardBundlerParam<>(
             "icon.png",
-            File.class,
+            Path.class,
             params -> {
-                File f = ICON.fetchFrom(params);
-                if (f != null && !f.getName().toLowerCase().endsWith(".png")) {
+                Path f = ICON.fetchFrom(params);
+                if (f != null && f.getFileName() != null && !f.getFileName()
+                        .toString().toLowerCase().endsWith(".png")) {
                     Log.error(MessageFormat.format(
                             I18N.getString("message.icon-not-png"), f));
                     return null;
                 }
                 return f;
             },
-            (s, p) -> new File(s));
+            (s, p) -> Path.of(s));
 
     final static String DEFAULT_ICON = "java32.png";
 

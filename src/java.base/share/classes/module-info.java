@@ -193,7 +193,6 @@ module java.base {
         java.net.http,
         java.rmi,
         java.security.jgss,
-        java.xml,
         jdk.attach,
         jdk.charsets,
         jdk.compiler,

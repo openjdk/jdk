@@ -2614,13 +2614,34 @@ assertEquals("[x, y, z]", pb.command().toString());
                 throw new IllegalArgumentException(targetClass + " is an array class");
 
             if (!VerifyAccess.isClassAccessible(targetClass, lookupClass, prevLookupClass, allowedModes)) {
-                throw new MemberName(targetClass).makeAccessException("access violation", this);
+                throw makeAccessException(targetClass);
             }
-            checkSecurityManager(targetClass, null);
+            checkSecurityManager(targetClass);
 
             // ensure class initialization
             Unsafe.getUnsafe().ensureClassInitialized(targetClass);
             return targetClass;
+        }
+
+        /*
+         * Returns IllegalAccessException due to access violation to the given targetClass.
+         *
+         * This method is called by {@link Lookup#accessClass} and {@link Lookup#ensureInitialized}
+         * which verifies access to a class rather a member.
+         */
+        private IllegalAccessException makeAccessException(Class<?> targetClass) {
+            String message = "access violation: "+ targetClass;
+            if (this == MethodHandles.publicLookup()) {
+                message += ", from public Lookup";
+            } else {
+                Module m = lookupClass().getModule();
+                message += ", from " + lookupClass() + " (" + m + ")";
+                if (prevLookupClass != null) {
+                    message += ", previous lookup " +
+                            prevLookupClass.getName() + " (" + prevLookupClass.getModule() + ")";
+                }
+            }
+            return new IllegalAccessException(message);
         }
 
         /**
@@ -2693,9 +2714,9 @@ assertEquals("[x, y, z]", pb.command().toString());
          */
         public Class<?> accessClass(Class<?> targetClass) throws IllegalAccessException {
             if (!VerifyAccess.isClassAccessible(targetClass, lookupClass, prevLookupClass, allowedModes)) {
-                throw new MemberName(targetClass).makeAccessException("access violation", this);
+                throw makeAccessException(targetClass);
             }
-            checkSecurityManager(targetClass, null);
+            checkSecurityManager(targetClass);
             return targetClass;
         }
 
@@ -3514,11 +3535,10 @@ return mh1;
         }
 
         /**
-         * Perform necessary <a href="MethodHandles.Lookup.html#secmgr">access checks</a>.
-         * Determines a trustable caller class to compare with refc, the symbolic reference class.
-         * If this lookup object has full privilege access, then the caller class is the lookupClass.
+         * Perform steps 1 and 2b <a href="MethodHandles.Lookup.html#secmgr">access checks</a>
+         * for ensureInitialzed, findClass or accessClass.
          */
-        void checkSecurityManager(Class<?> refc, MemberName m) {
+        void checkSecurityManager(Class<?> refc) {
             if (allowedModes == TRUSTED)  return;
 
             SecurityManager smgr = System.getSecurityManager();
@@ -3531,12 +3551,31 @@ return mh1;
                 ReflectUtil.checkPackageAccess(refc);
             }
 
-            if (m == null) {  // findClass or accessClass
-                // Step 2b:
-                if (!fullPowerLookup) {
-                    smgr.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-                }
-                return;
+            // Step 2b:
+            if (!fullPowerLookup) {
+                smgr.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
+            }
+        }
+
+        /**
+         * Perform steps 1, 2a and 3 <a href="MethodHandles.Lookup.html#secmgr">access checks</a>.
+         * Determines a trustable caller class to compare with refc, the symbolic reference class.
+         * If this lookup object has full privilege access, then the caller class is the lookupClass.
+         */
+        void checkSecurityManager(Class<?> refc, MemberName m) {
+            Objects.requireNonNull(refc);
+            Objects.requireNonNull(m);
+
+            if (allowedModes == TRUSTED)  return;
+
+            SecurityManager smgr = System.getSecurityManager();
+            if (smgr == null)  return;
+
+            // Step 1:
+            boolean fullPowerLookup = hasFullPrivilegeAccess();
+            if (!fullPowerLookup ||
+                !VerifyAccess.classLoaderIsAncestor(lookupClass, refc)) {
+                ReflectUtil.checkPackageAccess(refc);
             }
 
             // Step 2a:

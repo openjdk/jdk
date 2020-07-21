@@ -260,9 +260,9 @@ void MacroAssembler::fast_log(FloatRegister vtmp0, FloatRegister vtmp1,
                               Register tmp4, Register tmp5) {
   Label DONE, CHECK_CORNER_CASES, SMALL_VALUE, MAIN,
       CHECKED_CORNER_CASES, RETURN_MINF_OR_NAN;
-  const long INF_OR_NAN_PREFIX = 0x7FF0;
-  const long MINF_OR_MNAN_PREFIX = 0xFFF0;
-  const long ONE_PREFIX = 0x3FF0;
+  const int64_t INF_OR_NAN_PREFIX = 0x7FF0;
+  const int64_t MINF_OR_MNAN_PREFIX = 0xFFF0;
+  const int64_t ONE_PREFIX = 0x3FF0;
     movz(tmp2, ONE_PREFIX, 48);
     movz(tmp4, 0x0010, 48);
     fmovd(rscratch1, v0); // rscratch1 = AS_LONG_BITS(X)

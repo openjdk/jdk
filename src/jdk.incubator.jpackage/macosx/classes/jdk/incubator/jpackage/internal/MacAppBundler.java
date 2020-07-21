@@ -63,8 +63,8 @@ public class MacAppBundler extends AppImageBundler {
             String.class,
             params -> {
                     String result = MacBaseInstallerBundler.findKey(
-                            "Developer ID Application: "
-                            + SIGNING_KEY_USER.fetchFrom(params),
+                            "Developer ID Application: ",
+                            SIGNING_KEY_USER.fetchFrom(params),
                             SIGNING_KEYCHAIN.fetchFrom(params),
                             VERBOSE.fetchFrom(params));
                     if (result != null) {

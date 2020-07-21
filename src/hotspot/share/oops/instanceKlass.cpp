@@ -1157,15 +1157,23 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 8
   {
     DTRACE_CLASSINIT_PROBE_WAIT(clinit, -1, wait);
-    // Timer includes any side effects of class initialization (resolution,
-    // etc), but not recursive entry into call_class_initializer().
-    PerfClassTraceTime timer(ClassLoader::perf_class_init_time(),
-                             ClassLoader::perf_class_init_selftime(),
-                             ClassLoader::perf_classes_inited(),
-                             jt->get_thread_stat()->perf_recursion_counts_addr(),
-                             jt->get_thread_stat()->perf_timers_addr(),
-                             PerfClassTraceTime::CLASS_CLINIT);
-    call_class_initializer(THREAD);
+    if (class_initializer() != NULL) {
+      // Timer includes any side effects of class initialization (resolution,
+      // etc), but not recursive entry into call_class_initializer().
+      PerfClassTraceTime timer(ClassLoader::perf_class_init_time(),
+                               ClassLoader::perf_class_init_selftime(),
+                               ClassLoader::perf_classes_inited(),
+                               jt->get_thread_stat()->perf_recursion_counts_addr(),
+                               jt->get_thread_stat()->perf_timers_addr(),
+                               PerfClassTraceTime::CLASS_CLINIT);
+      call_class_initializer(THREAD);
+    } else {
+      // The elapsed time is so small it's not worth counting.
+      if (UsePerfData) {
+        ClassLoader::perf_classes_inited()->inc();
+      }
+      call_class_initializer(THREAD);
+    }
   }
 
   // Step 9
@@ -2817,7 +2825,17 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
     check_prohibited_package(name(), loader_data, CHECK);
   }
 
-  TempNewSymbol pkg_name = pkg_entry != NULL ? pkg_entry->name() : ClassLoader::package_from_class_name(name());
+  // ClassLoader::package_from_class_name has already incremented the refcount of the symbol
+  // it returns, so we need to decrement it when the current function exits.
+  TempNewSymbol from_class_name =
+      (pkg_entry != NULL) ? NULL : ClassLoader::package_from_class_name(name());
+
+  Symbol* pkg_name;
+  if (pkg_entry != NULL) {
+    pkg_name = pkg_entry->name();
+  } else {
+    pkg_name = from_class_name;
+  }
 
   if (pkg_name != NULL && loader_data != NULL) {
 

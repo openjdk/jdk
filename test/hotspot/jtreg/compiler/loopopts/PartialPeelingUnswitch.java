@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.compiler2.enabled
  * @bug 8233033 8235984 8240227
  * @summary Tests if partially peeled statements are not executed before the loop predicates by bailing out of loop unswitching.
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,21 +73,21 @@ public class LinuxResourceTest {
         })
         .addBundleVerifier((cmd, result) -> {
             TKit.assertTextStream("Using custom package resource [DEB control file]")
-                    .predicate(String::startsWith)
+                    .predicate(String::contains)
                     .apply(result.getOutput().stream());
             TKit.assertTextStream(String.format(
                     "Expected value of \"Package\" property is [%s]. Actual value in output package is [dont-install-me]",
                     LinuxHelper.getPackageName(cmd)))
-                    .predicate(String::startsWith)
+                    .predicate(String::contains)
                     .apply(result.getOutput().stream());
             TKit.assertTextStream(
                     "Expected value of \"Version\" property is [1.0-1]. Actual value in output package is [1.2.3-R2]")
-                    .predicate(String::startsWith)
+                    .predicate(String::contains)
                     .apply(result.getOutput().stream());
             TKit.assertTextStream(String.format(
                     "Expected value of \"Architecture\" property is [%s]. Actual value in output package is [bar]",
                     LinuxHelper.getDefaultPackageArch(cmd.packageType())))
-                    .predicate(String::startsWith)
+                    .predicate(String::contains)
                     .apply(result.getOutput().stream());
         })
         .forTypes(PackageType.LINUX_RPM)
@@ -116,20 +116,20 @@ public class LinuxResourceTest {
         })
         .addBundleVerifier((cmd, result) -> {
             TKit.assertTextStream("Using custom package resource [RPM spec file]")
-                    .predicate(String::startsWith)
+                    .predicate(String::contains)
                     .apply(result.getOutput().stream());
             TKit.assertTextStream(String.format(
                     "Expected value of \"Name\" property is [%s]. Actual value in output package is [dont-install-me]",
                     LinuxHelper.getPackageName(cmd)))
-                    .predicate(String::startsWith)
+                    .predicate(String::contains)
                     .apply(result.getOutput().stream());
             TKit.assertTextStream(
                     "Expected value of \"Version\" property is [1.0]. Actual value in output package is [1.2.3]")
-                    .predicate(String::startsWith)
+                    .predicate(String::contains)
                     .apply(result.getOutput().stream());
             TKit.assertTextStream(
                     "Expected value of \"Release\" property is [1]. Actual value in output package is [R2]")
-                    .predicate(String::startsWith)
+                    .predicate(String::contains)
                     .apply(result.getOutput().stream());
         })
         .run();

@@ -25,7 +25,6 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -45,20 +44,21 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
 
     private static final String TEMPLATE_APP_ICON ="java48.ico";
 
-    public static final BundlerParamInfo<File> ICON_ICO =
+    public static final BundlerParamInfo<Path> ICON_ICO =
             new StandardBundlerParam<>(
             "icon.ico",
-            File.class,
+            Path.class,
             params -> {
-                File f = ICON.fetchFrom(params);
-                if (f != null && !f.getName().toLowerCase().endsWith(".ico")) {
+                Path f = ICON.fetchFrom(params);
+                if (f != null && f.getFileName() != null && !f.getFileName()
+                        .toString().toLowerCase().endsWith(".ico")) {
                     Log.error(MessageFormat.format(
                             I18N.getString("message.icon-not-ico"), f));
                     return null;
                 }
                 return f;
             },
-            (s, p) -> new File(s));
+            (s, p) -> Path.of(s));
 
     public static final StandardBundlerParam<Boolean> CONSOLE_HINT =
             new StandardBundlerParam<>(

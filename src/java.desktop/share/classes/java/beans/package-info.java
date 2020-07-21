@@ -25,7 +25,7 @@
 
 /**
  * Contains classes related to developing <em>beans</em> -- components based on
- * the JavaBeans&trade; architecture. A few of the classes are used by beans
+ * the JavaBeans architecture. A few of the classes are used by beans
  * while they run in an application. For example, the event classes are used by
  * beans that fire property and vetoable change events (see
  * {@link java.beans.PropertyChangeEvent}). However, most of the classes in this

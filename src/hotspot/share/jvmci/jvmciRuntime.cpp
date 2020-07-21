@@ -26,7 +26,6 @@
 #include "classfile/symbolTable.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -720,7 +719,7 @@ JVMCIRuntime::JVMCIRuntime(int id) {
 
 // Handles to objects in the Hotspot heap.
 static OopStorage* object_handles() {
-  return OopStorageSet::vm_global();
+  return Universe::vm_global();
 }
 
 jobject JVMCIRuntime::make_global(const Handle& obj) {

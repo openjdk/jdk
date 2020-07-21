@@ -25,7 +25,7 @@
 #ifndef SHARE_PRIMS_METHODHANDLES_HPP
 #define SHARE_PRIMS_METHODHANDLES_HPP
 
-#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/globals.hpp"

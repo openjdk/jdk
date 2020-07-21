@@ -64,7 +64,11 @@ public final class EventInstrumentation {
         private String settingDescriptor;
         final String fieldName;
         final int index;
-        // Used when instantiating Setting
+
+        // The settingControl is passed to EventHandler where it is
+        // used to check enablement before calling commit
+        // Methods on settingControl must never be invoked
+        // directly by JFR, instead use jdk.jfr.internal.Control
         SettingControl settingControl;
 
         public SettingInfo(String fieldName, int index) {

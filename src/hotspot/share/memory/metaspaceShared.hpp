@@ -354,7 +354,7 @@ class MetaspaceShared : AllStatic {
   static Klass* get_relocated_klass(Klass *k, bool is_final=false);
 
   static void allocate_cloned_cpp_vtptrs();
-  static intptr_t* fix_cpp_vtable_for_dynamic_archive(MetaspaceObj::Type msotype, address obj);
+  static intptr_t* get_archived_cpp_vtable(MetaspaceObj::Type msotype, address obj);
   static void initialize_ptr_marker(CHeapBitMap* ptrmap);
 
   // This is the base address as specified by -XX:SharedBaseAddress during -Xshare:dump.

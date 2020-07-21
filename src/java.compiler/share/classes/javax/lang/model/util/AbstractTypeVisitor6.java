@@ -39,7 +39,7 @@ import static javax.lang.model.SourceVersion.*;
  * <p id=note_for_subclasses><strong>WARNING:</strong> The {@code
  * TypeVisitor} interface implemented by this class may have methods
  * added to it in the future to accommodate new, currently unknown,
- * language structures added to future versions of the Java&trade;
+ * language structures added to future versions of the Java
  * programming language.  Therefore, methods whose names begin with
  * {@code "visit"} may be added to this class in the future; to avoid
  * incompatibilities, classes and subclasses which extend this class

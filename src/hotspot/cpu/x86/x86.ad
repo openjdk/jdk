@@ -1188,10 +1188,7 @@ void PhaseOutput::pd_perform_mach_node_analysis() {
 }
 
 int MachNode::pd_alignment_required() const {
-  PhaseOutput* output = Compile::current()->output();
-  Block* block = output->block();
-  int index = output->index();
-  if (VM_Version::has_intel_jcc_erratum() && IntelJccErratum::is_jcc_erratum_branch(block, this, index)) {
+  if (VM_Version::has_intel_jcc_erratum() && IntelJccErratum::is_jcc_erratum_branch(this)) {
     // Conservatively add worst case padding. We assume that relocInfo::addr_unit() is 1 on x86.
     return IntelJccErratum::largest_jcc_size() + 1;
   } else {

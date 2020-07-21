@@ -146,8 +146,8 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
   }
 
   if (UseTLAB) {
-    heap->gclabs_retire(true);
-    heap->tlabs_retire(true);
+    heap->gclabs_retire(ResizeTLAB);
+    heap->tlabs_retire(ResizeTLAB);
   }
 
   OrderAccess::fence();

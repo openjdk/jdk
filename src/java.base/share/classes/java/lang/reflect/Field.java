@@ -255,7 +255,7 @@ class Field extends AccessibleObject implements Member {
      *     the field represented by this {@code Field} object
      * @throws GenericSignatureFormatError if the generic field
      *     signature does not conform to the format specified in
-     *     <cite>The Java&trade; Virtual Machine Specification</cite>
+     *     <cite>The Java Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the generic type
      *     signature of the underlying field refers to a non-existent
      *     type declaration

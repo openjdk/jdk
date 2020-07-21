@@ -58,11 +58,11 @@ public class TestSearch extends JavadocTester {
         checkSearchOutput("UnnamedPkgClass.html", true, true);
         checkJqueryAndImageFiles(true);
         checkSearchJS();
-        checkFiles(false,
-                "tag-search-index.js");
         checkFiles(true,
-                "package-search-index.js",
                 "member-search-index.js",
+                "module-search-index.js",
+                "package-search-index.js",
+                "tag-search-index.js",
                 "type-search-index.js");
     }
 
@@ -83,6 +83,7 @@ public class TestSearch extends JavadocTester {
         checkAllPkgsAllClasses();
         checkFiles(true,
                 "member-search-index.js",
+                "module-search-index.js",
                 "package-search-index.js",
                 "tag-search-index.js",
                 "type-search-index.js");
@@ -248,11 +249,11 @@ public class TestSearch extends JavadocTester {
         checkJavaFXOutput();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
-        checkFiles(false,
-                "tag-search-index.js");
         checkFiles(true,
                 "member-search-index.js",
+                "module-search-index.js",
                 "package-search-index.js",
+                "tag-search-index.js",
                 "type-search-index.js");
     }
 

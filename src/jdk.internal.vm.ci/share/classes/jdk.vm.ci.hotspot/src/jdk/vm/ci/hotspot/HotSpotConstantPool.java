@@ -621,6 +621,39 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     }
 
     @Override
+    public JavaType lookupReferencedType(int cpi, int opcode) {
+        int index;
+        switch (opcode) {
+            case Bytecodes.CHECKCAST:
+            case Bytecodes.INSTANCEOF:
+            case Bytecodes.NEW:
+            case Bytecodes.ANEWARRAY:
+            case Bytecodes.MULTIANEWARRAY:
+            case Bytecodes.LDC:
+            case Bytecodes.LDC_W:
+            case Bytecodes.LDC2_W:
+                index = cpi;
+                break;
+            case Bytecodes.GETSTATIC:
+            case Bytecodes.PUTSTATIC:
+            case Bytecodes.GETFIELD:
+            case Bytecodes.PUTFIELD:
+            case Bytecodes.INVOKEVIRTUAL:
+            case Bytecodes.INVOKESPECIAL:
+            case Bytecodes.INVOKESTATIC:
+            case Bytecodes.INVOKEINTERFACE: {
+                index = rawIndexToConstantPoolCacheIndex(cpi, opcode);
+                index = getKlassRefIndexAt(index);
+                break;
+            }
+            default:
+                throw JVMCIError.shouldNotReachHere("Unexpected opcode " + opcode);
+        }
+        final Object type = compilerToVM().lookupKlassInPool(this, index);
+        return getJavaType(type);
+    }
+
+    @Override
     public JavaField lookupField(int cpi, ResolvedJavaMethod method, int opcode) {
         final int index = rawIndexToConstantPoolCacheIndex(cpi, opcode);
         final int nameAndTypeIndex = getNameAndTypeRefIndexAt(index);

@@ -533,8 +533,8 @@ private:
   // Process any reference objects discovered.
   void process_discovered_references(G1ParScanThreadStateSet* per_thread_states);
 
-  // If during an initial mark pause we may install a pending list head which is not
-  // otherwise reachable ensure that it is marked in the bitmap for concurrent marking
+  // If during a concurrent start pause we may install a pending list head which is not
+  // otherwise reachable, ensure that it is marked in the bitmap for concurrent marking
   // to discover.
   void make_pending_list_reachable();
 
@@ -732,7 +732,7 @@ private:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).
   // (Rounds down to a HeapRegion boundary.)
-  void shrink(size_t expand_bytes);
+  void shrink(size_t shrink_bytes);
   void shrink_helper(size_t expand_bytes);
 
   #if TASKQUEUE_STATS
@@ -856,7 +856,7 @@ public:
   // for the current GC (based upon the type of GC and which
   // command line flags are set);
   inline bool evacuation_failure_alot_for_gc_type(bool for_young_gc,
-                                                  bool during_initial_mark,
+                                                  bool during_concurrent_start,
                                                   bool mark_or_rebuild_in_progress);
 
   inline void set_evacuation_failure_alot_for_current_gc();
@@ -916,7 +916,7 @@ public:
   //    making the STW ref processor inactive by disabling discovery.
   //  * Verify that the CM ref processor is still inactive
   //    and no references have been placed on it's discovered
-  //    lists (also checked as a precondition during initial marking).
+  //    lists (also checked as a precondition during concurrent start).
 
   // The (stw) reference processor...
   ReferenceProcessor* _ref_processor_stw;

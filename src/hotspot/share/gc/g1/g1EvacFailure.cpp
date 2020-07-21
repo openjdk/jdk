@@ -79,21 +79,21 @@ class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
   HeapRegion* _hr;
   size_t _marked_bytes;
   UpdateLogBuffersDeferred* _log_buffer_cl;
-  bool _during_initial_mark;
+  bool _during_concurrent_start;
   uint _worker_id;
   HeapWord* _last_forwarded_object_end;
 
 public:
   RemoveSelfForwardPtrObjClosure(HeapRegion* hr,
                                  UpdateLogBuffersDeferred* log_buffer_cl,
-                                 bool during_initial_mark,
+                                 bool during_concurrent_start,
                                  uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
     _cm(_g1h->concurrent_mark()),
     _hr(hr),
     _marked_bytes(0),
     _log_buffer_cl(log_buffer_cl),
-    _during_initial_mark(during_initial_mark),
+    _during_concurrent_start(during_concurrent_start),
     _worker_id(worker_id),
     _last_forwarded_object_end(hr->bottom()) { }
 
@@ -119,14 +119,14 @@ public:
       if (!_cm->is_marked_in_prev_bitmap(obj)) {
         _cm->mark_in_prev_bitmap(obj);
       }
-      if (_during_initial_mark) {
+      if (_during_concurrent_start) {
         // For the next marking info we'll only mark the
         // self-forwarded objects explicitly if we are during
-        // initial-mark (since, normally, we only mark objects pointed
+        // concurrent start (since, normally, we only mark objects pointed
         // to by roots if we succeed in copying them). By marking all
         // self-forwarded objects we ensure that we mark any that are
         // still pointed to be roots. During concurrent marking, and
-        // after initial-mark, we don't need to mark any objects
+        // after concurrent start, we don't need to mark any objects
         // explicitly and all objects in the CSet are considered
         // (implicitly) live. So, we won't mark them explicitly and
         // we'll leave them over NTAMS.
@@ -211,10 +211,10 @@ public:
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
-                                               bool during_initial_mark) {
+                                               bool during_concurrent_start) {
     RemoveSelfForwardPtrObjClosure rspc(hr,
                                         &_log_buffer_cl,
-                                        during_initial_mark,
+                                        during_concurrent_start,
                                         _worker_id);
     hr->object_iterate(&rspc);
     // Need to zap the remainder area of the processed region.
@@ -230,16 +230,16 @@ public:
     if (hr->evacuation_failed()) {
       hr->clear_index_in_opt_cset();
 
-      bool during_initial_mark = _g1h->collector_state()->in_initial_mark_gc();
-      bool during_conc_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
+      bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
+      bool during_concurrent_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
 
-      hr->note_self_forwarding_removal_start(during_initial_mark,
-                                               during_conc_mark);
+      hr->note_self_forwarding_removal_start(during_concurrent_start,
+                                             during_concurrent_mark);
       _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
 
       hr->reset_bot();
 
-      size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_initial_mark);
+      size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_concurrent_start);
 
       hr->rem_set()->clean_strong_code_roots(hr);
       hr->rem_set()->clear_locked(true);

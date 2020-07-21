@@ -189,19 +189,6 @@ void MemoryService::gc_end(GCMemoryManager* manager, bool recordPostGCUsage,
                   countCollection, cause, allMemoryPoolsAffected);
 }
 
-void MemoryService::oops_do(OopClosure* f) {
-  int i;
-
-  for (i = 0; i < _pools_list->length(); i++) {
-    MemoryPool* pool = _pools_list->at(i);
-    pool->oops_do(f);
-  }
-  for (i = 0; i < _managers_list->length(); i++) {
-    MemoryManager* mgr = _managers_list->at(i);
-    mgr->oops_do(f);
-  }
-}
-
 bool MemoryService::set_verbose(bool verbose) {
   MutexLocker m(Management_lock);
   // verbose will be set to the previous value

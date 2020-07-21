@@ -25,7 +25,7 @@
 /**
  * @test TestClassLoaderLeak
  * @summary Test OOME in due to classloader leak
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run driver TestClassLoaderLeak
  */

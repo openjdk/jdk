@@ -41,7 +41,7 @@ import java.util.Map.Entry;
  * or for a property specified by name.
  * <p>
  * Here is an example of {@code VetoableChangeSupport} usage that follows
- * the rules and recommendations laid out in the JavaBeans&trade; specification:
+ * the rules and recommendations laid out in the JavaBeans specification:
  * <pre>{@code
  * public class MyBean {
  *     private final VetoableChangeSupport vcs = new VetoableChangeSupport(this);

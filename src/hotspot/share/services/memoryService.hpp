@@ -105,8 +105,6 @@ public:
                      GCCause::Cause cause,
                      bool allMemoryPoolsAffected);
 
-  static void oops_do(OopClosure* f);
-
   static bool get_verbose() { return log_is_enabled(Info, gc); }
   static bool set_verbose(bool verbose);
 

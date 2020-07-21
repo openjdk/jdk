@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "ci/ciKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodHandle.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "code/compressedStream.hpp"
 #include "code/nmethod.hpp"
 #include "memory/resourceArea.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,13 +116,13 @@ public class ELFFileParser {
             private int version;                        // Elf32_Word
             /** Virtual address to which the system first transfers control.
              * If there is no entry point for the file the value is 0. */
-            private int entry_point;                    // Elf32_Addr
+            private long entry_point;                    // Elf32_Addr
             /** Program header table offset in bytes.  If there is no program
              * header table the value is 0. */
-            private int ph_offset;                      // Elf32_Off
+            private long ph_offset;                      // Elf32_Off
             /** Section header table offset in bytes.  If there is no section
              * header table the value is 0. */
-            private int sh_offset;                      // Elf32_Off
+            private long sh_offset;                      // Elf32_Off
             /** Processor specific flags. */
             private int flags;                          // Elf32_Word
             /** ELF header size in bytes. */
@@ -165,9 +165,9 @@ public class ELFFileParser {
                 file_type = readShort();
                 arch = readShort();
                 version = readInt();
-                entry_point = readInt();
-                ph_offset = readInt();
-                sh_offset = readInt();
+                entry_point = readWord();
+                ph_offset = readWord();
+                sh_offset = readWord();
                 flags = readInt();
                 eh_size = readShort();
                 ph_entry_size = readShort();
@@ -384,23 +384,23 @@ public class ELFFileParser {
             /** Section content and semantics. */
             private int type;                         // Elf32_Word
             /** Flags. */
-            private int flags;                        // Elf32_Word
+            private long flags;                        // Elf32_Word
             /** If the section will be in the memory image of a process this
              * will be the address at which the first byte of section will be
              * loaded.  Otherwise, this value is 0. */
-            private int address;                      // Elf32_Addr
+            private long address;                      // Elf32_Addr
             /** Offset from beginning of file to first byte of the section. */
-            private int section_offset;               // Elf32_Off
+            private long section_offset;               // Elf32_Off
             /** Size in bytes of the section.  TYPE_NOBITS is a special case. */
-            private int size;                         // Elf32_Word
+            private long size;                         // Elf32_Word
             /** Section header table index link. */
             private int link;                         // Elf32_Word
             /** Extra information determined by the section type. */
             private int info;                         // Elf32_Word
             /** Address alignment constraints for the section. */
-            private int address_alignment;            // Elf32_Word
+            private long address_alignment;            // Elf32_Word
             /** Size of a fixed-size entry, 0 if none. */
-            private int entry_size;                   // Elf32_Word
+            private long entry_size;                   // Elf32_Word
 
             /** Memoized symbol table.  */
             private MemoizedObject[] symbols;
@@ -416,14 +416,14 @@ public class ELFFileParser {
                 seek(offset);
                 name_ndx = readInt();
                 type = readInt();
-                flags = readInt();
-                address = readInt();
-                section_offset = readInt();
-                size = readInt();
+                flags = readWord();
+                address = readWord();
+                section_offset = readWord();
+                size = readWord();
                 link = readInt();
                 info = readInt();
-                address_alignment = readInt();
-                entry_size = readInt();
+                address_alignment = readWord();
+                entry_size = readWord();
 
                 switch (type) {
                     case ELFSectionHeader.TYPE_NULL:
@@ -433,10 +433,10 @@ public class ELFFileParser {
                     case ELFSectionHeader.TYPE_SYMTBL:
                     case ELFSectionHeader.TYPE_DYNSYM:
                         // Setup the symbol table.
-                        int num_entries = size / entry_size;
+                        int num_entries = (int)(size / entry_size);
                         symbols = new MemoizedObject[num_entries];
                         for (int i = 0; i < num_entries; i++) {
-                            final int symbolOffset = section_offset +
+                            final long symbolOffset = section_offset +
                                     (i * entry_size);
                             symbols[i] = new MemoizedObject() {
                                 public Object computeValue() {
@@ -447,24 +447,26 @@ public class ELFFileParser {
                         break;
                     case ELFSectionHeader.TYPE_STRTBL:
                         // Setup the string table.
-                        final int strTableOffset = section_offset;
-                        final int strTableSize = size;
+                        final long strTableOffset = section_offset;
+                        final long strTableSize = size;
+                        assert32bitLong(strTableSize);  // must fit in 32-bits
                         stringTable = new MemoizedObject() {
                             public Object computeValue() {
                                 return new ELFStringTableImpl(strTableOffset,
-                                                           strTableSize);
+                                                              (int)strTableSize);
                             }
                         };
                         break;
                     case ELFSectionHeader.TYPE_RELO_EXPLICIT:
                         break;
                     case ELFSectionHeader.TYPE_HASH:
-                        final int hashTableOffset = section_offset;
-                        final int hashTableSize = size;
+                        final long hashTableOffset = section_offset;
+                        final long hashTableSize = size;
+                        assert32bitLong(hashTableSize);  // must fit in 32-bits
                         hashTable = new MemoizedObject() {
                             public Object computeValue() {
                                 return new ELFHashTableImpl(hashTableOffset,
-                                                         hashTableSize);
+                                                            (int)hashTableSize);
                             }
                         };
                         break;
@@ -531,7 +533,7 @@ public class ELFFileParser {
                 return link;
             }
 
-            public int getOffset() {
+            public long getOffset() {
                 return section_offset;
             }
         }
@@ -625,10 +627,10 @@ public class ELFFileParser {
             private int name_ndx;                       // Elf32_Word
             /** Value of the associated symbol.  This may be an address or
              * an absolute value. */
-            private int value;                          // Elf32_Addr
+            private long value;                          // Elf32_Addr
             /** Size of the symbol.  0 if the symbol has no size or the size
              * is unknown. */
-            private int size;                           // Elf32_Word
+            private long size;                           // Elf32_Word
             /** Specifies the symbol type and beinding attributes. */
             private byte info;                          // unsigned char
             /** Currently holds the value of 0 and has no meaning. */
@@ -646,12 +648,28 @@ public class ELFFileParser {
             ELFSymbolImpl(long offset, int section_type) throws ELFException {
                 seek(offset);
                 this.offset = offset;
-                name_ndx = readInt();
-                value = readInt();
-                size = readInt();
-                info = readByte();
-                other = readByte();
-                section_header_ndx = readShort();
+                switch (getObjectSize()) {
+                    case CLASS_32: {
+                        name_ndx = readInt();
+                        value = readInt();
+                        size = readInt();
+                        info = readByte();
+                        other = readByte();
+                        section_header_ndx = readShort();
+                        break;
+                    }
+                    case CLASS_64: {
+                        name_ndx = readInt();
+                        info = readByte();
+                        other = readByte();
+                        section_header_ndx = readShort();
+                        value = readWord();
+                        size = readWord();
+                        break;
+                    }
+                    default:
+                        throw new ELFException("Invalid Object Size.");
+                }
 
                 this.section_type = section_type;
 
@@ -701,7 +719,7 @@ public class ELFFileParser {
                 return value;
             }
 
-            public int getSize() {
+            public long getSize() {
                 return size;
             }
         }
@@ -923,6 +941,17 @@ public class ELFFileParser {
             }
         }
 
+        long readWord() throws ELFException {
+            switch (getObjectSize()) {
+                case CLASS_32:
+                    return readInt();
+                case CLASS_64:
+                    return readLong();
+                default:
+                    throw new ELFException("Invalid Object Size.");
+            }
+        }
+
         /** Signed byte utility functions used for converting from big-endian
          * (MSB) to little-endian (LSB). */
         short byteSwap(short arg) {
@@ -1029,6 +1058,12 @@ public class ELFFileParser {
         long unsignedByteSwap(int arg) {
             return (long)(((long)unsignedByteSwap((short)arg)) << 16) |
                           ((long)unsignedByteSwap((short)(arg >>> 16)));
+        }
+
+        void assert32bitLong(long x) {
+            if (x != (long)(int)x) {
+                throw new ELFException("64-bit value does not fit in 32-bits: " + x);
+            }
         }
     }
 

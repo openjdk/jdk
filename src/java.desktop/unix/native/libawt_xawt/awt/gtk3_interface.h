@@ -132,6 +132,48 @@ typedef enum {
     CAIRO_FORMAT_RGB16_565 = 4
 } cairo_format_t;
 
+typedef enum _cairo_status {
+    CAIRO_STATUS_SUCCESS = 0,
+
+    CAIRO_STATUS_NO_MEMORY,
+    CAIRO_STATUS_INVALID_RESTORE,
+    CAIRO_STATUS_INVALID_POP_GROUP,
+    CAIRO_STATUS_NO_CURRENT_POINT,
+    CAIRO_STATUS_INVALID_MATRIX,
+    CAIRO_STATUS_INVALID_STATUS,
+    CAIRO_STATUS_NULL_POINTER,
+    CAIRO_STATUS_INVALID_STRING,
+    CAIRO_STATUS_INVALID_PATH_DATA,
+    CAIRO_STATUS_READ_ERROR,
+    CAIRO_STATUS_WRITE_ERROR,
+    CAIRO_STATUS_SURFACE_FINISHED,
+    CAIRO_STATUS_SURFACE_TYPE_MISMATCH,
+    CAIRO_STATUS_PATTERN_TYPE_MISMATCH,
+    CAIRO_STATUS_INVALID_CONTENT,
+    CAIRO_STATUS_INVALID_FORMAT,
+    CAIRO_STATUS_INVALID_VISUAL,
+    CAIRO_STATUS_FILE_NOT_FOUND,
+    CAIRO_STATUS_INVALID_DASH,
+    CAIRO_STATUS_INVALID_DSC_COMMENT,
+    CAIRO_STATUS_INVALID_INDEX,
+    CAIRO_STATUS_CLIP_NOT_REPRESENTABLE,
+    CAIRO_STATUS_TEMP_FILE_ERROR,
+    CAIRO_STATUS_INVALID_STRIDE,
+    CAIRO_STATUS_FONT_TYPE_MISMATCH,
+    CAIRO_STATUS_USER_FONT_IMMUTABLE,
+    CAIRO_STATUS_USER_FONT_ERROR,
+    CAIRO_STATUS_NEGATIVE_COUNT,
+    CAIRO_STATUS_INVALID_CLUSTERS,
+    CAIRO_STATUS_INVALID_SLANT,
+    CAIRO_STATUS_INVALID_WEIGHT,
+    CAIRO_STATUS_INVALID_SIZE,
+    CAIRO_STATUS_USER_FONT_NOT_IMPLEMENTED,
+    CAIRO_STATUS_DEVICE_TYPE_MISMATCH,
+    CAIRO_STATUS_DEVICE_ERROR,
+
+    CAIRO_STATUS_LAST_STATUS
+} cairo_status_t;
+
 /* We define all structure pointers to be void* */
 typedef void GdkPixbuf;
 typedef void GMainContext;
@@ -364,8 +406,10 @@ static void (*fp_g_strfreev)(gchar **str_array);
 static cairo_surface_t* (*fp_cairo_image_surface_create)(cairo_format_t format,
                                int width, int height);
 static void (*fp_cairo_surface_destroy)(cairo_surface_t *surface);
+static cairo_status_t (*fp_cairo_surface_status)(cairo_surface_t *surface);
 static cairo_t* (*fp_cairo_create)(cairo_surface_t *target);
 static void (*fp_cairo_destroy)(cairo_t *cr);
+static cairo_status_t (*fp_cairo_status)(cairo_t *cr);
 static void (*fp_cairo_fill)(cairo_t *cr);
 static void (*fp_cairo_surface_flush)(cairo_surface_t *surface);
 static void (*fp_cairo_rectangle)(cairo_t *cr, double x, double y, double width,

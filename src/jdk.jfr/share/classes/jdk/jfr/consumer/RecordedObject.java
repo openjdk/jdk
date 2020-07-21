@@ -254,7 +254,7 @@ public class RecordedObject {
         return t;
     }
 
-    protected Object objectAt(int index) {
+    Object objectAt(int index) {
         return objects[index];
     }
 

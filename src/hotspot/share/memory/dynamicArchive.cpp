@@ -470,9 +470,9 @@ private:
                             p2i(obj), p2i(p), bytes,
                             MetaspaceObj::type_name(ref->msotype()));
     memcpy(p, obj, bytes);
-    intptr_t* cloned_vtable = MetaspaceShared::fix_cpp_vtable_for_dynamic_archive(ref->msotype(), p);
-    if (cloned_vtable != NULL) {
-      update_pointer((address*)p, (address)cloned_vtable, "vtb", 0, /*is_mso_pointer*/false);
+    intptr_t* archived_vtable = MetaspaceShared::get_archived_cpp_vtable(ref->msotype(), p);
+    if (archived_vtable != NULL) {
+      update_pointer((address*)p, (address)archived_vtable, "vtb", 0, /*is_mso_pointer*/false);
       mark_pointer((address*)p);
     }
 

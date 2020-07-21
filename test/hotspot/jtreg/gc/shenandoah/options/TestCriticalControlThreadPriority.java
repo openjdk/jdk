@@ -26,7 +26,7 @@
  * @test TestCriticalControlThreadPriority
  * @summary Check that ShenandoahCriticalControlThreadPriority works
  * @bug 8217343
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:-ShenandoahCriticalControlThreadPriority -Xmx1g TestCriticalControlThreadPriority
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ShenandoahCriticalControlThreadPriority -Xmx1g TestCriticalControlThreadPriority

@@ -435,8 +435,8 @@ final class DesktopIntegration {
                         File.separatorChar, '-') + IOUtils.getSuffix(
                                 assoc.data.iconPath));
 
-                IOUtils.copyFile(assoc.data.iconPath.toFile(),
-                        faIconFile.srcPath().toFile());
+                IOUtils.copyFile(assoc.data.iconPath,
+                        faIconFile.srcPath());
 
                 shellCommands.addIcon(mimeType, faIconFile.installPath(),
                         assoc.iconSize);

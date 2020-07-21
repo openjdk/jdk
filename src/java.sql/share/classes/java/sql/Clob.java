@@ -28,7 +28,7 @@ package java.sql;
 import java.io.Reader;
 
 /**
- * The mapping in the Java&trade; programming language
+ * The mapping in the Java programming language
  * for the SQL {@code CLOB} type.
  * An SQL {@code CLOB} is a built-in type
  * that stores a Character Large Object as a column value in a row of

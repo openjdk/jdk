@@ -35,7 +35,6 @@
  * @comment build retransform.jar in current dir
  * @run driver vm.runtime.defmeth.shared.BuildJar
  *
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native
  *      -agentlib:redefineClasses
  *      -javaagent:retransform.jar

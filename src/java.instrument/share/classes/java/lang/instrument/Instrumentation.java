@@ -450,7 +450,7 @@ public interface Instrumentation {
      * instrumentation classes.
      *
      * <p>
-     * <cite>The Java&trade; Virtual Machine Specification</cite>
+     * <cite>The Java Virtual Machine Specification</cite>
      * specifies that a subsequent attempt to resolve a symbolic
      * reference that the Java virtual machine has previously unsuccessfully attempted
      * to resolve always fails with the same error that was thrown as a result of the
@@ -504,7 +504,7 @@ public interface Instrumentation {
      * parameter to the <code>appendToClassPathForInstrumentation</code> method.
      *
      * <p>
-     * <cite>The Java&trade; Virtual Machine Specification</cite>
+     * <cite>The Java Virtual Machine Specification</cite>
      * specifies that a subsequent attempt to resolve a symbolic
      * reference that the Java virtual machine has previously unsuccessfully attempted
      * to resolve always fails with the same error that was thrown as a result of the
@@ -697,7 +697,7 @@ public interface Instrumentation {
      * to export. The {@code extraOpens} parameter is the map of additional
      * packages to open. In both cases, the map key is the fully-qualified name
      * of the package as defined in section 6.5.3 of
-     * <cite>The Java&trade; Language Specification </cite>, for example, {@code
+     * <cite>The Java Language Specification </cite>, for example, {@code
      * "java.lang"}. The map value is the non-empty set of modules that the
      * package should be exported or opened to. </p>
      *

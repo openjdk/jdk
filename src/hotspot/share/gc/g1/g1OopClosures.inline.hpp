@@ -251,7 +251,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
     }
 
     // The object is not in collection set. If we're a root scanning
-    // closure during an initial mark pause then attempt to mark the object.
+    // closure during a concurrent start pause then attempt to mark the object.
     if (do_mark_object == G1MarkFromRoot) {
       mark_object(obj);
     }

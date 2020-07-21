@@ -161,7 +161,7 @@ void VM_Version::get_processor_features() {
     SoftwarePrefetchHintDistance &= ~7;
   }
 
-  unsigned long auxv = getauxval(AT_HWCAP);
+  uint64_t auxv = getauxval(AT_HWCAP);
 
   char buf[512];
 

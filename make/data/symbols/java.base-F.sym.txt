@@ -254,18 +254,18 @@ method name merge descriptor (Ljava/lang/Object;Ljava/lang/Object;Ljava/util/fun
 
 class name java/util/concurrent/locks/StampedLock
 header extends java/lang/Object implements java/io/Serializable flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
-method name tryWriteLock descriptor ()J flags 1
-method name writeLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name tryReadLock descriptor ()J flags 1
-method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J thrownTypes java/lang/InterruptedException flags 1
-method name readLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name unlock descriptor (J)V flags 1
 -method name tryWriteLock descriptor ()J
 -method name writeLockInterruptibly descriptor ()J
 -method name tryReadLock descriptor ()J
 -method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J
 -method name readLockInterruptibly descriptor ()J
 -method name unlock descriptor (J)V
+method name tryWriteLock descriptor ()J flags 1
+method name writeLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
+method name tryReadLock descriptor ()J flags 1
+method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J thrownTypes java/lang/InterruptedException flags 1
+method name readLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
+method name unlock descriptor (J)V flags 1
 
 class name javax/net/ssl/SSLSession
 -method name getPeerCertificateChain descriptor ()[Ljavax/security/cert/X509Certificate;

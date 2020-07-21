@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -766,6 +766,7 @@ Pgrab_core(const char* exec_file, const char* core_file) {
   }
 
   // exec file is also treated like a shared object for symbol search
+  // FIXME: This is broken and ends up with a base address of 0. See JDK-8248876.
   if (add_lib_info_fd(ph, exec_file, ph->core->exec_fd,
                       (uintptr_t)0 + find_base_address(ph->core->exec_fd, &exec_ehdr)) == NULL) {
     goto err;

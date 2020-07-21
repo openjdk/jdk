@@ -108,7 +108,8 @@ final class ExecutableRebrander {
     private void rebrandExecutable(Map<String, ? super Object> params,
             Path target, UpdateResourceAction action) throws IOException {
         try {
-            String tempDirectory = TEMP_ROOT.fetchFrom(params).getAbsolutePath();
+            String tempDirectory = TEMP_ROOT.fetchFrom(params)
+                    .toAbsolutePath().toString();
             if (WindowsDefender.isThereAPotentialWindowsDefenderIssue(
                     tempDirectory)) {
                 Log.verbose(MessageFormat.format(I18N.getString(

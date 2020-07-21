@@ -35,7 +35,7 @@ import java.sql.SQLException;
  * This class complements the <code>SQLWarning</code> class.
  * <P>
  * Rowset warnings may be retrieved from <code>JdbcRowSet</code>,
- * <code>CachedRowSet</code>&trade;,
+ * <code>CachedRowSet</code>,
  * <code>WebRowSet</code>, <code>FilteredRowSet</code>, or <code>JoinRowSet</code>
  * implementations. To retrieve the first warning reported on any
  * <code>RowSet</code>

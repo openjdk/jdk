@@ -25,7 +25,6 @@
 
 package jdk.incubator.jpackage.internal;
 
-
 import java.util.HashMap;
 import java.util.Map;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;

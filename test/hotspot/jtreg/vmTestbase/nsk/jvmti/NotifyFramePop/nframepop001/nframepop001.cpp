@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ FramePop(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
         printf("(GetMethodDeclaringClass) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     popClass = (jclass) env->NewGlobalRef(popClass);
 
@@ -88,6 +89,7 @@ ExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
             printf("(GetMethodDeclaringClass) unexpected error: %s (%d)\n",
                    TranslateError(err), err);
             result = STATUS_FAILED;
+            return;
         }
         currClass = (jclass) env->NewGlobalRef(currClass);
 
@@ -237,6 +239,7 @@ Java_nsk_jvmti_NotifyFramePop_nframepop001_setFramePopNotif(JNIEnv *env,
         printf("(SuspendThread) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     currThread = env->NewGlobalRef(thr);

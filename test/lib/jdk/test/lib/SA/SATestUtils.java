@@ -26,7 +26,6 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -35,9 +34,8 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPInputStream;
+import java.util.List;
 
 public class SATestUtils {
     /**
@@ -208,18 +206,5 @@ public class SATestUtils {
         }
         // Otherwise expect to be permitted:
         return true;
-    }
-
-    public static void unzipCores(File dir) {
-        File[] gzCores = dir.listFiles((directory, name) -> name.matches("core(\\.\\d+)?\\.gz"));
-        for (File gzCore : gzCores) {
-            String coreFileName = gzCore.getName().replace(".gz", "");
-            System.out.println("Unzipping core into " + coreFileName);
-            try (GZIPInputStream gzis = new GZIPInputStream(Files.newInputStream(gzCore.toPath()))) {
-                Files.copy(gzis, Paths.get(coreFileName));
-            } catch (IOException e) {
-                throw new SkippedException("Not able to unzip file: " + gzCore.getAbsolutePath(), e);
-            }
-        }
     }
 }

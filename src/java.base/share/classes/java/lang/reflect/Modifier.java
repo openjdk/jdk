@@ -32,8 +32,9 @@ import java.util.StringJoiner;
  * constants to decode class and member access modifiers.  The sets of
  * modifiers are represented as integers with distinct bit positions
  * representing different modifiers.  The values for the constants
- * representing the modifiers are taken from the tables in sections 4.1, 4.4, 4.5, and 4.7 of
- * <cite>The Java&trade; Virtual Machine Specification</cite>.
+ * representing the modifiers are taken from the tables in sections
+ * {@jvms 4.1}, {@jvms 4.4}, {@jvms 4.5}, and {@jvms 4.7} of
+ * <cite>The Java Virtual Machine Specification</cite>.
  *
  * @see Class#getModifiers()
  * @see Member#getModifiers()
@@ -201,7 +202,7 @@ public class Modifier {
      * </pre></blockquote>
      * The modifier names are returned in an order consistent with the
      * suggested modifier orderings given in sections 8.1.1, 8.3.1, 8.4.3, 8.8.3, and 9.1.1 of
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      * The full modifier ordering used by this method is:
      * <blockquote> {@code
      * public protected private abstract static final transient
@@ -247,7 +248,7 @@ public class Modifier {
 
     /*
      * Access modifier flag constants from tables 4.1, 4.4, 4.5, and 4.7 of
-     * <cite>The Java&trade; Virtual Machine Specification</cite>
+     * <cite>The Java Virtual Machine Specification</cite>
      */
 
     /**

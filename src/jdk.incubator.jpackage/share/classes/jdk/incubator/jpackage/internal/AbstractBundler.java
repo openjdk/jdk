@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 
 
@@ -39,12 +39,12 @@ import java.util.Map;
  */
 abstract class AbstractBundler implements Bundler {
 
-    static final BundlerParamInfo<File> IMAGES_ROOT =
+    static final BundlerParamInfo<Path> IMAGES_ROOT =
             new StandardBundlerParam<>(
             "imagesRoot",
-            File.class,
-            params -> new File(
-                StandardBundlerParam.TEMP_ROOT.fetchFrom(params), "images"),
+            Path.class,
+            params ->
+                StandardBundlerParam.TEMP_ROOT.fetchFrom(params).resolve("images"),
             (s, p) -> null);
 
     @Override

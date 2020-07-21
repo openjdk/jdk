@@ -30,7 +30,7 @@ package javax.lang.model.element;
  *
  * <p>Note that it is possible additional element kinds will be added
  * to accommodate new, currently unknown, language structures added to
- * future versions of the Java&trade; programming language.
+ * future versions of the Java programming language.
  *
  * @author Joseph D. Darcy
  * @author Scott Seligman

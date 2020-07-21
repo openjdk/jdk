@@ -24,8 +24,8 @@
  */
 package jdk.incubator.jpackage.internal;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -192,7 +192,7 @@ public class AppImageFile {
                    "http://apache.org/xml/features/nonvalidating/load-external-dtd",
                     false);
             DocumentBuilder b = dbf.newDocumentBuilder();
-            return b.parse(new FileInputStream(path.toFile()));
+            return b.parse(Files.newInputStream(path));
         } catch (ParserConfigurationException | SAXException ex) {
             // Let caller sort this out
             throw new IOException(ex);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include "immediate_aarch64.hpp"
 
 // there are at most 2^13 possible logical immediate encodings
@@ -34,14 +35,14 @@ static int li_table_entry_count;
 // for forward lookup we just use a direct array lookup
 // and assume that the cient has supplied a valid encoding
 // table[encoding] = immediate
-static u_int64_t LITable[LI_TABLE_SIZE];
+static uint64_t LITable[LI_TABLE_SIZE];
 
 // for reverse lookup we need a sparse map so we store a table of
 // immediate and encoding pairs sorted by immediate value
 
 struct li_pair {
-  u_int64_t immediate;
-  u_int32_t encoding;
+  uint64_t immediate;
+  uint32_t encoding;
 };
 
 static struct li_pair InverseLITable[LI_TABLE_SIZE];
@@ -63,9 +64,9 @@ int compare_immediate_pair(const void *i1, const void *i2)
 // helper functions used by expandLogicalImmediate
 
 // for i = 1, ... N result<i-1> = 1 other bits are zero
-static inline u_int64_t ones(int N)
+static inline uint64_t ones(int N)
 {
-  return (N == 64 ? (u_int64_t)-1UL : ((1UL << N) - 1));
+  return (N == 64 ? -1ULL : (1ULL << N) - 1);
 }
 
 /*
@@ -73,49 +74,49 @@ static inline u_int64_t ones(int N)
  */
 
 // 32 bit mask with bits [hi,...,lo] set
-static inline u_int32_t mask32(int hi = 31, int lo = 0)
+static inline uint32_t mask32(int hi = 31, int lo = 0)
 {
   int nbits = (hi + 1) - lo;
   return ((1 << nbits) - 1) << lo;
 }
 
-static inline u_int64_t mask64(int hi = 63, int lo = 0)
+static inline uint64_t mask64(int hi = 63, int lo = 0)
 {
   int nbits = (hi + 1) - lo;
   return ((1L << nbits) - 1) << lo;
 }
 
 // pick bits [hi,...,lo] from val
-static inline u_int32_t pick32(u_int32_t val, int hi = 31, int lo = 0)
+static inline uint32_t pick32(uint32_t val, int hi = 31, int lo = 0)
 {
   return (val & mask32(hi, lo));
 }
 
 // pick bits [hi,...,lo] from val
-static inline u_int64_t pick64(u_int64_t val, int hi = 31, int lo = 0)
+static inline uint64_t pick64(uint64_t val, int hi = 31, int lo = 0)
 {
   return (val & mask64(hi, lo));
 }
 
 // mask [hi,lo] and shift down to start at bit 0
-static inline u_int32_t pickbits32(u_int32_t val, int hi = 31, int lo = 0)
+static inline uint32_t pickbits32(uint32_t val, int hi = 31, int lo = 0)
 {
   return (pick32(val, hi, lo) >> lo);
 }
 
 // mask [hi,lo] and shift down to start at bit 0
-static inline u_int64_t pickbits64(u_int64_t val, int hi = 63, int lo = 0)
+static inline uint64_t pickbits64(uint64_t val, int hi = 63, int lo = 0)
 {
   return (pick64(val, hi, lo) >> lo);
 }
 
 // result<0> to val<N>
-static inline u_int64_t pickbit(u_int64_t val, int N)
+static inline uint64_t pickbit(uint64_t val, int N)
 {
   return pickbits64(val, N, N);
 }
 
-static inline u_int32_t uimm(u_int32_t val, int hi, int lo)
+static inline uint32_t uimm(uint32_t val, int hi, int lo)
 {
   return pickbits32(val, hi, lo);
 }
@@ -123,11 +124,11 @@ static inline u_int32_t uimm(u_int32_t val, int hi, int lo)
 // SPEC bits(M*N) Replicate(bits(M) x, integer N);
 // this is just an educated guess
 
-u_int64_t replicate(u_int64_t bits, int nbits, int count)
+uint64_t replicate(uint64_t bits, int nbits, int count)
 {
-  u_int64_t result = 0;
+  uint64_t result = 0;
   // nbits may be 64 in which case we want mask to be -1
-  u_int64_t mask = ones(nbits);
+  uint64_t mask = ones(nbits);
   for (int i = 0; i < count ; i++) {
     result <<= nbits;
     result |= (bits & mask);
@@ -140,24 +141,24 @@ u_int64_t replicate(u_int64_t bits, int nbits, int count)
 // encoding must be treated as an UNALLOC instruction
 
 // construct a 32 bit immediate value for a logical immediate operation
-int expandLogicalImmediate(u_int32_t immN, u_int32_t immr,
-                            u_int32_t imms, u_int64_t &bimm)
+int expandLogicalImmediate(uint32_t immN, uint32_t immr,
+                            uint32_t imms, uint64_t &bimm)
 {
-  int len;                  // ought to be <= 6
-  u_int32_t levels;         // 6 bits
-  u_int32_t tmask_and;      // 6 bits
-  u_int32_t wmask_and;      // 6 bits
-  u_int32_t tmask_or;       // 6 bits
-  u_int32_t wmask_or;       // 6 bits
-  u_int64_t imm64;          // 64 bits
-  u_int64_t tmask, wmask;   // 64 bits
-  u_int32_t S, R, diff;     // 6 bits?
+  int len;                 // ought to be <= 6
+  uint32_t levels;         // 6 bits
+  uint32_t tmask_and;      // 6 bits
+  uint32_t wmask_and;      // 6 bits
+  uint32_t tmask_or;       // 6 bits
+  uint32_t wmask_or;       // 6 bits
+  uint64_t imm64;          // 64 bits
+  uint64_t tmask, wmask;   // 64 bits
+  uint32_t S, R, diff;     // 6 bits?
 
   if (immN == 1) {
     len = 6; // looks like 7 given the spec above but this cannot be!
   } else {
     len = 0;
-    u_int32_t val = (~imms & 0x3f);
+    uint32_t val = (~imms & 0x3f);
     for (int i = 5; i > 0; i--) {
       if (val & (1 << i)) {
         len = i;
@@ -170,7 +171,7 @@ int expandLogicalImmediate(u_int32_t immN, u_int32_t immr,
     // for valid inputs leading 1s in immr must be less than leading
     // zeros in imms
     int len2 = 0;                   // ought to be < len
-    u_int32_t val2 = (~immr & 0x3f);
+    uint32_t val2 = (~immr & 0x3f);
     for (int i = 5; i > 0; i--) {
       if (!(val2 & (1 << i))) {
         len2 = i;
@@ -199,12 +200,12 @@ int expandLogicalImmediate(u_int32_t immN, u_int32_t immr,
 
   for (int i = 0; i < 6; i++) {
     int nbits = 1 << i;
-    u_int64_t and_bit = pickbit(tmask_and, i);
-    u_int64_t or_bit = pickbit(tmask_or, i);
-    u_int64_t and_bits_sub = replicate(and_bit, 1, nbits);
-    u_int64_t or_bits_sub = replicate(or_bit, 1, nbits);
-    u_int64_t and_bits_top = (and_bits_sub << nbits) | ones(nbits);
-    u_int64_t or_bits_top = (0 << nbits) | or_bits_sub;
+    uint64_t and_bit = pickbit(tmask_and, i);
+    uint64_t or_bit = pickbit(tmask_or, i);
+    uint64_t and_bits_sub = replicate(and_bit, 1, nbits);
+    uint64_t or_bits_sub = replicate(or_bit, 1, nbits);
+    uint64_t and_bits_top = (and_bits_sub << nbits) | ones(nbits);
+    uint64_t or_bits_top = (0 << nbits) | or_bits_sub;
 
     tmask = ((tmask
               & (replicate(and_bits_top, 2 * nbits, 32 / nbits)))
@@ -218,12 +219,12 @@ int expandLogicalImmediate(u_int32_t immN, u_int32_t immr,
 
   for (int i = 0; i < 6; i++) {
     int nbits = 1 << i;
-    u_int64_t and_bit = pickbit(wmask_and, i);
-    u_int64_t or_bit = pickbit(wmask_or, i);
-    u_int64_t and_bits_sub = replicate(and_bit, 1, nbits);
-    u_int64_t or_bits_sub = replicate(or_bit, 1, nbits);
-    u_int64_t and_bits_top = (ones(nbits) << nbits) | and_bits_sub;
-    u_int64_t or_bits_top = (or_bits_sub << nbits) | 0;
+    uint64_t and_bit = pickbit(wmask_and, i);
+    uint64_t or_bit = pickbit(wmask_or, i);
+    uint64_t and_bits_sub = replicate(and_bit, 1, nbits);
+    uint64_t or_bits_sub = replicate(or_bit, 1, nbits);
+    uint64_t and_bits_top = (ones(nbits) << nbits) | and_bits_sub;
+    uint64_t or_bits_top = (or_bits_sub << nbits) | 0;
 
     wmask = ((wmask
               & (replicate(and_bits_top, 2 * nbits, 32 / nbits)))
@@ -248,9 +249,9 @@ static void initLITables()
 {
   li_table_entry_count = 0;
   for (unsigned index = 0; index < LI_TABLE_SIZE; index++) {
-    u_int32_t N = uimm(index, 12, 12);
-    u_int32_t immr = uimm(index, 11, 6);
-    u_int32_t imms = uimm(index, 5, 0);
+    uint32_t N = uimm(index, 12, 12);
+    uint32_t immr = uimm(index, 11, 6);
+    uint32_t imms = uimm(index, 5, 0);
     if (expandLogicalImmediate(N, immr, imms, LITable[index])) {
       InverseLITable[li_table_entry_count].immediate = LITable[index];
       InverseLITable[li_table_entry_count].encoding = index;
@@ -264,12 +265,12 @@ static void initLITables()
 
 // public APIs provided for logical immediate lookup and reverse lookup
 
-u_int64_t logical_immediate_for_encoding(u_int32_t encoding)
+uint64_t logical_immediate_for_encoding(uint32_t encoding)
 {
   return LITable[encoding];
 }
 
-u_int32_t encoding_for_logical_immediate(u_int64_t immediate)
+uint32_t encoding_for_logical_immediate(uint64_t immediate)
 {
   struct li_pair pair;
   struct li_pair *result;
@@ -293,15 +294,15 @@ u_int32_t encoding_for_logical_immediate(u_int64_t immediate)
 // fpimm[3:0] = fraction (assuming leading 1)
 // i.e. F = s * 1.f * 2^(e - b)
 
-u_int64_t fp_immediate_for_encoding(u_int32_t imm8, int is_dp)
+uint64_t fp_immediate_for_encoding(uint32_t imm8, int is_dp)
 {
   union {
     float fpval;
     double dpval;
-    u_int64_t val;
+    uint64_t val;
   };
 
-  u_int32_t s, e, f;
+  uint32_t s, e, f;
   s = (imm8 >> 7 ) & 0x1;
   e = (imm8 >> 4) & 0x7;
   f = imm8 & 0xf;
@@ -329,7 +330,7 @@ u_int64_t fp_immediate_for_encoding(u_int32_t imm8, int is_dp)
   return val;
 }
 
-u_int32_t encoding_for_fp_immediate(float immediate)
+uint32_t encoding_for_fp_immediate(float immediate)
 {
   // given a float which is of the form
   //
@@ -341,10 +342,10 @@ u_int32_t encoding_for_fp_immediate(float immediate)
 
   union {
     float fpval;
-    u_int32_t val;
+    uint32_t val;
   };
   fpval = immediate;
-  u_int32_t s, r, f, res;
+  uint32_t s, r, f, res;
   // sign bit is 31
   s = (val >> 31) & 0x1;
   // exponent is bits 30-23 but we only want the bottom 3 bits

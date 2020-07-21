@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, SAP SE and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,7 @@
 #include "jni.h"
 
 JNIEXPORT jint JNICALL
-Java_TestJNIBlockFullGC_TestCriticalArray0(JNIEnv *env, jclass jCls, jintArray jIn) {
+Java_gc_stress_TestJNIBlockFullGC_TestJNIBlockFullGC_TestCriticalArray0(JNIEnv *env, jclass jCls, jintArray jIn) {
   jint *bufIn = NULL;
   jint jInLen = (*env)->GetArrayLength(env, jIn);
   jint result = 0;

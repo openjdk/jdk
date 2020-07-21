@@ -137,12 +137,7 @@ class JvmtiPendingMonitors : public AllStatic {
 
   // Return false if monitor is not found in the list.
   static bool exit(JvmtiRawMonitor* monitor) {
-    if (monitors()->contains(monitor)) {
-      monitors()->remove(monitor);
-      return true;
-    } else {
-      return false;
-    }
+    return monitors()->remove_if_existing(monitor);
   }
 
   static void transition_raw_monitors();
