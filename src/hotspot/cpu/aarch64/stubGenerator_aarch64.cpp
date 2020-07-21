@@ -697,7 +697,6 @@ class StubGenerator: public StubCodeGenerator {
     int unit = wordSize * direction;
     int bias = (UseSIMDForMemoryOps ? 4:2) * wordSize;
 
-    int offset;
     const Register t0 = r3, t1 = r4, t2 = r5, t3 = r6,
       t4 = r7, t5 = r10, t6 = r11, t7 = r12;
     const Register stride = r13;
