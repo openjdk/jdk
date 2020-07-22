@@ -75,13 +75,34 @@ public final class PlatformEventType extends Type {
         this.stackTraceOffset = stackTraceOffset(name, isJDK);
     }
 
+    private static boolean isExceptionEvent(String name) {
+        switch (name) {
+            case Type.EVENT_NAME_PREFIX + "JavaErrorThrow" :
+            case Type.EVENT_NAME_PREFIX + "JavaExceptionThrow" :
+                return true;
+        }
+        return false;
+    }
+
+    private static boolean isUsingHandler(String name) {
+        switch (name) {
+            case Type.EVENT_NAME_PREFIX + "SocketRead"  :
+            case Type.EVENT_NAME_PREFIX + "SocketWrite" :
+            case Type.EVENT_NAME_PREFIX + "FileRead"    :
+            case Type.EVENT_NAME_PREFIX + "FileWrite"   :
+            case Type.EVENT_NAME_PREFIX + "FileForce"   :
+                return true;
+        }
+        return false;
+    }
+
     private static int stackTraceOffset(String name, boolean isJDK) {
         if (isJDK) {
-            if (name.equals(Type.EVENT_NAME_PREFIX + "JavaExceptionThrow")) {
-                return 5;
+            if (isExceptionEvent(name)) {
+                return 4;
             }
-            if (name.equals(Type.EVENT_NAME_PREFIX + "JavaErrorThrow")) {
-                return 5;
+            if (isUsingHandler(name)) {
+                return 3;
             }
         }
         return 4;

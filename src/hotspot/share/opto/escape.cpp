@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -723,8 +723,7 @@ void ConnectionGraph::add_to_congraph_unsafe_access(Node* n, uint opcode, Unique
   if (adr_type->isa_oopptr()
       || ((opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass)
           && adr_type == TypeRawPtr::NOTNULL
-          && adr->in(AddPNode::Address)->is_Proj()
-          && adr->in(AddPNode::Address)->in(0)->is_Allocate())) {
+          && is_captured_store_address(adr))) {
     delayed_worklist->push(n); // Process it later.
 #ifdef ASSERT
     assert (adr->is_AddP(), "expecting an AddP");
@@ -771,8 +770,7 @@ bool ConnectionGraph::add_final_edges_unsafe_access(Node* n, uint opcode) {
   if (adr_type->isa_oopptr()
       || ((opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass)
            && adr_type == TypeRawPtr::NOTNULL
-           && adr->in(AddPNode::Address)->is_Proj()
-           && adr->in(AddPNode::Address)->in(0)->is_Allocate())) {
+           && is_captured_store_address(adr))) {
     // Point Address to Value
     PointsToNode* adr_ptn = ptnode_adr(adr->_idx);
     assert(adr_ptn != NULL &&
@@ -1584,8 +1582,7 @@ int ConnectionGraph::find_init_values(JavaObjectNode* pta, PointsToNode* init_va
         // Raw pointers are used for initializing stores so skip it
         // since it should be recorded already
         Node* base = get_addp_base(field->ideal_node());
-        assert(adr_type->isa_rawptr() && base->is_Proj() &&
-               (base->in(0) == alloc),"unexpected pointer type");
+        assert(adr_type->isa_rawptr() && is_captured_store_address(field->ideal_node()), "unexpected pointer type");
 #endif
         continue;
       }
@@ -1916,8 +1913,7 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
     Node *n = storestore_worklist.pop();
     MemBarStoreStoreNode *storestore = n ->as_MemBarStoreStore();
     Node *alloc = storestore->in(MemBarNode::Precedent)->in(0);
-    assert (alloc->is_Allocate(), "storestore should point to AllocateNode");
-    if (not_global_escape(alloc)) {
+    if (alloc->is_Allocate() && not_global_escape(alloc)) {
       MemBarNode* mb = MemBarNode::make(C, Op_MemBarCPUOrder, Compile::AliasIdxBot);
       mb->init_req(TypeFunc::Memory, storestore->in(TypeFunc::Memory));
       mb->init_req(TypeFunc::Control, storestore->in(TypeFunc::Control));
@@ -2251,11 +2247,29 @@ bool FieldNode::has_base(JavaObjectNode* jobj) const {
 }
 #endif
 
+bool ConnectionGraph::is_captured_store_address(Node* addp) {
+  // Handle simple case first.
+  assert(_igvn->type(addp)->isa_oopptr() == NULL, "should be raw access");
+  if (addp->in(AddPNode::Address)->is_Proj() && addp->in(AddPNode::Address)->in(0)->is_Allocate()) {
+    return true;
+  } else if (addp->in(AddPNode::Address)->is_Phi()) {
+    for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
+      Node* addp_use = addp->fast_out(i);
+      if (addp_use->is_Store()) {
+        for (DUIterator_Fast jmax, j = addp_use->fast_outs(jmax); j < jmax; j++) {
+          if (addp_use->fast_out(j)->is_Initialize()) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
 int ConnectionGraph::address_offset(Node* adr, PhaseTransform *phase) {
   const Type *adr_type = phase->type(adr);
-  if (adr->is_AddP() && adr_type->isa_oopptr() == NULL &&
-      adr->in(AddPNode::Address)->is_Proj() &&
-      adr->in(AddPNode::Address)->in(0)->is_Allocate()) {
+  if (adr->is_AddP() && adr_type->isa_oopptr() == NULL && is_captured_store_address(adr)) {
     // We are computing a raw address for a store captured by an Initialize
     // compute an appropriate address type. AddP cases #3 and #5 (see below).
     int offs = (int)phase->find_intptr_t_con(adr->in(AddPNode::Offset), Type::OffsetBot);
@@ -2358,7 +2372,7 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
       assert(opcode == Op_ConP || opcode == Op_ThreadLocal ||
              opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
              (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != NULL)) ||
-             (uncast_base->is_Proj() && uncast_base->in(0)->is_Allocate()), "sanity");
+             is_captured_store_address(addp), "sanity");
     }
   }
   return base;
@@ -2974,7 +2988,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         continue;
       }
       if (!n->is_CheckCastPP()) { // not unique CheckCastPP.
-        assert(!alloc->is_Allocate(), "allocation should have unique type");
+        // we could reach here for allocate case if one init is associated with many allocs.
+        if (alloc->is_Allocate()) {
+          alloc->as_Allocate()->_is_scalar_replaceable = false;
+        }
         continue;
       }
 
