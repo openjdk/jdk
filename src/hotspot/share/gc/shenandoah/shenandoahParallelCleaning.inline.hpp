@@ -53,6 +53,7 @@ ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::~ShenandoahParallel
   if (StringDedup::is_enabled()) {
     StringDedup::gc_epilogue();
   }
+  _weak_processing_task.report_num_dead();
 }
 
 template<typename IsAlive, typename KeepAlive>
@@ -66,11 +67,6 @@ void ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::work(uint work
   if (ShenandoahStringDedup::is_enabled()) {
     ShenandoahStringDedup::parallel_oops_do(_phase, _is_alive, _keep_alive, worker_id);
   }
-}
-
-template<typename IsAlive, typename KeepAlive>
-void ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::report_num_dead() {
-  _weak_processing_task.report_num_dead();
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPARALLELCLEANING_INLINE_HPP

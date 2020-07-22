@@ -2247,7 +2247,6 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
     ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>
       cleaning_task(timing_phase, &is_alive, &keep_alive, num_workers, !ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
     _workers->run_task(&cleaning_task);
-    cleaning_task.report_num_dead();
   } else {
     ShenandoahIsAliveClosure is_alive;
 #ifdef ASSERT
@@ -2259,7 +2258,6 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
       cleaning_task(timing_phase, &is_alive, &do_nothing_cl, num_workers, !ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
 #endif
     _workers->run_task(&cleaning_task);
-    cleaning_task.report_num_dead();
   }
 }
 
