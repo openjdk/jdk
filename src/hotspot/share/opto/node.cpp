@@ -2141,8 +2141,9 @@ void Node::verify_edges(Unique_Node_List &visited) {
       }
       assert( cnt == 0,"Mismatched edge count.");
     } else if (n == NULL) {
-      assert(i >= req() || i == 0 || is_Region() || is_Phi() || is_ArrayCopy()
-              || (is_Unlock() && i == req()-1), "only region, phi, arraycopy or unlock nodes have null data edges");
+      assert(i >= req() || i == 0 || is_Region() || is_Phi() || is_ArrayCopy() || (is_Unlock() && i == req()-1)
+              || (is_MemBar() && i == 5), // the precedence edge to a membar can be removed during macro node expansion
+              "only region, phi, arraycopy, unlock or membar nodes have null data edges");
     } else {
       assert(n->is_top(), "sanity");
       // Nothing to check.
