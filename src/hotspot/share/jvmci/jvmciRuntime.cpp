@@ -672,6 +672,7 @@ void JVMCINMethodData::set_nmethod_mirror(nmethod* nm, oop new_mirror) {
 
   // Since we've patched some oops in the nmethod,
   // (re)register it with the heap.
+  MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   Universe::heap()->register_nmethod(nm);
 }
 
