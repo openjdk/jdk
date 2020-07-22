@@ -52,6 +52,7 @@ public:
   ~ShenandoahParallelWeakRootsCleaningTask();
 
   void work(uint worker_id);
+  void report_num_dead();
 };
 
 // Perform class unloading at a pause

@@ -68,4 +68,9 @@ void ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::work(uint work
   }
 }
 
+template<typename IsAlive, typename KeepAlive>
+void ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::report_num_dead() {
+  _weak_processing_task.report_num_dead();
+}
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPARALLELCLEANING_INLINE_HPP
