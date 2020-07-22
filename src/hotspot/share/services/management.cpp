@@ -508,7 +508,7 @@ JVM_ENTRY(jobjectArray, jmm_GetMemoryPools(JNIEnv* env, jobject obj))
       poolArray->obj_at_put(i, ph());
     }
   }
-  return (jobjectArray) JNIHandles::make_local(env, poolArray());
+  return (jobjectArray) JNIHandles::make_local(THREAD, poolArray());
 JVM_END
 
 // Returns an array of java/lang/management/MemoryManagerMXBean object
@@ -552,7 +552,7 @@ JVM_ENTRY(jobjectArray, jmm_GetMemoryManagers(JNIEnv* env, jobject obj))
       mgrArray->obj_at_put(i, ph());
     }
   }
-  return (jobjectArray) JNIHandles::make_local(env, mgrArray());
+  return (jobjectArray) JNIHandles::make_local(THREAD, mgrArray());
 JVM_END
 
 
@@ -565,7 +565,7 @@ JVM_ENTRY(jobject, jmm_GetMemoryPoolUsage(JNIEnv* env, jobject obj))
   if (pool != NULL) {
     MemoryUsage usage = pool->get_memory_usage();
     Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
-    return JNIHandles::make_local(env, h());
+    return JNIHandles::make_local(THREAD, h());
   } else {
     return NULL;
   }
@@ -580,7 +580,7 @@ JVM_ENTRY(jobject, jmm_GetPeakMemoryPoolUsage(JNIEnv* env, jobject obj))
   if (pool != NULL) {
     MemoryUsage usage = pool->get_peak_memory_usage();
     Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
-    return JNIHandles::make_local(env, h());
+    return JNIHandles::make_local(THREAD, h());
   } else {
     return NULL;
   }
@@ -595,7 +595,7 @@ JVM_ENTRY(jobject, jmm_GetPoolCollectionUsage(JNIEnv* env, jobject obj))
   if (pool != NULL && pool->is_collected_pool()) {
     MemoryUsage usage = pool->get_last_collection_usage();
     Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
-    return JNIHandles::make_local(env, h());
+    return JNIHandles::make_local(THREAD, h());
   } else {
     return NULL;
   }
@@ -759,7 +759,7 @@ JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
   }
 
   Handle obj = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
-  return JNIHandles::make_local(env, obj());
+  return JNIHandles::make_local(THREAD, obj());
 JVM_END
 
 // Returns the boolean value of a given attribute.
@@ -1274,7 +1274,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
     result_h->obj_at_put(index, info_obj);
   }
 
-  return (jobjectArray) JNIHandles::make_local(env, result_h());
+  return (jobjectArray) JNIHandles::make_local(THREAD, result_h());
 JVM_END
 
 // Reset statistic.  Return true if the requested statistic is reset.
@@ -1420,23 +1420,23 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
     for(int i = 0; i < num_entries; i++) {
       res->obj_at_put(i, flags_ah->obj_at(i));
     }
-    return (jobjectArray)JNIHandles::make_local(env, res);
+    return (jobjectArray)JNIHandles::make_local(THREAD, res);
   }
 
-  return (jobjectArray)JNIHandles::make_local(env, flags_ah());
+  return (jobjectArray)JNIHandles::make_local(THREAD, flags_ah());
 JVM_END
 
 // Utility function used by jmm_GetVMGlobals.  Returns false if flag type
 // can't be determined, true otherwise.  If false is returned, then *global
 // will be incomplete and invalid.
-bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, JVMFlag *flag, TRAPS) {
+bool add_global_entry(Handle name, jmmVMGlobal *global, JVMFlag *flag, TRAPS) {
   Handle flag_name;
   if (name() == NULL) {
     flag_name = java_lang_String::create_from_str(flag->_name, CHECK_false);
   } else {
     flag_name = name;
   }
-  global->name = (jstring)JNIHandles::make_local(env, flag_name());
+  global->name = (jstring)JNIHandles::make_local(THREAD, flag_name());
 
   if (flag->is_bool()) {
     global->value.z = flag->get_bool() ? JNI_TRUE : JNI_FALSE;
@@ -1464,7 +1464,7 @@ bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, JVMFlag *fl
     global->type = JMM_VMGLOBAL_TYPE_JLONG;
   } else if (flag->is_ccstr()) {
     Handle str = java_lang_String::create_from_str(flag->get_ccstr(), CHECK_false);
-    global->value.l = (jobject)JNIHandles::make_local(env, str());
+    global->value.l = (jobject)JNIHandles::make_local(THREAD, str());
     global->type = JMM_VMGLOBAL_TYPE_JSTRING;
   } else {
     global->type = JMM_VMGLOBAL_TYPE_UNKNOWN;
@@ -1543,7 +1543,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
       char* str = java_lang_String::as_utf8_string(s);
       JVMFlag* flag = JVMFlag::find_flag(str);
       if (flag != NULL &&
-          add_global_entry(env, sh, &globals[i], flag, THREAD)) {
+          add_global_entry(sh, &globals[i], flag, THREAD)) {
         num_entries++;
       } else {
         globals[i].name = NULL;
@@ -1565,7 +1565,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
       }
       // Exclude the locked (diagnostic, experimental) flags
       if ((flag->is_unlocked() || flag->is_unlocker()) &&
-          add_global_entry(env, null_h, &globals[num_entries], flag, THREAD)) {
+          add_global_entry(null_h, &globals[num_entries], flag, THREAD)) {
         num_entries++;
       }
     }
@@ -1750,7 +1750,7 @@ static Handle find_deadlocks(bool object_monitors_only, TRAPS) {
 //
 JVM_ENTRY(jobjectArray, jmm_FindDeadlockedThreads(JNIEnv *env, jboolean object_monitors_only))
   Handle result = find_deadlocks(object_monitors_only != 0, CHECK_NULL);
-  return (jobjectArray) JNIHandles::make_local(env, result());
+  return (jobjectArray) JNIHandles::make_local(THREAD, result());
 JVM_END
 
 // Finds cycles of threads that are deadlocked on monitor locks
@@ -1758,7 +1758,7 @@ JVM_END
 // Otherwise, returns NULL.
 JVM_ENTRY(jobjectArray, jmm_FindMonitorDeadlockedThreads(JNIEnv *env))
   Handle result = find_deadlocks(true, CHECK_NULL);
-  return (jobjectArray) JNIHandles::make_local(env, result());
+  return (jobjectArray) JNIHandles::make_local(THREAD, result());
 JVM_END
 
 // Gets the information about GC extension attributes including
@@ -1940,7 +1940,7 @@ JVM_ENTRY(jobjectArray, jmm_GetDiagnosticCommands(JNIEnv *env))
     oop cmd_name = java_lang_String::create_oop_from_str(dcmd_list->at(i), CHECK_NULL);
     cmd_array->obj_at_put(i, cmd_name);
   }
-  return (jobjectArray) JNIHandles::make_local(env, cmd_array());
+  return (jobjectArray) JNIHandles::make_local(THREAD, cmd_array());
 JVM_END
 
 JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
@@ -2049,7 +2049,7 @@ JVM_ENTRY(jstring, jmm_ExecuteDiagnosticCommand(JNIEnv *env, jstring commandline
   bufferedStream output;
   DCmd::parse_and_execute(DCmd_Source_MBean, &output, cmdline, ' ', CHECK_NULL);
   oop result = java_lang_String::create_oop_from_str(output.as_string(), CHECK_NULL);
-  return (jstring) JNIHandles::make_local(env, result);
+  return (jstring) JNIHandles::make_local(THREAD, result);
 JVM_END
 
 JVM_ENTRY(void, jmm_SetDiagnosticFrameworkNotificationEnabled(JNIEnv *env, jboolean enabled))

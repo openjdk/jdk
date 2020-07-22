@@ -296,7 +296,6 @@ bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_ve
 Symbol* Verifier::inference_verify(
     InstanceKlass* klass, char* message, size_t message_len, TRAPS) {
   JavaThread* thread = (JavaThread*)THREAD;
-  JNIEnv *env = thread->jni_environment();
 
   verify_byte_codes_fn_t verify_func = verify_byte_codes_fn();
 
@@ -305,10 +304,10 @@ Symbol* Verifier::inference_verify(
     return vmSymbols::java_lang_VerifyError();
   }
 
-  ResourceMark rm(THREAD);
+  ResourceMark rm(thread);
   log_info(verification)("Verifying class %s with old format", klass->external_name());
 
-  jclass cls = (jclass) JNIHandles::make_local(env, klass->java_mirror());
+  jclass cls = (jclass) JNIHandles::make_local(thread, klass->java_mirror());
   jint result;
 
   {
@@ -316,7 +315,7 @@ Symbol* Verifier::inference_verify(
     ThreadToNativeFromVM ttn(thread);
     // ThreadToNativeFromVM takes care of changing thread_state, so safepoint
     // code knows that we have left the VM
-
+    JNIEnv *env = thread->jni_environment();
     result = (*verify_func)(env, cls, message, (int)message_len, klass->major_version());
   }
 

@@ -436,11 +436,11 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
   char *native_platform_string;
   { JavaThread* thread = (JavaThread*)THREAD;
     assert(thread->is_Java_thread(), "must be java thread");
-    JNIEnv *env = thread->jni_environment();
-    jstring js = (jstring) JNIHandles::make_local(env, java_string());
+    jstring js = (jstring) JNIHandles::make_local(thread, java_string());
     bool is_copy;
     HandleMark hm(thread);
     ThreadToNativeFromVM ttn(thread);
+    JNIEnv *env = thread->jni_environment();
     native_platform_string = (_to_platform_string_fn)(env, js, &is_copy);
     assert(is_copy == JNI_TRUE, "is_copy value changed");
     JNIHandles::destroy_local(js);
@@ -2844,10 +2844,10 @@ Method* java_lang_StackFrameInfo::get_method(Handle stackFrame, InstanceKlass* h
 void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci, TRAPS) {
   // set Method* or mid/cpref
   HandleMark hm(THREAD);
-  Handle mname(Thread::current(), stackFrame->obj_field(_memberName_offset));
+  Handle mname(THREAD, stackFrame->obj_field(_memberName_offset));
   InstanceKlass* ik = method->method_holder();
   CallInfo info(method(), ik, CHECK);
-  MethodHandles::init_method_MemberName(mname, info);
+  MethodHandles::init_method_MemberName(mname, info, THREAD);
   // set bci
   java_lang_StackFrameInfo::set_bci(stackFrame(), bci);
   // method may be redefined; store the version

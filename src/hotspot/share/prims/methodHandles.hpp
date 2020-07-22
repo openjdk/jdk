@@ -65,7 +65,7 @@ class MethodHandles: AllStatic {
   static void expand_MemberName(Handle mname, int suppress, TRAPS);  // expand defc/name/type if missing
   static oop init_MemberName(Handle mname_h, Handle target_h, TRAPS); // compute vmtarget/vmindex from target
   static oop init_field_MemberName(Handle mname_h, fieldDescriptor& fd, bool is_setter = false);
-  static oop init_method_MemberName(Handle mname_h, CallInfo& info);
+  static oop init_method_MemberName(Handle mname_h, CallInfo& info, TRAPS);
   static int find_MemberNames(Klass* k, Symbol* name, Symbol* sig,
                               int mflags, Klass* caller,
                               int skip, objArrayHandle results, TRAPS);

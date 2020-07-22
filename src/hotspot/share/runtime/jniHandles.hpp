@@ -84,8 +84,7 @@ class JNIHandles : AllStatic {
 
   // Local handles
   static jobject make_local(oop obj);
-  static jobject make_local(JNIEnv* env, oop obj);    // Fast version when env is known
-  static jobject make_local(Thread* thread, oop obj); // Even faster version when current thread is known
+  static jobject make_local(Thread* thread, oop obj); // Faster version when current thread is known
   inline static void destroy_local(jobject handle);
 
   // Global handles

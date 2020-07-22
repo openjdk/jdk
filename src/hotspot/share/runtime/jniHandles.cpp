@@ -55,18 +55,9 @@ void jni_handles_init() {
 }
 
 jobject JNIHandles::make_local(oop obj) {
-  if (obj == NULL) {
-    return NULL;                // ignore null handles
-  } else {
-    Thread* thread = Thread::current();
-    assert(oopDesc::is_oop(obj), "not an oop");
-    assert(!current_thread_in_native(), "must not be in native");
-    return thread->active_handles()->allocate_handle(obj);
-  }
+  return make_local(Thread::current(), obj);
 }
 
-
-// optimized versions
 
 jobject JNIHandles::make_local(Thread* thread, oop obj) {
   if (obj == NULL) {
@@ -78,19 +69,6 @@ jobject JNIHandles::make_local(Thread* thread, oop obj) {
     return thread->active_handles()->allocate_handle(obj);
   }
 }
-
-
-jobject JNIHandles::make_local(JNIEnv* env, oop obj) {
-  if (obj == NULL) {
-    return NULL;                // ignore null handles
-  } else {
-    JavaThread* thread = JavaThread::thread_from_jni_environment(env);
-    assert(oopDesc::is_oop(obj), "not an oop");
-    assert(!current_thread_in_native(), "must not be in native");
-    return thread->active_handles()->allocate_handle(obj);
-  }
-}
-
 
 static void report_handle_allocation_failure(AllocFailType alloc_failmode,
                                              const char* handle_kind) {

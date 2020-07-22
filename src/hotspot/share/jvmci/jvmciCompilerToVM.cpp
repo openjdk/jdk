@@ -251,7 +251,7 @@ C2V_VMENTRY_NULL(jobject, getObjectAtAddress, (JNIEnv* env, jobject c2vm, jlong 
   if (obj != NULL) {
     oopDesc::verify(obj);
   }
-  return JNIHandles::make_local(obj);
+  return JNIHandles::make_local(THREAD, obj);
 C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getBytecode, (JNIEnv* env, jobject, jobject jvmci_method))
@@ -1038,7 +1038,7 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   if (jap.return_type() == T_VOID) {
     return NULL;
   } else if (is_reference_type(jap.return_type())) {
-    return JNIHandles::make_local((oop) result.get_jobject());
+    return JNIHandles::make_local(THREAD, (oop) result.get_jobject());
   } else {
     jvalue *value = (jvalue *) result.get_value_addr();
     // Narrow the value down if required (Important on big endian machines)
@@ -2314,7 +2314,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
   }
 
   typeArrayOop info_oop = oopFactory::new_longArray(4, CHECK_0);
-  jlongArray info = (jlongArray) JNIHandles::make_local(info_oop);
+  jlongArray info = (jlongArray) JNIHandles::make_local(THREAD, info_oop);
   runtime->init_JavaVM_info(info, JVMCI_CHECK_0);
   return info;
 }
@@ -2565,7 +2565,7 @@ C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, jobject jvmc
   }
   fieldDescriptor fd(iklass, index);
   oop reflected = Reflection::new_field(&fd, CHECK_NULL);
-  return JNIHandles::make_local(env, reflected);
+  return JNIHandles::make_local(THREAD, reflected);
 }
 
 C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlong failed_speculations_address, jobjectArray current))
