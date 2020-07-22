@@ -3409,7 +3409,7 @@ JVM_ENTRY(jobject, JVM_GetAndClearReferencePendingList(JNIEnv* env))
   MonitorLocker ml(Heap_lock);
   oop ref = Universe::reference_pending_list();
   if (ref != NULL) {
-    Universe::set_reference_pending_list(NULL);
+    Universe::clear_reference_pending_list();
   }
   return JNIHandles::make_local(THREAD, ref);
 JVM_END

@@ -448,6 +448,7 @@ void TemplateTable::fast_aldc(bool wide) {
     Label notNull;
     ExternalAddress null_sentinel((address)Universe::the_null_sentinel_addr());
     __ movptr(tmp, null_sentinel);
+    __ resolve_oop_handle(tmp);
     __ cmpoop(tmp, result);
     __ jccb(Assembler::notEqual, notNull);
     __ xorptr(result, result);  // NULL object reference

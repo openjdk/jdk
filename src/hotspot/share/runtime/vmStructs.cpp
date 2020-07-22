@@ -369,23 +369,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /************/                                                                                                                     \
   /* Universe */                                                                                                                     \
   /************/                                                                                                                     \
-                                                                                                                                     \
-     static_field(Universe,                    _mirrors[0],                                   oop)                                   \
-     static_field(Universe,                    _main_thread_group,                            oop)                                   \
-     static_field(Universe,                    _system_thread_group,                          oop)                                   \
-     static_field(Universe,                    _the_empty_class_klass_array,                  objArrayOop)                           \
-     static_field(Universe,                    _null_ptr_exception_instance,                  oop)                                   \
-     static_field(Universe,                    _arithmetic_exception_instance,                oop)                                   \
-     static_field(Universe,                    _vm_exception,                                 oop)                                   \
      static_field(Universe,                    _collectedHeap,                                CollectedHeap*)                        \
-     static_field(Universe,                    _base_vtable_size,                             int)                                   \
-     static_field(Universe,                    _bootstrapping,                                bool)                                  \
-     static_field(Universe,                    _fully_initialized,                            bool)                                  \
-     static_field(Universe,                    _verify_count,                                 int)                                   \
-     static_field(Universe,                    _verify_oop_mask,                              uintptr_t)                             \
-     static_field(Universe,                    _verify_oop_bits,                              uintptr_t)                             \
-     static_field(Universe,                    _non_oop_bits,                                 intptr_t)                              \
-                                                                                                                                     \
   /******************/                                                                                                               \
   /* CompressedOops */                                                                                                               \
   /******************/                                                                                                               \

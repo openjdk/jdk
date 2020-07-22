@@ -48,6 +48,8 @@ public:
   inline oop resolve() const;
   inline oop peek() const;
 
+  bool is_empty() const { return _obj == NULL; }
+
   inline void release(OopStorage* storage);
 
   // Used only for removing handle.

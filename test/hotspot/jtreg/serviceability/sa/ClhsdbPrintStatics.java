@@ -71,9 +71,7 @@ public class ClhsdbPrintStatics {
                     "_number_of_threads", "_number_of_non_daemon_threads"));
             expStrMap.put("printstatics Universe", List.of(
                     "Static fields of Universe",
-                    "uintptr_t Universe::_verify_oop_mask",
-                    "intptr_t Universe::_non_oop_bits",
-                    "bool Universe::_fully_initialized"));
+                    "Universe::_collectedHeap"));
             expStrMap.put("printstatics JvmtiExport", List.of(
                     "Static fields of JvmtiExport",
                     "bool JvmtiExport::_can_access_local_variables",

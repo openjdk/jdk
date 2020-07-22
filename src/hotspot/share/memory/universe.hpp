@@ -27,6 +27,7 @@
 
 #include "gc/shared/verifyOption.hpp"
 #include "oops/array.hpp"
+#include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -106,30 +107,26 @@ class Universe: AllStatic {
   static oop _short_mirror;
   static oop _void_mirror;
 
-  static oop          _main_thread_group;             // Reference to the main thread group object
-  static oop          _system_thread_group;           // Reference to the system thread group object
+  static OopHandle    _main_thread_group;             // Reference to the main thread group object
+  static OopHandle    _system_thread_group;           // Reference to the system thread group object
 
-  static objArrayOop  _the_empty_class_klass_array;   // Canonicalized obj array of type java.lang.Class
-  static oop          _the_null_sentinel;             // A unique object pointer unused except as a sentinel for null.
-  static oop          _the_null_string;               // A cache of "null" as a Java string
-  static oop          _the_min_jint_string;          // A cache of "-2147483648" as a Java string
+  static OopHandle    _the_empty_class_array;         // Canonicalized obj array of type java.lang.Class
+  static OopHandle    _the_null_string;               // A cache of "null" as a Java string
+  static OopHandle    _the_min_jint_string;           // A cache of "-2147483648" as a Java string
+
+  static OopHandle    _the_null_sentinel;             // A unique object pointer unused except as a sentinel for null.
+
+  // preallocated error objects (no backtrace)
+  static OopHandle    _out_of_memory_errors;
+
+  // preallocated cause message for delayed StackOverflowError
+  static OopHandle    _delayed_stack_overflow_error_message;
+
   static LatestMethodCache* _finalizer_register_cache; // static method for registering finalizable objects
   static LatestMethodCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
   static LatestMethodCache* _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError() method
   static LatestMethodCache* _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError() method
   static LatestMethodCache* _do_stack_walk_cache;      // method for stack walker callback
-
-  // preallocated error objects (no backtrace)
-  static oop          _out_of_memory_error_java_heap;
-  static oop          _out_of_memory_error_metaspace;
-  static oop          _out_of_memory_error_class_metaspace;
-  static oop          _out_of_memory_error_array_size;
-  static oop          _out_of_memory_error_gc_overhead_limit;
-  static oop          _out_of_memory_error_realloc_objects;
-  static oop          _out_of_memory_error_retry;
-
-  // preallocated cause message for delayed StackOverflowError
-  static oop          _delayed_stack_overflow_error_message;
 
   static Array<int>*            _the_empty_int_array;            // Canonicalized int array
   static Array<u2>*             _the_empty_short_array;          // Canonicalized short array
@@ -140,17 +137,14 @@ class Universe: AllStatic {
   static Array<Klass*>*  _the_array_interfaces_array;
 
   // array of preallocated error objects with backtrace
-  static objArrayOop   _preallocated_out_of_memory_error_array;
+  static OopHandle     _preallocated_out_of_memory_error_array;
 
   // number of preallocated error objects available for use
   static volatile jint _preallocated_out_of_memory_error_avail_count;
 
-  static oop          _null_ptr_exception_instance;   // preallocated exception object
-  static oop          _arithmetic_exception_instance; // preallocated exception object
-  static oop          _virtual_machine_error_instance; // preallocated exception object
-  // The object used as an exception dummy when exceptions are thrown for
-  // the vm thread.
-  static oop          _vm_exception;
+  static OopHandle    _null_ptr_exception_instance;   // preallocated exception object
+  static OopHandle    _arithmetic_exception_instance; // preallocated exception object
+  static OopHandle    _virtual_machine_error_instance; // preallocated exception object
 
   // References waiting to be transferred to the ReferenceHandler
   static oop          _reference_pending_list;
@@ -161,8 +155,7 @@ class Universe: AllStatic {
   static intptr_t _non_oop_bits;
 
   // array of dummy objects used with +FullGCAlot
-  debug_only(static objArrayOop _fullgc_alot_dummy_array;)
-  // index of next entry to clear
+  debug_only(static OopHandle   _fullgc_alot_dummy_array;)
   debug_only(static int         _fullgc_alot_dummy_next;)
 
   // Compiler/dispatch support
@@ -174,8 +167,9 @@ class Universe: AllStatic {
   static bool _fully_initialized;                     // true after universe_init and initialize_vtables called
 
   // the array of preallocated errors with backtraces
-  static objArrayOop  preallocated_out_of_memory_errors()     { return _preallocated_out_of_memory_error_array; }
+  static objArrayOop  preallocated_out_of_memory_errors();
 
+  static objArrayOop out_of_memory_errors();
   // generate an out of memory error; if possible using an error with preallocated backtrace;
   // otherwise return the given default error.
   static oop        gen_out_of_memory_error(oop default_err);
@@ -265,17 +259,23 @@ class Universe: AllStatic {
     assert((uint)t < T_VOID+1, "range check");
     return check_mirror(_mirrors[t]);
   }
-  static oop      main_thread_group()                 { return _main_thread_group; }
-  static void set_main_thread_group(oop group)        { _main_thread_group = group;}
+  static oop      main_thread_group();
+  static void set_main_thread_group(oop group);
 
-  static oop      system_thread_group()               { return _system_thread_group; }
-  static void set_system_thread_group(oop group)      { _system_thread_group = group;}
+  static oop      system_thread_group();
+  static void set_system_thread_group(oop group);
 
-  static objArrayOop  the_empty_class_klass_array ()  { return _the_empty_class_klass_array;   }
-  static Array<Klass*>* the_array_interfaces_array() { return _the_array_interfaces_array;   }
-  static oop          the_null_string()               { return _the_null_string;               }
-  static oop          the_min_jint_string()          { return _the_min_jint_string;          }
+  static objArrayOop  the_empty_class_array ();
 
+  static oop          the_null_string();
+  static oop          the_min_jint_string();
+
+  static oop          null_ptr_exception_instance();
+  static oop          arithmetic_exception_instance();
+  static oop          virtual_machine_error_instance();
+  static oop          vm_exception()                  { return virtual_machine_error_instance(); }
+
+  static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array;   }
   static Method*      finalizer_register_method()     { return _finalizer_register_cache->get_method(); }
   static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_method(); }
 
@@ -284,16 +284,13 @@ class Universe: AllStatic {
 
   static Method*      do_stack_walk_method()          { return _do_stack_walk_cache->get_method(); }
 
-  static oop          the_null_sentinel()             { return _the_null_sentinel;             }
+  static oop          the_null_sentinel();
   static address      the_null_sentinel_addr()        { return (address) &_the_null_sentinel;  }
 
   // Function to initialize these
   static void initialize_known_methods(TRAPS);
 
-  static oop          null_ptr_exception_instance()   { return _null_ptr_exception_instance;   }
-  static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
-  static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
-  static oop          vm_exception()                  { return _vm_exception; }
+  static void create_preallocated_out_of_memory_errors(TRAPS);
 
   // Reference pending list manipulation.  Access is protected by
   // Heap_lock.  The getter, setter and predicate require the caller
@@ -302,7 +299,7 @@ class Universe: AllStatic {
   // Heap_lock, so requires the lock is locked, but not necessarily by
   // the current thread.
   static oop          reference_pending_list();
-  static void         set_reference_pending_list(oop list);
+  static void         clear_reference_pending_list();
   static bool         has_reference_pending_list();
   static oop          swap_reference_pending_list(oop list);
 
@@ -315,15 +312,16 @@ class Universe: AllStatic {
   // OutOfMemoryError support. Returns an error with the required message. The returned error
   // may or may not have a backtrace. If error has a backtrace then the stack trace is already
   // filled in.
-  static oop out_of_memory_error_java_heap()          { return gen_out_of_memory_error(_out_of_memory_error_java_heap);  }
-  static oop out_of_memory_error_metaspace()          { return gen_out_of_memory_error(_out_of_memory_error_metaspace);   }
-  static oop out_of_memory_error_class_metaspace()    { return gen_out_of_memory_error(_out_of_memory_error_class_metaspace);   }
-  static oop out_of_memory_error_array_size()         { return gen_out_of_memory_error(_out_of_memory_error_array_size); }
-  static oop out_of_memory_error_gc_overhead_limit()  { return gen_out_of_memory_error(_out_of_memory_error_gc_overhead_limit);  }
-  static oop out_of_memory_error_realloc_objects()    { return gen_out_of_memory_error(_out_of_memory_error_realloc_objects);  }
+  static oop out_of_memory_error_java_heap();
+  static oop out_of_memory_error_metaspace();
+  static oop out_of_memory_error_class_metaspace();
+  static oop out_of_memory_error_array_size();
+  static oop out_of_memory_error_gc_overhead_limit();
+  static oop out_of_memory_error_realloc_objects();
+
   // Throw default _out_of_memory_error_retry object as it will never propagate out of the VM
-  static oop out_of_memory_error_retry()              { return _out_of_memory_error_retry;  }
-  static oop delayed_stack_overflow_error_message()   { return _delayed_stack_overflow_error_message; }
+  static oop out_of_memory_error_retry();
+  static oop delayed_stack_overflow_error_message();
 
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
