@@ -323,7 +323,7 @@ In general, any version between these two should be usable.
 
 ### clang
 
-The minimum accepted version of clang is 3.2. Older versions will not be
+The minimum accepted version of clang is 3.5. Older versions will not be
 accepted by `configure`.
 
 To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
@@ -355,20 +355,13 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-The minimum accepted version of Visual Studio is 2010. Older versions will not
-be accepted by `configure`. The maximum accepted version of Visual Studio is
-2019. Versions older than 2017 are unlikely to continue working for long.
+The minimum accepted version of Visual Studio is 2017. Older versions will not
+be accepted by `configure` and will not work. The maximum accepted
+version of Visual Studio is 2019.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
-setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2015`.
-
-If you get `LINK: fatal error LNK1123: failure during conversion to COFF: file
-invalid` when building using Visual Studio 2010, you have encountered
-[KB2757355](http://support.microsoft.com/kb/2757355), a bug triggered by a
-specific installation order. However, the solution suggested by the KB article
-does not always resolve the problem. See [this stackoverflow discussion](
-https://stackoverflow.com/questions/10888391) for other suggestions.
+setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2017`.
 
 ### IBM XL C/C++
 
