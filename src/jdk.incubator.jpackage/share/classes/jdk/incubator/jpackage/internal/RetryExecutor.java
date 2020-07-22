@@ -26,6 +26,7 @@ package jdk.incubator.jpackage.internal;
 
 import java.io.IOException;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public final class RetryExecutor {
     RetryExecutor() {
@@ -64,10 +65,18 @@ public final class RetryExecutor {
     }
 
     void execute(String cmdline[]) throws IOException {
+        executeLoop(() -> Executor.of(cmdline));
+    }
+
+    void execute(ProcessBuilder pb) throws IOException {
+        executeLoop(() -> Executor.of(pb));
+    }
+
+    private void executeLoop(Supplier<Executor> execSupplier) throws IOException {
         aborted = false;
         for (;;) {
             try {
-                Executor exec = Executor.of(cmdline);
+                Executor exec = execSupplier.get();
                 if (executorInitializer != null) {
                     executorInitializer.accept(exec);
                 }

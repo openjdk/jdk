@@ -443,7 +443,12 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                     "-force",
                     hdiUtilVerbosityFlag,
                     mountedRoot.toAbsolutePath().toString());
-            IOUtils.exec(pb);
+            // "hdiutil detach" might not work right away due to resource busy error, so
+            // repeat detach several times.
+            RetryExecutor retryExecutor = new RetryExecutor();
+            // 10 times with 3 second delays.
+            retryExecutor.setMaxAttemptsCount(10).setAttemptTimeoutMillis(3000)
+                    .execute(pb);
         }
 
         // Compress it to a new image
