@@ -571,6 +571,7 @@ java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
 java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
+java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 
 ############################################################################
 
