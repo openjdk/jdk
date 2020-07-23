@@ -1903,8 +1903,7 @@ class CopySharedClassInfoToArchive : StackObj {
   bool _is_builtin;
 public:
   CopySharedClassInfoToArchive(CompactHashtableWriter* writer,
-                               bool is_builtin,
-                               bool is_static_archive)
+                               bool is_builtin)
     : _writer(writer), _is_builtin(is_builtin) {}
 
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
@@ -1953,12 +1952,11 @@ void SystemDictionaryShared::write_lambda_proxy_class_dictionary(LambdaProxyClas
 }
 
 void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionary,
-                                              bool is_builtin,
-                                              bool is_static_archive) {
+                                              bool is_builtin) {
   CompactHashtableStats stats;
   dictionary->reset();
   CompactHashtableWriter writer(_dumptime_table->count_of(is_builtin), &stats);
-  CopySharedClassInfoToArchive copy(&writer, is_builtin, is_static_archive);
+  CopySharedClassInfoToArchive copy(&writer, is_builtin);
   _dumptime_table->iterate(&copy);
   writer.dump(dictionary, is_builtin ? "builtin dictionary" : "unregistered dictionary");
 }
