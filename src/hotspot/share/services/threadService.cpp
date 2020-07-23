@@ -567,6 +567,7 @@ StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
   _locked_monitors = NULL;
   if (with_lock_info) {
     ResourceMark rm;
+    HandleMark hm;
     GrowableArray<MonitorInfo*>* list = jvf->locked_monitors();
     int length = list->length();
     if (length > 0) {

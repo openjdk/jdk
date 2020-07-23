@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,6 +288,9 @@ void LiveFrameStream::fill_live_stackframe(Handle stackFrame,
                                            const methodHandle& method, TRAPS) {
   fill_stackframe(stackFrame, method, CHECK);
   if (_jvf != NULL) {
+    ResourceMark rm(THREAD);
+    HandleMark hm(THREAD);
+
     StackValueCollection* locals = _jvf->locals();
     StackValueCollection* expressions = _jvf->expressions();
     GrowableArray<MonitorInfo*>* monitors = _jvf->monitors();

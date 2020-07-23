@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "code/location.hpp"
 #include "oops/oop.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/stackValue.hpp"
 #include "runtime/stackValueCollection.hpp"
 #include "utilities/growableArray.hpp"
@@ -241,34 +242,22 @@ class entryVFrame: public externalVFrame {
 // 2) the monitor lock
 class MonitorInfo : public ResourceObj {
  private:
-  oop        _owner; // the object owning the monitor
+  Handle     _owner; // the object owning the monitor
   BasicLock* _lock;
-  oop        _owner_klass; // klass (mirror) if owner was scalar replaced
+  Handle     _owner_klass; // klass (mirror) if owner was scalar replaced
   bool       _eliminated;
   bool       _owner_is_scalar_replaced;
  public:
   // Constructor
-  MonitorInfo(oop owner, BasicLock* lock, bool eliminated, bool owner_is_scalar_replaced) {
-    if (!owner_is_scalar_replaced) {
-      _owner = owner;
-      _owner_klass = NULL;
-    } else {
-      assert(eliminated, "monitor should be eliminated for scalar replaced object");
-      _owner = NULL;
-      _owner_klass = owner;
-    }
-    _lock  = lock;
-    _eliminated = eliminated;
-    _owner_is_scalar_replaced = owner_is_scalar_replaced;
-  }
+  MonitorInfo(oop owner, BasicLock* lock, bool eliminated, bool owner_is_scalar_replaced);
   // Accessors
-  oop        owner() const {
+  oop owner() const {
     assert(!_owner_is_scalar_replaced, "should not be called for scalar replaced object");
-    return _owner;
+    return _owner();
   }
-  oop   owner_klass() const {
+  oop owner_klass() const {
     assert(_owner_is_scalar_replaced, "should not be called for not scalar replaced object");
-    return _owner_klass;
+    return _owner_klass();
   }
   BasicLock* lock()  const { return _lock;  }
   bool eliminated()  const { return _eliminated; }

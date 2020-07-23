@@ -70,28 +70,32 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
 
   int index;
 
-  // Get the monitors off-stack
+  {
+    ResourceMark rm;
+    HandleMark hm;
+    // Get the monitors off-stack
 
-  GrowableArray<MonitorInfo*>* list = vf->monitors();
-  if (list->is_empty()) {
-    _monitors = NULL;
-  } else {
+    GrowableArray<MonitorInfo*>* list = vf->monitors();
+    if (list->is_empty()) {
+      _monitors = NULL;
+    } else {
 
-    // Allocate monitor chunk
-    _monitors = new MonitorChunk(list->length());
-    vf->thread()->add_monitor_chunk(_monitors);
+      // Allocate monitor chunk
+      _monitors = new MonitorChunk(list->length());
+      vf->thread()->add_monitor_chunk(_monitors);
 
-    // Migrate the BasicLocks from the stack to the monitor chunk
-    for (index = 0; index < list->length(); index++) {
-      MonitorInfo* monitor = list->at(index);
-      assert(!monitor->owner_is_scalar_replaced() || realloc_failures, "object should be reallocated already");
-      BasicObjectLock* dest = _monitors->at(index);
-      if (monitor->owner_is_scalar_replaced()) {
-        dest->set_obj(NULL);
-      } else {
-        assert(monitor->owner() == NULL || (!monitor->owner()->is_unlocked() && !monitor->owner()->has_bias_pattern()), "object must be null or locked, and unbiased");
-        dest->set_obj(monitor->owner());
-        monitor->lock()->move_to(monitor->owner(), dest->lock());
+      // Migrate the BasicLocks from the stack to the monitor chunk
+      for (index = 0; index < list->length(); index++) {
+        MonitorInfo* monitor = list->at(index);
+        assert(!monitor->owner_is_scalar_replaced() || realloc_failures, "object should be reallocated already");
+        BasicObjectLock* dest = _monitors->at(index);
+        if (monitor->owner_is_scalar_replaced()) {
+          dest->set_obj(NULL);
+        } else {
+          assert(monitor->owner() == NULL || (!monitor->owner()->is_unlocked() && !monitor->owner()->has_bias_pattern()), "object must be null or locked, and unbiased");
+          dest->set_obj(monitor->owner());
+          monitor->lock()->move_to(monitor->owner(), dest->lock());
+        }
       }
     }
   }

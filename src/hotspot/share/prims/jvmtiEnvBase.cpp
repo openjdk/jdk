@@ -724,13 +724,13 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
                                  javaVFrame *jvf, GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list, jint stack_depth) {
   jvmtiError err = JVMTI_ERROR_NONE;
   ResourceMark rm;
+  HandleMark hm;
 
   GrowableArray<MonitorInfo*>* mons = jvf->monitors();
   if (mons->is_empty()) {
     return err;  // this javaVFrame holds no monitors
   }
 
-  HandleMark hm;
   oop wait_obj = NULL;
   {
     // The ObjectMonitor* can't be async deflated since we are either
@@ -1005,7 +1005,6 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
       // as lightweight locks before inflating the monitor are not included.
       // We have to count the number of recursive monitor entries the hard way.
       // We pass a handle to survive any GCs along the way.
-      ResourceMark rm(current_thread);
       ret.entry_count = count_locked_objects(owning_thread, hobj);
     }
     // implied else: entry_count == 0
