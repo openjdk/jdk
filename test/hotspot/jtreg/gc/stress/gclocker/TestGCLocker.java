@@ -80,13 +80,14 @@ class MemoryWatcher {
     private final int criticalThresholdPromille = 800;
     private final int minGCWaitMS = 1000;
     private final int minFreeWaitElapsedMS = 30000;
-    private final int minFreeCriticalWaitMS = 500;
+    private final int minFreeCriticalWaitMS;
 
     private int lastUsage = 0;
     private long lastGCDetected = System.currentTimeMillis();
     private long lastFree = System.currentTimeMillis();
 
-    public MemoryWatcher(String mxBeanName) {
+    public MemoryWatcher(String mxBeanName, int minFreeCriticalWaitMS) {
+        this.minFreeCriticalWaitMS = minFreeCriticalWaitMS;
         List<MemoryPoolMXBean> memoryBeans = ManagementFactory.getMemoryPoolMXBeans();
         for (MemoryPoolMXBean bean : memoryBeans) {
             if (bean.getName().equals(mxBeanName)) {
@@ -151,8 +152,8 @@ class MemoryUser extends Exitable implements Runnable {
         cache.add(new Filler());
     }
 
-    public MemoryUser(String mxBeanName) {
-        watcher = new MemoryWatcher(mxBeanName);
+    public MemoryUser(String mxBeanName, int minFreeCriticalWaitMS) {
+        watcher = new MemoryWatcher(mxBeanName, minFreeCriticalWaitMS);
     }
 
     @Override
@@ -191,8 +192,8 @@ public class TestGCLocker {
         return task;
     }
 
-    private static Exitable startMemoryUser(String mxBeanName) {
-        MemoryUser task = new MemoryUser(mxBeanName);
+    private static Exitable startMemoryUser(String mxBeanName, int minFreeCriticalWaitMS) {
+        MemoryUser task = new MemoryUser(mxBeanName, minFreeCriticalWaitMS);
 
         Thread thread = new Thread(task);
         thread.setName("Memory User");
@@ -206,12 +207,13 @@ public class TestGCLocker {
 
         long durationMinutes = args.length > 0 ? Long.parseLong(args[0]) : 5;
         String mxBeanName = args.length > 1 ? args[1] : null;
+        int minFreeCriticalWaitMS = args.length > 2 ? Integer.parseInt(args[2]) : 500;
 
         long startMS = System.currentTimeMillis();
 
         Exitable stresser1 = startGCLockerStresser("GCLockerStresser1");
         Exitable stresser2 = startGCLockerStresser("GCLockerStresser2");
-        Exitable memoryUser = startMemoryUser(mxBeanName);
+        Exitable memoryUser = startMemoryUser(mxBeanName, minFreeCriticalWaitMS);
 
         long durationMS = durationMinutes * 60 * 1000;
         while ((System.currentTimeMillis() - startMS) < durationMS) {
