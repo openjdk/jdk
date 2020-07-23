@@ -319,25 +319,92 @@ final class StringUTF16 {
     }
 
     public static int compareToCI(byte[] value, byte[] other) {
-        int len1 = length(value);
-        int len2 = length(other);
-        int lim = Math.min(len1, len2);
-        for (int k = 0; k < lim; k++) {
-            char c1 = getChar(value, k);
-            char c2 = getChar(other, k);
-            if (c1 != c2) {
-                c1 = Character.toUpperCase(c1);
-                c2 = Character.toUpperCase(c2);
-                if (c1 != c2) {
-                    c1 = Character.toLowerCase(c1);
-                    c2 = Character.toLowerCase(c2);
-                    if (c1 != c2) {
-                        return c1 - c2;
-                    }
-                }
+        return compareToCIImpl(value, 0, length(value), other, 0, length(other));
+    }
+
+    private static int compareToCIImpl(byte[] value, int toffset, int tlen,
+                                      byte[] other, int ooffset, int olen) {
+        int tlast = toffset + tlen;
+        int olast = ooffset + olen;
+        assert toffset >= 0 && ooffset >= 0;
+        assert tlast <= length(value);
+        assert olast <= length(other);
+
+        for (int k1 = toffset, k2 = ooffset; k1 < tlast && k2 < olast; k1++, k2++) {
+            int cp1 = (int)getChar(value, k1);
+            int cp2 = (int)getChar(other, k2);
+
+            if (cp1 == cp2 || compareCodePointCI(cp1, cp2) == 0) {
+                continue;
+            }
+
+            // Check for supplementary characters case
+            cp1 = codePointIncluding(value, cp1, k1, toffset, tlast);
+            if (cp1 < 0) {
+                k1++;
+                cp1 -= cp1;
+            }
+            cp2 = codePointIncluding(other, cp2, k2, ooffset, olast);
+            if (cp2 < 0) {
+                k2++;
+                cp2 -= cp2;
+            }
+
+            int diff = compareCodePointCI(cp1, cp2);
+            if (diff != 0) {
+                return diff;
             }
         }
-        return len1 - len2;
+        return tlen - olen;
+    }
+
+    // Case insensitive comparison of two code points
+    private static int compareCodePointCI(int cp1, int cp2) {
+        // try converting both characters to uppercase.
+        // If the results match, then the comparison scan should
+        // continue.
+        cp1 = Character.toUpperCase(cp1);
+        cp2 = Character.toUpperCase(cp2);
+        if (cp1 != cp2) {
+            // Unfortunately, conversion to uppercase does not work properly
+            // for the Georgian alphabet, which has strange rules about case
+            // conversion.  So we need to make one last check before
+            // exiting.
+            cp1 = Character.toLowerCase(cp1);
+            cp2 = Character.toLowerCase(cp2);
+            if (cp1 != cp2) {
+                return cp1 - cp2;
+            }
+        }
+        return 0;
+    }
+
+    // Returns a code point from the code unit pointed by "index". If it is
+    // not a surrogate or an unpaired surrogate, then the code unit is
+    // returned as is. Otherwise, it is combined with the code unit before
+    // or after, depending on the type of the surrogate at index, to make a
+    // supplementary code point. The return value will be negated if the code
+    // unit pointed by index is a high surrogate, and index + 1 is a low surrogate.
+    private static int codePointIncluding(byte[] ba, int cp, int index, int start, int end) {
+        // fast check
+        if (!Character.isSurrogate((char)cp)) {
+            return cp;
+        }
+        if (Character.isLowSurrogate((char)cp)) {
+            if (index > start) {
+                char c = getChar(ba, index - 1);
+                if (Character.isHighSurrogate(c)) {
+                    return Character.toCodePoint(c, (char)cp);
+                }
+            }
+        } else if (index + 1 < end) { // cp == high surrogate
+            char c = getChar(ba, index + 1);
+            if (Character.isLowSurrogate(c)) {
+                // negate the code point
+                return - Character.toCodePoint((char)cp, c);
+            }
+        }
+        return cp;
     }
 
     public static int compareToCI_Latin1(byte[] value, byte[] other) {
@@ -716,34 +783,7 @@ final class StringUTF16 {
 
     public static boolean regionMatchesCI(byte[] value, int toffset,
                                           byte[] other, int ooffset, int len) {
-        int last = toffset + len;
-        assert toffset >= 0 && ooffset >= 0;
-        assert ooffset + len <= length(other);
-        assert last <= length(value);
-        while (toffset < last) {
-            char c1 = getChar(value, toffset++);
-            char c2 = getChar(other, ooffset++);
-            if (c1 == c2) {
-                continue;
-            }
-            // try converting both characters to uppercase.
-            // If the results match, then the comparison scan should
-            // continue.
-            char u1 = Character.toUpperCase(c1);
-            char u2 = Character.toUpperCase(c2);
-            if (u1 == u2) {
-                continue;
-            }
-            // Unfortunately, conversion to uppercase does not work properly
-            // for the Georgian alphabet, which has strange rules about case
-            // conversion.  So we need to make one last check before
-            // exiting.
-            if (Character.toLowerCase(u1) == Character.toLowerCase(u2)) {
-                continue;
-            }
-            return false;
-        }
-        return true;
+        return compareToCIImpl(value, toffset, len, other, ooffset, len) == 0;
     }
 
     public static boolean regionMatchesCI_Latin1(byte[] value, int toffset,
