@@ -801,7 +801,7 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
 
     JNI_CreateJavaVM = CAST_TO_FN_PTR(JNI_CreateJavaVM_t, os::dll_lookup(sl_handle, "JNI_CreateJavaVM"));
     if (JNI_CreateJavaVM == NULL) {
-      vm_exit_during_initialization("Unable to find JNI_CreateJavaVM", sl_path);
+      fatal("Unable to find JNI_CreateJavaVM in %s", sl_path);
     }
 
     ResourceMark rm;
@@ -836,7 +836,7 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
       JVMCI_event_1("created JavaVM[%ld]@" PTR_FORMAT " for JVMCI runtime %d", javaVM_id, p2i(javaVM), _id);
       return env;
     } else {
-      vm_exit_during_initialization(err_msg("JNI_CreateJavaVM failed with return value %d", result), sl_path);
+      fatal("JNI_CreateJavaVM failed with return value %d", result);
     }
   }
   return NULL;
