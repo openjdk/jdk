@@ -24,7 +24,6 @@
 #include <stdio.h>
 
 #include "jni.h"
-#include "jni_util.h"
 
 /*
  * We will replace:
