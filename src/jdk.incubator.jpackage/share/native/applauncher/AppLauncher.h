@@ -51,6 +51,11 @@ public:
         return *this;
     }
 
+    AppLauncher& setInitJvmFromCmdlineOnly(bool v) {
+        initJvmFromCmdlineOnly = v;
+        return *this;
+    }
+
     AppLauncher& addJvmLibName(const tstring& v) {
         jvmLibNames.push_back(v);
         return *this;
@@ -78,6 +83,7 @@ private:
     tstring appDirPath;
     tstring imageRoot;
     tstring_array jvmLibNames;
+    bool initJvmFromCmdlineOnly;
 };
 
 #endif // AppLauncher_h
