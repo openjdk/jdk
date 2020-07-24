@@ -45,12 +45,24 @@ public:
   explicit OopHandle(oop* w) : _obj(w) {}
   OopHandle(OopStorage* storage, oop obj);
 
+  OopHandle(const OopHandle& copy) : _obj(copy._obj) {}
+
+  OopHandle& operator=(const OopHandle& copy) {
+    // Allow "this" to be junk if copy is empty; needed by initialization of
+    // raw memory in hashtables.
+    assert(is_empty() || copy.is_empty(), "can only copy if empty");
+    _obj = copy._obj;
+    return *this;
+  }
+
   inline oop resolve() const;
   inline oop peek() const;
 
   bool is_empty() const { return _obj == NULL; }
 
   inline void release(OopStorage* storage);
+
+  inline void replace(oop obj);
 
   // Used only for removing handle.
   oop* ptr_raw() const { return _obj; }
