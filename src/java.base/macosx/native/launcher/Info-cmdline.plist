@@ -3,12 +3,14 @@
 <plist version="1.0">
 <dict>
         <key>CFBundleIdentifier</key>
-        <string>net.java.openjdk.cmd</string>
+        <string>@@ID@@</string>
         <key>CFBundleInfoDictionaryVersion</key>
         <string>6.0</string>
         <key>CFBundleShortVersionString</key>
         <string>1.0</string>
         <key>CFBundleVersion</key>
-        <string>1.0</string>
+        <string>@@VERSION@@</string>
+        <key>NSMicrophoneUsageDescription</key>
+        <string>The application is requesting access to the microphone.</string>
 </dict>
 </plist>
