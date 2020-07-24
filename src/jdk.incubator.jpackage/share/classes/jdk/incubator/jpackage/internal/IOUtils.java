@@ -148,7 +148,13 @@ public class IOUtils {
 
     public static void exec(ProcessBuilder pb)
             throws IOException {
-        exec(pb, false, null, false);
+        exec(pb, false, null, false, Executor.INFINITE_TIMEOUT);
+    }
+
+    // timeout in seconds. -1 will be return if process timeouts.
+    public static void exec(ProcessBuilder pb, long timeout)
+            throws IOException {
+        exec(pb, false, null, false, timeout);
     }
 
     // See JDK-8236282
@@ -158,19 +164,20 @@ public class IOUtils {
     // read this file back.
     public static void exec(ProcessBuilder pb, boolean writeOutputToFile)
             throws IOException {
-        exec(pb, false, null, writeOutputToFile);
+        exec(pb, false, null, writeOutputToFile, Executor.INFINITE_TIMEOUT);
     }
 
     static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
             PrintStream consumer) throws IOException {
-        exec(pb, testForPresenceOnly, consumer, false);
+        exec(pb, testForPresenceOnly, consumer, false, Executor.INFINITE_TIMEOUT);
     }
 
     static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
-            PrintStream consumer, boolean writeOutputToFile) throws IOException {
+            PrintStream consumer, boolean writeOutputToFile, long timeout)
+            throws IOException {
         List<String> output = new ArrayList<>();
         Executor exec = Executor.of(pb).setWriteOutputToFile(writeOutputToFile)
-                .setOutputConsumer(lines -> {
+                .setTimeout(timeout).setOutputConsumer(lines -> {
             lines.forEach(output::add);
             if (consumer != null) {
                 output.forEach(consumer::println);

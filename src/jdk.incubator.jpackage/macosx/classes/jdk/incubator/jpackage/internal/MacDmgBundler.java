@@ -359,7 +359,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 protoDMG.toAbsolutePath().toString(),
                 hdiUtilVerbosityFlag,
                 "-mountroot", imagesRoot.toAbsolutePath().toString());
-        IOUtils.exec(pb, false, null, true);
+        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
 
         Path mountedRoot = imagesRoot.resolve(APP_NAME.fetchFrom(params));
 
@@ -392,7 +392,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             try {
                 pb = new ProcessBuilder("osascript",
                         getConfig_VolumeScript(params).toAbsolutePath().toString());
-                IOUtils.exec(pb);
+                IOUtils.exec(pb, 180); // Wait 3 minutes. See JDK-8248248.
             } catch (IOException ex) {
                 Log.verbose(ex);
             }
