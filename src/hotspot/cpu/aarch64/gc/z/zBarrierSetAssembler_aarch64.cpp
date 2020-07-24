@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,6 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   assert_different_registers(rscratch1, rscratch2, src.base());
   assert_different_registers(rscratch1, rscratch2, dst);
 
-  RegSet savedRegs = RegSet::range(r0, r28) - RegSet::of(dst, rscratch1, rscratch2);
-
   Label done;
 
   // Load bad mask into scratch register.
@@ -82,37 +80,21 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   __ enter();
 
-  __ push(savedRegs, sp);
+  __ push_call_clobbered_registers_except(RegSet::of(dst));
 
   if (c_rarg0 != dst) {
     __ mov(c_rarg0, dst);
   }
   __ mov(c_rarg1, rscratch2);
 
-  int step = 4 * wordSize;
-  __ mov(rscratch2, -step);
-  __ sub(sp, sp, step);
-
-  for (int i = 28; i >= 4; i -= 4) {
-    __ st1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
-        as_FloatRegister(i+3), __ T1D, Address(__ post(sp, rscratch2)));
-  }
-  __ st1(as_FloatRegister(0), as_FloatRegister(1), as_FloatRegister(2),
-      as_FloatRegister(3), __ T1D, Address(sp));
-
   __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), 2);
-
-  for (int i = 0; i <= 28; i += 4) {
-    __ ld1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
-        as_FloatRegister(i+3), __ T1D, Address(__ post(sp, step)));
-  }
 
   // Make sure dst has the return value.
   if (dst != r0) {
     __ mov(dst, r0);
   }
 
-  __ pop(savedRegs, sp);
+  __ pop_call_clobbered_registers_except(RegSet::of(dst));
   __ leave();
 
   __ bind(done);
@@ -170,7 +152,7 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
 
   assert_different_registers(src, count, rscratch1);
 
-  __ pusha();
+  __ push(saved_regs, sp);
 
   if (count == c_rarg0) {
     if (src == c_rarg1) {
@@ -189,7 +171,8 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
 
   __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_array_addr(), 2);
 
-  __ popa();
+  __ pop(saved_regs, sp);
+
   BLOCK_COMMENT("} ZBarrierSetAssembler::arraycopy_prologue");
 }
 
@@ -295,13 +278,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
                                                                  DecoratorSet decorators) const {
   __ prologue("zgc_load_barrier stub", false);
 
-  // We don't use push/pop_clobbered_registers() - we need to pull out the result from r0.
-  for (int i = 0; i < 32; i += 2) {
-    __ stpd(as_FloatRegister(i), as_FloatRegister(i + 1), Address(__ pre(sp,-16)));
-  }
-
-  const RegSet save_regs = RegSet::range(r1, r28);
-  __ push(save_regs, sp);
+  __ push_call_clobbered_registers_except(RegSet::of(r0));
 
   // Setup arguments
   __ load_parameter(0, c_rarg0);
@@ -309,11 +286,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
 
   __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), 2);
 
-  __ pop(save_regs, sp);
-
-  for (int i = 30; i >= 0; i -= 2) {
-    __ ldpd(as_FloatRegister(i), as_FloatRegister(i + 1), Address(__ post(sp, 16)));
-  }
+  __ pop_call_clobbered_registers_except(RegSet::of(r0));
 
   __ epilogue();
 }
