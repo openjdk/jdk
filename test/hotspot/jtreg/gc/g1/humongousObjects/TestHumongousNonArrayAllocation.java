@@ -45,23 +45,23 @@ import java.nio.file.Paths;
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:G1HeapRegionSize=1M
+ *                   -XX:G1HeapRegionSize=1M -XX:AbortVMOnException=java.lang.StackOverflowError
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation LARGEST_NON_HUMONGOUS
  *
  * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:G1HeapRegionSize=1M
+ *                   -XX:G1HeapRegionSize=1M -XX:AbortVMOnException=java.lang.StackOverflowError
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation SMALLEST_HUMONGOUS
  *
  * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:G1HeapRegionSize=1M
+ *                   -XX:G1HeapRegionSize=1M -XX:AbortVMOnException=java.lang.StackOverflowError
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation ONE_REGION_HUMONGOUS
  *
  * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:G1HeapRegionSize=1M
+ *                   -XX:G1HeapRegionSize=1M -XX:AbortVMOnException=java.lang.StackOverflowError
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation TWO_REGION_HUMONGOUS
  *
  * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:G1HeapRegionSize=1M
+ *                   -XX:G1HeapRegionSize=1M -XX:AbortVMOnException=java.lang.StackOverflowError
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation MORE_THAN_TWO_REGION_HUMONGOUS
  *
  */
