@@ -714,6 +714,19 @@ static void remove_java_mirror_in_classes() {
   }
 }
 
+static void clear_basic_type_mirrors() {
+  assert(!HeapShared::is_heap_object_archiving_allowed(), "Sanity");
+  Universe::set_int_mirror(NULL);
+  Universe::set_float_mirror(NULL);
+  Universe::set_double_mirror(NULL);
+  Universe::set_byte_mirror(NULL);
+  Universe::set_bool_mirror(NULL);
+  Universe::set_char_mirror(NULL);
+  Universe::set_long_mirror(NULL);
+  Universe::set_short_mirror(NULL);
+  Universe::set_void_mirror(NULL);
+}
+
 static void rewrite_nofast_bytecode(const methodHandle& method) {
   BytecodeStream bcs(method);
   while (!bcs.is_last_bytecode()) {
@@ -1527,7 +1540,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   log_info(cds)("Removing java_mirror ... ");
   if (!HeapShared::is_heap_object_archiving_allowed()) {
-    Universe::clear_basic_type_mirrors();
+    clear_basic_type_mirrors();
   }
   remove_java_mirror_in_classes();
   log_info(cds)("done. ");
@@ -2079,7 +2092,7 @@ void ReadClosure::do_tag(int tag) {
 void ReadClosure::do_oop(oop *p) {
   narrowOop o = (narrowOop)nextPtr();
   if (o == 0 || !HeapShared::open_archive_heap_region_mapped()) {
-    *p = NULL;
+    p = NULL;
   } else {
     assert(HeapShared::is_heap_object_archiving_allowed(),
            "Archived heap object is not allowed");

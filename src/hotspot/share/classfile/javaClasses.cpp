@@ -1121,9 +1121,8 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
   assert(HeapShared::is_heap_object_archiving_allowed(),
          "HeapShared::is_heap_object_archiving_allowed() must be true");
 
-  for (int t = T_BOOLEAN; t < T_VOID+1; t++) {
-    BasicType bt = (BasicType)t;
-    oop m = Universe::_mirrors[t].resolve();
+  for (int t = 0; t <= T_VOID; t++) {
+    oop m = Universe::_mirrors[t];
     if (m != NULL) {
       // Update the field at _array_klass_offset to point to the relocated array klass.
       oop archived_m = HeapShared::archive_heap_object(m, THREAD);
@@ -1143,12 +1142,33 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
 
       log_trace(cds, heap, mirror)(
         "Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
-        type2name(bt), p2i(m), p2i(archived_m));
+        type2name((BasicType)t), p2i(Universe::_mirrors[t]), p2i(archived_m));
 
-      Universe::replace_mirror(bt, archived_m);
+      Universe::_mirrors[t] = archived_m;
     }
   }
+
+  assert(Universe::_mirrors[T_INT] != NULL &&
+         Universe::_mirrors[T_FLOAT] != NULL &&
+         Universe::_mirrors[T_DOUBLE] != NULL &&
+         Universe::_mirrors[T_BYTE] != NULL &&
+         Universe::_mirrors[T_BOOLEAN] != NULL &&
+         Universe::_mirrors[T_CHAR] != NULL &&
+         Universe::_mirrors[T_LONG] != NULL &&
+         Universe::_mirrors[T_SHORT] != NULL &&
+         Universe::_mirrors[T_VOID] != NULL, "sanity");
+
+  Universe::set_int_mirror(Universe::_mirrors[T_INT]);
+  Universe::set_float_mirror(Universe::_mirrors[T_FLOAT]);
+  Universe::set_double_mirror(Universe::_mirrors[T_DOUBLE]);
+  Universe::set_byte_mirror(Universe::_mirrors[T_BYTE]);
+  Universe::set_bool_mirror(Universe::_mirrors[T_BOOLEAN]);
+  Universe::set_char_mirror(Universe::_mirrors[T_CHAR]);
+  Universe::set_long_mirror(Universe::_mirrors[T_LONG]);
+  Universe::set_short_mirror(Universe::_mirrors[T_SHORT]);
+  Universe::set_void_mirror(Universe::_mirrors[T_VOID]);
 }
+
 //
 // After the mirror object is successfully archived, the archived
 // klass is set with _has_archived_raw_mirror flag.

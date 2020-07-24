@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,18 @@ class Universe: AllStatic {
   static Klass* _objectArrayKlassObj;
 
   // Known objects in the VM
+
+  // Primitive objects
+  static oop _int_mirror;
+  static oop _float_mirror;
+  static oop _double_mirror;
+  static oop _byte_mirror;
+  static oop _bool_mirror;
+  static oop _char_mirror;
+  static oop _long_mirror;
+  static oop _short_mirror;
+  static oop _void_mirror;
+
   static OopHandle    _main_thread_group;             // Reference to the main thread group object
   static OopHandle    _system_thread_group;           // Reference to the system thread group object
 
@@ -220,24 +232,33 @@ class Universe: AllStatic {
   }
 
   // Known objects in the VM
-  static oop int_mirror();
-  static oop float_mirror();
-  static oop double_mirror();
-  static oop byte_mirror();
-  static oop bool_mirror();
-  static oop char_mirror();
-  static oop long_mirror();
-  static oop short_mirror();
-  static oop void_mirror();
+  static oop int_mirror()                   { return check_mirror(_int_mirror); }
+  static oop float_mirror()                 { return check_mirror(_float_mirror); }
+  static oop double_mirror()                { return check_mirror(_double_mirror); }
+  static oop byte_mirror()                  { return check_mirror(_byte_mirror); }
+  static oop bool_mirror()                  { return check_mirror(_bool_mirror); }
+  static oop char_mirror()                  { return check_mirror(_char_mirror); }
+  static oop long_mirror()                  { return check_mirror(_long_mirror); }
+  static oop short_mirror()                 { return check_mirror(_short_mirror); }
+  static oop void_mirror()                  { return check_mirror(_void_mirror); }
 
-  // Table of primitive type mirrors, excluding T_OBJECT and T_ARRAY
-  // but including T_VOID, hence the index including T_VOID
-  static OopHandle _mirrors[T_VOID+1];
+  static void set_int_mirror(oop m)         { _int_mirror = m;    }
+  static void set_float_mirror(oop m)       { _float_mirror = m;  }
+  static void set_double_mirror(oop m)      { _double_mirror = m; }
+  static void set_byte_mirror(oop m)        { _byte_mirror = m;   }
+  static void set_bool_mirror(oop m)        { _bool_mirror = m;   }
+  static void set_char_mirror(oop m)        { _char_mirror = m;   }
+  static void set_long_mirror(oop m)        { _long_mirror = m;   }
+  static void set_short_mirror(oop m)       { _short_mirror = m;  }
+  static void set_void_mirror(oop m)        { _void_mirror = m;   }
 
-  static oop java_mirror(BasicType t);
-  static void replace_mirror(BasicType t, oop obj);
-  static void clear_basic_type_mirrors();
+  // table of same
+  static oop _mirrors[T_VOID+1];
 
+  static oop java_mirror(BasicType t) {
+    assert((uint)t < T_VOID+1, "range check");
+    return check_mirror(_mirrors[t]);
+  }
   static oop      main_thread_group();
   static void set_main_thread_group(oop group);
 
