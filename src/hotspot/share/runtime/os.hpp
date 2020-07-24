@@ -27,7 +27,6 @@
 
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
-#include "metaprogramming/isRegisteredEnum.hpp"
 #include "metaprogramming/integralConstant.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -971,10 +970,6 @@ class os: AllStatic {
   static bool set_boot_path(char fileSep, char pathSep);
 
 };
-
-#ifndef _WINDOWS
-template<> struct IsRegisteredEnum<os::SuspendResume::State> : public TrueType {};
-#endif // !_WINDOWS
 
 // Note that "PAUSE" is almost always used with synchronization
 // so arguably we should provide Atomic::SpinPause() instead

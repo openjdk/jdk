@@ -27,7 +27,6 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
-#include "metaprogramming/isRegisteredEnum.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
@@ -377,8 +376,5 @@ class ObjectMonitor {
   bool      ExitSuspendEquivalent(JavaThread* self);
   void      install_displaced_markword_in_object(const oop obj);
 };
-
-// Register for atomic operations.
-template<> struct IsRegisteredEnum<ObjectMonitor::AllocationState> : public TrueType {};
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP
