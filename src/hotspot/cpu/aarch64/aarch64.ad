@@ -4053,6 +4053,18 @@ operand immI_bitmask()
   interface(CONST_INTER);
 %}
 
+operand immL_positive_bitmaskI()
+%{
+  predicate((n->get_long() != 0)
+            && ((julong)n->get_long() < 0x80000000ULL)
+            && is_power_of_2(n->get_long() + 1));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Scale values for scaled offset addressing modes (up to long but not quad)
 operand immIScale()
 %{
@@ -12149,6 +12161,50 @@ instruct ubfizL(iRegLNoSp dst, iRegL src, immI lshift, immL_bitmask mask)
   ins_pipe(ialu_reg_shift);
 %}
 
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+
+// We can use ubfiz when masking by a positive number and then left shifting the result.
+// We know that the mask is positive because immI_bitmask guarantees it.
+instruct ubfizwIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI lshift, immI_bitmask mask)
+%{
+  match(Set dst (ConvI2L (LShiftI (AndI src mask) lshift)));
+  predicate((exact_log2(n->in(1)->in(1)->in(2)->get_int() + 1) + (n->in(1)->in(2)->get_int() & 31)) <= 31);
+
+  ins_cost(INSN_COST);
+  format %{ "ubfizw $dst, $src, $lshift, $mask" %}
+  ins_encode %{
+    int lshift = $lshift$$constant & 31;
+    intptr_t mask = $mask$$constant;
+    int width = exact_log2(mask+1);
+    __ ubfizw(as_Register($dst$$reg),
+          as_Register($src$$reg), lshift, width);
+  %}
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+
+// We can use ubfiz when masking by a positive number and then left shifting the result.
+// We know that the mask is positive because immL_bitmask guarantees it.
+instruct ubfizLConvL2I(iRegINoSp dst, iRegL src, immI lshift, immL_positive_bitmaskI mask)
+%{
+  match(Set dst (ConvL2I (LShiftL (AndL src mask) lshift)));
+  predicate((exact_log2_long(n->in(1)->in(1)->in(2)->get_long() + 1) + (n->in(1)->in(2)->get_int() & 63)) <= 31);
+
+  ins_cost(INSN_COST);
+  format %{ "ubfiz $dst, $src, $lshift, $mask" %}
+  ins_encode %{
+    int lshift = $lshift$$constant & 63;
+    intptr_t mask = $mask$$constant;
+    int width = exact_log2_long(mask+1);
+    __ ubfiz(as_Register($dst$$reg),
+          as_Register($src$$reg), lshift, width);
+  %}
+  ins_pipe(ialu_reg_shift);
+%}
+
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
@@ -12163,6 +12219,27 @@ instruct ubfizIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI lshift, immI_bitmask 
   format %{ "ubfiz $dst, $src, $lshift, $mask" %}
   ins_encode %{
     int lshift = $lshift$$constant & 63;
+    intptr_t mask = $mask$$constant;
+    int width = exact_log2(mask+1);
+    __ ubfiz(as_Register($dst$$reg),
+             as_Register($src$$reg), lshift, width);
+  %}
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+
+// If there is a convert L to I block between and AndL and a LShiftI, we can also match ubfiz
+instruct ubfizLConvL2Ix(iRegINoSp dst, iRegL src, immI lshift, immL_positive_bitmaskI mask)
+%{
+  match(Set dst (LShiftI (ConvL2I (AndL src mask)) lshift));
+  predicate((exact_log2_long(n->in(1)->in(1)->in(2)->get_long() + 1) + (n->in(2)->get_int() & 31)) <= 31);
+
+  ins_cost(INSN_COST);
+  format %{ "ubfiz $dst, $src, $lshift, $mask" %}
+  ins_encode %{
+    int lshift = $lshift$$constant & 31;
     intptr_t mask = $mask$$constant;
     int width = exact_log2(mask+1);
     __ ubfiz(as_Register($dst$$reg),

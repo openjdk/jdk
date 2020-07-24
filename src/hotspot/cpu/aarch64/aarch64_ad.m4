@@ -237,39 +237,45 @@ define(`UBFIZ_INSN', `// This pattern is automatically generated from aarch64_ad
 
 // We can use ubfiz when masking by a positive number and then left shifting the result.
 // We know that the mask is positive because imm$1_bitmask guarantees it.
-instruct $2$1(iReg$1NoSp dst, iReg$1`'ORL2I($1) src, immI lshift, imm$1_bitmask mask)
+instruct $3$1$8(iReg$2NoSp dst, iReg$1`'ORL2I($1) src, immI lshift, $7 mask)
 %{
-  match(Set dst (LShift$1 (And$1 src mask) lshift));
-  predicate((exact_log2$5(n->in(1)->in(2)->get_$4() + 1) + (n->in(2)->get_int() & $3)) <= ($3 + 1));
+  ifelse($8,,
+    match(Set dst (LShift$1 (And$1 src mask) lshift));,
+    match(Set dst ($8 (LShift$1 (And$1 src mask) lshift)));)
+  ifelse($8,,
+    predicate(($6(n->in(1)->in(2)->get_$5() + 1) + (n->in(2)->get_int() & $4)) <= ($4 + 1));,
+    predicate(($6(n->in(1)->in(1)->in(2)->get_$5() + 1) + (n->in(1)->in(2)->get_int() & $4)) <= 31);)
 
   ins_cost(INSN_COST);
-  format %{ "$2 $dst, $src, $lshift, $mask" %}
+  format %{ "$3 $dst, $src, $lshift, $mask" %}
   ins_encode %{
-    int lshift = $lshift$$constant & $3;
+    int lshift = $lshift$$constant & $4;
     intptr_t mask = $mask$$constant;
-    int width = exact_log2$5(mask+1);
-    __ $2(as_Register($dst$$reg),
+    int width = $6(mask+1);
+    __ $3(as_Register($dst$$reg),
           as_Register($src$$reg), lshift, width);
   %}
   ins_pipe(ialu_reg_shift);
 %}
 ')
-UBFIZ_INSN(I, ubfizw, 31, int)
-UBFIZ_INSN(L, ubfiz,  63, long, _long)
+UBFIZ_INSN(I, I, ubfizw, 31, int,  exact_log2,      immI_bitmask)
+UBFIZ_INSN(L, L, ubfiz,  63, long, exact_log2_long, immL_bitmask)
+UBFIZ_INSN(I, L, ubfizw, 31, int,  exact_log2,      immI_bitmask,           ConvI2L)
+UBFIZ_INSN(L, I, ubfiz,  63, long, exact_log2_long, immL_positive_bitmaskI, ConvL2I)
 
-// This pattern is automatically generated from aarch64_ad.m4
+define(`BFX1_INSN', `// This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 
-// If there is a convert I to L block between and AndI and a LShiftL, we can also match ubfiz
-instruct ubfizIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI lshift, immI_bitmask mask)
+// If there is a convert $1 to $2 block between and And$1 and a LShift$2, we can also match ubfiz
+instruct ubfiz$1Conv$3$9(iReg$2NoSp dst, iReg$1`'ORL2I($1) src, immI lshift, $8 mask)
 %{
-  match(Set dst (LShiftL (ConvI2L (AndI src mask)) lshift));
-  predicate((exact_log2(n->in(1)->in(1)->in(2)->get_int() + 1) + (n->in(2)->get_int() & 63)) <= (63 + 1));
+  match(Set dst (LShift$2 (Conv$3 (And$1 src mask)) lshift));
+  predicate(($4(n->in(1)->in(1)->in(2)->$5() + 1) + (n->in(2)->get_int() & $6)) <= $7);
 
   ins_cost(INSN_COST);
   format %{ "ubfiz $dst, $src, $lshift, $mask" %}
   ins_encode %{
-    int lshift = $lshift$$constant & 63;
+    int lshift = $lshift$$constant & $6;
     intptr_t mask = $mask$$constant;
     int width = exact_log2(mask+1);
     __ ubfiz(as_Register($dst$$reg),
@@ -277,7 +283,9 @@ instruct ubfizIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI lshift, immI_bitmask 
   %}
   ins_pipe(ialu_reg_shift);
 %}
-
+')dnl
+BFX1_INSN(I, L, I2L, exact_log2,      get_int,  63, (63 + 1), immI_bitmask)
+BFX1_INSN(L, I, L2I, exact_log2_long, get_long, 31, 31,       immL_positive_bitmaskI, x)
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 
