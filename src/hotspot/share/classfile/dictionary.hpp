@@ -195,6 +195,9 @@ class SymbolPropertyEntry : public HashtableEntry<Symbol*, mtSymbol> {
   oop      method_type() const;
   void set_method_type(oop p);
 
+  // We need to clear the OopHandle because these hashtable entries are not constructed properly.
+  void clear_method_type() { _method_type = OopHandle(); }
+
   void free_entry();
 
   SymbolPropertyEntry* next() const {
@@ -247,7 +250,7 @@ private:
     symbol->increment_refcount();
     entry->set_symbol_mode(symbol_mode);
     entry->set_method(NULL);
-    entry->set_method_type(NULL);
+    entry->clear_method_type();
     return entry;
   }
 
