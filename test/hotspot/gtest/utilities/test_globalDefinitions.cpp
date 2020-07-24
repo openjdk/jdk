@@ -223,3 +223,30 @@ TEST(globalDefinitions, log2) {
   EXPECT_EQ_LOG2(log2_uint, uint);
   EXPECT_EQ_LOG2(log2_jlong, jlong);
 }
+
+TEST(globalDefinitions, array_size) {
+  const size_t test_size = 10;
+
+  {
+    int test_array[test_size] = {};
+    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+  }
+
+  {
+    double test_array[test_size] = {};
+    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+  }
+
+  struct ArrayElt { int x; };
+
+  {
+    ArrayElt test_array[test_size] = {};
+    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+  }
+
+  {
+    const ArrayElt test_array[] = { {0}, {1}, {2}, {3}, {4}, {5} };
+    static_assert(6 == ARRAY_SIZE(test_array), "must be");
+  }
+
+}
