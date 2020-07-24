@@ -25,6 +25,7 @@
 #ifndef SHARE_MEMORY_ALLOCATION_HPP
 #define SHARE_MEMORY_ALLOCATION_HPP
 
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -348,13 +349,6 @@ class MetaspaceObj {
 // Base class for classes that constitute name spaces.
 
 class Arena;
-
-class AllStatic {
- public:
-  AllStatic()  { ShouldNotCallThis(); }
-  ~AllStatic() { ShouldNotCallThis(); }
-};
-
 
 extern char* resource_allocate_bytes(size_t size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
