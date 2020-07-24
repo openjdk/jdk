@@ -81,8 +81,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // available for allocation.
   bool _old_gen_is_full;
 
-#define PADDING_ELEM_NUM (DEFAULT_CACHE_LINE_SIZE / sizeof(size_t))
-
   G1RedirtyCardsQueue& redirty_cards_queue()     { return _rdcq; }
   G1CardTable* ct()                              { return _ct; }
 
