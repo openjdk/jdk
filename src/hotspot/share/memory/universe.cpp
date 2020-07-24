@@ -88,25 +88,10 @@
 #include "utilities/ostream.hpp"
 #include "utilities/preserveException.hpp"
 
-#define PRIMITIVE_MIRRORS_DO(func) \
-  func(_int_mirror)    \
-  func(_float_mirror)  \
-  func(_double_mirror) \
-  func(_byte_mirror)   \
-  func(_bool_mirror)   \
-  func(_char_mirror)   \
-  func(_long_mirror)   \
-  func(_short_mirror)  \
-  func(_void_mirror)
-
-#define DEFINE_PRIMITIVE_MIRROR(m) \
-    oop Universe::m  = NULL;
-
 // Known objects
-PRIMITIVE_MIRRORS_DO(DEFINE_PRIMITIVE_MIRROR)
 Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { NULL /*, NULL...*/ };
 Klass* Universe::_objectArrayKlassObj                 = NULL;
-oop Universe::_mirrors[T_VOID+1]                      = { NULL /*, NULL...*/ };
+OopHandle Universe::_mirrors[T_VOID+1];
 
 OopHandle Universe::_main_thread_group;
 OopHandle Universe::_system_thread_group;
@@ -197,6 +182,35 @@ oop Universe::virtual_machine_error_instance()    { return _virtual_machine_erro
 
 oop Universe::the_null_sentinel()                 { return _the_null_sentinel.resolve(); }
 
+oop Universe::int_mirror()                        { return check_mirror(_mirrors[T_INT].resolve()); }
+oop Universe::float_mirror()                      { return check_mirror(_mirrors[T_FLOAT].resolve()); }
+oop Universe::double_mirror()                     { return check_mirror(_mirrors[T_DOUBLE].resolve()); }
+oop Universe::byte_mirror()                       { return check_mirror(_mirrors[T_BYTE].resolve()); }
+oop Universe::bool_mirror()                       { return check_mirror(_mirrors[T_BOOLEAN].resolve()); }
+oop Universe::char_mirror()                       { return check_mirror(_mirrors[T_CHAR].resolve()); }
+oop Universe::long_mirror()                       { return check_mirror(_mirrors[T_LONG].resolve()); }
+oop Universe::short_mirror()                      { return check_mirror(_mirrors[T_SHORT].resolve()); }
+oop Universe::void_mirror()                       { return check_mirror(_mirrors[T_VOID].resolve()); }
+
+oop Universe::java_mirror(BasicType t) {
+  assert((uint)t < T_VOID+1, "range check");
+  return check_mirror(_mirrors[t].resolve());
+}
+
+// Used by CDS dumping
+void Universe::replace_mirror(BasicType t, oop new_mirror) {
+  Universe::_mirrors[t].replace(new_mirror);
+}
+
+// Not sure why CDS has to do this
+void Universe::clear_basic_type_mirrors() {
+  for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+    if (!is_reference_type((BasicType)i)) {
+      Universe::_mirrors[i].replace(NULL);
+    }
+  }
+}
+
 void Universe::basic_type_classes_do(void f(Klass*)) {
   for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
     f(_typeArrayKlassObjs[i]);
@@ -209,16 +223,7 @@ void Universe::basic_type_classes_do(KlassClosure *closure) {
   }
 }
 
-#define DO_PRIMITIVE_MIRROR(m) \
-  f->do_oop((oop*) &m);
-
 void Universe::oops_do(OopClosure* f) {
-  PRIMITIVE_MIRRORS_DO(DO_PRIMITIVE_MIRROR);
-
-  for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-    f->do_oop(&_mirrors[i]);
-  }
-  assert(_mirrors[0] == NULL && _mirrors[T_BOOLEAN - 1] == NULL, "checking");
 
   f->do_oop(&_reference_pending_list);
   ThreadsSMRSupport::exiting_threads_oops_do(f);
@@ -248,29 +253,33 @@ void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
   _do_stack_walk_cache->metaspace_pointers_do(it);
 }
 
-#define ASSERT_MIRROR_NULL(m) \
-  assert(m == NULL, "archived mirrors should be NULL");
-
-#define SERIALIZE_MIRROR(m) \
-  f->do_oop(&m); \
-  if (m != NULL) { java_lang_Class::update_archived_primitive_mirror_native_pointers(m); }
-
 // Serialize metadata and pointers to primitive type mirrors in and out of CDS archive
 void Universe::serialize(SerializeClosure* f) {
+
+#if INCLUDE_CDS_JAVA_HEAP
+  {
+    oop mirror_oop;
+    for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+      if (f->reading()) {
+        f->do_oop(&mirror_oop); // read from archive
+        assert(oopDesc::is_oop_or_null(mirror_oop), "is oop");
+        _mirrors[i] = OopHandle(vm_global(), mirror_oop);
+      } else {
+        mirror_oop = _mirrors[i].resolve();
+        f->do_oop(&mirror_oop); // write to archive
+      }
+      if (mirror_oop != NULL) { // may be null if archived heap is disabled
+        java_lang_Class::update_archived_primitive_mirror_native_pointers(mirror_oop);
+      }
+    }
+  }
+#endif
 
   for (int i = 0; i < T_LONG+1; i++) {
     f->do_ptr((void**)&_typeArrayKlassObjs[i]);
   }
 
   f->do_ptr((void**)&_objectArrayKlassObj);
-
-#if INCLUDE_CDS_JAVA_HEAP
-  DEBUG_ONLY(if (DumpSharedSpaces && !HeapShared::is_heap_object_archiving_allowed()) {
-      PRIMITIVE_MIRRORS_DO(ASSERT_MIRROR_NULL);
-    });
-  PRIMITIVE_MIRRORS_DO(SERIALIZE_MIRROR);
-#endif
-
   f->do_ptr((void**)&_the_array_interfaces_array);
   f->do_ptr((void**)&_the_empty_int_array);
   f->do_ptr((void**)&_the_empty_short_array);
@@ -283,6 +292,7 @@ void Universe::serialize(SerializeClosure* f) {
   _throw_no_such_method_error_cache->serialize(f);
   _do_stack_walk_cache->serialize(f);
 }
+
 
 void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
   if (size < alignment || size % alignment != 0) {
@@ -435,51 +445,32 @@ void Universe::genesis(TRAPS) {
   #endif
 }
 
-#define ASSERT_MIRROR_NOT_NULL(m) \
-  assert(m != NULL, "archived mirrors should not be NULL");
-
 void Universe::initialize_basic_type_mirrors(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
     if (UseSharedSpaces &&
         HeapShared::open_archive_heap_region_mapped() &&
-        _int_mirror != NULL) {
+        _mirrors[T_INT].resolve() != NULL) {
       assert(HeapShared::is_heap_object_archiving_allowed(), "Sanity");
-      PRIMITIVE_MIRRORS_DO(ASSERT_MIRROR_NOT_NULL);
+
+      // check that all mirrors are mapped also
+      for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+        if (!is_reference_type((BasicType)i)) {
+          oop m = _mirrors[i].resolve();
+          assert(m != NULL, "archived mirrors should not be NULL");
+        }
+      }
     } else
-      // _int_mirror could be NULL if archived heap is not mapped.
+      // _mirror[T_INT} could be NULL if archived heap is not mapped.
 #endif
     {
-      _int_mirror     =
-        java_lang_Class::create_basic_type_mirror("int",    T_INT, CHECK);
-      _float_mirror   =
-        java_lang_Class::create_basic_type_mirror("float",  T_FLOAT,   CHECK);
-      _double_mirror  =
-        java_lang_Class::create_basic_type_mirror("double", T_DOUBLE,  CHECK);
-      _byte_mirror    =
-        java_lang_Class::create_basic_type_mirror("byte",   T_BYTE, CHECK);
-      _bool_mirror    =
-        java_lang_Class::create_basic_type_mirror("boolean",T_BOOLEAN, CHECK);
-      _char_mirror    =
-        java_lang_Class::create_basic_type_mirror("char",   T_CHAR, CHECK);
-      _long_mirror    =
-        java_lang_Class::create_basic_type_mirror("long",   T_LONG, CHECK);
-      _short_mirror   =
-        java_lang_Class::create_basic_type_mirror("short",  T_SHORT,   CHECK);
-      _void_mirror    =
-        java_lang_Class::create_basic_type_mirror("void",   T_VOID, CHECK);
+      for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+        BasicType bt = (BasicType)i;
+        if (!is_reference_type(bt)) {
+          oop m = java_lang_Class::create_basic_type_mirror(type2name(bt), bt, CHECK);
+          _mirrors[i] = OopHandle(vm_global(), m);
+        }
+      }
     }
-
-    _mirrors[T_INT]     = _int_mirror;
-    _mirrors[T_FLOAT]   = _float_mirror;
-    _mirrors[T_DOUBLE]  = _double_mirror;
-    _mirrors[T_BYTE]    = _byte_mirror;
-    _mirrors[T_BOOLEAN] = _bool_mirror;
-    _mirrors[T_CHAR]    = _char_mirror;
-    _mirrors[T_LONG]    = _long_mirror;
-    _mirrors[T_SHORT]   = _short_mirror;
-    _mirrors[T_VOID]    = _void_mirror;
-  //_mirrors[T_OBJECT]  = _object_klass->java_mirror();
-  //_mirrors[T_ARRAY]   = _object_klass->java_mirror();
 }
 
 void Universe::fixup_mirrors(TRAPS) {
