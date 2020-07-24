@@ -313,6 +313,7 @@ class Universe: AllStatic {
   // may or may not have a backtrace. If error has a backtrace then the stack trace is already
   // filled in.
   static oop out_of_memory_error_java_heap();
+  static oop out_of_memory_error_c_heap();
   static oop out_of_memory_error_metaspace();
   static oop out_of_memory_error_class_metaspace();
   static oop out_of_memory_error_array_size();

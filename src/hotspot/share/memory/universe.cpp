@@ -118,6 +118,7 @@ OopHandle Universe::_the_null_sentinel;
 
 // _out_of_memory_errors is an objArray
 enum OutOfMemoryInstance { _oom_java_heap,
+                           _oom_c_heap,
                            _oom_metaspace,
                            _oom_class_metaspace,
                            _oom_array_size,
@@ -585,6 +586,10 @@ oop Universe::out_of_memory_error_java_heap() {
   return gen_out_of_memory_error(out_of_memory_errors()->obj_at(_oom_java_heap));
 }
 
+oop Universe::out_of_memory_error_c_heap() {
+  return gen_out_of_memory_error(out_of_memory_errors()->obj_at(_oom_c_heap));
+}
+
 oop Universe::out_of_memory_error_metaspace() {
   return gen_out_of_memory_error(out_of_memory_errors()->obj_at(_oom_metaspace));
 }
@@ -679,6 +684,9 @@ void Universe::create_preallocated_out_of_memory_errors(TRAPS) {
 
   Handle msg = java_lang_String::create_from_str("Java heap space", CHECK);
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_java_heap), msg());
+
+  msg = java_lang_String::create_from_str("C heap space", CHECK);
+  java_lang_Throwable::set_message(oom_array->obj_at(_oom_c_heap), msg());
 
   msg = java_lang_String::create_from_str("Metaspace", CHECK);
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_metaspace), msg());
@@ -1015,7 +1023,6 @@ bool universe_post_init() {
 
   Handle msg = java_lang_String::create_from_str("/ by zero", CHECK_false);
   java_lang_Throwable::set_message(Universe::arithmetic_exception_instance(), msg());
-
 
   Universe::initialize_known_methods(CHECK_false);
 

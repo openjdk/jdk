@@ -753,7 +753,7 @@ JNI_ENTRY(jobject, jni_NewGlobalRef(JNIEnv *env, jobject ref))
   HOTSPOT_JNI_NEWGLOBALREF_ENTRY(env, ref);
 
   Handle ref_handle(thread, JNIHandles::resolve(ref));
-  jobject ret = JNIHandles::make_global(ref_handle);
+  jobject ret = JNIHandles::make_global(ref_handle, AllocFailStrategy::RETURN_NULL);
 
   HOTSPOT_JNI_NEWGLOBALREF_RETURN(ret);
   return ret;
@@ -797,7 +797,8 @@ JNI_ENTRY(jobject, jni_NewLocalRef(JNIEnv *env, jobject ref))
 
   HOTSPOT_JNI_NEWLOCALREF_ENTRY(env, ref);
 
-  jobject ret = JNIHandles::make_local(THREAD, JNIHandles::resolve(ref));
+  jobject ret = JNIHandles::make_local(THREAD, JNIHandles::resolve(ref),
+                                       AllocFailStrategy::RETURN_NULL);
 
   HOTSPOT_JNI_NEWLOCALREF_RETURN(ret);
   return ret;
@@ -3048,10 +3049,13 @@ JNI_END
 
 JNI_ENTRY(jweak, jni_NewWeakGlobalRef(JNIEnv *env, jobject ref))
   JNIWrapper("jni_NewWeakGlobalRef");
- HOTSPOT_JNI_NEWWEAKGLOBALREF_ENTRY(env, ref);
+  HOTSPOT_JNI_NEWWEAKGLOBALREF_ENTRY(env, ref);
   Handle ref_handle(thread, JNIHandles::resolve(ref));
-  jweak ret = JNIHandles::make_weak_global(ref_handle);
- HOTSPOT_JNI_NEWWEAKGLOBALREF_RETURN(ret);
+  jweak ret = JNIHandles::make_weak_global(ref_handle, AllocFailStrategy::RETURN_NULL);
+  if (ret == NULL) {
+    THROW_OOP_(Universe::out_of_memory_error_c_heap(), NULL);
+  }
+  HOTSPOT_JNI_NEWWEAKGLOBALREF_RETURN(ret);
   return ret;
 JNI_END
 
@@ -3126,6 +3130,12 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
     bufferClass           = (jclass) env->NewGlobalRef(bufferClass);
     directBufferClass     = (jclass) env->NewGlobalRef(directBufferClass);
     directByteBufferClass = (jclass) env->NewGlobalRef(directByteBufferClass);
+
+    // Global refs will be NULL if out-of-memory (no exception is pending)
+    if (bufferClass == NULL || directBufferClass == NULL || directByteBufferClass == NULL) {
+      directBufferSupportInitializeFailed = 1;
+      return false;
+    }
 
     // Get needed field and method IDs
     directByteBufferConstructor = env->GetMethodID(directByteBufferClass, "<init>", "(JI)V");
