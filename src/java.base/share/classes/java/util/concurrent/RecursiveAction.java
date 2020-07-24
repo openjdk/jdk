@@ -166,6 +166,11 @@ public abstract class RecursiveAction extends ForkJoinTask<Void> {
     private static final long serialVersionUID = 5232453952276485070L;
 
     /**
+     * Constructor for subclasses to call.
+     */
+    public RecursiveAction() {}
+
+    /**
      * The main computation performed by this task.
      */
     protected abstract void compute();
