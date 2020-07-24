@@ -131,6 +131,11 @@ import java.util.Date;
 public abstract class X509Certificate extends Certificate {
 
     /**
+     * Constructor for subclasses to call.
+     */
+    public X509Certificate() {}
+
+    /**
      * Constant to lookup in the Security properties file.
      * In the Security properties file the default implementation
      * for X.509 v3 is given as:
