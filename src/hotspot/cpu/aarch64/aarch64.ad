@@ -12171,6 +12171,21 @@ instruct ubfizIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI lshift, immI_bitmask 
   ins_pipe(ialu_reg_shift);
 %}
 
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+
+// Can skip int2long conversions after AND with small bitmask
+instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
+%{
+  match(Set dst (ConvI2L (AndI src msk)));
+  ins_cost(INSN_COST);
+  format %{ "ubfiz $dst, $src, 0, exact_log2($msk + 1) " %}
+  ins_encode %{
+    __ ubfiz(as_Register($dst$$reg), as_Register($src$$reg), 0, exact_log2($msk$$constant + 1));
+  %}
+  ins_pipe(ialu_reg_shift);
+%}
+
 
 // Rotations 
 // This pattern is automatically generated from aarch64_ad.m4
