@@ -22,6 +22,7 @@
 #
 
 JVM_handle_linux_signal
+JVM_IsUseContainerSupport
 numa_error
 numa_warn
 sysThreadAvailableStackWithSlack

@@ -160,7 +160,13 @@ public class CgroupMetrics implements Metrics {
     }
 
     public static Metrics getInstance() {
+        if (!isUseContainerSupport()) {
+            // Return null on -XX:-UseContainerSupport
+            return null;
+        }
         return CgroupSubsystemFactory.create();
     }
+
+    private static native boolean isUseContainerSupport();
 
 }
