@@ -53,9 +53,10 @@ static const size_t GROW_HINT = 32;
 static const size_t ResolvedMethodTableSizeLog = 10;
 
 unsigned int method_hash(const Method* method) {
-  unsigned int name_hash = method->name()->identity_hash();
-  unsigned int signature_hash = method->signature()->identity_hash();
-  return name_hash ^ signature_hash;
+  unsigned int hash = method->klass_name()->identity_hash();
+  hash = (hash * 31) ^ method->name()->identity_hash();
+  hash = (hash * 31) ^ method->signature()->identity_hash();
+  return hash;
 }
 
 typedef ConcurrentHashTable<ResolvedMethodTableConfig,
