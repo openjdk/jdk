@@ -1563,4 +1563,37 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """
         );
     }
+
+    public void testNoNPEStaticAnnotatedFields() {
+        assertOK(
+                """
+                import java.lang.annotation.Native;
+                record R() {
+                    @Native public static final int i = 0;
+                }
+                """
+        );
+        assertOK(
+                """
+                import java.lang.annotation.Native;
+                class Outer {
+                    record R() {
+                        @Native public static final int i = 0;
+                    }
+                }
+                """
+        );
+        assertOK(
+                """
+                import java.lang.annotation.Native;
+                class Outer {
+                    void m() {
+                        record R () {
+                            @Native public static final int i = 0;
+                        }
+                    }
+                }
+                """
+        );
+    }
 }

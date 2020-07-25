@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8046703
  * @key randomness
  * @library /lib/testlibrary /java/lang/invoke/common
- * @ignore 8078602
  * @summary Test verifies that lambda forms are garbage collected
  * @author kshefov
  * @build jdk.test.lib.TimeLimitedRunner

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@
 package nsk.stress.stack;
 
 
-import nsk.share.Harakiri;
+import nsk.share.Terminator;
 
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
@@ -81,7 +81,7 @@ public class stack018 extends Thread {
             else if (args[i].toLowerCase().equals("-eager"))
                 eager = true;
         if (!eager)
-            Harakiri.appoint(Harakiri.parseAppointment(args));
+            Terminator.appoint(Terminator.parseAppointment(args));
         stack018.out = out;
         stack018 test = new stack018();
         return test.doRun();

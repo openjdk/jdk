@@ -906,8 +906,10 @@ void BiasedLocking::preserve_marks() {
   _preserved_mark_stack = new (ResourceObj::C_HEAP, mtGC) GrowableArray<markWord>(10, mtGC);
   _preserved_oop_stack = new (ResourceObj::C_HEAP, mtGC) GrowableArray<Handle>(10, mtGC);
 
-  ResourceMark rm;
   Thread* cur = Thread::current();
+  ResourceMark rm(cur);
+  HandleMark hm(cur);
+
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
     if (thread->has_last_Java_frame()) {
       RegisterMap rm(thread);

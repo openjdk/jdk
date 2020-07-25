@@ -211,8 +211,7 @@ private:
                                  TRAPS);
   static DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k);
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
-                               bool is_builtin,
-                               bool is_static_archive = true);
+                               bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
   static bool is_jfr_event_class(InstanceKlass *k);
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);

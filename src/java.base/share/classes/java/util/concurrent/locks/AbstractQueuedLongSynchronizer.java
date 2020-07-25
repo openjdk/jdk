@@ -65,6 +65,11 @@ public abstract class AbstractQueuedLongSynchronizer
 
     private static final long serialVersionUID = 7373984972572414692L;
 
+    /**
+     * Constructor for subclasses to call.
+     */
+    public AbstractQueuedLongSynchronizer() {}
+
     /*
      * To keep sources in sync, the remainder of this source file is
      * exactly cloned from AbstractQueuedSynchronizer, replacing class

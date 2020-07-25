@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,19 +247,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   // RedefineClasses support
   // The bug 6214132 caused the verification to fail.
   //
-  // Below is the detailed description of the fix approach taken:
-  // 1. What's done in RedefineClasses() before verification:
-  //  a) A reference to the class being redefined (_the_class) and a
-  //     reference to new version of the class (_scratch_class) are
-  //     saved here for use during the bytecode verification phase of
-  //     RedefineClasses. See RedefineVerifyMark for how these fields
-  //     are managed.
-  //   b) The _java_mirror field from _the_class is copied to the
-  //     _java_mirror field in _scratch_class. This means that a jclass
-  //     returned for _the_class or _scratch_class will refer to the
-  //     same Java mirror. The verifier will see the "one true mirror"
-  //     for the class being verified.
-  // 2. What is done at verification:
+  // What is done at verification:
+  //   (This seems to only apply to the old verifier.)
   //   When the verifier makes calls into the VM to ask questions about
   //   the class being verified, it will pass the jclass to JVM_* functions.
   //   The jclass is always pointing to the mirror of _the_class.
@@ -399,29 +388,6 @@ public:
   void enqueue_event(JvmtiDeferredEvent* event) NOT_JVMTI_RETURN;
   void post_events(JvmtiEnv* env);
   void run_nmethod_entry_barriers();
-};
-
-class RedefineVerifyMark : public StackObj {
- private:
-  JvmtiThreadState* _state;
-  Klass*            _scratch_class;
-  OopHandle         _scratch_mirror;
-
- public:
-  RedefineVerifyMark(Klass* the_class, Klass* scratch_class,
-                     JvmtiThreadState *state) : _state(state), _scratch_class(scratch_class)
-  {
-    _state->set_class_versions_map(the_class, scratch_class);
-    _scratch_mirror = _scratch_class->java_mirror_handle();
-    _scratch_class->set_java_mirror_handle(the_class->java_mirror_handle());
-  }
-
-  ~RedefineVerifyMark() {
-    // Restore the scratch class's mirror, so when scratch_class is removed
-    // the correct mirror pointing to it can be cleared.
-    _scratch_class->set_java_mirror_handle(_scratch_mirror);
-    _state->clear_class_versions_map();
-  }
 };
 
 #endif // SHARE_PRIMS_JVMTITHREADSTATE_HPP

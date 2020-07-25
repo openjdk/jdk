@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import static org.testng.Assert.assertEquals;
 
 /*
  * @test
- * @bug 8077559
+ * @bug 8077559 8248655
  * @summary Tests Compact String. This one is for String.regionMatches.
  * @run testng/othervm -XX:+CompactStrings RegionMatches
  * @run testng/othervm -XX:-CompactStrings RegionMatches
@@ -66,15 +66,23 @@ public class RegionMatches extends CompactString {
                         3, true },
                 new Object[] { STRING_MDUPLICATE1, false, 0, "\uFF21a\uFF21",
                         0, 3, false },
+                new Object[] { STRING_SUPPLEMENTARY, true, 0, "\uD801\uDC28\uD801\uDC29",
+                        0, 4, true },
                 new Object[] { STRING_SUPPLEMENTARY, true, 1, "\uDC00\uD801",
                         0, 2, true },
+                new Object[] { STRING_SUPPLEMENTARY, true, 1, "\uDC28",
+                        0, 1, false },
                 new Object[] { STRING_SUPPLEMENTARY, true, 4, "\uFF21", 0, 1,
                         true },
                 new Object[] { STRING_SUPPLEMENTARY, true, 5, "A", 0, 1, true },
                 new Object[] { STRING_SUPPLEMENTARY_LOWERCASE, false, 0,
                         "\uD801\uDC28\uD801\uDC29", 0, 4, true },
+                new Object[] { STRING_SUPPLEMENTARY_LOWERCASE, true, 0,
+                        "\uD801\uDC00\uD801\uDC01", 0, 4, true },
                 new Object[] { STRING_SUPPLEMENTARY_LOWERCASE, true, 1,
                         "\uDC28\uD801", 0, 2, true },
+                new Object[] { STRING_SUPPLEMENTARY_LOWERCASE, true, 1,
+                        "\uDC00", 0, 1, false },
                 new Object[] { STRING_SUPPLEMENTARY_LOWERCASE, true, 1,
                         "\uDC00\uD801", 0, 2, false },
                 new Object[] { STRING_SUPPLEMENTARY_LOWERCASE, true, 4,

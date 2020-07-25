@@ -697,7 +697,6 @@ class StubGenerator: public StubCodeGenerator {
     int unit = wordSize * direction;
     int bias = (UseSIMDForMemoryOps ? 4:2) * wordSize;
 
-    int offset;
     const Register t0 = r3, t1 = r4, t2 = r5, t3 = r6,
       t4 = r7, t5 = r10, t6 = r11, t7 = r12;
     const Register stride = r13;
@@ -4061,7 +4060,7 @@ class StubGenerator: public StubCodeGenerator {
     FloatRegister vtmpZ = v0, vtmp = v1, vtmp3 = v2;
     RegSet spilled_regs = RegSet::of(tmp3, tmp4);
 
-    int prefetchLoopExitCondition = MAX(64, SoftwarePrefetchHintDistance/2);
+    int prefetchLoopExitCondition = MAX2(64, SoftwarePrefetchHintDistance/2);
 
     __ eor(vtmpZ, __ T16B, vtmpZ, vtmpZ);
     // cnt2 == amount of characters left to compare
@@ -4219,7 +4218,7 @@ class StubGenerator: public StubCodeGenerator {
         DIFF_LAST_POSITION, DIFF_LAST_POSITION2;
     // exit from large loop when less than 64 bytes left to read or we're about
     // to prefetch memory behind array border
-    int largeLoopExitCondition = MAX(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
+    int largeLoopExitCondition = MAX2(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
     // cnt1/cnt2 contains amount of characters to compare. cnt1 can be re-used
     // update cnt2 counter with already loaded 8 bytes
     __ sub(cnt2, cnt2, wordSize/(isLL ? 1 : 2));
@@ -4645,7 +4644,7 @@ class StubGenerator: public StubCodeGenerator {
     address entry = __ pc();
     Label LOOP, LOOP_START, LOOP_PRFM, LOOP_PRFM_START, DONE;
     Register src = r0, dst = r1, len = r2, octetCounter = r3;
-    const int large_loop_threshold = MAX(64, SoftwarePrefetchHintDistance)/8 + 4;
+    const int large_loop_threshold = MAX2(64, SoftwarePrefetchHintDistance)/8 + 4;
 
     // do one more 8-byte read to have address 16-byte aligned in most cases
     // also use single store instruction

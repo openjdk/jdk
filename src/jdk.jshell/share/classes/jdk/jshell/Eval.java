@@ -24,15 +24,13 @@
  */
 package jdk.jshell;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
+
 import com.sun.source.tree.ArrayTypeTree;
 import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.ClassTree;
@@ -49,9 +47,7 @@ import com.sun.tools.javac.tree.Pretty;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
+
 import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo;
 import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo.AnonymousDescription;
 import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo.AnonymousDescription.VariableDesc;
@@ -304,6 +300,7 @@ class Eval {
         for (Tree unitTree : units) {
             VariableTree vt = (VariableTree) unitTree;
             String name = vt.getName().toString();
+//            String name = userReadableName(vt.getName(), compileSource);
             String typeName;
             String fullTypeName;
             String displayType;
@@ -400,13 +397,18 @@ class Eval {
                 winit = Wrap.simpleWrap(sinit);
                 subkind = SubKind.VAR_DECLARATION_SUBKIND;
             }
+            Wrap wname;
             int nameStart = compileSource.lastIndexOf(name, nameMax);
             if (nameStart < 0) {
-                throw new AssertionError("Name '" + name + "' not found");
+                // the name has been transformed (e.g. unicode).
+                // Use it directly
+                wname = Wrap.identityWrap(name);
+            } else {
+                int nameEnd = nameStart + name.length();
+                Range rname = new Range(nameStart, nameEnd);
+                wname = new Wrap.RangeWrap(compileSource, rname);
             }
-            int nameEnd = nameStart + name.length();
-            Range rname = new Range(nameStart, nameEnd);
-            Wrap guts = Wrap.varWrap(compileSource, typeWrap, sbBrackets.toString(), rname,
+            Wrap guts = Wrap.varWrap(compileSource, typeWrap, sbBrackets.toString(), wname,
                                      winit, enhancedDesugaring, anonDeclareWrap);
             DiagList modDiag = modifierDiagnostics(vt.getModifiers(), dis, true);
             Snippet snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
@@ -415,6 +417,26 @@ class Eval {
             snippets.add(snip);
         }
         return snippets;
+    }
+
+    private String userReadableName(Name nn, String compileSource) {
+        String s = nn.toString();
+        if (s.length() > 0 && Character.isJavaIdentifierStart(s.charAt(0)) && compileSource.contains(s)) {
+            return s;
+        }
+        String l = nameInUnicode(nn, false);
+        if (compileSource.contains(l)) {
+            return l;
+        }
+        return nameInUnicode(nn, true);
+    }
+
+    private String nameInUnicode(Name nn, boolean upper) {
+        return nn.codePoints()
+                .mapToObj(cp -> (cp > 0x7F)
+                        ? String.format(upper ? "\\u%04X" : "\\u%04x", cp)
+                        : "" + (char) cp)
+                .collect(Collectors.joining());
     }
 
     /**Convert anonymous classes in "init" to member classes, based
@@ -680,6 +702,7 @@ class Eval {
         TreeDissector dis = TreeDissector.createByFirstClass(pt);
 
         ClassTree klassTree = (ClassTree) unitTree;
+//        String name = userReadableName(klassTree.getSimpleName(), compileSource);
         String name = klassTree.getSimpleName().toString();
         DiagList modDiag = modifierDiagnostics(klassTree.getModifiers(), dis, false);
         TypeDeclKey key = state.keyMap.keyForClass(name);
@@ -730,6 +753,7 @@ class Eval {
         final TreeDissector dis = TreeDissector.createByFirstClass(pt);
 
         final MethodTree mt = (MethodTree) unitTree;
+        //String name = userReadableName(mt.getName(), compileSource);
         final String name = mt.getName().toString();
         if (objectMethods.contains(name)) {
             // The name matches a method on Object, short of an overhaul, this

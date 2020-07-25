@@ -359,7 +359,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 protoDMG.toAbsolutePath().toString(),
                 hdiUtilVerbosityFlag,
                 "-mountroot", imagesRoot.toAbsolutePath().toString());
-        IOUtils.exec(pb, false, null, true);
+        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
 
         Path mountedRoot = imagesRoot.resolve(APP_NAME.fetchFrom(params));
 
@@ -392,7 +392,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             try {
                 pb = new ProcessBuilder("osascript",
                         getConfig_VolumeScript(params).toAbsolutePath().toString());
-                IOUtils.exec(pb);
+                IOUtils.exec(pb, 180); // Wait 3 minutes. See JDK-8248248.
             } catch (IOException ex) {
                 Log.verbose(ex);
             }
@@ -443,7 +443,12 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                     "-force",
                     hdiUtilVerbosityFlag,
                     mountedRoot.toAbsolutePath().toString());
-            IOUtils.exec(pb);
+            // "hdiutil detach" might not work right away due to resource busy error, so
+            // repeat detach several times.
+            RetryExecutor retryExecutor = new RetryExecutor();
+            // 10 times with 3 second delays.
+            retryExecutor.setMaxAttemptsCount(10).setAttemptTimeoutMillis(3000)
+                    .execute(pb);
         }
 
         // Compress it to a new image

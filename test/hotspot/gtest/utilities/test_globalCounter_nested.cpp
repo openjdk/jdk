@@ -22,7 +22,6 @@
  */
 
 #include "precompiled.hpp"
-#include "metaprogramming/isRegisteredEnum.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalCounter.hpp"
@@ -40,7 +39,6 @@ enum NestedTestState {
   SYNCHRONIZING,
   SYNCHRONIZED
 };
-template<> struct IsRegisteredEnum<NestedTestState> : public TrueType {};
 
 class RCUNestedThread : public JavaTestThread {
   volatile NestedTestState _state;

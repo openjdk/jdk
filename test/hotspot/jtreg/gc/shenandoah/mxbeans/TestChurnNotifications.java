@@ -167,7 +167,7 @@ public class TestChurnNotifications {
         long maxExpected = mem + HEAP_MB * 1024 * 1024;
 
         String msg = "Expected = [" + minExpected / M + "; " + maxExpected / M + "] (" + mem / M + "), actual = " + actual / M;
-        if (minExpected < actual && actual < maxExpected) {
+        if (minExpected <= actual && actual <= maxExpected) {
             System.out.println(msg);
         } else {
             throw new IllegalStateException(msg);

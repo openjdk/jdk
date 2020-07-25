@@ -53,6 +53,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS],
 
   LDFLAGS_TESTEXE="${TARGET_LDFLAGS_JDK_LIBPATH}"
   AC_SUBST(LDFLAGS_TESTEXE)
+  AC_SUBST(ADLC_LDFLAGS)
 ])
 
 ################################################################################

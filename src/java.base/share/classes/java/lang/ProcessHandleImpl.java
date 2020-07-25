@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -83,6 +84,9 @@ final class ProcessHandleImpl implements ProcessHandle {
      */
     private static final Executor processReaperExecutor =
             doPrivileged((PrivilegedAction<Executor>) () -> {
+                // Initialize ThreadLocalRandom now to avoid using the smaller stack
+                // of the processReaper threads.
+                ThreadLocalRandom.current();
 
                 ThreadGroup tg = Thread.currentThread().getThreadGroup();
                 while (tg.getParent() != null) tg = tg.getParent();

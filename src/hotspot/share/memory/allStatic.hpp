@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,16 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "metaprogramming/integralConstant.hpp"
-#include "metaprogramming/isRegisteredEnum.hpp"
+#ifndef SHARE_MEMORY_ALLSTATIC_HPP
+#define SHARE_MEMORY_ALLSTATIC_HPP
 
-#include "unittest.hpp"
-
-struct IsRegisteredEnumTest : AllStatic {
-  enum A { A_x, A_y, A_z };
-  enum B { B_x, B_y, B_z };
+// Base class for classes used as namespaces.  HotSpot style prefers
+// using classes for grouping.  Deriving from this class indicates the
+// derived class is intended to be a namespace, with no instances ever
+// created.
+struct AllStatic {
+  AllStatic() = delete;
+  ~AllStatic() = delete;
 };
 
-typedef IsRegisteredEnumTest::A A;
-typedef IsRegisteredEnumTest::B B;
-
-template<> struct IsRegisteredEnum<A> : public TrueType {};
-
-STATIC_ASSERT(!IsRegisteredEnum<int>::value);
-STATIC_ASSERT(IsRegisteredEnum<A>::value);
-STATIC_ASSERT(!IsRegisteredEnum<B>::value);
+#endif // SHARE_MEMORY_ALLSTATIC_HPP

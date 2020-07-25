@@ -570,6 +570,8 @@ java/foreign/TestMismatch.java 8249684 macosx-all
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
 java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all
+java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
+java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 
 ############################################################################
 
@@ -588,6 +590,7 @@ javax/management/monitor/DerivedGaugeMonitorTest.java         8042211 generic-al
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
+java/io/File/GetXSpace.java                                     6501010,8249703 windows-all,macosx-all
 
 ############################################################################
 
@@ -924,6 +927,5 @@ jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-
 # jdk_jpackage
 
 tools/jpackage/share/jdk/jpackage/tests/ModulePathTest3.java#id0    8248418 generic-all
-tools/jpackage/share/EmptyFolderPackageTest.java                    8249201 macosx-all
 
 ############################################################################

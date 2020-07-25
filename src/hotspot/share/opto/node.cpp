@@ -1554,78 +1554,95 @@ jfloat Node::getf() const {
 
 #ifndef PRODUCT
 
-//------------------------------find------------------------------------------
-// Find a neighbor of this Node with the given _idx
-// If idx is negative, find its absolute value, following both _in and _out.
-static void find_recur(Compile* C,  Node* &result, Node *n, int idx, bool only_ctrl,
-                        VectorSet* old_space, VectorSet* new_space ) {
-  int node_idx = (idx >= 0) ? idx : -idx;
-  if (NotANode(n))  return;  // Gracefully handle NULL, -1, 0xabababab, etc.
-  // Contained in new_space or old_space?   Check old_arena first since it's mostly empty.
-  VectorSet *v = C->old_arena()->contains(n) ? old_space : new_space;
-  if( v->test(n->_idx) ) return;
-  if( (int)n->_idx == node_idx
-      debug_only(|| n->debug_idx() == node_idx) ) {
-    if (result != NULL)
-      tty->print("find: " INTPTR_FORMAT " and " INTPTR_FORMAT " both have idx==%d\n",
-                 (uintptr_t)result, (uintptr_t)n, node_idx);
-    result = n;
-  }
-  v->set(n->_idx);
-  for( uint i=0; i<n->len(); i++ ) {
-    if( only_ctrl && !(n->is_Region()) && (n->Opcode() != Op_Root) && (i != TypeFunc::Control) ) continue;
-    find_recur(C, result, n->in(i), idx, only_ctrl, old_space, new_space );
-  }
-  // Search along forward edges also:
-  if (idx < 0 && !only_ctrl) {
-    for( uint j=0; j<n->outcnt(); j++ ) {
-      find_recur(C, result, n->raw_out(j), idx, only_ctrl, old_space, new_space );
-    }
-  }
-#ifdef ASSERT
-  // Search along debug_orig edges last, checking for cycles
-  Node* orig = n->debug_orig();
-  if (orig != NULL) {
-    do {
-      if (NotANode(orig))  break;
-      find_recur(C, result, orig, idx, only_ctrl, old_space, new_space );
-      orig = orig->debug_orig();
-    } while (orig != NULL && orig != n->debug_orig());
-  }
-#endif //ASSERT
-}
-
-// call this from debugger:
-Node* find_node(Node* n, int idx) {
+// Call this from debugger:
+Node* find_node(Node* n, const int idx) {
   return n->find(idx);
 }
 
-// call this from debugger with root node as default:
-Node* find_node(int idx) {
+// Call this from debugger with root node as default:
+Node* find_node(const int idx) {
   return Compile::current()->root()->find(idx);
 }
 
-//------------------------------find-------------------------------------------
-Node* Node::find(int idx) const {
-  VectorSet old_space, new_space;
-  Node* result = NULL;
-  find_recur(Compile::current(), result, (Node*) this, idx, false, &old_space, &new_space);
-  return result;
+// Call this from debugger:
+Node* find_ctrl(Node* n, const int idx) {
+  return n->find_ctrl(idx);
+}
+
+// Call this from debugger with root node as default:
+Node* find_ctrl(const int idx) {
+  return Compile::current()->root()->find_ctrl(idx);
 }
 
 //------------------------------find_ctrl--------------------------------------
 // Find an ancestor to this node in the control history with given _idx
-Node* Node::find_ctrl(int idx) const {
-  VectorSet old_space, new_space;
+Node* Node::find_ctrl(int idx) {
+  return find(idx, true);
+}
+
+//------------------------------find-------------------------------------------
+// Tries to find the node with the index |idx| starting from this node. If idx is negative,
+// the search also includes forward (out) edges. Returns NULL if not found.
+// If only_ctrl is set, the search will only be done on control nodes. Returns NULL if
+// not found or if the node to be found is not a control node (search will not find it).
+Node* Node::find(const int idx, bool only_ctrl) {
+  ResourceMark rm;
+  VectorSet old_space;
+  VectorSet new_space;
+  Node_List worklist;
+  Arena* old_arena = Compile::current()->old_arena();
+  add_to_worklist(this, &worklist, old_arena, &old_space, &new_space);
   Node* result = NULL;
-  find_recur(Compile::current(), result, (Node*)this, idx, true, &old_space, &new_space);
+  int node_idx = (idx >= 0) ? idx : -idx;
+
+  for (uint list_index = 0; list_index < worklist.size(); list_index++) {
+    Node* n = worklist[list_index];
+
+    if ((int)n->_idx == node_idx debug_only(|| n->debug_idx() == node_idx)) {
+      if (result != NULL) {
+        tty->print("find: " INTPTR_FORMAT " and " INTPTR_FORMAT " both have idx==%d\n",
+                  (uintptr_t)result, (uintptr_t)n, node_idx);
+      }
+      result = n;
+    }
+
+    for (uint i = 0; i < n->len(); i++) {
+      if (!only_ctrl || n->is_Region() || (n->Opcode() == Op_Root) || (i == TypeFunc::Control)) {
+        // If only_ctrl is set: Add regions, the root node, or control inputs only
+        add_to_worklist(n->in(i), &worklist, old_arena, &old_space, &new_space);
+      }
+    }
+
+    // Also search along forward edges if idx is negative and the search is not done on control nodes only
+    if (idx < 0 && !only_ctrl) {
+      for (uint i = 0; i < n->outcnt(); i++) {
+        add_to_worklist(n->raw_out(i), &worklist, old_arena, &old_space, &new_space);
+      }
+    }
+#ifdef ASSERT
+    // Search along debug_orig edges last
+    Node* orig = n->debug_orig();
+    while (orig != NULL && add_to_worklist(orig, &worklist, old_arena, &old_space, &new_space)) {
+      orig = orig->debug_orig();
+    }
+#endif // ASSERT
+  }
   return result;
 }
-#endif
 
+bool Node::add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, VectorSet* old_space, VectorSet* new_space) {
+  if (NotANode(n)) {
+    return false; // Gracefully handle NULL, -1, 0xabababab, etc.
+  }
 
-
-#ifndef PRODUCT
+  // Contained in new_space or old_space? Check old_arena first since it's mostly empty.
+  VectorSet* v = old_arena->contains(n) ? old_space : new_space;
+  if (!v->test_set(n->_idx)) {
+    worklist->push(n);
+    return true;
+  }
+  return false;
+}
 
 // -----------------------------Name-------------------------------------------
 extern const char *NodeClassNames[];
@@ -2141,8 +2158,9 @@ void Node::verify_edges(Unique_Node_List &visited) {
       }
       assert( cnt == 0,"Mismatched edge count.");
     } else if (n == NULL) {
-      assert(i >= req() || i == 0 || is_Region() || is_Phi() || is_ArrayCopy()
-              || (is_Unlock() && i == req()-1), "only region, phi, arraycopy or unlock nodes have null data edges");
+      assert(i >= req() || i == 0 || is_Region() || is_Phi() || is_ArrayCopy() || (is_Unlock() && i == req()-1)
+              || (is_MemBar() && i == 5), // the precedence edge to a membar can be removed during macro node expansion
+              "only region, phi, arraycopy, unlock or membar nodes have null data edges");
     } else {
       assert(n->is_top(), "sanity");
       // Nothing to check.
@@ -2226,7 +2244,7 @@ void Node::verify(Node* n, int verify_depth) {
     }
   }
 }
-#endif
+#endif // not PRODUCT
 
 //------------------------------walk-------------------------------------------
 // Graph walk, with both pre-order and post-order functions

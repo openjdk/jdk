@@ -477,9 +477,18 @@ public:
   // Push and pop everything that might be clobbered by a native
   // runtime call except rscratch1 and rscratch2.  (They are always
   // scratch, so we don't have to protect them.)  Only save the lower
-  // 64 bits of each vector register.
-  void push_call_clobbered_registers();
-  void pop_call_clobbered_registers();
+  // 64 bits of each vector register. Additonal registers can be excluded
+  // in a passed RegSet.
+  void push_call_clobbered_registers_except(RegSet exclude);
+  void pop_call_clobbered_registers_except(RegSet exclude);
+
+  void push_call_clobbered_registers() {
+    push_call_clobbered_registers_except(RegSet());
+  }
+  void pop_call_clobbered_registers() {
+    pop_call_clobbered_registers_except(RegSet());
+  }
+
 
   // now mov instructions for loading absolute addresses and 32 or
   // 64 bit integers

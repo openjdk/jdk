@@ -30,6 +30,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -52,6 +53,16 @@ final public class Executor {
 
     Executor setWriteOutputToFile(boolean v) {
         writeOutputToFile = v;
+        return this;
+    }
+
+    Executor setTimeout(long v) {
+        timeout = v;
+        if (timeout != INFINITE_TIMEOUT) {
+            // Redirect output to file if timeout is requested, otherwise we will
+            // reading until process ends and timeout will never be reached.
+            setWriteOutputToFile(true);
+        }
         return this;
     }
 
@@ -103,7 +114,7 @@ final public class Executor {
         int code = 0;
         if (writeOutputToFile) {
             try {
-                code = p.waitFor();
+                code = waitForProcess(p);
             } catch (InterruptedException ex) {
                 Log.verbose(ex);
                 throw new RuntimeException(ex);
@@ -184,6 +195,21 @@ final public class Executor {
         }
     }
 
+    private int waitForProcess(Process p) throws InterruptedException {
+        if (timeout == INFINITE_TIMEOUT) {
+            return p.waitFor();
+        } else {
+            if (p.waitFor(timeout, TimeUnit.SECONDS)) {
+                return p.exitValue();
+            } else {
+                Log.verbose(String.format("Command %s timeout after %d seconds",
+                            createLogMessage(pb), timeout));
+                p.destroy();
+                return -1;
+            }
+        }
+    }
+
     static Executor of(String... cmdline) {
         return new Executor().setCommandLine(cmdline);
     }
@@ -201,9 +227,12 @@ final public class Executor {
         return sb.toString();
     }
 
+    public final static int INFINITE_TIMEOUT = -1;
+
     private ProcessBuilder pb;
     private boolean saveOutput;
     private boolean writeOutputToFile;
+    private long timeout = INFINITE_TIMEOUT;
     private List<String> output;
     private Consumer<Stream<String>> outputConsumer;
 }

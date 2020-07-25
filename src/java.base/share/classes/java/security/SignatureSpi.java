@@ -53,6 +53,11 @@ import sun.security.jca.JCAUtil;
 public abstract class SignatureSpi {
 
     /**
+     * Constructor for subclasses to call.
+     */
+    public SignatureSpi() {}
+
+    /**
      * Application-specified source of randomness.
      */
     protected SecureRandom appRandom = null;

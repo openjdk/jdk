@@ -47,6 +47,7 @@ public class SkipIntToLongCast {
     private static final long ARRAYSIZE_L = 40L;
 
     public int[] intValues;
+    public int intValue;
 
     @Setup
     public void setup() {
@@ -75,5 +76,14 @@ public class SkipIntToLongCast {
             }
         }
         return 0;
+    }
+
+    @Benchmark
+    public long skipMaskedSmallPositiveCast() {
+        int value = intValue;
+        return (long)(value & 0x1)    ^ (long)(value & 0x3)    ^ (long)(value & 0x7)    ^ (long)(value & 0xF)   ^
+               (long)(value & 0x1F)   ^ (long)(value & 0x3F)   ^ (long)(value & 0x7F)   ^ (long)(value & 0xFF)  ^
+               (long)(value & 0x1FF)  ^ (long)(value & 0x3FF)  ^ (long)(value & 0x7FF)  ^ (long)(value & 0xFFF) ^
+               (long)(value & 0x1FFF) ^ (long)(value & 0x3FFF) ^ (long)(value & 0x7FFF) ^ (long)(value & 0xFFFF);
     }
 }

@@ -109,7 +109,7 @@ public class IncompatibleOptions {
         testDump(2, "-XX:+UseParallelGC", "", GC_WARNING, false);
         testDump(3, "-XX:+UseSerialGC", "", GC_WARNING, false);
 
-        // ======= archive with compressed oops, run w/o
+        // Explicitly archive with compressed oops, run without.
         testDump(5, "-XX:+UseG1GC", "-XX:+UseCompressedOops", null, false);
         testExec(5, "-XX:+UseG1GC", "-XX:-UseCompressedOops",
                  COMPRESSED_OOPS_NOT_CONSISTENT, true);
@@ -124,20 +124,25 @@ public class IncompatibleOptions {
         testExec(9, "-XX:+UseG1GC", "-XX:ObjectAlignmentInBytes=16",
                  OBJ_ALIGNMENT_MISMATCH, true);
 
-        // See JDK-8081416 - Oops encoding mismatch with shared strings
-        // produces unclear or incorrect warning
-        // Correct the test case once the above is fixed
-        // @ignore JDK-8081416 - for tracking purposes
-        // for now, run test as is until the proper behavior is determined
+        // Implicitly archive with compressed oops, run without.
+        // Max heap size for compressed oops is around 31G.
+        // UseCompressedOops is turned on by default when heap
+        // size is under 31G, but will be turned off when heap
+        // size is greater than that.
         testDump(10, "-XX:+UseG1GC", "-Xmx1g", null, false);
         testExec(10, "-XX:+UseG1GC", "-Xmx32g", null, true);
-
+        // Explicitly archive without compressed oops and run with.
+        testDump(11, "-XX:+UseG1GC", "-XX:-UseCompressedOops", null, false);
+        testExec(11, "-XX:+UseG1GC", "-XX:+UseCompressedOops", null, true);
+        // Implicitly archive without compressed oops and run with.
+        testDump(12, "-XX:+UseG1GC", "-Xmx32G", null, false);
+        testExec(12, "-XX:+UseG1GC", "-Xmx1G", null, true);
         // CompactStrings must match between dump time and run time
-        testDump(11, "-XX:+UseG1GC", "-XX:-CompactStrings", null, false);
-        testExec(11, "-XX:+UseG1GC", "-XX:+CompactStrings",
+        testDump(13, "-XX:+UseG1GC", "-XX:-CompactStrings", null, false);
+        testExec(13, "-XX:+UseG1GC", "-XX:+CompactStrings",
                  COMPACT_STRING_MISMATCH, true);
-        testDump(12, "-XX:+UseG1GC", "-XX:+CompactStrings", null, false);
-        testExec(12, "-XX:+UseG1GC", "-XX:-CompactStrings",
+        testDump(14, "-XX:+UseG1GC", "-XX:+CompactStrings", null, false);
+        testExec(14, "-XX:+UseG1GC", "-XX:-CompactStrings",
                  COMPACT_STRING_MISMATCH, true);
     }
 

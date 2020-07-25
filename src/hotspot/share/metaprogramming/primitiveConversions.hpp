@@ -30,8 +30,8 @@
 #include "metaprogramming/integralConstant.hpp"
 #include "metaprogramming/isFloatingPoint.hpp"
 #include "metaprogramming/isIntegral.hpp"
-#include "metaprogramming/isRegisteredEnum.hpp"
 #include "utilities/debug.hpp"
+#include <type_traits>
 
 class PrimitiveConversions : public AllStatic {
 public:
@@ -68,8 +68,8 @@ private:
 // Return an object of type T with the same value representation as x.
 //
 // T and U must be of the same size.  It is expected that one of T and
-// U is an integral type, and the other is an integral type, a
-// (registered) enum type, or a floating point type
+// U is an integral type, and the other is an integral type, an enum type,
+// or a floating point type.
 //
 // This implementation uses the "union trick", which seems to be the
 // best of a bad set of options.  Though technically undefined
@@ -122,7 +122,7 @@ template<typename T, typename U>
 struct PrimitiveConversions::Cast<
   T, U, true,
   typename EnableIf<IsIntegral<T>::value &&
-                    (IsRegisteredEnum<U>::value ||
+                    (std::is_enum<U>::value ||
                      IsFloatingPoint<U>::value)>::type>
 {
   T operator()(U x) const { return cast_using_union<T>(x); }
@@ -133,7 +133,7 @@ template<typename T, typename U>
 struct PrimitiveConversions::Cast<
   T, U, true,
   typename EnableIf<IsIntegral<U>::value &&
-                    (IsRegisteredEnum<T>::value ||
+                    (std::is_enum<T>::value ||
                      IsFloatingPoint<T>::value)>::type>
 {
   T operator()(U x) const { return cast_using_union<T>(x); }

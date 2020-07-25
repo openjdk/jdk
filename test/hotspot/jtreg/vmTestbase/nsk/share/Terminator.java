@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,32 +24,32 @@
 package nsk.share;
 
 /**
- * Harakiri is used to terminate a stress test with PASS exit status
+ * Terminator is used to terminate a stress test with PASS exit status
  * before the test is terminated as timed out (and so failed).
  *
- * <p>Harakiri class holds a thread which sleeps for the given amount
+ * <p>Terminator class holds a thread which sleeps for the given amount
  * of time, and then wakes up and executes <tt>System.exit()</tt>
  * with the given exit status. That thread is daemon, so it doesn't
  * prevent application from exiting once all its threads finish
- * before it's time for harakiri. Appointing harakiri in zero
+ * before it's time for termination. Appointing terminator in zero
  * delay implies immediate <tt>exit()</tt>.
  *
- * <p>There is a limitation: you may appoint no more than one harakiri
+ * <p>There is a limitation: you may appoint no more than one terminator
  * per application.
  */
-public class Harakiri {
+public class Terminator {
     /**
-     * Use specific <tt>appoint()</tt> method to appoint harakiri.
+     * Use specific <tt>appoint()</tt> method to appoint terminator.
      *
      * @see #appoint(int)
      * @see #appoint(int,int)
      */
-    protected Harakiri() {}
+    protected Terminator() {}
 
     /**
-     * One harakiri per application, or <tt>null</tt> (by default).
+     * One terminator per application, or <tt>null</tt> (by default).
      */
-    private static Thread harakiri = null;
+    private static Thread terminator = null;
 
     /**
      * <p>Return timeout (or waittime) value munus the margin
@@ -108,11 +108,11 @@ public class Harakiri {
     }
 
     /**
-     * Appoint harakiri after the given amount of <tt>minutes</tt>,
+     * Appoint terminator after the given amount of <tt>minutes</tt>,
      * so that exit status would be 95 (to simulate JCK-like PASS
      * status).
      *
-     * @throws IllegalStateException If harakiri is already appointed.
+     * @throws IllegalStateException If terminator is already appointed.
      *
      * @see #appoint(int,int)
      * @see #parseAppointment(String[])
@@ -122,23 +122,23 @@ public class Harakiri {
     }
 
     /**
-     * Appoint Harakiri for the given amount of <tt>minutes</tt>,
+     * Appoint Terminator for the given amount of <tt>minutes</tt>,
      * so that the given <tt>status</tt> would be exited when time
      * is over.
      *
-     * @throws IllegalStateException If harakiri is already appointed.
+     * @throws IllegalStateException If terminator is already appointed.
      *
      * @see #appoint(int)
      * @see #parseAppointment(String[])
      */
     public static void appoint(int minutes, int status) {
-        if (harakiri != null)
-            throw new IllegalStateException("Harakiri is already appointed.");
+        if (terminator != null)
+            throw new IllegalStateException("Terminator is already appointed.");
 
         final long timeToExit = System.currentTimeMillis() + 60*1000L*minutes;
         final int  exitStatus = status;
 
-        harakiri = new Thread(Harakiri.class.getName()) {
+        terminator = new Thread(Terminator.class.getName()) {
             public void run() {
                 long timeToSleep = timeToExit - System.currentTimeMillis();
                 if (timeToSleep > 0)
@@ -155,7 +155,7 @@ public class Harakiri {
                     } catch (InterruptedException exception) {
                         exception.printStackTrace(System.err);
                        //
-                       // OOPS, the dagger for harakiri looks broken:
+                       // OOPS, the dagger for terminator looks broken:
                        //
                        return;
                     };
@@ -163,13 +163,13 @@ public class Harakiri {
                 // OK, lets do it now:
                 //
                 System.err.println(
-                    "#\n# Harakiri: prescheduled program termination.\n#");
-                System.exit(exitStatus); // harakiri to all threads
+                    "#\n# Terminator: prescheduled program termination.\n#");
+                System.exit(exitStatus); // terminator to all threads
             }
         };
 
-        harakiri.setPriority(Thread.MAX_PRIORITY);
-        harakiri.setDaemon(true);
-        harakiri.start();
+        terminator.setPriority(Thread.MAX_PRIORITY);
+        terminator.setDaemon(true);
+        terminator.start();
     }
 }

@@ -1221,6 +1221,44 @@ bool VM_RedefineClasses::is_unresolved_class_mismatch(const constantPoolHandle& 
 } // end is_unresolved_class_mismatch()
 
 
+// The bug 6214132 caused the verification to fail.
+// 1. What's done in RedefineClasses() before verification:
+//  a) A reference to the class being redefined (_the_class) and a
+//     reference to new version of the class (_scratch_class) are
+//     saved here for use during the bytecode verification phase of
+//     RedefineClasses.
+//  b) The _java_mirror field from _the_class is copied to the
+//     _java_mirror field in _scratch_class. This means that a jclass
+//     returned for _the_class or _scratch_class will refer to the
+//     same Java mirror. The verifier will see the "one true mirror"
+//     for the class being verified.
+// 2. See comments in JvmtiThreadState for what is done during verification.
+
+class RedefineVerifyMark : public StackObj {
+ private:
+  JvmtiThreadState* _state;
+  Klass*            _scratch_class;
+  Handle            _scratch_mirror;
+
+ public:
+
+  RedefineVerifyMark(Klass* the_class, Klass* scratch_class,
+                     JvmtiThreadState* state) : _state(state), _scratch_class(scratch_class)
+  {
+    _state->set_class_versions_map(the_class, scratch_class);
+    _scratch_mirror = Handle(_state->get_thread(), _scratch_class->java_mirror());
+    _scratch_class->replace_java_mirror(the_class->java_mirror());
+  }
+
+  ~RedefineVerifyMark() {
+    // Restore the scratch class's mirror, so when scratch_class is removed
+    // the correct mirror pointing to it can be cleared.
+    _scratch_class->replace_java_mirror(_scratch_mirror());
+    _state->clear_class_versions_map();
+  }
+};
+
+
 jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
 
   // For consistency allocate memory using os::malloc wrapper.

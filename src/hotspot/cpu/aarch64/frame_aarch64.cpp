@@ -658,10 +658,10 @@ intptr_t* frame::real_fp() const {
            p[frame::name##_offset], #name);                             \
   }
 
-static __thread uintptr_t nextfp;
-static __thread uintptr_t nextpc;
-static __thread uintptr_t nextsp;
-static __thread RegisterMap *reg_map;
+static THREAD_LOCAL uintptr_t nextfp;
+static THREAD_LOCAL uintptr_t nextpc;
+static THREAD_LOCAL uintptr_t nextsp;
+static THREAD_LOCAL RegisterMap *reg_map;
 
 static void printbc(Method *m, intptr_t bcx) {
   const char *name;

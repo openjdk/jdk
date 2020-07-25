@@ -631,7 +631,7 @@ WB_ENTRY(jobject, WB_G1AuxiliaryMemoryUsage(JNIEnv* env))
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     MemoryUsage usage = g1h->get_auxiliary_data_memory_usage();
     Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
-    return JNIHandles::make_local(env, h());
+    return JNIHandles::make_local(THREAD, h());
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1AuxiliaryMemoryUsage: G1 GC is not enabled");
 WB_END
@@ -654,7 +654,7 @@ WB_ENTRY(jintArray, WB_G1MemoryNodeIds(JNIEnv* env, jobject o))
     for (int i = 0; i < num_node_ids; i++) {
       result->int_at_put(i, (jint)node_ids[i]);
     }
-    return (jintArray) JNIHandles::make_local(env, result);
+    return (jintArray) JNIHandles::make_local(THREAD, result);
   }
   THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1MemoryNodeIds: G1 GC is not enabled");
 WB_END
@@ -715,7 +715,7 @@ WB_ENTRY(jlongArray, WB_G1GetMixedGCInfo(JNIEnv* env, jobject o, jint liveness))
   result->long_at_put(0, rli.total_count());
   result->long_at_put(1, rli.total_memory());
   result->long_at_put(2, rli.total_memory_to_free());
-  return (jlongArray) JNIHandles::make_local(env, result);
+  return (jlongArray) JNIHandles::make_local(THREAD, result);
 WB_END
 
 #endif // INCLUDE_G1GC
@@ -1678,12 +1678,11 @@ WB_ENTRY(jlong, WB_GetMethodData(JNIEnv* env, jobject wv, jobject method))
 WB_END
 
 WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
-  return (jlong) Thread::current()->stack_size();
+  return (jlong) thread->stack_size();
 WB_END
 
 WB_ENTRY(jlong, WB_GetThreadRemainingStackSize(JNIEnv* env, jobject o))
-  JavaThread* t = JavaThread::current();
-  return (jlong) t->stack_available(os::current_stack_pointer()) - (jlong)JavaThread::stack_shadow_zone_size();
+  return (jlong) thread->stack_available(os::current_stack_pointer()) - (jlong)JavaThread::stack_shadow_zone_size();
 WB_END
 
 
@@ -1790,7 +1789,7 @@ WB_ENTRY(void, WB_AssertSpecialLock(JNIEnv* env, jobject o, jboolean allowVMBloc
 
   MutexLocker ml(new Mutex(Mutex::special, "SpecialTest_lock", allowVMBlock, sfpt_check_required), safepoint_check);
   // If the lock above succeeds, try to safepoint to test the NSV implied with this special lock.
-  ThreadBlockInVM tbivm(JavaThread::current());
+  ThreadBlockInVM tbivm(thread);
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
@@ -1957,7 +1956,7 @@ WB_ENTRY(jobject, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass clazz
     InstanceKlass *ik = InstanceKlass::cast(k);
     ConstantPool *cp = ik->constants();
     objArrayOop refs =  cp->resolved_references();
-    return (jobject)JNIHandles::make_local(env, refs);
+    return (jobject)JNIHandles::make_local(THREAD, refs);
   } else {
     return NULL;
   }

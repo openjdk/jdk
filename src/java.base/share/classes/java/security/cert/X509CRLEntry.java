@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,11 @@ import sun.security.x509.X509CRLEntryImpl;
  */
 
 public abstract class X509CRLEntry implements X509Extension {
+
+    /**
+     * Constructor for subclasses to call.
+     */
+    public X509CRLEntry() {}
 
     /**
      * Compares this CRL entry for equality with the given
