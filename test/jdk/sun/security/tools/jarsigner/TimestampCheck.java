@@ -57,7 +57,7 @@ import sun.security.timestamp.TimestampToken;
 
 /*
  * @test
- * @bug 6543842 6543440 6939248 8009636 8024302 8163304 8169911 8180289 8172404
+ * @bug 6543842 6543440 6939248 8009636 8024302 8163304 8169911 8180289 8172404 8247960
  * @summary checking response of timestamp
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.timestamp
@@ -293,23 +293,27 @@ public class TimestampCheck {
                 signVerbose(null, "unsigned.jar", "sha1alg.jar", "signer",
                         "-strict", "-digestalg", "SHA-1")
                         .shouldHaveExitValue(0)
-                        .shouldContain("jar signed, with signer errors")
+                        .shouldContain("jar signed")
+                        .shouldNotContain("with signer errors")
                         .shouldMatch("SHA-1.*-digestalg.*will be disabled");
                 verify("sha1alg.jar", "-strict")
                         .shouldHaveExitValue(0)
-                        .shouldContain("jar verified, with signer errors")
+                        .shouldContain("jar verified")
+                        .shouldNotContain("with signer errors")
                         .shouldContain("SHA-1 digest algorithm is considered a security risk")
                         .shouldContain("This algorithm will be disabled in a future update")
                         .shouldNotContain("is disabled");
 
                 sign("sha1tsaalg", "-tsadigestalg", "SHA-1", "-strict")
                         .shouldHaveExitValue(0)
-                        .shouldContain("jar signed, with signer errors")
+                        .shouldContain("jar signed")
+                        .shouldNotContain("with signer errors")
                         .shouldMatch("SHA-1.*-tsadigestalg.*will be disabled")
                         .shouldNotContain("is disabled");
                 verify("sha1tsaalg.jar", "-strict")
                         .shouldHaveExitValue(0)
-                        .shouldContain("jar verified, with signer errors")
+                        .shouldContain("jar verified")
+                        .shouldNotContain("with signer errors")
                         .shouldContain("SHA-1 timestamp digest algorithm is considered a security risk")
                         .shouldNotContain("is disabled");
 

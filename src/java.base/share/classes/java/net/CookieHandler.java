@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,11 @@ import sun.security.util.SecurityConstants;
  * @since 1.5
  */
 public abstract class CookieHandler {
+    /**
+     * Constructor for subclasses to call.
+     */
+    public CookieHandler() {}
+
     /**
      * The system-wide cookie handler that will apply cookies to the
      * request headers and manage cookies from the response headers.

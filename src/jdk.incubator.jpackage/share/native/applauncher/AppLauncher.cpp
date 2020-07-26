@@ -35,6 +35,7 @@
 
 
 AppLauncher::AppLauncher() {
+    setInitJvmFromCmdlineOnly(false);
     launcherPath = SysInfo::getProcessModulePath();
     args = SysInfo::getCommandArgs();
 }
@@ -116,8 +117,17 @@ Jvm* AppLauncher::createJvmLauncher() const {
 
     (*jvm)
         .setPath(findJvmLib(cfgFile, defaultRuntimePath, jvmLibNames))
-        .addArgument(launcherPath)
-        .initFromConfigFile(cfgFile);
+        .addArgument(launcherPath);
+
+    if (initJvmFromCmdlineOnly) {
+        tstring_array::const_iterator argIt = args.begin();
+        const tstring_array::const_iterator argEnd = args.end();
+        for (; argIt != argEnd; ++argIt) {
+            (*jvm).addArgument(*argIt);
+        }
+    } else {
+        (*jvm).initFromConfigFile(cfgFile);
+    }
 
     return jvm.release();
 }

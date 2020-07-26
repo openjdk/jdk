@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,11 @@ public abstract class ProxySelector {
             theProxySelector = null;
         }
     }
+
+    /**
+     * Constructor for subclasses to call.
+     */
+    public ProxySelector() {}
 
     /**
      * Gets the system-wide proxy selector.

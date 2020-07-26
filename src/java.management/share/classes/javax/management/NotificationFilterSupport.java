@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,11 @@ public class NotificationFilterSupport implements NotificationFilter {
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private List<String> enabledTypes = new Vector<String>();
 
+
+    /**
+     * Constructs a {@code NotificationFilterSupport}.
+     */
+    public NotificationFilterSupport() {}
 
     /**
      * Invoked before sending the specified notification to the listener.

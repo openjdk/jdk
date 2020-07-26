@@ -24,14 +24,24 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "AppLauncher.h"
 #include "FileUtils.h"
 #include "UnixSysInfo.h"
 #include "Package.h"
+#include "Log.h"
+#include "ErrorHandling.h"
 
 
 namespace {
 
+size_t hash(const std::string& str) {
+    size_t h = 0;
+    for(std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
+        h = 31 * h + (*it & 0xff);
+    }
+    return h;
+}
 
 void launchApp() {
     setlocale(LC_ALL, "en_US.utf8");
@@ -56,6 +66,56 @@ void launchApp() {
     } else {
         ownerPackage.initAppLauncher(appLauncher);
     }
+
+    const std::string _JPACKAGE_LAUNCHER = "_JPACKAGE_LAUNCHER";
+
+    std::string launchInfo = SysInfo::getEnvVariable(std::nothrow,
+            _JPACKAGE_LAUNCHER, "");
+
+    const std::string thisLdLibraryPath = SysInfo::getEnvVariable(std::nothrow,
+            "LD_LIBRARY_PATH", "");
+
+    const size_t thisHash = hash(thisLdLibraryPath);
+
+    if (!launchInfo.empty()) {
+        LOG_TRACE(tstrings::any() << "Found "
+                << _JPACKAGE_LAUNCHER << "=[" << launchInfo << "]");
+
+        tistringstream iss(launchInfo);
+        iss.exceptions(std::ios::failbit | std::ios::badbit);
+
+        size_t hash = 0;
+        iss >> hash;
+
+        launchInfo = "";
+
+        if (thisHash != hash) {
+            // This launcher execution is the result of execve() call from
+            // withing JVM.
+            // This means all JVM arguments are already configured in launcher
+            // process command line.
+            // No need to construct command line for JVM.
+            LOG_TRACE("Not building JVM arguments from cfg file");
+            appLauncher.setInitJvmFromCmdlineOnly(true);
+        }
+    } else {
+        // Changed LD_LIBRARY_PATH environment variable might result in
+        // execve() call from within JVM.
+        // Set _JPACKAGE_LAUNCHER environment variable accordingly so that
+        // restarted launcher process can detect a restart.
+
+        launchInfo = (tstrings::any() << thisHash).str();
+    }
+
+    JP_TRY;
+    if (0 != setenv(_JPACKAGE_LAUNCHER.c_str(), launchInfo.c_str(), 1)) {
+        JP_THROW(tstrings::any() << "setenv(" << _JPACKAGE_LAUNCHER
+                << ", " << launchInfo << ") failed. Error: " << lastCRTError());
+    } else {
+        LOG_TRACE(tstrings::any() << "Set "
+                << _JPACKAGE_LAUNCHER << "=[" << launchInfo << "]");
+    }
+    JP_CATCH_ALL;
 
     appLauncher.launch();
 }
