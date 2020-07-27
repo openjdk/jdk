@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,8 @@ static meth_info m0[] = {
 };
 
 static meth_info m1[] = {
-    { "meth_n1", "()V" }
+    { "meth_n1", "()V" },
+    { "meth_def1", "()V" }
 };
 
 static meth_info m2[] = {
@@ -98,7 +99,7 @@ static meth_info m9[] = {
 
 static class_info classes[] = {
     { "InnerClass1", 2, m0 },
-    { "InnerInterface", 1, m1 },
+    { "InnerInterface", 2, m1 },
     { "InnerClass2", 4, m2 },
     { "OuterClass1", 1, m3 },
     { "OuterClass2", 2, m4 },
@@ -145,6 +146,7 @@ Java_nsk_jvmti_GetClassMethods_getclmthd007_check(JNIEnv *env,
     char *name, *sig, *generic;
     int j, k;
 
+    int failed = JNI_FALSE; // enable debugging on failure
     if (jvmti == NULL) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
@@ -167,12 +169,14 @@ Java_nsk_jvmti_GetClassMethods_getclmthd007_check(JNIEnv *env,
         printf("(%d) wrong number of methods: %d, expected: %d\n",
                i, mcount, classes[i].mcount);
         result = STATUS_FAILED;
+        failed = JNI_TRUE; // show the methods found
+        printf(">>> %s:\n", classes[i].name);
     }
     for (k = 0; k < mcount; k++) {
         if (methods[k] == NULL) {
             printf("(%d:%d) methodID = null\n", i, k);
             result = STATUS_FAILED;
-        } else if (printdump == JNI_TRUE) {
+        } else if (printdump == JNI_TRUE || failed == JNI_TRUE) {
             err = jvmti->GetMethodName(methods[k],
                 &name, &sig, &generic);
             if (err == JVMTI_ERROR_NONE) {
