@@ -1171,11 +1171,12 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), name_str);
   }
 
-  Klass* klass = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
+  oop mirror = JNIHandles::resolve_non_null(clazz);
+  Klass* klass = java_lang_Class::as_Klass(mirror);
 
   // Throw a NoSuchMethodError exception if we have an instance of a
   // primitive java.lang.Class
-  if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(clazz))) {
+  if (java_lang_Class::is_primitive(mirror)) {
     ResourceMark rm;
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
   }
