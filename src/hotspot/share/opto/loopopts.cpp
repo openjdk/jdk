@@ -46,7 +46,7 @@
 //=============================================================================
 //------------------------------split_thru_phi---------------------------------
 // Split Node 'n' through merge point if there is enough win.
-Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
+Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   if (n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::LONG) {
     // ConvI2L may have type information on it which is unsafe to push up
     // so disable this for now
@@ -61,13 +61,28 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
     return NULL;
   }
 
+  // Bail out if 'n' is a Div or Mod node whose zero check was removed earlier (i.e. control is NULL) and its divisor is an induction variable
+  // phi p of a trip-counted (integer) loop whose inputs could be zero (include zero in their type range). p could have a more precise type
+  // range that does not necessarily include all values of its inputs. Since each of these inputs will be a divisor of the newly cloned nodes
+  // of 'n', we need to bail out of one of these divisors could be zero (zero in its type range).
+  if ((n->Opcode() == Op_DivI || n->Opcode() == Op_ModI) && n->in(0) == NULL
+      && region->is_CountedLoop() && n->in(2) == region->as_CountedLoop()->phi()) {
+    Node* phi = region->as_CountedLoop()->phi();
+    for (uint i = 1; i < phi->req(); i++) {
+      if (_igvn.type(phi->in(i))->filter_speculative(TypeInt::ZERO) != Type::TOP) {
+        // Zero could be a possible value but we already removed the zero check. Bail out to avoid a possible division by zero at a later point.
+        return NULL;
+      }
+    }
+  }
+
   int wins = 0;
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
 
   const Type* type = n->bottom_type();
-  const TypeOopPtr *t_oop = _igvn.type(n)->isa_oopptr();
-  Node *phi;
+  const TypeOopPtr* t_oop = _igvn.type(n)->isa_oopptr();
+  Node* phi;
   if (t_oop != NULL && t_oop->is_known_instance_field()) {
     int iid    = t_oop->instance_id();
     int index  = C->get_alias_index(t_oop);
@@ -78,7 +93,7 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
   }
   uint old_unique = C->unique();
   for (uint i = 1; i < region->req(); i++) {
-    Node *x;
+    Node* x;
     Node* the_clone = NULL;
     if (region->in(i) == C->top()) {
       x = C->top();             // Dead path?  Use a dead data op
@@ -89,13 +104,13 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
       if (n->in(0) == region)
         x->set_req( 0, region->in(i) );
       for (uint j = 1; j < n->req(); j++) {
-        Node *in = n->in(j);
+        Node* in = n->in(j);
         if (in->is_Phi() && in->in(0) == region)
-          x->set_req( j, in->in(i) ); // Use pre-Phi input for the clone
+          x->set_req(j, in->in(i)); // Use pre-Phi input for the clone
       }
     }
     // Check for a 'win' on some paths
-    const Type *t = x->Value(&_igvn);
+    const Type* t = x->Value(&_igvn);
 
     bool singleton = t->singleton();
 
