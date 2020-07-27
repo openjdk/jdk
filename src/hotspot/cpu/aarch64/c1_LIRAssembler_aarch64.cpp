@@ -211,6 +211,19 @@ Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
   // FIXME: This needs to be much more clever.  See x86.
 }
 
+// Ensure a valid Address (base + offset) to a stack-slot. If stack access is
+// not encodable as a base + (immediate) offset, generate an explicit address
+// calculation to hold the address in a temporary register.
+Address LIR_Assembler::stack_slot_address(int index, uint size, Register tmp, int adjust) {
+  precond(size == 4 || size == 8);
+  Address addr = frame_map()->address_for_slot(index, adjust);
+  precond(addr.getMode() == Address::base_plus_offset);
+  precond(addr.base() == sp);
+  precond(addr.offset() > 0);
+  uint mask = size - 1;
+  assert((addr.offset() & mask) == 0, "scaled offsets only");
+  return __ legitimize_address(addr, size, tmp);
+}
 
 void LIR_Assembler::osr_entry() {
   offsets()->set_value(CodeOffsets::OSR_Entry, code_offset());
@@ -735,32 +748,38 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
 }
 
 void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool pop_fpu_stack) {
+  precond(src->is_register() && dest->is_stack());
+
+  uint const c_sz32 = sizeof(uint32_t);
+  uint const c_sz64 = sizeof(uint64_t);
+
   if (src->is_single_cpu()) {
+    int index = dest->single_stack_ix();
     if (is_reference_type(type)) {
-      __ str(src->as_register(), frame_map()->address_for_slot(dest->single_stack_ix()));
+      __ str(src->as_register(), stack_slot_address(index, c_sz64, rscratch1));
       __ verify_oop(src->as_register());
     } else if (type == T_METADATA || type == T_DOUBLE || type == T_ADDRESS) {
-      __ str(src->as_register(), frame_map()->address_for_slot(dest->single_stack_ix()));
+      __ str(src->as_register(), stack_slot_address(index, c_sz64, rscratch1));
     } else {
-      __ strw(src->as_register(), frame_map()->address_for_slot(dest->single_stack_ix()));
+      __ strw(src->as_register(), stack_slot_address(index, c_sz32, rscratch1));
     }
 
   } else if (src->is_double_cpu()) {
-    Address dest_addr_LO = frame_map()->address_for_slot(dest->double_stack_ix(), lo_word_offset_in_bytes);
+    int index = dest->double_stack_ix();
+    Address dest_addr_LO = stack_slot_address(index, c_sz64, rscratch1, lo_word_offset_in_bytes);
     __ str(src->as_register_lo(), dest_addr_LO);
 
   } else if (src->is_single_fpu()) {
-    Address dest_addr = frame_map()->address_for_slot(dest->single_stack_ix());
-    __ strs(src->as_float_reg(), dest_addr);
+    int index = dest->single_stack_ix();
+    __ strs(src->as_float_reg(), stack_slot_address(index, c_sz32, rscratch1));
 
   } else if (src->is_double_fpu()) {
-    Address dest_addr = frame_map()->address_for_slot(dest->double_stack_ix());
-    __ strd(src->as_double_reg(), dest_addr);
+    int index = dest->double_stack_ix();
+    __ strd(src->as_double_reg(), stack_slot_address(index, c_sz64, rscratch1));
 
   } else {
     ShouldNotReachHere();
   }
-
 }
 
 
@@ -845,30 +864,34 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
 
 
 void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
-  assert(src->is_stack(), "should not call otherwise");
-  assert(dest->is_register(), "should not call otherwise");
+  precond(src->is_stack() && dest->is_register());
+
+  uint const c_sz32 = sizeof(uint32_t);
+  uint const c_sz64 = sizeof(uint64_t);
 
   if (dest->is_single_cpu()) {
+    int index = src->single_stack_ix();
     if (is_reference_type(type)) {
-      __ ldr(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()));
+      __ ldr(dest->as_register(), stack_slot_address(index, c_sz64, rscratch1));
       __ verify_oop(dest->as_register());
     } else if (type == T_METADATA || type == T_ADDRESS) {
-      __ ldr(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()));
+      __ ldr(dest->as_register(), stack_slot_address(index, c_sz64, rscratch1));
     } else {
-      __ ldrw(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()));
+      __ ldrw(dest->as_register(), stack_slot_address(index, c_sz32, rscratch1));
     }
 
   } else if (dest->is_double_cpu()) {
-    Address src_addr_LO = frame_map()->address_for_slot(src->double_stack_ix(), lo_word_offset_in_bytes);
+    int index = src->double_stack_ix();
+    Address src_addr_LO = stack_slot_address(index, c_sz64, rscratch1, lo_word_offset_in_bytes);
     __ ldr(dest->as_register_lo(), src_addr_LO);
 
   } else if (dest->is_single_fpu()) {
-    Address src_addr = frame_map()->address_for_slot(src->single_stack_ix());
-    __ ldrs(dest->as_float_reg(), src_addr);
+    int index = src->single_stack_ix();
+    __ ldrs(dest->as_float_reg(), stack_slot_address(index, c_sz32, rscratch1));
 
   } else if (dest->is_double_fpu()) {
-    Address src_addr = frame_map()->address_for_slot(src->double_stack_ix());
-    __ ldrd(dest->as_double_reg(), src_addr);
+    int index = src->double_stack_ix();
+    __ ldrd(dest->as_double_reg(), stack_slot_address(index, c_sz64, rscratch1));
 
   } else {
     ShouldNotReachHere();

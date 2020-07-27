@@ -26,7 +26,7 @@
 #ifndef CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
-#include "asm/assembler.hpp"
+#include "asm/assembler.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/powerOfTwo.hpp"
 
