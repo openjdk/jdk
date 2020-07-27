@@ -2289,13 +2289,11 @@ public class Resolve {
     }
 
     boolean isInnerClassOfMethod(Symbol msym, Symbol csym) {
-        if (csym.owner == msym && !csym.isStatic()) {
-            return true;
-        } else if (csym.owner.kind == TYP) {
-            return isInnerClassOfMethod(msym, csym.owner);
-        } else {
-            return false;
+        while (csym.owner != msym) {
+            if (csym.isStatic()) return false;
+            csym = csym.owner.enclClass();
         }
+        return (csym.owner == msym && !csym.isStatic());
     }
 
     /** Find an unqualified type symbol.

@@ -800,6 +800,48 @@ public class RecordCompilationTests extends CompilationTestCase {
                 }
                 """
         );
+
+        // positive cases
+        assertOK(
+                """
+                import java.security.*;
+                class Test {
+                    static Test newInstance(Object provider) {
+                        return new Test() {
+                            private final PrivilegedExceptionAction<KeyStore> action = new PrivilegedExceptionAction<KeyStore>() {
+                                public KeyStore run() throws Exception {
+                                    if (provider == null) {}
+                                    return null;
+                                }
+                            };
+                        };
+                    }
+                }
+                """
+        );
+
+        assertOK(
+                """
+                import java.security.*;
+                class Test {
+                    static Test newInstance(Object provider) {
+                        return new Test() {
+                            int m(PrivilegedExceptionAction<KeyStore> a) { return 0; }
+                            {
+                                m(
+                                    new PrivilegedExceptionAction<KeyStore>() {
+                                        public KeyStore run() throws Exception {
+                                            if (provider == null) {}
+                                            return null;
+                                        }
+                                    }
+                                );
+                            }
+                        };
+                    }
+                }
+                """
+        );
     }
 
     public void testReturnInCanonical_Compact() {
