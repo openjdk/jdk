@@ -1618,14 +1618,14 @@ JvmtiEnv::GetFrameCount(JavaThread* java_thread, jint* count_ptr) {
   }
 
   // It is only safe to perform the direct operation on the current
-  // thread. All other usage needs to use a vm-safepoint-op for safety.
+  // thread. All other usage needs to use a direct handshake for safety.
   if (java_thread == JavaThread::current()) {
     err = get_frame_count(state, count_ptr);
   } else {
-    // get java stack frame count at safepoint.
-    VM_GetFrameCount op(this, state, count_ptr);
-    VMThread::execute(&op);
-    err = op.result();
+    // get java stack frame count with handshake.
+    GetFrameCountClosure op(this, state, count_ptr);
+    bool executed = Handshake::execute_direct(&op, java_thread);
+    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
   return err;
 } /* end GetFrameCount */
@@ -1748,14 +1748,14 @@ JvmtiEnv::GetFrameLocation(JavaThread* java_thread, jint depth, jmethodID* metho
   jvmtiError err = JVMTI_ERROR_NONE;
 
   // It is only safe to perform the direct operation on the current
-  // thread. All other usage needs to use a vm-safepoint-op for safety.
+  // thread. All other usage needs to use a direct handshake for safety.
   if (java_thread == JavaThread::current()) {
     err = get_frame_location(java_thread, depth, method_ptr, location_ptr);
   } else {
-    // JVMTI get java stack frame location at safepoint.
-    VM_GetFrameLocation op(this, java_thread, depth, method_ptr, location_ptr);
-    VMThread::execute(&op);
-    err = op.result();
+    // JVMTI get java stack frame location via direct handshake.
+    GetFrameLocationClosure op(this, depth, method_ptr, location_ptr);
+    bool executed = Handshake::execute_direct(&op, java_thread);
+    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
   return err;
 } /* end GetFrameLocation */
