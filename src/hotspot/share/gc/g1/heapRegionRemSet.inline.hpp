@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ inline void PerRegionTable::init(HeapRegion* hr, bool clear_links_to_all_list) {
 
 template <class Closure>
 void OtherRegionsTable::iterate(Closure& cl) {
-  if (_n_coarse_entries > 0) {
+  if (Atomic::load(&_has_coarse_entries)) {
     BitMap::idx_t cur = _coarse_map.get_next_one_offset(0);
     while (cur != _coarse_map.size()) {
       cl.next_coarse_prt((uint)cur);

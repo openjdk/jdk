@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ OtherRegionsTable::OtherRegionsTable(Mutex* m) :
   _m(m),
   _num_occupied(0),
   _coarse_map(mtGC),
-  _n_coarse_entries(0),
+  _has_coarse_entries(false),
   _fine_grain_regions(NULL),
   _n_fine_entries(0),
   _first_all_fine_prts(NULL),
@@ -261,19 +261,19 @@ PerRegionTable* OtherRegionsTable::delete_region_table(size_t& added_by_deleted)
   guarantee(max != NULL, "Since _n_fine_entries > 0");
   guarantee(max_prev != NULL, "Since max != NULL.");
 
-  // Set the corresponding coarse bit.
+  // Ensure the corresponding coarse bit is set.
   size_t max_hrm_index = (size_t) max->hr()->hrm_index();
-  if (_n_coarse_entries == 0) {
+  if (Atomic::load(&_has_coarse_entries)) {
+    _coarse_map.at_put(max_hrm_index, true);
+  } else {
     // This will lazily initialize an uninitialized bitmap
     _coarse_map.reinitialize(G1CollectedHeap::heap()->max_regions());
+    assert(!_coarse_map.at(max_hrm_index), "No coarse entries");
     _coarse_map.at_put(max_hrm_index, true);
     // Release store guarantees that the bitmap has initialized before any
-    // concurrent reader will ever see a non-zero value for _n_coarse_entries
+    // concurrent reader will ever see _has_coarse_entries is true
     // (when read with load_acquire)
-    Atomic::release_store(&_n_coarse_entries, _n_coarse_entries + 1);
-  } else if (!_coarse_map.at(max_hrm_index)) {
-    _coarse_map.at_put(max_hrm_index, true);
-    _n_coarse_entries++;
+    Atomic::release_store(&_has_coarse_entries, true);
   }
 
   added_by_deleted = HeapRegion::CardsPerRegion - max_occ;
@@ -331,11 +331,11 @@ void OtherRegionsTable::clear() {
 
   _first_all_fine_prts = _last_all_fine_prts = NULL;
   _sparse_table.clear();
-  if (_n_coarse_entries > 0) {
+  if (Atomic::load(&_has_coarse_entries)) {
     _coarse_map.clear();
   }
   _n_fine_entries = 0;
-  _n_coarse_entries = 0;
+  Atomic::store(&_has_coarse_entries, false);
 
   _num_occupied = 0;
 }
@@ -362,11 +362,11 @@ bool OtherRegionsTable::contains_reference_locked(OopOrNarrowOopStar from) const
   }
 }
 
-// A load_acquire on _n_coarse_entries - coupled with the release_store in
+// A load_acquire on _has_coarse_entries - coupled with the release_store in
 // delete_region_table - guarantees we don't access _coarse_map before
 // it's been properly initialized.
 bool OtherRegionsTable::is_region_coarsened(RegionIdx_t from_hrm_ind) const {
-  return Atomic::load_acquire(&_n_coarse_entries) > 0 && _coarse_map.at(from_hrm_ind);
+  return Atomic::load_acquire(&_has_coarse_entries) && _coarse_map.at(from_hrm_ind);
 }
 
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetTable* bot,
