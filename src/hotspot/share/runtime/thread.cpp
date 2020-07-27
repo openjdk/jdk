@@ -1575,7 +1575,10 @@ void JavaThread::collect_counters(jlong* array, int length) {
 
 // Attempt to enlarge the array for per thread counters.
 jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
-  jlong* new_counters = NEW_C_HEAP_ARRAY(jlong, new_size, mtJVMCI);
+  jlong* new_counters = NEW_C_HEAP_ARRAY_RETURN_NULL(jlong, new_size, mtJVMCI);
+  if (new_counters == NULL) {
+    return NULL;
+  }
   if (old_counters == NULL) {
     old_counters = new_counters;
     memset(old_counters, 0, sizeof(jlong) * new_size);
@@ -1592,34 +1595,54 @@ jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size
 }
 
 // Attempt to enlarge the array for per thread counters.
-void JavaThread::resize_counters(int current_size, int new_size) {
-  _jvmci_counters = resize_counters_array(_jvmci_counters, current_size, new_size);
+bool JavaThread::resize_counters(int current_size, int new_size) {
+  jlong* new_counters = resize_counters_array(_jvmci_counters, current_size, new_size);
+  if (new_counters == NULL) {
+    return false;
+  } else {
+    _jvmci_counters = new_counters;
+    return true;
+  }
 }
 
 class VM_JVMCIResizeCounters : public VM_Operation {
  private:
   int _new_size;
+  bool _failed;
 
  public:
-  VM_JVMCIResizeCounters(int new_size) : _new_size(new_size) { }
+  VM_JVMCIResizeCounters(int new_size) : _new_size(new_size), _failed(false) { }
   VMOp_Type type()                  const        { return VMOp_JVMCIResizeCounters; }
   bool allow_nested_vm_operations() const        { return true; }
   void doit() {
     // Resize the old thread counters array
     jlong* new_counters = resize_counters_array(JavaThread::_jvmci_old_thread_counters, JVMCICounterSize, _new_size);
-    JavaThread::_jvmci_old_thread_counters = new_counters;
+    if (new_counters == NULL) {
+      _failed = true;
+      return;
+    } else {
+      JavaThread::_jvmci_old_thread_counters = new_counters;
+    }
 
     // Now resize each threads array
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *tp = jtiwh.next(); ) {
-      tp->resize_counters(JVMCICounterSize, _new_size);
+      if (!tp->resize_counters(JVMCICounterSize, _new_size)) {
+        _failed = true;
+        break;
+      }
     }
-    JVMCICounterSize = _new_size;
+    if (!_failed) {
+      JVMCICounterSize = _new_size;
+    }
   }
+
+  bool failed() { return _failed; }
 };
 
-void JavaThread::resize_all_jvmci_counters(int new_size) {
+bool JavaThread::resize_all_jvmci_counters(int new_size) {
   VM_JVMCIResizeCounters op(new_size);
   VMThread::execute(&op);
+  return !op.failed();
 }
 
 #endif // INCLUDE_JVMCI

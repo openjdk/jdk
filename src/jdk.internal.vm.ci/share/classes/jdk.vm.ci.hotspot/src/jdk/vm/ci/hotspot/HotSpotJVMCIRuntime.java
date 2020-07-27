@@ -899,13 +899,14 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Enlarge the number of per thread counters available. Requires a safepoint so
+     * Attempt to enlarge the number of per thread counters available. Requires a safepoint so
      * resizing should be rare to avoid performance effects.
      *
      * @param newSize
+     * @return false if the resizing failed
      */
-    public void setCountersSize(int newSize) {
-        compilerToVm.setCountersSize(newSize);
+    public boolean setCountersSize(int newSize) {
+        return compilerToVm.setCountersSize(newSize);
     }
 
     /**
