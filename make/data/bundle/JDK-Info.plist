@@ -22,6 +22,8 @@
         <string>????</string>
         <key>CFBundleVersion</key>
         <string>@@VERSION@@</string>
+        <key>NSMicrophoneUsageDescription</key>
+        <string>The application is requesting access to the microphone.</string>
         <key>JavaVM</key>
         <dict>
                 <key>JVMCapabilities</key>
