@@ -29,13 +29,21 @@
  * @author Shannon Hickey
  * @run main bug6263446
  */
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.table.*;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Rectangle;
+import java.awt.event.InputEvent;
+import javax.swing.DefaultCellEditor;
+import javax.swing.JFrame;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.table.TableModel;
+import javax.swing.table.DefaultTableModel;
 
 public class bug6263446 {
 
+    private static JFrame frame;
     private static JTable table;
     private static final String FIRST = "AAAAA";
     private static final String SECOND = "BB";
@@ -43,183 +51,156 @@ public class bug6263446 {
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        robot = new Robot();
-        robot.setAutoDelay(50);
+        try {
+            robot = new Robot();
+            robot.setAutoDelay(50);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(() -> createAndShowGUI());
+            robot.waitForIdle();
+            robot.delay(1000);
 
-            public void run() {
-                createAndShowGUI();
+            Point point = getClickPoint();
+            robot.mouseMove(point.x, point.y);
+            robot.waitForIdle();
+
+            click(1);
+            robot.waitForIdle();
+            assertEditing(false);
+
+            click(2);
+            robot.waitForIdle();
+            checkSelectedText(null);
+
+            click(3);
+            robot.waitForIdle();
+            checkSelectedText(FIRST);
+
+            click(4);
+            robot.waitForIdle();
+            checkSelectedText(ALL);
+
+            setClickCountToStart(1);
+            robot.waitForIdle();
+
+            click(1);
+            robot.waitForIdle();
+            checkSelectedText(null);
+
+            click(2);
+            robot.waitForIdle();
+            checkSelectedText(FIRST);
+
+            click(3);
+            robot.waitForIdle();
+            checkSelectedText(ALL);
+
+            setClickCountToStart(3);
+            robot.waitForIdle();
+
+            click(1);
+            robot.waitForIdle();
+            assertEditing(false);
+
+            click(2);
+            robot.waitForIdle();
+            assertEditing(false);
+
+            click(3);
+            robot.waitForIdle();
+            checkSelectedText(null);
+
+            click(4);
+            robot.waitForIdle();
+            checkSelectedText(FIRST);
+
+            click(5);
+            robot.waitForIdle();
+            checkSelectedText(ALL);
+
+            SwingUtilities.invokeAndWait(() -> table.editCellAt(0, 0));
+
+            robot.waitForIdle();
+            assertEditing(true);
+
+            click(2);
+            robot.waitForIdle();
+            checkSelectedText(FIRST);
+        } finally {
+            if (frame != null) {
+                SwingUtilities.invokeAndWait(frame::dispose);
             }
-        });
-
-
-        robot.waitForIdle();
-
-        Point point = getClickPoint();
-        robot.mouseMove(point.x, point.y);
-        robot.waitForIdle();
-
-        click(1);
-        robot.waitForIdle();
-        assertEditing(false);
-
-        click(2);
-        robot.waitForIdle();
-        checkSelectedText(null);
-
-        click(3);
-        robot.waitForIdle();
-        checkSelectedText(FIRST);
-
-
-        click(4);
-        robot.waitForIdle();
-        checkSelectedText(ALL);
-
-        setClickCountToStart(1);
-
-        click(1);
-        robot.waitForIdle();
-        checkSelectedText(null);
-
-        click(2);
-        robot.waitForIdle();
-        checkSelectedText(FIRST);
-
-        click(3);
-        robot.waitForIdle();
-        checkSelectedText(ALL);
-
-        setClickCountToStart(3);
-
-        click(1);
-        robot.waitForIdle();
-        assertEditing(false);
-
-        click(2);
-        robot.waitForIdle();
-        assertEditing(false);
-
-        click(3);
-        robot.waitForIdle();
-        checkSelectedText(null);
-
-        click(4);
-        robot.waitForIdle();
-        checkSelectedText(FIRST);
-
-        click(5);
-        robot.waitForIdle();
-        checkSelectedText(ALL);
-
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                table.editCellAt(0, 0);
-            }
-        });
-
-        robot.waitForIdle();
-        assertEditing(true);
-
-        click(2);
-        robot.waitForIdle();
-        checkSelectedText(FIRST);
-
+        }
     }
 
     private static void checkSelectedText(String sel) throws Exception {
         assertEditing(true);
         checkSelection(sel);
+        robot.waitForIdle();
         cancelCellEditing();
+        robot.waitForIdle();
         assertEditing(false);
     }
 
     private static void setClickCountToStart(final int clicks) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                DefaultCellEditor editor =
-                        (DefaultCellEditor) table.getDefaultEditor(String.class);
-                editor.setClickCountToStart(clicks);
-            }
+        SwingUtilities.invokeAndWait(() -> {
+            DefaultCellEditor editor =
+                    (DefaultCellEditor) table.getDefaultEditor(String.class);
+            editor.setClickCountToStart(clicks);
         });
-
     }
 
     private static void cancelCellEditing() throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                table.getCellEditor().cancelCellEditing();
-            }
+        SwingUtilities.invokeAndWait(() -> {
+            table.getCellEditor().cancelCellEditing();
         });
     }
 
     private static void checkSelection(final String sel) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                DefaultCellEditor editor =
-                        (DefaultCellEditor) table.getDefaultEditor(String.class);
-                JTextField field = (JTextField) editor.getComponent();
-                String text = field.getSelectedText();
-                if (sel == null) {
-                    if (text != null && text.length() != 0) {
-                        throw new RuntimeException("Nothing should be selected,"
-                                + " but \"" + text + "\" is selected.");
-                    }
-                } else if (!sel.equals(text)) {
-                    throw new RuntimeException("\"" + sel + "\" should be "
-                            + "selected, but \"" + text + "\" is selected.");
+        SwingUtilities.invokeAndWait(() -> {
+            DefaultCellEditor editor =
+                    (DefaultCellEditor) table.getDefaultEditor(String.class);
+            JTextField field = (JTextField) editor.getComponent();
+            String text = field.getSelectedText();
+            if (sel == null) {
+                if (text != null && text.length() != 0) {
+                    throw new RuntimeException("Nothing should be selected,"
+                            + " but \"" + text + "\" is selected.");
                 }
+            } else if (!sel.equals(text)) {
+                throw new RuntimeException("\"" + sel + "\" should be "
+                        + "selected, but \"" + text + "\" is selected.");
             }
         });
     }
 
     private static void assertEditing(final boolean editing) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                if (editing && !table.isEditing()) {
-                    throw new RuntimeException("Table should be editing");
-                }
-                if (!editing && table.isEditing()) {
-                    throw new RuntimeException("Table should not be editing");
-                }
+        SwingUtilities.invokeAndWait(() -> {
+            if (editing && !table.isEditing()) {
+                throw new RuntimeException("Table should be editing");
+            }
+            if (!editing && table.isEditing()) {
+                throw new RuntimeException("Table should not be editing");
             }
         });
     }
 
     private static Point getClickPoint() throws Exception {
         final Point[] result = new Point[1];
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                Rectangle rect = table.getCellRect(0, 0, false);
-                Point point = new Point(rect.x + rect.width / 5,
-                        rect.y + rect.height / 2);
-                SwingUtilities.convertPointToScreen(point, table);
-                result[0] = point;
-            }
+        SwingUtilities.invokeAndWait(() -> {
+            Rectangle rect = table.getCellRect(0, 0, false);
+            Point point = new Point(rect.x + rect.width / 5,
+                                   rect.y + rect.height / 2);
+            SwingUtilities.convertPointToScreen(point, table);
+            result[0] = point;
         });
-
         return result[0];
     }
 
     private static void click(int times) {
         robot.delay(500);
         for (int i = 0; i < times; i++) {
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         }
     }
 
@@ -231,11 +212,14 @@ public class bug6263446 {
     }
 
     private static void createAndShowGUI() {
-        JFrame frame = new JFrame("bug6263446");
+        frame = new JFrame("bug6263446");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         table = new JTable(createTableModel());
         frame.add(table);
+        frame.setAlwaysOnTop(true);
+        frame.setLocationRelativeTo(null);
         frame.pack();
         frame.setVisible(true);
+        frame.toFront();
     }
 }
