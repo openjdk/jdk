@@ -1934,9 +1934,9 @@ encode %{
 //     // int imo_reg    = Matcher::interpreter_method_oop_reg();
 //     // int imo_encode = Matcher::_regEncode[imo_reg];
 //
-//     // // Interpreter expects method_oop in EBX, currently a callee-saved register,
+//     // // Interpreter expects method_ptr in EBX, currently a callee-saved register,
 //     // // so we load it immediately before the call
-//     // emit_opcode(cbuf, 0x8B);                     // MOV    imo_reg,ic_reg  # method_oop
+//     // emit_opcode(cbuf, 0x8B);                     // MOV    imo_reg,ic_reg  # method_ptr
 //     // emit_rm(cbuf, 0x03, imo_encode, ic_encode ); // R/M byte
 //
 //     // xor rbp,ebp
@@ -13317,10 +13317,10 @@ instruct Ret() %{
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
-instruct TailCalljmpInd(eRegP_no_EBP jump_target, eBXRegP method_oop) %{
-  match(TailCall jump_target method_oop );
+instruct TailCalljmpInd(eRegP_no_EBP jump_target, eBXRegP method_ptr) %{
+  match(TailCall jump_target method_ptr);
   ins_cost(300);
-  format %{ "JMP    $jump_target \t# EBX holds method oop" %}
+  format %{ "JMP    $jump_target \t# EBX holds method" %}
   opcode(0xFF, 0x4);  /* Opcode FF /4 */
   ins_encode( OpcP, RegOpc(jump_target) );
   ins_pipe( pipe_jmp );

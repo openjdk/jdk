@@ -2250,20 +2250,20 @@ JvmtiEnv::SetLocalDouble(JavaThread* java_thread, jint depth, jint slot, jdouble
   // Breakpoint functions
   //
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 jvmtiError
-JvmtiEnv::SetBreakpoint(Method* method_oop, jlocation location) {
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
+JvmtiEnv::SetBreakpoint(Method* method, jlocation location) {
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   if (location < 0) {   // simple invalid location check first
     return JVMTI_ERROR_INVALID_LOCATION;
   }
   // verify that the breakpoint is not past the end of the method
-  if (location >= (jlocation) method_oop->code_size()) {
+  if (location >= (jlocation) method->code_size()) {
     return JVMTI_ERROR_INVALID_LOCATION;
   }
 
   ResourceMark rm;
-  JvmtiBreakpoint bp(method_oop, location);
+  JvmtiBreakpoint bp(method, location);
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
   if (jvmti_breakpoints.set(bp) == JVMTI_ERROR_DUPLICATE)
     return JVMTI_ERROR_DUPLICATE;
@@ -2276,21 +2276,21 @@ JvmtiEnv::SetBreakpoint(Method* method_oop, jlocation location) {
 } /* end SetBreakpoint */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 jvmtiError
-JvmtiEnv::ClearBreakpoint(Method* method_oop, jlocation location) {
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
+JvmtiEnv::ClearBreakpoint(Method* method, jlocation location) {
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
 
   if (location < 0) {   // simple invalid location check first
     return JVMTI_ERROR_INVALID_LOCATION;
   }
 
   // verify that the breakpoint is not past the end of the method
-  if (location >= (jlocation) method_oop->code_size()) {
+  if (location >= (jlocation) method->code_size()) {
     return JVMTI_ERROR_INVALID_LOCATION;
   }
 
-  JvmtiBreakpoint bp(method_oop, location);
+  JvmtiBreakpoint bp(method, location);
 
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
   if (jvmti_breakpoints.clear(bp) == JVMTI_ERROR_NOT_FOUND)
@@ -2945,34 +2945,34 @@ JvmtiEnv::IsFieldSynthetic(fieldDescriptor* fdesc_ptr, jboolean* is_synthetic_pt
   // Method functions
   //
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // name_ptr - NULL is a valid value, must be checked
 // signature_ptr - NULL is a valid value, must be checked
 // generic_ptr - NULL is a valid value, must be checked
 jvmtiError
-JvmtiEnv::GetMethodName(Method* method_oop, char** name_ptr, char** signature_ptr, char** generic_ptr) {
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
+JvmtiEnv::GetMethodName(Method* method, char** name_ptr, char** signature_ptr, char** generic_ptr) {
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   JavaThread* current_thread  = JavaThread::current();
 
   ResourceMark rm(current_thread); // get the utf8 name and signature
   if (name_ptr == NULL) {
     // just don't return the name
   } else {
-    const char* utf8_name = (const char *) method_oop->name()->as_utf8();
+    const char* utf8_name = (const char *) method->name()->as_utf8();
     *name_ptr = (char *) jvmtiMalloc(strlen(utf8_name)+1);
     strcpy(*name_ptr, utf8_name);
   }
   if (signature_ptr == NULL) {
     // just don't return the signature
   } else {
-    const char* utf8_signature = (const char *) method_oop->signature()->as_utf8();
+    const char* utf8_signature = (const char *) method->signature()->as_utf8();
     *signature_ptr = (char *) jvmtiMalloc(strlen(utf8_signature) + 1);
     strcpy(*signature_ptr, utf8_signature);
   }
 
   if (generic_ptr != NULL) {
     *generic_ptr = NULL;
-    Symbol* soop = method_oop->generic_signature();
+    Symbol* soop = method->generic_signature();
     if (soop != NULL) {
       const char* gen_sig = soop->as_C_string();
       if (gen_sig != NULL) {
@@ -2988,56 +2988,56 @@ JvmtiEnv::GetMethodName(Method* method_oop, char** name_ptr, char** signature_pt
 } /* end GetMethodName */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // declaring_class_ptr - pre-checked for NULL
 jvmtiError
-JvmtiEnv::GetMethodDeclaringClass(Method* method_oop, jclass* declaring_class_ptr) {
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
-  (*declaring_class_ptr) = get_jni_class_non_null(method_oop->method_holder());
+JvmtiEnv::GetMethodDeclaringClass(Method* method, jclass* declaring_class_ptr) {
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  (*declaring_class_ptr) = get_jni_class_non_null(method->method_holder());
   return JVMTI_ERROR_NONE;
 } /* end GetMethodDeclaringClass */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // modifiers_ptr - pre-checked for NULL
 jvmtiError
-JvmtiEnv::GetMethodModifiers(Method* method_oop, jint* modifiers_ptr) {
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
-  (*modifiers_ptr) = method_oop->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+JvmtiEnv::GetMethodModifiers(Method* method, jint* modifiers_ptr) {
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  (*modifiers_ptr) = method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
   return JVMTI_ERROR_NONE;
 } /* end GetMethodModifiers */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // max_ptr - pre-checked for NULL
 jvmtiError
-JvmtiEnv::GetMaxLocals(Method* method_oop, jint* max_ptr) {
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
+JvmtiEnv::GetMaxLocals(Method* method, jint* max_ptr) {
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   // get max stack
-  (*max_ptr) = method_oop->max_locals();
+  (*max_ptr) = method->max_locals();
   return JVMTI_ERROR_NONE;
 } /* end GetMaxLocals */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // size_ptr - pre-checked for NULL
 jvmtiError
-JvmtiEnv::GetArgumentsSize(Method* method_oop, jint* size_ptr) {
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
+JvmtiEnv::GetArgumentsSize(Method* method, jint* size_ptr) {
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   // get size of arguments
 
-  (*size_ptr) = method_oop->size_of_parameters();
+  (*size_ptr) = method->size_of_parameters();
   return JVMTI_ERROR_NONE;
 } /* end GetArgumentsSize */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // entry_count_ptr - pre-checked for NULL
 // table_ptr - pre-checked for NULL
 jvmtiError
-JvmtiEnv::GetLineNumberTable(Method* method_oop, jint* entry_count_ptr, jvmtiLineNumberEntry** table_ptr) {
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
-  if (!method_oop->has_linenumber_table()) {
+JvmtiEnv::GetLineNumberTable(Method* method, jint* entry_count_ptr, jvmtiLineNumberEntry** table_ptr) {
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  if (!method->has_linenumber_table()) {
     return (JVMTI_ERROR_ABSENT_INFORMATION);
   }
 
@@ -3046,7 +3046,7 @@ JvmtiEnv::GetLineNumberTable(Method* method_oop, jint* entry_count_ptr, jvmtiLin
 
   // Compute size of table
   jint num_entries = 0;
-  CompressedLineNumberReadStream stream(method_oop->compressed_linenumber_table());
+  CompressedLineNumberReadStream stream(method->compressed_linenumber_table());
   while (stream.read_pair()) {
     num_entries++;
   }
@@ -3056,7 +3056,7 @@ JvmtiEnv::GetLineNumberTable(Method* method_oop, jint* entry_count_ptr, jvmtiLin
   // Fill jvmti table
   if (num_entries > 0) {
     int index = 0;
-    CompressedLineNumberReadStream stream(method_oop->compressed_linenumber_table());
+    CompressedLineNumberReadStream stream(method->compressed_linenumber_table());
     while (stream.read_pair()) {
       jvmti_table[index].start_location = (jlocation) stream.bci();
       jvmti_table[index].line_number = (jint) stream.line();
@@ -3073,16 +3073,16 @@ JvmtiEnv::GetLineNumberTable(Method* method_oop, jint* entry_count_ptr, jvmtiLin
 } /* end GetLineNumberTable */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // start_location_ptr - pre-checked for NULL
 // end_location_ptr - pre-checked for NULL
 jvmtiError
-JvmtiEnv::GetMethodLocation(Method* method_oop, jlocation* start_location_ptr, jlocation* end_location_ptr) {
+JvmtiEnv::GetMethodLocation(Method* method, jlocation* start_location_ptr, jlocation* end_location_ptr) {
 
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   // get start and end location
-  (*end_location_ptr) = (jlocation) (method_oop->code_size() - 1);
-  if (method_oop->code_size() == 0) {
+  (*end_location_ptr) = (jlocation) (method->code_size() - 1);
+  if (method->code_size() == 0) {
     // there is no code so there is no start location
     (*start_location_ptr) = (jlocation)(-1);
   } else {
@@ -3093,33 +3093,33 @@ JvmtiEnv::GetMethodLocation(Method* method_oop, jlocation* start_location_ptr, j
 } /* end GetMethodLocation */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // entry_count_ptr - pre-checked for NULL
 // table_ptr - pre-checked for NULL
 jvmtiError
-JvmtiEnv::GetLocalVariableTable(Method* method_oop, jint* entry_count_ptr, jvmtiLocalVariableEntry** table_ptr) {
+JvmtiEnv::GetLocalVariableTable(Method* method, jint* entry_count_ptr, jvmtiLocalVariableEntry** table_ptr) {
 
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   JavaThread* current_thread  = JavaThread::current();
 
   // does the klass have any local variable information?
-  InstanceKlass* ik = method_oop->method_holder();
+  InstanceKlass* ik = method->method_holder();
   if (!ik->access_flags().has_localvariable_table()) {
     return (JVMTI_ERROR_ABSENT_INFORMATION);
   }
 
-  ConstantPool* constants = method_oop->constants();
+  ConstantPool* constants = method->constants();
   NULL_CHECK(constants, JVMTI_ERROR_ABSENT_INFORMATION);
 
   // in the vm localvariable table representation, 6 consecutive elements in the table
   // represent a 6-tuple of shorts
   // [start_pc, length, name_index, descriptor_index, signature_index, index]
-  jint num_entries = method_oop->localvariable_table_length();
+  jint num_entries = method->localvariable_table_length();
   jvmtiLocalVariableEntry *jvmti_table = (jvmtiLocalVariableEntry *)
                 jvmtiMalloc(num_entries * (sizeof(jvmtiLocalVariableEntry)));
 
   if (num_entries > 0) {
-    LocalVariableTableElement* table = method_oop->localvariable_table_start();
+    LocalVariableTableElement* table = method->localvariable_table_start();
     for (int i = 0; i < num_entries; i++) {
       // get the 5 tuple information from the vm table
       jlocation start_location = (jlocation) table[i].start_bci;
@@ -3170,16 +3170,16 @@ JvmtiEnv::GetLocalVariableTable(Method* method_oop, jint* entry_count_ptr, jvmti
 } /* end GetLocalVariableTable */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // bytecode_count_ptr - pre-checked for NULL
 // bytecodes_ptr - pre-checked for NULL
 jvmtiError
-JvmtiEnv::GetBytecodes(Method* method_oop, jint* bytecode_count_ptr, unsigned char** bytecodes_ptr) {
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
+JvmtiEnv::GetBytecodes(Method* method, jint* bytecode_count_ptr, unsigned char** bytecodes_ptr) {
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
 
   HandleMark hm;
-  methodHandle method(Thread::current(), method_oop);
-  jint size = (jint)method->code_size();
+  methodHandle mh(Thread::current(), method);
+  jint size = (jint)mh->code_size();
   jvmtiError err = allocate(size, bytecodes_ptr);
   if (err != JVMTI_ERROR_NONE) {
     return err;
@@ -3187,36 +3187,36 @@ JvmtiEnv::GetBytecodes(Method* method_oop, jint* bytecode_count_ptr, unsigned ch
 
   (*bytecode_count_ptr) = size;
   // get byte codes
-  JvmtiClassFileReconstituter::copy_bytecodes(method, *bytecodes_ptr);
+  JvmtiClassFileReconstituter::copy_bytecodes(mh, *bytecodes_ptr);
 
   return JVMTI_ERROR_NONE;
 } /* end GetBytecodes */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // is_native_ptr - pre-checked for NULL
 jvmtiError
-JvmtiEnv::IsMethodNative(Method* method_oop, jboolean* is_native_ptr) {
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
-  (*is_native_ptr) = method_oop->is_native();
+JvmtiEnv::IsMethodNative(Method* method, jboolean* is_native_ptr) {
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  (*is_native_ptr) = method->is_native();
   return JVMTI_ERROR_NONE;
 } /* end IsMethodNative */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // is_synthetic_ptr - pre-checked for NULL
 jvmtiError
-JvmtiEnv::IsMethodSynthetic(Method* method_oop, jboolean* is_synthetic_ptr) {
-  NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
-  (*is_synthetic_ptr) = method_oop->is_synthetic();
+JvmtiEnv::IsMethodSynthetic(Method* method, jboolean* is_synthetic_ptr) {
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  (*is_synthetic_ptr) = method->is_synthetic();
   return JVMTI_ERROR_NONE;
 } /* end IsMethodSynthetic */
 
 
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method
+// method - pre-checked for validity, but may be NULL meaning obsolete method
 // is_obsolete_ptr - pre-checked for NULL
 jvmtiError
-JvmtiEnv::IsMethodObsolete(Method* method_oop, jboolean* is_obsolete_ptr) {
+JvmtiEnv::IsMethodObsolete(Method* method, jboolean* is_obsolete_ptr) {
   if (use_version_1_0_semantics() &&
       get_capabilities()->can_redefine_classes == 0) {
     // This JvmtiEnv requested version 1.0 semantics and this function
@@ -3225,7 +3225,7 @@ JvmtiEnv::IsMethodObsolete(Method* method_oop, jboolean* is_obsolete_ptr) {
     return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
 
-  if (method_oop == NULL || method_oop->is_obsolete()) {
+  if (method == NULL || method->is_obsolete()) {
     *is_obsolete_ptr = true;
   } else {
     *is_obsolete_ptr = false;

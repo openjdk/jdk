@@ -2625,10 +2625,10 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   }
 
   // Jump to the compiled code just as if compiled code was doing it.
-  // load target address from method oop:
+  // load target address from method:
   __ z_lg(Z_R1_scratch, Address(Z_method, Method::from_compiled_offset()));
 
-  // Store method oop into thread->callee_target.
+  // Store method into thread->callee_target.
   // 6243940: We might end up in handle_wrong_method if
   // the callee is deoptimized as we race thru here. If that
   // happens we don't want to take a safepoint because the

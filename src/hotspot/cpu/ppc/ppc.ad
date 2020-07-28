@@ -3940,7 +3940,7 @@ encode %{
       int entry_offset = in_bytes(Klass::vtable_start_offset()) + _vtable_index * vtableEntry::size_in_bytes();
       int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
       __ li(R19_method, v_off);
-      __ ldx(R19_method/*method oop*/, R19_method/*method offset*/, R11_scratch1/*class*/);
+      __ ldx(R19_method/*method*/, R19_method/*method offset*/, R11_scratch1/*class*/);
       // NOTE: for vtable dispatches, the vtable entry will never be
       // null. However it may very well end up in handle_wrong_method
       // if the method is abstract for the particular class.
@@ -15124,11 +15124,11 @@ instruct CallLeafNoFPDirect_Ex(method meth) %{
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
-instruct TailCalljmpInd(iRegPdstNoScratch jump_target, inline_cache_regP method_oop) %{
-  match(TailCall jump_target method_oop);
+instruct TailCalljmpInd(iRegPdstNoScratch jump_target, inline_cache_regP method_ptr) %{
+  match(TailCall jump_target method_ptr);
   ins_cost(CALL_COST);
 
-  format %{ "MTCTR   $jump_target \t// $method_oop holds method oop\n\t"
+  format %{ "MTCTR   $jump_target \t// $method_ptr holds method\n\t"
             "BCTR         \t// tail call" %}
   size(8);
   ins_encode %{

@@ -12587,12 +12587,12 @@ instruct Ret()
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
-instruct TailCalljmpInd(no_rbp_RegP jump_target, rbx_RegP method_oop)
+instruct TailCalljmpInd(no_rbp_RegP jump_target, rbx_RegP method_ptr)
 %{
-  match(TailCall jump_target method_oop);
+  match(TailCall jump_target method_ptr);
 
   ins_cost(300);
-  format %{ "jmp     $jump_target\t# rbx holds method oop" %}
+  format %{ "jmp     $jump_target\t# rbx holds method" %}
   opcode(0xFF, 0x4); /* Opcode FF /4 */
   ins_encode(REX_reg(jump_target), OpcP, reg_opc(jump_target));
   ins_pipe(pipe_jmp);

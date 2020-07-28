@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -887,10 +887,10 @@ static jvmtiError JNICALL
 
 <xsl:template match="jmethodID" mode="dochecks">
   <xsl:param name="name"/>
-  <xsl:text>  Method* method_oop = Method::checked_resolve_jmethod_id(</xsl:text>
+  <xsl:text>  Method* checked_method = Method::checked_resolve_jmethod_id(</xsl:text>
   <xsl:value-of select="$name"/>
   <xsl:text>);&#xA;</xsl:text>
-  <xsl:text>  if (method_oop == NULL) {&#xA;</xsl:text>
+  <xsl:text>  if (checked_method == NULL) {&#xA;</xsl:text>
   <xsl:apply-templates select=".." mode="traceError">     
     <xsl:with-param name="err">JVMTI_ERROR_INVALID_METHODID</xsl:with-param>
     <xsl:with-param name="comment"></xsl:with-param>
@@ -899,7 +899,7 @@ static jvmtiError JNICALL
   <xsl:text>&#xA;</xsl:text>
   <xsl:text>  }&#xA;</xsl:text>
   <xsl:if test="count(@native)=1 and contains(@native,'error')">
-    <xsl:text>  if (method_oop->is_native()) {&#xA;</xsl:text>   
+    <xsl:text>  if (checked_method->is_native()) {&#xA;</xsl:text>   
     <xsl:text>    return JVMTI_ERROR_NATIVE_METHOD;&#xA;</xsl:text>   
     <xsl:text>  }&#xA;</xsl:text>   
   </xsl:if>
@@ -1152,8 +1152,8 @@ static jvmtiError JNICALL
 <xsl:template match="jmethodID" mode="traceInValue">
   <xsl:param name="name"/>
   <xsl:text>, 
-                    method_oop == NULL? "NULL" : method_oop->klass_name()->as_C_string(),
-                    method_oop == NULL? "NULL" : method_oop->name()->as_C_string()
+                    checked_method == NULL? "NULL" : checked_method->klass_name()->as_C_string(),
+                    checked_method == NULL? "NULL" : checked_method->name()->as_C_string()
              </xsl:text>
 </xsl:template>
 
