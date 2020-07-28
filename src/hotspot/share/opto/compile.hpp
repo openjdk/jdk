@@ -1012,14 +1012,6 @@ class Compile : public Phase {
           int is_fancy_jump, bool pass_tls,
           bool save_arg_registers, bool return_pc, DirectiveSet* directive);
 
-  // From the TypeFunc signature, generate code to pass arguments
-  // from Compiled calling convention to Interpreter's calling convention
-  void Generate_Compiled_To_Interpreter_Graph(const TypeFunc *tf, address interpreter_entry);
-
-  // From the TypeFunc signature, generate code to pass arguments
-  // from Interpreter's calling convention to Compiler's calling convention
-  void Generate_Interpreter_To_Compiled_Graph(const TypeFunc *tf);
-
   // Are we compiling a method?
   bool has_method() { return method() != NULL; }
 
