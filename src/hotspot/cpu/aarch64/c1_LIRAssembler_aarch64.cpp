@@ -2108,6 +2108,13 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
 
   // get current pc information
   // pc is only needed if the method has an exception handler, the unwind code does not need it.
+  if (compilation()->debug_info_recorder()->last_pc_offset() == __ offset()) {
+    // As no instructions have been generated yet for this LIR node it's
+    // possible that an oop map already exists for the current offset.
+    // In that case insert an dummy NOP here to ensure all oop map PCs
+    // are unique. See JDK-8237483.
+    __ nop();
+  }
   int pc_for_athrow_offset = __ offset();
   InternalAddress pc_for_athrow(__ pc());
   __ adr(exceptionPC->as_register(), pc_for_athrow);
