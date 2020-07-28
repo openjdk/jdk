@@ -69,6 +69,9 @@ class name java/lang/Math
 method name absExact descriptor (I)I flags 9
 method name absExact descriptor (J)J flags 9
 
+class name java/lang/NullPointerException
+method name fillInStackTrace descriptor ()Ljava/lang/Throwable; flags 21
+
 class name java/lang/Short
 header extends java/lang/Number implements java/lang/Comparable,java/lang/constant/Constable flags 31 signature Ljava/lang/Number;Ljava/lang/Comparable<Ljava/lang/Short;>;Ljava/lang/constant/Constable;
 method name describeConstable descriptor ()Ljava/util/Optional; flags 1 signature ()Ljava/util/Optional<Ljava/lang/constant/DynamicConstantDesc<Ljava/lang/Short;>;>;
