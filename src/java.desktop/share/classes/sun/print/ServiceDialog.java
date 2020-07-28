@@ -961,7 +961,13 @@ public class ServiceDialog extends JDialog implements ActionListener {
             if (info != null) {
                 lblInfo.setText(info.toString());
             }
-            btnProperties.setEnabled(uiFactory != null);
+            PrinterJob job = null;
+            PrinterJobWrapper wrapper = (PrinterJobWrapper)
+                                        asCurrent.get(PrinterJobWrapper.class);
+            if (wrapper != null) {
+                job = wrapper.getPrinterJob();
+            }
+            btnProperties.setEnabled(uiFactory != null &&  job != null);
         }
     }
 
