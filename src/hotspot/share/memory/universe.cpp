@@ -121,7 +121,7 @@ OopHandle Universe::_null_ptr_exception_instance;
 OopHandle Universe::_arithmetic_exception_instance;
 OopHandle Universe::_virtual_machine_error_instance;
 
-oop Universe::_reference_pending_list = NULL;
+OopHandle Universe::_reference_pending_list;
 
 Array<Klass*>* Universe::_the_array_interfaces_array = NULL;
 LatestMethodCache* Universe::_finalizer_register_cache = NULL;
@@ -225,7 +225,6 @@ void Universe::basic_type_classes_do(KlassClosure *closure) {
 
 void Universe::oops_do(OopClosure* f) {
 
-  f->do_oop(&_reference_pending_list);
   ThreadsSMRSupport::exiting_threads_oops_do(f);
 }
 
@@ -392,6 +391,9 @@ void Universe::genesis(TRAPS) {
     _the_null_sentinel = OopHandle(vm_global(), tns());
   }
 
+  // Create a handle for reference_pending_list
+  _reference_pending_list = OopHandle(vm_global(), NULL);
+
   // Maybe this could be lifted up now that object array can be initialized
   // during the bootstrapping.
 
@@ -512,22 +514,22 @@ oop Universe::reference_pending_list() {
   } else {
     assert_pll_ownership();
   }
-  return _reference_pending_list;
+  return _reference_pending_list.resolve();
 }
 
 void Universe::clear_reference_pending_list() {
   assert_pll_ownership();
-  _reference_pending_list = NULL;
+  _reference_pending_list.replace(NULL);
 }
 
 bool Universe::has_reference_pending_list() {
   assert_pll_ownership();
-  return _reference_pending_list != NULL;
+  return _reference_pending_list.peek() != NULL;
 }
 
 oop Universe::swap_reference_pending_list(oop list) {
   assert_pll_locked(is_locked);
-  return Atomic::xchg(&_reference_pending_list, list);
+  return _reference_pending_list.xchg(list);
 }
 
 #undef assert_pll_locked

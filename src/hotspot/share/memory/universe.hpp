@@ -135,7 +135,7 @@ class Universe: AllStatic {
   static OopHandle    _virtual_machine_error_instance; // preallocated exception object
 
   // References waiting to be transferred to the ReferenceHandler
-  static oop          _reference_pending_list;
+  static OopHandle    _reference_pending_list;
 
   // The particular choice of collected heap.
   static CollectedHeap* _collectedHeap;
