@@ -1049,9 +1049,10 @@ public final class Pattern
     private transient int patternLength;
 
     /**
-     * If the Start node might possibly match supplementary characters.
+     * If the Start node might possibly match supplementary or surrogate
+     * code points.
      * It is set to true during compiling if
-     * (1) There is supplementary char in pattern, or
+     * (1) There is supplementary or surrogate code point in pattern, or
      * (2) There is complement node of a "family" CharProperty
      */
     private transient boolean hasSupplementary;
@@ -2948,8 +2949,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return null;
         if (p instanceof BmpCharPredicate)
             return new BmpCharProperty((BmpCharPredicate)p);
-        else
+        else {
+            hasSupplementary = true;
             return new CharProperty(p);
+        }
     }
 
     /**
@@ -5785,18 +5788,18 @@ NEXT:       while (i <= last) {
     }
 
     /**
-     * Charactrs within a explicit value range
+     * Characters within a explicit value range
      */
     static CharPredicate Range(int lower, int upper) {
         if (upper < Character.MIN_HIGH_SURROGATE ||
-            lower > Character.MAX_HIGH_SURROGATE &&
+            lower > Character.MAX_LOW_SURROGATE &&
             upper < Character.MIN_SUPPLEMENTARY_CODE_POINT)
             return (BmpCharPredicate)(ch -> inRange(lower, ch, upper));
         return ch -> inRange(lower, ch, upper);
     }
 
    /**
-    * Charactrs within a explicit value range in a case insensitive manner.
+    * Characters within a explicit value range in a case insensitive manner.
     */
     static CharPredicate CIRange(int lower, int upper) {
         return ch -> inRange(lower, ch, upper) ||
