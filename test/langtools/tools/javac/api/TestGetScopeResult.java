@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8205418 8207229 8207230 8230847 8245786 8247334
+ * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641
  * @summary Test the outcomes from Trees.getScope
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.comp
@@ -34,6 +34,7 @@
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.lang.model.element.Element;
@@ -60,11 +61,14 @@ import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
+import com.sun.tools.javac.api.JavacScope;
 
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.comp.Analyzer;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
@@ -82,6 +86,7 @@ public class TestGetScopeResult {
         new TestGetScopeResult().testCircular();
         new TestGetScopeResult().testRecord();
         new TestGetScopeResult().testLocalRecordAnnotation();
+        new TestGetScopeResult().testRuleCases();
     }
 
     public void run() throws IOException {
@@ -632,6 +637,103 @@ public class TestGetScopeResult {
                 if (!currentVariant.expectedScopeContent.equals(actual)) {
                     throw new AssertionError("Unexpected Scope content: " + actual);
                 }
+            }
+        }
+    }
+
+    void testRuleCases() throws IOException {
+        JavacTool c = JavacTool.create();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            String code = """
+                          class Test {
+                              void t(int i) {
+                                  long local;
+                                  System.err.println(switch (i) {
+                                    case 0 -> {
+                                        String var;
+                                        int scopeHere;
+                                        yield "";
+                                    }
+                                    default -> {
+                                        String var;
+                                        int scopeHere;
+                                        yield "";
+                                    }
+                                  });
+                                  switch (i) {
+                                    case 0 -> {
+                                        String var;
+                                        int scopeHere;
+                                    }
+                                    default -> {
+                                        String var;
+                                        int scopeHere;
+                                    }
+                                  };
+                                  switch (i) {
+                                    case 0: {
+                                        int checkTree;
+                                    }
+                                  }
+                              }
+                          }
+                          """;
+            class MyFileObject extends SimpleJavaFileObject {
+                MyFileObject() {
+                    super(URI.create("myfo:///Test.java"), SOURCE);
+                }
+                @Override
+                public String getCharContent(boolean ignoreEncodingErrors) {
+                    return code;
+                }
+            }
+            Context ctx = new Context();
+            TestAnalyzer.preRegister(ctx);
+            List<String> options = List.of("--enable-preview",
+                                           "-source", System.getProperty("java.specification.version"));
+            JavacTask t = (JavacTask) c.getTask(null, fm, null, options, null,
+                                                List.of(new MyFileObject()), ctx);
+            CompilationUnitTree cut = t.parse().iterator().next();
+            t.analyze();
+
+            List<List<String>> actual = new ArrayList<>();
+
+            new TreePathScanner<Void, Void>() {
+                @Override
+                public Void visitVariable(VariableTree node, Void p) {
+                    if (node.getName().contentEquals("scopeHere")) {
+                        Scope scope = Trees.instance(t).getScope(getCurrentPath());
+                        actual.add(dumpScope(scope));
+                        JCTree body = getCaseBody(scope);
+                        if (body == null) {
+                            throw new AssertionError("Unexpected null body.");
+                        }
+                    } else if (node.getName().contentEquals("checkTree")) {
+                        Scope scope = Trees.instance(t).getScope(getCurrentPath());
+                        JCTree body = getCaseBody(scope);
+                        if (body != null) {
+                            throw new AssertionError("Unexpected body tree: " + body);
+                        }
+                    }
+                    return super.visitVariable(node, p);
+                }
+                JCTree getCaseBody(Scope scope) {
+                    return ((JCCase) ((JavacScope) scope).getEnv().next.next.tree).body;
+                }
+            }.scan(cut, null);
+
+            List<List<String>> expected =
+                    Collections.nCopies(4,
+                                        List.of("scopeHere:int",
+                                                "var:java.lang.String",
+                                                "local:long",
+                                                "i:int",
+                                                "super:java.lang.Object",
+                                                "this:Test"
+                                            ));
+
+            if (!expected.equals(actual)) {
+                throw new AssertionError("Unexpected Scope content: " + actual);
             }
         }
     }

@@ -154,7 +154,13 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCCase t = (JCCase) node;
         List<JCExpression> pats = copy(t.pats, p);
         List<JCStatement> stats = copy(t.stats, p);
-        JCTree body = copy(t.body, p);
+        JCTree body;
+        if (node.getCaseKind() == CaseTree.CaseKind.RULE) {
+            body = t.body instanceof JCExpression && t.stats.head.hasTag(Tag.YIELD)
+                    ? ((JCYield) t.stats.head).value : t.stats.head;
+        } else {
+            body = null;
+        }
         return M.at(t.pos).Case(t.caseKind, pats, stats, body);
     }
 
