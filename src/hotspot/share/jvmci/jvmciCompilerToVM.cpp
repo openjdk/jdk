@@ -1573,7 +1573,7 @@ C2V_END
 
 // Creates a scope where the current thread is attached and detached
 // from HotSpot if it wasn't already attached when entering the scope.
-extern "C" void jio_printf(const char *fmt, ...);
+extern "C" int jio_printf(const char *fmt, ...);
 class AttachDetach : public StackObj {
  public:
   bool _attached;
