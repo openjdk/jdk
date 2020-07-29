@@ -48,7 +48,7 @@ public class LoggerDateFormatterTest {
     SSLPrintStream sslStream;
     static String year = "(\\|\\d\\d\\d\\d-\\d\\d-\\d\\d";
     static String hour = "\\s\\d\\d:\\d\\d:\\d\\d\\.\\d\\d\\d\\s";
-    static String zone = "\\w\\w\\w\\|)";
+    static String zone = "([A-Za-z]+([\\+\\-][0-2]?[0-9](\\:[0-5]?[0-9]))?))";
     static Pattern pattern;
     Matcher matcher;
 
