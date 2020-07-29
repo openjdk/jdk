@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,15 +42,12 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
  public:
   // Different reasons for a compilation
-  // The order is important - Reason_Whitebox and higher can not become
-  // stale, see CompileTask::can_become_stale()
-  // Also mapped to reason_names[]
+  // The order is important - mapped to reason_names[]
   enum CompileReason {
       Reason_None,
       Reason_InvocationCount,  // Simple/StackWalk-policy
       Reason_BackedgeCount,    // Simple/StackWalk-policy
       Reason_Tiered,           // Tiered-policy
-      Reason_CTW,              // Compile the world
       Reason_Replay,           // ciReplay
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
@@ -64,7 +61,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "count",
       "backedge_count",
       "tiered",
-      "CTW",
       "replay",
       "whitebox",
       "must_be_compiled",
@@ -137,7 +133,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         should_wait_for_compilation() const {
     // Wait for blocking compilation to finish.
     switch (_compile_reason) {
-        case Reason_CTW:
         case Reason_Replay:
         case Reason_Whitebox:
         case Reason_Bootstrap:
