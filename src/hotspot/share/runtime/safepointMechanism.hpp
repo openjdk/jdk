@@ -73,8 +73,6 @@ public:
   static inline void arm_local_poll(JavaThread* thread);
   // Release semantics
   static inline void arm_local_poll_release(JavaThread* thread);
-  // Optional release
-  static inline void disarm_if_needed(JavaThread* thread, bool memory_order_release);
 
   // Setup the selected safepoint mechanism
   static void initialize();
