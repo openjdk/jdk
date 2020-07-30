@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,36 +22,36 @@
  */
 
 import java.io.IOException;
-
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ManagementFactory;
-
 import java.nio.ByteBuffer;
-
 import java.nio.channels.FileChannel;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.SplittableRandom;
+import java.util.concurrent.CountDownLatch;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
+import jdk.test.lib.RandomFactory;
 
 /*
  * @test
  * @requires sun.arch.data.model == "64"
  * @modules java.management
+ * @library /test/lib
  * @build TestMaxCachedBufferSize
  * @run main/othervm TestMaxCachedBufferSize
  * @run main/othervm -Djdk.nio.maxCachedBufferSize=0 TestMaxCachedBufferSize
  * @run main/othervm -Djdk.nio.maxCachedBufferSize=2000 TestMaxCachedBufferSize
  * @run main/othervm -Djdk.nio.maxCachedBufferSize=100000 TestMaxCachedBufferSize
  * @run main/othervm -Djdk.nio.maxCachedBufferSize=10000000 TestMaxCachedBufferSize
- * @summary Test the implementation of the jdk.nio.maxCachedBufferSize property.
+ * @summary Test the implementation of the jdk.nio.maxCachedBufferSize property
+ * (use -Dseed=X to set PRNG seed)
+ * @key randomness
  */
 public class TestMaxCachedBufferSize {
     private static final int DEFAULT_ITERS = 10 * 1000;
@@ -70,7 +70,9 @@ public class TestMaxCachedBufferSize {
     private static final int LARGE_BUFFER_FREQUENCY = 100;
 
     private static final String FILE_NAME_PREFIX = "nio-out-file-";
-    private static final int VERBOSE_PERIOD = 5 * 1000;
+    private static final int VERBOSE_PERIOD = DEFAULT_ITERS / 10;
+
+    private static final SplittableRandom SRAND = RandomFactory.getSplittableRandom();
 
     private static int iters = DEFAULT_ITERS;
     private static int threadNum = DEFAULT_THREAD_NUM;
@@ -86,6 +88,8 @@ public class TestMaxCachedBufferSize {
         throw new Error("could not find direct pool");
     }
     private static final BufferPoolMXBean directPool = getDirectPool();
+    private static long initialCount;
+    private static long initialCapacity;
 
     // Each worker will do write operations on a file channel using
     // buffers of various sizes. The buffer size is randomly chosen to
@@ -95,7 +99,7 @@ public class TestMaxCachedBufferSize {
     private static class Worker implements Runnable {
         private final int id;
         private final CountDownLatch finishLatch, exitLatch;
-        private final Random random = new Random();
+        private SplittableRandom random = SRAND.split();
         private long smallBufferCount = 0;
         private long largeBufferCount = 0;
 
@@ -177,8 +181,9 @@ public class TestMaxCachedBufferSize {
     }
 
     public static void checkDirectBuffers(long expectedCount, long expectedMax) {
-        final long directCount = directPool.getCount();
-        final long directTotalCapacity = directPool.getTotalCapacity();
+        final long directCount = directPool.getCount() - initialCount;
+        final long directTotalCapacity =
+            directPool.getTotalCapacity() - initialCapacity;
         System.out.printf("Direct %d / %dK\n",
                           directCount, directTotalCapacity / 1024);
 
@@ -190,12 +195,15 @@ public class TestMaxCachedBufferSize {
 
         if (directTotalCapacity > expectedMax) {
             throw new Error(String.format(
-                "inconsistent direct buffer total capacity, expectex max = %d, found = %d",
+                "inconsistent direct buffer total capacity, expected max = %d, found = %d",
                 expectedMax, directTotalCapacity));
         }
     }
 
     public static void main(String[] args) {
+        initialCount = directPool.getCount();
+        initialCapacity = directPool.getTotalCapacity();
+
         final String maxBufferSizeStr = System.getProperty("jdk.nio.maxCachedBufferSize");
         final long maxBufferSize =
             (maxBufferSizeStr != null) ? Long.valueOf(maxBufferSizeStr) : Long.MAX_VALUE;
