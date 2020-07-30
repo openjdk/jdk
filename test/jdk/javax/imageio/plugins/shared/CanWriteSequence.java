@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ public final class CanWriteSequence {
 
     private static File file;
     private static FileOutputStream fos;
+    private static ImageOutputStream ios;
 
     public static void main(final String[] args) throws Exception {
         final IIORegistry registry = IIORegistry.getDefaultInstance();
@@ -65,7 +66,7 @@ public final class CanWriteSequence {
         try {
             file = File.createTempFile("temp", ".img");
             fos = new FileOutputStream(file);
-            final ImageOutputStream ios = ImageIO.createImageOutputStream(fos);
+            ios = ImageIO.createImageOutputStream(fos);
             writer.setOutput(ios);
             final IIOMetadata data = writer.getDefaultStreamMetadata(null);
 
@@ -83,6 +84,9 @@ public final class CanWriteSequence {
         } finally {
             writer.dispose();
             if (file != null) {
+                if (ios != null) {
+                    ios.close();
+                }
                 if (fos != null) {
                     fos.close();
                 }
@@ -91,4 +95,3 @@ public final class CanWriteSequence {
         }
     }
 }
-
