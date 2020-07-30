@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -548,170 +548,6 @@ class StubGenerator: public StubCodeGenerator {
     // rdx: throwing pc
     __ verify_oop(rax);
     __ jmp(rbx);
-
-    return start;
-  }
-
-  // Implementation of jint atomic_xchg(jint add_value, volatile jint* dest)
-  // used by Atomic::xchg(volatile jint* dest, jint exchange_value)
-  //
-  // Arguments :
-  //    c_rarg0: exchange_value
-  //    c_rarg0: dest
-  //
-  // Result:
-  //    *dest <- ex, return (orig *dest)
-  address generate_atomic_xchg() {
-    StubCodeMark mark(this, "StubRoutines", "atomic_xchg");
-    address start = __ pc();
-
-    __ movl(rax, c_rarg0); // Copy to eax we need a return value anyhow
-    __ xchgl(rax, Address(c_rarg1, 0)); // automatic LOCK
-    __ ret(0);
-
-    return start;
-  }
-
-  // Implementation of intptr_t atomic_xchg(jlong add_value, volatile jlong* dest)
-  // used by Atomic::xchg(volatile jlong* dest, jlong exchange_value)
-  //
-  // Arguments :
-  //    c_rarg0: exchange_value
-  //    c_rarg1: dest
-  //
-  // Result:
-  //    *dest <- ex, return (orig *dest)
-  address generate_atomic_xchg_long() {
-    StubCodeMark mark(this, "StubRoutines", "atomic_xchg_long");
-    address start = __ pc();
-
-    __ movptr(rax, c_rarg0); // Copy to eax we need a return value anyhow
-    __ xchgptr(rax, Address(c_rarg1, 0)); // automatic LOCK
-    __ ret(0);
-
-    return start;
-  }
-
-  // Support for jint atomic::atomic_cmpxchg(jint exchange_value, volatile jint* dest,
-  //                                         jint compare_value)
-  //
-  // Arguments :
-  //    c_rarg0: exchange_value
-  //    c_rarg1: dest
-  //    c_rarg2: compare_value
-  //
-  // Result:
-  //    if ( compare_value == *dest ) {
-  //       *dest = exchange_value
-  //       return compare_value;
-  //    else
-  //       return *dest;
-  address generate_atomic_cmpxchg() {
-    StubCodeMark mark(this, "StubRoutines", "atomic_cmpxchg");
-    address start = __ pc();
-
-    __ movl(rax, c_rarg2);
-    __ lock();
-    __ cmpxchgl(c_rarg0, Address(c_rarg1, 0));
-    __ ret(0);
-
-    return start;
-  }
-
-  // Support for int8_t atomic::atomic_cmpxchg(int8_t exchange_value, volatile int8_t* dest,
-  //                                           int8_t compare_value)
-  //
-  // Arguments :
-  //    c_rarg0: exchange_value
-  //    c_rarg1: dest
-  //    c_rarg2: compare_value
-  //
-  // Result:
-  //    if ( compare_value == *dest ) {
-  //       *dest = exchange_value
-  //       return compare_value;
-  //    else
-  //       return *dest;
-  address generate_atomic_cmpxchg_byte() {
-    StubCodeMark mark(this, "StubRoutines", "atomic_cmpxchg_byte");
-    address start = __ pc();
-
-    __ movsbq(rax, c_rarg2);
-    __ lock();
-    __ cmpxchgb(c_rarg0, Address(c_rarg1, 0));
-    __ ret(0);
-
-    return start;
-  }
-
-  // Support for int64_t atomic::atomic_cmpxchg(int64_t exchange_value,
-  //                                            volatile int64_t* dest,
-  //                                            int64_t compare_value)
-  // Arguments :
-  //    c_rarg0: exchange_value
-  //    c_rarg1: dest
-  //    c_rarg2: compare_value
-  //
-  // Result:
-  //    if ( compare_value == *dest ) {
-  //       *dest = exchange_value
-  //       return compare_value;
-  //    else
-  //       return *dest;
-  address generate_atomic_cmpxchg_long() {
-    StubCodeMark mark(this, "StubRoutines", "atomic_cmpxchg_long");
-    address start = __ pc();
-
-    __ movq(rax, c_rarg2);
-    __ lock();
-    __ cmpxchgq(c_rarg0, Address(c_rarg1, 0));
-    __ ret(0);
-
-    return start;
-  }
-
-  // Implementation of jint atomic_add(jint add_value, volatile jint* dest)
-  // used by Atomic::add(volatile jint* dest, jint add_value)
-  //
-  // Arguments :
-  //    c_rarg0: add_value
-  //    c_rarg1: dest
-  //
-  // Result:
-  //    *dest += add_value
-  //    return *dest;
-  address generate_atomic_add() {
-    StubCodeMark mark(this, "StubRoutines", "atomic_add");
-    address start = __ pc();
-
-    __ movl(rax, c_rarg0);
-    __ lock();
-    __ xaddl(Address(c_rarg1, 0), c_rarg0);
-    __ addl(rax, c_rarg0);
-    __ ret(0);
-
-    return start;
-  }
-
-  // Implementation of intptr_t atomic_add(intptr_t add_value, volatile intptr_t* dest)
-  // used by Atomic::add(volatile intptr_t* dest, intptr_t add_value)
-  //
-  // Arguments :
-  //    c_rarg0: add_value
-  //    c_rarg1: dest
-  //
-  // Result:
-  //    *dest += add_value
-  //    return *dest;
-  address generate_atomic_add_long() {
-    StubCodeMark mark(this, "StubRoutines", "atomic_add_long");
-    address start = __ pc();
-
-    __ movptr(rax, c_rarg0); // Copy to eax we need a return value anyhow
-    __ lock();
-    __ xaddptr(Address(c_rarg1, 0), c_rarg0);
-    __ addptr(rax, c_rarg0);
-    __ ret(0);
 
     return start;
   }
@@ -6332,13 +6168,6 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::_catch_exception_entry = generate_catch_exception();
 
     // atomic calls
-    StubRoutines::_atomic_xchg_entry          = generate_atomic_xchg();
-    StubRoutines::_atomic_xchg_long_entry     = generate_atomic_xchg_long();
-    StubRoutines::_atomic_cmpxchg_entry       = generate_atomic_cmpxchg();
-    StubRoutines::_atomic_cmpxchg_byte_entry  = generate_atomic_cmpxchg_byte();
-    StubRoutines::_atomic_cmpxchg_long_entry  = generate_atomic_cmpxchg_long();
-    StubRoutines::_atomic_add_entry           = generate_atomic_add();
-    StubRoutines::_atomic_add_long_entry      = generate_atomic_add_long();
     StubRoutines::_fence_entry                = generate_orderaccess_fence();
 
     // platform dependent
