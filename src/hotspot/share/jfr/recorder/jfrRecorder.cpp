@@ -246,8 +246,9 @@ bool JfrRecorder::is_created() {
 }
 
 bool JfrRecorder::create_components() {
-  ResourceMark rm;
-  HandleMark hm;
+  // Move these down into the functions that might create handles!
+  ResourceMark rm(Thread::current());
+  HandleMark hm(Thread::current());
 
   if (!create_java_event_writer()) {
     return false;

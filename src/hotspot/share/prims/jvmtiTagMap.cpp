@@ -841,7 +841,6 @@ void ClassFieldMap::add(int index, char type, int offset) {
 // of the given class.
 //
 ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // create the field map
@@ -866,7 +865,6 @@ ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
 // and private fields declared in superclasses and superinterfaces too).
 //
 ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(obj->klass());
 
   // create the field map

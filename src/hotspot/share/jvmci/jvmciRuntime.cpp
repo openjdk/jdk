@@ -925,9 +925,9 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
   {
     MutexUnlocker unlock(JVMCI_lock);
 
-    HandleMark hm;
-    ResourceMark rm;
     JavaThread* THREAD = JavaThread::current();
+    HandleMark hm(THREAD);
+    ResourceMark rm(THREAD);
     if (JVMCIENV->is_hotspot()) {
       HotSpotJVMCI::compute_offsets(CHECK_EXIT);
     } else {
@@ -1013,7 +1013,7 @@ JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
   JVMCIENV->runtime()->initialize(JVMCIENV);
 
   {
-    ResourceMark rm;
+    ResourceMark rm(thread);
     HandleMark hm(thread);
     ThreadToNativeFromVM trans(thread);
 
@@ -1483,7 +1483,7 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
     return;
   }
 
-  HandleMark hm;
+  HandleMark hm(thread);
   JVMCIObject receiver = get_HotSpotJVMCIRuntime(JVMCIENV);
   if (JVMCIENV->has_pending_exception()) {
     fatal_exception_in_compile(JVMCIENV, thread, "Exception during HotSpotJVMCIRuntime initialization");

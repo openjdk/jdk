@@ -661,8 +661,8 @@ void JVMCIEnv::call_HotSpotJVMCIRuntime_bootstrapFinished (JVMCIObject runtime, 
 }
 
 void JVMCIEnv::call_HotSpotJVMCIRuntime_shutdown (JVMCIObject runtime) {
-  HandleMark hm;
   JavaThread* THREAD = JavaThread::current();
+  HandleMark hm(THREAD);
   if (is_hotspot()) {
     JavaCallArguments jargs;
     jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(runtime)));

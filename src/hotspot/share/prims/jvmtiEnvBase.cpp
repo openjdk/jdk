@@ -622,8 +622,9 @@ JvmtiEnvBase::count_locked_objects(JavaThread *java_thread, Handle hobj) {
     return ret;  // no Java frames so no monitors
   }
 
-  ResourceMark rm;
-  HandleMark   hm;
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark   hm(current_thread);
   RegisterMap  reg_map(java_thread);
 
   for(javaVFrame *jvf=java_thread->last_java_vframe(&reg_map); jvf != NULL;
@@ -675,7 +676,7 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThre
   if (obj == NULL) {
     *monitor_ptr = NULL;
   } else {
-    HandleMark hm;
+    HandleMark hm(current_jt);
     Handle     hobj(current_jt, obj);
     *monitor_ptr = jni_reference(calling_thread, hobj);
   }
@@ -693,8 +694,8 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
          "call by myself or at direct handshake");
 
   if (java_thread->has_last_Java_frame()) {
-    ResourceMark rm;
-    HandleMark   hm;
+    ResourceMark rm(current_jt);
+    HandleMark   hm(current_jt);
     RegisterMap  reg_map(java_thread);
 
     int depth = 0;
@@ -723,8 +724,9 @@ jvmtiError
 JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread* java_thread,
                                  javaVFrame *jvf, GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list, jint stack_depth) {
   jvmtiError err = JVMTI_ERROR_NONE;
-  ResourceMark rm;
-  HandleMark hm;
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark   hm(current_thread);
 
   GrowableArray<MonitorInfo*>* mons = jvf->monitors();
   if (mons->is_empty()) {

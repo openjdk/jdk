@@ -3266,8 +3266,10 @@ oop JavaThread::current_park_blocker() {
 
 void JavaThread::print_stack_on(outputStream* st) {
   if (!has_last_Java_frame()) return;
-  ResourceMark rm;
-  HandleMark   hm;
+
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
 
   RegisterMap reg_map(this);
   vframe* start_vf = last_java_vframe(&reg_map);
@@ -3396,8 +3398,9 @@ void JavaThread::trace_stack_from(vframe* start_vf) {
 
 void JavaThread::trace_stack() {
   if (!has_last_Java_frame()) return;
-  ResourceMark rm;
-  HandleMark   hm;
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
   RegisterMap reg_map(this);
   trace_stack_from(last_java_vframe(&reg_map));
 }
@@ -3920,8 +3923,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Should be done after the heap is fully created
   main_thread->cache_global_variables();
 
-  HandleMark hm;
-
   { MutexLocker mu(Threads_lock);
     Threads::add(main_thread);
   }
@@ -3968,6 +3969,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   Arguments::update_vm_info_property(VM_Version::vm_info_string());
 
   Thread* THREAD = Thread::current();
+  HandleMark hm(THREAD);
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution

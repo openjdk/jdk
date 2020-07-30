@@ -819,7 +819,7 @@ C2V_END
 
 C2V_VMENTRY_0(jint, installCode, (JNIEnv *env, jobject, jobject target, jobject compiled_code,
             jobject installed_code, jlong failed_speculations_address, jbyteArray speculations_obj))
-  HandleMark hm;
+  HandleMark hm(THREAD);
   JNIHandleMark jni_hm(thread);
 
   JVMCIObject target_handle = JVMCIENV->wrap(target);
@@ -880,7 +880,7 @@ C2V_END
 
 C2V_VMENTRY_0(jint, getMetadata, (JNIEnv *env, jobject, jobject target, jobject compiled_code, jobject metadata))
 #if INCLUDE_AOT
-  HandleMark hm;
+  HandleMark hm(THREAD);
   assert(JVMCIENV->is_hotspot(), "AOT code is executed only in HotSpot mode");
 
   JVMCIObject target_handle = JVMCIENV->wrap(target);
@@ -968,7 +968,7 @@ C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv* env, jobject))
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, disassembleCodeBlob, (JNIEnv* env, jobject, jobject installedCode))
-  HandleMark hm;
+  HandleMark hm(THREAD);
 
   if (installedCode == NULL) {
     JVMCI_THROW_MSG_NULL(NullPointerException, "installedCode is null");
@@ -1006,7 +1006,7 @@ C2V_VMENTRY_NULL(jobject, disassembleCodeBlob, (JNIEnv* env, jobject, jobject in
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, getStackTraceElement, (JNIEnv* env, jobject, jobject jvmci_method, int bci))
-  HandleMark hm;
+  HandleMark hm(THREAD);
 
   methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
   JVMCIObject element = JVMCIENV->new_StackTraceElement(method, bci, JVMCI_CHECK_NULL);
@@ -1018,7 +1018,7 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   // and the return value would have to be wrapped as a JavaConstant.
   requireInHotSpot("executeHotSpotNmethod", JVMCI_CHECK_NULL);
 
-  HandleMark hm;
+  HandleMark hm(THREAD);
 
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
   nmethodLocker locker;
@@ -1157,7 +1157,7 @@ C2V_VMENTRY_0(jboolean, setCountersSize, (JNIEnv* env, jobject, jint new_size))
 C2V_END
 
 C2V_VMENTRY_0(jint, allocateCompileId, (JNIEnv* env, jobject, jobject jvmci_method, int entry_bci))
-  HandleMark hm;
+  HandleMark hm(THREAD);
   if (jvmci_method == NULL) {
     JVMCI_THROW_0(NullPointerException);
   }
@@ -2246,7 +2246,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
     // Ensure the JVMCI shared library runtime is initialized.
     JVMCIEnv __peer_jvmci_env__(thread, false, __FILE__, __LINE__);
     JVMCIEnv* peerEnv = &__peer_jvmci_env__;
-    HandleMark hm;
+    HandleMark hm(THREAD);
     JVMCIObject receiver = runtime->get_HotSpotJVMCIRuntime(peerEnv);
     if (peerEnv->has_pending_exception()) {
       peerEnv->describe_pending_exception(true);

@@ -3778,7 +3778,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
           JVMCICompiler* compiler = JVMCICompiler::instance(true, CATCH);
           compiler->bootstrap(THREAD);
           if (HAS_PENDING_EXCEPTION) {
-            HandleMark hm;
+            HandleMark hm(THREAD);
             vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
           }
         }
@@ -3812,7 +3812,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
       // otherwise no pending exception possible - VM will already have aborted
       JavaThread* THREAD = JavaThread::current();
       if (HAS_PENDING_EXCEPTION) {
-        HandleMark hm;
+        HandleMark hm(THREAD);
         vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
       }
     }

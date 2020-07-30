@@ -2031,11 +2031,11 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
     }
 
   public:
-    TraceSelfClosure() : HandshakeClosure("WB_TraceSelf"), _num_threads_completed(0) {}
+    TraceSelfClosure(Thread* thread) : HandshakeClosure("WB_TraceSelf"), _num_threads_completed(0) {}
 
     jint num_threads_completed() const { return _num_threads_completed; }
   };
-  TraceSelfClosure tsc;
+  TraceSelfClosure tsc(Thread::current());
 
   if (all_threads) {
     Handshake::execute(&tsc);

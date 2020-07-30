@@ -277,7 +277,6 @@ void G1FullCollector::verify_after_marking() {
     return;
   }
 
-  HandleMark hm;  // handle scope
 #if COMPILER2_OR_JVMCI
   DerivedPointerTableDeactivate dpt_deact;
 #endif

@@ -566,8 +566,9 @@ StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
   _class_holder = OopHandle(Universe::vm_global(), _method->method_holder()->klass_holder());
   _locked_monitors = NULL;
   if (with_lock_info) {
-    ResourceMark rm;
-    HandleMark hm;
+    Thread* current_thread = Thread::current();
+    ResourceMark rm(current_thread);
+    HandleMark hm(current_thread);
     GrowableArray<MonitorInfo*>* list = jvf->locked_monitors();
     int length = list->length();
     if (length > 0) {

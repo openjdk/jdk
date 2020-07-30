@@ -57,8 +57,8 @@ void JVMCICompiler::bootstrap(TRAPS) {
     return;
   }
   _bootstrapping = true;
-  ResourceMark rm;
-  HandleMark hm;
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
   if (PrintBootstrap) {
     tty->print("Bootstrapping JVMCI");
   }

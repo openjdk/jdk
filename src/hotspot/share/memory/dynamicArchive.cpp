@@ -561,7 +561,6 @@ public:
   void verify_universe(const char* info) {
     if (VerifyBeforeExit) {
       log_info(cds)("Verify %s", info);
-      HandleMark hm;
       // Among other things, this ensures that Eden top is correct.
       Universe::heap()->prepare_for_verify();
       Universe::verify(info);

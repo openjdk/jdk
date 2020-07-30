@@ -449,7 +449,6 @@ public:
   }
 
   void work(uint worker_id) {
-    HandleMark hm;
     VerifyRegionClosure blk(true, _vo);
     _g1h->heap_region_par_iterate_from_worker_offset(&blk, &_hrclaimer, worker_id);
     if (blk.failures()) {
@@ -619,7 +618,6 @@ double G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* ms
 
   if (should_verify(type) && _g1h->total_collections() >= VerifyGCStartAt) {
     double verify_start = os::elapsedTime();
-    HandleMark hm;  // Discard invalid handles created during verification
     prepare_for_verify();
     Universe::verify(vo, msg);
     verify_time_ms = (os::elapsedTime() - verify_start) * 1000;

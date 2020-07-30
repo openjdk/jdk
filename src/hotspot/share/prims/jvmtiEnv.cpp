@@ -660,7 +660,7 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
 
     // lock the loader
     Thread* thread = Thread::current();
-    HandleMark hm;
+    HandleMark hm(thread);
     Handle loader_lock = Handle(thread, SystemDictionary::system_loader_lock());
 
     ObjectLocker ol(loader_lock, thread);
@@ -697,7 +697,8 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     // The phase is checked by the wrapper that called this function,
     // but this thread could be racing with the thread that is
     // terminating the VM so we check one more time.
-    HandleMark hm;
+    Thread* THREAD = Thread::current();
+    HandleMark hm(THREAD);
 
     // create the zip entry (which will open the zip file and hence
     // check that the segment is indeed a zip file).
@@ -708,9 +709,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     delete zip_entry;   // no longer needed
 
     // lock the loader
-    Thread* THREAD = Thread::current();
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-
     ObjectLocker ol(loader, THREAD);
 
     // need the path as java.lang.String
@@ -915,11 +914,12 @@ jvmtiError
 JvmtiEnv::GetAllThreads(jint* threads_count_ptr, jthread** threads_ptr) {
   int nthreads        = 0;
   Handle *thread_objs = NULL;
-  ResourceMark rm;
-  HandleMark hm;
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
 
   // enumerate threads (including agent threads)
-  ThreadsListEnumerator tle(Thread::current(), true);
+  ThreadsListEnumerator tle(current_thread, true);
   nthreads = tle.num_threads();
   *threads_count_ptr = nthreads;
 
@@ -1125,10 +1125,10 @@ JvmtiEnv::InterruptThread(jthread thread) {
 // info_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
-  ResourceMark rm;
-  HandleMark hm;
-
   JavaThread* current_thread = JavaThread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
+
   ThreadsListHandle tlh(current_thread);
 
   // if thread is NULL the current thread is used
@@ -1400,10 +1400,9 @@ JvmtiEnv::GetTopThreadGroups(jint* group_count_ptr, jthreadGroup** groups_ptr) {
 // info_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::GetThreadGroupInfo(jthreadGroup group, jvmtiThreadGroupInfo* info_ptr) {
-  ResourceMark rm;
-  HandleMark hm;
-
-  JavaThread* current_thread = JavaThread::current();
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
 
   Handle group_obj (current_thread, JNIHandles::resolve_external_guard(group));
   NULL_CHECK(group_obj(), JVMTI_ERROR_INVALID_THREAD_GROUP);
@@ -3177,7 +3176,6 @@ jvmtiError
 JvmtiEnv::GetBytecodes(Method* method, jint* bytecode_count_ptr, unsigned char** bytecodes_ptr) {
   NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
 
-  HandleMark hm;
   methodHandle mh(Thread::current(), method);
   jint size = (jint)mh->code_size();
   jvmtiError err = allocate(size, bytecodes_ptr);

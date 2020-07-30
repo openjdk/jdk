@@ -63,7 +63,7 @@ static InstanceKlass* load_and_initialize_klass(Symbol* sh, TRAPS) {
 
 static jint get_properties(AttachOperation* op, outputStream* out, Symbol* serializePropertiesMethod) {
   Thread* THREAD = Thread::current();
-  HandleMark hm;
+  HandleMark hm(THREAD);
 
   // load VMSupport
   Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
