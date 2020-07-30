@@ -63,33 +63,22 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
   // we try to glean some information out of the CONTEXT
   // if we were running Java code when SIGPROF came in.
   if (isInJava) {
-    CONTEXT* uc = (CONTEXT*)ucontext;
-
-#ifdef AMD64
-    intptr_t* ret_fp = (intptr_t*) uc->Rbp;
-    intptr_t* ret_sp = (intptr_t*) uc->Rsp;
-    address addr = (address)uc->Rip;
-#else
-    intptr_t* ret_fp = (intptr_t*) uc->Ebp;
-    intptr_t* ret_sp = (intptr_t*) uc->Esp;
-    address addr = (address)uc->Eip;
-#endif // AMD64
-    if (addr == NULL || ret_sp == NULL ) {
+    frame ret_frame = os::fetch_frame_from_context(ucontext);
+    if (ret_frame.pc() == NULL || ret_frame.sp() == NULL ) {
       // CONTEXT wasn't useful
       return false;
     }
 
-    if (MetaspaceShared::is_in_trampoline_frame(addr)) {
+    if (MetaspaceShared::is_in_trampoline_frame(ret_frame.pc())) {
       // In the middle of a trampoline call. Bail out for safety.
       // This happens rarely so shouldn't affect profiling.
       return false;
     }
 
-    frame ret_frame(ret_sp, ret_fp, addr);
     if (!ret_frame.safe_for_sender(jt)) {
 #if COMPILER2_OR_JVMCI
       // C2 and JVMCI use ebp as a general register see if NULL fp helps
-      frame ret_frame2(ret_sp, NULL, addr);
+      frame ret_frame2(ret_frame.sp(), NULL, ret_frame.pc());
       if (!ret_frame2.safe_for_sender(jt)) {
         // nothing else to try if the frame isn't good
         return false;
