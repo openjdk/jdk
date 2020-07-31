@@ -37,7 +37,6 @@
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  * @run testng/othervm -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
  * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SendReceiveMaxSize
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
  */
 
