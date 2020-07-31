@@ -308,12 +308,12 @@ public class ObjectInputStream
 
         /**
          * Property to override the implementation limit on the number
-         * of interfaces allowed for Proxies.
+         * of interfaces allowed for Proxies. The property value is clamped to 0..65535.
          * The maximum number of interfaces allowed for a proxy is limited to 65535 by
          * {@link java.lang.reflect.Proxy#newProxyInstance(ClassLoader, Class[], InvocationHandler)}.
          */
-        static final int PROXY_INTERFACE_LIMIT = Math.min(65535, GetIntegerAction
-                .privilegedGetProperty("jdk.serialProxyInterfaceLimit", 65535));
+        static final int PROXY_INTERFACE_LIMIT = Math.max(0, Math.min(65535, GetIntegerAction
+                .privilegedGetProperty("jdk.serialProxyInterfaceLimit", 65535)));
     }
 
     /*
@@ -1981,6 +1981,11 @@ public class ObjectInputStream
             totalObjectRefs++;
             depth++;
             desc.initProxy(cl, resolveEx, readClassDesc(false));
+        } catch (OutOfMemoryError memerr) {
+            IOException ex = new InvalidObjectException("Proxy interface limit exceeded: " +
+                    Arrays.toString(ifaces));
+            ex.initCause(memerr);
+            throw ex;
         } finally {
             depth--;
         }
