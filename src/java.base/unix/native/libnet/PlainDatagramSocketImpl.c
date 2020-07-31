@@ -48,6 +48,11 @@
 #endif
 #endif  //  __linux__
 
+#ifdef __APPLE__
+#define IPV4_SNDBUF_LIMIT 65507
+#define IPV6_SNDBUF_LIMIT 65527
+#endif  // __APPLE__
+
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
 #endif
@@ -895,7 +900,7 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
     }
 
 #ifdef __APPLE__
-    arg = 65507;
+    arg = (domain == AF_INET6) ? IPV6_SNDBUF_LIMIT : IPV4_SNDBUF_LIMIT;
     if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF,
                    (char *)&arg, sizeof(arg)) < 0) {
         getErrorString(errno, tmpbuf, sizeof(tmpbuf));
