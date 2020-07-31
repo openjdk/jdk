@@ -26,7 +26,7 @@
 /**
  * RecordCompilationTests
  *
- * @test
+ * @test 8250629
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -1635,6 +1635,24 @@ public class RecordCompilationTests extends CompilationTestCase {
                         }
                     }
                 }
+                """
+        );
+    }
+
+    public void testDoNotAllowCStyleArraySyntaxForRecComponents() {
+        assertFail("compiler.err.record.component.and.old.array.syntax",
+                """
+                record R(int i[]) {}
+                """
+        );
+        assertFail("compiler.err.record.component.and.old.array.syntax",
+                """
+                record R(String s[]) {}
+                """
+        );
+        assertFail("compiler.err.record.component.and.old.array.syntax",
+                """
+                record R<T>(T t[]) {}
                 """
         );
     }
