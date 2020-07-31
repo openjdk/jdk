@@ -230,14 +230,14 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/Parameters.html", true,
                 """
                     <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
-                    lass="member-name">unannotated</span>&#8203;(<span class="parameters"><a href="P\
+                    lass="member-name">unannotated</span>&#8203;<span class="parameters">(<a href="P\
                     araParameterized.html" title="class in typeannos">ParaParameterized</a>&lt;java.\
                     lang.String,&#8203;java.lang.String&gt;&nbsp;a)</span></div>""",
 
                 """
                     <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
-                    lass="member-name">nestedParaParameterized</span>&#8203;(<span class="parameters\
-                    "><a href="ParaParameterized.html" title="class in typeannos">ParaParameterized<\
+                    lass="member-name">nestedParaParameterized</span>&#8203;<span class="parameters\
+                    ">(<a href="ParaParameterized.html" title="class in typeannos">ParaParameterized<\
                     /a>&lt;<a href="ParamA.html" title="annotation in typeannos">@ParamA</a> <a href\
                     ="ParaParameterized.html" title="class in typeannos">ParaParameterized</a>&lt;<a\
                      href="ParamA.html" title="annotation in typeannos">@ParamA</a> java.lang.String\
@@ -248,7 +248,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 // When JDK-8068737 is fixed, we should change the order
                 """
                     <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
-                    lass="member-name">array2Deep</span>&#8203;(<span class="parameters"><a href="Pa\
+                    lass="member-name">array2Deep</span>&#8203;<span class="parameters">(<a href="Pa\
                     ramA.html" title="annotation in typeannos">@ParamA</a> java.lang.String <a href=\
                     "ParamB.html" title="annotation in typeannos">@ParamB</a> [] <a href="ParamA.htm\
                     l" title="annotation in typeannos">@ParamA</a> []&nbsp;a)</span></div>""");
@@ -271,14 +271,14 @@ public class TestTypeAnnotations extends JavadocTester {
                 """
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">void</span>&nbsp;<span class="member-name">oneException\
-                    </span>&#8203;(<span class="parameters">java.lang.String&nbsp;a)</span>
+                    </span>&#8203;<span class="parameters">(java.lang.String&nbsp;a)</span>
                                             throws <span class="exceptions"><a href="ThrA.html" titl\
                     e="annotation in typeannos">@ThrA</a> java.lang.Exception</span></div>""",
 
                 """
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">void</span>&nbsp;<span class="member-name">twoException\
-                    s</span>&#8203;(<span class="parameters">java.lang.String&nbsp;a)</span>
+                    s</span>&#8203;<span class="parameters">(java.lang.String&nbsp;a)</span>
                                              throws <span class="exceptions"><a href="ThrA.html" tit\
                     le="annotation in typeannos">@ThrA</a> java.lang.RuntimeException,
                     <a href="ThrA.html" title="annotation in typeannos">@ThrA</a> java.lang.Exception</span></div>""");
@@ -310,7 +310,7 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/BoundTest.html", true,
                 """
                     <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
-                    lass="member-name">wcExtends</span>&#8203;(<span class="parameters"><a href="MyL\
+                    lass="member-name">wcExtends</span>&#8203;<span class="parameters">(<a href="MyL\
                     ist.html" title="class in typeannos">MyList</a>&lt;? extends <a href="WldA.html"\
                      title="annotation in typeannos">@WldA</a> java.lang.String&gt;&nbsp;l)</span></\
                     div>""",
@@ -324,7 +324,7 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/BoundWithValue.html", true,
                 """
                     <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
-                    lass="member-name">wcSuper</span>&#8203;(<span class="parameters"><a href="MyLis\
+                    lass="member-name">wcSuper</span>&#8203;<span class="parameters">(<a href="MyLis\
                     t.html" title="class in typeannos">MyList</a>&lt;? super <a href="WldB.html" tit\
                     le="annotation in typeannos">@WldB</a>("m") java.lang.String&gt;&nbsp;l)</span><\
                     /div>""",
@@ -368,14 +368,14 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/DefaultUnmodified.html", true,
                 """
                     <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
-                    lass="member-name">withException</span>&#8203;(<span class="parameters"><a href=\
+                    lass="member-name">withException</span>&#8203;<span class="parameters">(<a href=\
                     "RcvrA.html" title="annotation in typeannos">@RcvrA</a>&nbsp;DefaultUnmodified&n\
                     bsp;this)</span>
                                 throws <span class="exceptions">java.lang.Exception</span></div>""",
 
                 """
                     <div class="member-signature"><span class="return-type">java.lang.String</span>&\
-                    nbsp;<span class="member-name">nonVoid</span>&#8203;(<span class="parameters"><a\
+                    nbsp;<span class="member-name">nonVoid</span>&#8203;<span class="parameters">(<a\
                      href="RcvrA.html" title="annotation in typeannos">@RcvrA</a> <a href="RcvrB.htm\
                     l" title="annotation in typeannos">@RcvrB</a>("m")&nbsp;DefaultUnmodified&nbsp;t\
                     his)</span></div>""",
@@ -383,55 +383,55 @@ public class TestTypeAnnotations extends JavadocTester {
                 """
                     <div class="member-signature"><span class="type-parameters">&lt;T extends java.l\
                     ang.Runnable&gt;</span>&nbsp;<span class="return-type">void</span>&nbsp;<span cl\
-                    ass="member-name">accept</span>&#8203;(<span class="parameters"><a href="RcvrA.h\
+                    ass="member-name">accept</span>&#8203;<span class="parameters">(<a href="RcvrA.h\
                     tml" title="annotation in typeannos">@RcvrA</a>&nbsp;DefaultUnmodified&nbsp;this\
                     ,
-                    T&nbsp;r)</span>
+                     T&nbsp;r)</span>
                                                         throws <span class="exceptions">java.lang.Exception</span></div>""");
 
         checkOutput("typeannos/PublicModified.html", true,
                 """
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">java.lang.String</span>&nbsp;<span class="member-name">\
-                    nonVoid</span>&#8203;(<span class="parameters"><a href="RcvrA.html" title="annot\
+                    nonVoid</span>&#8203;<span class="parameters">(<a href="RcvrA.html" title="annot\
                     ation in typeannos">@RcvrA</a>&nbsp;PublicModified&nbsp;this)</span></div>""",
 
                 """
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="type-parameters">&lt;T extends java.lang.Runnable&gt;</span>&nbsp;<s\
                     pan class="return-type">void</span>&nbsp;<span class="member-name">accept</span>\
-                    &#8203;(<span class="parameters"><a href="RcvrA.html" title="annotation in typea\
+                    &#8203;<span class="parameters">(<a href="RcvrA.html" title="annotation in typea\
                     nnos">@RcvrA</a>&nbsp;PublicModified&nbsp;this,
-                    T&nbsp;r)</span>
+                     T&nbsp;r)</span>
                                                                      throws <span class="exceptions">java.lang.Exception</span></div>""");
 
         checkOutput("typeannos/WithValue.html", true,
                 """
                     <div class="member-signature"><span class="type-parameters">&lt;T extends java.l\
                     ang.Runnable&gt;</span>&nbsp;<span class="return-type">void</span>&nbsp;<span cl\
-                    ass="member-name">accept</span>&#8203;(<span class="parameters"><a href="RcvrB.h\
+                    ass="member-name">accept</span>&#8203;<span class="parameters">(<a href="RcvrB.h\
                     tml" title="annotation in typeannos">@RcvrB</a>("m")&nbsp;WithValue&nbsp;this,
-                    T&nbsp;r)</span>
+                     T&nbsp;r)</span>
                                                         throws <span class="exceptions">java.lang.Exception</span></div>""");
 
         checkOutput("typeannos/WithFinal.html", true,
                 """
                     <div class="member-signature"><span class="return-type">java.lang.String</span>&\
-                    nbsp;<span class="member-name">nonVoid</span>&#8203;(<span class="parameters"><a\
+                    nbsp;<span class="member-name">nonVoid</span>&#8203;<span class="parameters">(<a\
                      href="RcvrB.html" title="annotation in typeannos">@RcvrB</a>("m") <a href="With\
                     Final.html" title="class in typeannos">WithFinal</a>&nbsp;afield)</span></div>""");
 
         checkOutput("typeannos/WithBody.html", true,
                 """
                     <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
-                    lass="member-name">field</span>&#8203;(<span class="parameters"><a href="RcvrA.h\
+                    lass="member-name">field</span>&#8203;<span class="parameters">(<a href="RcvrA.h\
                     tml" title="annotation in typeannos">@RcvrA</a>&nbsp;WithBody&nbsp;this)</span><\
                     /div>""");
 
         checkOutput("typeannos/Generic2.html", true,
                 """
                     <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
-                    lass="member-name">test2</span>&#8203;(<span class="parameters"><a href="RcvrA.h\
+                    lass="member-name">test2</span>&#8203;<span class="parameters">(<a href="RcvrA.h\
                     tml" title="annotation in typeannos">@RcvrA</a>&nbsp;Generic2&lt;X&gt;&nbsp;this\
                     )</span></div>""");
 
@@ -484,8 +484,8 @@ public class TestTypeAnnotations extends JavadocTester {
                     <a href="RepConstructorB.html" title="annotation in typeannos">@RepConstructorB<\
                     /a> <a href="RepConstructorB.html" title="annotation in typeannos">@RepConstruct\
                     orB</a>
-                    </span><span class="member-name">RepeatingOnConstructor</span>&#8203;(<span class="parameters">int&nbsp;i,
-                    int&nbsp;j)</span></div>""",
+                    </span><span class="member-name">RepeatingOnConstructor</span>&#8203;<span class="parameters">(int&nbsp;i,
+                     int&nbsp;j)</span></div>""",
 
                 """
                     <div class="member-signature"><span class="annotations"><a href="RepAllContextsA\
@@ -494,23 +494,23 @@ public class TestTypeAnnotations extends JavadocTester {
                     <a href="RepAllContextsB.html" title="annotation in typeannos">@RepAllContextsB<\
                     /a> <a href="RepAllContextsB.html" title="annotation in typeannos">@RepAllContex\
                     tsB</a>
-                    </span><span class="member-name">RepeatingOnConstructor</span>&#8203;(<span class="parameters">int&nbsp;i,
-                    int&nbsp;j,
-                    int&nbsp;k)</span></div>""",
+                    </span><span class="member-name">RepeatingOnConstructor</span>&#8203;<span class="parameters">(int&nbsp;i,
+                     int&nbsp;j,
+                     int&nbsp;k)</span></div>""",
 
                 """
                     <div class="member-signature"><span class="member-name">RepeatingOnConstructor</\
-                    span>&#8203;(<span class="parameters"><a href="RepParameterA.html" title="annota\
+                    span>&#8203;<span class="parameters">(<a href="RepParameterA.html" title="annota\
                     tion in typeannos">@RepParameterA</a> <a href="RepParameterA.html" title="annota\
                     tion in typeannos">@RepParameterA</a> <a href="RepParameterB.html" title="annota\
                     tion in typeannos">@RepParameterB</a> <a href="RepParameterB.html" title="annota\
                     tion in typeannos">@RepParameterB</a>
-                    java.lang.String&nbsp;parameter,
-                    <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
+                     java.lang.String&nbsp;parameter,
+                     <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
                     <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
                     <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a> \
                     <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a>
-                    java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Rep\
+                     java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Rep\
                     TypeUseA</a> <a href="RepTypeUseA.html" title="annotation in typeannos">@RepType\
                     UseA</a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB\
                     </a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB</a>\
@@ -521,27 +521,27 @@ public class TestTypeAnnotations extends JavadocTester {
                 """
                     <code><span class="member-name-link"><a href="#%3Cinit%3E(java.lang.String,java.\
                     lang.String...)">Inner</a></span>&#8203;(java.lang.String&nbsp;parameter,
-                    java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Rep\
+                     java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Rep\
                     TypeUseA</a> <a href="RepTypeUseA.html" title="annotation in typeannos">@RepType\
                     UseA</a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB\
                     </a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB</a>\
                      ...&nbsp;vararg)</code>""",
                 """
-                    Inner</span>&#8203;(<span class="parameters"><a href="RepTypeUseA.html" title="a\
+                    Inner</span>&#8203;<span class="parameters">(<a href="RepTypeUseA.html" title="a\
                     nnotation in typeannos">@RepTypeUseA</a> <a href="RepTypeUseA.html" title="annot\
                     ation in typeannos">@RepTypeUseA</a> <a href="RepTypeUseB.html" title="annotatio\
                     n in typeannos">@RepTypeUseB</a> <a href="RepTypeUseB.html" title="annotation in\
                      typeannos">@RepTypeUseB</a>&nbsp;RepeatingOnConstructor&nbsp;this,
-                    <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
-                    <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
-                    <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a> \
-                    <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a>
-                    java.lang.String&nbsp;parameter,
-                    <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
+                     <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
                     <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
                     <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a> \
                     <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a>
-                    java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Rep\
+                     java.lang.String&nbsp;parameter,
+                     <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
+                    <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
+                    <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a> \
+                    <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a>
+                     java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Rep\
                     TypeUseA</a> <a href="RepTypeUseA.html" title="annotation in typeannos">@RepType\
                     UseA</a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB\
                     </a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB</a>\
@@ -675,7 +675,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 """
                     <code><span class="member-name-link"><a href="#test5(java.lang.String,java.lang.\
                     String...)">test5</a></span>&#8203;(java.lang.String&nbsp;parameter,
-                    java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Rep\
+                     java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Rep\
                     TypeUseA</a> <a href="RepTypeUseA.html" title="annotation in typeannos">@RepType\
                     UseA</a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB\
                     </a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB</a>\
@@ -722,22 +722,22 @@ public class TestTypeAnnotations extends JavadocTester {
                     pan class="member-name">test4</span>()""",
 
                 """
-                    java.lang.String</span>&nbsp;<span class="member-name">test5</span>&#8203;(<span\
-                     class="parameters"><a href="RepTypeUseA.html" title="annotation in typeannos">@\
+                    java.lang.String</span>&nbsp;<span class="member-name">test5</span>&#8203;<span\
+                     class="parameters">(<a href="RepTypeUseA.html" title="annotation in typeannos">@\
                     RepTypeUseA</a> <a href="RepTypeUseA.html" title="annotation in typeannos">@RepT\
                     ypeUseA</a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeU\
                     seB</a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB<\
                     /a>&nbsp;RepeatingOnMethod&nbsp;this,
-                    <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
-                    <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
-                    <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a> \
-                    <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a>
-                    java.lang.String&nbsp;parameter,
-                    <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
+                     <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
                     <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
                     <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a> \
                     <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a>
-                    java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Rep\
+                     java.lang.String&nbsp;parameter,
+                     <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
+                    <a href="RepParameterA.html" title="annotation in typeannos">@RepParameterA</a> \
+                    <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a> \
+                    <a href="RepParameterB.html" title="annotation in typeannos">@RepParameterB</a>
+                     java.lang.String <a href="RepTypeUseA.html" title="annotation in typeannos">@Rep\
                     TypeUseA</a> <a href="RepTypeUseA.html" title="annotation in typeannos">@RepType\
                     UseA</a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB\
                     </a> <a href="RepTypeUseB.html" title="annotation in typeannos">@RepTypeUseB</a>\
@@ -764,7 +764,7 @@ public class TestTypeAnnotations extends JavadocTester {
 
                 """
                     <span class="return-type">java.lang.String</span>&nbsp;<span class="member-name"\
-                    >test</span>&#8203;(<span class="parameters"><a href="RepTypeUseA.html" title="a\
+                    >test</span>&#8203;<span class="parameters">(<a href="RepTypeUseA.html" title="a\
                     nnotation in typeannos">@RepTypeUseA</a> <a href="RepTypeUseA.html" title="annot\
                     ation in typeannos">@RepTypeUseA</a> <a href="RepTypeUseB.html" title="annotatio\
                     n in typeannos">@RepTypeUseB</a> <a href="RepTypeUseB.html" title="annotation in\

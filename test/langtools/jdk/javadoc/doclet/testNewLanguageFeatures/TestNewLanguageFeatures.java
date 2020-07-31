@@ -82,7 +82,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 """
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
                     <span class="return-type"><a href="Coin.html" title="enum in pkg">Coin</a></span\
-                    >&nbsp;<span class="member-name">valueOf</span>&#8203;(<span class="parameters">\
+                    >&nbsp;<span class="member-name">valueOf</span>&#8203;<span class="parameters">(\
                     java.lang.String&nbsp;name)</span></div>
                     <div class="block">Returns the enum constant of this type with the specified name.
                     The string must match <i>exactly</i> an identifier used to declare an
@@ -134,9 +134,9 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     lass="type-parameters">&lt;T extends java.util.List,&#8203;
                     V&gt;</span>
                     <span class="return-type">java.lang.String[]</span>&nbsp;<span class="member-nam\
-                    e">methodThatHasTypeParameters</span>&#8203;(<span class="parameters">T&nbsp;par\
+                    e">methodThatHasTypeParameters</span>&#8203;<span class="parameters">(T&nbsp;par\
                     am1,
-                    V&nbsp;param2)</span></div>""",
+                     V&nbsp;param2)</span></div>""",
                 // Method that returns TypeParameters
                 """
                     <td class="col-first"><code><a href="TypeParameters.html" title="type parameter in TypeParameters">E</a>[]</code></td>
@@ -148,7 +148,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type"><a href="TypeParameters.html" title="type parameter in TypePa\
                     rameters">E</a>[]</span>&nbsp;<span class="member-name">methodThatReturnsTypePar\
-                    ameterA</span>&#8203;(<span class="parameters"><a href="TypeParameters.html" tit\
+                    ameterA</span>&#8203;<span class="parameters">(<a href="TypeParameters.html" tit\
                     le="type parameter in TypeParameters">E</a>[]&nbsp;e)</span></div>
                     """,
                 """
@@ -225,7 +225,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     lass="type-parameters">&lt;T extends java.lang.Number &amp; java.lang.Runnable&g\
                     t;</span>
                     <span class="return-type">T</span>&nbsp;<span class="member-name">foo</span>&#82\
-                    03;(<span class="parameters">T&nbsp;t)</span></div>""");
+                    03;<span class="parameters">(T&nbsp;t)</span></div>""");
 
         //==============================================================
         // Test Class-Use Documentation for Type Parameters.
@@ -551,21 +551,21 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">void</span>&nbsp;<span class="member-name">methodWithParams</\
-                    span>&#8203;(<span class="parameters"><a href="AnnotationType.html" title="annot\
+                    span>&#8203;<span class="parameters">(<a href="AnnotationType.html" title="annot\
                     ation in pkg">@AnnotationType</a>(<a href="AnnotationType.html#optional()">optio\
                     nal</a>="Parameter Annotation",<a href="AnnotationType.html#required()">required\
                     </a>=1994)
-                    int&nbsp;documented,
-                    int&nbsp;undocmented)</span></div>""",
+                     int&nbsp;documented,
+                     int&nbsp;undocmented)</span></div>""",
                 // CONSTRUCTOR PARAMS
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="member-name">AnnotationTypeUsage</span>&#8203;(<span class="parameters"><a\
+                    lass="member-name">AnnotationTypeUsage</span>&#8203;<span class="parameters">(<a\
                      href="AnnotationType.html" title="annotation in pkg">@AnnotationType</a>(<a hre\
                     f="AnnotationType.html#optional()">optional</a>="Constructor Param Annotation",<\
                     a href="AnnotationType.html#required()">required</a>=1994)
-                    int&nbsp;documented,
-                    int&nbsp;undocmented)</span></div>""");
+                     int&nbsp;documented,
+                     int&nbsp;undocmented)</span></div>""");
 
         //=================================
         // Annotatation Type Usage

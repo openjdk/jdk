@@ -105,7 +105,7 @@ public class TestMemberInheritance extends JavadocTester {
                     <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
                     "#between(java.time.LocalDate,java.time.LocalDate)">between</a></span>&#8203;(ja\
                     va.time.LocalDate&nbsp;startDateInclusive,
-                    java.time.LocalDate&nbsp;endDateExclusive)</code></th>""");
+                     java.time.LocalDate&nbsp;endDateExclusive)</code></th>""");
 
         checkOutput("pkg1/Implementer.html", false,
                 """
@@ -139,7 +139,7 @@ public class TestMemberInheritance extends JavadocTester {
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
                     nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="member-\
-                    name">parentMethod</span>&#8203;(<span class="parameters">java.lang.String&nbsp;\
+                    name">parentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
                     t)</span>
                                                               throws <span class="exceptions">java.lang.IllegalArgumentException,
                     java.lang.InterruptedException,
@@ -180,7 +180,7 @@ public class TestMemberInheritance extends JavadocTester {
                     <h3 id="method(java.lang.Object)">method</h3>
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">java.lang.String</span>&nbsp;<span class="member-name">method\
-                    </span>&#8203;(<span class="parameters">java.lang.String&nbsp;t)</span></div>
+                    </span>&#8203;<span class="parameters">(java.lang.String&nbsp;t)</span></div>
                     </section>""");
 
         checkOutput("index-all.html", true,
@@ -227,7 +227,7 @@ public class TestMemberInheritance extends JavadocTester {
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
                     nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="member-\
-                    name">parentMethod</span>&#8203;(<span class="parameters">java.lang.String&nbsp;\
+                    name">parentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
                     t)</span>
                                                               throws <span class="exceptions">java.lang.IllegalArgumentException,
                     java.lang.InterruptedException,
