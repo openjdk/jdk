@@ -28,9 +28,10 @@ OS=`uname -s`
 case "$OS" in
   Linux | Darwin ) TMP=/tmp ;;
   Windows_98 )    return    ;;
+  CYGWIN_* )      TMP="c:/temp" ;;
   Windows* )      SID=`sid`; TMP="c:/temp"  ;;
   * )
-    echo "Unrecognized system!"
+    echo "Unrecognized system! ${OS}"
     exit 1
     ;;
 esac
