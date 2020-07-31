@@ -78,7 +78,6 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     enum Container implements ComboParameter {
         NO_CONTAINER("#{STATIC_LOCAL}"),
         INTERFACE("interface CI { #{STATIC_LOCAL} }"),
-        ANNOTATION("@interface CA { #{STATIC_LOCAL} }"),
         ANONYMOUS(
                 """
                     new Object() {
@@ -112,7 +111,6 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     enum StaticLocalDecl implements ComboParameter {
         ENUM("enum E { E1; #{MEMBER} }"),
         RECORD("record R() { #{MEMBER} }"),
-        ANNOTATION("@interface A { #{MEMBER} }"),
         INTERFACE("interface I { #{MEMBER} }");
 
         String localDecl;
@@ -184,9 +182,7 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
 
     boolean notTriviallyIncorrect() {
         return decl == StaticLocalDecl.INTERFACE && (member == Member.DEFAULT_METHOD || member == Member.NONE) ||
-               decl != StaticLocalDecl.INTERFACE && (member == Member.METHOD || member == Member.NONE) &&
-               ((decl != StaticLocalDecl.ANNOTATION) ||
-               (decl == StaticLocalDecl.ANNOTATION && member == Member.NONE));
+               decl != StaticLocalDecl.INTERFACE && (member == Member.METHOD || member == Member.NONE);
     }
 
     void check(ComboTask.Result<Iterable<? extends JavaFileObject>> result) {
@@ -218,11 +214,7 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
                 !acceptableExpr()) {
             return result.containsKey("compiler.err.non-static.cant.be.ref");
         } else if (container == Container.ENUM) {
-            if (decl == StaticLocalDecl.ANNOTATION) {
-                return result.containsKey("compiler.err.expected");
-            } else {
-                return result.containsKey("compiler.err.enum.constant.expected" );
-            }
+            return result.containsKey("compiler.err.enum.constant.expected" );
         }
         return result.containsKey("compiler.err.static.declaration.not.allowed.in.inner.classes" );
     }
