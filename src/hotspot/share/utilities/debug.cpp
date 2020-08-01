@@ -355,8 +355,6 @@ void report_java_out_of_memory(const char* message) {
 class Command : public StackObj {
  private:
   ResourceMark rm;
-  ResetNoHandleMark rnhm;
-  HandleMark   hm;
   bool debug_save;
  public:
   static int level;

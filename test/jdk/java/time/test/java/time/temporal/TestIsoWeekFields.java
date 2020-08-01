@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@ package test.java.time.temporal;
 
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.MonthDay;
@@ -279,6 +281,11 @@ public class TestIsoWeekFields {
             }
             date = date.plusDays(1);
         }
+    }
+
+    @Test
+    public void test_ISOSingleton() {
+        assertTrue(WeekFields.ISO == WeekFields.of(DayOfWeek.MONDAY, 4));
     }
 
     private int wbyLen(int wby) {

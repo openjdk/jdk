@@ -835,7 +835,7 @@ void JfrJavaSupport::on_thread_start(Thread* t) {
     return;
   }
   DEBUG_ONLY(check_new_unstarted_java_thread(t);)
-  HandleMark hm;
+  HandleMark hm(t);
   if (check_exclusion_state_on_thread_start((JavaThread*)t)) {
     JfrThreadLocal::exclude(t);
   }

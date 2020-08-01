@@ -478,7 +478,7 @@ public class TestRecordTypes extends JavadocTester {
             <a href="Anno.html" title="annotation in p">@Anno</a>""";
         String rcAnno = t.contains(ElementType.RECORD_COMPONENT) ? anno + " " : "";
         String fAnno = t.contains(ElementType.FIELD) ? "<span class=\"annotations\">" + anno + "\n</span>" : "";
-        String pAnno = t.contains(ElementType.PARAMETER) ? anno + "\n" : "";
+        String pAnno = t.contains(ElementType.PARAMETER) ? anno + "\n " : "";
         String mAnno= t.contains(ElementType.METHOD) ? "<span class=\"annotations\">" + anno + "\n</span>" : "";
 
         checkOutput("p/R.html", true,
@@ -495,7 +495,7 @@ public class TestRecordTypes extends JavadocTester {
                             /span>&nbsp;<span class="member-name">i</span></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="member-name">R</span>&#8203;(<span class="parameters">"""
+                    lass="member-name">R</span>&#8203;<span class="parameters">("""
                         + pAnno
                         + "int&nbsp;i)</span></div>",
                 "<div class=\"member-signature\">"

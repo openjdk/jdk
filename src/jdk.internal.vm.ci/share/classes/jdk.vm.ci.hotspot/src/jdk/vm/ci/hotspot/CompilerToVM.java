@@ -557,10 +557,10 @@ final class CompilerToVM {
     native int getCountersSize();
 
     /**
-     * Change the size of the counters allocated for JVMCI. This requires a safepoint to
+     * Attempt to change the size of the counters allocated for JVMCI. This requires a safepoint to
      * safely reallocate the storage but it's advisable to increase the size in reasonable chunks.
      */
-    native void setCountersSize(int newSize);
+    native boolean setCountersSize(int newSize);
 
     /**
      * Determines if {@code metaspaceMethodData} is mature.

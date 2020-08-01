@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ public class getclmthd007 {
     }
 
     static interface InnerInterface {
+        default void meth_def1() {}
         void meth_n1();
     }
 
@@ -109,7 +110,11 @@ class OuterClass3 {
     }
 }
 
-interface OuterInterface1 {
+interface DefaultInterface {
+    default void default_method() { }
+}
+
+interface OuterInterface1 extends DefaultInterface {
     int meth_i1();
 }
 

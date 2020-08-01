@@ -1103,8 +1103,6 @@ JRT_LEAF(void, InterpreterRuntime::verify_mdp(Method* method, address bcp, addre
   address mdp2 = mdo->bci_to_dp(bci);
   if (mdp != mdp2) {
     ResourceMark rm;
-    ResetNoHandleMark rnm; // In a LEAF entry.
-    HandleMark hm;
     tty->print_cr("FAILED verify : actual mdp %p   expected mdp %p @ bci %d", mdp, mdp2, bci);
     int current_di = mdo->dp_to_di(mdp);
     int expected_di  = mdo->dp_to_di(mdp2);
@@ -1125,7 +1123,6 @@ JRT_END
 JRT_ENTRY(void, InterpreterRuntime::update_mdp_for_ret(JavaThread* thread, int return_bci))
   assert(ProfileInterpreter, "must be profiling interpreter");
   ResourceMark rm(thread);
-  HandleMark hm(thread);
   LastFrameAccessor last_frame(thread);
   assert(last_frame.is_interpreted_frame(), "must come from interpreter");
   MethodData* h_mdo = last_frame.method()->method_data();
@@ -1479,8 +1476,6 @@ JRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* threa
   if (src_address == dest_address) {
     return;
   }
-  ResetNoHandleMark rnm; // In a LEAF entry.
-  HandleMark hm;
   ResourceMark rm;
   LastFrameAccessor last_frame(thread);
   assert(last_frame.is_interpreted_frame(), "");

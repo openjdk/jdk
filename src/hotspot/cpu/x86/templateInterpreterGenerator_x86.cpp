@@ -953,7 +953,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   assert(InterpreterRuntime::SignatureHandlerGenerator::temp() == NOT_LP64(t) LP64_ONLY(rscratch1),
          "adjust this code");
 
-  // The generated handlers do not touch RBX (the method oop).
+  // The generated handlers do not touch RBX (the method).
   // However, large signatures cannot be cached and are generated
   // each time here.  The slow-path generator can do a GC on return,
   // so we must reload it after the call.

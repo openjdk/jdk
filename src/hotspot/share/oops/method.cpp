@@ -350,7 +350,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push_method_entry(&this_ptr, (intptr_t*)&_from_interpreted_entry);
 }
 
-// Attempt to return method oop to original state.  Clear any pointers
+// Attempt to return method to original state.  Clear any pointers
 // (to objects outside the shared spaces).  We won't be able to predict
 // where they should point in a new JVM.  Further initialize some
 // entries now in order allow them to be write protected later.

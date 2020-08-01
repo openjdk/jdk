@@ -686,12 +686,11 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             // Record current position for indentation of exceptions
             int indentSize = htmltree.charCount() - lastLineSeparator;
 
-            if (parameters.isEmpty()) {
-                htmltree.add("()");
+            if (parameters.charCount() == 2) {
+                // empty parameters are added without packing
+                htmltree.add(parameters);
             } else {
-                parameters.add(")");
                 htmltree.add(Entity.ZERO_WIDTH_SPACE);
-                htmltree.add("(");
                 htmltree.add(HtmlTree.SPAN(HtmlStyle.parameters, parameters));
             }
 

@@ -77,12 +77,12 @@ public class TestLinkOption extends JavadocTester {
                 //Make sure the parameters are formatted properly when the -link option is used.
                 """
                     (int&nbsp;p1,
-                    int&nbsp;p2,
-                    int&nbsp;p3)""",
+                     int&nbsp;p2,
+                     int&nbsp;p3)""",
                 """
                     (int&nbsp;p1,
-                    int&nbsp;p2,
-                    <a href=\"""" + url + """
+                     int&nbsp;p2,
+                     <a href=\"""" + url + """
                     java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;p3)""");
 
         checkOutput("pkg/B.html", true,

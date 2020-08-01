@@ -1062,15 +1062,15 @@ var getJibProfilesDependencies = function (input, common) {
 
         jcov: {
             // Until an official build of JCov is available, use custom
-            // build to support classfile version 57.
-            // See CODETOOLS-7902358 for more info.
+            // build to support classfile version 60.
+            // See CODETOOLS-7902734 for more info.
             // server: "jpg",
             // product: "jcov",
             // version: "3.0",
             // build_number: "b07",
             // file: "bundles/jcov-3_0.zip",
             organization: common.organization,
-            revision: "3.0-59-support+1.0",
+            revision: "3.0-60-support+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },

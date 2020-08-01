@@ -3702,7 +3702,7 @@ frame %{
   // These three registers define part of the calling convention
   // between compiled code and the interpreter.
 
-  // Inline Cache Register or methodOop for I2C.
+  // Inline Cache Register or Method for I2C.
   inline_cache_reg(R12);
 
   // Method Oop Register when calling interpreter.
@@ -15570,13 +15570,13 @@ instruct CallLeafNoFPDirect(method meth)
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
-instruct TailCalljmpInd(iRegPNoSp jump_target, inline_cache_RegP method_oop)
+instruct TailCalljmpInd(iRegPNoSp jump_target, inline_cache_RegP method_ptr)
 %{
-  match(TailCall jump_target method_oop);
+  match(TailCall jump_target method_ptr);
 
   ins_cost(CALL_COST);
 
-  format %{ "br $jump_target\t# $method_oop holds method oop" %}
+  format %{ "br $jump_target\t# $method_ptr holds method" %}
 
   ins_encode(aarch64_enc_tail_call(jump_target));
 

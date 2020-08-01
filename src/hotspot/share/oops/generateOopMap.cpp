@@ -2330,7 +2330,7 @@ void GenerateOopMap::rewrite_refval_conflict(int from, int to) {
   bool startOver;
   do {
     // Make sure that the BytecodeStream is constructed in the loop, since
-    // during rewriting a new method oop is going to be used, and the next time
+    // during rewriting a new method is going to be used, and the next time
     // around we want to use that.
     BytecodeStream bcs(_method);
     startOver = false;
@@ -2467,7 +2467,7 @@ void GenerateOopMap::expand_current_instr(int bci, int ilen, int newIlen, u_char
     return;
   }
 
-  // Relocator returns a new method oop.
+  // Relocator returns a new method.
   _did_relocation = true;
   _method = m;
 }

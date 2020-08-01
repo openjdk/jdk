@@ -26,47 +26,70 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.util.CoreUtils;
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 /**
  * @test
  * @bug 8190198
- * @summary Test clhsdb pmap command
+ * @summary Test clhsdb pmap command on a live process
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm ClhsdbPmap
+ * @run main/othervm ClhsdbPmap false
+ */
+
+/**
+ * @test
+ * @bug 8190198
+ * @summary Test clhsdb pmap command on a core file
+ * @requires vm.hasSA
+ * @library /test/lib
+ * @run main/othervm ClhsdbPmap true
  */
 
 public class ClhsdbPmap {
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Starting ClhsdbPmap test");
+        boolean withCore = Boolean.parseBoolean(args[0]);
+        System.out.println("Starting ClhsdbPmap test: withCore==" + withCore);
 
         LingeredApp theApp = null;
+        String coreFileName = null;
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
-            theApp = LingeredApp.startApp();
+            theApp = new LingeredApp();
+            theApp.setForceCrash(withCore);
+            LingeredApp.startApp(theApp);
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
+
+            if (withCore) {
+                String crashOutput = theApp.getOutput().getStdout();
+                coreFileName = CoreUtils.getCoreFileLocation(crashOutput);
+            }
 
             List<String> cmds = List.of("pmap");
 
             Map<String, List<String>> expStrMap = new HashMap<>();
-            if (Platform.isOSX()) {
-                expStrMap.put("pmap",
-                    List.of("Not available on Mac OS X"));
+            if (!withCore && Platform.isOSX()) {
+                expStrMap.put("pmap", List.of("Not available for Mac OS X processes"));
             } else {
-                expStrMap.put("pmap",
-                    List.of("jvm", "java", "net", "nio", "jimage"));
+                expStrMap.put("pmap", List.of("jvm", "java", "jli", "jimage"));
             }
 
-            test.run(theApp.getPid(), cmds, expStrMap, null);
+            if (withCore) {
+                test.runOnCore(coreFileName, cmds, expStrMap, null);
+            } else {
+                test.run(theApp.getPid(), cmds, expStrMap, null);
+            }
         } catch (SkippedException se) {
             throw se;
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
-            LingeredApp.stopApp(theApp);
+            if (!withCore) {
+                LingeredApp.stopApp(theApp);
+            }
         }
         System.out.println("Test PASSED");
     }

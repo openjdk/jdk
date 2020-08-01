@@ -654,8 +654,9 @@ public:
   }
 
   void work(uint worker_id) {
-    ResourceMark rm;
-    HandleMark hm;
+    Thread* current_thread = Thread::current();
+    ResourceMark rm(current_thread);
+    HandleMark hm(current_thread);
     assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahParallelWorkerSession worker_session(worker_id);

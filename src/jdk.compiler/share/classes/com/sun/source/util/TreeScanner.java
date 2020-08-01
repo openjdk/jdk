@@ -75,6 +75,10 @@ import com.sun.source.tree.*;
  * @since 1.6
  */
 public class TreeScanner<R,P> implements TreeVisitor<R,P> {
+    /**
+     * Constructs a {@code TreeScanner}.
+     */
+    public TreeScanner() {}
 
     /**
      * Scans a single node.

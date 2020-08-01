@@ -1773,7 +1773,7 @@ bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRA
     RunTimeSharedClassInfo* info = RunTimeSharedClassInfo::get_for(klass);
     assert(info != NULL, "Sanity");
     if (info->_num_loader_constraints > 0) {
-      HandleMark hm;
+      HandleMark hm(THREAD);
       for (int i = 0; i < info->_num_loader_constraints; i++) {
         RunTimeSharedClassInfo::RTLoaderConstraint* lc = info->loader_constraint_at(i);
         Symbol* name = lc->constraint_name();

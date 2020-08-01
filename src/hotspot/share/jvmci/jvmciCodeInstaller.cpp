@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -788,7 +788,7 @@ int CodeInstaller::estimate_stubs_size(JVMCI_TRAPS) {
 
 // perform data and call relocation on the CodeBuffer
 JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bool check_size, JVMCI_TRAPS) {
-  HandleMark hm;
+  HandleMark hm(Thread::current());
   JVMCIObjectArray sites = this->sites();
   int locs_buffer_size = JVMCIENV->get_length(sites) * (relocInfo::length_limit + sizeof(relocInfo));
 

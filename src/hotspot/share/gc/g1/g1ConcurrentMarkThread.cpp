@@ -153,7 +153,7 @@ void G1ConcurrentMarkThread::run_service() {
     GCTraceConcTime(Info, gc) tt("Concurrent Cycle");
     {
       ResourceMark rm;
-      HandleMark   hm;
+
       double cycle_start = os::elapsedVTime();
 
       {

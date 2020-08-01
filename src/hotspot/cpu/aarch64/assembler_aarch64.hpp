@@ -554,14 +554,7 @@ class Address {
 
   void lea(MacroAssembler *, Register) const;
 
-  static bool offset_ok_for_immed(int64_t offset, int shift) {
-    unsigned mask = (1 << shift) - 1;
-    if (offset < 0 || offset & mask) {
-      return (uabs(offset) < (1 << (20 - 12))); // Unscaled offset
-    } else {
-      return ((offset >> shift) < (1 << (21 - 10 + 1))); // Scaled, unsigned offset
-    }
-  }
+  static bool offset_ok_for_immed(int64_t offset, uint shift);
 };
 
 // Convience classes

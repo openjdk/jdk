@@ -105,7 +105,7 @@ private:
   JavaThread *_jthread;
 
 public:
-  JvmtiThreadEventTransition(Thread *thread) : _rm(), _hm() {
+  JvmtiThreadEventTransition(Thread *thread) : _rm(), _hm(thread) {
     if (thread->is_Java_thread()) {
        _jthread = (JavaThread *)thread;
        _saved_state = _jthread->thread_state();

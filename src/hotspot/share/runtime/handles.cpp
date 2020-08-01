@@ -116,7 +116,7 @@ void HandleArea::oops_do(OopClosure* f) {
 }
 
 void HandleMark::initialize(Thread* thread) {
-  _thread = thread;
+  _thread = thread;  // Not the current thread during thread creation.
   // Save area
   _area  = thread->handle_area();
   // Save current top

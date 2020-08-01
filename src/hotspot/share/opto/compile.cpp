@@ -2414,15 +2414,21 @@ static void eval_operands(Node* n,
                           uint& func1, uint& func2, uint& func3,
                           ResourceHashtable<Node*,uint>& eval_map) {
   assert(is_vector_bitwise_op(n), "");
-  func1 = eval_operand(n->in(1), eval_map);
 
-  if (is_vector_binary_bitwise_op(n)) {
+  if (is_vector_unary_bitwise_op(n)) {
+    Node* opnd = n->in(1);
+    if (VectorNode::is_vector_bitwise_not_pattern(n) && VectorNode::is_all_ones_vector(opnd)) {
+      opnd = n->in(2);
+    }
+    func1 = eval_operand(opnd, eval_map);
+  } else if (is_vector_binary_bitwise_op(n)) {
+    func1 = eval_operand(n->in(1), eval_map);
     func2 = eval_operand(n->in(2), eval_map);
-  } else if (is_vector_ternary_bitwise_op(n)) {
+  } else {
+    assert(is_vector_ternary_bitwise_op(n), "unknown operation");
+    func1 = eval_operand(n->in(1), eval_map);
     func2 = eval_operand(n->in(2), eval_map);
     func3 = eval_operand(n->in(3), eval_map);
-  } else {
-    assert(is_vector_unary_bitwise_op(n), "not unary");
   }
 }
 

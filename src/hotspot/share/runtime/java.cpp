@@ -111,7 +111,6 @@ void print_method_profiling_data() {
   if (ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData) &&
      (PrintMethodData || CompilerOracle::should_print_methods())) {
     ResourceMark rm;
-    HandleMark hm;
     collected_profiled_methods = new GrowableArray<Method*>(1024);
     SystemDictionary::methods_do(collect_profiled_methods);
     collected_profiled_methods->sort(&compare_methods);
@@ -158,7 +157,6 @@ void collect_invoked_methods(Method* m) {
 
 void print_method_invocation_histogram() {
   ResourceMark rm;
-  HandleMark hm;
   collected_invoked_methods = new GrowableArray<Method*>(1024);
   SystemDictionary::methods_do(collect_invoked_methods);
   collected_invoked_methods->sort(&compare_methods);

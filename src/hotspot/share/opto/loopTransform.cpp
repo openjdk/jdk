@@ -1480,14 +1480,14 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   Node_Stack clones(main_head->back_control()->outcnt());
   // Step B3: Make the fall-in values to the main-loop come from the
   // fall-out values of the pre-loop.
-  for (DUIterator_Fast i2max, i2 = main_head->fast_outs(i2max); i2 < i2max; i2++) {
-    Node* main_phi = main_head->fast_out(i2);
+  for (DUIterator i2 = main_head->outs(); main_head->has_out(i2); i2++) {
+    Node* main_phi = main_head->out(i2);
     if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
-      Node *pre_phi = old_new[main_phi->_idx];
-      Node *fallpre  = clone_up_backedge_goo(pre_head->back_control(),
-                                             main_head->skip_strip_mined()->in(LoopNode::EntryControl),
-                                             pre_phi->in(LoopNode::LoopBackControl),
-                                             visited, clones);
+      Node* pre_phi = old_new[main_phi->_idx];
+      Node* fallpre = clone_up_backedge_goo(pre_head->back_control(),
+                                            main_head->skip_strip_mined()->in(LoopNode::EntryControl),
+                                            pre_phi->in(LoopNode::LoopBackControl),
+                                            visited, clones);
       _igvn.hash_delete(main_phi);
       main_phi->set_req(LoopNode::EntryControl, fallpre);
     }
@@ -1765,11 +1765,11 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree *loop, Node_List &old_new,
   Node_Stack clones(main_head->back_control()->outcnt());
   // Step A3: Make the fall-in values to the post-loop come from the
   // fall-out values of the main-loop.
-  for (DUIterator_Fast imax, i = main_head->fast_outs(imax); i < imax; i++) {
-    Node* main_phi = main_head->fast_out(i);
+  for (DUIterator i = main_head->outs(); main_head->has_out(i); i++) {
+    Node* main_phi = main_head->out(i);
     if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
-      Node *cur_phi = old_new[main_phi->_idx];
-      Node *fallnew = clone_up_backedge_goo(main_head->back_control(),
+      Node* cur_phi = old_new[main_phi->_idx];
+      Node* fallnew = clone_up_backedge_goo(main_head->back_control(),
                                             post_head->init_control(),
                                             main_phi->in(LoopNode::LoopBackControl),
                                             visited, clones);

@@ -165,7 +165,7 @@ public class CredentialsUtil {
                 String service, Credentials ccreds)
             throws KrbException, IOException {
         PrincipalName sname = new PrincipalName(service,
-                PrincipalName.KRB_NT_SRV_HST);
+                PrincipalName.KRB_NT_UNKNOWN);
         return serviceCreds(sname, ccreds);
     }
 

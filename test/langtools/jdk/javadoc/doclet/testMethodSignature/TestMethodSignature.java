@@ -55,19 +55,19 @@ public class TestMethodSignature extends JavadocTester {
                 """
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
                     <span class="return-type">void</span>&nbsp;<span class="member-name">simpleMetho\
-                    d</span>&#8203;(<span class="parameters">int&nbsp;i,
-                    java.lang.String&nbsp;s,
-                    boolean&nbsp;b)</span></div>""",
+                    d</span>&#8203;<span class="parameters">(int&nbsp;i,
+                     java.lang.String&nbsp;s,
+                     boolean&nbsp;b)</span></div>""",
 
                 """
                     <div class="member-signature"><span class="annotations">@Generated(value="SomeGeneratedName",
                                date="a date",
                                comments="some comment about the method below")
                     </span><span class="modifiers">public static</span>&nbsp;<span class="return-typ\
-                    e">void</span>&nbsp;<span class="member-name">annotatedMethod</span>&#8203;(<spa\
-                    n class="parameters">int&nbsp;i,
-                    java.lang.String&nbsp;s,
-                    boolean&nbsp;b)</span></div>""",
+                    e">void</span>&nbsp;<span class="member-name">annotatedMethod</span>&#8203;<span\
+                     class="parameters">(int&nbsp;i,
+                     java.lang.String&nbsp;s,
+                     boolean&nbsp;b)</span></div>""",
 
                 """
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
@@ -83,15 +83,15 @@ public class TestMethodSignature extends JavadocTester {
                     <span class="return-type"><a href="C.With8Types.html" title="class in pkg">C.Wit\
                     h8Types</a>&lt;T1,&#8203;T2,&#8203;T3,&#8203;T4,&#8203;T5,&#8203;T6,&#8203;T7,&#\
                     8203;T8&gt;</span>&nbsp;<span class="member-name">bigGenericMethod</span>&#8203;\
-                    (<span class="parameters"><a href="C.F0.html" title="interface in pkg">C.F0</a>&\
+                    <span class="parameters">(<a href="C.F0.html" title="interface in pkg">C.F0</a>&\
                     lt;? extends T1&gt;&nbsp;t1,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T2&gt;&nbsp;t2,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T3&gt;&nbsp;t3,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T4&gt;&nbsp;t4,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T5&gt;&nbsp;t5,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T6&gt;&nbsp;t6,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T7&gt;&nbsp;t7,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T8&gt;&nbsp;t8)</span>
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T2&gt;&nbsp;t2,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T3&gt;&nbsp;t3,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T4&gt;&nbsp;t4,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T5&gt;&nbsp;t5,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T6&gt;&nbsp;t6,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T7&gt;&nbsp;t7,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T8&gt;&nbsp;t8)</span>
                                                                     throws <span class="exceptions">java.lang.IllegalArgumentException,
                     java.lang.IllegalStateException</span></div>""",
 
@@ -111,15 +111,15 @@ public class TestMethodSignature extends JavadocTester {
                     <span class="return-type"><a href="C.With8Types.html" title="class in pkg">C.Wit\
                     h8Types</a>&lt;T1,&#8203;T2,&#8203;T3,&#8203;T4,&#8203;T5,&#8203;T6,&#8203;T7,&#\
                     8203;T8&gt;</span>&nbsp;<span class="member-name">bigGenericAnnotatedMethod</spa\
-                    n>&#8203;(<span class="parameters"><a href="C.F0.html" title="interface in pkg">\
+                    n>&#8203;<span class="parameters">(<a href="C.F0.html" title="interface in pkg">\
                     C.F0</a>&lt;? extends T1&gt;&nbsp;t1,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T2&gt;&nbsp;t2,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T3&gt;&nbsp;t3,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T4&gt;&nbsp;t4,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T5&gt;&nbsp;t5,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T6&gt;&nbsp;t6,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T7&gt;&nbsp;t7,
-                    <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T8&gt;&nbsp;t8)</span>
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T2&gt;&nbsp;t2,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T3&gt;&nbsp;t3,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T4&gt;&nbsp;t4,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T5&gt;&nbsp;t5,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T6&gt;&nbsp;t6,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T7&gt;&nbsp;t7,
+                     <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T8&gt;&nbsp;t8)</span>
                                                                              throws <span class="exc\
                     eptions">java.lang.IllegalArgumentException,
                     java.lang.IllegalStateException</span></div>

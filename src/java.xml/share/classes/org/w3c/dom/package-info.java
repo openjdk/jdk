@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,42 @@
  *     Document Object Model (DOM) Level 3 Core Specification</a>,
  * and <a href="http://www.w3.org/TR/DOM-Level-3-LS">
  *     Document Object Model (DOM) Level 3 Load and Save Specification</a>.
+ *
+ * @apiNote
+ * The documentation comments for the get and set methods within this API are
+ * written as property definitions and are shared between both methods. These
+ * methods do not follow the standard Java SE specification format.
+ *
+ * <p>
+ * Take the {@link org.w3c.dom.Node Node} TextContent property as an example, both
+ * {@link org.w3c.dom.Node#getTextContent() getTextContent} and
+ * {@link org.w3c.dom.Node#setTextContent(String) setTextContent} shared the same
+ * content that defined the TextContent property itself.
+ *
+ * @implNote
+ * The JDK implementation of {@link org.w3c.dom.ls.LSSerializer LSSerializer}
+ * follows the <a href="https://www.w3.org/TR/xml/#charsets">Characters</a> section
+ * of the XML Specification in handling characters output. In particular, the
+ * specification defined a character range that excluded the surrogate blocks.
+ * As a result, the JDK LSSerializer writes characters in the surrogate blocks
+ * as Character References. Character {@code 0xf0 0x9f 0x9a 0xa9}
+ * (Unicode code point U+1F6A9) for example will be written as {@code &#128681;}.
+ *
+ * <p>
+ * This behavior is different from what was in the class description of
+ * {@link org.w3c.dom.ls.LSSerializer LSSerializer}. The relevant section is quoted
+ * below:
+ *
+ * <p>
+ * {@code Within the character data of a document (outside of markup), any characters
+ * that cannot be represented directly are replaced with character references...
+ * Any characters that cannot be represented directly in the output character encoding
+ * are serialized as numeric character references }
+ *
+ * <p>
+ * The JDK implementation does not follow this definition because it is not consistent
+ * with the XML Specification that defined an explicit character range with no
+ * association to the setting of the output character encoding.
  *
  *
  * @since 1.4

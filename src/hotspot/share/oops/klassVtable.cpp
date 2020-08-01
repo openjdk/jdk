@@ -1198,7 +1198,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
   assert(interf->is_interface(), "must be");
   Array<Method*>* methods = interf->methods();
   int nof_methods = methods->length();
-  HandleMark hm;
+  HandleMark hm(THREAD);
   Handle interface_loader (THREAD, interf->class_loader());
 
   int ime_count = method_count_for_interface(interf);
@@ -1590,7 +1590,6 @@ int VtableStats::array_entries = 0;
 
 void klassVtable::print_statistics() {
   ResourceMark rm;
-  HandleMark hm;
   VtableStats::compute();
   tty->print_cr("vtable statistics:");
   tty->print_cr("%6d classes (%d instance, %d array)", VtableStats::no_klasses, VtableStats::no_instance_klasses, VtableStats::no_array_klasses);

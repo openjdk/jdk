@@ -154,10 +154,7 @@ public class Terminator {
                         }
                     } catch (InterruptedException exception) {
                         exception.printStackTrace(System.err);
-                       //
-                       // OOPS, the dagger for terminator looks broken:
-                       //
-                       return;
+                        return;
                     };
                 //
                 // OK, lets do it now:

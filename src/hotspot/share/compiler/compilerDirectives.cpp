@@ -274,6 +274,49 @@ DirectiveSet::~DirectiveSet() {
   }
 }
 
+// A smart pointer of DirectiveSet. It uses Copy-on-Write strategy to avoid cloning.
+// It provides 2 accesses of the underlying raw pointer.
+// 1) operator->() returns a pointer to a constant DirectiveSet. It's read-only.
+// 2) cloned() returns a pointer that points to the cloned DirectiveSet.
+// Users should only use cloned() when they need to update DirectiveSet.
+//
+// In the end, users need invoke commit() to finalize the pending changes.
+// If cloning happens, the smart pointer will return the new pointer after releasing the original
+// one on DirectivesStack. If cloning doesn't happen, it returns the original intact pointer.
+class DirectiveSetPtr {
+ private:
+  DirectiveSet* _origin;
+  DirectiveSet* _clone;
+  NONCOPYABLE(DirectiveSetPtr);
+
+ public:
+  DirectiveSetPtr(DirectiveSet* origin): _origin(origin), _clone(nullptr) {
+    assert(origin != nullptr, "DirectiveSetPtr cannot be initialized with a NULL pointer.");
+  }
+
+  DirectiveSet const* operator->() {
+    return (_clone == nullptr) ? _origin : _clone;
+  }
+
+  DirectiveSet* cloned() {
+    if (_clone == nullptr) {
+      _clone = DirectiveSet::clone(_origin);
+    }
+    return _clone;
+  }
+
+  DirectiveSet* commit() {
+    if (_clone != nullptr) {
+      // We are returning a (parentless) copy. The originals parent don't need to account for this.
+      DirectivesStack::release(_origin);
+      _origin = _clone;
+      _clone = nullptr;
+    }
+
+    return _origin;
+  }
+};
+
 // Backward compatibility for CompileCommands
 // Breaks the abstraction and causes lots of extra complexity
 // - if some option is changed we need to copy directiveset since it no longer can be shared
@@ -285,46 +328,39 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
   // Only set a flag if it has not been modified and value changes.
   // Only copy set if a flag needs to be set
   if (!CompilerDirectivesIgnoreCompileCommandsOption && CompilerOracle::has_any_option()) {
-    DirectiveSet* set = DirectiveSet::clone(this);
-
-    bool changed = false; // Track if we actually change anything
+    DirectiveSetPtr set(this);
 
     // All CompileCommands are not equal so this gets a bit verbose
     // When CompileCommands have been refactored less clutter will remain.
     if (CompilerOracle::should_break_at(method)) {
       if (!_modified[BreakAtCompileIndex]) {
-        set->BreakAtCompileOption = true;
-        changed = true;
+        set.cloned()->BreakAtCompileOption = true;
       }
       if (!_modified[BreakAtExecuteIndex]) {
-        set->BreakAtExecuteOption = true;
-        changed = true;
+        set.cloned()->BreakAtExecuteOption = true;
       }
     }
     if (!_modified[LogIndex]) {
       bool log = CompilerOracle::should_log(method);
       if (log != set->LogOption) {
-        set->LogOption = log;
-        changed = true;
+        set.cloned()->LogOption = log;
       }
     }
 
     if (CompilerOracle::should_print(method)) {
       if (!_modified[PrintAssemblyIndex]) {
-        set->PrintAssemblyOption = true;
-        changed = true;
+        set.cloned()->PrintAssemblyOption = true;
       }
     }
     // Exclude as in should not compile == Enabled
     if (CompilerOracle::should_exclude(method)) {
       if (!_modified[ExcludeIndex]) {
-        set->ExcludeOption = true;
-        changed = true;
+        set.cloned()->ExcludeOption = true;
       }
     }
 
     // inline and dontinline (including exclude) are implemented in the directiveset accessors
-#define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompilerOracle::has_option_value(method, #cc_flag, v) && v != this->name##Option) { set->name##Option = v; changed = true;} }
+#define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompilerOracle::has_option_value(method, #cc_flag, v) && v != this->name##Option) { set.cloned()->name##Option = v; } }
     compilerdirectives_common_flags(init_default_cc)
     compilerdirectives_c2_flags(init_default_cc)
     compilerdirectives_c1_flags(init_default_cc)
@@ -338,14 +374,14 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       ControlIntrinsicIter iter(option_value);
 
       if (need_reset) {
-        set->_intrinsic_control_words.fill_in(TriBool());
+        set.cloned()->_intrinsic_control_words.fill_in(TriBool());
         need_reset = false;
       }
 
       while (*iter != NULL) {
         vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
         if (id != vmIntrinsics::_none) {
-          set->_intrinsic_control_words[id] = iter.is_enabled();
+          set.cloned()->_intrinsic_control_words[id] = iter.is_enabled();
         }
 
         ++iter;
@@ -358,29 +394,21 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       ControlIntrinsicIter iter(option_value, true/*disable_all*/);
 
       if (need_reset) {
-        set->_intrinsic_control_words.fill_in(TriBool());
+        set.cloned()->_intrinsic_control_words.fill_in(TriBool());
         need_reset = false;
       }
 
       while (*iter != NULL) {
         vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
         if (id != vmIntrinsics::_none) {
-          set->_intrinsic_control_words[id] = false;
+          set.cloned()->_intrinsic_control_words[id] = false;
         }
 
         ++iter;
       }
     }
 
-
-    if (!changed) {
-      // We didn't actually update anything, discard.
-      delete set;
-    } else {
-      // We are returning a (parentless) copy. The originals parent don't need to account for this.
-      DirectivesStack::release(this);
-      return set;
-    }
+    return set.commit();
   }
   // Nothing changed
   return this;

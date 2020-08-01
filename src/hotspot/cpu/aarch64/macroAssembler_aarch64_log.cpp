@@ -65,7 +65,7 @@
 
 // Table with p(r) polynomial coefficients
 // and table representation of logarithm values (hi and low parts)
-__attribute__ ((aligned(64))) juint _L_tbl[] =
+ATTRIBUTE_ALIGNED(64) juint _L_tbl[] =
 {
     // coefficients of p(r) polynomial:
     // _coeff[]

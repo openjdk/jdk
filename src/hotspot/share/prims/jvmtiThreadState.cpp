@@ -216,9 +216,13 @@ void JvmtiThreadState::leave_interp_only_mode() {
 
 // Helper routine used in several places
 int JvmtiThreadState::count_frames() {
-  guarantee(SafepointSynchronize::is_at_safepoint() ||
-    (JavaThread *)Thread::current() == get_thread(),
-    "must be current thread or at safepoint");
+#ifdef ASSERT
+  Thread *current_thread = Thread::current();
+#endif
+  assert(current_thread == get_thread() ||
+         SafepointSynchronize::is_at_safepoint() ||
+         current_thread == get_thread()->active_handshaker(),
+         "call by myself / at safepoint / at handshake");
 
   if (!get_thread()->has_last_Java_frame()) return 0;  // no Java frames
 

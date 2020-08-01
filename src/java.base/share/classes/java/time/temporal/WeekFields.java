@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ public final class WeekFields implements Serializable {
      * Note also that the first few days of a calendar year may be in the
      * week-based-year corresponding to the previous calendar year.
      */
-    public static final WeekFields ISO = new WeekFields(DayOfWeek.MONDAY, 4);
+    public static final WeekFields ISO = WeekFields.of(DayOfWeek.MONDAY, 4);
 
     /**
      * The common definition of a week that starts on Sunday and the first week

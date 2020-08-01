@@ -60,4 +60,8 @@ inline void OopHandle::replace(oop obj) {
   NativeAccess<>::oop_store(ptr, obj);
 }
 
+inline oop OopHandle::xchg(oop new_value) {
+  return NativeAccess<MO_SEQ_CST>::oop_atomic_xchg(_obj, new_value);
+}
+
 #endif // SHARE_OOPS_OOPHANDLE_INLINE_HPP

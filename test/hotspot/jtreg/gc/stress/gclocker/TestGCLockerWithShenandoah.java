@@ -58,7 +58,7 @@ package gc.stress.gclocker;
  */
 public class TestGCLockerWithShenandoah {
     public static void main(String[] args) {
-        String[] testArgs = {"2", "Shenandoah heap"};
+        String[] testArgs = {"2", "Shenandoah", "0"};
         TestGCLocker.main(testArgs);
     }
 }

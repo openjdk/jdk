@@ -1296,7 +1296,8 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
 static int getIndex(int sock, const char *name) {
     struct ifreq if2;
     memset((char *)&if2, 0, sizeof(if2));
-    strncpy(if2.ifr_name, name, sizeof(if2.ifr_name) - 1);
+    strncpy(if2.ifr_name, name, sizeof(if2.ifr_name));
+    if2.ifr_name[sizeof(if2.ifr_name) - 1] = 0;
 
     if (ioctl(sock, SIOCGIFINDEX, (char *)&if2) < 0) {
         return -1;
@@ -1359,7 +1360,8 @@ static int getMTU(JNIEnv *env, int sock, const char *ifname) {
 static int getFlags(int sock, const char *ifname, int *flags) {
     struct ifreq if2;
     memset((char *)&if2, 0, sizeof(if2));
-    strncpy(if2.ifr_name, ifname, sizeof(if2.ifr_name) - 1);
+    strncpy(if2.ifr_name, ifname, sizeof(if2.ifr_name));
+    if2.ifr_name[sizeof(if2.ifr_name) - 1] = 0;
 
     if (ioctl(sock, SIOCGIFFLAGS, (char *)&if2) < 0) {
         return -1;

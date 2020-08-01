@@ -173,8 +173,8 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   assert(loader_data != NULL, "invariant");
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
 
-  ResourceMark rm;
-  HandleMark hm;
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
 
   JvmtiCachedClassFileData* cached_class_file = NULL;
 

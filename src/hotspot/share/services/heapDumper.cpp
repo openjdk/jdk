@@ -830,7 +830,6 @@ void DumperSupport::dump_field_value(DumpWriter* writer, char type, oop obj, int
 
 // returns the size of the instance of the given class
 u4 DumperSupport::instance_size(Klass* k) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(k);
   u4 size = 0;
 
@@ -843,7 +842,6 @@ u4 DumperSupport::instance_size(Klass* k) {
 }
 
 u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
-  HandleMark hm;
   field_count = 0;
   u4 size = 0;
 
@@ -886,7 +884,6 @@ u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
 
 // dumps static fields of the given class
 void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // dump the field descriptors and raw values
@@ -930,7 +927,6 @@ void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
 
 // dump the raw values of the instance fields of the given object
 void DumperSupport::dump_instance_fields(DumpWriter* writer, oop o) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(o->klass());
 
   for (FieldStream fld(ik, false, false); !fld.eos(); fld.next()) {
@@ -943,7 +939,6 @@ void DumperSupport::dump_instance_fields(DumpWriter* writer, oop o) {
 
 // dumps the definition of the instance fields for a given class
 u2 DumperSupport::get_instance_fields_count(InstanceKlass* ik) {
-  HandleMark hm;
   u2 field_count = 0;
 
   for (FieldStream fldc(ik, true, true); !fldc.eos(); fldc.next()) {
@@ -955,7 +950,6 @@ u2 DumperSupport::get_instance_fields_count(InstanceKlass* ik) {
 
 // dumps the definition of the instance fields for a given class
 void DumperSupport::dump_instance_field_descriptors(DumpWriter* writer, Klass* k) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // dump the field descriptors
@@ -1777,7 +1771,6 @@ void VM_HeapDumper::do_threads() {
 
 void VM_HeapDumper::doit() {
 
-  HandleMark hm;
   CollectedHeap* ch = Universe::heap();
 
   ch->ensure_parsability(false); // must happen, even if collection does

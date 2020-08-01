@@ -518,7 +518,6 @@ void vframeStreamCommon::security_next() {
 
 void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
   ResourceMark rm;
-  HandleMark hm;
 
   int    method_prefix_count = 0;
   char** method_prefixes = JvmtiExport::get_all_native_method_prefixes(&method_prefix_count);
@@ -627,8 +626,9 @@ static void print_stack_values(const char* title, StackValueCollection* values) 
 
 
 void javaVFrame::print() {
-  ResourceMark rm;
-  HandleMark hm;
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
 
   vframe::print();
   tty->print("\t");

@@ -317,7 +317,6 @@ HeapWord* GenCollectedHeap::mem_allocate_work(size_t size,
 
   // Loop until the allocation is satisfied, or unsatisfied after GC.
   for (uint try_count = 1, gclocker_stalled_count = 0; /* return or throw */; try_count += 1) {
-    HandleMark hm; // Discard any handles allocated in each iteration.
 
     // First allocation attempt is lock-free.
     Generation *young = _young_gen;
@@ -477,7 +476,6 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   log_trace(gc)("%s invoke=%d size=" SIZE_FORMAT, heap()->is_young_gen(gen) ? "Young" : "Old", gen->stat_record()->invocations, size * HeapWordSize);
 
   if (run_verification && VerifyBeforeGC) {
-    HandleMark hm;  // Discard invalid handles created during verification
     Universe::verify("Before GC");
   }
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
@@ -502,7 +500,6 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
     // weak refs more uniform (and indeed remove such concerns
     // from GCH). XXX
 
-    HandleMark hm;  // Discard invalid handles created during gc
     save_marks();   // save marks for all gens
     // We want to discover references, but not process them yet.
     // This mode is disabled in process_discovered_references if the
@@ -535,7 +532,6 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   update_gc_stats(gen, full);
 
   if (run_verification && VerifyAfterGC) {
-    HandleMark hm;  // Discard invalid handles created during verification
     Universe::verify("After GC");
   }
 }

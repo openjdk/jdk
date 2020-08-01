@@ -47,6 +47,11 @@ import com.sun.source.doctree.DocTree;
  */
 public abstract class DocTrees extends Trees {
     /**
+     * Constructor for subclasses to call.
+     */
+    public DocTrees() {}
+
+    /**
      * Returns a DocTrees object for a given CompilationTask.
      * @param task the compilation task for which to get the Trees object
      * @return the DocTrees object

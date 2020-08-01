@@ -73,7 +73,7 @@ public class TestPrivateClasses extends JavadocTester {
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">void</span>&nbsp;<span class="member-name">methodInheritedFro\
-                    mParent</span>&#8203;(<span class="parameters">int&nbsp;p1)</span>
+                    mParent</span>&#8203;<span class="parameters">(int&nbsp;p1)</span>
                                                    throws <span class="exceptions">java.lang.Exception</span></div>""",
                 """
                     <dl class="notes">

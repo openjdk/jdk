@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,9 +74,9 @@ class OtherRegionsTable {
   size_t volatile _num_occupied;
 
   // These are protected by "_m".
-  CHeapBitMap _coarse_map;
-  size_t      _n_coarse_entries;
-  static jint _n_coarsenings;
+  CHeapBitMap   _coarse_map;
+  bool volatile _has_coarse_entries;
+  static jint   _n_coarsenings;
 
   PerRegionTable** _fine_grain_regions;
   size_t           _n_fine_entries;

@@ -71,8 +71,10 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
   int index;
 
   {
-    ResourceMark rm;
-    HandleMark hm;
+    Thread* current_thread = Thread::current();
+    ResourceMark rm(current_thread);
+    HandleMark hm(current_thread);
+
     // Get the monitors off-stack
 
     GrowableArray<MonitorInfo*>* list = vf->monitors();

@@ -557,8 +557,8 @@ public:
   jvmtiError result()             { return _collector.result(); }
 };
 
-// VM operation to count stack frames at safepoint.
-class VM_GetFrameCount : public VM_Operation {
+// HandshakeClosure to count stack frames.
+class GetFrameCountClosure : public HandshakeClosure {
 private:
   JvmtiEnv *_env;
   JvmtiThreadState *_state;
@@ -566,38 +566,38 @@ private:
   jvmtiError _result;
 
 public:
-  VM_GetFrameCount(JvmtiEnv *env, JvmtiThreadState *state, jint *count_ptr) {
-    _env = env;
-    _state = state;
-    _count_ptr = count_ptr;
+  GetFrameCountClosure(JvmtiEnv *env, JvmtiThreadState *state, jint *count_ptr)
+    : HandshakeClosure("GetFrameCount"),
+      _env(env),
+      _state(state),
+      _count_ptr(count_ptr),
+      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {
   }
-  VMOp_Type type() const { return VMOp_GetFrameCount; }
   jvmtiError result()    { return _result; }
-  void doit();
+  void do_thread(Thread *target);
 };
 
-// VM operation to frame location at safepoint.
-class VM_GetFrameLocation : public VM_Operation {
+// HandshakeClosure to get frame location.
+class GetFrameLocationClosure : public HandshakeClosure {
 private:
   JvmtiEnv *_env;
-  JavaThread* _java_thread;
   jint _depth;
   jmethodID* _method_ptr;
   jlocation* _location_ptr;
   jvmtiError _result;
 
 public:
-  VM_GetFrameLocation(JvmtiEnv *env, JavaThread* java_thread, jint depth,
-                      jmethodID* method_ptr, jlocation* location_ptr) {
-    _env = env;
-    _java_thread = java_thread;
-    _depth = depth;
-    _method_ptr = method_ptr;
-    _location_ptr = location_ptr;
+  GetFrameLocationClosure(JvmtiEnv *env, jint depth,
+                          jmethodID* method_ptr, jlocation* location_ptr)
+    : HandshakeClosure("GetFrameLocation"),
+      _env(env),
+      _depth(depth),
+      _method_ptr(method_ptr),
+      _location_ptr(location_ptr),
+      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {
   }
-  VMOp_Type type() const { return VMOp_GetFrameLocation; }
   jvmtiError result()    { return _result; }
-  void doit();
+  void do_thread(Thread *target);
 };
 
 

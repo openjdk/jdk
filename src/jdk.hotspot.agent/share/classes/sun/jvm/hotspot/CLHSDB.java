@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ public class CLHSDB {
     private void attachDebugger(final String executablePath, final String corePath) {
         // Try to open this core file
         try {
-            System.err.println("Opening core file, please wait...");
+            System.out.println("Opening core file, please wait...");
 
             // FIXME: display exec'd debugger's output messages during this
             // lengthy call

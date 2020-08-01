@@ -62,7 +62,7 @@ bool StubRoutines::aarch64::_completed = false;
 /**
  *  crc_table[] from jdk/src/share/native/java/util/zip/zlib-1.2.5/crc32.h
  */
-juint StubRoutines::aarch64::_crc_table[] ATTRIBUTE_ALIGNED(4096) =
+ATTRIBUTE_ALIGNED(4096) juint StubRoutines::aarch64::_crc_table[] =
 {
     // Table 0
     0x00000000UL, 0x77073096UL, 0xee0e612cUL, 0x990951baUL, 0x076dc419UL,
@@ -289,11 +289,11 @@ juint StubRoutines::aarch64::_crc_table[] ATTRIBUTE_ALIGNED(4096) =
 };
 
 // Accumulation coefficients for adler32 upper 16 bits
-jubyte StubRoutines::aarch64::_adler_table[] __attribute__ ((aligned(64))) = {
+ATTRIBUTE_ALIGNED(64) jubyte StubRoutines::aarch64::_adler_table[] = {
     16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
 };
 
-juint StubRoutines::aarch64::_npio2_hw[] __attribute__ ((aligned(64))) = {
+ATTRIBUTE_ALIGNED(64) juint StubRoutines::aarch64::_npio2_hw[] = {
     // first, various coefficient values: 0.5, invpio2, pio2_1, pio2_1t, pio2_2,
     // pio2_2t, pio2_3, pio2_3t
     // This is a small optimization wich keeping double[8] values in int[] table
@@ -325,7 +325,7 @@ juint StubRoutines::aarch64::_npio2_hw[] __attribute__ ((aligned(64))) = {
 
 // Coefficients for sin(x) polynomial approximation: S1..S6.
 // See kernel_sin comments in macroAssembler_aarch64_trig.cpp for details
-jdouble StubRoutines::aarch64::_dsin_coef[] __attribute__ ((aligned(64))) = {
+ATTRIBUTE_ALIGNED(64) jdouble StubRoutines::aarch64::_dsin_coef[] = {
     -1.66666666666666324348e-01, // 0xBFC5555555555549
      8.33333333332248946124e-03, // 0x3F8111111110F8A6
     -1.98412698298579493134e-04, // 0xBF2A01A019C161D5
@@ -336,7 +336,7 @@ jdouble StubRoutines::aarch64::_dsin_coef[] __attribute__ ((aligned(64))) = {
 
 // Coefficients for cos(x) polynomial approximation: C1..C6.
 // See kernel_cos comments in macroAssembler_aarch64_trig.cpp for details
-jdouble StubRoutines::aarch64::_dcos_coef[] __attribute__ ((aligned(64))) = {
+ATTRIBUTE_ALIGNED(64) jdouble StubRoutines::aarch64::_dcos_coef[] = {
      4.16666666666666019037e-02, // c0x3FA555555555554C
     -1.38888888888741095749e-03, // 0xBF56C16C16C15177
      2.48015872894767294178e-05, // 0x3EFA01A019CB1590
@@ -351,7 +351,7 @@ jdouble StubRoutines::aarch64::_dcos_coef[] __attribute__ ((aligned(64))) = {
 // Converted to double to avoid unnecessary conversion in code
 // NOTE: table looks like original int table: {0xA2F983, 0x6E4E44,...} with
 //       only (double) conversion added
-jdouble StubRoutines::aarch64::_two_over_pi[] __attribute__ ((aligned(64))) = {
+ATTRIBUTE_ALIGNED(64) jdouble StubRoutines::aarch64::_two_over_pi[] = {
   (double)0xA2F983, (double)0x6E4E44, (double)0x1529FC, (double)0x2757D1, (double)0xF534DD, (double)0xC0DB62,
   (double)0x95993C, (double)0x439041, (double)0xFE5163, (double)0xABDEBB, (double)0xC561B7, (double)0x246E3A,
   (double)0x424DD2, (double)0xE00649, (double)0x2EEA09, (double)0xD1921C, (double)0xFE1DEB, (double)0x1CB129,
@@ -366,7 +366,7 @@ jdouble StubRoutines::aarch64::_two_over_pi[] __attribute__ ((aligned(64))) = {
 };
 
 // Pi over 2 value
-jdouble StubRoutines::aarch64::_pio2[] __attribute__ ((aligned(64))) = {
+ATTRIBUTE_ALIGNED(64) jdouble StubRoutines::aarch64::_pio2[] = {
   1.57079625129699707031e+00, // 0x3FF921FB40000000
   7.54978941586159635335e-08, // 0x3E74442D00000000
   5.39030252995776476554e-15, // 0x3CF8469880000000

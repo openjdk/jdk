@@ -868,7 +868,7 @@ const size_t minimumSymbolTableSize = 1024;
           "Time calls to GenerateOopMap::compute_map() individually")       \
                                                                             \
   develop(bool, TraceOopMapRewrites, false,                                 \
-          "Trace rewriting of method oops during oop map generation")       \
+          "Trace rewriting of methods during oop map generation")           \
                                                                             \
   develop(bool, TraceICBuffer, false,                                       \
           "Trace usage of IC buffer")                                       \

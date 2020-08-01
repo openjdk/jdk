@@ -44,7 +44,8 @@ serviceability/sa/ClhsdbJstack.java#id1                       8220624   generic-
 serviceability/sa/ClhsdbJstackXcompStress.java                8220624   generic-all
 serviceability/sa/ClhsdbPrintAs.java                          8220624   generic-all
 serviceability/sa/ClhsdbPrintStatics.java                     8220624   generic-all
-serviceability/sa/ClhsdbPstack.java                           8220624   generic-all
+serviceability/sa/ClhsdbPstack.java#id0                       8220624   generic-all
+serviceability/sa/ClhsdbPstack.java#id1                       8220624   generic-all
 serviceability/sa/ClhsdbSource.java                           8220624   generic-all
 serviceability/sa/ClhsdbThread.java                           8220624   generic-all
 serviceability/sa/ClhsdbWhere.java                            8220624   generic-all

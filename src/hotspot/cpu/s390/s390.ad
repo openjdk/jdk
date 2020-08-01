@@ -9830,11 +9830,11 @@ instruct CallLeafNoFPDirect(method meth) %{
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
-instruct TailCalljmpInd(iRegP jump_target, inline_cache_regP method_oop) %{
-  match(TailCall jump_target method_oop);
+instruct TailCalljmpInd(iRegP jump_target, inline_cache_regP method_ptr) %{
+  match(TailCall jump_target method_ptr);
   ins_cost(CALL_COST);
   size(2);
-  format %{ "Jmp     $jump_target\t # $method_oop holds method oop" %}
+  format %{ "Jmp     $jump_target\t # $method_ptr holds method" %}
   ins_encode %{ __ z_br($jump_target$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ typedef struct lib_info {
   struct symtab*   symtab;
   int              fd;        // file descriptor for lib
   struct lib_info* next;
+  size_t           memsz;
 } lib_info;
 
 // list of threads
@@ -108,8 +109,8 @@ typedef struct sa_thread_info {
 // list of virtual memory maps
 typedef struct map_info {
    int              fd;       // file descriptor
-   off_t            offset;   // file offset of this mapping
-   uintptr_t        vaddr;    // starting virtual address
+   uint64_t         offset;   // file offset of this mapping
+   uint64_t         vaddr;    // starting virtual address
    size_t           memsz;    // size of the mapping
    struct map_info* next;
 } map_info;
@@ -170,11 +171,11 @@ typedef bool (*thread_info_callback)(struct ps_prochandle* ph, pthread_t pid, lw
 bool read_thread_info(struct ps_prochandle* ph, thread_info_callback cb);
 
 // adds a new shared object to lib list, returns NULL on failure
-lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t base);
+lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t base, size_t memsz);
 
 // adds a new shared object to lib list, supply open lib file descriptor as well
 lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
-                          uintptr_t base);
+                          uintptr_t base, size_t memsz);
 
 sa_thread_info* add_thread_info(struct ps_prochandle* ph, pthread_t pthread_id, lwpid_t lwp_id);
 // a test for ELF signature without using libelf

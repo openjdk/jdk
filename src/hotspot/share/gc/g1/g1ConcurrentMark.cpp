@@ -1479,7 +1479,6 @@ public:
 
   virtual void work(uint worker_id) {
     ResourceMark rm;
-    HandleMark hm;
     G1CMTask* task = _cm->task(worker_id);
     G1CMIsAliveClosure g1_is_alive(_g1h);
     G1CMKeepAliveAndDrainClosure g1_par_keep_alive(_cm, task, false /* is_serial */);
@@ -1508,7 +1507,6 @@ void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task, uint ergo_workers)
 
 void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
   ResourceMark rm;
-  HandleMark   hm;
 
   // Is alive closure.
   G1CMIsAliveClosure g1_is_alive(_g1h);
@@ -1755,7 +1753,6 @@ public:
     task->record_start_time();
     {
       ResourceMark rm;
-      HandleMark hm;
 
       G1RemarkThreadsClosure threads_f(G1CollectedHeap::heap(), task);
       Threads::threads_do(&threads_f);
@@ -1779,7 +1776,6 @@ public:
 
 void G1ConcurrentMark::finalize_marking() {
   ResourceMark rm;
-  HandleMark   hm;
 
   _g1h->ensure_parsability(false);
 

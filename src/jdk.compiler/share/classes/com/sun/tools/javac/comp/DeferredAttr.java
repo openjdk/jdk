@@ -919,6 +919,13 @@ public class DeferredAttr extends JCTree.Visitor {
             }
 
             @Override
+            public void visitConditional(JCTree.JCConditional tree) {
+                //skip tree.cond
+                scan(tree.truepart);
+                scan(tree.falsepart);
+            }
+
+            @Override
             public void visitReference(JCMemberReference tree) {
                 Assert.checkNonNull(tree.getOverloadKind());
                 Check.CheckContext checkContext = resultInfo.checkContext;
