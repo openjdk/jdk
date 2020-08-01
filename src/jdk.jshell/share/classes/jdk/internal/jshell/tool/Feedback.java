@@ -25,34 +25,28 @@
 
 package jdk.internal.jshell.tool;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.StringJoiner;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
-import static jdk.internal.jshell.tool.ContinuousCompletionProvider.PERFECT_MATCHER;
+
 import jdk.internal.jshell.tool.JShellTool.CompletionProvider;
+
+import static java.util.stream.Collectors.*;
+import static jdk.internal.jshell.tool.ContinuousCompletionProvider.PERFECT_MATCHER;
 import static jdk.internal.jshell.tool.JShellTool.EMPTY_COMPLETION_PROVIDER;
+import static jdk.internal.jshell.tool.Selector.SelectorKind;
+import static jdk.internal.jshell.tool.Selector.SelectorInstanceWithDoc;
+import static jdk.internal.jshell.tool.Selector.SelectorBuilder;
+import static jdk.internal.jshell.tool.Selector.FormatAction;
+import static jdk.internal.jshell.tool.Selector.FormatCase;
+import static jdk.internal.jshell.tool.Selector.FormatErrors;
+import static jdk.internal.jshell.tool.Selector.FormatResolve;
+import static jdk.internal.jshell.tool.Selector.FormatUnresolved;
+import static jdk.internal.jshell.tool.Selector.FormatWhen;
+
 
 /**
  * Feedback customization support
@@ -70,6 +64,24 @@ class Feedback {
     // For encoding to Properties String
     private static final String RECORD_SEPARATOR = "\u241E";
 
+    // Selector for truncation of var value
+    private static final Selector VAR_VALUE_ADD_SELECTOR = new Selector(
+            FormatCase.VARVALUE,
+            FormatAction.ADDED,
+            FormatWhen.PRIMARY,
+            FormatResolve.OK,
+            FormatUnresolved.UNRESOLVED0,
+            FormatErrors.ERROR0);
+
+    // Selector for typeKind record
+    private static final Selector RECORD_TYPEKIND_SELECTOR = new Selector(
+            EnumSet.of(FormatCase.RECORD),
+            EnumSet.noneOf(FormatAction.class),
+            EnumSet.noneOf(FormatWhen.class),
+            EnumSet.noneOf(FormatResolve.class),
+            EnumSet.noneOf(FormatUnresolved.class),
+            EnumSet.noneOf(FormatErrors.class));
+
     // Current mode -- initial value is placeholder during start-up
     private Mode mode = new Mode("");
 
@@ -82,43 +94,36 @@ class Feedback {
     // Mapping of mode names to encoded retained mode
     private final Map<String, String> retainedMap = new HashMap<>();
 
-    // Mapping selector enum names to enums
-    private final Map<String, Selector<?>> selectorMap = new HashMap<>();
-
-    private static final long ALWAYS = bits(FormatCase.all, FormatAction.all, FormatWhen.all,
-            FormatResolve.all, FormatUnresolved.all, FormatErrors.all);
-    private static final long ANY = 0L;
-
     public boolean shouldDisplayCommandFluff() {
         return mode.commandFluff;
     }
 
     public String getPre() {
-        return mode.format("pre", ANY);
+        return mode.format("pre", Selector.ANY);
     }
 
     public String getPost() {
-        return mode.format("post", ANY);
+        return mode.format("post", Selector.ANY);
     }
 
     public String getErrorPre() {
-        return mode.format("errorpre", ANY);
+        return mode.format("errorpre", Selector.ANY);
     }
 
     public String getErrorPost() {
-        return mode.format("errorpost", ANY);
+        return mode.format("errorpost", Selector.ANY);
     }
 
     public String format(FormatCase fc, FormatAction fa, FormatWhen fw,
-                    FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
-                    String name, String type, String value, String unresolved, List<String> errorLines) {
+                         FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
+                         String name, String type, String value, String unresolved, List<String> errorLines) {
         return mode.format(fc, fa, fw, fr, fu, fe,
                 name, type, value, unresolved, errorLines);
     }
 
     public String format(String field, FormatCase fc, FormatAction fa, FormatWhen fw,
-                    FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
-                    String name, String type, String value, String unresolved, List<String> errorLines) {
+                         FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
+                         String name, String type, String value, String unresolved, List<String> errorLines) {
         return mode.format(field, fc, fa, fw, fr, fu, fe,
                 name, type, value, unresolved, errorLines);
     }
@@ -175,30 +180,6 @@ class Feedback {
                 PERFECT_MATCHER);
     }
 
-    {
-        for (FormatCase e : FormatCase.all)
-            selectorMap.put(e.name().toLowerCase(Locale.US), e);
-        for (FormatAction e : FormatAction.all)
-            selectorMap.put(e.name().toLowerCase(Locale.US), e);
-        for (FormatResolve e : FormatResolve.all)
-            selectorMap.put(e.name().toLowerCase(Locale.US), e);
-        for (FormatUnresolved e : FormatUnresolved.all)
-            selectorMap.put(e.name().toLowerCase(Locale.US), e);
-        for (FormatErrors e : FormatErrors.all)
-            selectorMap.put(e.name().toLowerCase(Locale.US), e);
-        for (FormatWhen e : FormatWhen.all)
-            selectorMap.put(e.name().toLowerCase(Locale.US), e);
-    }
-
-    private static class SelectorSets {
-        Set<FormatCase> cc;
-        Set<FormatAction> ca;
-        Set<FormatWhen> cw;
-        Set<FormatResolve> cr;
-        Set<FormatUnresolved> cu;
-        Set<FormatErrors> ce;
-    }
-
     /**
      * Holds all the context of a mode mode
      */
@@ -210,8 +191,8 @@ class Feedback {
         // Display command verification/information
         boolean commandFluff;
 
-        // Event cases: class, method, expression, ...
-        final Map<String, List<Setting>> cases;
+        // Setting (including format) by field
+        final Map<String, List<Setting>> byField;
 
         boolean readOnly = false;
 
@@ -220,19 +201,20 @@ class Feedback {
 
         static class Setting {
 
-            final long enumBits;
             final String format;
+            final Selector selector;
 
-            Setting(long enumBits, String format) {
-                this.enumBits = enumBits;
+            Setting(String format, Selector selector) {
                 this.format = format;
+                this.selector = selector;
             }
 
             @Override
             public boolean equals(Object o) {
                 if (o instanceof Setting) {
                     Setting ing = (Setting) o;
-                    return enumBits == ing.enumBits && format.equals(ing.format);
+                    return format.equals(ing.format)
+                            && selector.equals(ing.selector);
                 } else {
                     return false;
                 }
@@ -241,9 +223,14 @@ class Feedback {
             @Override
             public int hashCode() {
                 int hash = 7;
-                hash = 67 * hash + (int) (this.enumBits ^ (this.enumBits >>> 32));
+                hash = 67 * hash + Objects.hashCode(this.selector);
                 hash = 67 * hash + Objects.hashCode(this.format);
                 return hash;
+            }
+
+            @Override
+            public String toString() {
+                return "Setting(" + format + "," + selector.toString() + ")";
             }
         }
 
@@ -251,69 +238,44 @@ class Feedback {
          * Set up an empty mode.
          *
          * @param name
-         * @param commandFluff True if should display command fluff messages
          */
         Mode(String name) {
             this.name = name;
-            this.cases = new HashMap<>();
-            add("name",       new Setting(ALWAYS, "%1$s"));
-            add("type",       new Setting(ALWAYS, "%2$s"));
-            add("value",      new Setting(ALWAYS, "%3$s"));
-            add("unresolved", new Setting(ALWAYS, "%4$s"));
-            add("errors",     new Setting(ALWAYS, "%5$s"));
-            add("err",        new Setting(ALWAYS, "%6$s"));
+            this.byField = new HashMap<>();
+            set("name", "%1$s", Selector.ALWAYS);
+            set("type", "%2$s", Selector.ALWAYS);
+            set("value", "%3$s", Selector.ALWAYS);
+            set("unresolved", "%4$s", Selector.ALWAYS);
+            set("errors", "%5$s", Selector.ALWAYS);
+            set("err", "%6$s", Selector.ALWAYS);
 
-            add("errorline",  new Setting(ALWAYS, "    {err}%n"));
+            set("errorline", "    {err}%n", Selector.ALWAYS);
 
-            add("pre",        new Setting(ALWAYS, "|  "));
-            add("post",       new Setting(ALWAYS, "%n"));
-            add("errorpre",   new Setting(ALWAYS, "|  "));
-            add("errorpost",  new Setting(ALWAYS, "%n"));
+            set("pre", "|  ", Selector.ALWAYS);
+            set("post", "%n", Selector.ALWAYS);
+            set("errorpre", "|  ", Selector.ALWAYS);
+            set("errorpost", "%n", Selector.ALWAYS);
+        }
+
+        private Mode(String name, boolean commandFluff, String prompt, String continuationPrompt) {
+            this.name = name;
+            this.commandFluff = commandFluff;
+            this.prompt = prompt;
+            this.continuationPrompt = continuationPrompt;
+            this.byField = new HashMap<>();
         }
 
         /**
          * Set up a copied mode.
          *
          * @param name
-         * @param m Mode to copy, or null for no fresh
+         * @param m    Mode to copy, or null for no fresh
          */
         Mode(String name, Mode m) {
-            this.name = name;
-            this.commandFluff = m.commandFluff;
-            this.prompt = m.prompt;
-            this.continuationPrompt = m.continuationPrompt;
-            this.cases = new HashMap<>();
-            m.cases.entrySet().stream()
-                    .forEach(fes -> fes.getValue()
-                    .forEach(ing -> add(fes.getKey(), ing)));
+            this(name, m.commandFluff, m.prompt, m.continuationPrompt);
+            m.byField.forEach((fieldName, settingList) ->
+                    settingList.forEach(setting -> set(fieldName, setting.format, setting.selector)));
 
-        }
-
-        /**
-         * Set up a mode reconstituted from a preferences string.
-         *
-         * @param it the encoded Mode broken into String chunks, may contain
-         * subsequent encoded modes
-         */
-        Mode(Iterator<String> it) {
-            this.name = it.next();
-            this.commandFluff = Boolean.parseBoolean(it.next());
-            this.prompt = it.next();
-            this.continuationPrompt = it.next();
-            cases = new HashMap<>();
-            String field;
-            while (!(field = it.next()).equals("***")) {
-                String open = it.next();
-                assert open.equals("(");
-                List<Setting> settings = new ArrayList<>();
-                String bits;
-                while (!(bits = it.next()).equals(")")) {
-                    String format = it.next();
-                    Setting ing = new Setting(Long.parseLong(bits), format);
-                    settings.add(ing);
-                }
-                cases.put(field, settings);
-            }
         }
 
         @Override
@@ -324,7 +286,7 @@ class Feedback {
                         && commandFluff == m.commandFluff
                         && prompt.equals((m.prompt))
                         && continuationPrompt.equals((m.continuationPrompt))
-                        && cases.equals((m.cases));
+                        && byField.equals((m.byField));
             } else {
                 return false;
             }
@@ -356,11 +318,11 @@ class Feedback {
             el.add(String.valueOf(commandFluff));
             el.add(prompt);
             el.add(continuationPrompt);
-            for (Entry<String, List<Setting>> es : cases.entrySet()) {
+            for (Entry<String, List<Setting>> es : byField.entrySet()) {
                 el.add(es.getKey());
                 el.add("(");
                 for (Setting ing : es.getValue()) {
-                    el.add(String.valueOf(ing.enumBits));
+                    el.add(ing.selector.toString());
                     el.add(ing.format);
                 }
                 el.add(")");
@@ -370,28 +332,21 @@ class Feedback {
         }
 
         private void add(String field, Setting ing) {
-            List<Setting> settings = cases.get(field);
+            List<Setting> settings = byField.get(field);
             if (settings == null) {
                 settings = new ArrayList<>();
-                cases.put(field, settings);
+                byField.put(field, settings);
             } else {
-                // remove obscured settings
-                long mask = ~ing.enumBits;
-                settings.removeIf(t -> (t.enumBits & mask) == 0);
+                // remove completely obscured settings.
+                // transformation of partially obscured would be confusing to user and complex
+                Selector addedSelector = ing.selector;
+                settings.removeIf(t -> t.selector.includedIn(addedSelector));
             }
             settings.add(ing);
         }
 
-        void set(String field,
-                Collection<FormatCase> cc, Collection<FormatAction> ca, Collection<FormatWhen> cw,
-                Collection<FormatResolve> cr, Collection<FormatUnresolved> cu, Collection<FormatErrors> ce,
-                String format) {
-            long bits = bits(cc, ca, cw, cr, cu, ce);
-            set(field, bits, format);
-        }
-
-        void set(String field, long bits, String format) {
-            add(field, new Setting(bits, format));
+        void set(String field, String format, Selector selector) {
+            add(field, new Setting(format, selector));
         }
 
         /**
@@ -399,16 +354,16 @@ class Feedback {
          *
          * @return format string
          */
-        String format(String field, long bits) {
-            List<Setting> settings = cases.get(field);
+        String format(String field, Selector selector) {
+            List<Setting> settings = byField.get(field);
             if (settings == null) {
                 return ""; //TODO error?
             }
             String format = null;
+            // Iterate backward, as most recent setting that covers the case is used
             for (int i = settings.size() - 1; i >= 0; --i) {
                 Setting ing = settings.get(i);
-                long mask = ing.enumBits;
-                if ((bits & mask) == bits) {
+                if (ing.selector.covers(selector)) {
                     format = ing.format;
                     break;
                 }
@@ -420,7 +375,7 @@ class Feedback {
             StringBuffer sb = new StringBuffer(format.length());
             while (m.find()) {
                 String fieldName = m.group(1);
-                String sub = format(fieldName, bits);
+                String sub = format(fieldName, selector);
                 m.appendReplacement(sb, Matcher.quoteReplacement(sub));
             }
             m.appendTail(sb);
@@ -428,18 +383,15 @@ class Feedback {
         }
 
         String truncateVarValue(String value) {
-            return truncateValue(value,
-                    bits(FormatCase.VARVALUE, FormatAction.ADDED,
-                            FormatWhen.PRIMARY, FormatResolve.OK,
-                            FormatUnresolved.UNRESOLVED0, FormatErrors.ERROR0));
+            return truncateValue(value, VAR_VALUE_ADD_SELECTOR);
         }
 
-        String truncateValue(String value, long bits) {
+        String truncateValue(String value, Selector selector) {
             if (value==null) {
                 return "";
             } else {
                 // Retrieve the truncation length
-                String truncField = format(TRUNCATION_FIELD, bits);
+                String truncField = format(TRUNCATION_FIELD, selector);
                 if (truncField.isEmpty()) {
                     // No truncation set, use whole value
                     return value;
@@ -468,30 +420,30 @@ class Feedback {
 
         // Compute the display output given full context and values
         String format(FormatCase fc, FormatAction fa, FormatWhen fw,
-                    FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
-                    String name, String type, String value, String unresolved, List<String> errorLines) {
+                      FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
+                      String name, String type, String value, String unresolved, List<String> errorLines) {
             return format("display", fc, fa, fw, fr, fu, fe,
                 name, type, value, unresolved, errorLines);
         }
 
         // Compute the display output given full context and values
         String format(String field, FormatCase fc, FormatAction fa, FormatWhen fw,
-                    FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
-                    String name, String type, String value, String unresolved, List<String> errorLines) {
+                      FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
+                      String name, String type, String value, String unresolved, List<String> errorLines) {
             // Convert the context into a bit representation used as selectors for store field formats
-            long bits = bits(fc, fa, fw, fr, fu, fe);
+            Selector selector  = new Selector(fc, fa, fw, fr, fu, fe);
             String fname = name==null? "" : name;
             String ftype = type==null? "" : type;
             // Compute the representation of value
-            String fvalue = truncateValue(value, bits);
+            String fvalue = truncateValue(value, selector);
             String funresolved = unresolved==null? "" : unresolved;
             String errors = errorLines.stream()
                     .map(el -> String.format(
-                            format("errorline", bits),
+                            format("errorline", selector),
                             fname, ftype, fvalue, funresolved, "*cannot-use-errors-here*", el))
                     .collect(joining());
             return String.format(
-                    format(field, bits),
+                    format(field, selector),
                     fname, ftype, fvalue, funresolved, errors, "*cannot-use-err-here*");
         }
 
@@ -506,279 +458,6 @@ class Feedback {
 
         String getContinuationPrompt(String nextId) {
             return String.format(continuationPrompt, nextId);
-        }
-    }
-
-    // Representation of one instance of all the enum values as bits in a long
-    private static long bits(FormatCase fc, FormatAction fa, FormatWhen fw,
-            FormatResolve fr, FormatUnresolved fu, FormatErrors fe) {
-        long res = 0L;
-        res |= 1 << fc.ordinal();
-        res <<= FormatAction.count;
-        res |= 1 << fa.ordinal();
-        res <<= FormatWhen.count;
-        res |= 1 << fw.ordinal();
-        res <<= FormatResolve.count;
-        res |= 1 << fr.ordinal();
-        res <<= FormatUnresolved.count;
-        res |= 1 << fu.ordinal();
-        res <<= FormatErrors.count;
-        res |= 1 << fe.ordinal();
-        return res;
-    }
-
-    // Representation of a space of enum values as or'edbits in a long
-    private static long bits(Collection<FormatCase> cc, Collection<FormatAction> ca, Collection<FormatWhen> cw,
-                Collection<FormatResolve> cr, Collection<FormatUnresolved> cu, Collection<FormatErrors> ce) {
-        long res = 0L;
-        for (FormatCase fc : cc)
-            res |= 1 << fc.ordinal();
-        res <<= FormatAction.count;
-        for (FormatAction fa : ca)
-            res |= 1 << fa.ordinal();
-        res <<= FormatWhen.count;
-        for (FormatWhen fw : cw)
-            res |= 1 << fw.ordinal();
-        res <<= FormatResolve.count;
-        for (FormatResolve fr : cr)
-            res |= 1 << fr.ordinal();
-        res <<= FormatUnresolved.count;
-        for (FormatUnresolved fu : cu)
-            res |= 1 << fu.ordinal();
-        res <<= FormatErrors.count;
-        for (FormatErrors fe : ce)
-            res |= 1 << fe.ordinal();
-        return res;
-    }
-
-    private static SelectorSets unpackEnumbits(long enumBits) {
-        class Unpacker {
-
-            SelectorSets u = new SelectorSets();
-            long b = enumBits;
-
-            <E extends Enum<E>> Set<E> unpackEnumbits(E[] values) {
-                Set<E> c = new HashSet<>();
-                for (int i = 0; i < values.length; ++i) {
-                    if ((b & (1 << i)) != 0) {
-                        c.add(values[i]);
-                    }
-                }
-                b >>>= values.length;
-                return c;
-            }
-
-            SelectorSets unpack() {
-                // inverseof the order they were packed
-                u.ce = unpackEnumbits(FormatErrors.values());
-                u.cu = unpackEnumbits(FormatUnresolved.values());
-                u.cr = unpackEnumbits(FormatResolve.values());
-                u.cw = unpackEnumbits(FormatWhen.values());
-                u.ca = unpackEnumbits(FormatAction.values());
-                u.cc = unpackEnumbits(FormatCase.values());
-                return u;
-            }
-        }
-        return new Unpacker().unpack();
-    }
-
-    interface Selector<E extends Enum<E> & Selector<E>> {
-        SelectorCollector<E> collector(Setter.SelectorList sl);
-        String doc();
-    }
-
-    /**
-     * The event cases
-     */
-    public enum FormatCase implements Selector<FormatCase> {
-        IMPORT("import declaration"),
-        CLASS("class declaration"),
-        INTERFACE("interface declaration"),
-        ENUM("enum declaration"),
-        ANNOTATION("annotation interface declaration"),
-        RECORD("record declaration"),
-        METHOD("method declaration -- note: {type}==parameter-types"),
-        VARDECL("variable declaration without init"),
-        VARINIT("variable declaration with init"),
-        EXPRESSION("expression -- note: {name}==scratch-variable-name"),
-        VARVALUE("variable value expression"),
-        ASSIGNMENT("assign variable"),
-        STATEMENT("statement");
-        String doc;
-        static final EnumSet<FormatCase> all = EnumSet.allOf(FormatCase.class);
-        static final int count = all.size();
-
-        @Override
-        public SelectorCollector<FormatCase> collector(Setter.SelectorList sl) {
-            return sl.cases;
-        }
-
-        @Override
-        public String doc() {
-            return doc;
-        }
-
-        private FormatCase(String doc) {
-            this.doc = doc;
-        }
-    }
-
-    /**
-     * The event actions
-     */
-    public enum FormatAction implements Selector<FormatAction> {
-        ADDED("snippet has been added"),
-        MODIFIED("an existing snippet has been modified"),
-        REPLACED("an existing snippet has been replaced with a new snippet"),
-        OVERWROTE("an existing snippet has been overwritten"),
-        DROPPED("snippet has been dropped"),
-        USED("snippet was used when it cannot be");
-        String doc;
-        static final EnumSet<FormatAction> all = EnumSet.allOf(FormatAction.class);
-        static final int count = all.size();
-
-        @Override
-        public SelectorCollector<FormatAction> collector(Setter.SelectorList sl) {
-            return sl.actions;
-        }
-
-        @Override
-        public String doc() {
-            return doc;
-        }
-
-        private FormatAction(String doc) {
-            this.doc = doc;
-        }
-    }
-
-    /**
-     * When the event occurs: primary or update
-     */
-    public enum FormatWhen implements Selector<FormatWhen> {
-        PRIMARY("the entered snippet"),
-        UPDATE("an update to a dependent snippet");
-        String doc;
-        static final EnumSet<FormatWhen> all = EnumSet.allOf(FormatWhen.class);
-        static final int count = all.size();
-
-        @Override
-        public SelectorCollector<FormatWhen> collector(Setter.SelectorList sl) {
-            return sl.whens;
-        }
-
-        @Override
-        public String doc() {
-            return doc;
-        }
-
-        private FormatWhen(String doc) {
-            this.doc = doc;
-        }
-    }
-
-    /**
-     * Resolution problems
-     */
-    public enum FormatResolve implements Selector<FormatResolve> {
-        OK("resolved correctly"),
-        DEFINED("defined despite recoverably unresolved references"),
-        NOTDEFINED("not defined because of recoverably unresolved references");
-        String doc;
-        static final EnumSet<FormatResolve> all = EnumSet.allOf(FormatResolve.class);
-        static final int count = all.size();
-
-        @Override
-        public SelectorCollector<FormatResolve> collector(Setter.SelectorList sl) {
-            return sl.resolves;
-        }
-
-        @Override
-        public String doc() {
-            return doc;
-        }
-
-        private FormatResolve(String doc) {
-            this.doc = doc;
-        }
-    }
-
-    /**
-     * Count of unresolved references
-     */
-    public enum FormatUnresolved implements Selector<FormatUnresolved> {
-        UNRESOLVED0("no names are unresolved"),
-        UNRESOLVED1("one name is unresolved"),
-        UNRESOLVED2("two or more names are unresolved");
-        String doc;
-        static final EnumSet<FormatUnresolved> all = EnumSet.allOf(FormatUnresolved.class);
-        static final int count = all.size();
-
-        @Override
-        public SelectorCollector<FormatUnresolved> collector(Setter.SelectorList sl) {
-            return sl.unresolvedCounts;
-        }
-
-        @Override
-        public String doc() {
-            return doc;
-        }
-
-        private FormatUnresolved(String doc) {
-            this.doc = doc;
-        }
-    }
-
-    /**
-     * Count of unresolved references
-     */
-    public enum FormatErrors implements Selector<FormatErrors> {
-        ERROR0("no errors"),
-        ERROR1("one error"),
-        ERROR2("two or more errors");
-        String doc;
-        static final EnumSet<FormatErrors> all = EnumSet.allOf(FormatErrors.class);
-        static final int count = all.size();
-
-        @Override
-        public SelectorCollector<FormatErrors> collector(Setter.SelectorList sl) {
-            return sl.errorCounts;
-        }
-
-        @Override
-        public String doc() {
-            return doc;
-        }
-
-        private FormatErrors(String doc) {
-            this.doc = doc;
-        }
-    }
-
-    class SelectorCollector<E extends Enum<E> & Selector<E>> {
-        final EnumSet<E> all;
-        EnumSet<E> set = null;
-        SelectorCollector(EnumSet<E> all) {
-            this.all = all;
-        }
-        void add(Object o) {
-            @SuppressWarnings("unchecked")
-            E e = (E) o;
-            if (set == null) {
-                set = EnumSet.of(e);
-            } else {
-                set.add(e);
-            }
-        }
-
-        boolean isEmpty() {
-            return set == null;
-        }
-
-        EnumSet<E> getSet() {
-            return set == null
-                    ? all
-                    : set;
         }
     }
 
@@ -827,52 +506,6 @@ class Feedback {
             messageHandler.errormsg(messageKey, a2);
         }
 
-        String selectorsToString(SelectorSets u) {
-            StringBuilder sb = new StringBuilder();
-            selectorToString(sb, u.cc, FormatCase.values());
-            selectorToString(sb, u.ca, FormatAction.values());
-            selectorToString(sb, u.cw, FormatWhen.values());
-            selectorToString(sb, u.cr, FormatResolve.values());
-            selectorToString(sb, u.cu, FormatUnresolved.values());
-            selectorToString(sb, u.ce, FormatErrors.values());
-            return sb.toString();
-        }
-
-        private <E extends Enum<E>> void selectorToString(StringBuilder sb, Set<E> c, E[] values) {
-            if (!c.containsAll(Arrays.asList(values))) {
-                sb.append(c.stream()
-                        .sorted((x, y) -> x.ordinal() - y.ordinal())
-                        .map(v -> v.name().toLowerCase(Locale.US))
-                        .collect(new Collector<CharSequence, StringJoiner, String>() {
-                            @Override
-                            public BiConsumer<StringJoiner, CharSequence> accumulator() {
-                                return StringJoiner::add;
-                            }
-
-                            @Override
-                            public Supplier<StringJoiner> supplier() {
-                                return () -> new StringJoiner(",", (sb.length() == 0)? "" : "-", "")
-                                        .setEmptyValue("");
-                            }
-
-                            @Override
-                            public BinaryOperator<StringJoiner> combiner() {
-                                return StringJoiner::merge;
-                            }
-
-                            @Override
-                            public Function<StringJoiner, String> finisher() {
-                                return StringJoiner::toString;
-                            }
-
-                            @Override
-                            public Set<Characteristics> characteristics() {
-                                return Collections.emptySet();
-                            }
-                        }));
-            }
-        }
-
         // Show format settings -- in a predictable order, for testing...
         void showFormatSettings(Mode sm, String f) {
             if (sm == null) {
@@ -880,7 +513,7 @@ class Feedback {
                         .sorted((es1, es2) -> es1.getKey().compareTo(es2.getKey()))
                         .forEach(m -> showFormatSettings(m.getValue(), f));
             } else {
-                sm.cases.entrySet().stream()
+                sm.byField.entrySet().stream()
                         .filter(ec -> (f == null)
                             ? !ec.getKey().equals(TRUNCATION_FIELD)
                             : ec.getKey().equals(f))
@@ -889,7 +522,7 @@ class Feedback {
                             ec.getValue().forEach(s -> {
                                 hard("/set format %s %s %s %s",
                                         sm.name, ec.getKey(), toStringLiteral(s.format),
-                                        selectorsToString(unpackEnumbits(s.enumBits)));
+                                        s.selector.toString());
 
                             });
                         });
@@ -900,12 +533,12 @@ class Feedback {
             if (sm == null) {
                 modeMap.values().forEach(this::showTruncationSettings);
             } else {
-                List<Mode.Setting> trunc = sm.cases.get(TRUNCATION_FIELD);
+                List<Mode.Setting> trunc = sm.byField.get(TRUNCATION_FIELD);
                 if (trunc != null) {
                     trunc.forEach(s -> {
                         hard("/set truncation %s %s %s",
                                 sm.name, s.format,
-                                selectorsToString(unpackEnumbits(s.enumBits)));
+                                s.selector.toString());
                     });
                 }
             }
@@ -939,7 +572,7 @@ class Feedback {
                     m = modeMap.get(umode);
                 }
                 if (retained != null) {
-                    Mode rm = new Mode(encodedModeIterator(retained));
+                    Mode rm = buildMode(encodedModeIterator(retained));
                     showModeSettings(rm);
                     hard("/set mode -retain %s", umode);
                     if (m != null && !m.equals(rm)) {
@@ -994,7 +627,7 @@ class Feedback {
 
         /**
          * Set mode. Create, changed, or delete a feedback mode. For @{code /set
-         * mode <mode> [<old-mode>] [-command|-quiet|-delete]}.
+         * mode <mode> [<old-mode>] [-command|-quiet|-delete|-retain]}.
          *
          * @return true if successful
          */
@@ -1134,7 +767,7 @@ class Feedback {
             String field = toIdentifier(next(), "jshell.err.field.name");
             String format = nextFormat();
             if (valid && format == null) {
-                if (field != null && m != null && !m.cases.containsKey(field)) {
+                if (field != null && m != null && !m.byField.containsKey(field)) {
                     errorat("jshell.err.field.name", field);
                 } else {
                     showFormatSettings(m, field);
@@ -1206,9 +839,9 @@ class Feedback {
                 Iterator<String> itr = encodedModeIterator(allEncoded);
                 while (itr.hasNext()) {
                     // Reconstruct the encoded mode
-                    Mode m = new Mode(itr);
+                    Mode m = buildMode(itr);
                     modeMap.put(m.name, m);
-                    // Continue to retain it a new retains occur
+                    // Continue to retain if a new retains occur
                     retainedMap.put(m.name, m.encode());
                 }
                 return true;
@@ -1220,6 +853,78 @@ class Feedback {
             }
         }
 
+
+        /**
+         * Set up a mode reconstituted from a preferences string.
+         *
+         * @param it the encoded Mode broken into String chunks, may contain
+         *           subsequent encoded modes
+         */
+        private Mode buildMode(Iterator<String> it) {
+            Mode newMode = new Mode(it.next(), Boolean.parseBoolean(it.next()),  it.next(), it.next());
+            Map<String, List<Mode.Setting>> fields = new HashMap<>();
+            long suspiciousBits = Selector.OLD_ALWAYS.asBits();
+            boolean suspicious = false;
+            String field;
+            while (!(field = it.next()).equals("***")) {
+                String open = it.next();
+                assert open.equals("(");
+                List<Mode.Setting> settings = new ArrayList<>();
+                String selectorText;
+                while (!(selectorText = it.next()).equals(")")) {
+                    String format = it.next();
+                    Selector selector;
+                    if (selectorText.isEmpty()) {
+                        selector = Selector.ALWAYS;
+                    } else if (Character.isDigit(selectorText.charAt(0))) {
+                        // legacy format, bits
+                        long bits = Long.parseLong(selectorText);
+                        suspicious |= bits == suspiciousBits;
+                        selector = new Selector(bits);
+                    } else {
+                        selector = parseSelector(selectorText);
+                    }
+                    Mode.Setting ing = new Mode.Setting(format, selector);
+                    settings.add(ing);
+                }
+                fields.put(field, settings);
+            }
+            List<Mode.Setting> tk;
+            List<Mode.Setting> errf;
+            // If suspicious that this is a pre-JDK-14 settings, check deeper...
+            if (suspicious
+                    // Super simple might not define typeKind, otherwise check for JDK-14 presence of record
+                    && ((tk = fields.get("typeKind")) == null
+                    || !tk.stream().anyMatch(tkc -> tkc.selector.equals(RECORD_TYPEKIND_SELECTOR)))
+                    // no record typeKind, now check for corruption
+                    && ((errf = fields.get("err")) == null
+                    || errf.stream().anyMatch(tkc -> tkc.selector.equals(Selector.OLD_ALWAYS)))) {
+                // Pre-JDK-14 setting found, convert them
+
+                // start with solid base, ideally normal
+                Mode base = modeMap.get("normal");
+                if (base == null) {
+                    base = mode;
+                }
+
+                // Make sure any current fields/selectors are covered: filling in with the base (normal)
+                base.byField.forEach((fieldName, settingList) ->
+                        settingList.forEach(setting -> newMode.set(fieldName, setting.format, setting.selector)));
+
+                // Now, overlay with user's settings (position adjusted).
+                // Assume any setting for class applies to record, except for typeKind definition where base definition
+                // should fall through.
+                fields.forEach((fieldName, settingList) -> {
+                        settingList.forEach(setting -> newMode.set(fieldName, setting.format,
+                                Selector.fromPreJDK14(setting.selector, !fieldName.equals("typeKind"))));
+                        });
+            } else {
+                fields.forEach((fieldName, settingList) ->
+                        settingList.forEach(setting -> newMode.set(fieldName, setting.format, setting.selector)));
+            }
+            return newMode;
+        }
+
         Iterator<String> encodedModeIterator(String encoded) {
             String[] ms = encoded.split(RECORD_SEPARATOR);
             return Arrays.asList(ms).iterator();
@@ -1228,26 +933,20 @@ class Feedback {
         // install the format of a field under parsed selectors
         void installFormat(Mode m, String field, String format, String help) {
             String slRaw;
-            List<SelectorList> slList = new ArrayList<>();
+            List<Selector> selectorList = new ArrayList<>();
             while (valid && (slRaw = next()) != null) {
-                SelectorList sl = new SelectorList();
-                sl.parseSelectorList(slRaw);
-                slList.add(sl);
+                selectorList.add(parseSelector(slRaw));
             }
             checkOptionsAndRemainingInput();
             if (valid) {
                 if (m.readOnly) {
                     errorat("jshell.err.not.valid.with.predefined.mode", m.name);
-                } else if (slList.isEmpty()) {
-                    // No selectors specified, then always the format
-                    m.set(field, ALWAYS, format);
+                } else if (selectorList.isEmpty()) {
+                    // No selectors specified, then always use the format
+                    m.set(field, format, Selector.ALWAYS);
                 } else {
                     // Set the format of the field for specified selector
-                    slList.stream()
-                            .forEach(sl -> m.set(field,
-                            sl.cases.getSet(), sl.actions.getSet(), sl.whens.getSet(),
-                            sl.resolves.getSet(), sl.unresolvedCounts.getSet(), sl.errorCounts.getSet(),
-                            format));
+                    selectorList.forEach(sel -> m.set(field, format, sel));
                 }
             } else {
                 fluffmsg("jshell.msg.see", help);
@@ -1281,7 +980,6 @@ class Feedback {
          *
          * @param id the string to check, MUST be the most recently retrieved
          * token from 'at'.
-         * @param missing null for no null error, otherwise the resource error to display if id is null
          * @param err the resource error to display if not an identifier
          * @return the identifier string, or null if null or not an identifier
          */
@@ -1425,41 +1123,35 @@ class Feedback {
             return sb.toString();
         }
 
-        class SelectorList {
-
-            SelectorCollector<FormatCase> cases = new SelectorCollector<>(FormatCase.all);
-            SelectorCollector<FormatAction> actions = new SelectorCollector<>(FormatAction.all);
-            SelectorCollector<FormatWhen> whens = new SelectorCollector<>(FormatWhen.all);
-            SelectorCollector<FormatResolve> resolves = new SelectorCollector<>(FormatResolve.all);
-            SelectorCollector<FormatUnresolved> unresolvedCounts = new SelectorCollector<>(FormatUnresolved.all);
-            SelectorCollector<FormatErrors> errorCounts = new SelectorCollector<>(FormatErrors.all);
-
-            final void parseSelectorList(String sl) {
-                for (String s : sl.split("-")) {
-                    SelectorCollector<?> lastCollector = null;
-                    for (String as : s.split(",")) {
-                        if (!as.isEmpty()) {
-                            Selector<?> sel = selectorMap.get(as);
-                            if (sel == null) {
-                                errorat("jshell.err.feedback.not.a.valid.selector", as, s);
-                                return;
-                            }
-                            SelectorCollector<?> collector = sel.collector(this);
-                            if (lastCollector == null) {
-                                if (!collector.isEmpty()) {
-                                    errorat("jshell.err.feedback.multiple.sections", as, s);
-                                    return;
-                                }
-                            } else if (collector != lastCollector) {
-                                errorat("jshell.err.feedback.different.selector.kinds", as, s);
-                                return;
-                            }
-                            collector.add(sel);
-                            lastCollector = collector;
+        private Selector parseSelector(String selectorText) {
+            SelectorBuilder seb = new SelectorBuilder(selectorText);
+            EnumSet<SelectorKind> seen = EnumSet.noneOf(SelectorKind.class);
+            for (String s : selectorText.split("-")) {
+                SelectorKind lastKind = null;
+                for (String as : s.split(",")) {
+                    if (!as.isEmpty()) {
+                        SelectorInstanceWithDoc<?> sel = Selector.selectorMap.get(as);
+                        if (sel == null) {
+                            errorat("jshell.err.feedback.not.a.valid.selector", as, s);
+                            return Selector.ALWAYS;
                         }
+                        SelectorKind kind = sel.kind();
+                        if (lastKind == null) {
+                            if (seen.contains(kind)) {
+                                errorat("jshell.err.feedback.multiple.sections", as, s);
+                                return Selector.ALWAYS;
+                            }
+                        } else if (kind != lastKind) {
+                            errorat("jshell.err.feedback.different.selector.kinds", as, s);
+                            return Selector.ALWAYS;
+                        }
+                        seb.add(sel);
+                        seen.add(kind);
+                        lastKind = kind;
                     }
                 }
             }
-        }
+            return seb.toSelector();
+         }
     }
 }
