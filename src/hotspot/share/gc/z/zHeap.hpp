@@ -64,7 +64,6 @@ private:
   void flip_to_remapped();
 
   void out_of_memory();
-  void fixup_partial_loads();
 
 public:
   static ZHeap* heap();
