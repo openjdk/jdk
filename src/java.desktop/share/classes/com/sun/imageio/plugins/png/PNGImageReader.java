@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,13 +459,18 @@ public class PNGImageReader extends ImageReader {
         int compressionMethod = stream.readUnsignedByte();
         metadata.iTXt_compressionMethod.add(Integer.valueOf(compressionMethod));
 
-        String languageTag = readNullTerminatedString("UTF8", 80);
+        long pos = stream.getStreamPosition();
+        int remainingLen = (int)(chunkStart + chunkLength - pos);
+        String languageTag = readNullTerminatedString("UTF8", remainingLen);
         metadata.iTXt_languageTag.add(languageTag);
 
-        long pos = stream.getStreamPosition();
-        int maxLen = (int)(chunkStart + chunkLength - pos);
+        pos = stream.getStreamPosition();
+        remainingLen = (int)(chunkStart + chunkLength - pos);
+        if (remainingLen < 0) {
+            throw new IIOException("iTXt chunk length is not proper");
+        }
         String translatedKeyword =
-            readNullTerminatedString("UTF8", maxLen);
+            readNullTerminatedString("UTF8", remainingLen);
         metadata.iTXt_translatedKeyword.add(translatedKeyword);
 
         String text;
