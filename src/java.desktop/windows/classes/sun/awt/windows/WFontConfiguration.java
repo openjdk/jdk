@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,13 +152,17 @@ public final class WFontConfiguration extends FontConfiguration {
 
     /**
      * Returns the component font name (face name plus charset) of the
-     * font that should be used for AWT text components. May return null.
+     * font that should be used for AWT text components.
      */
     public String getTextComponentFontName(String familyName, int style) {
         FontDescriptor[] fontDescriptors = getFontDescriptors(familyName, style);
         String fontName = findFontWithCharset(fontDescriptors, textInputCharset);
-        if (fontName == null) {
+        if ((fontName == null) && !textInputCharset.equals("DEFAULT_CHARSET")) {
             fontName = findFontWithCharset(fontDescriptors, "DEFAULT_CHARSET");
+        }
+        if (fontName == null) {
+            fontName = (fontDescriptors.length > 0) ? fontDescriptors[0].getNativeName()
+                                                    : "Arial,ANSI_CHARSET";
         }
         return fontName;
     }
