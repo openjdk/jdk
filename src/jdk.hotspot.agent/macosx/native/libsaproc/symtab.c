@@ -93,11 +93,12 @@ void build_search_table(symtab_t *symtab) {
 }
 
 // read symbol table from given fd.
-struct symtab* build_symtab(int fd) {
+struct symtab* build_symtab(int fd, size_t *p_max_offset) {
   symtab_t* symtab = NULL;
   int i, j;
   mach_header_64 header;
   off_t image_start;
+  size_t max_offset = 0;
 
   print_debug("build_symtab\n");
   if (!get_arch_off(fd, CPU_TYPE_X86_64, &image_start)) {
@@ -187,6 +188,11 @@ struct symtab* build_symtab(int fd) {
     if (stridx == 0 || offset == 0) {
       continue; // Skip this entry. It's not a reference to code or data
     }
+    if (lentry.n_type == N_OSO) {
+      // This is an object file name/path. These entries have something other than
+      // an offset in lentry.n_value, so we need to ignore them.
+      continue;
+    }
     symtab->symbols[i].offset = offset;
     symtab->symbols[i].name = symtab->strs + stridx;
     symtab->symbols[i].size = strlen(symtab->symbols[i].name);
@@ -195,6 +201,11 @@ struct symtab* build_symtab(int fd) {
       continue; // Skip this entry. It points to an empty string.
     }
 
+    // Track the maximum offset we've seen. This is used to determine the address range
+    // that the library covers.
+    if (offset > max_offset) {
+      max_offset = (offset + 4096) & ~0xfff; // Round up to next page boundary
+    }
     print_debug("symbol read: %d %d n_type=0x%x n_sect=0x%x n_desc=0x%x n_strx=0x%lx offset=0x%lx %s\n",
                 j, i, lentry.n_type, lentry.n_sect, lentry.n_desc, stridx, offset, symtab->symbols[i].name);
     i++;
@@ -212,6 +223,7 @@ struct symtab* build_symtab(int fd) {
 
   // build a hashtable for fast query
   build_search_table(symtab);
+  *p_max_offset = max_offset;
   return symtab;
 quit:
   if (symtab) destroy_symtab(symtab);

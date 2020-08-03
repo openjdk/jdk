@@ -208,12 +208,12 @@ void Prelease(struct ps_prochandle* ph) {
   free(ph);
 }
 
-lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t base, size_t memsz) {
-  return add_lib_info_fd(ph, libname, -1, base, memsz);
+lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t base) {
+  return add_lib_info_fd(ph, libname, -1, base);
 }
 
-lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd, uintptr_t base, size_t memsz) {
-   lib_info* newlib;
+lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd, uintptr_t base) {
+  lib_info* newlib;
   print_debug("add_lib_info_fd %s\n", libname);
 
   if ( (newlib = (lib_info*) calloc(1, sizeof(struct lib_info))) == NULL) {
@@ -229,7 +229,6 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
   strcpy(newlib->name, libname);
 
   newlib->base = base;
-  newlib->memsz = memsz;
 
   if (fd == -1) {
     if ( (newlib->fd = pathmap_open(newlib->name)) < 0) {
@@ -259,11 +258,11 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
   }
 #endif // __APPLE__
 
-  newlib->symtab = build_symtab(newlib->fd);
+  newlib->symtab = build_symtab(newlib->fd, &newlib->memsz);
   if (newlib->symtab == NULL) {
     print_debug("symbol table build failed for %s\n", newlib->name);
   } else {
-    print_debug("built symbol table for 0x%lx %s\n", newlib, newlib->name);
+    print_debug("built symbol table for 0x%lx memsz=0x%lx %s\n", newlib, newlib->memsz, newlib->name);
   }
 
   // even if symbol table building fails, we add the lib_info.
