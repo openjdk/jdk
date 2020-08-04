@@ -916,6 +916,8 @@ jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-
 
 # jdk_internal
 
+jdk/internal/platform/docker/TestDockerMemoryMetrics.java 8250984 linux-5.4.0-1019-oracle
+
 ############################################################################
 
 # jdk_jpackage
