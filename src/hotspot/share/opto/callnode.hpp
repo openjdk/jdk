@@ -329,14 +329,14 @@ public:
                 // A plain safepoint advertises no memory effects (NULL):
                 const TypePtr* adr_type = NULL)
     : MultiNode( edges ),
-      _oop_map(NULL),
       _jvms(jvms),
       _adr_type(adr_type)
   {
     init_class_id(Class_SafePoint);
   }
 
-  OopMap*         _oop_map;   // Array of OopMap info (8-bit char) for GC
+  // There is no OopMap field, the oop map is set after matching in
+  // OopFlow::compute_reach on the MachSafePointNode. (See buildOopMap.cpp)
   JVMState* const _jvms;      // Pointer to list of JVM State objects
   const TypePtr*  _adr_type;  // What type of memory does this node produce?
   ReplacedNodes   _replaced_nodes; // During parsing: list of pair of nodes from calls to GraphKit::replace_in_map()
@@ -349,8 +349,6 @@ public:
   void set_jvms(JVMState* s) {
     *(JVMState**)&_jvms = s;  // override const attribute in the accessor
   }
-  OopMap *oop_map() const { return _oop_map; }
-  void set_oop_map(OopMap *om) { _oop_map = om; }
 
  private:
   void verify_input(JVMState* jvms, uint idx) const {
