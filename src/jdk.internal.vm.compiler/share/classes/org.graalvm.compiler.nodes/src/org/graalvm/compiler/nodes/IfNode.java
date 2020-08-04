@@ -549,6 +549,10 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                 return false;
             }
 
+            if (falseSuccessor instanceof LoopExitNode && ((LoopExitNode) falseSuccessor).stateAfter != null) {
+                return false;
+            }
+
             PhiNode phi = merge.phis().first();
             ValueNode falseValue = phi.valueAt(falseEnd);
             ValueNode trueValue = phi.valueAt(trueEnd);
@@ -868,6 +872,11 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
             AbstractEndNode trueEnd = (AbstractEndNode) trueSuccessor().next();
             AbstractEndNode falseEnd = (AbstractEndNode) falseSuccessor().next();
             AbstractMergeNode merge = trueEnd.merge();
+
+            if (falseSuccessor instanceof LoopExitNode && ((LoopExitNode) falseSuccessor).stateAfter != null) {
+                return false;
+            }
+
             if (merge == falseEnd.merge() && trueSuccessor().anchored().isEmpty() && falseSuccessor().anchored().isEmpty()) {
                 PhiNode singlePhi = null;
                 int distinct = 0;
@@ -986,6 +995,11 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
     }
 
     protected void removeThroughFalseBranch(SimplifierTool tool, AbstractMergeNode merge) {
+        // If the LoopExitNode and the Merge still have states then it's incorrect to arbitrarily
+        // pick one side of the branch the represent the control flow. The state on the merge is the
+        // real after state but it would need to be adjusted to represent the effects of the
+        // conditional conversion.
+        assert !(falseSuccessor instanceof LoopExitNode) || ((LoopExitNode) falseSuccessor).stateAfter == null;
         AbstractBeginNode trueBegin = trueSuccessor();
         LogicNode conditionNode = condition();
         graph().removeSplitPropagate(this, trueBegin);
