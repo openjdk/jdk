@@ -40,6 +40,7 @@ AC_DEFUN_ONCE([LIB_SETUP_BUNDLED_LIBS],
   LIB_SETUP_LIBPNG
   LIB_SETUP_ZLIB
   LIB_SETUP_LCMS
+  LIB_SETUP_HARFBUZZ
 ])
 
 ################################################################################
@@ -262,4 +263,44 @@ AC_DEFUN_ONCE([LIB_SETUP_LCMS],
   AC_SUBST(USE_EXTERNAL_LCMS)
   AC_SUBST(LCMS_CFLAGS)
   AC_SUBST(LCMS_LIBS)
+])
+
+################################################################################
+# Setup harfbuzz
+################################################################################
+AC_DEFUN_ONCE([LIB_SETUP_HARFBUZZ],
+[
+  AC_ARG_WITH(harfbuzz, [AS_HELP_STRING([--with-harfbuzz],
+      [use harfbuzz from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
+
+  AC_MSG_CHECKING([for which harfbuzz to use])
+
+  DEFAULT_HARFBUZZ=bundled
+  # If user didn't specify, use DEFAULT_HARFBUZZ
+  if test "x${with_harfbuzz}" = "x"; then
+    with_harfbuzz=${DEFAULT_HARFBUZZ}
+  fi
+
+  if test "x${with_harfbuzz}" = "xbundled"; then
+    USE_EXTERNAL_HARFBUZZ=false
+    HARFBUZZ_CFLAGS=""
+    HARFBUZZ_LIBS=""
+    AC_MSG_RESULT([bundled])
+  elif test "x${with_harfbuzz}" = "xsystem"; then
+    AC_MSG_RESULT([system])
+    PKG_CHECK_MODULES([HARFBUZZ], [harfbuzz], [HARFBUZZ_FOUND=yes], [HARFBUZZ_FOUND=no])
+    if test "x${HARFBUZZ_FOUND}" = "xyes"; then
+      # PKG_CHECK_MODULES will set HARFBUZZ_CFLAGS and HARFBUZZ_LIBS
+      USE_EXTERNAL_HARFBUZZ=true
+    else
+      HELP_MSG_MISSING_DEPENDENCY([harfbuzz])
+      AC_MSG_ERROR([--with-harfbuzz=system specified, but no harfbuzz found! $HELP_MSG])
+    fi
+  else
+    AC_MSG_ERROR([Invalid value for --with-harfbuzz: ${with_harfbuzz}, use 'system' or 'bundled'])
+  fi
+
+  AC_SUBST(USE_EXTERNAL_HARFBUZZ)
+  AC_SUBST(HARFBUZZ_CFLAGS)
+  AC_SUBST(HARFBUZZ_LIBS)
 ])
