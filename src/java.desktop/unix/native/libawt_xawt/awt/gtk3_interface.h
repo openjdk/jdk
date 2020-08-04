@@ -177,7 +177,7 @@ typedef enum _cairo_status {
 /* We define all structure pointers to be void* */
 typedef void GdkPixbuf;
 typedef void GMainContext;
-typedef void GVfs;
+typedef void GAppInfo;
 
 typedef void GdkColormap;
 typedef void GdkDrawable;

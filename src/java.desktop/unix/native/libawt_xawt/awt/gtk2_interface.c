@@ -362,9 +362,7 @@ do { \
 
 
 static void update_supported_actions(JNIEnv *env) {
-    GVfs * (*fp_g_vfs_get_default) (void);
-    const gchar * const * (*fp_g_vfs_get_supported_uri_schemes) (GVfs * vfs);
-    const gchar * const * schemes = NULL;
+    GAppInfo * (*fp_g_app_info_get_default_for_uri_scheme) (const char *);
 
     jclass cls_action = (*env)->FindClass(env, "java/awt/Desktop$Action");
     CHECK_NULL(cls_action);
@@ -385,38 +383,17 @@ static void update_supported_actions(JNIEnv *env) {
 
     ADD_SUPPORTED_ACTION("OPEN");
 
-    /**
-     * gtk_show_uri() documentation says:
-     *
-     * > you need to install gvfs to get support for uri schemes such as http://
-     * > or ftp://, as only local files are handled by GIO itself.
-     *
-     * So OPEN action was safely added here.
-     * However, it looks like Solaris 11 have gvfs support only for 32-bit
-     * applications only by default.
-     */
-
-    fp_g_vfs_get_default = dl_symbol("g_vfs_get_default");
-    fp_g_vfs_get_supported_uri_schemes = dl_symbol("g_vfs_get_supported_uri_schemes");
+    fp_g_app_info_get_default_for_uri_scheme = dl_symbol("g_app_info_get_default_for_uri_scheme");
     dlerror();
 
-    if (fp_g_vfs_get_default && fp_g_vfs_get_supported_uri_schemes) {
-        GVfs * vfs = fp_g_vfs_get_default();
-        schemes = vfs ? fp_g_vfs_get_supported_uri_schemes(vfs) : NULL;
-        if (schemes) {
-            int i = 0;
-            while (schemes[i]) {
-                if (strcmp(schemes[i], "http") == 0) {
-                    ADD_SUPPORTED_ACTION("BROWSE");
-                    ADD_SUPPORTED_ACTION("MAIL");
-                    break;
-                }
-                i++;
-            }
+    if (fp_g_app_info_get_default_for_uri_scheme) {
+        if (fp_g_app_info_get_default_for_uri_scheme("http")) {
+            ADD_SUPPORTED_ACTION("BROWSE");
+            ADD_SUPPORTED_ACTION("MAIL");
         }
     } else {
 #ifdef DEBUG
-        fprintf(stderr, "Cannot load g_vfs_get_supported_uri_schemes\n");
+        fprintf(stderr, "Cannot load g_app_info_get_default_for_uri_scheme\n");
 #endif /* DEBUG */
     }
 

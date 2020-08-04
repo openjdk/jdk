@@ -51,7 +51,7 @@ typedef enum
 
 /* We define all structure pointers to be void* */
 typedef void GMainContext;
-typedef void GVfs;
+typedef void GAppInfo;
 
 typedef void GdkColormap;
 typedef void GdkDrawable;
