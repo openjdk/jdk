@@ -345,7 +345,9 @@ final class P11Cipher extends CipherSpi {
             SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         reset(true);
-        if (fixedKeySize != -1 && key.getEncoded().length != fixedKeySize) {
+        if (fixedKeySize != -1 &&
+                ((key instanceof P11Key) ? ((P11Key) key).length() >> 3 :
+                            key.getEncoded().length) != fixedKeySize) {
             throw new InvalidKeyException("Key size is invalid");
         }
         switch (opmode) {
