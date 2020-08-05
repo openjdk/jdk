@@ -363,6 +363,7 @@ public class enable001 extends JDIBase {
                       throw new JDITestRuntimeException("** default case 2 **");
             }
 
+            vm.suspend();
             log2("......eventRequest1.enable();");
             eventRequest1.enable();
             log2("      checking up on eventRequest1");
@@ -371,6 +372,7 @@ public class enable001 extends JDIBase {
                 log3("ERROR: EventRequest is not enabled");
             }
             eventRequest1.disable();
+            vm.resume();
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         }
