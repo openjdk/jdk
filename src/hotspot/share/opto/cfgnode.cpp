@@ -1605,40 +1605,33 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
   // Check other phi input for subtract node
   Node *sub = phi_root->in(3 - phi_x_idx);
 
+  bool is_sub = sub->Opcode() == Op_SubF || sub->Opcode() == Op_SubD ||
+                sub->Opcode() == Op_SubI || sub->Opcode() == Op_SubL;
+
   // Allow only Sub(0,X) and fail out for all others; Neg is not OK
-  if( tzero == TypeF::ZERO ) {
-    if( sub->Opcode() != Op_SubF ||
-        sub->in(2) != x ||
-        phase->type(sub->in(1)) != tzero ) return NULL;
+  if (!is_sub || phase->type(sub->in(1)) != tzero || sub->in(2) != x) return NULL;
+
+  if (tzero == TypeF::ZERO) {
     x = new AbsFNode(x);
     if (flip) {
       x = new SubFNode(sub->in(1), phase->transform(x));
     }
   } else if (tzero == TypeD::ZERO) {
-    if( sub->Opcode() != Op_SubD ||
-        sub->in(2) != x ||
-        phase->type(sub->in(1)) != tzero ) return NULL;
     x = new AbsDNode(x);
     if (flip) {
       x = new SubDNode(sub->in(1), phase->transform(x));
     }
-  } else if (tzero == TypeInt::ZERO) {
-    if (sub->Opcode() != Op_SubI ||
-        sub->in(2) != x ||
-        phase->type(sub->in(1)) != tzero) return NULL;
+  } else if (tzero == TypeInt::ZERO && Matcher::match_rule_supported(Op_AbsI)) {
     x = new AbsINode(x);
     if (flip) {
       x = new SubINode(sub->in(1), phase->transform(x));
     }
-  } else {
-    if (sub->Opcode() != Op_SubL ||
-        sub->in(2) != x ||
-        phase->type(sub->in(1)) != tzero) return NULL;
+  } else if (tzero == TypeLong::ZERO && Matcher::match_rule_supported(Op_AbsL)) {
     x = new AbsLNode(x);
     if (flip) {
       x = new SubLNode(sub->in(1), phase->transform(x));
     }
-  }
+  } else return NULL;
 
   return x;
 }
