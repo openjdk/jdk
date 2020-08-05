@@ -242,7 +242,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE_CYGWIN],
   new_path=`$CYGPATH -u "$path"`
 
   # Now try to locate executable using which
-  new_path=`$WHICH "$new_path" 2> /dev/null`
+  new_path=`type -p "$new_path" 2> /dev/null`
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
@@ -258,7 +258,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE_CYGWIN],
     path="$complete"
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
-    new_path=`$WHICH "$new_path" 2> /dev/null`
+    new_path=`type -p "$new_path" 2> /dev/null`
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
@@ -324,7 +324,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE_MSYS],
   UTIL_REWRITE_AS_UNIX_PATH(new_path)
 
   # Now try to locate executable using which
-  new_path=`$WHICH "$new_path" 2> /dev/null`
+  new_path=`type -p "$new_path" 2> /dev/null`
 
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
@@ -336,7 +336,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE_MSYS],
     new_path="$path"
     UTIL_REWRITE_AS_UNIX_PATH(new_path)
 
-    new_path=`$WHICH "$new_path" 2> /dev/null`
+    new_path=`type -p "$new_path" 2> /dev/null`
     # bat and cmd files are not always considered executable in MSYS causing which
     # to not find them
     if test "x$new_path" = x \
@@ -392,7 +392,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE_WSL],
 
   # Now try to locate executable using which
   new_path_bak="$new_path"
-  new_path=`$WHICH "$new_path" 2> /dev/null`
+  new_path=`type -p "$new_path" 2> /dev/null`
   # bat and cmd files are not considered executable in WSL
   if test "x$new_path" = x \
       && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
@@ -409,7 +409,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE_WSL],
     new_path="$path"
     UTIL_REWRITE_AS_UNIX_PATH([new_path])
     new_path_bak="$new_path"
-    new_path=`$WHICH "$new_path" 2> /dev/null`
+    new_path=`type -p "$new_path" 2> /dev/null`
     # bat and cmd files are not considered executable in WSL
     if test "x$new_path" = x \
         && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \

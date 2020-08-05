@@ -72,7 +72,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_REQUIRE_PROGS(UNAME, uname)
   UTIL_REQUIRE_PROGS(UNIQ, uniq)
   UTIL_REQUIRE_PROGS(WC, wc)
-  UTIL_REQUIRE_PROGS(WHICH, which)
   UTIL_REQUIRE_PROGS(XARGS, xargs)
 
   # Then required tools that require some special treatment.

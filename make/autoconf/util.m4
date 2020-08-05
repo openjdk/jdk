@@ -601,7 +601,7 @@ AC_DEFUN([UTIL_REQUIRE_BUILTIN_PROGS],
   UTIL_SETUP_TOOL($1, [AC_PATH_PROGS($1, $2, , $3)])
   if test "x[$]$1" = x; then
     AC_MSG_NOTICE([Required tool $2 not found in PATH, checking built-in])
-    if command -v $2 > /dev/null 2>&1; then
+    if type -p $2 > /dev/null 2>&1; then
       AC_MSG_NOTICE([Found $2 as shell built-in. Using it])
       $1="$2"
     else

@@ -78,11 +78,11 @@ generated_script="$build_support_dir/generated-configure.sh"
 ###
 
 autoconf_missing_help() {
-  APT_GET="`which apt-get 2> /dev/null | grep -v '^no apt-get in'`"
-  YUM="`which yum 2> /dev/null | grep -v '^no yum in'`"
-  BREW="`which brew 2> /dev/null | grep -v '^no brew in'`"
-  ZYPPER="`which zypper 2> /dev/null | grep -v '^no zypper in'`"
-  CYGWIN="`which cygpath 2> /dev/null | grep -v '^no cygpath in'`"
+  APT_GET="`type -p apt-get 2> /dev/null`"
+  YUM="`type -p yum 2> /dev/null`"
+  BREW="`type -p brew 2> /dev/null`"
+  ZYPPER="`type -p zypper 2> /dev/null`"
+  CYGWIN="`type -p cygpath 2> /dev/null`"
 
   if test "x$ZYPPER" != x; then
     PKGHANDLER_COMMAND="sudo zypper install autoconf"
@@ -111,7 +111,7 @@ generate_configure_script() {
       exit 1
     fi
   else
-    AUTOCONF="`which autoconf 2> /dev/null | grep -v '^no autoconf in'`"
+    AUTOCONF="`type -p autoconf 2> /dev/null`"
     if test "x$AUTOCONF" = x; then
       echo
       echo "Autoconf is not found on the PATH, and AUTOCONF is not set."
