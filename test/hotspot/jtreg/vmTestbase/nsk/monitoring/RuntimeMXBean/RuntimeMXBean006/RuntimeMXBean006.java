@@ -56,7 +56,8 @@ public class RuntimeMXBean006 extends MonitoringTestBase implements Initializabl
     public void initialize() {
         runtime = monitoringFactory.getRuntimeMXBean();
         /* Name should be on the format <pid>@<hostname>. */
-        namePattern = Pattern.compile("^[0-9]+@(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\\-]*[A-Za-z0-9])$");
+        namePattern = Pattern.compile("^[0-9]+@(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*" +
+                                      "[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
     }
 
     private void testGetName() {
