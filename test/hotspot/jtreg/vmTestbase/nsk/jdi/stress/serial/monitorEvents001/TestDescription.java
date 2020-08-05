@@ -60,6 +60,6 @@
  *      "-debugee.vmkeys=-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                       -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
- *      -configFile ./monitorEvents001.tests
+ *      -configFile ${test.src}/monitorEvents001.tests
  */
 

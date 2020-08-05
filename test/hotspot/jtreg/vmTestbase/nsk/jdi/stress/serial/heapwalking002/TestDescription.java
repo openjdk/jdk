@@ -67,7 +67,7 @@
  *      "-debugee.vmkeys=-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                       -XX:+WhiteBoxAPI -Xmx256M ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
- *      -configFile ./heapwalking002.tests
+ *      -configFile ${test.src}/heapwalking002.tests
  *      -testWorkDir .
  */
 
