@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,11 @@ public class HostIdentifier {
         if ((uriString == null) || (uriString.compareTo("localhost") == 0)) {
             uriString = "//localhost";
             return new URI(uriString);
+        }
+
+        if (Character.isDigit(uriString.charAt(0))) {
+            // may be hostname or hostname:port since it starts with digits
+            uriString = "//" + uriString;
         }
 
         URI u = new URI(uriString);
