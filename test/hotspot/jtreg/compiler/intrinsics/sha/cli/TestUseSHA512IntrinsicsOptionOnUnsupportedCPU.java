@@ -45,14 +45,14 @@ import compiler.intrinsics.sha.cli.testcases.UseSHAIntrinsicsSpecificTestCaseFor
 
 public class TestUseSHA512IntrinsicsOptionOnUnsupportedCPU {
     public static void main(String args[]) throws Throwable {
-        new SHAOptionsBase(
+        new DigestOptionsBase(
                 new GenericTestCaseForUnsupportedX86CPU(
-                        SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION),
+                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION),
                 new GenericTestCaseForUnsupportedAArch64CPU(
-                        SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION),
+                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION),
                 new UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU(
-                        SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION),
+                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION),
                 new GenericTestCaseForOtherCPU(
-                        SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION)).test();
+                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION)).test();
     }
 }

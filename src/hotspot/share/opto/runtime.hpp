@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,7 @@ private:
   static const TypeFunc* electronicCodeBook_aescrypt_Type();
   static const TypeFunc* counterMode_aescrypt_Type();
 
-  static const TypeFunc* sha_implCompress_Type();
+  static const TypeFunc* digestBase_implCompress_Type();
   static const TypeFunc* digestBase_implCompressMB_Type();
 
   static const TypeFunc* multiplyToLen_Type();

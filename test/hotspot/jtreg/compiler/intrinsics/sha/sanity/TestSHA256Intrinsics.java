@@ -78,7 +78,7 @@ import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 public class TestSHA256Intrinsics {
     public static void main(String args[]) throws Exception {
-        new SHASanityTestBase(IntrinsicPredicates.isSHA256IntrinsicAvailable(),
-                SHASanityTestBase.SHA256_INTRINSIC_ID).test();
+        new DigestSanityTestBase(IntrinsicPredicates.isSHA256IntrinsicAvailable(),
+                DigestSanityTestBase.SHA256_INTRINSIC_ID).test();
     }
 }

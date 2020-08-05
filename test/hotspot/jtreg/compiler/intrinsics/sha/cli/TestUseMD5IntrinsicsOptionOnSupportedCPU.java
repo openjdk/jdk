@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8035968
- * @summary Verify UseSHA1Intrinsics option processing on supported CPU.
+ * @summary Verify UseMD5Intrinsics option processing on supported CPU.
  * @library /test/lib testcases /
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -33,16 +33,16 @@
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   compiler.intrinsics.sha.cli.TestUseSHA1IntrinsicsOptionOnSupportedCPU
+ *                   compiler.intrinsics.sha.cli.TestUseMD5IntrinsicsOptionOnSupportedCPU
  */
 
 package compiler.intrinsics.sha.cli;
 
 import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForSupportedCPU;
 
-public class TestUseSHA1IntrinsicsOptionOnSupportedCPU {
+public class TestUseMD5IntrinsicsOptionOnSupportedCPU {
     public static void main(String args[]) throws Throwable {
         new DigestOptionsBase(new GenericTestCaseForSupportedCPU(
-                DigestOptionsBase.USE_SHA1_INTRINSICS_OPTION)).test();
+                DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false)).test();
     }
 }

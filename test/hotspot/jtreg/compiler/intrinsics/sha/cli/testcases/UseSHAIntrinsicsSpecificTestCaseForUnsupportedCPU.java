@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package compiler.intrinsics.sha.cli.testcases;
 
-import compiler.intrinsics.sha.cli.SHAOptionsBase;
+import compiler.intrinsics.sha.cli.DigestOptionsBase;
 import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.Platform;
@@ -41,14 +41,14 @@ import jdk.test.lib.cli.predicate.OrPredicate;
  * sha512.
  */
 public class UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU
-        extends SHAOptionsBase.TestCase {
+        extends DigestOptionsBase.TestCase {
     public UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU(
             String optionName) {
         // execute test case on CPU that supports any sha* instructions,
         // but does not support sha* instruction required by the tested option.
         super(optionName, new AndPredicate(
                 IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE,
-                new NotPredicate(SHAOptionsBase.getPredicateForOption(optionName))));
+                new NotPredicate(DigestOptionsBase.getPredicateForOption(optionName))));
     }
     @Override
     protected void verifyWarnings() throws Throwable {
@@ -57,9 +57,9 @@ public class UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU
                 optionName);
         // Verify that attempt to enable the tested option will cause a warning
         CommandLineOptionTest.verifySameJVMStartup(new String[] {
-                        SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
+                        DigestOptionsBase.getWarningForUnsupportedCPU(optionName)
                 }, null, shouldPassMessage, shouldPassMessage, ExitCode.OK,
-                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
+                DigestOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
     }
 }

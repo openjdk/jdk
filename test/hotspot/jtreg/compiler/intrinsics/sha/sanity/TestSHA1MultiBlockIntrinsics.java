@@ -37,8 +37,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive.log
  *                   -XX:CompileOnly=sun/security/provider/DigestBase
  *                   -XX:CompileOnly=sun/security/provider/SHA
- *                   -XX:+UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
- *                   -XX:-UseSHA512Intrinsics
+ *                   -XX:+UseSHA1Intrinsics -XX:-UseMD5Intrinsics
+ *                   -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
  *                   -Dalgorithm=SHA-1
  *                   compiler.intrinsics.sha.sanity.TestSHA1MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -67,7 +67,7 @@ import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 public class TestSHA1MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new SHASanityTestBase(IntrinsicPredicates.isSHA1IntrinsicAvailable(),
-                SHASanityTestBase.MB_INTRINSIC_ID).test();
+        new DigestSanityTestBase(IntrinsicPredicates.isSHA1IntrinsicAvailable(),
+                DigestSanityTestBase.MB_INTRINSIC_ID).test();
     }
 }

@@ -4301,6 +4301,16 @@ void Assembler::ret(int imm16) {
   }
 }
 
+void Assembler::roll(Register dst, int imm8) {
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
+  int encode = prefix_and_encode(dst->encoding());
+  if (imm8 == 1) {
+    emit_int16((unsigned char)0xD1, (0xC0 | encode));
+  } else {
+    emit_int24((unsigned char)0xC1, (0xc0 | encode), imm8);
+  }
+}
+
 void Assembler::sahf() {
 #ifdef _LP64
   // Not supported in 64bit mode

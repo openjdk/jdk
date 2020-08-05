@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,12 +134,12 @@ public final class SHA extends DigestBase {
 
         // The checks performed by the method 'b2iBig64'
         // are sufficient for the case when the method
-        // 'implCompressImpl' is replaced with a compiler
+        // 'implCompress0' is replaced with a compiler
         // intrinsic.
         b2iBig64(buf, ofs, W);
     }
 
-    // The method 'implCompressImpl seems not to use its parameters.
+    // The method 'implCompress0 seems not to use its parameters.
     // The method can, however, be replaced with a compiler intrinsic
     // that operates directly on the array 'buf' (starting from
     // offset 'ofs') and not on array 'W', therefore 'buf' and 'ofs'

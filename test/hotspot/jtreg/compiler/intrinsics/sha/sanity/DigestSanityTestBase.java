@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package compiler.intrinsics.sha.sanity;
 
-import compiler.intrinsics.sha.TestSHA;
+import compiler.intrinsics.sha.TestDigest;
 import compiler.testlibrary.intrinsics.Verifier;
 import sun.hotspot.WhiteBox;
 
@@ -36,7 +36,9 @@ import java.util.function.BooleanSupplier;
 /**
  * Base class for sanity tests on SHA intrinsics support.
  */
-public class SHASanityTestBase {
+public class DigestSanityTestBase {
+    protected static final String MD5_INTRINSIC_ID
+            = "_md5_implCompress";
     protected static final String SHA1_INTRINSIC_ID
             = "_sha_implCompress";
     protected static final String SHA256_INTRINSIC_ID
@@ -65,7 +67,7 @@ public class SHASanityTestBase {
      *                  be used.
      * @param intrinsicID The ID of the intrinsic to be tested.
      */
-    protected SHASanityTestBase(BooleanSupplier predicate, String intrinsicID) {
+    protected DigestSanityTestBase(BooleanSupplier predicate, String intrinsicID) {
         this.predicate = predicate;
         this.intrinsicID = intrinsicID;
     }
@@ -82,10 +84,10 @@ public class SHASanityTestBase {
 
         dumpProperties();
 
-        TestSHA.testSHA(SHASanityTestBase.PROVIDER, algorithm,
-                SHASanityTestBase.MSG_SIZE, SHASanityTestBase.OFFSET,
-                SHASanityTestBase.ITERATIONS,
-                SHASanityTestBase.WARMUP_ITERATIONS);
+        TestDigest.testDigest(DigestSanityTestBase.PROVIDER, algorithm,
+                DigestSanityTestBase.MSG_SIZE, DigestSanityTestBase.OFFSET,
+                DigestSanityTestBase.ITERATIONS,
+                DigestSanityTestBase.WARMUP_ITERATIONS);
     }
 
     /**
@@ -102,7 +104,7 @@ public class SHASanityTestBase {
                 String.valueOf(predicate.getAsBoolean()));
 
         String logFileName
-                = SHASanityTestBase.WHITE_BOX.getStringVMFlag("LogFile");
+                = DigestSanityTestBase.WHITE_BOX.getStringVMFlag("LogFile");
         FileOutputStream fileOutputStream = new FileOutputStream(logFileName
                 + Verifier.PROPERTY_FILE_SUFFIX);
 
