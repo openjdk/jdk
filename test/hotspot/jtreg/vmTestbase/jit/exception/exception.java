@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.exception.exception
- * @run driver ExecDriver --java jit.exception.exception
+ * @run main/othervm jit.exception.exception
  */
 
 package jit.exception;
@@ -49,7 +48,7 @@ package jit.exception;
 
 import nsk.share.TestFailure;
 
-class exception {
+public class exception {
     public static void main(String[] args) {
         int i, j;
 

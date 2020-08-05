@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.t.t041.t041
- * @run driver ExecDriver --java jit.t.t041.t041
+ * @run main/othervm jit.t.t041.t041
  */
 
 package jit.t.t041;
@@ -39,7 +38,7 @@ import nsk.share.TestFailure;
 
 // opc_swap
 
-class t041
+public class t041
 {
     public static void main(String argv[])
     {

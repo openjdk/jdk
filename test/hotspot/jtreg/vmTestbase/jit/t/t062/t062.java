@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t062.t062
- * @run driver ExecDriver --java jit.t.t062.t062
+ * @run main/othervm jit.t.t062.t062
  */
 
 package jit.t.t062;
@@ -47,7 +46,7 @@ interface l
     void voodoo();
 }
 
-class t062 implements l
+public class t062 implements l
 {
     public static final GoldChecker goldChecker = new GoldChecker( "t062" );
 

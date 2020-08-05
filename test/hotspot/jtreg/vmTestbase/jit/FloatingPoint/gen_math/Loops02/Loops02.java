@@ -30,8 +30,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.FloatingPoint.gen_math.Loops02.Loops02
- * @run driver ExecDriver --java jit.FloatingPoint.gen_math.Loops02.Loops02
+ * @run main/othervm jit.FloatingPoint.gen_math.Loops02.Loops02
  */
 
 package jit.FloatingPoint.gen_math.Loops02;
@@ -39,7 +38,7 @@ package jit.FloatingPoint.gen_math.Loops02;
 // Test working with  loops and random functions.
 import nsk.share.TestFailure;
 
-class Loops02
+public class Loops02
 {
 
    static final int N = 300;

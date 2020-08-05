@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.FloatingPoint.gen_math.Loops04.Loops04
- * @run driver ExecDriver --java jit.FloatingPoint.gen_math.Loops04.Loops04
+ * @run main/othervm jit.FloatingPoint.gen_math.Loops04.Loops04
  */
 
 package jit.FloatingPoint.gen_math.Loops04;
@@ -38,7 +37,7 @@ package jit.FloatingPoint.gen_math.Loops04;
 // Test working with nested loops.
 import nsk.share.TestFailure;
 
-class Loops04
+public class Loops04
 {
 
    public static void main (String args[])

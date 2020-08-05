@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t061.t061
- * @run driver ExecDriver --java jit.t.t061.t061
+ * @run main/othervm jit.t.t061.t061
  */
 
 package jit.t.t061;
@@ -41,7 +40,7 @@ import nsk.share.GoldChecker;
 
 // Long and double array loads with variable and constant subscripts.
 
-class t061
+public class t061
 {
     public static final GoldChecker goldChecker = new GoldChecker( "t061" );
 

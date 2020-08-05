@@ -29,15 +29,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.FloatingPoint.gen_math.Filtering.Filtering
- * @run driver ExecDriver --java jit.FloatingPoint.gen_math.Filtering.Filtering
+ * @run main/othervm jit.FloatingPoint.gen_math.Filtering.Filtering
  */
 
 package jit.FloatingPoint.gen_math.Filtering;
 
 import nsk.share.TestFailure;
 
-class Filtering
+public class Filtering
 {
    static int N = 1000;
    static double xx[];

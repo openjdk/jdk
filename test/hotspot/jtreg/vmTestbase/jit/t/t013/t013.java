@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t013.t013
- * @run driver ExecDriver --java jit.t.t013.t013
+ * @run main/othervm jit.t.t013.t013
  */
 
 package jit.t.t013;
@@ -44,7 +43,7 @@ class Globals {
         static public int MaxDisks = 64; // this will do!
 }
 
-class t013 {
+public class t013 {
 
     public static final GoldChecker goldChecker = new GoldChecker( "t013" );
 

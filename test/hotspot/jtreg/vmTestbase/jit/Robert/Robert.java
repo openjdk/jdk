@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.Robert.Robert
- * @run driver ExecDriver --java jit.Robert.Robert
+ * @run main/othervm jit.Robert.Robert
  */
 
 package jit.Robert;
@@ -38,7 +37,7 @@ package jit.Robert;
 import java.io.*;
 import nsk.share.TestFailure;
 
-class Robert
+public class Robert
    {
    Robert()
       throws Exception

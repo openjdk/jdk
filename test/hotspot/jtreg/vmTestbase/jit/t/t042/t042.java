@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t042.t042
- * @run driver ExecDriver --java jit.t.t042.t042
+ * @run main/othervm jit.t.t042.t042
  */
 
 package jit.t.t042;
@@ -42,7 +41,7 @@ import nsk.share.GoldChecker;
 // The special little twiddle that occurs when you invoke a method
 // of an array.
 
-class t042
+public class t042
 {
     public static final GoldChecker goldChecker = new GoldChecker( "t042" );
 

@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.t.t045.t045
- * @run driver ExecDriver --java jit.t.t045.t045
+ * @run main/othervm jit.t.t045.t045
  */
 
 package jit.t.t045;
@@ -39,7 +38,7 @@ import nsk.share.TestFailure;
 
 // Putfield interferes with one lazy load but not the other.
 
-class t045
+public class t045
 {
     static double x = 409.0;
     static double y;
