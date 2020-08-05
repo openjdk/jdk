@@ -47,7 +47,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.BreakpointEvent._itself_.breakpoint002
  *        nsk.jdi.BreakpointEvent._itself_.breakpoint002t
  *

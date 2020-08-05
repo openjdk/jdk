@@ -65,7 +65,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Method.locationOfCodeIndex.locationofcodeindex001
  *        nsk.jdi.Method.locationOfCodeIndex.locationofcodeindex001a
  *

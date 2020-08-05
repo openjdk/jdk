@@ -62,7 +62,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.suspend.suspend001
  *        nsk.jdi.VirtualMachine.suspend.suspend001a
  * @run main/othervm PropertyResolvingWrapper

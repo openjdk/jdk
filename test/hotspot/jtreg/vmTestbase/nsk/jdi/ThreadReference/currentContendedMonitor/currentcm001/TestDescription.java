@@ -74,7 +74,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ThreadReference.currentContendedMonitor.currentcm001
  *        nsk.jdi.ThreadReference.currentContendedMonitor.currentcm001a
  * @run main/othervm PropertyResolvingWrapper

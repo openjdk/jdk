@@ -37,7 +37,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ListeningConnector.listennosuspend.listennosuspend001
  *        nsk.jdi.ListeningConnector.listennosuspend.listennosuspend001t
  * @run main/othervm PropertyResolvingWrapper

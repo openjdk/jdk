@@ -66,7 +66,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.MethodExitRequest.addClassExclusionFilter.filter002
  *        nsk.jdi.MethodExitRequest.addClassExclusionFilter.filter002a
  * @run main/othervm PropertyResolvingWrapper

@@ -56,7 +56,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ArrayReference.length.length001
  *        nsk.jdi.ArrayReference.length.length001a
  * @run main/othervm PropertyResolvingWrapper

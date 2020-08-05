@@ -49,7 +49,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ClassPrepareRequest.addSourceNameFilter.addSourceNameFilter002.addSourceNameFilter002
  *        nsk.share.jdi.TestClass1
  * @run main/othervm PropertyResolvingWrapper

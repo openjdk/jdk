@@ -43,7 +43,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.sourceDebugExtension.srcdebugx002
  *        nsk.jdi.ReferenceType.sourceDebugExtension.srcdebugx002t
  * @compile srcdebugx002x.jcod

@@ -58,7 +58,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VMDisconnectEvent._itself_.disconnect003
  *        nsk.jdi.VMDisconnectEvent._itself_.disconnect003a
  * @run main/othervm PropertyResolvingWrapper

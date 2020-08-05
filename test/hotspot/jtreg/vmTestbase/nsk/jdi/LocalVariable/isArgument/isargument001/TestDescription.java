@@ -64,7 +64,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.LocalVariable.isArgument.isargument001
  *        nsk.jdi.LocalVariable.isArgument.isargument001a
  *

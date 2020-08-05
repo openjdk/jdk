@@ -45,7 +45,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Scenarios.invokeMethod.redefineclasses001
  *        nsk.jdi.Scenarios.invokeMethod.redefineclasses001a
  *        nsk.jdi.Scenarios.invokeMethod.redefineclasses001b

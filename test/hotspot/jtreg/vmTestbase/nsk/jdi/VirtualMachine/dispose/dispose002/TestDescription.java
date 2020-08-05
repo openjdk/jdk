@@ -72,7 +72,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.dispose.dispose002
  *        nsk.jdi.VirtualMachine.dispose.dispose002a
  * @run main/othervm PropertyResolvingWrapper

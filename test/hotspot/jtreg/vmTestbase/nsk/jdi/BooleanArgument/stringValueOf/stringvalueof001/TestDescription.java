@@ -63,7 +63,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.BooleanArgument.stringValueOf.stringvalueof001
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.BooleanArgument.stringValueOf.stringvalueof001

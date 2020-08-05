@@ -58,7 +58,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.createClassUnloadRequest.cureg001
  *        nsk.jdi.EventRequestManager.createClassUnloadRequest.cureg001a
  * @run main/othervm PropertyResolvingWrapper

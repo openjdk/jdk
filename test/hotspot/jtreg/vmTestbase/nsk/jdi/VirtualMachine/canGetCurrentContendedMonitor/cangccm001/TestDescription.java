@@ -57,7 +57,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.canGetCurrentContendedMonitor.cangccm001
  *        nsk.jdi.VirtualMachine.canGetCurrentContendedMonitor.cangccm001a
  * @run main/othervm PropertyResolvingWrapper

@@ -65,7 +65,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Location.sourcePath.sourcepath001
  *        nsk.jdi.Location.sourcePath.sourcepath001a
  *

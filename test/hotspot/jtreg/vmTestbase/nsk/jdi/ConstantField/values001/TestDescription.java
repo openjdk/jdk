@@ -68,7 +68,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm nsk.jdi.ConstantField.values001
  */
 

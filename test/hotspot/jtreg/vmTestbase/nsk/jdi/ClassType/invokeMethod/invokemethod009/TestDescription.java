@@ -45,7 +45,6 @@
  * @modules jdk.jdi/com.sun.tools.jdi:open
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ClassType.invokeMethod.invokemethod009
  *        nsk.jdi.ClassType.invokeMethod.invokemethod009t
  * @run main/othervm PropertyResolvingWrapper

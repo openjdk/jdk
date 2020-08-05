@@ -52,7 +52,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.methods.methods006
  *        nsk.jdi.ReferenceType.methods.methods006a
  * @run main/othervm PropertyResolvingWrapper

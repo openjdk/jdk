@@ -69,7 +69,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.BScenarios.hotswap.tc10x002
  *        nsk.jdi.BScenarios.hotswap.tc10x002a
  *

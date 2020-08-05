@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.LocalVariable.genericSignature.gensignature001
  *        nsk.jdi.LocalVariable.genericSignature.gensignature001a
  *

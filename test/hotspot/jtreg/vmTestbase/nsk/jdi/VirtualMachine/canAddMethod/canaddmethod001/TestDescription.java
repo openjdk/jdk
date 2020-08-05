@@ -55,7 +55,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.canAddMethod.canaddmethod001
  *        nsk.jdi.VirtualMachine.canAddMethod.canaddmethod001a
  * @run main/othervm PropertyResolvingWrapper

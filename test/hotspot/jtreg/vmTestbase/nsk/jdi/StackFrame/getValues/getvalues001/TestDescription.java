@@ -69,7 +69,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.StackFrame.getValues.getvalues001
  *        nsk.jdi.StackFrame.getValues.getvalues001a
  *

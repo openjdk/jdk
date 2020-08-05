@@ -89,7 +89,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.PlugConnectors.MultiConnectors.plugMultiConnect004.plugMultiConnect004
  *
  * @comment build connectors.jar to jars

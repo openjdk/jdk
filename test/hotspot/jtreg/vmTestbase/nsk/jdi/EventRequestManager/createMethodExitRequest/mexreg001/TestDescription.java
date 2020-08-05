@@ -58,7 +58,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.createMethodExitRequest.mexreg001
  *        nsk.jdi.EventRequestManager.createMethodExitRequest.mexreg001a
  * @run main/othervm PropertyResolvingWrapper

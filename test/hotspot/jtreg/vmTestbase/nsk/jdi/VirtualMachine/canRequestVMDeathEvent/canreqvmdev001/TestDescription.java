@@ -54,7 +54,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.canRequestVMDeathEvent.canreqvmdev001
  *        nsk.jdi.VirtualMachine.canRequestVMDeathEvent.canreqvmdev001a
  * @run main/othervm PropertyResolvingWrapper

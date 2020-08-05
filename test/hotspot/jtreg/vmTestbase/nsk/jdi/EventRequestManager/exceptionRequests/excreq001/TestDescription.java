@@ -48,7 +48,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.exceptionRequests.excreq001
  *        nsk.jdi.EventRequestManager.exceptionRequests.excreq001t
  *        nsk.jdi.EventRequestManager.exceptionRequests.excreq001a

@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.PlugConnectors.AttachConnector.plugAttachConnect001.plugAttachConnect001
  *
  * @comment build connectors.jar to jars

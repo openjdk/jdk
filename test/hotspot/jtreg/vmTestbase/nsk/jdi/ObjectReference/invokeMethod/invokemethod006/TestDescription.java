@@ -41,7 +41,6 @@
  * @modules jdk.jdi/com.sun.tools.jdi:open
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.invokeMethod.invokemethod006
  *        nsk.jdi.ObjectReference.invokeMethod.invokemethod006t
  *

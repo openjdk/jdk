@@ -46,7 +46,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Accessible.modifiers.modifiers001
  *        nsk.jdi.Accessible.modifiers.modifiers001a
  * @run main/othervm PropertyResolvingWrapper

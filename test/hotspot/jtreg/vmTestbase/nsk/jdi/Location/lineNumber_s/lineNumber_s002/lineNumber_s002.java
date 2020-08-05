@@ -50,7 +50,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Location.lineNumber_s.lineNumber_s002.lineNumber_s002
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.Location.lineNumber_s.lineNumber_s002.lineNumber_s002

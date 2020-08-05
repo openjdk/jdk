@@ -39,7 +39,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Field.isTransient.istrans001
  *        nsk.jdi.Field.isTransient.istrans001a
  * @run main/othervm PropertyResolvingWrapper

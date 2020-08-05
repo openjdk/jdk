@@ -53,7 +53,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.defaultStratum.defaultStratum003.defaultStratum003
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.ReferenceType.defaultStratum.defaultStratum003.defaultStratum003

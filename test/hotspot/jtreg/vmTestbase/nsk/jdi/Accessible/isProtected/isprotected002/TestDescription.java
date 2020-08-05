@@ -48,7 +48,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Accessible.isProtected.isprotected002
  *        nsk.jdi.Accessible.isProtected.isprotected002a
  * @run main/othervm PropertyResolvingWrapper

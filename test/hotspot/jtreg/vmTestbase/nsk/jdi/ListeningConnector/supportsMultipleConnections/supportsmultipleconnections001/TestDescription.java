@@ -41,7 +41,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ListeningConnector.supportsMultipleConnections.supportsmultipleconnections001
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.ListeningConnector.supportsMultipleConnections.supportsmultipleconnections001

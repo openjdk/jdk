@@ -47,7 +47,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.allMethods.allmethods002
  *        nsk.jdi.ReferenceType.allMethods.allmethods002a
  *

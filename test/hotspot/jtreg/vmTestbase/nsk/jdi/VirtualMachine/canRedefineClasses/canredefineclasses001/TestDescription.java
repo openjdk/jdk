@@ -54,7 +54,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.canRedefineClasses.canredefineclasses001
  *        nsk.jdi.VirtualMachine.canRedefineClasses.canredefineclasses001a
  * @run main/othervm PropertyResolvingWrapper

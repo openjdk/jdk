@@ -52,7 +52,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventSet.virtualMachine.virtualmachine001
  *        nsk.jdi.EventSet.virtualMachine.virtualmachine001a
  * @run main/othervm PropertyResolvingWrapper

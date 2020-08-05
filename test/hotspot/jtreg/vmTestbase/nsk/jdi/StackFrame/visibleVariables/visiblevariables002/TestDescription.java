@@ -83,7 +83,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.StackFrame.visibleVariables.visiblevariables002
  *        nsk.jdi.StackFrame.visibleVariables.visiblevariables002a
  * @run main/othervm PropertyResolvingWrapper

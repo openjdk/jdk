@@ -60,7 +60,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.exceptionRequests.excreq002
  *        nsk.jdi.EventRequestManager.exceptionRequests.excreq002a
  * @run main/othervm PropertyResolvingWrapper

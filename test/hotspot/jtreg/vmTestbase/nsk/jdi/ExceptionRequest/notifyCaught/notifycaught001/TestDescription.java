@@ -61,7 +61,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ExceptionRequest.notifyCaught.notifycaught001
  *        nsk.jdi.ExceptionRequest.notifyCaught.notifycaught001a
  * @run main/othervm PropertyResolvingWrapper

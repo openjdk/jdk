@@ -57,7 +57,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VoidValue.equals.equals002
  *        nsk.jdi.VoidValue.equals.equals002a
  * @run main/othervm PropertyResolvingWrapper

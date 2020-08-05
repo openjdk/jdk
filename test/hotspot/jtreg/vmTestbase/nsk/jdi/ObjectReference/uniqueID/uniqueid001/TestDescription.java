@@ -63,7 +63,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.uniqueID.uniqueid001
  *        nsk.jdi.ObjectReference.uniqueID.uniqueid001a
  * @run main/othervm PropertyResolvingWrapper

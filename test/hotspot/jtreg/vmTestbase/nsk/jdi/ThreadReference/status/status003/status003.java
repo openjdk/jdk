@@ -61,7 +61,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ThreadReference.status.status003.status003
  *        nsk.jdi.ThreadReference.status.status003.status003a
  * @run main/othervm PropertyResolvingWrapper

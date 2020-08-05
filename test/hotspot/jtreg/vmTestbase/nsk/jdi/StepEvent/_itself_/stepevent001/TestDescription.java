@@ -82,7 +82,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.StepEvent._itself_.stepevent001
  *        nsk.jdi.StepEvent._itself_.stepevent001a
  * @run main/othervm PropertyResolvingWrapper

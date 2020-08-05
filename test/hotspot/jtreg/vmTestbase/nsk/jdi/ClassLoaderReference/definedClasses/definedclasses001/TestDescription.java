@@ -63,7 +63,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ClassLoaderReference.definedClasses.definedclasses001
  *        nsk.jdi.ClassLoaderReference.definedClasses.definedclasses001a
  * @run main/othervm PropertyResolvingWrapper

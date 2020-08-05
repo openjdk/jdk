@@ -45,7 +45,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.MethodExitEvent.returnValue.returnValue004.returnValue004
  *        nsk.jdi.MethodExitEvent.returnValue.returnValue004.returnValue004a
  * @run main/othervm/native PropertyResolvingWrapper

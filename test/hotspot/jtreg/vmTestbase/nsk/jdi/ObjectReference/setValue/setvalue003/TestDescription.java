@@ -44,7 +44,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.setValue.setvalue003
  *        nsk.jdi.ObjectReference.setValue.setvalue003t
  *

@@ -54,7 +54,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.canPopFrames.canpopframes001
  *        nsk.jdi.VirtualMachine.canPopFrames.canpopframes001a
  * @run main/othervm PropertyResolvingWrapper

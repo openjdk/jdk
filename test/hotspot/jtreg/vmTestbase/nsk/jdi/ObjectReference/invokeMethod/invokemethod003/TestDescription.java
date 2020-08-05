@@ -40,7 +40,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.invokeMethod.invokemethod003
  *        nsk.jdi.ObjectReference.invokeMethod.invokemethod003t
  *

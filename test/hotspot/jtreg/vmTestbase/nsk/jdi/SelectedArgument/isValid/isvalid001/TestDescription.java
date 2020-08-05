@@ -53,7 +53,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.SelectedArgument.isValid.isvalid001
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.SelectedArgument.isValid.isvalid001

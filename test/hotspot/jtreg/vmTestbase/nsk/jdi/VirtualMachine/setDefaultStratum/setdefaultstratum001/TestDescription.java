@@ -62,7 +62,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.setDefaultStratum.setdefaultstratum001
  *        nsk.jdi.VirtualMachine.setDefaultStratum.setdefaultstratum001a
  * @run main/othervm PropertyResolvingWrapper

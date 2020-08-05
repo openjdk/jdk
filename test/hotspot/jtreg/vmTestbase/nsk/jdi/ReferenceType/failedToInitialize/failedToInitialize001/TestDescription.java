@@ -39,7 +39,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.failedToInitialize.failedToInitialize001
  *        nsk.jdi.ReferenceType.failedToInitialize.failedToInitialize001a
  * @run main/othervm PropertyResolvingWrapper

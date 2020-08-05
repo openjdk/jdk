@@ -66,7 +66,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ExceptionRequest.exception.exception001
  *        nsk.jdi.ExceptionRequest.exception.exception001a
  * @run main/othervm PropertyResolvingWrapper

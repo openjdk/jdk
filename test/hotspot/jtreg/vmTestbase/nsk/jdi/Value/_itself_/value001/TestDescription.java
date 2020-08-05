@@ -55,7 +55,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Value._itself_.value001
  *        nsk.jdi.Value._itself_.value001a
  *

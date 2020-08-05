@@ -45,7 +45,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.genericSignature.genericSignature002
  *        nsk.jdi.ReferenceType.genericSignature.genericSignature002a
  * @run main/othervm PropertyResolvingWrapper

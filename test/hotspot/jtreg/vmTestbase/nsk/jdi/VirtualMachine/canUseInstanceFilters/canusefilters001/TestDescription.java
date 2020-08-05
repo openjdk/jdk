@@ -56,7 +56,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.canUseInstanceFilters.canusefilters001
  *        nsk.jdi.VirtualMachine.canUseInstanceFilters.canusefilters001a
  * @run main/othervm PropertyResolvingWrapper

@@ -53,7 +53,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager._bounds_.requests001
  *        nsk.jdi.EventRequestManager._bounds_.requests001a
  * @run main/othervm PropertyResolvingWrapper

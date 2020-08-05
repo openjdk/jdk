@@ -70,7 +70,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Method.variables.variables002
  *        nsk.jdi.Method.variables.variables002a
  * @run main/othervm PropertyResolvingWrapper

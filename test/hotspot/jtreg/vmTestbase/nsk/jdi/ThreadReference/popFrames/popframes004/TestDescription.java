@@ -102,7 +102,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ThreadReference.popFrames.popframes004
  *        nsk.jdi.ThreadReference.popFrames.popframes004a
  * @run main/othervm PropertyResolvingWrapper

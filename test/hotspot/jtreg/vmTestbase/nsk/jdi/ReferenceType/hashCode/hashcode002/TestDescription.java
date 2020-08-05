@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.hashCode.hashcode002
  *        nsk.jdi.ReferenceType.hashCode.hashcode002a
  *

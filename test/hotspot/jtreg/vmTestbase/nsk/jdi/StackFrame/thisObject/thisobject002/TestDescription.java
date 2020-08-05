@@ -64,7 +64,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.StackFrame.thisObject.thisobject002
  *        nsk.jdi.StackFrame.thisObject.thisobject002a
  * @run main/othervm PropertyResolvingWrapper

@@ -61,7 +61,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequest.disable.disable002
  *        nsk.jdi.EventRequest.disable.disable002a
  * @run main/othervm PropertyResolvingWrapper

@@ -37,7 +37,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn015.forceEarlyReturn015
  *        nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn015.forceEarlyReturn015a
  * @run main/othervm PropertyResolvingWrapper

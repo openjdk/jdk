@@ -49,7 +49,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.StackFrame.toString.tostring001
  *        nsk.jdi.StackFrame.toString.tostring001a
  * @run main/othervm PropertyResolvingWrapper

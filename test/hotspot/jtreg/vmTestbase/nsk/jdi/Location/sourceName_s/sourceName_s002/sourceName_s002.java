@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Location.sourceName_s.sourceName_s002.sourceName_s002
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.Location.sourceName_s.sourceName_s002.sourceName_s002

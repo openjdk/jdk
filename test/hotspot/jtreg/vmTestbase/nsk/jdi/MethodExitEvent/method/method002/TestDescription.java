@@ -80,7 +80,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.MethodExitEvent.method.method002
  *        nsk.jdi.MethodExitEvent.method.method002a
  * @run main/othervm PropertyResolvingWrapper

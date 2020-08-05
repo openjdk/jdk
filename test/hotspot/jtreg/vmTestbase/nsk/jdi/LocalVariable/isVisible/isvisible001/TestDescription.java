@@ -72,7 +72,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.LocalVariable.isVisible.isvisible001
  *        nsk.jdi.LocalVariable.isVisible.isvisible001a
  *

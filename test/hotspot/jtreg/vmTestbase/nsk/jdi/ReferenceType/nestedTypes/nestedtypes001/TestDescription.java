@@ -64,7 +64,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.nestedTypes.nestedtypes001
  *        nsk.jdi.ReferenceType.nestedTypes.nestedtypes001a
  * @run main/othervm PropertyResolvingWrapper

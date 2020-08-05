@@ -50,7 +50,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.isInitialized.isinit001
  *        nsk.jdi.ReferenceType.isInitialized.isinit001a
  * @run main/othervm PropertyResolvingWrapper

@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.fields.fields003
  *        nsk.jdi.ReferenceType.fields.fields003a
  *

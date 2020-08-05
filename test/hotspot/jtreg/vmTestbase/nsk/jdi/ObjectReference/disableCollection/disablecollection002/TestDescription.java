@@ -73,7 +73,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.disableCollection.disablecollection002
  *        nsk.jdi.ObjectReference.disableCollection.disablecollection002a
  * @run main/othervm PropertyResolvingWrapper

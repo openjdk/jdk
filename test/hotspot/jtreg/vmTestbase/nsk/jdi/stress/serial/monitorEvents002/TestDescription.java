@@ -45,7 +45,6 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build classes required for tests from monitorEvents002.tests
  * @build nsk.share.jdi.EventTestTemplates

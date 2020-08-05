@@ -50,7 +50,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.TypeComponent.isStatic.isstatic004
  *        nsk.jdi.TypeComponent.isStatic.isstatic004a
  * @run main/othervm PropertyResolvingWrapper

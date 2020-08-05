@@ -134,7 +134,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ClassType.newInstance.newinstance002
  *        nsk.jdi.ClassType.newInstance.newinstance002a
  *

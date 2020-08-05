@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.CharType._itself_.chartype001
  *        nsk.jdi.CharType._itself_.chartype001a
  * @run main/othervm PropertyResolvingWrapper

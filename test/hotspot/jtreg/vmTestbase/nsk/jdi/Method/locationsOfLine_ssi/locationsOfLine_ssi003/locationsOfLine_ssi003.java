@@ -56,7 +56,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Method.locationsOfLine_ssi.locationsOfLine_ssi003.locationsOfLine_ssi003
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.Method.locationsOfLine_ssi.locationsOfLine_ssi003.locationsOfLine_ssi003

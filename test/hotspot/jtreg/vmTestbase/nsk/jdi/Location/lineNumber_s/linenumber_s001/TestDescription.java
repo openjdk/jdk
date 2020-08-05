@@ -63,7 +63,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Location.lineNumber_s.linenumber_s001
  *        nsk.jdi.Location.lineNumber_s.linenumber_s001a
  *

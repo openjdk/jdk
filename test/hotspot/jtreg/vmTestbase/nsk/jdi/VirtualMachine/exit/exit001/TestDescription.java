@@ -65,7 +65,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.exit.exit001
  *        nsk.jdi.VirtualMachine.exit.exit001a
  * @run main/othervm PropertyResolvingWrapper

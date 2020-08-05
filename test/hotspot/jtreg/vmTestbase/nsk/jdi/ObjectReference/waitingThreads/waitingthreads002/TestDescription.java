@@ -57,7 +57,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.waitingThreads.waitingthreads002
  *        nsk.jdi.ObjectReference.waitingThreads.waitingthreads002a
  * @run main/othervm PropertyResolvingWrapper

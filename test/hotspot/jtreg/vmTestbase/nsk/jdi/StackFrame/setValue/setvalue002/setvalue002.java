@@ -88,7 +88,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.StackFrame.setValue.setvalue002.setvalue002
  *        nsk.jdi.StackFrame.setValue.setvalue002.setvalue002a
  *

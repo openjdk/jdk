@@ -77,7 +77,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ClassUnloadEvent.className.classname001
  *        nsk.jdi.ClassUnloadEvent.className.classname001a
  *

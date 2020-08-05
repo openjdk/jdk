@@ -73,7 +73,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.createExceptionRequest.crexreq009
  *        nsk.jdi.EventRequestManager.createExceptionRequest.crexreq009a
  * @run main/othervm PropertyResolvingWrapper

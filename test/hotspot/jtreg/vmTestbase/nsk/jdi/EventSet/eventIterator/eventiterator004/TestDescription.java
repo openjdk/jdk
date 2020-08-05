@@ -60,7 +60,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventSet.eventIterator.eventiterator004
  *        nsk.jdi.EventSet.eventIterator.eventiterator004a
  * @run main/othervm PropertyResolvingWrapper

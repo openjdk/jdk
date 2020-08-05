@@ -45,7 +45,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.LaunchingConnector.launch.launch003
  *        nsk.jdi.LaunchingConnector.launch.launch003o
  * @run main/othervm PropertyResolvingWrapper

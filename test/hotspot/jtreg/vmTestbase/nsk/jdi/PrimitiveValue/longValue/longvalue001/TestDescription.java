@@ -59,7 +59,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.PrimitiveValue.longValue.longvalue001
  *        nsk.jdi.PrimitiveValue.longValue.longvalue001a
  * @run main/othervm PropertyResolvingWrapper

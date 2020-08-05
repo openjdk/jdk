@@ -57,7 +57,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.WatchpointEvent._itself_.wevent001
  *        nsk.jdi.WatchpointEvent._itself_.wevent001a
  * @run main/othervm PropertyResolvingWrapper

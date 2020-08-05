@@ -74,7 +74,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ArrayReference.setValues_ilii.setvaluesilii005
  *        nsk.jdi.ArrayReference.setValues_ilii.setvaluesilii005a
  * @run main/othervm PropertyResolvingWrapper

@@ -43,7 +43,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.redefineClasses.redefineclasses031
  *        nsk.jdi.VirtualMachine.redefineClasses.redefineclasses031a
  *

@@ -63,7 +63,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Location.hashCode.hashcode001
  *        nsk.jdi.Location.hashCode.hashcode001a
  *

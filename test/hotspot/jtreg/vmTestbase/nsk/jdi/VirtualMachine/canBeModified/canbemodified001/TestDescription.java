@@ -39,7 +39,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.canBeModified.canbemodified001
  *        nsk.jdi.VirtualMachine.canBeModified.canbemodified001a
  * @run main/othervm PropertyResolvingWrapper

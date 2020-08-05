@@ -44,7 +44,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.instanceCounts.instancecounts001.instancecounts001
  *        nsk.share.jdi.TestClass1
  *        nsk.share.jdi.TestClass2

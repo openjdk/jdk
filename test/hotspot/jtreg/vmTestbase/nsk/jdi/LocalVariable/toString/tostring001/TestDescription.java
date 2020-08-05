@@ -42,7 +42,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.LocalVariable.toString.tostring001
  *        nsk.jdi.LocalVariable.toString.tostring001a
  *

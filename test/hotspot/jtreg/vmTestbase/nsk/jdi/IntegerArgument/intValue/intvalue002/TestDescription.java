@@ -63,7 +63,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.IntegerArgument.intValue.intvalue002
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.IntegerArgument.intValue.intvalue002

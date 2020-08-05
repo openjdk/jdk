@@ -50,7 +50,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VoidType._itself_.voidtype001
  *        nsk.jdi.VoidType._itself_.voidtype001a
  * @run main/othervm PropertyResolvingWrapper

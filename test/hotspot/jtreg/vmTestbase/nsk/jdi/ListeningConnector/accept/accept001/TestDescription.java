@@ -43,7 +43,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ListeningConnector.accept.accept001
  *        nsk.jdi.ListeningConnector.accept.accept001t
  * @run main/othervm PropertyResolvingWrapper

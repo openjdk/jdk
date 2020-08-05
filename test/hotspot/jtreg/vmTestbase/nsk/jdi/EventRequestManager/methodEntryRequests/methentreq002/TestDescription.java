@@ -61,7 +61,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.methodEntryRequests.methentreq002
  *        nsk.jdi.EventRequestManager.methodEntryRequests.methentreq002a
  * @run main/othervm PropertyResolvingWrapper

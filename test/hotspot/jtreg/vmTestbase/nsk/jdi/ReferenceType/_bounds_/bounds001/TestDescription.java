@@ -40,7 +40,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType._bounds_.bounds001
  *        nsk.jdi.ReferenceType._bounds_.bounds001a
  *

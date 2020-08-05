@@ -79,7 +79,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ClassPrepareEvent.referenceType.refType001
  *        nsk.jdi.ClassPrepareEvent.referenceType.refType001a
  * @run main/othervm PropertyResolvingWrapper

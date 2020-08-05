@@ -34,7 +34,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.StackFrame.getArgumentValues.getArgumentValues002.getArgumentValues002
  *        nsk.jdi.StackFrame.getArgumentValues.getArgumentValues002.getArgumentValues002a
  * @run main/othervm PropertyResolvingWrapper

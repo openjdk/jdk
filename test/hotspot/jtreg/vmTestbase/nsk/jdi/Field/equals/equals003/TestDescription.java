@@ -48,7 +48,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Field.equals.equals003
  *        nsk.jdi.Field.equals.equals003a
  * @run main/othervm PropertyResolvingWrapper

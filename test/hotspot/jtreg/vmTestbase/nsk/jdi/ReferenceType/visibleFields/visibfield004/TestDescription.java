@@ -43,7 +43,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.visibleFields.visibfield004
  *        nsk.jdi.ReferenceType.visibleFields.visibfield004a
  * @run main/othervm PropertyResolvingWrapper

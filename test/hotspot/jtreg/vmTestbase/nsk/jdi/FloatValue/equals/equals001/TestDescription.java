@@ -58,7 +58,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.FloatValue.equals.equals001
  *        nsk.jdi.FloatValue.equals.equals001a
  * @run main/othervm PropertyResolvingWrapper

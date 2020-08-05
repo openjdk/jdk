@@ -55,7 +55,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.canUnrestrictedlyRedefineClasses.curc001
  *        nsk.jdi.VirtualMachine.canUnrestrictedlyRedefineClasses.curc001a
  * @run main/othervm PropertyResolvingWrapper

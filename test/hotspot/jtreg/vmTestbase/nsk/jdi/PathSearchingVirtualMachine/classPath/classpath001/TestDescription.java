@@ -61,7 +61,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.PathSearchingVirtualMachine.classPath.classpath001
  *        nsk.jdi.PathSearchingVirtualMachine.classPath.classpath001a
  * @run main/othervm PropertyResolvingWrapper

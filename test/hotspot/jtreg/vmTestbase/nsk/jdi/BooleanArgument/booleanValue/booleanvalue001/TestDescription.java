@@ -81,7 +81,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.BooleanArgument.booleanValue.booleanvalue001
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.BooleanArgument.booleanValue.booleanvalue001

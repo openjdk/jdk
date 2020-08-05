@@ -60,7 +60,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.threadStartRequests.thrstartreq002
  *        nsk.jdi.EventRequestManager.threadStartRequests.thrstartreq002a
  * @run main/othervm PropertyResolvingWrapper

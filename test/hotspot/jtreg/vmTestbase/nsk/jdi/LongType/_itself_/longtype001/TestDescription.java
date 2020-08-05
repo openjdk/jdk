@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.LongType._itself_.longtype001
  *        nsk.jdi.LongType._itself_.longtype001a
  * @run main/othervm PropertyResolvingWrapper

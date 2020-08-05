@@ -61,7 +61,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.classPrepareRequests.clsprepreq002
  *        nsk.jdi.EventRequestManager.classPrepareRequests.clsprepreq002a
  * @run main/othervm PropertyResolvingWrapper

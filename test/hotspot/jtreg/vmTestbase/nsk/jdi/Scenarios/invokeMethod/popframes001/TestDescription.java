@@ -53,7 +53,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Scenarios.invokeMethod.popframes001
  *        nsk.jdi.Scenarios.invokeMethod.popframes001a
  * @run main/othervm PropertyResolvingWrapper

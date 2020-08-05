@@ -77,7 +77,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VMDeathEvent._itself_.vmdeath003
  *        nsk.jdi.VMDeathEvent._itself_.vmdeath003a
  * @run main/othervm PropertyResolvingWrapper

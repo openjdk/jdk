@@ -60,7 +60,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.BooleanValue.equals.equals001
  *        nsk.jdi.BooleanValue.equals.equals001a
  * @run main/othervm PropertyResolvingWrapper

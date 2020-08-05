@@ -63,7 +63,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequest.getProperty.getproperty001
  *        nsk.jdi.EventRequest.getProperty.getproperty001a
  * @run main/othervm PropertyResolvingWrapper

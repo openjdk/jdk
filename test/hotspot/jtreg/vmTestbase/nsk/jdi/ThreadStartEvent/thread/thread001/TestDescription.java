@@ -83,7 +83,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ThreadStartEvent.thread.thread001
  *        nsk.jdi.ThreadStartEvent.thread.thread001a
  * @run main/othervm PropertyResolvingWrapper

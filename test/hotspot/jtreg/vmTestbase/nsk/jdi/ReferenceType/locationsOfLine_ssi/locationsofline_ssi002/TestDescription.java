@@ -43,7 +43,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.locationsOfLine_ssi.locationsofline_ssi002
  *        nsk.jdi.ReferenceType.locationsOfLine_ssi.locationsofline_ssi002t
  * @run main/othervm PropertyResolvingWrapper

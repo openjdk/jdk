@@ -64,7 +64,6 @@
  *      newclass02 nsk/jdi/VirtualMachine/redefineClasses/redefineclasses030b.class
  * @clean nsk.jdi.VirtualMachine.redefineClasses.redefineclasses030b
  *
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.redefineClasses.redefineclasses030
  *        nsk.jdi.VirtualMachine.redefineClasses.redefineclasses030a
  *

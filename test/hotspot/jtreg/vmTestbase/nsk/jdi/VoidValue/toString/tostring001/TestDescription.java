@@ -50,7 +50,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VoidValue.toString.tostring001
  *        nsk.jdi.VoidValue.toString.tostring001a
  * @run main/othervm PropertyResolvingWrapper

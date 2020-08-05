@@ -52,7 +52,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ListeningConnector.startListening.startlis002
  *        nsk.jdi.ListeningConnector.startListening.startlis002t
  * @run main/othervm PropertyResolvingWrapper

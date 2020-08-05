@@ -68,7 +68,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.nestedTypes.nestedtypes002
  *        nsk.jdi.ReferenceType.nestedTypes.nestedtypes002a
  *

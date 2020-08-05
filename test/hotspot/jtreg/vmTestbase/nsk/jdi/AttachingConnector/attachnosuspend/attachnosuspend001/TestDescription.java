@@ -40,7 +40,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.AttachingConnector.attachnosuspend.attachnosuspend001
  *        nsk.jdi.AttachingConnector.attachnosuspend.attachnosuspend001t
  * @run main/othervm PropertyResolvingWrapper

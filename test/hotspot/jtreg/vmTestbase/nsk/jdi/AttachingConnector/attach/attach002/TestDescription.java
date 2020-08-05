@@ -47,7 +47,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.AttachingConnector.attach.attach002
  *        nsk.jdi.AttachingConnector.attach.attach002t
  * @run main/othervm PropertyResolvingWrapper

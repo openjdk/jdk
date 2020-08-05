@@ -44,7 +44,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference._bounds_.bounds002
  *        nsk.jdi.ObjectReference._bounds_.bounds002a
  * @run main/othervm PropertyResolvingWrapper

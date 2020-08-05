@@ -79,7 +79,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Method.locationsOfLine_ssi.locationsofline_ssi001
  *        nsk.jdi.Method.locationsOfLine_ssi.locationsofline_ssi001a
  *

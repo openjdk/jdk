@@ -50,7 +50,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.PrimitiveType._itself_.primitivetype001
  *        nsk.jdi.PrimitiveType._itself_.primitivetype001a
  * @run main/othervm PropertyResolvingWrapper

@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ByteType._itself_.bytetype001
  *        nsk.jdi.ByteType._itself_.bytetype001a
  * @run main/othervm PropertyResolvingWrapper

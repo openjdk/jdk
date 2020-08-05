@@ -58,7 +58,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ExceptionEvent.catchLocation.location002
  *        nsk.jdi.ExceptionEvent.catchLocation.location002a
  * @run main/othervm PropertyResolvingWrapper

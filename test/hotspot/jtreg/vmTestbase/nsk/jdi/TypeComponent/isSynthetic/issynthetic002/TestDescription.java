@@ -67,7 +67,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.TypeComponent.isSynthetic.issynthetic002
  *        nsk.jdi.TypeComponent.isSynthetic.issynthetic002a
  * @run main/othervm PropertyResolvingWrapper

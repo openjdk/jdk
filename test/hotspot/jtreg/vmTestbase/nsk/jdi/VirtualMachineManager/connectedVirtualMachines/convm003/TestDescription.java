@@ -67,7 +67,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachineManager.connectedVirtualMachines.convm003
  *        nsk.jdi.VirtualMachineManager.connectedVirtualMachines.convm003a
  * @run main/othervm PropertyResolvingWrapper

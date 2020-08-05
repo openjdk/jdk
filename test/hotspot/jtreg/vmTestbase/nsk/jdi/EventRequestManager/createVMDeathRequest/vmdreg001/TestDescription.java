@@ -65,7 +65,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.createVMDeathRequest.vmdreg001
  *        nsk.jdi.EventRequestManager.createVMDeathRequest.vmdreg001a
  * @run main/othervm PropertyResolvingWrapper

@@ -53,7 +53,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.TypeComponent.isProtected.isprotected002
  *        nsk.jdi.TypeComponent.isProtected.isprotected002a
  * @run main/othervm PropertyResolvingWrapper

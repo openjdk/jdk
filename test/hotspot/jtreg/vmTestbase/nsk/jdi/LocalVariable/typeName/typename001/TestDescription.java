@@ -64,7 +64,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.LocalVariable.typeName.typename001
  *        nsk.jdi.LocalVariable.typeName.typename001a
  *

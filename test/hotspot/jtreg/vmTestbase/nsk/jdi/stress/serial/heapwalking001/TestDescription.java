@@ -42,7 +42,6 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build classes required for tests from heapwalking001.tests
  * @build nsk.jdi.ObjectReference.referringObjects.referringObjects003.referringObjects003

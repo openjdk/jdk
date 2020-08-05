@@ -60,7 +60,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.accessWatchpointRequests.accwtchpreq002
  *        nsk.jdi.EventRequestManager.accessWatchpointRequests.accwtchpreq002a
  * @run main/othervm PropertyResolvingWrapper

@@ -47,7 +47,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.visibleFields.visibfield002
  *        nsk.jdi.ReferenceType.visibleFields.visibfield002a
  *

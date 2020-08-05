@@ -72,7 +72,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ThreadReference.suspend.suspend001
  *        nsk.jdi.ThreadReference.suspend.suspend001a
  * @run main/othervm/timeout=420 PropertyResolvingWrapper

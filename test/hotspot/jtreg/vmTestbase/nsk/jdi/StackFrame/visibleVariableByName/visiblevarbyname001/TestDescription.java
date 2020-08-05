@@ -75,7 +75,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.StackFrame.visibleVariableByName.visiblevarbyname001
  *        nsk.jdi.StackFrame.visibleVariableByName.visiblevarbyname001a
  *

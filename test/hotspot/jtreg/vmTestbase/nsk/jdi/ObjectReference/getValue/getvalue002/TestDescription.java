@@ -70,7 +70,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.getValue.getvalue002
  *        nsk.jdi.ObjectReference.getValue.getvalue002a
  *

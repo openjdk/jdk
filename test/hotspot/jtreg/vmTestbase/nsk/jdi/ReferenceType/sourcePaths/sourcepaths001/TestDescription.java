@@ -77,7 +77,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.sourcePaths.sourcepaths001
  *        nsk.jdi.ReferenceType.sourcePaths.sourcepaths001a
  * @run main/othervm PropertyResolvingWrapper

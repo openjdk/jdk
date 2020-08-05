@@ -57,7 +57,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Method.isBridge.isbridge001
  *        nsk.jdi.Method.isBridge.isbridge001t
  * @run main/othervm PropertyResolvingWrapper

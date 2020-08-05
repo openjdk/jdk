@@ -42,7 +42,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventQueue.remove.remove003
  *        nsk.jdi.EventQueue.remove.remove003t
  * @run main/othervm PropertyResolvingWrapper

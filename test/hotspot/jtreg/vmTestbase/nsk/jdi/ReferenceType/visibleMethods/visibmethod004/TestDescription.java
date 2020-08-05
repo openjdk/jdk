@@ -41,7 +41,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.visibleMethods.visibmethod004
  *        nsk.jdi.ReferenceType.visibleMethods.visibmethod004a
  * @run main/othervm PropertyResolvingWrapper

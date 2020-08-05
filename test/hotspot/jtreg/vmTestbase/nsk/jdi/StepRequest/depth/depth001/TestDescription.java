@@ -56,7 +56,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.StepRequest.depth.depth001
  *        nsk.jdi.StepRequest.depth.depth001a
  * @run main/othervm PropertyResolvingWrapper

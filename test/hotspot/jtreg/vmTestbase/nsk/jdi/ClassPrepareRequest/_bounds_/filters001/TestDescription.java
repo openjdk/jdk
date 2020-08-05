@@ -42,7 +42,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ClassPrepareRequest._bounds_.filters001
  *        nsk.jdi.ClassPrepareRequest._bounds_.filters001a
  * @run main/othervm PropertyResolvingWrapper

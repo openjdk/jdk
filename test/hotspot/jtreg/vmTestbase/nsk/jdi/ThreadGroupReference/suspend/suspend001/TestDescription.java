@@ -65,7 +65,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ThreadGroupReference.suspend.suspend001
  *        nsk.jdi.ThreadGroupReference.suspend.suspend001a
  * @run main/othervm PropertyResolvingWrapper

@@ -77,7 +77,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.createStepRequest.crstepreq002
  *        nsk.jdi.EventRequestManager.createStepRequest.crstepreq002a
  * @run main/othervm PropertyResolvingWrapper

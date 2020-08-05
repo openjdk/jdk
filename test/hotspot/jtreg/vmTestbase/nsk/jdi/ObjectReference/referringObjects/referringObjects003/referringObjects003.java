@@ -55,7 +55,6 @@
  * @requires !vm.graal.enabled
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.referringObjects.referringObjects003.referringObjects003
  *        nsk.jdi.ObjectReference.referringObjects.referringObjects003.referringObjects003a
  * @run main/othervm/native PropertyResolvingWrapper

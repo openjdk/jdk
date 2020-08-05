@@ -72,7 +72,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.StackFrame.location.location001
  *        nsk.jdi.StackFrame.location.location001a
  * @run main/othervm PropertyResolvingWrapper

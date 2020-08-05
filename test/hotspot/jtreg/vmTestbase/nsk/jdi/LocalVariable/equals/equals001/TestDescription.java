@@ -68,7 +68,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.LocalVariable.equals.equals001
  *        nsk.jdi.LocalVariable.equals.equals001a
  *

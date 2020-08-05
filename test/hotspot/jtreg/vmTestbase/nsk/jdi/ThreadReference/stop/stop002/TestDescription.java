@@ -41,7 +41,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ThreadReference.stop.stop002
  *        nsk.jdi.ThreadReference.stop.stop002t
  *

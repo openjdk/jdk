@@ -48,7 +48,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Accessible.isPrivate.isprivate002
  *        nsk.jdi.Accessible.isPrivate.isprivate002a
  * @run main/othervm PropertyResolvingWrapper

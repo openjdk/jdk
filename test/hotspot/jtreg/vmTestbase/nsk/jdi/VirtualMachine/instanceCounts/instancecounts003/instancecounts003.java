@@ -45,7 +45,6 @@
  * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.instanceCounts.instancecounts003.instancecounts003
  *        nsk.share.jdi.TestClass1
  *        nsk.share.jdi.TestInterfaceImplementer1

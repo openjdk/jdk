@@ -60,7 +60,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.deleteEventRequests.delevtreqs002
  *        nsk.jdi.EventRequestManager.deleteEventRequests.delevtreqs002a
  * @run main/othervm PropertyResolvingWrapper

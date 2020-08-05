@@ -57,7 +57,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.canGetOwnedMonitorInfo.cangetinfo001
  *        nsk.jdi.VirtualMachine.canGetOwnedMonitorInfo.cangetinfo001a
  * @run main/othervm PropertyResolvingWrapper

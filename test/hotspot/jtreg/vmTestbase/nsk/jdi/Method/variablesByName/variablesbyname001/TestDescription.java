@@ -80,7 +80,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Method.variablesByName.variablesbyname001
  *        nsk.jdi.Method.variablesByName.variablesbyname001a
  *

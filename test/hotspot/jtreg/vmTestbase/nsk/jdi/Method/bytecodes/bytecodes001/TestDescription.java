@@ -61,7 +61,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Method.bytecodes.bytecodes001
  *        nsk.jdi.Method.bytecodes.bytecodes001a
  * @run main/othervm PropertyResolvingWrapper

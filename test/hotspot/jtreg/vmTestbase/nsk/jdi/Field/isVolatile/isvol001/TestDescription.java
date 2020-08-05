@@ -39,7 +39,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Field.isVolatile.isvol001
  *        nsk.jdi.Field.isVolatile.isvol001a
  * @run main/othervm PropertyResolvingWrapper

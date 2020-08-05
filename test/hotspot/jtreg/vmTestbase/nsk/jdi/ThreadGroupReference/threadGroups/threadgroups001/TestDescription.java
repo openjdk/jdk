@@ -63,7 +63,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ThreadGroupReference.threadGroups.threadgroups001
  *        nsk.jdi.ThreadGroupReference.threadGroups.threadgroups001a
  * @run main/othervm PropertyResolvingWrapper

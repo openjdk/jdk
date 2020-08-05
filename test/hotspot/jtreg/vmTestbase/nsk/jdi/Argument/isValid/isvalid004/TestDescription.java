@@ -77,7 +77,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Argument.isValid.isvalid004
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.Argument.isValid.isvalid004

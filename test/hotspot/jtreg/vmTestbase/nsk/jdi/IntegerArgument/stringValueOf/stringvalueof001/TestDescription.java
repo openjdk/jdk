@@ -60,7 +60,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.IntegerArgument.stringValueOf.stringvalueof001
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.IntegerArgument.stringValueOf.stringvalueof001

@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ClassType.invokeMethod.invokemethod011
  *        nsk.jdi.ClassType.invokeMethod.invokemethod011t
  * @run main/othervm PropertyResolvingWrapper

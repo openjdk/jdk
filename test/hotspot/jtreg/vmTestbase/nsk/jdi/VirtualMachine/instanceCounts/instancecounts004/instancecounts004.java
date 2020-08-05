@@ -39,7 +39,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.instanceCounts.instancecounts004.instancecounts004
  *        nsk.jdi.VirtualMachine.instanceCounts.instancecounts004.instancecounts004a
  * @run main/othervm PropertyResolvingWrapper

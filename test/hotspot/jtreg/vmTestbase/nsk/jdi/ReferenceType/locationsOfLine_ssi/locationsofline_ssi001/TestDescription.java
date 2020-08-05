@@ -81,7 +81,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.locationsOfLine_ssi.locationsofline_ssi001
  *        nsk.jdi.ReferenceType.locationsOfLine_ssi.locationsofline_ssi001a
  *

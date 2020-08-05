@@ -63,7 +63,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ArrayType.newInstance.newinstance002
  *        nsk.jdi.ArrayType.newInstance.newinstance002a
  * @run main/othervm PropertyResolvingWrapper

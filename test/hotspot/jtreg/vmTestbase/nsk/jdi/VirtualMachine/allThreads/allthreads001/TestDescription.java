@@ -68,7 +68,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.allThreads.allthreads001
  *        nsk.jdi.VirtualMachine.allThreads.allthreads001a
  * @run main/othervm PropertyResolvingWrapper

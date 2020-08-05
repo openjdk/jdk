@@ -40,7 +40,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.referringObjects.referringObjects004.referringObjects004
  * @run main/othervm/native PropertyResolvingWrapper
  *      nsk.jdi.ObjectReference.referringObjects.referringObjects004.referringObjects004

@@ -58,7 +58,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.BreakpointRequest.location.location001
  *        nsk.jdi.BreakpointRequest.location.location001a
  * @run main/othervm PropertyResolvingWrapper

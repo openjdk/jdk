@@ -74,7 +74,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ModificationWatchpointEvent.valueToBe.valuetobe001
  *        nsk.jdi.ModificationWatchpointEvent.valueToBe.valuetobe001a
  * @run main/othervm PropertyResolvingWrapper

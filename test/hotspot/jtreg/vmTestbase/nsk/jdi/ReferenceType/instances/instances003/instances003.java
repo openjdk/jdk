@@ -44,7 +44,6 @@
  * @requires vm.gc != "Z"
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.instances.instances003.instances003
  * @run main/othervm/native PropertyResolvingWrapper
  *      nsk.jdi.ReferenceType.instances.instances003.instances003

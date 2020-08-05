@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.DoubleType._itself_.doubletype001
  *        nsk.jdi.DoubleType._itself_.doubletype001a
  * @run main/othervm PropertyResolvingWrapper

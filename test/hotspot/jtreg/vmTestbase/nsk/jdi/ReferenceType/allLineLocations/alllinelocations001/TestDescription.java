@@ -67,7 +67,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.allLineLocations.alllinelocations001
  *        nsk.jdi.ReferenceType.allLineLocations.alllinelocations001a
  *

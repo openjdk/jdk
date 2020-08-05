@@ -85,7 +85,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Method.isObsolete.isobsolete003
  *        nsk.jdi.Method.isObsolete.isobsolete003a
  *

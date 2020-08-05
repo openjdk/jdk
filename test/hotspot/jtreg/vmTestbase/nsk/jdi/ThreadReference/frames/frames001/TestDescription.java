@@ -67,7 +67,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ThreadReference.frames.frames001
  *        nsk.jdi.ThreadReference.frames.frames001a
  * @run main/othervm PropertyResolvingWrapper

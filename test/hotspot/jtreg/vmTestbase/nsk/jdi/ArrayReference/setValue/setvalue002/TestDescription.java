@@ -70,7 +70,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ArrayReference.setValue.setvalue002
  *        nsk.jdi.ArrayReference.setValue.setvalue002a
  * @run main/othervm PropertyResolvingWrapper

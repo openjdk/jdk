@@ -76,7 +76,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.BScenarios.multithrd.tc02x003
  *        nsk.jdi.BScenarios.multithrd.tc02x003a
  * @run main/othervm PropertyResolvingWrapper

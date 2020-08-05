@@ -58,7 +58,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VirtualMachine.canWatchFieldModification.canwatchmod001
  *        nsk.jdi.VirtualMachine.canWatchFieldModification.canwatchmod001a
  * @run main/othervm PropertyResolvingWrapper

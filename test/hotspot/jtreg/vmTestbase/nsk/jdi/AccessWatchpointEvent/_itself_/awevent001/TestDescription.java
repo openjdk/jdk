@@ -53,7 +53,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.AccessWatchpointEvent._itself_.awevent001
  *        nsk.jdi.AccessWatchpointEvent._itself_.awevent001t
  *

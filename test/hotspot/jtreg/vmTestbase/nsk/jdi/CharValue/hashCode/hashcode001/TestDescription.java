@@ -56,7 +56,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.CharValue.hashCode.hashcode001
  *        nsk.jdi.CharValue.hashCode.hashcode001a
  * @run main/othervm PropertyResolvingWrapper

@@ -57,7 +57,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.deleteAllBreakpoints.delallbreakp002
  *        nsk.jdi.EventRequestManager.deleteAllBreakpoints.delallbreakp002a
  * @run main/othervm PropertyResolvingWrapper

@@ -53,7 +53,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Accessible.isPackagePrivate.accipp001
  *        nsk.jdi.Accessible.isPackagePrivate.accipp001a
  * @run main/othervm PropertyResolvingWrapper

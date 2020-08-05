@@ -58,7 +58,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.entryCount.entrycount002
  *        nsk.jdi.ObjectReference.entryCount.entrycount002a
  * @run main/othervm PropertyResolvingWrapper

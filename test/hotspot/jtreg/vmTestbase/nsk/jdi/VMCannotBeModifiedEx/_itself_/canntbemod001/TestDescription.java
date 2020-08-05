@@ -36,7 +36,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VMCannotBeModifiedEx._itself_.canntbemod001
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.VMCannotBeModifiedEx._itself_.canntbemod001

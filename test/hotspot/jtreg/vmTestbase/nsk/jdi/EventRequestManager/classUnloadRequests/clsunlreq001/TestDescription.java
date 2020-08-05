@@ -46,7 +46,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.classUnloadRequests.clsunlreq001
  *        nsk.jdi.EventRequestManager.classUnloadRequests.clsunlreq001t
  * @run main/othervm PropertyResolvingWrapper

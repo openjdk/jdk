@@ -43,7 +43,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.allLineLocations.alllinelocations002
  *        nsk.jdi.ReferenceType.allLineLocations.alllinelocations002t
  * @run main/othervm PropertyResolvingWrapper

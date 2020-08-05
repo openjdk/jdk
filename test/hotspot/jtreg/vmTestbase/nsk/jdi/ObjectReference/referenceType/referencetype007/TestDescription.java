@@ -70,7 +70,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.referenceType.referencetype007
  *        nsk.jdi.ObjectReference.referenceType.referencetype007a
  * @run main/othervm PropertyResolvingWrapper

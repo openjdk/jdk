@@ -57,7 +57,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Transport.name.name001
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.Transport.name.name001

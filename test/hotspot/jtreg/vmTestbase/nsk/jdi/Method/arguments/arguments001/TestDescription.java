@@ -78,7 +78,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Method.arguments.arguments001
  *        nsk.jdi.Method.arguments.arguments001a
  *

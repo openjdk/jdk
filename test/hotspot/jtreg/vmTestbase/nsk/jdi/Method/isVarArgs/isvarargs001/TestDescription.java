@@ -49,7 +49,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.Method.isVarArgs.isvarargs001
  *        nsk.jdi.Method.isVarArgs.isvarargs001a
  * @run main/othervm PropertyResolvingWrapper

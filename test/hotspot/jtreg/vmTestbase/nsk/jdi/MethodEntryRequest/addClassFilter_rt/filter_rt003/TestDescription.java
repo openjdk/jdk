@@ -64,7 +64,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.MethodEntryRequest.addClassFilter_rt.filter_rt003
  *        nsk.jdi.MethodEntryRequest.addClassFilter_rt.filter_rt003a
  * @run main/othervm PropertyResolvingWrapper

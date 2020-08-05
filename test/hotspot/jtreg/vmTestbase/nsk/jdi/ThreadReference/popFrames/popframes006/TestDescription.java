@@ -41,7 +41,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ThreadReference.popFrames.popframes006
  *        nsk.jdi.ThreadReference.popFrames.popframes006t
  *

@@ -36,7 +36,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.availableStrata.availableStrata002.availableStrata002
  * @run main/othervm PropertyResolvingWrapper
  *      nsk.jdi.ReferenceType.availableStrata.availableStrata002.availableStrata002

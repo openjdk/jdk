@@ -61,7 +61,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.BreakpointRequest.addThreadFilter.threadfilter001
  *        nsk.jdi.BreakpointRequest.addThreadFilter.threadfilter001a
  * @run main/othervm PropertyResolvingWrapper

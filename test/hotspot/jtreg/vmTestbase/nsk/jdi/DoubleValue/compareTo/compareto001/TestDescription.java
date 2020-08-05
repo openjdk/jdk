@@ -55,7 +55,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.DoubleValue.compareTo.compareto001
  *        nsk.jdi.DoubleValue.compareTo.compareto001a
  * @run main/othervm PropertyResolvingWrapper

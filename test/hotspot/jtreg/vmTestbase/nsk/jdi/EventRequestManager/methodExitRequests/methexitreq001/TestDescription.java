@@ -46,7 +46,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.methodExitRequests.methexitreq001
  *        nsk.jdi.EventRequestManager.methodExitRequests.methexitreq001t
  * @run main/othervm PropertyResolvingWrapper

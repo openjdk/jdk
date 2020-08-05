@@ -37,7 +37,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.LaunchingConnector.launchnosuspend.launchnosuspend001
  *        nsk.jdi.LaunchingConnector.launchnosuspend.launchnosuspend001o
  * @run main/othervm PropertyResolvingWrapper

@@ -35,7 +35,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequestManager.createBreakpointRequest.crbreakpreq002
  *        nsk.jdi.EventRequestManager.createBreakpointRequest.crbreakpreq002t
  * @run main/othervm PropertyResolvingWrapper

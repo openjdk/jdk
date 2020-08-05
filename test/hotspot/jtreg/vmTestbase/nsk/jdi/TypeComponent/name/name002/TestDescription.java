@@ -47,7 +47,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.TypeComponent.name.name002
  *        nsk.jdi.TypeComponent.name.name002a
  * @run main/othervm PropertyResolvingWrapper

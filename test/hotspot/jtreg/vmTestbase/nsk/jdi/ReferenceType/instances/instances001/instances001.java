@@ -55,7 +55,6 @@
  * @requires !vm.graal.enabled
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.instances.instances001.instances001
  *        nsk.share.jdi.TestClass1
  *        nsk.share.jdi.TestClass2

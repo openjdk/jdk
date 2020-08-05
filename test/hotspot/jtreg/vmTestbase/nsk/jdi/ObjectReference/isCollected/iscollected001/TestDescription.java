@@ -58,7 +58,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.isCollected.iscollected001
  *        nsk.jdi.ObjectReference.isCollected.iscollected001a
  * @run main/othervm PropertyResolvingWrapper

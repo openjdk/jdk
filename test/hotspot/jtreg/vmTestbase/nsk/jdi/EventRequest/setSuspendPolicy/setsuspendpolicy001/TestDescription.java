@@ -70,7 +70,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.EventRequest.setSuspendPolicy.setsuspendpolicy001
  *        nsk.jdi.EventRequest.setSuspendPolicy.setsuspendpolicy001a
  * @run main/othervm PropertyResolvingWrapper
