@@ -28,9 +28,7 @@
 #include "jni.h"
 #include "memory/allocation.hpp"
 
-class BoolObjectClosure;
 class JavaThread;
-class OopClosure;
 class Thread;
 
 extern "C" void JNICALL jfr_register_natives(JNIEnv*, jclass);
@@ -53,7 +51,6 @@ class Jfr : AllStatic {
   static bool on_flight_recorder_option(const JavaVMOption** option, char* delimiter);
   static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
   static void on_vm_error_report(outputStream* st);
-  static void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
   static void exclude_thread(Thread* thread);
   static bool is_excluded(Thread* thread);
   static void include_thread(Thread* thread);

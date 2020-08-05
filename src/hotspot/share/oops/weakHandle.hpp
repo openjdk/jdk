@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,9 @@ class WeakHandle {
 
   void print() const;
   void print_on(outputStream* st) const;
+
+  bool is_empty() const { return _obj == NULL; }
+  oop* ptr_raw() const { return _obj; }
 };
 
 #endif // SHARE_OOPS_WEAKHANDLE_HPP

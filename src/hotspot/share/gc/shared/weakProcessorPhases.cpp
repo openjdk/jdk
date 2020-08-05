@@ -27,19 +27,15 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-#if INCLUDE_JFR
-#include "jfr/jfr.hpp"
-#endif // INCLUDE_JFR
-
 #if INCLUDE_JVMTI
 #include "prims/jvmtiExport.hpp"
 #endif // INCLUDE_JVMTI
 
-// serial_phase_count is 0 if JFR and JVMTI are both not built,
+// serial_phase_count is 0 if JVMTI is not built,
 // requiring some code to be careful to avoid tautological checks
 // that some compilers warn about.
 
-#define HAVE_SERIAL_PHASES (INCLUDE_JVMTI || INCLUDE_JFR)
+#define HAVE_SERIAL_PHASES INCLUDE_JVMTI
 
 WeakProcessorPhases::Phase WeakProcessorPhases::serial_phase(uint value) {
 #if HAVE_SERIAL_PHASES
@@ -109,7 +105,6 @@ void WeakProcessorPhases::Iterator::verify_dereferenceable() const {
 const char* WeakProcessorPhases::description(Phase phase) {
   switch (phase) {
   JVMTI_ONLY(case jvmti: return "JVMTI weak processing";)
-  JFR_ONLY(case jfr: return "JFR weak processing";)
   default:
     ShouldNotReachHere();
     return "Invalid serial weak processing phase";
@@ -119,7 +114,6 @@ const char* WeakProcessorPhases::description(Phase phase) {
 WeakProcessorPhases::Processor WeakProcessorPhases::processor(Phase phase) {
   switch (phase) {
   JVMTI_ONLY(case jvmti: return &JvmtiExport::weak_oops_do;)
-  JFR_ONLY(case jfr: return &Jfr::weak_oops_do;)
   default:
     ShouldNotReachHere();
     return NULL;

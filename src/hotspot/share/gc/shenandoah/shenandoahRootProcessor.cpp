@@ -35,7 +35,6 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
-#include "jfr/jfr.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -81,15 +80,8 @@ ShenandoahJVMTIWeakRoot::ShenandoahJVMTIWeakRoot(ShenandoahPhaseTimings::Phase p
 }
 #endif // INCLUDE_JVMTI
 
-#if INCLUDE_JFR
-ShenandoahJFRWeakRoot::ShenandoahJFRWeakRoot(ShenandoahPhaseTimings::Phase phase) :
-  ShenandoahWeakSerialRoot(&Jfr::weak_oops_do, phase, ShenandoahPhaseTimings::JFRWeakRoots) {
-}
-#endif // INCLUDE_JFR
-
 void ShenandoahSerialWeakRoots::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id) {
   JVMTI_ONLY(_jvmti_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);)
-  JFR_ONLY(_jfr_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);)
 }
 
 void ShenandoahSerialWeakRoots::weak_oops_do(OopClosure* cl, uint worker_id) {

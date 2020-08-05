@@ -170,10 +170,8 @@ public:
 class ZWeakRootsIterator {
 private:
   void do_jvmti_weak_export(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
-  void do_jfr_weak(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
 
   ZSerialWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_jvmti_weak_export> _jvmti_weak_export;
-  ZSerialWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_jfr_weak>          _jfr_weak;
 
 public:
   ZWeakRootsIterator();

@@ -79,21 +79,12 @@ public:
 };
 #endif // INCLUDE_JVMTI
 
-#if INCLUDE_JFR
-class ShenandoahJFRWeakRoot : public ShenandoahWeakSerialRoot {
-public:
-  ShenandoahJFRWeakRoot(ShenandoahPhaseTimings::Phase phase);
-};
-#endif // INCLUDE_JFR
-
 class ShenandoahSerialWeakRoots {
 private:
   JVMTI_ONLY(ShenandoahJVMTIWeakRoot _jvmti_weak_roots;)
-  JFR_ONLY(ShenandoahJFRWeakRoot     _jfr_weak_roots;)
 public:
   ShenandoahSerialWeakRoots(ShenandoahPhaseTimings::Phase phase)
   JVMTI_ONLY(: _jvmti_weak_roots(phase))
-  JFR_ONLY(NOT_JVMTI(:) JVMTI_ONLY(COMMA) _jfr_weak_roots(phase))
   {};
 
   void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
