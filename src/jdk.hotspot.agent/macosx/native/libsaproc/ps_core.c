@@ -248,7 +248,7 @@ static bool read_core_segments(struct ps_prochandle* ph) {
         print_debug("failed to read LC_SEGMENT_64 i = %d!\n", i);
         goto err;
       }
-      if (add_map_info(ph, fd, segcmd.fileoff, segcmd.vmaddr, segcmd.vmsize) == NULL) {
+      if (add_map_info(ph, fd, segcmd.fileoff, segcmd.vmaddr, segcmd.vmsize, segcmd.flags) == NULL) {
         print_debug("Failed to add map_info at i = %d\n", i);
         goto err;
       }
@@ -788,7 +788,7 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
          case PT_LOAD: {
             if (core_php->p_filesz != 0) {
                if (add_map_info(ph, ph->core->core_fd, core_php->p_offset,
-                  core_php->p_vaddr, core_php->p_filesz) == NULL) goto err;
+                  core_php->p_vaddr, core_php->p_filesz, core_php->p_flags) == NULL) goto err;
             }
             break;
          }
@@ -827,7 +827,7 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
 
       if (existing_map == NULL){
         if (add_map_info(ph, lib_fd, lib_php->p_offset,
-                          target_vaddr, lib_php->p_filesz) == NULL) {
+                          target_vaddr, lib_php->p_filesz, lib_php->p_flags) == NULL) {
           goto err;
         }
       } else {
@@ -893,7 +893,7 @@ static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
          case PT_LOAD: {
             // add only non-writable segments of non-zero filesz
             if (!(exec_php->p_flags & PF_W) && exec_php->p_filesz != 0) {
-               if (add_map_info(ph, ph->core->exec_fd, exec_php->p_offset, exec_php->p_vaddr, exec_php->p_filesz) == NULL) goto err;
+               if (add_map_info(ph, ph->core->exec_fd, exec_php->p_offset, exec_php->p_vaddr, exec_php->p_filesz, exec_php->p_flags) == NULL) goto err;
             }
             break;
          }
