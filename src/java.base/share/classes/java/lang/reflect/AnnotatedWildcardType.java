@@ -40,6 +40,10 @@ public interface AnnotatedWildcardType extends AnnotatedType {
      * If no lower bound is explicitly declared, the lower bound is the
      * type of null. In this case, a zero length array is returned.
      *
+     * @apiNote While to date a wildcard may have at most one lower
+     * bound, callers of this method should be written to accommodate
+     * multiple bounds.
+     *
      * @return the potentially annotated lower bounds of this wildcard type or
      * an empty array if no lower bound is explicitly declared.
      * @see WildcardType#getLowerBounds()
@@ -50,6 +54,10 @@ public interface AnnotatedWildcardType extends AnnotatedType {
      * Returns the potentially annotated upper bounds of this wildcard type.
      * If no upper bound is explicitly declared, the upper bound is
      * unannotated {@code Object}
+     *
+     * @apiNote While to date a wildcard may have at most one upper
+     * bound, callers of this method should be written to accommodate
+     * multiple bounds.
      *
      * @return the potentially annotated upper bounds of this wildcard type
      * @see WildcardType#getUpperBounds()
