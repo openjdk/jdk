@@ -422,16 +422,16 @@ Java_sun_lwawt_macosx_CWrapper_00024NSWindow_isZoomed
 (JNIEnv *env, jclass cls, jlong windowPtr)
 {
     __block jboolean isZoomed = JNI_FALSE;
-    
+
 JNF_COCOA_ENTER(env);
-    
+
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         isZoomed = [window isZoomed];
     }];
-    
+
 JNF_COCOA_EXIT(env);
-    
+
     return isZoomed;
 }
 
@@ -566,14 +566,14 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSView_setHidden
 (JNIEnv *env, jclass cls, jlong viewPtr, jboolean toHide)
-{    
+{
     JNF_COCOA_ENTER(env);
-    
+
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [view setHidden:(BOOL)toHide];
     }];
-    
+
     JNF_COCOA_EXIT(env);
 }
 
@@ -590,7 +590,7 @@ Java_sun_lwawt_macosx_CWrapper_00024NSView_setToolTip
 JNF_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
-    NSString* s = JNFJavaToNSString(env, msg); 
+    NSString* s = JNFJavaToNSString(env, msg);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [view setToolTip: s];
     }];

@@ -611,7 +611,7 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
         JNF_MEMBER_CACHE(handleExitMessageMethod, jc_CDropTargetContextPeer, "handleExitMessage", "(Ljava/awt/Component;J)V");
         if (sDraggingError == FALSE) {
             DLog3(@"  - dragExit: loc native %f, %f\n", sDraggingLocation.x, sDraggingLocation.y);
-             // AWT_THREADING Safe (CToolkitThreadBlockedHandler) 
+             // AWT_THREADING Safe (CToolkitThreadBlockedHandler)
             JNFCallVoidMethod(env, fDropTargetContextPeer,
                               handleExitMessageMethod, fComponent, ptr_to_jlong(self));
         }

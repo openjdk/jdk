@@ -203,14 +203,14 @@ static JNF_CLASS_CACHE(sjc_PageFormat, "java/awt/print/PageFormat");
         // Actually print and get the PageFormatArea
         jobject pageFormatArea = JNFCallObjectMethod(env, fPrinterJob, jm_printAndGetPageFormatArea, fCurPainter, fCurPeekGraphics, fCurPageFormat, jPageNumber); // AWT_THREADING Safe (AWTRunLoopMode)
         if (pageFormatArea != NULL) {
-            NSPrintingOrientation currentOrientation = 
+            NSPrintingOrientation currentOrientation =
                     [[[NSPrintOperation currentOperation] printInfo] orientation];
             // set page orientation
-            switch (JNFCallIntMethod(env, fCurPageFormat, jm_getOrientation)) { 
+            switch (JNFCallIntMethod(env, fCurPageFormat, jm_getOrientation)) {
                 case java_awt_print_PageFormat_PORTRAIT:
                 default:
                     if (currentOrientation != NSPortraitOrientation) {
-                        [[[NSPrintOperation currentOperation] printInfo] 
+                        [[[NSPrintOperation currentOperation] printInfo]
                                             setOrientation:NSPortraitOrientation];
                     }
                     break;
@@ -218,7 +218,7 @@ static JNF_CLASS_CACHE(sjc_PageFormat, "java/awt/print/PageFormat");
                 case java_awt_print_PageFormat_LANDSCAPE:
                 case java_awt_print_PageFormat_REVERSE_LANDSCAPE:
                     if (currentOrientation != NSLandscapeOrientation) {
-                        [[[NSPrintOperation currentOperation] printInfo] 
+                        [[[NSPrintOperation currentOperation] printInfo]
                                             setOrientation:NSLandscapeOrientation];
                     }
                     break;
