@@ -745,8 +745,8 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller,
   if (type == NULL)  return empty;  // no such signature exists in the VM
 
   LinkInfo::AccessCheck access_check = caller != NULL ?
-                                              LinkInfo::needs_access_check :
-                                              LinkInfo::skip_access_check;
+                                              LinkInfo::AccessCheck::required :
+                                              LinkInfo::AccessCheck::skip;
 
   // Time to do the lookup.
   switch (flags & ALL_KINDS) {
@@ -819,7 +819,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller,
       fieldDescriptor result; // find_field initializes fd if found
       {
         assert(!HAS_PENDING_EXCEPTION, "");
-        LinkInfo link_info(defc, name, type, caller, LinkInfo::skip_access_check);
+        LinkInfo link_info(defc, name, type, caller, LinkInfo::AccessCheck::skip);
         LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, false, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           if (speculative_resolve) {

@@ -438,7 +438,7 @@ address NativeLookup::base_library_lookup(const char* class_name, const char* me
 
   // Find method and invoke standard lookup
   methodHandle method (THREAD,
-                       klass->uncached_lookup_method(m_name, s_name, Klass::find_overpass));
+                       klass->uncached_lookup_method(m_name, s_name, Klass::OverpassLookupMode::find));
   address result = lookup(method, in_base_library, CATCH);
   assert(in_base_library, "must be in basic library");
   guarantee(result != NULL, "must be non NULL");
