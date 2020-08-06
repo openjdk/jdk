@@ -314,7 +314,7 @@ public class SocketTransportService extends TransportService {
      * Listen on the default address
      */
     public ListenKey startListening() throws IOException {
-        return startListening(null, 0);
+        return startListening(null);
     }
 
     /**
