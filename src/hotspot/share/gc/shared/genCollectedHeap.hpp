@@ -105,7 +105,6 @@ protected:
 
   // The set of potentially parallel tasks in root scanning.
   enum GCH_strong_roots_tasks {
-    GCH_PS_Universe_oops_do,
     GCH_PS_ObjectSynchronizer_oops_do,
     GCH_PS_OopStorageSet_oops_do,
     GCH_PS_ClassLoaderDataGraph_oops_do,

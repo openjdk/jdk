@@ -223,11 +223,6 @@ void Universe::basic_type_classes_do(KlassClosure *closure) {
   }
 }
 
-void Universe::oops_do(OopClosure* f) {
-
-  ThreadsSMRSupport::exiting_threads_oops_do(f);
-}
-
 void LatestMethodCache::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_klass);
 }

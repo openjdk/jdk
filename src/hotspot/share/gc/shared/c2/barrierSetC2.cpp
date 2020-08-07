@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   bool control_dependent = (decorators & C2_CONTROL_DEPENDENT_LOAD) != 0;
   bool unknown_control = (decorators & C2_UNKNOWN_CONTROL_LOAD) != 0;
   bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
+  bool immutable = (decorators & C2_IMMUTABLE_MEMORY) != 0;
 
   bool in_native = (decorators & IN_NATIVE) != 0;
 
@@ -153,10 +154,14 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     GraphKit* kit = parse_access.kit();
     Node* control = control_dependent ? kit->control() : NULL;
 
-    if (in_native) {
-      load = kit->make_load(control, adr, val_type, access.type(), mo, dep,
-                            requires_atomic_access, unaligned,
+    if (immutable) {
+      assert(!requires_atomic_access, "can't ensure atomicity");
+      Compile* C = Compile::current();
+      Node* mem = kit->immutable_memory();
+      load = LoadNode::make(kit->gvn(), control, mem, adr,
+                            adr_type, val_type, access.type(), mo, dep, unaligned,
                             mismatched, unsafe, access.barrier_data());
+      load = kit->gvn().transform(load);
     } else {
       load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
                             dep, requires_atomic_access, unaligned, mismatched, unsafe,

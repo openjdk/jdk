@@ -43,7 +43,6 @@
 #include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/universe.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/macros.hpp"
 
@@ -180,13 +179,6 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
                                        G1GCPhaseTimes* phase_times,
                                        uint worker_id) {
   OopClosure* strong_roots = closures->strong_oops();
-
-  {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::UniverseRoots, worker_id);
-    if (_process_strong_tasks.try_claim_task(G1RP_PS_Universe_oops_do)) {
-      Universe::oops_do(strong_roots);
-    }
-  }
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ObjectSynchronizerRoots, worker_id);

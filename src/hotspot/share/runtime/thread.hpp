@@ -92,6 +92,8 @@ class JVMCIPrimitiveArray;
 class Metadata;
 class ResourceArea;
 
+class OopStorage;
+
 DEBUG_ONLY(class ResourceMark;)
 
 class WorkerThread;
@@ -1017,7 +1019,7 @@ class JavaThread: public Thread {
   friend class ThreadsSMRSupport; // to access _threadObj for exiting_threads_oops_do
  private:
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
-  oop            _threadObj;                     // The Java level thread object
+  OopHandle      _threadObj;                     // The Java level thread object
 
 #ifdef ASSERT
  private:
@@ -1277,8 +1279,8 @@ class JavaThread: public Thread {
 
   // Thread oop. threadObj() can be NULL for initial JavaThread
   // (or for threads attached via JNI)
-  oop threadObj() const                          { return _threadObj; }
-  void set_threadObj(oop p)                      { _threadObj = p; }
+  oop threadObj() const;
+  void set_threadObj(oop p);
 
   // Prepare thread and add to priority queue.  If a priority is
   // not specified, use the priority of the thread object. Threads_lock
@@ -2112,6 +2114,7 @@ public:
   void interrupt();
   bool is_interrupted(bool clear_interrupted);
 
+  static OopStorage* thread_oop_storage();
 };
 
 // Inline implementation of JavaThread::current

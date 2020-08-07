@@ -51,7 +51,6 @@ public:
 
 class ShenandoahSerialRoots {
 private:
-  ShenandoahSerialRoot  _universe_root;
   ShenandoahSerialRoot  _object_synchronizer_root;
 public:
   ShenandoahSerialRoots(ShenandoahPhaseTimings::Phase phase);

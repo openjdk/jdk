@@ -3030,7 +3030,7 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
   // Many of these won't be visible but others (such as instances of important
   // exceptions) will be visible.
   blk.set_kind(JVMTI_HEAP_REFERENCE_OTHER);
-  Universe::oops_do(&blk);
+  Universe::vm_global()->oops_do(&blk);
   if (blk.stopped()) {
     return false;
   }

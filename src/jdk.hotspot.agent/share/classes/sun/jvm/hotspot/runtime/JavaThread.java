@@ -43,7 +43,7 @@ import sun.jvm.hotspot.utilities.Observer;
 public class JavaThread extends Thread {
   private static final boolean DEBUG = System.getProperty("sun.jvm.hotspot.runtime.JavaThread.DEBUG") != null;
 
-  private static sun.jvm.hotspot.types.OopField threadObjField;
+  private static long          threadObjFieldOffset;
   private static AddressField  anchorField;
   private static AddressField  lastJavaSPField;
   private static AddressField  lastJavaPCField;
@@ -85,7 +85,8 @@ public class JavaThread extends Thread {
     Type type = db.lookupType("JavaThread");
     Type anchorType = db.lookupType("JavaFrameAnchor");
 
-    threadObjField    = type.getOopField("_threadObj");
+    threadObjFieldOffset = type.getField("_threadObj").getOffset();
+
     anchorField       = type.getAddressField("_anchor");
     lastJavaSPField   = anchorType.getAddressField("_last_Java_sp");
     lastJavaPCField   = anchorType.getAddressField("_last_Java_pc");
@@ -347,7 +348,9 @@ public class JavaThread extends Thread {
   public Oop getThreadObj() {
     Oop obj = null;
     try {
-      obj = VM.getVM().getObjectHeap().newOop(threadObjField.getValue(addr));
+      Address addr = getAddress().addOffsetTo(threadObjFieldOffset);
+      VMOopHandle vmOopHandle = VMObjectFactory.newObject(VMOopHandle.class, addr);
+      obj = vmOopHandle.resolve();
     } catch (Exception e) {
       e.printStackTrace();
     }

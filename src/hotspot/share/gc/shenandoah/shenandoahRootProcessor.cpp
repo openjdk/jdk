@@ -37,7 +37,6 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.hpp"
 #include "runtime/thread.hpp"
 
 ShenandoahSerialRoot::ShenandoahSerialRoot(ShenandoahSerialRoot::OopsDo oops_do,
@@ -53,12 +52,10 @@ void ShenandoahSerialRoot::oops_do(OopClosure* cl, uint worker_id) {
 }
 
 ShenandoahSerialRoots::ShenandoahSerialRoots(ShenandoahPhaseTimings::Phase phase) :
-  _universe_root(&Universe::oops_do, phase, ShenandoahPhaseTimings::UniverseRoots),
   _object_synchronizer_root(&ObjectSynchronizer::oops_do, phase, ShenandoahPhaseTimings::ObjectSynchronizerRoots) {
 }
 
 void ShenandoahSerialRoots::oops_do(OopClosure* cl, uint worker_id) {
-  _universe_root.oops_do(cl, worker_id);
   _object_synchronizer_root.oops_do(cl, worker_id);
 }
 
