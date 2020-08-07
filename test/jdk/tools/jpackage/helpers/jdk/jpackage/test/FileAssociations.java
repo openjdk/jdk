@@ -38,9 +38,11 @@ final public class FileAssociations {
     private void createFile() {
         Map<String, String> entries = new HashMap<>(Map.of(
             "extension", suffixName,
-            "mime-type", getMime(),
-            "description", description
+            "mime-type", getMime()
         ));
+        if (description != null) {
+            entries.put("description", description);
+        }
         if (icon != null) {
             if (TKit.isWindows()) {
                 entries.put("icon", icon.toString().replace("\\", "/"));
