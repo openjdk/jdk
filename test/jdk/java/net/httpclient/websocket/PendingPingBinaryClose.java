@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,9 @@ public class PendingPingBinaryClose extends PendingOperations {
             assertHangs(cfBinary);
             cfClose = webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
             assertHangs(cfClose);
+            assertNotDone(cfPing);
             return null;
-        }, () -> cfPing.isDone() ? true : false);
+        }, () -> cfPing.isDone());
         webSocket.abort();
         assertFails(IOE, cfPing);
         assertFails(IOE, cfBinary);
