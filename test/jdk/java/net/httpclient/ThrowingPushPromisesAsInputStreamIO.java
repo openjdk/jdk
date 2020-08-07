@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8229822
  * @summary Tests what happens when push promise handlers and their
  *          response body handlers and subscribers throw unexpected exceptions.
  * @library /test/lib http2/server

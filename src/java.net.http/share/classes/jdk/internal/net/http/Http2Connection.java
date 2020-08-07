@@ -329,7 +329,11 @@ class Http2Connection  {
         Log.logTrace("Connection send window size {0} ", windowController.connectionWindowSize());
 
         Stream<?> initialStream = createStream(exchange);
-        initialStream.registerStream(1);
+        boolean opened = initialStream.registerStream(1, true);
+        if (debug.on() && !opened) {
+            debug.log("Initial stream was cancelled - but connection is maintained: " +
+                    "reset frame will need to be sent later");
+        }
         windowController.registerStream(1, getInitialSendWindowSize());
         initialStream.requestSent();
         // Upgrading:
@@ -338,6 +342,11 @@ class Http2Connection  {
         this.initial = initial;
         connectFlows(connection);
         sendConnectionPreface();
+        if (!opened) {
+            debug.log("ensure reset frame is sent to cancel initial stream");
+            initialStream.sendCancelStreamFrame();
+        }
+
     }
 
     // Used when upgrading an HTTP/1.1 connection to HTTP/2 after receiving
@@ -849,7 +858,7 @@ class Http2Connection  {
         Exchange<T> pushExch = new Exchange<>(pushReq, parent.exchange.multi);
         Stream.PushedStream<T> pushStream = createPushStream(parent, pushExch);
         pushExch.exchImpl = pushStream;
-        pushStream.registerStream(promisedStreamid);
+        pushStream.registerStream(promisedStreamid, true);
         parent.incoming_pushPromise(pushReq, pushStream);
     }
 
@@ -874,7 +883,7 @@ class Http2Connection  {
         }
     }
 
-    void resetStream(int streamid, int code) throws IOException {
+    void resetStream(int streamid, int code) {
         try {
             if (connection.channel().isOpen()) {
                 // no need to try & send a reset frame if the
@@ -882,6 +891,7 @@ class Http2Connection  {
                 Log.logError(
                         "Resetting stream {0,number,integer} with error code {1,number,integer}",
                         streamid, code);
+                markStream(streamid, code);
                 ResetFrame frame = new ResetFrame(streamid, code);
                 sendFrame(frame);
             } else if (debug.on()) {
@@ -892,6 +902,11 @@ class Http2Connection  {
             decrementStreamsCount(streamid);
             closeStream(streamid);
         }
+    }
+
+    private void markStream(int streamid, int code) {
+        Stream<?> s = streams.get(streamid);
+        if (s != null) s.markStream(code);
     }
 
     // reduce count of streams by 1 if stream still exists
@@ -1192,12 +1207,19 @@ class Http2Connection  {
         Stream<?> stream = oh.getAttachment();
         assert stream.streamid == 0;
         int streamid = nextstreamid;
-        nextstreamid += 2;
-        stream.registerStream(streamid);
-        // set outgoing window here. This allows thread sending
-        // body to proceed.
-        windowController.registerStream(streamid, getInitialSendWindowSize());
-        return stream;
+        if (stream.registerStream(streamid, false)) {
+            // set outgoing window here. This allows thread sending
+            // body to proceed.
+            nextstreamid += 2;
+            windowController.registerStream(streamid, getInitialSendWindowSize());
+            return stream;
+        } else {
+            stream.cancelImpl(new IOException("Request cancelled"));
+            if (finalStream() && streams.isEmpty()) {
+                close();
+            }
+            return null;
+        }
     }
 
     private final Object sendlock = new Object();
@@ -1211,7 +1233,9 @@ class Http2Connection  {
                     OutgoingHeaders<Stream<?>> oh = (OutgoingHeaders<Stream<?>>) frame;
                     Stream<?> stream = registerNewStream(oh);
                     // provide protection from inserting unordered frames between Headers and Continuation
-                    publisher.enqueue(encodeHeaders(oh, stream));
+                    if (stream != null) {
+                        publisher.enqueue(encodeHeaders(oh, stream));
+                    }
                 } else {
                     publisher.enqueue(encodeFrame(frame));
                 }
