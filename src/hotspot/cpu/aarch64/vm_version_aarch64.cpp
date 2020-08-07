@@ -62,6 +62,10 @@
 #define HWCAP_ATOMICS (1<<8)
 #endif
 
+#ifndef HWCAP_SHA512
+#define HWCAP_SHA512 (1 << 21)
+#endif
+
 int VM_Version::_cpu;
 int VM_Version::_model;
 int VM_Version::_model2;
@@ -285,6 +289,7 @@ void VM_Version::get_processor_features() {
   if (auxv & HWCAP_AES)   strcat(buf, ", aes");
   if (auxv & HWCAP_SHA1)  strcat(buf, ", sha1");
   if (auxv & HWCAP_SHA2)  strcat(buf, ", sha256");
+  if (auxv & HWCAP_SHA512) strcat(buf, ", sha512");
   if (auxv & HWCAP_ATOMICS) strcat(buf, ", lse");
 
   _features_string = os::strdup(buf);
@@ -390,7 +395,12 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
   }
 
-  if (UseSHA512Intrinsics) {
+  if (UseSHA && (auxv & HWCAP_SHA512)) {
+    // Do not auto-enable UseSHA512Intrinsics until it has been fully tested on hardware
+    // if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
+      // FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
+    // }
+  } else if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }

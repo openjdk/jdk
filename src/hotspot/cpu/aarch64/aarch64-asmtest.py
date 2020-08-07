@@ -865,6 +865,37 @@ class LdStSIMDOp(Instruction):
     def aname(self):
          return self._name
 
+class SHA512SIMDOp(Instruction):
+
+    def generate(self):
+        if (self._name == 'sha512su0'):
+            self.reg = [FloatRegister().generate(), FloatRegister().generate()]
+        else:
+            self.reg = [FloatRegister().generate(), FloatRegister().generate(),
+                        FloatRegister().generate()]
+        return self
+
+    def cstr(self):
+        if (self._name == 'sha512su0'):
+            return (super(SHA512SIMDOp, self).cstr()
+                    + ('%s, __ T2D, %s);' % (self.reg[0], self.reg[1])))
+        else:
+            return (super(SHA512SIMDOp, self).cstr()
+                    + ('%s, __ T2D, %s, %s);' % (self.reg[0], self.reg[1], self.reg[2])))
+
+    def astr(self):
+        if (self._name == 'sha512su0'):
+            return (super(SHA512SIMDOp, self).astr()
+                    + ('\t%s.2D, %s.2D' % (self.reg[0].astr("v"), self.reg[1].astr("v"))))
+        elif (self._name == 'sha512su1'):
+            return (super(SHA512SIMDOp, self).astr()
+                    + ('\t%s.2D, %s.2D, %s.2D' % (self.reg[0].astr("v"),
+                       self.reg[1].astr("v"), self.reg[2].astr("v"))))
+        else:
+            return (super(SHA512SIMDOp, self).astr()
+                    + ('\t%s, %s, %s.2D' % (self.reg[0].astr("q"),
+                       self.reg[1].astr("q"), self.reg[2].astr("v"))))
+
 class LSEOp(Instruction):
     def __init__(self, args):
         self._name, self.asmname, self.size, self.suffix = args
@@ -1100,6 +1131,8 @@ generate(LdStSIMDOp, [["ld1",  1, "8B",  Address.base_only],
                       ["ld4r", 4, "2S",  Address.post_reg],
 ])
 
+generate(SHA512SIMDOp, ["sha512h", "sha512h2", "sha512su0", "sha512su1"])
+
 generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",                "ccmn\txzr, xzr, #3, LE"],
                         ["ccmnw",  "__ ccmnw(zr, zr, 5u, Assembler::EQ);",               "ccmn\twzr, wzr, #5, EQ"],
                         ["ccmp",   "__ ccmp(zr, 1, 4u, Assembler::NE);",                 "ccmp\txzr, 1, #4, NE"],
@@ -1147,8 +1180,8 @@ outfile.close()
 import subprocess
 import sys
 
-# compile for 8.1 because of lse atomics
-subprocess.check_call([AARCH64_AS, "-march=armv8.1-a", "aarch64ops.s", "-o", "aarch64ops.o"])
+# compile for 8.1 and sha2 because of lse atomics and sha512 crypto extension.
+subprocess.check_call([AARCH64_AS, "-march=armv8.1-a+sha2", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*",
