@@ -74,8 +74,6 @@ class G1Policy: public CHeapObj<mtGC> {
 
   double _full_collection_start_sec;
 
-  jlong _collection_pause_end_millis;
-
   uint _young_list_target_length;
   uint _young_list_fixed_length;
 
@@ -259,8 +257,6 @@ public:
   // the amount of reclaimable space still to be collected) as a
   // percentage of the current heap capacity.
   double reclaimable_bytes_percent(size_t reclaimable_bytes) const;
-
-  jlong collection_pause_end_millis() { return _collection_pause_end_millis; }
 
 private:
   void clear_collection_set_candidates();

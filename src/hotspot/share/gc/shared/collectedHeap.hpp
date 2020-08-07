@@ -112,6 +112,12 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Used for filler objects (static, but initialized in ctor).
   static size_t _filler_array_max_size;
 
+  // Last time the whole heap has been examined in support of RMI
+  // MaxObjectInspectionAge.
+  // This timestamp must be monotonically non-decreasing to avoid
+  // time-warp warnings.
+  jlong _last_whole_heap_examined_time_ns;
+
   unsigned int _total_collections;          // ... started
   unsigned int _total_full_collections;     // ... started
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
@@ -404,15 +410,18 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj) {}
 
-  // Returns the longest time (in ms) that has elapsed since the last
-  // time that any part of the heap was examined by a garbage collection.
-  virtual jlong millis_since_last_gc() = 0;
-
   // Perform any cleanup actions necessary before allowing a verification.
   virtual void prepare_for_verify() = 0;
 
-  // Generate any dumps preceding or following a full gc
+  // Returns the longest time (in ms) that has elapsed since the last
+  // time that the whole heap has been examined by a garbage collection.
+  jlong millis_since_last_whole_heap_examined();
+  // GC should call this when the next whole heap analysis has completed to
+  // satisfy above requirement.
+  void record_whole_heap_examined_timestamp();
+
  private:
+  // Generate any dumps preceding or following a full gc
   void full_gc_dump(GCTimer* timer, bool before);
 
   virtual void initialize_serviceability() = 0;

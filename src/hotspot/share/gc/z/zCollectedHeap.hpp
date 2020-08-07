@@ -107,8 +107,6 @@ public:
 
   virtual WorkGang* get_safepoint_workers();
 
-  virtual jlong millis_since_last_gc();
-
   virtual void gc_threads_do(ThreadClosure* tc) const;
 
   virtual VirtualSpaceSummary create_heap_space_summary();
