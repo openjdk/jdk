@@ -22,6 +22,7 @@
  */
 
 /* @test
+   @key headful
    @bug 6709913
    @summary Verifies BasicComboBoxUI.isPopupVisible does not return NPE
    @run main BasicComboNPE
@@ -52,7 +53,7 @@ public class BasicComboNPE extends JComboBox
     @Override
     public ComboBoxModel getModel()
     {
-        setPopupVisible(true);
+        setPopupVisible(false);
         isPopupVisible();
         return super.getModel();
     }
