@@ -107,8 +107,20 @@ public class CoreUtils {
         // Find the core file
         String coreFileLocation = parseCoreFileLocationFromOutput(crashOutputString);
         if (coreFileLocation != null) {
-            Asserts.assertGT(new File(coreFileLocation).length(), 0L, "Unexpected core size");
             System.out.println("Found core file: " + coreFileLocation);
+            Asserts.assertGT(new File(coreFileLocation).length(), 0L, "Unexpected core size");
+
+            // Make sure the core file is moved into the cwd if not already there.
+            Path corePath = Paths.get(coreFileLocation);
+            if (corePath.getParent() != null) {
+                Path coreFileName = corePath.getFileName();
+                System.out.println("Moving core file to cwd: " +  coreFileName);
+                long startTime = System.currentTimeMillis();
+                Files.move(corePath, coreFileName);
+                System.out.println("Core file move took " + (System.currentTimeMillis() - startTime) + "ms");
+                coreFileLocation = coreFileName.toString();
+            }
+
             return coreFileLocation; // success!
         }
 
