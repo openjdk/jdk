@@ -289,10 +289,6 @@ public:
   // Ensure parsability: override
   virtual void ensure_parsability(bool retire_tlabs);
 
-  // Time in ms since the longest time a collector ran in
-  // in any generation.
-  virtual jlong millis_since_last_gc();
-
   // Total number of full collections completed.
   unsigned int total_full_collections_completed() {
     assert(_full_collections_completed <= _total_full_collections,
@@ -304,12 +300,6 @@ public:
   unsigned int update_full_collections_completed();
   // Update above counter, as appropriate, at the end of a concurrent GC cycle
   unsigned int update_full_collections_completed(unsigned int count);
-
-  // Update "time of last gc" for all generations to "now".
-  void update_time_of_last_gc(jlong now) {
-    _young_gen->update_time_of_last_gc(now);
-    _old_gen->update_time_of_last_gc(now);
-  }
 
   // Update the gc statistics for each generation.
   void update_gc_stats(Generation* current_generation, bool full) {

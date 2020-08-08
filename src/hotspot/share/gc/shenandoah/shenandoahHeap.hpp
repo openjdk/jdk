@@ -556,9 +556,6 @@ public:
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj);
 
-  // Used by RMI
-  jlong millis_since_last_gc();
-
 // ---------- Safepoint interface hooks
 //
 public:

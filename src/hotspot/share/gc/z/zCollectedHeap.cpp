@@ -277,10 +277,6 @@ WorkGang* ZCollectedHeap::get_safepoint_workers() {
   return _runtime_workers.workers();
 }
 
-jlong ZCollectedHeap::millis_since_last_gc() {
-  return ZStatCycle::time_since_last() / MILLIUNITS;
-}
-
 void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   tc->do_thread(_director);
   tc->do_thread(_driver);

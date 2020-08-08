@@ -60,7 +60,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _ihop_control(create_ihop_control(&_predictor)),
   _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 2)),
   _full_collection_start_sec(0.0),
-  _collection_pause_end_millis(os::javaTimeNanos() / NANOSECS_PER_MILLISEC),
   _young_list_target_length(0),
   _young_list_fixed_length(0),
   _young_list_max_length(0),
@@ -647,8 +646,6 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
   bool update_stats = !_g1h->evacuation_failed();
 
   record_pause(this_pause, end_time_sec - pause_time_ms / 1000.0, end_time_sec);
-
-  _collection_pause_end_millis = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
 
   if (is_concurrent_start_pause(this_pause)) {
     record_concurrent_mark_init_end(0.0);

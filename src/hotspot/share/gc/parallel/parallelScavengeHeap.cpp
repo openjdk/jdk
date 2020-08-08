@@ -559,10 +559,6 @@ bool ParallelScavengeHeap::block_is_obj(const HeapWord* addr) const {
   return block_start(addr) == addr;
 }
 
-jlong ParallelScavengeHeap::millis_since_last_gc() {
-  return PSParallelCompact::millis_since_last_gc();
-}
-
 void ParallelScavengeHeap::prepare_for_verify() {
   ensure_parsability(false);  // no need to retire TLABs for verification
 }
