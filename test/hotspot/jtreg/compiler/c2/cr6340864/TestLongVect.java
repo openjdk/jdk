@@ -30,6 +30,7 @@
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=8 compiler.c2.cr6340864.TestLongVect
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=16 compiler.c2.cr6340864.TestLongVect
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=32 compiler.c2.cr6340864.TestLongVect
+ * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=3 compiler.c2.cr6340864.TestLongVect
  */
 
 package compiler.c2.cr6340864;
@@ -41,6 +42,8 @@ public class TestLongVect {
   private static final long BIT_MASK = 0xEC80F731EC80F731L;
   private static final int VALUE = 31;
   private static final int SHIFT = 64;
+  private static final int SHIFT_LT_IMM8 = -128;
+  private static final int SHIFT_GT_IMM8 = 128;
 
   public static void main(String args[]) {
     System.out.println("Testing Long vectors");
@@ -142,6 +145,13 @@ public class TestLongVect {
       test_srlv_and(a0, a1, BIT_MASK);
       test_srac_and(a0, a1);
       test_srav_and(a0, a1, BIT_MASK);
+
+      test1_ror(a0, a1);
+      test1_rol(a0, a1);
+      test2_ror(a0, a1);
+      test2_rol(a0, a1);
+      test3_ror(a0, a1, SHIFT);
+      test3_rol(a0, a1, SHIFT);
     }
     // Test and verify results
     System.out.println("Verification");
@@ -432,6 +442,30 @@ public class TestLongVect {
         errn += verify("test_srav_and: ", i, a0[i], (long)(((long)(ADD_INIT+i) & BIT_MASK)>>VALUE));
       }
 
+      test1_ror(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test1_ror: ", i, a0[i], (long)(((long)(ADD_INIT+i)>>>SHIFT_GT_IMM8) | (long)(ADD_INIT+i)<<-SHIFT_GT_IMM8));
+      }
+      test1_rol(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test1_rol: ", i, a0[i], (long)(((long)(ADD_INIT+i)<<SHIFT_GT_IMM8) | (long)(ADD_INIT+i)>>>-SHIFT_GT_IMM8));
+      }
+      test2_ror(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test2_ror: ", i, a0[i], (long)(((long)(ADD_INIT+i)>>>SHIFT_LT_IMM8) | (long)(ADD_INIT+i)<<-SHIFT_LT_IMM8));
+      }
+      test2_rol(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test2_rol: ", i, a0[i], (long)(((long)(ADD_INIT+i)<<SHIFT_LT_IMM8) | (long)(ADD_INIT+i)>>>-SHIFT_LT_IMM8));
+      }
+      test3_rol(a0, a1, SHIFT);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test3_rol: ", i, a0[i], (long)(((long)(ADD_INIT+i)<<SHIFT) | (long)(ADD_INIT+i)>>>-SHIFT));
+      }
+      test3_ror(a0, a1, SHIFT);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test3_ror: ", i, a0[i], (long)(((long)(ADD_INIT+i)>>>SHIFT) | (long)(ADD_INIT+i)<<-SHIFT));
+      }
     }
 
     if (errn > 0)
@@ -852,6 +886,48 @@ public class TestLongVect {
     end = System.currentTimeMillis();
     System.out.println("test_srav_and: " + (end - start));
 
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test1_rol(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test1_rol: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test1_ror(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test1_ror: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test2_rol(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test2_rol: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test2_ror(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test2_ror: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test3_rol(a0, a1, SHIFT);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test3_rol: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test3_ror(a0, a1, SHIFT);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test3_ror: " + (end - start));
+
     return errn;
   }
 
@@ -1120,6 +1196,36 @@ public class TestLongVect {
   static void test_srav_and(long[] a0, long[] a1, long b) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (long)((a1[i] & b)>>VALUE);
+    }
+  }
+  static void test1_rol(long[] a0, long[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)(Long.rotateLeft(a1[i], SHIFT_GT_IMM8));
+    }
+  }
+  static void test1_ror(long[] a0, long[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)(Long.rotateRight(a1[i], SHIFT_GT_IMM8));
+    }
+  }
+  static void test2_rol(long[] a0, long[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)(Long.rotateLeft(a1[i], SHIFT_LT_IMM8));
+    }
+  }
+  static void test2_ror(long[] a0, long[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)(Long.rotateRight(a1[i], SHIFT_LT_IMM8));
+    }
+  }
+  static void test3_rol(long[] a0, long[] a1, int shift) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)(Long.rotateLeft(a1[i], shift));
+    }
+  }
+  static void test3_ror(long[] a0, long[] a1, int shift) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)(Long.rotateRight(a1[i], shift));
     }
   }
 

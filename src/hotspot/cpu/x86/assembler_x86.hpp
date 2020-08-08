@@ -1827,9 +1827,18 @@ private:
 
   void ret(int imm16);
 
+  void roll(Register dst);
+
   void roll(Register dst, int imm8);
 
+  void rorl(Register dst);
+
+  void rorl(Register dst, int imm8);
+
 #ifdef _LP64
+  void rolq(Register dst);
+  void rolq(Register dst, int imm8);
+  void rorq(Register dst);
   void rorq(Register dst, int imm8);
   void rorxq(Register dst, Register src, int imm8);
   void rorxd(Register dst, Register src, int imm8);
@@ -2204,6 +2213,16 @@ private:
   void vpternlogd(XMMRegister dst, int imm8, XMMRegister src2, XMMRegister src3, int vector_len);
   void vpternlogd(XMMRegister dst, int imm8, XMMRegister src2, Address     src3, int vector_len);
   void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, XMMRegister src3, int vector_len);
+
+  // Vector Rotate Left/Right instruction.
+  void evprolvd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
+  void evprolvq(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
+  void evprorvd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
+  void evprorvq(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
+  void evprold(XMMRegister dst, XMMRegister src, int shift, int vector_len);
+  void evprolq(XMMRegister dst, XMMRegister src, int shift, int vector_len);
+  void evprord(XMMRegister dst, XMMRegister src, int shift, int vector_len);
+  void evprorq(XMMRegister dst, XMMRegister src, int shift, int vector_len);
 
   // vinserti forms
   void vinserti128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);

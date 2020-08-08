@@ -2464,6 +2464,16 @@ void SuperWord::output() {
         const TypePtr* atyp = n->adr_type();
         vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
         vlen_in_bytes = vn->as_StoreVector()->memory_size();
+      } else if (VectorNode::is_scalar_rotate(n)) {
+        Node* in1 = low_adr->in(1);
+        Node* in2 = p->at(0)->in(2);
+        assert(in2->bottom_type()->isa_int(), "Shift must always be an int value");
+        // If rotation count is non-constant or greater than 8bit value create a vector.
+        if (!in2->is_Con() || -0x80 > in2->get_int() || in2->get_int() >= 0x80) {
+          in2 =  vector_opd(p, 2);
+        }
+        vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_roundopD(n)) {
         Node* in1 = vector_opd(p, 1);
         Node* in2 = low_adr->in(2);
@@ -2758,8 +2768,22 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     // Convert scalar input to vector with the same number of elements as
     // p0's vector. Use p0's type because size of operand's container in
     // vector should match p0's size regardless operand's size.
-    const Type* p0_t = velt_type(p0);
-    VectorNode* vn = VectorNode::scalar2vector(opd, vlen, p0_t);
+    const Type* p0_t = NULL;
+    VectorNode* vn = NULL;
+    if (opd_idx == 2 && VectorNode::is_scalar_rotate(p0)) {
+       Node* conv = opd;
+       p0_t =  TypeInt::INT;
+       if (p0->bottom_type()->isa_long()) {
+         p0_t = TypeLong::LONG;
+         conv = new ConvI2LNode(opd);
+         _igvn.register_new_node_with_optimizer(conv);
+         _phase->set_ctrl(conv, _phase->get_ctrl(opd));
+       }
+       vn = VectorNode::scalar2vector(conv, vlen, p0_t);
+    } else {
+       p0_t =  velt_type(p0);
+       vn = VectorNode::scalar2vector(opd, vlen, p0_t);
+    }
 
     _igvn.register_new_node_with_optimizer(vn);
     _phase->set_ctrl(vn, _phase->get_ctrl(opd));

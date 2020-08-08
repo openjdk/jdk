@@ -870,6 +870,57 @@ void C2_MacroAssembler::vextendbw(bool sign, XMMRegister dst, XMMRegister src, i
   }
 }
 
+void C2_MacroAssembler::vprotate_imm(int opcode, BasicType etype, XMMRegister dst, XMMRegister src,
+                                     int shift, int vector_len) {
+  if (opcode == Op_RotateLeftV) {
+    if (etype == T_INT) {
+      evprold(dst, src, shift, vector_len);
+    } else {
+      assert(etype == T_LONG, "expected type T_LONG");
+      evprolq(dst, src, shift, vector_len);
+    }
+  } else {
+    assert(opcode == Op_RotateRightV, "opcode should be Op_RotateRightV");
+    if (etype == T_INT) {
+      evprord(dst, src, shift, vector_len);
+    } else {
+      assert(etype == T_LONG, "expected type T_LONG");
+      evprorq(dst, src, shift, vector_len);
+    }
+  }
+}
+
+void C2_MacroAssembler::vprotate_var(int opcode, BasicType etype, XMMRegister dst, XMMRegister src,
+                                     XMMRegister shift, int vector_len) {
+  if (opcode == Op_RotateLeftV) {
+    if (etype == T_INT) {
+      evprolvd(dst, src, shift, vector_len);
+    } else {
+      assert(etype == T_LONG, "expected type T_LONG");
+      evprolvq(dst, src, shift, vector_len);
+    }
+  } else {
+    assert(opcode == Op_RotateRightV, "opcode should be Op_RotateRightV");
+    if (etype == T_INT) {
+      evprorvd(dst, src, shift, vector_len);
+    } else {
+      assert(etype == T_LONG, "expected type T_LONG");
+      evprorvq(dst, src, shift, vector_len);
+    }
+  }
+}
+
+void C2_MacroAssembler::vshiftd_imm(int opcode, XMMRegister dst, int shift) {
+  if (opcode == Op_RShiftVI) {
+    psrad(dst, shift);
+  } else if (opcode == Op_LShiftVI) {
+    pslld(dst, shift);
+  } else {
+    assert((opcode == Op_URShiftVI),"opcode should be Op_URShiftVI");
+    psrld(dst, shift);
+  }
+}
+
 void C2_MacroAssembler::vshiftd(int opcode, XMMRegister dst, XMMRegister src) {
   if (opcode == Op_RShiftVI) {
     psrad(dst, src);
@@ -878,6 +929,17 @@ void C2_MacroAssembler::vshiftd(int opcode, XMMRegister dst, XMMRegister src) {
   } else {
     assert((opcode == Op_URShiftVI),"opcode should be Op_URShiftVI");
     psrld(dst, src);
+  }
+}
+
+void C2_MacroAssembler::vshiftd_imm(int opcode, XMMRegister dst, XMMRegister nds, int shift, int vector_len) {
+  if (opcode == Op_RShiftVI) {
+    vpsrad(dst, nds, shift, vector_len);
+  } else if (opcode == Op_LShiftVI) {
+    vpslld(dst, nds, shift, vector_len);
+  } else {
+    assert((opcode == Op_URShiftVI),"opcode should be Op_URShiftVI");
+    vpsrld(dst, nds, shift, vector_len);
   }
 }
 
@@ -925,6 +987,17 @@ void C2_MacroAssembler::vshiftq(int opcode, XMMRegister dst, XMMRegister src) {
   }
 }
 
+void C2_MacroAssembler::vshiftq_imm(int opcode, XMMRegister dst, int shift) {
+  if (opcode == Op_RShiftVL) {
+    psrlq(dst, shift);  // using srl to implement sra on pre-avs512 systems
+  } else if (opcode == Op_LShiftVL) {
+    psllq(dst, shift);
+  } else {
+    assert((opcode == Op_URShiftVL),"opcode should be Op_URShiftVL");
+    psrlq(dst, shift);
+  }
+}
+
 void C2_MacroAssembler::vshiftq(int opcode, XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   if (opcode == Op_RShiftVL) {
     evpsraq(dst, nds, src, vector_len);
@@ -933,6 +1006,17 @@ void C2_MacroAssembler::vshiftq(int opcode, XMMRegister dst, XMMRegister nds, XM
   } else {
     assert((opcode == Op_URShiftVL),"opcode should be Op_URShiftVL");
     vpsrlq(dst, nds, src, vector_len);
+  }
+}
+
+void C2_MacroAssembler::vshiftq_imm(int opcode, XMMRegister dst, XMMRegister nds, int shift, int vector_len) {
+  if (opcode == Op_RShiftVL) {
+    evpsraq(dst, nds, shift, vector_len);
+  } else if (opcode == Op_LShiftVL) {
+    vpsllq(dst, nds, shift, vector_len);
+  } else {
+    assert((opcode == Op_URShiftVL),"opcode should be Op_URShiftVL");
+    vpsrlq(dst, nds, shift, vector_len);
   }
 }
 
