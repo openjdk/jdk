@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4057701 6286712 6364377
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "windows")
  * @run build GetXSpace
  * @run shell GetXSpace.sh
  * @summary Basic functionality of File.get-X-Space methods.
