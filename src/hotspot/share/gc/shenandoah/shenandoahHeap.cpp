@@ -82,20 +82,6 @@
 #include "services/mallocTracker.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#ifdef ASSERT
-template <class T>
-void ShenandoahAssertToSpaceClosure::do_oop_work(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (! CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    shenandoah_assert_not_forwarded(p, obj);
-  }
-}
-
-void ShenandoahAssertToSpaceClosure::do_oop(narrowOop* p) { do_oop_work(p); }
-void ShenandoahAssertToSpaceClosure::do_oop(oop* p)       { do_oop_work(p); }
-#endif
-
 class ShenandoahPretouchHeapTask : public AbstractGangTask {
 private:
   ShenandoahRegionIterator _regions;
