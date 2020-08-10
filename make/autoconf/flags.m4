@@ -218,10 +218,12 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
     # We also need -iframework<path>/System/Library/Frameworks
     $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS -iframework [$]$1SYSROOT/System/Library/Frameworks"
     $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -iframework [$]$1SYSROOT/System/Library/Frameworks"
-    # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
-    # set this here so it doesn't have to be peppered throughout the forest
-    $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS -F [$]$1SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
-    $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -F [$]$1SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+    if test -d "[$]$1SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks" ; then
+      # These always need to be set on macOS 10.X, or we can't find the frameworks embedded in JavaVM.framework
+      # set this here so it doesn't have to be peppered throughout the forest
+      $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS -F [$]$1SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+      $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -F [$]$1SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+    fi
   fi
 
   AC_SUBST($1SYSROOT_CFLAGS)
