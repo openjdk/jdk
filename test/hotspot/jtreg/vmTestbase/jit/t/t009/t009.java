@@ -29,15 +29,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.t.t009.t009
- * @run driver ExecDriver --java jit.t.t009.t009
+ * @run main/othervm jit.t.t009.t009
  */
 
 package jit.t.t009;
 
 import nsk.share.TestFailure;
 
-class t009
+public class t009
 {
     public static void main(String argv[])
     {

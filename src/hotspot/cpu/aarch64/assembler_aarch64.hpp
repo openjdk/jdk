@@ -2372,6 +2372,30 @@ public:
 
 #undef INSN
 
+#define INSN(NAME, opc)                                                                 \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
+    starti;                                                                             \
+    assert(T == T2D, "arrangement must be T2D");                                        \
+    f(0b11001110011, 31, 21), rf(Vm, 16), f(opc, 15, 10), rf(Vn, 5), rf(Vd, 0);         \
+  }
+
+  INSN(sha512h,   0b100000);
+  INSN(sha512h2,  0b100001);
+  INSN(sha512su1, 0b100010);
+
+#undef INSN
+
+#define INSN(NAME, opc)                                                                 \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {                   \
+    starti;                                                                             \
+    assert(T == T2D, "arrangement must be T2D");                                        \
+    f(opc, 31, 10), rf(Vn, 5), rf(Vd, 0);                                               \
+  }
+
+  INSN(sha512su0, 0b1100111011000000100000);
+
+#undef INSN
+
 #define INSN(NAME, opc)                           \
   void NAME(FloatRegister Vd, FloatRegister Vn) { \
     starti;                                       \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,6 +207,11 @@ void VM_Version::initialize() {
   if (UseFMA) {
     warning("FMA instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseFMA, false);
+  }
+
+  if (UseMD5Intrinsics) {
+    warning("MD5 intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
   }
 
   if (UseSHA) {

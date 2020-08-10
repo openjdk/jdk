@@ -25,6 +25,9 @@
  * @test
  * @bug 8035968
  * @summary Verify that SHA-1 multi block intrinsic is actually used.
+ * @comment the test verifies compilation of java.base methods, so it can't be run w/ AOT'ed java.base
+ * @requires !vm.aot.enabled
+ *
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -37,8 +40,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive.log
  *                   -XX:CompileOnly=sun/security/provider/DigestBase
  *                   -XX:CompileOnly=sun/security/provider/SHA
- *                   -XX:+UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
- *                   -XX:-UseSHA512Intrinsics
+ *                   -XX:+UseSHA1Intrinsics -XX:-UseMD5Intrinsics
+ *                   -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
  *                   -Dalgorithm=SHA-1
  *                   compiler.intrinsics.sha.sanity.TestSHA1MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -67,7 +70,7 @@ import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 public class TestSHA1MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new SHASanityTestBase(IntrinsicPredicates.isSHA1IntrinsicAvailable(),
-                SHASanityTestBase.MB_INTRINSIC_ID).test();
+        new DigestSanityTestBase(IntrinsicPredicates.isSHA1IntrinsicAvailable(),
+                DigestSanityTestBase.MB_INTRINSIC_ID).test();
     }
 }

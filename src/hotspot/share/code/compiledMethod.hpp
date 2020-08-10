@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -330,7 +330,7 @@ public:
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
   inline bool is_deopt_pc(address pc);
-  bool is_deopt_mh_entry(address pc) { return pc == deopt_mh_handler_begin(); }
+  inline bool is_deopt_mh_entry(address pc);
   inline bool is_deopt_entry(address pc);
 
   virtual bool can_convert_to_zombie() = 0;

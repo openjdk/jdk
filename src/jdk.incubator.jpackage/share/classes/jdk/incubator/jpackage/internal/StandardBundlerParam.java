@@ -338,8 +338,8 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
             new StandardBundlerParam<>(
                     "fileAssociation.description",
                     String.class,
-                    params -> APP_NAME.fetchFrom(params) + " Path",
-                    null
+                    p -> null,
+                    (s, p) -> s
             );
 
     static final StandardBundlerParam<Path> FA_ICON =

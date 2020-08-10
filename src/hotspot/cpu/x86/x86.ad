@@ -1469,6 +1469,8 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false; // implementation limitation (only vcmov8F_reg is present)
       }
       break;
+    case Op_RotateRightV:
+    case Op_RotateLeftV:
     case Op_MacroLogicV:
       if (!VM_Version::supports_evex() ||
           ((size_in_bits != 512) && !VM_Version::supports_avx512vl())) {
@@ -4955,6 +4957,33 @@ instruct vshiftI(vec dst, vec src, vec shift) %{
   ins_pipe( pipe_slow );
 %}
 
+// Integers vector left constant shift
+instruct vshiftI_imm(vec dst, vec src, immI8 shift) %{
+  match(Set dst (LShiftVI src (LShiftCntV shift)));
+  match(Set dst (RShiftVI src (RShiftCntV shift)));
+  match(Set dst (URShiftVI src (RShiftCntV shift)));
+  effect(TEMP dst, USE src);
+  format %{ "vshiftd_imm  $dst,$src,$shift\t! shift packedI" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    if (UseAVX > 0) {
+      int vector_len = vector_length_encoding(this);
+      __ vshiftd_imm(opcode, $dst$$XMMRegister, $src$$XMMRegister, $shift$$constant, vector_len);
+    } else {
+      int vlen = vector_length(this);
+      if (vlen == 2) {
+        __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+        __ vshiftd_imm(opcode, $dst$$XMMRegister, $shift$$constant);
+      } else {
+        assert(vlen == 4, "sanity");
+        __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
+        __ vshiftd_imm(opcode, $dst$$XMMRegister, $shift$$constant);
+      }
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // Longs vector shift
 instruct vshiftL(vec dst, vec src, vec shift) %{
   match(Set dst (LShiftVL src shift));
@@ -4970,6 +4999,26 @@ instruct vshiftL(vec dst, vec src, vec shift) %{
       assert(vector_length(this) == 2, "");
       __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
       __ vshiftq(opcode, $dst$$XMMRegister, $shift$$XMMRegister);
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Longs vector constant shift
+instruct vshiftL_imm(vec dst, vec src, immI8 shift) %{
+  match(Set dst (LShiftVL src (LShiftCntV shift)));
+  match(Set dst (URShiftVL src (RShiftCntV shift)));
+  effect(TEMP dst, USE src, USE shift);
+  format %{ "vshiftq_imm  $dst,$src,$shift\t! shift packedL" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    if (UseAVX > 0) {
+      int vector_len = vector_length_encoding(this);
+      __ vshiftq_imm(opcode, $dst$$XMMRegister, $src$$XMMRegister, $shift$$constant, vector_len);
+    } else {
+      assert(vector_length(this) == 2, "");
+      __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
+      __ vshiftq_imm(opcode, $dst$$XMMRegister, $shift$$constant);
     }
   %}
   ins_pipe( pipe_slow );
@@ -5359,3 +5408,31 @@ instruct vpternlog_mem(vec dst, vec src2, memory src3, immU8 func) %{
   %}
   ins_pipe( pipe_slow );
 %}
+
+// --------------------------------- Rotation Operations ----------------------------------
+instruct vprotate_immI8(vec dst, vec src, immI8 shift) %{
+  match(Set dst (RotateLeftV src shift));
+  match(Set dst (RotateRightV src shift));
+  format %{ "vprotate_imm8 $dst,$src,$shift\t! vector rotate" %}
+  ins_encode %{
+    int opcode      = this->ideal_Opcode();
+    int vector_len  = vector_length_encoding(this);
+    BasicType etype = this->bottom_type()->is_vect()->element_basic_type();
+    __ vprotate_imm(opcode, etype, $dst$$XMMRegister, $src$$XMMRegister, $shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vprorate(vec dst, vec src, vec shift) %{
+  match(Set dst (RotateLeftV src shift));
+  match(Set dst (RotateRightV src shift));
+  format %{ "vprotate $dst,$src,$shift\t! vector rotate" %}
+  ins_encode %{
+    int opcode      = this->ideal_Opcode();
+    int vector_len  = vector_length_encoding(this);
+    BasicType etype = this->bottom_type()->is_vect()->element_basic_type();
+    __ vprotate_var(opcode, etype, $dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+

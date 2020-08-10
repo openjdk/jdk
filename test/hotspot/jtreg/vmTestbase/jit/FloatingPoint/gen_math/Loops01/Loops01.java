@@ -29,15 +29,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.FloatingPoint.gen_math.Loops01.Loops01
- * @run driver ExecDriver --java jit.FloatingPoint.gen_math.Loops01.Loops01
+ * @run main/othervm jit.FloatingPoint.gen_math.Loops01.Loops01
  */
 
 package jit.FloatingPoint.gen_math.Loops01;
 
 import nsk.share.TestFailure;
 
-class Loops01
+public class Loops01
 {
 
    static final int N = 500;

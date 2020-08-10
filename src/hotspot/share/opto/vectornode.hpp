@@ -78,10 +78,14 @@ class VectorNode : public TypeNode {
   static bool is_type_transition_short_to_int(Node* n);
   static bool is_type_transition_to_int(Node* n);
   static bool is_muladds2i(Node* n);
-  static bool is_roundopD(Node * n);
+  static bool is_roundopD(Node* n);
+  static bool is_scalar_rotate(Node* n);
+  static bool is_vector_rotate_supported(int vopc, uint vlen, BasicType bt);
   static bool is_invariant_vector(Node* n);
   static bool is_all_ones_vector(Node* n);
   static bool is_vector_bitwise_not_pattern(Node* n);
+  static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
+                                        BasicType bt, PhaseGVN* phase);
 
   // [Start, end) half-open range defining which operands are vectors
   static void vector_operands(Node* n, uint* start, uint* end);
@@ -620,6 +624,7 @@ class OrVNode : public VectorNode {
  public:
   OrVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------XorVNode---------------------------------------
@@ -1001,6 +1006,24 @@ public:
   virtual int Opcode() const;
 
   static MacroLogicVNode* make(PhaseGVN& igvn, Node* in1, Node* in2, Node* in3, uint truth_table, const TypeVect* vt);
+};
+
+class RotateRightVNode : public VectorNode {
+public:
+  RotateRightVNode(Node* in1, Node* in2, const TypeVect* vt)
+  : VectorNode(in1, in2, vt) {}
+
+  virtual int Opcode() const;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+class RotateLeftVNode : public VectorNode {
+public:
+  RotateLeftVNode(Node* in1, Node* in2, const TypeVect* vt)
+  : VectorNode(in1, in2, vt) {}
+
+  virtual int Opcode() const;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 #endif // SHARE_OPTO_VECTORNODE_HPP

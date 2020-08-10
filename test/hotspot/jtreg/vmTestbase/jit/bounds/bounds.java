@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.bounds.bounds
- * @run driver ExecDriver --java jit.bounds.bounds
+ * @run main/othervm jit.bounds.bounds
  */
 
 package jit.bounds;
@@ -40,7 +39,7 @@ package jit.bounds;
 
 import nsk.share.TestFailure;
 
-class bounds {
+public class bounds {
     public static void main(String[] argv) {
         int i;
         int a[] = new int[2];

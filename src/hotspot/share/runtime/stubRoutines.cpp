@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,8 @@ address StubRoutines::_counterMode_AESCrypt                = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
 address StubRoutines::_base64_encodeBlock                  = NULL;
 
+address StubRoutines::_md5_implCompress      = NULL;
+address StubRoutines::_md5_implCompressMB    = NULL;
 address StubRoutines::_sha1_implCompress     = NULL;
 address StubRoutines::_sha1_implCompressMB   = NULL;
 address StubRoutines::_sha256_implCompress   = NULL;

@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.overflow.overflow
- * @run driver ExecDriver --java jit.overflow.overflow
+ * @run main/othervm jit.overflow.overflow
  */
 
 package jit.overflow;
@@ -46,7 +45,7 @@ import java.lang.*;
 
 import nsk.share.TestFailure;
 
-class overflow {
+public class overflow {
     public static void main(String[] args) {
         try {
            recurse(1);

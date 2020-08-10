@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.deoptimization.test03.test03
- * @run driver ExecDriver --java jit.deoptimization.test03.test03
+ * @run main/othervm jit.deoptimization.test03.test03
  */
 
 package jit.deoptimization.test03;
@@ -44,7 +43,7 @@ import nsk.share.TestFailure;
  *      run with the -XX:TraceDeoptimization to observ the result.
  */
 
-class test03 {
+public class test03 {
   public static void main (String[] args) {
     A obj = new A();
     for (int index = 0; index < 100; index++) {

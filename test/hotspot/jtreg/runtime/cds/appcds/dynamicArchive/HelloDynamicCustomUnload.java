@@ -39,10 +39,10 @@
  */
 
 import java.io.File;
+import jdk.test.lib.cds.CDSTestUtils;
 
 public class HelloDynamicCustomUnload extends DynamicArchiveTestBase {
-    private static final String ARCHIVE_NAME =
-        System.getProperty("test.classes") + File.separator + "HelloDynamicCustomUnload.jsa";
+    private static final String ARCHIVE_NAME = CDSTestUtils.getOutputFileName("top.jsa");
 
     public static void main(String[] args) throws Exception {
         runTest(HelloDynamicCustomUnload::testDefaultBase);

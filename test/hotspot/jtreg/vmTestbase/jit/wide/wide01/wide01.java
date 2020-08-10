@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.wide.wide01.wide01
- * @run driver ExecDriver --java jit.wide.wide01.wide01
+ * @run main/othervm jit.wide.wide01.wide01
  */
 
 package jit.wide.wide01;
@@ -45,7 +44,7 @@ import nsk.share.TestFailure;
      greater-than-double precision.
 */
 
-strictfp class wide01
+strictfp public class wide01
 {
    public static void main(String[] arg) {
        float  f1 = Float.MAX_VALUE;

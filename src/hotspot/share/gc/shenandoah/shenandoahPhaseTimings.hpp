@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPHASETIMINGS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPHASETIMINGS_HPP
 
+#include "jfr/jfrEvents.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "gc/shared/workerDataArray.hpp"
 #include "memory/allocation.hpp"
@@ -36,7 +37,6 @@ class outputStream;
   f(CNT_PREFIX ## TotalWork,                DESC_PREFIX "<total>")                     \
   f(CNT_PREFIX ## ThreadRoots,              DESC_PREFIX "Thread Roots")                \
   f(CNT_PREFIX ## CodeCacheRoots,           DESC_PREFIX "Code Cache Roots")            \
-  f(CNT_PREFIX ## UniverseRoots,            DESC_PREFIX "Universe Roots")              \
   f(CNT_PREFIX ## VMStrongRoots,            DESC_PREFIX "VM Strong Roots")             \
   f(CNT_PREFIX ## VMWeakRoots,              DESC_PREFIX "VM Weak Roots")               \
   f(CNT_PREFIX ## ObjectSynchronizerRoots,  DESC_PREFIX "Synchronizer Roots")          \

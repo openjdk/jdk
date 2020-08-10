@@ -34,6 +34,7 @@
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
@@ -44,7 +45,8 @@
 #include "runtime/thread.hpp"
 
 // Timestamp of when the gc last processed the set of sampled objects.
-static JfrTicks _last_sweep;
+// Atomic access to prevent word tearing on 32-bit platforms.
+static volatile int64_t _last_sweep;
 
 // Condition variable to communicate that some sampled objects have been cleared by the gc
 // and can therefore be removed from the sample priority queue.
@@ -66,7 +68,7 @@ void ObjectSampler::oop_storage_gc_notification(size_t num_dead) {
     // instance was created concurrently.  This allows for a small race where cleaning
     // could be done again.
     Atomic::store(&_dead_samples, true);
-    _last_sweep = JfrTicks::now();
+    Atomic::store(&_last_sweep, (int64_t)JfrTicks::now().value());
   }
 }
 
@@ -90,8 +92,8 @@ ObjectSampler::ObjectSampler(size_t size) :
         _total_allocated(0),
         _threshold(0),
         _size(size) {
-  _last_sweep = JfrTicks::now();
   Atomic::store(&_dead_samples, false);
+  Atomic::store(&_last_sweep, (int64_t)JfrTicks::now().value());
 }
 
 ObjectSampler::~ObjectSampler() {
@@ -285,6 +287,6 @@ ObjectSample* ObjectSampler::item_at(int index) {
                                   );
 }
 
-const JfrTicks& ObjectSampler::last_sweep() {
-  return _last_sweep;
+int64_t ObjectSampler::last_sweep() {
+  return Atomic::load(&_last_sweep);
 }

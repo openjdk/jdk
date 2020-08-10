@@ -26,7 +26,6 @@
 #define SHARE_JFR_LEAKPROFILER_SAMPLING_OBJECTSAMPLER_HPP
 
 #include "memory/allocation.hpp"
-#include "jfr/utilities/jfrTime.hpp"
 
 typedef u8 traceid;
 
@@ -80,7 +79,7 @@ class ObjectSampler : public CHeapObj<mtTracing> {
   // For operations that require exclusive access (non-safepoint)
   static ObjectSampler* acquire();
   static void release();
-  static const JfrTicks& last_sweep();
+  static int64_t last_sweep();
   const ObjectSample* first() const;
   ObjectSample* last() const;
   const ObjectSample* last_resolved() const;

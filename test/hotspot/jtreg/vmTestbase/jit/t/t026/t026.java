@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.t.t026.t026
- * @run driver ExecDriver --java jit.t.t026.t026
+ * @run main/othervm jit.t.t026.t026
  */
 
 package jit.t.t026;
@@ -39,7 +38,7 @@ import nsk.share.TestFailure;
 
 // opc_areturn
 
-class t026
+public class t026
 {
     t026 foo()
     {

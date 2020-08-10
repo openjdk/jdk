@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/*
- * @test TestCriticalControlThreadPriority
- * @summary Check that ShenandoahCriticalControlThreadPriority works
- * @bug 8217343
- * @requires vm.gc.Shenandoah
+/**
+ * @test
+ * @bug 8035968
+ * @summary Verify UseMD5Intrinsics option processing on supported CPU.
+ * @library /test/lib testcases /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:-ShenandoahCriticalControlThreadPriority -Xmx1g TestCriticalControlThreadPriority
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ShenandoahCriticalControlThreadPriority -Xmx1g TestCriticalControlThreadPriority
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.intrinsics.sha.cli.TestUseMD5IntrinsicsOptionOnSupportedCPU
  */
 
-public class TestCriticalControlThreadPriority {
+package compiler.intrinsics.sha.cli;
 
-    public static void main(String[] args) throws Exception {
-        // checking the initialization before entering main()
+import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForSupportedCPU;
+
+public class TestUseMD5IntrinsicsOptionOnSupportedCPU {
+    public static void main(String args[]) throws Throwable {
+        new DigestOptionsBase(new GenericTestCaseForSupportedCPU(
+                DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false)).test();
     }
-
 }

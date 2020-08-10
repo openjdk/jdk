@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t101.t101
- * @run driver ExecDriver --java jit.t.t101.t101
+ * @run main/othervm jit.t.t101.t101
  */
 
 package jit.t.t101;
@@ -45,7 +44,7 @@ import nsk.share.GoldChecker;
 //
 // , which ain't anything Ma Intel understands.
 
-class t101
+public class t101
 {
     public static final GoldChecker goldChecker = new GoldChecker( "t101" );
 

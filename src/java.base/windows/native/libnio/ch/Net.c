@@ -226,11 +226,23 @@ Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6, job
 {
     SOCKETADDRESS sa;
     int rv;
+    int so_rv;
     int sa_len = 0;
     SOCKET s = (SOCKET)fdval(env, fdo);
+    int type = 0, optlen = sizeof(type);
 
     if (NET_InetAddressToSockaddr(env, iao, port, &sa, &sa_len, preferIPv6) != 0) {
         return IOS_THROWN;
+    }
+
+    so_rv = getsockopt(s, SOL_SOCKET, SO_TYPE, (char*)&type, &optlen);
+
+    /**
+     * Windows has a very long socket connect timeout of 2 seconds.
+     * If it's the loopback adapter we can shorten the wait interval.
+     */
+    if (so_rv == 0 && type == SOCK_STREAM && IS_LOOPBACK_ADDRESS(&sa)) {
+        NET_EnableFastTcpLoopbackConnect((jint)s);
     }
 
     rv = connect(s, &sa.sa, sa_len);
@@ -243,9 +255,7 @@ Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6, job
         return IOS_THROWN;
     } else {
         /* Enable WSAECONNRESET errors when a UDP socket is connected */
-        int type = 0, optlen = sizeof(type);
-        rv = getsockopt(s, SOL_SOCKET, SO_TYPE, (char*)&type, &optlen);
-        if (rv == 0 && type == SOCK_DGRAM) {
+        if (so_rv == 0 && type == SOCK_DGRAM) {
             setConnectionReset(s, TRUE);
         }
     }

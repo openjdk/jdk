@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.FloatingPoint.gen_math.Summ.Summ
- * @run driver ExecDriver --java jit.FloatingPoint.gen_math.Summ.Summ
+ * @run main/othervm jit.FloatingPoint.gen_math.Summ.Summ
  */
 
 package jit.FloatingPoint.gen_math.Summ;
@@ -39,7 +38,7 @@ package jit.FloatingPoint.gen_math.Summ;
 
 import nsk.share.TestFailure;
 
-class Summ
+public class Summ
 {
    public static void main (String args[])
    {

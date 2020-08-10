@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -809,7 +809,7 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
    Symbol* h_signature = signature()->get_symbol();
 
    LinkInfo link_info(resolved, h_name, h_signature, caller_klass,
-                      check_access ? LinkInfo::needs_access_check : LinkInfo::skip_access_check);
+                      check_access ? LinkInfo::AccessCheck::required : LinkInfo::AccessCheck::skip);
    Method* m = NULL;
    // Only do exact lookup if receiver klass has been linked.  Otherwise,
    // the vtable has not been setup, and the LinkResolver will fail.

@@ -59,6 +59,12 @@ public class IntrinsicPredicates {
         return Platform.isServer() && !Platform.isEmulatedClient() && (!isTiered || maxLevelIsReachable);
     };
 
+    public static final BooleanSupplier MD5_INSTRUCTION_AVAILABLE
+            = // x86 variants
+              new OrPredicate(new CPUSpecificPredicate("amd64.*",   null, null),
+              new OrPredicate(new CPUSpecificPredicate("i386.*",    null, null),
+                              new CPUSpecificPredicate("x86.*",     null, null)));
+
     public static final BooleanSupplier SHA1_INSTRUCTION_AVAILABLE
             = new OrPredicate(new CPUSpecificPredicate("aarch64.*", new String[] { "sha1" }, null),
               new OrPredicate(new CPUSpecificPredicate("s390.*",    new String[] { "sha1" }, null),
@@ -96,6 +102,11 @@ public class IntrinsicPredicates {
                     new OrPredicate(
                             IntrinsicPredicates.SHA256_INSTRUCTION_AVAILABLE,
                             IntrinsicPredicates.SHA512_INSTRUCTION_AVAILABLE));
+
+    public static BooleanSupplier isMD5IntrinsicAvailable() {
+        return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                                IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.MD5", "implCompress0"));
+    }
 
     public static BooleanSupplier isSHA1IntrinsicAvailable() {
         return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,

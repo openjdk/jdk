@@ -159,6 +159,8 @@ private:
   WorkGang* _workers;
   G1CardTable* _card_table;
 
+  Ticks _collection_pause_end;
+
   SoftRefPolicy      _soft_ref_policy;
 
   static size_t _humongous_object_threshold_in_words;
@@ -644,7 +646,10 @@ public:
   // the G1OldGCCount_lock in case a Java thread is waiting for a full
   // GC to happen (e.g., it called System.gc() with
   // +ExplicitGCInvokesConcurrent).
-  void increment_old_marking_cycles_completed(bool concurrent);
+  // whole_heap_examined should indicate that during that old marking
+  // cycle the whole heap has been examined for live objects (as opposed
+  // to only parts, or aborted before completion).
+  void increment_old_marking_cycles_completed(bool concurrent, bool whole_heap_examined);
 
   uint old_marking_cycles_completed() {
     return _old_marking_cycles_completed;
@@ -1288,8 +1293,7 @@ public:
   // Return the size of reserved memory. Returns different value than max_capacity() when AllocateOldGenAt is used.
   virtual size_t max_reserved_capacity() const;
 
-  virtual jlong millis_since_last_gc();
-
+  Tickspan time_since_last_collection() const { return Ticks::now() - _collection_pause_end; }
 
   // Convenience function to be used in situations where the heap type can be
   // asserted to be this type.

@@ -455,7 +455,7 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   case vmIntrinsics::_counterMode_AESCrypt:
     return 1;
   case vmIntrinsics::_digestBase_implCompressMB:
-    return 3;
+    return 4;
   default:
     return 0;
   }
@@ -699,6 +699,9 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_counterMode_AESCrypt:
     if (!UseAESCTRIntrinsics) return true;
     break;
+  case vmIntrinsics::_md5_implCompress:
+    if (!UseMD5Intrinsics) return true;
+    break;
   case vmIntrinsics::_sha_implCompress:
     if (!UseSHA1Intrinsics) return true;
     break;
@@ -709,7 +712,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!UseSHA512Intrinsics) return true;
     break;
   case vmIntrinsics::_digestBase_implCompressMB:
-    if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) return true;
+    if (!(UseMD5Intrinsics || UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) return true;
     break;
   case vmIntrinsics::_ghash_processBlocks:
     if (!UseGHASHIntrinsics) return true;

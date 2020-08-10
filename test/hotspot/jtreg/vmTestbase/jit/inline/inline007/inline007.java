@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.inline.inline007.inline007
- * @run driver ExecDriver --java jit.inline.inline007.inline007
+ * @run main/othervm jit.inline.inline007.inline007
  */
 
 package jit.inline.inline007;
@@ -158,7 +157,7 @@ class inline007Sub extends inline007Sup {
         }
 }
 
-class inline007 extends inline007_1 {
+public class inline007 extends inline007_1 {
         public static final GoldChecker goldChecker = new GoldChecker( "inline007" );
 
         static int[] myIters = new int[14];

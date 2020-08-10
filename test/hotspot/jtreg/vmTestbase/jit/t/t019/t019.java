@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t019.t019
- * @run driver ExecDriver --java jit.t.t019.t019
+ * @run main/othervm jit.t.t019.t019
  */
 
 package jit.t.t019;
@@ -43,7 +42,7 @@ import nsk.share.GoldChecker;
 // opc_caload, opc_castore,
 // opc_saload, opc_sastore
 
-class t019
+public class t019
 {
     public static final GoldChecker goldChecker = new GoldChecker( "t019" );
 

@@ -328,7 +328,7 @@ Method* LinkResolver::lookup_method_in_klasses(const LinkInfo& link_info,
   Symbol* signature = link_info.signature();
 
   // Ignore overpasses so statics can be found during resolution
-  Method* result = klass->uncached_lookup_method(name, signature, Klass::skip_overpass);
+  Method* result = klass->uncached_lookup_method(name, signature, Klass::OverpassLookupMode::skip);
 
   if (klass->is_array_klass()) {
     // Only consider klass and super klass for arrays
@@ -377,11 +377,11 @@ Method* LinkResolver::lookup_instance_method_in_klasses(Klass* klass,
                                                         Symbol* name,
                                                         Symbol* signature,
                                                         Klass::PrivateLookupMode private_mode, TRAPS) {
-  Method* result = klass->uncached_lookup_method(name, signature, Klass::find_overpass, private_mode);
+  Method* result = klass->uncached_lookup_method(name, signature, Klass::OverpassLookupMode::find, private_mode);
 
   while (result != NULL && result->is_static() && result->method_holder()->super() != NULL) {
     Klass* super_klass = result->method_holder()->super();
-    result = super_klass->uncached_lookup_method(name, signature, Klass::find_overpass, private_mode);
+    result = super_klass->uncached_lookup_method(name, signature, Klass::OverpassLookupMode::find, private_mode);
   }
 
   if (klass->is_array_klass()) {
@@ -410,8 +410,10 @@ int LinkResolver::vtable_index_of_interface_method(Klass* klass,
   // First check in default method array
   if (!resolved_method->is_abstract() && ik->default_methods() != NULL) {
     int index = InstanceKlass::find_method_index(ik->default_methods(),
-                                                 name, signature, Klass::find_overpass,
-                                                 Klass::find_static, Klass::find_private);
+                                                 name, signature,
+                                                 Klass::OverpassLookupMode::find,
+                                                 Klass::StaticLookupMode::find,
+                                                 Klass::PrivateLookupMode::find);
     if (index >= 0 ) {
       vtable_index = ik->default_vtable_indices()->at(index);
     }
@@ -430,7 +432,7 @@ Method* LinkResolver::lookup_method_in_interfaces(const LinkInfo& cp_info) {
   // Specify 'true' in order to skip default methods when searching the
   // interfaces.  Function lookup_method_in_klasses() already looked for
   // the method in the default methods table.
-  return ik->lookup_method_in_all_interfaces(cp_info.name(), cp_info.signature(), Klass::skip_defaults);
+  return ik->lookup_method_in_all_interfaces(cp_info.name(), cp_info.signature(), Klass::DefaultsLookupMode::skip);
 }
 
 Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
@@ -1087,7 +1089,7 @@ void LinkResolver::resolve_static_call(CallInfo& result,
     // Use updated LinkInfo to reresolve with resolved method holder
     LinkInfo new_info(resolved_klass, link_info.name(), link_info.signature(),
                       link_info.current_klass(),
-                      link_info.check_access() ? LinkInfo::needs_access_check : LinkInfo::skip_access_check);
+                      link_info.check_access() ? LinkInfo::AccessCheck::required : LinkInfo::AccessCheck::skip);
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
   }
 
@@ -1236,7 +1238,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
       Method* instance_method = lookup_instance_method_in_klasses(super_klass,
                                                      resolved_method->name(),
                                                      resolved_method->signature(),
-                                                     Klass::find_private, CHECK);
+                                                     Klass::PrivateLookupMode::find, CHECK);
       sel_method = methodHandle(THREAD, instance_method);
 
       // check if found
@@ -1478,7 +1480,7 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
     Method* method = lookup_instance_method_in_klasses(recv_klass,
                                                        resolved_method->name(),
                                                        resolved_method->signature(),
-                                                       Klass::skip_private, CHECK);
+                                                       Klass::PrivateLookupMode::skip, CHECK);
     selected_method = methodHandle(THREAD, method);
 
     if (selected_method.is_null() && !check_null_and_abstract) {

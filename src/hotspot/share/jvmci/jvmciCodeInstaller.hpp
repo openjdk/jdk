@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,7 @@ private:
     CRC_TABLE_ADDRESS,
     LOG_OF_HEAP_REGION_GRAIN_BYTES,
     INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED,
+    DEOPT_MH_HANDLER_ENTRY,
     INVOKE_INVALID                         = -1
   };
 
@@ -297,11 +298,11 @@ protected:
 
   int map_jvmci_bci(int bci);
 
-  void record_scope(jint pc_offset, JVMCIObject debug_info, ScopeMode scope_mode, bool return_oop, JVMCI_TRAPS);
+  void record_scope(jint pc_offset, JVMCIObject debug_info, ScopeMode scope_mode, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS);
   void record_scope(jint pc_offset, JVMCIObject debug_info, ScopeMode scope_mode, JVMCI_TRAPS) {
-    record_scope(pc_offset, debug_info, scope_mode, false /* return_oop */, JVMCIENV);
+    record_scope(pc_offset, debug_info, scope_mode, false /* is_mh_invoke */, false /* return_oop */, JVMCIENV);
   }
-  void record_scope(jint pc_offset, JVMCIObject position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, bool return_oop, JVMCI_TRAPS);
+  void record_scope(jint pc_offset, JVMCIObject position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS);
   void record_object_value(ObjectValue* sv, JVMCIObject value, GrowableArray<ScopeValue*>* objects, JVMCI_TRAPS);
 
   GrowableArray<ScopeValue*>* record_virtual_objects(JVMCIObject debug_info, JVMCI_TRAPS);

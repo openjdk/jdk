@@ -328,12 +328,6 @@ class Universe: AllStatic {
   static bool        should_fill_in_stack_trace(Handle throwable);
   static void check_alignment(uintx size, uintx alignment, const char* name);
 
-  // Iteration
-
-  // Apply "f" to the addresses of all the direct heap pointers maintained
-  // as static fields of "Universe".
-  static void oops_do(OopClosure* f);
-
   // CDS support
   static void serialize(SerializeClosure* f);
 

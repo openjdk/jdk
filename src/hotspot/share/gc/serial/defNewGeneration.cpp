@@ -680,12 +680,6 @@ void DefNewGeneration::collect(bool   full,
   from()->set_concurrent_iteration_safe_limit(from()->top());
   to()->set_concurrent_iteration_safe_limit(to()->top());
 
-  // We need to use a monotonically non-decreasing time in ms
-  // or we will see time-warp warnings and os::javaTimeMillis()
-  // does not guarantee monotonicity.
-  jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
-  update_time_of_last_gc(now);
-
   heap->trace_heap_after_gc(&gc_tracer);
 
   _gc_timer->register_gc_end();

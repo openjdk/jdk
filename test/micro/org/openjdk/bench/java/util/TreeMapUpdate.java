@@ -39,11 +39,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Random;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -54,6 +56,9 @@ import java.util.stream.IntStream;
 @Fork(3)
 @State(Scope.Thread)
 public class TreeMapUpdate {
+    @Param({"TreeMap", "descendingMap", "tailMap"})
+    public String mode;
+
     @Param({"10", "1000", "100000"})
     public int size;
 
@@ -68,10 +73,25 @@ public class TreeMapUpdate {
 
     private Supplier<TreeMap<Integer, Integer>> supplier;
 
+    private UnaryOperator<NavigableMap<Integer, Integer>> transformer;
+
     private Integer[] keys;
 
     @Setup
     public void setUp() {
+        switch(mode) {
+            case "TreeMap":
+                transformer = map -> map;
+                break;
+            case "descendingMap":
+                transformer = map -> map.descendingMap();
+                break;
+            case "tailMap":
+                transformer = map -> map.tailMap(0, true);
+                break;
+            default:
+                throw new IllegalStateException(mode);
+        }
         supplier = comparator ? () -> new TreeMap<>(Comparator.reverseOrder()) : TreeMap::new;
         keys = IntStream.range(0, size).boxed().toArray(Integer[]::new);
         Random rnd = seed == 0 ? new Random() : new Random(seed);
@@ -86,12 +106,12 @@ public class TreeMapUpdate {
     @Benchmark
     public Map<Integer, Integer> baseline() {
         // Just create map (empty or pre-filled)
-        return supplier.get();
+        return transformer.apply(supplier.get());
     }
 
     @Benchmark
     public Map<Integer, Integer> put(Blackhole bh) {
-        Map<Integer, Integer> map = supplier.get();
+        Map<Integer, Integer> map = transformer.apply(supplier.get());
         Integer[] keys = this.keys;
         for (Integer key : keys) {
             bh.consume(map.put(key, key));
@@ -101,7 +121,7 @@ public class TreeMapUpdate {
 
     @Benchmark
     public Map<Integer, Integer> putIfAbsent(Blackhole bh) {
-        Map<Integer, Integer> map = supplier.get();
+        Map<Integer, Integer> map = transformer.apply(supplier.get());
         Integer[] keys = this.keys;
         for (Integer key : keys) {
             bh.consume(map.putIfAbsent(key, key));
@@ -111,7 +131,7 @@ public class TreeMapUpdate {
 
     @Benchmark
     public Map<Integer, Integer> computeIfAbsent(Blackhole bh) {
-        Map<Integer, Integer> map = supplier.get();
+        Map<Integer, Integer> map = transformer.apply(supplier.get());
         Integer[] keys = this.keys;
         for (Integer key : keys) {
             bh.consume(map.computeIfAbsent(key, k -> k));
@@ -121,7 +141,7 @@ public class TreeMapUpdate {
 
     @Benchmark
     public Map<Integer, Integer> compute(Blackhole bh) {
-        Map<Integer, Integer> map = supplier.get();
+        Map<Integer, Integer> map = transformer.apply(supplier.get());
         Integer[] keys = this.keys;
         for (Integer key : keys) {
             bh.consume(map.compute(key, (k, old) -> k));
@@ -131,7 +151,7 @@ public class TreeMapUpdate {
 
     @Benchmark
     public Map<Integer, Integer> computeIfPresent(Blackhole bh) {
-        Map<Integer, Integer> map = supplier.get();
+        Map<Integer, Integer> map = transformer.apply(supplier.get());
         Integer[] keys = this.keys;
         for (Integer key : keys) {
             bh.consume(map.computeIfPresent(key, (k, old) -> k));
@@ -141,7 +161,7 @@ public class TreeMapUpdate {
 
     @Benchmark
     public Map<Integer, Integer> merge(Blackhole bh) {
-        Map<Integer, Integer> map = supplier.get();
+        Map<Integer, Integer> map = transformer.apply(supplier.get());
         Integer[] keys = this.keys;
         for (Integer key : keys) {
             bh.consume(map.merge(key, key, (k1, k2) -> k1));

@@ -129,11 +129,6 @@ public:
   virtual void prepare_for_verify() {}
   virtual void verify(VerifyOption option) {}
 
-  virtual jlong millis_since_last_gc() {
-    // Report time since the VM start
-    return os::elapsed_counter() / NANOSECS_PER_MILLISEC;
-  }
-
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 

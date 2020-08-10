@@ -993,6 +993,8 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "counterMode_AESCrypt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "ghash_processBlocks") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "encodeBlock") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "md5_implCompress") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "md5_implCompressMB") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha1_implCompress") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha1_implCompressMB") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha256_implCompress") == 0 ||

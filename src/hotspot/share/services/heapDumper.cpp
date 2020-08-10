@@ -1859,8 +1859,9 @@ void VM_HeapDumper::work(uint worker_id) {
   // HPROF_GC_ROOT_JNI_GLOBAL
   JNIGlobalsDumper jni_dumper(writer());
   JNIHandles::oops_do(&jni_dumper);
-  Universe::oops_do(&jni_dumper);  // technically not jni roots, but global roots
-                                   // for things like preallocated throwable backtraces
+  // technically not jni roots, but global roots
+  // for things like preallocated throwable backtraces
+  Universe::vm_global()->oops_do(&jni_dumper);
 
   // HPROF_GC_ROOT_STICKY_CLASS
   // These should be classes in the NULL class loader data, and not all classes

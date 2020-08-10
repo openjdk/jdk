@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import org.testng.annotations.DataProvider;
 import java.io.IOException;
 import java.net.http.WebSocket;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BooleanSupplier;
 
@@ -46,6 +47,7 @@ public class PendingOperations {
 
     @AfterTest
     public void cleanup() {
+        System.err.println("cleanup: Closing server");
         server.close();
         webSocket.abort();
     }
@@ -61,6 +63,10 @@ public class PendingOperations {
         Support.assertCompletesExceptionally(clazz, stage);
     }
 
+    static void assertNotDone(CompletableFuture<?> future) {
+        Support.assertNotDone(future);
+    }
+
     @DataProvider(name = "booleans")
     public Object[][] booleans() {
         return new Object[][]{{Boolean.TRUE}, {Boolean.FALSE}};
@@ -68,6 +74,9 @@ public class PendingOperations {
 
     static boolean isMacOS() {
         return System.getProperty("os.name").contains("OS X");
+    }
+    static boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().startsWith("win");
     }
 
     private static final int ITERATIONS = 3;
@@ -84,7 +93,12 @@ public class PendingOperations {
                 callable.call();
                 break;
             } catch (AssertionError e) {
-                if (isMacOS() && repeatCondition.getAsBoolean()) {
+                var isMac = isMacOS();
+                var isWindows = isWindows();
+                var repeat = repeatCondition.getAsBoolean();
+                System.out.printf("repeatable: isMac=%s, isWindows=%s, repeat=%s, iterations=%d%n",
+                                  isMac, isWindows, repeat, iterations);
+                if ((isMac || isWindows) && repeat) {
                     // ## This is loathsome, but necessary because of observed
                     // ## automagic socket buffer resizing on recent macOS platforms
                     continue;

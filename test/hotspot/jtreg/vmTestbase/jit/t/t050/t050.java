@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.t.t050.t050
- * @run driver ExecDriver --java jit.t.t050.t050
+ * @run main/othervm jit.t.t050.t050
  */
 
 package jit.t.t050;
@@ -39,7 +38,7 @@ import nsk.share.TestFailure;
 
 // Pending local load clobbered by local store.
 
-class t050
+public class t050
 {
     public static void main(String argv[])
     {

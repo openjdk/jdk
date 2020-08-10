@@ -284,6 +284,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseFMA, true);
   }
 
+  if (UseMD5Intrinsics) {
+    warning("MD5 intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  }
+
   if (has_vshasig()) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       UseSHA = true;

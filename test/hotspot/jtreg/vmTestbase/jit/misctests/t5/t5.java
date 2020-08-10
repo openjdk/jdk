@@ -29,15 +29,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.misctests.t5.t5
- * @run driver ExecDriver --java jit.misctests.t5.t5
+ * @run main/othervm jit.misctests.t5.t5
  */
 
 package jit.misctests.t5;
 
 import nsk.share.TestFailure;
 
-class t5
+public class t5
 {
     public static void main (String [] args)
     {

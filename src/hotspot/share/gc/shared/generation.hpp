@@ -75,7 +75,6 @@ struct ScratchBlock {
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
-  jlong _time_of_last_gc; // time when last gc on this generation happened (ms)
   MemRegion _prev_used_region; // for collectors that want to "remember" a value for
                                // used region at some specific point during collection.
 
@@ -362,25 +361,6 @@ class Generation: public CHeapObj<mtGC> {
   // Some generations may need to be "fixed-up" after some allocation
   // activity to make them parsable again. The default is to do nothing.
   virtual void ensure_parsability() {}
-
-  // Time (in ms) when we were last collected or now if a collection is
-  // in progress.
-  virtual jlong time_of_last_gc(jlong now) {
-    // Both _time_of_last_gc and now are set using a time source
-    // that guarantees monotonically non-decreasing values provided
-    // the underlying platform provides such a source. So we still
-    // have to guard against non-monotonicity.
-    NOT_PRODUCT(
-      if (now < _time_of_last_gc) {
-        log_warning(gc)("time warp: " JLONG_FORMAT " to " JLONG_FORMAT, _time_of_last_gc, now);
-      }
-    )
-    return _time_of_last_gc;
-  }
-
-  virtual void update_time_of_last_gc(jlong now)  {
-    _time_of_last_gc = now;
-  }
 
   // Generations may keep statistics about collection. This method
   // updates those statistics. current_generation is the generation

@@ -375,7 +375,19 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
     public final int threadTlabOffset = getFieldOffset("Thread::_tlab", Integer.class, "ThreadLocalAllocBuffer");
     public final int javaThreadAnchorOffset = getFieldOffset("JavaThread::_anchor", Integer.class, "JavaFrameAnchor");
     public final int javaThreadShouldPostOnExceptionsFlagOffset = getFieldOffset("JavaThread::_should_post_on_exceptions_flag", Integer.class, "int", Integer.MIN_VALUE, JVMCI || JDK >= 12);
-    public final int threadObjectOffset = getFieldOffset("JavaThread::_threadObj", Integer.class, "oop");
+
+    public final boolean threadObjectFieldIsHandle;
+    public final int threadObjectOffset;
+    {
+        if (JDK <= 15) {
+            threadObjectFieldIsHandle = false;
+            threadObjectOffset = getFieldOffset("JavaThread::_threadObj", Integer.class, "oop");
+        } else {
+            threadObjectFieldIsHandle = true;
+            threadObjectOffset = getFieldOffset("JavaThread::_threadObj", Integer.class, "OopHandle");
+        }
+    }
+
     public final int osThreadOffset = getFieldOffset("JavaThread::_osthread", Integer.class, "OSThread*");
     public final int threadIsMethodHandleReturnOffset = getFieldOffset("JavaThread::_is_method_handle_return", Integer.class, "int");
     public final int threadObjectResultOffset = getFieldOffset("JavaThread::_vm_result", Integer.class, "oop");

@@ -323,6 +323,9 @@ const size_t minimumSymbolTableSize = 1024;
   diagnostic(bool, UseAESCTRIntrinsics, false,                              \
           "Use intrinsics for the paralleled version of AES/CTR crypto")    \
                                                                             \
+  diagnostic(bool, UseMD5Intrinsics, false,                                 \
+          "Use intrinsics for MD5 crypto hash function")                    \
+                                                                            \
   diagnostic(bool, UseSHA1Intrinsics, false,                                \
           "Use intrinsics for SHA-1 crypto hash function. "                 \
           "Requires that UseSHA is enabled.")                               \

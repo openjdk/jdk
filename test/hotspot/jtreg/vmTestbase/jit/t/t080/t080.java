@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t080.t080
- * @run driver ExecDriver --java jit.t.t080.t080
+ * @run main/othervm jit.t.t080.t080
  */
 
 package jit.t.t080;
@@ -41,7 +40,7 @@ import nsk.share.GoldChecker;
 
 // Like t079.java except this one has lots of local variables.
 
-class t080
+public class t080
 {
     public static final GoldChecker goldChecker = new GoldChecker( "t080" );
 

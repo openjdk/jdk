@@ -91,10 +91,10 @@ public class TestG1ParallelPhases {
         Set<String> allPhases = of(
             "ExtRootScan",
             "ThreadRoots",
-            "UniverseRoots",
             "ObjectSynchronizerRoots",
             "VM Global",
             "JNI Global",
+            "Thread OopStorage",
             "CLDGRoots",
             "CMRefRoots",
             "MergeER",

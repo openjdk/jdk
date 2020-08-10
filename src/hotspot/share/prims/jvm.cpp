@@ -502,7 +502,7 @@ JVM_END
 
 JVM_LEAF(jlong, JVM_MaxObjectInspectionAge(void))
   JVMWrapper("JVM_MaxObjectInspectionAge");
-  return Universe::heap()->millis_since_last_gc();
+  return Universe::heap()->millis_since_last_whole_heap_examined();
 JVM_END
 
 

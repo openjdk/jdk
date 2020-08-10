@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,9 @@ import java.util.function.BooleanSupplier;
  * Instead of using huge complex tests for each option, each test is constructed
  * from several test cases shared among different tests.
  */
-public class SHAOptionsBase extends CommandLineOptionTest {
+public class DigestOptionsBase extends CommandLineOptionTest {
+    public static final String USE_MD5_INTRINSICS_OPTION
+            = "UseMD5Intrinsics";
     public static final String USE_SHA_OPTION = "UseSHA";
     public static final String USE_SHA1_INTRINSICS_OPTION
             = "UseSHA1Intrinsics";
@@ -52,6 +54,8 @@ public class SHAOptionsBase extends CommandLineOptionTest {
     // Note that strings below will be passed to
     // CommandLineOptionTest.verifySameJVMStartup and thus are regular
     // expressions, not just a plain strings.
+    protected static final String MD5_INTRINSICS_ARE_NOT_AVAILABLE
+            = "Intrinsics for MD5 crypto hash functions not available on this CPU.";
     protected static final String SHA_INSTRUCTIONS_ARE_NOT_AVAILABLE
             = "SHA instructions are not available on this CPU";
     protected static final String SHA1_INTRINSICS_ARE_NOT_AVAILABLE
@@ -75,14 +79,16 @@ public class SHAOptionsBase extends CommandLineOptionTest {
      */
     public static String getWarningForUnsupportedCPU(String optionName) {
         switch (optionName) {
-        case SHAOptionsBase.USE_SHA_OPTION:
-            return SHAOptionsBase.SHA_INSTRUCTIONS_ARE_NOT_AVAILABLE;
-        case SHAOptionsBase.USE_SHA1_INTRINSICS_OPTION:
-            return SHAOptionsBase.SHA1_INTRINSICS_ARE_NOT_AVAILABLE;
-        case SHAOptionsBase.USE_SHA256_INTRINSICS_OPTION:
-            return SHAOptionsBase.SHA256_INTRINSICS_ARE_NOT_AVAILABLE;
-        case SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION:
-            return SHAOptionsBase.SHA512_INTRINSICS_ARE_NOT_AVAILABLE;
+        case DigestOptionsBase.USE_MD5_INTRINSICS_OPTION:
+            return DigestOptionsBase.MD5_INTRINSICS_ARE_NOT_AVAILABLE;
+        case DigestOptionsBase.USE_SHA_OPTION:
+            return DigestOptionsBase.SHA_INSTRUCTIONS_ARE_NOT_AVAILABLE;
+        case DigestOptionsBase.USE_SHA1_INTRINSICS_OPTION:
+            return DigestOptionsBase.SHA1_INTRINSICS_ARE_NOT_AVAILABLE;
+        case DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION:
+            return DigestOptionsBase.SHA256_INTRINSICS_ARE_NOT_AVAILABLE;
+        case DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION:
+            return DigestOptionsBase.SHA512_INTRINSICS_ARE_NOT_AVAILABLE;
         default:
             throw new Error("Unexpected option " + optionName);
         }
@@ -99,20 +105,22 @@ public class SHAOptionsBase extends CommandLineOptionTest {
      */
     public static BooleanSupplier getPredicateForOption(String optionName) {
         switch (optionName) {
-            case SHAOptionsBase.USE_SHA_OPTION:
+            case DigestOptionsBase.USE_MD5_INTRINSICS_OPTION:
+                return IntrinsicPredicates.MD5_INSTRUCTION_AVAILABLE;
+            case DigestOptionsBase.USE_SHA_OPTION:
                 return IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE;
-            case SHAOptionsBase.USE_SHA1_INTRINSICS_OPTION:
+            case DigestOptionsBase.USE_SHA1_INTRINSICS_OPTION:
                 return IntrinsicPredicates.SHA1_INSTRUCTION_AVAILABLE;
-            case SHAOptionsBase.USE_SHA256_INTRINSICS_OPTION:
+            case DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION:
                 return IntrinsicPredicates.SHA256_INSTRUCTION_AVAILABLE;
-            case SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION:
+            case DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION:
                 return IntrinsicPredicates.SHA512_INSTRUCTION_AVAILABLE;
             default:
                 throw new Error("Unexpected option " + optionName);
         }
     }
 
-    public SHAOptionsBase(TestCase... testCases) {
+    public DigestOptionsBase(TestCase... testCases) {
         super(Boolean.TRUE::booleanValue);
         this.testCases = testCases;
     }

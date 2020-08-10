@@ -191,9 +191,6 @@
           "adjustment. Lower values make adjustments faster, at the "       \
           "expense of higher perf overhead. Time is in milliseconds.")      \
                                                                             \
-  experimental(bool, ShenandoahCriticalControlThreadPriority, false,        \
-          "Run control thread runs at critical scheduling priority.")       \
-                                                                            \
   diagnostic(bool, ShenandoahVerify, false,                                 \
           "Enable internal verification. This would catch many GC bugs, "   \
           "but it would also stall the collector during the verification, " \

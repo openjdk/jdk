@@ -35,15 +35,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.init.init02.init02
- * @run driver ExecDriver --java jit.init.init02.init02
+ * @run main/othervm jit.init.init02.init02
  */
 
 package jit.init.init02;
 
 import nsk.share.TestFailure;
 
-class init02 {
+public class init02 {
     public static boolean failed = false;
     public static void main(String args[]) {
         int i, x;

@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.t.t044.t044
- * @run driver ExecDriver --java jit.t.t044.t044
+ * @run main/othervm jit.t.t044.t044
  */
 
 package jit.t.t044;
@@ -39,7 +38,7 @@ import nsk.share.TestFailure;
 
 // Call interferes with one lazy load but not the other.
 
-class t044
+public class t044
 {
     static double x = 409.0;
 

@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <sys/errno.h>
 #include "libproc_impl.h"
 #include "ps_core_common.h"
 
@@ -335,86 +336,110 @@ err:
   return false;
 }
 
-/**local function **/
-bool exists(const char *fname) {
+static bool exists(const char *fname) {
   return access(fname, F_OK) == 0;
 }
 
-// we check: 1. lib
-//           2. lib/server
-//           3. jre/lib
-//           4. jre/lib/server
-// from: 1. exe path
-//       2. JAVA_HOME
-//       3. DYLD_LIBRARY_PATH
+// reverse strstr()
+static char* rstrstr(const char *str, const char *sub) {
+  char *result = NULL;
+  for (char *p = strstr(str, sub); p != NULL; p = strstr(p + 1, sub)) {
+    result = p;
+  }
+  return result;
+}
+
+// Check if <filename> exists in the <jdk_subdir> directory of <jdk_dir>.
+// Note <jdk_subdir> and  <filename> already have '/' prepended.
+static bool get_real_path_jdk_subdir(char* rpath, char* filename, char* jdk_dir, char* jdk_subdir) {
+  char  filepath[BUF_SIZE];
+  strncpy(filepath, jdk_dir, BUF_SIZE);
+  filepath[BUF_SIZE - 1] = '\0'; // just in case jdk_dir didn't fit
+  strncat(filepath, jdk_subdir, BUF_SIZE - 1 - strlen(filepath));
+  strncat(filepath, filename, BUF_SIZE - 1 - strlen(filepath));
+  if (exists(filepath)) {
+    strcpy(rpath, filepath);
+    return true;
+  }
+  return false;
+}
+
+// Look for <filename> in various subdirs of <jdk_dir>.
+static bool get_real_path_jdk_dir(char* rpath, char* filename, char* jdk_dir) {
+  if (get_real_path_jdk_subdir(rpath, filename, jdk_dir, "/lib")) {
+      return true;
+  }
+  if (get_real_path_jdk_subdir(rpath, filename, jdk_dir, "/lib/server")) {
+      return true;
+  }
+  if (get_real_path_jdk_subdir(rpath, filename, jdk_dir, "/jre/lib")) {
+      return true;
+  }
+  if (get_real_path_jdk_subdir(rpath, filename, jdk_dir, "/jre/lib/server")) {
+      return true;
+  }
+  return false;
+}
+
+// Get the file specified by rpath. We check various directories for it.
 static bool get_real_path(struct ps_prochandle* ph, char *rpath) {
-  /** check if they exist in JAVA ***/
   char* execname = ph->core->exec_path;
-  char  filepath[4096];
-  char* filename = strrchr(rpath, '/');               // like /libjvm.dylib
+  char jdk_dir[BUF_SIZE];
+  char* posbin;
+  char* filename = strrchr(rpath, '/'); // like /libjvm.dylib
   if (filename == NULL) {
     return false;
   }
 
-  char* posbin = strstr(execname, "/bin/java");
+  // First look for the library in 3 places where the JDK might be located. For each of
+  // these 3 potential JDK locations we look in lib, lib/server, jre/lib, and jre/lib/server.
+
+  posbin = rstrstr(execname, "/bin/java");
   if (posbin != NULL) {
-    memcpy(filepath, execname, posbin - execname);    // not include trailing '/'
-    filepath[posbin - execname] = '\0';
-  } else {
-    char* java_home = getenv("JAVA_HOME");
-    if (java_home != NULL) {
-      strcpy(filepath, java_home);
-    } else {
-      char* dyldpath = getenv("DYLD_LIBRARY_PATH");
-      char* save_ptr;
-      char* dypath = strtok_r(dyldpath, ":", &save_ptr);
-      while (dypath != NULL) {
-        strcpy(filepath, dypath);
-        strcat(filepath, filename);
-        if (exists(filepath)) {
-           strcpy(rpath, filepath);
-           return true;
-        }
-        dypath = strtok_r(NULL, ":", &save_ptr);
-      }
-      // not found
-      return false;
+    strncpy(jdk_dir, execname, posbin - execname);
+    jdk_dir[posbin - execname] = '\0';
+    if (get_real_path_jdk_dir(rpath, filename, jdk_dir)) {
+      return true;
     }
   }
-  // for exec and java_home, jdkpath now is filepath
-  size_t filepath_base_size = strlen(filepath);
 
-  // first try /lib/ and /lib/server
-  strcat(filepath, "/lib");
-  strcat(filepath, filename);
-  if (exists(filepath)) {
-    strcpy(rpath, filepath);
-    return true;
-  }
-  char* pos = strstr(filepath, filename);    // like /libjvm.dylib
-  *pos = '\0';
-  strcat(filepath, "/server");
-  strcat(filepath, filename);
-  if (exists(filepath)) {
-    strcpy(rpath, filepath);
-    return true;
+  char* java_home = getenv("JAVA_HOME");
+  if (java_home != NULL) {
+    if (get_real_path_jdk_dir(rpath, filename, java_home)) {
+      return true;
+    }
   }
 
-  // then try /jre/lib/ and /jre/lib/server
-  filepath[filepath_base_size] = '\0';
-  strcat(filepath, "/jre/lib");
-  strcat(filepath, filename);
-  if (exists(filepath)) {
-    strcpy(rpath, filepath);
-    return true;
+  // Look for bin directory in path. This is useful when attaching to a core file
+  // that was launched with a JDK tool other than "java".
+  posbin = rstrstr(execname, "/bin/");  // look for the last occurence of "/bin/"
+  if (posbin != NULL) {
+    strncpy(jdk_dir, execname, posbin - execname);
+    jdk_dir[posbin - execname] = '\0';
+    if (get_real_path_jdk_dir(rpath, filename, jdk_dir)) {
+      return true;
+    }
   }
-  pos = strstr(filepath, filename);
-  *pos = '\0';
-  strcat(filepath, "/server");
-  strcat(filepath, filename);
-  if (exists(filepath)) {
-    strcpy(rpath, filepath);
-    return true;
+
+  // If we didn't find the library in any of the 3 above potential JDK locations, then look in
+  // DYLD_LIBRARY_PATH. This is where user libraries might be. We don't treat these
+  // paths as JDK paths, so we don't append the  various JDK subdirs like lib/server.
+  // However, that doesn't preclude JDK libraries from actually being in one of the paths.
+  char* dyldpath = getenv("DYLD_LIBRARY_PATH");
+  if (dyldpath != NULL) {
+    char* save_ptr;
+    char  filepath[BUF_SIZE];
+    char* dypath = strtok_r(dyldpath, ":", &save_ptr);
+    while (dypath != NULL) {
+      strncpy(filepath, dypath, BUF_SIZE);
+      filepath[BUF_SIZE - 1] = '\0'; // just in case dypath didn't fit
+      strncat(filepath, filename, BUF_SIZE - 1 - strlen(filepath));
+      if (exists(filepath)) {
+        strcpy(rpath, filepath);
+        return true;
+      }
+      dypath = strtok_r(NULL, ":", &save_ptr);
+    }
   }
 
   return false;
@@ -563,13 +588,13 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
   ph->core->exec_fd   = -1;
   ph->core->interp_fd = -1;
 
-  print_debug("exec: %s   core: %s", exec_file, core_file);
+  print_debug("exec: %s   core: %s\n", exec_file, core_file);
 
   strncpy(ph->core->exec_path, exec_file, sizeof(ph->core->exec_path));
 
   // open the core file
   if ((ph->core->core_fd = open(core_file, O_RDONLY)) < 0) {
-    print_error("can't open core file\n");
+    print_error("can't open core file: %s\n", strerror(errno));
     goto err;
   }
 

@@ -46,6 +46,10 @@ public interface WildcardType extends Type {
      *  <li>Otherwise, B is resolved.
      * </ul>
      *
+     * @apiNote While to date a wildcard may have at most one upper
+     * bound, callers of this method should be written to accommodate
+     * multiple bounds.
+     *
      * @return an array of Types representing the upper bound(s) of this
      *     type variable
      * @throws TypeNotPresentException if any of the
@@ -70,6 +74,10 @@ public interface WildcardType extends Type {
      *   <li>Otherwise, B is resolved.
      * </ul>
      *
+     * @apiNote While to date a wildcard may have at most one lower
+     * bound, callers of this method should be written to accommodate
+     * multiple bounds.
+     *
      * @return an array of Types representing the lower bound(s) of this
      *     type variable
      * @throws TypeNotPresentException if any of the
@@ -79,6 +87,4 @@ public interface WildcardType extends Type {
      *     for any reason
      */
     Type[] getLowerBounds();
-    // one or many? Up to language spec; currently only one, but this API
-    // allows for generalization.
 }
