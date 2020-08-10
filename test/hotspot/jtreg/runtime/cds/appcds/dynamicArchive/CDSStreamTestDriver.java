@@ -36,11 +36,8 @@
  */
 
 import org.testng.annotations.Test;
-
 import java.io.File;
-
 import jtreg.SkippedException;
-
 import sun.hotspot.gc.GC;
 
 @Test
@@ -58,8 +55,7 @@ public class CDSStreamTestDriver extends DynamicArchiveTestBase {
 
     static void doTest() throws Exception {
         String topArchiveName = getNewArchiveName();
-        JarBuilder.build("streamapp", new File(classDir), null);
-        String appJar = classDir + File.separator + "streamapp.jar";
+        String appJar = JarBuilder.build("streamapp", new File(classDir), null);
 
         String[] classPaths = javaClassPath.split(File.pathSeparator);
         String testngJar = null;

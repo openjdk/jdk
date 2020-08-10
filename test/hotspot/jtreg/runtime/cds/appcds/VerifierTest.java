@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,15 +62,13 @@ public class VerifierTest implements Opcodes {
         String jarName_hi = "hi" + "_" + subCaseId;
 
 
-        JarBuilder.build(jarName_verifier_test_tmp, "VerifierTest0", "VerifierTestA",
+        File jarSrcFile = new File(JarBuilder.build(jarName_verifier_test_tmp, "VerifierTest0", "VerifierTestA",
                          "VerifierTestB", "VerifierTestC", "VerifierTestD", "VerifierTestE",
-                         "UnverifiableBase", "UnverifiableIntf", "UnverifiableIntfSub");
+                         "UnverifiableBase", "UnverifiableIntf", "UnverifiableIntfSub"));
         JarBuilder.build(jarName_greet, "Greet");
         JarBuilder.build(jarName_hi, "Hi", "Hi$MyClass");
 
-        File dir = new File(System.getProperty("test.classes", "."));
-        File jarSrcFile = new File(dir, jarName_verifier_test_tmp + ".jar");
-        File jarFile = new File(dir, jarName_verifier_test + ".jar");
+        File jarFile = new File(JarBuilder.getJarFilePath(jarName_verifier_test));
         String jar = jarFile.getPath();
 
         if (!jarFile.exists() || jarFile.lastModified() < jarSrcFile.lastModified()) {
