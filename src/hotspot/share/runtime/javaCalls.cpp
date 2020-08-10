@@ -78,7 +78,6 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
     }
   }
 
-
   // Make sure to set the oop's after the thread transition - since we can block there. No one is GC'ing
   // the JavaCallWrapper before the entry frame is on the stack.
   _callee_method = callee_method();
@@ -112,11 +111,15 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   if (_anchor.last_Java_sp() == NULL) {
     _thread->record_base_of_stack_pointer();
   }
+
+  Thread::enable_wx_from_write(WXExec);
 }
 
 
 JavaCallWrapper::~JavaCallWrapper() {
   assert(_thread == JavaThread::current(), "must still be the same thread");
+
+  Thread::enable_wx_from_exec(WXWrite);
 
   // restore previous handle block & Java frame linkage
   JNIHandleBlock *_old_handles = _thread->active_handles();

@@ -289,6 +289,7 @@ address NativeLookup::lookup_critical_entry(const methodHandle& method) {
 
   // dll handling requires I/O. Don't do that while in _thread_in_vm (safepoint may get requested).
   ThreadToNativeFromVM thread_in_native(JavaThread::current());
+  Thread::WXWriteVerifier wx_write;
 
   void* dll = dll_load(method);
   address entry = NULL;

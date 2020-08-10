@@ -48,6 +48,8 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
 }
 
 int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
+  Thread::WXWriteFromExecSetter wx_write;
+
   address return_address = *return_address_ptr;
   CodeBlob* cb = CodeCache::find_blob(return_address);
   assert(cb != NULL, "invariant");

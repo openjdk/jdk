@@ -53,4 +53,10 @@
 #endif
   }
 
+private:
+
+  static void current_thread_enable_wx_impl(WXMode mode) { }
+
+public:
+
 #endif // OS_CPU_BSD_ZERO_OS_BSD_ZERO_HPP

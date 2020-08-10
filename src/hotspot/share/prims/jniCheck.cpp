@@ -64,6 +64,7 @@
 
 #define IN_VM(source_code)   {                                         \
     {                                                                  \
+      Thread::WXWriteFromExecSetter __wx_write;                        \
       ThreadInVMfromNative __tiv(thr);                                 \
       source_code                                                      \
     }                                                                  \

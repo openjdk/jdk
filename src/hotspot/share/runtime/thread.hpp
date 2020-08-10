@@ -850,6 +850,81 @@ protected:
   static void SpinRelease(volatile int * Lock);
   static void muxAcquire(volatile intptr_t * Lock, const char * Name);
   static void muxRelease(volatile intptr_t * Lock);
+
+private:
+#ifdef ASSERT
+  bool _wx_init;
+  WXMode _wx_state;
+  static inline void verify_wx_init(WXMode state) {
+    Thread* current = Thread::current();
+    assert(!current->_wx_init, "second init");
+    current->_wx_init = true;
+    current->_wx_state = state;
+  }
+  static inline void verify_wx_transition(WXMode from, WXMode to) {
+    Thread* current = Thread::current();
+    assert(current->_wx_init, "no init");
+    assert(current->_wx_state == from, "wrong state");
+    current->_wx_init = true;
+    current->_wx_state = to;
+  }
+  static inline void verify_wx_state(WXMode now) {
+    Thread* current = Thread::current();
+    assert(current->_wx_init, "no init");
+    assert(current->_wx_state == now, "wrong state");
+  }
+#else
+  static inline void verify_wx_init(WXMode state) { }
+  static inline void verify_wx_transition(WXMode from, WXMode to) { }
+  static inline void verify_wx_state(WXMode now) { }
+#endif // ASSERT
+public:
+  void init_wx() {
+    WXMode init_mode = WXWrite;
+    verify_wx_init(init_mode);
+    os::current_thread_enable_wx(init_mode);
+  }
+  static inline void enable_wx_from_write(WXMode to) {
+    verify_wx_transition(WXWrite, to);
+    os::current_thread_enable_wx(to);
+  }
+  static inline void enable_wx_from_exec(WXMode to) {
+    verify_wx_transition(WXExec, to);
+    os::current_thread_enable_wx(to);
+  }
+
+  class WXWriteFromExecSetter {
+  public:
+    WXWriteFromExecSetter() {
+      enable_wx_from_exec(WXWrite);
+    }
+    ~WXWriteFromExecSetter() {
+      enable_wx_from_write(WXExec);
+    }
+  };
+
+  class WXExecFromWriteSetter {
+  public:
+    WXExecFromWriteSetter() {
+      enable_wx_from_write(WXExec);
+    }
+    ~WXExecFromWriteSetter() {
+      enable_wx_from_exec(WXWrite);
+    }
+  };
+
+  class WXWriteVerifier {
+  public:
+    WXWriteVerifier() {
+      verify_wx_state(WXWrite);
+    }
+  };
+  class WXExecVerifier {
+  public:
+    WXExecVerifier() {
+      verify_wx_state(WXExec);
+    }
+  };
 };
 
 // Inline implementation of Thread::current()

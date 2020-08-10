@@ -50,4 +50,10 @@
    */
   static void workaround_expand_exec_shield_cs_limit();
 
+private:
+
+  static void current_thread_enable_wx_impl(WXMode mode) { }
+
+public:
+
 #endif // OS_CPU_LINUX_X86_OS_LINUX_X86_HPP

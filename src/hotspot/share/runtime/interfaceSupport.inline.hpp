@@ -305,8 +305,9 @@ class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
 // from being installed on vm exit in situations where we can't tolerate them.
 // See bugs: 4324348, 4854693, 4998314, 5040492, 5050705.
 class ThreadInVMfromJavaNoAsyncException : public ThreadStateTransition {
+  Thread::WXWriteVerifier _wx_write;
  public:
-  ThreadInVMfromJavaNoAsyncException(JavaThread* thread) : ThreadStateTransition(thread) {
+  ThreadInVMfromJavaNoAsyncException(JavaThread* thread) : ThreadStateTransition(thread), _wx_write() {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJavaNoAsyncException()  {
@@ -392,6 +393,7 @@ class RuntimeHistogramElement : public HistogramElement {
 
 #define JRT_ENTRY(result_type, header)                               \
   result_type header {                                               \
+    Thread::WXWriteFromExecSetter __wx_write;                        \
     ThreadInVMfromJava __tiv(thread);                                \
     VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
@@ -418,6 +420,7 @@ class RuntimeHistogramElement : public HistogramElement {
 
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \
   result_type header {                                               \
+    Thread::WXWriteFromExecSetter __wx_write;                        \
     ThreadInVMfromJavaNoAsyncException __tiv(thread);                \
     VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
@@ -427,6 +430,7 @@ class RuntimeHistogramElement : public HistogramElement {
 #define JRT_BLOCK_ENTRY(result_type, header)                         \
   result_type header {                                               \
     TRACE_CALL(result_type, header)                                  \
+    Thread::WXWriteFromExecSetter __wx_write;                        \
     HandleMarkCleaner __hm(thread);
 
 #define JRT_BLOCK                                                    \
@@ -456,6 +460,7 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
+    Thread::WXWriteFromExecSetter __wx_write;                        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
@@ -466,6 +471,7 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
+    Thread::WXWriteFromExecSetter __wx_write;                        \
     VM_LEAF_BASE(result_type, header)
 
 
@@ -480,6 +486,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
+    Thread::WXWriteFromExecSetter __wx_write;                        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
@@ -489,6 +496,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread = JavaThread::current();                      \
+    Thread::WXWriteFromExecSetter __wx_write;                        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
@@ -498,6 +506,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     VM_Exit::block_if_vm_exited();                                   \
+    Thread::WXWriteFromExecSetter __wx_write;                        \
     VM_LEAF_BASE(result_type, header)
 
 

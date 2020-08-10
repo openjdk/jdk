@@ -836,6 +836,7 @@ WB_END
 static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobject method) {
   assert(method != NULL, "method should not be null");
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   return env->FromReflectedMethod(method);
 }
 
@@ -1211,6 +1212,7 @@ static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, J
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
   const JVMFlag* flag = JVMFlag::find_declared_flag(flag_name);
@@ -1225,6 +1227,7 @@ static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, J
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
   JVMFlag* flag = JVMFlag::find_flag(flag_name);
@@ -1265,6 +1268,7 @@ static jobject doubleBox(JavaThread* thread, JNIEnv* env, jdouble value) {
 
 static const JVMFlag* getVMFlag(JavaThread* thread, JNIEnv* env, jstring name) {
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, NULL);
   const JVMFlag* result = JVMFlag::find_declared_flag(flag_name);
@@ -1286,6 +1290,7 @@ WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
   bool result;
   if (GetVMFlag <bool> (thread, env, name, &result, &JVMFlag::boolAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return booleanBox(thread, env, result);
   }
   return NULL;
@@ -1295,6 +1300,7 @@ WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
   int result;
   if (GetVMFlag <int> (thread, env, name, &result, &JVMFlag::intAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return longBox(thread, env, result);
   }
   return NULL;
@@ -1304,6 +1310,7 @@ WB_ENTRY(jobject, WB_GetUintVMFlag(JNIEnv* env, jobject o, jstring name))
   uint result;
   if (GetVMFlag <uint> (thread, env, name, &result, &JVMFlag::uintAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return longBox(thread, env, result);
   }
   return NULL;
@@ -1313,6 +1320,7 @@ WB_ENTRY(jobject, WB_GetIntxVMFlag(JNIEnv* env, jobject o, jstring name))
   intx result;
   if (GetVMFlag <intx> (thread, env, name, &result, &JVMFlag::intxAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return longBox(thread, env, result);
   }
   return NULL;
@@ -1322,6 +1330,7 @@ WB_ENTRY(jobject, WB_GetUintxVMFlag(JNIEnv* env, jobject o, jstring name))
   uintx result;
   if (GetVMFlag <uintx> (thread, env, name, &result, &JVMFlag::uintxAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return longBox(thread, env, result);
   }
   return NULL;
@@ -1331,6 +1340,7 @@ WB_ENTRY(jobject, WB_GetUint64VMFlag(JNIEnv* env, jobject o, jstring name))
   uint64_t result;
   if (GetVMFlag <uint64_t> (thread, env, name, &result, &JVMFlag::uint64_tAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return longBox(thread, env, result);
   }
   return NULL;
@@ -1340,6 +1350,7 @@ WB_ENTRY(jobject, WB_GetSizeTVMFlag(JNIEnv* env, jobject o, jstring name))
   size_t result;
   if (GetVMFlag <size_t> (thread, env, name, &result, &JVMFlag::size_tAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return longBox(thread, env, result);
   }
   return NULL;
@@ -1349,6 +1360,7 @@ WB_ENTRY(jobject, WB_GetDoubleVMFlag(JNIEnv* env, jobject o, jstring name))
   double result;
   if (GetVMFlag <double> (thread, env, name, &result, &JVMFlag::doubleAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return doubleBox(thread, env, result);
   }
   return NULL;
@@ -1358,6 +1370,7 @@ WB_ENTRY(jstring, WB_GetStringVMFlag(JNIEnv* env, jobject o, jstring name))
   ccstr ccstrResult;
   if (GetVMFlag <ccstr> (thread, env, name, &ccstrResult, &JVMFlag::ccstrAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     jstring result = env->NewStringUTF(ccstrResult);
     CHECK_JNI_EXCEPTION_(env, NULL);
     return result;
@@ -1407,6 +1420,7 @@ WB_END
 
 WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring value))
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* ccstrValue;
   if (value == NULL) {
     ccstrValue = NULL;
@@ -1418,6 +1432,7 @@ WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring 
   ccstr ccstrResult = ccstrValue;
   bool needFree;
   {
+    Thread::WXWriteFromExecSetter wx_write;
     ThreadInVMfromNative ttvfn(thread); // back to VM
     needFree = SetVMFlag <ccstr> (thread, env, name, &ccstrResult, &JVMFlag::ccstrAtPut);
   }
@@ -1483,6 +1498,7 @@ WB_END
 WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
   const char* features = VM_Version::features_string();
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   jstring features_string = env->NewStringUTF(features);
 
   CHECK_JNI_EXCEPTION_(env, NULL);
@@ -1555,6 +1571,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   int insts_size = comp_level == CompLevel_aot ? code->code_end() - code->code_begin() : code->insts_size();
 
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
   result = env->NewObjectArray(5, clazz, NULL);
@@ -1638,6 +1655,7 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
     }
   }
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   jobjectArray result = NULL;
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
@@ -1668,6 +1686,7 @@ WB_ENTRY(jobjectArray, WB_GetCodeBlob(JNIEnv* env, jobject o, jlong addr))
       "WB_GetCodeBlob: addr is null");
   }
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   CodeBlobStub stub((CodeBlob*) addr);
   return codeBlob2objectArray(thread, env, &stub);
 WB_END
@@ -1837,6 +1856,7 @@ static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jst
   methodHandle mh(thread, Method::checked_resolve_jmethod_id(jmid));
   // can't be in VM when we call JNI
   ThreadToNativeFromVM ttnfv(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
   bool result =  CompilerOracle::has_option_value(mh, flag_name, *value);
@@ -1849,6 +1869,7 @@ WB_ENTRY(jobject, WB_GetMethodBooleaneOption(JNIEnv* env, jobject wb, jobject me
   if (GetMethodOption<bool> (thread, env, method, name, &result)) {
     // can't be in VM when we call JNI
     ThreadToNativeFromVM ttnfv(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
     return booleanBox(thread, env, result);
   }
   return NULL;
@@ -1859,6 +1880,7 @@ WB_ENTRY(jobject, WB_GetMethodIntxOption(JNIEnv* env, jobject wb, jobject method
   if (GetMethodOption <intx> (thread, env, method, name, &result)) {
     // can't be in VM when we call JNI
     ThreadToNativeFromVM ttnfv(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
     return longBox(thread, env, result);
   }
   return NULL;
@@ -1869,6 +1891,7 @@ WB_ENTRY(jobject, WB_GetMethodUintxOption(JNIEnv* env, jobject wb, jobject metho
   if (GetMethodOption <uintx> (thread, env, method, name, &result)) {
     // can't be in VM when we call JNI
     ThreadToNativeFromVM ttnfv(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
     return longBox(thread, env, result);
   }
   return NULL;
@@ -1879,6 +1902,7 @@ WB_ENTRY(jobject, WB_GetMethodDoubleOption(JNIEnv* env, jobject wb, jobject meth
   if (GetMethodOption <double> (thread, env, method, name, &result)) {
     // can't be in VM when we call JNI
     ThreadToNativeFromVM ttnfv(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
     return doubleBox(thread, env, result);
   }
   return NULL;
@@ -1889,6 +1913,7 @@ WB_ENTRY(jobject, WB_GetMethodStringOption(JNIEnv* env, jobject wb, jobject meth
   if (GetMethodOption <ccstr> (thread, env, method, name, &ccstrResult)) {
     // can't be in VM when we call JNI
     ThreadToNativeFromVM ttnfv(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
     jstring result = env->NewStringUTF(ccstrResult);
     CHECK_JNI_EXCEPTION_(env, NULL);
     return result;
@@ -1899,6 +1924,7 @@ WB_END
 WB_ENTRY(jobject, WB_GetDefaultArchivePath(JNIEnv* env, jobject wb))
   const char* p = Arguments::get_default_shared_archive_path();
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   jstring path_string = env->NewStringUTF(p);
 
   CHECK_JNI_EXCEPTION_(env, NULL);
@@ -2077,6 +2103,7 @@ bool WhiteBox::lookup_bool(const char* field_name, oop object) {
 void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread, JNINativeMethod* method_array, int method_count) {
   ResourceMark rm;
   ThreadToNativeFromVM ttnfv(thread); // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
 
   //  one by one registration natives for exception catching
   jclass no_such_method_error_klass = env->FindClass(vmSymbols::java_lang_NoSuchMethodError()->as_C_string());
@@ -2108,11 +2135,13 @@ void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread,
 WB_ENTRY(jint, WB_AddCompilerDirective(JNIEnv* env, jobject o, jstring compDirect))
   // can't be in VM when we call JNI
   ThreadToNativeFromVM ttnfv(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* dir = env->GetStringUTFChars(compDirect, NULL);
   CHECK_JNI_EXCEPTION_(env, 0);
   int ret;
   {
     ThreadInVMfromNative ttvfn(thread); // back to VM
+    Thread::WXExecVerifier wx_exec;
     ret = DirectivesParser::parse_string(dir, tty);
   }
   env->ReleaseStringUTFChars(compDirect, dir);
@@ -2133,6 +2162,7 @@ WB_ENTRY(jboolean, WB_CheckLibSpecifiesNoexecstack(JNIEnv* env, jobject o, jstri
 #ifdef LINUX
   // Can't be in VM when we call JNI.
   ThreadToNativeFromVM ttnfv(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* lf = env->GetStringUTFChars(libfile, NULL);
   CHECK_JNI_EXCEPTION_(env, 0);
   ret = (jboolean) ElfFile::specifies_noexecstack(lf);
@@ -2154,6 +2184,7 @@ WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,
   jint ret = 0;
 #ifdef LINUX
   ThreadToNativeFromVM ttnfv(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* p_cgroups = env->GetStringUTFChars(proc_cgroups, NULL);
   CHECK_JNI_EXCEPTION_(env, 0);
   const char* p_s_cgroup = env->GetStringUTFChars(proc_self_cgroup, NULL);

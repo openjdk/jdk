@@ -70,4 +70,10 @@
                                            int32_t exchange_value,
                                            volatile int32_t *dest);
 
+private:
+
+  static void current_thread_enable_wx_impl(WXMode mode) { }
+
+public:
+
 #endif // OS_CPU_LINUX_ARM_OS_LINUX_ARM_HPP

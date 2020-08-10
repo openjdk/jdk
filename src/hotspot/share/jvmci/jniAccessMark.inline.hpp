@@ -36,11 +36,12 @@
 class JNIAccessMark : public StackObj {
  private:
   ThreadToNativeFromVM _ttnfv;
+  Thread::WXExecFromWriteSetter _wx_exec;
   HandleMark _hm;
   JNIEnv* _env;
  public:
   inline JNIAccessMark(JVMCIEnv* jvmci_env, JavaThread* thread=JavaThread::current()) :
-    _ttnfv(thread), _hm(thread) {
+    _ttnfv(thread), _wx_exec(), _hm(thread) {
     _env = jvmci_env->_env;
   }
   JNIEnv* env() const { return _env; }

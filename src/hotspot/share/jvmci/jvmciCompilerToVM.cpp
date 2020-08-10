@@ -121,6 +121,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
 
 // Bring the JVMCI compiler thread into the VM state.
 #define JVMCI_VM_ENTRY_MARK                   \
+  Thread::WXWriteFromExecSetter __wx_write;   \
   ThreadInVMfromNative __tiv(thread);         \
   ResetNoHandleMark rnhm;                     \
   HandleMarkCleaner __hm(thread);             \

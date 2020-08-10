@@ -518,6 +518,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
 
 
 JRT_LEAF(address, SharedRuntime::exception_handler_for_return_address(JavaThread* thread, address return_address))
+  Thread::WXWriteFromExecSetter wx_write;
   return raw_exception_handler_for_return_address(thread, return_address);
 JRT_END
 
@@ -1906,6 +1907,8 @@ bool SharedRuntime::should_fixup_call_destination(address destination, address e
 // so he no longer calls into the interpreter.
 JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address caller_pc))
   Method* moop(method);
+
+  Thread::WXWriteFromExecSetter wx_write;
 
   address entry_point = moop->from_compiled_entry_no_trampoline();
 
