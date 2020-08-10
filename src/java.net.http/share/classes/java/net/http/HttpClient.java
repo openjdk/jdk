@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package java.net.http;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.InetSocketAddress;
@@ -153,6 +155,8 @@ public abstract class HttpClient {
      * built instances.
      *
      * @return a new HttpClient
+     * @throws UncheckedIOException if necessary underlying IO resources required to
+     * {@linkplain Builder#build() build a new HttpClient} cannot be allocated.
      */
     public static HttpClient newHttpClient() {
         return newBuilder().build();
@@ -352,6 +356,11 @@ public abstract class HttpClient {
          * builder.
          *
          * @return a new {@code HttpClient}
+         *
+         * @throws UncheckedIOException may be thrown if underlying IO resources required
+         * by the implementation cannot be allocated. For instance,
+         * if the implementation requires a {@link Selector}, and opening
+         * one fails due to {@linkplain Selector#open() lack of necessary resources}.
          */
         public HttpClient build();
     }
