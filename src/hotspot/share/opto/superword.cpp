@@ -499,6 +499,10 @@ void SuperWord::SLP_extract() {
 
     find_adjacent_refs();
 
+    if (align_to_ref() == NULL) {
+      return; // Did not find memory reference to align vectors
+    }
+
     extend_packlist();
 
     if (_do_vector_loop) {
@@ -574,6 +578,9 @@ void SuperWord::find_adjacent_refs() {
         memops.push(n);
       }
     }
+  }
+  if (TraceSuperWord) {
+    tty->print_cr("\nfind_adjacent_refs found %d memops", memops.size());
   }
 
   Node_List align_to_refs;
@@ -3229,15 +3236,15 @@ void SuperWord::compute_vector_element_type() {
 //------------------------------memory_alignment---------------------------
 // Alignment within a vector memory reference
 int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
-  #ifndef PRODUCT
-    if(TraceSuperWord && Verbose) {
-      tty->print("SuperWord::memory_alignment within a vector memory reference for %d:  ", s->_idx); s->dump();
-    }
-  #endif
+#ifndef PRODUCT
+  if ((TraceSuperWord && Verbose) || is_trace_alignment()) {
+    tty->print("SuperWord::memory_alignment within a vector memory reference for %d:  ", s->_idx); s->dump();
+  }
+#endif
   NOT_PRODUCT(SWPointer::Tracer::Depth ddd(0);)
   SWPointer p(s, this, NULL, false);
   if (!p.valid()) {
-    NOT_PRODUCT(if(is_trace_alignment()) tty->print("SWPointer::memory_alignment: SWPointer p invalid, return bottom_align");)
+    NOT_PRODUCT(if(is_trace_alignment()) tty->print_cr("SWPointer::memory_alignment: SWPointer p invalid, return bottom_align");)
     return bottom_align;
   }
   int vw = get_vw_bytes_special(s);
@@ -3249,9 +3256,11 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
   offset     += iv_adjust*p.memory_size();
   int off_rem = offset % vw;
   int off_mod = off_rem >= 0 ? off_rem : off_rem + vw;
-  if (TraceSuperWord && Verbose) {
+#ifndef PRODUCT
+  if ((TraceSuperWord && Verbose) || is_trace_alignment()) {
     tty->print_cr("SWPointer::memory_alignment: off_rem = %d, off_mod = %d", off_rem, off_mod);
   }
+#endif
   return off_mod;
 }
 
@@ -3766,6 +3775,7 @@ bool SWPointer::invariant(Node* n) {
   NOT_PRODUCT(_tracer.invariant_1(n, n_c);)
   return !lpt()->is_member(phase()->get_loop(n_c));
 }
+
 //------------------------scaled_iv_plus_offset--------------------
 // Match: k*iv + offset
 // where: k is a constant that maybe zero, and
@@ -3786,20 +3796,20 @@ bool SWPointer::scaled_iv_plus_offset(Node* n) {
 
   int opc = n->Opcode();
   if (opc == Op_AddI) {
-    if (scaled_iv(n->in(1)) && offset_plus_k(n->in(2))) {
+    if (offset_plus_k(n->in(2)) && scaled_iv_plus_offset(n->in(1))) {
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_4(n);)
       return true;
     }
-    if (scaled_iv(n->in(2)) && offset_plus_k(n->in(1))) {
+    if (offset_plus_k(n->in(1)) && scaled_iv_plus_offset(n->in(2))) {
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_5(n);)
       return true;
     }
   } else if (opc == Op_SubI) {
-    if (scaled_iv(n->in(1)) && offset_plus_k(n->in(2), true)) {
+    if (offset_plus_k(n->in(2), true) && scaled_iv_plus_offset(n->in(1))) {
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_6(n);)
       return true;
     }
-    if (scaled_iv(n->in(2)) && offset_plus_k(n->in(1))) {
+    if (offset_plus_k(n->in(1)) && scaled_iv_plus_offset(n->in(2))) {
       _scale *= -1;
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_7(n);)
       return true;
@@ -3871,6 +3881,7 @@ bool SWPointer::scaled_iv(Node* n) {
           int mult = 1 << n->in(2)->get_int();
           _scale   = tmp._scale  * mult;
           _offset += tmp._offset * mult;
+          _invar = tmp._invar;
           NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, mult);)
           return true;
         }
