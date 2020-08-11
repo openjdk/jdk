@@ -4987,7 +4987,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
 
   hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL,
                      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-  if (hFile == NULL) {
+  if (hFile == INVALID_HANDLE_VALUE) {
     log_info(os)("CreateFile() failed: GetLastError->%ld.", GetLastError());
     return NULL;
   }

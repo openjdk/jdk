@@ -464,9 +464,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * specified radix into a BigInteger.  The String representation
      * consists of an optional minus or plus sign followed by a
      * sequence of one or more digits in the specified radix.  The
-     * character-to-digit mapping is provided by {@code
-     * Character.digit}.  The String may not contain any extraneous
-     * characters (whitespace, for example).
+     * character-to-digit mapping is provided by {@link
+     * Character#digit(char, char) Character.digit}.  The String may
+     * not contain any extraneous characters (whitespace, for
+     * example).
      *
      * @param val String representation of BigInteger.
      * @param radix radix to be used in interpreting {@code val}.
@@ -474,7 +475,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         of a BigInteger in the specified radix, or {@code radix} is
      *         outside the range from {@link Character#MIN_RADIX} to
      *         {@link Character#MAX_RADIX}, inclusive.
-     * @see    Character#digit
      */
     public BigInteger(String val, int radix) {
         int cursor = 0, numDigits;
@@ -658,17 +658,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
-     * Translates the decimal String representation of a BigInteger into a
-     * BigInteger.  The String representation consists of an optional minus
-     * sign followed by a sequence of one or more decimal digits.  The
-     * character-to-digit mapping is provided by {@code Character.digit}.
-     * The String may not contain any extraneous characters (whitespace, for
-     * example).
+     * Translates the decimal String representation of a BigInteger
+     * into a BigInteger.  The String representation consists of an
+     * optional minus or plus sign followed by a sequence of one or
+     * more decimal digits.  The character-to-digit mapping is
+     * provided by {@link Character#digit(char, char)
+     * Character.digit}.  The String may not contain any extraneous
+     * characters (whitespace, for example).
      *
      * @param val decimal String representation of BigInteger.
      * @throws NumberFormatException {@code val} is not a valid representation
      *         of a BigInteger.
-     * @see    Character#digit
      */
     public BigInteger(String val) {
         this(val, 10);

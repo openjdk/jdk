@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.deoptimization.test04.test04
- * @run driver ExecDriver --java jit.deoptimization.test04.test04
+ * @run main/othervm jit.deoptimization.test04.test04
  */
 
 package jit.deoptimization.test04;
@@ -41,7 +40,7 @@ import nsk.share.TestFailure;
  *
  */
 
-class test04 {
+public class test04 {
         public static void main (String[] args) {
                 A obj = new A();
 

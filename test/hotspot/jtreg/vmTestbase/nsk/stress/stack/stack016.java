@@ -26,8 +26,7 @@
  * @key stress
  *
  * @summary converted from VM testbase nsk/stress/stack/stack016.
- * VM testbase keywords: [stress, diehard, stack, nonconcurrent, exclude]
- * VM testbase comments: 8139875
+ * VM testbase keywords: [stress, diehard, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     The test provokes second stack overflow from within the
@@ -49,9 +48,10 @@
  *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
- * @ignore 8139875
- * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack016 -eager
+ * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp")
+ * @library /vmTestbase
+ * @build nsk.share.Terminator
+ * @run main/othervm/timeout=900 -Xss200K nsk.stress.stack.stack016 -eager
  */
 
 package nsk.stress.stack;

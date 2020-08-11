@@ -308,6 +308,8 @@ public class HotSpotReplacementsUtil {
      */
     public static final LocationIdentity JAVA_THREAD_THREAD_OBJECT_LOCATION = NamedLocationIdentity.immutable("JavaThread::_threadObj");
 
+    public static final LocationIdentity JAVA_THREAD_THREAD_OBJECT_HANDLE_LOCATION = NamedLocationIdentity.immutable("JavaThread::_threadObj handle");
+
     @Fold
     public static int threadObjectOffset(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.threadObjectOffset;

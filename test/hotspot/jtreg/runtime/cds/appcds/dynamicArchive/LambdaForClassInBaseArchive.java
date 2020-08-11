@@ -37,12 +37,12 @@
  */
 
 import java.io.File;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class LambdaForClassInBaseArchive extends DynamicArchiveTestBase {
-    static final String classList = System.getProperty("test.classes") +
-        File.separator + "LambdaForClassInBaseArchive.list";
+    static final String classList = CDSTestUtils.getOutputFileName("classlist");
     static final String appClass = "SimpleApp";
 
     public static void main(String[] args) throws Exception {

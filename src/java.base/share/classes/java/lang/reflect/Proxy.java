@@ -675,18 +675,22 @@ public class Proxy implements java.io.Serializable {
             Map<Class<?>, Boolean> interfaceSet = new IdentityHashMap<>(interfaces.size());
             for (Class<?> intf : interfaces) {
                 /*
-                 * Verify that the class loader resolves the name of this
-                 * interface to the same Class object.
-                 */
-                ensureVisible(loader, intf);
-
-                /*
                  * Verify that the Class object actually represents an
                  * interface.
                  */
                 if (!intf.isInterface()) {
                     throw new IllegalArgumentException(intf.getName() + " is not an interface");
                 }
+
+                if (intf.isHidden()) {
+                    throw new IllegalArgumentException(intf.getName() + " is a hidden interface");
+                }
+
+                /*
+                 * Verify that the class loader resolves the name of this
+                 * interface to the same Class object.
+                 */
+                ensureVisible(loader, intf);
 
                 /*
                  * Verify that this interface is not a duplicate.
@@ -905,7 +909,8 @@ public class Proxy implements java.io.Serializable {
      * if any of the following restrictions is violated:</a>
      * <ul>
      * <li>All of {@code Class} objects in the given {@code interfaces} array
-     * must represent interfaces, not classes or primitive types.
+     * must represent {@linkplain Class#isHidden() non-hidden} interfaces,
+     * not classes or primitive types.
      *
      * <li>No two elements in the {@code interfaces} array may
      * refer to identical {@code Class} objects.

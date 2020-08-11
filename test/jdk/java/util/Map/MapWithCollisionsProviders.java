@@ -193,6 +193,8 @@ public class MapWithCollisionsProviders {
                              new IdentityHashMap<>(), keys, val));
         cases.add(createCase("TreeMap with " + desc,
                              new TreeMap<>(), keys, val));
+        cases.add(createCase("Descending TreeMap with " + desc,
+                             new TreeMap<>().descendingMap(), keys, val));
         cases.add(createCase("WeakHashMap with " + desc,
                              new WeakHashMap<>(), keys, val));
         cases.add(createCase("ConcurrentHashMap with " + desc,

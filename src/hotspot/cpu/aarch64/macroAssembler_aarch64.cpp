@@ -1507,7 +1507,7 @@ void MacroAssembler::movptr(Register r, uintptr_t imm64) {
     block_comment(buffer);
   }
 #endif
-  assert(imm64 < (1ul << 48), "48-bit overflow in address constant");
+  assert(imm64 < (1ull << 48), "48-bit overflow in address constant");
   movz(r, imm64 & 0xffff);
   imm64 >>= 16;
   movk(r, imm64 & 0xffff, 16);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package java.lang.reflect;
 /**
  * {@code GenericArrayType} represents an array type whose component
  * type is either a parameterized type or a type variable.
+ *
+ * @jls 10.1 Array Types
  * @since 1.5
  */
 public interface GenericArrayType extends Type {

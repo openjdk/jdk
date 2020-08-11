@@ -74,11 +74,18 @@ public:
   void vextendbw(bool sign, XMMRegister dst, XMMRegister src, int vector_len);
   void vextendbw(bool sign, XMMRegister dst, XMMRegister src);
   void vshiftd(int opcode, XMMRegister dst, XMMRegister src);
+  void vshiftd_imm(int opcode, XMMRegister dst, int shift);
   void vshiftd(int opcode, XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vshiftd_imm(int opcode, XMMRegister dst, XMMRegister nds, int shift, int vector_len);
   void vshiftw(int opcode, XMMRegister dst, XMMRegister src);
   void vshiftw(int opcode, XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vshiftq(int opcode, XMMRegister dst, XMMRegister src);
+  void vshiftq_imm(int opcode, XMMRegister dst, int shift);
   void vshiftq(int opcode, XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vshiftq_imm(int opcode, XMMRegister dst, XMMRegister nds, int shift, int vector_len);
+
+  void vprotate_imm(int opcode, BasicType etype, XMMRegister dst, XMMRegister src, int shift, int vector_len);
+  void vprotate_var(int opcode, BasicType etype, XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
 
   // Reductions for vectors of ints, longs, floats, and doubles.
 

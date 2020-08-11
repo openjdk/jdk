@@ -43,7 +43,6 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build classes required for tests from monitorEvents001.tests
  * @build nsk.share.jdi.EventTestTemplates
@@ -61,6 +60,6 @@
  *      "-debugee.vmkeys=-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                       -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
- *      -configFile ./monitorEvents001.tests
+ *      -configFile ${test.src}/monitorEvents001.tests
  */
 

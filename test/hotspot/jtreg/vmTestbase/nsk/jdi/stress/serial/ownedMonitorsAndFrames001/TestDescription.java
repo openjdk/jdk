@@ -42,7 +42,6 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build classes required for tests from ownedMonitorsAndFrames001.tests
  * @build nsk.jdi.ThreadReference.ownedMonitorsAndFrames.ownedMonitorsAndFrames001.ownedMonitorsAndFrames001
@@ -65,6 +64,6 @@
  *      "-debugee.vmkeys=-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                       -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
- *      -configFile ./ownedMonitorsAndFrames001.tests
+ *      -configFile ${test.src}/ownedMonitorsAndFrames001.tests
  */
 

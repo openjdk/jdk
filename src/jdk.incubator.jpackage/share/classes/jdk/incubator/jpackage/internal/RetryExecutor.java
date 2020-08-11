@@ -53,6 +53,10 @@ public final class RetryExecutor {
         aborted = true;
     }
 
+    boolean isAborted() {
+        return aborted;
+    }
+
     static RetryExecutor retryOnKnownErrorMessage(String v) {
         RetryExecutor result = new RetryExecutor();
         return result.setExecutorInitializer(exec -> {
@@ -75,6 +79,10 @@ public final class RetryExecutor {
     private void executeLoop(Supplier<Executor> execSupplier) throws IOException {
         aborted = false;
         for (;;) {
+            if (aborted) {
+                break;
+            }
+
             try {
                 Executor exec = execSupplier.get();
                 if (executorInitializer != null) {

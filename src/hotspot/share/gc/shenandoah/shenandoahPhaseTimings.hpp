@@ -37,13 +37,11 @@ class outputStream;
   f(CNT_PREFIX ## TotalWork,                DESC_PREFIX "<total>")                     \
   f(CNT_PREFIX ## ThreadRoots,              DESC_PREFIX "Thread Roots")                \
   f(CNT_PREFIX ## CodeCacheRoots,           DESC_PREFIX "Code Cache Roots")            \
-  f(CNT_PREFIX ## UniverseRoots,            DESC_PREFIX "Universe Roots")              \
   f(CNT_PREFIX ## VMStrongRoots,            DESC_PREFIX "VM Strong Roots")             \
   f(CNT_PREFIX ## VMWeakRoots,              DESC_PREFIX "VM Weak Roots")               \
   f(CNT_PREFIX ## ObjectSynchronizerRoots,  DESC_PREFIX "Synchronizer Roots")          \
   f(CNT_PREFIX ## CLDGRoots,                DESC_PREFIX "CLDG Roots")                  \
   f(CNT_PREFIX ## JVMTIWeakRoots,           DESC_PREFIX "JVMTI Weak Roots")            \
-  f(CNT_PREFIX ## JFRWeakRoots,             DESC_PREFIX "JFR Weak Roots")              \
   f(CNT_PREFIX ## StringDedupTableRoots,    DESC_PREFIX "Dedup Table Roots")           \
   f(CNT_PREFIX ## StringDedupQueueRoots,    DESC_PREFIX "Dedup Queue Roots")           \
   f(CNT_PREFIX ## FinishQueues,             DESC_PREFIX "Finish Queues")               \

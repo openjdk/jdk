@@ -398,6 +398,7 @@ public class addcountfilter001 extends JDIBase {
                 log3("ERROR: IllegalArgumentException");
             }
 
+            vm.suspend();
             try {
                 log2("......eventRequest1.enable();");
                 eventRequest1.enable();
@@ -419,6 +420,7 @@ public class addcountfilter001 extends JDIBase {
             } catch ( InvalidRequestStateException e ) {
                 log2("       InvalidRequestStateException");
             }
+            vm.resume();
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         }

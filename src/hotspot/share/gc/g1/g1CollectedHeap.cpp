@@ -1417,6 +1417,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _young_gen_sampling_thread(NULL),
   _workers(NULL),
   _card_table(NULL),
+  _collection_pause_end(Ticks::now()),
   _soft_ref_policy(),
   _old_set("Old Region Set", new OldRegionSetChecker()),
   _archive_set("Archive Region Set", new ArchiveRegionSetChecker()),
@@ -1966,7 +1967,8 @@ void G1CollectedHeap::increment_old_marking_cycles_started() {
   _old_marking_cycles_started++;
 }
 
-void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
+void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
+                                                             bool whole_heap_examined) {
   MonitorLocker ml(G1OldGCCount_lock, Mutex::_no_safepoint_check_flag);
 
   // We assume that if concurrent == true, then the caller is a
@@ -1998,6 +2000,10 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
          _old_marking_cycles_started, _old_marking_cycles_completed);
 
   _old_marking_cycles_completed += 1;
+  if (whole_heap_examined) {
+    // Signal that we have completed a visit to all live objects.
+    record_whole_heap_examined_timestamp();
+  }
 
   // We need to clear the "in_progress" flag in the CM thread before
   // we wake up any waiters (especially when ExplicitInvokesConcurrent
@@ -2366,19 +2372,6 @@ size_t G1CollectedHeap::max_reserved_capacity() const {
   return _hrm->max_length() * HeapRegion::GrainBytes;
 }
 
-jlong G1CollectedHeap::millis_since_last_gc() {
-  // See the notes in GenCollectedHeap::millis_since_last_gc()
-  // for more information about the implementation.
-  jlong ret_val = (os::javaTimeNanos() / NANOSECS_PER_MILLISEC) -
-                  _policy->collection_pause_end_millis();
-  if (ret_val < 0) {
-    log_warning(gc)("millis_since_last_gc() would return : " JLONG_FORMAT
-      ". returning zero instead.", ret_val);
-    return 0;
-  }
-  return ret_val;
-}
-
 void G1CollectedHeap::deduplicate_string(oop str) {
   assert(java_lang_String::is_instance(str), "invariant");
 
@@ -2641,7 +2634,7 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   // Update common counters.
   if (full) {
     // Update the number of full collections that have been completed.
-    increment_old_marking_cycles_completed(false /* concurrent */);
+    increment_old_marking_cycles_completed(false /* concurrent */, true /* liveness_completed */);
   }
 
   // We are at the end of the GC. Total collections has already been increased.
@@ -2665,6 +2658,8 @@ void G1CollectedHeap::gc_epilogue(bool full) {
 
   // Print NUMA statistics.
   _numa->print_statistics();
+
+  _collection_pause_end = Ticks::now();
 }
 
 void G1CollectedHeap::verify_numa_regions(const char* desc) {

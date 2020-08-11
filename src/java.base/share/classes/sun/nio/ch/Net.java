@@ -185,8 +185,10 @@ public class Net {
             nx = new SocketException("Socket is not bound yet");
         else if (x instanceof UnsupportedAddressTypeException)
             nx = new SocketException("Unsupported address type");
-        else if (x instanceof UnresolvedAddressException) {
+        else if (x instanceof UnresolvedAddressException)
             nx = new SocketException("Unresolved address");
+        else if (x instanceof IOException) {
+            nx = new SocketException(x.getMessage());
         }
         if (nx != x)
             nx.initCause(x);

@@ -277,7 +277,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * </ol>
  *
- * <p> For category <i>General</i>, <i>Character</i>, <i>Numberic</i>,
+ * <p> For category <i>General</i>, <i>Character</i>, <i>Numeric</i>,
  * <i>Integral</i> and <i>Date/Time</i> conversion, unless otherwise specified,
  * if the argument <i>arg</i> is {@code null}, then the result is "{@code null}".
  *
@@ -703,7 +703,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * methods such as {@link String#format(String,Object...) String.format} and
  * {@link java.io.PrintStream#printf(String,Object...) PrintStream.printf}.
  *
- * <p> For category <i>General</i>, <i>Character</i>, <i>Numberic</i>,
+ * <p> For category <i>General</i>, <i>Character</i>, <i>Numeric</i>,
  * <i>Integral</i> and <i>Date/Time</i> conversion, unless otherwise specified,
  * if the argument <i>arg</i> is {@code null}, then the result is "{@code null}".
  *

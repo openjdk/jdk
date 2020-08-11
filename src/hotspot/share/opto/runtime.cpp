@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -960,7 +960,7 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
 /*
  * void implCompress(byte[] buf, int ofs)
  */
-const TypeFunc* OptoRuntime::sha_implCompress_Type() {
+const TypeFunc* OptoRuntime::digestBase_implCompress_Type() {
   // create input type (domain)
   int num_args = 2;
   int argcnt = num_args;

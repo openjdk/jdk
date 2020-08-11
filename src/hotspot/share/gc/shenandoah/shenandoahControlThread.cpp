@@ -50,7 +50,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _allocs_seen(0) {
 
   reset_gc_id();
-  create_and_start(ShenandoahCriticalControlThreadPriority ? CriticalPriority : NearMaxPriority);
+  create_and_start();
   _periodic_task.enroll();
   _periodic_satb_flush_task.enroll();
   if (ShenandoahPacing) {
@@ -235,6 +235,9 @@ void ShenandoahControlThread::run_service() {
         // global soft refs policy, and we better report it every time heap
         // usage goes down.
         Universe::update_heap_info_at_gc();
+
+        // Signal that we have completed a visit to all live objects.
+        Universe::heap()->record_whole_heap_examined_timestamp();
       }
 
       // Disable forced counters update, and update counters one more time

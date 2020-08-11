@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.t.t066.t066
- * @run driver ExecDriver --java jit.t.t066.t066
+ * @run main/othervm jit.t.t066.t066
  */
 
 package jit.t.t066;
@@ -41,7 +40,7 @@ import nsk.share.TestFailure;
 // offsets on the stores of the two halves of the double
 // constant.
 
-class t066
+public class t066
 {
     public static void main(String argv[])
     {

@@ -92,6 +92,7 @@ public class LingeredApp {
     protected Process appProcess;
     protected OutputBuffer output;
     protected static final int appWaitTime = 100;
+    protected static final int appCoreWaitTime = 240;
     protected final String lockFileName;
 
     protected boolean forceCrash = false; // set true to force a crash and core file
@@ -291,7 +292,7 @@ public class LingeredApp {
      * Waits for the application to start with the default timeout.
      */
     public void waitAppReady() throws IOException {
-        waitAppReady(appWaitTime);
+        waitAppReady(forceCrash ? appCoreWaitTime : appWaitTime);
     }
 
     /**

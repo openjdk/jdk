@@ -172,6 +172,7 @@ public:
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------OrLNode----------------------------------------
@@ -186,6 +187,7 @@ public:
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegL; }
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------XorINode---------------------------------------

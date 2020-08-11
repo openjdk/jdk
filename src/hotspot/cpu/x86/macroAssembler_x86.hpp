@@ -956,6 +956,9 @@ public:
 
 #endif
 
+  void fast_md5(Register buf, Address state, Address ofs, Address limit,
+                bool multi_block);
+
   void fast_sha1(XMMRegister abcd, XMMRegister e0, XMMRegister e1, XMMRegister msg0,
                  XMMRegister msg1, XMMRegister msg2, XMMRegister msg3, XMMRegister shuf_mask,
                  Register buf, Register state, Register ofs, Register limit, Register rsp,

@@ -26,13 +26,11 @@
 #define SHARE_JFR_LEAKPROFILER_SAMPLING_OBJECTSAMPLER_HPP
 
 #include "memory/allocation.hpp"
-#include "jfr/utilities/jfrTime.hpp"
 
 typedef u8 traceid;
 
-class BoolObjectClosure;
 class JavaThread;
-class OopClosure;
+class OopStorage;
 class ObjectSample;
 class SampleList;
 class SamplePriorityQueue;
@@ -41,17 +39,17 @@ class SamplePriorityQueue;
 // making sure the samples are evenly distributed as
 // new entries are added and removed.
 class ObjectSampler : public CHeapObj<mtTracing> {
+  friend class JfrRecorder;
   friend class LeakProfiler;
+  friend class ObjectSample;
   friend class StartOperation;
   friend class StopOperation;
  private:
   SamplePriorityQueue* _priority_queue;
   SampleList* _list;
-  JfrTicks _last_sweep;
   size_t _total_allocated;
   size_t _threshold;
   size_t _size;
-  bool _dead_samples;
 
   // Lifecycle
   explicit ObjectSampler(size_t size);
@@ -66,24 +64,26 @@ class ObjectSampler : public CHeapObj<mtTracing> {
   void scavenge();
   void remove_dead(ObjectSample* sample);
 
-  // Called by GC
-  static void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
-
   const ObjectSample* item_at(int index) const;
   ObjectSample* item_at(int index);
   int item_count() const;
+
+  // OopStorage
+  static bool create_oop_storage();
+  static OopStorage* oop_storage();
+  // Invoked by the GC post oop storage processing.
+  static void oop_storage_gc_notification(size_t num_dead);
 
  public:
   static ObjectSampler* sampler();
   // For operations that require exclusive access (non-safepoint)
   static ObjectSampler* acquire();
   static void release();
-
+  static int64_t last_sweep();
   const ObjectSample* first() const;
   ObjectSample* last() const;
   const ObjectSample* last_resolved() const;
   void set_last_resolved(const ObjectSample* sample);
-  const JfrTicks& last_sweep() const;
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_SAMPLING_OBJECTSAMPLER_HPP

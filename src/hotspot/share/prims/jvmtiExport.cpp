@@ -29,6 +29,7 @@
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -678,6 +679,18 @@ void JvmtiExport::post_vm_start() {
   }
 }
 
+static OopStorage* _jvmti_oop_storage = NULL;
+
+OopStorage* JvmtiExport::jvmti_oop_storage() {
+  assert(_jvmti_oop_storage != NULL, "not yet initialized");
+  return _jvmti_oop_storage;
+}
+
+void JvmtiExport::initialize_oop_storage() {
+  // OopStorage needs to be created early in startup and unconditionally
+  // because of OopStorageSet static array indices.
+  _jvmti_oop_storage = OopStorageSet::create_strong("JVMTI OopStorage");
+}
 
 void JvmtiExport::post_vm_initialized() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_INIT, ("Trg VM init event triggered" ));
@@ -2828,7 +2841,7 @@ void JvmtiObjectAllocEventCollector::generate_call_for_allocated() {
       oop obj = _allocated->at(i).resolve();
       _post_callback(JavaThread::current(), obj);
       // Release OopHandle
-      _allocated->at(i).release(Universe::vm_global());
+      _allocated->at(i).release(JvmtiExport::jvmti_oop_storage());
 
     }
     delete _allocated, _allocated = NULL;
@@ -2840,7 +2853,7 @@ void JvmtiObjectAllocEventCollector::record_allocation(oop obj) {
   if (_allocated == NULL) {
     _allocated = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<OopHandle>(1, mtServiceability);
   }
-  _allocated->push(OopHandle(Universe::vm_global(), obj));
+  _allocated->push(OopHandle(JvmtiExport::jvmti_oop_storage(), obj));
 }
 
 // Disable collection of VMObjectAlloc events

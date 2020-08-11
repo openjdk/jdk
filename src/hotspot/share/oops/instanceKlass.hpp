@@ -662,7 +662,7 @@ public:
   Method* uncached_lookup_method(const Symbol* name,
                                  const Symbol* signature,
                                  OverpassLookupMode overpass_mode,
-                                 PrivateLookupMode private_mode = find_private) const;
+                                 PrivateLookupMode private_mode = PrivateLookupMode::find) const;
 
   // lookup a method in all the interfaces that this class implements
   // (returns NULL if not found)

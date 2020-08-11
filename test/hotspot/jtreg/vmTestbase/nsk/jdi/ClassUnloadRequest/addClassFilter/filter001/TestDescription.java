@@ -61,7 +61,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ClassUnloadRequest.addClassFilter.filter001
  *        nsk.jdi.ClassUnloadRequest.addClassFilter.filter001a
  *

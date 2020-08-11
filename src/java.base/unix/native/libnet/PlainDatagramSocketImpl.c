@@ -908,13 +908,6 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
         close(fd);
         return;
     }
-    if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF,
-                   (char *)&arg, sizeof(arg)) < 0) {
-        getErrorString(errno, tmpbuf, sizeof(tmpbuf));
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", tmpbuf);
-        close(fd);
-        return;
-    }
 #endif /* __APPLE__ */
 
     if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*) &t, sizeof (int)) < 0) {

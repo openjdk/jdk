@@ -945,6 +945,10 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseFMA, false);
   }
 
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+    UseMD5Intrinsics = true;
+  }
+
   if (supports_sha() LP64_ONLY(|| supports_avx2() && supports_bmi2())) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       UseSHA = true;

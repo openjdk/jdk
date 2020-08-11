@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ public:
   // The order reflects the order these roots are to be processed,
   // We do not want any holes in the enum as we enumerate these values by incrementing them.
   enum Value {
-    universe,
     object_synchronizer,
     class_loader_data,
     code_cache,

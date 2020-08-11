@@ -41,8 +41,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.escape.LockElision.MatMul.MatMul
- * @run driver ExecDriver --java jit.escape.LockElision.MatMul.MatMul -dim 30 -threadCount 10
+ * @run main/othervm jit.escape.LockElision.MatMul.MatMul -dim 30 -threadCount 10
  */
 
 package jit.escape.LockElision.MatMul;
@@ -62,7 +61,7 @@ import vm.share.options.Options;
 
 import jdk.test.lib.Utils;
 
-class MatMul {
+public class MatMul {
 
     @Option(name = "dim", description = "dimension of matrices")
     int dim;

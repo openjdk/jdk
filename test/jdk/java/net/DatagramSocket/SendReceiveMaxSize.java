@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8242885
+ * @bug 8242885 8250886
  * @summary This test verifies that on macOS, the send buffer size is configured
  *          by default so that none of our implementations of the UDP protocol
  *          will fail with a "packet too large" exception when trying to send a
@@ -37,6 +37,7 @@
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  * @run testng/othervm -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
  * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SendReceiveMaxSize
+ * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
  */
 

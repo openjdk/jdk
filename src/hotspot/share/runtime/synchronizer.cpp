@@ -1017,15 +1017,6 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* self, oop obj) {
     }
   }
 
-  // hashCode() is a heap mutator ...
-  // Relaxing assertion for bug 6320749.
-  assert(Universe::verify_in_progress() || DumpSharedSpaces ||
-         !SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(Universe::verify_in_progress() || DumpSharedSpaces ||
-         self->is_Java_thread() , "invariant");
-  assert(Universe::verify_in_progress() || DumpSharedSpaces ||
-         ((JavaThread *)self)->thread_state() != _thread_blocked, "invariant");
-
   while (true) {
     ObjectMonitor* monitor = NULL;
     markWord temp, test;
@@ -1807,11 +1798,6 @@ void ObjectSynchronizer::inflate_helper(oop obj) {
 
 ObjectMonitor* ObjectSynchronizer::inflate(Thread* self, oop object,
                                            const InflateCause cause) {
-  // Inflate mutates the heap ...
-  // Relaxing assertion for bug 6320749.
-  assert(Universe::verify_in_progress() ||
-         !SafepointSynchronize::is_at_safepoint(), "invariant");
-
   EventJavaMonitorInflate event;
 
   for (;;) {

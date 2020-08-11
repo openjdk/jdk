@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.classObject.classobj002
  *        nsk.jdi.ReferenceType.classObject.classobj002a
  *

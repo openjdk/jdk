@@ -121,7 +121,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("LAB Undo Waste", Level.DEBUG),
         // Ext Root Scan
         new LogMessageWithLevel("Thread Roots", Level.TRACE),
-        new LogMessageWithLevel("Universe Roots", Level.TRACE),
         new LogMessageWithLevel("ObjectSynchronizer Roots", Level.TRACE),
         new LogMessageWithLevel("CLDG Roots", Level.TRACE),
         new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),

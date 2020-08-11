@@ -811,7 +811,9 @@ bool LoadNode::is_immutable_value(Node* adr) {
   return (adr->is_AddP() && adr->in(AddPNode::Base)->is_top() &&
           adr->in(AddPNode::Address)->Opcode() == Op_ThreadLocal &&
           (adr->in(AddPNode::Offset)->find_intptr_t_con(-1) ==
-           in_bytes(JavaThread::osthread_offset())));
+           in_bytes(JavaThread::osthread_offset()) ||
+           adr->in(AddPNode::Offset)->find_intptr_t_con(-1) ==
+           in_bytes(JavaThread::threadObj_offset())));
 }
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ final class SocketTube implements FlowTube {
         }
         @Override
         public final void abort(IOException error) {
-            debug().log(() -> "abort: " + error);
+            debug().log(() -> this.getClass().getSimpleName() + " abort: " + error);
             pause();              // pause, then signal
             signalError(error);   // should not be resumed after abort (not checked)
         }
@@ -724,10 +724,12 @@ final class SocketTube implements FlowTube {
             @Override
             public final void cancel() {
                 pauseReadEvent();
+                if (debug.on()) debug.log("Read subscription cancelled");
                 if (Log.channel()) {
                     Log.logChannel("Read subscription cancelled for channel {0}",
                             channelDescr());
                 }
+                if (debug.on()) debug.log("Stopping read scheduler");
                 readScheduler.stop();
             }
 
@@ -748,6 +750,7 @@ final class SocketTube implements FlowTube {
             }
 
             final void signalError(Throwable error) {
+                if (debug.on()) debug.log("signal read error: " + error);
                 if (!errorRef.compareAndSet(null, error)) {
                     return;
                 }
@@ -808,6 +811,7 @@ final class SocketTube implements FlowTube {
                             }
                             current.errorRef.compareAndSet(null, error);
                             current.signalCompletion();
+                            if (debug.on()) debug.log("Stopping read scheduler");
                             readScheduler.stop();
                             debugState("leaving read() loop with error: ");
                             return;
@@ -831,6 +835,7 @@ final class SocketTube implements FlowTube {
                                         // anyway.
                                         pauseReadEvent();
                                         current.signalCompletion();
+                                        if (debug.on()) debug.log("Stopping read scheduler");
                                         readScheduler.stop();
                                     }
                                     debugState("leaving read() loop after EOF: ");
@@ -850,6 +855,7 @@ final class SocketTube implements FlowTube {
                                     // waiting for this event to terminate.
                                     // So resume the read event and return now...
                                     resumeReadEvent();
+                                    if (errorRef.get() != null) continue;
                                     debugState("leaving read() loop after onNext: ");
                                     return;
                                 } else {
@@ -861,6 +867,7 @@ final class SocketTube implements FlowTube {
                                     // readable again.
                                     demand.increase(1);
                                     resumeReadEvent();
+                                    if (errorRef.get() != null) continue;
                                     debugState("leaving read() loop with no bytes");
                                     return;
                                 }
@@ -879,6 +886,7 @@ final class SocketTube implements FlowTube {
                             // Trying to pause the event here would actually
                             // introduce a race condition between this loop and
                             // request(n).
+                            if (errorRef.get() != null) continue;
                             debugState("leaving read() loop with no demand");
                             break;
                         }
@@ -946,6 +954,7 @@ final class SocketTube implements FlowTube {
 
             @Override
             protected final void signalError(Throwable error) {
+                if (debug.on()) debug.log("signalError to %s (%s)", sub, error);
                 sub.signalError(error);
             }
 

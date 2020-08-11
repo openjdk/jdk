@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.FloatingPoint.gen_math.Loops07.Loops07
- * @run driver ExecDriver --java jit.FloatingPoint.gen_math.Loops07.Loops07
+ * @run main/othervm jit.FloatingPoint.gen_math.Loops07.Loops07
  */
 
 package jit.FloatingPoint.gen_math.Loops07;
@@ -41,7 +40,7 @@ package jit.FloatingPoint.gen_math.Loops07;
 
 import nsk.share.TestFailure;
 
-class Loops07
+public class Loops07
 {
 
    public static void main (String args[])

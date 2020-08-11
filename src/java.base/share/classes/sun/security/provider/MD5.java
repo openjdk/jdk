@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
 package sun.security.provider;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import static sun.security.provider.ByteArrayAccess.*;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * The MD5 class is used to compute an MD5 message digest over a given
@@ -147,8 +149,27 @@ public final class MD5 extends DigestBase {
      * bytes from the buffer, beginning at the specified offset.
      */
     void implCompress(byte[] buf, int ofs) {
-        b2iLittle64(buf, ofs, x);
+        implCompressCheck(buf, ofs);
+        implCompress0(buf, ofs);
+    }
 
+    private void implCompressCheck(byte[] buf, int ofs) {
+        Objects.requireNonNull(buf);
+
+        // The checks performed by the method 'b2iBig64'
+        // are sufficient for the case when the method
+        // 'implCompressImpl' is replaced with a compiler
+        // intrinsic.
+        b2iLittle64(buf, ofs, x);
+    }
+
+    // The method 'implCompress0 seems not to use its parameters.
+    // The method can, however, be replaced with a compiler intrinsic
+    // that operates directly on the array 'buf' (starting from
+    // offset 'ofs') and not on array 'x', therefore 'buf' and 'ofs'
+    // must be passed as parameter to the method.
+    @HotSpotIntrinsicCandidate
+    void implCompress0(byte[] buf, int ofs) {
         int a = state[0];
         int b = state[1];
         int c = state[2];

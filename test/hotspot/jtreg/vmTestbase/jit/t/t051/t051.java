@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t051.t051
- * @run driver ExecDriver --java jit.t.t051.t051
+ * @run main/othervm jit.t.t051.t051
  */
 
 package jit.t.t051;
@@ -39,7 +38,7 @@ package jit.t.t051;
 import nsk.share.TestFailure;
 import nsk.share.GoldChecker;
 
-class t051
+public class t051
 {
     public static final GoldChecker goldChecker = new GoldChecker( "t051" );
 

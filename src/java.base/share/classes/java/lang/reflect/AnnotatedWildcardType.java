@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ package java.lang.reflect;
  * wildcard type argument, whose upper or lower bounds may themselves represent
  * annotated uses of types.
  *
+ * @jls 4.5.1 Type Arguments of Parameterized Types
  * @since 1.8
  */
 public interface AnnotatedWildcardType extends AnnotatedType {
@@ -38,6 +39,10 @@ public interface AnnotatedWildcardType extends AnnotatedType {
      * Returns the potentially annotated lower bounds of this wildcard type.
      * If no lower bound is explicitly declared, the lower bound is the
      * type of null. In this case, a zero length array is returned.
+     *
+     * @apiNote While to date a wildcard may have at most one lower
+     * bound, callers of this method should be written to accommodate
+     * multiple bounds.
      *
      * @return the potentially annotated lower bounds of this wildcard type or
      * an empty array if no lower bound is explicitly declared.
@@ -49,6 +54,10 @@ public interface AnnotatedWildcardType extends AnnotatedType {
      * Returns the potentially annotated upper bounds of this wildcard type.
      * If no upper bound is explicitly declared, the upper bound is
      * unannotated {@code Object}
+     *
+     * @apiNote While to date a wildcard may have at most one upper
+     * bound, callers of this method should be written to accommodate
+     * multiple bounds.
      *
      * @return the potentially annotated upper bounds of this wildcard type
      * @see WildcardType#getUpperBounds()

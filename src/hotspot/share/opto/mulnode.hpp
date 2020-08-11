@@ -211,6 +211,29 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+
+//------------------------ RotateLeftNode ----------------------------------
+class RotateLeftNode : public TypeNode {
+  public:
+  RotateLeftNode(Node* in1, Node* in2, const Type* type) : TypeNode(type, 3) {
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
+//----------------------- RotateRightNode ----------------------------------
+class RotateRightNode : public TypeNode {
+  public:
+  RotateRightNode(Node* in1, Node* in2, const Type* type) : TypeNode(type, 3) {
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
 //------------------------------RShiftINode------------------------------------
 // Signed shift right
 class RShiftINode : public Node {

@@ -482,11 +482,21 @@ public class CDSTestUtils {
         return output;
     }
 
+    private static final String outputDir;
+    private static final File outputDirAsFile;
+
+    static {
+        outputDir = System.getProperty("user.dir", ".");
+        outputDirAsFile = new File(outputDir);
+    }
+
+    public static String getOutputDir() {
+        return outputDir;
+    }
 
     // get the file object for the test artifact
     public static File getTestArtifact(String name, boolean checkExistence) {
-        File dir = new File(System.getProperty("test.classes", "."));
-        File file = new File(dir, name);
+        File file = new File(outputDirAsFile, name);
 
         if (checkExistence && !file.exists()) {
             throw new RuntimeException("Cannot find " + file.getPath());
@@ -549,14 +559,16 @@ public class CDSTestUtils {
 
     // ===================== FILE ACCESS convenience methods
     public static File getOutputFile(String name) {
-        File dir = new File(System.getProperty("test.classes", "."));
-        return new File(dir, testName + "-" + name);
+        return new File(outputDirAsFile, testName + "-" + name);
+    }
+
+    public static String getOutputFileName(String name) {
+        return getOutputFile(name).getName();
     }
 
 
     public static File getOutputSourceFile(String name) {
-        File dir = new File(System.getProperty("test.classes", "."));
-        return new File(dir, name);
+        return new File(outputDirAsFile, name);
     }
 
 
@@ -570,14 +582,17 @@ public class CDSTestUtils {
     public static OutputAnalyzer executeAndLog(ProcessBuilder pb, String logName) throws Exception {
         long started = System.currentTimeMillis();
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        String outputFileNamePrefix =
-            testName + "-" + String.format("%04d", getNextLogCounter()) + "-" + logName;
+        String logFileNameStem =
+            String.format("%04d", getNextLogCounter()) + "-" + logName;
 
-        writeFile(getOutputFile(outputFileNamePrefix + ".stdout"), output.getStdout());
-        writeFile(getOutputFile(outputFileNamePrefix + ".stderr"), output.getStderr());
+        File stdout = getOutputFile(logFileNameStem + ".stdout");
+        File stderr = getOutputFile(logFileNameStem + ".stderr");
+
+        writeFile(stdout, output.getStdout());
+        writeFile(stderr, output.getStderr());
         System.out.println("[ELAPSED: " + (System.currentTimeMillis() - started) + " ms]");
-        System.out.println("[logging stdout to " + outputFileNamePrefix + ".stdout]");
-        System.out.println("[logging stderr to " + outputFileNamePrefix + ".stderr]");
+        System.out.println("[logging stdout to " + stdout + "]");
+        System.out.println("[logging stderr to " + stderr + "]");
         System.out.println("[STDERR]\n" + output.getStderr());
 
         if (copyChildStdoutToMainStdout)

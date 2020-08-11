@@ -42,7 +42,7 @@ import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForSupportedCPU;
 
 public class TestUseSHA256IntrinsicsOptionOnSupportedCPU {
     public static void main(String args[]) throws Throwable {
-        new SHAOptionsBase(new GenericTestCaseForSupportedCPU(
-                SHAOptionsBase.USE_SHA256_INTRINSICS_OPTION)).test();
+        new DigestOptionsBase(new GenericTestCaseForSupportedCPU(
+                DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION)).test();
     }
 }

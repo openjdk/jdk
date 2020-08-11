@@ -446,9 +446,22 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             // "hdiutil detach" might not work right away due to resource busy error, so
             // repeat detach several times.
             RetryExecutor retryExecutor = new RetryExecutor();
-            // 10 times with 3 second delays.
-            retryExecutor.setMaxAttemptsCount(10).setAttemptTimeoutMillis(3000)
-                    .execute(pb);
+            // Image can get detach even if we got resource busy error, so stop
+            // trying to detach it if it is no longer attached.
+            retryExecutor.setExecutorInitializer(exec -> {
+                if (!Files.exists(mountedRoot)) {
+                    retryExecutor.abort();
+                }
+            });
+            try {
+                // 10 times with 3 second delays.
+                retryExecutor.setMaxAttemptsCount(10).setAttemptTimeoutMillis(3000)
+                        .execute(pb);
+            } catch (IOException ex) {
+                if (!retryExecutor.isAborted()) {
+                    throw ex;
+                }
+            }
         }
 
         // Compress it to a new image

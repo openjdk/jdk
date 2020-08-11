@@ -45,7 +45,7 @@ import jtreg.SkippedException;
  * @summary Test clhsdb pstack command on a core file
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm ClhsdbPstack true
+ * @run main/othervm/timeout=240 ClhsdbPstack true
  */
 
 public class ClhsdbPstack {

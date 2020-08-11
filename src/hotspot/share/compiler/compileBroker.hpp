@@ -224,6 +224,8 @@ class CompileBroker: AllStatic {
   static int _sum_nmethod_code_size;
   static long _peak_compilation_time;
 
+  static CompilerStatistics _stats_per_level[];
+
   static volatile int _print_compilation_warning;
 
   static Handle create_thread_oop(const char* name, TRAPS);
@@ -371,10 +373,8 @@ public:
   // Redefine Classes support
   static void mark_on_stack();
 
-#if INCLUDE_JVMCI
   // Print curent compilation time stats for a given compiler
-  static void print_times(AbstractCompiler* comp);
-#endif
+  static void print_times(const char* name, CompilerStatistics* stats);
 
   // Print a detailed accounting of compilation time
   static void print_times(bool per_compiler = true, bool aggregate = true);

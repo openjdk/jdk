@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -636,11 +636,15 @@ public:
 
   // Reassociate invariant expressions.
   void reassociate_invariants(PhaseIdealLoop *phase);
+  // Reassociate invariant binary expressions.
+  Node* reassociate(Node* n1, PhaseIdealLoop *phase);
   // Reassociate invariant add and subtract expressions.
-  Node* reassociate_add_sub(Node* n1, PhaseIdealLoop *phase);
+  Node* reassociate_add_sub(Node* n1, int inv1_idx, int inv2_idx, PhaseIdealLoop *phase);
   // Return nonzero index of invariant operand if invariant and variant
-  // are combined with an Add or Sub. Helper for reassociate_invariants.
-  int is_invariant_addition(Node* n, PhaseIdealLoop *phase);
+  // are combined with an associative binary. Helper for reassociate_invariants.
+  int find_invariant(Node* n, PhaseIdealLoop *phase);
+  // Return TRUE if "n" is associative.
+  bool is_associative(Node* n, Node* base=NULL);
 
   // Return true if n is invariant
   bool is_invariant(Node* n) const;

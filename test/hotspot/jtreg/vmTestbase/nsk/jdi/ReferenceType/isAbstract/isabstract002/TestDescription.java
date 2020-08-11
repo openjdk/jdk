@@ -51,7 +51,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ReferenceType.isAbstract.isabstract002
  *        nsk.jdi.ReferenceType.isAbstract.isabstract002a
  *

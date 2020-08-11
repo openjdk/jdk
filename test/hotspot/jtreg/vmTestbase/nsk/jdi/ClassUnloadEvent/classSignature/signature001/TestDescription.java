@@ -83,7 +83,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ClassUnloadEvent.classSignature.signature001
  *        nsk.jdi.ClassUnloadEvent.classSignature.signature001a
  *

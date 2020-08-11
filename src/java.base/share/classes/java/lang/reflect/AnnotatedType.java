@@ -37,6 +37,14 @@ import java.lang.annotation.Annotation;
  * <em>type annotations</em> (JLS {@jls 9.7.4}) as the entity being
  * potentially annotated is a type.
  *
+ * @jls 4.1 The Kinds of Types and Values
+ * @jls 4.2 Primitive Types and Values
+ * @jls 4.3 Reference Types and Values
+ * @jls 4.4 Type Variables
+ * @jls 4.5 Parameterized Types
+ * @jls 4.8 Raw Types
+ * @jls 4.9 Intersection Types
+ * @jls 10.1 Array Types
  * @since 1.8
  */
 public interface AnnotatedType extends AnnotatedElement {

@@ -36,6 +36,7 @@
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 #include <mach-o/fat.h>
+#include <mach-o/stab.h>
 
 #ifndef register_t
 #define register_t uint64_t
@@ -112,6 +113,7 @@ typedef struct map_info {
    uint64_t         offset;   // file offset of this mapping
    uint64_t         vaddr;    // starting virtual address
    size_t           memsz;    // size of the mapping
+   uint32_t         flags;    // access flags
    struct map_info* next;
 } map_info;
 
@@ -171,11 +173,10 @@ typedef bool (*thread_info_callback)(struct ps_prochandle* ph, pthread_t pid, lw
 bool read_thread_info(struct ps_prochandle* ph, thread_info_callback cb);
 
 // adds a new shared object to lib list, returns NULL on failure
-lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t base, size_t memsz);
+lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t base);
 
 // adds a new shared object to lib list, supply open lib file descriptor as well
-lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
-                          uintptr_t base, size_t memsz);
+lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd, uintptr_t base);
 
 sa_thread_info* add_thread_info(struct ps_prochandle* ph, pthread_t pthread_id, lwpid_t lwp_id);
 // a test for ELF signature without using libelf

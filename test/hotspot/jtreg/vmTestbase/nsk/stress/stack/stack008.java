@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @key stress
  *
  * @summary converted from VM testbase nsk/stress/stack/stack008.
- * VM testbase keywords: [stress, stack, nonconcurrent, exclude]
- * VM testbase comments: 8139875
+ * VM testbase keywords: [stress, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     This test provokes multiple stack overflows in the same thread
@@ -46,9 +45,8 @@
  *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
- * @ignore 8139875
- * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack008
+ * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp")
+ * @run main/othervm/timeout=900 -Xss200K nsk.stress.stack.stack008
  */
 
 package nsk.stress.stack;

@@ -42,7 +42,6 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build classes required for tests from forceEarlyReturn001.tests
  * @build nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn001.forceEarlyReturn001
@@ -72,6 +71,6 @@
  *      "-debugee.vmkeys=-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                       -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
- *      -configFile ./forceEarlyReturn001.tests
+ *      -configFile ${test.src}/forceEarlyReturn001.tests
  */
 

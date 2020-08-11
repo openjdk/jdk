@@ -31,7 +31,6 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.HiddenClass.events.*
  *
  * @run main/othervm PropertyResolvingWrapper

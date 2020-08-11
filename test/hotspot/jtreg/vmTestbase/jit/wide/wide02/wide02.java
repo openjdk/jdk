@@ -29,8 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.wide.wide02.wide02
- * @run driver ExecDriver --java jit.wide.wide02.wide02
+ * @run main/othervm jit.wide.wide02.wide02
  */
 
 package jit.wide.wide02;
@@ -44,7 +43,7 @@ import nsk.share.TestFailure;
      or if the result of the expression (d0+d53) is maintained in
      greater-than-double precision.
 */
-class wide02
+public class wide02
 {
    static double twoto(int n) {
        double res = 1.0;

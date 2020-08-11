@@ -46,11 +46,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
@@ -79,26 +79,26 @@ public class LockStep {
     static void realMain(String[] args) {
         size = intArg(args, 0, DEFAULT_SIZE);
 
-        lockSteps(new TreeMap(),
-                  new ConcurrentSkipListMap());
-        lockSteps(new TreeMap(),
-                  Collections.checkedNavigableMap(new TreeMap(), Integer.class, Integer.class));
-        lockSteps(new TreeMap(),
-                  Collections.synchronizedNavigableMap(new TreeMap()));
-        lockSteps(new TreeMap(reverseOrder()),
-                  new ConcurrentSkipListMap(reverseOrder()));
+        lockSteps(new TreeMap<>(),
+                  new ConcurrentSkipListMap<>());
+        lockSteps(new TreeMap<>(),
+                  Collections.checkedNavigableMap(new TreeMap<>(), Integer.class, Integer.class));
+        lockSteps(new TreeMap<>(),
+                  Collections.synchronizedNavigableMap(new TreeMap<>()));
+        lockSteps(new TreeMap<>(reverseOrder()),
+                  new ConcurrentSkipListMap<>(reverseOrder()));
 
-        lockSteps(new TreeSet(),
-                  new ConcurrentSkipListSet());
-        lockSteps(new TreeSet(),
-                  Collections.checkedNavigableSet(new TreeSet(), Integer.class));
-        lockSteps(new TreeSet(),
-                  Collections.synchronizedNavigableSet(new TreeSet()));
-        lockSteps(new TreeSet(reverseOrder()),
-                  new ConcurrentSkipListSet(reverseOrder()));
+        lockSteps(new TreeSet<>(),
+                  new ConcurrentSkipListSet<>());
+        lockSteps(new TreeSet<>(),
+                  Collections.checkedNavigableSet(new TreeSet<>(), Integer.class));
+        lockSteps(new TreeSet<>(),
+                  Collections.synchronizedNavigableSet(new TreeSet<>()));
+        lockSteps(new TreeSet<>(reverseOrder()),
+                  new ConcurrentSkipListSet<>(reverseOrder()));
     }
 
-    static void lockSteps(NavigableMap m1, NavigableMap m2) {
+    static void lockSteps(NavigableMap<Integer, Integer> m1, NavigableMap<Integer, Integer> m2) {
         if (maybe(4)) m1 = serialClone(m1);
         if (maybe(4)) m2 = serialClone(m2);
         lockStep(m1,
@@ -119,7 +119,7 @@ public class LockStep {
                  fullTailMap(m2.descendingMap()));
     }
 
-    static void lockSteps(NavigableSet s1, NavigableSet s2) {
+    static void lockSteps(NavigableSet<Integer> s1, NavigableSet<Integer> s2) {
         if (maybe(4)) s1 = serialClone(s1);
         if (maybe(4)) s2 = serialClone(s2);
         lockStep(s1,
@@ -140,47 +140,47 @@ public class LockStep {
                  fullTailSet(s2.descendingSet()));
     }
 
-    static boolean isAscending(NavigableMap m) {
-        Comparator cmp = m.comparator();
+    static boolean isAscending(NavigableMap<Integer, Integer> m) {
+        var cmp = m.comparator();
         return (cmp == null || cmp.compare(1, 2) < 0);
     }
 
-    static NavigableMap fullSubMap(NavigableMap m) {
+    static NavigableMap<Integer, Integer> fullSubMap(NavigableMap<Integer, Integer> m) {
         return isAscending(m)
             ? m.subMap(Integer.MIN_VALUE, true, Integer.MAX_VALUE, true)
             : m.subMap(Integer.MAX_VALUE, true, Integer.MIN_VALUE, true);
     }
 
-    static NavigableMap fullHeadMap(NavigableMap m) {
+    static NavigableMap<Integer, Integer> fullHeadMap(NavigableMap<Integer, Integer> m) {
         return isAscending(m)
             ? m.headMap(Integer.MAX_VALUE, true)
             : m.headMap(Integer.MIN_VALUE, true);
     }
 
-    static NavigableMap fullTailMap(NavigableMap m) {
+    static NavigableMap<Integer, Integer> fullTailMap(NavigableMap<Integer, Integer> m) {
         return isAscending(m)
             ? m.tailMap(Integer.MIN_VALUE, true)
             : m.tailMap(Integer.MAX_VALUE, true);
     }
 
-    static boolean isAscending(NavigableSet s) {
-        Comparator cmp = s.comparator();
+    static boolean isAscending(NavigableSet<Integer> s) {
+        var cmp = s.comparator();
         return (cmp == null || cmp.compare(1, 2) < 0);
     }
 
-    static NavigableSet fullSubSet(NavigableSet s) {
+    static NavigableSet<Integer> fullSubSet(NavigableSet<Integer> s) {
         return isAscending(s)
             ? s.subSet(Integer.MIN_VALUE, true, Integer.MAX_VALUE, true)
             : s.subSet(Integer.MAX_VALUE, true, Integer.MIN_VALUE, true);
     }
 
-    static NavigableSet fullHeadSet(NavigableSet s) {
+    static NavigableSet<Integer> fullHeadSet(NavigableSet<Integer> s) {
         return isAscending(s)
             ? s.headSet(Integer.MAX_VALUE, true)
             : s.headSet(Integer.MIN_VALUE, true);
     }
 
-    static NavigableSet fullTailSet(NavigableSet s) {
+    static NavigableSet<Integer> fullTailSet(NavigableSet<Integer> s) {
         return isAscending(s)
             ? s.tailSet(Integer.MIN_VALUE, true)
             : s.tailSet(Integer.MAX_VALUE, true);
@@ -231,21 +231,17 @@ public class LockStep {
         equal(it.next(), expected);
     }
 
-    static Comparator comparator(NavigableSet s) {
-        Comparator cmp = s.comparator();
-        return cmp != null ? cmp : new Comparator() {
-            public int compare(Object o1, Object o2) {
-                return ((Comparable) o1).compareTo(o2); }};
+    static Comparator<? super Integer> comparator(NavigableSet<Integer> s) {
+        var cmp = s.comparator();
+        return cmp != null ? cmp : Comparator.naturalOrder();
     }
 
-    static Comparator comparator(NavigableMap m) {
-        Comparator cmp = m.comparator();
-        return cmp != null ? cmp : new Comparator() {
-            public int compare(Object o1, Object o2) {
-                return ((Comparable) o1).compareTo(o2); }};
+    static Comparator<? super Integer> comparator(NavigableMap<Integer, Integer> m) {
+        var cmp = m.comparator();
+        return cmp != null ? cmp : Comparator.naturalOrder();
     }
 
-    static void checkNavigableSet(final NavigableSet s) {
+    static void checkNavigableSet(final NavigableSet<Integer> s) {
         if (s.comparator() == null)
             check(s.descendingSet().descendingSet().comparator() == null);
         equal(s.isEmpty(), s.size() == 0);
@@ -259,7 +255,7 @@ public class LockStep {
                 }
             }
         }
-        Comparator cmp = comparator(s);
+        var cmp = comparator(s);
         if (s.isEmpty()) {
             THROWS(NoSuchElementException.class,
                    () -> s.first(),
@@ -269,8 +265,8 @@ public class LockStep {
             equal(null, s.ceiling(1));
             equal(null, s.higher(1));
         } else {
-            Object a = s.first();
-            Object z = s.last();
+            Integer a = s.first();
+            Integer z = s.last();
             equal(s.lower(a), null);
             equal(s.higher(z), null);
             equal2(s, s.tailSet(a));
@@ -285,28 +281,27 @@ public class LockStep {
             equal2(s.headSet(a, true), singleton(a));
             equal2(s.tailSet(z, true), singleton(z));
         }
-        Iterator[] its = new Iterator[] {
+        Iterator<?>[] its = new Iterator[] {
             s.iterator(),
             s.descendingSet().descendingSet().iterator(),
         };
-        for (final Iterator it : its)
+        for (final Iterator<?> it : its)
             if (maybe(4))
                 THROWS(IllegalStateException.class, () -> it.remove());
-        Object prev = null;
-        for (Object e : s) {
+        Integer prev = null;
+        for (final Integer e : s) {
             check(s.contains(e));
-            for (Iterator it : its) equalNext(it, e);
+            for (Iterator<?> it : its) equalNext(it, e);
             equal(e, s.ceiling(e));
             equal(e, s.floor(e));
             check(s.higher(e) == null || cmp.compare(e, s.higher(e)) < 0);
             equal(s.lower(e), prev);
-            if (prev == null) {
-            } else {
+            if (prev != null) {
                 check(cmp.compare(prev, e) < 0);
             }
             prev = e;
         }
-        for (final Iterator it : its) {
+        for (final Iterator<?> it : its) {
             if (maybe(2))
                 check(! it.hasNext());
             Fun fun = () -> it.next();
@@ -324,7 +319,7 @@ public class LockStep {
         check(! it2.hasNext());
     }
 
-    static void equalSetsLeaf(final Set s1, final Set s2) {
+    static void equalSetsLeaf(final Set<?> s1, final Set<?> s2) {
         equal2(s1,            s2);
         equal( s1.size(),     s2.size());
         equal( s1.isEmpty(),  s2.isEmpty());
@@ -333,8 +328,8 @@ public class LockStep {
         equal( s1.containsAll(s2), s2.containsAll(s1));
     }
 
-    static void equalNavigableSetsLeaf(final NavigableSet s1,
-                                       final NavigableSet s2) {
+    static void equalNavigableSetsLeaf(final NavigableSet<Integer> s1,
+                                       final NavigableSet<Integer> s2) {
         equal2(s1,            s2);
         equal( s1.size(),     s2.size());
         equal( s1.isEmpty(),  s2.isEmpty());
@@ -350,16 +345,16 @@ public class LockStep {
         checkNavigableSet(s2);
     }
 
-    static void equalNavigableSets(final NavigableSet s1,
-                                   final NavigableSet s2) {
+    static void equalNavigableSets(final NavigableSet<Integer> s1,
+                                   final NavigableSet<Integer> s2) {
         equalNavigableSetsLeaf(s1, s2);
         equalNavigableSetsLeaf(s1.descendingSet(), s2.descendingSet());
         equalNavigableSetsLeaf(s1.descendingSet().descendingSet(), s2);
-        Object min = s1.isEmpty() ? Integer.MIN_VALUE : s1.first();
-        Object max = s2.isEmpty() ? Integer.MAX_VALUE : s2.last();
+        Integer min = s1.isEmpty() ? Integer.MIN_VALUE : s1.first();
+        Integer max = s2.isEmpty() ? Integer.MAX_VALUE : s2.last();
         if (s1.comparator() != null &&
             s1.comparator().compare(min, max) > 0) {
-            Object tmp = min; min = max; max = tmp;
+            Integer tmp = min; min = max; max = tmp;
         }
 
         equalNavigableSetsLeaf(s1.subSet(min, true, max, true),
@@ -368,31 +363,29 @@ public class LockStep {
                                s2.tailSet(min, true));
         equalNavigableSetsLeaf(s1.headSet(max, true),
                                s2.headSet(max, true));
-        equalNavigableSetsLeaf((NavigableSet) s1.subSet(min, max),
-                               (NavigableSet) s2.subSet(min, max));
-        equalNavigableSetsLeaf((NavigableSet) s1.tailSet(min),
-                               (NavigableSet) s2.tailSet(min));
-        equalNavigableSetsLeaf((NavigableSet) s1.headSet(max),
-                               (NavigableSet) s2.headSet(max));
+        equalNavigableSetsLeaf((NavigableSet<Integer>) s1.subSet(min, max),
+                               (NavigableSet<Integer>) s2.subSet(min, max));
+        equalNavigableSetsLeaf((NavigableSet<Integer>) s1.tailSet(min),
+                               (NavigableSet<Integer>) s2.tailSet(min));
+        equalNavigableSetsLeaf((NavigableSet<Integer>) s1.headSet(max),
+                               (NavigableSet<Integer>) s2.headSet(max));
     }
 
     // Destined for a Collections.java near you?
     static <T> T[] concat(T[]... arrays) {
         int len = 0;
-        for (int i = 0; i < arrays.length; i++)
-            len += arrays[i].length;
+        for (T[] arr : arrays) len += arr.length;
         T[] a = (T[])java.lang.reflect.Array
             .newInstance(arrays[0].getClass().getComponentType(), len);
         int k = 0;
-        for (int i = 0; i < arrays.length; i++) {
-            T[] array = arrays[i];
-            System.arraycopy(array, 0, a, k, array.length);
-            k += array.length;
+        for (T[] arr : arrays) {
+            System.arraycopy(arr, 0, a, k, arr.length);
+            k += arr.length;
         }
         return a;
     }
 
-    static void checkNavigableMap(final NavigableMap m) {
+    static void checkNavigableMap(final NavigableMap<Integer, Integer> m) {
         if (m.comparator() == null) {
             check(m.descendingMap().descendingMap().comparator() == null);
             check(m.descendingKeySet().descendingSet().comparator() == null);
@@ -402,7 +395,7 @@ public class LockStep {
         if (maybe(4))
             equal2(m, serialClone(m));
         equal2(m.keySet(), m.descendingKeySet());
-        Comparator cmp = comparator(m);
+        var cmp = comparator(m);
         if (m.isEmpty()) {
             THROWS(NoSuchElementException.class,
                    () -> m.firstKey(),
@@ -420,8 +413,8 @@ public class LockStep {
             equal(null, m.ceilingEntry(1));
             equal(null, m.higherEntry(1));
         } else {
-            Object a = m.firstKey();
-            Object z = m.lastKey();
+            Integer a = m.firstKey();
+            Integer z = m.lastKey();
             equal(m.lowerKey(a), null);
             equal(m.higherKey(z), null);
             equal(a, m.firstEntry().getKey());
@@ -439,32 +432,32 @@ public class LockStep {
             equal2(m.tailMap(z, true), singletonMap(z, m.get(z)));
         }
 
-        Iterator[] kits = new Iterator[] {
+        Iterator<?>[] kits = new Iterator[] {
             m.keySet().iterator(),
             m.descendingMap().descendingKeySet().iterator(),
             m.descendingKeySet().descendingSet().iterator(),
         };
-        Iterator[] vits = new Iterator[] {
+        Iterator<?>[] vits = new Iterator[] {
             m.values().iterator(),
             m.descendingMap().descendingMap().values().iterator(),
         };
-        Iterator[] eits = new Iterator[] {
+        Iterator<?>[] eits = new Iterator[] {
             m.entrySet().iterator(),
             m.descendingMap().descendingMap().entrySet().iterator(),
         };
-        Iterator[] its = concat(kits, vits, eits);
-        for (final Iterator it : its)
+        Iterator<?>[] its = concat(kits, vits, eits);
+        for (final Iterator<?> it : its)
             if (maybe(4))
                 THROWS(IllegalStateException.class, () -> it.remove());
-        Map.Entry prev = null;
-        for (Map.Entry e : (Set<Map.Entry>) m.entrySet()) {
-            Object k = e.getKey();
-            Object v = e.getValue();
+        Map.Entry<Integer, Integer> prev = null;
+        for (var e : m.entrySet()) {
+            Integer k = e.getKey();
+            Integer v = e.getValue();
             check(m.containsKey(k));
             check(m.containsValue(v));
-            for (Iterator kit : kits) equalNext(kit, k);
-            for (Iterator vit : vits) equalNext(vit, v);
-            for (Iterator eit : eits) equalNext(eit, e);
+            for (var kit : kits) equalNext(kit, k);
+            for (var vit : vits) equalNext(vit, v);
+            for (var eit : eits) equalNext(eit, e);
             equal(k, m.ceilingKey(k));
             equal(k, m.ceilingEntry(k).getKey());
             equal(k, m.floorKey(k));
@@ -480,7 +473,7 @@ public class LockStep {
             }
             prev = e;
         }
-        for (final Iterator it : its) {
+        for (final var it : its) {
             if (maybe(2))
                 check(! it.hasNext());
             Fun fun = () -> it.next();
@@ -488,8 +481,8 @@ public class LockStep {
         }
     }
 
-    static void equalNavigableMapsLeaf(final NavigableMap m1,
-                                       final NavigableMap m2) {
+    static void equalNavigableMapsLeaf(final NavigableMap<Integer, Integer> m1,
+                                       final NavigableMap<Integer, Integer> m2) {
         equal2(m1,              m2);
         equal( m1.size(),       m2.size());
         equal( m1.isEmpty(),    m2.isEmpty());
@@ -501,8 +494,8 @@ public class LockStep {
         checkNavigableMap(m2);
     }
 
-    static void equalNavigableMaps(NavigableMap m1,
-                                   NavigableMap m2) {
+    static void equalNavigableMaps(NavigableMap<Integer, Integer> m1,
+                                   NavigableMap<Integer, Integer> m2) {
         equalNavigableMapsLeaf(m1, m2);
         equalSetsLeaf(m1.keySet(), m2.keySet());
         equalNavigableSets(m1.navigableKeySet(),
@@ -515,8 +508,8 @@ public class LockStep {
                                m2.descendingMap());
         equalNavigableMapsLeaf(m1.descendingMap().descendingMap(),
                                m2);
-        equalNavigableSetsLeaf((NavigableSet) m1.descendingMap().keySet(),
-                               (NavigableSet) m2.descendingMap().keySet());
+        equalNavigableSetsLeaf((NavigableSet<Integer>) m1.descendingMap().keySet(),
+                               (NavigableSet<Integer>) m2.descendingMap().keySet());
         equalNavigableSetsLeaf(m1.descendingMap().descendingKeySet(),
                                m2.descendingMap().descendingKeySet());
         equal2(m1.descendingMap().entrySet(),
@@ -525,11 +518,11 @@ public class LockStep {
         //----------------------------------------------------------------
         // submaps
         //----------------------------------------------------------------
-        Object min = Integer.MIN_VALUE;
-        Object max = Integer.MAX_VALUE;
+        Integer min = Integer.MIN_VALUE;
+        Integer max = Integer.MAX_VALUE;
         if (m1.comparator() != null
             && m1.comparator().compare(min, max) > 0) {
-            Object tmp = min; min = max; max = tmp;
+            Integer tmp = min; min = max; max = tmp;
         }
         switch (rnd.nextInt(6)) {
         case 0:
@@ -545,107 +538,119 @@ public class LockStep {
                                    m2.headMap(max, true));
             break;
         case 3:
-            equalNavigableMapsLeaf((NavigableMap) m1.subMap(min, max),
-                                   (NavigableMap) m2.subMap(min, max));
+            equalNavigableMapsLeaf((NavigableMap<Integer, Integer>) m1.subMap(min, max),
+                                   (NavigableMap<Integer, Integer>) m2.subMap(min, max));
             break;
         case 4:
-            equalNavigableMapsLeaf((NavigableMap) m1.tailMap(min),
-                                   (NavigableMap) m2.tailMap(min));
+            equalNavigableMapsLeaf((NavigableMap<Integer, Integer>) m1.tailMap(min),
+                                   (NavigableMap<Integer, Integer>) m2.tailMap(min));
             break;
         case 5:
-            equalNavigableMapsLeaf((NavigableMap) m1.headMap(max),
-                                   (NavigableMap) m2.headMap(max));
+            equalNavigableMapsLeaf((NavigableMap<Integer, Integer>) m1.headMap(max),
+                                   (NavigableMap<Integer, Integer>) m2.headMap(max));
             break;
         }
     }
 
-    abstract static class MapFrobber { abstract void frob(NavigableMap m); }
-    abstract static class SetFrobber { abstract void frob(NavigableSet m); }
+    interface MapFrobber { void frob(NavigableMap<Integer, Integer> m); }
+    interface SetFrobber { void frob(NavigableSet<Integer> m); }
 
-    static MapFrobber randomAdder(NavigableMap m) {
+    static MapFrobber randomAdder(NavigableMap<Integer, Integer> m) {
         final Integer k = unusedKey(m);
         final MapFrobber[] randomAdders = {
-            new MapFrobber() {void frob(NavigableMap m) {
-                equal(m.put(k, k+1), null);
-                equal(m.get(k), k+1);
+            map -> {
+                equal(map.put(k, k + 1), null);
+                equal(map.get(k), k + 1);
                 if (maybe(4)) {
-                    equal(m.put(k, k+1), k+1);
-                    equal(m.get(k), k+1);}}},
-            new MapFrobber() {void frob(NavigableMap m) {
-                m.descendingMap().put(k, k+1);
-                equal(m.get(k), k+1);}},
-            new MapFrobber() {void frob(NavigableMap m) {
-                m.tailMap(k,true).headMap(k,true).put(k,k+1);}},
-            new MapFrobber() {void frob(NavigableMap m) {
-                m.tailMap(k,true).headMap(k,true).descendingMap().put(k,k+1);}}
+                    equal(map.put(k, k + 1), k + 1);
+                    equal(map.get(k), k + 1);}},
+            map -> {
+                map.descendingMap().put(k, k + 1);
+                equal(map.get(k), k + 1);},
+            map -> map.tailMap(k,true).headMap(k,true).put(k, k + 1),
+            map -> {
+                equal(map.tailMap(k,true).headMap(k,true).putIfAbsent(k, k + 1), null);
+                equal(map.tailMap(k,true).headMap(k,true).putIfAbsent(k, k + 1), k + 1);},
+            map -> {
+                equal(map.tailMap(k,true).headMap(k,true).merge(k,k,Integer::sum), k);
+                equal(map.tailMap(k,true).headMap(k,true).merge(k,1,Integer::sum), k+1);},
+            map -> equal(map.subMap(k,true, k, true).computeIfAbsent(k, key -> key + 1), k + 1),
+            map -> {
+                equal(map.subMap(k,true, k, true).computeIfPresent(k, (key, val) -> 1), null);
+                equal(map.tailMap(k,true).compute(k, (key, val) -> {
+                    equal(val, null);
+                    return 1;
+                }), 1);
+                equal(map.headMap(k, true).computeIfPresent(k, (key, val) -> val + key), k + 1);
+                equal(map.tailMap(k, false).computeIfPresent(k, (key, val) -> 1), null);
+                equal(map.headMap(k, false).compute(k, (key, val) -> null), null);
+                equal(map.tailMap(k, false).computeIfAbsent(k, key -> null), null);
+            },
+            map -> map.tailMap(k,true).headMap(k,true).descendingMap().put(k, k + 1)
         };
-        return new MapFrobber() {void frob(NavigableMap m) {
-            randomAdders[rnd.nextInt(randomAdders.length)].frob(m);
-            if (maybe(2)) equal(m.get(k), k+1);
+        return map -> {
+            randomAdders[rnd.nextInt(randomAdders.length)].frob(map);
+            if (maybe(2)) equal(map.get(k), k + 1);
             if (maybe(4)) {
-                equal(m.put(k, k+1), k+1);
-                equal(m.get(k), k+1);}}};
+                equal(map.put(k, k + 1), k + 1);
+                equal(map.get(k), k + 1);}};
     }
 
-    static SetFrobber randomAdder(NavigableSet s) {
+    static SetFrobber randomAdder(NavigableSet<Integer> s) {
         final Integer e = unusedElt(s);
         final SetFrobber[] randomAdders = {
-            new SetFrobber() {void frob(NavigableSet s) {
-                check(s.add(e));}},
-            new SetFrobber() {void frob(NavigableSet s) {
-                s.descendingSet().add(e);}},
-            new SetFrobber() {void frob(NavigableSet s) {
-                s.tailSet(e,true).headSet(e,true).add(e);}},
-            new SetFrobber() {void frob(NavigableSet s) {
-                s.descendingSet().tailSet(e,true).headSet(e,true).add(e);}}
+            set -> check(set.add(e)),
+            set -> set.descendingSet().add(e),
+            set -> set.tailSet(e,true).headSet(e,true).add(e),
+            set -> set.descendingSet().tailSet(e,true).headSet(e,true).add(e)
         };
-        return new SetFrobber() {void frob(NavigableSet s) {
-            if (maybe(2)) check(! s.contains(e));
-            randomAdders[rnd.nextInt(randomAdders.length)].frob(s);
-            if (maybe(2)) check(! s.add(e));
-            if (maybe(2)) check(s.contains(e));}};
+        return set -> {
+            if (maybe(2)) check(! set.contains(e));
+            randomAdders[rnd.nextInt(randomAdders.length)].frob(set);
+            if (maybe(2)) check(! set.add(e));
+            if (maybe(2)) check(set.contains(e));};
     }
 
-    static Integer unusedElt(NavigableSet s) {
+    static Integer unusedElt(NavigableSet<Integer> s) {
         Integer e;
         do { e = rnd.nextInt(1024); }
         while (s.contains(e));
         return e;
     }
 
-    static Integer unusedKey(NavigableMap m) {
+    static Integer unusedKey(NavigableMap<Integer, Integer> m) {
         Integer k;
         do { k = rnd.nextInt(1024); }
         while (m.containsKey(k));
         return k;
     }
 
-    static Integer usedKey(NavigableMap m) {
+    static Integer usedKey(NavigableMap<Integer, Integer> m) {
         Integer x = rnd.nextInt(1024);
-        Integer floor   = (Integer) m.floorKey(x);
-        Integer ceiling = (Integer) m.ceilingKey(x);
+        Integer floor   = m.floorKey(x);
+        Integer ceiling = m.ceilingKey(x);
         if (floor != null) return floor;
         check(ceiling != null);
         return ceiling;
     }
 
-    static Integer usedElt(NavigableSet s) {
+    static Integer usedElt(NavigableSet<Integer> s) {
         Integer x = rnd.nextInt(1024);
-        Integer floor   = (Integer) s.floor(x);
-        Integer ceiling = (Integer) s.ceiling(x);
+        Integer floor   = s.floor(x);
+        Integer ceiling = s.ceiling(x);
         if (floor != null) return floor;
         check(ceiling != null);
         return ceiling;
     }
 
-    static void checkUnusedKey(NavigableMap m, Object k) {
+    static void checkUnusedKey(NavigableMap<Integer, Integer> m, Integer k) {
         check(! m.containsKey(k));
         equal(m.get(k), null);
         if (maybe(2))
             equal(m.remove(k), null);
     }
 
-    static void checkUnusedElt(NavigableSet s, Object e) {
+    static void checkUnusedElt(NavigableSet<Integer> s, Integer e) {
         if (maybe(2))
             check(! s.contains(e));
         if (maybe(2)) {
@@ -656,32 +661,32 @@ public class LockStep {
             check(! s.remove(e));
     }
 
-    static Fun remover(final Iterator it) {
+    static Fun remover(final Iterator<?> it) {
         return () -> it.remove();
     }
 
-    static MapFrobber randomRemover(NavigableMap m) {
+    static MapFrobber randomRemover(NavigableMap<Integer, Integer> m) {
         final Integer k = usedKey(m);
         final MapFrobber[] randomRemovers = {
-            new MapFrobber() {void frob(NavigableMap m) {
-                Map.Entry e = m.firstEntry();
-                equal(m.pollFirstEntry(), e);
-                checkUnusedKey(m, e.getKey());}},
-            new MapFrobber() {void frob(NavigableMap m) {
-                Map.Entry e = m.lastEntry();
-                equal(m.pollLastEntry(), e);
-                checkUnusedKey(m, e.getKey());}},
-            new MapFrobber() {void frob(NavigableMap m) {
-                check(m.remove(k) != null);
-                checkUnusedKey(m, k);}},
-            new MapFrobber() {void frob(NavigableMap m) {
-                m.subMap(k, true, k, true).clear();
-                checkUnusedKey(m, k);}},
-            new MapFrobber() {void frob(NavigableMap m) {
-                m.descendingMap().subMap(k, true, k, true).clear();
-                checkUnusedKey(m, k);}},
-            new MapFrobber() {void frob(NavigableMap m) {
-                final Iterator it = m.keySet().iterator();
+            map -> {
+                var e = map.firstEntry();
+                equal(map.pollFirstEntry(), e);
+                checkUnusedKey(map, e.getKey());},
+            map -> {
+                var e = map.lastEntry();
+                equal(map.pollLastEntry(), e);
+                checkUnusedKey(map, e.getKey());},
+            map -> {
+                check(map.remove(k) != null);
+                checkUnusedKey(map, k);},
+            map -> {
+                map.subMap(k, true, k, true).clear();
+                checkUnusedKey(map, k);},
+            map -> {
+                map.descendingMap().subMap(k, true, k, true).clear();
+                checkUnusedKey(map, k);},
+            map -> {
+                final var it = map.keySet().iterator();
                 while (it.hasNext())
                     if (it.next().equals(k)) {
                         it.remove();
@@ -689,9 +694,9 @@ public class LockStep {
                             THROWS(IllegalStateException.class,
                                    () -> it.remove());
                     }
-                checkUnusedKey(m, k);}},
-            new MapFrobber() {void frob(NavigableMap m) {
-                final Iterator it = m.navigableKeySet().descendingIterator();
+                checkUnusedKey(map, k);},
+            map -> {
+                final var it = map.navigableKeySet().descendingIterator();
                 while (it.hasNext())
                     if (it.next().equals(k)) {
                         it.remove();
@@ -699,44 +704,44 @@ public class LockStep {
                             THROWS(IllegalStateException.class,
                                    () -> it.remove());
                     }
-                checkUnusedKey(m, k);}},
-            new MapFrobber() {void frob(NavigableMap m) {
-                final Iterator<Map.Entry> it = m.entrySet().iterator();
+                checkUnusedKey(map, k);},
+            map -> {
+                final var it = map.entrySet().iterator();
                 while (it.hasNext())
                     if (it.next().getKey().equals(k)) {
                         it.remove();
                         if (maybe(2))
                             THROWS(IllegalStateException.class, remover(it));
                     }
-                checkUnusedKey(m, k);}},
+                checkUnusedKey(map, k);},
         };
 
         return randomRemovers[rnd.nextInt(randomRemovers.length)];
     }
 
-    static SetFrobber randomRemover(NavigableSet s) {
+    static SetFrobber randomRemover(NavigableSet<Integer> s) {
         final Integer e = usedElt(s);
 
         final SetFrobber[] randomRemovers = {
-            new SetFrobber() {void frob(NavigableSet s) {
-                Object e = s.first();
-                equal(s.pollFirst(), e);
-                checkUnusedElt(s, e);}},
-            new SetFrobber() {void frob(NavigableSet s) {
-                Object e = s.last();
-                equal(s.pollLast(), e);
-                checkUnusedElt(s, e);}},
-            new SetFrobber() {void frob(NavigableSet s) {
-                check(s.remove(e));
-                checkUnusedElt(s, e);}},
-            new SetFrobber() {void frob(NavigableSet s) {
-                s.subSet(e, true, e, true).clear();
-                checkUnusedElt(s, e);}},
-            new SetFrobber() {void frob(NavigableSet s) {
-                s.descendingSet().subSet(e, true, e, true).clear();
-                checkUnusedElt(s, e);}},
-            new SetFrobber() {void frob(NavigableSet s) {
-                final Iterator it = s.iterator();
+            set -> {
+                var fst = set.first();
+                equal(set.pollFirst(), fst);
+                checkUnusedElt(set, fst);},
+            set -> {
+                var lst = set.last();
+                equal(set.pollLast(), lst);
+                checkUnusedElt(set, lst);},
+            set -> {
+                check(set.remove(e));
+                checkUnusedElt(set, e);},
+            set -> {
+                set.subSet(e, true, e, true).clear();
+                checkUnusedElt(set, e);},
+            set -> {
+                set.descendingSet().subSet(e, true, e, true).clear();
+                checkUnusedElt(set, e);},
+            set -> {
+                final var it = set.iterator();
                 while (it.hasNext())
                     if (it.next().equals(e)) {
                         it.remove();
@@ -744,9 +749,9 @@ public class LockStep {
                             THROWS(IllegalStateException.class,
                                    () -> it.remove());
                     }
-                checkUnusedElt(s, e);}},
-            new SetFrobber() {void frob(NavigableSet s) {
-                final Iterator it = s.descendingSet().iterator();
+                checkUnusedElt(set, e);},
+            set -> {
+                final var it = set.descendingSet().iterator();
                 while (it.hasNext())
                     if (it.next().equals(e)) {
                         it.remove();
@@ -754,9 +759,9 @@ public class LockStep {
                             THROWS(IllegalStateException.class,
                                    () -> it.remove());
                     }
-                checkUnusedElt(s, e);}},
-            new SetFrobber() {void frob(NavigableSet s) {
-                final Iterator it = s.descendingIterator();
+                checkUnusedElt(set, e);},
+            set -> {
+                final var it = set.descendingIterator();
                 while (it.hasNext())
                     if (it.next().equals(e)) {
                         it.remove();
@@ -764,94 +769,96 @@ public class LockStep {
                             THROWS(IllegalStateException.class,
                                    () -> it.remove());
                     }
-                checkUnusedElt(s, e);}}
+                checkUnusedElt(set, e);}
         };
 
         return randomRemovers[rnd.nextInt(randomRemovers.length)];
     }
 
-    static void lockStep(NavigableMap m1,
-                         NavigableMap m2) {
+    static void lockStep(NavigableMap<Integer, Integer> m1,
+                         NavigableMap<Integer, Integer> m2) {
         if (! (thorough || maybe(3))) return;
         if (maybe(4)) m1 = serialClone(m1);
         if (maybe(4)) m2 = serialClone(m2);
 
-        List<NavigableMap> maps = Arrays.asList(m1, m2);
-        for (NavigableMap m : maps) testEmptyMap(m);
+        var maps = Arrays.asList(m1, m2);
+        for (var m : maps) testEmptyMap(m);
         final Set<Integer> ints = new HashSet<>();
         while (ints.size() < size)
             ints.add(rnd.nextInt(1024));
         final Integer[] elts = ints.toArray(new Integer[size]);
+        equal(elts.length, size);
         for (int i = 0; i < size; i++) {
             MapFrobber adder = randomAdder(m1);
-            for (final NavigableMap m : maps) {
+            for (var m : maps) {
                 adder.frob(m);
                 equal(m.size(), i+1);
             }
             equalNavigableMaps(m1, m2);
         }
-        for (final NavigableMap m : maps) {
-            final Object e = usedKey(m);
+        for (var m : maps) {
+            final var e = usedKey(m);
             THROWS(IllegalArgumentException.class,
-                   () -> {m.subMap(e,true,e,false)
-                           .subMap(e,true,e,true);},
-                   () -> {m.subMap(e,false,e,true)
-                           .subMap(e,true,e,true);},
+                   () -> m.subMap(e,true,e,false).subMap(e,true,e,true),
+                   () -> m.subMap(e,false,e,true).subMap(e,true,e,true),
                    () -> m.tailMap(e,false).tailMap(e,true),
-                   () -> m.headMap(e,false).headMap(e,true));
+                   () -> m.headMap(e,false).headMap(e,true),
+                   () -> m.headMap(e, false).put(e, 0),
+                   () -> m.tailMap(e, false).putIfAbsent(e, 0),
+                   () -> m.headMap(e, false).computeIfAbsent(e, k -> 1),
+                   () -> m.tailMap(e, false).compute(e, (k, v) -> 0));
         }
         //System.out.printf("%s%n", m1);
         for (int i = size; i > 0; i--) {
             MapFrobber remover = randomRemover(m1);
-            for (final NavigableMap m : maps) {
+            for (var m : maps) {
                 remover.frob(m);
                 equal(m.size(), i-1);
             }
             equalNavigableMaps(m1, m2);
         }
-        for (NavigableMap m : maps) testEmptyMap(m);
+        for (var m : maps) testEmptyMap(m);
     }
 
-    static void lockStep(NavigableSet s1,
-                         NavigableSet s2) {
+    static void lockStep(NavigableSet<Integer> s1,
+                         NavigableSet<Integer> s2) {
         if (! (thorough || maybe(3))) return;
         if (maybe(4)) s1 = serialClone(s1);
         if (maybe(4)) s2 = serialClone(s2);
 
-        List<NavigableSet> sets = Arrays.asList(s1, s2);
-        for (NavigableSet s : sets) testEmptySet(s);
+        var sets = Arrays.asList(s1, s2);
+        for (var s : sets) testEmptySet(s);
         final Set<Integer> ints = new HashSet<>();
         while (ints.size() < size)
             ints.add(rnd.nextInt(1024));
         final Integer[] elts = ints.toArray(new Integer[size]);
+        equal(elts.length, size);
         for (int i = 0; i < size; i++) {
             SetFrobber adder = randomAdder(s1);
-            for (final NavigableSet s : sets) {
+            for (var s : sets) {
                 adder.frob(s);
                 equal(s.size(), i+1);
             }
             equalNavigableSets(s1, s2);
         }
-        for (final NavigableSet s : sets) {
-            final Object e = usedElt(s);
+        for (var s : sets) {
+            final Integer e = usedElt(s);
             THROWS(IllegalArgumentException.class,
-                   () -> {s.subSet(e,true,e,false)
-                           .subSet(e,true,e,true);},
-                   () -> {s.subSet(e,false,e,true)
-                           .subSet(e,true,e,true);},
+                   () -> s.subSet(e,true,e,false).subSet(e,true,e,true),
+                   () -> s.subSet(e,false,e,true).subSet(e,true,e,true),
                    () -> s.tailSet(e,false).tailSet(e,true),
                    () -> s.headSet(e,false).headSet(e,true));
         }
         //System.out.printf("%s%n", s1);
         for (int i = size; i > 0; i--) {
             SetFrobber remover = randomRemover(s1);
-            for (final NavigableSet s : sets) {
+            for (var s : sets) {
                 remover.frob(s);
                 equal(s.size(), i-1);
             }
             equalNavigableSets(s1, s2);
         }
-        for (NavigableSet s : sets) testEmptySet(s);
+        for (var s : sets) testEmptySet(s);
     }
 
     //--------------------- Infrastructure ---------------------------
@@ -862,7 +869,7 @@ public class LockStep {
     static void unexpected(Throwable t) { failed++; t.printStackTrace(); }
     static void check(boolean cond) { if (cond) pass(); else fail(); }
     static void equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) pass();
+        if (Objects.equals(x, y)) pass();
         else {System.out.println(x + " not equal to " + y); fail();}}
     static void equal2(Object x, Object y) {equal(x, y); equal(y, x);}
     public static void main(String[] args) throws Throwable {

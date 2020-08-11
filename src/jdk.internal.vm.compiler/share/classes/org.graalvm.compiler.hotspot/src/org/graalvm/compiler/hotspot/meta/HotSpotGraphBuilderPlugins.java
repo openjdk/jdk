@@ -30,6 +30,7 @@ import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigAccess.JDK;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.BASE64_ENCODE_BLOCK;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.GHASH_PROCESS_BLOCKS;
 import static org.graalvm.compiler.hotspot.meta.HotSpotAOTProfilingPlugin.Options.TieredAOT;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.JAVA_THREAD_THREAD_OBJECT_HANDLE_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.JAVA_THREAD_THREAD_OBJECT_LOCATION;
 import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsing;
 
@@ -427,12 +428,21 @@ public class HotSpotGraphBuilderPlugins {
                 AddressNode address = b.add(new OffsetAddressNode(thread, offset));
                 // JavaThread::_threadObj is never compressed
                 ObjectStamp stamp = StampFactory.objectNonNull(TypeReference.create(b.getAssumptions(), metaAccess.lookupJavaType(Thread.class)));
-                b.addPush(JavaKind.Object, new ReadNode(address, JAVA_THREAD_THREAD_OBJECT_LOCATION, stamp, BarrierType.NONE));
+                ReadNode value = b.add(new ReadNode(address, JAVA_THREAD_THREAD_OBJECT_LOCATION,
+                                config.threadObjectFieldIsHandle ? StampFactory.forKind(wordTypes.getWordKind()) : stamp, BarrierType.NONE));
+                if (config.threadObjectFieldIsHandle) {
+                    ValueNode handleOffset = ConstantNode.forIntegerKind(wordTypes.getWordKind(), 0, b.getGraph());
+                    AddressNode handleAddress = b.add(new OffsetAddressNode(value, handleOffset));
+                    value = b.add(new ReadNode(handleAddress, JAVA_THREAD_THREAD_OBJECT_HANDLE_LOCATION, stamp, BarrierType.NONE));
+                }
+                b.push(JavaKind.Object, value);
                 return true;
             }
         });
 
         if (config.osThreadInterruptedOffset != Integer.MAX_VALUE) {
+            // This substitution is no longer in use when threadObj is a handle
+            assert !config.threadObjectFieldIsHandle;
             r.registerMethodSubstitution(ThreadSubstitutions.class, "isInterrupted", Receiver.class, boolean.class);
         }
 

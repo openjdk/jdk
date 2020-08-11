@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,27 +26,20 @@
 extern "C" {
 
 
-int always_true = 1;
-
 JNIEXPORT jint JNICALL
 Java_nsk_jdi_ThreadReference_forceEarlyReturn_forceEarlyReturn004_forceEarlyReturn004a_nativeMethod(JNIEnv *env, jobject classObject, jobject object)
 {
-    int dummy_counter = 0;
+    static volatile int dummy_counter = 0;
     // notify another thread that thread in native method
     jclass klass = env->GetObjectClass(object);
     jfieldID field = env->GetFieldID(klass, "threadInNative", "Z");
     env->SetBooleanField(object, field, 1);
 
     // execute infinite loop to be sure that thread in native method
-    while (always_true)
-    {
-        // Need some dummy code so the optimizer does not remove this loop.
-        dummy_counter = dummy_counter < 1000 ? 0 : dummy_counter + 1;
-    }
-    // The optimizer can be surprisingly clever.
-    // Use dummy_counter so it can never be optimized out.
-    // This statement will always return 0.
-    return dummy_counter >= 0 ? 0 : 1;
+    while (dummy_counter == 0) {}
+
+    // Should not reach here
+    return 0;
 }
 
 }

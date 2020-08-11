@@ -191,6 +191,7 @@ bool CollectedHeap::is_oop(oop object) const {
 
 CollectedHeap::CollectedHeap() :
   _is_gc_active(false),
+  _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
   _total_full_collections(0),
   _gc_cause(GCCause::_no_gc),
@@ -486,6 +487,14 @@ void CollectedHeap::resize_all_tlabs() {
       thread->tlab().resize();
     }
   }
+}
+
+jlong CollectedHeap::millis_since_last_whole_heap_examined() {
+  return (os::javaTimeNanos() - _last_whole_heap_examined_time_ns) / NANOSECS_PER_MILLISEC;
+}
+
+void CollectedHeap::record_whole_heap_examined_timestamp() {
+  _last_whole_heap_examined_time_ns = os::javaTimeNanos();
 }
 
 void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {

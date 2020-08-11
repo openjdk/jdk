@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.inline.inline004.inline004
- * @run driver ExecDriver --java jit.inline.inline004.inline004
+ * @run main/othervm jit.inline.inline004.inline004
  */
 
 package jit.inline.inline004;
@@ -51,7 +50,7 @@ class inline004_1 {
         }
 }
 
-class inline004 extends inline004_1 {
+public class inline004 extends inline004_1 {
         public static final GoldChecker goldChecker = new GoldChecker( "inline004" );
 
         static int pFlag = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@
  * @requires !vm.graal.enabled
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.VMOutOfMemoryException.VMOutOfMemoryException001.VMOutOfMemoryException001
  *        nsk.jdi.VMOutOfMemoryException.VMOutOfMemoryException001.VMOutOfMemoryException001t
  * @run main/othervm PropertyResolvingWrapper

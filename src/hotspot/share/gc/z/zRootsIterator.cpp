@@ -50,14 +50,10 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
-#if INCLUDE_JFR
-#include "jfr/jfr.hpp"
-#endif
 
 static const ZStatSubPhase ZSubPhasePauseRootsSetup("Pause Roots Setup");
 static const ZStatSubPhase ZSubPhasePauseRoots("Pause Roots");
 static const ZStatSubPhase ZSubPhasePauseRootsTeardown("Pause Roots Teardown");
-static const ZStatSubPhase ZSubPhasePauseRootsUniverse("Pause Roots Universe");
 static const ZStatSubPhase ZSubPhasePauseRootsObjectSynchronizer("Pause Roots ObjectSynchronizer");
 static const ZStatSubPhase ZSubPhasePauseRootsJVMTIWeakExport("Pause Roots JVMTIWeakExport");
 static const ZStatSubPhase ZSubPhasePauseRootsVMThread("Pause Roots VM Thread");
@@ -74,7 +70,6 @@ static const ZStatSubPhase ZSubPhasePauseWeakRootsSetup("Pause Weak Roots Setup"
 static const ZStatSubPhase ZSubPhasePauseWeakRoots("Pause Weak Roots");
 static const ZStatSubPhase ZSubPhasePauseWeakRootsTeardown("Pause Weak Roots Teardown");
 static const ZStatSubPhase ZSubPhasePauseWeakRootsJVMTIWeakExport("Pause Weak Roots JVMTIWeakExport");
-static const ZStatSubPhase ZSubPhasePauseWeakRootsJFRWeak("Pause Weak Roots JFRWeak");
 
 static const ZStatSubPhase ZSubPhaseConcurrentWeakRoots("Concurrent Weak Roots");
 static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsOopStorageSet("Concurrent Weak Roots OopStorageSet");
@@ -189,7 +184,6 @@ void ZJavaThreadsIterator::threads_do(ThreadClosure* cl) {
 ZRootsIterator::ZRootsIterator(bool visit_jvmti_weak_export) :
     _visit_jvmti_weak_export(visit_jvmti_weak_export),
     _java_threads_iter(),
-    _universe(this),
     _object_synchronizer(this),
     _jvmti_weak_export(this),
     _vm_thread(this),
@@ -215,11 +209,6 @@ ZRootsIterator::~ZRootsIterator() {
   }
 
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
-}
-
-void ZRootsIterator::do_universe(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseRootsUniverse);
-  Universe::oops_do(cl);
 }
 
 void ZRootsIterator::do_object_synchronizer(ZRootsIteratorClosure* cl) {
@@ -252,7 +241,6 @@ void ZRootsIterator::do_code_cache(ZRootsIteratorClosure* cl) {
 
 void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRoots);
-  _universe.oops_do(cl);
   _object_synchronizer.oops_do(cl);
   _vm_thread.oops_do(cl);
   _java_threads.oops_do(cl);
@@ -295,8 +283,7 @@ void ZConcurrentRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
 }
 
 ZWeakRootsIterator::ZWeakRootsIterator() :
-    _jvmti_weak_export(this),
-    _jfr_weak(this) {
+    _jvmti_weak_export(this) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   ZStatTimer timer(ZSubPhasePauseWeakRootsSetup);
 }
@@ -310,17 +297,9 @@ void ZWeakRootsIterator::do_jvmti_weak_export(BoolObjectClosure* is_alive, ZRoot
   JvmtiExport::weak_oops_do(is_alive, cl);
 }
 
-void ZWeakRootsIterator::do_jfr_weak(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl) {
-#if INCLUDE_JFR
-  ZStatTimer timer(ZSubPhasePauseWeakRootsJFRWeak);
-  Jfr::weak_oops_do(is_alive, cl);
-#endif
-}
-
 void ZWeakRootsIterator::weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseWeakRoots);
   _jvmti_weak_export.weak_oops_do(is_alive, cl);
-  _jfr_weak.weak_oops_do(is_alive, cl);
 }
 
 void ZWeakRootsIterator::oops_do(ZRootsIteratorClosure* cl) {

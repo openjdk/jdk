@@ -45,7 +45,7 @@ import jtreg.SkippedException;
  * @summary Test clhsdb pmap command on a core file
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm ClhsdbPmap true
+ * @run main/othervm/timeout=240 ClhsdbPmap true
  */
 
 public class ClhsdbPmap {

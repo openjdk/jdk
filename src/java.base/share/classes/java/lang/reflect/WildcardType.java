@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package java.lang.reflect;
  * WildcardType represents a wildcard type expression, such as
  * {@code ?}, {@code ? extends Number}, or {@code ? super Integer}.
  *
+ * @jls 4.5.1 Type Arguments of Parameterized Types
  * @since 1.5
  */
 public interface WildcardType extends Type {
@@ -44,6 +45,10 @@ public interface WildcardType extends Type {
      *  for the details of the creation process for parameterized types).
      *  <li>Otherwise, B is resolved.
      * </ul>
+     *
+     * @apiNote While to date a wildcard may have at most one upper
+     * bound, callers of this method should be written to accommodate
+     * multiple bounds.
      *
      * @return an array of Types representing the upper bound(s) of this
      *     type variable
@@ -69,6 +74,10 @@ public interface WildcardType extends Type {
      *   <li>Otherwise, B is resolved.
      * </ul>
      *
+     * @apiNote While to date a wildcard may have at most one lower
+     * bound, callers of this method should be written to accommodate
+     * multiple bounds.
+     *
      * @return an array of Types representing the lower bound(s) of this
      *     type variable
      * @throws TypeNotPresentException if any of the
@@ -78,6 +87,4 @@ public interface WildcardType extends Type {
      *     for any reason
      */
     Type[] getLowerBounds();
-    // one or many? Up to language spec; currently only one, but this API
-    // allows for generalization.
 }

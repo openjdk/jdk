@@ -67,6 +67,7 @@ typedef struct map_info {
    off_t            offset;   // file offset of this mapping
    uintptr_t        vaddr;    // starting virtual address
    size_t           memsz;    // size of the mapping
+   uint32_t         flags;    // acces flags
    struct map_info* next;
 } map_info;
 

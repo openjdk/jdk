@@ -174,7 +174,6 @@ public class ClhsdbCDSCore {
     }
 
     private static void cleanup() {
-        if (coreFileName != null) remove(coreFileName);
         remove(SHARED_ARCHIVE_NAME);
     }
 

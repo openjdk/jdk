@@ -670,7 +670,10 @@ final class ProxyGenerator extends ClassWriter {
         private void generateMethod(ClassWriter cw, String className) {
             MethodType mt = MethodType.methodType(returnType, parameterTypes);
             String desc = mt.toMethodDescriptorString();
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_FINAL,
+            int accessFlags = ACC_PUBLIC | ACC_FINAL;
+            if (method.isVarArgs()) accessFlags |= ACC_VARARGS;
+
+            MethodVisitor mv = cw.visitMethod(accessFlags,
                     method.getName(), desc, null,
                     typeNames(Arrays.asList(exceptionTypes)));
 

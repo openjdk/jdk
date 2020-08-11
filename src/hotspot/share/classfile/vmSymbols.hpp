@@ -1044,11 +1044,15 @@
    do_intrinsic(_counterMode_AESCrypt, com_sun_crypto_provider_counterMode, crypt_name, byteArray_int_int_byteArray_int_signature, F_R)   \
    do_name(     crypt_name,                                 "implCrypt")                                                    \
                                                                                                                         \
+  /* support for sun.security.provider.MD5 */                                                                           \
+  do_class(sun_security_provider_md5,                              "sun/security/provider/MD5")                         \
+  do_intrinsic(_md5_implCompress, sun_security_provider_md5, implCompress_name, implCompress_signature, F_R)            \
+   do_name(     implCompress_name,                                 "implCompress0")                                     \
+   do_signature(implCompress_signature,                            "([BI)V")                                            \
+                                                                                                                        \
   /* support for sun.security.provider.SHA */                                                                           \
   do_class(sun_security_provider_sha,                              "sun/security/provider/SHA")                         \
   do_intrinsic(_sha_implCompress, sun_security_provider_sha, implCompress_name, implCompress_signature, F_R)            \
-   do_name(     implCompress_name,                                 "implCompress0")                                     \
-   do_signature(implCompress_signature,                            "([BI)V")                                            \
                                                                                                                         \
   /* support for sun.security.provider.SHA2 */                                                                          \
   do_class(sun_security_provider_sha2,                             "sun/security/provider/SHA2")                        \

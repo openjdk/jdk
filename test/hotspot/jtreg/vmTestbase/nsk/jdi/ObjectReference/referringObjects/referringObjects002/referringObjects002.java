@@ -53,7 +53,6 @@
  * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ObjectReference.referringObjects.referringObjects002.referringObjects002
  *        nsk.jdi.ObjectReference.referringObjects.referringObjects002.referringObjects002a
  *        nsk.share.jdi.TestClass1
