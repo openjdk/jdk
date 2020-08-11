@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,11 @@ public class DefaultFocusTraversalPolicy
      * serialVersionUID
      */
     private static final long serialVersionUID = 8876966522510157497L;
+
+    /**
+     * Constructs a {@code DefaultFocusTraversalPolicy}.
+     */
+    public DefaultFocusTraversalPolicy() {}
 
     /**
      * Determines whether a Component is an acceptable choice as the new

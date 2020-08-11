@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,11 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
      */
     private transient Container cachedRoot;
     private transient List<Component> cachedCycle;
+
+    /**
+     * Constructs a {@code ContainerOrderFocusTraversalPolicy}.
+     */
+    public ContainerOrderFocusTraversalPolicy() {}
 
     /*
      * We suppose to use getFocusTraversalCycle & getComponentIndex methods in order

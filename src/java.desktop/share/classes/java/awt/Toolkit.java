@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,11 @@ import sun.awt.SunToolkit;
  * @since       1.0
  */
 public abstract class Toolkit {
+
+    /**
+     * Constructs a {@code Toolkit}.
+     */
+    protected Toolkit() {}
 
     // The following method is called by the private method
     // <code>updateSystemColors</code> in <code>SystemColor</code>.
