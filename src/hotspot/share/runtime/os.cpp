@@ -148,19 +148,23 @@ char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
   // No offset when dealing with UTC
   time_t UTC_to_local = 0;
   if (!utc) {
-#if defined(_WINDOWS)
+#if defined(_ALLBSD_SOURCE) || defined(_GNU_SOURCE)
+    UTC_to_local = -(time_struct.tm_gmtoff);
+#elif defined(_WINDOWS)
     long zone;
     _get_timezone(&zone);
     UTC_to_local = static_cast<time_t>(zone);
+#else
+    UTC_to_local = timezone;
+#endif
 
+    // tm_gmtoff already includes adjustment for daylight saving
+#if !defined(_ALLBSD_SOURCE) && !defined(_GNU_SOURCE)
     // If daylight savings time is in effect,
     // we are 1 hour East of our time zone
     if (time_struct.tm_isdst > 0) {
       UTC_to_local = UTC_to_local - seconds_per_hour;
     }
-#else
-    // tm_gmtoff already includes adjustment for daylight saving
-    UTC_to_local = -(time_struct.tm_gmtoff);
 #endif
   }
 
