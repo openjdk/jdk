@@ -456,10 +456,10 @@ else
     HARFBUZZ_CFLAGS += -DHAVE_CORETEXT
   endif
   ifeq ($(call isTargetOs, macosx), false)
-    LIBHARFBUZZ_EXCLUDE_FILES += harfbuzz/hb-coretext.cc
+    LIBHARFBUZZ_EXCLUDE_FILES += libharfbuzz/hb-coretext.cc
   endif
   # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
-  LIBHARFBUZZ_EXCLUDE_FILES += harfbuzz/hb-ft.cc
+  LIBHARFBUZZ_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 
   LIBHARFBUZZ_CFLAGS += $(HARFBUZZ_CFLAGS)
 
