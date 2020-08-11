@@ -200,19 +200,19 @@ JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location)
   assert(_method != NULL, "No method for breakpoint.");
   assert(_bci >= 0, "Negative bci for breakpoint.");
   oop class_holder_oop  = _method->method_holder()->klass_holder();
-  _class_holder = OopHandle(Universe::vm_global(), class_holder_oop);
+  _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), class_holder_oop);
 }
 
 JvmtiBreakpoint::~JvmtiBreakpoint() {
   if (_class_holder.peek() != NULL) {
-    _class_holder.release(Universe::vm_global());
+    _class_holder.release(JvmtiExport::jvmti_oop_storage());
   }
 }
 
 void JvmtiBreakpoint::copy(JvmtiBreakpoint& bp) {
   _method   = bp._method;
   _bci      = bp._bci;
-  _class_holder = OopHandle(Universe::vm_global(), bp._class_holder.resolve());
+  _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), bp._class_holder.resolve());
 }
 
 bool JvmtiBreakpoint::equals(JvmtiBreakpoint& bp) {

@@ -95,6 +95,8 @@ public class TestG1ParallelPhases {
             "VM Global",
             "JNI Global",
             "Thread OopStorage",
+            "ThreadService OopStorage",
+            "JVMTI OopStorage",
             "CLDGRoots",
             "CMRefRoots",
             "MergeER",
