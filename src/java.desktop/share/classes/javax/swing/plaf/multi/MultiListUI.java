@@ -52,6 +52,11 @@ public class MultiListUI extends ListUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiListUI}.
+     */
+    public MultiListUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

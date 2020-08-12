@@ -49,6 +49,11 @@ public class MultiColorChooserUI extends ColorChooserUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiColorChooserUI}.
+     */
+    public MultiColorChooserUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

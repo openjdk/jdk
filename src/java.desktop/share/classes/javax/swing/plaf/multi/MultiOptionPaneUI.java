@@ -50,6 +50,11 @@ public class MultiOptionPaneUI extends OptionPaneUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiOptionPaneUI}.
+     */
+    public MultiOptionPaneUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

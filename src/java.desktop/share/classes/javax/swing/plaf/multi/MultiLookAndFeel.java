@@ -59,6 +59,11 @@ import javax.swing.plaf.*;
 @SuppressWarnings("serial") // Same-version serialization only
 public class MultiLookAndFeel extends LookAndFeel {
 
+    /**
+     * Constructs a {@code MultiLookAndFeel}.
+     */
+    public MultiLookAndFeel() {}
+
 //////////////////////////////
 // LookAndFeel methods
 //////////////////////////////

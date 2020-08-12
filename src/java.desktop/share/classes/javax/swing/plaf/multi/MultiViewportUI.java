@@ -49,6 +49,11 @@ public class MultiViewportUI extends ViewportUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiViewportUI}.
+     */
+    public MultiViewportUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

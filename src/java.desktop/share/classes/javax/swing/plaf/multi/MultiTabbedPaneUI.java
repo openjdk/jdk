@@ -51,6 +51,11 @@ public class MultiTabbedPaneUI extends TabbedPaneUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiTabbedPaneUI}.
+     */
+    public MultiTabbedPaneUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

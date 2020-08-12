@@ -49,6 +49,11 @@ public class MultiLabelUI extends LabelUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiLabelUI}.
+     */
+    public MultiLabelUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////
