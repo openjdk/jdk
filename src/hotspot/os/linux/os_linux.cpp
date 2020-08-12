@@ -3716,6 +3716,10 @@ bool os::pd_release_memory(char* addr, size_t size) {
   return anon_munmap(addr, size);
 }
 
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+extern char* g_assert_poison; // assertion poison page address
+#endif
+
 static bool linux_mprotect(char* addr, size_t size, int prot) {
   // Linux wants the mprotect address argument to be page aligned.
   char* bottom = (char*)align_down((intptr_t)addr, os::Linux::page_size());
@@ -3728,6 +3732,11 @@ static bool linux_mprotect(char* addr, size_t size, int prot) {
   assert(addr == bottom, "sanity check");
 
   size = align_up(pointer_delta(addr, bottom, 1) + size, os::Linux::page_size());
+  // Don't log anything if we're executing in the poison page signal handling
+  // context. It can lead to reentrant use of other parts of the VM code.
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (addr != g_assert_poison)
+#endif
   Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
   return ::mprotect(bottom, size, prot) == 0;
 }
