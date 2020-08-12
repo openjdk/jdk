@@ -111,6 +111,13 @@ class ProviderTest implements Callable<Boolean> {
             env.put(Context.PROVIDER_URL, url);
         }
 
+        // Set JNDI LDAP connect timeout property. It helps to prevent
+        // initial bind operation from blocking in case of a local process
+        // listening on the port specified in the URL. With the property set,
+        // the bind operation will fail with timeout exception, and then it
+        // could be retried with another port number.
+        env.put("com.sun.jndi.ldap.connect.timeout", "1000");
+
         try {
             ctx = new InitialDirContext(env);
             SearchControls scl = new SearchControls();
@@ -119,8 +126,13 @@ class ProviderTest implements Callable<Boolean> {
                     "ou=People,o=Test", "(objectClass=*)", scl);
             throw new RuntimeException("Search should not complete");
         } catch (NamingException e) {
-            e.printStackTrace();
             passed = e.toString().contains(expected);
+            System.err.println((passed ? "Expected" : "Unexpected") +
+                    " NamingException observed: " + e.toString());
+            // Print stack trace only for unexpected exceptions
+            if (!passed) {
+                e.printStackTrace();
+            }
         } finally {
             shutItDown(ctx);
         }
@@ -243,7 +255,8 @@ public class LdapDnsProviderTest {
             // Construct text expected to be present in Exception message
             String expected = "localhost:" + port;
 
-            System.err.printf("Iteration %d: Testing: %s, %s%n", attempt, url, expected);
+            System.err.printf("Iteration %d: Testing: url='%s', expected content='%s'%n",
+                    attempt, url, expected);
 
             FutureTask<Boolean> future = new FutureTask<>(
                     new ProviderTest(url, expected));
@@ -278,7 +291,7 @@ public class LdapDnsProviderTest {
                     new ProviderTest(url, expected));
         new Thread(future).start();
 
-        System.err.println("Testing: " + url + ", " + expected);
+        System.err.printf("Testing: url='%s', expected content='%s'%n", url, expected);
         while (!future.isDone()) {
             try {
                 if (!future.get()) {
