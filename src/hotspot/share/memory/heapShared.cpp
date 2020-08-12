@@ -136,17 +136,23 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
     return NULL;
   }
 
-  // Pre-compute object identity hash at CDS dump time.
-  obj->identity_hash();
-
   oop archived_oop = (oop)G1CollectedHeap::heap()->archive_mem_allocate(len);
   if (archived_oop != NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(archived_oop), len);
     MetaspaceShared::relocate_klass_ptr(archived_oop);
-    // Clear age -- it might have been set if a GC happened during -Xshare:dump
-    markWord mark = archived_oop->mark_raw();
-    mark = mark.set_age(0);
-    archived_oop->set_mark_raw(mark);
+    // Reinitialize markword to remove age/marking/locking/etc.
+    //
+    // We need to retain the identity_hash, because it may have been used by some hashtables
+    // in the shared heap. This also has the side effect of pre-initializing the
+    // identity_hash for all shared objects, so they are less likely to be written
+    // into during run time, increasing the potential of memory sharing.
+    int hash_original = obj->identity_hash();
+    archived_oop->set_mark_raw(markWord::prototype().copy_set_hash(hash_original));
+    assert(archived_oop->mark().is_unlocked(), "sanity");
+
+    DEBUG_ONLY(int hash_archived = archived_oop->identity_hash());
+    assert(hash_original == hash_archived, "Different hash codes: original %x, archived %x", hash_original, hash_archived);
+
     ArchivedObjectCache* cache = archived_object_cache();
     cache->put(obj, archived_oop);
     log_debug(cds, heap)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT,
