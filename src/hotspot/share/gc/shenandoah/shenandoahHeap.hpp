@@ -198,6 +198,8 @@ public:
   WorkGang* get_safepoint_workers();
 
   void gc_threads_do(ThreadClosure* tcl) const;
+  // Runs the given AbstractGangTask with the current active workers.
+  virtual void run_task(AbstractGangTask* task);
 
 // ---------- Heap regions handling machinery
 //
