@@ -29,7 +29,6 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
-#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/ageTable.hpp"
@@ -159,6 +158,21 @@ public:
 private:
   inline void do_partial_array(PartialArrayScanTask task);
 
+  HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
+                               oop old,
+                               size_t word_sz,
+                               uint age,
+                               uint node_index);
+
+  void undo_allocation(G1HeapRegionAttr dest_addr,
+                       HeapWord* obj_ptr,
+                       size_t word_sz,
+                       uint node_index);
+
+  inline oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
+                                       oop obj,
+                                       markWord old_mark);
+
   // This method is applied to the fields of the objects that have just been copied.
   template <class T> inline void do_oop_evac(T* p);
 
@@ -181,26 +195,24 @@ private:
                               oop const old, size_t word_sz, uint age,
                               HeapWord * const obj_ptr, uint node_index) const;
 
-  inline bool needs_partial_trimming() const;
-  inline bool is_partially_trimmed() const;
+  void trim_queue_to_threshold(uint threshold);
 
-  inline void trim_queue_to_threshold(uint threshold);
+  inline bool needs_partial_trimming() const;
 
   // NUMA statistics related methods.
-  inline void initialize_numa_stats();
-  inline void flush_numa_stats();
+  void initialize_numa_stats();
+  void flush_numa_stats();
   inline void update_numa_stats(uint node_index);
 
 public:
-  oop copy_to_survivor_space(G1HeapRegionAttr const region_attr, oop const obj, markWord const old_mark);
+  oop copy_to_survivor_space(G1HeapRegionAttr region_attr, oop obj, markWord old_mark);
 
-  void trim_queue();
-  void trim_queue_partially();
+  inline void trim_queue();
+  inline void trim_queue_partially();
+  void steal_and_trim_queue(G1ScannerTasksQueueSet *task_queues);
 
   Tickspan trim_ticks() const;
   void reset_trim_ticks();
-
-  inline void steal_and_trim_queue(G1ScannerTasksQueueSet *task_queues);
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
   oop handle_evacuation_failure_par(oop obj, markWord m);
