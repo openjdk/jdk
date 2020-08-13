@@ -528,7 +528,8 @@ void Parse::do_lookupswitch() {
     for (int j = 0; j < len; j++) {
       table[3*j+0] = iter().get_int_table(2+2*j);
       table[3*j+1] = iter().get_dest_table(2+2*j+1);
-      table[3*j+2] = profile == NULL ? 1 : profile->count_at(j);
+      // Handle overflow when converting from uint to jint
+      table[3*j+2] = (profile == NULL) ? 1 : MIN2<uint>(max_jint, profile->count_at(j));
     }
     qsort(table, len, 3*sizeof(table[0]), jint_cmp);
   }
