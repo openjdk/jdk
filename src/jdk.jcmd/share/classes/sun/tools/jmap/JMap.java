@@ -216,6 +216,11 @@ public class JMap {
                 liveopt = "-live";
             } else if (subopt.startsWith("file=")) {
                 filename = parseFileName(subopt);
+            } else if (subopt.equals("format=b")) {
+                // ignore format (not needed at this time)
+            } else {
+                System.err.println("Fail: invalid option: '" + subopt + "'");
+                usage(1);
             }
         }
 
