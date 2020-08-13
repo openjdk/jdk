@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.io.IOException;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class MultiReleaseJars {
@@ -90,7 +91,7 @@ public class MultiReleaseJars {
      * META-INF/versions/<major-version>/version/Version.class
      */
     static void createClassFilesAndJar() throws Exception {
-        String tempDir = System.getProperty("test.classes");
+        String tempDir = CDSTestUtils.getOutputDir();
         File baseDir = new File(tempDir + File.separator + "base");
         File vDir    = new File(tempDir + File.separator + MAJOR_VERSION_STRING);
 

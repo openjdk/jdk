@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4057701 6286712 6364377
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "windows")
  * @run build GetXSpace
  * @run shell GetXSpace.sh
  * @summary Basic functionality of File.get-X-Space methods.
@@ -35,6 +36,8 @@ import java.io.File;
 import java.io.FilePermission;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.FileStore;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
@@ -47,9 +50,12 @@ public class GetXSpace {
     private static SecurityManager [] sma = { null, new Allow(), new DenyFSA(),
                                               new DenyRead() };
 
-    private static final String osName = System.getProperty("os.name");
+    private static final String OS_NAME = System.getProperty("os.name");
+    private static final boolean IS_MAC = OS_NAME.startsWith("Mac");
+    private static final boolean IS_WIN = OS_NAME.startsWith("Windows");
+
     // FileSystem Total Used Available Use% MountedOn
-    private static final Pattern dfPattern = Pattern.compile("([^\\s]+)\\s+(\\d+)\\s+\\d+\\s+(\\d+)\\s+\\d+%\\s+([^\\s].*)\n");
+    private static final Pattern DF_PATTERN = Pattern.compile("([^\\s]+)\\s+(\\d+)\\s+\\d+\\s+(\\d+)\\s+\\d+%\\s+([^\\s].*)\n");
 
     private static int fail = 0;
     private static int pass = 0;
@@ -129,7 +135,7 @@ public class GetXSpace {
         }
         out.println(sb);
 
-        Matcher m = dfPattern.matcher(sb);
+        Matcher m = DF_PATTERN.matcher(sb);
         int j = 0;
         while (j < sb.length()) {
             if (m.find(j)) {
@@ -138,7 +144,7 @@ public class GetXSpace {
                     String name = f;
                     if (name == null) {
                         // cygwin's df lists windows path as FileSystem (1st group)
-                        name = osName.startsWith("Windows") ? m.group(1) : m.group(4);
+                        name = IS_WIN ? m.group(1) : m.group(4);
                     }
                     al.add(new Space(m.group(2), m.group(3), name));;
                 }
@@ -201,13 +207,31 @@ public class GetXSpace {
 
         // if the file system can dynamically change size, this check will fail
         if (ts != s.total()) {
-            fail(s.name(), s.total(), "!=", ts);
+            long blockSize = 1;
+            long numBlocks = 0;
+            try {
+                FileStore fileStore = Files.getFileStore(f.toPath());
+                blockSize = fileStore.getBlockSize();
+                numBlocks = fileStore.getTotalSpace()/blockSize;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+
+            // On macOS, the number of 1024 byte blocks might be incorrectly
+            // calculated by 'df' using integer division by 2 of the number of
+            // 512 byte blocks, resulting in a size smaller than the actual
+            // value when the number of blocks is odd.
+            if (!IS_MAC || blockSize != 512 || numBlocks % 2 == 0
+                || ts - s.total() != 512) {
+                fail(s.name(), s.total(), "!=", ts);
+            }
         } else {
             pass();
         }
 
         // unix df returns statvfs.f_bavail
-        long tsp = (!osName.startsWith("Windows") ? us : fs);
+        long tsp = (!IS_WIN ? us : fs);
         if (!s.woomFree(tsp)) {
             fail(s.name(), s.free(), "??", tsp);
         } else {

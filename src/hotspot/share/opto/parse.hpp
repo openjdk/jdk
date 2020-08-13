@@ -48,12 +48,7 @@ class InlineTree : public ResourceObj {
   ciMethod*   _method;            // method being called by the caller_jvms
   InlineTree* _caller_tree;
   uint        _count_inline_bcs;  // Accumulated count of inlined bytecodes
-  // Call-site count / interpreter invocation count, scaled recursively.
-  // Always between 0.0 and 1.0.  Represents the percentage of the method's
-  // total execution time used at this call site.
-  const float _site_invoke_ratio;
   const int   _max_inline_level;  // the maximum inline level for this sub-tree (may be adjusted)
-  float compute_callee_frequency( int caller_bci ) const;
 
   GrowableArray<InlineTree*> _subtrees;
 
@@ -67,7 +62,6 @@ protected:
              ciMethod* callee_method,
              JVMState* caller_jvms,
              int caller_bci,
-             float site_invoke_ratio,
              int max_inline_level);
   InlineTree *build_inline_tree_for_callee(ciMethod* callee_method,
                                            JVMState* caller_jvms,
@@ -125,7 +119,6 @@ public:
   ciMethod   *method()            const { return _method; }
   int         caller_bci()        const { return _caller_jvms ? _caller_jvms->bci() : InvocationEntryBci; }
   uint        count_inline_bcs()  const { return _count_inline_bcs; }
-  float       site_invoke_ratio() const { return _site_invoke_ratio; };
 
 #ifndef PRODUCT
 private:

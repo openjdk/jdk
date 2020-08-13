@@ -1433,3 +1433,99 @@ const Type* FmaFNode::Value(PhaseGVN* phase) const {
 uint MulAddS2INode::hash() const {
   return (uintptr_t)in(1) + (uintptr_t)in(2) + (uintptr_t)in(3) + (uintptr_t)in(4) + Opcode();
 }
+
+//------------------------------Rotate Operations ------------------------------
+
+const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  // Either input is TOP ==> the result is TOP
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  if (t1->isa_int()) {
+    const TypeInt* r1 = t1->is_int();
+    const TypeInt* r2 = t2->is_int();
+
+    // Left input is ZERO ==> the result is ZERO.
+    if (r1 == TypeInt::ZERO) {
+      return TypeInt::ZERO;
+    }
+    // Shift by zero does nothing
+    if (r2 == TypeInt::ZERO) {
+      return r1;
+    }
+
+    if (r1->is_con() && r2->is_con()) {
+      int shift = r2->get_con() & (BitsPerJavaInteger - 1); // semantics of Java shifts
+      return TypeInt::make((r1->get_con() << shift) | (r1->get_con() >> (32 - shift)));
+    }
+    return TypeInt::INT;
+  } else {
+    assert(t1->isa_long(), "Type must be a long");
+    const TypeLong* r1 = t1->is_long();
+    const TypeInt*  r2 = t2->is_int();
+
+    // Left input is ZERO ==> the result is ZERO.
+    if (r1 == TypeLong::ZERO) {
+      return TypeLong::ZERO;
+    }
+    // Shift by zero does nothing
+    if (r2 == TypeInt::ZERO) {
+      return r1;
+    }
+
+    if (r1->is_con() && r2->is_con()) {
+      int shift = r2->get_con() & (BitsPerJavaLong - 1); // semantics of Java shifts
+      return TypeLong::make((r1->get_con() << shift) | (r1->get_con() >> (64 - shift)));
+    }
+    return TypeLong::LONG;
+  }
+}
+
+const Type* RotateRightNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  // Either input is TOP ==> the result is TOP
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  if (t1->isa_int()) {
+    const TypeInt* r1 = t1->is_int();
+    const TypeInt* r2 = t2->is_int();
+
+    // Left input is ZERO ==> the result is ZERO.
+    if (r1 == TypeInt::ZERO) {
+      return TypeInt::ZERO;
+    }
+    // Shift by zero does nothing
+    if (r2 == TypeInt::ZERO) {
+      return r1;
+    }
+    if (r1->is_con() && r2->is_con()) {
+      int shift = r2->get_con() & (BitsPerJavaInteger - 1); // semantics of Java shifts
+      return TypeInt::make((r1->get_con() >> shift) | (r1->get_con() << (32 - shift)));
+    }
+    return TypeInt::INT;
+
+  } else {
+    assert(t1->isa_long(), "Type must be a long");
+    const TypeLong* r1 = t1->is_long();
+    const TypeInt*  r2 = t2->is_int();
+    // Left input is ZERO ==> the result is ZERO.
+    if (r1 == TypeLong::ZERO) {
+      return TypeLong::ZERO;
+    }
+    // Shift by zero does nothing
+    if (r2 == TypeInt::ZERO) {
+      return r1;
+    }
+    if (r1->is_con() && r2->is_con()) {
+      int shift = r2->get_con() & (BitsPerJavaLong - 1); // semantics of Java shifts
+      return TypeLong::make((r1->get_con() >> shift) | (r1->get_con() << (64 - shift)));
+    }
+    return TypeLong::LONG;
+  }
+}

@@ -47,6 +47,8 @@ class JvmtiManageCapabilities;
 class JvmtiEnv;
 class JvmtiThreadState;
 
+class OopStorage;
+
 #define JVMTI_SUPPORT_FLAG(key)                                           \
   private:                                                                \
   static bool  _##key;                                                    \
@@ -162,6 +164,9 @@ class JvmtiExport : public AllStatic {
   static void post_dynamic_code_generated_internal(const char *name, const void *code_begin, const void *code_end) NOT_JVMTI_RETURN;
 
   static void post_class_unload_internal(const char *name) NOT_JVMTI_RETURN;
+
+  static void initialize_oop_storage() NOT_JVMTI_RETURN;
+  static OopStorage* jvmti_oop_storage();
  private:
 
   // GenerateEvents support to allow posting of CompiledMethodLoad and

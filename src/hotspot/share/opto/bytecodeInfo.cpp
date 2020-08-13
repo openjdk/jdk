@@ -42,13 +42,12 @@
 InlineTree::InlineTree(Compile* c,
                        const InlineTree *caller_tree, ciMethod* callee,
                        JVMState* caller_jvms, int caller_bci,
-                       float site_invoke_ratio, int max_inline_level) :
+                       int max_inline_level) :
   C(c),
   _caller_jvms(caller_jvms),
   _method(callee),
   _caller_tree((InlineTree*) caller_tree),
   _count_inline_bcs(method()->code_size_for_inlining()),
-  _site_invoke_ratio(site_invoke_ratio),
   _max_inline_level(max_inline_level),
   _subtrees(c->comp_arena(), 2, 0, NULL),
   _msg(NULL)
@@ -646,21 +645,8 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
   return NULL;
 }
 
-//------------------------------compute_callee_frequency-----------------------
-float InlineTree::compute_callee_frequency( int caller_bci ) const {
-  int count  = method()->interpreter_call_site_count(caller_bci);
-  int invcnt = method()->interpreter_invocation_count();
-  float freq = (float)count/(float)invcnt;
-  // Call-site count / interpreter invocation count, scaled recursively.
-  // Always between 0.0 and 1.0.  Represents the percentage of the method's
-  // total execution time used at this call site.
-
-  return freq;
-}
-
 //------------------------------build_inline_tree_for_callee-------------------
 InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, JVMState* caller_jvms, int caller_bci) {
-  float recur_frequency = _site_invoke_ratio * compute_callee_frequency(caller_bci);
   // Attempt inlining.
   InlineTree* old_ilt = callee_at(caller_bci, callee_method);
   if (old_ilt != NULL) {
@@ -685,7 +671,7 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
     }
   }
   // Allocate in the comp_arena to make sure the InlineTree is live when dumping a replay compilation file
-  InlineTree* ilt = new (C->comp_arena()) InlineTree(C, this, callee_method, caller_jvms, caller_bci, recur_frequency, _max_inline_level + max_inline_level_adjust);
+  InlineTree* ilt = new (C->comp_arena()) InlineTree(C, this, callee_method, caller_jvms, caller_bci, _max_inline_level + max_inline_level_adjust);
   _subtrees.append(ilt);
 
   NOT_PRODUCT( _count_inlines += 1; )
@@ -711,7 +697,7 @@ InlineTree *InlineTree::build_inline_tree_root() {
   Compile* C = Compile::current();
 
   // Root of inline tree
-  InlineTree* ilt = new InlineTree(C, NULL, C->method(), NULL, -1, 1.0F, MaxInlineLevel);
+  InlineTree* ilt = new InlineTree(C, NULL, C->method(), NULL, -1, MaxInlineLevel);
 
   return ilt;
 }

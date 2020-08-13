@@ -105,17 +105,6 @@ public:
   virtual bool is_thread_safe() { return false; }
 };
 
-#ifdef ASSERT
-class ShenandoahAssertToSpaceClosure : public OopClosure {
-private:
-  template <class T>
-  void do_oop_work(T* p);
-public:
-  void do_oop(narrowOop* p);
-  void do_oop(oop* p);
-};
-#endif
-
 typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
 

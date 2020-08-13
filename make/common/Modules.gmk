@@ -346,7 +346,7 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	                          sub(/\/\*.*\*\//, ""); \
 	                          gsub(/^ +\*.*/, ""); \
 	                          gsub(/ /, ""); \
-                                  gsub(/\r/, ""); \
+	                          gsub(/\r/, ""); \
 	                          printf(" %s", $$0) } \
 	          END           { printf("\n") }' $m && \
 	      $(PRINTF) "TRANSITIVE_MODULES_$(call GetModuleNameFromModuleInfo, $m) :=" && \
@@ -360,7 +360,7 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	                          sub(/\/\*.*\*\//, ""); \
 	                          gsub(/^ +\*.*/, ""); \
 	                          gsub(/ /, ""); \
-                                  gsub(/\r/, ""); \
+	                          gsub(/\r/, ""); \
 	                          printf(" %s", $$0) } \
 	          END           { printf("\n") }' $m \
 	    ) >> $@ $(NEWLINE))

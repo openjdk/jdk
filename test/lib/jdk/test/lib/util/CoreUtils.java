@@ -135,6 +135,14 @@ public class CoreUtils {
             if (!coresDir.canWrite()) {
                 throw new SkippedException("Directory \"" + coresDir + "\" is not writable");
             }
+            if (Platform.isSignedOSX()) {
+                if (Platform.getOsVersionMajor() > 10 ||
+                    (Platform.getOsVersionMajor() == 10 && Platform.getOsVersionMinor() >= 15))
+                {
+                    // We can't generate cores files with signed binaries on OSX 10.15 and later.
+                    throw new SkippedException("Cannot produce core file with signed binary on OSX 10.15 and later");
+                }
+            }
         } else if (Platform.isLinux()) {
             // Check if a crash report tool is installed.
             File corePatternFile = new File(CORE_PATTERN_FILE_NAME);

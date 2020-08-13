@@ -751,34 +751,34 @@ private:
   static int _used_cisc_instructions, _unused_cisc_instructions;
   static int _allocator_attempts, _allocator_successes;
 
+#ifdef ASSERT
+  // Verify that base pointers and derived pointers are still sane
+  void verify_base_ptrs(ResourceArea* a) const;
+  void verify(ResourceArea* a, bool verify_ifg = false) const;
+#endif // ASSERT
+
 #ifndef PRODUCT
   static uint _high_pressure, _low_pressure;
 
   void dump() const;
-  void dump( const Node *n ) const;
-  void dump( const Block * b ) const;
+  void dump(const Node* n) const;
+  void dump(const Block* b) const;
   void dump_degree_lists() const;
   void dump_simplified() const;
-  void dump_lrg( uint lidx, bool defs_only) const;
-  void dump_lrg( uint lidx) const {
+  void dump_lrg(uint lidx, bool defs_only) const;
+  void dump_lrg(uint lidx) const {
     // dump defs and uses by default
     dump_lrg(lidx, false);
   }
-  void dump_bb( uint pre_order ) const;
-
-  // Verify that base pointers and derived pointers are still sane
-  void verify_base_ptrs( ResourceArea *a ) const;
-
-  void verify( ResourceArea *a, bool verify_ifg = false ) const;
-
+  void dump_bb(uint pre_order) const;
   void dump_for_spill_split_recycle() const;
 
 public:
   void dump_frame() const;
-  char *dump_register( const Node *n, char *buf  ) const;
+  char *dump_register(const Node* n, char* buf) const;
 private:
   static void print_chaitin_statistics();
-#endif
+#endif // not PRODUCT
   friend class PhaseCoalesce;
   friend class PhaseAggressiveCoalesce;
   friend class PhaseConservativeCoalesce;

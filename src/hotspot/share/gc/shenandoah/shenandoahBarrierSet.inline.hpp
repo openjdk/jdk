@@ -77,6 +77,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
 }
 
 inline void ShenandoahBarrierSet::enqueue(oop obj) {
+  assert(obj != NULL, "checked by caller");
   assert(_satb_mark_queue_set.is_active(), "only get here when SATB active");
 
   // Filter marked objects before hitting the SATB queues. The same predicate would
@@ -116,6 +117,7 @@ inline void ShenandoahBarrierSet::storeval_barrier(oop obj) {
 
 inline void ShenandoahBarrierSet::keep_alive_if_weak(DecoratorSet decorators, oop value) {
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
+  assert(value != NULL, "checked by caller");
   const bool on_strong_oop_ref = (decorators & ON_STRONG_OOP_REF) != 0;
   const bool peek              = (decorators & AS_NO_KEEPALIVE) != 0;
   if (!peek && !on_strong_oop_ref) {
@@ -125,6 +127,7 @@ inline void ShenandoahBarrierSet::keep_alive_if_weak(DecoratorSet decorators, oo
 
 template <DecoratorSet decorators>
 inline void ShenandoahBarrierSet::keep_alive_if_weak(oop value) {
+  assert(value != NULL, "checked by caller");
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
   if (!HasDecorator<decorators, ON_STRONG_OOP_REF>::value &&
       !HasDecorator<decorators, AS_NO_KEEPALIVE>::value) {

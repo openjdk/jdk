@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,6 +240,21 @@ BitMap::get_next_zero_offset(idx_t l_offset, idx_t r_offset) const {
 inline BitMap::idx_t
 BitMap::get_next_one_offset_aligned_right(idx_t l_offset, idx_t r_offset) const {
   return get_next_bit_impl<find_ones_flip, true>(l_offset, r_offset);
+}
+
+inline bool BitMap::iterate(BitMapClosure* cl, idx_t beg, idx_t end) {
+  for (idx_t index = beg; true; ++index) {
+    index = get_next_one_offset(index, end);
+    if (index >= end) {
+      return true;
+    } else if (!cl->do_bit(index)) {
+      return false;
+    }
+  }
+}
+
+inline bool BitMap::iterate(BitMapClosure* cl) {
+  return iterate(cl, 0, size());
 }
 
 // Returns a bit mask for a range of bits [beg, end) within a single word.  Each

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,12 @@
  *
  */
 
-/*
- * @test TestCriticalControlThreadPriority
- * @summary Check that ShenandoahCriticalControlThreadPriority works
- * @bug 8217343
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:-ShenandoahCriticalControlThreadPriority -Xmx1g TestCriticalControlThreadPriority
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ShenandoahCriticalControlThreadPriority -Xmx1g TestCriticalControlThreadPriority
- */
+public class LockDuringDumpApp {
+    static String LITERAL = "@@LockDuringDump@@LITERAL"; // must be the same as in LockDuringDumpAgent
 
-public class TestCriticalControlThreadPriority {
-
-    public static void main(String[] args) throws Exception {
-        // checking the initialization before entering main()
+    public static void main(String args[]) {
+        synchronized (LITERAL) { // See comments in LockDuringDumpAgent.java
+            System.out.println("I am able to lock the literal string \"" + LITERAL + "\"");
+        }
     }
-
 }

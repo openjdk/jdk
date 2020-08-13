@@ -50,7 +50,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _allocs_seen(0) {
 
   reset_gc_id();
-  create_and_start(ShenandoahCriticalControlThreadPriority ? CriticalPriority : NearMaxPriority);
+  create_and_start();
   _periodic_task.enroll();
   _periodic_satb_flush_task.enroll();
   if (ShenandoahPacing) {

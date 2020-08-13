@@ -1790,6 +1790,42 @@ public class TreeMap<K,V>
             return m.put(key, value);
         }
 
+        public V putIfAbsent(K key, V value) {
+            if (!inRange(key))
+                throw new IllegalArgumentException("key out of range");
+            return m.putIfAbsent(key, value);
+        }
+
+        public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+            if (!inRange(key))
+                throw new IllegalArgumentException("key out of range");
+            return m.merge(key, value, remappingFunction);
+        }
+
+        public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+            if (!inRange(key)) {
+                // Do not throw if mapping function returns null
+                // to preserve compatibility with default computeIfAbsent implementation
+                if (mappingFunction.apply(key) == null) return null;
+                throw new IllegalArgumentException("key out of range");
+            }
+            return m.computeIfAbsent(key, mappingFunction);
+        }
+
+        public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            if (!inRange(key)) {
+                // Do not throw if remapping function returns null
+                // to preserve compatibility with default computeIfAbsent implementation
+                if (remappingFunction.apply(key, null) == null) return null;
+                throw new IllegalArgumentException("key out of range");
+            }
+            return m.compute(key, remappingFunction);
+        }
+
+        public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            return !inRange(key) ? null : m.computeIfPresent(key, remappingFunction);
+        }
+
         public final V get(Object key) {
             return !inRange(key) ? null :  m.get(key);
         }

@@ -1007,11 +1007,11 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* self, oop obj) {
     if (obj->mark().has_bias_pattern()) {
       // Handle for oop obj in case of STW safepoint
       Handle hobj(self, obj);
-      // Relaxing assertion for bug 6320749.
-      assert(Universe::verify_in_progress() ||
-             !SafepointSynchronize::is_at_safepoint(),
-             "biases should not be seen by VM thread here");
-      BiasedLocking::revoke(hobj, JavaThread::current());
+      if (SafepointSynchronize::is_at_safepoint()) {
+        BiasedLocking::revoke_at_safepoint(hobj);
+      } else {
+        BiasedLocking::revoke(hobj, self);
+      }
       obj = hobj();
       assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
     }

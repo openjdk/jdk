@@ -30,26 +30,42 @@ import java.io.InputStream;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.PathMatcher;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  * WinMsiBundler
@@ -416,7 +432,7 @@ public class WinMsiBundler  extends AbstractBundler {
             }
         }
 
-        // Copy l10n files.
+        // Copy standard l10n files.
         for (String loc : Arrays.asList("en", "ja", "zh_CN")) {
             String fname = "MsiInstallerStrings_" + loc + ".wxl";
             try (InputStream is = OverridableResource.readDefault(fname)) {
@@ -470,9 +486,23 @@ public class WinMsiBundler  extends AbstractBundler {
             wixPipeline.addLightOptions("-ext", "WixUIExtension");
         }
 
-        wixPipeline.addLightOptions("-loc",
-                CONFIG_ROOT.fetchFrom(params).resolve(I18N.getString(
-                        "resource.wxl-file-name")).toAbsolutePath().toString());
+        final Path primaryWxlFile = CONFIG_ROOT.fetchFrom(params).resolve(
+                I18N.getString("resource.wxl-file-name")).toAbsolutePath();
+
+        wixPipeline.addLightOptions("-loc", primaryWxlFile.toString());
+
+        List<String> cultures = new ArrayList<>();
+        for (var wxl : getCustomWxlFiles(params)) {
+            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().toString());
+            cultures.add(getCultureFromWxlFile(wxl));
+        }
+        cultures.add(getCultureFromWxlFile(primaryWxlFile));
+
+        // Build ordered list of unique cultures.
+        Set<String> uniqueCultures = new LinkedHashSet<>();
+        uniqueCultures.addAll(cultures);
+        wixPipeline.addLightOptions(uniqueCultures.stream().collect(
+                Collectors.joining(";", "-cultures:", "")));
 
         // Only needed if we using CA dll, so Wix can find it
         if (enableInstalldirUI) {
@@ -483,6 +513,52 @@ public class WinMsiBundler  extends AbstractBundler {
         wixPipeline.buildMsi(msiOut.toAbsolutePath());
 
         return msiOut;
+    }
+
+    private static List<Path> getCustomWxlFiles(Map<String, ? super Object> params)
+            throws IOException {
+        Path resourceDir = RESOURCE_DIR.fetchFrom(params);
+        if (resourceDir == null) {
+            return Collections.emptyList();
+        }
+
+        final String glob = "glob:**/*.wxl";
+        final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(
+                glob);
+
+        try (var walk = Files.walk(resourceDir, 1)) {
+            return walk
+                    .filter(Files::isReadable)
+                    .filter(pathMatcher::matches)
+                    .sorted((a, b) -> a.getFileName().toString().compareToIgnoreCase(b.getFileName().toString()))
+                    .collect(Collectors.toList());
+        }
+    }
+
+    private static String getCultureFromWxlFile(Path wxlPath) throws IOException {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(false);
+            DocumentBuilder builder = factory.newDocumentBuilder();
+
+            Document doc = builder.parse(wxlPath.toFile());
+
+            XPath xPath = XPathFactory.newInstance().newXPath();
+            NodeList nodes = (NodeList) xPath.evaluate(
+                    "//WixLocalization/@Culture", doc,
+                    XPathConstants.NODESET);
+            if (nodes.getLength() != 1) {
+                throw new IOException(MessageFormat.format(I18N.getString(
+                        "error.extract-culture-from-wix-l10n-file"),
+                        wxlPath.toAbsolutePath()));
+            }
+
+            return nodes.item(0).getNodeValue();
+        } catch (XPathExpressionException | ParserConfigurationException
+                | SAXException ex) {
+            throw new IOException(MessageFormat.format(I18N.getString(
+                    "error.read-wix-l10n-file"), wxlPath.toAbsolutePath()), ex);
+        }
     }
 
     private static void ensureByMutationFileIsRTF(Path f) {

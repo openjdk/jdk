@@ -42,6 +42,14 @@ public class JcmdScale {
     // Grab my own PID
     String pid = Long.toString(ProcessTools.getProcessId());
 
+    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=1"});
+    output = new OutputAnalyzer(pb.start());
+    output.shouldContain(", committed=");
+
+    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=b"});
+    output = new OutputAnalyzer(pb.start());
+    output.shouldContain(", committed=");
+
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=KB"});
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("KB, committed=");

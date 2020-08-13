@@ -384,6 +384,7 @@ public class Extern {
             DocPath elempath;
             String moduleName = null;
             DocPath basePath  = DocPath.create(path);
+            boolean issueWarning = true;
             while ((elemname = in.readLine()) != null) {
                 if (elemname.length() > 0) {
                     elempath = basePath;
@@ -398,10 +399,11 @@ public class Extern {
                         } else {
                             elempath = elempath.resolve(pkgPath);
                         }
-                        String actualModuleName = checkLinkCompatibility(elemname, moduleName, path);
+                        String actualModuleName = checkLinkCompatibility(elemname, moduleName, path, issueWarning);
                         Item item = new Item(elemname, elempath, relative);
                         packageItems.computeIfAbsent(actualModuleName, k -> new TreeMap<>())
                             .putIfAbsent(elemname, item); // first-one-wins semantics
+                        issueWarning = false;
                     }
                 }
             }
@@ -416,14 +418,15 @@ public class Extern {
      * @param packageName the package name
      * @param moduleName the module name or null
      * @param path the documentation path
+     * @param issueWarning whether to print a warning in case of modularity mismatch
      * @return the module name to use according to actual modularity of the package
      */
-    private String checkLinkCompatibility(String packageName, String moduleName, String path)  {
+    private String checkLinkCompatibility(String packageName, String moduleName, String path, boolean issueWarning)  {
         PackageElement pe = utils.elementUtils.getPackageElement(packageName);
         if (pe != null) {
             ModuleElement me = (ModuleElement)pe.getEnclosingElement();
             if (me == null || me.isUnnamed()) {
-                if (moduleName != null) {
+                if (moduleName != null && issueWarning) {
                     configuration.getReporter().print(Kind.WARNING,
                             resources.getText("doclet.linkMismatch_PackagedLinkedtoModule", path));
                 }
@@ -431,7 +434,7 @@ public class Extern {
                 return DocletConstants.DEFAULT_ELEMENT_NAME;
             } else if (moduleName == null) {
                 // suppress the warning message in the case of automatic modules
-                if (!isAutomaticModule(me)) {
+                if (!isAutomaticModule(me) && issueWarning) {
                     configuration.getReporter().print(Kind.WARNING,
                             resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage", path));
                 }
