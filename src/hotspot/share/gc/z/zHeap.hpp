@@ -98,6 +98,7 @@ public:
   uint nconcurrent_no_boost_worker_threads() const;
   void set_boost_worker_threads(bool boost);
   void threads_do(ThreadClosure* tc) const;
+  void run_task(AbstractGangTask* task);
 
   // Reference processing
   ReferenceDiscoverer* reference_discoverer();

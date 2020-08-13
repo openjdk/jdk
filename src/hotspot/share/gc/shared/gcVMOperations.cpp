@@ -149,7 +149,7 @@ void VM_GC_HeapInspection::doit() {
     }
   }
   HeapInspection inspect;
-  inspect.heap_inspection(_out);
+  inspect.heap_inspection(_out, _parallel_thread_num);
 }
 
 

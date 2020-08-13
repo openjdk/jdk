@@ -1195,6 +1195,10 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
   }
 }
 
+void ShenandoahHeap::run_task(AbstractGangTask* task) {
+  workers()->run_task(task, workers()->active_workers());
+}
+
 void ShenandoahHeap::print_tracing_info() const {
   LogTarget(Info, gc, stats) lt;
   if (lt.is_enabled()) {

@@ -30,6 +30,9 @@
 #include "oops/oop.hpp"
 #include "oops/annotations.hpp"
 #include "utilities/macros.hpp"
+#include "gc/shared/workgroup.hpp"
+
+class ParallelObjectIterator;
 
 #if INCLUDE_SERVICES
 
@@ -122,6 +125,8 @@ class KlassInfoTable: public StackObj {
   void iterate(KlassInfoClosure* cic);
   bool allocation_failed() { return _buckets == NULL; }
   size_t size_of_instances_in_words() const;
+  bool merge(KlassInfoTable* table);
+  bool merge_entry(const KlassInfoEntry* cie);
 
   friend class KlassInfoHisto;
   friend class KlassHierarchy;
@@ -211,11 +216,46 @@ class KlassInfoClosure;
 
 class HeapInspection : public StackObj {
  public:
-  void heap_inspection(outputStream* st) NOT_SERVICES_RETURN;
-  size_t populate_table(KlassInfoTable* cit, BoolObjectClosure* filter = NULL) NOT_SERVICES_RETURN_(0);
+  void heap_inspection(outputStream* st, uint parallel_thread_num = 1) NOT_SERVICES_RETURN;
+  uintx populate_table(KlassInfoTable* cit, BoolObjectClosure* filter = NULL, uint parallel_thread_num = 1) NOT_SERVICES_RETURN_(0);
   static void find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) NOT_SERVICES_RETURN;
  private:
   void iterate_over_heap(KlassInfoTable* cit, BoolObjectClosure* filter = NULL);
+};
+
+// Parallel heap inspection task. Parallel inspection can fail due to
+// a native OOM when allocating memory for TL-KlassInfoTable.
+// _success will be set false on an OOM, and serial inspection tried.
+class ParHeapInspectTask : public AbstractGangTask {
+ private:
+  ParallelObjectIterator* _poi;
+  KlassInfoTable* _shared_cit;
+  BoolObjectClosure* _filter;
+  uintx _missed_count;
+  bool _success;
+  Mutex _mutex;
+
+ public:
+  ParHeapInspectTask(ParallelObjectIterator* poi,
+                     KlassInfoTable* shared_cit,
+                     BoolObjectClosure* filter) :
+      AbstractGangTask("Iterating heap"),
+      _poi(poi),
+      _shared_cit(shared_cit),
+      _filter(filter),
+      _missed_count(0),
+      _success(true),
+      _mutex(Mutex::leaf, "Parallel heap iteration data merge lock") {}
+
+  uintx missed_count() const {
+    return _missed_count;
+  }
+
+  bool success() {
+    return _success;
+  }
+
+  virtual void work(uint worker_id);
 };
 
 #endif // SHARE_MEMORY_HEAPINSPECTION_HPP

@@ -79,40 +79,68 @@ public class BasicJMapTest {
         output.shouldHaveExitValue(0);
     }
 
+    private static void testHistoParallelZero() throws Exception {
+        OutputAnalyzer output = jmap("-histo:parallel=0");
+        output.shouldHaveExitValue(0);
+    }
+
+    private static void testHistoParallel() throws Exception {
+        OutputAnalyzer output = jmap("-histo:parallel=2");
+        output.shouldHaveExitValue(0);
+    }
+
+    private static void testHistoNonParallel() throws Exception {
+        OutputAnalyzer output = jmap("-histo:parallel=1");
+        output.shouldHaveExitValue(0);
+    }
+
     private static void testHistoToFile() throws Exception {
-        histoToFile(false);
+        histoToFile(false, false, 1);
     }
 
     private static void testHistoLiveToFile() throws Exception {
-        histoToFile(true);
+        histoToFile(true, false, 1);
     }
 
     private static void testHistoAllToFile() throws Exception {
-        boolean explicitAll = true;
-        histoToFile(false, explicitAll);
+        histoToFile(false, true, 1);
     }
 
-    private static void histoToFile(boolean live) throws Exception {
-        boolean explicitAll = false;
-        histoToFile(live, explicitAll);
+    private static void testHistoFileParallelZero() throws Exception {
+        histoToFile(false, false, 0);
     }
 
-    private static void histoToFile(boolean live, boolean explicitAll) throws Exception {
-        if (live == true && explicitAll == true) {
+    private static void testHistoFileParallel() throws Exception {
+        histoToFile(false, false, 2);
+    }
+
+    private static void histoToFile(boolean live,
+                                    boolean explicitAll,
+                                    int parallelThreadNum) throws Exception {
+        String liveArg = "";
+        String fileArg = "";
+        String parArg = "parallel=" + parallelThreadNum;
+        String allArgs = "-histo:";
+
+        if (live && explicitAll) {
             fail("Illegal argument setting for jmap -histo");
         }
+        if (live) {
+            liveArg = "live,";
+        }
+        if (explicitAll) {
+            liveArg = "all,";
+        }
+
         File file = new File("jmap.histo.file" + System.currentTimeMillis() + ".histo");
         if (file.exists()) {
             file.delete();
         }
+        fileArg = "file=" + file.getName();
+
         OutputAnalyzer output;
-        if (live) {
-            output = jmap("-histo:live,file=" + file.getName());
-        } else if (explicitAll == true) {
-            output = jmap("-histo:all,file=" + file.getName());
-        } else {
-            output = jmap("-histo:file=" + file.getName());
-        }
+        allArgs = allArgs + liveArg + fileArg + ',' + parArg;
+        output = jmap(allArgs);
         output.shouldHaveExitValue(0);
         output.shouldContain("Heap inspection file created");
         file.delete();
@@ -129,43 +157,45 @@ public class BasicJMapTest {
     }
 
     private static void testDump() throws Exception {
-        dump(false);
+        dump(false, false);
     }
 
     private static void testDumpLive() throws Exception {
-        dump(true);
+        dump(true, false);
     }
 
     private static void testDumpAll() throws Exception {
-        boolean explicitAll = true;
-        dump(false, explicitAll);
-    }
-
-    private static void dump(boolean live) throws Exception {
-        boolean explicitAll = false;
-        dump(live, explicitAll);
+        dump(false, true);
     }
 
     private static void dump(boolean live, boolean explicitAll) throws Exception {
-        if (live == true && explicitAll == true) {
-          fail("Illegal argument setting for jmap -dump");
+        String liveArg = "";
+        String fileArg = "";
+        String allArgs = "-dump:";
+
+        if (live && explicitAll) {
+            fail("Illegal argument setting for jmap -dump");
         }
-        File dump = new File("jmap.dump." + System.currentTimeMillis() + ".hprof");
-        if (dump.exists()) {
-            dump.delete();
-        }
-        OutputAnalyzer output;
         if (live) {
-            output = jmap("-dump:live,format=b,file=" + dump.getName());
-        } else if (explicitAll == true) {
-            output = jmap("-dump:all,format=b,file=" + dump.getName());
-        } else {
-            output = jmap("-dump:format=b,file=" + dump.getName());
+            liveArg = "live,";
         }
+        if (explicitAll) {
+            liveArg = "all,";
+        }
+
+        File file = new File("jmap.dump" + System.currentTimeMillis() + ".hprof");
+        if (file.exists()) {
+            file.delete();
+        }
+        fileArg = "file=" + file.getName();
+
+        OutputAnalyzer output;
+        allArgs = allArgs + liveArg + "format=b," + fileArg;
+        output = jmap(allArgs);
         output.shouldHaveExitValue(0);
         output.shouldContain("Heap dump file created");
-        verifyDumpFile(dump);
-        dump.delete();
+        verifyDumpFile(file);
+        file.delete();
     }
 
     private static void verifyDumpFile(File dump) {
@@ -195,5 +225,4 @@ public class BasicJMapTest {
 
         return output;
     }
-
 }
