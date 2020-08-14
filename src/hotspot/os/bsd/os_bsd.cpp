@@ -1536,11 +1536,11 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   int mib_kern[] = { CTL_KERN, KERN_OSTYPE };
   if (sysctl(mib_kern, 2, os, &size, NULL, 0) < 0) {
 #ifdef __APPLE__
-      strncpy(os, "Darwin", sizeof(os));
+    strncpy(os, "Darwin", sizeof(os));
 #elif __OpenBSD__
-      strncpy(os, "OpenBSD", sizeof(os));
+    strncpy(os, "OpenBSD", sizeof(os));
 #else
-      strncpy(os, "BSD", sizeof(os));
+    strncpy(os, "BSD", sizeof(os));
 #endif
   }
 
@@ -1548,9 +1548,25 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   size = sizeof(release);
   int mib_release[] = { CTL_KERN, KERN_OSRELEASE };
   if (sysctl(mib_release, 2, release, &size, NULL, 0) < 0) {
-      // if error, leave blank
-      strncpy(release, "", sizeof(release));
+    // if error, leave blank
+    strncpy(release, "", sizeof(release));
   }
+
+#ifdef __APPLE__
+  char osproductversion[100];
+  size_t sz = sizeof(osproductversion);
+  int ret = sysctlbyname("kern.osproductversion", osproductversion, &sz, NULL, 0);
+  if (ret == 0) {
+    char build[100];
+    size = sizeof(build);
+    int mib_build[] = { CTL_KERN, KERN_OSVERSION };
+    if (sysctl(mib_build, 2, build, &size, NULL, 0) < 0) {
+      snprintf(buf, buflen, "%s %s, macOS %s", os, release, osproductversion);
+    } else {
+      snprintf(buf, buflen, "%s %s, macOS %s (%s)", os, release, osproductversion, build);
+    }
+  } else
+#endif
   snprintf(buf, buflen, "%s %s", os, release);
 }
 
