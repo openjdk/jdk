@@ -539,7 +539,6 @@ void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
   old_gen()->object_iterate(cl);
 }
 
-
 HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
   if (young_gen()->is_in_reserved(addr)) {
     assert(young_gen()->is_in(addr),
@@ -609,6 +608,10 @@ void ParallelScavengeHeap::print_on_error(outputStream* st) const {
 
 void ParallelScavengeHeap::gc_threads_do(ThreadClosure* tc) const {
   ParallelScavengeHeap::heap()->workers().threads_do(tc);
+}
+
+void ParallelScavengeHeap::run_task(AbstractGangTask* task) {
+  _workers.run_task(task);
 }
 
 void ParallelScavengeHeap::print_tracing_info() const {

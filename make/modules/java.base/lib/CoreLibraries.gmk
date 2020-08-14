@@ -157,7 +157,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJIMAGE, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm -ldl $(LIBCXX), \
-    LIBS_macosx := -lc++, \
     LIBS_windows := jvm.lib, \
 ))
 

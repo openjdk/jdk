@@ -244,14 +244,14 @@ final public class TKit {
         return v.subpath(0, v.getNameCount());
     }
 
-    public static void createTextFile(Path propsFilename, Collection<String> lines) {
-        createTextFile(propsFilename, lines.stream());
+    public static void createTextFile(Path filename, Collection<String> lines) {
+        createTextFile(filename, lines.stream());
     }
 
-    public static void createTextFile(Path propsFilename, Stream<String> lines) {
+    public static void createTextFile(Path filename, Stream<String> lines) {
         trace(String.format("Create [%s] text file...",
-                propsFilename.toAbsolutePath().normalize()));
-        ThrowingRunnable.toRunnable(() -> Files.write(propsFilename,
+                filename.toAbsolutePath().normalize()));
+        ThrowingRunnable.toRunnable(() -> Files.write(filename,
                 lines.peek(TKit::trace).collect(Collectors.toList()))).run();
         trace("Done");
     }

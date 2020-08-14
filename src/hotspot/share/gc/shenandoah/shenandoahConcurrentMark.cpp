@@ -256,7 +256,8 @@ class ShenandoahFinalMarkingTask : public AbstractGangTask {
 private:
   ShenandoahConcurrentMark* _cm;
   TaskTerminator*           _terminator;
-  bool _dedup_string;
+  bool                      _dedup_string;
+  ShenandoahSharedFlag      _claimed_syncroots;
 
 public:
   ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, bool dedup_string) :
@@ -294,6 +295,9 @@ public:
                                                           ShenandoahStoreValEnqueueBarrier ? &resolve_mark_cl : NULL,
                                                           do_nmethods ? &blobsCl : NULL);
         Threads::threads_do(&tc);
+        if (ShenandoahStoreValEnqueueBarrier && _claimed_syncroots.try_set()) {
+          ObjectSynchronizer::oops_do(&resolve_mark_cl);
+        }
       } else {
         ShenandoahMarkRefsClosure mark_cl(q, rp);
         MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
@@ -301,6 +305,9 @@ public:
                                                           ShenandoahStoreValEnqueueBarrier ? &mark_cl : NULL,
                                                           do_nmethods ? &blobsCl : NULL);
         Threads::threads_do(&tc);
+        if (ShenandoahStoreValEnqueueBarrier && _claimed_syncroots.try_set()) {
+          ObjectSynchronizer::oops_do(&mark_cl);
+        }
       }
     }
 

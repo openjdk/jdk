@@ -1890,7 +1890,7 @@ void PhaseChaitin::add_reference(const Node *node, const Node *old_node) {
 }
 
 #ifndef PRODUCT
-void PhaseChaitin::dump(const Node *n) const {
+void PhaseChaitin::dump(const Node* n) const {
   uint r = (n->_idx < _lrg_map.size()) ? _lrg_map.find_const(n) : 0;
   tty->print("L%d",r);
   if (r && n->Opcode() != Op_Phi) {
@@ -1968,7 +1968,7 @@ void PhaseChaitin::dump(const Node *n) const {
   tty->print("\n");
 }
 
-void PhaseChaitin::dump(const Block *b) const {
+void PhaseChaitin::dump(const Block* b) const {
   b->dump_head(&_cfg);
 
   // For all instructions
@@ -2064,7 +2064,7 @@ void PhaseChaitin::dump_simplified() const {
   tty->cr();
 }
 
-static char *print_reg( OptoReg::Name reg, const PhaseChaitin *pc, char *buf ) {
+static char *print_reg(OptoReg::Name reg, const PhaseChaitin* pc, char* buf) {
   if ((int)reg < 0)
     sprintf(buf, "<OptoReg::%d>", (int)reg);
   else if (OptoReg::is_reg(reg))
@@ -2077,7 +2077,7 @@ static char *print_reg( OptoReg::Name reg, const PhaseChaitin *pc, char *buf ) {
 
 // Dump a register name into a buffer.  Be intelligent if we get called
 // before allocation is complete.
-char *PhaseChaitin::dump_register( const Node *n, char *buf  ) const {
+char *PhaseChaitin::dump_register(const Node* n, char* buf) const {
   if( _node_regs ) {
     // Post allocation, use direct mappings, no LRG info available
     print_reg( get_reg_first(n), this, buf );
@@ -2226,7 +2226,7 @@ void PhaseChaitin::dump_frame() const {
   tty->print_cr("#");
 }
 
-void PhaseChaitin::dump_bb( uint pre_order ) const {
+void PhaseChaitin::dump_bb(uint pre_order) const {
   tty->print_cr("---dump of B%d---",pre_order);
   for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
     Block* block = _cfg.get_block(i);
@@ -2236,7 +2236,7 @@ void PhaseChaitin::dump_bb( uint pre_order ) const {
   }
 }
 
-void PhaseChaitin::dump_lrg( uint lidx, bool defs_only ) const {
+void PhaseChaitin::dump_lrg(uint lidx, bool defs_only) const {
   tty->print_cr("---dump of L%d---",lidx);
 
   if (_ifg) {
@@ -2293,6 +2293,102 @@ void PhaseChaitin::dump_lrg( uint lidx, bool defs_only ) const {
   tty->cr();
 }
 #endif // not PRODUCT
+
+#ifdef ASSERT
+// Verify that base pointers and derived pointers are still sane.
+void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
+  Unique_Node_List worklist(a);
+  for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
+    Block* block = _cfg.get_block(i);
+    for (uint j = block->end_idx() + 1; j > 1; j--) {
+      Node* n = block->get_node(j-1);
+      if (n->is_Phi()) {
+        break;
+      }
+      // Found a safepoint?
+      if (n->is_MachSafePoint()) {
+        MachSafePointNode* sfpt = n->as_MachSafePoint();
+        JVMState* jvms = sfpt->jvms();
+        if (jvms != NULL) {
+          // Now scan for a live derived pointer
+          if (jvms->oopoff() < sfpt->req()) {
+            // Check each derived/base pair
+            for (uint idx = jvms->oopoff(); idx < sfpt->req(); idx++) {
+              Node* check = sfpt->in(idx);
+              bool is_derived = ((idx - jvms->oopoff()) & 1) == 0;
+              // search upwards through spills and spill phis for AddP
+              worklist.clear();
+              worklist.push(check);
+              uint k = 0;
+              while (k < worklist.size()) {
+                check = worklist.at(k);
+                assert(check, "Bad base or derived pointer");
+                // See PhaseChaitin::find_base_for_derived() for all cases.
+                int isc = check->is_Copy();
+                if (isc) {
+                  worklist.push(check->in(isc));
+                } else if (check->is_Phi()) {
+                  for (uint m = 1; m < check->req(); m++) {
+                    worklist.push(check->in(m));
+                  }
+                } else if (check->is_Con()) {
+                  if (is_derived) {
+                    // Derived is NULL+offset
+                    assert(!is_derived || check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad derived pointer");
+                  } else {
+                    assert(check->bottom_type()->is_ptr()->_offset == 0, "Bad base pointer");
+                    // Base either ConP(NULL) or loadConP
+                    if (check->is_Mach()) {
+                      assert(check->as_Mach()->ideal_Opcode() == Op_ConP, "Bad base pointer");
+                    } else {
+                      assert(check->Opcode() == Op_ConP &&
+                             check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad base pointer");
+                    }
+                  }
+                } else if (check->bottom_type()->is_ptr()->_offset == 0) {
+                  if (check->is_Proj() || (check->is_Mach() &&
+                     (check->as_Mach()->ideal_Opcode() == Op_CreateEx ||
+                      check->as_Mach()->ideal_Opcode() == Op_ThreadLocal ||
+                      check->as_Mach()->ideal_Opcode() == Op_CMoveP ||
+                      check->as_Mach()->ideal_Opcode() == Op_CheckCastPP ||
+#ifdef _LP64
+                      (UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_CastPP) ||
+                      (UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_DecodeN) ||
+                      (UseCompressedClassPointers && check->as_Mach()->ideal_Opcode() == Op_DecodeNKlass) ||
+#endif // _LP64
+                      check->as_Mach()->ideal_Opcode() == Op_LoadP ||
+                      check->as_Mach()->ideal_Opcode() == Op_LoadKlass))) {
+                    // Valid nodes
+                  } else {
+                    check->dump();
+                    assert(false, "Bad base or derived pointer");
+                  }
+                } else {
+                  assert(is_derived, "Bad base pointer");
+                  assert(check->is_Mach() && check->as_Mach()->ideal_Opcode() == Op_AddP, "Bad derived pointer");
+                }
+                k++;
+                assert(k < 100000, "Derived pointer checking in infinite loop");
+              } // End while
+            }
+          } // End of check for derived pointers
+        } // End of Kcheck for debug info
+      } // End of if found a safepoint
+    } // End of forall instructions in block
+  } // End of forall blocks
+}
+
+// Verify that graphs and base pointers are still sane.
+void PhaseChaitin::verify(ResourceArea* a, bool verify_ifg) const {
+  if (VerifyRegisterAllocator) {
+    _cfg.verify();
+    verify_base_ptrs(a);
+    if (verify_ifg) {
+      _ifg->verify(this);
+    }
+  }
+}
+#endif // ASSERT
 
 int PhaseChaitin::_final_loads  = 0;
 int PhaseChaitin::_final_stores = 0;

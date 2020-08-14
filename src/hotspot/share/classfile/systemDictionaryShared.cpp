@@ -599,8 +599,8 @@ public:
   }
 
 private:
-  // ArchiveCompactor::allocate() has reserved a pointer immediately before
-  // archived InstanceKlasses. We can use this slot to do a quick
+  // ArchiveBuilder::make_shallow_copy() has reserved a pointer immediately
+  // before archived InstanceKlasses. We can use this slot to do a quick
   // lookup of InstanceKlass* -> RunTimeSharedClassInfo* without
   // building a new hashtable.
   //
@@ -1345,7 +1345,7 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
   return false;
 }
 
-// k is a class before relocating by ArchiveCompactor
+// k is a class before relocating by ArchiveBuilder
 void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
   ResourceMark rm;
   const char* name = k->name()->as_C_string();

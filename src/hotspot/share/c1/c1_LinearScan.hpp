@@ -613,6 +613,7 @@ class Interval : public CompilationResourceObj {
   bool   covers(int op_id, LIR_OpVisitState::OprMode mode) const;
   bool   has_hole_between(int from, int to);
   bool   intersects(Interval* i) const           { return _first->intersects(i->_first); }
+  bool   intersects_any_children_of(Interval* i) const;
   int    intersects_at(Interval* i) const        { return _first->intersects_at(i->_first); }
 
   // range iteration

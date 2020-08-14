@@ -218,6 +218,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual void print_on(outputStream* st) const;
   virtual void print_on_error(outputStream* st) const;
   virtual void gc_threads_do(ThreadClosure* tc) const;
+  // Runs the given AbstractGangTask with the current active workers.
+  virtual void run_task(AbstractGangTask* task);
   virtual void print_tracing_info() const;
 
   virtual WorkGang* get_safepoint_workers() { return &_workers; }

@@ -1195,6 +1195,10 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
   }
 }
 
+void ShenandoahHeap::run_task(AbstractGangTask* task) {
+  workers()->run_task(task, workers()->active_workers());
+}
+
 void ShenandoahHeap::print_tracing_info() const {
   LogTarget(Info, gc, stats) lt;
   if (lt.is_enabled()) {
@@ -1325,7 +1329,7 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
 
 // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
 void ShenandoahHeap::keep_alive(oop obj) {
-  if (is_concurrent_mark_in_progress()) {
+  if (is_concurrent_mark_in_progress() && (obj != NULL)) {
     ShenandoahBarrierSet::barrier_set()->enqueue(obj);
   }
 }

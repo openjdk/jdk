@@ -46,6 +46,10 @@
 #define ATTRIBUTE_ALIGNED(x)
 #endif
 
+#ifndef ATTRIBUTE_FLATTEN
+#define ATTRIBUTE_FLATTEN
+#endif
+
 // These are #defines to selectively turn on/off the Print(Opto)Assembly
 // capabilities. Choices should be led by a tradeoff between
 // code size and improved supportability.

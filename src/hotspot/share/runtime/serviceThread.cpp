@@ -69,10 +69,17 @@ class OopHandleList : public CHeapObj<mtInternal> {
 static OopHandleList* _oop_handle_list = NULL;
 
 static void release_oop_handles() {
-  assert_lock_strong(Service_lock);
-  while (_oop_handle_list != NULL) {
-    OopHandleList* l = _oop_handle_list;
-    _oop_handle_list = l->next();
+  OopHandleList* list;
+  {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    list = _oop_handle_list;
+    _oop_handle_list = NULL;
+  }
+  assert(!SafepointSynchronize::is_at_safepoint(), "cannot be called at a safepoint");
+
+  while (list != NULL) {
+    OopHandleList* l = list;
+    list = l->next();
     delete l;
   }
 }
@@ -137,6 +144,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool oopstorage_work = false;
     bool deflate_idle_monitors = false;
     JvmtiDeferredEvent jvmti_event;
+    bool oop_handles_to_release = false;
     {
       // Need state transition ThreadBlockInVM so that this thread
       // will be handled by safepoint correctly when this thread is
@@ -163,7 +171,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (thread_id_table_work = ThreadIdTable::has_work()) |
               (protection_domain_table_work = SystemDictionary::pd_cache_table()->has_work()) |
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset()) |
-              (_oop_handle_list != NULL) |
+              (oop_handles_to_release = (_oop_handle_list != NULL)) |
               (deflate_idle_monitors = ObjectSynchronizer::is_async_deflation_needed())
              ) == 0) {
         // Wait until notified that there is some work to do.
@@ -176,11 +184,6 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
         // Get the event under the Service_lock
         jvmti_event = _jvmti_service_queue.dequeue();
         _jvmti_event = &jvmti_event;
-      }
-
-      // Release thread OopHandles in lock
-      if (_oop_handle_list != NULL) {
-        release_oop_handles();
       }
     }
 
@@ -229,6 +232,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (deflate_idle_monitors) {
       ObjectSynchronizer::deflate_idle_monitors_using_JT();
+    }
+
+    if (oop_handles_to_release) {
+      release_oop_handles();
     }
   }
 }

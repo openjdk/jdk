@@ -30,7 +30,7 @@
 #include "code/location.hpp"
 #include "oops/oop.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/handles.inline.hpp"
+#include "runtime/handles.hpp"
 #include "runtime/stackValue.hpp"
 #include "runtime/stackValueCollection.hpp"
 #include "utilities/growableArray.hpp"
