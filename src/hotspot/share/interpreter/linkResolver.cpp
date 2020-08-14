@@ -339,7 +339,7 @@ Method* LinkResolver::lookup_method_in_klasses(const LinkInfo& link_info,
 
   // JDK 8, JVMS 5.4.3.4: Interface method resolution should
   // ignore static and non-public methods of java.lang.Object,
-  // like clone, finalize, registerNatives.
+  // like clone and finalize.
   if (in_imethod_resolve &&
       result != NULL &&
       ik->is_interface() &&
