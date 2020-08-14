@@ -530,32 +530,9 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
 // Find an arraycopy that must have set (can_see_stored_value=true) or
 // could have set (can_see_stored_value=false) the value for this load
 Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const {
-  if (mem->is_Proj() && mem->in(0) != NULL && (mem->in(0)->Opcode() == Op_MemBarStoreStore ||
-                                               mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
-    if (ld_alloc != NULL) {
-      // Check if there is an array copy for a clone
-      Node* mb = mem->in(0);
-      ArrayCopyNode* ac = NULL;
-      if (mb->in(0) != NULL && mb->in(0)->is_Proj() &&
-          mb->in(0)->in(0) != NULL && mb->in(0)->in(0)->is_ArrayCopy()) {
-        ac = mb->in(0)->in(0)->as_ArrayCopy();
-      } else {
-        // Step over GC barrier when ReduceInitialCardMarks is disabled
-        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-        Node* control_proj_ac = bs->step_over_gc_barrier(mb->in(0));
-
-        if (control_proj_ac->is_Proj() && control_proj_ac->in(0)->is_ArrayCopy()) {
-          ac = control_proj_ac->in(0)->as_ArrayCopy();
-        }
-      }
-
-      if (ac != NULL && ac->is_clonebasic()) {
-        AllocateNode* alloc = AllocateNode::Ideal_allocation(ac->in(ArrayCopyNode::Dest), phase);
-        if (alloc != NULL && alloc == ld_alloc) {
-          return ac;
-        }
-      }
-    }
+  ArrayCopyNode* ac = find_array_copy_clone(phase, ld_alloc, mem);
+  if (ac != NULL) {
+    return ac;
   } else if (mem->is_Proj() && mem->in(0) != NULL && mem->in(0)->is_ArrayCopy()) {
     ArrayCopyNode* ac = mem->in(0)->as_ArrayCopy();
 
@@ -577,6 +554,37 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
           if (!can_see_stored_value) {
             mem = ac->in(TypeFunc::Memory);
           }
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+ArrayCopyNode* MemNode::find_array_copy_clone(PhaseTransform* phase, Node* ld_alloc, Node* mem) const {
+  if (mem->is_Proj() && mem->in(0) != NULL && (mem->in(0)->Opcode() == Op_MemBarStoreStore ||
+                                                 mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
+    if (ld_alloc != NULL) {
+      // Check if there is an array copy for a clone
+      Node* mb = mem->in(0);
+      ArrayCopyNode* ac = NULL;
+      if (mb->in(0) != NULL && mb->in(0)->is_Proj() &&
+          mb->in(0)->in(0) != NULL && mb->in(0)->in(0)->is_ArrayCopy()) {
+        ac = mb->in(0)->in(0)->as_ArrayCopy();
+      } else {
+        // Step over GC barrier when ReduceInitialCardMarks is disabled
+        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+        Node* control_proj_ac = bs->step_over_gc_barrier(mb->in(0));
+
+        if (control_proj_ac->is_Proj() && control_proj_ac->in(0)->is_ArrayCopy()) {
+          ac = control_proj_ac->in(0)->as_ArrayCopy();
+        }
+      }
+
+      if (ac != NULL && ac->is_clonebasic()) {
+        AllocateNode* alloc = AllocateNode::Ideal_allocation(ac->in(ArrayCopyNode::Dest), phase);
+        if (alloc != NULL && alloc == ld_alloc) {
+          return ac;
         }
       }
     }
@@ -1103,7 +1111,12 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
       // (This is one of the few places where a generic PhaseTransform
       // can create new nodes.  Think of it as lazily manifesting
       // virtually pre-existing constants.)
-      return phase->zerocon(memory_type());
+      if (ReduceBulkZeroing || find_array_copy_clone(phase, ld_alloc, in(MemNode::Memory)) == NULL) {
+        // If ReduceBulkZeroing is disabled, we need to check if the allocation does not belong to an
+        // ArrayCopyNode clone. If it does, then we cannot assume zero since the initialization is done
+        // by the ArrayCopyNode.
+        return phase->zerocon(memory_type());
+      }
     }
 
     // A load from an initialization barrier can match a captured store.
