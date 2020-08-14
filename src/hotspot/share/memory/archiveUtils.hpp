@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,19 @@ class ArchivePtrMarker : AllStatic {
 public:
   static void initialize(CHeapBitMap* ptrmap, address* ptr_base, address* ptr_end);
   static void mark_pointer(address* ptr_loc);
+  static void clear_pointer(address* ptr_loc);
   static void compact(address relocatable_base, address relocatable_end);
   static void compact(size_t max_non_null_offset);
 
   template <typename T>
   static void mark_pointer(T* ptr_loc) {
     mark_pointer((address*)ptr_loc);
+  }
+
+  template <typename T>
+  static void set_and_mark_pointer(T* ptr_loc, T ptr_value) {
+    *ptr_loc = ptr_value;
+    mark_pointer(ptr_loc);
   }
 
   static void expand_ptr_end(address *new_ptr_end) {
