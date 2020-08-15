@@ -408,11 +408,9 @@ public abstract class ClassValue<T> {
          */
         private static final int INITIAL_ENTRIES = 32;
 
-        /** Build a backing map for ClassValues.
-         *  Also, create an empty cache array and install it on the class.
+        /** Create a backing map for ClassValues.
          */
         ClassValueMap() {
-            sizeCache(INITIAL_ENTRIES);
         }
 
         Entry<?>[] getCache() { return cacheArray; }
