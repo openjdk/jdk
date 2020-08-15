@@ -182,18 +182,15 @@ public abstract class ClassValue<T> {
     /// Implementation...
     /// --------
 
-    /** Return the cache, if it exists, else a dummy empty cache. */
+    /** Return the cache, if it exists, else null. */
     private static Entry<?>[] getCacheCarefully(Class<?> type) {
         // racing type.classValueMap{.cacheArray} : null => new Entry[X] <=> new Entry[Y]
         ClassValueMap map = type.classValueMap;
-        if (map == null)  return EMPTY_CACHE;
+        if (map == null)  return null;
         Entry<?>[] cache = map.getCache();
         return cache;
         // invariant:  returned value is safe to dereference and check for an Entry
     }
-
-    /** Initial, one-element, empty cache used by all Class instances.  Must never be filled. */
-    private static final Entry<?>[] EMPTY_CACHE = { null };
 
     /**
      * Slow tail of ClassValue.get to retry at nearby locations in the cache,
@@ -530,9 +527,9 @@ public abstract class ClassValue<T> {
 
         /** Load the cache entry at the given (hashed) location. */
         static Entry<?> loadFromCache(Entry<?>[] cache, int i) {
-            // non-racing cache.length : constant
-            // racing cache[i & (mask)] : null <=> Entry
-            return cache[i & (cache.length-1)];
+            // non-racing cache != null && cache.length : constant
+            // racing cache == null || cache[i & (mask)] : null <=> Entry
+            return cache == null ? null : cache[i & (cache.length-1)];
             // invariant:  returned value is null or well-constructed (ready to match)
         }
 
@@ -544,6 +541,7 @@ public abstract class ClassValue<T> {
         /** Given that first probe was a collision, retry at nearby locations. */
         static <T> Entry<T> probeBackupLocations(Entry<?>[] cache, ClassValue<T> classValue) {
             if (PROBE_LIMIT <= 0)  return null;
+            if (cache == null) return null;
             // Probe the cache carefully, in a range of slots.
             int mask = (cache.length-1);
             int home = (classValue.hashCodeForCache & mask);
@@ -589,11 +587,11 @@ public abstract class ClassValue<T> {
         /// Below this line all functions are private, and assume synchronized access.
         /// --------
 
-        private void sizeCache(int length) {
+        private Entry<?>[] sizeCache(int length) {
             assert((length & (length-1)) == 0);  // must be power of 2
             cacheLoad = 0;
             cacheLoadLimit = (int) ((double) length * CACHE_LOAD_LIMIT / 100);
-            cacheArray = new Entry<?>[length];
+            return cacheArray = new Entry<?>[length];
         }
 
         /** Make sure the cache load stays below its limit, if possible. */
@@ -607,12 +605,14 @@ public abstract class ClassValue<T> {
             if (cacheLoad < cacheLoadLimit)
                 return;  // win
             Entry<?>[] oldCache = getCache();
-            if (oldCache.length > HASH_MASK)
+            if (oldCache != null && oldCache.length > HASH_MASK)
                 return;  // lose
-            sizeCache(oldCache.length * 2);
-            for (Entry<?> e : oldCache) {
-                if (e != null && e.isLive()) {
-                    addToCache(e);
+            sizeCache(oldCache == null ? INITIAL_ENTRIES : oldCache.length * 2);
+            if (oldCache != null) {
+                for (Entry<?> e : oldCache) {
+                    if (e != null && e.isLive()) {
+                        addToCache(e);
+                    }
                 }
             }
         }
@@ -622,6 +622,7 @@ public abstract class ClassValue<T> {
          */
         private void removeStaleEntries(Entry<?>[] cache, int begin, int count) {
             if (PROBE_LIMIT <= 0)  return;
+            if (cache == null) return;
             int mask = (cache.length-1);
             int removed = 0;
             for (int i = begin; i < begin + count; i++) {
@@ -702,9 +703,13 @@ public abstract class ClassValue<T> {
 
         /** Add the given entry to the cache, in its home location. */
         private <T> void addToCache(ClassValue<T> classValue, Entry<T> e) {
+            // assert Thread.holdsLock(this);
             if (PROBE_LIMIT <= 0)  return;  // do not fill cache
             // Add e to the cache.
             Entry<?>[] cache = getCache();
+            if (cache == null) {
+                cache = sizeCache(INITIAL_ENTRIES);
+            }
             int mask = (cache.length-1);
             int home = classValue.hashCodeForCache & mask;
             Entry<?> e2 = placeInCache(cache, home, e, false);
