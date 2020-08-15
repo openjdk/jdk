@@ -86,6 +86,10 @@
 //    [ptr             | 11]  marked             used to mark an object
 //
 //    We assume that stack/thread pointers have the lowest two bits cleared.
+//
+//  - INFLATING() is a distinguished markword value that is used when
+//    inflating an existing stack-lock into an ObjectMonitor. See below
+//    for is_being_inflated() and INFLATING().
 
 class BasicLock;
 class ObjectMonitor;
@@ -226,7 +230,7 @@ class markWord {
   bool is_being_inflated() const { return (value() == 0); }
 
   // Distinguished markword value - used when inflating over
-  // an existing stacklock.  0 indicates the markword is "BUSY".
+  // an existing stack-lock.  0 indicates the markword is "BUSY".
   // Lockword mutators that use a LD...CAS idiom should always
   // check for and avoid overwriting a 0 value installed by some
   // other thread.  (They should spin or block instead.  The 0 value
