@@ -61,7 +61,7 @@ class SharedClassPathEntry {
   bool   _is_module_path;
   bool   _from_class_path_attr;
   time_t _timestamp;          // jar timestamp,  0 if is directory, modules image or other
-  long   _filesize;           // jar/jimage file size, -1 if is directory, -2 if other
+  int64_t      _filesize;     // jar/jimage file size, -1 if is directory, -2 if other
   Array<char>* _name;
   Array<u1>*   _manifest;
 
@@ -84,7 +84,6 @@ public:
   }
   bool from_class_path_attr() { return _from_class_path_attr; }
   time_t timestamp() const { return _timestamp; }
-  long   filesize()  const { return _filesize; }
   const char* name() const;
   const char* manifest() const {
     return (_manifest == NULL) ? NULL : (const char*)_manifest->data();

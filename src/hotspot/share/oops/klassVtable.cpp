@@ -1604,8 +1604,8 @@ void klassVtable::print_statistics() {
   tty->print_cr("%6d bytes total", total);
 }
 
-int  klassItable::_total_classes;   // Total no. of classes with itables
-long klassItable::_total_size;      // Total no. of bytes used for itables
+int    klassItable::_total_classes;   // Total no. of classes with itables
+size_t klassItable::_total_size;      // Total no. of bytes used for itables
 
 void klassItable::print_statistics() {
  tty->print_cr("itable statistics:");
