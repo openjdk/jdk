@@ -534,13 +534,6 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
             return;
         }
         m.setValue(n);
-
-        if (accessibleContext != null) {
-            accessibleContext.firePropertyChange(
-                                                AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                                                Integer.valueOf(oldValue),
-                                                Integer.valueOf(m.getValue()));
-        }
     }
 
 
@@ -1413,8 +1406,19 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJSlider extends AccessibleJComponent
-    implements AccessibleValue {
+    implements AccessibleValue, ChangeListener {
 
+
+        private int oldModelValue;
+
+        /**
+         * constructs an AccessibleJSlider
+         */
+        protected AccessibleJSlider() {
+            // model is guaranteed to be non-null
+            oldModelValue = getModel().getValue();
+            JSlider.this.addChangeListener(this);
+        }
         /**
          * Get the state set of this object.
          *
@@ -1434,6 +1438,24 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
                 states.add(AccessibleState.HORIZONTAL);
             }
             return states;
+        }
+
+        /**
+         * Invoked when the target of the listener has changed its state.
+         *
+         * @param e  a {@code ChangeEvent} object. Must not be {@code null}
+         * @throws NullPointerException if the parameter is {@code null}
+         */
+        public void stateChanged(ChangeEvent e) {
+            if (e == null) {
+                throw new NullPointerException();
+            }
+            int newModelValue = getModel().getValue();
+            firePropertyChange(
+                    AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
+                    Integer.valueOf(oldModelValue),
+                    Integer.valueOf(newModelValue));
+            oldModelValue = newModelValue;
         }
 
         /**
