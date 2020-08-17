@@ -1789,7 +1789,7 @@ void VM_HeapDumper::doit() {
   set_global_dumper();
   set_global_writer();
 
-  WorkGang* gang = ch->get_safepoint_workers();
+  WorkGang* gang = ch->safepoint_workers();
 
   if (gang == NULL) {
     work(0);

@@ -195,7 +195,7 @@ public:
   void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
 
   WorkGang* workers() const;
-  WorkGang* get_safepoint_workers();
+  WorkGang* safepoint_workers();
 
   void gc_threads_do(ThreadClosure* tcl) const;
 

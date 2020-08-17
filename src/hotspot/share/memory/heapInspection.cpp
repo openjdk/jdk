@@ -576,7 +576,7 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
   if (parallel_thread_num > 1) {
     ResourceMark rm;
 
-    WorkGang* gang = Universe::heap()->get_safepoint_workers();
+    WorkGang* gang = Universe::heap()->safepoint_workers();
     if (gang != NULL) {
       // The GC provided a WorkGang to be used during a safepoint.
 
