@@ -36,6 +36,11 @@ import javax.swing.JComboBox;
 public abstract class ComboBoxUI extends ComponentUI {
 
     /**
+     * Constructor for subclasses to call.
+     */
+    protected ComboBoxUI() {}
+
+    /**
      * Set the visibility of the popup
      *
      * @param c a {@code JComboBox}

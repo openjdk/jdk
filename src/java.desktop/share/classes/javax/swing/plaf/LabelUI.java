@@ -31,4 +31,9 @@ package javax.swing.plaf;
  * @author Hans Muller
  */
 public abstract class LabelUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected LabelUI() {}
 }
+

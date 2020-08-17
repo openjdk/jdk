@@ -31,4 +31,8 @@ package javax.swing.plaf;
  * @author David Kloba
  */
 public abstract class InternalFrameUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected InternalFrameUI() {}
 }

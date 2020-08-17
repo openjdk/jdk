@@ -37,5 +37,8 @@ import javax.swing.colorchooser.*;
 
 public abstract class ColorChooserUI extends ComponentUI
 {
-
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected ColorChooserUI() {}
 }

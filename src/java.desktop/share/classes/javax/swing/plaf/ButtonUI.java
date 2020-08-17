@@ -36,4 +36,8 @@ import java.awt.Insets;
  * @author Jeff Dinkins
  */
 public abstract class ButtonUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected ButtonUI() {}
 }

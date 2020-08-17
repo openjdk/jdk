@@ -39,6 +39,11 @@ import java.io.File;
 public abstract class FileChooserUI extends ComponentUI
 {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected FileChooserUI() {}
+
+    /**
      * Returns an accept-all file filter.
      * @param fc the file chooser
      * @return an accept-all file filter

@@ -38,6 +38,11 @@ import javax.swing.text.*;
 public abstract class TextUI extends ComponentUI
 {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected TextUI() {}
+
+    /**
      * Converts the given location in the model to a place in
      * the view coordinate system.
      *
