@@ -98,8 +98,6 @@ public:
 
   virtual void object_iterate(ObjectClosure* cl);
 
-  virtual void run_task(AbstractGangTask* task);
-
   virtual void keep_alive(oop obj);
 
   virtual void register_nmethod(nmethod* nm);

@@ -575,13 +575,26 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
   // Try parallel first.
   if (parallel_thread_num > 1) {
     ResourceMark rm;
-    ParallelObjectIterator* poi = Universe::heap()->parallel_object_iterator(parallel_thread_num);
-    if (poi != NULL) {
-      ParHeapInspectTask task(poi, cit, filter);
-      Universe::heap()->run_task(&task);
-      delete poi;
-      if (task.success()) {
-        return task.missed_count();
+
+    WorkGang* gang = Universe::heap()->get_safepoint_workers();
+    if (gang != NULL) {
+      // The GC provided a WorkGang to be used during a safepoint.
+
+      // Can't run with more threads than provided by the WorkGang.
+      WithUpdatedActiveWorkers update_and_restore(gang, parallel_thread_num);
+
+      ParallelObjectIterator* poi = Universe::heap()->parallel_object_iterator(gang->active_workers());
+      if (poi != NULL) {
+        // The GC supports parallel object iteration.
+
+        ParHeapInspectTask task(poi, cit, filter);
+        // Run task with the active workers.
+        gang->run_task(&task);
+
+        delete poi;
+        if (task.success()) {
+          return task.missed_count();
+        }
       }
     }
   }

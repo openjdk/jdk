@@ -551,9 +551,6 @@ public:
 
   WorkGang* workers() const { return _workers; }
 
-  // Runs the given AbstractGangTask with the current active workers.
-  virtual void run_task(AbstractGangTask* task);
-
   // Runs the given AbstractGangTask with the current active workers,
   // returning the total time taken.
   Tickspan run_task_timed(AbstractGangTask* task);

@@ -202,6 +202,27 @@ protected:
   virtual AbstractGangWorker* allocate_worker(uint which);
 };
 
+// Temporarily try to set the number of active workers.
+// It's not guaranteed that it succeeds, and users need to
+// query the number of active workers.
+class WithUpdatedActiveWorkers : public StackObj {
+private:
+  AbstractWorkGang* const _gang;
+  const uint              _old_active_workers;
+
+public:
+  WithUpdatedActiveWorkers(AbstractWorkGang* gang, uint requested_num_workers) :
+      _gang(gang),
+      _old_active_workers(gang->active_workers()) {
+    uint capped_num_workers = MIN2(requested_num_workers, gang->total_workers());
+    gang->update_active_workers(capped_num_workers);
+  }
+
+  ~WithUpdatedActiveWorkers() {
+    _gang->update_active_workers(_old_active_workers);
+  }
+};
+
 // Several instances of this class run in parallel as workers for a gang.
 class AbstractGangWorker: public WorkerThread {
 public:

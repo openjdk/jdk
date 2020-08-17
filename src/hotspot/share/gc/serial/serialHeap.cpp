@@ -87,8 +87,3 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   memory_pools.append(_old_pool);
   return memory_pools;
 }
-
-// No workGang for SerialHeap, work serially with thread 0.
-void SerialHeap::run_task(AbstractGangTask* task) {
-  task->work(0);
-}

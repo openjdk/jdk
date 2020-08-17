@@ -467,9 +467,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 
-  // Run given task. Possibly in parallel if the GC supports it.
-  virtual void run_task(AbstractGangTask* task) = 0;
-
   // Print any relevant tracing info that flags imply.
   // Default implementation does nothing.
   virtual void print_tracing_info() const = 0;

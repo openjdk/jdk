@@ -162,13 +162,9 @@ void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_region
   reset_from_card_cache(start_idx, num_regions);
 }
 
-void G1CollectedHeap::run_task(AbstractGangTask* task) {
-  workers()->run_task(task, workers()->active_workers());
-}
-
 Tickspan G1CollectedHeap::run_task_timed(AbstractGangTask* task) {
   Ticks start = Ticks::now();
-  run_task(task);
+  workers()->run_task(task);
   return Ticks::now() - start;
 }
 
