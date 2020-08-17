@@ -34,7 +34,7 @@ import javax.naming.directory.InitialDirContext;
  *          dead DNS server or a flakey router.
  * @library ../lib/
  * @modules java.base/sun.security.util
- * @run main PortUnreachable
+ * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl=false PortUnreachable
  */
 
 public class PortUnreachable extends DNSTestBase {
