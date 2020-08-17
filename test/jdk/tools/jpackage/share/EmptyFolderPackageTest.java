@@ -40,7 +40,7 @@ import jdk.jpackage.test.TKit;
  * @build EmptyFolderBase
  * @build jdk.jpackage.test.*
  * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
- * @run main/othervm -Xmx512m EmptyFolderPackageTest
+ * @run main/othervm/timeout=720 -Xmx512m EmptyFolderPackageTest
  */
 public class EmptyFolderPackageTest {
 
