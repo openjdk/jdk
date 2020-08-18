@@ -76,6 +76,7 @@ java.datatransfer_COPY += flavormap.properties
 
 ################################################################################
 
+java.desktop_DISABLED_WARNINGS += missing-explicit-ctor
 java.desktop_DOCLINT += -Xdoclint:all/protected,-reference \
     '-Xdoclint/package:java.*,javax.*'
 java.desktop_COPY += .gif .png .wav .txt .xml .css .pf
@@ -298,6 +299,10 @@ java.xml.crypto_CLEAN += .properties
 
 ################################################################################
 
+jdk.accessibility_DISABLED_WARNINGS += missing-explicit-ctor
+
+################################################################################
+
 jdk.charsets_COPY += .dat
 
 ################################################################################
@@ -347,7 +352,16 @@ jdk.javadoc_COPY += .xml .css .js .png
 
 ################################################################################
 
+jdk.jartool_DISABLED_WARNINGS += missing-explicit-ctor
 jdk.jartool_JAVAC_FLAGS += -XDstringConcat=inline
+
+################################################################################
+
+jdk.httpserver_DISABLED_WARNINGS += missing-explicit-ctor
+
+################################################################################
+
+jdk.unsupported.desktop_DISABLED_WARNINGS += missing-explicit-ctor
 
 ################################################################################
 
