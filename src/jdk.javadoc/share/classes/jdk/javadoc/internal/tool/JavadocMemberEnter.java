@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.Names;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;

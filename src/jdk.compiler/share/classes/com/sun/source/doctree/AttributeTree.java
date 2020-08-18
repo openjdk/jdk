@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,13 +56,14 @@ public interface AttributeTree extends DocTree {
 
     /**
      * Returns the kind of the attribute.
-     * @return the kind of the attribute.
+     * @return the kind of the attribute
      */
     ValueKind getValueKind();
 
     /**
-     * Returns the value of the attribute, or {@code null} if the kind is EMPTY.
-     * @return the value of the attribute.
+     * Returns the value of the attribute, or {@code null} if the
+     * {@linkplain #getValueKind() kind of this attribute} is {@code EMPTY}.
+     * @return the value of the attribute
      */
     List<? extends DocTree> getValue();
 }

@@ -49,7 +49,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;

@@ -49,15 +49,16 @@ public class BaseTaglet implements Taglet {
     private final Set<Location> sites;
 
     BaseTaglet(DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
-        this.tagKind = tagKind;
-        this.name = tagKind.tagName;
-        this.inline = inline;
-        this.sites = sites;
+        this(tagKind.tagName, tagKind, inline, sites);
     }
 
     BaseTaglet(String name, boolean inline, Set<Location> sites) {
-        this.tagKind = inline ? DocTree.Kind.UNKNOWN_INLINE_TAG : DocTree.Kind.UNKNOWN_BLOCK_TAG;
+        this(name, inline ? DocTree.Kind.UNKNOWN_INLINE_TAG : DocTree.Kind.UNKNOWN_BLOCK_TAG, inline, sites);
+    }
+
+    private BaseTaglet(String name, DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
         this.name = name;
+        this.tagKind = tagKind;
         this.inline = inline;
         this.sites = sites;
     }
@@ -67,91 +68,49 @@ public class BaseTaglet implements Taglet {
         return sites;
     }
 
-    /**
-     * Returns true if this {@code Taglet} can be used in constructor documentation.
-     *
-     * @return true if this {@code Taglet} can be used in constructor documentation and false
-     * otherwise.
-     */
-    @Override
-    public final boolean inConstructor() {
-        return sites.contains(Location.CONSTRUCTOR);
-    }
-
-    /**
-     * Returns true if this {@code Taglet} can be used in field documentation.
-     *
-     * @return true if this {@code Taglet} can be used in field documentation and false
-     * otherwise.
-     */
     @Override
     public final boolean inField() {
         return sites.contains(Location.FIELD);
     }
 
-    /**
-     * Returns true if this {@code Taglet} can be used in method documentation.
-     *
-     * @return true if this {@code Taglet} can be used in method documentation and false
-     * otherwise.
-     */
+    @Override
+    public final boolean inConstructor() {
+        return sites.contains(Location.CONSTRUCTOR);
+    }
+
     @Override
     public final boolean inMethod() {
         return sites.contains(Location.METHOD);
     }
 
-    /**
-     * Returns true if this {@code Taglet} can be used in overview documentation.
-     *
-     * @return true if this {@code Taglet} can be used in method documentation and false
-     * otherwise.
-     */
     @Override
     public final boolean inOverview() {
         return sites.contains(Location.OVERVIEW);
     }
 
-    /**
-     * Returns true if this {@code Taglet} can be used in module documentation.
-     *
-     * @return true if this {@code Taglet} can be used in module documentation and false
-     * otherwise.
-     */
     @Override
     public final boolean inModule() {
         return sites.contains(Location.MODULE);
     }
 
-    /**
-     * Returns true if this {@code Taglet} can be used in package documentation.
-     *
-     * @return true if this {@code Taglet} can be used in package documentation and false
-     * otherwise.
-     */
     @Override
     public final boolean inPackage() {
         return sites.contains(Location.PACKAGE);
     }
 
-    /**
-     * Returns true if this {@code Taglet} can be used in type documentation (classes or interfaces).
-     *
-     * @return true if this {@code Taglet} can be used in type documentation and false
-     * otherwise.
-     */
     @Override
     public final boolean inType() {
         return sites.contains(Location.TYPE);
     }
 
-    /**
-     * Returns true if this {@code Taglet} is an inline tag.
-     *
-     * @return true if this {@code Taglet} represents an inline tag and false otherwise.
-     */
     @Override
     public final boolean isInlineTag() {
         return inline;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     /**
@@ -164,22 +123,12 @@ public class BaseTaglet implements Taglet {
     }
 
     /**
-     * Returns the name of this tag.
-     *
-     * @return the name of this tag.
-     */
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    /**
      * Returns whether or not this taglet accepts a {@code DocTree} node.
      * The taglet accepts a tree node if it has the same kind, and
      * if the kind is {@code UNKNOWN_BLOCK_TAG} the same tag name.
      *
      * @param tree the tree node
-     * @return {@code true} if this taglet accepts this tree node.
+     * @return {@code true} if this taglet accepts this tree node
      */
     public boolean accepts(DocTree tree) {
         return (tree.getKind() == DocTree.Kind.UNKNOWN_BLOCK_TAG

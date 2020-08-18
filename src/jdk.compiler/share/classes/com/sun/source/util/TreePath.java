@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.source.util;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import com.sun.source.tree.*;
@@ -138,11 +139,11 @@ public class TreePath implements Iterable<Tree> {
     }
 
     /**
-     *  Iterates from leaves to root.
+     * Iterates from leaves to root.
      */
     @Override
     public Iterator<Tree> iterator() {
-        return new Iterator<Tree>() {
+        return new Iterator<>() {
             @Override
             public boolean hasNext() {
                 return next != null;
@@ -150,6 +151,9 @@ public class TreePath implements Iterable<Tree> {
 
             @Override
             public Tree next() {
+                if (next == null) {
+                    throw new NoSuchElementException();
+                }
                 Tree t = next.leaf;
                 next = next.parent;
                 return t;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
 import com.sun.source.doctree.AttributeTree.ValueKind;
-import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
@@ -46,15 +45,12 @@ import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
-import com.sun.source.doctree.ProvidesTree;
-import com.sun.source.doctree.UsesTree;
 import com.sun.source.util.DocTreeFactory;
 import com.sun.tools.doclint.HtmlTag;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.parser.ReferenceParser;
 import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.tree.DCTree.DCAttribute;
 import com.sun.tools.javac.tree.DCTree.DCAuthor;
 import com.sun.tools.javac.tree.DCTree.DCComment;
@@ -552,7 +548,7 @@ public class DocTreeMaker implements DocTreeFactory {
                                 : null;
                         int sbreak = getSentenceBreak(s, peekedNext);
                         if (sbreak > 0) {
-                            s = removeTrailingWhitespace(s.substring(0, sbreak));
+                            s = s.substring(0, sbreak).stripTrailing();
                             DCText text = this.at(spos).newTextTree(s);
                             fs.add(text);
                             foundFirstSentence = true;
@@ -568,7 +564,7 @@ public class DocTreeMaker implements DocTreeFactory {
                             boolean sbrk = isSentenceBreak(peekedNext, false);
                             if (sbrk) {
                                 DocTree next = itr.next();
-                                s = removeTrailingWhitespace(s);
+                                s = s.stripTrailing();
                                 DCText text = this.at(spos).newTextTree(s);
                                 fs.add(text);
                                 body.add((DCTree) next);
@@ -725,16 +721,6 @@ public class DocTreeMaker implements DocTreeFactory {
             }
         }
         return -1;
-    }
-
-    private String removeTrailingWhitespace(String s) {
-        for (int i = s.length() - 1 ; i >= 0 ; i--) {
-            char ch = s.charAt(i);
-            if (!Character.isWhitespace(ch)) {
-                return s.substring(0, i + 1);
-            }
-        }
-        return s;
     }
 
     @SuppressWarnings("unchecked")

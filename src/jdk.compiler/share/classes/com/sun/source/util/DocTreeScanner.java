@@ -29,7 +29,7 @@ import com.sun.source.doctree.*;
 
 
 /**
- * A TreeVisitor that visits all the child tree nodes.
+ * A DocTreeVisitor that visits all the child tree nodes.
  * To visit nodes of a particular type, just override the
  * corresponding visitXYZ method.
  * Inside your method, call super.visitXYZ to visit descendant
@@ -463,8 +463,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      */
     @Override
     public R visitSummary(SummaryTree node, P p) {
-        R r = scan(node.getSummary(), p);
-        return r;
+        return scan(node.getSummary(), p);
     }
 
     /**

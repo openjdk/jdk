@@ -157,7 +157,7 @@ public abstract class JavacTask implements CompilationTask {
      *
      * @implSpec The default implementation of this method does nothing.
      *
-     * @param provider the provider.
+     * @param provider the provider
      * @since 13
      */
     public void setParameterNameProvider(ParameterNameProvider provider) {}

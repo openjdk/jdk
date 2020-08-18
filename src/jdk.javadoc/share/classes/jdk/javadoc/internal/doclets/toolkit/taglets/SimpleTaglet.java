@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * A simple single argument custom tag.
+ * A custom single-argument tag.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -57,8 +57,8 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
 
     /**
      * Whether or not the taglet should generate output.
-     * Standard tags like at-author, at-since, at-version can be disabled
-     * by command-line options; custom tags created with -tag can be
+     * Standard tags like {@code @author}, {@code @since}, {@code @version} can
+     * be disabled by command-line options; custom tags created with -tag can be
      * disabled with an X in the defining string.
      */
     protected final boolean enabled;
@@ -71,7 +71,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * @param locations the possible locations that this tag can appear in
      *                  The string can contain 'p' for package, 't' for type,
      *                  'm' for method, 'c' for constructor and 'f' for field.
-     *                  See {@linbk #getLocations(String) getLocations} for the
+     *                  See {@link #getLocations(String) getLocations} for the
      *                  complete list.
      */
     public SimpleTaglet(String tagName, String header, String locations) {
@@ -83,18 +83,17 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      *
      * @param tagKind   the kind of this tag
      * @param header    the header to output
-     * @param locations the possible locations that this tag can appear in.
+     * @param locations the possible locations that this tag can appear in
      */
     public SimpleTaglet(DocTree.Kind tagKind, String header, Set<Location> locations) {
         this(tagKind, header, locations, true);
     }
 
-
     /**
      * Constructs a {@code SimpleTaglet}.
      *
      * @param tagName   the name of this tag
-     * @param header    the header to output.
+     * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
      */
     public SimpleTaglet(String tagName, String header, Set<Location> locations) {
@@ -105,7 +104,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * Constructs a {@code SimpleTaglet}.
      *
      * @param tagName   the name of this tag
-     * @param header    the header to output.
+     * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
      */
     public SimpleTaglet(String tagName, String header, Set<Location> locations, boolean enabled) {
@@ -118,7 +117,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * Constructs a {@code SimpleTaglet}.
      *
      * @param tagKind   the kind of this tag
-     * @param header    the header to output.
+     * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
      */
     public SimpleTaglet(DocTree.Kind tagKind, String header, Set<Location> locations, boolean enabled) {

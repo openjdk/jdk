@@ -236,8 +236,8 @@ public abstract class Trees {
 
     /**
       * Returns the original type from the ErrorType object.
-      * @param errorType The errorType for which we want to get the original type.
-      * @return javax.lang.model.type.TypeMirror corresponding to the original type, replaced by the ErrorType.
+      * @param errorType the errorType for which we want to get the original type
+      * @return the type mirror corresponding to the original type, replaced by the ErrorType
       */
     public abstract TypeMirror getOriginalType(ErrorType errorType);
 
@@ -257,7 +257,7 @@ public abstract class Trees {
     /**
      * Returns the lub of an exception parameter declared in a catch clause.
      * @param tree the tree for the catch clause
-     * @return The lub of the exception parameter
+     * @return the lub of the exception parameter
      */
     public abstract TypeMirror getLub(CatchTree tree);
 }

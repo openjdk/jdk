@@ -875,7 +875,7 @@ public class Utils {
     /*
      * We should not instantiate if (i) there's no contextual type declaration, (ii) the declaration
      * to which the member belongs to is the same as the one under consideration, (iii) if the
-     * delcaration to which the member belongs to is not generic.
+     * declaration to which the member belongs to is not generic.
      */
     private boolean shouldInstantiate(TypeElement site, Element e) {
         return site != null &&

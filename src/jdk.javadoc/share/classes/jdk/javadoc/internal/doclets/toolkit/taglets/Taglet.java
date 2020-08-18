@@ -38,89 +38,80 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 
 public interface Taglet {
     /**
-     * Returns the set of allowed locations for block tags
-     * handled by this taglet.
+     * Returns the set of allowed locations for a block tag handled by this taglet.
      *
      * @return the set of allowable locations
      */
     Set<Location> getAllowedLocations();
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in field documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in field documentation and false
-     * otherwise.
+     * Indicates whether this {@code Taglet} can be used in field documentation.
+     *
+     * @return {@code true} if this {@code Taglet} can be used in field documentation
+     *         and {@code false} otherwise
      */
     boolean inField();
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in constructor documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in constructor documentation and false
-     * otherwise.
+     * Indicates whether this {@code Taglet} can be used in constructor documentation.
+     *
+     * @return {@code true} if this {@code Taglet} can be used in constructor documentation
+     *         and {@code false} otherwise
      */
     boolean inConstructor();
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in method documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in method documentation and false
-     * otherwise.
+     * Indicates whether this {@code Taglet} can be used in method documentation.
+     *
+     * @return {@code true} if this {@code Taglet} can be used in method documentation
+     *         and {@code false} otherwise
      */
     boolean inMethod();
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in overview documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in method documentation and false
-     * otherwise.
+     * Indicates whether this {@code Taglet} can be used in overview documentation.
+     *
+     * @return {@code true} if this {@code Taglet} can be used in overview documentation
+     *         and {@code false} otherwise
      */
     boolean inOverview();
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in module documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in module documentation and false
-     * otherwise.
+     * Indicates whether this {@code Taglet} can be used in module documentation.
+     *
+     * @return {@code true} if this {@code Taglet} can be used in module documentation
+     *         and {@code false} otherwise
      */
     boolean inModule();
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in package documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in package documentation and false
-     * otherwise.
+     * Indicates whether this {@code Taglet} can be used in package documentation.
+     *
+     * @return {@code true} if this {@code Taglet} can be used in package documentation
+     *         and {@code false} otherwise
      */
     boolean inPackage();
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in type documentation (classes or
-     * interfaces).
-     * @return true if this <code>Taglet</code>
-     * is used in type documentation and false
-     * otherwise.
+     * Indicates whether this {@code Taglet} can be used in type documentation (classes or interfaces).
+     *
+     * @return {@code true} if this {@code Taglet} can be used in type documentation
+     *         and {@code false} otherwise
      */
     boolean inType();
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is an inline tag. Return false otherwise.
-     * @return true if this <code>Taglet</code>
-     * is an inline tag and false otherwise.
+     * Indicates whether this {@code Taglet} represents an inline tag.
+     *
+     * @return {@code true} if this {@code Taglet} represents an inline tag
+     *         and {@code false} otherwise
      */
     boolean isInlineTag();
 
     /**
-     * Indicates whether this taglet supports block tags.
+     * Indicates whether this {@code Taglet} represents a block tag.
      *
-     * @return true if this taglet supports block tags
+     * @return {@code true} if this {@code Taglet} represents a block tag
      * @implSpec This implementation returns the inverse
      * result to {@code isInlineTag}.
      */
@@ -129,8 +120,8 @@ public interface Taglet {
     }
 
     /**
-     * Return the name of this custom tag.
-     * @return the name of this custom tag.
+     * Returns the name of this tag.
+     * @return the name of this tag
      */
     String getName();
 
@@ -148,8 +139,8 @@ public interface Taglet {
             UnsupportedTagletOperationException;
 
     /**
-     * Returns the content to be included in the generated output for all
-     * instances of tags handled by this taglet.
+     * Returns the content to be included in the generated output for
+     * instances of a tag handled by this taglet.
      *
      * @param element the element for the enclosing doc comment
      * @param writer  the taglet-writer used in this doclet
