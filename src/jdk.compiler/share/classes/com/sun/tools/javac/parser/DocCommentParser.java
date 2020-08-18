@@ -31,6 +31,7 @@ import java.util.Map;
 import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
+import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCAttribute;
@@ -303,7 +304,7 @@ public class DocCommentParser {
     /**
      * Read a single inline tag, including its content.
      * Standard tags parse their content appropriately.
-     * Non-standard tags are represented by {@link UnknownBlockTagTree}.
+     * Non-standard tags are represented by {@link UnknownInlineTagTree}.
      * Malformed tags may be returned as {@link ErroneousTree}.
      */
     protected DCTree inlineTag() {
