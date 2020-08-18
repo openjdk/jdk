@@ -330,7 +330,7 @@ size_t ZPageCache::flush_for_uncommit(size_t requested, ZList<ZPage>* to, uint64
 }
 
 void ZPageCache::set_last_commit() {
-  _last_commit = os::elapsedTime();
+  _last_commit = ceil(os::elapsedTime());
 }
 
 void ZPageCache::pages_do(ZPageClosure* cl) const {

@@ -27,33 +27,28 @@ package gc.z;
  * @test TestUncommit
  * @requires vm.gc.Z
  * @summary Test ZGC uncommit unused memory
- * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit true 2
- */
-
-/*
- * @test TestUncommit
- * @requires vm.gc.Z
- * @summary Test ZGC uncommit unused memory
- * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms512M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit false 1
- */
-
-/*
- * @test TestUncommit
- * @requires vm.gc.Z
- * @summary Test ZGC uncommit unused memory
- * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 -XX:-ZUncommit gc.z.TestUncommit false 1
+ * @library /test/lib
+ * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit
  */
 
 import java.util.ArrayList;
+import jdk.test.lib.Utils;
 
 public class TestUncommit {
-    private static final int delay = 10; // seconds
+    private static final int delay = 10 * 1000; // milliseconds
     private static final int allocSize = 200 * 1024 * 1024; // 200M
     private static final int smallObjectSize = 4 * 1024; // 4K
     private static final int mediumObjectSize = 2 * 1024 * 1024; // 2M
     private static final int largeObjectSize = allocSize;
 
     private static volatile ArrayList<byte[]> keepAlive;
+
+    private static final long startTime = System.nanoTime();
+
+    private static void log(String msg) {
+        final String elapsedSeconds = String.format("%.3fs", (System.nanoTime() - startTime) / 1_000_000_000.0);
+        System.out.println("[" + elapsedSeconds + "] (" + Thread.currentThread().getName() + ") " + msg);
+    }
 
     private static long capacity() {
         return Runtime.getRuntime().totalMemory();
@@ -71,71 +66,71 @@ public class TestUncommit {
         System.gc();
     }
 
-    private static void test(boolean enabled, int objectSize) throws Exception {
+    private static void test(int objectSize) throws Exception {
         final var beforeAlloc = capacity();
 
         // Allocate memory
+        log("Allocating");
         allocate(objectSize);
 
+        final var timeAfterAlloc = System.nanoTime();
         final var afterAlloc = capacity();
 
         // Reclaim memory
+        log("Reclaiming");
         reclaim();
 
-        // Wait shorter than the uncommit delay
-        Thread.sleep(delay * 1000 / 2);
+        log("Waiting for uncommit to start");
+        while (capacity() >= afterAlloc) {
+            Thread.sleep(1000);
+        }
 
-        final var beforeUncommit = capacity();
+        log("Uncommit started");
+        final var timeUncommitStart = System.nanoTime();
+        final var actualDelay = (timeUncommitStart - timeAfterAlloc) / 1_000_000;
 
-        // Wait longer than the uncommit delay
-        Thread.sleep(delay * 1000);
+        log("Waiting for uncommit to complete");
+        while (capacity() > beforeAlloc) {
+            Thread.sleep(1000);
+        }
 
+        log("Uncommit completed");
         final var afterUncommit = capacity();
 
-        System.out.println("  Uncommit Enabled: " + enabled);
-        System.out.println("    Uncommit Delay: " + delay);
-        System.out.println("       Object Size: " + objectSize);
-        System.out.println("        Alloc Size: " + allocSize);
-        System.out.println("      Before Alloc: " + beforeAlloc);
-        System.out.println("       After Alloc: " + afterAlloc);
-        System.out.println("   Before Uncommit: " + beforeUncommit);
-        System.out.println("    After Uncommit: " + afterUncommit);
-        System.out.println();
+        log("        Uncommit Delay: " + delay);
+        log("           Object Size: " + objectSize);
+        log("            Alloc Size: " + allocSize);
+        log("          Before Alloc: " + beforeAlloc);
+        log("           After Alloc: " + afterAlloc);
+        log("        After Uncommit: " + afterUncommit);
+        log(" Actual Uncommit Delay: " + actualDelay);
 
         // Verify
-        if (enabled) {
-            if (beforeUncommit == beforeAlloc) {
-                throw new Exception("Uncommitted too fast");
-            }
-
-            if (afterUncommit >= afterAlloc) {
-                throw new Exception("Uncommitted too slow");
-            }
-
-            if (afterUncommit < beforeAlloc) {
-                throw new Exception("Uncommitted too much");
-            }
-
-            if (afterUncommit > beforeAlloc) {
-                throw new Exception("Uncommitted too little");
-            }
-        } else {
-            if (afterAlloc > beforeUncommit ||
-                afterAlloc > afterUncommit) {
-                throw new Exception("Should not uncommit");
-            }
+        if (actualDelay < delay) {
+            throw new Exception("Uncommitted too fast");
         }
+
+        if (actualDelay > delay * 2 * Utils.TIMEOUT_FACTOR) {
+            throw new Exception("Uncommitted too slow");
+        }
+
+        if (afterUncommit < beforeAlloc) {
+            throw new Exception("Uncommitted too much");
+        }
+
+        if (afterUncommit > beforeAlloc) {
+            throw new Exception("Uncommitted too little");
+        }
+
+        log("Success");
     }
 
     public static void main(String[] args) throws Exception {
-        final boolean enabled = Boolean.parseBoolean(args[0]);
-        final int iterations = Integer.parseInt(args[1]);
-
-        for (int i = 0; i < iterations; i++) {
-            System.out.println("Iteration " + i);
-            test(enabled, smallObjectSize);
-            test(enabled, mediumObjectSize);
-            test(enabled, largeObjectSize);
+        for (int i = 0; i < 2; i++) {
+            log("Iteration " + i);
+            test(smallObjectSize);
+            test(mediumObjectSize);
+            test(largeObjectSize);
         }
     }
 }
