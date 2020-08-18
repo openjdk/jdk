@@ -250,14 +250,14 @@ ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
 
     define SetupOperatorNewDeleteCheck
         $1.op_check: $1
-	  if [ -n "`$(NM) $$< | $(GREP) $(addprefix -e , $(MANGLED_SYMS)) \
-	      | $(GREP) $(UNDEF_PATTERN)`" ]; then \
-	    $(ECHO) "$$<: Error: Use of global operators new and delete is not allowed in Hotspot:"; \
-	    $(NM) $$< | $(CXXFILT) | $(EGREP) '$(DEMANGLED_REGEXP)' | $(GREP) $(UNDEF_PATTERN); \
-	    $(ECHO) "See: $(TOPDIR)/make/hotspot/lib/CompileJvm.gmk"; \
+	  $$(call ExecuteWithLog, $1.op_check, \
+	      $$(NM) $$<  2>&1 | $$(GREP) $$(addprefix -e , $$(MANGLED_SYMS)) | $$(GREP) $$(UNDEF_PATTERN) > $1.op_check || true)
+	  if [ -s $1.op_check ]; then \
+	    $$(ECHO) "$$(notdir $$<): Error: Use of global operators new and delete is not allowed in Hotspot:"; \
+	    $$(NM) $$< | $$(CXXFILT) | $$(EGREP) '$$(DEMANGLED_REGEXP)' | $$(GREP) $$(UNDEF_PATTERN); \
+	    $$(ECHO) "See: $$(TOPDIR)/make/hotspot/lib/CompileJvm.gmk"; \
 	    exit 1; \
 	  fi
-	  $(TOUCH) $$@
 
       TARGETS += $1.op_check
     endef
