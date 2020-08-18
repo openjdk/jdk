@@ -1821,8 +1821,7 @@ void ShenandoahHeap::op_weak_roots() {
     // Perform handshake to flush out dead oops
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
-      ShenandoahRendezvousClosure cl;
-      Handshake::execute(&cl);
+      rendezvous_threads();
     }
   }
 }
@@ -1840,6 +1839,15 @@ void ShenandoahHeap::op_strong_roots() {
   ShenandoahConcurrentRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_strong_roots);
   workers()->run_task(&task);
   set_concurrent_strong_root_in_progress(false);
+}
+
+void ShenandoahHeap::op_rendezvous_roots() {
+  rendezvous_threads();
+}
+
+void ShenandoahHeap::rendezvous_threads() {
+  ShenandoahRendezvousClosure cl;
+  Handshake::execute(&cl);
 }
 
 class ShenandoahResetUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
@@ -2898,6 +2906,16 @@ void ShenandoahHeap::entry_cleanup_early() {
 
   try_inject_alloc_failure();
   op_cleanup_early();
+}
+
+void ShenandoahHeap::entry_rendezvous_roots() {
+  static const char* msg = "Rendezvous roots";
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_rendezvous_roots);
+  EventMark em("%s", msg);
+
+  // This phase does not use workers, no need for setup
+  try_inject_alloc_failure();
+  op_rendezvous_roots();
 }
 
 void ShenandoahHeap::entry_cleanup_complete() {

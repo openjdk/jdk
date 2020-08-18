@@ -386,6 +386,7 @@ public:
   void entry_class_unloading();
   void entry_strong_roots();
   void entry_cleanup_early();
+  void entry_rendezvous_roots();
   void entry_evac();
   void entry_updaterefs();
   void entry_cleanup_complete();
@@ -409,11 +410,14 @@ private:
   void op_class_unloading();
   void op_strong_roots();
   void op_cleanup_early();
+  void op_rendezvous_roots();
   void op_conc_evac();
   void op_stw_evac();
   void op_updaterefs();
   void op_cleanup_complete();
   void op_uncommit(double shrink_before);
+
+  void rendezvous_threads();
 
   // Messages for GC trace events, they have to be immortal for
   // passing around the logging/tracing systems
