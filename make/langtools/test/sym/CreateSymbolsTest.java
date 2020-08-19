@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class CreateSymbolsTest {
         Path compileDir = testClasses.resolve("data");
         deleteRecursively(compileDir);
         Files.createDirectories(compileDir);
-        Path createSymbols = findFile("../../make/src/classes/build/tools/symbolgenerator/CreateSymbols.java");
+        Path createSymbols = findFile("../../src/jdk.compiler/share/tools/org/openjdk/symbolgenerator/CreateSymbols.java");
 
         if (createSymbols == null) {
             System.err.println("Warning: cannot find CreateSymbols, skipping.");

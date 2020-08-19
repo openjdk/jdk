@@ -26,6 +26,10 @@
 #
 # Generate java files for javax.swing.plaf package
 #
+
+TOOL_GENERATENIMBUS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.generatenimbus.Generator
+
 NIMBUS_PACKAGE = javax.swing.plaf
 NIMBUS_GENSRC_DIR = $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/javax/swing/plaf/nimbus
 NIMBUS_SKIN_FILE = $(TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/skin.laf

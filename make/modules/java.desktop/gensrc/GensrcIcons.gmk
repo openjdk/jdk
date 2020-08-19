@@ -68,6 +68,10 @@ $(GENSRC_AWT_ICONS_TMP)/_the.icons.dir:
 
 ################################################################################
 
+TOOL_AWT_TOBIN = $(JAVA_SMALL) -Djava.awt.headless=true \
+    -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.icondataawt.ToBin
+
 define SetupGensrcAWTIcon
   # param 1 is for src-file
   # param 2 is for src-dir
@@ -107,6 +111,9 @@ TARGETS += $(GENSRC_AWT_ICONS)
 ################################################################################
 
 ifeq ($(call isTargetOs, macosx), true)
+  TOOL_OSX_TOBIN = $(JAVA_SMALL) -Djava.awt.headless=true \
+      -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+      org.openjdk.buildtools.icondataosx.ToBin
 
   GENSRC_OSX_ICONS_DST := $(SUPPORT_OUTPUTDIR)/headers/java.desktop
   GENSRC_OSX_ICONS := $(GENSRC_OSX_ICONS_DST)/AWTIconData.h

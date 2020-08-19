@@ -26,6 +26,9 @@
 # Generate java sources using the X11 offsets that are precalculated in files
 # make/data/x11wrappergen/sizes-<address size>.txt.
 
+TOOL_WRAPPERGENERATOR = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.x11wrappergen.WrapperGenerator
+
 # Put the generated Java classes used to interface X11 from awt here.
 GENSRC_X11WRAPPERS_OUTPUTDIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/sun/awt/X11
 

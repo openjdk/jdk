@@ -23,6 +23,9 @@
 # questions.
 #
 
+TOOL_BLACKLISTED_CERTS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.blacklistedcertsconverter.BlacklistedCertsConverter
+
 GENDATA_BLACKLISTED_CERTS_SRC += $(TOPDIR)/make/data/blacklistedcertsconverter/blacklisted.certs.pem
 GENDATA_BLACKLISTED_CERTS := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/blacklisted.certs
 

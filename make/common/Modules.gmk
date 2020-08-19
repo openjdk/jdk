@@ -200,7 +200,7 @@ HOTSPOT_MODULES := \
 # The native dynamic libraries in these modules will also get built into static
 # libraries for consumption by downstream projects that need to statically link
 # the JDK libraries. Those static libraries are not part of the main JDK
-# distribution. 
+# distribution.
 STATIC_LIBS_MODULES := \
     java.base \
     jdk.crypto.ec \
@@ -271,6 +271,8 @@ SPEC_SUBDIRS += share/specs
 
 MAN_SUBDIRS += share/man
 
+TOOLS_SUBDIRS += share/tools
+
 # Find all module-info.java files for the current build target platform and
 # configuration.
 # Param 1 - Module to find for, set to * for finding all
@@ -334,6 +336,13 @@ FindModuleSpecsDirs = \
 FindModuleManDirs = \
     $(strip $(wildcard \
         $(foreach sub, $(MAN_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
+
+# Find all tools directories for all modules for the current build target platform and
+# configuration.
+FindAllToolsDirs = \
+    $(sort $(wildcard \
+        $(foreach sub, $(TOOLS_SUBDIRS), \
+          $(patsubst %,%/*/$(sub), $(TOP_SRC_DIRS)))))
 
 # Construct the complete module source path
 GetModuleSrcPath = \

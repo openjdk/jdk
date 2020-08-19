@@ -27,6 +27,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include Modules.gmk
 include JavaCompilation.gmk
 include TextFileProcessing.gmk
 
@@ -38,6 +39,7 @@ $(eval $(call IncludeCustomExtension, CompileTools.gmk))
 
 # Use += to be able to add to this from a custom extension
 BUILD_TOOLS_SRC_DIRS += \
+    $(call FindAllToolsDirs) \
     $(TOPDIR)/make/jdk/src/classes \
     $(BUILDTOOLS_OUTPUTDIR)/interim_tzdb_classes \
     #
@@ -47,10 +49,9 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
     SRC := $(BUILD_TOOLS_SRC_DIRS), \
     EXCLUDES := \
         build/tools/classlist \
-        build/tools/deps \
-        build/tools/docs \
         build/tools/jigsaw \
         build/tools/depend \
+        org/openjdk/buildtools/symbolgenerator \
         , \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
     DISABLED_WARNINGS := options, \
@@ -61,10 +62,11 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
 
 TARGETS += $(BUILD_TOOLS_JDK)
 
-$(eval $(call SetupCopyFiles,COPY_NIMBUS_TEMPLATES, \
+$(eval $(call SetupCopyFiles, COPY_NIMBUS_TEMPLATES, \
     SRC := $(TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus, \
-    DEST := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/generatenimbus/resources, \
-    FILES := $(wildcard $(TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/*.template)))
+    DEST := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/org/openjdk/buildtools/generatenimbus/resources, \
+    FILES := $(wildcard $(TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/*.template), \
+))
 
 TARGETS += $(COPY_NIMBUS_TEMPLATES)
 

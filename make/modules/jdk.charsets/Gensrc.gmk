@@ -33,7 +33,7 @@ CHARSET_DATA_DIR := $(TOPDIR)/make/data/charsetmapping
 
 CHARSET_GENSRC_JAVA_DIR_CS := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.charsets/sun/nio/cs/ext
 CHARSET_DONE_CS := $(CHARSET_GENSRC_JAVA_DIR_CS)/_the.charsetmapping
-CHARSET_COPYRIGHT_HEADER := $(TOPDIR)/make/jdk/src/classes/build/tools/charsetmapping
+CHARSET_COPYRIGHT_HEADER := $(TOPDIR)/src/java.base/share/tools/org/openjdk/buildtools/charsetmapping
 CHARSET_TEMPLATES := \
     $(CHARSET_DATA_DIR)/SingleByte-X.java.template \
     $(CHARSET_DATA_DIR)/DoubleByte-X.java.template

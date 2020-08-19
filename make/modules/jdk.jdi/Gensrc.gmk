@@ -29,6 +29,9 @@ include GensrcCommonJdk.gmk
 # Translate the Java debugger wire protocol (jdwp.spec) file into a JDWP.java file
 # and a JDWPCommands.h C-header file.
 
+TOOL_JDWPGEN = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.jdwpgen.Main
+
 JDWP_SPEC_FILE := $(TOPDIR)/make/data/jdwp/jdwp.spec
 HEADER_FILE := $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h
 JAVA_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java

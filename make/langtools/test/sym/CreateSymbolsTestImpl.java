@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import build.tools.symbolgenerator.CreateSymbols;
-import build.tools.symbolgenerator.CreateSymbols.ClassDescription;
-import build.tools.symbolgenerator.CreateSymbols.ClassList;
-import build.tools.symbolgenerator.CreateSymbols.CtSymKind;
-import build.tools.symbolgenerator.CreateSymbols.ExcludeIncludeList;
-import build.tools.symbolgenerator.CreateSymbols.VersionDescription;
+import org.openjdk.buildtools.symbolgenerator.CreateSymbols;
+import org.openjdk.buildtools.symbolgenerator.CreateSymbols.ClassDescription;
+import org.openjdk.buildtools.symbolgenerator.CreateSymbols.ClassList;
+import org.openjdk.buildtools.symbolgenerator.CreateSymbols.CtSymKind;
+import org.openjdk.buildtools.symbolgenerator.CreateSymbols.ExcludeIncludeList;
+import org.openjdk.buildtools.symbolgenerator.CreateSymbols.VersionDescription;
 
 public class CreateSymbolsTestImpl {
 

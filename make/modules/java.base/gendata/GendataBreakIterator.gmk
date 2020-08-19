@@ -76,6 +76,10 @@ BREAK_ITERATOR_BOOTCLASSPATH := \
 # input
 UNICODEDATA := $(TOPDIR)/make/data/unicodedata/UnicodeData.txt
 
+TOOL_GENERATEBREAKITERATORDATA = $(JAVA_SMALL) \
+    -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.generatebreakiteratordata.GenerateBreakIteratorData
+
 # output
 BASE_DATA_PKG_DIR := $(JDK_OUTPUTDIR)/modules/java.base/sun/text/resources
 LD_DATA_PKG_DIR := $(JDK_OUTPUTDIR)/modules/jdk.localedata/sun/text/resources/ext

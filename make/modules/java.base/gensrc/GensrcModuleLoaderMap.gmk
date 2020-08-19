@@ -41,6 +41,10 @@ PLATFORM_MODULES_LIST := $(call SubstComma, $(PLATFORM_MODULES))
 VARDEPS_VALUE := $(BOOT_MODULES_LIST) $(PLATFORM_MODULES_LIST)
 VARDEPS_FILE := $(call DependOnVariable, VARDEPS_VALUE)
 
+TOOL_GENCLASSLOADERMAP = $(JAVA_SMALL) \
+    -cp $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes) \
+    org.openjdk.buildtools.moduleloadermap.GenModuleLoaderMap
+
 ############################################################################
 
 $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/module/ModuleLoaderMap.java: \

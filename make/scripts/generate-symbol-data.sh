@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,5 +73,5 @@ $1/bin/java --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
             --add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
             --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
             --add-modules jdk.jdeps \
-            ../../../make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java \
+            ../../../src/jdk.compiler/share/tools/org/openjdk/buildtools/symbolgenerator/CreateSymbols.java \
             build-description-incremental symbols include.list

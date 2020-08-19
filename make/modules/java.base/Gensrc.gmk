@@ -25,6 +25,10 @@
 
 include GensrcCommonJdk.gmk
 
+# Used by GensrcBuffer.gmk, GensrcCharsetCoder.gmk and GensrcVarHandles.gmk
+TOOL_SPP = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.spp.Spp
+
 include gensrc/GensrcLocaleData.gmk
 include gensrc/GensrcCharacterData.gmk
 include gensrc/GensrcMisc.gmk
@@ -94,6 +98,9 @@ TARGETS += $(COPY_ZH_HK)
 
 ################################################################################
 
+TOOL_GENERATELSREQUIVMAPS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.generatelsrequivmaps.EquivMapsGenerator
+
 GENSRC_LSREQUIVMAPS := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/LocaleEquivalentMaps.java
 
 $(GENSRC_LSREQUIVMAPS): $(TOPDIR)/make/data/lsrdata/language-subtag-registry.txt $(BUILD_TOOLS_JDK)
@@ -104,8 +111,11 @@ TARGETS += $(GENSRC_LSREQUIVMAPS)
 
 ################################################################################
 
+TOOL_INTPOLY = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.intpoly.FieldGen
+
 INTPOLY_GEN_DONE := $(GENSRC_DIR)/_intpoly-gensrc.marker
-INTPOLY_HEADER := $(TOPDIR)/make/jdk/src/classes/build/tools/intpoly/header.txt
+INTPOLY_HEADER := $(TOPDIR)/src/java.base/share/tools/org/openjdk/buildtools/intpoly/header.txt
 $(INTPOLY_GEN_DONE): $(INTPLOY_HEADER) $(BUILD_TOOLS_JDK)
 	$(call MakeDir, $(GENSRC_DIR))
 	$(call LogInfo, Generating fixed-field math classes for java.base)

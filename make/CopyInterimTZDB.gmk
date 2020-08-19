@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,15 +35,16 @@ include MakeBase.gmk
 define tzdb_copyfiles
 	$(call MakeTargetDir)
 	$(RM) '$@'
-	$(SED) -e "s/package java.time.zone/package build.tools.tzdb/" \
+	$(SED) -e "s/package java.time.zone/package org.openjdk.buildtools.tzdb/" \
         < $(<) > $@
 endef
 
-$(eval $(call SetupCopyFiles,COPY_INTERIM_TZDB, \
+$(eval $(call SetupCopyFiles, COPY_INTERIM_TZDB, \
     SRC := $(TOPDIR)/src/java.base/share/classes/java/time/zone, \
-    DEST := $(BUILDTOOLS_OUTPUTDIR)/interim_tzdb_classes/build/tools/tzdb, \
+    DEST := $(BUILDTOOLS_OUTPUTDIR)/interim_tzdb_classes/org/openjdk/buildtools/tzdb, \
     FILES := ZoneRules.java ZoneOffsetTransition.java ZoneOffsetTransitionRule.java Ser.java, \
-    MACRO := tzdb_copyfiles))
+    MACRO := tzdb_copyfiles, \
+))
 
 ##########################################################################################
 

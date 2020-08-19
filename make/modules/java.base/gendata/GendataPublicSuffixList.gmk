@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 #
 
 include $(SPEC)
+
+TOOL_PUBLICSUFFIXLIST = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.publicsuffixlist.GeneratePublicSuffixList
 
 GENDATA_PUBLICSUFFIXLIST_SRC += $(TOPDIR)/make/data/publicsuffixlist/public_suffix_list.dat
 GENDATA_PUBLICSUFFIXLIST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/public_suffix_list.dat

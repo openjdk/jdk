@@ -27,4 +27,13 @@ include Execute.gmk
 include JavaCompilation.gmk
 include NativeCompilation.gmk
 include TextFileProcessing.gmk
+# Still needed to be able to depend on BUILD_TOOLS_JD
 include ToolsJdk.gmk
+
+# shared by java.base and jdk.charsets
+TOOL_CHARSETMAPPING = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.charsetmapping.Main $(LOG_INFO)
+
+# shared by java.base and jdk.localedata
+TOOL_CLDRCONVERTER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    org.openjdk.buildtools.cldrconverter.CLDRConverter

@@ -36,9 +36,7 @@ TOOLS_CLASSES_DIR := $(BUILDTOOLS_OUTPUTDIR)/tools_jigsaw_classes
 $(eval $(call SetupJavaCompilation, BUILD_JIGSAW_TOOLS, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SRC := $(TOPDIR)/make/jdk/src/classes, \
-    INCLUDES := build/tools/deps \
-                build/tools/docs \
-                build/tools/jigsaw, \
+    INCLUDES := build/tools/jigsaw, \
     COPY := .properties .html, \
     BIN := $(TOOLS_CLASSES_DIR), \
     DISABLED_WARNINGS := fallthrough, \
