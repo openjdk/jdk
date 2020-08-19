@@ -56,6 +56,13 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
     private Handler handler = new Handler();
     private SynthStyle style;
     private boolean updateKBAction = true;
+
+    /**
+     *
+     * Constructs a {@code SynthTextAreaUI}.
+     */
+    public SynthTextAreaUI() {}
+
     /**
      * Creates a UI object for a JTextArea.
      *

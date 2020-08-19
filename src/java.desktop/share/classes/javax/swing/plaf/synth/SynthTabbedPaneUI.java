@@ -106,6 +106,12 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     private boolean selectedTabIsPressed = false;
 
     /**
+     *
+     * Constructs a {@code SynthTabbedPaneUI}.
+     */
+    public SynthTabbedPaneUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

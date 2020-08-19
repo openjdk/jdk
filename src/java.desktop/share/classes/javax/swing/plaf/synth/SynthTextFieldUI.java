@@ -57,6 +57,12 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
     private boolean updateKBAction = true;
 
     /**
+     *
+     * Constructs a {@code SynthTextFieldUI}.
+     */
+    public SynthTextFieldUI() {}
+
+    /**
      * Creates a UI for a JTextField.
      *
      * @param c the text field

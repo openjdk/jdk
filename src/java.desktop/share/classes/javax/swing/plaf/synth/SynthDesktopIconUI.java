@@ -45,6 +45,12 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
     private Handler handler = new Handler();
 
     /**
+     *
+     * Constructs a {@code SynthDesktopIconUI}.
+     */
+    public SynthDesktopIconUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

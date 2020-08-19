@@ -49,6 +49,12 @@ public class SynthScrollBarUI extends BasicScrollBarUI
     private boolean validMinimumThumbSize;
 
     /**
+     *
+     * Constructs a {@code SynthScrollBarUI}.
+     */
+    public SynthScrollBarUI() {}
+
+    /**
      * Returns a UI.
      * @return a UI
      * @param c a component

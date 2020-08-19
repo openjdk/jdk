@@ -38,6 +38,12 @@ import javax.swing.plaf.ComponentUI;
  * @since 1.7
  */
 public class SynthToggleButtonUI extends SynthButtonUI {
+    /**
+     *
+     * Constructs a {@code SynthToggleButtonUI}.
+     */
+    public SynthToggleButtonUI() {}
+
     // ********************************
     //          Create PLAF
     // ********************************

@@ -49,6 +49,12 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     private SynthStyle accStyle;
 
     /**
+     *
+     * Constructs a {@code SynthMenuItemUI}.
+     */
+    public SynthMenuItemUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

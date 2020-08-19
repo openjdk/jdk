@@ -54,6 +54,12 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     private SynthStyle style;
 
     /**
+     *
+     * Constructs a {@code SynthTableHeaderUI}.
+     */
+    public SynthTableHeaderUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param h component to create UI object for

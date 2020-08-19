@@ -74,6 +74,12 @@ public class SynthTreeUI extends BasicTreeUI
     private Icon expandedIconWrapper = new ExpandedIconWrapper();
 
     /**
+     *
+     * Constructs a {@code SynthTreeUI}.
+     */
+    public SynthTreeUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param x component to create UI object for
