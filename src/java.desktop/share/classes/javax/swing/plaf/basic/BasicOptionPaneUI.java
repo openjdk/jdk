@@ -127,6 +127,11 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         }
     }
 
+    /**
+     * Constructs a {@code BasicOptionPaneUI}.
+     */
+    public BasicOptionPaneUI() {}
+
     static void loadActionMap(LazyActionMap map) {
         map.put(new Actions(Actions.CLOSE));
         BasicLookAndFeel.installAudioActionMap(map);
@@ -1257,6 +1262,11 @@ public class BasicOptionPaneUI extends OptionPaneUI {
      * Instantiate it only within subclasses of {@code BasicOptionPaneUI}.
      */
     public class PropertyChangeHandler implements PropertyChangeListener {
+        /**
+         * Constructs a {@code PropertyChangeHandler}.
+         */
+        public PropertyChangeHandler() {}
+
         /**
          * If the source of the PropertyChangeEvent <code>e</code> equals the
          * optionPane and is one of the ICON_PROPERTY, MESSAGE_PROPERTY,

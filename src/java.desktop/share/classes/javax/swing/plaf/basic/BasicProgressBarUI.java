@@ -134,6 +134,11 @@ public class BasicProgressBarUI extends ProgressBarUI {
     private int maxPosition = 0; //maximum X (horiz) or Y box location
 
     /**
+     * Constructs a {@code BasicProgressBarUI}.
+     */
+    public BasicProgressBarUI() {}
+
+    /**
      * Returns a new instance of {@code BasicProgressBarUI}.
      *
      * @param x a component
@@ -1288,6 +1293,11 @@ public class BasicProgressBarUI extends ProgressBarUI {
      * Instantiate it only within subclasses of {@code BasicProgressBarUI}.
      */
     public class ChangeHandler implements ChangeListener {
+        /**
+         * Constructs a {@code ChangeHandler}.
+         */
+        public ChangeHandler() {}
+
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this

@@ -131,6 +131,11 @@ public class BasicMenuItemUI extends MenuItemUI
     private static final boolean VERBOSE = false; // show reuse hits/misses
     private static final boolean DEBUG =   false;  // show bad params, misc.
 
+    /**
+     * Constructs a {@code BasicMenuItemUI}.
+     */
+    public BasicMenuItemUI() {}
+
     static void loadActionMap(LazyActionMap map) {
         // NOTE: BasicMenuUI also calls into this method.
         map.put(new Actions(Actions.CLICK));

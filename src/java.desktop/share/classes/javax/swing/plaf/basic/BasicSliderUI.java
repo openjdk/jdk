@@ -117,6 +117,11 @@ public class BasicSliderUI extends SliderUI{
     private boolean sameLabelBaselines;
 
     /**
+     * Constructs a {@code BasicSliderUI}.
+     */
+    public BasicSliderUI() {}
+
+    /**
      * Returns the shadow color.
      * @return the shadow color
      */
@@ -918,6 +923,11 @@ public class BasicSliderUI extends SliderUI{
      * A property change handler.
      */
     public class PropertyChangeHandler implements PropertyChangeListener {
+        /**
+         * Constructs a {@code PropertyChangeHandler}.
+         */
+        public PropertyChangeHandler() {}
+
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
@@ -1863,6 +1873,11 @@ public class BasicSliderUI extends SliderUI{
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class ChangeHandler implements ChangeListener {
+        /**
+         * Constructs a {@code ChangeHandler}.
+         */
+        public ChangeHandler() {}
+
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
@@ -1888,6 +1903,11 @@ public class BasicSliderUI extends SliderUI{
         protected transient int currentMouseX;
         /** Current mouse y. */
         protected transient int currentMouseY;
+
+        /**
+         * Constructs a {@code TrackListener}.
+         */
+        public TrackListener() {}
 
         /**
          * {@inheritDoc}
@@ -2200,6 +2220,11 @@ public class BasicSliderUI extends SliderUI{
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class ComponentHandler extends ComponentAdapter {
+        /**
+         * Constructs a {@code ComponentHandler}.
+         */
+        public ComponentHandler() {}
+
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
@@ -2216,6 +2241,11 @@ public class BasicSliderUI extends SliderUI{
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class FocusHandler implements FocusListener {
+        /**
+         * Constructs a {@code FocusHandler}.
+         */
+        public FocusHandler() {}
+
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this

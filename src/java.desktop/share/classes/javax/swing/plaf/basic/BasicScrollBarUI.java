@@ -163,6 +163,11 @@ public class BasicScrollBarUI
      */
     protected int decrGap;
 
+    /**
+     * Constructs a {@code BasicScrollBarUI}.
+     */
+    public BasicScrollBarUI() {}
+
     static void loadActionMap(LazyActionMap map) {
         map.put(new Actions(Actions.POSITIVE_UNIT_INCREMENT));
         map.put(new Actions(Actions.POSITIVE_BLOCK_INCREMENT));
@@ -1645,6 +1650,11 @@ public class BasicScrollBarUI
     /** Property change handler */
     public class PropertyChangeHandler implements PropertyChangeListener
     {
+        /**
+         * Constructs a {@code PropertyChangeHandler}.
+         */
+        public PropertyChangeHandler() {}
+
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this

@@ -44,6 +44,11 @@ public class BasicPanelUI extends PanelUI {
     private static PanelUI panelUI;
 
     /**
+     * Constructs a {@code BasicPanelUI}.
+     */
+    public BasicPanelUI() {}
+
+    /**
      * Returns an instance of {@code BasicPanelUI}.
      *
      * @param c a component

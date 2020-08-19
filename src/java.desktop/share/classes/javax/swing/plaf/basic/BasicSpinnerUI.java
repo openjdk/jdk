@@ -80,6 +80,10 @@ public class BasicSpinnerUI extends SpinnerUI
      */
     private static final Dimension zeroSize = new Dimension(0, 0);
 
+    /**
+     * Constructs a {@code BasicSpinnerUI}.
+     */
+    public BasicSpinnerUI() {}
 
     /**
      * Returns a new instance of BasicSpinnerUI.  SpinnerListUI

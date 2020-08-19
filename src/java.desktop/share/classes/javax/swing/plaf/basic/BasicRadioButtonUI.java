@@ -62,6 +62,11 @@ public class BasicRadioButtonUI extends BasicToggleButtonUI
     // ********************************
 
     /**
+     * Constructs a {@code BasicRadioButtonUI}.
+     */
+    public BasicRadioButtonUI() {}
+
+    /**
      * Returns an instance of {@code BasicRadioButtonUI}.
      *
      * @param b a component
