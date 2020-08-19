@@ -126,7 +126,7 @@ lines of code.  Name what you must repeat.
 change should be done with a "setter" accessor matched to the simple
 "getter".
 
-### Files
+### Source Files
 
 * All source files must have a globally unique basename.  The build
 system depends on this uniqueness.
@@ -146,6 +146,24 @@ it to resolve include problems.
 * Keep the include lines alphabetically sorted.
 
 * Put conditional inclusions (`#if ...`) at the end of the include list.
+
+### JTReg Tests
+
+* JTReg tests should have meaningful names.
+
+* JTReg tests associated with specific bugs should be tagged with the
+`@bug` keyword in the test description.
+
+* JTReg tests should be organized by component or feature under
+`test/`, in a directory hierarchy that generally follows that of the
+`src/` directory. There may be additional subdirectories to further
+categorize tests by feature. This structure makes it easy to run a
+collection of tests associated with a specific feature by specifying
+the associated directory as the source of the tests to run.
+
+    * Some (older) tests use the associated bug number in the directory
+    name, the test name, or both.  That naming style should no longer be
+    used, with existing tests using that style being candidates for migration.
 
 ### Naming
 
