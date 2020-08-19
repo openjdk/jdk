@@ -708,14 +708,14 @@ public class DocCommentParser {
                     case "body":
                         // Check if also followed by <main>
                         // 1. skip rest of <body>
-                        while (ch != -1 && ch != '>') {
+                        while (bp < buflen && ch != '>') {
                             nextChar();
                         }
                         if (ch == '>') {
                             nextChar();
                         }
                         // 2. skip any whitespace
-                        while (ch != -1 && Character.isWhitespace(ch)) {
+                        while (bp < buflen && isWhitespace(ch)) {
                             nextChar();
                         }
                         // 3. check if looking at "<main..."
