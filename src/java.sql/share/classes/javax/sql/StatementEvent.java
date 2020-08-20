@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,14 @@ import java.util.EventObject;
 public class StatementEvent extends EventObject {
 
         static final long serialVersionUID = -8089573731826608315L;
+        /**
+         * The {@code SQLException} the driver is about to throw to the application.
+         */
         private SQLException            exception;
+
+        /**
+         * The {@code PreparedStatement} that is being closed or is invalid.
+         */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         private PreparedStatement       statement;
 
