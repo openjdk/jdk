@@ -893,8 +893,11 @@ void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
 
   // This should only be called in the context of the JVMCI class being initialized
   JVMCIObject result = JVMCIENV->call_HotSpotJVMCIRuntime_runtime(JVMCI_CHECK);
+  result = JVMCIENV->make_global(result);
 
-  _HotSpotJVMCIRuntime_instance = JVMCIENV->make_global(result);
+  OrderAccess::storestore();  // Ensure handle is fully constructed before publishing
+  _HotSpotJVMCIRuntime_instance = result;
+
   JVMCI::_is_initialized = true;
 }
 
