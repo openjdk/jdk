@@ -2658,7 +2658,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
 
 void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude) {
   int step = 4 * wordSize;
-  push(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2) - exclude, sp);
+  push(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2) BSD_ONLY(- r18) - exclude, sp);
   sub(sp, sp, step);
   mov(rscratch1, -step);
   // Push v0-v7, v16-v31.
@@ -2678,7 +2678,7 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
           as_FloatRegister(i+3), T1D, Address(post(sp, 4 * wordSize)));
   }
 
-  pop(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2) - exclude, sp);
+  pop(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2) BSD_ONLY(- r18) - exclude, sp);
 }
 
 void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
@@ -5253,7 +5253,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 // aarch64_get_thread_helper() clobbers only r0, r1, and flags.
 //
 void MacroAssembler::get_thread(Register dst) {
-  RegSet saved_regs = RegSet::range(r0, r1) + lr - dst;
+  RegSet saved_regs = RegSet::range(r0, r1) + BSD_ONLY(RegSet::range(r2, r17)) + lr - dst;
   push(saved_regs, sp);
 
   mov(lr, CAST_FROM_FN_PTR(address, JavaThread::aarch64_get_thread_helper));

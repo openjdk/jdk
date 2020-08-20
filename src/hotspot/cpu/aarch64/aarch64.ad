@@ -716,6 +716,11 @@ reg_class any_reg %{
 
 // Class for non-allocatable 32 bit registers
 reg_class non_allocatable_reg32(
+#ifdef __APPLE__
+    //On macOS-aarch64, the register x18 is reserved for the platform.
+    //Conforming software should not make use of it
+    R18,
+#endif
     R28,                        // thread
     R30,                        // lr
     R31                         // sp
@@ -723,6 +728,9 @@ reg_class non_allocatable_reg32(
 
 // Class for non-allocatable 64 bit registers
 reg_class non_allocatable_reg(
+#ifdef __APPLE__
+    R18, R18_H
+#endif
     R28, R28_H,                 // thread
     R30, R30_H,                 // lr
     R31, R31_H                  // sp

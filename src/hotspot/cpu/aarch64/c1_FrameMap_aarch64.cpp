@@ -181,7 +181,9 @@ void FrameMap::initialize() {
   map_register(i, r15); r15_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, r16); r16_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, r17); r17_opr = LIR_OprFact::single_cpu(i); i++;
+#ifndef __APPLE__
   map_register(i, r18); r18_opr = LIR_OprFact::single_cpu(i); i++;
+#endif
   map_register(i, r19); r19_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, r20); r20_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, r21); r21_opr = LIR_OprFact::single_cpu(i); i++;
@@ -198,6 +200,10 @@ void FrameMap::initialize() {
   map_register(i, r31_sp); sp_opr = LIR_OprFact::single_cpu(i); i++; // sp
   map_register(i, r8); r8_opr = LIR_OprFact::single_cpu(i); i++;   // rscratch1
   map_register(i, r9); r9_opr = LIR_OprFact::single_cpu(i); i++;   // rscratch2
+
+#ifdef __APPLE__
+  map_register(i, r18); r18_opr = LIR_OprFact::single_cpu(i); i++;   // rscratch2
+#endif
 
   rscratch1_opr = r8_opr;
   rscratch2_opr = r9_opr;
@@ -227,7 +233,9 @@ void FrameMap::initialize() {
   _caller_save_cpu_regs[13] = r15_opr;
   _caller_save_cpu_regs[14] = r16_opr;
   _caller_save_cpu_regs[15] = r17_opr;
+#ifndef __APPLE__
   _caller_save_cpu_regs[16] = r18_opr;
+#endif
 
   for (int i = 0; i < 8; i++) {
     _caller_save_fpu_regs[i] = LIR_OprFact::single_fpu(i);

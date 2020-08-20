@@ -689,7 +689,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
       RECOMP_FOR1_CHECK;
   Register tmp2 = r1, n = r2, jv = r4, tmp5 = r5, jx = r6,
       tmp3 = r7, iqBase = r10, ih = r11, tmp4 = r12, tmp1 = r13,
-      jz = r14, j = r15, twoOverPiBase = r16, i = r17, qBase = r18;
+      jz = r14, j = r15, twoOverPiBase = r16, i = r17, qBase = r20;
     // jp = jk == init_jk[prec] = init_jk[2] == {2,3,4,6}[2] == 4
     // jx = nx - 1
     lea(twoOverPiBase, ExternalAddress(two_over_pi));
