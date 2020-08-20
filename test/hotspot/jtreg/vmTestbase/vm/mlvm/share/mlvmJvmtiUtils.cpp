@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,8 +96,11 @@ struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method) {
       return NULL;
     }
 
-    strncpy(mn->methodName, szName, sizeof(mn->methodName));
-    strncpy(mn->classSig, szSignature, sizeof(mn->classSig));
+    strncpy(mn->methodName, szName, sizeof(mn->methodName) - 1);
+    mn->methodName[sizeof(mn->methodName) - 1] = '\0';
+
+    strncpy(mn->classSig, szSignature, sizeof(mn->classSig) - 1);
+    mn->classSig[sizeof(mn->classSig) - 1] = '\0';
 
     return mn;
 }
