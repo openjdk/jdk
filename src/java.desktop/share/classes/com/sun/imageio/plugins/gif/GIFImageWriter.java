@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.awt.image.IndexColorModel;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.SampleModel;
-import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -45,16 +44,15 @@ import javax.imageio.IIOImage;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
-import javax.imageio.spi.ImageWriterSpi;
 import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataFormatImpl;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageOutputStream;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import com.sun.imageio.plugins.common.LZWCompressor;
 import com.sun.imageio.plugins.common.PaletteBuilder;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import sun.awt.image.ByteComponentRaster;
 
 public class GIFImageWriter extends ImageWriter {
@@ -267,6 +265,7 @@ public class GIFImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public boolean canWriteSequence() {
         return true;
     }
@@ -317,6 +316,7 @@ public class GIFImageWriter extends ImageWriter {
      * Creates a default stream metadata object and merges in the
      * supplied metadata.
      */
+    @Override
     public IIOMetadata convertStreamMetadata(IIOMetadata inData,
                                              ImageWriteParam param) {
         if (inData == null) {
@@ -334,6 +334,7 @@ public class GIFImageWriter extends ImageWriter {
      * Creates a default image metadata object and merges in the
      * supplied metadata.
      */
+    @Override
     public IIOMetadata convertImageMetadata(IIOMetadata inData,
                                             ImageTypeSpecifier imageType,
                                             ImageWriteParam param) {
@@ -364,6 +365,7 @@ public class GIFImageWriter extends ImageWriter {
         return im;
     }
 
+    @Override
     public void endWriteSequence() throws IOException {
         if (stream == null) {
             throw new IllegalStateException("output == null!");
@@ -375,6 +377,7 @@ public class GIFImageWriter extends ImageWriter {
         resetLocal();
     }
 
+    @Override
     public IIOMetadata getDefaultImageMetadata(ImageTypeSpecifier imageType,
                                                ImageWriteParam param) {
         GIFWritableImageMetadata imageMetadata =
@@ -422,6 +425,7 @@ public class GIFImageWriter extends ImageWriter {
         return imageMetadata;
     }
 
+    @Override
     public IIOMetadata getDefaultStreamMetadata(ImageWriteParam param) {
         GIFWritableStreamMetadata streamMetadata =
             new GIFWritableStreamMetadata();
@@ -429,10 +433,12 @@ public class GIFImageWriter extends ImageWriter {
         return streamMetadata;
     }
 
+    @Override
     public ImageWriteParam getDefaultWriteParam() {
         return new GIFImageWriteParam(getLocale());
     }
 
+    @Override
     public void prepareWriteSequence(IIOMetadata streamMetadata)
       throws IOException {
 
@@ -455,6 +461,7 @@ public class GIFImageWriter extends ImageWriter {
         this.isWritingSequence = true;
     }
 
+    @Override
     public void reset() {
         super.reset();
         resetLocal();
@@ -470,6 +477,7 @@ public class GIFImageWriter extends ImageWriter {
         this.imageIndex = 0;
     }
 
+    @Override
     public void setOutput(Object output) {
         super.setOutput(output);
         if (output != null) {
@@ -484,6 +492,7 @@ public class GIFImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public void write(IIOMetadata sm,
                       IIOImage iioimage,
                       ImageWriteParam p) throws IOException {
@@ -511,6 +520,7 @@ public class GIFImageWriter extends ImageWriter {
         write(true, true, streamMetadata, iioimage, p);
     }
 
+    @Override
     public void writeToSequence(IIOImage image, ImageWriteParam param)
       throws IOException {
         if (stream == null) {
@@ -1319,6 +1329,7 @@ class GIFImageWriteParam extends ImageWriteParam {
         this.compressionType = compressionTypes[0];
     }
 
+    @Override
     public void setCompressionMode(int mode) {
         if (mode == MODE_DISABLED) {
             throw new UnsupportedOperationException("MODE_DISABLED is not supported.");

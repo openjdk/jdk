@@ -73,6 +73,7 @@ class PNGImageDataEnumeration implements Enumeration<InputStream> {
         int type = stream.readInt(); // skip chunk type
     }
 
+    @Override
     public InputStream nextElement() {
         try {
             firstTime = false;
@@ -83,6 +84,7 @@ class PNGImageDataEnumeration implements Enumeration<InputStream> {
         }
     }
 
+    @Override
     public boolean hasMoreElements() {
         if (firstTime) {
             return true;
@@ -198,6 +200,7 @@ public class PNGImageReader extends ImageReader {
         super(originatingProvider);
     }
 
+    @Override
     public void setInput(Object input,
                          boolean seekForwardOnly,
                          boolean ignoreMetadata) {
@@ -1525,6 +1528,7 @@ public class PNGImageReader extends ImageReader {
         }
     }
 
+    @Override
     public int getNumImages(boolean allowSearch) throws IIOException {
         if (stream == null) {
             throw new IllegalStateException("No input source set!");
@@ -1536,6 +1540,7 @@ public class PNGImageReader extends ImageReader {
         return 1;
     }
 
+    @Override
     public int getWidth(int imageIndex) throws IIOException {
         if (imageIndex != 0) {
             throw new IndexOutOfBoundsException("imageIndex != 0!");
@@ -1546,6 +1551,7 @@ public class PNGImageReader extends ImageReader {
         return metadata.IHDR_width;
     }
 
+    @Override
     public int getHeight(int imageIndex) throws IIOException {
         if (imageIndex != 0) {
             throw new IndexOutOfBoundsException("imageIndex != 0!");
@@ -1556,6 +1562,7 @@ public class PNGImageReader extends ImageReader {
         return metadata.IHDR_height;
     }
 
+    @Override
     public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex)
       throws IIOException
     {
@@ -1790,6 +1797,7 @@ public class PNGImageReader extends ImageReader {
      * After this changes we should override getRawImageType()
      * to return last element of image types list.
      */
+    @Override
     public ImageTypeSpecifier getRawImageType(int imageIndex)
       throws IOException {
 
@@ -1801,15 +1809,18 @@ public class PNGImageReader extends ImageReader {
         return raw;
     }
 
+    @Override
     public ImageReadParam getDefaultReadParam() {
         return new ImageReadParam();
     }
 
+    @Override
     public IIOMetadata getStreamMetadata()
         throws IIOException {
         return null;
     }
 
+    @Override
     public IIOMetadata getImageMetadata(int imageIndex) throws IIOException {
         if (imageIndex != 0) {
             throw new IndexOutOfBoundsException("imageIndex != 0!");
@@ -1818,6 +1829,7 @@ public class PNGImageReader extends ImageReader {
         return metadata;
     }
 
+    @Override
     public BufferedImage read(int imageIndex, ImageReadParam param)
         throws IIOException {
         if (imageIndex != 0) {
@@ -1837,6 +1849,7 @@ public class PNGImageReader extends ImageReader {
         return theImage;
     }
 
+    @Override
     public void reset() {
         super.reset();
         resetStreamSettings();

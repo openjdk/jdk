@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,7 @@ public class TIFFImageReader extends ImageReader {
         super(originatingProvider);
     }
 
+    @Override
     public void setInput(Object input,
             boolean seekForwardOnly,
             boolean ignoreMetadata) {
@@ -245,6 +246,7 @@ public class TIFFImageReader extends ImageReader {
         return imageIndex;
     }
 
+    @Override
     public int getNumImages(boolean allowSearch) throws IOException {
         if (stream == null) {
             throw new IllegalStateException("Input not set!");
@@ -262,6 +264,7 @@ public class TIFFImageReader extends ImageReader {
         return numImages;
     }
 
+    @Override
     public IIOMetadata getStreamMetadata() throws IIOException {
         readHeader();
         return streamMetadata;
@@ -487,11 +490,13 @@ public class TIFFImageReader extends ImageReader {
         }
     }
 
+    @Override
     public int getWidth(int imageIndex) throws IOException {
         seekToImage(imageIndex);
         return getWidth();
     }
 
+    @Override
     public int getHeight(int imageIndex) throws IOException {
         seekToImage(imageIndex);
         return getHeight();
@@ -699,6 +704,7 @@ public class TIFFImageReader extends ImageReader {
         }
     }
 
+    @Override
     public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IIOException {
         List<ImageTypeSpecifier> l; // List of ImageTypeSpecifiers
 
@@ -826,6 +832,7 @@ public class TIFFImageReader extends ImageReader {
         return l.iterator();
     }
 
+    @Override
     public IIOMetadata getImageMetadata(int imageIndex) throws IIOException {
         seekToImage(imageIndex);
         TIFFImageMetadata im
@@ -844,6 +851,7 @@ public class TIFFImageReader extends ImageReader {
         return sm;
     }
 
+    @Override
     public boolean isRandomAccessEasy(int imageIndex) throws IOException {
         if (currIndex != -1) {
             seekToImage(currIndex);
@@ -858,18 +866,22 @@ public class TIFFImageReader extends ImageReader {
         return false;
     }
 
+    @Override
     public boolean hasThumbnails(int imageIndex) {
         return false;
     }
 
+    @Override
     public int getNumThumbnails(int imageIndex) throws IOException {
         return 0;
     }
 
+    @Override
     public ImageReadParam getDefaultReadParam() {
         return new TIFFImageReadParam();
     }
 
+    @Override
     public boolean isImageTiled(int imageIndex) throws IOException {
         seekToImage(imageIndex);
 
@@ -878,16 +890,19 @@ public class TIFFImageReader extends ImageReader {
         return f != null;
     }
 
+    @Override
     public int getTileWidth(int imageIndex) throws IOException {
         seekToImage(imageIndex);
         return getTileOrStripWidth();
     }
 
+    @Override
     public int getTileHeight(int imageIndex) throws IOException {
         seekToImage(imageIndex);
         return getTileOrStripHeight();
     }
 
+    @Override
     public BufferedImage readTile(int imageIndex, int tileX, int tileY)
             throws IOException {
 
@@ -918,10 +933,12 @@ public class TIFFImageReader extends ImageReader {
         return read(imageIndex, param);
     }
 
+    @Override
     public boolean canReadRaster() {
         return false;
     }
 
+    @Override
     public Raster readRaster(int imageIndex, ImageReadParam param)
             throws IOException {
         throw new UnsupportedOperationException();
@@ -1009,6 +1026,7 @@ public class TIFFImageReader extends ImageReader {
         }
     }
 
+    @Override
     public RenderedImage readAsRenderedImage(int imageIndex,
             ImageReadParam param)
             throws IOException {
@@ -1135,6 +1153,7 @@ public class TIFFImageReader extends ImageReader {
                 destinationBands);
     }
 
+    @Override
     public BufferedImage read(int imageIndex, ImageReadParam param)
             throws IOException {
         prepareRead(imageIndex, param);
@@ -1353,6 +1372,7 @@ public class TIFFImageReader extends ImageReader {
         return theImage;
     }
 
+    @Override
     public void reset() {
         super.reset();
         resetLocal();
