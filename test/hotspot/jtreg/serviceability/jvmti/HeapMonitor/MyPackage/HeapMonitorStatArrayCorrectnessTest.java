@@ -28,6 +28,7 @@ package MyPackage;
  * @test
  * @build Frame HeapMonitor
  * @summary Verifies the JVMTI Heap Monitor interval when allocating arrays.
+ * @requires vm.jvmti
  * @compile HeapMonitorStatArrayCorrectnessTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorStatArrayCorrectnessTest
  */

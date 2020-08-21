@@ -25,6 +25,7 @@
  * @test
  * @library /test/lib
  * @summary Test that redefinition reuses metaspace blocks that are freed
+ * @requires vm.jvmti
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  *          jdk.jartool/sun.tools.jar

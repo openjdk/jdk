@@ -28,6 +28,7 @@ package MyPackage;
  * @test
  * @build Frame HeapMonitor ThreadInformation
  * @summary Verifies the JVMTI Heap Monitor Thread information sanity.
+ * @requires vm.jvmti
  * @compile HeapMonitorThreadTest.java
  * @run main/othervm/native -Xmx512m -agentlib:HeapMonitorTest MyPackage.HeapMonitorThreadTest
  */

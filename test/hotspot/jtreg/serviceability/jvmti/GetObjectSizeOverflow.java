@@ -33,6 +33,7 @@
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @requires vm.bits == 64
+ * @requires vm.jvmti
  * @build GetObjectSizeOverflowAgent
  * @run driver ClassFileInstaller GetObjectSizeOverflowAgent
  * @run main GetObjectSizeOverflow

@@ -25,6 +25,7 @@
  * @test
  * @bug 8212159
  * @summary Generate compiled method load events without crashing
+ * @requires vm.jvmti
  * @run main/othervm/native -agentlib:CompiledZombie -Xcomp -XX:ReservedCodeCacheSize=50m Zombie
  **/
 

@@ -30,5 +30,6 @@ package MyPackage;
  * @build Frame HeapMonitor
  * @compile HeapMonitorGCTest.java
  * @requires vm.gc == "Parallel" | vm.gc == "null"
+ * @requires vm.jvmti
  * @run main/othervm/native -agentlib:HeapMonitorTest -XX:+UseParallelGC MyPackage.HeapMonitorGCTest
  */

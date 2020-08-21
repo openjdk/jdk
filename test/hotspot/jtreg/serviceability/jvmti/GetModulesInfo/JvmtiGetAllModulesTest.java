@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Verifies the JVMTI GetAllModules API
+ * @requires vm.jvmti
  * @library /test/lib
  * @run main/othervm/native -agentlib:JvmtiGetAllModulesTest JvmtiGetAllModulesTest
  *

@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.jvmti
  * @run main/othervm/native -agentlib:MAAClassFileLoadHook MAAClassFileLoadHook
  * @run main/othervm/native -agentlib:MAAClassFileLoadHook=with_early_vmstart MAAClassFileLoadHook
  * @run main/othervm/native -agentlib:MAAClassFileLoadHook=with_early_class_hook MAAClassFileLoadHook

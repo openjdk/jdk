@@ -25,6 +25,7 @@
  * @test
  * @bug 8165246 8010319
  * @summary Test has_previous_versions flag and processing during class unloading.
+ * @requires vm.jvmti
  * @requires vm.opt.final.ClassUnloading
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
