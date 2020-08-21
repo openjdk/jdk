@@ -873,7 +873,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       if (result != NULL) {
         size_t size_in_regions = humongous_obj_size_in_regions(word_size);
         policy()->old_gen_alloc_tracker()->
-          add_allocated_bytes_since_last_gc(size_in_regions * HeapRegion::GrainBytes);
+          add_allocated_humongous_bytes_since_last_gc(size_in_regions * HeapRegion::GrainBytes);
         return result;
       }
 
@@ -893,6 +893,9 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
         assert(succeeded, "only way to get back a non-NULL result");
         log_trace(gc, alloc)("%s: Successfully scheduled collection returning " PTR_FORMAT,
                              Thread::current()->name(), p2i(result));
+        size_t size_in_regions = humongous_obj_size_in_regions(word_size);
+        policy()->old_gen_alloc_tracker()->
+          record_collection_pause_humongous_allocation(size_in_regions * HeapRegion::GrainBytes);
         return result;
       }
 
