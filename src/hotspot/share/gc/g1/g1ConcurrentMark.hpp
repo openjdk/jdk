@@ -818,8 +818,7 @@ public:
   G1CMTask(uint worker_id,
            G1ConcurrentMark *cm,
            G1CMTaskQueue* task_queue,
-           G1RegionMarkStats* mark_stats,
-           uint max_regions);
+           G1RegionMarkStats* mark_stats);
 
   inline void update_liveness(oop const obj, size_t const obj_size);
 
