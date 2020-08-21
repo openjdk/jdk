@@ -504,7 +504,7 @@ void emit_cmpfp_fixup(MacroAssembler& _masm) {
   __ bind(exit);
 }
 
-void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
+static void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
   Label done;
   __ movl(dst, -1);
   __ jcc(Assembler::parity, done);

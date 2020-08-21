@@ -1664,7 +1664,7 @@ void FileMapInfo::close() {
 /*
  * Same as os::map_memory() but also pretouches if AlwaysPreTouch is enabled.
  */
-char* map_memory(int fd, const char* file_name, size_t file_offset,
+static char* map_memory(int fd, const char* file_name, size_t file_offset,
                  char *addr, size_t bytes, bool read_only,
                  bool allow_exec, MEMFLAGS flags = mtNone) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,

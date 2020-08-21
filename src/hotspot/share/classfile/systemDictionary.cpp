@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,13 +212,13 @@ void SystemDictionary::set_platform_loader(ClassLoaderData *cld) {
 // ----------------------------------------------------------------------------
 // Parallel class loading check
 
-bool is_parallelCapable(Handle class_loader) {
+static bool is_parallelCapable(Handle class_loader) {
   if (class_loader.is_null()) return true;
   return java_lang_ClassLoader::parallelCapable(class_loader());
 }
 // ----------------------------------------------------------------------------
 // ParallelDefineClass flag does not apply to bootclass loader
-bool is_parallelDefine(Handle class_loader) {
+static bool is_parallelDefine(Handle class_loader) {
    if (class_loader.is_null()) return false;
    if (AllowParallelDefineClass && java_lang_ClassLoader::parallelCapable(class_loader())) {
      return true;
@@ -280,7 +280,7 @@ Symbol* SystemDictionary::class_name_symbol(const char* name, Symbol* exception,
 
 #ifdef ASSERT
 // Used to verify that class loading succeeded in adding k to the dictionary.
-void verify_dictionary_entry(Symbol* class_name, InstanceKlass* k) {
+static void verify_dictionary_entry(Symbol* class_name, InstanceKlass* k) {
   MutexLocker mu(SystemDictionary_lock);
   ClassLoaderData* loader_data = k->class_loader_data();
   Dictionary* dictionary = loader_data->dictionary();

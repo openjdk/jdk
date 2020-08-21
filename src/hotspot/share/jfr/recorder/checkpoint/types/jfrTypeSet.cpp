@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1092,14 +1092,14 @@ static int write_symbol(JfrCheckpointWriter* writer, SymbolEntryPtr entry, bool 
   return 1;
 }
 
-int write__symbol(JfrCheckpointWriter* writer, const void* e) {
+static int write__symbol(JfrCheckpointWriter* writer, const void* e) {
   assert(e != nullptr, "invariant");
   SymbolEntryPtr entry = static_cast<SymbolEntryPtr>(e);
   set_serialized(entry);
   return write_symbol(writer, entry, false);
 }
 
-int write__symbol__leakp(JfrCheckpointWriter* writer, const void* e) {
+static int write__symbol__leakp(JfrCheckpointWriter* writer, const void* e) {
   assert(e != nullptr, "invariant");
   SymbolEntryPtr entry = static_cast<SymbolEntryPtr>(e);
   return write_symbol(writer, entry, true);
@@ -1113,14 +1113,14 @@ static int write_string(JfrCheckpointWriter* writer, StringEntryPtr entry, bool 
   return 1;
 }
 
-int write__string(JfrCheckpointWriter* writer, const void* e) {
+static int write__string(JfrCheckpointWriter* writer, const void* e) {
   assert(e != nullptr, "invariant");
   StringEntryPtr entry = static_cast<StringEntryPtr>(e);
   set_serialized(entry);
   return write_string(writer, entry, false);
 }
 
-int write__string__leakp(JfrCheckpointWriter* writer, const void* e) {
+static int write__string__leakp(JfrCheckpointWriter* writer, const void* e) {
   assert(e != nullptr, "invariant");
   StringEntryPtr entry = static_cast<StringEntryPtr>(e);
   return write_string(writer, entry, true);
