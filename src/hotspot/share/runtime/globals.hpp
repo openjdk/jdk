@@ -808,6 +808,16 @@ const size_t minimumSymbolTableSize = 1024;
           range(500, max_intx)                                              \
           constraint(BiasedLockingDecayTimeFunc,AfterErgo)                  \
                                                                             \
+  diagnostic(intx, DiagnoseSyncOnPrimitiveWrappers, 0,                      \
+             "Detect and take action upon identifying synchronization on "  \
+             "primitive wrappers. Modes: "                                  \
+             "0: off; "                                                     \
+             "1: exit with fatal error; "                                   \
+             "2: log message to stdout. Output file can be specified with " \
+             "   -Xlog:primitivewrappers. If JFR is running it will "       \
+             "   also generate JFR events.")                                \
+             range(0, 2)                                                    \
+                                                                            \
   product(bool, ExitOnOutOfMemoryError, false,                              \
           "JVM exits on the first occurrence of an out-of-memory error")    \
                                                                             \

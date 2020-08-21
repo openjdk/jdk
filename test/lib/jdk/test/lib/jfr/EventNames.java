@@ -61,6 +61,7 @@ public class EventNames {
     public final static String JavaMonitorEnter = PREFIX + "JavaMonitorEnter";
     public final static String JavaMonitorWait = PREFIX + "JavaMonitorWait";
     public final static String JavaMonitorInflate = PREFIX + "JavaMonitorInflate";
+    public final static String SyncOnPrimitiveWrapper = PREFIX + "SyncOnPrimitiveWrapper";
     public final static String ClassLoad = PREFIX + "ClassLoad";
     public final static String ClassDefine = PREFIX + "ClassDefine";
     public final static String ClassUnload = PREFIX + "ClassUnload";

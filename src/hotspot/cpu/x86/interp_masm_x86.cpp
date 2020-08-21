@@ -1186,6 +1186,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     const Register tmp_reg = rbx; // Will be passed to biased_locking_enter to avoid a
                                   // problematic case where tmp_reg = no_reg.
     const Register obj_reg = LP64_ONLY(c_rarg3) NOT_LP64(rcx); // Will contain the oop
+    const Register rklass_decode_tmp = LP64_ONLY(rscratch1) NOT_LP64(noreg);
 
     const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
     const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
@@ -1197,8 +1198,14 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     // Load object pointer into obj_reg
     movptr(obj_reg, Address(lock_reg, obj_offset));
 
+    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+      load_klass(tmp_reg, obj_reg, rklass_decode_tmp);
+      movl(tmp_reg, Address(tmp_reg, Klass::access_flags_offset()));
+      testl(tmp_reg, JVM_ACC_IS_BOX_CLASS);
+      jcc(Assembler::notZero, slow_case);
+    }
+
     if (UseBiasedLocking) {
-      Register rklass_decode_tmp = LP64_ONLY(rscratch1) NOT_LP64(noreg);
       biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp_reg, rklass_decode_tmp, false, done, &slow_case);
     }
 

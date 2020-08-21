@@ -375,18 +375,14 @@ public:
   // biased and we acquired it. Slow case label is branched to with
   // condition code NE set if the lock is biased but we failed to acquire
   // it. Otherwise fall through.
-  // Returns offset of first potentially-faulting instruction for null
-  // check info (currently consumed only by C1). If
-  // swap_reg_contains_mark is true then returns -1 as it is assumed
-  // the calling code has already passed any potential faults.
   // Notes:
   // - swap_reg and tmp_reg are scratched
   // - Rtemp was (implicitly) scratched and can now be specified as the tmp2
-  int biased_locking_enter(Register obj_reg, Register swap_reg, Register tmp_reg,
-                           bool swap_reg_contains_mark,
-                           Register tmp2,
-                           Label& done, Label& slow_case,
-                           BiasedLockingCounters* counters = NULL);
+  void biased_locking_enter(Register obj_reg, Register swap_reg, Register tmp_reg,
+                            bool swap_reg_contains_mark,
+                            Register tmp2,
+                            Label& done, Label& slow_case,
+                            BiasedLockingCounters* counters = NULL);
   void biased_locking_exit(Register obj_reg, Register temp_reg, Label& done);
 
   // Building block for CAS cases of biased locking: makes CAS and records statistics.

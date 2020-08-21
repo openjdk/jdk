@@ -910,6 +910,13 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // Load markWord from object into displaced_header.
     ld(displaced_header, oopDesc::mark_offset_in_bytes(), object);
 
+    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+      load_klass(tmp, object);
+      lwz(tmp, in_bytes(Klass::access_flags_offset()), tmp);
+      testbitdi(CCR0, R0, tmp, exact_log2(JVM_ACC_IS_BOX_CLASS));
+      bne(CCR0, slow_case);
+    }
+
     if (UseBiasedLocking) {
       biased_locking_enter(CCR0, object, displaced_header, tmp, current_header, done, &slow_case);
     }

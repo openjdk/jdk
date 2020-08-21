@@ -4193,6 +4193,11 @@ jint Arguments::apply_ergo() {
   }
 #endif
 
+  if (FLAG_IS_CMDLINE(DiagnoseSyncOnPrimitiveWrappers)) {
+    if (DiagnoseSyncOnPrimitiveWrappers == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, primitivewrappers)) {
+      LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(primitivewrappers));
+    }
+  }
   return JNI_OK;
 }
 

@@ -504,6 +504,10 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
   NoSafepointVerifier nsv;
   if (obj == NULL) return false;       // Need to throw NPE
 
+  if (DiagnoseSyncOnPrimitiveWrappers != 0 && obj->klass()->is_box()) {
+    return false;
+  }
+
   const markWord mark = obj->mark();
 
   if (mark.has_monitor()) {
@@ -554,6 +558,52 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
   return false;        // revert to slow-path
 }
 
+// Handle notifications when synchronizing on primitive wrappers
+void ObjectSynchronizer::handle_sync_on_primitive_wrapper(Handle obj, Thread* current) {
+  assert(current->is_Java_thread(), "must be for java object synchronization");
+  JavaThread* self = (JavaThread*) current;
+
+  frame last_frame = self->last_frame();
+  if (last_frame.is_interpreted_frame()) {
+    // adjust bcp to point back to monitorenter so that we print the correct line numbers
+    last_frame.interpreter_frame_set_bcp(last_frame.interpreter_frame_bcp() - 1);
+  }
+
+  if (DiagnoseSyncOnPrimitiveWrappers == FATAL_EXIT) {
+    ResourceMark rm(self);
+    stringStream ss;
+    self->print_stack_on(&ss);
+    char* base = (char*)strstr(ss.base(), "at");
+    char* newline = (char*)strchr(ss.base(), '\n');
+    if (newline != NULL) {
+      *newline = '\0';
+    }
+    fatal("Synchronizing on object " INTPTR_FORMAT " of klass %s %s", p2i(obj()), obj->klass()->external_name(), base);
+  } else {
+    assert(DiagnoseSyncOnPrimitiveWrappers == LOG_WARNING, "invalid value for DiagnoseSyncOnPrimitiveWrappers");
+    ResourceMark rm(self);
+    Log(primitivewrappers) pwlog;
+
+    pwlog.info("Synchronizing on object " INTPTR_FORMAT " of klass %s", p2i(obj()), obj->klass()->external_name());
+    if (self->has_last_Java_frame()) {
+      LogStream info_stream(pwlog.info());
+      self->print_stack_on(&info_stream);
+    } else {
+      pwlog.info("Cannot find the last Java frame");
+    }
+
+    EventSyncOnPrimitiveWrapper event;
+    if (event.should_commit()) {
+      event.set_boxClass(obj->klass());
+      event.commit();
+    }
+  }
+
+  if (last_frame.is_interpreted_frame()) {
+    last_frame.interpreter_frame_set_bcp(last_frame.interpreter_frame_bcp() + 1);
+  }
+}
+
 // -----------------------------------------------------------------------------
 // Monitor Enter/Exit
 // The interpreter and compiler assembly code tries to lock using the fast path
@@ -561,6 +611,10 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
 // changed. The implementation is extremely sensitive to race condition. Be careful.
 
 void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, TRAPS) {
+  if (DiagnoseSyncOnPrimitiveWrappers != 0 && obj->klass()->is_box()) {
+    handle_sync_on_primitive_wrapper(obj, THREAD);
+  }
+
   if (UseBiasedLocking) {
     if (!SafepointSynchronize::is_at_safepoint()) {
       BiasedLocking::revoke(obj, THREAD);
@@ -704,6 +758,10 @@ void ObjectSynchronizer::reenter(Handle obj, intx recursions, TRAPS) {
 // JNI locks on java objects
 // NOTE: must use heavy weight monitor to handle jni monitor enter
 void ObjectSynchronizer::jni_enter(Handle obj, TRAPS) {
+  if (DiagnoseSyncOnPrimitiveWrappers != 0 && obj->klass()->is_box()) {
+    handle_sync_on_primitive_wrapper(obj, THREAD);
+  }
+
   // the current locking is from JNI instead of Java code
   if (UseBiasedLocking) {
     BiasedLocking::revoke(obj, THREAD);
