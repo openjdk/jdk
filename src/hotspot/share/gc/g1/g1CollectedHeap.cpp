@@ -1621,12 +1621,11 @@ jint G1CollectedHeap::initialize() {
   // Create the hot card cache.
   _hot_card_cache = new G1HotCardCache(this);
 
-  // Carve out the G1 part of the heap.
-  ReservedSpace g1_rs = heap_rs.first_part(reserved_byte_size);
+  // Create space mappers.
   size_t page_size = actual_reserved_page_size(heap_rs);
   G1RegionToSpaceMapper* heap_storage =
-    G1RegionToSpaceMapper::create_heap_mapper(g1_rs,
-                                              g1_rs.size(),
+    G1RegionToSpaceMapper::create_heap_mapper(heap_rs,
+                                              heap_rs.size(),
                                               page_size,
                                               HeapRegion::GrainBytes,
                                               1,
@@ -1647,20 +1646,20 @@ jint G1CollectedHeap::initialize() {
   // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmaps.
   G1RegionToSpaceMapper* bot_storage =
     create_aux_memory_mapper("Block Offset Table",
-                             G1BlockOffsetTable::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetTable::compute_size(heap_rs.size() / HeapWordSize),
                              G1BlockOffsetTable::heap_map_factor());
 
   G1RegionToSpaceMapper* cardtable_storage =
     create_aux_memory_mapper("Card Table",
-                             G1CardTable::compute_size(g1_rs.size() / HeapWordSize),
+                             G1CardTable::compute_size(heap_rs.size() / HeapWordSize),
                              G1CardTable::heap_map_factor());
 
   G1RegionToSpaceMapper* card_counts_storage =
     create_aux_memory_mapper("Card Counts Table",
-                             G1CardCounts::compute_size(g1_rs.size() / HeapWordSize),
+                             G1CardCounts::compute_size(heap_rs.size() / HeapWordSize),
                              G1CardCounts::heap_map_factor());
 
-  size_t bitmap_size = G1CMBitMap::compute_size(g1_rs.size());
+  size_t bitmap_size = G1CMBitMap::compute_size(heap_rs.size());
   G1RegionToSpaceMapper* prev_bitmap_storage =
     create_aux_memory_mapper("Prev Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
   G1RegionToSpaceMapper* next_bitmap_storage =
@@ -1681,7 +1680,7 @@ jint G1CollectedHeap::initialize() {
 
   // The G1FromCardCache reserves card with value 0 as "invalid", so the heap must not
   // start within the first card.
-  guarantee(g1_rs.base() >= (char*)G1CardTable::card_size, "Java heap must not start within the first card.");
+  guarantee(heap_rs.base() >= (char*)G1CardTable::card_size, "Java heap must not start within the first card.");
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this, _card_table, _hot_card_cache);
   _rem_set->initialize(max_reserved_capacity(), max_regions());
