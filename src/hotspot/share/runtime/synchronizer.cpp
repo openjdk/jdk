@@ -2380,6 +2380,8 @@ void ObjectSynchronizer::deflate_idle_monitors_using_JT() {
                              Atomic::load(&om_list_globals._free_count),
                              Atomic::load(&om_list_globals._wait_count));
 
+  GVars.stw_random = os::random();
+
   // The ServiceThread's async deflation request has been processed.
   _last_async_deflation_time_ns = os::javaTimeNanos();
   set_is_async_deflation_requested(false);
