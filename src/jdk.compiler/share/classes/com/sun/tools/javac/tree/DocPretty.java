@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,11 +117,11 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
 
     final String lineSep = System.getProperty("line.separator");
 
-    /**************************************************************************
+    /* ************************************************************************
      * Traversal methods
      *************************************************************************/
 
-    /** Exception to propagate IOException through visitXXX methods */
+    /** Exception to propagate IOException through visitXYZ methods */
     private static class UncheckedIOException extends Error {
         static final long serialVersionUID = -4032692679158424751L;
         UncheckedIOException(IOException e) {

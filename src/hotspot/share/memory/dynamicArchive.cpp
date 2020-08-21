@@ -196,6 +196,8 @@ public:
   }
 
   void doit() {
+    SystemDictionaryShared::start_dumping();
+
     verify_universe("Before CDS dynamic dump");
     DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
     SystemDictionaryShared::check_excluded_classes();

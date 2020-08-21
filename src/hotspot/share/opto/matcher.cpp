@@ -49,6 +49,10 @@ OptoReg::Name OptoReg::c_frame_pointer;
 
 const RegMask *Matcher::idealreg2regmask[_last_machine_leaf];
 RegMask Matcher::mreg2regmask[_last_Mach_Reg];
+RegMask Matcher::caller_save_regmask;
+RegMask Matcher::caller_save_regmask_exclude_soe;
+RegMask Matcher::mh_caller_save_regmask;
+RegMask Matcher::mh_caller_save_regmask_exclude_soe;
 RegMask Matcher::STACK_ONLY_mask;
 RegMask Matcher::c_frame_ptr_mask;
 const uint Matcher::_begin_rematerialize = _BEGIN_REMATERIALIZE;
@@ -583,57 +587,42 @@ void Matcher::init_first_stack_mask() {
 #endif
    }
 
-  // Make up debug masks.  Any spill slot plus callee-save registers.
-  // Caller-save registers are assumed to be trashable by the various
+  // Make up debug masks.  Any spill slot plus callee-save (SOE) registers.
+  // Caller-save (SOC, AS) registers are assumed to be trashable by the various
   // inline-cache fixup routines.
-  *idealreg2debugmask  [Op_RegN]= *idealreg2spillmask[Op_RegN];
-  *idealreg2debugmask  [Op_RegI]= *idealreg2spillmask[Op_RegI];
-  *idealreg2debugmask  [Op_RegL]= *idealreg2spillmask[Op_RegL];
-  *idealreg2debugmask  [Op_RegF]= *idealreg2spillmask[Op_RegF];
-  *idealreg2debugmask  [Op_RegD]= *idealreg2spillmask[Op_RegD];
-  *idealreg2debugmask  [Op_RegP]= *idealreg2spillmask[Op_RegP];
+  *idealreg2debugmask  [Op_RegN] = *idealreg2spillmask[Op_RegN];
+  *idealreg2debugmask  [Op_RegI] = *idealreg2spillmask[Op_RegI];
+  *idealreg2debugmask  [Op_RegL] = *idealreg2spillmask[Op_RegL];
+  *idealreg2debugmask  [Op_RegF] = *idealreg2spillmask[Op_RegF];
+  *idealreg2debugmask  [Op_RegD] = *idealreg2spillmask[Op_RegD];
+  *idealreg2debugmask  [Op_RegP] = *idealreg2spillmask[Op_RegP];
 
-  *idealreg2mhdebugmask[Op_RegN]= *idealreg2spillmask[Op_RegN];
-  *idealreg2mhdebugmask[Op_RegI]= *idealreg2spillmask[Op_RegI];
-  *idealreg2mhdebugmask[Op_RegL]= *idealreg2spillmask[Op_RegL];
-  *idealreg2mhdebugmask[Op_RegF]= *idealreg2spillmask[Op_RegF];
-  *idealreg2mhdebugmask[Op_RegD]= *idealreg2spillmask[Op_RegD];
-  *idealreg2mhdebugmask[Op_RegP]= *idealreg2spillmask[Op_RegP];
+  *idealreg2mhdebugmask[Op_RegN] = *idealreg2spillmask[Op_RegN];
+  *idealreg2mhdebugmask[Op_RegI] = *idealreg2spillmask[Op_RegI];
+  *idealreg2mhdebugmask[Op_RegL] = *idealreg2spillmask[Op_RegL];
+  *idealreg2mhdebugmask[Op_RegF] = *idealreg2spillmask[Op_RegF];
+  *idealreg2mhdebugmask[Op_RegD] = *idealreg2spillmask[Op_RegD];
+  *idealreg2mhdebugmask[Op_RegP] = *idealreg2spillmask[Op_RegP];
 
   // Prevent stub compilations from attempting to reference
-  // callee-saved registers from debug info
+  // callee-saved (SOE) registers from debug info
   bool exclude_soe = !Compile::current()->is_method_compilation();
+  RegMask* caller_save_mask = exclude_soe ? &caller_save_regmask_exclude_soe : &caller_save_regmask;
+  RegMask* mh_caller_save_mask = exclude_soe ? &mh_caller_save_regmask_exclude_soe : &mh_caller_save_regmask;
 
-  for( i=OptoReg::Name(0); i<OptoReg::Name(_last_Mach_Reg); i = OptoReg::add(i,1) ) {
-    // registers the caller has to save do not work
-    if( _register_save_policy[i] == 'C' ||
-        _register_save_policy[i] == 'A' ||
-        (_register_save_policy[i] == 'E' && exclude_soe) ) {
-      idealreg2debugmask  [Op_RegN]->Remove(i);
-      idealreg2debugmask  [Op_RegI]->Remove(i); // Exclude save-on-call
-      idealreg2debugmask  [Op_RegL]->Remove(i); // registers from debug
-      idealreg2debugmask  [Op_RegF]->Remove(i); // masks
-      idealreg2debugmask  [Op_RegD]->Remove(i);
-      idealreg2debugmask  [Op_RegP]->Remove(i);
+  idealreg2debugmask[Op_RegN]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_RegI]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_RegL]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_RegF]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_RegD]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_RegP]->SUBTRACT(*caller_save_mask);
 
-      idealreg2mhdebugmask[Op_RegN]->Remove(i);
-      idealreg2mhdebugmask[Op_RegI]->Remove(i);
-      idealreg2mhdebugmask[Op_RegL]->Remove(i);
-      idealreg2mhdebugmask[Op_RegF]->Remove(i);
-      idealreg2mhdebugmask[Op_RegD]->Remove(i);
-      idealreg2mhdebugmask[Op_RegP]->Remove(i);
-    }
-  }
-
-  // Subtract the register we use to save the SP for MethodHandle
-  // invokes to from the debug mask.
-  const RegMask save_mask = method_handle_invoke_SP_save_mask();
-  idealreg2mhdebugmask[Op_RegN]->SUBTRACT(save_mask);
-  idealreg2mhdebugmask[Op_RegI]->SUBTRACT(save_mask);
-  idealreg2mhdebugmask[Op_RegL]->SUBTRACT(save_mask);
-  idealreg2mhdebugmask[Op_RegF]->SUBTRACT(save_mask);
-  idealreg2mhdebugmask[Op_RegD]->SUBTRACT(save_mask);
-  idealreg2mhdebugmask[Op_RegP]->SUBTRACT(save_mask);
+  idealreg2mhdebugmask[Op_RegN]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_RegI]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_RegL]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_RegF]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_RegD]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_RegP]->SUBTRACT(*mh_caller_save_mask);
 }
 
 //---------------------------is_save_on_entry----------------------------------
@@ -848,12 +837,32 @@ void Matcher::init_spill_mask( Node *ret ) {
   // Also set the "infinite stack" bit.
   STACK_ONLY_mask.set_AllStack();
 
-  // Copy the register names over into the shared world
-  for( i=OptoReg::Name(0); i<OptoReg::Name(_last_Mach_Reg); i = OptoReg::add(i,1) ) {
+  for (i = OptoReg::Name(0); i < OptoReg::Name(_last_Mach_Reg); i = OptoReg::add(i, 1)) {
+    // Copy the register names over into the shared world.
     // SharedInfo::regName[i] = regName[i];
     // Handy RegMasks per machine register
     mreg2regmask[i].Insert(i);
+
+    // Set up regmasks used to exclude save-on-call (and always-save) registers from debug masks.
+    if (_register_save_policy[i] == 'C' ||
+        _register_save_policy[i] == 'A') {
+      caller_save_regmask.Insert(i);
+      mh_caller_save_regmask.Insert(i);
+    }
+    // Exclude save-on-entry registers from debug masks for stub compilations.
+    if (_register_save_policy[i] == 'C' ||
+        _register_save_policy[i] == 'A' ||
+        _register_save_policy[i] == 'E') {
+      caller_save_regmask_exclude_soe.Insert(i);
+      mh_caller_save_regmask_exclude_soe.Insert(i);
+    }
   }
+
+  // Also exclude the register we use to save the SP for MethodHandle
+  // invokes to from the corresponding MH debug masks
+  const RegMask sp_save_mask = method_handle_invoke_SP_save_mask();
+  mh_caller_save_regmask.OR(sp_save_mask);
+  mh_caller_save_regmask_exclude_soe.OR(sp_save_mask);
 
   // Grab the Frame Pointer
   Node *fp  = ret->in(TypeFunc::FramePtr);

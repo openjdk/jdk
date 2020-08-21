@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,13 @@ package com.sun.source.doctree;
 import java.util.List;
 
 /**
+ * A tree node for an {@code @see} block tag.
  *
- * A tree node for an @see block tag.
- *
- * <p>
- * &#064;see "string" <br>
- * &#064;see &lt;a href="URL#value"&gt; label &lt;/a&gt; <br>
- * &#064;see reference
+ * <pre>
+ *    &#064;see "string"
+ *    &#064;see &lt;a href="URL#value"&gt; label &lt;/a&gt;
+ *    &#064;see reference
+ * </pre>
  *
  * @since 1.8
  */

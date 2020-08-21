@@ -218,6 +218,7 @@ private:
   static void warn_excluded(InstanceKlass* k, const char* reason);
   static bool should_be_excluded(InstanceKlass* k);
 
+  static bool _dump_in_progress;
   DEBUG_ONLY(static bool _no_class_loading_should_happen;)
 
 public:
@@ -318,6 +319,7 @@ public:
   static void print_on(outputStream* st) NOT_CDS_RETURN;
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
   static bool empty_dumptime_table() NOT_CDS_RETURN_(true);
+  static void start_dumping() NOT_CDS_RETURN;
 
   DEBUG_ONLY(static bool no_class_loading_should_happen() {return _no_class_loading_should_happen;})
 

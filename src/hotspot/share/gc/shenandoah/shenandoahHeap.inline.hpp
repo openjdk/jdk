@@ -66,7 +66,7 @@ inline WorkGang* ShenandoahHeap::workers() const {
   return _workers;
 }
 
-inline WorkGang* ShenandoahHeap::get_safepoint_workers() {
+inline WorkGang* ShenandoahHeap::safepoint_workers() {
   return _safepoint_workers;
 }
 

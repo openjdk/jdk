@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
  * The description of some members refer to "elements".
  * This typically refers to "HTML elements", but may in some cases refer to
  * or {@link javax.lang.model.element.Element "language model elements"}.
- * The usage is made explicit when it is not clear fromthe surrounding context.
+ * The usage is made explicit when it is not clear from the surrounding context.
  *
  * @see <a href="https://html.spec.whatwg.org/#classes>WhatWG: {@code class} attribute</a>
  */
@@ -459,7 +459,7 @@ public enum HtmlStyle {
     /**
      * The class of the last column of cells in a table.
      * This is typically the "description" column, where the description is
-     * the first sentence of the elemen ts documentation comment.
+     * the first sentence of the elements documentation comment.
      */
     colLast,
 

@@ -4233,9 +4233,7 @@ jint os::init_2(void) {
   // initialize thread priority policy
   prio_init();
 
-  if (UseNUMA && !ForceNUMA) {
-    UseNUMA = false; // We don't fully support this yet
-  }
+  UseNUMA = false; // We don't fully support this yet
 
   if (UseNUMAInterleaving || (UseNUMA && FLAG_IS_DEFAULT(UseNUMAInterleaving))) {
     if (!numa_interleaving_init()) {

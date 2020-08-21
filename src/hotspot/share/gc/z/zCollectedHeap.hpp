@@ -98,8 +98,6 @@ public:
 
   virtual void object_iterate(ObjectClosure* cl);
 
-  virtual void run_task(AbstractGangTask* task);
-
   virtual void keep_alive(oop obj);
 
   virtual void register_nmethod(nmethod* nm);
@@ -107,7 +105,7 @@ public:
   virtual void flush_nmethod(nmethod* nm);
   virtual void verify_nmethod(nmethod* nmethod);
 
-  virtual WorkGang* get_safepoint_workers();
+  virtual WorkGang* safepoint_workers();
 
   virtual void gc_threads_do(ThreadClosure* tc) const;
 

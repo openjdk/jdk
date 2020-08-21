@@ -587,7 +587,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
 
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "heap not initialized yet?");
-  WorkGang* cleanup_workers = heap->get_safepoint_workers();
+  WorkGang* cleanup_workers = heap->safepoint_workers();
   if (cleanup_workers != NULL) {
     // Parallel cleanup using GC provided thread pool.
     uint num_cleanup_workers = cleanup_workers->active_workers();

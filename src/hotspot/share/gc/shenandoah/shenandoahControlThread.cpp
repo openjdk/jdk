@@ -424,6 +424,12 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     heap->entry_cleanup_complete();
+  } else {
+    // Concurrent weak/strong root flags are unset concurrently. We depend on updateref GC safepoints
+    // to ensure the changes are visible to all mutators before gc cycle is completed.
+    // In case of no evacuation, updateref GC safepoints are skipped. Therefore, we will need
+    // to perform thread handshake to ensure their consistences.
+    heap->entry_rendezvous_roots();
   }
 
   // Cycle is complete

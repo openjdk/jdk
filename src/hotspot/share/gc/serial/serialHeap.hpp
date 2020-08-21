@@ -75,10 +75,6 @@ public:
   template <typename OopClosureType1, typename OopClosureType2>
   void oop_since_save_marks_iterate(OopClosureType1* cur,
                                     OopClosureType2* older);
-
-  // Runs the given AbstractGangTask with the current active workers.
-  // No workGang for SerialHeap, work serially with thread 0.
-  virtual void run_task(AbstractGangTask* task);
 };
 
 #endif // SHARE_GC_SERIAL_SERIALHEAP_HPP

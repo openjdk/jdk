@@ -54,9 +54,9 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
  private:
   KlassInfoEntry* _next;
   Klass*          _klass;
-  long            _instance_count;
+  uint64_t        _instance_count;
   size_t          _instance_words;
-  long            _index;
+  int64_t         _index;
   bool            _do_print; // True if we should print this class when printing the class hierarchy.
   GrowableArray<KlassInfoEntry*>* _subclasses;
 
@@ -68,13 +68,13 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
   ~KlassInfoEntry();
   KlassInfoEntry* next() const   { return _next; }
   bool is_equal(const Klass* k)  { return k == _klass; }
-  Klass* klass()  const      { return _klass; }
-  long count()    const      { return _instance_count; }
-  void set_count(long ct)    { _instance_count = ct; }
-  size_t words()  const      { return _instance_words; }
-  void set_words(size_t wds) { _instance_words = wds; }
-  void set_index(long index) { _index = index; }
-  long index()    const      { return _index; }
+  Klass* klass()  const          { return _klass; }
+  uint64_t count()    const      { return _instance_count; }
+  void set_count(uint64_t ct)    { _instance_count = ct; }
+  size_t words()  const          { return _instance_words; }
+  void set_words(size_t wds)     { _instance_words = wds; }
+  void set_index(int64_t index)  { _index = index; }
+  int64_t index()    const       { return _index; }
   GrowableArray<KlassInfoEntry*>* subclasses() const { return _subclasses; }
   void add_subclass(KlassInfoEntry* cie);
   void set_do_print(bool do_print) { _do_print = do_print; }

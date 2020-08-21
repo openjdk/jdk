@@ -467,9 +467,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 
-  // Run given task. Possibly in parallel if the GC supports it.
-  virtual void run_task(AbstractGangTask* task) = 0;
-
   // Print any relevant tracing info that flags imply.
   // Default implementation does nothing.
   virtual void print_tracing_info() const = 0;
@@ -502,7 +499,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // concurrent marking) for an intermittent non-GC safepoint.
   // If this method returns NULL, SafepointSynchronize will
   // perform cleanup tasks serially in the VMThread.
-  virtual WorkGang* get_safepoint_workers() { return NULL; }
+  virtual WorkGang* safepoint_workers() { return NULL; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
   // and Release*Critical() family of functions. If supported, the GC

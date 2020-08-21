@@ -186,26 +186,6 @@ void ZHeap::threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
 }
 
-// Adapter class from AbstractGangTask to Ztask
-class ZAbstractGangTaskAdapter : public ZTask {
-private:
-  AbstractGangTask* _task;
-
-public:
-  ZAbstractGangTaskAdapter(AbstractGangTask* task) :
-      ZTask(task->name()),
-      _task(task) { }
-
-  virtual void work() {
-    _task->work(ZThread::worker_id());
-  }
-};
-
-void ZHeap::run_task(AbstractGangTask* task) {
-  ZAbstractGangTaskAdapter ztask(task);
-  _workers.run_parallel(&ztask);
-}
-
 void ZHeap::out_of_memory() {
   ResourceMark rm;
 

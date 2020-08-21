@@ -599,6 +599,10 @@ public class LogRecord implements java.io.Serializable {
      * by String values for each parameter.  If a parameter is null, then
      * a null String is written.  Otherwise the output of Object.toString()
      * is written.
+     *
+     * @param out the {@code ObjectOutputStream} to write to
+     *
+     * @throws  IOException if I/O errors occur
      */
     @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
@@ -647,6 +651,14 @@ public class LogRecord implements java.io.Serializable {
      * {@code threadID} which may be anything between {@code Integer.MIN_VALUE}
      * and {Integer.MAX_VALUE}.
      * </ul>
+     *
+     * See {@code writeObject} for a description of the serial form.
+     *
+     * @param in the {@code ObjectInputStream} to read from
+     *
+     * @throws  ClassNotFoundException if the class of a serialized object
+     *          could not be found.
+     * @throws  IOException if an I/O error occurs.
      */
     @Serial
     private void readObject(ObjectInputStream in)

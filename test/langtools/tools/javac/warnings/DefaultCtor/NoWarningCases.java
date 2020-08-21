@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,9 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "utilities/sizes.hpp"
+/*
+ * @test
+ * @bug 8071961
+ * @compile -Xlint:missing-explicit-ctor -Werror --release 8 NoWarningCases.java
+ * @compile -Xlint:missing-explicit-ctor -Werror             NoWarningCases.java
+ */
 
+public class NoWarningCases {
+    // No explicit constructor; use a default.
+
+    public enum NestedEnum {
+        FOO,
+        BAR;
+        // No explicit constructor; use implicit one.
+    }
+}

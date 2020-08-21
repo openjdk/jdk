@@ -1604,13 +1604,14 @@ void klassVtable::print_statistics() {
   tty->print_cr("%6d bytes total", total);
 }
 
-int  klassItable::_total_classes;   // Total no. of classes with itables
-long klassItable::_total_size;      // Total no. of bytes used for itables
+int    klassItable::_total_classes;   // Total no. of classes with itables
+size_t klassItable::_total_size;      // Total no. of bytes used for itables
 
 void klassItable::print_statistics() {
  tty->print_cr("itable statistics:");
  tty->print_cr("%6d classes with itables", _total_classes);
- tty->print_cr("%6lu K uses for itables (average by class: %ld bytes)", _total_size / K, _total_size / _total_classes);
+ tty->print_cr(SIZE_FORMAT_W(6) " K uses for itables (average by class: " SIZE_FORMAT " bytes)",
+               _total_size / K, _total_size / _total_classes);
 }
 
 #endif // PRODUCT

@@ -551,9 +551,6 @@ public:
 
   WorkGang* workers() const { return _workers; }
 
-  // Runs the given AbstractGangTask with the current active workers.
-  virtual void run_task(AbstractGangTask* task);
-
   // Runs the given AbstractGangTask with the current active workers,
   // returning the total time taken.
   Tickspan run_task_timed(AbstractGangTask* task);
@@ -1440,7 +1437,7 @@ public:
   virtual bool supports_concurrent_gc_breakpoints() const;
   bool is_heterogeneous_heap() const;
 
-  virtual WorkGang* get_safepoint_workers() { return _workers; }
+  virtual WorkGang* safepoint_workers() { return _workers; }
 
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption

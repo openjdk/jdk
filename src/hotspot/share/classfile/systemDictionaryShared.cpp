@@ -66,6 +66,7 @@ OopHandle SystemDictionaryShared::_shared_protection_domains;
 OopHandle SystemDictionaryShared::_shared_jar_urls;
 OopHandle SystemDictionaryShared::_shared_jar_manifests;
 DEBUG_ONLY(bool SystemDictionaryShared::_no_class_loading_should_happen = false;)
+bool SystemDictionaryShared::_dump_in_progress = false;
 
 class DumpTimeSharedClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
@@ -200,15 +201,22 @@ class DumpTimeSharedClassTable: public ResourceHashtable<
   int _builtin_count;
   int _unregistered_count;
 public:
-  DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k) {
+  DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k, bool dump_in_progress) {
     bool created = false;
-    DumpTimeSharedClassInfo* p = put_if_absent(k, &created);
+    DumpTimeSharedClassInfo* p;
+    if (!dump_in_progress) {
+      p = put_if_absent(k, &created);
+    } else {
+      p = get(k);
+    }
     if (created) {
       assert(!SystemDictionaryShared::no_class_loading_should_happen(),
              "no new classes can be loaded while dumping archive");
       p->_klass = k;
     } else {
-      assert(p->_klass == k, "Sanity");
+      if (!dump_in_progress) {
+        assert(p->_klass == k, "Sanity");
+      }
     }
     return p;
   }
@@ -1176,12 +1184,17 @@ InstanceKlass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
   }
 }
 
+void SystemDictionaryShared::start_dumping() {
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  _dump_in_progress = true;
+}
+
 DumpTimeSharedClassInfo* SystemDictionaryShared::find_or_allocate_info_for(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   if (_dumptime_table == NULL) {
     _dumptime_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeSharedClassTable();
   }
-  return _dumptime_table->find_or_allocate_info_for(k);
+  return _dumptime_table->find_or_allocate_info_for(k, _dump_in_progress);
 }
 
 void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
@@ -1418,6 +1431,7 @@ public:
 };
 
 void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
+  assert_locked_or_safepoint(DumpTimeTable_lock);
   IterateDumpTimeSharedClassTable iter(it);
   _dumptime_table->iterate(&iter);
 }
@@ -1957,6 +1971,7 @@ void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionar
   dictionary->reset();
   CompactHashtableWriter writer(_dumptime_table->count_of(is_builtin), &stats);
   CopySharedClassInfoToArchive copy(&writer, is_builtin);
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   _dumptime_table->iterate(&copy);
   writer.dump(dictionary, is_builtin ? "builtin dictionary" : "unregistered dictionary");
 }

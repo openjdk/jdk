@@ -212,7 +212,9 @@ public class JMap {
 
         for (int i = 0; i < subopts.length; i++) {
             String subopt = subopts[i];
-            if (subopt.equals("live")) {
+            if (subopt.equals("") || subopt.equals("all")) {
+                // pass
+            } else if (subopt.equals("live")) {
                 liveopt = "-live";
             } else if (subopt.startsWith("file=")) {
                 filename = parseFileName(subopt);

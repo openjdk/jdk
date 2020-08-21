@@ -250,7 +250,7 @@ class MonitorLocker: public MutexLocker {
     assert(_monitor != NULL, "NULL monitor not allowed");
   }
 
-  bool wait(long timeout = 0,
+  bool wait(int64_t timeout = 0,
             bool as_suspend_equivalent = !Mutex::_as_suspend_equivalent_flag) {
     if (_flag == Mutex::_safepoint_check_flag) {
       return _monitor->wait(timeout, as_suspend_equivalent);

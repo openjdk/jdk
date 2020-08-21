@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,18 @@
 package com.sun.source.doctree;
 
 /**
+ * A tree node for an {@code @literal} or {@code @code} inline tag.
  *
- * A tree node for an @literal or @code inline tag.
- *
- * <p>
- * {&#064;literal text}
+ * <pre>
+ *    {&#064;literal text}
+ *    {&#064;code text}
+ * </pre>
  *
  * @since 1.8
  */
 public interface LiteralTree extends InlineTagTree {
     /**
-     * Returns the body of the {@code @code} or {@code @literal} tag.
+     * Returns the body of the {@code @literal} or {@code @code} tag.
      * @return the body of the tag
      */
     TextTree getBody();

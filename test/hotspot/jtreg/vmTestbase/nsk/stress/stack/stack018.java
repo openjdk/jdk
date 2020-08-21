@@ -49,7 +49,7 @@
  * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp")
  * @library /vmTestbase
  * @build nsk.share.Terminator
- * @run main/othervm/timeout=900 -Xss200K nsk.stress.stack.stack018 -eager
+ * @run main/othervm/timeout=900 -Xss448K nsk.stress.stack.stack018 -eager
  */
 
 package nsk.stress.stack;

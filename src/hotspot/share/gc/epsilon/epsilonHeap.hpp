@@ -119,10 +119,6 @@ public:
   // No GC threads
   virtual void gc_threads_do(ThreadClosure* tc) const {}
 
-  // Runs the given AbstractGangTask with the current active workers
-  // No workGang for EpsilonHeap, work serially with thread 0
-  virtual void run_task(AbstractGangTask* task) { task->work(0); }
-
   // No nmethod handling
   virtual void register_nmethod(nmethod* nm) {}
   virtual void unregister_nmethod(nmethod* nm) {}
