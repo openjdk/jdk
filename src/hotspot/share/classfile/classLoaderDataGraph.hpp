@@ -62,7 +62,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static ClassLoaderData* find_or_create(Handle class_loader);
   static ClassLoaderData* add(Handle class_loader, bool has_class_mirror_holder);
   static void clean_module_and_package_info();
-  static void purge();
+  static void purge(bool at_safepoint);
   static void clear_claimed_marks();
   static void clear_claimed_marks(int claim);
   // Iteration through CLDG inside a safepoint; GC support
@@ -89,10 +89,12 @@ class ClassLoaderDataGraph : public AllStatic {
   static void classes_unloading_do(void f(Klass* const));
   static bool do_unloading();
 
-  // Expose state to avoid logging overhead in safepoint cleanup tasks.
   static inline bool should_clean_metaspaces_and_reset();
   static void set_should_clean_deallocate_lists() { _should_clean_deallocate_lists = true; }
   static void clean_deallocate_lists(bool purge_previous_versions);
+  // Called from ServiceThread
+  static void safepoint_and_clean_metaspaces();
+  // Called from VMOperation
   static void walk_metadata_and_clean_metaspaces();
 
   // dictionary do

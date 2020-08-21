@@ -1143,7 +1143,7 @@ void G1ConcurrentMark::remark() {
     // Clean out dead classes
     if (ClassUnloadingWithConcurrentMark) {
       GCTraceTime(Debug, gc, phases) debug("Purge Metaspace", _gc_timer_cm);
-      ClassLoaderDataGraph::purge();
+      ClassLoaderDataGraph::purge(/*at_safepoint*/true);
     }
 
     _g1h->resize_heap_if_necessary();

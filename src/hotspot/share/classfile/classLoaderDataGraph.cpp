@@ -40,6 +40,8 @@
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -163,6 +165,13 @@ void ClassLoaderDataGraph::clean_deallocate_lists(bool walk_previous_versions) {
   }
   log_debug(class, loader, data)("clean_deallocate_lists: loaders processed %u %s",
                                  loaders_processed, walk_previous_versions ? "walk_previous_versions" : "");
+}
+
+void ClassLoaderDataGraph::safepoint_and_clean_metaspaces() {
+  // Safepoint and mark all metadata with MetadataOnStackMark and then deallocate unused bits of metaspace.
+  // This needs to be exclusive to Redefinition, so needs to be a safepoint.
+  VM_CleanClassLoaderDataMetaspaces op;
+  VMThread::execute(&op);
 }
 
 void ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces() {
@@ -497,9 +506,6 @@ bool ClassLoaderDataGraph::is_valid(ClassLoaderData* loader_data) {
 bool ClassLoaderDataGraph::do_unloading() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
-  // Indicate whether safepoint cleanup is needed.
-  _safepoint_cleanup_needed = true;
-
   ClassLoaderData* data = _head;
   ClassLoaderData* prev = NULL;
   bool seen_dead_loader = false;
@@ -560,7 +566,7 @@ void ClassLoaderDataGraph::clean_module_and_package_info() {
   }
 }
 
-void ClassLoaderDataGraph::purge() {
+void ClassLoaderDataGraph::purge(bool at_safepoint) {
   ClassLoaderData* list = _unloading;
   _unloading = NULL;
   ClassLoaderData* next = list;
@@ -576,6 +582,20 @@ void ClassLoaderDataGraph::purge() {
     set_metaspace_oom(false);
   }
   DependencyContext::purge_dependency_contexts();
+
+  // If we're purging metadata at a safepoint, clean remaining
+  // metaspaces if we need to.
+  if (at_safepoint) {
+    if (_should_clean_deallocate_lists || InstanceKlass::has_previous_versions()) {
+      walk_metadata_and_clean_metaspaces();
+    }
+  } else {
+    // Tell service thread this is a good time to check to see if we should
+    // clean loaded CLDGs. This causes another safepoint.
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    _safepoint_cleanup_needed = true;
+    Service_lock->notify_all();
+  }
 }
 
 int ClassLoaderDataGraph::resize_dictionaries() {

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
@@ -145,6 +146,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool deflate_idle_monitors = false;
     JvmtiDeferredEvent jvmti_event;
     bool oop_handles_to_release = false;
+    bool cldg_cleanup_work = false;
     {
       // Need state transition ThreadBlockInVM so that this thread
       // will be handled by safepoint correctly when this thread is
@@ -172,6 +174,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (protection_domain_table_work = SystemDictionary::pd_cache_table()->has_work()) |
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset()) |
               (oop_handles_to_release = (_oop_handle_list != NULL)) |
+              (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) |
               (deflate_idle_monitors = ObjectSynchronizer::is_async_deflation_needed())
              ) == 0) {
         // Wait until notified that there is some work to do.
@@ -236,6 +239,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (oop_handles_to_release) {
       release_oop_handles();
+    }
+
+    if (cldg_cleanup_work) {
+      ClassLoaderDataGraph::safepoint_and_clean_metaspaces();
     }
   }
 }
