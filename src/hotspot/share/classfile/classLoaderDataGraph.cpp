@@ -586,7 +586,8 @@ void ClassLoaderDataGraph::purge(bool at_safepoint) {
   // If we're purging metadata at a safepoint, clean remaining
   // metaspaces if we need to.
   if (at_safepoint) {
-    if (_should_clean_deallocate_lists || InstanceKlass::has_previous_versions()) {
+    _safepoint_cleanup_needed = true; // tested and reset next.
+    if (should_clean_metaspaces_and_reset()) {
       walk_metadata_and_clean_metaspaces();
     }
   } else {
