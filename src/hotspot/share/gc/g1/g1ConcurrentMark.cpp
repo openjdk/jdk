@@ -1664,7 +1664,7 @@ public:
 
   bool do_object_b(oop obj) {
     return obj != NULL &&
-           (!_g1h->is_in_g1_reserved(obj) || !_g1h->is_obj_dead(obj));
+           (!_g1h->is_in_reserved(obj) || !_g1h->is_obj_dead(obj));
   }
 };
 
@@ -1830,7 +1830,7 @@ G1ConcurrentMark::claim_region(uint worker_id) {
   HeapWord* finger = _finger;
 
   while (finger < _heap.end()) {
-    assert(_g1h->is_in_g1_reserved(finger), "invariant");
+    assert(_g1h->is_in_reserved(finger), "invariant");
 
     HeapRegion* curr_region = _g1h->heap_region_containing(finger);
     // Make sure that the reads below do not float before loading curr_region.
@@ -2893,7 +2893,7 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
   }
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  MemRegion g1_reserved = g1h->g1_reserved();
+  MemRegion reserved = g1h->reserved_region();
   double now = os::elapsedTime();
 
   // Print the header of the output.
@@ -2901,7 +2901,7 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" HEAP"
                           G1PPRL_SUM_ADDR_FORMAT("reserved")
                           G1PPRL_SUM_BYTE_FORMAT("region-size"),
-                          p2i(g1_reserved.start()), p2i(g1_reserved.end()),
+                          p2i(reserved.start()), p2i(reserved.end()),
                           HeapRegion::GrainBytes);
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX

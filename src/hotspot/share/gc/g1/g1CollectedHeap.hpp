@@ -1141,18 +1141,6 @@ public:
   inline G1HeapRegionAttr region_attr(const void* obj) const;
   inline G1HeapRegionAttr region_attr(uint idx) const;
 
-  // Return "TRUE" iff the given object address is in the reserved
-  // region of g1.
-  bool is_in_g1_reserved(const void* p) const {
-    return _hrm->reserved().contains(p);
-  }
-
-  // Returns a MemRegion that corresponds to the space that has been
-  // reserved for the heap
-  MemRegion g1_reserved() const {
-    return _hrm->reserved();
-  }
-
   MemRegion reserved_region() const {
     return _reserved;
   }

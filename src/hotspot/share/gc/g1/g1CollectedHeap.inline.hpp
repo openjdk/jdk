@@ -87,18 +87,18 @@ inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
 template <class T>
 inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
   assert(addr != NULL, "invariant");
-  assert(is_in_g1_reserved((const void*) addr),
+  assert(is_in_reserved((const void*) addr),
          "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
-         p2i((void*)addr), p2i(g1_reserved().start()), p2i(g1_reserved().end()));
+         p2i((void*)addr), p2i(reserved_region().start()), p2i(reserved_region().end()));
   return _hrm->addr_to_region((HeapWord*)(void*) addr);
 }
 
 template <class T>
 inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const T addr) const {
   assert(addr != NULL, "invariant");
-  assert(is_in_g1_reserved((const void*) addr),
+  assert(is_in_reserved((const void*) addr),
          "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
-         p2i((void*)addr), p2i(g1_reserved().start()), p2i(g1_reserved().end()));
+         p2i((void*)addr), p2i(reserved_region().start()), p2i(reserved_region().end()));
   uint const region_idx = addr_to_region(addr);
   return region_at_or_null(region_idx);
 }

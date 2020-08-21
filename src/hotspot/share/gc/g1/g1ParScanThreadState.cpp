@@ -125,14 +125,14 @@ void G1ParScanThreadState::verify_task(narrowOop* task) const {
   assert(task != NULL, "invariant");
   assert(UseCompressedOops, "sanity");
   oop p = RawAccess<>::oop_load(task);
-  assert(_g1h->is_in_g1_reserved(p),
+  assert(_g1h->is_in_reserved(p),
          "task=" PTR_FORMAT " p=" PTR_FORMAT, p2i(task), p2i(p));
 }
 
 void G1ParScanThreadState::verify_task(oop* task) const {
   assert(task != NULL, "invariant");
   oop p = RawAccess<>::oop_load(task);
-  assert(_g1h->is_in_g1_reserved(p),
+  assert(_g1h->is_in_reserved(p),
          "task=" PTR_FORMAT " p=" PTR_FORMAT, p2i(task), p2i(p));
 }
 
