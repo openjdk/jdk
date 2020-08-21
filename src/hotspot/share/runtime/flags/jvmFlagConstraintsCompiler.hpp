@@ -71,4 +71,8 @@ JVMFlag::Error NodeLimitFudgeFactorConstraintFunc(intx value, bool verbose);
 
 JVMFlag::Error RTMTotalCountIncrRateConstraintFunc(int value, bool verbose);
 
+#ifdef COMPILER2
+JVMFlag::Error LoopStripMiningIterConstraintFunc(uintx value, bool verbose);
+#endif
+
 #endif // SHARE_RUNTIME_FLAGS_JVMFLAGCONSTRAINTSCOMPILER_HPP

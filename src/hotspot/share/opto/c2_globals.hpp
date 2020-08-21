@@ -762,6 +762,7 @@
   product(uintx, LoopStripMiningIter, 0,                                    \
           "Number of iterations in strip mined loop")                       \
           range(0, max_juint)                                               \
+          constraint(LoopStripMiningIterConstraintFunc, AfterErgo)          \
                                                                             \
   product(uintx, LoopStripMiningIterShortLoop, 0,                           \
           "Loop with fewer iterations are not strip mined")                 \
