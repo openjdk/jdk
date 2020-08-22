@@ -63,8 +63,6 @@ class G1RegionMarkStatsCache {
 private:
   // The array of statistics entries to evict to; the global array.
   G1RegionMarkStats* _target;
-  // Number of entries in the eviction target.
-  uint _num_stats;
 
   // An entry of the statistics cache.
   struct G1RegionMarkStatsCacheEntry {
@@ -100,7 +98,7 @@ private:
 
   G1RegionMarkStatsCacheEntry* find_for_add(uint region_idx);
 public:
-  G1RegionMarkStatsCache(G1RegionMarkStats* target, uint max_regions, uint num_cache_entries);
+  G1RegionMarkStatsCache(G1RegionMarkStats* target, uint num_cache_entries);
 
   ~G1RegionMarkStatsCache();
 

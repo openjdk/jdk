@@ -27,6 +27,7 @@ package MyPackage;
 /**
  * @test
  * @build Frame HeapMonitor
+ * @requires vm.jvmti
  * @summary Verifies the JVMTI Heap Monitor events are only sent after enabling.
  * @compile HeapMonitorStatSimpleTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorStatSimpleTest

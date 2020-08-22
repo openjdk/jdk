@@ -90,6 +90,13 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
 
   Label fast_lock, done;
 
+  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    load_klass(Rscratch, Roop);
+    ldr_u32(Rscratch, Address(Rscratch, Klass::access_flags_offset()));
+    tst(Rscratch, JVM_ACC_IS_BOX_CLASS);
+    b(done, ne);
+  }
+
   if (UseBiasedLocking && !UseOptoBiasInlining) {
     assert(scratch3 != noreg, "need extra temporary for -XX:-UseOptoBiasInlining");
     biased_locking_enter(Roop, Rmark, Rscratch, false, scratch3, done, done);

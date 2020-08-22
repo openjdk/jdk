@@ -25,6 +25,7 @@
  * @test
  * @bug 8232613
  * @summary Ensure Object natives stay registered after redefinition
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.org.objectweb.asm

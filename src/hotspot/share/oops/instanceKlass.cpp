@@ -3956,8 +3956,9 @@ void InstanceKlass::purge_previous_version_list() {
       InstanceKlass* next = pv_node->previous_versions();
       pv_node->link_previous_versions(NULL);   // point next to NULL
       last->link_previous_versions(next);
-      // Add to the deallocate list after unlinking
-      loader_data->add_to_deallocate_list(pv_node);
+      // Delete this node directly. Nothing is referring to it and we don't
+      // want it to increase the counter for metadata to delete in CLDG.
+      MetadataFactory::free_metadata(loader_data, pv_node);
       pv_node = next;
       deleted_count++;
       version++;

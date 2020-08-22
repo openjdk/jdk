@@ -27,6 +27,7 @@ package MyPackage;
 /**
  * @test
  * @summary Verifies the JVMTI Heap Monitor does not always sample the first object.
+ * @requires vm.jvmti
  * @build Frame HeapMonitor
  * @compile HeapMonitorInitialAllocationTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorInitialAllocationTest

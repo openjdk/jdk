@@ -27,6 +27,7 @@ package MyPackage;
 /**
  * @test
  * @summary Verifies the JVMTI SetHeapSamplingInterval returns an illegal argument for negative ints.
+ * @requires vm.jvmti
  * @build Frame HeapMonitor
  * @compile HeapMonitorIllegalArgumentTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorIllegalArgumentTest

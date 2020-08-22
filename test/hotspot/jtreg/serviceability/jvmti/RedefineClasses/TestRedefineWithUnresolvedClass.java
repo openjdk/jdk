@@ -25,6 +25,7 @@
  * @test
  * @summary Redefine a class with an UnresolvedClass reference in the constant pool.
  * @bug 8035150
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler

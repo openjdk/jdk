@@ -2206,7 +2206,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
     ShenandoahGCPhase phase(full_gc ?
                             ShenandoahPhaseTimings::full_gc_purge_cldg :
                             ShenandoahPhaseTimings::purge_cldg);
-    ClassLoaderDataGraph::purge();
+    ClassLoaderDataGraph::purge(/*at_safepoint*/true);
   }
   // Resize and verify metaspace
   MetaspaceGC::compute_new_size();

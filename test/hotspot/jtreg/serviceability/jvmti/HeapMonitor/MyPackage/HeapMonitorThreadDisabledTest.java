@@ -28,6 +28,7 @@ package MyPackage;
  * @test
  * @build Frame HeapMonitor ThreadInformation
  * @summary Verifies the JVMTI Heap Monitor Thread can disable events for a given thread.
+ * @requires vm.jvmti
  * @compile HeapMonitorThreadDisabledTest.java
  * @run main/othervm/native -Xmx512m -agentlib:HeapMonitorTest MyPackage.HeapMonitorThreadDisabledTest
  */

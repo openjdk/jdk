@@ -32,6 +32,7 @@ import java.util.List;
  * @summary Verifies the default GC with the Heap Monitor event system.
  * @compile HeapMonitorGCTest.java
  * @requires vm.gc == "G1" | vm.gc == "null"
+ * @requires vm.jvmti
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorGCTest
  */
 

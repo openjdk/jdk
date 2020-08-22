@@ -470,6 +470,13 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   Label IsInflated, DONE_LABEL;
 
+  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    load_klass(tmpReg, objReg, cx1Reg);
+    movl(tmpReg, Address(tmpReg, Klass::access_flags_offset()));
+    testl(tmpReg, JVM_ACC_IS_BOX_CLASS);
+    jcc(Assembler::notZero, DONE_LABEL);
+  }
+
   // it's stack-locked, biased or neutral
   // TODO: optimize away redundant LDs of obj->mark and improve the markword triage
   // order to reduce the number of conditional branches in the most common cases.

@@ -25,7 +25,7 @@
  * @test
  * @bug 8080406
  * @summary VM_GetOrSetLocal doesn't check local slot type against requested type
- *
+ * @requires vm.jvmti
  * @compile GetLocalVars.java
  * @run main/othervm/native -Xcomp -agentlib:GetLocalVars GetLocalVars
  */

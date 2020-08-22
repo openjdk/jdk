@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderDataGraph.inline.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -597,15 +597,6 @@ void SafepointSynchronize::do_cleanup_tasks() {
     // Serial cleanup using VMThread.
     ParallelSPCleanupTask cleanup(1);
     cleanup.work(0);
-  }
-
-  // Needs to be done single threaded by the VMThread.  This walks
-  // the thread stacks looking for references to metadata before
-  // deciding to remove it from the metaspaces.
-  if (ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) {
-    const char* name = "cleanup live ClassLoaderData metaspaces";
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces();
   }
 
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");

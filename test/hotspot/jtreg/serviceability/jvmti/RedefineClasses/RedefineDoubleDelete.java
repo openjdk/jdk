@@ -25,6 +25,7 @@
  * @test
  * @bug 8178870 8010319
  * @summary Redefine class with CFLH twice to test deleting the cached_class_file
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler

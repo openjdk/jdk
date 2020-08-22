@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Verifies NotifyFramePop request is cleared if JVMTI_EVENT_FRAME_POP is disabled
+ * @requires vm.jvmti
  * @library /test/lib
  * @compile NotifyFramePopTest.java
  * @run main/othervm/native -agentlib:NotifyFramePopTest NotifyFramePopTest

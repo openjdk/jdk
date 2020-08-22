@@ -84,12 +84,13 @@
 //    [header      | 0 | 01]  unlocked           regular object header
 //    [ptr             | 10]  monitor            inflated lock (header is wapped out)
 //    [ptr             | 11]  marked             used to mark an object
+//    [0 ............ 0| 00]  inflating          inflation in progress
 //
 //    We assume that stack/thread pointers have the lowest two bits cleared.
 //
-//  - INFLATING() is a distinguished markword value that is used when
-//    inflating an existing stack-lock into an ObjectMonitor. See below
-//    for is_being_inflated() and INFLATING().
+//  - INFLATING() is a distinguished markword value of all zeros that is
+//    used when inflating an existing stack-lock into an ObjectMonitor.
+//    See below for is_being_inflated() and INFLATING().
 
 class BasicLock;
 class ObjectMonitor;

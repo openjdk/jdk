@@ -28,6 +28,7 @@ package MyPackage;
  * @test
  * @build Frame HeapMonitor
  * @summary Verifies the JVMTI Heap Monitor sampling via object allocation.
+ * @requires vm.jvmti
  * @compile HeapMonitorStatObjectCorrectnessTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorStatObjectCorrectnessTest
  */

@@ -2836,6 +2836,12 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   // Load markWord from object into displaced_header.
   ld(displaced_header, oopDesc::mark_offset_in_bytes(), oop);
 
+  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    load_klass(temp, oop);
+    lwz(temp, in_bytes(Klass::access_flags_offset()), temp);
+    testbitdi(flag, R0, temp, exact_log2(JVM_ACC_IS_BOX_CLASS));
+    bne(flag, cont);
+  }
 
   if (try_bias) {
     biased_locking_enter(flag, oop, displaced_header, temp, current_header, cont);

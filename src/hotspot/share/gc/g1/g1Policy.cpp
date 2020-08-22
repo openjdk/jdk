@@ -57,7 +57,8 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _analytics(new G1Analytics(&_predictor)),
   _remset_tracker(),
   _mmu_tracker(new G1MMUTrackerQueue(GCPauseIntervalMillis / 1000.0, MaxGCPauseMillis / 1000.0)),
-  _ihop_control(create_ihop_control(&_predictor)),
+  _old_gen_alloc_tracker(),
+  _ihop_control(create_ihop_control(&_old_gen_alloc_tracker, &_predictor)),
   _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 2)),
   _full_collection_start_sec(0.0),
   _young_list_target_length(0),
@@ -72,7 +73,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _rs_length(0),
   _rs_length_prediction(0),
   _pending_cards_at_gc_start(0),
-  _old_gen_alloc_tracker(),
   _concurrent_start_to_mixed(),
   _collection_set(NULL),
   _g1h(NULL),
@@ -469,7 +469,7 @@ void G1Policy::record_full_collection_end() {
   update_young_list_max_and_target_length();
   update_rs_length_prediction();
 
-  _old_gen_alloc_tracker.reset_after_full_gc();
+  _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * HeapRegion::GrainBytes);
 
   record_pause(FullGC, _full_collection_start_sec, end_sec);
 }
@@ -804,9 +804,8 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
     // predicted target occupancy.
     size_t last_unrestrained_young_length = update_young_list_max_and_target_length();
 
-    _old_gen_alloc_tracker.reset_after_young_gc(app_time_ms / 1000.0);
-    update_ihop_prediction(_old_gen_alloc_tracker.last_cycle_duration(),
-                           _old_gen_alloc_tracker.last_cycle_old_bytes(),
+    _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * HeapRegion::GrainBytes);
+    update_ihop_prediction(app_time_ms / 1000.0,
                            last_unrestrained_young_length * HeapRegion::GrainBytes,
                            is_young_only_pause(this_pause));
 
@@ -844,19 +843,20 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
                                     scan_logged_cards_time_goal_ms);
 }
 
-G1IHOPControl* G1Policy::create_ihop_control(const G1Predictions* predictor){
+G1IHOPControl* G1Policy::create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
+                                             const G1Predictions* predictor) {
   if (G1UseAdaptiveIHOP) {
     return new G1AdaptiveIHOPControl(InitiatingHeapOccupancyPercent,
+                                     old_gen_alloc_tracker,
                                      predictor,
                                      G1ReservePercent,
                                      G1HeapWastePercent);
   } else {
-    return new G1StaticIHOPControl(InitiatingHeapOccupancyPercent);
+    return new G1StaticIHOPControl(InitiatingHeapOccupancyPercent, old_gen_alloc_tracker);
   }
 }
 
 void G1Policy::update_ihop_prediction(double mutator_time_s,
-                                      size_t mutator_alloc_bytes,
                                       size_t young_gen_size,
                                       bool this_gc_was_young_only) {
   // Always try to update IHOP prediction. Even evacuation failures give information
@@ -885,7 +885,7 @@ void G1Policy::update_ihop_prediction(double mutator_time_s,
   // marking, which makes any prediction useless. This increases the accuracy of the
   // prediction.
   if (this_gc_was_young_only && mutator_time_s > min_valid_time) {
-    _ihop_control->update_allocation_info(mutator_time_s, mutator_alloc_bytes, young_gen_size);
+    _ihop_control->update_allocation_info(mutator_time_s, young_gen_size);
     report = true;
   }
 

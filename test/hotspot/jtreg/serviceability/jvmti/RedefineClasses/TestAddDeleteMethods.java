@@ -25,6 +25,7 @@
  * @test
  * @bug 8192936
  * @summary RI does not follow the JVMTI RedefineClasses spec; need to disallow adding and deleting methods
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler

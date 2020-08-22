@@ -25,6 +25,7 @@
  * @test
  * @bug 8008678
  * @summary JSR 292: constant pool reconstitution must support pseudo strings
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.instrument

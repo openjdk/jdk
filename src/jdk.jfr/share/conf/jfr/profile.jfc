@@ -91,6 +91,11 @@
       <setting name="threshold" control="synchronization-threshold">10 ms</setting>
     </event>
 
+    <event name="jdk.SyncOnPrimitiveWrapper">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.BiasedLockRevocation">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>

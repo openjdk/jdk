@@ -27,6 +27,7 @@
  * @test
  * @bug 8216324
  * @summary GetClassMethods is confused by the presence of default methods in super interfaces
+ * @requires vm.jvmti
  * @library /test/lib
  * @compile OverpassMethods.java
  * @run main/othervm/native -agentlib:OverpassMethods OverpassMethods

@@ -33,6 +33,7 @@ import java.util.List;
  * @summary Verifies that when the VM event is sent, sampled events are also collected.
  * @build Frame HeapMonitor
  * @compile HeapMonitorVMEventsTest.java
+ * @requires vm.jvmti
  * @requires !vm.graal.enabled
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions
  *                          -XX:DisableIntrinsic=_clone
