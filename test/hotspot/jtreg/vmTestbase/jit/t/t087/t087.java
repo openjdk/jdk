@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,14 @@
  *
  * @comment make sure foo.class is only in the current directory
  * @clean jit.t.t087.foo
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
  *      -d .
  *      -cp ${test.class.path}
  *      ${test.src}/t087.java
  *
  * @comment run the test
- * @run driver PropertyResolvingWrapper ExecDriver --java
+ * @run driver ExecDriver --java
  *      -cp .${path.separator}${test.class.path}
  *      jit.t.t087.t087
  *      -WorkDir ./jit/t/t087
@@ -52,49 +52,41 @@
 
 package jit.t.t087;
 
-import java.io.File;
-import nsk.share.TestFailure;
 import nsk.share.GoldChecker;
 
-class foo
-{
-    static void bar()
-    {
+import java.io.File;
+
+class foo {
+    static void bar() {
         t087.goldChecker.println("You shouldn't see this.");
     }
 }
 
-class t087
-{
-    public static final GoldChecker goldChecker = new GoldChecker( "t087" );
+class t087 {
+    public static final GoldChecker goldChecker = new GoldChecker("t087");
 
-    public static void main(String[] argv)
-    {
+    public static void main(String[] argv) {
         File f;
-        if (argv.length < 2 || !argv[0].equals("-WorkDir"))
-                f = new File(".", "foo.class");
-        else
-                f = new File(argv[1], "foo.class");
-        if(f.isFile())
-        {
-
+        if (argv.length < 2 || !argv[0].equals("-WorkDir")) {
+            f = new File(".", "foo.class");
+        } else {
+            f = new File(argv[1], "foo.class");
+        }
+        if (f.isFile()) {
             f.delete();
 
-            for(int i = 1; i <= 2; i += 1)
-            {
-                try
-                {
+            for (int i = 1; i <= 2; i += 1) {
+                try {
                     foo.bar();
-                }
-                catch(Throwable t)
-                {
+                } catch (Throwable t) {
                     t087.goldChecker.println("Exception on try" + i);
                 }
             }
 
-        }
-        else
+        } else {
             t087.goldChecker.println("No foo.class in cwd");
+        }
         t087.goldChecker.check();
     }
 }
+
