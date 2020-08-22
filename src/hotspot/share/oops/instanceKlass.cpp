@@ -3599,8 +3599,10 @@ const char* InstanceKlass::internal_name() const {
 }
 
 void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
-                                             const char* module_name,
+                                             const ModuleEntry* module_entry,
                                              const ClassFileStream* cfs) const {
+  log_to_classlist(cfs);
+
   if (!log_is_enabled(Info, class, load)) {
     return;
   }
@@ -3615,6 +3617,7 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
   // Source
   if (cfs != NULL) {
     if (cfs->source() != NULL) {
+      const char* module_name = (module_entry->name() == NULL) ? UNNAMED_MODULE : module_entry->name()->as_C_string();
       if (module_name != NULL) {
         // When the boot loader created the stream, it didn't know the module name
         // yet. Let's format it now.
@@ -4190,3 +4193,52 @@ unsigned char * InstanceKlass::get_cached_class_file_bytes() {
   return VM_RedefineClasses::get_cached_class_file_bytes(_cached_class_file);
 }
 #endif
+
+void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
+#if INCLUDE_CDS
+  if (DumpLoadedClassList && classlist_file->is_open()) {
+    if (!ClassLoader::has_jrt_entry()) {
+       warning("DumpLoadedClassList and CDS are not supported in exploded build");
+       DumpLoadedClassList = NULL;
+       return;
+    }
+    ClassLoaderData* loader_data = class_loader_data();
+    if (!SystemDictionaryShared::is_sharing_possible(loader_data)) {
+      return;
+    }
+    bool skip = false;
+    if (is_shared()) {
+      assert(stream == NULL, "shared class with stream");
+    } else {
+      assert(stream != NULL, "non-shared class without stream");
+      // skip hidden class and unsafe anonymous class.
+      if ( is_hidden() || unsafe_anonymous_host() != NULL) {
+        return;
+      }
+      oop class_loader = loader_data->class_loader();
+      if (class_loader == NULL || SystemDictionary::is_platform_class_loader(class_loader)) {
+        // For the boot and platform class loaders, skip classes that are not found in the
+        // java runtime image, such as those found in the --patch-module entries.
+        // These classes can't be loaded from the archive during runtime.
+        if (!stream->from_boot_loader_modules_image() && strncmp(stream->source(), "jrt:", 4) != 0) {
+          skip = true;
+        }
+
+        if (class_loader == NULL && ClassLoader::contains_append_entry(stream->source())) {
+          // .. but don't skip the boot classes that are loaded from -Xbootclasspath/a
+          // as they can be loaded from the archive during runtime.
+          skip = false;
+        }
+      }
+    }
+    ResourceMark rm;
+    if (skip) {
+      tty->print_cr("skip writing class %s from source %s to classlist file",
+                    name()->as_C_string(), stream->source());
+    } else {
+      classlist_file->print_cr("%s", name()->as_C_string());
+      classlist_file->flush();
+    }
+  }
+#endif // INCLUDE_CDS
+}

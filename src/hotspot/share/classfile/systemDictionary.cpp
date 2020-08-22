@@ -1470,15 +1470,6 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
     ik->set_classpath_index(path_index, THREAD);
   }
 
-  if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
-    // Only dump the classes that can be stored into CDS archive
-    if (SystemDictionaryShared::is_sharing_possible(loader_data)) {
-      ResourceMark rm(THREAD);
-      classlist_file->print_cr("%s", ik->name()->as_C_string());
-      classlist_file->flush();
-    }
-  }
-
   // notify a class loaded from shared object
   ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
 
