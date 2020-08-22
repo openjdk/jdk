@@ -551,9 +551,9 @@ public:
 
   WorkGang* workers() const { return _workers; }
 
-  // Runs the given AbstractGangTask with the current active workers, returning the
-  // total time taken.
-  Tickspan run_task(AbstractGangTask* task);
+  // Runs the given AbstractGangTask with the current active workers,
+  // returning the total time taken.
+  Tickspan run_task_timed(AbstractGangTask* task);
 
   G1Allocator* allocator() {
     return _allocator;
@@ -1141,18 +1141,6 @@ public:
   inline G1HeapRegionAttr region_attr(const void* obj) const;
   inline G1HeapRegionAttr region_attr(uint idx) const;
 
-  // Return "TRUE" iff the given object address is in the reserved
-  // region of g1.
-  bool is_in_g1_reserved(const void* p) const {
-    return _hrm->reserved().contains(p);
-  }
-
-  // Returns a MemRegion that corresponds to the space that has been
-  // reserved for the heap
-  MemRegion g1_reserved() const {
-    return _hrm->reserved();
-  }
-
   MemRegion reserved_region() const {
     return _reserved;
   }
@@ -1173,8 +1161,12 @@ public:
 
   // Iteration functions.
 
+  void object_iterate_parallel(ObjectClosure* cl, uint worker_id, HeapRegionClaimer* claimer);
+
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl);
+
+  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num);
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj);
@@ -1433,7 +1425,7 @@ public:
   virtual bool supports_concurrent_gc_breakpoints() const;
   bool is_heterogeneous_heap() const;
 
-  virtual WorkGang* get_safepoint_workers() { return _workers; }
+  virtual WorkGang* safepoint_workers() { return _workers; }
 
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption

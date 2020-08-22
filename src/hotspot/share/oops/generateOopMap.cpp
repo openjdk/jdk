@@ -2000,7 +2000,7 @@ CellTypeState *GenerateOopMap::signature_to_effect(const Symbol* sig, int bci, C
   return vCTS;                               // Otherwise
 }
 
-long GenerateOopMap::_total_byte_count = 0;
+uint64_t GenerateOopMap::_total_byte_count = 0;
 elapsedTimer GenerateOopMap::_total_oopmap_time;
 
 // This function assumes "bcs" is at a "ret" instruction and that the vars

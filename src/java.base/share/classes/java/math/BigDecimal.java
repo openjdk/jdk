@@ -283,14 +283,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     @java.io.Serial
     private static final long serialVersionUID = 6108874887143696463L;
 
-    private static final ThreadLocal<StringBuilderHelper>
-        threadLocalStringBuilderHelper = new ThreadLocal<StringBuilderHelper>() {
-        @Override
-        protected StringBuilderHelper initialValue() {
-            return new StringBuilderHelper();
-        }
-    };
-
     // Cache of common small BigDecimal values.
     private static final BigDecimal ZERO_THROUGH_TEN[] = {
         new BigDecimal(BigInteger.ZERO,       0,  0, 1),
@@ -3798,19 +3790,17 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return BigDecimal.valueOf(1, this.scale(), 1);
     }
 
-    // Private class to build a string representation for BigDecimal object.
-    // "StringBuilderHelper" is constructed as a thread local variable so it is
-    // thread safe. The StringBuilder field acts as a buffer to hold the temporary
-    // representation of BigDecimal. The cmpCharArray holds all the characters for
-    // the compact representation of BigDecimal (except for '-' sign' if it is
-    // negative) if its intCompact field is not INFLATED. It is shared by all
-    // calls to toString() and its variants in that particular thread.
+    // Private class to build a string representation for BigDecimal object. The
+    // StringBuilder field acts as a buffer to hold the temporary representation
+    // of BigDecimal. The cmpCharArray holds all the characters for the compact
+    // representation of BigDecimal (except for '-' sign' if it is negative) if
+    // its intCompact field is not INFLATED.
     static class StringBuilderHelper {
         final StringBuilder sb;    // Placeholder for BigDecimal string
         final char[] cmpCharArray; // character array to place the intCompact
 
         StringBuilderHelper() {
-            sb = new StringBuilder();
+            sb = new StringBuilder(32);
             // All non negative longs can be made to fit into 19 character array.
             cmpCharArray = new char[19];
         }
@@ -3921,7 +3911,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     StringBuilderHelper.DIGIT_ONES[lowInt]) ;
         }
 
-        StringBuilderHelper sbHelper = threadLocalStringBuilderHelper.get();
+        StringBuilderHelper sbHelper = new StringBuilderHelper();
         char[] coeff;
         int offset;  // offset is the starting index for coeff array
         // Get the significand as an absolute value

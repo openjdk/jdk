@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,13 @@ package com.sun.source.doctree;
 import java.util.List;
 
 /**
+ * A tree node for an {@code @exception} or {@code @throws} block tag.
+ * {@code @exception} is a synonym for {@code @throws}.
  *
- * A tree node for an @exception or &#064;throws block tag.
- * &#064;exception is a synonym for &#064;throws.
- *
- * <p>
- * &#064;exception class-name description <br>
- * &#064;throws class-name description
+ * <pre>
+ *    &#064;exception class-name description
+ *    &#064;throws class-name description
+ * </pre>
  *
  * @since 1.8
  */

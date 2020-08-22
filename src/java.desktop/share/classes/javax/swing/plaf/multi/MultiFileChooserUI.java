@@ -54,6 +54,11 @@ public class MultiFileChooserUI extends FileChooserUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiFileChooserUI}.
+     */
+    public MultiFileChooserUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

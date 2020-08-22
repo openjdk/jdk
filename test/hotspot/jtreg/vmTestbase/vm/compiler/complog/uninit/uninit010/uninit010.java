@@ -32,10 +32,9 @@
  * @build vm.compiler.complog.share.LogCompilationTest
  *        vm.compiler.complog.uninit.uninit010.uninit010
  *        vm.compiler.complog.uninit.UninitializedTrapCounter
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      vm.compiler.complog.share.LogCompilationTest
  *      -testedJava ${test.jdk}/bin/java
- *      -options "${test.vm.opts} ${test.java.opts}"
  *      -testClass vm.compiler.complog.uninit.uninit010.uninit010
  *      -parserClass vm.compiler.complog.uninit.UninitializedTrapCounter
  *      -parserOptions "-classFilter=.*uninit.*"

@@ -1322,11 +1322,11 @@ void MacroAssembler::biased_locking_enter_with_cas(Register obj_reg, Register ol
 #endif // !PRODUCT
 }
 
-int MacroAssembler::biased_locking_enter(Register obj_reg, Register swap_reg, Register tmp_reg,
-                                         bool swap_reg_contains_mark,
-                                         Register tmp2,
-                                         Label& done, Label& slow_case,
-                                         BiasedLockingCounters* counters) {
+void MacroAssembler::biased_locking_enter(Register obj_reg, Register swap_reg, Register tmp_reg,
+                                          bool swap_reg_contains_mark,
+                                          Register tmp2,
+                                          Label& done, Label& slow_case,
+                                          BiasedLockingCounters* counters) {
   // obj_reg must be preserved (at least) if the bias locking fails
   // tmp_reg is a temporary register
   // swap_reg was used as a temporary but contained a value
@@ -1357,10 +1357,6 @@ int MacroAssembler::biased_locking_enter(Register obj_reg, Register swap_reg, Re
   // First check to see whether biasing is even enabled for this object
   Label cas_label;
 
-  // The null check applies to the mark loading, if we need to load it.
-  // If the mark has already been loaded in swap_reg then it has already
-  // been performed and the offset is irrelevant.
-  int null_check_offset = offset();
   if (!swap_reg_contains_mark) {
     ldr(swap_reg, mark_addr);
   }
@@ -1504,8 +1500,6 @@ int MacroAssembler::biased_locking_enter(Register obj_reg, Register swap_reg, Re
   // removing the bias bit from the object's header.
 
   bind(cas_label);
-
-  return null_check_offset;
 }
 
 

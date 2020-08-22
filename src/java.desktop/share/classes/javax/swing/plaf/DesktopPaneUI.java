@@ -32,4 +32,8 @@ package javax.swing.plaf;
  * @author David Kloba
  */
 public abstract class DesktopPaneUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected DesktopPaneUI() {}
 }

@@ -23,19 +23,21 @@
 
 /*
  * @test
- * @bug 8239355 8242885
+ * @bug 8239355 8242885 8240901
+ * @key randomness
  * @summary Check that it is possible to send and receive datagrams of
  *          maximum size on macOS.
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @requires os.family == "mac"
  * @run testng/othervm SendReceiveMaxSize
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SendReceiveMaxSize
  * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  */
 
+import jdk.test.lib.RandomFactory;
 import jdk.test.lib.NetworkConfiguration;
+import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
@@ -49,6 +51,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.function.Predicate;
 
 import static java.net.StandardProtocolFamily.INET;
@@ -65,6 +68,7 @@ public class SendReceiveMaxSize {
     private final static int IPV4_SNDBUF = 65507;
     private final static int IPV6_SNDBUF = 65527;
     private final static Class<IOException> IOE = IOException.class;
+    private final static Random random = RandomFactory.getRandom();
 
     public interface DatagramChannelSupplier {
         DatagramChannel open() throws IOException;
@@ -118,8 +122,10 @@ public class SendReceiveMaxSize {
     @Test(dataProvider = "invariants")
     public void testGetOption(DatagramChannelSupplier supplier, int capacity, InetAddress host)
             throws IOException {
-        try (var dc = supplier.open()) {
-            assertTrue(dc.getOption(SO_SNDBUF) >= capacity);
+        if (Platform.isOSX()) {
+            try (var dc = supplier.open()){
+                assertTrue(dc.getOption(SO_SNDBUF) >= capacity);
+            }
         }
     }
 
@@ -133,17 +139,43 @@ public class SendReceiveMaxSize {
 
             try (var sender = supplier.open()) {
                 sender.bind(null);
-                var sendBuf = ByteBuffer.allocate(capacity);
+                if (!Platform.isOSX()) {
+                    if (sender.getOption(SO_SNDBUF) < capacity)
+                        sender.setOption(SO_SNDBUF, capacity);
+                }
+                byte[] testData = new byte[capacity];
+                random.nextBytes(testData);
+
+                var sendBuf = ByteBuffer.wrap(testData);
                 sender.send(sendBuf, addr);
                 var receiveBuf = ByteBuffer.allocate(capacity);
                 receiver.receive(receiveBuf);
-                assertEquals(sendBuf, receiveBuf);
 
-                sendBuf = ByteBuffer.allocate(capacity - 1);
+                sendBuf.flip();
+                receiveBuf.flip();
+
+                // check that data has been fragmented and re-assembled correctly at receiver
+                System.out.println("sendBuf:    " + sendBuf);
+                System.out.println("receiveBuf: " + receiveBuf);
+                assertEquals(sendBuf, receiveBuf);
+                assertEquals(sendBuf.compareTo(receiveBuf), 0);
+
+                testData = new byte[capacity - 1];
+                random.nextBytes(testData);
+
+                sendBuf = ByteBuffer.wrap(testData);
                 sender.send(sendBuf, addr);
                 receiveBuf = ByteBuffer.allocate(capacity - 1);
                 receiver.receive(receiveBuf);
-                assertTrue(sendBuf.compareTo(receiveBuf) == 0);
+
+                sendBuf.flip();
+                receiveBuf.flip();
+
+                // check that data has been fragmented and re-assembled correctly at receiver
+                System.out.println("sendBuf:    " + sendBuf);
+                System.out.println("receiveBuf: " + receiveBuf);
+                assertEquals(sendBuf, receiveBuf);
+                assertEquals(sendBuf.compareTo(receiveBuf), 0);
 
                 var failSendBuf = ByteBuffer.allocate(capacity + 1);
                 assertThrows(IOE, () ->  sender.send(failSendBuf, addr));

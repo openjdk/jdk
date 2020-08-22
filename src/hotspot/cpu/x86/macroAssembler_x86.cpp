@@ -1081,15 +1081,15 @@ void MacroAssembler::reserved_stack_check() {
     bind(no_reserved_zone_enabling);
 }
 
-int MacroAssembler::biased_locking_enter(Register lock_reg,
-                                         Register obj_reg,
-                                         Register swap_reg,
-                                         Register tmp_reg,
-                                         Register tmp_reg2,
-                                         bool swap_reg_contains_mark,
-                                         Label& done,
-                                         Label* slow_case,
-                                         BiasedLockingCounters* counters) {
+void MacroAssembler::biased_locking_enter(Register lock_reg,
+                                          Register obj_reg,
+                                          Register swap_reg,
+                                          Register tmp_reg,
+                                          Register tmp_reg2,
+                                          bool swap_reg_contains_mark,
+                                          Label& done,
+                                          Label* slow_case,
+                                          BiasedLockingCounters* counters) {
   assert(UseBiasedLocking, "why call this otherwise?");
   assert(swap_reg == rax, "swap_reg must be rax for cmpxchgq");
   assert(tmp_reg != noreg, "tmp_reg must be supplied");
@@ -1108,9 +1108,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   // pointers to allow age to be placed into low bits
   // First check to see whether biasing is even enabled for this object
   Label cas_label;
-  int null_check_offset = -1;
   if (!swap_reg_contains_mark) {
-    null_check_offset = offset();
     movptr(swap_reg, mark_addr);
   }
   movptr(tmp_reg, swap_reg);
@@ -1127,9 +1125,6 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   // simpler.
   movptr(saved_mark_addr, swap_reg);
 #endif
-  if (swap_reg_contains_mark) {
-    null_check_offset = offset();
-  }
   load_prototype_header(tmp_reg, obj_reg, tmp_reg2);
 #ifdef _LP64
   orptr(tmp_reg, r15_thread);
@@ -1263,8 +1258,6 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   }
 
   bind(cas_label);
-
-  return null_check_offset;
 }
 
 void MacroAssembler::biased_locking_exit(Register obj_reg, Register temp_reg, Label& done) {

@@ -47,6 +47,12 @@ public class SynthListUI extends BasicListUI
     private boolean useUIBorder;
 
     /**
+     *
+     * Constructs a {@code SynthListUI}.
+     */
+    public SynthListUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param list component to create UI object for

@@ -25,6 +25,7 @@
  * @test
  * @bug 8193524
  * @summary Redefine a class' public static method that contains a lambda expression
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler

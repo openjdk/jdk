@@ -51,6 +51,12 @@ import java.awt.*;
 public class SynthTextPaneUI extends SynthEditorPaneUI {
 
     /**
+     *
+     * Constructs a {@code SynthTextPaneUI}.
+     */
+    public SynthTextPaneUI() {}
+
+    /**
      * Creates a UI for the JTextPane.
      *
      * @param c the JTextPane object

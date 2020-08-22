@@ -949,6 +949,11 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
 
     static final long serialVersionUID = 6893806403181801867L;
 
+    /**
+     * {@code ColInfo} objects are used to store information
+     * about each column in the {@code RowSet} object for which
+     * this {@code RowSetMetaDataImpl} object was created.
+     */
     private class ColInfo implements Serializable {
         /**
          * The field that indicates whether the value in this column is a number

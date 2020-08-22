@@ -131,8 +131,8 @@ public class TagletManager {
 
     /**
      * Keep track of standard tags in lowercase to compare for better
-     * error messages when a tag like @docRoot is mistakenly spelled
-     * lowercase @docroot.
+     * error messages when a tag like {@code @docRoot} is mistakenly spelled
+     * lowercase {@code @docroot}.
      */
     private final Set<String> standardTagsLowercase;
 
@@ -154,22 +154,22 @@ public class TagletManager {
     private final Set<String> unseenCustomTags;
 
     /**
-     * True if we do not want to use @since tags.
+     * True if we do not want to use {@code @since} tags.
      */
     private final boolean nosince;
 
     /**
-     * True if we want to use @version tags.
+     * True if we want to use {@code @version} tags.
      */
     private final boolean showversion;
 
     /**
-     * True if we want to use @author tags.
+     * True if we want to use {@code @author} tags.
      */
     private final boolean showauthor;
 
     /**
-     * True if we want to use JavaFX-related tags (@defaultValue, @treatAsPrivate).
+     * True if we want to use JavaFX-related tags ({@code @defaultValue}, {@code @treatAsPrivate}).
      */
     private final boolean javafx;
 
@@ -207,30 +207,15 @@ public class TagletManager {
         initStandardTaglets();
     }
 
-    /**
-     * Add a new {@code Taglet}.  This is used to add a Taglet from within
-     * a Doclet.  No message is printed to indicate that the Taglet is properly
-     * registered because these Taglets are typically added for every execution of the
-     * Doclet.  We don't want to see this type of error message every time.
-     * @param customTag the new {@code Taglet} to add.
-     */
-    public void addCustomTag(Taglet customTag) {
-        if (customTag != null) {
-            String name = customTag.getName();
-            allTaglets.remove(name);
-            allTaglets.put(name, customTag);
-            checkTagName(name);
-        }
-    }
-
     public Set<String> getAllTagletNames() {
         return allTaglets.keySet();
     }
 
     /**
      * Initializes the location TAGLET_PATH which is used to locate the custom taglets.
-     * @param fileManager the file manager to load classes and resources.
-     * @throws IOException if an error occurs while setting the location.
+     *
+     * @param fileManager the file manager to load classes and resources
+     * @throws IOException if an error occurs while setting the location
      */
     public void initTagletPath(JavaFileManager fileManager) throws IOException {
         if (fileManager instanceof StandardJavaFileManager) {
@@ -250,10 +235,12 @@ public class TagletManager {
     }
 
     /**
-     * Adds a new {@code Taglet}.  Print a message to indicate whether or not
-     * the Taglet was registered properly.
-     * @param classname  the name of the class representing the custom tag.
-     * @param fileManager the file manager to load classes and resources.
+     * Adds a new {@code Taglet}.
+     *
+     * Prints a message to indicate whether or not the Taglet was registered properly.
+     *
+     * @param classname  the name of the class representing the custom tag
+     * @param fileManager the file manager to load classes and resources
      */
     public void addCustomTag(String classname, JavaFileManager fileManager) {
         try {
@@ -270,9 +257,10 @@ public class TagletManager {
     }
 
     /**
-     * Loads taglets from a taglet path using service loader.
-     * @param fileManager the file manager to load the taglets.
-     * @throws IOException if an error occurs while getting the service loader.
+     * Loads taglets from a taglet path using the service loader.
+     *
+     * @param fileManager the file manager to load the taglets
+     * @throws IOException if an error occurs while getting the service loader
      */
     public void loadTaglets(JavaFileManager fileManager) throws IOException {
         Iterable<? extends File> location = ((StandardJavaFileManager) fileManager).getLocation(TAGLET_PATH);
@@ -286,8 +274,11 @@ public class TagletManager {
     }
 
     /**
-     * Registers the {@code Taglet}. Prints a message if a {@code Taglet} got registered properly.
-     * @param instance the {@code Taglet} instance.
+     * Registers the {@code Taglet}.
+     *
+     * Prints a message if the {@code Taglet} got registered properly.
+     *
+     * @param instance the {@code Taglet} instance
      */
     private void registerTaglet(jdk.javadoc.doclet.Taglet instance) {
         instance.init(docEnv, doclet);
@@ -297,15 +288,16 @@ public class TagletManager {
     }
 
     /**
-     * Add a new {@code SimpleTaglet}.  If this tag already exists
-     * and the header passed as an argument is null, move tag to the back of the
-     * list. If this tag already exists and the header passed as an argument is
-     * not null, overwrite previous tag with new one.  Otherwise, add new
-     * SimpleTaglet to list.
+     * Add a new {@code SimpleTaglet}.
+     *
+     * If this tag already exists and the header passed as an argument is {@code null},
+     * move tag to the back of the list. If this tag already exists and the
+     * header passed as an argument is not {@code null}, overwrite previous tag
+     * with the new one. Otherwise, add a new SimpleTaglet to the list.
+     *
      * @param tagName the name of this tag
-     * @param header the header to output.
-     * @param locations the possible locations that this tag
-     * can appear in.
+     * @param header the header to output
+     * @param locations the possible locations that this tag can appear in
      */
     public void addNewSimpleCustomTag(String tagName, String header, String locations) {
         if (tagName == null || locations == null) {
@@ -342,7 +334,7 @@ public class TagletManager {
     /**
      * Given a name of a seen custom tag, remove it from the set of unseen
      * custom tags.
-     * @param name the name of the seen custom tag.
+     * @param name the name of the seen custom tag
      */
     void seenCustomTag(String name) {
         unseenCustomTags.remove(name);
@@ -350,9 +342,10 @@ public class TagletManager {
 
     /**
      * Given a series of {@code DocTree}s, check for spelling mistakes.
+     *
      * @param element the tags holder
      * @param trees the trees containing the comments
-     * @param inlineTrees true if the trees are inline and false otherwise.
+     * @param inlineTrees true if the trees are inline and false otherwise
      */
     @SuppressWarnings("preview")
     public void checkTags(Element element, Iterable<? extends DocTree> trees, boolean inlineTrees) {
@@ -453,9 +446,10 @@ public class TagletManager {
     /**
      * Given the taglet, the tag and the type of documentation that the tag
      * was found in, print a tag misuse warning.
-     * @param taglet the taglet representing the misused tag.
-     * @param tag the misused tag.
-     * @param holderType the type of documentation that the misused tag was found in.
+     *
+     * @param taglet the taglet representing the misused tag
+     * @param tag the misused tag
+     * @param holderType the type of documentation that the misused tag was found in
      */
     private void printTagMisuseWarn(CommentHelper ch, Taglet taglet, DocTree tag, String holderType) {
         Set<String> locationsSet = new LinkedHashSet<>();
@@ -526,7 +520,7 @@ public class TagletManager {
      *
      * @param e the element to get custom tags for
      * @return the array of {@code Taglet}s that can
-     * appear in the given element.
+     * appear in the given element
      */
     @SuppressWarnings("fallthrough")
     public List<Taglet> getBlockTaglets(Element e) {
@@ -716,11 +710,9 @@ public class TagletManager {
 
     /**
      * Given the name of a tag, return the corresponding taglet.
-     * Return null if the tag is unknown.
      *
-     * @param name the name of the taglet to retrieve.
-     * @return return the corresponding taglet. Return null if the tag is
-     *         unknown.
+     * @param name the name of the taglet to retrieve
+     * @return the corresponding taglet or {@code null} if the tag is unknown
      */
     Taglet getTaglet(String name) {
         if (name.indexOf("@") == 0) {
@@ -756,6 +748,6 @@ public class TagletManager {
     }
 
     private String format(boolean b, String s) {
-        return b ? s : s.replaceAll(".", "."); // replace all with "."
+        return b ? s : ".".repeat(s.length()); // "replace" all with "."
     }
 }

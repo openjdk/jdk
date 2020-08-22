@@ -5474,11 +5474,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   ClassLoadingService::notify_class_loaded(ik, false /* not shared class */);
 
   if (!is_internal()) {
-    if (log_is_enabled(Info, class, load)) {
-      ResourceMark rm;
-      const char* module_name = (module_entry->name() == NULL) ? UNNAMED_MODULE : module_entry->name()->as_C_string();
-      ik->print_class_load_logging(_loader_data, module_name, _stream);
-    }
+    ik->print_class_load_logging(_loader_data, module_entry, _stream);
 
     if (ik->minor_version() == JAVA_PREVIEW_MINOR_VERSION &&
         ik->major_version() == JVM_CLASSFILE_MAJOR_VERSION &&
@@ -5985,44 +5981,6 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
       }
       ls.cr();
     }
-
-#if INCLUDE_CDS
-    if (DumpLoadedClassList != NULL && stream->source() != NULL && classlist_file->is_open()) {
-      if (!ClassLoader::has_jrt_entry()) {
-        warning("DumpLoadedClassList and CDS are not supported in exploded build");
-        DumpLoadedClassList = NULL;
-      } else if (SystemDictionaryShared::is_sharing_possible(_loader_data) &&
-                 !_is_hidden &&
-                 _unsafe_anonymous_host == NULL) {
-        // Only dump the classes that can be stored into CDS archive.
-        // Hidden and unsafe anonymous classes such as generated LambdaForm classes are also not included.
-        oop class_loader = _loader_data->class_loader();
-        ResourceMark rm(THREAD);
-        bool skip = false;
-        if (class_loader == NULL || SystemDictionary::is_platform_class_loader(class_loader)) {
-          // For the boot and platform class loaders, skip classes that are not found in the
-          // java runtime image, such as those found in the --patch-module entries.
-          // These classes can't be loaded from the archive during runtime.
-          if (!stream->from_boot_loader_modules_image() && strncmp(stream->source(), "jrt:", 4) != 0) {
-            skip = true;
-          }
-
-          if (class_loader == NULL && ClassLoader::contains_append_entry(stream->source())) {
-            // .. but don't skip the boot classes that are loaded from -Xbootclasspath/a
-            // as they can be loaded from the archive during runtime.
-            skip = false;
-          }
-        }
-        if (skip) {
-          tty->print_cr("skip writing class %s from source %s to classlist file",
-            _class_name->as_C_string(), stream->source());
-        } else {
-          classlist_file->print_cr("%s", _class_name->as_C_string());
-          classlist_file->flush();
-        }
-      }
-    }
-#endif
   }
 
   // SUPERKLASS

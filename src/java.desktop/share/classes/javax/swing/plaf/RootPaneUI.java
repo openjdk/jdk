@@ -32,4 +32,8 @@ package javax.swing.plaf;
  * @since 1.3
  */
 public abstract class RootPaneUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected RootPaneUI() {}
 }

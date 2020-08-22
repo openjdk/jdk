@@ -25,6 +25,7 @@
  * @test
  * @library /test/lib
  * @summary Test that retransforming and redefining anonymous classes gets UnmodifiableClassException
+ * @requires vm.jvmti
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  *          jdk.jartool/sun.tools.jar

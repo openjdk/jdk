@@ -50,6 +50,11 @@ public class MultiComboBoxUI extends ComboBoxUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiComboBoxUI}.
+     */
+    public MultiComboBoxUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

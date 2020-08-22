@@ -248,11 +248,13 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
 // Input arguments :-
 //   arg0: "-live" or "-all"
 //   arg1: Name of the dump file or NULL
+//   arg2: parallel thread number
 static jint heap_inspection(AttachOperation* op, outputStream* out) {
   bool live_objects_only = true;   // default is true to retain the behavior before this change is made
   outputStream* os = out;   // if path not specified or path is NULL, use out
   fileStream* fs = NULL;
   const char* arg0 = op->arg(0);
+  uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
   if (arg0 != NULL && (strlen(arg0) > 0)) {
     if (strcmp(arg0, "-all") != 0 && strcmp(arg0, "-live") != 0) {
       out->print_cr("Invalid argument to inspectheap operation: %s", arg0);
@@ -262,21 +264,26 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
   }
 
   const char* path = op->arg(1);
-  if (path != NULL) {
-    if (path[0] == '\0') {
-      out->print_cr("No dump file specified");
-    } else {
-      // create file
-      fs = new (ResourceObj::C_HEAP, mtInternal) fileStream(path);
-      if (fs == NULL) {
-        out->print_cr("Failed to allocate space for file: %s", path);
-        return JNI_ERR;
-      }
-      os = fs;
+  if (path != NULL && path[0] != '\0') {
+    // create file
+    fs = new (ResourceObj::C_HEAP, mtInternal) fileStream(path);
+    if (fs == NULL) {
+      out->print_cr("Failed to allocate space for file: %s", path);
     }
+    os = fs;
   }
 
-  VM_GC_HeapInspection heapop(os, live_objects_only /* request full gc */);
+  const char* num_str = op->arg(2);
+  if (num_str != NULL && num_str[0] != '\0') {
+    uintx num;
+    if (!Arguments::parse_uintx(num_str, &num, 0)) {
+      out->print_cr("Invalid parallel thread number: [%s]", num_str);
+      return JNI_ERR;
+    }
+    parallel_thread_num = num == 0 ? parallel_thread_num : (uint)num;
+  }
+
+  VM_GC_HeapInspection heapop(os, live_objects_only /* request full gc */, parallel_thread_num);
   VMThread::execute(&heapop);
   if (os != NULL && os != out) {
     out->print_cr("Heap inspection file created: %s", path);

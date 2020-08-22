@@ -49,6 +49,11 @@ public class MultiDesktopPaneUI extends DesktopPaneUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiDesktopPaneUI}.
+     */
+    public MultiDesktopPaneUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

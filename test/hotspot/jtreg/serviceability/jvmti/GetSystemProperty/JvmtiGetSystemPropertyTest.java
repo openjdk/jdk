@@ -25,6 +25,7 @@
  * @test
  * @bug 8203329
  * @summary Verifies the JVMTI GetSystemProperty API returns the updated java.vm.info value
+ * @requires vm.jvmti
  * @library /test/lib
  * @run main/othervm/native -agentlib:JvmtiGetSystemPropertyTest JvmtiGetSystemPropertyTest
  *

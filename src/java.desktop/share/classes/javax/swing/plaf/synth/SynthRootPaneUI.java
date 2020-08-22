@@ -42,6 +42,12 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
     private SynthStyle style;
 
     /**
+     *
+     * Constructs a {@code SynthRootPaneUI}.
+     */
+    public SynthRootPaneUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

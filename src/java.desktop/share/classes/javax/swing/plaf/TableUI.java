@@ -31,4 +31,8 @@ package javax.swing.plaf;
  * @author Alan Chung
  */
 public abstract class TableUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected TableUI() {}
 }

@@ -49,6 +49,11 @@ public class MultiMenuBarUI extends MenuBarUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiMenuBarUI}.
+     */
+    public MultiMenuBarUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

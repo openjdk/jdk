@@ -128,6 +128,11 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
     private PropertyChangeListener disposer = null;
 
     /**
+     * Constructor for subclasses to call.
+     */
+    protected BasicLookAndFeel() {}
+
+    /**
      * Returns the look and feel defaults. The returned {@code UIDefaults}
      * is populated by invoking, in order, {@code initClassDefaults},
      * {@code initSystemColorDefaults} and {@code initComponentDefaults}.

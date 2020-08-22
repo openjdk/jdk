@@ -123,7 +123,7 @@ NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array) {
     jobject axText = JNFCallStaticObjectMethod(env, sjm_getAccessibleText, fAccessible, fComponent); // AWT_THREADING Safe (AWTRunLoop)
     if (axText == NULL) return nil;
     (*env)->DeleteLocalRef(env, axText);
-    
+
     jobject axEditableText = JNFCallStaticObjectMethod(env, sjm_getAccessibleEditableText, fAccessible, fComponent); // AWT_THREADING Safe (AWTRunLoop)
     if (axEditableText == NULL) return nil;
 
@@ -133,7 +133,7 @@ NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array) {
 
     (*env)->DeleteLocalRef(env, jrange);
     (*env)->DeleteLocalRef(env, axEditableText);
-    
+
     if (string == nil) string = @"";
     return string;
 }
@@ -305,7 +305,7 @@ NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array) {
     jdouble *values = (*env)->GetDoubleArrayElements(env, axBounds, 0);
     if (values == NULL) {
         // Note: Java will not be on the stack here so a java exception can't happen and no need to call ExceptionCheck.
-        NSLog(@"%s failed calling GetDoubleArrayElements", __FUNCTION__); 
+        NSLog(@"%s failed calling GetDoubleArrayElements", __FUNCTION__);
         return nil;
     };
     NSRect bounds;
@@ -427,7 +427,7 @@ NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array) {
     return javaIntArrayToNSRangeValue(env, axTextRange);
 }
 
-/* 
+/*
  * - (NSDictionary *)getActions:(JNIEnv *)env { ... }
  *
  * In the future, possibly add support: Editable text has AXShowMenu.

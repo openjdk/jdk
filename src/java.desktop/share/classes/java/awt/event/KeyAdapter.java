@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,12 @@ package java.awt.event;
  * @since 1.1
  */
 public abstract class KeyAdapter implements KeyListener {
+
+    /**
+     * Constructs a {@code KeyAdapter}.
+     */
+    protected KeyAdapter() {}
+
     /**
      * Invoked when a key has been typed.
      * This event occurs when a key press is followed by a key release.

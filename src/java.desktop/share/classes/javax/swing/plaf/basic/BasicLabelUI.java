@@ -71,6 +71,11 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
     private Rectangle paintIconR = new Rectangle();
     private Rectangle paintTextR = new Rectangle();
 
+    /**
+     * Constructs a {@code BasicLabelUI}.
+     */
+    public BasicLabelUI() {}
+
     static void loadActionMap(LazyActionMap map) {
         map.put(new Actions(Actions.PRESS));
         map.put(new Actions(Actions.RELEASE));

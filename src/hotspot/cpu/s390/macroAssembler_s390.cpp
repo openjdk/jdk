@@ -3358,6 +3358,14 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   // Load markWord from oop into mark.
   z_lg(displacedHeader, 0, oop);
 
+  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    load_klass(Z_R1_scratch, oop);
+    z_l(Z_R1_scratch, Address(Z_R1_scratch, Klass::access_flags_offset()));
+    assert((JVM_ACC_IS_BOX_CLASS & 0xFFFF) == 0, "or change following instruction");
+    z_nilh(Z_R1_scratch, JVM_ACC_IS_BOX_CLASS >> 16);
+    z_brne(done);
+  }
+
   if (try_bias) {
     biased_locking_enter(oop, displacedHeader, temp, Z_R0, done);
   }

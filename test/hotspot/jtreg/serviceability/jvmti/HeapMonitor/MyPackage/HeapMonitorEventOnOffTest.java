@@ -29,6 +29,7 @@ import java.util.List;
 /**
  * @test
  * @summary Verifies if turning off the event notification stops events.
+ * @requires vm.jvmti
  * @build Frame HeapMonitor
  * @compile HeapMonitorEventOnOffTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorEventOnOffTest

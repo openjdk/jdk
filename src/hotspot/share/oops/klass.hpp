@@ -632,6 +632,8 @@ protected:
   void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
   bool is_non_strong_hidden() const     { return access_flags().is_hidden_class() &&
                                           class_loader_data()->has_class_mirror_holder(); }
+  bool is_box() const                   { return access_flags().is_box_class(); }
+  void set_is_box()                     { _access_flags.set_is_box_class(); }
 
   bool is_cloneable() const;
   void set_is_cloneable();
@@ -641,6 +643,7 @@ protected:
   // prototype markWord. If biased locking is enabled it may further be
   // biasable and have an epoch.
   markWord prototype_header() const      { return _prototype_header; }
+
   // NOTE: once instances of this klass are floating around in the
   // system, this header must only be updated at a safepoint.
   // NOTE 2: currently we only ever set the prototype header to the

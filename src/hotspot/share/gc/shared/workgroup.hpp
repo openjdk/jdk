@@ -52,6 +52,7 @@ class AbstractGangWorker;
 class Semaphore;
 class ThreadClosure;
 class WorkGang;
+class GangTaskDispatcher;
 
 // An abstract task to be worked on by a gang.
 // You subclass this to supply your own work() method
@@ -78,29 +79,6 @@ struct WorkData {
   AbstractGangTask* _task;
   uint              _worker_id;
   WorkData(AbstractGangTask* task, uint worker_id) : _task(task), _worker_id(worker_id) {}
-};
-
-// Interface to handle the synchronization between the coordinator thread and the worker threads,
-// when a task is dispatched out to the worker threads.
-class GangTaskDispatcher : public CHeapObj<mtGC> {
- public:
-  virtual ~GangTaskDispatcher() {}
-
-  // Coordinator API.
-
-  // Distributes the task out to num_workers workers.
-  // Returns when the task has been completed by all workers.
-  virtual void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers,
-                                              bool add_foreground_work) = 0;
-
-  // Worker API.
-
-  // Waits for a task to become available to the worker.
-  // Returns when the worker has been assigned a task.
-  virtual WorkData worker_wait_for_task() = 0;
-
-  // Signal to the coordinator that the worker is done with the assigned task.
-  virtual void     worker_done_with_task() = 0;
 };
 
 // The work gang is the collection of workers to execute tasks.
@@ -222,6 +200,27 @@ public:
 
 protected:
   virtual AbstractGangWorker* allocate_worker(uint which);
+};
+
+// Temporarily try to set the number of active workers.
+// It's not guaranteed that it succeeds, and users need to
+// query the number of active workers.
+class WithUpdatedActiveWorkers : public StackObj {
+private:
+  AbstractWorkGang* const _gang;
+  const uint              _old_active_workers;
+
+public:
+  WithUpdatedActiveWorkers(AbstractWorkGang* gang, uint requested_num_workers) :
+      _gang(gang),
+      _old_active_workers(gang->active_workers()) {
+    uint capped_num_workers = MIN2(requested_num_workers, gang->total_workers());
+    gang->update_active_workers(capped_num_workers);
+  }
+
+  ~WithUpdatedActiveWorkers() {
+    _gang->update_active_workers(_old_active_workers);
+  }
 };
 
 // Several instances of this class run in parallel as workers for a gang.

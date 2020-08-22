@@ -26,6 +26,7 @@
  * @test
  * @bug 8242428
  * @summary Verifies JVMTI GetThreadListStackTraces API with thread_count = 1
+ * @requires vm.jvmti
  * @library /test/lib
  * @run main/othervm/native -agentlib:OneGetThreadListStackTraces OneGetThreadListStackTraces
  *

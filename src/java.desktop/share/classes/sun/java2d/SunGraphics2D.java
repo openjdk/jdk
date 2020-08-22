@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3151,6 +3151,13 @@ public final class SunGraphics2D
                 int rvWidth = resolutionVariant.getWidth(rvObserver);
                 int rvHeight = resolutionVariant.getHeight(rvObserver);
 
+                if (rvWidth < 0 || rvHeight < 0) {
+                    // The resolution variant is not loaded yet, try to use default resolution
+                    resolutionVariant = mrImage.getResolutionVariant(width, height);
+                    rvWidth = resolutionVariant.getWidth(rvObserver);
+                    rvHeight = resolutionVariant.getHeight(rvObserver);
+                }
+
                 if (0 < width && 0 < height && 0 < rvWidth && 0 < rvHeight) {
 
                     double widthScale = ((double) rvWidth) / width;
@@ -3184,6 +3191,8 @@ public final class SunGraphics2D
                     return scaleImage(img, dx1, dy1, dx2, dy2,
                                       sx1, sy1, sx2, sy2,
                                       bgcolor, observer);
+                } else {
+                    return false; // Image variant is not initialized yet
                 }
             }
         }

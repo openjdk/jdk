@@ -130,7 +130,6 @@ extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for
 #endif
 extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::find_or_allocate_info_for
 extern Mutex*   CDSLambda_lock;                  // SystemDictionaryShared::get_shared_lambda_proxy_class
-extern Mutex*   CDSAddSymbol_lock;               // SystemDictionaryShared::add_symbol
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
@@ -251,7 +250,7 @@ class MonitorLocker: public MutexLocker {
     assert(_monitor != NULL, "NULL monitor not allowed");
   }
 
-  bool wait(long timeout = 0,
+  bool wait(int64_t timeout = 0,
             bool as_suspend_equivalent = !Mutex::_as_suspend_equivalent_flag) {
     if (_flag == Mutex::_safepoint_check_flag) {
       return _monitor->wait(timeout, as_suspend_equivalent);

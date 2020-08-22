@@ -112,7 +112,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CImage_nativeCreateNSImageFromArra
     jlong result = 0L;
 
 JNF_COCOA_ENTER(env);
-    
+
     NSBitmapImageRep* imageRep = CImage_CreateImageRep(env, buffer, width, height);
     if (imageRep) {
         NSImage *nsImage = [[NSImage alloc] initWithSize:NSMakeSize(width, height)];
@@ -325,16 +325,16 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CImage_nativeResizeNSImageRepresent
 {
     if (!image) return;
     NSImage *i = (NSImage *)jlong_to_ptr(image);
-    
+
 JNF_COCOA_ENTER(env);
-    
+
     NSImageRep *imageRep = nil;
     NSArray *imageRepresentations = [i representations];
     NSEnumerator *imageEnumerator = [imageRepresentations objectEnumerator];
     while ((imageRep = [imageEnumerator nextObject]) != nil) {
         [imageRep setSize:NSMakeSize(w, h)];
     }
-    
+
 JNF_COCOA_EXIT(env);
 }
 
@@ -356,20 +356,20 @@ JNIEXPORT jobjectArray JNICALL
     NSImage *img = (NSImage *)jlong_to_ptr(image);
 
 JNF_COCOA_ENTER(env);
-        
+
     NSArray *imageRepresentations = [img representations];
     if([imageRepresentations count] == 0){
         return NULL;
     }
-    
+
     NSArray *sortedImageRepresentations = [imageRepresentations
                     sortedArrayUsingComparator: ^(id obj1, id obj2) {
-        
+
         NSImageRep *imageRep1 = (NSImageRep *) obj1;
         NSImageRep *imageRep2 = (NSImageRep *) obj2;
         NSSize size1 = [imageRep1 size];
         NSSize size2 = [imageRep2 size];
-        
+
         if (NSEqualSizes(size1, size2)) {
             return getOrder([imageRep1 pixelsWide] <= [imageRep2 pixelsWide] &&
                             [imageRep1 pixelsHigh] <= [imageRep2 pixelsHigh]);
@@ -380,7 +380,7 @@ JNF_COCOA_ENTER(env);
 
     NSMutableArray *sortedPixelSizes = [[[NSMutableArray alloc] init] autorelease];
     NSSize lastSize = [[sortedImageRepresentations lastObject] size];
-    
+
     NSUInteger i = [sortedImageRepresentations indexOfObjectPassingTest:
                ^BOOL(id obj, NSUInteger idx, BOOL *stop) {
         NSSize imageRepSize = [obj size];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,9 +198,9 @@ class Monitor : public Mutex {
   // Defaults are to make safepoint checks, wait time is forever (i.e.,
   // zero), and not a suspend-equivalent condition. Returns true if wait
   // times out; otherwise returns false.
-  bool wait(long timeout = 0,
+  bool wait(int64_t timeout = 0,
             bool as_suspend_equivalent = !_as_suspend_equivalent_flag);
-  bool wait_without_safepoint_check(long timeout = 0);
+  bool wait_without_safepoint_check(int64_t timeout = 0);
   void notify();
   void notify_all();
 };

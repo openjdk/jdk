@@ -29,6 +29,7 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/universe.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
@@ -44,6 +45,7 @@
 // class defines the functions that a heap must implement, and contains
 // infrastructure common to all heaps.
 
+class AbstractGangTask;
 class AdaptiveSizePolicy;
 class BarrierSet;
 class GCHeapSummary;
@@ -83,6 +85,11 @@ class GCHeapLog : public EventLogBase<GCMessage> {
   void log_heap_after(CollectedHeap* heap) {
     log_heap(heap, false);
   }
+};
+
+class ParallelObjectIterator : public CHeapObj<mtGC> {
+public:
+  virtual void object_iterate(ObjectClosure* cl, uint worker_id) = 0;
 };
 
 //
@@ -407,6 +414,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;
 
+  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num) {
+    return NULL;
+  }
+
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj) {}
 
@@ -488,7 +499,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // concurrent marking) for an intermittent non-GC safepoint.
   // If this method returns NULL, SafepointSynchronize will
   // perform cleanup tasks serially in the VMThread.
-  virtual WorkGang* get_safepoint_workers() { return NULL; }
+  virtual WorkGang* safepoint_workers() { return NULL; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
   // and Release*Critical() family of functions. If supported, the GC

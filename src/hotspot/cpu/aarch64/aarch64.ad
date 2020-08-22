@@ -3511,6 +3511,13 @@ encode %{
     // Load markWord from object into displaced_header.
     __ ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
+    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+      __ load_klass(tmp, oop);
+      __ ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
+      __ tstw(tmp, JVM_ACC_IS_BOX_CLASS);
+      __ br(Assembler::NE, cont);
+    }
+
     if (UseBiasedLocking && !UseOptoBiasInlining) {
       __ biased_locking_enter(box, oop, disp_hdr, tmp, true, cont);
     }

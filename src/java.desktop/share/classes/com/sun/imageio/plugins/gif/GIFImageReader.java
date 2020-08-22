@@ -128,6 +128,7 @@ public class GIFImageReader extends ImageReader {
     }
 
     // Take input from an ImageInputStream
+    @Override
     public void setInput(Object input,
                          boolean seekForwardOnly,
                          boolean ignoreMetadata) {
@@ -146,6 +147,7 @@ public class GIFImageReader extends ImageReader {
         resetStreamSettings();
     }
 
+    @Override
     public int getNumImages(boolean allowSearch) throws IIOException {
         if (stream == null) {
             throw new IllegalStateException("Input not set!");
@@ -175,6 +177,7 @@ public class GIFImageReader extends ImageReader {
         }
     }
 
+    @Override
     public int getWidth(int imageIndex) throws IIOException {
         checkIndex(imageIndex);
 
@@ -186,6 +189,7 @@ public class GIFImageReader extends ImageReader {
         return imageMetadata.imageWidth;
     }
 
+    @Override
     public int getHeight(int imageIndex) throws IIOException {
         checkIndex(imageIndex);
 
@@ -227,6 +231,7 @@ public class GIFImageReader extends ImageReader {
         return new ImageTypeSpecifier(colorModel, sampleModel);
     }
 
+    @Override
     public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex)
             throws IIOException {
         checkIndex(imageIndex);
@@ -289,15 +294,18 @@ public class GIFImageReader extends ImageReader {
         return l.iterator();
     }
 
+    @Override
     public ImageReadParam getDefaultReadParam() {
         return new ImageReadParam();
     }
 
+    @Override
     public IIOMetadata getStreamMetadata() throws IIOException {
         readHeader();
         return streamMetadata;
     }
 
+    @Override
     public IIOMetadata getImageMetadata(int imageIndex) throws IIOException {
         checkIndex(imageIndex);
 
@@ -855,6 +863,7 @@ public class GIFImageReader extends ImageReader {
                            bands);
     }
 
+    @Override
     public BufferedImage read(int imageIndex, ImageReadParam param)
         throws IIOException {
         if (stream == null) {
@@ -1037,6 +1046,7 @@ public class GIFImageReader extends ImageReader {
      * Remove all settings including global settings such as
      * {@code Locale}s and listeners, as well as stream settings.
      */
+    @Override
     public void reset() {
         super.reset();
         resetStreamSettings();

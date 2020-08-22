@@ -353,7 +353,7 @@ public class JTabbedPane extends JComponent
      * these cases.
      *
      * @see #addChangeListener
-     * @see EventListenerList
+     * @see javax.swing.event.EventListenerList
      */
     @SuppressWarnings("deprecation")
     protected void fireStateChanged() {

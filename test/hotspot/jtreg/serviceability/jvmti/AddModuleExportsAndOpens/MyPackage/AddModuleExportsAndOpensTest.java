@@ -26,6 +26,7 @@ package MyPackage;
 /**
  * @test
  * @summary Verifies the JVMTI AddModuleExports and AddModuleOpens API
+ * @requires vm.jvmti
  * @compile AddModuleExportsAndOpensTest.java
  * @run main/othervm/native -agentlib:AddModuleExportsAndOpensTest MyPackage.AddModuleExportsAndOpensTest
  */

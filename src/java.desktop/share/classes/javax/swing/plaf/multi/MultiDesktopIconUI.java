@@ -49,6 +49,11 @@ public class MultiDesktopIconUI extends DesktopIconUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiDesktopIconUI}.
+     */
+    public MultiDesktopIconUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

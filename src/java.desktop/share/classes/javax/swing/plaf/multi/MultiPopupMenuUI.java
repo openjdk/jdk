@@ -52,6 +52,11 @@ public class MultiPopupMenuUI extends PopupMenuUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiPopupMenuUI}.
+     */
+    public MultiPopupMenuUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

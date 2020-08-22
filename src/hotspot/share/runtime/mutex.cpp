@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ void Monitor::assert_wait_lock_state(Thread* self) {
 }
 #endif // ASSERT
 
-bool Monitor::wait_without_safepoint_check(long timeout) {
+bool Monitor::wait_without_safepoint_check(int64_t timeout) {
   Thread* const self = Thread::current();
 
   // timeout is in milliseconds - with zero meaning never timeout
@@ -205,7 +205,7 @@ bool Monitor::wait_without_safepoint_check(long timeout) {
   return wait_status != 0;          // return true IFF timeout
 }
 
-bool Monitor::wait(long timeout, bool as_suspend_equivalent) {
+bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
   Thread* const self = Thread::current();
 
   // timeout is in milliseconds - with zero meaning never timeout

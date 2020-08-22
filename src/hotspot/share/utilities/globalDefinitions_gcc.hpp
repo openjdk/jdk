@@ -159,6 +159,7 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 // Inlining support
 #define NOINLINE     __attribute__ ((noinline))
 #define ALWAYSINLINE inline __attribute__ ((always_inline))
+#define ATTRIBUTE_FLATTEN __attribute__ ((flatten))
 
 // Alignment
 //

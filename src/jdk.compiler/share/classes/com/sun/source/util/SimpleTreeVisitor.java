@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
 
     /**
      * Creates a visitor, with a specified DEFAULT_VALUE.
-     * @param defaultValue the default value to be returned by the default action.
+     * @param defaultValue the default value to be returned by the default action
      */
     protected SimpleTreeVisitor(R defaultValue) {
         DEFAULT_VALUE = defaultValue;
@@ -85,7 +85,7 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
      * @param nodes the nodes on which to dispatch
      * @param p a parameter value to be passed to each appropriate visit method
      * @return the value return from the last of the visit methods, or null
-     *      if none were called.
+     *      if none were called
      */
     public final R visit(Iterable<? extends Tree> nodes, P p) {
         R r = null;

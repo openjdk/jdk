@@ -42,10 +42,10 @@
 
 static hb_bool_t
 hb_jdk_get_nominal_glyph (hb_font_t *font HB_UNUSED,
-		          void *font_data,
-		          hb_codepoint_t unicode,
-		          hb_codepoint_t *glyph,
-		          void *user_data HB_UNUSED)
+                          void *font_data,
+                          hb_codepoint_t unicode,
+                          hb_codepoint_t *glyph,
+                          void *user_data HB_UNUSED)
 {
 
     JDKFontInfo *jdkFontInfo = (JDKFontInfo*)font_data;
@@ -65,18 +65,18 @@ hb_jdk_get_nominal_glyph (hb_font_t *font HB_UNUSED,
 
 static hb_bool_t
 hb_jdk_get_variation_glyph (hb_font_t *font HB_UNUSED,
-		 void *font_data,
-		 hb_codepoint_t unicode,
-		 hb_codepoint_t variation_selector,
-		 hb_codepoint_t *glyph,
-		 void *user_data HB_UNUSED)
+                 void *font_data,
+                 hb_codepoint_t unicode,
+                 hb_codepoint_t variation_selector,
+                 hb_codepoint_t *glyph,
+                 void *user_data HB_UNUSED)
 {
 
     JDKFontInfo *jdkFontInfo = (JDKFontInfo*)font_data;
     JNIEnv* env = jdkFontInfo->env;
     jobject font2D = jdkFontInfo->font2D;
     *glyph = (hb_codepoint_t)env->CallIntMethod(
-              font2D, sunFontIDs.f2dCharToVariationGlyphMID, 
+              font2D, sunFontIDs.f2dCharToVariationGlyphMID,
               unicode, variation_selector);
     if (env->ExceptionOccurred())
     {
@@ -90,9 +90,9 @@ hb_jdk_get_variation_glyph (hb_font_t *font HB_UNUSED,
 
 static hb_position_t
 hb_jdk_get_glyph_h_advance (hb_font_t *font HB_UNUSED,
-			   void *font_data,
-			   hb_codepoint_t glyph,
-			   void *user_data HB_UNUSED)
+                           void *font_data,
+                           hb_codepoint_t glyph,
+                           void *user_data HB_UNUSED)
 {
 
     float fadv = 0.0f;
@@ -118,9 +118,9 @@ hb_jdk_get_glyph_h_advance (hb_font_t *font HB_UNUSED,
 
 static hb_position_t
 hb_jdk_get_glyph_v_advance (hb_font_t *font HB_UNUSED,
-			   void *font_data,
-			   hb_codepoint_t glyph,
-			   void *user_data HB_UNUSED)
+                           void *font_data,
+                           hb_codepoint_t glyph,
+                           void *user_data HB_UNUSED)
 {
 
     float fadv = 0.0f;
@@ -146,11 +146,11 @@ hb_jdk_get_glyph_v_advance (hb_font_t *font HB_UNUSED,
 
 static hb_bool_t
 hb_jdk_get_glyph_h_origin (hb_font_t *font HB_UNUSED,
-			  void *font_data HB_UNUSED,
-			  hb_codepoint_t glyph HB_UNUSED,
-			  hb_position_t *x HB_UNUSED,
-			  hb_position_t *y HB_UNUSED,
-			  void *user_data HB_UNUSED)
+                          void *font_data HB_UNUSED,
+                          hb_codepoint_t glyph HB_UNUSED,
+                          hb_position_t *x HB_UNUSED,
+                          hb_position_t *y HB_UNUSED,
+                          void *user_data HB_UNUSED)
 {
   /* We always work in the horizontal coordinates. */
   return true;
@@ -158,21 +158,21 @@ hb_jdk_get_glyph_h_origin (hb_font_t *font HB_UNUSED,
 
 static hb_bool_t
 hb_jdk_get_glyph_v_origin (hb_font_t *font HB_UNUSED,
-			  void *font_data,
-			  hb_codepoint_t glyph,
-			  hb_position_t *x,
-			  hb_position_t *y,
-			  void *user_data HB_UNUSED)
+                          void *font_data,
+                          hb_codepoint_t glyph,
+                          hb_position_t *x,
+                          hb_position_t *y,
+                          void *user_data HB_UNUSED)
 {
   return false;
 }
 
 static hb_position_t
 hb_jdk_get_glyph_h_kerning (hb_font_t *font,
-			   void *font_data,
-			   hb_codepoint_t lejdk_glyph,
-			   hb_codepoint_t right_glyph,
-			   void *user_data HB_UNUSED)
+                           void *font_data,
+                           hb_codepoint_t lejdk_glyph,
+                           hb_codepoint_t right_glyph,
+                           void *user_data HB_UNUSED)
 {
   /* Not implemented. This seems to be in the HB API
    * as a way to fall back to Freetype's kerning support
@@ -189,10 +189,10 @@ hb_jdk_get_glyph_h_kerning (hb_font_t *font,
 
 static hb_position_t
 hb_jdk_get_glyph_v_kerning (hb_font_t *font HB_UNUSED,
-			   void *font_data HB_UNUSED,
-			   hb_codepoint_t top_glyph HB_UNUSED,
-			   hb_codepoint_t bottom_glyph HB_UNUSED,
-			   void *user_data HB_UNUSED)
+                           void *font_data HB_UNUSED,
+                           hb_codepoint_t top_glyph HB_UNUSED,
+                           hb_codepoint_t bottom_glyph HB_UNUSED,
+                           void *user_data HB_UNUSED)
 {
   /* OpenType doesn't have vertical-kerning other than GPOS. */
   return 0;
@@ -200,10 +200,10 @@ hb_jdk_get_glyph_v_kerning (hb_font_t *font HB_UNUSED,
 
 static hb_bool_t
 hb_jdk_get_glyph_extents (hb_font_t *font HB_UNUSED,
-			 void *font_data,
-			 hb_codepoint_t glyph,
-			 hb_glyph_extents_t *extents,
-			 void *user_data HB_UNUSED)
+                         void *font_data,
+                         hb_codepoint_t glyph,
+                         hb_glyph_extents_t *extents,
+                         void *user_data HB_UNUSED)
 {
   /* TODO */
   return false;
@@ -211,12 +211,12 @@ hb_jdk_get_glyph_extents (hb_font_t *font HB_UNUSED,
 
 static hb_bool_t
 hb_jdk_get_glyph_contour_point (hb_font_t *font HB_UNUSED,
-			       void *font_data,
-			       hb_codepoint_t glyph,
-			       unsigned int point_index,
-			       hb_position_t *x,
-			       hb_position_t *y,
-			       void *user_data HB_UNUSED)
+                               void *font_data,
+                               hb_codepoint_t glyph,
+                               unsigned int point_index,
+                               hb_position_t *x,
+                               hb_position_t *y,
+                               void *user_data HB_UNUSED)
 {
     if ((glyph & 0xfffe) == 0xfffe) {
         *x = 0; *y = 0;
@@ -243,20 +243,20 @@ hb_jdk_get_glyph_contour_point (hb_font_t *font HB_UNUSED,
 
 static hb_bool_t
 hb_jdk_get_glyph_name (hb_font_t *font HB_UNUSED,
-		      void *font_data,
-		      hb_codepoint_t glyph,
-		      char *name, unsigned int size,
-		      void *user_data HB_UNUSED)
+                      void *font_data,
+                      hb_codepoint_t glyph,
+                      char *name, unsigned int size,
+                      void *user_data HB_UNUSED)
 {
   return false;
 }
 
 static hb_bool_t
 hb_jdk_get_glyph_from_name (hb_font_t *font HB_UNUSED,
-			   void *font_data,
-			   const char *name, int len,
-			   hb_codepoint_t *glyph,
-			   void *user_data HB_UNUSED)
+                           void *font_data,
+                           const char *name, int len,
+                           hb_codepoint_t *glyph,
+                           void *user_data HB_UNUSED)
 {
   return false;
 }

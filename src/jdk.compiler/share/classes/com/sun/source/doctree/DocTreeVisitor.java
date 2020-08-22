@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ package com.sun.source.doctree;
  * A visitor of trees, in the style of the visitor design pattern.
  * Classes implementing this interface are used to operate
  * on a tree when the kind of tree is unknown at compile time.
- * When a visitor is passed to an tree's {@link DocTree#accept
+ * When a visitor is passed to a tree's {@link DocTree#accept
  * accept} method, the <code>visit<i>Xyz</i></code> method most applicable
  * to that tree is invoked.
  *
@@ -107,11 +107,11 @@ public interface DocTreeVisitor<R,P> {
     /**
      * Visits a DocTypeTree node.
      *
-     * @implSpec Visits a {@code DocTypeTree} node
+     * @implSpec Visits the provided {@code DocTypeTree} node
      * by calling {@code visitOther(node, p)}.
      *
      * @param node the node being visited
-     * @param p    a parameter value
+     * @param p a parameter value
      * @return a result value
      * @since 10
      */
@@ -146,7 +146,7 @@ public interface DocTreeVisitor<R,P> {
     /**
      * Visits a HiddenTree node.
      *
-     * @implSpec Visits a {@code HiddenTree} node
+     * @implSpec Visits the provided {@code HiddenTree} node
      * by calling {@code visitOther(node, p)}.
      *
      * @param node the node being visited
@@ -170,7 +170,7 @@ public interface DocTreeVisitor<R,P> {
     /**
      * Visits an IndexTree node.
      *
-     * @implSpec Visits an {@code IndexTree} node
+     * @implSpec Visits the provided {@code IndexTree} node
      * by calling {@code visitOther(node, p)}.
      *
      * @param node the node being visited
@@ -218,7 +218,7 @@ public interface DocTreeVisitor<R,P> {
     /**
      * Visits a ProvidesTree node.
      *
-     * @implSpec Visits a {@code ProvidesTree} node
+     * @implSpec Visits the provided {@code ProvidesTree} node
      * by calling {@code visitOther(node, p)}.
      *
      * @param node the node being visited
@@ -298,7 +298,7 @@ public interface DocTreeVisitor<R,P> {
     /**
      * Visits a SummaryTree node.
      *
-     * @implSpec Visits a {@code SummaryTree} node
+     * @implSpec Visits the provided {@code SummaryTree} node
      * by calling {@code visitOther(node, p)}.
      *
      * @param node the node being visited
@@ -313,7 +313,7 @@ public interface DocTreeVisitor<R,P> {
     /**
      * Visits a SystemPropertyTree node.
      *
-     * @implSpec Visits a {@code SystemPropertyTree} node
+     * @implSpec Visits the provided {@code SystemPropertyTree} node
      * by calling {@code visitOther(node, p)}.
      *
      * @param node the node being visited
@@ -382,7 +382,7 @@ public interface DocTreeVisitor<R,P> {
     R visitValue(ValueTree node, P p);
 
     /**
-     * Visits a VersionTreeTree node.
+     * Visits a VersionTree node.
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value

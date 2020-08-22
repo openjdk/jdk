@@ -2282,6 +2282,10 @@ WB_ENTRY(void, WB_CheckThreadObjOfTerminatingThread(JNIEnv* env, jobject wb, job
   }
 WB_END
 
+WB_ENTRY(jboolean, WB_IsJVMTIIncluded(JNIEnv* env, jobject wb))
+  return INCLUDE_JVMTI ? JNI_TRUE : JNI_FALSE;
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2533,6 +2537,7 @@ static JNINativeMethod methods[] = {
   {CC"protectionDomainRemovedCount",   CC"()I",       (void*)&WB_ProtectionDomainRemovedCount },
   {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
   {CC"getKlassMetadataSize", CC"(Ljava/lang/Class;)I",(void*)&WB_GetKlassMetadataSize},
+  {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
 };
 
 

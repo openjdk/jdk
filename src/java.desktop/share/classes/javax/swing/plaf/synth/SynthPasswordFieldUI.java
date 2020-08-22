@@ -40,6 +40,12 @@ import javax.swing.plaf.ComponentUI;
 public class SynthPasswordFieldUI extends SynthTextFieldUI {
 
     /**
+     *
+     * Constructs a {@code SynthPasswordFieldUI}.
+     */
+    public SynthPasswordFieldUI() {}
+
+    /**
      * Creates a UI for a JPasswordField.
      *
      * @param c the JPasswordField

@@ -33,4 +33,8 @@ package javax.swing.plaf;
  * @since 1.4
  */
 public abstract class SpinnerUI extends javax.swing.plaf.ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected SpinnerUI() {}
 }

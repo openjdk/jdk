@@ -89,6 +89,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -161,9 +162,9 @@ void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_region
   reset_from_card_cache(start_idx, num_regions);
 }
 
-Tickspan G1CollectedHeap::run_task(AbstractGangTask* task) {
+Tickspan G1CollectedHeap::run_task_timed(AbstractGangTask* task) {
   Ticks start = Ticks::now();
-  workers()->run_task(task, workers()->active_workers());
+  workers()->run_task(task);
   return Ticks::now() - start;
 }
 
@@ -872,7 +873,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       if (result != NULL) {
         size_t size_in_regions = humongous_obj_size_in_regions(word_size);
         policy()->old_gen_alloc_tracker()->
-          add_allocated_bytes_since_last_gc(size_in_regions * HeapRegion::GrainBytes);
+          add_allocated_humongous_bytes_since_last_gc(size_in_regions * HeapRegion::GrainBytes);
         return result;
       }
 
@@ -892,6 +893,9 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
         assert(succeeded, "only way to get back a non-NULL result");
         log_trace(gc, alloc)("%s: Successfully scheduled collection returning " PTR_FORMAT,
                              Thread::current()->name(), p2i(result));
+        size_t size_in_regions = humongous_obj_size_in_regions(word_size);
+        policy()->old_gen_alloc_tracker()->
+          record_collection_pause_humongous_allocation(size_in_regions * HeapRegion::GrainBytes);
         return result;
       }
 
@@ -1028,7 +1032,7 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   hrm()->prepare_for_full_collection_end();
 
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph
-  ClassLoaderDataGraph::purge();
+  ClassLoaderDataGraph::purge(/*at_safepoint*/true);
   MetaspaceUtils::verify_metrics();
 
   // Prepare heap for normal collections.
@@ -1617,12 +1621,11 @@ jint G1CollectedHeap::initialize() {
   // Create the hot card cache.
   _hot_card_cache = new G1HotCardCache(this);
 
-  // Carve out the G1 part of the heap.
-  ReservedSpace g1_rs = heap_rs.first_part(reserved_byte_size);
+  // Create space mappers.
   size_t page_size = actual_reserved_page_size(heap_rs);
   G1RegionToSpaceMapper* heap_storage =
-    G1RegionToSpaceMapper::create_heap_mapper(g1_rs,
-                                              g1_rs.size(),
+    G1RegionToSpaceMapper::create_heap_mapper(heap_rs,
+                                              heap_rs.size(),
                                               page_size,
                                               HeapRegion::GrainBytes,
                                               1,
@@ -1643,20 +1646,20 @@ jint G1CollectedHeap::initialize() {
   // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmaps.
   G1RegionToSpaceMapper* bot_storage =
     create_aux_memory_mapper("Block Offset Table",
-                             G1BlockOffsetTable::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetTable::compute_size(heap_rs.size() / HeapWordSize),
                              G1BlockOffsetTable::heap_map_factor());
 
   G1RegionToSpaceMapper* cardtable_storage =
     create_aux_memory_mapper("Card Table",
-                             G1CardTable::compute_size(g1_rs.size() / HeapWordSize),
+                             G1CardTable::compute_size(heap_rs.size() / HeapWordSize),
                              G1CardTable::heap_map_factor());
 
   G1RegionToSpaceMapper* card_counts_storage =
     create_aux_memory_mapper("Card Counts Table",
-                             G1CardCounts::compute_size(g1_rs.size() / HeapWordSize),
+                             G1CardCounts::compute_size(heap_rs.size() / HeapWordSize),
                              G1CardCounts::heap_map_factor());
 
-  size_t bitmap_size = G1CMBitMap::compute_size(g1_rs.size());
+  size_t bitmap_size = G1CMBitMap::compute_size(heap_rs.size());
   G1RegionToSpaceMapper* prev_bitmap_storage =
     create_aux_memory_mapper("Prev Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
   G1RegionToSpaceMapper* next_bitmap_storage =
@@ -1677,7 +1680,7 @@ jint G1CollectedHeap::initialize() {
 
   // The G1FromCardCache reserves card with value 0 as "invalid", so the heap must not
   // start within the first card.
-  guarantee(g1_rs.base() >= (char*)G1CardTable::card_size, "Java heap must not start within the first card.");
+  guarantee(heap_rs.base() >= (char*)G1CardTable::card_size, "Java heap must not start within the first card.");
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this, _card_table, _hot_card_cache);
   _rem_set->initialize(max_reserved_capacity(), max_regions());
@@ -2299,6 +2302,30 @@ public:
 void G1CollectedHeap::object_iterate(ObjectClosure* cl) {
   IterateObjectClosureRegionClosure blk(cl);
   heap_region_iterate(&blk);
+}
+
+class G1ParallelObjectIterator : public ParallelObjectIterator {
+private:
+  G1CollectedHeap*  _heap;
+  HeapRegionClaimer _claimer;
+
+public:
+  G1ParallelObjectIterator(uint thread_num) :
+      _heap(G1CollectedHeap::heap()),
+      _claimer(thread_num == 0 ? G1CollectedHeap::heap()->workers()->active_workers() : thread_num) {}
+
+  virtual void object_iterate(ObjectClosure* cl, uint worker_id) {
+    _heap->object_iterate_parallel(cl, worker_id, &_claimer);
+  }
+};
+
+ParallelObjectIterator* G1CollectedHeap::parallel_object_iterator(uint thread_num) {
+  return new G1ParallelObjectIterator(thread_num);
+}
+
+void G1CollectedHeap::object_iterate_parallel(ObjectClosure* cl, uint worker_id, HeapRegionClaimer* claimer) {
+  IterateObjectClosureRegionClosure blk(cl);
+  heap_region_par_iterate_from_worker_offset(&blk, claimer, worker_id);
 }
 
 void G1CollectedHeap::keep_alive(oop obj) {
@@ -3694,7 +3721,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
 
   {
     G1PrepareEvacuationTask g1_prep_task(this);
-    Tickspan task_time = run_task(&g1_prep_task);
+    Tickspan task_time = run_task_timed(&g1_prep_task);
 
     phase_times()->record_register_regions(task_time.seconds() * 1000.0,
                                            g1_prep_task.humongous_total(),
@@ -3843,7 +3870,7 @@ void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* p
   {
     G1RootProcessor root_processor(this, num_workers);
     G1EvacuateRegionsTask g1_par_task(this, per_thread_states, _task_queues, &root_processor, num_workers);
-    task_time = run_task(&g1_par_task);
+    task_time = run_task_timed(&g1_par_task);
     // Closing the inner scope will execute the destructor for the G1RootProcessor object.
     // To extract its code root fixup time we measure total time of this scope and
     // subtract from the time the WorkGang task took.
@@ -3882,7 +3909,7 @@ void G1CollectedHeap::evacuate_next_optional_regions(G1ParScanThreadStateSet* pe
   {
     G1MarkScope code_mark_scope;
     G1EvacuateOptionalRegionsTask task(per_thread_states, _task_queues, workers()->active_workers());
-    task_time = run_task(&task);
+    task_time = run_task_timed(&task);
     // See comment in evacuate_collection_set() for the reason of the scope.
   }
   Tickspan total_processing = Ticks::now() - start_processing;

@@ -106,8 +106,9 @@
  * called.
  *
  * The solution is for the application listener to make the change using
- * {@link SwingUtilities.invokeLater} so that any changes to  UI rendering will
- * be done post processing all the model listeners installed by the component.
+ * {@link javax.swing.SwingUtilities#invokeLater(Runnable)} so that any changes
+ * to  UI rendering will be done post processing all the model listeners
+ * installed by the component.
  * </p>
  * <p>
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.imageio.plugins.wbmp;
 
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.awt.image.IndexColorModel;
@@ -36,17 +35,12 @@ import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
-
 import java.io.IOException;
-
 import javax.imageio.IIOImage;
-import javax.imageio.IIOException;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.metadata.IIOMetadata;
-import javax.imageio.metadata.IIOMetadataFormatImpl;
-import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.spi.ImageWriterSpi;
 import javax.imageio.stream.ImageOutputStream;
 
@@ -97,6 +91,7 @@ public class WBMPImageWriter extends ImageWriter {
         super(originator);
     }
 
+    @Override
     public void setOutput(Object output) {
         super.setOutput(output); // validates output
         if (output != null) {
@@ -107,10 +102,12 @@ public class WBMPImageWriter extends ImageWriter {
             this.stream = null;
     }
 
+    @Override
     public IIOMetadata getDefaultStreamMetadata(ImageWriteParam param) {
         return null;
     }
 
+    @Override
     public IIOMetadata getDefaultImageMetadata(ImageTypeSpecifier imageType,
                                                ImageWriteParam param) {
         WBMPMetadata meta = new WBMPMetadata();
@@ -118,21 +115,25 @@ public class WBMPImageWriter extends ImageWriter {
         return meta;
     }
 
+    @Override
     public IIOMetadata convertStreamMetadata(IIOMetadata inData,
                                              ImageWriteParam param) {
         return null;
     }
 
+    @Override
     public IIOMetadata convertImageMetadata(IIOMetadata metadata,
                                             ImageTypeSpecifier type,
                                             ImageWriteParam param) {
         return null;
     }
 
+    @Override
     public boolean canWriteRasters() {
         return true;
     }
 
+    @Override
     public void write(IIOMetadata streamMetadata,
                       IIOImage image,
                       ImageWriteParam param) throws IOException {
@@ -299,6 +300,7 @@ public class WBMPImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public void reset() {
         super.reset();
         stream = null;

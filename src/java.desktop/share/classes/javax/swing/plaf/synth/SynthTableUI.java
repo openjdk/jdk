@@ -88,6 +88,12 @@ public class SynthTableUI extends BasicTableUI
 //
 
     /**
+     *
+     * Constructs a {@code SynthTableUI}.
+     */
+    public SynthTableUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

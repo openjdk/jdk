@@ -49,6 +49,11 @@ public class MultiToolBarUI extends ToolBarUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiToolBarUI}.
+     */
+    public MultiToolBarUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

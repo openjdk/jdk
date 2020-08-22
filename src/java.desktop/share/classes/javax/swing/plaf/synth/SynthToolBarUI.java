@@ -58,6 +58,12 @@ public class SynthToolBarUI extends BasicToolBarUI
     private SynthStyle dragWindowStyle;
 
     /**
+     *
+     * Constructs a {@code SynthToolBarUI}.
+     */
+    public SynthToolBarUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

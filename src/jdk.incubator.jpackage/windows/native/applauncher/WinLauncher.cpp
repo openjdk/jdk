@@ -100,6 +100,47 @@ std::unique_ptr<Dll> loadDllWithAddDllDirectory(const tstring& dllFullPath) {
     return std::unique_ptr<Dll>(new Dll(dllFullPath));
 }
 
+
+class DllWrapper {
+public:
+    DllWrapper(const tstring& dllName) {
+        try {
+            // Try load DLL.
+            dll = std::unique_ptr<Dll>(new Dll(dllName));
+            LOG_TRACE(tstrings::any() << "Load [" << dllName << "]: OK");
+        }
+        catch (const std::exception&) {
+            // JVM DLL load failed, though it exists in file system.
+            try {
+                // Try adjust the DLL search paths with AddDllDirectory() WINAPI CALL
+                dll = loadDllWithAddDllDirectory(dllName);
+            }
+            catch (const std::exception&) {
+                // AddDllDirectory() didn't work. Try altering PATH environment
+                // variable as the last resort.
+                dll = loadDllWithAlteredPATH(dllName);
+            }
+        }
+    }
+
+private:
+    DllWrapper(const DllWrapper&);
+    DllWrapper& operator=(const DllWrapper&);
+
+private:
+    std::unique_ptr<Dll> dll;
+};
+
+
+tstring getJvmLibPath(const Jvm& jvm) {
+    FileUtils::mkpath path;
+
+    path << FileUtils::dirname(jvm.getPath()) << _T("server") << _T("jvm.dll");
+
+    return path;
+}
+
+
 void launchApp() {
     // [RT-31061] otherwise UI can be left in back of other windows.
     ::AllowSetForegroundWindow(ASFW_ANY);
@@ -115,20 +156,14 @@ void launchApp() {
                 << _T("runtime"))
         .createJvmLauncher());
 
-    std::unique_ptr<Dll> jvmDll;
-    try {
-        // Try load JVM DLL.
-        jvmDll = std::unique_ptr<Dll>(new Dll(jvm->getPath()));
-    } catch (const std::exception&) {
-        // JVM DLL load failed, though it exists in file system.
-        try {
-            // Try adjust the DLL search paths with AddDllDirectory() WINAPI CALL
-            jvmDll = loadDllWithAddDllDirectory(jvm->getPath());
-        } catch (const std::exception&) {
-            // AddDllDirectory() didn't work. Try altering PATH environment
-            // variable as the last resort.
-            jvmDll = loadDllWithAlteredPATH(jvm->getPath());
-        }
+    const DllWrapper jliDll(jvm->getPath());
+    std::unique_ptr<DllWrapper> splashDll;
+    if (jvm->isWithSplash()) {
+        const DllWrapper jvmDll(getJvmLibPath(*jvm));
+        splashDll = std::unique_ptr<DllWrapper>(new DllWrapper(
+                FileUtils::mkpath()
+                        << FileUtils::dirname(jvm->getPath())
+                        << _T("splashscreen.dll")));
     }
 
     jvm->launch();

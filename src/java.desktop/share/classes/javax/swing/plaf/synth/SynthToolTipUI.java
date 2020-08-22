@@ -49,6 +49,12 @@ public class SynthToolTipUI extends BasicToolTipUI
     private SynthStyle style;
 
     /**
+     *
+     * Constructs a {@code SynthToolTipUI}.
+     */
+    public SynthToolTipUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

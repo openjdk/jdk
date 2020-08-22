@@ -31,4 +31,8 @@ package javax.swing.plaf;
  * @author Alan Chung
  */
 public abstract class TableHeaderUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected TableHeaderUI() {}
 }

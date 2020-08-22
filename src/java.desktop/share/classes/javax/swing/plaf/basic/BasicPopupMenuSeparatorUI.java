@@ -43,6 +43,11 @@ import javax.swing.plaf.ComponentUI;
 public class BasicPopupMenuSeparatorUI extends BasicSeparatorUI
 {
     /**
+     * Constructs a {@code BasicPopupMenuSeparatorUI}.
+     */
+    public BasicPopupMenuSeparatorUI() {}
+
+    /**
      * Returns a new instance of {@code BasicPopupMenuSeparatorUI}.
      *
      * @param c a component

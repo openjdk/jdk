@@ -54,6 +54,12 @@ public class SynthSpinnerUI extends BasicSpinnerUI
     private EditorFocusHandler editorFocusHandler = new EditorFocusHandler();
 
     /**
+     *
+     * Constructs a {@code SynthSpinnerUI}.
+     */
+    public SynthSpinnerUI() {}
+
+    /**
      * Returns a new instance of SynthSpinnerUI.
      *
      * @param c the JSpinner (not used)

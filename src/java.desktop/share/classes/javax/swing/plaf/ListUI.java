@@ -39,6 +39,11 @@ import java.awt.Rectangle;
 public abstract class ListUI extends ComponentUI
 {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected ListUI() {}
+
+    /**
      * Returns the cell index in the specified {@code JList} closest to the
      * given location in the list's coordinate system. To determine if the
      * cell actually contains the specified location, compare the point against

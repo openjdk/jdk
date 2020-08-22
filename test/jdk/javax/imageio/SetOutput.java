@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
@@ -43,13 +44,10 @@ public class SetOutput {
     public static void main(String[] args) throws IOException {
         ImageWriter iw = new PNGImageWriter(null);
         File f = File.createTempFile("imageio", "tmp");
-        ImageOutputStream ios = ImageIO.createImageOutputStream(f);
-        try {
+        try (ImageOutputStream ios = ImageIO.createImageOutputStream(f)) {
             iw.setOutput(ios);
-        } catch (NullPointerException npe) {
-            f.delete();
-            throw new RuntimeException("Got NullPointerException!");
+        } finally {
+            Files.delete(f.toPath());
         }
-        f.delete();
     }
 }

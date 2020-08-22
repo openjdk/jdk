@@ -71,7 +71,7 @@ import javax.swing.event.DocumentEvent;
  * as of 1.4.
  *
  * @author  Scott Violet
- * @see IconView
+ * @see javax.swing.text.IconView
  * @since 1.4
  */
 public class ImageView extends View {

@@ -49,6 +49,11 @@ public class MultiProgressBarUI extends ProgressBarUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiProgressBarUI}.
+     */
+    public MultiProgressBarUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

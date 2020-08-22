@@ -27,6 +27,7 @@ package MyPackage;
 /**
  * @test
  * @summary Verifies the JVMTI Heap Monitor using the interpreter.
+ * @requires vm.jvmti
  * @build Frame HeapMonitor
  * @compile HeapMonitorStatObjectCorrectnessTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest -Xint MyPackage.HeapMonitorStatObjectCorrectnessTest

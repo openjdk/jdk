@@ -432,81 +432,86 @@ endif
 
 ###########################################################################
 
-HARFBUZZ_CFLAGS := -DHAVE_OT -DHAVE_FALLBACK -DHAVE_UCDN -DHAVE_ROUND
+ifeq ($(USE_EXTERNAL_HARFBUZZ), true)
+  LIBHARFBUZZ_LIBS := $(HARFBUZZ_LIBS)
+else
+  HARFBUZZ_CFLAGS := -DHAVE_OT -DHAVE_FALLBACK -DHAVE_UCDN -DHAVE_ROUND
 
-# This is better than adding EXPORT_ALL_SYMBOLS
-ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
-  HARFBUZZ_CFLAGS += -DHB_EXTERN=__attribute__\(\(visibility\(\"default\"\)\)\)
-else ifeq ($(TOOLCHAIN_TYPE), microsoft)
-  HARFBUZZ_CFLAGS += -DHB_EXTERN=__declspec\(dllexport\)
-endif
+  # This is better than adding EXPORT_ALL_SYMBOLS
+  ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
+    HARFBUZZ_CFLAGS += -DHB_EXTERN=__attribute__\(\(visibility\(\"default\"\)\)\)
+  else ifeq ($(TOOLCHAIN_TYPE), microsoft)
+    HARFBUZZ_CFLAGS += -DHB_EXTERN=__declspec\(dllexport\)
+  endif
 
-ifeq ($(call isTargetOs, windows), false)
-  HARFBUZZ_CFLAGS += -DGETPAGESIZE -DHAVE_MPROTECT -DHAVE_PTHREAD \
+  ifeq ($(call isTargetOs, windows), false)
+    HARFBUZZ_CFLAGS += -DGETPAGESIZE -DHAVE_MPROTECT -DHAVE_PTHREAD \
                       -DHAVE_SYSCONF -DHAVE_SYS_MMAN_H -DHAVE_UNISTD_H \
                       -DHB_NO_PRAGMA_GCC_DIAGNOSTIC
-endif
-ifeq ($(call isTargetOs, linux macosx), true)
-  HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES
-endif
-ifeq ($(call isTargetOs, macosx), true)
-  HARFBUZZ_CFLAGS += -DHAVE_CORETEXT
-endif
-ifeq ($(call isTargetOs, macosx), false)
-  LIBHARFBUZZ_EXCLUDE_FILES += harfbuzz/hb-coretext.cc
-endif
-# hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
-LIBHARFBUZZ_EXCLUDE_FILES += harfbuzz/hb-ft.cc
+  endif
+  ifeq ($(call isTargetOs, linux macosx), true)
+    HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES
+  endif
+  ifeq ($(call isTargetOs, macosx), true)
+    HARFBUZZ_CFLAGS += -DHAVE_CORETEXT
+  endif
+  ifeq ($(call isTargetOs, macosx), false)
+    LIBHARFBUZZ_EXCLUDE_FILES += libharfbuzz/hb-coretext.cc
+  endif
+  # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
+  LIBHARFBUZZ_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 
-LIBHARFBUZZ_CFLAGS += $(HARFBUZZ_CFLAGS)
+  LIBHARFBUZZ_CFLAGS += $(HARFBUZZ_CFLAGS)
 
-# For use by libfontmanager:
-ifeq ($(call isTargetOs, windows), true)
-  LIBHARFBUZZ_LIBS := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libharfbuzz/harfbuzz.lib
-else
-  LIBHARFBUZZ_LIBS := -lharfbuzz
-endif
+  # For use by libfontmanager:
+  ifeq ($(call isTargetOs, windows), true)
+    LIBHARFBUZZ_LIBS := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libharfbuzz/harfbuzz.lib
+  else
+    LIBHARFBUZZ_LIBS := -lharfbuzz
+  endif
 
-LIBHARFBUZZ_EXTRA_HEADER_DIRS := \
+  LIBHARFBUZZ_EXTRA_HEADER_DIRS := \
     libharfbuzz/hb-ucdn \
     #
 
-LIBHARFBUZZ_OPTIMIZATION := HIGH
+  LIBHARFBUZZ_OPTIMIZATION := HIGH
 
-LIBHARFBUZZ_CFLAGS += $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
+  LIBHARFBUZZ_CFLAGS += $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
 
-$(eval $(call SetupJdkLibrary, BUILD_LIBHARFBUZZ, \
-    NAME := harfbuzz, \
-    EXCLUDE_FILES := $(LIBHARFBUZZ_EXCLUDE_FILES), \
-    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBHARFBUZZ_CFLAGS), \
-    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBHARFBUZZ_CFLAGS), \
-    OPTIMIZATION := $(LIBHARFBUZZ_OPTIMIZATION), \
-    CFLAGS_windows = -DCC_NOEX, \
-    EXTRA_HEADER_DIRS := $(LIBHARFBUZZ_EXTRA_HEADER_DIRS), \
-    WARNINGS_AS_ERRORS_xlc := false, \
-    DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing, \
-    DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBHARFBUZZ, \
+      NAME := harfbuzz, \
+      EXCLUDE_FILES := $(LIBHARFBUZZ_EXCLUDE_FILES), \
+      TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+      CFLAGS := $(CFLAGS_JDKLIB) $(LIBHARFBUZZ_CFLAGS), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBHARFBUZZ_CFLAGS), \
+      OPTIMIZATION := $(LIBHARFBUZZ_OPTIMIZATION), \
+      CFLAGS_windows = -DCC_NOEX, \
+      EXTRA_HEADER_DIRS := $(LIBHARFBUZZ_EXTRA_HEADER_DIRS), \
+      WARNINGS_AS_ERRORS_xlc := false, \
+      DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing, \
+      DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
         maybe-uninitialized class-memaccess, \
-    DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
+      DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         undef missing-field-initializers, \
-    DISABLED_WARNINGS_microsoft := 4267 4244 4090 4146 4334 4819 4101 4068 4805 4138, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
+      DISABLED_WARNINGS_microsoft := 4267 4244 4090 4146 4334 4819 4101 4068 4805 4138, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
-    LDFLAGS_aix := -Wl$(COMMA)-berok, \
-    LIBS := $(BUILD_LIBHARFBUZZ), \
-    LIBS_unix := $(LIBM) $(LIBCXX), \
-    LIBS_macosx := -framework CoreText -framework CoreFoundation -framework CoreGraphics, \
-    LIBS_windows := user32.lib, \
-))
+      LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
+      LDFLAGS_aix := -Wl$(COMMA)-berok, \
+      LIBS := $(BUILD_LIBHARFBUZZ), \
+      LIBS_unix := $(LIBM) $(LIBCXX), \
+      LIBS_macosx := -framework CoreText -framework CoreFoundation -framework CoreGraphics, \
+      LIBS_windows := user32.lib, \
+  ))
 
-ifeq ($(FREETYPE_TO_USE), bundled)
-  $(BUILD_LIBHARFBUZZ): $(BUILD_LIBFREETYPE)
+  ifeq ($(FREETYPE_TO_USE), bundled)
+    $(BUILD_LIBHARFBUZZ): $(BUILD_LIBFREETYPE)
+  endif
+
+  TARGETS += $(BUILD_LIBHARFBUZZ)
+
 endif
-
-TARGETS += $(BUILD_LIBHARFBUZZ)
 
 ###########################################################################
 
@@ -576,7 +581,11 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
         $(WIN_AWT_LIB), \
 ))
 
-$(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT) $(BUILD_LIBHARFBUZZ)
+$(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
+
+ifeq ($(USE_EXTERNAL_HARFBUZZ), false)
+  $(BUILD_LIBFONTMANAGER): $(BUILD_LIBHARFBUZZ)
+endif
 
 ifeq ($(call isTargetOs, macosx), true)
   $(BUILD_LIBFONTMANAGER): $(call FindLib, $(MODULE), awt_lwawt)

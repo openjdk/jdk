@@ -324,7 +324,7 @@ Java_sun_lwawt_macosx_CRobot_nativeGetScreenPixels
     jint picHeight = height;
 
     CGRect screenRect = CGRectMake(picX / scale, picY / scale,
-    				picWidth / scale, picHeight / scale);
+                                picWidth / scale, picHeight / scale);
     CGImageRef screenPixelsImage = CGWindowListCreateImage(screenRect,
                                         kCGWindowListOptionOnScreenOnly,
                                         kCGNullWindowID, kCGWindowImageBestResolution);

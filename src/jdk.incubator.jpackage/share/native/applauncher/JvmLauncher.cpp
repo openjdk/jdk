@@ -66,8 +66,7 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
         if (splash != appOptions.end()) {
             const tstring splashPath = CfgFile::asString(*splash);
             if (FileUtils::isFileExists(splashPath)) {
-                addArgument(_T("-splash"));
-                addArgument(splashPath);
+                addArgument(_T("-splash:") + splashPath);
             } else {
                 LOG_WARNING(tstrings::any()
                         << "Splash property ignored. File \""
@@ -135,6 +134,18 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
     } while (0);
 
     return *this;
+}
+
+
+bool Jvm::isWithSplash() const {
+    tstring_array::const_iterator it = args.begin();
+    const tstring_array::const_iterator end = args.end();
+    for (; it != end; ++it) {
+        if (tstrings::startsWith(*it, _T("-splash:"))) {
+            return true;
+        }
+    }
+    return false;
 }
 
 

@@ -56,10 +56,10 @@ class STWGCTimer;
 class G1Policy: public CHeapObj<mtGC> {
  private:
 
-  static G1IHOPControl* create_ihop_control(const G1Predictions* predictor);
+  static G1IHOPControl* create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
+                                            const G1Predictions* predictor);
   // Update the IHOP control with necessary statistics.
   void update_ihop_prediction(double mutator_time_s,
-                              size_t mutator_alloc_bytes,
                               size_t young_gen_size,
                               bool this_gc_was_young_only);
   void report_ihop_statistics();
@@ -68,6 +68,10 @@ class G1Policy: public CHeapObj<mtGC> {
   G1Analytics* _analytics;
   G1RemSetTrackingPolicy _remset_tracker;
   G1MMUTracker* _mmu_tracker;
+
+  // Tracking the allocation in the old generation between
+  // two GCs.
+  G1OldGenAllocationTracker _old_gen_alloc_tracker;
   G1IHOPControl* _ihop_control;
 
   GCPolicyCounters* _policy_counters;
@@ -100,10 +104,6 @@ class G1Policy: public CHeapObj<mtGC> {
   size_t _rs_length_prediction;
 
   size_t _pending_cards_at_gc_start;
-
-  // Tracking the allocation in the old generation between
-  // two GCs.
-  G1OldGenAllocationTracker _old_gen_alloc_tracker;
 
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 

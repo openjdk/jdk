@@ -25,7 +25,7 @@
 
 #import "CDataTransferer.h"
 #import "ThreadUtilities.h"
-#import "jni_util.h" 
+#import "jni_util.h"
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
@@ -79,10 +79,10 @@
 - (void)checkPasteboard:(id)sender {
 
     // This is called via NSApplicationDidBecomeActiveNotification.
-    
+
     // If the change count on the general pasteboard is different than when we set it
     // someone else put data on the clipboard.  That means the current owner lost ownership.
-    
+
     NSInteger newChangeCount = [[NSPasteboard generalPasteboard] changeCount];
 
     if (self.changeCount != newChangeCount) {
@@ -109,11 +109,11 @@
 
 - (BOOL) checkPasteboardWithoutNotification:(id)application {
     AWT_ASSERT_APPKIT_THREAD;
-    
+
     NSInteger newChangeCount = [[NSPasteboard generalPasteboard] changeCount];
-    
+
     if (self.changeCount != newChangeCount) {
-        self.changeCount = newChangeCount;    
+        self.changeCount = newChangeCount;
         return YES;
     } else {
         return NO;
@@ -189,7 +189,7 @@ JNF_COCOA_ENTER(env);
         dataTypes = [[[NSPasteboard generalPasteboard] types] retain];
     }];
     [dataTypes autorelease];
-    
+
     NSUInteger nFormats = [dataTypes count];
     NSUInteger knownFormats = 0;
     NSUInteger i;
@@ -250,7 +250,7 @@ JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^() {
         clipData = [[[NSPasteboard generalPasteboard] dataForType:formatAsString] retain];
     }];
-    
+
     if (clipData == NULL) {
         [JNFException raise:env as:"java/io/IOException" reason:"Font transform has NaN position"];
         return NULL;
@@ -273,20 +273,20 @@ JNF_COCOA_EXIT(env);
     return returnValue;
 }
 
-/*                                                                                            
- * Class:     sun_lwawt_macosx_CClipboard                                                     
- * Method:    checkPasteboard                                                                 
- * Signature: ()V                                                                             
- */                                                                                           
+/*
+ * Class:     sun_lwawt_macosx_CClipboard
+ * Method:    checkPasteboard
+ * Signature: ()V
+ */
 JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CClipboard_checkPasteboardWithoutNotification
-(JNIEnv *env, jobject inObject)                                                               
-{                                                                                             
-    __block BOOL ret = NO;                                                                    
-    JNF_COCOA_ENTER(env);                                                                     
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){                                
-        ret = [[CClipboard sharedClipboard] checkPasteboardWithoutNotification:nil];          
-    }];                                                                                       
-                                                                                              
-    JNF_COCOA_EXIT(env);                                                                      
-    return ret;                                                                               
-}                                                                                             
+(JNIEnv *env, jobject inObject)
+{
+    __block BOOL ret = NO;
+    JNF_COCOA_ENTER(env);
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        ret = [[CClipboard sharedClipboard] checkPasteboardWithoutNotification:nil];
+    }];
+
+    JNF_COCOA_EXIT(env);
+    return ret;
+}

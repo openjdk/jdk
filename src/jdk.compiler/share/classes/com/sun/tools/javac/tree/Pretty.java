@@ -32,7 +32,7 @@ import com.sun.source.tree.ModuleTree.ModuleKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.List;
+
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -166,11 +166,11 @@ public class Pretty extends JCTree.Visitor {
 
     String lineSep = System.getProperty("line.separator");
 
-    /**************************************************************************
+    /* ************************************************************************
      * Traversal methods
      *************************************************************************/
 
-    /** Exception to propagate IOException through visitXXX methods */
+    /** Exception to propagate IOException through visitXYZ methods */
     private static class UncheckedIOException extends Error {
         static final long serialVersionUID = -4032692679158424751L;
         UncheckedIOException(IOException e) {

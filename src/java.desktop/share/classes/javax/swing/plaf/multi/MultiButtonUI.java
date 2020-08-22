@@ -49,6 +49,11 @@ public class MultiButtonUI extends ButtonUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiButtonUI}.
+     */
+    public MultiButtonUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

@@ -72,9 +72,21 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
       }
       assert(idx < _ptrmap->size(), "must be");
       _ptrmap->set_bit(idx);
-      //tty->print_cr("Marking pointer [%p] -> %p @ " SIZE_FORMAT_W(9), ptr_loc, *ptr_loc, idx);
+      //tty->print_cr("Marking pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ " SIZE_FORMAT_W(5), p2i(ptr_loc), p2i(*ptr_loc), idx);
     }
   }
+}
+
+void ArchivePtrMarker::clear_pointer(address* ptr_loc) {
+  assert(_ptrmap != NULL, "not initialized");
+  assert(!_compacted, "cannot clear anymore");
+
+  assert(_ptr_base <= ptr_loc && ptr_loc < _ptr_end, "must be");
+  assert(uintx(ptr_loc) % sizeof(intptr_t) == 0, "pointers must be stored in aligned addresses");
+  size_t idx = ptr_loc - _ptr_base;
+  assert(idx < _ptrmap->size(), "cannot clear pointers that have not been marked");
+  _ptrmap->clear_bit(idx);
+  //tty->print_cr("Clearing pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ " SIZE_FORMAT_W(5), p2i(ptr_loc), p2i(*ptr_loc), idx);
 }
 
 class ArchivePtrBitmapCleaner: public BitMapClosure {

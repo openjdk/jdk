@@ -159,7 +159,7 @@ inline uint64_t ZPage::last_used() const {
 }
 
 inline void ZPage::set_last_used() {
-  _last_used = os::elapsedTime();
+  _last_used = ceil(os::elapsedTime());
 }
 
 inline bool ZPage::is_in(uintptr_t addr) const {

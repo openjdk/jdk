@@ -30,6 +30,7 @@ import jdk.test.lib.process.ProcessTools;
  * @test
  * @bug 8075030
  * @summary JvmtiEnv::GetObjectSize reports incorrect java.lang.Class instance size
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler

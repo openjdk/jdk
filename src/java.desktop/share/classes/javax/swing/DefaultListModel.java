@@ -271,7 +271,7 @@ public class DefaultListModel<E> extends AbstractListModel<E>
      * Returns the first component of this list.
      * @return     the first component of this list
      * @see Vector#firstElement()
-     * @throws NoSuchElementException if this
+     * @throws java.util.NoSuchElementException if this
      * vector has no components
      */
     public E firstElement() {
@@ -283,7 +283,7 @@ public class DefaultListModel<E> extends AbstractListModel<E>
      *
      * @return  the last component of the list
      * @see Vector#lastElement()
-     * @throws NoSuchElementException if this vector
+     * @throws java.util.NoSuchElementException if this vector
      * has no components
      */
     public E lastElement() {

@@ -908,7 +908,6 @@ void BiasedLocking::preserve_marks() {
 
   Thread* cur = Thread::current();
   ResourceMark rm(cur);
-  HandleMark hm(cur);
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
     if (thread->has_last_Java_frame()) {

@@ -1470,15 +1470,6 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
     ik->set_classpath_index(path_index, THREAD);
   }
 
-  if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
-    // Only dump the classes that can be stored into CDS archive
-    if (SystemDictionaryShared::is_sharing_possible(loader_data)) {
-      ResourceMark rm(THREAD);
-      classlist_file->print_cr("%s", ik->name()->as_C_string());
-      classlist_file->flush();
-    }
-  }
-
   // notify a class loaded from shared object
   ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
 
@@ -2183,6 +2174,14 @@ void SystemDictionary::resolve_well_known_classes(TRAPS) {
   _box_klasses[T_LONG]    = WK_KLASS(Long_klass);
   //_box_klasses[T_OBJECT]  = WK_KLASS(object_klass);
   //_box_klasses[T_ARRAY]   = WK_KLASS(object_klass);
+
+  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    for (int i = T_BOOLEAN; i < T_LONG + 1; i++) {
+      assert(_box_klasses[i] != NULL, "NULL box class");
+      _box_klasses[i]->set_is_box();
+      _box_klasses[i]->set_prototype_header(markWord::prototype());
+    }
+  }
 
 #ifdef ASSERT
   if (UseSharedSpaces) {

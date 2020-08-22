@@ -491,7 +491,7 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Craetes an HTML {@code HTML} element with the given {@code lang} attribute,
+     * Creates an HTML {@code HTML} element with the given {@code lang} attribute,
      * and {@code HEAD} and {@code BODY} contents.
      *
      * @param lang the value for the {@code lang} attribute

@@ -46,6 +46,12 @@ public class SynthMenuUI extends BasicMenuUI
     private SynthStyle accStyle;
 
     /**
+     *
+     * Constructs a {@code SynthMenuUI}.
+     */
+    public SynthMenuUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param x component to create UI object for

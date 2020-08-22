@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,7 @@
 // root references (such as all Klass'es in the SystemDictionary).
 //
 // Currently it is used for compacting the CDS archive by eliminate temporary
-// objects allocated during archive creation time. See ArchiveCompactor in
-// metaspaceShared.cpp for an example.
+// objects allocated during archive creation time. See ArchiveBuilder for an example.
 //
 // To support MetaspaceClosure, each subclass of MetaspaceObj must provide
 // a method of the type void metaspace_pointers_do(MetaspaceClosure*). This method
@@ -108,12 +107,14 @@ public:
   // [2] All Array<T> dimensions are statically declared.
   class Ref : public CHeapObj<mtInternal> {
     Writability _writability;
+    bool _keep_after_pushing;
     Ref* _next;
+    void* _user_data;
     NONCOPYABLE(Ref);
 
   protected:
     virtual void** mpp() const = 0;
-    Ref(Writability w) : _writability(w), _next(NULL) {}
+    Ref(Writability w) : _writability(w), _keep_after_pushing(false), _next(NULL), _user_data(NULL) {}
   public:
     virtual bool not_null() const = 0;
     virtual int size() const = 0;
@@ -137,6 +138,10 @@ public:
     void update(address new_loc) const;
 
     Writability writability() const { return _writability; };
+    void set_keep_after_pushing()   { _keep_after_pushing = true; }
+    bool keep_after_pushing()       { return _keep_after_pushing; }
+    void set_user_data(void* data)  { _user_data = data; }
+    void* user_data()               { return _user_data; }
     void set_next(Ref* n)           { _next = n; }
     Ref* next() const               { return _next; }
 
@@ -243,20 +248,42 @@ private:
     }
   };
 
-  // If recursion is too deep, save the Refs in _pending_refs, and push them later using
-  // MetaspaceClosure::finish()
+  // Normally, chains of references like a->b->c->d are iterated recursively. However,
+  // if recursion is too deep, we save the Refs in _pending_refs, and push them later in
+  // MetaspaceClosure::finish(). This avoids overflowing the C stack.
   static const int MAX_NEST_LEVEL = 5;
   Ref* _pending_refs;
   int _nest_level;
+  Ref* _enclosing_ref;
 
   void push_impl(Ref* ref);
   void do_push(Ref* ref);
 
 public:
-  MetaspaceClosure(): _pending_refs(NULL), _nest_level(0) {}
+  MetaspaceClosure(): _pending_refs(NULL), _nest_level(0), _enclosing_ref(NULL) {}
   ~MetaspaceClosure();
 
   void finish();
+
+  // enclosing_ref() is used to compute the offset of a field in a C++ class. For example
+  // class Foo { intx scala; Bar* ptr; }
+  //    Foo *f = 0x100;
+  // when the f->ptr field is iterated with do_ref() on 64-bit platforms, we will have
+  //    do_ref(Ref* r) {
+  //       r->addr() == 0x108;                // == &f->ptr;
+  //       enclosing_ref()->obj() == 0x100;   // == foo
+  // So we know that we are iterating upon a field at offset 8 of the object at 0x100.
+  //
+  // Note that if we have stack overflow, do_pending_ref(r) will be called first and
+  // do_ref(r) will be called later, for the same r. In this case, enclosing_ref() is valid only
+  // when do_pending_ref(r) is called, and will return NULL when do_ref(r) is called.
+  Ref* enclosing_ref() const {
+    return _enclosing_ref;
+  }
+
+  // This is called when a reference is placed in _pending_refs. Override this
+  // function if you're using enclosing_ref(). See notes above.
+  virtual void do_pending_ref(Ref* ref) {}
 
   // returns true if we want to keep iterating the pointers embedded inside <ref>
   virtual bool do_ref(Ref* ref, bool read_only) = 0;
@@ -285,7 +312,11 @@ public:
   }
 
   template <class T> void push_method_entry(T** mpp, intptr_t* p) {
-    push_special(_method_entry_ref, new ObjectRef<T>(mpp, _default), (intptr_t*)p);
+    Ref* ref = new ObjectRef<T>(mpp, _default);
+    push_special(_method_entry_ref, ref, (intptr_t*)p);
+    if (!ref->keep_after_pushing()) {
+      delete ref;
+    }
   }
 
   // This is for tagging special pointers that are not a reference to MetaspaceObj. It's currently

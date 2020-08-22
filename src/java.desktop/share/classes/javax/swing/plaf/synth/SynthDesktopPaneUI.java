@@ -48,6 +48,12 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
     private DesktopManager oldDesktopManager;
 
     /**
+     *
+     * Constructs a {@code SynthDesktopPaneUI}.
+     */
+    public SynthDesktopPaneUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

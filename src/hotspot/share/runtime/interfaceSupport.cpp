@@ -74,9 +74,9 @@ VMNativeEntryWrapper::~VMNativeEntryWrapper() {
   if (GCALotAtAllSafepoints) InterfaceSupport::check_gc_alot();
 }
 
-long InterfaceSupport::_scavenge_alot_counter = 1;
-long InterfaceSupport::_fullgc_alot_counter   = 1;
-long InterfaceSupport::_fullgc_alot_invocation = 0;
+unsigned int InterfaceSupport::_scavenge_alot_counter = 1;
+unsigned int InterfaceSupport::_fullgc_alot_counter   = 1;
+int InterfaceSupport::_fullgc_alot_invocation = 0;
 
 Histogram* RuntimeHistogram;
 
@@ -134,8 +134,8 @@ void InterfaceSupport::gc_alot() {
       unsigned int invocations = Universe::heap()->total_full_collections();
       // Compute new interval
       if (FullGCALotInterval > 1) {
-        _fullgc_alot_counter = 1+(long)((double)FullGCALotInterval*os::random()/(max_jint+1.0));
-        log_trace(gc)("Full gc no: %u\tInterval: %ld", invocations, _fullgc_alot_counter);
+        _fullgc_alot_counter = 1+(unsigned int)((double)FullGCALotInterval*os::random()/(max_jint+1.0));
+        log_trace(gc)("Full gc no: %u\tInterval: %u", invocations, _fullgc_alot_counter);
       } else {
         _fullgc_alot_counter = 1;
       }
@@ -152,8 +152,8 @@ void InterfaceSupport::gc_alot() {
         unsigned int invocations = Universe::heap()->total_collections() - Universe::heap()->total_full_collections();
         // Compute new interval
         if (ScavengeALotInterval > 1) {
-          _scavenge_alot_counter = 1+(long)((double)ScavengeALotInterval*os::random()/(max_jint+1.0));
-          log_trace(gc)("Scavenge no: %u\tInterval: %ld", invocations, _scavenge_alot_counter);
+          _scavenge_alot_counter = 1+(unsigned int)((double)ScavengeALotInterval*os::random()/(max_jint+1.0));
+          log_trace(gc)("Scavenge no: %u\tInterval: %u", invocations, _scavenge_alot_counter);
         } else {
           _scavenge_alot_counter = 1;
         }

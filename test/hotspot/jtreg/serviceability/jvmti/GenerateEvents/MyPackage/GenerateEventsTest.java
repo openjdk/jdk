@@ -25,6 +25,7 @@
  * @test
  * @bug 8222072
  * @summary Send CompiledMethodLoad events only to the environment requested it with GenerateEvents
+ * @requires vm.jvmti
  * @compile GenerateEventsTest.java
  * @run main/othervm/native -agentlib:GenerateEvents1 -agentlib:GenerateEvents2 MyPackage.GenerateEventsTest
  */

@@ -28,7 +28,8 @@
 </ul></li>
 <li><a href="#structure-and-formatting">Structure and Formatting</a><ul>
 <li><a href="#factoring-and-class-design">Factoring and Class Design</a></li>
-<li><a href="#files">Files</a></li>
+<li><a href="#source-files">Source Files</a></li>
+<li><a href="#jtreg-tests">JTReg Tests</a></li>
 <li><a href="#naming">Naming</a></li>
 <li><a href="#commenting">Commenting</a></li>
 <li><a href="#macros">Macros</a></li>
@@ -87,7 +88,7 @@
 <li><p>Don't use the Copy and Paste keys to replicate more than a couple lines of code. Name what you must repeat.</p></li>
 <li><p>If a class needs a member function to change a user-visible attribute, the change should be done with a &quot;setter&quot; accessor matched to the simple &quot;getter&quot;.</p></li>
 </ul>
-<h3 id="files">Files</h3>
+<h3 id="source-files">Source Files</h3>
 <ul>
 <li><p>All source files must have a globally unique basename. The build system depends on this uniqueness.</p></li>
 <li><p>Do not put non-trivial function implementations in .hpp files. If the implementation depends on other .hpp files, put it in a .cpp or a .inline.hpp file.</p></li>
@@ -96,6 +97,15 @@
 <li><p>precompiled.hpp is just a build time optimization, so don't rely on it to resolve include problems.</p></li>
 <li><p>Keep the include lines alphabetically sorted.</p></li>
 <li><p>Put conditional inclusions (<code>#if ...</code>) at the end of the include list.</p></li>
+</ul>
+<h3 id="jtreg-tests">JTReg Tests</h3>
+<ul>
+<li><p>JTReg tests should have meaningful names.</p></li>
+<li><p>JTReg tests associated with specific bugs should be tagged with the <code>@bug</code> keyword in the test description.</p></li>
+<li><p>JTReg tests should be organized by component or feature under <code>test/</code>, in a directory hierarchy that generally follows that of the <code>src/</code> directory. There may be additional subdirectories to further categorize tests by feature. This structure makes it easy to run a collection of tests associated with a specific feature by specifying the associated directory as the source of the tests to run.</p>
+<ul>
+<li>Some (older) tests use the associated bug number in the directory name, the test name, or both. That naming style should no longer be used, with existing tests using that style being candidates for migration.</li>
+</ul></li>
 </ul>
 <h3 id="naming">Naming</h3>
 <ul>

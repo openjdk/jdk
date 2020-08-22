@@ -59,6 +59,11 @@ public class MultiTextUI extends TextUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiTextUI}.
+     */
+    public MultiTextUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

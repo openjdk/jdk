@@ -34,7 +34,11 @@ inline bool SharedDataRelocator<COMPACTING>::do_bit(size_t offset) {
   assert(_patch_base <= p && p < _patch_end, "must be");
 
   address old_ptr = *p;
-  assert(_valid_old_base <= old_ptr && old_ptr < _valid_old_end, "must be");
+  if (old_ptr == NULL) {
+    assert(COMPACTING, "NULL pointers should not be marked when relocating at run-time");
+  } else {
+    assert(_valid_old_base <= old_ptr && old_ptr < _valid_old_end, "must be");
+  }
 
   if (COMPACTING) {
     // Start-up performance: use a template parameter to elide this block for run-time archive

@@ -50,6 +50,8 @@ public:
         return jvmPath;
     }
 
+    bool isWithSplash() const;
+
     void launch();
 
 private:

@@ -46,6 +46,12 @@ public class SynthOptionPaneUI extends BasicOptionPaneUI implements
     private SynthStyle style;
 
     /**
+     *
+     * Constructs a {@code SynthOptionPaneUI}.
+     */
+    public SynthOptionPaneUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param x component to create UI object for

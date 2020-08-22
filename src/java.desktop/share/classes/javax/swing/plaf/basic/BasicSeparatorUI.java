@@ -56,6 +56,11 @@ public class BasicSeparatorUI extends SeparatorUI
     protected Color highlight;
 
     /**
+     * Constructs a {@code BasicSeparatorUI}.
+     */
+    public BasicSeparatorUI() {}
+
+    /**
      * Returns a new instance of {@code BasicSeparatorUI}.
      *
      * @param c a component

@@ -44,6 +44,12 @@ import javax.swing.plaf.*;
 public class SynthCheckBoxMenuItemUI extends SynthMenuItemUI {
 
     /**
+     *
+     * Constructs a {@code SynthCheckBoxMenuItemUI}.
+     */
+    public SynthCheckBoxMenuItemUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

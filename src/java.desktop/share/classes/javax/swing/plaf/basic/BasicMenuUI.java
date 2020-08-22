@@ -71,6 +71,11 @@ public class BasicMenuUI extends BasicMenuItemUI
     private static boolean crossMenuMnemonic = true;
 
     /**
+     * Constructs a {@code BasicMenuUI}.
+     */
+    public BasicMenuUI() {}
+
+    /**
      * Constructs a new instance of {@code BasicMenuUI}.
      *
      * @param x a component

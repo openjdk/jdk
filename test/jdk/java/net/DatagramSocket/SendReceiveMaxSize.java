@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 8242885 8250886
+ * @bug 8242885 8250886 8240901
+ * @key randomness
  * @summary This test verifies that on macOS, the send buffer size is configured
  *          by default so that none of our implementations of the UDP protocol
  *          will fail with a "packet too large" exception when trying to send a
@@ -32,7 +33,6 @@
  *          limit.
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @requires os.family == "mac"
  * @run testng/othervm SendReceiveMaxSize
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  * @run testng/othervm -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
@@ -41,6 +41,8 @@
  * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
  */
 
+import jdk.test.lib.RandomFactory;
+import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
@@ -54,7 +56,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.DatagramChannel;
+import java.util.Random;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.expectThrows;
 
 public class SendReceiveMaxSize {
@@ -63,6 +67,7 @@ public class SendReceiveMaxSize {
     private final static int IPV4_SNDBUF = 65507;
     private final static int IPV6_SNDBUF = 65527;
     private final static Class<IOException> IOE = IOException.class;
+    private final static Random random = RandomFactory.getRandom();
 
     public interface DatagramSocketSupplier {
         DatagramSocket open() throws IOException;
@@ -102,7 +107,14 @@ public class SendReceiveMaxSize {
             var port = receiver.getLocalPort();
             var addr = new InetSocketAddress(HOST_ADDR, port);
             try (var sender = supplier.open()) {
-                var sendPkt = new DatagramPacket(new byte[capacity], capacity, addr);
+                if (!Platform.isOSX()) {
+                    if (sender.getSendBufferSize() < capacity)
+                        sender.setSendBufferSize(capacity);
+                }
+                byte[] testData = new byte[capacity];
+                random.nextBytes(testData);
+                var sendPkt = new DatagramPacket(testData, capacity, addr);
+
                 if (exception != null) {
                     Exception ex = expectThrows(IOE, () -> sender.send(sendPkt));
                     System.out.println(name + " got expected exception: " + ex);
@@ -110,6 +122,10 @@ public class SendReceiveMaxSize {
                     sender.send(sendPkt);
                     var receivePkt = new DatagramPacket(new byte[capacity], capacity);
                     receiver.receive(receivePkt);
+
+                    // check packet data has been fragmented and re-assembled correctly at receiver
+                    assertEquals(receivePkt.getLength(), capacity);
+                    assertEquals(receivePkt.getData(), testData);
                 }
             }
         }

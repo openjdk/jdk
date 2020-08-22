@@ -27,6 +27,7 @@
  * @summary Test JVMTI's GetOwnedMonitorInfo with scalar replaced objects and eliminated locks on stack (optimizations based on escape analysis).
  * @comment Without RFE 8227745 escape analysis needs to be switched off to pass the test. For the implementation of RFE 8227745 it serves as a regression test.
  * @requires (vm.compMode != "Xcomp" & vm.compiler2.enabled)
+ * @requires vm.jvmti
  * @library /test/lib
  * @compile GetOwnedMonitorInfoWithEATest.java
  * @run main/othervm/native

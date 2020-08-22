@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -136,7 +136,20 @@ void AbstractInterpreter::layout_activation(Method* method,
   // interpreter_frame_sender_sp interpreter_frame_sender_sp is
   // the original sp of the caller (the unextended_sp) and
   // sender_sp is fp+8/16 (32bit/64bit) XXX
-  intptr_t* locals = interpreter_frame->sender_sp() + max_locals - 1;
+  //
+  // The interpreted method entry on AArch64 aligns SP to 16 bytes
+  // before generating the fixed part of the activation frame. So there
+  // may be a gap between the locals block and the saved sender SP. For
+  // an interpreted caller we need to recreate this gap and exactly
+  // align the incoming parameters with the caller's temporary
+  // expression stack. For other types of caller frame it doesn't
+  // matter.
+  intptr_t* locals;
+  if (caller->is_interpreted_frame()) {
+    locals = caller->interpreter_frame_last_sp() + caller_actual_parameters - 1;
+  } else {
+    locals = interpreter_frame->sender_sp() + max_locals - 1;
+  }
 
 #ifdef ASSERT
   if (caller->is_interpreted_frame()) {

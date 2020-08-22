@@ -54,6 +54,12 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
     private ViewportViewFocusHandler viewportViewFocusHandler;
 
     /**
+     *
+     * Constructs a {@code SynthScrollPaneUI}.
+     */
+    public SynthScrollPaneUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param x component to create UI object for

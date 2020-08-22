@@ -42,6 +42,12 @@ public class SynthViewportUI extends ViewportUI
     private SynthStyle style;
 
     /**
+     *
+     * Constructs a {@code SynthViewportUI}.
+     */
+    public SynthViewportUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

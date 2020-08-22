@@ -37,6 +37,11 @@ import javax.swing.plaf.*;
  * @since 1.7
  */
 public class SynthRadioButtonUI extends SynthToggleButtonUI {
+    /**
+     *
+     * Constructs a {@code SynthRadioButtonUI}.
+     */
+    public SynthRadioButtonUI() {}
 
     // ********************************
     //        Create PLAF

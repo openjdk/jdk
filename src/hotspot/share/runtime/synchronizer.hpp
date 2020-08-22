@@ -62,6 +62,12 @@ class ObjectSynchronizer : AllStatic {
     inflate_cause_nof = 7 // Number of causes
   } InflateCause;
 
+  typedef enum {
+    NOT_ENABLED    = 0,
+    FATAL_EXIT     = 1,
+    LOG_WARNING    = 2
+  } SyncDiagnosticOption;
+
   // exit must be implemented non-blocking, since the compiler cannot easily handle
   // deoptimization at monitor exit. Hence, it does not take a Handle argument.
 
@@ -194,6 +200,8 @@ class ObjectSynchronizer : AllStatic {
   static u_char* get_gvars_hc_sequence_addr();
   static size_t get_gvars_size();
   static u_char* get_gvars_stw_random_addr();
+
+  static void handle_sync_on_primitive_wrapper(Handle obj, Thread* current);
 };
 
 // ObjectLocker enforces balanced locking and can never throw an
