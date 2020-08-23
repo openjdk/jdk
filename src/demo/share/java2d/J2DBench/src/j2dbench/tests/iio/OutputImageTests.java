@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -143,7 +143,7 @@ abstract class OutputImageTests extends OutputTests {
             String klass = spi.getClass().getName();
             String format = spi.getFormatNames()[0].toLowerCase();
             String suffix = spi.getFileSuffixes()[0].toLowerCase();
-            if (suffix == null || suffix.isEmpty()) {
+            if (suffix == null || suffix.equals("")) {
                 suffix = format;
             }
             String shortName;
