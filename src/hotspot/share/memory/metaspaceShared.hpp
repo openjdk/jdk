@@ -36,8 +36,9 @@
 #define MAX_SHARED_DELTA                (0x7FFFFFFF)
 
 class outputStream;
-class FileMapInfo;
 class CHeapBitMap;
+class FileMapInfo;
+class DumpRegion;
 struct ArchiveHeapOopmapInfo;
 
 enum MapArchiveResult {
@@ -54,113 +55,6 @@ public:
   CompactHashtableStats symbol;
   CompactHashtableStats string;
 };
-
-#if INCLUDE_CDS
-class DumpRegion {
-private:
-  const char* _name;
-  char* _base;
-  char* _top;
-  char* _end;
-  bool _is_packed;
-  ReservedSpace* _rs;
-  VirtualSpace* _vs;
-
-public:
-  DumpRegion(const char* name) : _name(name), _base(NULL), _top(NULL), _end(NULL), _is_packed(false) {}
-
-  char* expand_top_to(char* newtop);
-  char* allocate(size_t num_bytes, size_t alignment=BytesPerWord);
-
-  void append_intptr_t(intptr_t n, bool need_to_mark = false);
-
-  char* base()      const { return _base;        }
-  char* top()       const { return _top;         }
-  char* end()       const { return _end;         }
-  size_t reserved() const { return _end - _base; }
-  size_t used()     const { return _top - _base; }
-  bool is_packed()  const { return _is_packed;   }
-  bool is_allocatable() const {
-    return !is_packed() && _base != NULL;
-  }
-
-  void print(size_t total_bytes) const;
-  void print_out_of_space_msg(const char* failing_region, size_t needed_bytes);
-
-  void init(ReservedSpace* rs, VirtualSpace* vs);
-
-  void pack(DumpRegion* next = NULL);
-
-  bool contains(char* p) {
-    return base() <= p && p < top();
-  }
-};
-
-// Closure for serializing initialization data out to a data area to be
-// written to the shared file.
-
-class WriteClosure : public SerializeClosure {
-private:
-  DumpRegion* _dump_region;
-
-public:
-  WriteClosure(DumpRegion* r) {
-    _dump_region = r;
-  }
-
-  void do_ptr(void** p) {
-    _dump_region->append_intptr_t((intptr_t)*p, true);
-  }
-
-  void do_u4(u4* p) {
-    _dump_region->append_intptr_t((intptr_t)(*p));
-  }
-
-  void do_bool(bool *p) {
-    _dump_region->append_intptr_t((intptr_t)(*p));
-  }
-
-  void do_tag(int tag) {
-    _dump_region->append_intptr_t((intptr_t)tag);
-  }
-
-  void do_oop(oop* o);
-
-  void do_region(u_char* start, size_t size);
-
-  bool reading() const { return false; }
-};
-
-// Closure for serializing initialization data in from a data area
-// (ptr_array) read from the shared file.
-
-class ReadClosure : public SerializeClosure {
-private:
-  intptr_t** _ptr_array;
-
-  inline intptr_t nextPtr() {
-    return *(*_ptr_array)++;
-  }
-
-public:
-  ReadClosure(intptr_t** ptr_array) { _ptr_array = ptr_array; }
-
-  void do_ptr(void** p);
-
-  void do_u4(u4* p);
-
-  void do_bool(bool *p);
-
-  void do_tag(int tag);
-
-  void do_oop(oop *p);
-
-  void do_region(u_char* start, size_t size);
-
-  bool reading() const { return true; }
-};
-
-#endif // INCLUDE_CDS
 
 // Class Data Sharing Support
 class MetaspaceShared : AllStatic {
