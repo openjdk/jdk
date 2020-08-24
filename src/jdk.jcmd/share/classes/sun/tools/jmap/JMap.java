@@ -181,7 +181,7 @@ public class JMap {
             } else if (subopt.startsWith("file=")) {
                 filename = parseFileName(subopt);
                 if (filename == null) {
-                    System.err.println("Fail: invalid option or no file name '" + subopt +"'");
+                    System.err.println("Fail: invalid option or no file name '" + subopt + "'");
                     usage(1);
                 }
             } else if (subopt.startsWith("parallel=")) {
@@ -218,6 +218,10 @@ public class JMap {
                 liveopt = "-live";
             } else if (subopt.startsWith("file=")) {
                 filename = parseFileName(subopt);
+                if (filename == null) {
+                    System.err.println("Fail: invalid option or no file name '" + subopt + "'");
+                    usage(1);
+                }
             } else if (subopt.equals("format=b")) {
                 // ignore format (not needed at this time)
             } else {
@@ -230,6 +234,8 @@ public class JMap {
             System.err.println("Fail: invalid option or no file name");
             usage(1);
         }
+
+        System.out.flush();
 
         // dumpHeap is not the same as jcmd GC.heap_dump
         executeCommandForPid(pid, "dumpheap", filename, liveopt);
