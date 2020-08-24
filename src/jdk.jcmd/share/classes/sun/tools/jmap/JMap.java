@@ -299,15 +299,15 @@ public class JMap {
         System.err.println("        to print this help message");
         System.err.println("");
         System.err.println("    dump-options:");
-        System.err.println("      live         dump only live objects");
-        System.err.println("      all          dump all objects in the heap (default if one of \"live\" or \"all\" is not specified");
+        System.err.println("      live         dump only live objects (takes precedence if both \"live\" and \"all\" are specified)");
+        System.err.println("      all          dump all objects in the heap (default if one of \"live\" or \"all\" is not specified)");
         System.err.println("      format=b     binary format");
         System.err.println("      file=<file>  dump heap to <file>");
         System.err.println("");
         System.err.println("    Example: jmap -dump:live,format=b,file=heap.bin <pid>");
         System.err.println("");
         System.err.println("    histo-options:");
-        System.err.println("      live         count only live objects");
+        System.err.println("      live         count only live objects (takes precedence if both \"live\" and \"all\" are specified)");
         System.err.println("      all          count all objects in the heap (default if one of \"live\" or \"all\" is not specified)");
         System.err.println("      file=<file>  dump data to <file>");
         System.err.println("      parallel=<number>  parallel threads number for heap iteration:");
