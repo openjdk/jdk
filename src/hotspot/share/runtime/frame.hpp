@@ -454,7 +454,7 @@ class StackFrameStream : public StackObj {
   RegisterMap _reg_map;
   bool        _is_done;
  public:
-   StackFrameStream(JavaThread *thread, bool update = true);
+  StackFrameStream(JavaThread *thread, bool update, bool process_frames);
 
   // Iteration
   inline bool is_done();

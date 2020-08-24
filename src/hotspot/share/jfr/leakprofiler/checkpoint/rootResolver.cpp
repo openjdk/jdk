@@ -272,7 +272,7 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
     }
 
     // Traverse the execution stack
-    for (StackFrameStream fst(jt); !fst.is_done(); fst.next()) {
+    for (StackFrameStream fst(jt, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
       fst.current()->oops_do(&rcl, NULL, fst.register_map());
     }
 

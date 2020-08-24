@@ -70,6 +70,10 @@ public:
     return false;
   }
 
+  virtual bool skip_thread_oop_barriers() const {
+    return true;
+  }
+
   virtual bool do_operation() = 0;
 
   virtual bool doit_prologue() {
@@ -96,6 +100,10 @@ public:
 
     // Update statistics
     ZStatSample(ZSamplerJavaThreads, Threads::number_of_threads());
+  }
+
+  virtual bool allow_coalesced_vm_operations() const {
+    return false;
   }
 
   virtual void doit_epilogue() {
@@ -216,6 +224,10 @@ class VM_ZVerify : public VM_Operation {
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZVerify;
+  }
+
+  virtual bool skip_thread_oop_barriers() const {
+    return true;
   }
 
   virtual void doit() {

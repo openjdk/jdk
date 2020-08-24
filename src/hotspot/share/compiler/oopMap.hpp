@@ -227,7 +227,7 @@ class OopMapSet : public ResourceObj {
   // Iterates through frame for a compiled method for dead ones and values, too
   static void all_do(const frame* fr, const RegisterMap* reg_map,
                      OopClosure* oop_fn,
-                     void derived_oop_fn(oop* base, oop* derived),
+                     void derived_oop_fn(oop* base, oop* derived, OopClosure* oop_fn),
                      OopClosure* value_fn);
 
   // Printing

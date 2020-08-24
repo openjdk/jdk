@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,10 @@ uintptr_t ZBarrier::load_barrier_on_oop_slow_path(uintptr_t addr) {
   return relocate_or_mark(addr);
 }
 
+uintptr_t ZBarrier::load_barrier_on_invisible_root_oop_slow_path(uintptr_t addr) {
+  return during_relocate() ? relocate(addr) : mark<DontFollow, Strong, Publish>(addr);
+}
+
 void ZBarrier::load_barrier_on_oop_fields(oop o) {
   assert(ZAddress::is_good(ZOop::to_address(o)), "Should be good");
   ZLoadBarrierOopClosure cl;
@@ -196,14 +200,6 @@ uintptr_t ZBarrier::mark_barrier_on_root_oop_slow_path(uintptr_t addr) {
 
   // Mark
   return mark<Follow, Strong, Publish>(addr);
-}
-
-uintptr_t ZBarrier::mark_barrier_on_invisible_root_oop_slow_path(uintptr_t addr) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  assert(during_mark(), "Invalid phase");
-
-  // Mark
-  return mark<DontFollow, Strong, Publish>(addr);
 }
 
 //

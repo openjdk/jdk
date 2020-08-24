@@ -31,6 +31,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/semaphore.inline.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/task.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
@@ -510,6 +511,11 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* op
     guarantee(!_processing_sem.trywait(), "we should already own the semaphore");
     log_trace(handshake)("Processing handshake by %s", Thread::current()->is_VM_thread() ? "VMThread" : "Handshaker");
     _active_handshaker = Thread::current();
+
+    if (!_handshakee->is_terminated()) {
+      StackWatermarkSet::start_processing(_handshakee, StackWatermarkKind::gc);
+    }
+
     op->do_handshake(_handshakee);
     _active_handshaker = NULL;
     // Disarm after we have executed the operation.

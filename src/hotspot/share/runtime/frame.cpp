@@ -53,9 +53,10 @@
 #include "utilities/decoder.hpp"
 #include "utilities/formatBuffer.hpp"
 
-RegisterMap::RegisterMap(JavaThread *thread, bool update_map) {
+RegisterMap::RegisterMap(JavaThread *thread, bool update_map, bool process_frames) {
   _thread         = thread;
   _update_map     = update_map;
+  _process_frames = process_frames;
   clear();
   debug_only(_update_for_id = NULL;)
 #ifndef PRODUCT
@@ -68,6 +69,7 @@ RegisterMap::RegisterMap(const RegisterMap* map) {
   assert(map != NULL, "RegisterMap must be present");
   _thread                = map->thread();
   _update_map            = map->update_map();
+  _process_frames        = map->process_frames();
   _include_argument_oops = map->include_argument_oops();
   debug_only(_update_for_id = map->_update_for_id;)
   pd_initialize_from(map);
@@ -1219,7 +1221,7 @@ void frame::describe(FrameValues& values, int frame_no) {
 //-----------------------------------------------------------------------------------
 // StackFrameStream implementation
 
-StackFrameStream::StackFrameStream(JavaThread *thread, bool update) : _reg_map(thread, update) {
+StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames) : _reg_map(thread, update, process_frames) {
   assert(thread->has_last_Java_frame(), "sanity check");
   _fr = thread->last_frame();
   _is_done = false;

@@ -64,6 +64,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -518,6 +519,10 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
 
 
 JRT_LEAF(address, SharedRuntime::exception_handler_for_return_address(JavaThread* thread, address return_address))
+  // This is called when we are about to throw an exception. We must make sure the
+  // frame we are unwinding to is safe to be access w.r.t. concurrent stack processing.
+  // The stack watermark code will take care of ensuring that.
+  StackWatermarkSet::after_unwind(thread);
   return raw_exception_handler_for_return_address(thread, return_address);
 JRT_END
 
@@ -3022,6 +3027,12 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 // All of this is done NOT at any Safepoint, nor is any safepoint or GC allowed.
 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
+  // During OSR migration, we unwind the interpreted frame and replace it with a compiled
+  // frame. The stack watermark code below ensures that the interpreted frame is processed
+  // before it gets unwinded. This is helpful as the size of the compiled frame could be
+  // larger than the interpreted frame, which could result in the new frame not being
+  // processed correctly.
+  StackWatermarkSet::before_unwind(thread);
 
   //
   // This code is dependent on the memory layout of the interpreter local

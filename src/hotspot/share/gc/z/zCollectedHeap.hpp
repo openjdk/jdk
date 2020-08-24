@@ -89,6 +89,8 @@ public:
   virtual size_t max_tlab_size() const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
+  virtual bool uses_stack_watermark_barrier() const;
+
   virtual bool can_elide_tlab_store_barriers() const;
   virtual bool can_elide_initializing_store_barrier(oop new_obj);
   virtual bool card_mark_must_follow_store() const;

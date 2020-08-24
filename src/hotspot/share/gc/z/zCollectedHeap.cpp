@@ -229,6 +229,10 @@ bool ZCollectedHeap::can_elide_tlab_store_barriers() const {
   return false;
 }
 
+bool ZCollectedHeap::uses_stack_watermark_barrier() const {
+  return true;
+}
+
 bool ZCollectedHeap::can_elide_initializing_store_barrier(oop new_obj) {
   // Not supported
   ShouldNotReachHere();

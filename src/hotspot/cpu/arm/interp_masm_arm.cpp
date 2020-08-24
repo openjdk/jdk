@@ -580,7 +580,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 
   if (needs_thread_local_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    ldr(Rtemp, Address(Rthread, Thread::polling_page_offset()));
+    ldr(Rtemp, Address(Rthread, Thread::polling_word_offset()));
     tbnz(Rtemp, exact_log2(SafepointMechanism::poll_bit()), safepoint);
   }
 

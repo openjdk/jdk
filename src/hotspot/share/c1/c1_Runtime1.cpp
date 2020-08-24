@@ -63,6 +63,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
@@ -505,6 +506,21 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   thread->set_is_method_handle_return(false);
 
   Handle exception(thread, ex);
+
+  // This function is called when we are about to throw an exception. Therefore,
+  // we have to poll the stack watermark barrier to make sure that not yet safe
+  // stack frames are made safe before returning into them.
+  if (thread->last_frame().is_runtime_frame()) {
+    // The Runtime1::handle_exception_from_callee_id handler is invoked after the
+    // frame has been unwinded. It instead builds its own stub frame, to call the
+    // runtime. But the throwing frame has already been unwinded here.
+    StackWatermarkSet::after_unwind(thread);
+  } else {
+    // The other C1 exception handler call in here before the throwing frame has
+    // been unwinded.
+    StackWatermarkSet::before_unwind(thread);
+  }
+
   nm = CodeCache::find_nmethod(pc);
   assert(nm != NULL, "this is not an nmethod");
   // Adjust the pc as needed/
