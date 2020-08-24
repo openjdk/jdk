@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,10 +102,10 @@ public class SynthToolBarUI extends BasicToolBarUI
 
     private void updateStyle(JToolBar c) {
         SynthContext context = getContext(
-                c, Region.TOOL_BAR_CONTENT, null, ENABLED);
+                c, Region.TOOL_BAR_CONTENT, contentStyle, ENABLED);
         contentStyle = SynthLookAndFeel.updateStyle(context, this);
 
-        context = getContext(c, Region.TOOL_BAR_DRAG_WINDOW, null, ENABLED);
+        context = getContext(c, Region.TOOL_BAR_DRAG_WINDOW, dragWindowStyle, ENABLED);
         dragWindowStyle = SynthLookAndFeel.updateStyle(context, this);
 
         context = getContext(c, ENABLED);
