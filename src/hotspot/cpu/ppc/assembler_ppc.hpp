@@ -436,6 +436,10 @@ class Assembler : public AbstractAssembler {
     NAND_OPCODE   = (31u << OPCODE_SHIFT | 476u << XO_21_30_SHIFT), // X-FORM
     NOR_OPCODE    = (31u << OPCODE_SHIFT | 124u << XO_21_30_SHIFT), // X-FORM
 
+    // Byte reverse opcodes (introduced with Power10)
+    BRH_OPCODE    = (31u << OPCODE_SHIFT | 219u << 1),              // X-FORM
+    BRW_OPCODE    = (31u << OPCODE_SHIFT | 155u << 1),              // X-FORM
+    BRD_OPCODE    = (31u << OPCODE_SHIFT | 187u << 1),              // X-FORM
 
     // opcodes only used for floating arithmetic
     FADD_OPCODE   = (63u << OPCODE_SHIFT |  21u << 1),
@@ -1567,6 +1571,11 @@ class Assembler : public AbstractAssembler {
   inline void extrdi(  Register a, Register s, int n, int b);
   // testbit with condition register
   inline void testbitdi(ConditionRegister cr, Register a, Register s, int ui6);
+
+  // Byte reverse instructions (introduced with Power10)
+  inline void brh(     Register a, Register s);
+  inline void brw(     Register a, Register s);
+  inline void brd(     Register a, Register s);
 
   // rotate instructions
   inline void rotldi(  Register a, Register s, int n);

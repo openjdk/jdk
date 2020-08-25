@@ -287,6 +287,11 @@ inline void Assembler::testbitdi(ConditionRegister cr, Register a, Register s, i
   }
 }
 
+// Byte reverse instructions (introduced with Power10)
+inline void Assembler::brh(Register a, Register s) { emit_int32(BRH_OPCODE | rta(a) | rs(s)); }
+inline void Assembler::brw(Register a, Register s) { emit_int32(BRW_OPCODE | rta(a) | rs(s)); }
+inline void Assembler::brd(Register a, Register s) { emit_int32(BRD_OPCODE | rta(a) | rs(s)); }
+
 // rotate instructions
 inline void Assembler::rotldi( Register a, Register s, int n) { Assembler::rldicl(a, s, n, 0); }
 inline void Assembler::rotrdi( Register a, Register s, int n) { Assembler::rldicl(a, s, 64-n, 0); }

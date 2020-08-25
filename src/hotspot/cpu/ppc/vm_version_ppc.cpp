@@ -67,7 +67,9 @@ void VM_Version::initialize() {
 
   // If PowerArchitecturePPC64 hasn't been specified explicitly determine from features.
   if (FLAG_IS_DEFAULT(PowerArchitecturePPC64)) {
-    if (VM_Version::has_darn()) {
+    if (VM_Version::has_brw()) {
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 10);
+    } else if (VM_Version::has_darn()) {
       FLAG_SET_ERGO(PowerArchitecturePPC64, 9);
     } else if (VM_Version::has_lqarx()) {
       FLAG_SET_ERGO(PowerArchitecturePPC64, 8);
@@ -84,12 +86,13 @@ void VM_Version::initialize() {
 
   bool PowerArchitecturePPC64_ok = false;
   switch (PowerArchitecturePPC64) {
-    case 9: if (!VM_Version::has_darn()   ) break;
-    case 8: if (!VM_Version::has_lqarx()  ) break;
-    case 7: if (!VM_Version::has_popcntw()) break;
-    case 6: if (!VM_Version::has_cmpb()   ) break;
-    case 5: if (!VM_Version::has_popcntb()) break;
-    case 0: PowerArchitecturePPC64_ok = true; break;
+    case 10: if (!VM_Version::has_brw()    ) break;
+    case  9: if (!VM_Version::has_darn()   ) break;
+    case  8: if (!VM_Version::has_lqarx()  ) break;
+    case  7: if (!VM_Version::has_popcntw()) break;
+    case  6: if (!VM_Version::has_cmpb()   ) break;
+    case  5: if (!VM_Version::has_popcntb()) break;
+    case  0: PowerArchitecturePPC64_ok = true; break;
     default: break;
   }
   guarantee(PowerArchitecturePPC64_ok, "PowerArchitecturePPC64 cannot be set to "
@@ -156,12 +159,23 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseVectorByteReverseInstructionsPPC64, false);
     }
   }
+
+  if (PowerArchitecturePPC64 >= 10) {
+    if (FLAG_IS_DEFAULT(UseByteReverseInstructions)) {
+        FLAG_SET_ERGO(UseByteReverseInstructions, true);
+    }
+  } else {
+    if (UseByteReverseInstructions) {
+      warning("UseByteReverseInstructions specified, but needs at least Power10.");
+      FLAG_SET_DEFAULT(UseByteReverseInstructions, false);
+    }
+  }
 #endif
 
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_fsqrt()   ? " fsqrt"   : ""),
                (has_isel()    ? " isel"    : ""),
                (has_lxarxeh() ? " lxarxeh" : ""),
@@ -179,7 +193,8 @@ void VM_Version::initialize() {
                (has_stdbrx()  ? " stdbrx"  : ""),
                (has_vshasig() ? " sha"     : ""),
                (has_tm()      ? " rtm"     : ""),
-               (has_darn()    ? " darn"    : "")
+               (has_darn()    ? " darn"    : ""),
+               (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
               );
   _features_string = os::strdup(buf);
@@ -835,6 +850,7 @@ void VM_Version::determine_features() {
   a->vshasigmaw(VR0, VR1, 1, 0xF);             // code[16] -> vshasig
   // rtm is determined by OS
   a->darn(R7);                                 // code[17] -> darn
+  a->brw(R5, R6);                              // code[18] -> brw
   a->blr();
 
   // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
@@ -888,6 +904,7 @@ void VM_Version::determine_features() {
   if (code[feature_cntr++]) features |= vshasig_m;
   // feature rtm_m is determined by OS
   if (code[feature_cntr++]) features |= darn_m;
+  if (code[feature_cntr++]) features |= brw_m;
 
   // Print the detection code.
   if (PrintAssembly) {

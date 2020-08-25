@@ -84,8 +84,9 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
                    constraint)   \
                                                                             \
   product(uintx, PowerArchitecturePPC64, 0,                                 \
-          "CPU Version: x for PowerX. Currently recognizes Power5 to "      \
-          "Power8. Default is 0. Newer CPUs will be recognized as Power8.") \
+          "Specify the PowerPC family version in use. If not provided, "    \
+          "HotSpot will determine it automatically. Host family version "   \
+          "is the maximum value allowed (instructions are not emulated).")  \
                                                                             \
   product(bool, SuperwordUseVSX, false,                                     \
           "Use Power8 VSX instructions for superword optimization.")        \
@@ -112,6 +113,9 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
           "Use load instructions for stack banging.")                       \
                                                                             \
   /* special instructions */                                                \
+  product(bool, UseByteReverseInstructions, false,                          \
+          "Use byte reverse instructions.")                                 \
+                                                                            \
   product(bool, UseVectorByteReverseInstructionsPPC64, false,               \
           "Use Power9 xxbr* vector byte reverse instructions.")             \
                                                                             \
