@@ -533,7 +533,7 @@ public class Socket implements java.io.Closeable {
      *
      * @param stream a {@code boolean} value : {@code true} for a TCP socket,
      *               {@code false} for UDP.
-     * @throws IOException if creation fails
+     * @throws SocketException if creation fails
      * @since 1.4
      */
      void createImpl(boolean stream) throws SocketException {
