@@ -1338,7 +1338,7 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
 
   assert(oop_stack.is_empty(), "should be empty");
 
-  if (!_aux_bitmap_region_special && !os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size())) {
+  if (!_aux_bitmap_region_special && !os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), !ExecMem)) {
     log_warning(gc)("Could not uncommit native memory for auxiliary marking bitmap for heap iteration");
   }
 }
@@ -2690,7 +2690,7 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
   size_t slice = r->index() / _bitmap_regions_per_slice;
   size_t off = _bitmap_bytes_per_slice * slice;
   size_t len = _bitmap_bytes_per_slice;
-  if (!os::uncommit_memory((char*)_bitmap_region.start() + off, len)) {
+  if (!os::uncommit_memory((char*)_bitmap_region.start() + off, len, !ExecMem)) {
     return false;
   }
   return true;

@@ -254,7 +254,8 @@ void CardTable::resize_covered_region(MemRegion new_region) {
                                                 cur_committed.end()));
       if (!uncommit_region.is_empty()) {
         if (!os::uncommit_memory((char*)uncommit_region.start(),
-                                 uncommit_region.byte_size())) {
+                                 uncommit_region.byte_size(),
+                                 !ExecMem)) {
           assert(false, "Card table contraction failed");
           // The call failed so don't change the end of the
           // committed region.  This is better than taking the

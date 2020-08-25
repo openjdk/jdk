@@ -2269,7 +2269,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   assert(is_aligned_to(addr, os::vm_page_size()),
     "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
     p2i(addr), os::vm_page_size());
@@ -2347,7 +2347,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 
 // Reserves and attaches a shared memory segment.
 // Will assert if a wish address is given and could not be obtained.
-char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
+char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint, bool executable) {
 
   // All other Unices do a mmap(MAP_FIXED) if the addr is given,
   // thereby clobbering old mappings at that place. That is probably
