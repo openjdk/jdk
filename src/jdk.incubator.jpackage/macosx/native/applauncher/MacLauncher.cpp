@@ -52,6 +52,8 @@ void initJvmLauncher() {
     jvmLauncher = AppLauncher()
         .setImageRoot(appImageRoot)
         .addJvmLibName(_T("Contents/Home/lib/libjli.dylib"))
+        // add backup - older version such as JDK11 have it in jli sub-dir
+        .addJvmLibName(_T("Contents/Home/lib/jli/libjli.dylib"))
         .setAppDir(FileUtils::mkpath() << appImageRoot << _T("Contents/app"))
         .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
                 << _T("Contents/runtime"))
