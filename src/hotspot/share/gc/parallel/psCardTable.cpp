@@ -587,7 +587,8 @@ bool PSCardTable::resize_commit_uncommit(int changed_region,
       MemRegion(cur_committed.start(), new_start_aligned));
     if (!uncommit_region.is_empty()) {
       if (!os::uncommit_memory((char*)uncommit_region.start(),
-                               uncommit_region.byte_size())) {
+                               uncommit_region.byte_size(),
+                               !ExecMem)) {
         // If the uncommit fails, ignore it.  Let the
         // committed table resizing go even though the committed
         // table will over state the committed space.
