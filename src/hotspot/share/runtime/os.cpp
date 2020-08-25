@@ -1652,8 +1652,8 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, MEMFLAGS flags) {
-  char* result = pd_reserve_memory(bytes);
+char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
+  char* result = pd_reserve_memory(bytes, executable);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
     if (flags != mtOther) {
@@ -1701,16 +1701,16 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
-bool os::uncommit_memory(char* addr, size_t bytes) {
+bool os::uncommit_memory(char* addr, size_t bytes, bool exec) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
     Tracker tkr(Tracker::uncommit);
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes, exec);
     if (res) {
       tkr.record((address)addr, bytes);
     }
   } else {
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes, exec);
   }
   return res;
 }

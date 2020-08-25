@@ -1977,7 +1977,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   assert(is_aligned_to(addr, os::vm_page_size()),
     "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
     p2i(addr), os::vm_page_size());
@@ -2054,7 +2054,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 }
 
 // Reserves and attaches a shared memory segment.
-char* os::pd_reserve_memory(size_t bytes) {
+char* os::pd_reserve_memory(size_t bytes, bool executable) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
 
