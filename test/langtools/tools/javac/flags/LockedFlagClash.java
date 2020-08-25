@@ -28,6 +28,7 @@
             by use in Types.asSuper.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.JavacTask toolbox.TestRunner toolbox.ToolBox
  * @run main LockedFlagClash
  */
