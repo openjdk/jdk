@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,10 @@ public abstract class XMLOutputFactory {
 
   static final String DEFAULIMPL = "com.sun.xml.internal.stream.XMLOutputFactoryImpl";
 
+  /**
+   * Protected constructor to prevent instantiation.
+   * Use {@link #newFactory()} instead.
+   */
   protected XMLOutputFactory(){}
 
    /**
@@ -130,6 +134,7 @@ public abstract class XMLOutputFactory {
   /**
    * Creates a new instance of the factory in exactly the same manner as the
    * {@link #newFactory()} method.
+   * @return an instance of the {@code XMLOutputFactory}
    * @throws FactoryConfigurationError if an instance of this factory cannot be loaded
    */
   public static XMLOutputFactory newInstance()
@@ -190,6 +195,7 @@ public abstract class XMLOutputFactory {
    * Once an application has obtained a reference to a XMLOutputFactory it
    * can use the factory to configure and obtain stream instances.
    *
+   * @return an instance of the {@code XMLOutputFactory}
    * @throws FactoryConfigurationError in case of {@linkplain
    *   java.util.ServiceConfigurationError service configuration error} or if
    *   the implementation is not available or cannot be instantiated.
@@ -302,14 +308,16 @@ public abstract class XMLOutputFactory {
   /**
    * Create a new XMLStreamWriter that writes to a writer
    * @param stream the writer to write to
-   * @throws XMLStreamException
+   * @return instance of the {@code XMLStreamWriter}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLStreamWriter createXMLStreamWriter(java.io.Writer stream) throws XMLStreamException;
 
   /**
    * Create a new XMLStreamWriter that writes to a stream
    * @param stream the stream to write to
-   * @throws XMLStreamException
+   * @return instance of the {@code XMLStreamWriter}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLStreamWriter createXMLStreamWriter(java.io.OutputStream stream) throws XMLStreamException;
 
@@ -317,7 +325,8 @@ public abstract class XMLOutputFactory {
    * Create a new XMLStreamWriter that writes to a stream
    * @param stream the stream to write to
    * @param encoding the encoding to use
-   * @throws XMLStreamException
+   * @return instance of the {@code XMLStreamWriter}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLStreamWriter createXMLStreamWriter(java.io.OutputStream stream,
                                          String encoding) throws XMLStreamException;
@@ -325,9 +334,10 @@ public abstract class XMLOutputFactory {
   /**
    * Create a new XMLStreamWriter that writes to a JAXP result.  This method is optional.
    * @param result the result to write to
+   * @return instance of the {@code XMLStreamWriter}
    * @throws UnsupportedOperationException if this method is not
    * supported by this XMLOutputFactory
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLStreamWriter createXMLStreamWriter(Result result) throws XMLStreamException;
 
@@ -335,16 +345,18 @@ public abstract class XMLOutputFactory {
   /**
    * Create a new XMLEventWriter that writes to a JAXP result.  This method is optional.
    * @param result the result to write to
+   * @return instance of the {@code XMLEventWriter}
    * @throws UnsupportedOperationException if this method is not
    * supported by this XMLOutputFactory
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLEventWriter createXMLEventWriter(Result result) throws XMLStreamException;
 
   /**
    * Create a new XMLEventWriter that writes to a stream
    * @param stream the stream to write to
-   * @throws XMLStreamException
+   * @return instance of the {@code XMLEventWriter}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLEventWriter createXMLEventWriter(java.io.OutputStream stream) throws XMLStreamException;
 
@@ -354,7 +366,8 @@ public abstract class XMLOutputFactory {
    * Create a new XMLEventWriter that writes to a stream
    * @param stream the stream to write to
    * @param encoding the encoding to use
-   * @throws XMLStreamException
+   * @return instance of the {@code XMLEventWriter}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLEventWriter createXMLEventWriter(java.io.OutputStream stream,
                                                      String encoding) throws XMLStreamException;
@@ -362,7 +375,8 @@ public abstract class XMLOutputFactory {
   /**
    * Create a new XMLEventWriter that writes to a writer
    * @param stream the stream to write to
-   * @throws XMLStreamException
+   * @return instance of the {@code XMLEventWriter}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLEventWriter createXMLEventWriter(java.io.Writer stream) throws XMLStreamException;
 

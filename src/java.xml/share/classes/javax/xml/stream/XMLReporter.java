@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,27 +35,16 @@ package javax.xml.stream;
 public interface XMLReporter {
 
     /**
-
      * Report the desired message in an application specific format.
-
      * Only warnings and non-fatal errors should be reported through
-
      * this interface.
-
      * Fatal errors should be thrown as XMLStreamException.
-
      *
-
      * @param message the error message
-
      * @param errorType an implementation defined error type
-
      * @param relatedInformation information related to the error, if available
-
      * @param location the location of the error, if available
-
-     * @throws XMLStreamException
-
+     * @throws XMLStreamException if an error occurs
      */
     public void report(String message, String errorType, Object relatedInformation, Location location)
             throws XMLStreamException;
