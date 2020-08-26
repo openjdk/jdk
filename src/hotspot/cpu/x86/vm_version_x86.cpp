@@ -50,12 +50,14 @@ address VM_Version::_cpuinfo_segv_addr = 0;
 address VM_Version::_cpuinfo_cont_addr = 0;
 
 static BufferBlob* stub_blob;
-static const int stub_size = 1100;
+static const int stub_size = 2000;
 
 extern "C" {
   typedef void (*get_cpu_info_stub_t)(void*);
+  typedef void (*detect_virt_stub_t)(uint32_t, uint32_t*);
 }
 static get_cpu_info_stub_t get_cpu_info_stub = NULL;
+static detect_virt_stub_t detect_virt_stub = NULL;
 
 
 class VM_Version_StubGenerator: public StubCodeGenerator {
@@ -568,6 +570,43 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ vzeroupper_uncached();
 #   undef __
   }
+  address generate_detect_virt() {
+    StubCodeMark mark(this, "VM_Version", "detect_virt_stub");
+#   define __ _masm->
+
+    address start = __ pc();
+
+    // Evacuate callee-saved registers
+    __ push(rbp);
+    __ push(rbx);
+    __ push(rsi); // for Windows
+
+#ifdef _LP64
+    __ mov(rax, c_rarg0); // CPUID leaf
+    __ mov(rsi, c_rarg1); // register array address (eax, ebx, ecx, edx)
+#else
+    __ movptr(rax, Address(rsp, 16)); // CPUID leaf
+    __ movptr(rsi, Address(rsp, 20)); // register array address
+#endif
+
+    __ cpuid();
+
+    // Store result to register array
+    __ movl(Address(rsi,  0), rax);
+    __ movl(Address(rsi,  4), rbx);
+    __ movl(Address(rsi,  8), rcx);
+    __ movl(Address(rsi, 12), rdx);
+
+    // Epilogue
+    __ pop(rsi);
+    __ pop(rbx);
+    __ pop(rbp);
+    __ ret(0);
+
+#   undef __
+
+    return start;
+  };
 };
 
 void VM_Version::get_processor_features() {
@@ -1671,55 +1710,11 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
     st->print_cr("VMWare virtualization detected");
     VirtualizationSupport::print_virtualization_info(st);
   } else if (vrt == HyperV) {
-    st->print_cr("HyperV virtualization detected");
+    st->print_cr("Hyper-V virtualization detected");
+  } else if (vrt == HyperVRole) {
+    st->print_cr("Hyper-V role detected");
   }
 }
-
-void VM_Version::check_virt_cpuid(uint32_t idx, uint32_t *regs) {
-// TODO support 32 bit
-#if defined(_LP64)
-#if defined(_MSC_VER)
-  // Allocate space for the code
-  const int code_size = 100;
-  ResourceMark rm;
-  CodeBuffer cb("detect_virt", code_size, 0);
-  MacroAssembler* a = new MacroAssembler(&cb);
-  address code = a->pc();
-  void (*test)(uint32_t idx, uint32_t *regs) = (void(*)(uint32_t idx, uint32_t *regs))code;
-
-  a->movq(r9, rbx); // save nonvolatile register
-
-  // next line would not work on 32-bit
-  a->movq(rax, c_rarg0 /* rcx */);
-  a->movq(r8, c_rarg1 /* rdx */);
-  a->cpuid();
-  a->movl(Address(r8,  0), rax);
-  a->movl(Address(r8,  4), rbx);
-  a->movl(Address(r8,  8), rcx);
-  a->movl(Address(r8, 12), rdx);
-
-  a->movq(rbx, r9); // restore nonvolatile register
-  a->ret(0);
-
-  uint32_t *code_end = (uint32_t *)a->pc();
-  a->flush();
-
-  // execute code
-  (*test)(idx, regs);
-#elif defined(__GNUC__)
-  __asm__ volatile (
-     "        cpuid;"
-     "        mov %%eax,(%1);"
-     "        mov %%ebx,4(%1);"
-     "        mov %%ecx,8(%1);"
-     "        mov %%edx,12(%1);"
-     : "+a" (idx)
-     : "S" (regs)
-     : "ebx", "ecx", "edx", "memory" );
-#endif
-#endif
-}
-
 
 bool VM_Version::use_biased_locking() {
 #if INCLUDE_RTM_OPT
@@ -1821,59 +1816,62 @@ bool VM_Version::compute_has_intel_jcc_erratum() {
 // https://kb.vmware.com/s/article/1009458
 //
 void VM_Version::check_virtualizations() {
-#if defined(_LP64)
-  uint32_t registers[4];
-  char signature[13];
-  uint32_t base;
-  signature[12] = '\0';
-  memset((void*)registers, 0, 4*sizeof(uint32_t));
+  uint32_t registers[4] = {0};
+  char signature[13] = {0};
 
-  for (base = 0x40000000; base < 0x40010000; base += 0x100) {
-    check_virt_cpuid(base, registers);
-
-    *(uint32_t *)(signature + 0) = registers[1];
-    *(uint32_t *)(signature + 4) = registers[2];
-    *(uint32_t *)(signature + 8) = registers[3];
+  // Xen cpuid leaves can be found 0x100 aligned boundary starting
+  // from 0x40000000 until 0x40010000.
+  //   https://lists.linuxfoundation.org/pipermail/virtualization/2012-May/019974.html
+  for (int leaf = 0x40000000; leaf < 0x40010000; leaf += 0x100) {
+    detect_virt_stub(leaf, registers);
+    memcpy(signature, &registers[1], 12);
 
     if (strncmp("VMwareVMware", signature, 12) == 0) {
       Abstract_VM_Version::_detected_virtualization = VMWare;
       // check for extended metrics from guestlib
       VirtualizationSupport::initialize();
-    }
-
-    if (strncmp("Microsoft Hv", signature, 12) == 0) {
+    } else if (strncmp("Microsoft Hv", signature, 12) == 0) {
       Abstract_VM_Version::_detected_virtualization = HyperV;
-    }
-
-    if (strncmp("KVMKVMKVM", signature, 9) == 0) {
+#ifdef _WINDOWS
+      // CPUID leaf 0x40000007 is available to the root partition only.
+      // See Hypervisor Top Level Functional Specification section 2.4.8 for more details.
+      //   https://github.com/MicrosoftDocs/Virtualization-Documentation/raw/master/tlfs/Hypervisor%20Top%20Level%20Functional%20Specification%20v6.0b.pdf
+      detect_virt_stub(0x40000007, registers);
+      if ((registers[0] != 0x0) ||
+          (registers[1] != 0x0) ||
+          (registers[2] != 0x0) ||
+          (registers[3] != 0x0)) {
+        Abstract_VM_Version::_detected_virtualization = HyperVRole;
+      }
+#endif
+    } else if (strncmp("KVMKVMKVM", signature, 9) == 0) {
       Abstract_VM_Version::_detected_virtualization = KVM;
-    }
-
-    if (strncmp("XenVMMXenVMM", signature, 12) == 0) {
+    } else if (strncmp("XenVMMXenVMM", signature, 12) == 0) {
       Abstract_VM_Version::_detected_virtualization = XenHVM;
     }
   }
-#endif
 }
 
 void VM_Version::initialize() {
   ResourceMark rm;
   // Making this stub must be FIRST use of assembler
-
-  stub_blob = BufferBlob::create("get_cpu_info_stub", stub_size);
+  stub_blob = BufferBlob::create("VM_Version stub", stub_size);
   if (stub_blob == NULL) {
-    vm_exit_during_initialization("Unable to allocate get_cpu_info_stub");
+    vm_exit_during_initialization("Unable to allocate stub for VM_Version");
   }
   CodeBuffer c(stub_blob);
   VM_Version_StubGenerator g(&c);
+
   get_cpu_info_stub = CAST_TO_FN_PTR(get_cpu_info_stub_t,
                                      g.generate_get_cpu_info());
+  detect_virt_stub = CAST_TO_FN_PTR(detect_virt_stub_t,
+                                     g.generate_detect_virt());
 
   get_processor_features();
 
   LP64_ONLY(Assembler::precompute_instructions();)
 
-  if (cpu_family() > 4) { // it supports CPUID
+  if (VM_Version::supports_hv()) { // Supports hypervisor
     check_virtualizations();
   }
 }
