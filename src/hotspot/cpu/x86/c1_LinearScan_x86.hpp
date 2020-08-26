@@ -78,7 +78,7 @@ inline void LinearScan::pd_add_temps(LIR_Op* op) {
       // assume that slow paths are uncommon but it's not clear that
       // would be a good idea.
       if (UseSSE > 0) {
-#ifndef PRODUCT
+#ifdef ASSERT
         if (TraceLinearScanLevel >= 2) {
           tty->print_cr("killing XMMs for trig");
         }
