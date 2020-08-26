@@ -29,6 +29,7 @@
 #include "gc/shared/gcArguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/java.hpp"
 
 void ZArguments::initialize_alignments() {
   SpaceAlignment = ZGranuleSize;

@@ -40,6 +40,7 @@
 #include "memory/metaspaceTracer.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "services/memTracker.hpp"

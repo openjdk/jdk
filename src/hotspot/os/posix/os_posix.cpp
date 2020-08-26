@@ -31,6 +31,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "services/memTracker.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/events.hpp"
