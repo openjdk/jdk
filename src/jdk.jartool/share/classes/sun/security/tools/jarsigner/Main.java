@@ -1431,7 +1431,7 @@ public class Main {
             x509Cert = (X509Certificate) c;
             certStr.append(tab).append(x509Cert.getType())
                 .append(rb.getString("COMMA"))
-                .append(x509Cert.getSubjectDN().getName());
+                .append(x509Cert.getSubjectX500Principal().toString());
         } else {
             certStr.append(tab).append(c.getType());
         }
@@ -2055,7 +2055,7 @@ public class Main {
                         // Only add TrustedCertificateEntry and self-signed
                         // PrivateKeyEntry
                         if (store.isCertificateEntry(a) ||
-                                c.getSubjectDN().equals(c.getIssuerDN())) {
+                                c.getSubjectX500Principal().equals(c.getIssuerX500Principal())) {
                             trustedCerts.add(c);
                         }
                     } catch (Exception e2) {

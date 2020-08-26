@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -562,10 +562,11 @@ final class LDAPCertStoreImpl {
         (X509CertSelector xsel, String ldapDN) throws CertStoreException {
 
         if (ldapDN == null) {
-            ldapDN = xsel.getSubjectAsString();
+            X500Principal subject = xsel.getSubject();
+            ldapDN = subject == null ? null : subject.getName();
         }
         int basicConstraints = xsel.getBasicConstraints();
-        String issuer = xsel.getIssuerAsString();
+        X500Principal issuer = xsel.getIssuer();
         HashSet<X509Certificate> certs = new HashSet<>();
         if (debug != null) {
             debug.println("LDAPCertStore.engineGetCertificates() basicConstraints: "
@@ -634,7 +635,7 @@ final class LDAPCertStoreImpl {
                 + "getMatchingCrossCerts...");
         }
         if ((issuer != null) && (basicConstraints > -2)) {
-            LDAPRequest request = new LDAPRequest(issuer);
+            LDAPRequest request = new LDAPRequest(issuer.getName());
             request.addRequestedAttribute(CROSS_CERT);
             request.addRequestedAttribute(CA_CERT);
             request.addRequestedAttribute(ARL);
