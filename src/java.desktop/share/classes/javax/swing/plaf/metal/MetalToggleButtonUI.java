@@ -82,6 +82,11 @@ public class MetalToggleButtonUI extends BasicToggleButtonUI {
     // ********************************
 
     /**
+     * Constructs a {@code MetalToggleButtonUI}.
+     */
+    public MetalToggleButtonUI() {}
+
+    /**
      * Constructs the {@code MetalToogleButtonUI}.
      *
      * @param b a component

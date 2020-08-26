@@ -140,5 +140,9 @@ public class MetalComboBoxEditor extends BasicComboBoxEditor {
     @SuppressWarnings("serial") // Same-version serialization only
     public static class UIResource extends MetalComboBoxEditor
     implements javax.swing.plaf.UIResource {
+        /**
+         * Constructs a {@code UIResource}.
+         */
+        public UIResource() {}
     }
 }

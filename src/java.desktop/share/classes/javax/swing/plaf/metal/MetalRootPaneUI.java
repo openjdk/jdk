@@ -124,6 +124,11 @@ public class MetalRootPaneUI extends BasicRootPaneUI
             Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
 
     /**
+     * Constructs a {@code MetalRootPaneUI}.
+     */
+    public MetalRootPaneUI() {}
+
+    /**
      * Creates a UI for a <code>JRootPane</code>.
      *
      * @param c the JRootPane the RootPaneUI will be created for

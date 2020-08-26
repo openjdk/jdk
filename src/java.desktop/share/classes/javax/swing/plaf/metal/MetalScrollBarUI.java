@@ -90,6 +90,11 @@ public class MetalScrollBarUI extends BasicScrollBarUI
     protected boolean isFreeStanding = true;
 
     /**
+     * Constructs a {@code MetalScrollBarUI}.
+     */
+    public MetalScrollBarUI() {}
+
+    /**
      * Constructs a new {@code MetalScrollBarUI} instance.
      *
      * @param c a component

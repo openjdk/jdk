@@ -57,6 +57,11 @@ public class MetalScrollPaneUI extends BasicScrollPaneUI
     private PropertyChangeListener scrollBarSwapListener;
 
     /**
+     * Constructs a {@code MetalScrollPaneUI}.
+     */
+    public MetalScrollPaneUI() {}
+
+    /**
      * Constructs a new {@code MetalScrollPaneUI}.
      *
      * @param x a component

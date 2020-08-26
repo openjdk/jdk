@@ -108,6 +108,10 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      */
     private static boolean useSystemFonts;
 
+    /**
+     * Constructs a {@code MetalLookAndFeel}.
+     */
+    public MetalLookAndFeel() {}
 
     /**
      * Returns true if running on Windows.

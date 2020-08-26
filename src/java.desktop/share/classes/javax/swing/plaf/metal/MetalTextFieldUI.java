@@ -51,6 +51,11 @@ import javax.swing.plaf.basic.*;
 public class MetalTextFieldUI extends BasicTextFieldUI {
 
     /**
+     * Constructs a {@code MetalTextFieldUI}.
+     */
+    public MetalTextFieldUI() {}
+
+    /**
      * Constructs {@code MetalTextFieldUI}.
      *
      * @param c a component

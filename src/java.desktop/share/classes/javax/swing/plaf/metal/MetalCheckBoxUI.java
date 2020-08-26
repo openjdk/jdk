@@ -69,6 +69,11 @@ public class MetalCheckBoxUI extends MetalRadioButtonUI {
     // ********************************
 
     /**
+     * Constructs a {@code MetalCheckBoxUI}.
+     */
+    public MetalCheckBoxUI() {}
+
+    /**
      * Returns an instance of {@code MetalCheckBoxUI}.
      *
      * @param b a component

@@ -54,6 +54,11 @@ import javax.swing.plaf.basic.BasicSeparatorUI;
 public class MetalSeparatorUI extends BasicSeparatorUI
 {
     /**
+     * Constructs a {@code MetalSeparatorUI}.
+     */
+    public MetalSeparatorUI() {}
+
+    /**
      * Constructs a new {@code MetalSeparatorUI} instance.
      *
      * @param c a component

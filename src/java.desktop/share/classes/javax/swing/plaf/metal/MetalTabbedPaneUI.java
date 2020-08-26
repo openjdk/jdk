@@ -81,6 +81,11 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
     private Color oceanSelectedBorderColor;
 
     /**
+     * Constructs a {@code MetalTabbedPaneUI}.
+     */
+    public MetalTabbedPaneUI() {}
+
+    /**
      * Constructs {@code MetalTabbedPaneUI}.
      *
      * @param x a component

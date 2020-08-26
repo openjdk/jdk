@@ -77,6 +77,11 @@ public class MetalButtonUI extends BasicButtonUI {
     // ********************************
 
     /**
+     * Constructs a {@code MetalButtonUI}.
+     */
+    public MetalButtonUI() {}
+
+    /**
      * Returns an instance of {@code MetalButtonUI}.
      *
      * @param c a component
