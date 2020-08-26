@@ -1767,31 +1767,6 @@ WB_ENTRY(jlong, WB_MetaspaceReserveAlignment(JNIEnv* env, jobject wb))
   return (jlong)Metaspace::reserve_alignment();
 WB_END
 
-WB_ENTRY(void, WB_AssertMatchingSafepointCalls(JNIEnv* env, jobject o, jboolean mutexSafepointValue, jboolean attemptedNoSafepointValue))
-  Mutex::SafepointCheckRequired sfpt_check_required = mutexSafepointValue ?
-                                           Mutex::_safepoint_check_always :
-                                           Mutex::_safepoint_check_never;
-  Mutex::SafepointCheckFlag sfpt_check_attempted = attemptedNoSafepointValue ?
-                                           Mutex::_no_safepoint_check_flag :
-                                           Mutex::_safepoint_check_flag;
-  MutexLocker ml(new Mutex(Mutex::leaf, "SFPT_Test_lock", true, sfpt_check_required),
-                 sfpt_check_attempted);
-WB_END
-
-WB_ENTRY(void, WB_AssertSpecialLock(JNIEnv* env, jobject o, jboolean allowVMBlock, jboolean safepointCheck))
-  // Create a special lock violating condition in value
-  Mutex::SafepointCheckRequired sfpt_check_required = safepointCheck ?
-                                           Mutex::_safepoint_check_always :
-                                           Mutex::_safepoint_check_never;
-  Mutex::SafepointCheckFlag safepoint_check = safepointCheck ?
-                                           Monitor::_safepoint_check_flag :
-                                           Monitor::_no_safepoint_check_flag;
-
-  MutexLocker ml(new Mutex(Mutex::special, "SpecialTest_lock", allowVMBlock, sfpt_check_required), safepoint_check);
-  // If the lock above succeeds, try to safepoint to test the NSV implied with this special lock.
-  ThreadBlockInVM tbivm(thread);
-WB_END
-
 WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
   oop obj_oop = JNIHandles::resolve(obj);
   return (jboolean) obj_oop->mark().has_monitor();
@@ -2468,8 +2443,6 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddModuleExportsToAllUnnamed },
   {CC"AddModuleExportsToAll", CC"(Ljava/lang/Object;Ljava/lang/String;)V",
                                                       (void*)&WB_AddModuleExportsToAll },
-  {CC"assertMatchingSafepointCalls", CC"(ZZ)V",       (void*)&WB_AssertMatchingSafepointCalls },
-  {CC"assertSpecialLock",  CC"(ZZ)V",                 (void*)&WB_AssertSpecialLock },
   {CC"deflateIdleMonitors", CC"()Z",                  (void*)&WB_DeflateIdleMonitors },
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
