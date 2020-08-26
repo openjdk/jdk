@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ Java_sun_awt_windows_WInputMethod_createNativeContext(JNIEnv *env, jobject self)
     TRY;
 
     // use special message to call ImmCreateContext() in main thread.
-    return (jint)AwtToolkit::GetInstance().SendMessage(WM_AWT_CREATECONTEXT);
+    return (jint)AwtToolkit::GetInstance().InvokeInputMethodFunction(WM_AWT_CREATECONTEXT);
 
     CATCH_BAD_ALLOC_RET(0);
 }
@@ -74,7 +74,7 @@ Java_sun_awt_windows_WInputMethod_destroyNativeContext(JNIEnv *env, jobject self
     TRY_NO_VERIFY;
 
     // use special message to call ImmDestroyContext() in main thread.
-    AwtToolkit::GetInstance().SendMessage(WM_AWT_DESTROYCONTEXT, context, 0);
+    AwtToolkit::GetInstance().InvokeInputMethodFunction(WM_AWT_DESTROYCONTEXT, context, 0);
 
     CATCH_BAD_ALLOC;
 }
@@ -101,7 +101,7 @@ Java_sun_awt_windows_WInputMethod_enableNativeIME(JNIEnv *env, jobject self, job
     enis->context = context;
     enis->useNativeCompWindow = useNativeCompWindow;
 
-    AwtToolkit::GetInstance().SendMessage(WM_AWT_ASSOCIATECONTEXT,
+    AwtToolkit::GetInstance().InvokeInputMethodFunction(WM_AWT_ASSOCIATECONTEXT,
                                           reinterpret_cast<WPARAM>(enis), (LPARAM)0);
     // global refs are deleted in message handler
 
@@ -128,7 +128,7 @@ Java_sun_awt_windows_WInputMethod_disableNativeIME(JNIEnv *env, jobject self, jo
     enis->context = NULL;
     enis->useNativeCompWindow = JNI_TRUE;
 
-    AwtToolkit::GetInstance().SendMessage(WM_AWT_ASSOCIATECONTEXT,
+    AwtToolkit::GetInstance().InvokeInputMethodFunction(WM_AWT_ASSOCIATECONTEXT,
                                           reinterpret_cast<WPARAM>(enis), (LPARAM)0);
     // global refs are deleted in message handler
 
@@ -205,7 +205,7 @@ Java_sun_awt_windows_WInputMethod_endCompositionNative(JNIEnv *env, jobject self
     // 10/29/98 - Changed to commit it according to the flag.
 
     // use special message to call ImmNotifyIME() in main thread.
-    AwtToolkit::GetInstance().SendMessage(WM_AWT_ENDCOMPOSITION, context,
+    AwtToolkit::GetInstance().InvokeInputMethodFunction(WM_AWT_ENDCOMPOSITION, context,
         (LPARAM)(flag != sun_awt_windows_WInputMethod_DISCARD_INPUT));
 
     CATCH_BAD_ALLOC;
@@ -222,7 +222,7 @@ Java_sun_awt_windows_WInputMethod_setConversionStatus(JNIEnv *env, jobject self,
     TRY;
 
     // use special message to call ImmSetConversionStatus() in main thread.
-    AwtToolkit::GetInstance().SendMessage(WM_AWT_SETCONVERSIONSTATUS,
+    AwtToolkit::GetInstance().InvokeInputMethodFunction(WM_AWT_SETCONVERSIONSTATUS,
                                           context,
                                           MAKELPARAM((WORD)request, (WORD)0));
 
@@ -240,7 +240,7 @@ Java_sun_awt_windows_WInputMethod_getConversionStatus(JNIEnv *env, jobject self,
     TRY;
 
     // use special message to call ImmSetConversionStatus() in main thread.
-    return (jint) AwtToolkit::GetInstance().SendMessage(
+    return (jint) AwtToolkit::GetInstance().InvokeInputMethodFunction(
         WM_AWT_GETCONVERSIONSTATUS, context, 0);
 
     CATCH_BAD_ALLOC_RET(0);
@@ -257,7 +257,7 @@ Java_sun_awt_windows_WInputMethod_setOpenStatus(JNIEnv *env, jobject self, jint 
     TRY;
 
     // use special message to call ImmSetConversionStatus() in main thread.
-    AwtToolkit::GetInstance().SendMessage(WM_AWT_SETOPENSTATUS,
+    AwtToolkit::GetInstance().InvokeInputMethodFunction(WM_AWT_SETOPENSTATUS,
                                           context, flag);
 
     CATCH_BAD_ALLOC;
@@ -274,7 +274,7 @@ Java_sun_awt_windows_WInputMethod_getOpenStatus(JNIEnv *env, jobject self, jint 
     TRY;
 
     // use special message to call ImmSetConversionStatus() in main thread.
-    return (jboolean)(AwtToolkit::GetInstance().SendMessage(
+    return (jboolean)(AwtToolkit::GetInstance().InvokeInputMethodFunction(
                                                        WM_AWT_GETOPENSTATUS,
                                                        context, 0));
     CATCH_BAD_ALLOC_RET(0);
@@ -392,7 +392,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WInputMethod_setStatusWindowVisible
         jobject peerGlobalRef = env->NewGlobalRef(peer);
 
         // use special message to access pData on the toolkit thread
-        LRESULT res = AwtToolkit::GetInstance().SendMessage(WM_AWT_GET_DEFAULT_IME_HANDLER,
+        LRESULT res = AwtToolkit::GetInstance().InvokeInputMethodFunction(WM_AWT_GET_DEFAULT_IME_HANDLER,
                                           reinterpret_cast<WPARAM>(peerGlobalRef), 0);
         // global ref is deleted in message handler
 
@@ -431,7 +431,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WInputMethod_openCandidateWindow
     // See CR 4805862, AwtToolkit::WndProc
 
     // use special message to open candidate window in main thread.
-    AwtToolkit::GetInstance().SendMessage(WM_AWT_OPENCANDIDATEWINDOW,
+    AwtToolkit::GetInstance().InvokeInputMethodFunction(WM_AWT_OPENCANDIDATEWINDOW,
                                           (WPARAM)peerGlobalRef, MAKELONG(x, y));
     // global ref is deleted in message handler
 
