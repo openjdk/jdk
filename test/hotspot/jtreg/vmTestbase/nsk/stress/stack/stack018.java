@@ -46,10 +46,10 @@
  *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
- * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp")
+ * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
  * @library /vmTestbase
  * @build nsk.share.Terminator
- * @run main/othervm/timeout=900 -Xss448K nsk.stress.stack.stack018 -eager
+ * @run main/othervm/timeout=900 -Xss220K nsk.stress.stack.stack018 -eager
  */
 
 package nsk.stress.stack;
