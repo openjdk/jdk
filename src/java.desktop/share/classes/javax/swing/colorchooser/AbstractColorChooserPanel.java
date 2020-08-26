@@ -74,6 +74,11 @@ public abstract class AbstractColorChooserPanel extends JPanel {
     private JColorChooser chooser;
 
     /**
+     * Constructor for subclasses to call.
+     */
+    protected AbstractColorChooserPanel() {}
+
+    /**
       * Invoked automatically when the model's state changes.
       * It is also called by <code>installChooserPanel</code> to allow
       * you to set up the initial state of your chooser.

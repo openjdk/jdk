@@ -41,6 +41,11 @@ import javax.swing.text.StyleContext;
 public class HTML {
 
     /**
+     * Constructs a {@code HTML}.
+     */
+    public HTML() {}
+
+    /**
      * Typesafe enumeration for an HTML tag.  Although the
      * set of HTML tags is a closed set, we have left the
      * set open so that people can add their own tag types

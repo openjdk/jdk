@@ -50,6 +50,11 @@ import java.io.Serializable;
 public abstract class AbstractBorder implements Border, Serializable
 {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected AbstractBorder() {}
+
+    /**
      * This default implementation does no painting.
      * @param c the component for which this border is being painted
      * @param g the paint graphics

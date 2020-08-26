@@ -67,6 +67,11 @@ public abstract class AbstractTableModel implements TableModel, Serializable
     /** List of listeners */
     protected EventListenerList listenerList = new EventListenerList();
 
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected AbstractTableModel() {}
+
 //
 // Default Implementation of the Interface
 //

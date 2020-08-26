@@ -870,6 +870,11 @@ public class JFormattedTextField extends JTextField {
      */
     public abstract static class AbstractFormatterFactory {
         /**
+         * Constructor for subclasses to call.
+         */
+        protected AbstractFormatterFactory() {}
+
+        /**
          * Returns an <code>AbstractFormatter</code> that can handle formatting
          * of the passed in <code>JFormattedTextField</code>.
          *
@@ -913,6 +918,11 @@ public class JFormattedTextField extends JTextField {
      */
     public abstract static class AbstractFormatter implements Serializable {
         private JFormattedTextField ftf;
+
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected AbstractFormatter() {}
 
         /**
          * Installs the <code>AbstractFormatter</code> onto a particular

@@ -154,6 +154,10 @@ public class ScrollPaneLayout
      */
     protected int hsbPolicy = HORIZONTAL_SCROLLBAR_AS_NEEDED;
 
+    /**
+     * Constructs a {@code ScrollPaneLayout}.
+     */
+    public ScrollPaneLayout() {}
 
     /**
      * This method is invoked after the ScrollPaneLayout is set as the
@@ -1116,5 +1120,10 @@ public class ScrollPaneLayout
     /**
      * The UI resource version of <code>ScrollPaneLayout</code>.
      */
-    public static class UIResource extends ScrollPaneLayout implements javax.swing.plaf.UIResource {}
+    public static class UIResource extends ScrollPaneLayout implements javax.swing.plaf.UIResource {
+        /**
+         * Constructs a {@code UIResource}.
+         */
+        public UIResource() {}
+    }
 }

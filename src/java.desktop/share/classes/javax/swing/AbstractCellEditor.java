@@ -62,6 +62,11 @@ public abstract class AbstractCellEditor implements CellEditor, Serializable {
      */
     protected transient ChangeEvent changeEvent = null;
 
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected AbstractCellEditor() {}
+
     // Force this to be implemented.
     // public Object  getCellEditorValue()
 

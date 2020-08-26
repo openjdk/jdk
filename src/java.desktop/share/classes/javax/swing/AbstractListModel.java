@@ -55,6 +55,10 @@ public abstract class AbstractListModel<E> implements ListModel<E>, Serializable
      */
     protected EventListenerList listenerList = new EventListenerList();
 
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected AbstractListModel() {}
 
     /**
      * Adds a listener to the list that's notified each time a change

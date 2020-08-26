@@ -1889,6 +1889,11 @@ public class HTMLDocument extends DefaultStyledDocument {
     public abstract static class Iterator {
 
         /**
+         * Constructor for subclasses to call.
+         */
+        protected Iterator() {}
+
+        /**
          * Return the attributes for this tag.
          * @return the <code>AttributeSet</code> for this tag, or
          *      <code>null</code> if none can be found
@@ -2966,6 +2971,10 @@ public class HTMLDocument extends DefaultStyledDocument {
          * switch statement.
          */
         public class TagAction {
+            /**
+             * Constructs a {@code TagAction}.
+             */
+            public TagAction() {}
 
             /**
              * Called when a start tag is seen for the
@@ -3000,6 +3009,10 @@ public class HTMLDocument extends DefaultStyledDocument {
          * Action assigned by default to handle the Block task of the reader.
          */
         public class BlockAction extends TagAction {
+            /**
+             * Constructs a {@code BlockAction}.
+             */
+            public BlockAction() {}
 
             public void start(HTML.Tag t, MutableAttributeSet attr) {
                 blockOpen(t, attr);
@@ -3041,6 +3054,11 @@ public class HTMLDocument extends DefaultStyledDocument {
          */
         public class ParagraphAction extends BlockAction {
 
+            /**
+             * Constructs a {@code ParagraphAction}.
+             */
+            public ParagraphAction() {}
+
             public void start(HTML.Tag t, MutableAttributeSet a) {
                 super.start(t, a);
                 inParagraph = true;
@@ -3056,6 +3074,10 @@ public class HTMLDocument extends DefaultStyledDocument {
          * Action assigned by default to handle the Special task of the reader.
          */
         public class SpecialAction extends TagAction {
+            /**
+             * Constructs a {@code SpecialAction}.
+             */
+            public SpecialAction() {}
 
             public void start(HTML.Tag t, MutableAttributeSet a) {
                 addSpecialElement(t, a);
@@ -3067,6 +3089,11 @@ public class HTMLDocument extends DefaultStyledDocument {
          * Action assigned by default to handle the Isindex task of the reader.
          */
         public class IsindexAction extends TagAction {
+
+            /**
+             * Constructs a {@code IsindexAction}.
+             */
+            public IsindexAction() {}
 
             public void start(HTML.Tag t, MutableAttributeSet a) {
                 blockOpen(HTML.Tag.IMPLIED, new SimpleAttributeSet());
@@ -3081,6 +3108,11 @@ public class HTMLDocument extends DefaultStyledDocument {
          * Action assigned by default to handle the Hidden task of the reader.
          */
         public class HiddenAction extends TagAction {
+
+            /**
+             * Constructs a {@code HiddenAction}.
+             */
+            public HiddenAction() {}
 
             public void start(HTML.Tag t, MutableAttributeSet a) {
                 addSpecialElement(t, a);
@@ -3311,6 +3343,11 @@ public class HTMLDocument extends DefaultStyledDocument {
          */
         public class PreAction extends BlockAction {
 
+            /**
+             * Constructs a {@code PreAction}.
+             */
+            public PreAction() {}
+
             public void start(HTML.Tag t, MutableAttributeSet attr) {
                 inPre = true;
                 blockOpen(t, attr);
@@ -3331,6 +3368,11 @@ public class HTMLDocument extends DefaultStyledDocument {
          * Action assigned by default to handle the Character task of the reader.
          */
         public class CharacterAction extends TagAction {
+
+            /**
+             * Constructs a {@code CharacterAction}.
+             */
+            public CharacterAction() {}
 
             public void start(HTML.Tag t, MutableAttributeSet attr) {
                 pushCharacterStyle();
@@ -3583,6 +3625,11 @@ public class HTMLDocument extends DefaultStyledDocument {
          * </table>
          */
         public class FormAction extends SpecialAction {
+
+            /**
+             * Constructs a {@code FormAction}.
+             */
+            public FormAction() {}
 
             public void start(HTML.Tag t, MutableAttributeSet attr) {
                 if (t == HTML.Tag.INPUT) {

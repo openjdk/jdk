@@ -400,6 +400,10 @@ public class DefaultTableCellRenderer extends JLabel
     public static class UIResource extends DefaultTableCellRenderer
         implements javax.swing.plaf.UIResource
     {
+        /**
+         * Constructs a {@code UIResource}.
+         */
+        public UIResource() {}
     }
 
 }
