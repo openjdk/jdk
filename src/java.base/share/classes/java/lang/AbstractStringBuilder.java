@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -585,7 +585,12 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         return this;
     }
 
-    // Documentation in subclasses because of synchro difference
+    /**
+     * Appends the specified {@code StringBuffer} to this sequence.
+     *
+     * @param   sb   the {@code StringBuffer} to append.
+     * @return  a reference to this object.
+     */
     public AbstractStringBuilder append(StringBuffer sb) {
         return this.append((AbstractStringBuilder)sb);
     }

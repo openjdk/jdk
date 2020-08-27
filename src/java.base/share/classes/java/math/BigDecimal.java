@@ -5403,7 +5403,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *
      * @param n the numerator; must be negative
      * @param d the denominator; must not be unity
-     * @return a two-element {@long} array with the remainder and quotient in
+     * @return a two-element {@code long} array with the remainder and quotient in
      *         the initial and final elements, respectively
      */
     private static long[] divRemNegativeLong(long n, long d) {

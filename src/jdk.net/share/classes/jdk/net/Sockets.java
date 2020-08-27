@@ -25,14 +25,20 @@
 
 package jdk.net;
 
-import java.net.*;
+import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
+
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.MulticastSocket;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketOption;
+import java.net.StandardSocketOptions;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
 
 /**
  * Defines static methods to set and get socket options defined by the
@@ -50,8 +56,14 @@ import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
  * The details are specified in {@link ExtendedSocketOptions}. No permission
  * is required for {@link java.net.StandardSocketOptions}.
  *
+ * @deprecated
+ * Java SE 9 added standard methods to set/get socket options, and retrieve the per-Socket
+ * supported options effectively rendering this API redundant. Please refer to the corresponding
+ * socket's class for the equivalent method to set/get a socket option or retrieve available socket options.
+ *
  * @see java.nio.channels.NetworkChannel
  */
+@Deprecated(since = "16")
 public class Sockets {
 
     private static final Map<Class<?>,Set<SocketOption<?>>>
@@ -80,8 +92,11 @@ public class Sockets {
      *
      * @throws NullPointerException if name is null
      *
+     * @deprecated use {@link java.net.Socket#setOption(SocketOption, Object)} instead.
+     *
      * @see java.net.StandardSocketOptions
      */
+    @Deprecated(since = "16")
     public static <T> void setOption(Socket s, SocketOption<T> name, T value) throws IOException
     {
         s.setOption(name, value);
@@ -105,8 +120,11 @@ public class Sockets {
      *
      * @throws NullPointerException if name is null
      *
+     * @deprecated use {@link java.net.Socket#getOption(SocketOption)} instead.
+     *
      * @see java.net.StandardSocketOptions
      */
+    @Deprecated(since = "16")
     public static <T> T getOption(Socket s, SocketOption<T> name) throws IOException
     {
         return s.getOption(name);
@@ -132,8 +150,11 @@ public class Sockets {
      * @throws SecurityException if a security manager is set and the
      *         caller does not have any required permission.
      *
+     * @deprecated use {@link java.net.ServerSocket#setOption(SocketOption, Object)} instead.
+     *
      * @see java.net.StandardSocketOptions
      */
+    @Deprecated(since = "16")
     public static <T> void setOption(ServerSocket s, SocketOption<T> name, T value) throws IOException
     {
         s.setOption(name, value);
@@ -157,8 +178,11 @@ public class Sockets {
      * @throws SecurityException if a security manager is set and the
      *         caller does not have any required permission.
      *
+     * @deprecated use {@link java.net.ServerSocket#getOption(SocketOption)} instead.
+     *
      * @see java.net.StandardSocketOptions
      */
+    @Deprecated(since = "16")
     public static <T> T getOption(ServerSocket s, SocketOption<T> name) throws IOException
     {
         return s.getOption(name);
@@ -185,8 +209,11 @@ public class Sockets {
      * @throws SecurityException if a security manager is set and the
      *         caller does not have any required permission.
      *
+     * @deprecated use {@link java.net.DatagramSocket#setOption(SocketOption, Object)} instead.
+     *
      * @see java.net.StandardSocketOptions
      */
+    @Deprecated(since = "16")
     public static <T> void setOption(DatagramSocket s, SocketOption<T> name, T value) throws IOException
     {
         s.setOption(name, value);
@@ -211,8 +238,11 @@ public class Sockets {
      * @throws SecurityException if a security manager is set and the
      *         caller does not have any required permission.
      *
+     * @deprecated use {@link java.net.DatagramSocket#getOption(SocketOption)} instead.
+     *
      * @see java.net.StandardSocketOptions
      */
+    @Deprecated(since = "16")
     public static <T> T getOption(DatagramSocket s, SocketOption<T> name) throws IOException
     {
         return s.getOption(name);
@@ -227,7 +257,11 @@ public class Sockets {
      *
      * @throws IllegalArgumentException if socketType is not a valid
      *         socket type from the java.net package.
+     *
+     * @deprecated use {@link Socket#supportedOptions()}, {@link ServerSocket#supportedOptions()},
+     *             or {@link DatagramSocket#supportedOptions()} instead.
      */
+    @Deprecated(since = "16", forRemoval=true)
     public static Set<SocketOption<?>> supportedOptions(Class<?> socketType) {
         Set<SocketOption<?>> set = options.get(socketType);
         if (set == null) {

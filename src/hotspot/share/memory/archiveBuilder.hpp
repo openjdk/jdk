@@ -25,6 +25,7 @@
 #ifndef SHARE_MEMORY_ARCHIVEBUILDER_HPP
 #define SHARE_MEMORY_ARCHIVEBUILDER_HPP
 
+#include "memory/archiveUtils.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/growableArray.hpp"

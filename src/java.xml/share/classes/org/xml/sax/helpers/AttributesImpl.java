@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,7 +417,7 @@ public class AttributesImpl implements Attributes
      *        if qualified names are not available.
      * @param type The attribute type as a string.
      * @param value The attribute value.
-     * @exception java.lang.ArrayIndexOutOfBoundsException When the
+     * @throws java.lang.ArrayIndexOutOfBoundsException When the
      *            supplied index does not point to an attribute
      *            in the list.
      */
@@ -440,7 +440,7 @@ public class AttributesImpl implements Attributes
      * Remove an attribute from the list.
      *
      * @param index The index of the attribute (zero-based).
-     * @exception java.lang.ArrayIndexOutOfBoundsException When the
+     * @throws java.lang.ArrayIndexOutOfBoundsException When the
      *            supplied index does not point to an attribute
      *            in the list.
      */
@@ -470,7 +470,7 @@ public class AttributesImpl implements Attributes
      * @param index The index of the attribute (zero-based).
      * @param uri The attribute's Namespace URI, or the empty
      *        string for none.
-     * @exception java.lang.ArrayIndexOutOfBoundsException When the
+     * @throws java.lang.ArrayIndexOutOfBoundsException When the
      *            supplied index does not point to an attribute
      *            in the list.
      */
@@ -490,7 +490,7 @@ public class AttributesImpl implements Attributes
      * @param index The index of the attribute (zero-based).
      * @param localName The attribute's local name, or the empty
      *        string for none.
-     * @exception java.lang.ArrayIndexOutOfBoundsException When the
+     * @throws java.lang.ArrayIndexOutOfBoundsException When the
      *            supplied index does not point to an attribute
      *            in the list.
      */
@@ -510,7 +510,7 @@ public class AttributesImpl implements Attributes
      * @param index The index of the attribute (zero-based).
      * @param qName The attribute's qualified name, or the empty
      *        string for none.
-     * @exception java.lang.ArrayIndexOutOfBoundsException When the
+     * @throws java.lang.ArrayIndexOutOfBoundsException When the
      *            supplied index does not point to an attribute
      *            in the list.
      */
@@ -529,7 +529,7 @@ public class AttributesImpl implements Attributes
      *
      * @param index The index of the attribute (zero-based).
      * @param type The attribute's type.
-     * @exception java.lang.ArrayIndexOutOfBoundsException When the
+     * @throws java.lang.ArrayIndexOutOfBoundsException When the
      *            supplied index does not point to an attribute
      *            in the list.
      */
@@ -548,7 +548,7 @@ public class AttributesImpl implements Attributes
      *
      * @param index The index of the attribute (zero-based).
      * @param value The attribute's value.
-     * @exception java.lang.ArrayIndexOutOfBoundsException When the
+     * @throws java.lang.ArrayIndexOutOfBoundsException When the
      *            supplied index does not point to an attribute
      *            in the list.
      */
@@ -604,7 +604,7 @@ public class AttributesImpl implements Attributes
      * Report a bad array index in a manipulator.
      *
      * @param index The index to report.
-     * @exception java.lang.ArrayIndexOutOfBoundsException Always.
+     * @throws java.lang.ArrayIndexOutOfBoundsException Always.
      */
     private void badIndex (int index)
         throws ArrayIndexOutOfBoundsException

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,9 +137,9 @@ public interface EntityResolver2 extends EntityResolver
      *  to be used by the parser, or null to indicate that no external
      *  subset is provided.
      *
-     * @exception SAXException Any SAX exception, possibly wrapping
+     * @throws SAXException Any SAX exception, possibly wrapping
      *  another exception.
-     * @exception IOException Probably indicating a failure to create
+     * @throws IOException Probably indicating a failure to create
      *  a new InputStream or Reader, or an illegal URL.
      */
     public InputSource getExternalSubset (String name, String baseURI)
@@ -194,9 +194,9 @@ public interface EntityResolver2 extends EntityResolver
      *  resolve the system ID against the base URI and open a connection
      *  to resulting URI.
      *
-     * @exception SAXException Any SAX exception, possibly wrapping
+     * @throws SAXException Any SAX exception, possibly wrapping
      *  another exception.
-     * @exception IOException Probably indicating a failure to create
+     * @throws IOException Probably indicating a failure to create
      *  a new InputStream or Reader, or an illegal URL.
      */
     public InputSource resolveEntity (

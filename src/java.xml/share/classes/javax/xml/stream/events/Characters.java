@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ package javax.xml.stream.events;
 public interface Characters extends XMLEvent {
   /**
    * Get the character data of this event
+   * @return the character data
    */
   public String getData();
 
@@ -49,6 +50,7 @@ public interface Characters extends XMLEvent {
    * is reported as CHARACTERS.  This method allows
    * checking of CHARACTERS events to see if they
    * are composed of only whitespace characters
+   * @return true if the {@code Characters} are all whitespace, false otherwise
    */
   public boolean isWhiteSpace();
 
@@ -60,6 +62,7 @@ public interface Characters extends XMLEvent {
    * that are surrounded by non CDATA characters will be reported
    * as a single Characters event. This method will return false
    * in this case.
+   * @return true if it is {@code CDATA}, false otherwise
    */
   public boolean isCData();
 
@@ -67,6 +70,7 @@ public interface Characters extends XMLEvent {
    * Return true if this is ignorableWhiteSpace.  If
    * this event is ignorableWhiteSpace its event type will
    * be SPACE.
+   * @return true if it is ignorable whitespace, false otherwise
    */
   public boolean isIgnorableWhiteSpace();
 

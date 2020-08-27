@@ -444,7 +444,7 @@ public class JavacParser implements Parser {
             }
         }
         S.errPos(pos);
-        if (token.pos == errorPos) {
+        if (token.pos == errorPos && token.kind != EOF) {
             //check for a possible infinite loop in parsing:
             Assert.check(count++ < RECOVERY_THRESHOLD);
         } else {
@@ -4048,6 +4048,8 @@ public class JavacParser implements Parser {
             skip(false, true, false, false);
             if (token.kind == LBRACE)
                 nextToken();
+            else
+                return List.nil();
         }
         ListBuffer<JCTree> defs = new ListBuffer<>();
         while (token.kind != RBRACE && token.kind != EOF) {

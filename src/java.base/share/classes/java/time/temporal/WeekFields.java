@@ -359,6 +359,7 @@ public final class WeekFields implements Serializable {
      * Check that the values are valid.
      *
      * @param s the stream to read
+     * @throws IOException if an I/O error occurs
      * @throws InvalidObjectException if the serialized object has an invalid
      *     value for firstDayOfWeek or minimalDays.
      * @throws ClassNotFoundException if a class cannot be resolved

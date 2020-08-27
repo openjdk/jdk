@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,5 +80,11 @@ public class ErrorHandler {
         for (String p : patterns) {
             runTest(i++).shouldMatch(p);
         }
+
+        // Tests after here could be handled by above iterations, but doing
+        // so would renumber ErrorHandlerTest cases, requiring updates a
+        // bunch of other test programs.
+
+        runTest(18).shouldContain("memory leak: allocating without ResourceMark");
     }
 }

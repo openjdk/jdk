@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -315,7 +315,7 @@ public class ServerSocket implements java.io.Closeable {
     /**
      * Creates the socket implementation.
      *
-     * @throws IOException if creation fails
+     * @throws SocketException if creation fails
      * @since 1.4
      */
     void createImpl() throws SocketException {

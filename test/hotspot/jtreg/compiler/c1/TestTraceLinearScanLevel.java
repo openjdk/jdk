@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,18 @@
  * questions.
  */
 
-
 /*
  * @test
+ * @bug 8251093
+ * @summary Sanity check the flag TraceLinearScanLevel with the highest level in a silent HelloWorld program.
  *
- * @summary converted from VM Testbase jit/t/t109.
- * VM Testbase keywords: [jit, quick]
- * VM Testbase readme:
- * Clone of t084.  The pass file changed in JDK 1.2.
- *
- * @library /vmTestbase
- *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t109.t109
- * @run driver ExecDriver --java jit.t.t109.t109
+ * @requires vm.debug == true & vm.compiler1.enabled
+ * @run main/othervm -XX:TraceLinearScanLevel=4 compiler.c1.TestTraceLinearScanLevel
  */
+package compiler.c1;
+
+public class TestTraceLinearScanLevel {
+    public static void main(String[] strArr) {
+    }
+}
 

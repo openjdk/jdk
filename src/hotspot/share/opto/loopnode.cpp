@@ -4209,17 +4209,26 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
           }
         } else {
           Node *sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
-          const TypePtr* adr_type = s->adr_type();
-          if (s->is_ArrayCopy()) {
-            // Copy to known instance needs destination type to test for aliasing
-            const TypePtr* dest_type = s->as_ArrayCopy()->_dest_type;
-            if (dest_type != TypeOopPtr::BOTTOM) {
-              adr_type = dest_type;
-            }
-          }
           assert(sctrl != NULL || !s->is_reachable_from_root(), "must have control");
-          if (sctrl != NULL && !sctrl->is_top() && C->can_alias(adr_type, load_alias_idx) && is_dominator(early, sctrl)) {
-            LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
+          if (sctrl != NULL && !sctrl->is_top() && is_dominator(early, sctrl)) {
+            const TypePtr* adr_type = s->adr_type();
+            if (s->is_ArrayCopy()) {
+              // Copy to known instance needs destination type to test for aliasing
+              const TypePtr* dest_type = s->as_ArrayCopy()->_dest_type;
+              if (dest_type != TypeOopPtr::BOTTOM) {
+                adr_type = dest_type;
+              }
+            }
+            if (C->can_alias(adr_type, load_alias_idx)) {
+              LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
+            } else if (s->is_CFG()) {
+              for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
+                Node* s1 = s->fast_out(i);
+                if (_igvn.type(s1) == Type::MEMORY) {
+                  worklist.push(s1);
+                }
+              }
+            }
           }
         }
       }

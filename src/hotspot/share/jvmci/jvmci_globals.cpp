@@ -28,6 +28,7 @@
 #include "gc/shared/gcConfig.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 
 fileStream* JVMCIGlobals::_jni_config_file = NULL;

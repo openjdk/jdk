@@ -30,67 +30,17 @@
 
 template <typename T>
 inline ZArray<T>::ZArray() :
-    _array(NULL),
-    _size(0),
-    _capacity(0) {}
-
-template <typename T>
-inline ZArray<T>::~ZArray() {
-  FREE_C_HEAP_ARRAY(T, _array);
-}
-
-template <typename T>
-inline size_t ZArray<T>::size() const {
-  return _size;
-}
-
-template <typename T>
-inline bool ZArray<T>::is_empty() const {
-  return size() == 0;
-}
-
-template <typename T>
-inline T ZArray<T>::at(size_t index) const {
-  assert(index < _size, "Index out of bounds");
-  return _array[index];
-}
-
-template <typename T>
-inline void ZArray<T>::expand(size_t new_capacity) {
-  T* new_array = NEW_C_HEAP_ARRAY(T, new_capacity, mtGC);
-  if (_array != NULL) {
-    memcpy(new_array, _array, sizeof(T) * _capacity);
-    FREE_C_HEAP_ARRAY(T, _array);
-  }
-
-  _array = new_array;
-  _capacity = new_capacity;
-}
-
-template <typename T>
-inline void ZArray<T>::add(T value) {
-  if (_size == _capacity) {
-    const size_t new_capacity = (_capacity > 0) ? _capacity * 2 : initial_capacity;
-    expand(new_capacity);
-  }
-
-  _array[_size++] = value;
-}
+    GrowableArrayCHeap<T, mtGC>(0) {}
 
 template <typename T>
 inline void ZArray<T>::transfer(ZArray<T>* from) {
-  assert(_array == NULL, "Should be empty");
-  _array = from->_array;
-  _size = from->_size;
-  _capacity = from->_capacity;
-  from->_array = NULL;
-  from->_size = 0;
-  from->_capacity = 0;
-}
-
-template <typename T>
-inline void ZArray<T>::clear() {
-  _size = 0;
+  assert(this->_data == NULL, "Should be empty");
+  this->_data = from->_data;
+  this->_len = from->_len;
+  this->_max = from->_max;
+  from->_data = NULL;
+  from->_len = 0;
+  from->_max = 0;
 }
 
 template <typename T, bool parallel>
@@ -101,13 +51,13 @@ inline ZArrayIteratorImpl<T, parallel>::ZArrayIteratorImpl(ZArray<T>* array) :
 template <typename T, bool parallel>
 inline bool ZArrayIteratorImpl<T, parallel>::next(T* elem) {
   if (parallel) {
-    const size_t next = Atomic::fetch_and_add(&_next, 1u);
-    if (next < _array->size()) {
+    const int next = Atomic::fetch_and_add(&_next, 1);
+    if (next < _array->length()) {
       *elem = _array->at(next);
       return true;
     }
   } else {
-    if (_next < _array->size()) {
+    if (_next < _array->length()) {
       *elem = _array->at(_next++);
       return true;
     }
@@ -116,13 +66,5 @@ inline bool ZArrayIteratorImpl<T, parallel>::next(T* elem) {
   // No more elements
   return false;
 }
-
-template <typename T>
-inline ZArrayIterator<T>::ZArrayIterator(ZArray<T>* array) :
-    ZArrayIteratorImpl<T, ZARRAY_SERIAL>(array) {}
-
-template <typename T>
-inline ZArrayParallelIterator<T>::ZArrayParallelIterator(ZArray<T>* array) :
-    ZArrayIteratorImpl<T, ZARRAY_PARALLEL>(array) {}
 
 #endif // SHARE_GC_Z_ZARRAY_INLINE_HPP

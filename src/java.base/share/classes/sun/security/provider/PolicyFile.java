@@ -1555,8 +1555,8 @@ public class PolicyFile extends java.security.Policy {
         while (i < certs.length) {
             count++;
             while (((i+1) < certs.length)
-                   && ((X509Certificate)certs[i]).getIssuerDN().equals(
-                           ((X509Certificate)certs[i+1]).getSubjectDN())) {
+                   && ((X509Certificate)certs[i]).getIssuerX500Principal().equals(
+                           ((X509Certificate)certs[i+1]).getSubjectX500Principal())) {
                 i++;
             }
             i++;
@@ -1570,8 +1570,8 @@ public class PolicyFile extends java.security.Policy {
         while (i < certs.length) {
             userCertList.add(certs[i]);
             while (((i+1) < certs.length)
-                   && ((X509Certificate)certs[i]).getIssuerDN().equals(
-                           ((X509Certificate)certs[i+1]).getSubjectDN())) {
+                   && ((X509Certificate)certs[i]).getIssuerX500Principal().equals(
+                           ((X509Certificate)certs[i+1]).getSubjectX500Principal())) {
                 i++;
             }
             i++;
@@ -2017,8 +2017,8 @@ public class PolicyFile extends java.security.Policy {
                     while (i < certs.length) {
                         count++;
                         while (((i+1) < certs.length) &&
-                            ((X509Certificate)certs[i]).getIssuerDN().equals(
-                            ((X509Certificate)certs[i+1]).getSubjectDN())) {
+                            ((X509Certificate)certs[i]).getIssuerX500Principal().equals(
+                            ((X509Certificate)certs[i+1]).getSubjectX500Principal())) {
                             i++;
                         }
                         i++;
@@ -2036,8 +2036,8 @@ public class PolicyFile extends java.security.Policy {
                         while (i < certs.length) {
                             signerCerts.add(certs[i]);
                             while (((i+1) < certs.length) &&
-                                ((X509Certificate)certs[i]).getIssuerDN().equals(
-                                ((X509Certificate)certs[i+1]).getSubjectDN())) {
+                                ((X509Certificate)certs[i]).getIssuerX500Principal().equals(
+                                ((X509Certificate)certs[i+1]).getSubjectX500Principal())) {
                                 i++;
                             }
                             i++;

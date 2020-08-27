@@ -33,6 +33,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.hpp"

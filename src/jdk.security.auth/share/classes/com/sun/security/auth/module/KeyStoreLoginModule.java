@@ -664,8 +664,7 @@ public class KeyStoreLoginModule implements LoginModule {
         /* Get principal and keys */
         try {
             X509Certificate certificate = (X509Certificate)fromKeyStore[0];
-            principal = new javax.security.auth.x500.X500Principal
-                (certificate.getSubjectDN().getName());
+            principal = certificate.getSubjectX500Principal();
 
             // if token, privateKeyPassword will be null
             Key privateKey = keyStore.getKey(keyStoreAlias, privateKeyPassword);

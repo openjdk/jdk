@@ -63,16 +63,6 @@ bool C2Compiler::init_c2_runtime() {
     }
   }
 
-  // Check that runtime and architecture description agree on callee-saved-floats
-  bool callee_saved_floats = false;
-  for( OptoReg::Name i=OptoReg::Name(0); i<OptoReg::Name(_last_Mach_Reg); i = OptoReg::add(i,1) ) {
-    // Is there a callee-saved float or double?
-    if( register_save_policy[i] == 'E' /* callee-saved */ &&
-       (register_save_type[i] == Op_RegF || register_save_type[i] == Op_RegD) ) {
-      callee_saved_floats = true;
-    }
-  }
-
   DEBUG_ONLY( Node::init_NodeProperty(); )
 
   Compile::pd_compiler2_init();

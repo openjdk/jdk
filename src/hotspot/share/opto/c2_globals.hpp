@@ -112,9 +112,6 @@
   notproduct(bool, PrintIdealNodeCount, false,                              \
           "Print liveness counts of ideal nodes")                           \
                                                                             \
-  notproduct(bool, VerifyOptoOopOffsets, false,                             \
-          "Check types of base addresses in field references")              \
-                                                                            \
   develop(bool, IdealizedNumerics, false,                                   \
           "Check performance difference allowing FP "                       \
           "associativity and commutativity...")                             \
@@ -765,6 +762,7 @@
   product(uintx, LoopStripMiningIter, 0,                                    \
           "Number of iterations in strip mined loop")                       \
           range(0, max_juint)                                               \
+          constraint(LoopStripMiningIterConstraintFunc, AfterErgo)          \
                                                                             \
   product(uintx, LoopStripMiningIterShortLoop, 0,                           \
           "Loop with fewer iterations are not strip mined")                 \

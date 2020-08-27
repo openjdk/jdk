@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public interface Attributes2 extends Attributes
      * @param index The attribute index (zero-based).
      * @return true if the attribute was declared in the DTD,
      *          false otherwise.
-     * @exception java.lang.ArrayIndexOutOfBoundsException When the
+     * @throws java.lang.ArrayIndexOutOfBoundsException When the
      *            supplied index does not identify an attribute.
      */
     public boolean isDeclared (int index);
@@ -75,7 +75,7 @@ public interface Attributes2 extends Attributes
      * @param qName The XML qualified (prefixed) name.
      * @return true if the attribute was declared in the DTD,
      *          false otherwise.
-     * @exception java.lang.IllegalArgumentException When the
+     * @throws java.lang.IllegalArgumentException When the
      *            supplied name does not identify an attribute.
      */
     public boolean isDeclared (String qName);
@@ -96,7 +96,7 @@ public interface Attributes2 extends Attributes
      * @param localName The attribute's local name.
      * @return true if the attribute was declared in the DTD,
      *          false otherwise.
-     * @exception java.lang.IllegalArgumentException When the
+     * @throws java.lang.IllegalArgumentException When the
      *            supplied names do not identify an attribute.
      */
     public boolean isDeclared (String uri, String localName);
@@ -108,7 +108,7 @@ public interface Attributes2 extends Attributes
      * @param index The attribute index (zero-based).
      * @return true if the value was found in the XML text,
      *          false if the value was provided by DTD defaulting.
-     * @exception java.lang.ArrayIndexOutOfBoundsException When the
+     * @throws java.lang.ArrayIndexOutOfBoundsException When the
      *            supplied index does not identify an attribute.
      */
     public boolean isSpecified (int index);
@@ -127,7 +127,7 @@ public interface Attributes2 extends Attributes
      * @param localName The attribute's local name.
      * @return true if the value was found in the XML text,
      *          false if the value was provided by DTD defaulting.
-     * @exception java.lang.IllegalArgumentException When the
+     * @throws java.lang.IllegalArgumentException When the
      *            supplied names do not identify an attribute.
      */
     public boolean isSpecified (String uri, String localName);
@@ -139,7 +139,7 @@ public interface Attributes2 extends Attributes
      * @param qName The XML qualified (prefixed) name.
      * @return true if the value was found in the XML text,
      *          false if the value was provided by DTD defaulting.
-     * @exception java.lang.IllegalArgumentException When the
+     * @throws java.lang.IllegalArgumentException When the
      *            supplied name does not identify an attribute.
      */
     public boolean isSpecified (String qName);

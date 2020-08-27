@@ -444,5 +444,6 @@ bool CountedLoopReserveKit::create_reserve() {
     return false;
   }
 
-  return _has_reserved = true;
+  _has_reserved = true;
+  return true;
 }

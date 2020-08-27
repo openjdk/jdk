@@ -80,7 +80,7 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
      * @param p the prime modulus
      * @param g the base generator
      *
-     * @exception ProviderException if the key cannot be encoded
+     * @throws ProviderException if the key cannot be encoded
      */
     DHPrivateKey(BigInteger x, BigInteger p, BigInteger g)
         throws InvalidKeyException {
@@ -97,7 +97,7 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
      * @param g the base generator
      * @param l the private-value length
      *
-     * @exception InvalidKeyException if the key cannot be encoded
+     * @throws ProviderException if the key cannot be encoded
      */
     DHPrivateKey(BigInteger x, BigInteger p, BigInteger g, int l) {
         this.x = x;
@@ -118,7 +118,7 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
      *
      * @param encodedKey the encoded key
      *
-     * @exception InvalidKeyException if the encoded key does not represent
+     * @throws InvalidKeyException if the encoded key does not represent
      * a Diffie-Hellman private key
      */
     DHPrivateKey(byte[] encodedKey) throws InvalidKeyException {

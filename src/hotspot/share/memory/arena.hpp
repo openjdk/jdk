@@ -93,7 +93,6 @@ class Chunk: CHeapObj<mtChunk> {
 // Fast allocation of memory
 class Arena : public CHeapObj<mtNone> {
 protected:
-  friend class ResourceMark;
   friend class HandleMark;
   friend class NoHandleMark;
   friend class VMStructs;

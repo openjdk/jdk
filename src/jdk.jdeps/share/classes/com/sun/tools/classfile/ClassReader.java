@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,15 @@ public class ClassReader {
     public Attribute readAttribute() throws IOException {
         int name_index = readUnsignedShort();
         int length = readInt();
+        if (length < 0) { // we have an overflow as max_value(u4) > max_value(int)
+            String attrName;
+            try {
+                attrName = getConstantPool().getUTF8Value(name_index);
+            } catch (ConstantPool.InvalidIndex | ConstantPool.UnexpectedEntry e) {
+                attrName = "";
+            }
+            throw new FatalError(String.format("attribute %s too big to handle", attrName));
+        }
         byte[] data = new byte[length];
         readFully(data);
 

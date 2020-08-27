@@ -29,6 +29,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 
@@ -421,6 +422,15 @@ void ConstMethod::metaspace_pointers_do(MetaspaceClosure* it) {
   }
   ConstMethod* this_ptr = this;
   it->push_method_entry(&this_ptr, (intptr_t*)&_adapter_trampoline);
+}
+
+void ConstMethod::set_adapter_trampoline(AdapterHandlerEntry** trampoline) {
+  Arguments::assert_is_dumping_archive();
+  if (DumpSharedSpaces) {
+    assert(*trampoline == NULL,
+           "must be NULL during dump time, to be initialized at run time");
+  }
+  _adapter_trampoline = trampoline;
 }
 
 // Printing

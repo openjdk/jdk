@@ -31,11 +31,10 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller data/main.data main.data
  * @build jit.graph.*
  * @run main
  *      jit.graph.CGT
- *      -path main.data
+ *      -path ${test.src}/data/main.data
  *      -numTestClass 4
  *      -randomLoop 40
  *      -staticLoop 40

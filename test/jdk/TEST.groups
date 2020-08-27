@@ -295,6 +295,7 @@ jdk_other = \
     javax/smartcardio \
     javax/xml \
     -javax/xml/crypto \
+    jdk/dynalink \
     jdk/internal/jline \
     com/sun/jndi \
     lib/testlibrary

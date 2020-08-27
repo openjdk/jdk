@@ -200,7 +200,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      *
      * @return a CallSite, which, when invoked, will return an instance of the
      * functional interface
-     * @throws ReflectiveOperationException
      * @throws LambdaConversionException If properly formed functional interface
      * is not found
      */

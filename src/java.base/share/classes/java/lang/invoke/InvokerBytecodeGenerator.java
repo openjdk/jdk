@@ -937,6 +937,9 @@ class InvokerBytecodeGenerator {
         }
     }
 
+    /**
+     * The BytecodeGenerationException.
+     */
     @SuppressWarnings("serial")
     static final class BytecodeGenerationException extends RuntimeException {
         BytecodeGenerationException(Exception cause) {

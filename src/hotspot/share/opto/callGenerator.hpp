@@ -36,11 +36,6 @@
 // call sites and method entry points.
 
 class CallGenerator : public ResourceObj {
- public:
-  enum {
-    xxxunusedxxx
-  };
-
  private:
   ciMethod*             _method;                // The method being called.
 

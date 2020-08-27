@@ -989,7 +989,7 @@ void Thread::check_possible_safepoint() {
 
   if (_no_safepoint_count > 0) {
     print_owned_locks();
-    fatal("Possible safepoint reached by thread that does not allow it");
+    assert(false, "Possible safepoint reached by thread that does not allow it");
   }
 #ifdef CHECK_UNHANDLED_OOPS
   // Clear unhandled oops in JavaThreads so we get a crash right away.

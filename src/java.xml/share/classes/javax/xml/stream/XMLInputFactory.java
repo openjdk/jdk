@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,10 @@ public abstract class XMLInputFactory {
 
   static final String DEFAULIMPL = "com.sun.xml.internal.stream.XMLInputFactoryImpl";
 
+    /**
+     * Protected constructor to prevent instantiation.
+     * Use {@link #newFactory()} instead.
+     */
   protected XMLInputFactory(){}
 
   /**
@@ -153,6 +157,7 @@ public abstract class XMLInputFactory {
   /**
    * Creates a new instance of the factory in exactly the same manner as the
    * {@link #newFactory()} method.
+   * @return an instance of the {@code XMLInputFactory}
    * @throws FactoryConfigurationError if an instance of this factory cannot be loaded
    */
   public static XMLInputFactory newInstance()
@@ -210,6 +215,7 @@ public abstract class XMLInputFactory {
    *   Once an application has obtained a reference to a XMLInputFactory it
    *   can use the factory to configure and obtain stream instances.
    *
+   * @return an instance of the {@code XMLInputFactory}
    * @throws FactoryConfigurationError in case of {@linkplain
    *   java.util.ServiceConfigurationError service configuration error} or if
    *   the implementation is not available or cannot be instantiated.
@@ -221,7 +227,7 @@ public abstract class XMLInputFactory {
   }
 
   /**
-   * Create a new instance of the factory
+   * Create a new instance of the factory.
    *
    * @param factoryId             Name of the factory to find, same as
    *                              a property name
@@ -324,9 +330,10 @@ public abstract class XMLInputFactory {
   }
 
   /**
-   * Create a new XMLStreamReader from a reader
+   * Create a new XMLStreamReader from a reader.
    * @param reader the XML data to read from
-   * @throws XMLStreamException
+   * @return an instance of the {@code XMLStreamReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLStreamReader createXMLStreamReader(java.io.Reader reader)
     throws XMLStreamException;
@@ -334,59 +341,68 @@ public abstract class XMLInputFactory {
   /**
    * Create a new XMLStreamReader from a JAXP source.  This method is optional.
    * @param source the source to read from
+   * @return an instance of the {@code XMLStreamReader}
    * @throws UnsupportedOperationException if this method is not
    * supported by this XMLInputFactory
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLStreamReader createXMLStreamReader(Source source)
     throws XMLStreamException;
 
   /**
-   * Create a new XMLStreamReader from a java.io.InputStream
+   * Create a new XMLStreamReader from a java.io.InputStream.
    * @param stream the InputStream to read from
-   * @throws XMLStreamException
+   * @return an instance of the {@code XMLStreamReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLStreamReader createXMLStreamReader(java.io.InputStream stream)
     throws XMLStreamException;
 
   /**
-   * Create a new XMLStreamReader from a java.io.InputStream
+   * Create a new XMLStreamReader from a java.io.InputStream.
    * @param stream the InputStream to read from
    * @param encoding the character encoding of the stream
-   * @throws XMLStreamException
+   * @return an instance of the {@code XMLStreamReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLStreamReader createXMLStreamReader(java.io.InputStream stream, String encoding)
     throws XMLStreamException;
 
   /**
-   * Create a new XMLStreamReader from a java.io.InputStream
+   * Create a new XMLStreamReader from a java.io.InputStream.
    * @param systemId the system ID of the stream
    * @param stream the InputStream to read from
+   * @return an instance of the {@code XMLStreamReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLStreamReader createXMLStreamReader(String systemId, java.io.InputStream stream)
     throws XMLStreamException;
 
   /**
-   * Create a new XMLStreamReader from a java.io.InputStream
+   * Create a new XMLStreamReader from a java.io.InputStream.
    * @param systemId the system ID of the stream
    * @param reader the InputStream to read from
+   * @return an instance of the {@code XMLStreamReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLStreamReader createXMLStreamReader(String systemId, java.io.Reader reader)
     throws XMLStreamException;
 
   /**
-   * Create a new XMLEventReader from a reader
+   * Create a new XMLEventReader from a reader.
    * @param reader the XML data to read from
-   * @throws XMLStreamException
+   * @return an instance of the {@code XMLEventReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLEventReader createXMLEventReader(java.io.Reader reader)
     throws XMLStreamException;
 
   /**
-   * Create a new XMLEventReader from a reader
+   * Create a new XMLEventReader from a reader.
    * @param systemId the system ID of the input
    * @param reader the XML data to read from
-   * @throws XMLStreamException
+   * @return an instance of the {@code XMLEventReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLEventReader createXMLEventReader(String systemId, java.io.Reader reader)
     throws XMLStreamException;
@@ -397,7 +413,7 @@ public abstract class XMLInputFactory {
    * the XMLStreamReader must not be used.
    * @param reader the XMLStreamReader to read from (may not be modified)
    * @return a new XMLEventReader
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLEventReader createXMLEventReader(XMLStreamReader reader)
     throws XMLStreamException;
@@ -406,6 +422,8 @@ public abstract class XMLInputFactory {
    * Create a new XMLEventReader from a JAXP source.
    * Support of this method is optional.
    * @param source the source to read from
+   * @return an instance of the {@code XMLEventReader}
+   * @throws XMLStreamException if an error occurs
    * @throws UnsupportedOperationException if this method is not
    * supported by this XMLInputFactory
    */
@@ -415,7 +433,8 @@ public abstract class XMLInputFactory {
   /**
    * Create a new XMLEventReader from a java.io.InputStream
    * @param stream the InputStream to read from
-   * @throws XMLStreamException
+   * @return an instance of the {@code XMLEventReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLEventReader createXMLEventReader(java.io.InputStream stream)
     throws XMLStreamException;
@@ -424,7 +443,8 @@ public abstract class XMLInputFactory {
    * Create a new XMLEventReader from a java.io.InputStream
    * @param stream the InputStream to read from
    * @param encoding the character encoding of the stream
-   * @throws XMLStreamException
+   * @return an instance of the {@code XMLEventReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLEventReader createXMLEventReader(java.io.InputStream stream, String encoding)
     throws XMLStreamException;
@@ -433,7 +453,8 @@ public abstract class XMLInputFactory {
    * Create a new XMLEventReader from a java.io.InputStream
    * @param systemId the system ID of the stream
    * @param stream the InputStream to read from
-   * @throws XMLStreamException
+   * @return an instance of the {@code XMLEventReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLEventReader createXMLEventReader(String systemId, java.io.InputStream stream)
     throws XMLStreamException;
@@ -442,7 +463,8 @@ public abstract class XMLInputFactory {
    * Create a filtered reader that wraps the filter around the reader
    * @param reader the reader to filter
    * @param filter the filter to apply to the reader
-   * @throws XMLStreamException
+   * @return an instance of the {@code XMLEventReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLStreamReader createFilteredReader(XMLStreamReader reader, StreamFilter filter)
     throws XMLStreamException;
@@ -451,7 +473,8 @@ public abstract class XMLInputFactory {
    * Create a filtered event reader that wraps the filter around the event reader
    * @param reader the event reader to wrap
    * @param filter the filter to apply to the event reader
-   * @throws XMLStreamException
+   * @return an instance of the {@code XMLEventReader}
+   * @throws XMLStreamException if an error occurs
    */
   public abstract XMLEventReader createFilteredReader(XMLEventReader reader, EventFilter filter)
     throws XMLStreamException;
@@ -459,6 +482,7 @@ public abstract class XMLInputFactory {
   /**
    * The resolver that will be set on any XMLStreamReader or XMLEventReader created
    * by this factory instance.
+   * @return an instance of the {@code XMLResolver}
    */
   public abstract XMLResolver getXMLResolver();
 
@@ -472,6 +496,7 @@ public abstract class XMLInputFactory {
   /**
    * The reporter that will be set on any XMLStreamReader or XMLEventReader created
    * by this factory instance.
+   * @return an instance of the {@code XMLReporter}
    */
   public abstract XMLReporter getXMLReporter();
 
@@ -535,6 +560,7 @@ public abstract class XMLInputFactory {
 
   /**
    * Gets the allocator used by streams created with this factory
+   * @return an instance of the {@code XMLEventAllocator}
    */
   public abstract XMLEventAllocator getEventAllocator();
 

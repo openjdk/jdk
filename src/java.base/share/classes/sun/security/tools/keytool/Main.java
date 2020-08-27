@@ -1614,7 +1614,7 @@ public final class Main {
         SignatureUtil.initSignWithParam(signature, privKey, params, null);
 
         X500Name subject = dname == null?
-                new X500Name(((X509Certificate)cert).getSubjectDN().toString()):
+                new X500Name(((X509Certificate)cert).getSubjectX500Principal().getEncoded()):
                 new X500Name(dname);
 
         // Sign the request and base-64 encode it
@@ -2806,7 +2806,7 @@ public final class Main {
                             for (Certificate cert: certs) {
                                 X509Certificate x = (X509Certificate)cert;
                                 if (rfc) {
-                                    out.println(rb.getString("Certificate.owner.") + x.getSubjectDN() + "\n");
+                                    out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
                                     dumpCert(x, out);
                                 } else {
                                     printX509Cert(x, out);
@@ -2823,7 +2823,7 @@ public final class Main {
                                 for (Certificate cert: certs) {
                                     X509Certificate x = (X509Certificate)cert;
                                     if (rfc) {
-                                        out.println(rb.getString("Certificate.owner.") + x.getSubjectDN() + "\n");
+                                        out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
                                         dumpCert(x, out);
                                     } else {
                                         printX509Cert(x, out);
@@ -3373,8 +3373,8 @@ public final class Main {
         if (!isTrustedCert(cert)) {
             sigName = withWeak(sigName);
         }
-        Object[] source = {cert.getSubjectDN().toString(),
-                        cert.getIssuerDN().toString(),
+        Object[] source = {cert.getSubjectX500Principal().toString(),
+                        cert.getIssuerX500Principal().toString(),
                         cert.getSerialNumber().toString(16),
                         cert.getNotBefore().toString(),
                         cert.getNotAfter().toString(),
@@ -3931,7 +3931,7 @@ public final class Main {
             return true;
         }
 
-        Principal issuer = certToVerify.snd.getIssuerDN();
+        Principal issuer = certToVerify.snd.getIssuerX500Principal();
 
         // Get the issuer's certificate(s)
         Vector<Pair<String,X509Certificate>> vec = certs.get(issuer);
@@ -4009,7 +4009,7 @@ public final class Main {
             String alias = aliases.nextElement();
             Certificate cert = ks.getCertificate(alias);
             if (cert != null) {
-                Principal subjectDN = ((X509Certificate)cert).getSubjectDN();
+                Principal subjectDN = ((X509Certificate)cert).getSubjectX500Principal();
                 Pair<String,X509Certificate> pair = new Pair<>(
                         String.format(
                                 rb.getString(ks == caks ?

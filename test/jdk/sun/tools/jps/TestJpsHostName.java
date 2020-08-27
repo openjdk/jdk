@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2020 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,26 @@
  * questions.
  */
 
+import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
- *
- * @summary converted from VM Testbase jit/t/t108.
- * VM Testbase keywords: [jit, quick]
- * VM Testbase readme:
- * Clone of t083.  The pass file changed in JDK 1.2.
- *
- * @library /vmTestbase
- *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t108.t108
- * @run driver ExecDriver --java jit.t.t108.t108
+ * @bug 8251155
+ * @summary Test host names starting with digits
+ * @library /test/lib
+ * @build JpsHelper
+ * @run driver TestJpsHostName
  */
+public class TestJpsHostName {
 
+    public static void main(String[] args) throws Throwable {
+        testJpsHostName("12345");
+        testJpsHostName("12345:37266");
+    }
+
+    private static void testJpsHostName(String hostname) throws Exception {
+        OutputAnalyzer output = JpsHelper.jps(hostname);
+        output.shouldNotContain("Malformed Host Identifier: " + hostname);
+    }
+
+}
