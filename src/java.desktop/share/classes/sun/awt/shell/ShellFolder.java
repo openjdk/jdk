@@ -33,6 +33,8 @@ import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -479,12 +481,16 @@ public abstract class ShellFolder extends File {
             case 1: // size
                 return file.isDirectory() ? null : Long.valueOf(file.length());
 
-            case 2: // date
+            case 2: // type
+                return file.isDirectory() ? new String("File folder"): null;
+
+            case 3: // date
                 if (isFileSystemRoot(file)) {
                     return null;
                 }
                 long time = file.lastModified();
-                return (time == 0L) ? null : new Date(time);
+                Format formatter = new SimpleDateFormat("dd-MMM-yy hh:mm aa");
+                return (time == 0L) ? null : formatter.format(new Date(time));
 
             default:
                 return null;
