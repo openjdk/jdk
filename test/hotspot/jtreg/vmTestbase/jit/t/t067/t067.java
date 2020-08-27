@@ -29,7 +29,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm jit.t.t067.t067
  */
 

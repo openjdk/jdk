@@ -29,7 +29,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build ExecDriver
  *
  * @comment build all dependencies
@@ -46,6 +45,7 @@
  * @comment run the test
  * @run driver ExecDriver --java
  *      -cp .${path.separator}${test.class.path}
+ *      -Dtest.src=${test.src}
  *      jit.t.t088.t088
  *      -WorkDir ./jit/t/t088
  */
