@@ -40,6 +40,7 @@ private:
   int _verified_entry;
   int _exception_handler_offset;
   int _deopt_handler_offset;
+  int _deopt_mh_handler_offset;
   int _stubs_offset;
   int _frame_size;
   // location in frame (offset for sp) that deopt can store the original
@@ -78,6 +79,7 @@ public:
   int verified_entry_offset() const { return _verified_entry; }
   int exception_handler_offset() const { return _exception_handler_offset; }
   int deopt_handler_offset() const { return _deopt_handler_offset; }
+  int deopt_mh_handler_offset() const { return _deopt_mh_handler_offset; }
   int orig_pc_offset() const { return _orig_pc_offset; }
 
   int handler_table_size() const { return handler_table_end() - handler_table_begin(); }
@@ -148,7 +150,11 @@ private:
 
     _scopes_data_begin = (address) _meta->scopes_data_begin();
     _deopt_handler_begin = (address) _code + _meta->deopt_handler_offset();
-    _deopt_mh_handler_begin = (address) this;
+    if (_meta->deopt_mh_handler_offset() != -1) {
+      _deopt_mh_handler_begin = (address) _code + _meta->deopt_mh_handler_offset();
+    } else {
+      _deopt_mh_handler_begin = (address) this;
+    }
 
     _pc_desc_container.reset_to(scopes_pcs_begin());
 
