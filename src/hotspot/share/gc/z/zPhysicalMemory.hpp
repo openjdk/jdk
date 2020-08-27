@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZPHYSICALMEMORY_HPP
 #define SHARE_GC_Z_ZPHYSICALMEMORY_HPP
 
+#include "gc/z/zArray.hpp"
 #include "gc/z/zMemory.hpp"
 #include "memory/allocation.hpp"
 #include OS_HEADER(gc/z/zPhysicalMemoryBacking)
@@ -48,33 +49,30 @@ public:
 
 class ZPhysicalMemory {
 private:
-  uint32_t                _nsegments_max;
-  uint32_t                _nsegments;
-  ZPhysicalMemorySegment* _segments;
+  ZArray<ZPhysicalMemorySegment> _segments;
 
-  void insert_segment(uint32_t index, uintptr_t start, size_t size, bool committed);
-  void replace_segment(uint32_t index, uintptr_t start, size_t size, bool committed);
-  void remove_segment(uint32_t index);
+  void insert_segment(int index, uintptr_t start, size_t size, bool committed);
+  void replace_segment(int index, uintptr_t start, size_t size, bool committed);
+  void remove_segment(int index);
 
 public:
   ZPhysicalMemory();
   ZPhysicalMemory(const ZPhysicalMemorySegment& segment);
   ZPhysicalMemory(const ZPhysicalMemory& pmem);
   const ZPhysicalMemory& operator=(const ZPhysicalMemory& pmem);
-  ~ZPhysicalMemory();
 
   bool is_null() const;
   size_t size() const;
 
-  uint32_t nsegments() const;
-  const ZPhysicalMemorySegment& segment(uint32_t index) const;
+  int nsegments() const;
+  const ZPhysicalMemorySegment& segment(int index) const;
 
   void add_segments(const ZPhysicalMemory& pmem);
   void remove_segments();
 
   void add_segment(const ZPhysicalMemorySegment& segment);
-  bool commit_segment(uint32_t index, size_t size);
-  bool uncommit_segment(uint32_t index, size_t size);
+  bool commit_segment(int index, size_t size);
+  bool uncommit_segment(int index, size_t size);
 
   ZPhysicalMemory split(size_t size);
   ZPhysicalMemory split_committed();

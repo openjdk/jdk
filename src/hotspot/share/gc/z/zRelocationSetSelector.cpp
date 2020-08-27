@@ -66,7 +66,7 @@ void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
   const size_t garbage = size - live;
 
   if (garbage > _fragmentation_limit) {
-    _registered_pages.add(page);
+    _registered_pages.append(page);
   }
 
   _stats._npages++;
@@ -100,7 +100,7 @@ void ZRelocationSetSelectorGroup::semi_sort() {
   const size_t npartitions = (size_t)1 << npartitions_shift;
   const size_t partition_size = _page_size >> npartitions_shift;
   const size_t partition_size_shift = exact_log2(partition_size);
-  const size_t npages = _registered_pages.size();
+  const size_t npages = _registered_pages.length();
 
   // Partition slots/fingers
   size_t partitions[npartitions];
@@ -140,7 +140,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
   // Calculate the number of pages to relocate by successively including pages in
   // a candidate relocation set and calculate the maximum space requirement for
   // their live objects.
-  const size_t npages = _registered_pages.size();
+  const size_t npages = _registered_pages.length();
   size_t selected_from = 0;
   size_t selected_to = 0;
   size_t from_size = 0;
