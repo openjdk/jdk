@@ -3835,7 +3835,7 @@ public class Check {
         if (lint.isEnabled(LintCategory.MISSING_EXPLICIT_CTOR) &&
             ((c.flags() & (ENUM | RECORD)) == 0) &&
             !c.isAnonymous() &&
-            ((c.flags() & PUBLIC) != 0) &&
+            ((c.flags() & (PUBLIC | PROTECTED)) != 0) &&
             Feature.MODULES.allowedInSource(source)) {
             NestingKind nestingKind = c.getNestingKind();
             switch (nestingKind) {
@@ -3844,10 +3844,10 @@ public class Check {
                 case TOP_LEVEL -> {;} // No additional checks needed
                 case MEMBER -> {
                     // For nested member classes, all the enclosing
-                    // classes must be public.
+                    // classes must be public or protected.
                     Symbol owner = c.owner;
                     while (owner != null && owner.kind == TYP) {
-                        if ((owner.flags() & PUBLIC) == 0)
+                        if ((owner.flags() & (PUBLIC | PROTECTED)) == 0)
                             return;
                         owner = owner.owner;
                     }
