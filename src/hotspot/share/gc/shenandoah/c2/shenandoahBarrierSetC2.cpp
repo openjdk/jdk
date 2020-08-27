@@ -1146,16 +1146,6 @@ bool ShenandoahBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, ui
     case Op_ShenandoahWeakCompareAndSwapP:
     case Op_ShenandoahCompareAndExchangeP:
     case Op_ShenandoahCompareAndExchangeN:
-#ifdef ASSERT
-      if( VerifyOptoOopOffsets ) {
-        MemNode* mem  = n->as_Mem();
-        // Check to see if address types have grounded out somehow.
-        const TypeInstPtr *tp = mem->in(MemNode::Address)->bottom_type()->isa_instptr();
-        ciInstanceKlass *k = tp->klass()->as_instance_klass();
-        bool oop_offset_is_sane = k->contains_field_offset(tp->offset());
-        assert( !tp || oop_offset_is_sane, "" );
-      }
-#endif
       return true;
     case Op_ShenandoahLoadReferenceBarrier:
       assert(false, "should have been expanded already");

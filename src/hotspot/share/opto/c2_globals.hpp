@@ -112,9 +112,6 @@
   notproduct(bool, PrintIdealNodeCount, false,                              \
           "Print liveness counts of ideal nodes")                           \
                                                                             \
-  notproduct(bool, VerifyOptoOopOffsets, false,                             \
-          "Check types of base addresses in field references")              \
-                                                                            \
   develop(bool, IdealizedNumerics, false,                                   \
           "Check performance difference allowing FP "                       \
           "associativity and commutativity...")                             \
