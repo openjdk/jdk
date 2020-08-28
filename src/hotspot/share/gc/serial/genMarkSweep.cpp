@@ -178,12 +178,6 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  // Because follow_root_closure is created statically, cannot
-  // use OopsInGenClosure constructor which takes a generation,
-  // as the Universe has not been created when the static constructors
-  // are run.
-  follow_root_closure.set_orig_generation(gch->old_gen());
-
   // Need new claim bits before marking starts.
   ClassLoaderDataGraph::clear_claimed_marks();
 
@@ -276,12 +270,6 @@ void GenMarkSweep::mark_sweep_phase3() {
 
   // Need new claim bits for the pointer adjustment tracing.
   ClassLoaderDataGraph::clear_claimed_marks();
-
-  // Because the closure below is created statically, we cannot
-  // use OopsInGenClosure constructor which takes a generation,
-  // as the Universe has not been created when the static constructors
-  // are run.
-  adjust_pointer_closure.set_orig_generation(gch->old_gen());
 
   {
     StrongRootsScope srs(1);

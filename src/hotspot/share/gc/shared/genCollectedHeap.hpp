@@ -380,7 +380,7 @@ public:
                           bool is_adjust_phase,
                           ScanningOption so,
                           bool only_strong_roots,
-                          OopsInGenClosure* root_closure,
+                          OopClosure* root_closure,
                           CLDClosure* cld_closure);
 
   // Apply "root_closure" to all the weak roots of the system.

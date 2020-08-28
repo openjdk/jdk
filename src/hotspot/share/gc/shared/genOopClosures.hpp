@@ -58,28 +58,16 @@ class OopsInGenClosure : public OopIterateClosure {
   template <class T> void do_barrier(T* p);
 
  public:
-  OopsInGenClosure() : OopIterateClosure(NULL),
-    _orig_gen(NULL), _gen(NULL), _gen_boundary(NULL), _rs(NULL) {};
-
   OopsInGenClosure(Generation* gen);
   void set_generation(Generation* gen);
 
   void reset_generation() { _gen = _orig_gen; }
 
-  // Problem with static closures: must have _gen_boundary set at some point,
-  // but cannot do this until after the heap is initialized.
-  void set_orig_generation(Generation* gen) {
-    _orig_gen = gen;
-    set_generation(gen);
-  }
-
   HeapWord* gen_boundary() { return _gen_boundary; }
-
 };
 
 class BasicOopsInGenClosure: public OopsInGenClosure {
  public:
-  BasicOopsInGenClosure() : OopsInGenClosure() {}
   BasicOopsInGenClosure(Generation* gen);
 
   virtual bool do_metadata() { return false; }

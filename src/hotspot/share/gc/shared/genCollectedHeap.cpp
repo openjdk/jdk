@@ -876,7 +876,7 @@ void GenCollectedHeap::full_process_roots(StrongRootsScope* scope,
                                           bool is_adjust_phase,
                                           ScanningOption so,
                                           bool only_strong_roots,
-                                          OopsInGenClosure* root_closure,
+                                          OopClosure* root_closure,
                                           CLDClosure* cld_closure) {
   MarkingCodeBlobClosure mark_code_closure(root_closure, is_adjust_phase);
   CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;
