@@ -104,7 +104,7 @@ import jdk.dynalink.StandardOperation;
  * {@link BeansLinker#getConstructorMethod(Class, String)}.
  */
 public final class StaticClass implements Serializable {
-    private static final ClassValue<StaticClass> staticClasses = new ClassValue<StaticClass>() {
+    private static final ClassValue<StaticClass> staticClasses = new ClassValue<>() {
         @Override
         protected StaticClass computeValue(final Class<?> type) {
             return new StaticClass(type);
