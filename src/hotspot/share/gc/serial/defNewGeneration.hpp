@@ -35,7 +35,6 @@
 #include "utilities/stack.hpp"
 
 class ContiguousSpace;
-class ScanClosure;
 class STWGCTimer;
 class CSpaceCounters;
 class ScanWeakRefClosure;

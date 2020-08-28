@@ -74,34 +74,6 @@ inline void OopsInClassLoaderDataOrGenClosure::do_cld_barrier() {
 
 #if INCLUDE_SERIALGC
 
-// NOTE! Any changes made here should also be made
-// in FastScanClosure::do_oop_work()
-template <class T> inline void ScanClosure::do_oop_work(T* p) {
-  T heap_oop = RawAccess<>::oop_load(p);
-  // Should we copy the obj?
-  if (!CompressedOops::is_null(heap_oop)) {
-    oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (cast_from_oop<HeapWord*>(obj) < _boundary) {
-      assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
-      oop new_obj = obj->is_forwarded() ? obj->forwardee()
-                                        : _g->copy_to_survivor_space(obj);
-      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
-    }
-
-    if (is_scanning_a_cld()) {
-      do_cld_barrier();
-    } else if (_gc_barrier) {
-      // Now call parent closure
-      do_barrier(p);
-    }
-  }
-}
-
-inline void ScanClosure::do_oop(oop* p)       { ScanClosure::do_oop_work(p); }
-inline void ScanClosure::do_oop(narrowOop* p) { ScanClosure::do_oop_work(p); }
-
-// NOTE! Any changes made here should also be made
-// in ScanClosure::do_oop_work()
 template <class T> inline void FastScanClosure::do_oop_work(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   // Should we copy the obj?
@@ -142,7 +114,7 @@ inline void FilteringClosure::do_oop(narrowOop* p) { FilteringClosure::do_oop_wo
 
 #if INCLUDE_SERIALGC
 
-// Note similarity to ScanClosure; the difference is that
+// Note similarity to FastScanClosure; the difference is that
 // the barrier set is taken care of outside this closure.
 template <class T> inline void ScanWeakRefClosure::do_oop_work(T* p) {
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
