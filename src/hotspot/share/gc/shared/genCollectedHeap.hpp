@@ -371,11 +371,6 @@ public:
   virtual void gc_epilogue(bool full);
 
  public:
-  void young_process_roots(StrongRootsScope* scope,
-                           OopsInGenClosure* root_closure,
-                           OopsInGenClosure* old_gen_closure,
-                           CLDClosure* cld_closure);
-
   void full_process_roots(StrongRootsScope* scope,
                           bool is_adjust_phase,
                           ScanningOption so,

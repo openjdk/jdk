@@ -264,13 +264,6 @@ void Generation::oop_iterate(OopIterateClosure* cl) {
   space_iterate(&blk);
 }
 
-void Generation::younger_refs_in_space_iterate(Space* sp,
-                                               OopsInGenClosure* cl,
-                                               uint n_threads) {
-  CardTableRS* rs = GenCollectedHeap::heap()->rem_set();
-  rs->younger_refs_in_space_iterate(sp, cl, n_threads);
-}
-
 class GenerationObjIterateClosure : public SpaceClosure {
  private:
   ObjectClosure* _cl;

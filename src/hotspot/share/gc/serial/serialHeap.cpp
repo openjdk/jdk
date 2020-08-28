@@ -27,6 +27,7 @@
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/genMemoryPools.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 #include "memory/universe.hpp"
 #include "services/memoryManager.hpp"
 
@@ -86,4 +87,25 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   memory_pools.append(_survivor_pool);
   memory_pools.append(_old_pool);
   return memory_pools;
+}
+
+void SerialHeap::young_process_roots(StrongRootsScope* scope,
+                                     OopsInGenClosure* root_closure,
+                                     OopsInGenClosure* old_gen_closure,
+                                     CLDClosure* cld_closure) {
+  MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations);
+
+  process_roots(scope, SO_ScavengeCodeCache, root_closure,
+                cld_closure, cld_closure, &mark_code_closure);
+
+  if (_process_strong_tasks->try_claim_task(GCH_PS_younger_gens)) {
+    root_closure->reset_generation();
+  }
+
+  old_gen_closure->set_generation(_old_gen);
+  rem_set()->at_younger_refs_iterate();
+  old_gen()->younger_refs_iterate(old_gen_closure, scope->n_threads());
+  old_gen_closure->reset_generation();
+
+  _process_strong_tasks->all_tasks_completed(scope->n_threads());
 }

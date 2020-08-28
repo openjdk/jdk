@@ -32,6 +32,7 @@
 
 class GCMemoryManager;
 class MemoryPool;
+class OopsInGenClosure;
 class TenuredGeneration;
 
 class SerialHeap : public GenCollectedHeap {
@@ -75,6 +76,11 @@ public:
   template <typename OopClosureType1, typename OopClosureType2>
   void oop_since_save_marks_iterate(OopClosureType1* cur,
                                     OopClosureType2* older);
+
+  void young_process_roots(StrongRootsScope* scope,
+                           OopsInGenClosure* root_closure,
+                           OopsInGenClosure* old_gen_closure,
+                           CLDClosure* cld_closure);
 };
 
 #endif // SHARE_GC_SERIAL_SERIALHEAP_HPP

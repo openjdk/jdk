@@ -241,8 +241,6 @@ protected:
   // Iteration
   void object_iterate(ObjectClosure* blk);
 
-  void younger_refs_iterate(OopsInGenClosure* cl, uint n_threads);
-
   void space_iterate(SpaceClosure* blk, bool usedOnly = false);
 
   // Allocation support
