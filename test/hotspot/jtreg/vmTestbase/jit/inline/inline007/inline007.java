@@ -33,7 +33,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm jit.inline.inline007.inline007
  */
 

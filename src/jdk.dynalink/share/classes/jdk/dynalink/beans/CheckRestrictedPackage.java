@@ -102,12 +102,9 @@ class CheckRestrictedPackage {
         }
         // Do a package access check from within an access control context with no permissions
         try {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    sm.checkPackageAccess(pkgName);
-                    return null;
-                }
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                sm.checkPackageAccess(pkgName);
+                return null;
             }, NO_PERMISSIONS_CONTEXT);
         } catch(final SecurityException e) {
             return true;

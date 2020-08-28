@@ -367,6 +367,8 @@ class LinearScan : public CompilationResourceObj {
   static void print_bitmap(BitMap& bitmap);
   void        print_intervals(const char* label);
   void        print_lir(int level, const char* label, bool hir_valid = true);
+  static void print_reg_num(int reg_num) { print_reg_num(tty, reg_num); }
+  static void print_reg_num(outputStream* out, int reg_num);
 #endif
 
 #ifdef ASSERT
@@ -390,10 +392,13 @@ class LinearScan : public CompilationResourceObj {
   int         max_spills()  const { return _max_spills; }
   int         num_calls() const   { assert(_num_calls >= 0, "not set"); return _num_calls; }
 
-  // entry functions for printing
 #ifndef PRODUCT
+  // entry functions for printing
   static void print_statistics();
   static void print_timers(double total);
+
+  // Used for debugging
+  Interval* find_interval_at(int reg_num) const;
 #endif
 };
 
@@ -626,7 +631,15 @@ class Interval : public CompilationResourceObj {
   int    current_intersects_at(Interval* it)     { return _current->intersects_at(it->_current); };
 
   // printing
-  void print(outputStream* out = tty) const      PRODUCT_RETURN;
+#ifndef PRODUCT
+  void print() const { print_on(tty); }
+  void print_on(outputStream* out) const;
+
+  // Used for debugging
+  void print_parent() const;
+  void print_children() const;
+#endif
+
 };
 
 
@@ -674,9 +687,9 @@ class IntervalWalker : public CompilationResourceObj {
   // It is safe to append current to any interval list but the unhandled list.
   virtual bool activate_current() { return true; }
 
-  // interval_moved() is called whenever an interval moves from one interval list to another.
-  // In the implementation of this method it is prohibited to move the interval to any list.
-  virtual void interval_moved(Interval* interval, IntervalKind kind, IntervalState from, IntervalState to);
+  // This method is called whenever an interval moves from one interval list to another to print some
+  // information about it and its state change if TraceLinearScanLevel is set appropriately.
+  DEBUG_ONLY(void interval_moved(Interval* interval, IntervalKind kind, IntervalState from, IntervalState to);)
 
  public:
   IntervalWalker(LinearScan* allocator, Interval* unhandled_fixed_first, Interval* unhandled_any_first);

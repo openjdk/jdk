@@ -60,13 +60,37 @@ public final class StackTraceElement implements java.io.Serializable {
     private transient Class<?> declaringClassObject;
 
     // Normally initialized by VM
+    /**
+     * The name of the class loader.
+     */
     private String classLoaderName;
+    /**
+     * The module name.
+     */
     private String moduleName;
+    /**
+     * The module version.
+     */
     private String moduleVersion;
+    /**
+     * The declaring class.
+     */
     private String declaringClass;
+    /**
+     * The method name.
+     */
     private String methodName;
+    /**
+     * The source file name.
+     */
     private String fileName;
+    /**
+     * The source line number.
+     */
     private int    lineNumber;
+    /**
+     * Control to show full or partial module, package, and class names.
+     */
     private byte   format = 0; // Default to show all
 
     /**

@@ -20,53 +20,65 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ *
+ * @summary converted from VM Testbase jit/t/t113.
+ * VM Testbase keywords: [jit, quick, vm6]
+ * VM Testbase readme:
+ * Clone of t097.  The pass file changed in JDK 1.2.
+ *
+ * @library /vmTestbase
+ *          /test/lib
+ * @build jit.t.t113.t113
+ * @comment ExecDriver is used so golden file won't depend on jtreg
+ * @run driver ExecDriver --java
+ *      -Dtest.src=${test.src}
+ *      jit.t.t113.t113
+ */
+
 package jit.t.t113;
 
-import java.io.*;
-import nsk.share.TestFailure;
 import nsk.share.GoldChecker;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 // THIS TEST IS LINE NUMBER SENSITIVE
 
 // Exception thrown by checkcast.
 
-class parent
-{
+class parent {
 }
 
-class kid1 extends parent
-{
+class kid1 extends parent {
     int i;
 }
 
-class kid2 extends parent
-{
+class kid2 extends parent {
     int j;
 }
 
-public class t113
-{
-    public static final GoldChecker goldChecker = new GoldChecker( "t113" );
+public class t113 {
+    public static final GoldChecker goldChecker = new GoldChecker("t113");
 
-    public static void main(String[] argv) throws Throwable
-    {
+    public static void main(String[] argv) throws Throwable {
         parent p;
         kid2 k2;
 
         p = new kid1();
-        try
-        {
+        try {
             k2 = (kid2) p;
+        } catch (Throwable t) {
+            StringWriter sr = new StringWriter();
+            t.printStackTrace(new PrintWriter(sr));
+            // Relaxing the gold checking to allow jigsaw module names
+            // appear in ClassCastException message
+            t113.goldChecker.print(sr.toString().replace("\t", "        ")
+                    .replaceAll(" \\(in module: [ \\w\\.]*\\)", ""));
         }
-        catch(Throwable t)
-        {
-                StringWriter sr = new StringWriter();
-                t.printStackTrace(new PrintWriter(sr));
-                // Relaxing the gold checking to allow jigsaw module names
-                // appear in ClassCastException message
-                t113.goldChecker.print(sr.toString().replace("\t", "        ")
-                        .replaceAll(" \\(in module: [ \\w\\.]*\\)",""));
-        }
+
         t113.goldChecker.check();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2231,6 +2231,9 @@ public class File
      * in case the path is reconstituted on a different host type.
      *
      * @serialData  Default fields followed by separator character.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private synchronized void writeObject(java.io.ObjectOutputStream s)
@@ -2245,6 +2248,10 @@ public class File
      * The original separator character is read.  If it is different
      * than the separator character on this system, then the old separator
      * is replaced by the local separator.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private synchronized void readObject(java.io.ObjectInputStream s)

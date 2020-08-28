@@ -948,6 +948,10 @@ public class NamingManager {
         return (answer != null) ? answer : obj;
     }
 
+    /**
+     * Thrown when an error is encountered while loading and instantiating the
+     * context factory classes.
+     */
     private static class FactoryInitializationError extends Error {
         @java.io.Serial
         static final long serialVersionUID = -5805552256848841560L;

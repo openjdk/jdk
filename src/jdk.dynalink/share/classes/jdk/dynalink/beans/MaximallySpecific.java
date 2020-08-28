@@ -65,6 +65,7 @@ import java.lang.invoke.MethodType;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 import jdk.dynalink.linker.ConversionComparator.Comparison;
 import jdk.dynalink.linker.LinkerServices;
 import jdk.dynalink.linker.support.TypeUtilities;
@@ -81,28 +82,8 @@ class MaximallySpecific {
      * @return the list of maximally specific methods.
      */
     static List<SingleDynamicMethod> getMaximallySpecificMethods(final List<SingleDynamicMethod> methods, final boolean varArgs) {
-        return getMaximallySpecificSingleDynamicMethods(methods, varArgs, null, null);
+        return getMaximallySpecificMethods(methods, varArgs, null, null, SingleDynamicMethod::getMethodType);
     }
-
-    private abstract static class MethodTypeGetter<T> {
-        abstract MethodType getMethodType(T t);
-    }
-
-    private static final MethodTypeGetter<MethodHandle> METHOD_HANDLE_TYPE_GETTER =
-            new MethodTypeGetter<MethodHandle>() {
-        @Override
-        MethodType getMethodType(final MethodHandle t) {
-            return t.type();
-        }
-    };
-
-    private static final MethodTypeGetter<SingleDynamicMethod> DYNAMIC_METHOD_TYPE_GETTER =
-            new MethodTypeGetter<SingleDynamicMethod>() {
-        @Override
-        MethodType getMethodType(final SingleDynamicMethod t) {
-            return t.getMethodType();
-        }
-    };
 
      /**
       * Given a list of methods handles, returns a list of maximally specific methods, applying language-runtime
@@ -115,21 +96,7 @@ class MaximallySpecific {
       */
      static List<MethodHandle> getMaximallySpecificMethodHandles(final List<MethodHandle> methods, final boolean varArgs,
              final Class<?>[] argTypes, final LinkerServices ls) {
-         return getMaximallySpecificMethods(methods, varArgs, argTypes, ls, METHOD_HANDLE_TYPE_GETTER);
-     }
-
-     /**
-      * Given a list of methods, returns a list of maximally specific methods, applying language-runtime specific
-      * conversion preferences.
-      *
-      * @param methods the list of methods
-      * @param varArgs whether to assume the methods are varargs
-      * @param argTypes concrete argument types for the invocation
-      * @return the list of maximally specific methods.
-      */
-     static List<SingleDynamicMethod> getMaximallySpecificSingleDynamicMethods(final List<SingleDynamicMethod> methods,
-             final boolean varArgs, final Class<?>[] argTypes, final LinkerServices ls) {
-         return getMaximallySpecificMethods(methods, varArgs, argTypes, ls, DYNAMIC_METHOD_TYPE_GETTER);
+         return getMaximallySpecificMethods(methods, varArgs, argTypes, ls, MethodHandle::type);
      }
 
     /**
@@ -142,17 +109,17 @@ class MaximallySpecific {
      * @return the list of maximally specific methods.
      */
     private static <T> List<T> getMaximallySpecificMethods(final List<T> methods, final boolean varArgs,
-            final Class<?>[] argTypes, final LinkerServices ls, final MethodTypeGetter<T> methodTypeGetter) {
+            final Class<?>[] argTypes, final LinkerServices ls, final Function<T, MethodType> methodTypeGetter) {
         if(methods.size() < 2) {
             return methods;
         }
         final LinkedList<T> maximals = new LinkedList<>();
         for(final T m: methods) {
-            final MethodType methodType = methodTypeGetter.getMethodType(m);
+            final MethodType methodType = methodTypeGetter.apply(m);
             boolean lessSpecific = false;
             for(final Iterator<T> maximal = maximals.iterator(); maximal.hasNext();) {
                 final T max = maximal.next();
-                switch(isMoreSpecific(methodType, methodTypeGetter.getMethodType(max), varArgs, argTypes, ls)) {
+                switch(isMoreSpecific(methodType, methodTypeGetter.apply(max), varArgs, argTypes, ls)) {
                     case TYPE_1_BETTER: {
                         maximal.remove();
                         break;

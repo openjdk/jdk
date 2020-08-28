@@ -450,9 +450,6 @@ bool HandshakeState::can_process_handshake() {
 
 bool HandshakeState::possibly_can_process_handshake() {
   // Note that this method is allowed to produce false positives.
-  if (_handshakee->is_ext_suspended()) {
-    return true;
-  }
   if (_handshakee->is_terminated()) {
     return true;
   }

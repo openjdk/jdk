@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "compiler/compilerDefinitions.hpp"
@@ -401,17 +402,6 @@ bool CompilerConfig::check_args_consistency(bool status) {
       warning("PostLoopMultiversioning disabled because RangeCheckElimination is disabled.");
     }
     FLAG_SET_CMDLINE(PostLoopMultiversioning, false);
-  }
-  if (UseCountedLoopSafepoints && LoopStripMiningIter == 0) {
-    if (!FLAG_IS_DEFAULT(UseCountedLoopSafepoints) || !FLAG_IS_DEFAULT(LoopStripMiningIter)) {
-      warning("When counted loop safepoints are enabled, LoopStripMiningIter must be at least 1 (a safepoint every 1 iteration): setting it to 1");
-    }
-    LoopStripMiningIter = 1;
-  } else if (!UseCountedLoopSafepoints && LoopStripMiningIter > 0) {
-    if (!FLAG_IS_DEFAULT(UseCountedLoopSafepoints) || !FLAG_IS_DEFAULT(LoopStripMiningIter)) {
-      warning("Disabling counted safepoints implies no loop strip mining: setting LoopStripMiningIter to 0");
-    }
-    LoopStripMiningIter = 0;
   }
 #endif // COMPILER2
 

@@ -58,6 +58,7 @@ requires.properties= \
     vm.jvmci \
     vm.emulatedClient \
     vm.cpu.features \
+    vm.pageSize \
     vm.debug \
     vm.hasSA \
     vm.hasJFR \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,13 +547,20 @@ public class CompoundName implements Name {
     }
 
     /**
-     * Overridden to avoid implementation dependency.
+     * The writeObject method is called to save the state of the
+     * {@code CompoundName} to a stream.
+     *
      * @serialData The syntax {@code Properties}, followed by
      * the number of components (an {@code int}), and the individual
      * components (each a {@code String}).
+     *
+     * @param s the {@code ObjectOutputStream} to write to
+     * @throws java.io.IOException if an I/O error occurs
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException {
+        // Overridden to avoid implementation dependency
         s.writeObject(mySyntax);
         s.writeInt(size());
         Enumeration<String> comps = getAll();
@@ -563,10 +570,20 @@ public class CompoundName implements Name {
     }
 
     /**
-     * Overridden to avoid implementation dependency.
+     * The readObject method is called to restore the state of
+     * the {@code CompoundName} from a stream.
+     *
+     * See {@code writeObject} for a description of the serial form.
+     *
+     * @param s the {@code ObjectInputStream} to read from
+     * @throws java.io.IOException if an I/O error occurs
+     * @throws ClassNotFoundException if the class of a serialized object
+     *         could not be found
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
             throws java.io.IOException, ClassNotFoundException {
+        // Overridden to avoid implementation dependency.
         mySyntax = (Properties)s.readObject();
         impl = new NameImpl(mySyntax);
         int n = s.readInt();    // number of components
@@ -582,6 +599,7 @@ public class CompoundName implements Name {
     /**
      * Use serialVersionUID from JNDI 1.1.1 for interoperability
      */
+    @java.io.Serial
     private static final long serialVersionUID = 3513100557083972036L;
 
 /*

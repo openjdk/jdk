@@ -25,6 +25,7 @@
 package jdk.incubator.jpackage.internal;
 
 import java.io.IOException;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import static jdk.incubator.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.ARGUMENTS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
 
 /**
  * App launcher's config file.
@@ -49,6 +51,7 @@ final class CfgFile {
         launcherName = APP_NAME.fetchFrom(params);
         javaOptions = JAVA_OPTIONS.fetchFrom(params);
         arguments = ARGUMENTS.fetchFrom(params);
+        version = VERSION.fetchFrom(params);
         return this;
     }
 
@@ -82,11 +85,20 @@ final class CfgFile {
 
         ApplicationLayout appImagelayout = appLayout.resolveAt(appImage);
         Path modsDir = appImagelayout.appModsDirectory();
-        if (!javaOptions.isEmpty() || Files.isDirectory(modsDir)) {
-            content.add(Map.entry("[JavaOptions]", SECTION_TAG));
-            for (var value : javaOptions) {
-                content.add(Map.entry("java-options", value));
-            }
+
+        content.add(Map.entry("[JavaOptions]", SECTION_TAG));
+
+        // always let app know it's version
+        content.add(Map.entry(
+                "java-options", "-Djpackage.app-version=" + version));
+
+        // add user supplied java options if there are any
+        for (var value : javaOptions) {
+            content.add(Map.entry("java-options", value));
+        }
+
+        // add module path if there is one
+        if (Files.isDirectory(modsDir)) {
             content.add(Map.entry("java-options", "--module-path"));
             content.add(Map.entry("java-options",
                     appCfgLayout.appModsDirectory()));
@@ -126,6 +138,7 @@ final class CfgFile {
     }
 
     private String launcherName;
+    private String version;
     private LauncherData launcherData;
     List<String> arguments;
     List<String> javaOptions;

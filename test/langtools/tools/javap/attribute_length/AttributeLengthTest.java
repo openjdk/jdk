@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,33 @@
  * questions.
  */
 
-
-/*
- * @test
- *
- * @summary converted from VM Testbase jit/t/t112.
- * VM Testbase keywords: [jit, quick]
- * VM Testbase readme:
- * Clone of t090.  The pass file changed in JDK 1.2.
- *
- * @library /vmTestbase
- *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t112.t112
- * @run driver ExecDriver --java jit.t.t112.t112
+/* @test
+ * @bug 8230918
+ * @summary j.l.NASE in javap
+ * @modules jdk.jdeps/com.sun.tools.javap
+ * @compile JavapBug.jcod
+ * @run main AttributeLengthTest
  */
 
+import java.io.*;
+
+
+import java.util.*;
+import java.util.Properties;
+
+public class AttributeLengthTest {
+    public static void main(String... args) throws Exception {
+        String testClasses = System.getProperty("test.classes");
+        String fileSep = System.getProperty("file.separator");
+
+        String[] opts = { "-v", testClasses + fileSep + "JavapBug.class" };
+        StringWriter sw = new StringWriter();
+        PrintWriter pout = new PrintWriter(sw);
+
+        com.sun.tools.javap.Main.run(opts, pout);
+        pout.flush();
+        if (sw.getBuffer().indexOf("Error: Fatal error: attribute Code too big to handle") == -1) {
+            throw new Exception("unexpected javap output");
+        }
+    }
+}

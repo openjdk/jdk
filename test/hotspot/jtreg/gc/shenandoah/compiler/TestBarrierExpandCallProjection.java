@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,29 @@
  * questions.
  */
 
-module com.hello {
-    exports com.hello;
+/**
+ * @test
+ * @bug 8252296
+ * @summary Shenandoah: crash in CallNode::extract_projections
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:+UseShenandoahGC -XX:CompileOnly=TestBarrierExpandCallProjection::test TestBarrierExpandCallProjection
+ *
+ */
+
+public class TestBarrierExpandCallProjection {
+    static TestBarrierExpandCallProjection test = new TestBarrierExpandCallProjection();
+    private int field;
+
+    public static void main(String[] args) {
+        test();
+    }
+
+    private static int test() {
+        int v = 0;
+        for (int i = 0; i < 100_000; i++) {
+            v += test.field;
+        }
+        return v;
+    }
 }

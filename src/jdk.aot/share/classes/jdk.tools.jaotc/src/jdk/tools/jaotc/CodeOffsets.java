@@ -35,12 +35,14 @@ final class CodeOffsets {
     private final int verifiedEntry;
     private final int exceptionHandler;
     private final int deoptHandler;
+    private final int deoptMHHandler;
 
-    private CodeOffsets(int entry, int verifiedEntry, int exceptionHandler, int deoptHandler) {
+    private CodeOffsets(int entry, int verifiedEntry, int exceptionHandler, int deoptHandler, int deoptMHHandler) {
         this.entry = entry;
         this.verifiedEntry = verifiedEntry;
         this.exceptionHandler = exceptionHandler;
         this.deoptHandler = deoptHandler;
+        this.deoptMHHandler = deoptMHHandler;
     }
 
     static CodeOffsets buildFrom(List<CompilationResult.CodeMark> marks) {
@@ -48,6 +50,7 @@ final class CodeOffsets {
         int verifiedEntry = 0;
         int exceptionHandler = -1;
         int deoptHandler = -1;
+        int deoptMHHandler = -1;
 
         for (CompilationResult.CodeMark mark : marks) {
             HotSpotMarkId markId = (HotSpotMarkId) mark.id;
@@ -67,11 +70,14 @@ final class CodeOffsets {
                 case DEOPT_HANDLER_ENTRY:
                     deoptHandler = mark.pcOffset;
                     break;
+                case DEOPT_MH_HANDLER_ENTRY:
+                    deoptMHHandler = mark.pcOffset;
+                    break;
                 default:
                     break; // Ignore others
             }
         }
-        return new CodeOffsets(entry, verifiedEntry, exceptionHandler, deoptHandler);
+        return new CodeOffsets(entry, verifiedEntry, exceptionHandler, deoptHandler, deoptMHHandler);
     }
 
     int entry() {
@@ -88,5 +94,9 @@ final class CodeOffsets {
 
     int deoptHandler() {
         return deoptHandler;
+    }
+
+    int deoptMHHandler() {
+        return deoptMHHandler;
     }
 }

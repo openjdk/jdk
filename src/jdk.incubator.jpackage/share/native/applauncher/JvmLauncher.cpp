@@ -89,6 +89,11 @@ Jvm& Jvm::initFromConfigFile(const CfgFile& cfgFile) {
         }
     } while (0);
 
+    do {
+        addArgument(_T("-Djpackage.app-path=")
+                + SysInfo::getProcessModulePath());
+    } while (0);
+
     // No validation of data in config file related to how Java app should be
     // launched intentionally.
     // Just read what is in config file and put on jvm's command line as is.

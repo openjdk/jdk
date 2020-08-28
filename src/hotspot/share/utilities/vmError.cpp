@@ -32,7 +32,7 @@
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
-#include "memory/resourceArea.hpp"
+#include "memory/resourceArea.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "prims/whitebox.hpp"
@@ -1866,6 +1866,15 @@ void VMError::controlled_crash(int how) {
         ThreadsListHandle tlh2;
         fatal("Force crash with a nested ThreadsListHandle.");
       }
+    }
+    case 18: {
+      // Check for assert when allocating from resource area without a
+      // ResourceMark.  There must not be a ResourceMark on the
+      // current stack when invoking this test case.
+      ResourceArea* area = Thread::current()->resource_area();
+      assert(area->nesting() == 0, "unexpected ResourceMark");
+      area->allocate_bytes(100);
+      break;
     }
 
     default: tty->print_cr("ERROR: %d: unexpected test_num value.", how);

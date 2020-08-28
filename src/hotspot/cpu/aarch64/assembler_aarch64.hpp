@@ -380,9 +380,15 @@ class Address {
     : _base(r), _index(noreg), _offset(0), _mode(base_plus_offset), _target(0) { }
   Address(Register r, int o)
     : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, int64_t o)
+  Address(Register r, long o)
     : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, uint64_t o)
+  Address(Register r, long long o)
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
+  Address(Register r, unsigned int o)
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
+  Address(Register r, unsigned long o)
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
+  Address(Register r, unsigned long long o)
     : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
 #ifdef ASSERT
   Address(Register r, ByteSize disp)

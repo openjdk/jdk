@@ -97,7 +97,9 @@ public class DefaultCtorWarningToolBox extends TestRunner {
             List.of("Foo.java:4:8: compiler.warn.missing-explicit-ctor: pkg1.Foo, pkg1, mod",
                     "Foo.java:12:12: compiler.warn.missing-explicit-ctor: pkg1.Foo.FooNest, pkg1, mod",
                     "Foo.java:16:19: compiler.warn.missing-explicit-ctor: pkg1.Foo.StaticFooNest, pkg1, mod",
-                    "3 warnings");
+                    "Foo.java:25:15: compiler.warn.missing-explicit-ctor: pkg1.Foo.ProtectedFooNest, pkg1, mod",
+                    "Foo.java:27:19: compiler.warn.missing-explicit-ctor: pkg1.Foo.ProtectedFooNest.ProtectedFooNestNest, pkg1, mod",
+                    "5 warnings");
 
         // Warning enable,
         log = new JavacTask(tb)
@@ -137,30 +139,34 @@ public class DefaultCtorWarningToolBox extends TestRunner {
         class Bar {
 
             // No explicit constructor; use a default.
-            public class FooNest {
+            public class BarNest {
             }
 
             // No explicit constructor; use a default.
-            public static class StaticFooNest {
+            public static class StaticBarNest {
+            }
+
+            // No explicit constructor; use a default.
+            protected class ProtectedBarNest {
             }
 
             // Package-access classes
 
             // No explicit constructor; use a default.
-            /*package*/ class PkgFooNest {
+            /*package*/ class PkgBarNest {
             }
 
             // No explicit constructor; use a default.
-            /*package*/ static class PkgStaticFooNest {
+            /*package*/ static class PkgStaticBarNest {
             }
             // Private classes
 
             // No explicit constructor; use a default.
-            private class PrvFooNest {
+            private class PrvBarNest {
             }
 
             // No explicit constructor; use a default.
-            private static class PrvStaticFooNest {
+            private static class PrvStaticBarNest {
             }
         }
         """;
@@ -190,10 +196,18 @@ public class DefaultCtorWarningToolBox extends TestRunner {
             public static class SuppressedStaticFooNest {
             }
 
+            // No explicit constructor; use a default.
+            protected class ProtectedFooNest {
+                // No explicit constructor; use a default.
+                protected class ProtectedFooNestNest {}
+            }
+
             // Package-access classes
 
             // No explicit constructor; use a default.
             /*package*/ class PkgFooNest {
+                // No explicit constructor; use a default.
+                protected class PkgFooNestNest {}
             }
 
             // No explicit constructor; use a default.
@@ -203,6 +217,8 @@ public class DefaultCtorWarningToolBox extends TestRunner {
 
             // No explicit constructor; use a default.
             private class PrvFooNest {
+                // No explicit constructor; use a default.
+                protected class PrvFooNestNest {}
             }
 
             // No explicit constructor; use a default.

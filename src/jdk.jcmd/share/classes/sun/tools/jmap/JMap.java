@@ -181,7 +181,7 @@ public class JMap {
             } else if (subopt.startsWith("file=")) {
                 filename = parseFileName(subopt);
                 if (filename == null) {
-                    System.err.println("Fail: invalid option or no file name '" + subopt +"'");
+                    System.err.println("Fail: invalid option or no file name '" + subopt + "'");
                     usage(1);
                 }
             } else if (subopt.startsWith("parallel=")) {
@@ -218,6 +218,10 @@ public class JMap {
                 liveopt = "-live";
             } else if (subopt.startsWith("file=")) {
                 filename = parseFileName(subopt);
+                if (filename == null) {
+                    System.err.println("Fail: invalid option or no file name '" + subopt + "'");
+                    usage(1);
+                }
             } else if (subopt.equals("format=b")) {
                 // ignore format (not needed at this time)
             } else {
@@ -230,6 +234,8 @@ public class JMap {
             System.err.println("Fail: invalid option or no file name");
             usage(1);
         }
+
+        System.out.flush();
 
         // dumpHeap is not the same as jcmd GC.heap_dump
         executeCommandForPid(pid, "dumpheap", filename, liveopt);
@@ -293,15 +299,15 @@ public class JMap {
         System.err.println("        to print this help message");
         System.err.println("");
         System.err.println("    dump-options:");
-        System.err.println("      live         dump only live objects");
-        System.err.println("      all          dump all objects in the heap (default if one of \"live\" or \"all\" is not specified");
+        System.err.println("      live         dump only live objects (takes precedence if both \"live\" and \"all\" are specified)");
+        System.err.println("      all          dump all objects in the heap (default if one of \"live\" or \"all\" is not specified)");
         System.err.println("      format=b     binary format");
         System.err.println("      file=<file>  dump heap to <file>");
         System.err.println("");
         System.err.println("    Example: jmap -dump:live,format=b,file=heap.bin <pid>");
         System.err.println("");
         System.err.println("    histo-options:");
-        System.err.println("      live         count only live objects");
+        System.err.println("      live         count only live objects (takes precedence if both \"live\" and \"all\" are specified)");
         System.err.println("      all          count all objects in the heap (default if one of \"live\" or \"all\" is not specified)");
         System.err.println("      file=<file>  dump data to <file>");
         System.err.println("      parallel=<number>  parallel threads number for heap iteration:");

@@ -25,7 +25,9 @@
 #ifndef SHARE_MEMORY_ARCHIVEBUILDER_HPP
 #define SHARE_MEMORY_ARCHIVEBUILDER_HPP
 
+#include "memory/archiveUtils.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "oops/klass.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
@@ -33,7 +35,6 @@
 
 class CHeapBitMap;
 class Klass;
-class DumpRegion;
 class Symbol;
 class DumpAllocStats;
 
@@ -227,6 +228,10 @@ public:
     Klass* klass = (Klass*)singleton()->get_dumped_addr((address)orig_klass);
     assert(klass != NULL && klass->is_klass(), "must be");
     return klass;
+  }
+
+  static Symbol* get_relocated_symbol(Symbol* orig_symbol) {
+    return (Symbol*)singleton()->get_dumped_addr((address)orig_symbol);
   }
 
   void print_stats(int ro_all, int rw_all, int mc_all);

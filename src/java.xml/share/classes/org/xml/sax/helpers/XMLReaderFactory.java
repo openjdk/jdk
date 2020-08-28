@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ final public class XMLReaderFactory
      * removal in a future release.
      *
      * @return a new XMLReader.
-     * @exception org.xml.sax.SAXException If no default XMLReader class
+     * @throws org.xml.sax.SAXException If no default XMLReader class
      *            can be identified and instantiated.
      * @see #createXMLReader(java.lang.String)
      */
@@ -166,8 +166,9 @@ final public class XMLReaderFactory
      * the caller (perhaps an applet) is not permitted to load classes
      * dynamically.
      *
+     * @param className a class name
      * @return A new XML reader.
-     * @exception org.xml.sax.SAXException If the class cannot be
+     * @throws org.xml.sax.SAXException If the class cannot be
      *            loaded, instantiated, and cast to XMLReader.
      * @see #createXMLReader()
      */

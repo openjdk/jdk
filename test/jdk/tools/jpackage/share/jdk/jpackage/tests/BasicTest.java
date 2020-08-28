@@ -65,6 +65,28 @@ public final class BasicTest {
     }
 
     @Test
+    public void testJpackageProps() {
+        String appVersion = "3.0";
+        JPackageCommand cmd = JPackageCommand.helloAppImage(
+                JavaAppDesc.parse("Hello"))
+                // Disable default logic adding `--verbose` option
+                // to jpackage command line.
+                .ignoreDefaultVerbose(true)
+                .saveConsoleOutput(true)
+                .addArguments("--app-version", appVersion, "--arguments",
+                    "jpackage.app-version jpackage.app-path")
+                .ignoreDefaultRuntime(true);
+
+        cmd.executeAndAssertImageCreated();
+        Path launcherPath = cmd.appLauncherPath();
+
+        List<String> output = HelloApp.executeLauncher(cmd).getOutput();
+
+        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output.stream());
+        TKit.assertTextStream("jpackage.app-path=").apply(output.stream());
+    }
+
+    @Test
     public void testVersion() {
         List<String> output =
                 getJPackageToolProvider()

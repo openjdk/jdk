@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,8 +187,8 @@ implements java.io.Serializable
                 while (i < certs.length) {
                     count++;
                     while (((i+1) < certs.length) &&
-                           ((X509Certificate)certs[i]).getIssuerDN().equals(
-                               ((X509Certificate)certs[i+1]).getSubjectDN())) {
+                           ((X509Certificate)certs[i]).getIssuerX500Principal().equals(
+                               ((X509Certificate)certs[i+1]).getSubjectX500Principal())) {
                         i++;
                     }
                     i++;
@@ -207,8 +207,8 @@ implements java.io.Serializable
                     while (i < certs.length) {
                         signerCerts.add(certs[i]);
                         while (((i+1) < certs.length) &&
-                            ((X509Certificate)certs[i]).getIssuerDN().equals(
-                              ((X509Certificate)certs[i+1]).getSubjectDN())) {
+                            ((X509Certificate)certs[i]).getIssuerX500Principal().equals(
+                              ((X509Certificate)certs[i+1]).getSubjectX500Principal())) {
                             i++;
                         }
                         i++;

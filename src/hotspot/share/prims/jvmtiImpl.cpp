@@ -579,16 +579,13 @@ bool VM_GetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
   jobject jobj = _value.l;
   if (_set && slot_type == T_OBJECT && jobj != NULL) { // NULL reference is allowed
     // Check that the jobject class matches the return type signature.
-    JavaThread* cur_thread = JavaThread::current();
-    HandleMark hm(cur_thread);
-
-    Handle obj(cur_thread, JNIHandles::resolve_external_guard(jobj));
+    oop obj = JNIHandles::resolve_external_guard(jobj);
     NULL_CHECK(obj, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
     Klass* ob_k = obj->klass();
     NULL_CHECK(ob_k, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
 
     const char* signature = (const char *) sign_sym->as_utf8();
-    if (!is_assignable(signature, ob_k, cur_thread)) {
+    if (!is_assignable(signature, ob_k, VMThread::vm_thread())) {
       _result = JVMTI_ERROR_TYPE_MISMATCH;
       return false;
     }
@@ -629,34 +626,33 @@ static bool can_be_deoptimized(vframe* vf) {
   return (vf->is_compiled_frame() && vf->fr().can_be_deoptimized());
 }
 
-bool VM_GetOrSetLocal::doit_prologue() {
+void VM_GetOrSetLocal::doit() {
   _jvf = get_java_vframe();
-  NULL_CHECK(_jvf, false);
+  if (_jvf == NULL) {
+    return;
+  };
 
   Method* method = _jvf->method();
   if (getting_receiver()) {
     if (method->is_static()) {
       _result = JVMTI_ERROR_INVALID_SLOT;
-      return false;
+      return;
     }
-    return true;
+  } else {
+    if (method->is_native()) {
+      _result = JVMTI_ERROR_OPAQUE_FRAME;
+      return;
+    }
+
+    if (!check_slot_type_no_lvt(_jvf)) {
+      return;
+    }
+    if (method->has_localvariable_table() &&
+        !check_slot_type_lvt(_jvf)) {
+      return;
+    }
   }
 
-  if (method->is_native()) {
-    _result = JVMTI_ERROR_OPAQUE_FRAME;
-    return false;
-  }
-
-  if (!check_slot_type_no_lvt(_jvf)) {
-    return false;
-  }
-  if (method->has_localvariable_table()) {
-    return check_slot_type_lvt(_jvf);
-  }
-  return true;
-}
-
-void VM_GetOrSetLocal::doit() {
   InterpreterOopMap oop_mask;
   _jvf->method()->mask_for(_jvf->bci(), &oop_mask);
   if (oop_mask.is_dead(_index)) {
@@ -695,7 +691,7 @@ void VM_GetOrSetLocal::doit() {
       return;
     }
     StackValueCollection *locals = _jvf->locals();
-    Thread* current_thread = Thread::current();
+    Thread* current_thread = VMThread::vm_thread();
     HandleMark hm(current_thread);
 
     switch (_type) {

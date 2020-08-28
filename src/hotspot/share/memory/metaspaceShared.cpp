@@ -56,6 +56,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
@@ -113,92 +114,6 @@ bool MetaspaceShared::_use_optimized_module_handling = true;
 //
 // The s0/s1 and oa0/oa1 regions are populated inside HeapShared::archive_java_heap_objects.
 // Their layout is independent of the other 4 regions.
-
-char* DumpRegion::expand_top_to(char* newtop) {
-  assert(is_allocatable(), "must be initialized and not packed");
-  assert(newtop >= _top, "must not grow backwards");
-  if (newtop > _end) {
-    MetaspaceShared::report_out_of_space(_name, newtop - _top);
-    ShouldNotReachHere();
-  }
-
-  if (_rs == MetaspaceShared::shared_rs()) {
-    uintx delta;
-    if (DynamicDumpSharedSpaces) {
-      delta = DynamicArchive::object_delta_uintx(newtop);
-    } else {
-      delta = MetaspaceShared::object_delta_uintx(newtop);
-    }
-    if (delta > MAX_SHARED_DELTA) {
-      // This is just a sanity check and should not appear in any real world usage. This
-      // happens only if you allocate more than 2GB of shared objects and would require
-      // millions of shared classes.
-      vm_exit_during_initialization("Out of memory in the CDS archive",
-                                    "Please reduce the number of shared classes.");
-    }
-  }
-
-  MetaspaceShared::commit_to(_rs, _vs, newtop);
-  _top = newtop;
-  return _top;
-}
-
-char* DumpRegion::allocate(size_t num_bytes, size_t alignment) {
-  char* p = (char*)align_up(_top, alignment);
-  char* newtop = p + align_up(num_bytes, alignment);
-  expand_top_to(newtop);
-  memset(p, 0, newtop - p);
-  return p;
-}
-
-void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
-  assert(is_aligned(_top, sizeof(intptr_t)), "bad alignment");
-  intptr_t *p = (intptr_t*)_top;
-  char* newtop = _top + sizeof(intptr_t);
-  expand_top_to(newtop);
-  *p = n;
-  if (need_to_mark) {
-    ArchivePtrMarker::mark_pointer(p);
-  }
-}
-
-void DumpRegion::print(size_t total_bytes) const {
-  log_debug(cds)("%-3s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
-                 _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
-                 p2i(_base + MetaspaceShared::final_delta()));
-}
-
-void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t needed_bytes) {
-  log_error(cds)("[%-8s] " PTR_FORMAT " - " PTR_FORMAT " capacity =%9d, allocated =%9d",
-                 _name, p2i(_base), p2i(_top), int(_end - _base), int(_top - _base));
-  if (strcmp(_name, failing_region) == 0) {
-    log_error(cds)(" required = %d", int(needed_bytes));
-  }
-}
-
-void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
-  _rs = rs;
-  _vs = vs;
-  // Start with 0 committed bytes. The memory will be committed as needed by
-  // MetaspaceShared::commit_to().
-  if (!_vs->initialize(*_rs, 0)) {
-    fatal("Unable to allocate memory for shared space");
-  }
-  _base = _top = _rs->base();
-  _end = _rs->end();
-}
-
-void DumpRegion::pack(DumpRegion* next) {
-  assert(!is_packed(), "sanity");
-  _end = (char*)align_up(_top, MetaspaceShared::reserved_space_alignment());
-  _is_packed = true;
-  if (next != NULL) {
-    next->_rs = _rs;
-    next->_vs = _vs;
-    next->_base = next->_top = this->_end;
-    next->_end = _rs->end();
-  }
-}
 
 static DumpRegion _mc_region("mc"), _ro_region("ro"), _rw_region("rw"), _symbol_region("symbols");
 static size_t _total_closed_archive_region_size = 0, _total_open_archive_region_size = 0;
@@ -452,10 +367,12 @@ void MetaspaceShared::post_initialize(TRAPS) {
   }
 }
 
-static GrowableArrayCHeap<Handle, mtClassShared>* _extra_interned_strings = NULL;
+static GrowableArrayCHeap<OopHandle, mtClassShared>* _extra_interned_strings = NULL;
+static GrowableArrayCHeap<Symbol*, mtClassShared>* _extra_symbols = NULL;
 
 void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
-  _extra_interned_strings = new GrowableArrayCHeap<Handle, mtClassShared>(10000);
+  _extra_interned_strings = new GrowableArrayCHeap<OopHandle, mtClassShared>(10000);
+  _extra_symbols = new GrowableArrayCHeap<Symbol*, mtClassShared>(1000);
 
   HashtableTextDump reader(filename);
   reader.check_version("VERSION: 1.0");
@@ -474,10 +391,10 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
     utf8_buffer[utf8_length] = '\0';
 
     if (prefix_type == HashtableTextDump::SymbolPrefix) {
-      SymbolTable::new_permanent_symbol(utf8_buffer);
+      _extra_symbols->append(SymbolTable::new_permanent_symbol(utf8_buffer));
     } else{
       assert(prefix_type == HashtableTextDump::StringPrefix, "Sanity");
-      oop s = StringTable::intern(utf8_buffer, THREAD);
+      oop str = StringTable::intern(utf8_buffer, THREAD);
 
       if (HAS_PENDING_EXCEPTION) {
         log_warning(cds, heap)("[line %d] extra interned string allocation failed; size too large: %d",
@@ -486,7 +403,7 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
       } else {
 #if INCLUDE_G1GC
         if (UseG1GC) {
-          typeArrayOop body = java_lang_String::value(s);
+          typeArrayOop body = java_lang_String::value(str);
           const HeapRegion* hr = G1CollectedHeap::heap()->heap_region_containing(body);
           if (hr->is_humongous()) {
             // Don't keep it alive, so it will be GC'ed before we dump the strings, in order
@@ -497,11 +414,9 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
           }
         }
 #endif
-        // Interned strings are GC'ed if there are no references to it, so let's
-        // add a reference to keep this string alive.
-        assert(s != NULL, "must succeed");
-        Handle h(THREAD, s);
-        _extra_interned_strings->append(h);
+        // Make sure this string is included in the dumped interned string table.
+        assert(str != NULL, "must succeed");
+        _extra_interned_strings->append(OopHandle(Universe::vm_global(), str));
       }
     }
   }
@@ -983,30 +898,6 @@ bool MetaspaceShared::is_valid_shared_method(const Method* m) {
   return CppVtableCloner<Method>::is_valid_shared_object(m);
 }
 
-void WriteClosure::do_oop(oop* o) {
-  if (*o == NULL) {
-    _dump_region->append_intptr_t(0);
-  } else {
-    assert(HeapShared::is_heap_object_archiving_allowed(),
-           "Archiving heap object is not allowed");
-    _dump_region->append_intptr_t(
-      (intptr_t)CompressedOops::encode_not_null(*o));
-  }
-}
-
-void WriteClosure::do_region(u_char* start, size_t size) {
-  assert((intptr_t)start % sizeof(intptr_t) == 0, "bad alignment");
-  assert(size % sizeof(intptr_t) == 0, "bad size");
-  do_tag((int)size);
-  while (size > 0) {
-    _dump_region->append_intptr_t(*(intptr_t*)start, true);
-    start += sizeof(intptr_t);
-    size -= sizeof(intptr_t);
-  }
-}
-
-// Populate the shared space.
-
 class VM_PopulateDumpSharedSpace: public VM_Operation {
 private:
   GrowableArray<MemRegion> *_closed_archive_heap_regions;
@@ -1019,7 +910,10 @@ private:
   void dump_archive_heap_oopmaps() NOT_CDS_JAVA_HEAP_RETURN;
   void dump_archive_heap_oopmaps(GrowableArray<MemRegion>* regions,
                                  GrowableArray<ArchiveHeapOopmapInfo>* oopmaps);
-  void dump_symbols();
+  void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
+    log_info(cds)("Dumping symbol table ...");
+    SymbolTable::write_to_archive(symbols);
+  }
   char* dump_read_only_tables();
   void print_region_stats(FileMapInfo* map_info);
   void print_bitmap_region_stats(size_t size, size_t total_size);
@@ -1043,17 +937,20 @@ public:
     FileMapInfo::metaspace_pointers_do(it, false);
     SystemDictionaryShared::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
-    SymbolTable::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
+
+    // The above code should find all the symbols that are referenced by the
+    // archived classes. We just need to add the extra symbols which
+    // may not be used by any of the archived classes -- these are usually
+    // symbols that we anticipate to be used at run time, so we can store
+    // them in the RO region, to be shared across multiple processes.
+    if (_extra_symbols != NULL) {
+      for (int i = 0; i < _extra_symbols->length(); i++) {
+        it->push(_extra_symbols->adr_at(i));
+      }
+    }
   }
 };
-
-void VM_PopulateDumpSharedSpace::dump_symbols() {
-  log_info(cds)("Dumping symbol table ...");
-
-  NOT_PRODUCT(SymbolTable::verify());
-  SymbolTable::write_to_archive();
-}
 
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
@@ -1179,7 +1076,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.dump_ro_region();
   builder.relocate_pointers();
 
-  dump_symbols();
+  dump_shared_symbol_table(builder.symbols());
 
   // Dump supported java heap objects
   _closed_archive_heap_regions = NULL;
@@ -1430,7 +1327,7 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     }
     log_info(cds)("Reading extra data: done.");
 
-    HeapShared::init_subgraph_entry_fields(THREAD);
+    HeapShared::init_for_dumping(THREAD);
 
     // Rewrite and link classes
     log_info(cds)("Rewriting and linking classes ...");
@@ -1522,6 +1419,22 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
+  // Find all the interned strings that should be dumped.
+  int i;
+  for (i = 0; i < _global_klass_objects->length(); i++) {
+    Klass* k = _global_klass_objects->at(i);
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      ik->constants()->add_dumped_interned_strings();
+    }
+  }
+  if (_extra_interned_strings != NULL) {
+    for (i = 0; i < _extra_interned_strings->length(); i ++) {
+      OopHandle string = _extra_interned_strings->at(i);
+      HeapShared::add_to_dumped_interned_strings(string.resolve());
+    }
+  }
+
   // The closed and open archive heap space has maximum two regions.
   // See FileMapInfo::write_archive_heap_regions() for details.
   _closed_archive_heap_regions = new GrowableArray<MemRegion>(2);
@@ -1563,56 +1476,6 @@ void VM_PopulateDumpSharedSpace::dump_archive_heap_oopmaps(GrowableArray<MemRegi
   }
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
-
-void ReadClosure::do_ptr(void** p) {
-  assert(*p == NULL, "initializing previous initialized pointer.");
-  intptr_t obj = nextPtr();
-  assert((intptr_t)obj >= 0 || (intptr_t)obj < -100,
-         "hit tag while initializing ptrs.");
-  *p = (void*)obj;
-}
-
-void ReadClosure::do_u4(u4* p) {
-  intptr_t obj = nextPtr();
-  *p = (u4)(uintx(obj));
-}
-
-void ReadClosure::do_bool(bool* p) {
-  intptr_t obj = nextPtr();
-  *p = (bool)(uintx(obj));
-}
-
-void ReadClosure::do_tag(int tag) {
-  int old_tag;
-  old_tag = (int)(intptr_t)nextPtr();
-  // do_int(&old_tag);
-  assert(tag == old_tag, "old tag doesn't match");
-  FileMapInfo::assert_mark(tag == old_tag);
-}
-
-void ReadClosure::do_oop(oop *p) {
-  narrowOop o = (narrowOop)nextPtr();
-  if (o == 0 || !HeapShared::open_archive_heap_region_mapped()) {
-    *p = NULL;
-  } else {
-    assert(HeapShared::is_heap_object_archiving_allowed(),
-           "Archived heap object is not allowed");
-    assert(HeapShared::open_archive_heap_region_mapped(),
-           "Open archive heap region is not mapped");
-    *p = HeapShared::decode_from_archive(o);
-  }
-}
-
-void ReadClosure::do_region(u_char* start, size_t size) {
-  assert((intptr_t)start % sizeof(intptr_t) == 0, "bad alignment");
-  assert(size % sizeof(intptr_t) == 0, "bad size");
-  do_tag((int)size);
-  while (size > 0) {
-    *(intptr_t*)start = nextPtr();
-    start += sizeof(intptr_t);
-    size -= sizeof(intptr_t);
-  }
-}
 
 void MetaspaceShared::set_shared_metaspace_range(void* base, void *static_top, void* top) {
   assert(base <= static_top && static_top <= top, "must be");
@@ -2206,8 +2069,3 @@ void MetaspaceShared::print_on(outputStream* st) {
   }
   st->cr();
 }
-
-
-
-
-

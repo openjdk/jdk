@@ -298,6 +298,8 @@ define SetupApiDocsGenerationBody
   # Create a string like "-Xdoclint:all,-syntax,-html,..."
   $1_OPTIONS += -Xdoclint:all,$$(call CommaList, $$(addprefix -, \
       $$(JAVADOC_DISABLED_DOCLINT)))
+  # Ignore the doclint warnings in the W3C DOM package
+  $1_OPTIONS += -Xdoclint/package:-org.w3c.*
 
   $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API \
       Specification

@@ -2719,15 +2719,6 @@ struct Final_Reshape_Counts : public StackObj {
   int  get_inner_loop_count() const { return _inner_loop_count; }
 };
 
-#ifdef ASSERT
-static bool oop_offset_is_sane(const TypeInstPtr* tp) {
-  ciInstanceKlass *k = tp->klass()->as_instance_klass();
-  // Make sure the offset goes inside the instance layout.
-  return k->contains_field_offset(tp->offset());
-  // Note that OffsetBot and OffsetTop are very negative.
-}
-#endif
-
 // Eliminate trivially redundant StoreCMs and accumulate their
 // precedence edges.
 void Compile::eliminate_redundant_card_marks(Node* n) {
@@ -2850,6 +2841,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_ConF:
   case Op_CmpF:
   case Op_CmpF3:
+  case Op_StoreF:
+  case Op_LoadF:
   // case Op_ConvL2F: // longs are split into 32-bit halves
     frc.inc_float_count();
     break;
@@ -2874,6 +2867,9 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_ConD:
   case Op_CmpD:
   case Op_CmpD3:
+  case Op_StoreD:
+  case Op_LoadD:
+  case Op_LoadD_unaligned:
     frc.inc_double_count();
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
@@ -2914,16 +2910,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
-
-  case Op_StoreD:
-  case Op_LoadD:
-  case Op_LoadD_unaligned:
-    frc.inc_double_count();
-    goto handle_mem;
-  case Op_StoreF:
-  case Op_LoadF:
-    frc.inc_float_count();
-    goto handle_mem;
 
   case Op_StoreCM:
     {
@@ -2986,18 +2972,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_LoadP:
   case Op_LoadN:
   case Op_LoadRange:
-  case Op_LoadS: {
-  handle_mem:
-#ifdef ASSERT
-    if( VerifyOptoOopOffsets ) {
-      MemNode* mem  = n->as_Mem();
-      // Check to see if address types have grounded out somehow.
-      const TypeInstPtr *tp = mem->in(MemNode::Address)->bottom_type()->isa_instptr();
-      assert( !tp || oop_offset_is_sane(tp), "" );
-    }
-#endif
+  case Op_LoadS:
     break;
-  }
 
   case Op_AddP: {               // Assert sane base pointers
     Node *addp = n->in(AddPNode::Address);

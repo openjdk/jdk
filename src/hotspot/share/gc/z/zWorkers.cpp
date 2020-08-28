@@ -27,6 +27,7 @@
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThread.hpp"
 #include "gc/z/zWorkers.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 

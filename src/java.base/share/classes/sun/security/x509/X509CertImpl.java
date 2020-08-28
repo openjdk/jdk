@@ -901,7 +901,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             SerialNumber ser = (SerialNumber)info.get(
                               CertificateSerialNumber.NAME + DOT +
                               CertificateSerialNumber.NUMBER);
-           return ser;
+            return ser;
         } catch (Exception e) {
             return null;
         }
@@ -913,6 +913,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      *
      * @return the subject name.
      */
+    @SuppressWarnings("deprecation")
     public Principal getSubjectDN() {
         if (info == null)
             return null;
@@ -949,6 +950,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      *
      * @return the issuer name.
      */
+    @SuppressWarnings("deprecation")
     public Principal getIssuerDN() {
         if (info == null)
             return null;

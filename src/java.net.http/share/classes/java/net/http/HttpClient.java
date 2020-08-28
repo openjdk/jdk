@@ -40,8 +40,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import java.net.http.HttpResponse.BodyHandler;
@@ -53,8 +51,10 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *
  * <p> An {@code HttpClient} can be used to send {@linkplain HttpRequest
  * requests} and retrieve their {@linkplain HttpResponse responses}. An {@code
- * HttpClient} is created through a {@link HttpClient#newBuilder() builder}. The
- * builder can be used to configure per-client state, like: the preferred
+ * HttpClient} is created through a {@link HttpClient.Builder builder}.
+ * The {@link #newBuilder() newBuilder} method returns a builder that creates
+ * instances of the default {@code HttpClient} implementation.
+ * The builder can be used to configure per-client state, like: the preferred
  * protocol version ( HTTP/1.1 or HTTP/2 ), whether to follow redirects, a
  * proxy, an authenticator, etc. Once built, an {@code HttpClient} is immutable,
  * and can be used to send multiple requests.
@@ -164,6 +164,9 @@ public abstract class HttpClient {
 
     /**
      * Creates a new {@code HttpClient} builder.
+     *
+     * <p> Builders returned by this method create instances
+     * of the default {@code HttpClient} implementation.
      *
      * @return an {@code HttpClient.Builder}
      */
@@ -529,6 +532,23 @@ public abstract class HttpClient {
      * response status, headers, and body ( as handled by given response body
      * handler ).
      *
+     * <p> If the operation is interrupted, the default {@code HttpClient}
+     * implementation attempts to cancel the HTTP exchange and
+     * {@link InterruptedException} is thrown.
+     * No guarantee is made as to exactly <em>when</em> the cancellation request
+     * may be taken into account. In particular, the request might still get sent
+     * to the server, as its processing might already have started asynchronously
+     * in another thread, and the underlying resources may only be released
+     * asynchronously.
+     * <ul>
+     *     <li>With HTTP/1.1, an attempt to cancel may cause the underlying
+     *         connection to be closed abruptly.
+     *     <li>With HTTP/2, an attempt to cancel may cause the stream to be reset,
+     *         or in certain circumstances, may also cause the connection to be
+     *         closed abruptly, if, for instance, the thread is currently trying
+     *         to write to the underlying socket.
+     * </ul>
+     *
      * @param <T> the response body type
      * @param request the request
      * @param responseBodyHandler the response body handler
@@ -586,6 +606,24 @@ public abstract class HttpClient {
      *          URL in the given request, or proxy if one is configured.
      *          See <a href="#securitychecks">security checks</a> for further
      *          information.</li>
+     * </ul>
+     *
+     * <p> The default {@code HttpClient} implementation returns
+     * {@code CompletableFuture} objects that are <em>cancelable</em>.
+     * {@code CompletableFuture} objects {@linkplain CompletableFuture#newIncompleteFuture()
+     * derived} from cancelable futures are themselves <em>cancelable</em>.
+     * Invoking {@linkplain CompletableFuture#cancel(boolean) cancel(true)}
+     * on a cancelable future that is not completed, attempts to cancel the HTTP exchange
+     * in an effort to release underlying resources as soon as possible.
+     * No guarantee is made as to exactly <em>when</em> the cancellation request
+     * may be taken into account. In particular, the request might still get sent
+     * to the server, as its processing might already have started asynchronously
+     * in another thread, and the underlying resources may only be released
+     * asynchronously.
+     * <ul>
+     *     <li>With HTTP/1.1, an attempt to cancel may cause the underlying connection
+     *         to be closed abruptly.
+     *     <li>With HTTP/2, an attempt to cancel may cause the stream to be reset.
      * </ul>
      *
      * @param <T> the response body type

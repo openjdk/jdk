@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,19 +23,18 @@
  * questions.
  */
 
+package com.sun.tools.classfile;
 
-/*
- * @test
- *
- * @summary converted from VM Testbase jit/t/t113.
- * VM Testbase keywords: [jit, quick, vm6]
- * VM Testbase readme:
- * Clone of t097.  The pass file changed in JDK 1.2.
- *
- * @library /vmTestbase
- *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t113.t113
- * @run driver ExecDriver --java jit.t.t113.t113
+/**
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
+public class FatalError extends Error {
+    private static final long serialVersionUID = 8114054446416187030L;
 
+    FatalError(String message) {
+        super(message);
+    }
+}

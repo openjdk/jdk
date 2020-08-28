@@ -704,6 +704,7 @@ public class PKCS7 {
      * Populate array of Issuer DNs from certificates and convert
      * each Principal to type X500Name if necessary.
      */
+    @SuppressWarnings("deprecation")
     private void populateCertIssuerNames() {
         if (certificates == null)
             return;

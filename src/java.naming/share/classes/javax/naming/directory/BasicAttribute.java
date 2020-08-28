@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -494,13 +494,20 @@ public class BasicAttribute implements Attribute {
 //  ---- serialization methods
 
     /**
-     * Overridden to avoid exposing implementation details
-     * @serialData Default field (the attribute ID -- a String),
-     * followed by the number of values (an int), and the
+     * The writeObject method is called to save the state of the
+     * {@code BasicAttribute} to a stream.
+     *
+     * @serialData Default field (the attribute ID - a {@code String}),
+     * followed by the number of values (an {@code int}), and the
      * individual values.
+     *
+     * @param s the {@code ObjectOutputStream} to write to
+     * @throws java.io.IOException if an I/O error occurs
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException {
+        // Overridden to avoid exposing implementation details
         s.defaultWriteObject(); // write out the attrID
         s.writeInt(values.size());
         for (int i = 0; i < values.size(); i++) {
@@ -509,10 +516,20 @@ public class BasicAttribute implements Attribute {
     }
 
     /**
-     * Overridden to avoid exposing implementation details.
+     * The readObject method is called to restore the state of
+     * the {@code BasicAttribute} from a stream.
+     *
+     * See {@code writeObject} for a description of the serial form.
+     *
+     * @param s the {@code ObjectInputStream} to read from
+     * @throws java.io.IOException if an I/O error occurs
+     * @throws ClassNotFoundException if the class of a serialized object
+     *         could not be found
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
             throws java.io.IOException, ClassNotFoundException {
+        // Overridden to avoid exposing implementation details.
         s.defaultReadObject();  // read in the attrID
         int n = s.readInt();    // number of values
         values = new Vector<>(Math.min(1024, n));
@@ -553,5 +570,6 @@ public class BasicAttribute implements Attribute {
     /**
      * Use serialVersionUID from JNDI 1.1.1 for interoperability.
      */
+    @java.io.Serial
     private static final long serialVersionUID = 6743528196119291326L;
 }

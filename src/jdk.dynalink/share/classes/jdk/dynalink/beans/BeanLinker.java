@@ -158,7 +158,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
     private enum CollectionType {
         ARRAY, LIST, MAP
-    };
+    }
 
     private GuardedInvocationComponent getElementGetter(final ComponentLinkRequest req) throws Exception {
         final CallSiteDescriptor callSiteDescriptor = req.getDescriptor();
@@ -241,7 +241,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         // Convert the key to a number if we're working with a list or array
         if (!isMap && name != null) {
             final Integer integer = convertKeyToInteger(name, linkerServices);
-            if (integer == null || integer.intValue() < 0) {
+            if (integer == null || integer < 0) {
                 // key is not a non-negative integer, it can never address an
                 // array or list element
                 return INVALID_NAME;

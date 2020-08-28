@@ -26,39 +26,21 @@
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
 template <typename T>
-class ZArray {
-private:
-  static const size_t initial_capacity = 32;
-
-  T*     _array;
-  size_t _size;
-  size_t _capacity;
-
-  NONCOPYABLE(ZArray);
-
-  void expand(size_t new_capacity);
-
+class ZArray : public GrowableArrayCHeap<T, mtGC> {
 public:
   ZArray();
-  ~ZArray();
 
-  size_t size() const;
-  bool is_empty() const;
-
-  T at(size_t index) const;
-
-  void add(T value);
   void transfer(ZArray<T>* from);
-  void clear();
 };
 
 template <typename T, bool parallel>
 class ZArrayIteratorImpl : public StackObj {
 private:
   ZArray<T>* const _array;
-  size_t           _next;
+  int              _next;
 
 public:
   ZArrayIteratorImpl(ZArray<T>* array);
@@ -70,16 +52,7 @@ public:
 #define ZARRAY_SERIAL      false
 #define ZARRAY_PARALLEL    true
 
-template <typename T>
-class ZArrayIterator : public ZArrayIteratorImpl<T, ZARRAY_SERIAL> {
-public:
-  ZArrayIterator(ZArray<T>* array);
-};
-
-template <typename T>
-class ZArrayParallelIterator : public ZArrayIteratorImpl<T, ZARRAY_PARALLEL> {
-public:
-  ZArrayParallelIterator(ZArray<T>* array);
-};
+template <typename T> using ZArrayIterator = ZArrayIteratorImpl<T, ZARRAY_SERIAL>;
+template <typename T> using ZArrayParallelIterator = ZArrayIteratorImpl<T, ZARRAY_PARALLEL>;
 
 #endif // SHARE_GC_Z_ZARRAY_HPP

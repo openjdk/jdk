@@ -1043,7 +1043,7 @@ GrowableArray<ScopeValue*>* CodeInstaller::record_virtual_objects(JVMCIObject de
   return objects;
 }
 
-void CodeInstaller::record_scope(jint pc_offset, JVMCIObject debug_info, ScopeMode scope_mode, bool return_oop, JVMCI_TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, JVMCIObject debug_info, ScopeMode scope_mode, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS) {
   JVMCIObject position = jvmci_env()->get_DebugInfo_bytecodePosition(debug_info);
   if (position.is_null()) {
     // Stubs do not record scope info, just oop maps
@@ -1056,7 +1056,7 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject debug_info, ScopeMo
   } else {
     objectMapping = NULL;
   }
-  record_scope(pc_offset, position, scope_mode, objectMapping, return_oop, JVMCI_CHECK);
+  record_scope(pc_offset, position, scope_mode, objectMapping, is_mh_invoke, return_oop, JVMCI_CHECK);
 }
 
 int CodeInstaller::map_jvmci_bci(int bci) {
@@ -1079,7 +1079,7 @@ int CodeInstaller::map_jvmci_bci(int bci) {
   return bci;
 }
 
-void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, bool return_oop, JVMCI_TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS) {
   JVMCIObject frame;
   if (scope_mode == CodeInstaller::FullFrame) {
     if (!jvmci_env()->isa_BytecodeFrame(position)) {
@@ -1089,7 +1089,7 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
   }
   JVMCIObject caller_frame = jvmci_env()->get_BytecodePosition_caller(position);
   if (caller_frame.is_non_null()) {
-    record_scope(pc_offset, caller_frame, scope_mode, objects, return_oop, JVMCI_CHECK);
+    record_scope(pc_offset, caller_frame, scope_mode, objects, is_mh_invoke, return_oop, JVMCI_CHECK);
   }
 
   JVMCIObject hotspot_method = jvmci_env()->get_BytecodePosition_method(position);
@@ -1181,7 +1181,7 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
     throw_exception = jvmci_env()->get_BytecodeFrame_rethrowException(frame) == JNI_TRUE;
   }
 
-  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, false, return_oop,
+  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, is_mh_invoke, return_oop,
                                   locals_token, expressions_token, monitors_token);
 }
 
@@ -1236,9 +1236,19 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
     OopMap *map = create_oop_map(debug_info, JVMCI_CHECK);
     _debug_recorder->add_safepoint(next_pc_offset, map);
 
-    bool return_oop = hotspot_method.is_non_null() && jvmci_env()->asMethod(hotspot_method)->is_returning_oop();
-
-    record_scope(next_pc_offset, debug_info, CodeInstaller::FullFrame, return_oop, JVMCI_CHECK);
+    if (hotspot_method.is_non_null()) {
+      Method *method = jvmci_env()->asMethod(hotspot_method);
+      vmIntrinsics::ID iid = method->intrinsic_id();
+      bool is_mh_invoke = false;
+      if (jvmci_env()->get_site_Call_direct(site)) {
+        is_mh_invoke = !method->is_static() && (iid == vmIntrinsics::_compiledLambdaForm ||
+                (MethodHandles::is_signature_polymorphic(iid) && MethodHandles::is_signature_polymorphic_intrinsic(iid)));
+      }
+      bool return_oop = method->is_returning_oop();
+      record_scope(next_pc_offset, debug_info, CodeInstaller::FullFrame, is_mh_invoke, return_oop, JVMCI_CHECK);
+    } else {
+      record_scope(next_pc_offset, debug_info, CodeInstaller::FullFrame, JVMCI_CHECK);
+    }
   }
 
   if (foreign_call.is_non_null()) {
@@ -1346,6 +1356,9 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
         break;
       case DEOPT_HANDLER_ENTRY:
         _offsets.set_value(CodeOffsets::Deopt, pc_offset);
+        break;
+      case DEOPT_MH_HANDLER_ENTRY:
+        _offsets.set_value(CodeOffsets::DeoptMH, pc_offset);
         break;
       case FRAME_COMPLETE:
         _offsets.set_value(CodeOffsets::Frame_Complete, pc_offset);

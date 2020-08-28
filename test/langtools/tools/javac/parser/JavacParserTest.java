@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1510,6 +1510,58 @@ public class JavacParserTest extends TestCase {
             int end = (int) t.getSourcePositions().getEndPosition(cut, permitted);
             assertEquals("testStartAndEndPositionForClassesInPermitsClause", expected.get(i++), code.substring(start, end));
         }
+    }
+
+    @Test //JDK-8237041
+    void testDeepNestingNoClose() throws IOException {
+        //verify that many nested unclosed classes do not crash javac
+        //due to the safety fallback in JavacParser.reportSyntaxError:
+        String code = "package t; class Test {\n";
+        for (int i = 0; i < 100; i++) {
+            code += "class C" + i + " {\n";
+        }
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, List.of("-XDdev"),
+                null, Arrays.asList(new MyFileObject(code)));
+        Result result = ct.doCall();
+        assertEquals("Expected a (plain) error, got: " + result, result, Result.ERROR);
+    }
+
+    @Test //JDK-8237041
+    void testErrorRecoveryClassNotBrace() throws IOException {
+        //verify the AST form produced for classes without opening brace
+        //(classes without an opening brace do not nest the upcoming content):
+        String code = """
+                      package t;
+                      class Test {
+                          String.class,
+                          String.class,
+                          class A
+                          public
+                          class B
+                      }
+                      """;
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, List.of("-XDdev"),
+                null, Arrays.asList(new MyFileObject(code)));
+        String ast = ct.parse().iterator().next().toString().replaceAll("\\R", "\n");
+        String expected = """
+                          package t;
+                          \n\
+                          class Test {
+                              String.<error> <error>;
+                              \n\
+                              class <error> {
+                              }
+                              \n\
+                              class <error> {
+                              }
+                              \n\
+                              class A {
+                              }
+                              \n\
+                              public class B {
+                              }
+                          }""";
+        assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
     }
 
     void run(String[] args) throws Exception {

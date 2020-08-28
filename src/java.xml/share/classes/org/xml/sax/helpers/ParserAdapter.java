@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * <p>Use the "org.xml.sax.parser" property to locate the
      * embedded SAX1 driver.</p>
      *
-     * @exception SAXException If the embedded driver
+     * @throws SAXException If the embedded driver
      *            cannot be instantiated or if the
      *            org.xml.sax.parser property is not specified.
      */
@@ -128,7 +128,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * a new ParserAdapter.</p>
      *
      * @param parser The SAX1 parser to embed.
-     * @exception java.lang.NullPointerException If the parser parameter
+     * @throws java.lang.NullPointerException If the parser parameter
      *            is null.
      */
     public ParserAdapter (Parser parser)
@@ -142,7 +142,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * Internal setup method.
      *
      * @param parser The embedded parser.
-     * @exception java.lang.NullPointerException If the parser parameter
+     * @throws java.lang.NullPointerException If the parser parameter
      *            is null.
      */
     private void setup (Parser parser)
@@ -181,9 +181,9 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      *
      * @param name The feature name, as a complete URI.
      * @param value The requested feature value.
-     * @exception SAXNotRecognizedException If the feature
+     * @throws SAXNotRecognizedException If the feature
      *            can't be assigned or retrieved.
-     * @exception SAXNotSupportedException If the feature
+     * @throws SAXNotSupportedException If the feature
      *            can't be assigned that value.
      * @see org.xml.sax.XMLReader#setFeature
      */
@@ -219,9 +219,9 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      *
      * @param name The feature name, as a complete URI.
      * @return The current feature value.
-     * @exception SAXNotRecognizedException If the feature
+     * @throws SAXNotRecognizedException If the feature
      *            value can't be assigned or retrieved.
-     * @exception SAXNotSupportedException If the
+     * @throws SAXNotSupportedException If the
      *            feature is not currently readable.
      * @see org.xml.sax.XMLReader#setFeature
      */
@@ -247,9 +247,9 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      *
      * @param name The property name.
      * @param value The property value.
-     * @exception SAXNotRecognizedException If the property
+     * @throws SAXNotRecognizedException If the property
      *            value can't be assigned or retrieved.
-     * @exception SAXNotSupportedException If the property
+     * @throws SAXNotSupportedException If the property
      *            can't be assigned that value.
      * @see org.xml.sax.XMLReader#setProperty
      */
@@ -267,9 +267,9 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      *
      * @param name The property name.
      * @return The property value.
-     * @exception SAXNotRecognizedException If the property
+     * @throws SAXNotRecognizedException If the property
      *            value can't be assigned or retrieved.
-     * @exception SAXNotSupportedException If the property
+     * @throws SAXNotSupportedException If the property
      *            value is not currently readable.
      * @see org.xml.sax.XMLReader#getProperty
      */
@@ -380,9 +380,9 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * Parse an XML document.
      *
      * @param systemId The absolute URL of the document.
-     * @exception java.io.IOException If there is a problem reading
+     * @throws java.io.IOException If there is a problem reading
      *            the raw content of the document.
-     * @exception SAXException If there is a problem
+     * @throws SAXException If there is a problem
      *            processing the document.
      * @see #parse(org.xml.sax.InputSource)
      * @see org.xml.sax.Parser#parse(java.lang.String)
@@ -398,9 +398,9 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * Parse an XML document.
      *
      * @param input An input source for the document.
-     * @exception java.io.IOException If there is a problem reading
+     * @throws java.io.IOException If there is a problem reading
      *            the raw content of the document.
-     * @exception SAXException If there is a problem
+     * @throws SAXException If there is a problem
      *            processing the document.
      * @see #parse(java.lang.String)
      * @see org.xml.sax.Parser#parse(org.xml.sax.InputSource)
@@ -448,7 +448,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * Adapter implementation method; do not call.
      * Adapt a SAX1 start document event.
      *
-     * @exception SAXException The client may raise a
+     * @throws SAXException The client may raise a
      *            processing exception.
      * @see org.xml.sax.DocumentHandler#startDocument
      */
@@ -465,7 +465,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * Adapter implementation method; do not call.
      * Adapt a SAX1 end document event.
      *
-     * @exception SAXException The client may raise a
+     * @throws SAXException The client may raise a
      *            processing exception.
      * @see org.xml.sax.DocumentHandler#endDocument
      */
@@ -486,7 +486,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      *
      * @param qName The qualified (prefixed) name.
      * @param qAtts The XML attribute list (with qnames).
-     * @exception SAXException The client may raise a
+     * @throws SAXException The client may raise a
      *            processing exception.
      */
     public void startElement (String qName, AttributeList qAtts)
@@ -616,7 +616,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * Adapt a SAX1 end element event.
      *
      * @param qName The qualified (prefixed) name.
-     * @exception SAXException The client may raise a
+     * @throws SAXException The client may raise a
      *            processing exception.
      * @see org.xml.sax.DocumentHandler#endElement
      */
@@ -653,7 +653,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * @param ch An array of characters.
      * @param start The starting position in the array.
      * @param length The number of characters to use.
-     * @exception SAXException The client may raise a
+     * @throws SAXException The client may raise a
      *            processing exception.
      * @see org.xml.sax.DocumentHandler#characters
      */
@@ -673,7 +673,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * @param ch An array of characters.
      * @param start The starting position in the array.
      * @param length The number of characters to use.
-     * @exception SAXException The client may raise a
+     * @throws SAXException The client may raise a
      *            processing exception.
      * @see org.xml.sax.DocumentHandler#ignorableWhitespace
      */
@@ -692,7 +692,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      *
      * @param target The processing instruction target.
      * @param data The remainder of the processing instruction
-     * @exception SAXException The client may raise a
+     * @throws SAXException The client may raise a
      *            processing exception.
      * @see org.xml.sax.DocumentHandler#processingInstruction
      */
@@ -748,7 +748,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * @param qName The qualified (prefixed) name.
      * @param isAttribute true if this is an attribute name.
      * @return The name split into three parts.
-     * @exception SAXException The client may throw
+     * @throws SAXException The client may throw
      *            an exception if there is an error callback.
      */
     private String [] processName (String qName, boolean isAttribute,
@@ -773,7 +773,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      * Report a non-fatal error.
      *
      * @param message The error message.
-     * @exception SAXException The client may throw
+     * @throws SAXException The client may throw
      *            an exception.
      */
     void reportError (String message)
@@ -807,7 +807,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
      *
      * @param type The type of thing (feature or property).
      * @param name The feature or property name.
-     * @exception SAXNotSupportedException If a
+     * @throws SAXNotSupportedException If a
      *            document is currently being parsed.
      */
     private void checkNotParsing (String type, String name)

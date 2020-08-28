@@ -27,6 +27,7 @@
 
 #include "classfile/classLoader.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/arguments.hpp"
 
 // Next entry in class path
 inline ClassPathEntry* ClassPathEntry::next() const { return Atomic::load_acquire(&_next); }

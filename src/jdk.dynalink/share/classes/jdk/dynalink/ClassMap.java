@@ -132,12 +132,9 @@ abstract class ClassMap<T> {
         final T newV = computeValue(clazz);
         assert newV != null;
 
-        final Boolean canReferenceDirectly = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            @Override
-            public Boolean run() {
-                return InternalTypeUtilities.canReferenceDirectly(classLoader, clazz.getClassLoader());
-            }
-        }, GET_CLASS_LOADER_CONTEXT);
+        final Boolean canReferenceDirectly = AccessController.doPrivileged(
+            (PrivilegedAction<Boolean>) () -> InternalTypeUtilities.canReferenceDirectly(classLoader, clazz.getClassLoader()),
+            GET_CLASS_LOADER_CONTEXT);
 
         // If allowed to strongly reference, put it in the fast map
         if(canReferenceDirectly) {

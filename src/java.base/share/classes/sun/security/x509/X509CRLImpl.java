@@ -682,8 +682,9 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * TeletexString or UniversalString.
      * @return the issuer name.
      */
+    @SuppressWarnings("deprecation")
     public Principal getIssuerDN() {
-        return (Principal)issuer;
+        return issuer;
     }
 
     /**

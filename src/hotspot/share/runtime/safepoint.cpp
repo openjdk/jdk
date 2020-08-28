@@ -653,7 +653,7 @@ static bool safepoint_safe_with(JavaThread *thread, JavaThreadState state) {
 }
 
 bool SafepointSynchronize::handshake_safe(JavaThread *thread) {
-  if (thread->is_ext_suspended() || thread->is_terminated()) {
+  if (thread->is_terminated()) {
     return true;
   }
   JavaThreadState stable_state;
@@ -887,32 +887,6 @@ void ThreadSafepointState::examine_state_of_thread(uint64_t safepoint_count) {
   if (!SafepointSynchronize::try_stable_load_state(&stable_state, _thread, safepoint_count)) {
     // We could not get stable state of the JavaThread.
     // Consider it running and just return.
-    return;
-  }
-
-  // Check for a thread that is suspended. Note that thread resume tries
-  // to grab the Threads_lock which we own here, so a thread cannot be
-  // resumed during safepoint synchronization.
-
-  // We check to see if this thread is suspended without locking to
-  // avoid deadlocking with a third thread that is waiting for this
-  // thread to be suspended. The third thread can notice the safepoint
-  // that we're trying to start at the beginning of its SR_lock->wait()
-  // call. If that happens, then the third thread will block on the
-  // safepoint while still holding the underlying SR_lock. We won't be
-  // able to get the SR_lock and we'll deadlock.
-  //
-  // We don't need to grab the SR_lock here for two reasons:
-  // 1) The suspend flags are both volatile and are set with an
-  //    Atomic::cmpxchg() call so we should see the suspended
-  //    state right away.
-  // 2) We're being called from the safepoint polling loop; if
-  //    we don't see the suspended state on this iteration, then
-  //    we'll come around again.
-  //
-  bool is_suspended = _thread->is_ext_suspended();
-  if (is_suspended) {
-    account_safe_thread();
     return;
   }
 

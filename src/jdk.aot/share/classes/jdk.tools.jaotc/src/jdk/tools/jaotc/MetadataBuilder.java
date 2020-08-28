@@ -114,6 +114,7 @@ final class MetadataBuilder {
             int verifiedEntry = co.verifiedEntry();
             int exceptionHandler = co.exceptionHandler();
             int deoptHandler = co.deoptHandler();
+            int deoptMHHandler = co.deoptMHHandler();
             int frameSize = methodInfo.getCompilationResult().getTotalFrameSize();
             StackSlot deoptRescueSlot = methodInfo.getCompilationResult().getCustomStackArea();
             int origPcOffset = deoptRescueSlot != null ? deoptRescueSlot.getOffset(frameSize) : -1;
@@ -135,6 +136,7 @@ final class MetadataBuilder {
                                putInt(verifiedEntry).
                                putInt(exceptionHandler).
                                putInt(deoptHandler).
+                               putInt(deoptMHHandler).
                                putInt(stubsOffset).
                                putInt(frameSize).
                                putInt(origPcOffset).

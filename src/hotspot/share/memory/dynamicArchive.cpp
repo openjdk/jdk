@@ -238,7 +238,7 @@ public:
       // they would need to call DynamicArchive::original_to_target() to
       // get the correct addresses.
       assert(current_dump_space() == ro_space, "Must be RO space");
-      SymbolTable::write_to_archive(false);
+      SymbolTable::write_to_archive(symbols());
       SystemDictionaryShared::write_to_archive(false);
 
       serialized_data = ro_space->top();
@@ -270,7 +270,6 @@ public:
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) {
     if (!is_relocating_pointers) {
       SystemDictionaryShared::dumptime_classes_do(it);
-      SymbolTable::metaspace_pointers_do(it);
     }
     FileMapInfo::metaspace_pointers_do(it);
   }

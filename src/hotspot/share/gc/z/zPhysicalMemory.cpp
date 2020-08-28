@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zNUMA.inline.hpp"
@@ -40,102 +41,58 @@
 #include "utilities/powerOfTwo.hpp"
 
 ZPhysicalMemory::ZPhysicalMemory() :
-    _nsegments_max(0),
-    _nsegments(0),
-    _segments(NULL) {}
+    _segments() {}
 
 ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemorySegment& segment) :
-    _nsegments_max(0),
-    _nsegments(0),
-    _segments(NULL) {
+    _segments() {
   add_segment(segment);
 }
 
 ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemory& pmem) :
-    _nsegments_max(0),
-    _nsegments(0),
-    _segments(NULL) {
+    _segments() {
   add_segments(pmem);
 }
 
 const ZPhysicalMemory& ZPhysicalMemory::operator=(const ZPhysicalMemory& pmem) {
-  remove_segments();
-  add_segments(pmem);
-  return *this;
-}
+  // Free segments
+  _segments.clear_and_deallocate();
 
-ZPhysicalMemory::~ZPhysicalMemory() {
-  remove_segments();
+  // Copy segments
+  add_segments(pmem);
+
+  return *this;
 }
 
 size_t ZPhysicalMemory::size() const {
   size_t size = 0;
 
-  for (uint32_t i = 0; i < _nsegments; i++) {
-    size += _segments[i].size();
+  for (int i = 0; i < _segments.length(); i++) {
+    size += _segments.at(i).size();
   }
 
   return size;
 }
 
-void ZPhysicalMemory::insert_segment(uint32_t index, uintptr_t start, size_t size, bool committed) {
-  assert(index <= _nsegments, "Invalid index");
-
-  ZPhysicalMemorySegment* const from_segments = _segments;
-
-  if (_nsegments + 1 > _nsegments_max) {
-    // Resize array
-    _nsegments_max = round_up_power_of_2(_nsegments_max + 1);
-    _segments = new ZPhysicalMemorySegment[_nsegments_max];
-
-    // Copy segments before index
-    for (uint32_t i = 0; i < index; i++) {
-      _segments[i] = from_segments[i];
-    }
-  }
-
-  // Copy/Move segments after index
-  for (uint32_t i = _nsegments; i > index; i--) {
-    _segments[i] = from_segments[i - 1];
-  }
-
-  // Insert new segment
-  _segments[index] = ZPhysicalMemorySegment(start, size, committed);
-  _nsegments++;
-
-  // Delete old array
-  if (from_segments != _segments) {
-    delete [] from_segments;
-  }
+void ZPhysicalMemory::insert_segment(int index, uintptr_t start, size_t size, bool committed) {
+  _segments.insert_before(index, ZPhysicalMemorySegment(start, size, committed));
 }
 
-void ZPhysicalMemory::replace_segment(uint32_t index, uintptr_t start, size_t size, bool committed) {
-  assert(index < _nsegments, "Invalid index");
-  _segments[index] = ZPhysicalMemorySegment(start, size, committed);;
+void ZPhysicalMemory::replace_segment(int index, uintptr_t start, size_t size, bool committed) {
+  _segments.at_put(index, ZPhysicalMemorySegment(start, size, committed));
 }
 
-void ZPhysicalMemory::remove_segment(uint32_t index) {
-  assert(index < _nsegments, "Invalid index");
-
-  // Move segments after index
-  for (uint32_t i = index + 1; i < _nsegments; i++) {
-    _segments[i - 1] = _segments[i];
-  }
-
-  _nsegments--;
+void ZPhysicalMemory::remove_segment(int index) {
+  _segments.remove_at(index);
 }
 
 void ZPhysicalMemory::add_segments(const ZPhysicalMemory& pmem) {
-  for (uint32_t i = 0; i < pmem.nsegments(); i++) {
+  for (int i = 0; i < pmem.nsegments(); i++) {
     add_segment(pmem.segment(i));
   }
 }
 
 void ZPhysicalMemory::remove_segments() {
-  delete [] _segments;
-  _segments = NULL;
-  _nsegments_max = 0;
-  _nsegments = 0;
+  _segments.clear_and_deallocate();
 }
 
 static bool is_mergable(const ZPhysicalMemorySegment& before, const ZPhysicalMemorySegment& after) {
@@ -144,29 +101,29 @@ static bool is_mergable(const ZPhysicalMemorySegment& before, const ZPhysicalMem
 
 void ZPhysicalMemory::add_segment(const ZPhysicalMemorySegment& segment) {
   // Insert segments in address order, merge segments when possible
-  for (uint32_t i = _nsegments; i > 0; i--) {
-    const uint32_t current = i - 1;
+  for (int i = _segments.length(); i > 0; i--) {
+    const int current = i - 1;
 
-    if (_segments[current].end() <= segment.start()) {
-      if (is_mergable(_segments[current], segment)) {
-        if (current + 1 < _nsegments && is_mergable(segment, _segments[current + 1])) {
+    if (_segments.at(current).end() <= segment.start()) {
+      if (is_mergable(_segments.at(current), segment)) {
+        if (current + 1 < _segments.length() && is_mergable(segment, _segments.at(current + 1))) {
           // Merge with end of current segment and start of next segment
-          const size_t start = _segments[current].start();
-          const size_t size = _segments[current].size() + segment.size() + _segments[current + 1].size();
+          const size_t start = _segments.at(current).start();
+          const size_t size = _segments.at(current).size() + segment.size() + _segments.at(current + 1).size();
           replace_segment(current, start, size, segment.is_committed());
           remove_segment(current + 1);
           return;
         }
 
         // Merge with end of current segment
-        const size_t start = _segments[current].start();
-        const size_t size = _segments[current].size() + segment.size();
+        const size_t start = _segments.at(current).start();
+        const size_t size = _segments.at(current).size() + segment.size();
         replace_segment(current, start, size, segment.is_committed());
         return;
-      } else if (current + 1 < _nsegments && is_mergable(segment, _segments[current + 1])) {
+      } else if (current + 1 < _segments.length() && is_mergable(segment, _segments.at(current + 1))) {
         // Merge with start of next segment
         const size_t start = segment.start();
-        const size_t size = segment.size() + _segments[current + 1].size();
+        const size_t size = segment.size() + _segments.at(current + 1).size();
         replace_segment(current + 1, start, size, segment.is_committed());
         return;
       }
@@ -177,10 +134,10 @@ void ZPhysicalMemory::add_segment(const ZPhysicalMemorySegment& segment) {
     }
   }
 
-  if (_nsegments > 0 && is_mergable(segment, _segments[0])) {
+  if (_segments.length() > 0 && is_mergable(segment, _segments.at(0))) {
     // Merge with start of first segment
     const size_t start = segment.start();
-    const size_t size = segment.size() + _segments[0].size();
+    const size_t size = segment.size() + _segments.at(0).size();
     replace_segment(0, start, size, segment.is_committed());
     return;
   }
@@ -189,41 +146,43 @@ void ZPhysicalMemory::add_segment(const ZPhysicalMemorySegment& segment) {
   insert_segment(0, segment.start(), segment.size(), segment.is_committed());
 }
 
-bool ZPhysicalMemory::commit_segment(uint32_t index, size_t size) {
-  assert(index < _nsegments, "Invalid index");
-  assert(size <= _segments[index].size(), "Invalid size");
-  assert(!_segments[index].is_committed(), "Invalid state");
+bool ZPhysicalMemory::commit_segment(int index, size_t size) {
+  ZPhysicalMemorySegment& segment = _segments.at(index);
 
-  if (size == _segments[index].size()) {
+  assert(size <= segment.size(), "Invalid size");
+  assert(!segment.is_committed(), "Invalid state");
+
+  if (size == segment.size()) {
     // Completely committed
-    _segments[index].set_committed(true);
+    segment.set_committed(true);
     return true;
   }
 
   if (size > 0) {
     // Partially committed, split segment
-    insert_segment(index + 1, _segments[index].start() + size, _segments[index].size() - size, false /* committed */);
-    replace_segment(index, _segments[index].start(), size, true /* committed */);
+    insert_segment(index + 1, segment.start() + size, segment.size() - size, false /* committed */);
+    replace_segment(index, segment.start(), size, true /* committed */);
   }
 
   return false;
 }
 
-bool ZPhysicalMemory::uncommit_segment(uint32_t index, size_t size) {
-  assert(index < _nsegments, "Invalid index");
-  assert(size <= _segments[index].size(), "Invalid size");
-  assert(_segments[index].is_committed(), "Invalid state");
+bool ZPhysicalMemory::uncommit_segment(int index, size_t size) {
+  ZPhysicalMemorySegment& segment = _segments.at(index);
 
-  if (size == _segments[index].size()) {
+  assert(size <= segment.size(), "Invalid size");
+  assert(segment.is_committed(), "Invalid state");
+
+  if (size == segment.size()) {
     // Completely uncommitted
-    _segments[index].set_committed(false);
+    segment.set_committed(false);
     return true;
   }
 
   if (size > 0) {
     // Partially uncommitted, split segment
-    insert_segment(index + 1, _segments[index].start() + size, _segments[index].size() - size, true /* committed */);
-    replace_segment(index, _segments[index].start(), size, false /* committed */);
+    insert_segment(index + 1, segment.start() + size, segment.size() - size, true /* committed */);
+    replace_segment(index, segment.start(), size, false /* committed */);
   }
 
   return false;
@@ -231,10 +190,10 @@ bool ZPhysicalMemory::uncommit_segment(uint32_t index, size_t size) {
 
 ZPhysicalMemory ZPhysicalMemory::split(size_t size) {
   ZPhysicalMemory pmem;
-  uint32_t nsegments = 0;
+  int nsegments = 0;
 
-  for (uint32_t i = 0; i < _nsegments; i++) {
-    const ZPhysicalMemorySegment& segment = _segments[i];
+  for (int i = 0; i < _segments.length(); i++) {
+    const ZPhysicalMemorySegment& segment = _segments.at(i);
     if (pmem.size() < size) {
       if (pmem.size() + segment.size() <= size) {
         // Transfer segment
@@ -243,35 +202,35 @@ ZPhysicalMemory ZPhysicalMemory::split(size_t size) {
         // Split segment
         const size_t split_size = size - pmem.size();
         pmem.add_segment(ZPhysicalMemorySegment(segment.start(), split_size, segment.is_committed()));
-        _segments[nsegments++] = ZPhysicalMemorySegment(segment.start() + split_size, segment.size() - split_size, segment.is_committed());
+        _segments.at_put(nsegments++, ZPhysicalMemorySegment(segment.start() + split_size, segment.size() - split_size, segment.is_committed()));
       }
     } else {
       // Keep segment
-      _segments[nsegments++] = segment;
+      _segments.at_put(nsegments++, segment);
     }
   }
 
-  _nsegments = nsegments;
+  _segments.trunc_to(nsegments);
 
   return pmem;
 }
 
 ZPhysicalMemory ZPhysicalMemory::split_committed() {
   ZPhysicalMemory pmem;
-  uint32_t nsegments = 0;
+  int nsegments = 0;
 
-  for (uint32_t i = 0; i < _nsegments; i++) {
-    const ZPhysicalMemorySegment& segment = _segments[i];
+  for (int i = 0; i < _segments.length(); i++) {
+    const ZPhysicalMemorySegment& segment = _segments.at(i);
     if (segment.is_committed()) {
       // Transfer segment
       pmem.add_segment(segment);
     } else {
       // Keep segment
-      _segments[nsegments++] = segment;
+      _segments.at_put(nsegments++, segment);
     }
   }
 
-  _nsegments = nsegments;
+  _segments.trunc_to(nsegments);
 
   return pmem;
 }
@@ -349,7 +308,7 @@ void ZPhysicalMemoryManager::alloc(ZPhysicalMemory& pmem, size_t size) {
 
 void ZPhysicalMemoryManager::free(const ZPhysicalMemory& pmem) {
   // Free segments
-  for (uint32_t i = 0; i < pmem.nsegments(); i++) {
+  for (int i = 0; i < pmem.nsegments(); i++) {
     const ZPhysicalMemorySegment& segment = pmem.segment(i);
     _manager.free(segment.start(), segment.size());
   }
@@ -357,7 +316,7 @@ void ZPhysicalMemoryManager::free(const ZPhysicalMemory& pmem) {
 
 bool ZPhysicalMemoryManager::commit(ZPhysicalMemory& pmem) {
   // Commit segments
-  for (uint32_t i = 0; i < pmem.nsegments(); i++) {
+  for (int i = 0; i < pmem.nsegments(); i++) {
     const ZPhysicalMemorySegment& segment = pmem.segment(i);
     if (segment.is_committed()) {
       // Segment already committed
@@ -378,7 +337,7 @@ bool ZPhysicalMemoryManager::commit(ZPhysicalMemory& pmem) {
 
 bool ZPhysicalMemoryManager::uncommit(ZPhysicalMemory& pmem) {
   // Commit segments
-  for (uint32_t i = 0; i < pmem.nsegments(); i++) {
+  for (int i = 0; i < pmem.nsegments(); i++) {
     const ZPhysicalMemorySegment& segment = pmem.segment(i);
     if (!segment.is_committed()) {
       // Segment already uncommitted
@@ -406,7 +365,7 @@ void ZPhysicalMemoryManager::map_view(uintptr_t addr, const ZPhysicalMemory& pme
   size_t size = 0;
 
   // Map segments
-  for (uint32_t i = 0; i < pmem.nsegments(); i++) {
+  for (int i = 0; i < pmem.nsegments(); i++) {
     const ZPhysicalMemorySegment& segment = pmem.segment(i);
     _backing.map(addr + size, segment.size(), segment.start());
     size += segment.size();

@@ -354,6 +354,7 @@ public final class ValueRange implements Serializable {
      * Check that the values are valid.
      *
      * @param s the stream to read
+     * @throws IOException if an I/O error occurs
      * @throws InvalidObjectException if
      *     the smallest minimum is greater than the smallest maximum,
      *  or the smallest maximum is greater than the largest maximum

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,19 +23,17 @@
  * questions.
  */
 
+import jdk.dynalink.beans.BeansLinker;
+import org.testng.annotations.Test;
 
-/*
+/**
  * @test
- *
- * @summary converted from VM Testbase jit/t/t110.
- * VM Testbase keywords: [jit, quick]
- * VM Testbase readme:
- * Clone of t085.  The pass file changed in JDK 1.2.
- *
- * @library /vmTestbase
- *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t110.t110
- * @run driver ExecDriver --java jit.t.t110.t110
+ * @build ClassLoaderAware
+ * @run testng CallerSensitiveTest
  */
-
+public class CallerSensitiveTest {
+    @Test
+    public void testCallerSensitive() {
+        new BeansLinker().getLinkerForClass(ClassLoaderAware.class);
+    }
+}

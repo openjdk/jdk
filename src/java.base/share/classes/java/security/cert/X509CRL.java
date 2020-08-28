@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,12 +279,6 @@ public abstract class X509CRL extends CRL implements X509Extension {
     public abstract int getVersion();
 
     /**
-     * <strong>Denigrated</strong>, replaced by {@linkplain
-     * #getIssuerX500Principal()}. This method returns the {@code issuer}
-     * as an implementation specific Principal object, which should not be
-     * relied upon by portable code.
-     *
-     * <p>
      * Gets the {@code issuer} (issuer distinguished name) value from
      * the CRL. The issuer name identifies the entity that signed (and
      * issued) the CRL.
@@ -316,7 +310,13 @@ public abstract class X509CRL extends CRL implements X509Extension {
      * {@code TeletexString} or {@code UniversalString}.
      *
      * @return a Principal whose name is the issuer distinguished name.
+     *
+     * @deprecated Use {@link #getIssuerX500Principal} instead. This method
+     * returns the {@code issuer} as an implementation specific
+     * {@code Principal} object, which should not be relied upon by portable
+     * code.
      */
+    @Deprecated(since="16")
     public abstract Principal getIssuerDN();
 
     /**

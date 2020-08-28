@@ -178,11 +178,13 @@ public final class RequestPublishers {
         }
 
         static long computeLength(Iterable<byte[]> bytes) {
-            long len = 0;
-            for (byte[] b : bytes) {
-                len = Math.addExact(len, (long)b.length);
-            }
-            return len;
+            // Avoid iterating just for the purpose of computing
+            // a length, in case iterating is a costly operation
+            // For HTTP/1.1 it means we will be using chunk encoding
+            // when sending the request body.
+            // For HTTP/2 it means we will not send the optional
+            // Content-length header.
+            return -1;
         }
 
         @Override

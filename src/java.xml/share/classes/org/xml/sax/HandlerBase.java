@@ -59,7 +59,7 @@ public class HandlerBase
     implements EntityResolver, DTDHandler, DocumentHandler, ErrorHandler
 {
     /**
-     * Constructs a {@code HandlerBase}.
+     * Creates a {@code HandlerBase}.
      */
     public HandlerBase() {}
 
@@ -82,7 +82,7 @@ public class HandlerBase
      *                 document.
      * @return The new input source, or null to require the
      *         default behaviour.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.EntityResolver#resolveEntity
      */
@@ -170,7 +170,7 @@ public class HandlerBase
      * of a document (such as allocating the root node of a tree or
      * creating an output file).</p>
      *
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.DocumentHandler#startDocument
      */
@@ -189,7 +189,7 @@ public class HandlerBase
      * of a document (such as finalising a tree or closing an output
      * file).</p>
      *
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.DocumentHandler#endDocument
      */
@@ -210,7 +210,7 @@ public class HandlerBase
      *
      * @param name The element type name.
      * @param attributes The specified or defaulted attributes.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.DocumentHandler#startElement
      */
@@ -230,7 +230,7 @@ public class HandlerBase
      * output to a file).</p>
      *
      * @param name the element name
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.DocumentHandler#endElement
      */
@@ -253,7 +253,7 @@ public class HandlerBase
      * @param start The start position in the character array.
      * @param length The number of characters to use from the
      *               character array.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.DocumentHandler#characters
      */
@@ -276,7 +276,7 @@ public class HandlerBase
      * @param start The start position in the character array.
      * @param length The number of characters to use from the
      *               character array.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.DocumentHandler#ignorableWhitespace
      */
@@ -298,7 +298,7 @@ public class HandlerBase
      * @param target The processing instruction target.
      * @param data The processing instruction data, or null if
      *             none is supplied.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.DocumentHandler#processingInstruction
      */
@@ -324,7 +324,7 @@ public class HandlerBase
      * printing it to the console.</p>
      *
      * @param e The warning information encoded as an exception.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ErrorHandler#warning
      * @see org.xml.sax.SAXParseException
@@ -345,7 +345,7 @@ public class HandlerBase
      * printing it to the console.</p>
      *
      * @param e The warning information encoded as an exception.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ErrorHandler#warning
      * @see org.xml.sax.SAXParseException
@@ -369,7 +369,7 @@ public class HandlerBase
      * the parser may no longer report parsing events.</p>
      *
      * @param e The error information encoded as an exception.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ErrorHandler#fatalError
      * @see org.xml.sax.SAXParseException

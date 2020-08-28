@@ -41,7 +41,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.net.http.HttpClient;
@@ -415,6 +414,15 @@ class Stream<T> extends ExchangeImpl<T> {
         this.windowUpdater = new StreamWindowUpdateSender(connection);
     }
 
+    private boolean checkRequestCancelled() {
+        if (exchange.multi.requestCancelled()) {
+            if (errorRef.get() == null) cancel();
+            else sendCancelStreamFrame();
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Entry point from Http2Connection reader thread.
      *
@@ -422,9 +430,9 @@ class Stream<T> extends ExchangeImpl<T> {
      */
     void incoming(Http2Frame frame) throws IOException {
         if (debug.on()) debug.log("incoming: %s", frame);
-        var cancelled = closed || streamState != 0;
+        var cancelled = checkRequestCancelled() || closed;
         if ((frame instanceof HeaderFrame)) {
-            HeaderFrame hframe = (HeaderFrame)frame;
+            HeaderFrame hframe = (HeaderFrame) frame;
             if (hframe.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
                 handleResponse();
@@ -585,7 +593,7 @@ class Stream<T> extends ExchangeImpl<T> {
             Log.logRequest("PUSH_PROMISE: " + pushRequest.toString());
         }
         PushGroup<T> pushGroup = exchange.getPushGroup();
-        if (pushGroup == null) {
+        if (pushGroup == null || exchange.multi.requestCancelled()) {
             Log.logTrace("Rejecting push promise stream " + streamid);
             connection.resetStream(pushStream.streamid, ResetFrame.REFUSED_STREAM);
             pushStream.close();
@@ -796,7 +804,7 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     boolean registerStream(int id, boolean registerIfCancelled) {
-        boolean cancelled = closed;
+        boolean cancelled = closed || exchange.multi.requestCancelled();
         if (!cancelled || registerIfCancelled) {
             this.streamid = id;
             connection.putStream(this, streamid);

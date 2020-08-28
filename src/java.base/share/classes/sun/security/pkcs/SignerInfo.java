@@ -269,26 +269,26 @@ public class SignerInfo implements DerEncoder {
 
         X509Certificate[] pkcsCerts = block.getCertificates();
         if (pkcsCerts == null
-            || userCert.getSubjectDN().equals(userCert.getIssuerDN())) {
+            || userCert.getSubjectX500Principal().equals(userCert.getIssuerX500Principal())) {
             return certList;
         }
 
-        Principal issuer = userCert.getIssuerDN();
+        Principal issuer = userCert.getIssuerX500Principal();
         int start = 0;
         while (true) {
             boolean match = false;
             int i = start;
             while (i < pkcsCerts.length) {
-                if (issuer.equals(pkcsCerts[i].getSubjectDN())) {
+                if (issuer.equals(pkcsCerts[i].getSubjectX500Principal())) {
                     // next cert in chain found
                     certList.add(pkcsCerts[i]);
                     // if selected cert is self-signed, we're done
                     // constructing the chain
-                    if (pkcsCerts[i].getSubjectDN().equals(
-                                            pkcsCerts[i].getIssuerDN())) {
+                    if (pkcsCerts[i].getSubjectX500Principal().equals(
+                                            pkcsCerts[i].getIssuerX500Principal())) {
                         start = pkcsCerts.length;
                     } else {
-                        issuer = pkcsCerts[i].getIssuerDN();
+                        issuer = pkcsCerts[i].getIssuerX500Principal();
                         X509Certificate tmpCert = pkcsCerts[start];
                         pkcsCerts[start] = pkcsCerts[i];
                         pkcsCerts[i] = tmpCert;

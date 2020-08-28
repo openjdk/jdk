@@ -1609,9 +1609,7 @@ void os::print_os_info(outputStream* st) {
 
   os::win32::print_uptime_info(st);
 
-#ifdef _LP64
   VM_Version::print_platform_virtualization_info(st);
-#endif
 }
 
 void os::win32::print_windows_version(outputStream* st) {

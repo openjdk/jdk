@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -773,7 +773,7 @@ public class AnnotationParser {
      * an "annotation structure" OR two bytes into an annotation
      * structure (i.e., after the type index).
      *
-     * @parameter complete true if the byte buffer points to the beginning
+     * @param complete true if the byte buffer points to the beginning
      *     of an annotation structure (rather than two bytes in).
      */
     private static void skipAnnotation(ByteBuffer buf, boolean complete) {

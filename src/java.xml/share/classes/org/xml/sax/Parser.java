@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public interface Parser
      * not request a locale change in the middle of a parse.</p>
      *
      * @param locale A Java Locale object.
-     * @exception org.xml.sax.SAXException Throws an exception
+     * @throws org.xml.sax.SAXException Throws an exception
      *            (using the previous or default locale) if the
      *            requested locale is not supported.
      * @see org.xml.sax.SAXException
@@ -176,9 +176,9 @@ public interface Parser
      *
      * @param source The input source for the top-level of the
      *        XML document.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
-     * @exception java.io.IOException An IO exception from the parser,
+     * @throws java.io.IOException An IO exception from the parser,
      *            possibly from a byte stream or character stream
      *            supplied by the application.
      * @see org.xml.sax.InputSource
@@ -207,9 +207,9 @@ public interface Parser
      * by the application before it is passed to the parser.</p>
      *
      * @param systemId The system identifier (URI).
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
-     * @exception java.io.IOException An IO exception from the parser,
+     * @throws java.io.IOException An IO exception from the parser,
      *            possibly from a byte stream or character stream
      *            supplied by the application.
      * @see #parse(org.xml.sax.InputSource)
