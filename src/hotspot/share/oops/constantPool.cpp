@@ -293,17 +293,18 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
     int ref_map_len = ref_map == NULL ? 0 : ref_map->length();
     int rr_len = rr->length();
     for (int i = 0; i < rr_len; i++) {
-      oop p = rr->obj_at(i);
+      oop obj = rr->obj_at(i);
       rr->obj_at_put(i, NULL);
-      if (p != NULL && i < ref_map_len) {
+      if (obj != NULL && i < ref_map_len) {
         int index = object_to_cp_index(i);
         if (tag_at(index).is_string()) {
-          oop op = StringTable::create_archived_string(p, THREAD);
-          // If the String object is not archived (possibly too large),
-          // NULL is returned. Also set it in the array, so we won't
-          // have a 'bad' reference in the archived resolved_reference
-          // array.
-          rr->obj_at_put(i, op);
+          oop archived_string = HeapShared::find_archived_heap_object(obj);
+          // Update the reference to point to the archived copy
+          // of this string.
+          // If the string is too large to archive, NULL is
+          // stored into rr. At run time, string_at_impl() will create and intern
+          // the string.
+          rr->obj_at_put(i, archived_string);
         }
       }
     }
@@ -332,6 +333,19 @@ void ConstantPool::resolve_class_constants(TRAPS) {
     if (tag_at(index).is_string() && !cp->is_pseudo_string_at(index)) {
       int cache_index = cp->cp_to_object_index(index);
       string_at_impl(cp, index, cache_index, CHECK);
+    }
+  }
+}
+
+void ConstantPool::add_dumped_interned_strings() {
+  objArrayOop rr = resolved_references();
+  if (rr != NULL) {
+    int rr_len = rr->length();
+    for (int i = 0; i < rr_len; i++) {
+      oop p = rr->obj_at(i);
+      if (java_lang_String::is_instance(p)) {
+        HeapShared::add_to_dumped_interned_strings(p);
+      }
     }
   }
 }

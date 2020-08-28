@@ -56,6 +56,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
@@ -366,10 +367,12 @@ void MetaspaceShared::post_initialize(TRAPS) {
   }
 }
 
-static GrowableArrayCHeap<Handle, mtClassShared>* _extra_interned_strings = NULL;
+static GrowableArrayCHeap<OopHandle, mtClassShared>* _extra_interned_strings = NULL;
+static GrowableArrayCHeap<Symbol*, mtClassShared>* _extra_symbols = NULL;
 
 void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
-  _extra_interned_strings = new GrowableArrayCHeap<Handle, mtClassShared>(10000);
+  _extra_interned_strings = new GrowableArrayCHeap<OopHandle, mtClassShared>(10000);
+  _extra_symbols = new GrowableArrayCHeap<Symbol*, mtClassShared>(1000);
 
   HashtableTextDump reader(filename);
   reader.check_version("VERSION: 1.0");
@@ -388,10 +391,10 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
     utf8_buffer[utf8_length] = '\0';
 
     if (prefix_type == HashtableTextDump::SymbolPrefix) {
-      SymbolTable::new_permanent_symbol(utf8_buffer);
+      _extra_symbols->append(SymbolTable::new_permanent_symbol(utf8_buffer));
     } else{
       assert(prefix_type == HashtableTextDump::StringPrefix, "Sanity");
-      oop s = StringTable::intern(utf8_buffer, THREAD);
+      oop str = StringTable::intern(utf8_buffer, THREAD);
 
       if (HAS_PENDING_EXCEPTION) {
         log_warning(cds, heap)("[line %d] extra interned string allocation failed; size too large: %d",
@@ -400,7 +403,7 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
       } else {
 #if INCLUDE_G1GC
         if (UseG1GC) {
-          typeArrayOop body = java_lang_String::value(s);
+          typeArrayOop body = java_lang_String::value(str);
           const HeapRegion* hr = G1CollectedHeap::heap()->heap_region_containing(body);
           if (hr->is_humongous()) {
             // Don't keep it alive, so it will be GC'ed before we dump the strings, in order
@@ -411,11 +414,9 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
           }
         }
 #endif
-        // Interned strings are GC'ed if there are no references to it, so let's
-        // add a reference to keep this string alive.
-        assert(s != NULL, "must succeed");
-        Handle h(THREAD, s);
-        _extra_interned_strings->append(h);
+        // Make sure this string is included in the dumped interned string table.
+        assert(str != NULL, "must succeed");
+        _extra_interned_strings->append(OopHandle(Universe::vm_global(), str));
       }
     }
   }
@@ -909,7 +910,10 @@ private:
   void dump_archive_heap_oopmaps() NOT_CDS_JAVA_HEAP_RETURN;
   void dump_archive_heap_oopmaps(GrowableArray<MemRegion>* regions,
                                  GrowableArray<ArchiveHeapOopmapInfo>* oopmaps);
-  void dump_symbols();
+  void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
+    log_info(cds)("Dumping symbol table ...");
+    SymbolTable::write_to_archive(symbols);
+  }
   char* dump_read_only_tables();
   void print_region_stats(FileMapInfo* map_info);
   void print_bitmap_region_stats(size_t size, size_t total_size);
@@ -933,17 +937,20 @@ public:
     FileMapInfo::metaspace_pointers_do(it, false);
     SystemDictionaryShared::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
-    SymbolTable::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
+
+    // The above code should find all the symbols that are referenced by the
+    // archived classes. We just need to add the extra symbols which
+    // may not be used by any of the archived classes -- these are usually
+    // symbols that we anticipate to be used at run time, so we can store
+    // them in the RO region, to be shared across multiple processes.
+    if (_extra_symbols != NULL) {
+      for (int i = 0; i < _extra_symbols->length(); i++) {
+        it->push(_extra_symbols->adr_at(i));
+      }
+    }
   }
 };
-
-void VM_PopulateDumpSharedSpace::dump_symbols() {
-  log_info(cds)("Dumping symbol table ...");
-
-  NOT_PRODUCT(SymbolTable::verify());
-  SymbolTable::write_to_archive();
-}
 
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
@@ -1069,7 +1076,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.dump_ro_region();
   builder.relocate_pointers();
 
-  dump_symbols();
+  dump_shared_symbol_table(builder.symbols());
 
   // Dump supported java heap objects
   _closed_archive_heap_regions = NULL;
@@ -1320,7 +1327,7 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     }
     log_info(cds)("Reading extra data: done.");
 
-    HeapShared::init_subgraph_entry_fields(THREAD);
+    HeapShared::init_for_dumping(THREAD);
 
     // Rewrite and link classes
     log_info(cds)("Rewriting and linking classes ...");
@@ -1412,6 +1419,22 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
+  // Find all the interned strings that should be dumped.
+  int i;
+  for (i = 0; i < _global_klass_objects->length(); i++) {
+    Klass* k = _global_klass_objects->at(i);
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      ik->constants()->add_dumped_interned_strings();
+    }
+  }
+  if (_extra_interned_strings != NULL) {
+    for (i = 0; i < _extra_interned_strings->length(); i ++) {
+      OopHandle string = _extra_interned_strings->at(i);
+      HeapShared::add_to_dumped_interned_strings(string.resolve());
+    }
+  }
+
   // The closed and open archive heap space has maximum two regions.
   // See FileMapInfo::write_archive_heap_regions() for details.
   _closed_archive_heap_regions = new GrowableArray<MemRegion>(2);

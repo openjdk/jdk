@@ -157,6 +157,10 @@ ArchiveBuilder::~ArchiveBuilder() {
 
   clean_up_src_obj_table();
 
+  for (int i = 0; i < _symbols->length(); i++) {
+    _symbols->at(i)->decrement_refcount();
+  }
+
   delete _klasses;
   delete _symbols;
   delete _special_refs;
@@ -197,7 +201,10 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
     }
     _estimated_metsapceobj_bytes += BytesPerWord; // See RunTimeSharedClassInfo::get_for()
   } else if (ref->msotype() == MetaspaceObj::SymbolType) {
-    _symbols->append((Symbol*)ref->obj());
+    // Make sure the symbol won't be GC'ed while we are dumping the archive.
+    Symbol* sym = (Symbol*)ref->obj();
+    sym->increment_refcount();
+    _symbols->append(sym);
   }
 
   int bytes = ref->size() * BytesPerWord;
@@ -274,9 +281,13 @@ void ArchiveBuilder::sort_klasses() {
 void ArchiveBuilder::iterate_sorted_roots(MetaspaceClosure* it, bool is_relocating_pointers) {
   int i;
 
-  int num_symbols = _symbols->length();
-  for (i = 0; i < num_symbols; i++) {
-    it->push(&_symbols->at(i));
+  if (!is_relocating_pointers) {
+    // Don't relocate _symbol, so we can safely call decrement_refcount on the
+    // original symbols.
+    int num_symbols = _symbols->length();
+    for (i = 0; i < num_symbols; i++) {
+      it->push(&_symbols->at(i));
+    }
   }
 
   int num_klasses = _klasses->length();
