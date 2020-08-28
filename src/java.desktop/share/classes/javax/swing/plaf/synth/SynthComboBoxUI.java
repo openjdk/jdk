@@ -358,6 +358,8 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
             Rectangle r = rectangleForCurrentValue();
             paintCurrentValue(g,r,hasFocus);
         }
+        // Empty out the renderer pane, allowing renderers to be gc'ed.
+        currentValuePane.removeAll();
     }
 
     /**

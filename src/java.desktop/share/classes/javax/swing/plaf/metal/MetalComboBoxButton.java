@@ -283,6 +283,8 @@ public class MetalComboBoxButton extends JButton {
                 rendererPane.paintComponent( g, c, this,
                                              left + iconWidth, top, cWidth, height, shouldValidate );
             }
+            // Remove the component from renderer pane, allowing it to be gc'ed.
+            rendererPane.remove(c);
         }
     }
 
