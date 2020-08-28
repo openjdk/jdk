@@ -55,8 +55,8 @@ public interface AttributeTree extends DocTree {
     Name getName();
 
     /**
-     * Returns the kind of the attribute.
-     * @return the kind of the attribute
+     * Returns the kind of the attribute value.
+     * @return the kind of the attribute value
      */
     ValueKind getValueKind();
 

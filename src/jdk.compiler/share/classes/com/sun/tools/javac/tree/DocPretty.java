@@ -36,7 +36,7 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
 /**
- * Prints out a doc comment tree.
+ * Prints out a doc-comment tree.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -49,11 +49,6 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
      * The output stream on which trees are printed.
      */
     final Writer out;
-
-    /**
-     * The left margin.
-     */
-    int lmargin = 0;
 
     public DocPretty(Writer out) {
         this.out = out;
@@ -90,7 +85,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     }
 
     /**
-     * Print list., with separators
+     * Print list with separators.
      */
     protected void print(List<? extends DocTree> list, String sep) throws IOException {
         if (list.isEmpty())
@@ -497,7 +492,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
             List<? extends DocTree> attrs = node.getAttributes();
             if (!attrs.isEmpty()) {
                 print(" ");
-                print(attrs);
+                print(attrs, " ");
                 DocTree last = node.getAttributes().get(attrs.size() - 1);
                 if (node.isSelfClosing() && last instanceof AttributeTree
                         && ((AttributeTree) last).getValueKind() == ValueKind.UNQUOTED)
