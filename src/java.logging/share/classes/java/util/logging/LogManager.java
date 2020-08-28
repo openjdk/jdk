@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1184,7 +1184,7 @@ public class LogManager {
      * @param   logger the new logger.
      * @return  true if the argument logger was registered successfully,
      *          false if a logger of that name already exists.
-     * @exception NullPointerException if the logger name is null.
+     * @throws NullPointerException if the logger name is null.
      */
     public boolean addLogger(Logger logger) {
         final String name = logger.getName();
@@ -2439,7 +2439,7 @@ public class LogManager {
      * If the check fails we throw a SecurityException, otherwise
      * we return normally.
      *
-     * @exception  SecurityException  if a security manager exists and if
+     * @throws  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
      */
     public void checkAccess() throws SecurityException {
