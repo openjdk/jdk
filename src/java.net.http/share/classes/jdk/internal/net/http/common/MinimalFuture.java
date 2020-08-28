@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
 
     private final static AtomicLong TOKENS = new AtomicLong();
     private final long id;
+    private final Cancelable cancelable;
 
     public static <U> MinimalFuture<U> completedFuture(U value) {
         MinimalFuture<U> f = new MinimalFuture<>();
@@ -70,13 +71,18 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
     }
 
     public MinimalFuture() {
+        this(null);
+    }
+
+    public MinimalFuture(Cancelable cancelable) {
         super();
         this.id = TOKENS.incrementAndGet();
+        this.cancelable = cancelable;
     }
 
     @Override
     public <U> MinimalFuture<U> newIncompleteFuture() {
-        return new MinimalFuture<>();
+        return new MinimalFuture<>(cancelable);
     }
 
     @Override
@@ -94,8 +100,23 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
         return super.toString() + " (id=" + id +")";
     }
 
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        boolean result = false;
+        if  (cancelable != null && !isDone()) {
+            result = cancelable.cancel(mayInterruptIfRunning);
+        }
+        return super.cancel(mayInterruptIfRunning) || result;
+    }
+
+    private Cancelable cancelable() {
+        return cancelable;
+    }
+
     public static <U> MinimalFuture<U> of(CompletionStage<U> stage) {
-        MinimalFuture<U> cf = new MinimalFuture<>();
+        Cancelable cancelable = stage instanceof MinimalFuture
+                ? ((MinimalFuture)stage).cancelable() : null;
+        MinimalFuture<U> cf = new MinimalFuture<>(cancelable);
         stage.whenComplete((r,t) -> complete(cf, r, t));
         return cf;
     }

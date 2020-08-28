@@ -526,6 +526,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         throws IOException, InterruptedException
     {
         CompletableFuture<HttpResponse<T>> cf = null;
+
+        // if the thread is already interrupted no need to go further.
+        // cf.get() would throw anyway.
+        if (Thread.interrupted()) throw new InterruptedException();
         try {
             cf = sendAsync(req, responseHandler, null, null);
             return cf.get();
