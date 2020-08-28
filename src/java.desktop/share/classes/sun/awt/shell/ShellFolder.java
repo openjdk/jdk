@@ -481,16 +481,12 @@ public abstract class ShellFolder extends File {
             case 1: // size
                 return file.isDirectory() ? null : Long.valueOf(file.length());
 
-            case 2: // type
-                return file.isDirectory() ? new String("File folder"): null;
-
-            case 3: // date
+            case 2: // date
                 if (isFileSystemRoot(file)) {
                     return null;
                 }
                 long time = file.lastModified();
-                Format formatter = new SimpleDateFormat("dd-MMM-yy hh:mm aa");
-                return (time == 0L) ? null : formatter.format(new Date(time));
+                return (time == 0L) ? null : new Date(time);
 
             default:
                 return null;
