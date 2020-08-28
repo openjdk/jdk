@@ -102,19 +102,19 @@ define SetupBuildLauncherBody
 
   ifeq ($(call isTargetOs, macosx), true)
     ifeq ($$($1_MACOSX_PRIVILEGED), true)
-      $1_PLIST_SRC_FILE := Info-privileged.plist
-    else
-      $1_PLIST_SRC_FILE := Info-cmdline.plist
+      $1_PLIST_EXTRA := <key>SecTaskAccess</key><string>allowed</string>
     endif
 
     $1_PLIST_FILE := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/$1/Info.plist
 
     $$(eval $$(call SetupTextFileProcessing, BUILD_PLIST_$1, \
-        SOURCE_FILES := $$(TOPDIR)/src/java.base/macosx/native/launcher/$$($1_PLIST_SRC_FILE), \
+        SOURCE_FILES := $(TOPDIR)/make/data/bundle/cmdline-Info.plist, \
         OUTPUT_FILE := $$($1_PLIST_FILE), \
         REPLACEMENTS := \
-            @@ID@@ => $(MACOSX_BUNDLE_ID_BASE).$(VERSION_SHORT).$1 ; \
+            @@ID@@ => $(MACOSX_BUNDLE_ID_BASE).$1 ; \
             @@VERSION@@ => $(VERSION_NUMBER) ; \
+            @@BUILD_VERSION@@ => $(MACOSX_BUNDLE_BUILD_VERSION) ; \
+            @@EXTRA@@ => $$($1_PLIST_EXTRA), \
     ))
 
     $1_LDFLAGS += -sectcreate __TEXT __info_plist $$($1_PLIST_FILE)
@@ -186,6 +186,10 @@ define SetupBuildLauncherBody
   ifeq ($(call isTargetOs, windows), true)
     $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, java, /libjava) \
         $$($1_WINDOWS_JLI_LIB)
+  endif
+
+  ifeq ($(call isTargetOs, macosx), true)
+    $$(BUILD_LAUNCHER_$1): $$($1_PLIST_FILE)
   endif
 endef
 
