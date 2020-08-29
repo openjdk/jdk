@@ -105,12 +105,6 @@ void DefNewGeneration::FastEvacuateFollowersClosure::do_void() {
   guarantee(_heap->young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
-ScanClosure::ScanClosure(DefNewGeneration* g, bool gc_barrier) :
-    OopsInClassLoaderDataOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
-{
-  _boundary = _g->reserved().end();
-}
-
 FastScanClosure::FastScanClosure(DefNewGeneration* g, bool gc_barrier) :
     OopsInClassLoaderDataOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
 {
@@ -428,10 +422,6 @@ void DefNewGeneration::compute_new_size() {
         "  [allowed " SIZE_FORMAT "K extra for %d threads]",
           thread_increase_size/K, threads_count);
       }
-}
-
-void DefNewGeneration::younger_refs_iterate(OopsInGenClosure* cl, uint n_threads) {
-  assert(false, "NYI -- are you sure you want to call this?");
 }
 
 

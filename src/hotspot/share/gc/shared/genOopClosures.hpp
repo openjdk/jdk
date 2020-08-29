@@ -58,28 +58,16 @@ class OopsInGenClosure : public OopIterateClosure {
   template <class T> void do_barrier(T* p);
 
  public:
-  OopsInGenClosure() : OopIterateClosure(NULL),
-    _orig_gen(NULL), _gen(NULL), _gen_boundary(NULL), _rs(NULL) {};
-
   OopsInGenClosure(Generation* gen);
   void set_generation(Generation* gen);
 
   void reset_generation() { _gen = _orig_gen; }
 
-  // Problem with static closures: must have _gen_boundary set at some point,
-  // but cannot do this until after the heap is initialized.
-  void set_orig_generation(Generation* gen) {
-    _orig_gen = gen;
-    set_generation(gen);
-  }
-
   HeapWord* gen_boundary() { return _gen_boundary; }
-
 };
 
 class BasicOopsInGenClosure: public OopsInGenClosure {
  public:
-  BasicOopsInGenClosure() : OopsInGenClosure() {}
   BasicOopsInGenClosure(Generation* gen);
 
   virtual bool do_metadata() { return false; }
@@ -104,25 +92,8 @@ class OopsInClassLoaderDataOrGenClosure: public BasicOopsInGenClosure {
 
 // Closure for scanning DefNewGeneration.
 //
-// This closure will perform barrier store calls for ALL
-// pointers in scanned oops.
-class ScanClosure: public OopsInClassLoaderDataOrGenClosure {
- private:
-  DefNewGeneration* _g;
-  HeapWord*         _boundary;
-  bool              _gc_barrier;
-  template <class T> inline void do_oop_work(T* p);
- public:
-  ScanClosure(DefNewGeneration* g, bool gc_barrier);
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-};
-
-// Closure for scanning DefNewGeneration.
-//
 // This closure only performs barrier store calls on
-// pointers into the DefNewGeneration. This is less
-// precise, but faster, than a ScanClosure
+// pointers into the DefNewGeneration.
 class FastScanClosure: public OopsInClassLoaderDataOrGenClosure {
  protected:
   DefNewGeneration* _g;
@@ -168,9 +139,8 @@ class FilteringClosure: public OopIterateClosure {
 #if INCLUDE_SERIALGC
 
 // Closure for scanning DefNewGeneration's weak references.
-// NOTE: very much like ScanClosure but not derived from
-//  OopsInGenClosure -- weak references are processed all
-//  at once, with no notion of which generation they were in.
+//  -- weak references are processed all at once,
+//  with no notion of which generation they were in.
 class ScanWeakRefClosure: public OopClosure {
  protected:
   DefNewGeneration* _g;

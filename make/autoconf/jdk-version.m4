@@ -67,34 +67,6 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(JDK_RC_PLATFORM_NAME)
   AC_SUBST(HOTSPOT_VM_DISTRO)
 
-  # Set the MACOSX Bundle Name base
-  AC_ARG_WITH(macosx-bundle-name-base, [AS_HELP_STRING([--with-macosx-bundle-name-base],
-      [Set the MacOSX Bundle Name base. This is the base name for calculating MacOSX Bundle Names.
-      @<:@not specified@:>@])])
-  if test "x$with_macosx_bundle_name_base" = xyes; then
-    AC_MSG_ERROR([--with-macosx-bundle-name-base must have a value])
-  elif [ ! [[ $with_macosx_bundle_name_base =~ ^[[:print:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with-macosx-bundle-name-base contains non-printing characters: $with_macosx_bundle_name_base])
-  elif test "x$with_macosx_bundle_name_base" != x; then
-    # Set MACOSX_BUNDLE_NAME_BASE to the configured value.
-    MACOSX_BUNDLE_NAME_BASE="$with_macosx_bundle_name_base"
-  fi
-  AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
-
-  # Set the MACOSX Bundle ID base
-  AC_ARG_WITH(macosx-bundle-id-base, [AS_HELP_STRING([--with-macosx-bundle-id-base],
-      [Set the MacOSX Bundle ID base. This is the base ID for calculating MacOSX Bundle IDs.
-      @<:@not specified@:>@])])
-  if test "x$with_macosx_bundle_id_base" = xyes; then
-    AC_MSG_ERROR([--with-macosx-bundle-id-base must have a value])
-  elif [ ! [[ $with_macosx_bundle_id_base =~ ^[[:print:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with-macosx-bundle-id-base contains non-printing characters: $with_macosx_bundle_id_base])
-  elif test "x$with_macosx_bundle_id_base" != x; then
-    # Set MACOSX_BUNDLE_ID_BASE to the configured value.
-    MACOSX_BUNDLE_ID_BASE="$with_macosx_bundle_id_base"
-  fi
-  AC_SUBST(MACOSX_BUNDLE_ID_BASE)
-
   # Set the JDK RC name
   AC_ARG_WITH(jdk-rc-name, [AS_HELP_STRING([--with-jdk-rc-name],
       [Set JDK RC name. This is used for FileDescription and ProductName properties
@@ -501,6 +473,60 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   else
     VENDOR_VERSION_STRING="$with_vendor_version_string"
   fi
+
+  # Set the MACOSX Bundle Name base
+  AC_ARG_WITH(macosx-bundle-name-base, [AS_HELP_STRING([--with-macosx-bundle-name-base],
+      [Set the MacOSX Bundle Name base. This is the base name for calculating MacOSX Bundle Names.
+      @<:@not specified@:>@])])
+  if test "x$with_macosx_bundle_name_base" = xyes; then
+    AC_MSG_ERROR([--with-macosx-bundle-name-base must have a value])
+  elif [ ! [[ $with_macosx_bundle_name_base =~ ^[[:print:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with-macosx-bundle-name-base contains non-printing characters: $with_macosx_bundle_name_base])
+  elif test "x$with_macosx_bundle_name_base" != x; then
+    # Set MACOSX_BUNDLE_NAME_BASE to the configured value.
+    MACOSX_BUNDLE_NAME_BASE="$with_macosx_bundle_name_base"
+  fi
+  AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
+
+  # Set the MACOSX Bundle ID base
+  AC_ARG_WITH(macosx-bundle-id-base, [AS_HELP_STRING([--with-macosx-bundle-id-base],
+      [Set the MacOSX Bundle ID base. This is the base ID for calculating MacOSX Bundle IDs.
+      @<:@not specified@:>@])])
+  if test "x$with_macosx_bundle_id_base" = xyes; then
+    AC_MSG_ERROR([--with-macosx-bundle-id-base must have a value])
+  elif [ ! [[ $with_macosx_bundle_id_base =~ ^[[:print:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with-macosx-bundle-id-base contains non-printing characters: $with_macosx_bundle_id_base])
+  elif test "x$with_macosx_bundle_id_base" != x; then
+    # Set MACOSX_BUNDLE_ID_BASE to the configured value.
+    MACOSX_BUNDLE_ID_BASE="$with_macosx_bundle_id_base"
+  else
+    # If using the default value, append the VERSION_PRE if there is one
+    # to make it possible to tell official builds apart from developer builds
+    if test "x$VERSION_PRE" != x; then
+      MACOSX_BUNDLE_ID_BASE="$MACOSX_BUNDLE_ID_BASE-$VERSION_PRE"
+    fi
+  fi
+  AC_SUBST(MACOSX_BUNDLE_ID_BASE)
+
+  # Set the MACOSX CFBundleVersion field
+  AC_ARG_WITH(macosx-bundle-build-version, [AS_HELP_STRING([--with-macosx-bundle-build-version],
+      [Set the MacOSX Bundle CFBundleVersion field. This key is a machine-readable
+      string composed of one to three period-separated integers and should represent the
+      build version. Defaults to the build number.])])
+  if test "x$with_macosx_bundle_build_version" = xyes; then
+    AC_MSG_ERROR([--with-macosx-bundle-build-version must have a value])
+  elif [ ! [[ $with_macosx_bundle_build_version =~ ^[0-9\.]*$ ]] ]; then
+    AC_MSG_ERROR([--with-macosx-bundle-build-version contains non numbers and periods: $with_macosx_bundle_build_version])
+  elif test "x$with_macosx_bundle_build_version" != x; then
+    MACOSX_BUNDLE_BUILD_VERSION="$with_macosx_bundle_build_version"
+  else
+    MACOSX_BUNDLE_BUILD_VERSION="$VERSION_BUILD"
+    # If VERSION_OPT consists of only numbers and periods, add it.
+    if [ [[ $VERSION_OPT =~ ^[0-9\.]+$ ]] ]; then
+      MACOSX_BUNDLE_BUILD_VERSION+=".$VERSION_OPT"
+    fi
+  fi
+  AC_SUBST(MACOSX_BUNDLE_BUILD_VERSION)
 
   # We could define --with flags for these, if really needed
   VERSION_CLASSFILE_MAJOR="$DEFAULT_VERSION_CLASSFILE_MAJOR"

@@ -1339,13 +1339,17 @@ var versionArgs = function(input, common) {
                       "--with-version-pre=" + version_numbers.get("DEFAULT_PROMOTED_VERSION_PRE"),
                       "--without-version-opt");
     } else if (input.build_type == "ci") {
-        var optString = input.build_id_data.ciBuildNumber;
+        var ciBuildNumber = input.build_id_data.ciBuildNumber;
         var preString = input.build_id_data.projectName;
         if (preString == "jdk") {
             preString = version_numbers.get("DEFAULT_PROMOTED_VERSION_PRE");
         }
         args = concat(args, "--with-version-pre=" + preString,
-                     "--with-version-opt=" + optString);
+                      "--with-version-opt=" + ciBuildNumber);
+        if (input.target_os == "macosx") {
+            args = concat(args, "--with-macosx-bundle-build-version="
+                          + common.build_number + "." + ciBuildNumber);
+        }
     } else {
         args = concat(args, "--with-version-opt=" + common.build_id);
     }

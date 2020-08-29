@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.CharacterCodingException;
@@ -41,7 +42,6 @@ import java.nio.file.Path;
 import java.text.Normalizer;
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.nio.cs.ThreadLocalCoders;
 import sun.nio.cs.UTF_8;
 
 import java.lang.Character;             // for javadoc
@@ -2761,11 +2761,10 @@ public final class URI
         sb.append(hexDigits[(b >> 0) & 0x0f]);
     }
 
-    private static void appendEncoded(StringBuilder sb, char c) {
+    private static void appendEncoded(CharsetEncoder encoder, StringBuilder sb, char c) {
         ByteBuffer bb = null;
         try {
-            bb = ThreadLocalCoders.encoderFor(UTF_8.INSTANCE)
-                .encode(CharBuffer.wrap("" + c));
+            bb = encoder.encode(CharBuffer.wrap("" + c));
         } catch (CharacterCodingException x) {
             assert false;
         }
@@ -2783,6 +2782,7 @@ public final class URI
     //
     private static String quote(String s, long lowMask, long highMask) {
         StringBuilder sb = null;
+        CharsetEncoder encoder = null;
         boolean allowNonASCII = ((lowMask & L_ESCAPED) != 0);
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
@@ -2800,11 +2800,13 @@ public final class URI
             } else if (allowNonASCII
                        && (Character.isSpaceChar(c)
                            || Character.isISOControl(c))) {
+                if (encoder == null)
+                    encoder = UTF_8.INSTANCE.newEncoder();
                 if (sb == null) {
                     sb = new StringBuilder();
                     sb.append(s, 0, i);
                 }
-                appendEncoded(sb, c);
+                appendEncoded(encoder, sb, c);
             } else {
                 if (sb != null)
                     sb.append(c);
@@ -2832,8 +2834,9 @@ public final class URI
         String ns = Normalizer.normalize(s, Normalizer.Form.NFC);
         ByteBuffer bb = null;
         try {
-            bb = ThreadLocalCoders.encoderFor(UTF_8.INSTANCE)
+            bb = UTF_8.INSTANCE.newEncoder()
                 .encode(CharBuffer.wrap(ns));
+
         } catch (CharacterCodingException x) {
             assert false;
         }
@@ -2890,9 +2893,9 @@ public final class URI
         StringBuilder sb = new StringBuilder(n);
         ByteBuffer bb = ByteBuffer.allocate(n);
         CharBuffer cb = CharBuffer.allocate(n);
-        CharsetDecoder dec = ThreadLocalCoders.decoderFor(UTF_8.INSTANCE)
-                .onMalformedInput(CodingErrorAction.REPLACE)
-                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        CharsetDecoder dec = UTF_8.INSTANCE.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPLACE)
+            .onUnmappableCharacter(CodingErrorAction.REPLACE);
 
         // This is not horribly efficient, but it will do for now
         char c = s.charAt(0);

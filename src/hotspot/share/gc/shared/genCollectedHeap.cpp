@@ -850,33 +850,11 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   }
 }
 
-void GenCollectedHeap::young_process_roots(StrongRootsScope* scope,
-                                           OopsInGenClosure* root_closure,
-                                           OopsInGenClosure* old_gen_closure,
-                                           CLDClosure* cld_closure) {
-  MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations);
-
-  process_roots(scope, SO_ScavengeCodeCache, root_closure,
-                cld_closure, cld_closure, &mark_code_closure);
-
-  if (_process_strong_tasks->try_claim_task(GCH_PS_younger_gens)) {
-    root_closure->reset_generation();
-  }
-
-  // When collection is parallel, all threads get to cooperate to do
-  // old generation scanning.
-  old_gen_closure->set_generation(_old_gen);
-  rem_set()->younger_refs_iterate(_old_gen, old_gen_closure, scope->n_threads());
-  old_gen_closure->reset_generation();
-
-  _process_strong_tasks->all_tasks_completed(scope->n_threads());
-}
-
 void GenCollectedHeap::full_process_roots(StrongRootsScope* scope,
                                           bool is_adjust_phase,
                                           ScanningOption so,
                                           bool only_strong_roots,
-                                          OopsInGenClosure* root_closure,
+                                          OopClosure* root_closure,
                                           CLDClosure* cld_closure) {
   MarkingCodeBlobClosure mark_code_closure(root_closure, is_adjust_phase);
   CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;

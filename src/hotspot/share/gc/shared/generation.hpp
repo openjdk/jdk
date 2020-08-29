@@ -55,9 +55,7 @@ class GenerationSpec;
 class CompactibleSpace;
 class ContiguousSpace;
 class CompactPoint;
-class OopsInGenClosure;
 class OopClosure;
-class ScanClosure;
 class FastScanClosure;
 class GenCollectedHeap;
 class GCStats;
@@ -102,13 +100,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Initialize the generation.
   Generation(ReservedSpace rs, size_t initial_byte_size);
-
-  // Apply "cl->do_oop" to (the address of) (exactly) all the ref fields in
-  // "sp" that point into younger generations.
-  // The iteration is only over objects allocated at the start of the
-  // iterations; objects allocated as a result of applying the closure are
-  // not included.
-  void younger_refs_in_space_iterate(Space* sp, OopsInGenClosure* cl, uint n_threads);
 
  public:
   // The set of possible generation kinds.
@@ -449,12 +440,6 @@ class Generation: public CHeapObj<mtGC> {
   // Iterate over all objects in the generation, calling "cl.do_object" on
   // each.
   virtual void object_iterate(ObjectClosure* cl);
-
-  // Apply "cl->do_oop" to (the address of) all and only all the ref fields
-  // in the current generation that contain pointers to objects in younger
-  // generations. Objects allocated since the last "save_marks" call are
-  // excluded.
-  virtual void younger_refs_iterate(OopsInGenClosure* cl, uint n_threads) = 0;
 
   // Inform a generation that it longer contains references to objects
   // in any younger generation.    [e.g. Because younger gens are empty,

@@ -38,11 +38,8 @@ ifeq ($(call isTargetOs, macosx), true)
 
   MACOSX_PLIST_SRC := $(TOPDIR)/make/data/bundle
 
-  BUNDLE_ID := $(MACOSX_BUNDLE_ID_BASE).$(VERSION_SHORT)
   BUNDLE_NAME := $(MACOSX_BUNDLE_NAME_BASE) $(VERSION_SHORT)
   BUNDLE_INFO := $(MACOSX_BUNDLE_NAME_BASE) $(VERSION_STRING)
-  BUNDLE_PLATFORM_VERSION := $(VERSION_FEATURE).$(VERSION_INTERIM)
-  BUNDLE_VERSION := $(VERSION_NUMBER)
   ifeq ($(COMPANY_NAME), N/A)
     BUNDLE_VENDOR := UNDEFINED
   else
@@ -75,24 +72,26 @@ ifeq ($(call isTargetOs, macosx), true)
       SOURCE_FILES := $(MACOSX_PLIST_SRC)/JDK-Info.plist, \
       OUTPUT_FILE := $(JDK_MACOSX_CONTENTS_DIR)/Info.plist, \
       REPLACEMENTS := \
-          @@ID@@ => $(BUNDLE_ID).jdk ; \
+          @@ID@@ => $(MACOSX_BUNDLE_ID_BASE).jdk ; \
           @@NAME@@ => $(BUNDLE_NAME) ; \
           @@INFO@@ => $(BUNDLE_INFO) ; \
-          @@PLATFORM_VERSION@@ => $(BUNDLE_PLATFORM_VERSION) ; \
-          @@VERSION@@ => $(BUNDLE_VERSION) ; \
-          @@VENDOR@@ => $(BUNDLE_VENDOR) , \
+          @@VERSION@@ => $(VERSION_NUMBER) ; \
+          @@BUILD_VERSION@@ => $(MACOSX_BUNDLE_BUILD_VERSION) ; \
+          @@VENDOR@@ => $(BUNDLE_VENDOR) ; \
+          @@MACOSX_VERSION_MIN@@ => $(MACOSX_VERSION_MIN) , \
   ))
 
   $(eval $(call SetupTextFileProcessing, BUILD_JRE_PLIST, \
       SOURCE_FILES := $(MACOSX_PLIST_SRC)/JRE-Info.plist, \
       OUTPUT_FILE := $(JRE_MACOSX_CONTENTS_DIR)/Info.plist, \
       REPLACEMENTS := \
-          @@ID@@ => $(BUNDLE_ID).jre ; \
+          @@ID@@ => $(MACOSX_BUNDLE_ID_BASE).jre ; \
           @@NAME@@ => $(BUNDLE_NAME) ; \
           @@INFO@@ => $(BUNDLE_INFO) ; \
-          @@PLATFORM_VERSION@@ => $(BUNDLE_PLATFORM_VERSION) ; \
-          @@VERSION@@ => $(BUNDLE_VERSION) ; \
-          @@VENDOR@@ => $(BUNDLE_VENDOR) , \
+          @@VERSION@@ => $(VERSION_NUMBER) ; \
+          @@BUILD_VERSION@@ => $(BUNDLE_BUILD_VERSION) ; \
+          @@VENDOR@@ => $(BUNDLE_VENDOR) ; \
+          @@MACOSX_VERSION_MIN@@ => $(MACOSX_VERSION_MIN) , \
   ))
 
   $(SUPPORT_OUTPUTDIR)/images/_jdk_bundle_attribute_set: $(COPY_JDK_IMAGE)
