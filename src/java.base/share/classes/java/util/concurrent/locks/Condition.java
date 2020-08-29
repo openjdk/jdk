@@ -349,12 +349,13 @@ public interface Condition {
      * there is one.
      *
      * @param nanosTimeout the maximum time to wait, in nanoseconds
-     * @return an estimate of the {@code nanosTimeout} value minus
+     * @return an estimate of(一个预估的) the {@code nanosTimeout} value minus(减去)
      *         the time spent waiting upon return from this method.
      *         A positive value may be used as the argument to a
      *         subsequent call to this method to finish waiting out
      *         the desired time.  A value less than or equal to zero
      *         indicates that no time remains.
+     *         剩余的等待时间，小于或者等于0表示超时了。
      * @throws InterruptedException if the current thread is interrupted
      *         (and interruption of thread suspension is supported)
      */
