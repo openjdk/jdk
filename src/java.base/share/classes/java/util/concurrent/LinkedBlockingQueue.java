@@ -554,7 +554,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E> implements Blocking
         if (count.get() == 0)
             return null;
 
-        // 获取读锁
+        // 获取take锁、如果这里是读取锁更好
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lock();
         try {

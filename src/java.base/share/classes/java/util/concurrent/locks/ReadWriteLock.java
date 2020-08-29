@@ -117,16 +117,18 @@ package java.util.concurrent.locks;
  */
 public interface ReadWriteLock {
     /**
-     * Returns the lock used for reading.
+     * Returns the lock used for reading. 读锁
      *
      * @return the lock used for reading
+     * 普通的锁接口，但是调用的都是AQS中的 xxxShare() 方法
      */
     Lock readLock();
 
     /**
-     * Returns the lock used for writing.
+     * Returns the lock used for writing. 写锁
      *
-     * @return the lock used for writing
+     * @return the lock used for writing.
+     * 普通的锁接口，但是调用的都是AQS中的 独占方法
      */
     Lock writeLock();
 }

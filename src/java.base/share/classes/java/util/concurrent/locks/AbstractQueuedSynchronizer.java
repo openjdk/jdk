@@ -485,7 +485,10 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     // Concrete classes tagged by type
+    // 写锁使用
     static final class ExclusiveNode extends Node { }
+
+    // 读锁使用
     static final class SharedNode extends Node { }
 
     static final class ConditionNode extends Node
