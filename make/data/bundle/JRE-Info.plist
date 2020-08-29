@@ -17,11 +17,11 @@
         <key>CFBundlePackageType</key>
         <string>BNDL</string>
         <key>CFBundleShortVersionString</key>
-        <string>1.0</string>
+        <string>@@VERSION@@</string>
         <key>CFBundleSignature</key>
         <string>????</string>
         <key>CFBundleVersion</key>
-        <string>@@VERSION@@</string>
+        <string>@@BUILD_VERSION@@</string>
         <key>NSMicrophoneUsageDescription</key>
         <string>The application is requesting access to the microphone.</string>
         <key>JavaVM</key>
@@ -29,9 +29,9 @@
                 <key>JVMMinimumFrameworkVersion</key>
                 <string>13.2.9</string>
                 <key>JVMMinimumSystemVersion</key>
-                <string>10.6.0</string>
+                <string>@@MACOSX_VERSION_MIN@@</string>
                 <key>JVMPlatformVersion</key>
-                <string>@@PLATFORM_VERSION@@</string>
+                <string>@@VERSION@@</string>
                 <key>JVMVendor</key>
                 <string>@@VENDOR@@</string>
                 <key>JVMVersion</key>

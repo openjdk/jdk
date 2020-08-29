@@ -242,16 +242,6 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
       )
 
   JDK_SYMBOLS_BUNDLE_FILES := \
-      $(filter \
-          $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
-          $(SYMBOLS_EXCLUDE_PATTERN) \
-          , \
-          $(filter-out \
-              $(JDK_IMAGE_HOMEDIR)/demo/% %.stripped.pdb \
-              , \
-              $(ALL_JDK_SYMBOLS_FILES) \
-          ) \
-      ) \
       $(call FindFiles, $(SYMBOLS_IMAGE_DIR))
 
   TEST_DEMOS_BUNDLE_FILES := $(filter $(JDK_DEMOS_IMAGE_HOMEDIR)/demo/%, \
@@ -383,7 +373,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
     $(eval $(call SetupBundleFile, BUILD_JDK_SYMBOLS_BUNDLE, \
         BUNDLE_NAME := $(JDK_SYMBOLS_BUNDLE_NAME), \
         FILES := $(JDK_SYMBOLS_BUNDLE_FILES), \
-        BASE_DIRS := $(JDK_SYMBOLS_IMAGE_DIR) $(wildcard $(SYMBOLS_IMAGE_DIR)), \
+        BASE_DIRS := $(SYMBOLS_IMAGE_DIR), \
         SUBDIR := $(JDK_BUNDLE_SUBDIR), \
         UNZIP_DEBUGINFO := true, \
     ))

@@ -56,7 +56,7 @@ class MarkSweep : AllStatic {
   //
   // Inline closure decls
   //
-  class FollowRootClosure: public BasicOopsInGenClosure {
+  class FollowRootClosure: public BasicOopIterateClosure {
    public:
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
@@ -185,7 +185,7 @@ public:
   }
 };
 
-class AdjustPointerClosure: public BasicOopsInGenClosure {
+class AdjustPointerClosure: public BasicOopIterateClosure {
  public:
   template <typename T> void do_oop_work(T* p);
   virtual void do_oop(oop* p);

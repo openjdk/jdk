@@ -117,7 +117,12 @@ public final class Utils {
      */
     public static final String TEST_NAME = System.getProperty("test.name", ".");
 
-   /**
+    /**
+     * Returns the value of 'test.nativepath' system property
+     */
+    public static final String TEST_NATIVE_PATH = System.getProperty("test.nativepath", ".");
+
+    /**
      * Defines property name for seed value.
      */
     public static final String SEED_PROPERTY_NAME = "jdk.test.lib.random.seed";
