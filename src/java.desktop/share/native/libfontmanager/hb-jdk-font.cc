@@ -304,9 +304,6 @@ _hb_jdk_get_font_funcs (void)
 static void _do_nothing(void) {
 }
 
-static void _free_nothing(void*) {
-}
-
 struct Font2DPtr {
     JavaVM* vmPtr;
     jweak font2DRef;
