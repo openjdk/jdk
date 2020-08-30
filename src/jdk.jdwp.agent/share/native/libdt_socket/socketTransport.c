@@ -716,7 +716,6 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
                                char** actualAddress)
 {
     int err;
-    int pass;
     struct addrinfo *addrInfo = NULL;
     struct addrinfo *listenAddr = NULL;
     struct addrinfo *ai = NULL;
