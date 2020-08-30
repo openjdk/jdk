@@ -25,12 +25,9 @@
 
 package org.graalvm.compiler.hotspot;
 
-import static org.graalvm.compiler.debug.GraalError.shouldNotReachHere;
-
 import org.graalvm.compiler.code.CompilationResult;
 
 import jdk.vm.ci.common.NativeImageReinitialize;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 
 /**
  * Constants used to mark special positions in code being installed into the code cache by Graal C++
@@ -43,7 +40,7 @@ public enum HotSpotMarkId implements CompilationResult.MarkId {
     EXCEPTION_HANDLER_ENTRY(false),
     DEOPT_HANDLER_ENTRY(false),
     DEOPT_MH_HANDLER_ENTRY(false),
-    FRAME_COMPLETE(true, true),
+    FRAME_COMPLETE(true),
     INVOKEINTERFACE(false),
     INVOKEVIRTUAL(false),
     INVOKESTATIC(false),
@@ -57,31 +54,22 @@ public enum HotSpotMarkId implements CompilationResult.MarkId {
     NARROW_KLASS_BASE_ADDRESS(true),
     NARROW_OOP_BASE_ADDRESS(true),
     CRC_TABLE_ADDRESS(true),
-    LOG_OF_HEAP_REGION_GRAIN_BYTES(true);
+    LOG_OF_HEAP_REGION_GRAIN_BYTES(true),
+    VERIFY_OOPS(true),
+    VERIFY_OOP_BITS(true),
+    VERIFY_OOP_MASK(true),
+    VERIFY_OOP_COUNT_ADDRESS(true);
 
     private final boolean isMarkAfter;
     @NativeImageReinitialize private Integer value;
-    private final boolean optional;
 
     HotSpotMarkId(boolean isMarkAfter) {
-        this(isMarkAfter, false);
-    }
-
-    HotSpotMarkId(boolean isMarkAfter, boolean optional) {
         this.isMarkAfter = isMarkAfter;
-        this.optional = optional;
+        this.value = null;
     }
 
-    private Integer getValue() {
-        if (value == null) {
-            Long result = HotSpotJVMCIRuntime.runtime().getConfigStore().getConstants().get("CodeInstaller::" + name());
-            if (result != null) {
-                this.value = result.intValue();
-            } else if (!optional) {
-                throw shouldNotReachHere("Unsupported Mark " + name());
-            }
-        }
-        return value;
+    void setValue(Integer value) {
+        this.value = value;
     }
 
     @Override
@@ -92,7 +80,7 @@ public enum HotSpotMarkId implements CompilationResult.MarkId {
     @Override
     public Object getId() {
         assert isAvailable() : this;
-        return getValue();
+        return value;
     }
 
     @Override
@@ -101,14 +89,14 @@ public enum HotSpotMarkId implements CompilationResult.MarkId {
     }
 
     public boolean isAvailable() {
-        return getValue() != null;
+        return value != null;
     }
 
     @Override
     public String toString() {
         return "HotSpotCodeMark{" + name() +
-                        ", value=" + getValue() +
-                        ", optional=" + optional +
+                        ", value=" + value +
                         '}';
     }
+
 }
