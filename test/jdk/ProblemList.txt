@@ -124,7 +124,6 @@ java/awt/Focus/UnaccessibleChoice/AccessibleChoiceTest.java 8239801 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 java/awt/Frame/FrameLocation/FrameLocation.java 8233703 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
-java/awt/FileDialog/8003399/bug8003399.java 8198334 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
 java/awt/dnd/DropTargetEnterExitTest/MissedDragExitTest.java 8159694 linux-all
@@ -283,7 +282,6 @@ java/awt/print/PrinterJob/Margins.java 8196301 windows-all,macosx-all
 java/awt/PrintJob/PrinterException.java 8196301 windows-all,macosx-all
 java/awt/Choice/PopupPosTest/PopupPosTest.java  8197811 windows-all
 java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 7100044 macosx-all,linux-all
-java/awt/Component/CreateImage/CreateImage.java 8198334  windows-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java 8165863 macosx-all
 java/awt/Clipboard/HTMLTransferTest/HTMLTransferTest.java 8017454 macosx-all
@@ -729,7 +727,6 @@ javax/sound/midi/Sequencer/MetaCallback.java 8178698 linux-all
 
 # jdk_swing
 
-com/sun/java/swing/plaf/windows/Test8173145.java 8198334 windows-all
 javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8233177 linux-all,windows-all
 
 javax/swing/border/TestTitledBorderLeak.java 8213531 linux-all
