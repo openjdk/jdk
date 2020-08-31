@@ -35,6 +35,9 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.ComponentUI;
@@ -67,6 +70,8 @@ public class BasicButtonUI extends ButtonUI{
     private static final String propertyPrefix = "Button" + ".";
 
     private static final Object BASIC_BUTTON_UI_KEY = new Object();
+
+    private KeyListener keyListener = null;
 
     // ********************************
     //          Create PLAF
@@ -156,6 +161,27 @@ public class BasicButtonUI extends ButtonUI{
             b.addPropertyChangeListener(listener);
             b.addChangeListener(listener);
         }
+
+        if (b instanceof JToggleButton) {
+            keyListener = createKeyListener();
+            b.addKeyListener(keyListener);
+
+            // Need to get traversal key event
+            b.setFocusTraversalKeysEnabled(false);
+
+            // Map actions to the arrow keys
+            b.getActionMap().put("Previous", new BasicButtonUI.SelectPreviousBtn());
+            b.getActionMap().put("Next", new BasicButtonUI.SelectNextBtn());
+
+            b.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).
+                    put(KeyStroke.getKeyStroke("UP"), "Previous");
+            b.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).
+                    put(KeyStroke.getKeyStroke("DOWN"), "Next");
+            b.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).
+                    put(KeyStroke.getKeyStroke("LEFT"), "Previous");
+            b.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).
+                    put(KeyStroke.getKeyStroke("RIGHT"), "Next");
+        }
     }
 
     /**
@@ -207,6 +233,24 @@ public class BasicButtonUI extends ButtonUI{
             b.removeFocusListener(listener);
             b.removeChangeListener(listener);
             b.removePropertyChangeListener(listener);
+        }
+        if (b instanceof JToggleButton) {
+            // Unmap actions from the arrow keys
+            b.getActionMap().remove("Previous");
+            b.getActionMap().remove("Next");
+            b.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                    .remove(KeyStroke.getKeyStroke("UP"));
+            b.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                    .remove(KeyStroke.getKeyStroke("DOWN"));
+            b.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                    .remove(KeyStroke.getKeyStroke("LEFT"));
+            b.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                    .remove(KeyStroke.getKeyStroke("RIGHT"));
+
+            if (keyListener != null) {
+                b.removeKeyListener(keyListener);
+                keyListener = null;
+            }
         }
     }
 
@@ -564,6 +608,264 @@ public class BasicButtonUI extends ButtonUI{
             }
         }
         return null;
+    }
+
+    /////////////////////////// Private functions ////////////////////////
+    /**
+     * Creates the key listener to handle tab navigation in JToggleButton Group.
+     */
+    private KeyListener createKeyListener() {
+        if (keyListener == null) {
+            keyListener = new BasicButtonUI.KeyHandler();
+        }
+        return keyListener;
+    }
+
+
+    private boolean isValidToggleButtonObj(Object obj) {
+        return ((obj instanceof JToggleButton) &&
+                ((JToggleButton) obj).isVisible() &&
+                ((JToggleButton) obj).isEnabled());
+    }
+
+    /**
+     * Select toggle button based on "Previous" or "Next" operation
+     *
+     * @param event, the event object.
+     * @param next, indicate if it's next one
+     */
+    private void selectToggleButton(ActionEvent event, boolean next) {
+        // Get the source of the event.
+        Object eventSrc = event.getSource();
+
+        // Check whether the source is JToggleButton, it so, whether it is visible
+        if (!isValidToggleButtonObj(eventSrc))
+            return;
+
+        BasicButtonUI.ButtonGroupInfo btnGroupInfo = new BasicButtonUI.ButtonGroupInfo((JToggleButton)eventSrc);
+        btnGroupInfo.selectNewButton(next);
+    }
+
+    /////////////////////////// Inner Classes ////////////////////////
+    @SuppressWarnings("serial")
+    private class SelectPreviousBtn extends AbstractAction {
+        public SelectPreviousBtn() {
+            super("Previous");
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            BasicButtonUI.this.selectToggleButton(e, false);
+        }
+    }
+
+    @SuppressWarnings("serial")
+    private class SelectNextBtn extends AbstractAction{
+        public SelectNextBtn() {
+            super("Next");
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            BasicButtonUI.this.selectToggleButton(e, true);
+        }
+    }
+
+    /**
+     * ButtonGroupInfo, used to get related info in button group
+     * for given toggle button
+     */
+    private class ButtonGroupInfo {
+
+        JToggleButton activeBtn = null;
+
+        JToggleButton firstBtn = null;
+        JToggleButton lastBtn = null;
+
+        JToggleButton previousBtn = null;
+        JToggleButton nextBtn = null;
+
+        HashSet<JToggleButton> btnsInGroup = null;
+
+        boolean srcFound = false;
+        public ButtonGroupInfo(JToggleButton btn) {
+            activeBtn = btn;
+            btnsInGroup = new HashSet<JToggleButton>();
+        }
+
+        // Check if given object is in the button group
+        boolean containsInGroup(Object obj){
+            return btnsInGroup.contains(obj);
+        }
+
+        // Check if the next object to gain focus belongs
+        // to the button group or not
+        Component getFocusTransferBaseComponent(boolean next){
+            return firstBtn;
+        }
+
+        boolean getButtonGroupInfo() {
+            if (activeBtn == null)
+                return false;
+
+            btnsInGroup.clear();
+
+            // Get the button model from the source.
+            ButtonModel model = activeBtn.getModel();
+            if (!(model instanceof DefaultButtonModel))
+                return false;
+
+            // If the button model is DefaultButtonModel, and use it, otherwise return.
+            DefaultButtonModel bm = (DefaultButtonModel) model;
+
+            // get the ButtonGroup of the button from the button model
+            ButtonGroup group = bm.getGroup();
+            if (group == null)
+                return false;
+
+            // Get all the buttons in the group
+            Enumeration<AbstractButton> e = group.getElements();
+            if (e == null)
+                return false;
+
+            while (e.hasMoreElements()) {
+                AbstractButton curElement = e.nextElement();
+                if (!isValidToggleButtonObj(curElement))
+                    continue;
+
+                btnsInGroup.add((JToggleButton) curElement);
+
+                // If firstBtn is not set yet, curElement is that first button
+                if (null == firstBtn)
+                    firstBtn = (JToggleButton) curElement;
+
+                if (activeBtn == curElement)
+                    srcFound = true;
+                else if (!srcFound) {
+                    // The source has not been yet found and the current element
+                    // is the last previousBtn
+                    previousBtn = (JToggleButton) curElement;
+                } else if (nextBtn == null) {
+                    // The source has been found and the current element
+                    // is the next valid button of the list
+                    nextBtn = (JToggleButton) curElement;
+                }
+
+                // Set new last "valid" JToggleButton of the list
+                lastBtn = (JToggleButton) curElement;
+            }
+
+            return true;
+        }
+
+        /**
+         * Find the new toggle button that focus needs to be
+         * moved to in the group, select the button
+         *
+         * @param next, indicate if it's arrow up/left or down/right
+         */
+        void selectNewButton(boolean next) {
+            if (!getButtonGroupInfo())
+                return;
+
+            if (srcFound) {
+                JToggleButton newSelectedBtn = null;
+                if (next) {
+                    // Select Next button. Cycle to the first button if the source
+                    // button is the last of the group.
+                    newSelectedBtn = (null == nextBtn) ? firstBtn : nextBtn;
+                } else {
+                    // Select previous button. Cycle to the last button if the source
+                    // button is the first button of the group.
+                    newSelectedBtn = (null == previousBtn) ? lastBtn : previousBtn;
+                }
+                if (newSelectedBtn != null &&
+                        (newSelectedBtn != activeBtn)) {
+                    ButtonModel btnModel = newSelectedBtn.getModel();
+                    btnModel.setPressed(true);
+                    btnModel.setArmed(true);
+                    newSelectedBtn.requestFocusInWindow();
+                    newSelectedBtn.setSelected(true);
+                    btnModel.setPressed(false);
+                    btnModel.setArmed(false);
+                }
+            }
+        }
+
+        /**
+         * Find the button group the passed in JToggleButton belongs to, and
+         * move focus to next component of the last button in the group
+         * or previous component of first button
+         *
+         * @param next, indicate if jump to next component or previous
+         */
+        void jumpToNextComponent(boolean next) {
+            if (!getButtonGroupInfo()){
+                // In case the button does not belong to any group, it needs
+                // to be treated as a component
+                if (activeBtn != null){
+                    lastBtn = activeBtn;
+                    firstBtn = activeBtn;
+                }
+                else
+                    return;
+            }
+
+            // Update the component we will use as base to transfer
+            // focus from
+            JComponent compTransferFocusFrom = activeBtn;
+
+            // If next component in the parent window is not in
+            // the button group, current active button will be
+            // base, otherwise, the base will be first or last
+            // button in the button group
+            Component focusBase = getFocusTransferBaseComponent(next);
+            if (focusBase != null){
+                if (next) {
+                    KeyboardFocusManager.
+                            getCurrentKeyboardFocusManager().focusNextComponent(focusBase);
+                } else {
+                    KeyboardFocusManager.
+                            getCurrentKeyboardFocusManager().focusPreviousComponent(focusBase);
+                }
+            }
+        }
+    }
+
+    /**
+     * Togglebutton KeyListener
+     */
+    private class KeyHandler implements KeyListener {
+
+        // This listener checks if the key event is a focus traversal key event
+        // on a toggle button, consume the event if so and move the focus
+        // to next/previous component
+        public void keyPressed(KeyEvent e) {
+            AWTKeyStroke stroke = AWTKeyStroke.getAWTKeyStrokeForEvent(e);
+            if (stroke != null && e.getSource() instanceof JToggleButton) {
+                JToggleButton source = (JToggleButton) e.getSource();
+                boolean next = isFocusTraversalKey(source,
+                        KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
+                        stroke);
+                if (next || isFocusTraversalKey(source,
+                        KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
+                        stroke)) {
+                    e.consume();
+                    BasicButtonUI.ButtonGroupInfo btnGroupInfo = new BasicButtonUI.ButtonGroupInfo(source);
+                    btnGroupInfo.jumpToNextComponent(next);
+                }
+            }
+        }
+
+        private boolean isFocusTraversalKey(JComponent c, int id,
+                                            AWTKeyStroke stroke) {
+            Set<AWTKeyStroke> keys = c.getFocusTraversalKeys(id);
+            return keys != null && keys.contains(stroke);
+        }
+
+        public void keyReleased(KeyEvent e) {
+        }
+
+        public void keyTyped(KeyEvent e) {
+        }
     }
 
 }
