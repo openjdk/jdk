@@ -185,17 +185,13 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     }
 
     protected void installListeners(final AbstractButton b) {
-        final AquaButtonListener listener = createButtonListener(b);
+        super.installListeners(b);
+        AquaButtonListener listener = getAquaButtonListener(b);
         if (listener != null) {
             // put the listener in the button's client properties so that
             // we can get at it later
             b.putClientProperty(this, listener);
 
-            b.addMouseListener(listener);
-            b.addMouseMotionListener(listener);
-            b.addFocusListener(listener);
-            b.addPropertyChangeListener(listener);
-            b.addChangeListener(listener);
             b.addAncestorListener(listener);
         }
         installHierListener(b);
@@ -221,15 +217,10 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     }
 
     protected void uninstallListeners(final AbstractButton b) {
+        super.uninstallListeners(b);
         final AquaButtonListener listener = (AquaButtonListener)b.getClientProperty(this);
         b.putClientProperty(this, null);
         if (listener != null) {
-            b.removeMouseListener(listener);
-            b.removeMouseListener(listener);
-            b.removeMouseMotionListener(listener);
-            b.removeFocusListener(listener);
-            b.removeChangeListener(listener);
-            b.removePropertyChangeListener(listener);
             b.removeAncestorListener(listener);
         }
         uninstallHierListener(b);
@@ -244,6 +235,23 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     // Create Listeners
     protected AquaButtonListener createButtonListener(final AbstractButton b) {
         return new AquaButtonListener(b);
+    }
+
+    /**
+     * Returns the AquaButtonListener for the passed in Button, or null if one
+     * could not be found.
+     */
+    private AquaButtonListener getAquaButtonListener(AbstractButton b) {
+        MouseMotionListener[] listeners = b.getMouseMotionListeners();
+
+        if (listeners != null) {
+            for (MouseMotionListener listener : listeners) {
+                if (listener instanceof AquaButtonListener) {
+                    return (AquaButtonListener) listener;
+                }
+            }
+        }
+        return null;
     }
 
     // Paint Methods
