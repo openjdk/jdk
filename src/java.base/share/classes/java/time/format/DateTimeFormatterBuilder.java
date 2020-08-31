@@ -1510,6 +1510,7 @@ public final class DateTimeFormatterBuilder {
      *   F       day-of-week-in-month        number            3
      *
      *   a       am-pm-of-day                text              PM
+     *   B       flexible-period-of-day      text              in the morning
      *   h       clock-hour-of-am-pm (1-12)  number            12
      *   K       hour-of-am-pm (0-11)        number            0
      *   k       clock-hour-of-day (1-24)    number            24
@@ -1621,6 +1622,9 @@ public final class DateTimeFormatterBuilder {
      *  Pattern  Count  Equivalent builder methods
      *  -------  -----  --------------------------
      *    a       1      appendText(ChronoField.AMPM_OF_DAY, TextStyle.SHORT)
+     *    B       1      appendText(ChronoField.FLEXIBLE_PERIOD_OF_DAY, TextStyle.SHORT)
+     *    BBBB    4      appendText(ChronoField.FLEXIBLE_PERIOD_OF_DAY, TextStyle.FULL)
+     *    BBBBB   5      appendText(ChronoField.FLEXIBLE_PERIOD_OF_DAY, TextStyle.NARROW)
      *    h       1      appendValue(ChronoField.CLOCK_HOUR_OF_AMPM)
      *    hh      2      appendValue(ChronoField.CLOCK_HOUR_OF_AMPM, 2)
      *    H       1      appendValue(ChronoField.HOUR_OF_DAY)
@@ -1918,6 +1922,7 @@ public final class DateTimeFormatterBuilder {
                     throw new IllegalArgumentException("Too many pattern letters: " + cur);
                 }
                 break;
+            case 'B':
             case 'G':
                 switch (count) {
                     case 1:
@@ -2005,6 +2010,7 @@ public final class DateTimeFormatterBuilder {
         FIELD_MAP.put('c', ChronoField.DAY_OF_WEEK);               // LDML (stand-alone)
         FIELD_MAP.put('e', ChronoField.DAY_OF_WEEK);               // LDML (needs localized week number)
         FIELD_MAP.put('a', ChronoField.AMPM_OF_DAY);               // SDF, LDML
+        FIELD_MAP.put('B', ChronoField.FLEXIBLE_PERIOD_OF_DAY);    // LDML (needs localized day periods)
         FIELD_MAP.put('H', ChronoField.HOUR_OF_DAY);               // SDF, LDML
         FIELD_MAP.put('k', ChronoField.CLOCK_HOUR_OF_DAY);         // SDF, LDML
         FIELD_MAP.put('K', ChronoField.HOUR_OF_AMPM);              // SDF, LDML

@@ -70,6 +70,7 @@ public class CLDRConverter {
     private static String TIMEZONE_SOURCE_FILE;
     private static String WINZONES_SOURCE_FILE;
     private static String PLURALS_SOURCE_FILE;
+    private static String DAYPERIODRULE_SOURCE_FILE;
     static String DESTINATION_DIR = "build/gensrc";
 
     static final String LOCALE_NAME_PREFIX = "locale.displayname.";
@@ -100,6 +101,7 @@ public class CLDRConverter {
     static NumberingSystemsParseHandler handlerNumbering;
     static MetaZonesParseHandler handlerMetaZones;
     static TimeZoneParseHandler handlerTimeZone;
+    static DayPeriodRuleParseHandler handlerDayPeriodRule;
     private static BundleGenerator bundleGenerator;
 
     // java.base module related
@@ -248,6 +250,7 @@ public class CLDRConverter {
         SPPL_META_SOURCE_FILE = CLDR_BASE + "/supplemental/supplementalMetadata.xml";
         WINZONES_SOURCE_FILE = CLDR_BASE + "/supplemental/windowsZones.xml";
         PLURALS_SOURCE_FILE = CLDR_BASE + "/supplemental/plurals.xml";
+        DAYPERIODRULE_SOURCE_FILE = CLDR_BASE + "/supplemental/dayPeriods.xml";
 
         if (BASE_LOCALES.isEmpty()) {
             setupBaseLocales("en-US");
@@ -271,6 +274,9 @@ public class CLDRConverter {
 
             // Generate Plural rules
             generatePluralRules();
+
+            // Generate dayPeriod rules
+            generateDayPeriodRules();
         }
     }
 
@@ -462,6 +468,10 @@ public class CLDRConverter {
         // Parse plurals
         handlerPlurals = new PluralsParseHandler();
         parseLDMLFile(new File(PLURALS_SOURCE_FILE), handlerPlurals);
+
+        // Parse day period rules
+        handlerDayPeriodRule = new DayPeriodRuleParseHandler();
+        parseLDMLFile(new File(DAYPERIODRULE_SOURCE_FILE), handlerDayPeriodRule);
     }
 
     // Parsers for data in "bcp47" directory
@@ -1136,24 +1146,43 @@ public class CLDRConverter {
      * @throws Exception
      */
     private static void generatePluralRules() throws Exception {
+        generateRules("Plural");
+    }
+
+    private static void generateDayPeriodRules() throws Exception {
+        generateRules("DayPeriod");
+    }
+
+    private static void generateRules(String type) throws Exception {
         Files.createDirectories(Paths.get(DESTINATION_DIR, "sun", "text", "resources"));
-        Files.write(Paths.get(DESTINATION_DIR, "sun", "text", "resources", "PluralRules.java"),
-            Stream.concat(
+        Files.write(Paths.get(DESTINATION_DIR, "sun", "text", "resources", type + "Rules.java"),
                 Stream.concat(
-                    Stream.of(
-                        "package sun.text.resources;",
-                        "public final class PluralRules {",
-                        "    public static final String[][] rulesArray = {"
-                    ),
-                    pluralRulesStream().sorted()
-                ),
-                Stream.of(
-                    "    };",
-                    "}"
+                        Stream.concat(
+                                Stream.of(
+                                        "package sun.text.resources;",
+                                        "public final class " + type + "Rules {",
+                                        "    public static final String[][] rulesArray = {"
+                                ),
+                                rulesStream(type).sorted()
+                        ),
+                        Stream.of(
+                                "    };",
+                                "}"
+                        )
                 )
-            )
-            .collect(Collectors.toList()),
-        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                        .collect(Collectors.toList()),
+                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
+    private static Stream<String> rulesStream(String type) {
+        switch (type) {
+            case "Plural":
+                return pluralRulesStream();
+            case "DayPeriod":
+                return dayPeriodRulesStream();
+            default:
+                throw new InternalError("unknown rule type");
+        }
     }
 
     private static Stream<String> pluralRulesStream() {
@@ -1168,6 +1197,20 @@ public class CLDRConverter {
                         .map(String::trim)
                         .collect(Collectors.joining(";")) + "\"},";
             });
+    }
+
+    private static Stream<String> dayPeriodRulesStream() {
+        return handlerDayPeriodRule.getData().entrySet().stream()
+                .filter(e -> !(e.getValue()).isEmpty())
+                .map(e -> {
+                    String loc = e.getKey();
+                    Map<String, String> rules = e.getValue();
+                    return "        {\"" + loc + "\", \"" +
+                            rules.entrySet().stream()
+                                    .map(rule -> rule.getKey() + ":" + rule.getValue().replaceFirst("@.*", ""))
+                                    .map(String::trim)
+                                    .collect(Collectors.joining(";")) + "\"},";
+                });
     }
 
     // for debug

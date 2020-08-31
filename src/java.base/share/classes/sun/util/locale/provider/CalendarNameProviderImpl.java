@@ -172,7 +172,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
             }
 
             if (strings != null) {
-                if (!hasDuplicates(strings)) {
+                if (!hasDuplicates(strings) || field == AM_PM) {
                     if (field == YEAR) {
                         if (strings.length > 0) {
                             map.put(strings[0], 1);

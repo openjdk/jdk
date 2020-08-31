@@ -78,4 +78,16 @@ public abstract class CalendarDataProvider extends LocaleServiceProvider {
      * @see java.util.Calendar#getMinimalDaysInFirstWeek()
      */
     public abstract int getMinimalDaysInFirstWeek(Locale locale);
+
+    /**
+     * TBD
+     * @param locale
+     *        the desired locale
+     * @param hour
+     *        hour to determine the day period
+     * @return index to the day period
+     */
+    public int getFlexibleDayPeriod(Locale locale, int hour) {
+        return hour / 12;
+    }
 }
