@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2017 Marti Maria Saguer
+//  Copyright (c) 1998-2020 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -52,7 +52,7 @@
 //
 //---------------------------------------------------------------------------------
 //
-// Version 2.9rc3
+// Version 2.11
 //
 
 #ifndef _lcms2_H
@@ -90,6 +90,9 @@
 // Uncomment this for special windows mutex initialization (see lcms2_internal.h)
 // #define CMS_RELY_ON_WINDOWS_STATIC_MUTEX_INIT
 
+// Uncomment this to remove the "register" storage class
+// #define CMS_NO_REGISTER_KEYWORD 1
+
 // ********** End of configuration toggles ******************************
 
 // Needed for streams
@@ -107,7 +110,7 @@ extern "C" {
 #endif
 
 // Version/release
-#define LCMS_VERSION        2090
+#define LCMS_VERSION        2100
 
 // I will give the chance of redefining basic types for compilers that are not fully C99 compliant
 #ifndef CMS_BASIC_TYPES_ALREADY_DEFINED
@@ -175,6 +178,13 @@ typedef double               cmsFloat64Number;
 #     define CMS_DONT_USE_INT64 1
 #  endif
 #endif
+#endif
+
+// Handle "register" keyword
+#if defined(CMS_NO_REGISTER_KEYWORD) && !defined(CMS_DLL) && !defined(CMS_DLL_BUILD)
+#  define CMSREGISTER
+#else
+#  define CMSREGISTER register
 #endif
 
 // In the case 64 bit numbers are not supported by the compiler
@@ -1058,7 +1068,7 @@ CMSAPI long int          CMSEXPORT cmsfilelength(FILE* f);
 typedef struct _cmsContext_struct* cmsContext;
 
 CMSAPI cmsContext       CMSEXPORT cmsCreateContext(void* Plugin, void* UserData);
-CMSAPI void             CMSEXPORT cmsDeleteContext(cmsContext ContexID);
+CMSAPI void             CMSEXPORT cmsDeleteContext(cmsContext ContextID);
 CMSAPI cmsContext       CMSEXPORT cmsDupContext(cmsContext ContextID, void* NewUserData);
 CMSAPI void*            CMSEXPORT cmsGetContextUserData(cmsContext ContextID);
 
@@ -1210,6 +1220,7 @@ CMSAPI cmsBool           CMSEXPORT cmsIsToneCurveMonotonic(const cmsToneCurve* t
 CMSAPI cmsBool           CMSEXPORT cmsIsToneCurveDescending(const cmsToneCurve* t);
 CMSAPI cmsInt32Number    CMSEXPORT cmsGetToneCurveParametricType(const cmsToneCurve* t);
 CMSAPI cmsFloat64Number  CMSEXPORT cmsEstimateGamma(const cmsToneCurve* t, cmsFloat64Number Precision);
+CMSAPI cmsFloat64Number* CMSEXPORT cmsGetToneCurveParams(const cmsToneCurve* t);
 
 // Tone curve tabular estimation
 CMSAPI cmsUInt32Number         CMSEXPORT cmsGetToneCurveEstimatedTableEntries(const cmsToneCurve* t);
@@ -1276,13 +1287,13 @@ CMSAPI cmsStageSignature CMSEXPORT cmsStageType(const cmsStage* mpe);
 CMSAPI void*             CMSEXPORT cmsStageData(const cmsStage* mpe);
 
 // Sampling
-typedef cmsInt32Number (* cmsSAMPLER16)   (register const cmsUInt16Number In[],
-                                            register cmsUInt16Number Out[],
-                                            register void * Cargo);
+typedef cmsInt32Number (* cmsSAMPLER16)   (CMSREGISTER const cmsUInt16Number In[],
+                                           CMSREGISTER cmsUInt16Number Out[],
+                                           CMSREGISTER void * Cargo);
 
-typedef cmsInt32Number (* cmsSAMPLERFLOAT)(register const cmsFloat32Number In[],
-                                            register cmsFloat32Number Out[],
-                                            register void * Cargo);
+typedef cmsInt32Number (* cmsSAMPLERFLOAT)(CMSREGISTER const cmsFloat32Number In[],
+                                           CMSREGISTER cmsFloat32Number Out[],
+                                           CMSREGISTER void * Cargo);
 
 // Use this flag to prevent changes being written to destination
 #define SAMPLER_INSPECT     0x01000000
@@ -1673,7 +1684,7 @@ CMSAPI cmsUInt32Number  CMSEXPORT cmsGetSupportedIntentsTHR(cmsContext ContextID
 // Misc
 #define cmsFLAGS_BLACKPOINTCOMPENSATION   0x2000
 #define cmsFLAGS_NOWHITEONWHITEFIXUP      0x0004    // Don't fix scum dot
-#define cmsFLAGS_HIGHRESPRECALC           0x0400    // Use more memory to give better accurancy
+#define cmsFLAGS_HIGHRESPRECALC           0x0400    // Use more memory to give better accuracy
 #define cmsFLAGS_LOWRESPRECALC            0x0800    // Use less memory to minimize resources
 
 // For devicelink creation
