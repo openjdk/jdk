@@ -28,6 +28,7 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/fieldLayoutBuilder.hpp"

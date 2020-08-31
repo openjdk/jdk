@@ -28,6 +28,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "oops/oop.hpp"
+#include "oops/instanceKlass.hpp"
 #include "runtime/os.hpp"
 
 class RecordComponent;

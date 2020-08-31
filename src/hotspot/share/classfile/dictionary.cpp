@@ -33,6 +33,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/arguments.hpp"
@@ -416,6 +417,23 @@ void SymbolPropertyEntry::free_entry() {
   literal()->decrement_refcount();
   // Free OopHandle
   _method_type.release(Universe::vm_global());
+}
+
+void SymbolPropertyEntry::print_entry(outputStream* st) const {
+  symbol()->print_value_on(st);
+  st->print("/mode=" INTX_FORMAT, symbol_mode());
+  st->print(" -> ");
+  bool printed = false;
+  if (method() != NULL) {
+    method()->print_value_on(st);
+    printed = true;
+  }
+  if (method_type() != NULL) {
+    if (printed)  st->print(" and ");
+    st->print(INTPTR_FORMAT, p2i((void *)method_type()));
+    printed = true;
+  }
+  st->print_cr(printed ? "" : "(empty)");
 }
 
 SymbolPropertyTable::SymbolPropertyTable(int table_size)

@@ -34,6 +34,7 @@
 #include "gc/shared/workerPolicy.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/java.hpp"
 
 static const double MaxRamFractionForYoung = 0.8;
 size_t G1Arguments::MaxMemoryForYoung;
