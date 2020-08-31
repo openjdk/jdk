@@ -92,8 +92,8 @@ void DefNewGeneration::FastKeepAliveClosure::do_oop(narrowOop* p) { DefNewGenera
 
 DefNewGeneration::FastEvacuateFollowersClosure::
 FastEvacuateFollowersClosure(SerialHeap* heap,
-                             FastScanClosure* cur,
-                             FastScanClosure* older) :
+                             DefNewScanClosure* cur,
+                             DefNewYoungerGenClosure* older) :
   _heap(heap), _scan_cur_or_nonheap(cur), _scan_older(older)
 {
 }
@@ -103,12 +103,6 @@ void DefNewGeneration::FastEvacuateFollowersClosure::do_void() {
     _heap->oop_since_save_marks_iterate(_scan_cur_or_nonheap, _scan_older);
   } while (!_heap->no_allocs_since_save_marks());
   guarantee(_heap->young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
-}
-
-FastScanClosure::FastScanClosure(DefNewGeneration* g, bool gc_barrier) :
-    OopsInClassLoaderDataOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
-{
-  _boundary = _g->reserved().end();
 }
 
 void CLDScanClosure::do_cld(ClassLoaderData* cld) {
@@ -570,16 +564,16 @@ void DefNewGeneration::collect(bool   full,
   assert(heap->no_allocs_since_save_marks(),
          "save marks have not been newly set.");
 
-  FastScanClosure fsc_with_no_gc_barrier(this, false);
-  FastScanClosure fsc_with_gc_barrier(this, true);
+  DefNewScanClosure       scan_closure(this);
+  DefNewYoungerGenClosure younger_gen_closure(this, _old_gen);
 
-  CLDScanClosure cld_scan_closure(&fsc_with_no_gc_barrier,
+  CLDScanClosure cld_scan_closure(&scan_closure,
                                   heap->rem_set()->cld_rem_set()->accumulate_modified_oops());
 
-  set_promo_failure_scan_stack_closure(&fsc_with_no_gc_barrier);
+  set_promo_failure_scan_stack_closure(&scan_closure);
   FastEvacuateFollowersClosure evacuate_followers(heap,
-                                                  &fsc_with_no_gc_barrier,
-                                                  &fsc_with_gc_barrier);
+                                                  &scan_closure,
+                                                  &younger_gen_closure);
 
   assert(heap->no_allocs_since_save_marks(),
          "save marks have not been newly set.");
@@ -591,8 +585,8 @@ void DefNewGeneration::collect(bool   full,
     StrongRootsScope srs(0);
 
     heap->young_process_roots(&srs,
-                              &fsc_with_no_gc_barrier,
-                              &fsc_with_gc_barrier,
+                              &scan_closure,
+                              &younger_gen_closure,
                               &cld_scan_closure);
   }
 

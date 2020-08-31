@@ -56,7 +56,6 @@ class CompactibleSpace;
 class ContiguousSpace;
 class CompactPoint;
 class OopClosure;
-class FastScanClosure;
 class GenCollectedHeap;
 class GCStats;
 
