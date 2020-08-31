@@ -2761,12 +2761,12 @@ static bool gdi_can_use_memory(void* mem) {
 
 // Test if GDI functions work when memory spans
 // two adjacent memory reservations.
-static bool gdi_can_use_split_reservation_memory(bool use_large_pages, size_t granule) {
-  DWORD mem_large_pages = use_large_pages ? MEM_LARGE_PAGES : 0;
+static bool gdi_can_use_split_reservation_memory() {
+  size_t granule = os::vm_allocation_granularity();
 
-  // Find virtual memory range. Two granules for regions and one for alignment.
+  // Find virtual memory range
   void* reserved = VirtualAlloc(NULL,
-                                granule * 3,
+                                granule * 2,
                                 MEM_RESERVE,
                                 PAGE_NOACCESS);
   if (reserved == NULL) {
@@ -2775,14 +2775,13 @@ static bool gdi_can_use_split_reservation_memory(bool use_large_pages, size_t gr
   }
   VirtualFreeChecked(reserved, 0, MEM_RELEASE);
 
-  // Ensure proper alignment
-  void* res0 = align_up(reserved, granule);
-  void* res1 = (char*)res0 + granule;
+  void* res0 = reserved;
+  void* res1 = (char*)reserved + granule;
 
   // Reserve and commit the first part
   void* mem0 = VirtualAlloc(res0,
                             granule,
-                            MEM_RESERVE|MEM_COMMIT|mem_large_pages,
+                            MEM_RESERVE|MEM_COMMIT,
                             PAGE_READWRITE);
   if (mem0 != res0) {
     // Can't proceed with test - pessimistically report false
@@ -2792,7 +2791,7 @@ static bool gdi_can_use_split_reservation_memory(bool use_large_pages, size_t gr
   // Reserve and commit the second part
   void* mem1 = VirtualAlloc(res1,
                             granule,
-                            MEM_RESERVE|MEM_COMMIT|mem_large_pages,
+                            MEM_RESERVE|MEM_COMMIT,
                             PAGE_READWRITE);
   if (mem1 != res1) {
     VirtualFreeChecked(mem0, 0, MEM_RELEASE);
@@ -2914,7 +2913,7 @@ static bool numa_interleaving_init() {
     return false;
   }
 
-  if (!gdi_can_use_split_reservation_memory(UseLargePages, min_interleave_granularity)) {
+  if (!gdi_can_use_split_reservation_memory()) {
     WARN("Windows GDI cannot handle split reservations.");
     WARN("...Ignoring UseNUMAInterleaving flag.");
     return false;
@@ -3080,25 +3079,6 @@ static size_t large_page_init_decide_size() {
     size = LargePageSizeInBytes;
   }
 
-  // Now test allocating a page
-  void* large_page = VirtualAlloc(NULL,
-                                  size,
-                                  MEM_RESERVE|MEM_COMMIT|MEM_LARGE_PAGES,
-                                  PAGE_READWRITE);
-  if (large_page == NULL) {
-    WARN("JVM cannot allocate one single large page.");
-    return 0;
-  }
-
-  // Detect if GDI can use memory backed by large pages
-  if (!gdi_can_use_memory(large_page)) {
-    WARN("JVM cannot use large pages because of bug in Windows GDI.");
-    return 0;
-  }
-
-  // Release test page
-  VirtualFreeChecked(large_page, 0, MEM_RELEASE);
-
 #undef WARN
 
   return size;
@@ -3119,16 +3099,6 @@ void os::large_page_init() {
   }
 
   UseLargePages = _large_page_size != 0;
-
-  if (UseLargePages && UseLargePagesIndividualAllocation) {
-    if (!gdi_can_use_split_reservation_memory(true /* use_large_pages */, _large_page_size)) {
-      if (FLAG_IS_CMDLINE(UseLargePagesIndividualAllocation)) {
-        warning("Windows GDI cannot handle split reservations.");
-        warning("...Ignoring UseLargePagesIndividualAllocation flag.");
-      }
-      UseLargePagesIndividualAllocation = false;
-    }
-  }
 }
 
 int os::create_file_for_heap(const char* dir) {
