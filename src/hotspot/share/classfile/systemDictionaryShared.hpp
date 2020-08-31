@@ -26,7 +26,6 @@
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
 #include "oops/klass.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/filemap.hpp"
@@ -103,6 +102,7 @@
 #define UNREGISTERED_INDEX -9999
 
 class ClassFileStream;
+class Dictionary;
 class DumpTimeSharedClassInfo;
 class DumpTimeSharedClassTable;
 class LambdaProxyClassDictionary;

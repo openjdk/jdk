@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class StreamHandler extends Handler {
      * Then the output stream is replaced with the new output stream.
      *
      * @param out   New output stream.  May not be null.
-     * @exception  SecurityException  if a security manager exists and if
+     * @throws  SecurityException  if a security manager exists and if
      *             the caller does not have {@code LoggingPermission("control")}.
      */
     protected synchronized void setOutputStream(OutputStream out) throws SecurityException {
@@ -151,9 +151,9 @@ public class StreamHandler extends Handler {
      *
      * @param encoding  The name of a supported character encoding.
      *        May be null, to indicate the default platform encoding.
-     * @exception  SecurityException  if a security manager exists and if
+     * @throws  SecurityException  if a security manager exists and if
      *             the caller does not have {@code LoggingPermission("control")}.
-     * @exception  UnsupportedEncodingException if the named encoding is
+     * @throws  UnsupportedEncodingException if the named encoding is
      *          not supported.
      */
     @Override
@@ -282,7 +282,7 @@ public class StreamHandler extends Handler {
      * yet been written to the stream, it will be written before the
      * "tail" string.
      *
-     * @exception  SecurityException  if a security manager exists and if
+     * @throws  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
      */
     @Override

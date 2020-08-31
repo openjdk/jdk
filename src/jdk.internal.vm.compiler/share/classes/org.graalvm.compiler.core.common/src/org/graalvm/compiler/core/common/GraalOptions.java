@@ -198,6 +198,9 @@ public final class GraalOptions {
     @Option(help = "Generate position independent code", type = OptionType.Expert)
     public static final OptionKey<Boolean> GeneratePIC = new OptionKey<>(false);
 
+    @Option(help = "Generate verify oop checks in AOT code", type = OptionType.Expert)
+    public static final OptionKey<Boolean> AOTVerifyOops = new OptionKey<>(false);
+
     // Runtime settings
     @Option(help = "", type = OptionType.Expert)
     public static final OptionKey<Boolean> SupportJsrBytecodes = new OptionKey<>(true);

@@ -2696,122 +2696,6 @@ int os::vm_allocation_granularity() {
   #define MEM_LARGE_PAGES 0x20000000
 #endif
 
-#define VirtualFreeChecked(mem, size, type)                       \
-  do {                                                            \
-    bool ret = VirtualFree(mem, size, type);                      \
-    assert(ret, "Failed to free memory: " PTR_FORMAT, p2i(mem));  \
-  } while (false)
-
-// The number of bytes is setup to match 1 pixel and 32 bits per pixel.
-static const int gdi_tiny_bitmap_width_bytes = 4;
-
-static HBITMAP gdi_create_tiny_bitmap(void* mem) {
-  // The documentation for CreateBitmap states a word-alignment requirement.
-  STATIC_ASSERT(is_aligned_(gdi_tiny_bitmap_width_bytes, sizeof(WORD)));
-
-  // Some callers use this function to test if memory crossing separate memory
-  // reservations can be used. Create a height of 2 to make sure that one pixel
-  // ends up in the first reservation and the other in the second.
-  int nHeight = 2;
-
-  assert(is_aligned(mem, gdi_tiny_bitmap_width_bytes), "Incorrect alignment");
-
-  // Width is one pixel and correlates with gdi_tiny_bitmap_width_bytes.
-  int nWidth = 1;
-
-  // Calculate bit count - will be 32.
-  UINT nBitCount = gdi_tiny_bitmap_width_bytes / nWidth * BitsPerByte;
-
-  return CreateBitmap(
-      nWidth,
-      nHeight,
-      1,         // nPlanes
-      nBitCount,
-      mem);      // lpBits
-}
-
-// It has been found that some of the GDI functions fail under these two situations:
-//  1) When used with large pages
-//  2) When mem crosses the boundary between two separate memory reservations.
-//
-// This is a small test used to see if the current GDI implementation is
-// susceptible to any of these problems.
-static bool gdi_can_use_memory(void* mem) {
-  HBITMAP bitmap = gdi_create_tiny_bitmap(mem);
-  if (bitmap != NULL) {
-    DeleteObject(bitmap);
-    return true;
-  }
-
-  // Verify that the bitmap could be created with a normal page.
-  // If this fails, the testing method above isn't reliable.
-#ifdef ASSERT
-  void* verify_mem = ::malloc(4 * 1024);
-  HBITMAP verify_bitmap = gdi_create_tiny_bitmap(verify_mem);
-  if (verify_bitmap == NULL) {
-    fatal("Couldn't create test bitmap with malloced memory");
-  } else {
-    DeleteObject(verify_bitmap);
-  }
-  ::free(verify_mem);
-#endif
-
-  return false;
-}
-
-// Test if GDI functions work when memory spans
-// two adjacent memory reservations.
-static bool gdi_can_use_split_reservation_memory(bool use_large_pages, size_t granule) {
-  DWORD mem_large_pages = use_large_pages ? MEM_LARGE_PAGES : 0;
-
-  // Find virtual memory range. Two granules for regions and one for alignment.
-  void* reserved = VirtualAlloc(NULL,
-                                granule * 3,
-                                MEM_RESERVE,
-                                PAGE_NOACCESS);
-  if (reserved == NULL) {
-    // Can't proceed with test - pessimistically report false
-    return false;
-  }
-  VirtualFreeChecked(reserved, 0, MEM_RELEASE);
-
-  // Ensure proper alignment
-  void* res0 = align_up(reserved, granule);
-  void* res1 = (char*)res0 + granule;
-
-  // Reserve and commit the first part
-  void* mem0 = VirtualAlloc(res0,
-                            granule,
-                            MEM_RESERVE|MEM_COMMIT|mem_large_pages,
-                            PAGE_READWRITE);
-  if (mem0 != res0) {
-    // Can't proceed with test - pessimistically report false
-    return false;
-  }
-
-  // Reserve and commit the second part
-  void* mem1 = VirtualAlloc(res1,
-                            granule,
-                            MEM_RESERVE|MEM_COMMIT|mem_large_pages,
-                            PAGE_READWRITE);
-  if (mem1 != res1) {
-    VirtualFreeChecked(mem0, 0, MEM_RELEASE);
-    // Can't proceed with test - pessimistically report false
-    return false;
-  }
-
-  // Set the bitmap's bits to point one "width" bytes before, so that
-  // the bitmap extends across the reservation boundary.
-  void* bitmapBits = (char*)mem1 - gdi_tiny_bitmap_width_bytes;
-
-  bool success = gdi_can_use_memory(bitmapBits);
-
-  VirtualFreeChecked(mem1, 0, MEM_RELEASE);
-  VirtualFreeChecked(mem0, 0, MEM_RELEASE);
-
-  return success;
-}
-
 // Container for NUMA node list info
 class NUMANodeListHolder {
  private:
@@ -2910,12 +2794,6 @@ static bool numa_interleaving_init() {
 
   if (!numa_node_list_holder.build()) {
     WARN("Process does not cover multiple NUMA nodes.");
-    WARN("...Ignoring UseNUMAInterleaving flag.");
-    return false;
-  }
-
-  if (!gdi_can_use_split_reservation_memory(UseLargePages, min_interleave_granularity)) {
-    WARN("Windows GDI cannot handle split reservations.");
     WARN("...Ignoring UseNUMAInterleaving flag.");
     return false;
   }
@@ -3080,25 +2958,6 @@ static size_t large_page_init_decide_size() {
     size = LargePageSizeInBytes;
   }
 
-  // Now test allocating a page
-  void* large_page = VirtualAlloc(NULL,
-                                  size,
-                                  MEM_RESERVE|MEM_COMMIT|MEM_LARGE_PAGES,
-                                  PAGE_READWRITE);
-  if (large_page == NULL) {
-    WARN("JVM cannot allocate one single large page.");
-    return 0;
-  }
-
-  // Detect if GDI can use memory backed by large pages
-  if (!gdi_can_use_memory(large_page)) {
-    WARN("JVM cannot use large pages because of bug in Windows GDI.");
-    return 0;
-  }
-
-  // Release test page
-  VirtualFreeChecked(large_page, 0, MEM_RELEASE);
-
 #undef WARN
 
   return size;
@@ -3119,16 +2978,6 @@ void os::large_page_init() {
   }
 
   UseLargePages = _large_page_size != 0;
-
-  if (UseLargePages && UseLargePagesIndividualAllocation) {
-    if (!gdi_can_use_split_reservation_memory(true /* use_large_pages */, _large_page_size)) {
-      if (FLAG_IS_CMDLINE(UseLargePagesIndividualAllocation)) {
-        warning("Windows GDI cannot handle split reservations.");
-        warning("...Ignoring UseLargePagesIndividualAllocation flag.");
-      }
-      UseLargePagesIndividualAllocation = false;
-    }
-  }
 }
 
 int os::create_file_for_heap(const char* dir) {

@@ -25,8 +25,6 @@
 #ifndef SHARE_CLASSFILE_DICTIONARY_HPP
 #define SHARE_CLASSFILE_DICTIONARY_HPP
 
-#include "classfile/protectionDomainCache.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
@@ -34,7 +32,7 @@
 #include "utilities/ostream.hpp"
 
 class DictionaryEntry;
-class BoolObjectClosure;
+class ProtectionDomainEntry;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // The data structure for the class loader data dictionaries.
@@ -208,22 +206,7 @@ class SymbolPropertyEntry : public HashtableEntry<Symbol*, mtSymbol> {
     return (SymbolPropertyEntry**)HashtableEntry<Symbol*, mtSymbol>::next_addr();
   }
 
-  void print_entry(outputStream* st) const {
-    symbol()->print_value_on(st);
-    st->print("/mode=" INTX_FORMAT, symbol_mode());
-    st->print(" -> ");
-    bool printed = false;
-    if (method() != NULL) {
-      method()->print_value_on(st);
-      printed = true;
-    }
-    if (method_type() != NULL) {
-      if (printed)  st->print(" and ");
-      st->print(INTPTR_FORMAT, p2i((void *)method_type()));
-      printed = true;
-    }
-    st->print_cr(printed ? "" : "(empty)");
-  }
+  void print_entry(outputStream* st) const;
 };
 
 // A system-internal mapping of symbols to pointers, both managed

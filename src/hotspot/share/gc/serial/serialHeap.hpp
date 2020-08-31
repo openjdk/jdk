@@ -32,7 +32,7 @@
 
 class GCMemoryManager;
 class MemoryPool;
-class OopsInGenClosure;
+class OopIterateClosure;
 class TenuredGeneration;
 
 class SerialHeap : public GenCollectedHeap {
@@ -78,8 +78,8 @@ public:
                                     OopClosureType2* older);
 
   void young_process_roots(StrongRootsScope* scope,
-                           OopsInGenClosure* root_closure,
-                           OopsInGenClosure* old_gen_closure,
+                           OopIterateClosure* root_closure,
+                           OopIterateClosure* old_gen_closure,
                            CLDClosure* cld_closure);
 };
 

@@ -27,6 +27,7 @@ package org.graalvm.compiler.hotspot;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import java.util.Map;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
@@ -64,6 +65,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
 
         assert check();
         reportErrors();
+        populateMarkConstants();
     }
 
     private final CompressEncoding oopEncoding;
@@ -893,25 +895,6 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
     private static final boolean JDK_8245443 = ((JDK == 11 && JDK_UPDATE >= 8) || JDK >= 15);
 
     // Checkstyle: stop
-    public final int VERIFIED_ENTRY = getConstant("CodeInstaller::VERIFIED_ENTRY", Integer.class);
-    public final int UNVERIFIED_ENTRY = getConstant("CodeInstaller::UNVERIFIED_ENTRY", Integer.class);
-    public final int OSR_ENTRY = getConstant("CodeInstaller::OSR_ENTRY", Integer.class);
-    public final int EXCEPTION_HANDLER_ENTRY = getConstant("CodeInstaller::EXCEPTION_HANDLER_ENTRY", Integer.class);
-    public final int DEOPT_HANDLER_ENTRY = getConstant("CodeInstaller::DEOPT_HANDLER_ENTRY", Integer.class);
-    public final int DEOPT_MH_HANDLER_ENTRY = getConstant("CodeInstaller::DEOPT_MH_HANDLER_ENTRY", Integer.class, -1, (JVMCI ? jvmciGE(JVMCI_20_2_b01) : JDK >= 16));
-    public final int FRAME_COMPLETE = getConstant("CodeInstaller::FRAME_COMPLETE", Integer.class, -1, (JVMCI ? jvmciGE(JVMCI_20_1_b01) : JDK_8245443));
-    public final int INVOKEINTERFACE = getConstant("CodeInstaller::INVOKEINTERFACE", Integer.class);
-    public final int INVOKEVIRTUAL = getConstant("CodeInstaller::INVOKEVIRTUAL", Integer.class);
-    public final int INVOKESTATIC = getConstant("CodeInstaller::INVOKESTATIC", Integer.class);
-    public final int INVOKESPECIAL = getConstant("CodeInstaller::INVOKESPECIAL", Integer.class);
-    public final int INLINE_INVOKE = getConstant("CodeInstaller::INLINE_INVOKE", Integer.class);
-    public final int POLL_NEAR = getConstant("CodeInstaller::POLL_NEAR", Integer.class);
-    public final int POLL_RETURN_NEAR = getConstant("CodeInstaller::POLL_RETURN_NEAR", Integer.class);
-    public final int POLL_FAR = getConstant("CodeInstaller::POLL_FAR", Integer.class);
-    public final int POLL_RETURN_FAR = getConstant("CodeInstaller::POLL_RETURN_FAR", Integer.class);
-    public final int CARD_TABLE_SHIFT = getConstant("CodeInstaller::CARD_TABLE_SHIFT", Integer.class);
-    public final int CARD_TABLE_ADDRESS = getConstant("CodeInstaller::CARD_TABLE_ADDRESS", Integer.class);
-    public final int INVOKE_INVALID = getConstant("CodeInstaller::INVOKE_INVALID", Integer.class);
     public final int VMINTRINSIC_FIRST_MH_SIG_POLY = getConstant("vmIntrinsics::FIRST_MH_SIG_POLY", Integer.class, -1, (JVMCI ? jvmciGE(JVMCI_20_2_b01) : JDK >= 16));
     public final int VMINTRINSIC_LAST_MH_SIG_POLY = getConstant("vmIntrinsics::LAST_MH_SIG_POLY", Integer.class, -1, (JVMCI ? jvmciGE(JVMCI_20_2_b01) : JDK >= 16));
     public final int VMINTRINSIC_INVOKE_GENERIC = getConstant("vmIntrinsics::_invokeGeneric", Integer.class, -1, (JVMCI ? jvmciGE(JVMCI_20_2_b01) : JDK >= 16));
@@ -920,16 +903,50 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
     public final boolean CPU_HAS_INTEL_JCC_ERRATUM = getFieldValue("VM_Version::_has_intel_jcc_erratum", Boolean.class, "bool",
                     true, "amd64".equals(osArch) && (JVMCI ? jvmciGE(JVMCI_20_1_b01) : JDK >= 15));
 
-    /**
-     * The following constants are given default values here since they are missing in the native
-     * JVMCI-8 code but are still required for {@link HotSpotMarkId} to work in a JDK8 environment.
-     */
-    public final int NARROW_KLASS_BASE_ADDRESS = getConstant("CodeInstaller::NARROW_KLASS_BASE_ADDRESS", Integer.class, 19, JDK > 9);
-    public final int NARROW_OOP_BASE_ADDRESS = getConstant("CodeInstaller::NARROW_OOP_BASE_ADDRESS", Integer.class, 20, JDK > 9);
-    public final int CRC_TABLE_ADDRESS = getConstant("CodeInstaller::CRC_TABLE_ADDRESS", Integer.class, 21, JDK > 9);
-    public final int LOG_OF_HEAP_REGION_GRAIN_BYTES = getConstant("CodeInstaller::LOG_OF_HEAP_REGION_GRAIN_BYTES", Integer.class, 22, JDK > 9);
-
     // Checkstyle: resume
+
+    private static void checkForMissingRequiredValue(HotSpotMarkId markId, boolean required) {
+        if (!markId.isAvailable() && required) {
+            GraalHotSpotVMConfigAccess.reportError("Unsupported Mark " + markId);
+        }
+    }
+
+    private void populateMarkConstants() {
+        boolean jdk13JvmciBackport = (JVMCI && JDK > 8) ? jvmciGE(JVMCI_19_3_b03) : JDK > 9;
+        boolean verifyOopsMarkSupported = JDK >= 16;
+        Map<String, Long> constants = getStore().getConstants();
+        for (HotSpotMarkId markId : HotSpotMarkId.values()) {
+            Integer value = null;
+            String key = "CodeInstaller::" + markId.name();
+            Long result = constants.get(key);
+            if (result != null) {
+                value = result.intValue();
+            }
+            markId.setValue(value);
+            switch (markId) {
+                case FRAME_COMPLETE:
+                    checkForMissingRequiredValue(markId, JVMCI ? jvmciGE(JVMCI_20_1_b01) : JDK_8245443);
+                    break;
+                case DEOPT_MH_HANDLER_ENTRY:
+                    checkForMissingRequiredValue(markId, JVMCI ? jvmciGE(JVMCI_20_2_b01) : JDK >= 16);
+                    break;
+                case NARROW_KLASS_BASE_ADDRESS:
+                case CRC_TABLE_ADDRESS:
+                case NARROW_OOP_BASE_ADDRESS:
+                case LOG_OF_HEAP_REGION_GRAIN_BYTES:
+                    checkForMissingRequiredValue(markId, jdk13JvmciBackport);
+                    break;
+                case VERIFY_OOPS:
+                case VERIFY_OOP_BITS:
+                case VERIFY_OOP_MASK:
+                case VERIFY_OOP_COUNT_ADDRESS:
+                    checkForMissingRequiredValue(markId, verifyOopsMarkSupported);
+                    break;
+                default:
+                    checkForMissingRequiredValue(markId, true);
+            }
+        }
+    }
 
     protected boolean check() {
         for (Field f : getClass().getDeclaredFields()) {
@@ -952,7 +969,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
     }
 
     public boolean supportsMethodHandleDeoptimizationEntry() {
-        return DEOPT_MH_HANDLER_ENTRY != -1 && VMINTRINSIC_FIRST_MH_SIG_POLY != -1 && VMINTRINSIC_LAST_MH_SIG_POLY != -1 && VMINTRINSIC_INVOKE_GENERIC != -1 &&
+        return HotSpotMarkId.DEOPT_MH_HANDLER_ENTRY.isAvailable() && VMINTRINSIC_FIRST_MH_SIG_POLY != -1 && VMINTRINSIC_LAST_MH_SIG_POLY != -1 && VMINTRINSIC_INVOKE_GENERIC != -1 &&
                         VMINTRINSIC_COMPILED_LAMBDA_FORM != -1;
     }
 

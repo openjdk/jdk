@@ -31,6 +31,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/klassFactory.hpp"
@@ -110,46 +111,6 @@ OopHandle   SystemDictionary::_java_platform_loader;
 // Default ProtectionDomainCacheSize value
 
 const int defaultProtectionDomainCacheSize = 1009;
-
-ClassLoadInfo::ClassLoadInfo() {
-  _protection_domain = Handle();
-  _unsafe_anonymous_host = NULL;
-  _cp_patches = NULL;
-  _class_hidden_info._dynamic_nest_host = NULL;
-  _class_hidden_info._class_data = Handle();
-  _is_hidden = false;
-  _is_strong_hidden = false;
-  _can_access_vm_annotations = false;
-}
-
-ClassLoadInfo::ClassLoadInfo(Handle protection_domain) {
-  _protection_domain = protection_domain;
-  _unsafe_anonymous_host = NULL;
-  _cp_patches = NULL;
-  _class_hidden_info._dynamic_nest_host = NULL;
-  _class_hidden_info._class_data = Handle();
-  _is_hidden = false;
-  _is_strong_hidden = false;
-  _can_access_vm_annotations = false;
-}
-
-ClassLoadInfo::ClassLoadInfo(Handle protection_domain,
-                             const InstanceKlass* unsafe_anonymous_host,
-                             GrowableArray<Handle>* cp_patches,
-                             InstanceKlass* dynamic_nest_host,
-                             Handle class_data,
-                             bool is_hidden,
-                             bool is_strong_hidden,
-                             bool can_access_vm_annotations) {
-  _protection_domain = protection_domain;
-  _unsafe_anonymous_host = unsafe_anonymous_host;
-  _cp_patches = cp_patches;
-  _class_hidden_info._dynamic_nest_host = dynamic_nest_host;
-  _class_hidden_info._class_data = class_data;
-  _is_hidden = is_hidden;
-  _is_strong_hidden = is_strong_hidden;
-  _can_access_vm_annotations = can_access_vm_annotations;
-}
 
 // ----------------------------------------------------------------------------
 // Java-level SystemLoader and PlatformLoader
@@ -2047,6 +2008,10 @@ bool SystemDictionary::is_well_known_klass(Symbol* class_name) {
   }
   return false;
 }
+
+bool SystemDictionary::is_well_known_klass(Klass* k) {
+  return is_well_known_klass(k->name());
+}
 #endif
 
 bool SystemDictionary::resolve_wk_klass(WKID id, TRAPS) {
@@ -2949,6 +2914,19 @@ void SystemDictionary::invoke_bootstrap_method(BootstrapInfo& bootstrap_specifie
 
 ProtectionDomainCacheEntry* SystemDictionary::cache_get(Handle protection_domain) {
   return _pd_cache_table->get(protection_domain);
+}
+
+ClassLoaderData* SystemDictionary::class_loader_data(Handle class_loader) {
+  return ClassLoaderData::class_loader_data(class_loader());
+}
+
+bool SystemDictionary::is_wk_klass_loaded(InstanceKlass* klass) {
+  return !(klass == NULL || !klass->is_loaded());
+}
+
+bool SystemDictionary::is_nonpublic_Object_method(Method* m) {
+  assert(m != NULL, "Unexpected NULL Method*");
+  return !m->is_public() && m->method_holder() == SystemDictionary::Object_klass();
 }
 
 // ----------------------------------------------------------------------------

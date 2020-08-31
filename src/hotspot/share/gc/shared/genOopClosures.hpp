@@ -34,90 +34,75 @@ class CardTableBarrierSet;
 class DefNewGeneration;
 class KlassRemSet;
 
-// Closure for iterating roots from a particular generation
-// Note: all classes deriving from this MUST call this do_barrier
-// method at the end of their own do_oop method!
-// Note: no do_oop defined, this is an abstract class.
-
-class OopsInGenClosure : public OopIterateClosure {
- private:
-  Generation*  _orig_gen;     // generation originally set in ctor
-  Generation*  _gen;          // generation being scanned
-
- protected:
-  // Some subtypes need access.
-  HeapWord*    _gen_boundary; // start of generation
-  CardTableRS* _rs;           // remembered set
-
-  // For assertions
-  Generation* generation() { return _gen; }
-  CardTableRS* rs() { return _rs; }
-
-  // Derived classes that modify oops so that they might be old-to-young
-  // pointers must call the method below.
-  template <class T> void do_barrier(T* p);
-
- public:
-  OopsInGenClosure(Generation* gen);
-  void set_generation(Generation* gen);
-
-  void reset_generation() { _gen = _orig_gen; }
-
-  HeapWord* gen_boundary() { return _gen_boundary; }
-};
-
-class BasicOopsInGenClosure: public OopsInGenClosure {
- public:
-  BasicOopsInGenClosure(Generation* gen);
-
-  virtual bool do_metadata() { return false; }
-  virtual void do_klass(Klass* k) { ShouldNotReachHere(); }
-  virtual void do_cld(ClassLoaderData* cld) { ShouldNotReachHere(); }
-};
-
-// Super class for scan closures. It contains code to dirty scanned class loader data.
-class OopsInClassLoaderDataOrGenClosure: public BasicOopsInGenClosure {
-  ClassLoaderData* _scanned_cld;
- public:
-  OopsInClassLoaderDataOrGenClosure(Generation* g) : BasicOopsInGenClosure(g), _scanned_cld(NULL) {}
-  void set_scanned_cld(ClassLoaderData* cld) {
-    assert(cld == NULL || _scanned_cld == NULL, "Must be");
-    _scanned_cld = cld;
-  }
-  bool is_scanning_a_cld() { return _scanned_cld != NULL; }
-  void do_cld_barrier();
-};
-
 #if INCLUDE_SERIALGC
 
-// Closure for scanning DefNewGeneration.
+// Super closure class for scanning DefNewGeneration.
 //
-// This closure only performs barrier store calls on
-// pointers into the DefNewGeneration.
-class FastScanClosure: public OopsInClassLoaderDataOrGenClosure {
- protected:
-  DefNewGeneration* _g;
-  HeapWord*         _boundary;
-  bool              _gc_barrier;
-  template <class T> inline void do_oop_work(T* p);
- public:
-  FastScanClosure(DefNewGeneration* g, bool gc_barrier);
+// - Derived: The derived type provides necessary barrier
+//            after an oop has been updated.
+template <typename Derived>
+class FastScanClosure : public BasicOopIterateClosure {
+private:
+  DefNewGeneration* _young_gen;
+  HeapWord*         _young_gen_end;
+
+  template <typename T>
+  void do_oop_work(T* p);
+
+protected:
+  FastScanClosure(DefNewGeneration* g);
+
+public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
 };
 
-#endif // INCLUDE_SERIALGC
+// Closure for scanning DefNewGeneration when iterating over the old generation.
+//
+// This closure performs barrier store calls on pointers into the DefNewGeneration.
+class DefNewYoungerGenClosure : public FastScanClosure<DefNewYoungerGenClosure> {
+private:
+  Generation*  _old_gen;
+  HeapWord*    _old_gen_start;
+  CardTableRS* _rs;
+
+public:
+  DefNewYoungerGenClosure(DefNewGeneration* young_gen, Generation* old_gen);
+
+  template <typename T>
+  void barrier(T* p);
+};
+
+// Closure for scanning DefNewGeneration when *not* iterating over the old generation.
+//
+// This closures records changes to oops in CLDs.
+class DefNewScanClosure : public FastScanClosure<DefNewScanClosure> {
+  ClassLoaderData* _scanned_cld;
+
+public:
+  DefNewScanClosure(DefNewGeneration* g);
+
+  void set_scanned_cld(ClassLoaderData* cld) {
+    assert(cld == NULL || _scanned_cld == NULL, "Must be");
+    _scanned_cld = cld;
+  }
+
+  template <typename T>
+  void barrier(T* p);
+};
 
 class CLDScanClosure: public CLDClosure {
-  OopsInClassLoaderDataOrGenClosure*   _scavenge_closure;
+  DefNewScanClosure* _scavenge_closure;
   // true if the the modified oops state should be saved.
-  bool                                 _accumulate_modified_oops;
+  bool               _accumulate_modified_oops;
  public:
-  CLDScanClosure(OopsInClassLoaderDataOrGenClosure* scavenge_closure,
+  CLDScanClosure(DefNewScanClosure* scavenge_closure,
                  bool accumulate_modified_oops) :
        _scavenge_closure(scavenge_closure), _accumulate_modified_oops(accumulate_modified_oops) {}
   void do_cld(ClassLoaderData* cld);
 };
+
+#endif // INCLUDE_SERIALGC
 
 class FilteringClosure: public OopIterateClosure {
  private:

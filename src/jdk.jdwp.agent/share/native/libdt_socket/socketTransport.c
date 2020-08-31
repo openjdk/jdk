@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -702,15 +702,24 @@ static jdwpTransportError startListening(struct addrinfo *ai, int *socket, char*
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
+static int isEqualIPv6Addr(const struct addrinfo *ai, const struct in6_addr in6Addr)
+{
+    if (ai->ai_addr->sa_family == AF_INET6) {
+        const struct sockaddr_in6 sa = *((struct sockaddr_in6*) ai->ai_addr);
+        return (memcmp(&sa.sin6_addr, &in6Addr, sizeof(in6Addr)) == 0);
+    }
+    return 0;
+}
+
 static jdwpTransportError JNICALL
 socketTransport_startListening(jdwpTransportEnv* env, const char* address,
                                char** actualAddress)
 {
     int err;
-    int pass;
     struct addrinfo *addrInfo = NULL;
     struct addrinfo *listenAddr = NULL;
     struct addrinfo *ai = NULL;
+    struct in6_addr mappedAny = IN6ADDR_ANY_INIT;
 
     /* no address provided */
     if ((address == NULL) || (address[0] == '\0')) {
@@ -722,21 +731,40 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
         return err;
     }
 
-    /* 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest */
-    for (pass = 0; pass < 2 && listenAddr == NULL; pass++) {
-        for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
-            if ((pass == 0 && ai->ai_family == preferredAddressFamily) ||
-                (pass == 1 && ai->ai_family != preferredAddressFamily))
-            {
-                listenAddr = ai;
-                break;
-            }
+    // Try to find bind address of preferred address family first.
+    for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
+        if (ai->ai_family == preferredAddressFamily) {
+            listenAddr = ai;
+            break;
         }
+    }
+
+    if (listenAddr == NULL) {
+        // No address of preferred addres family found, grab the fist one.
+        listenAddr = &(addrInfo[0]);
     }
 
     if (listenAddr == NULL) {
         dbgsysFreeAddrInfo(addrInfo);
         RETURN_ERROR(JDWPTRANSPORT_ERROR_INTERNAL, "listen failed: wrong address");
+    }
+
+    // Binding to IN6ADDR_ANY allows to serve both IPv4 and IPv6 connections,
+    // but binding to mapped INADDR_ANY (::ffff:0.0.0.0) allows to serve IPv4
+    // connections only. Make sure that IN6ADDR_ANY is preferred over
+    // mapped INADDR_ANY if preferredAddressFamily is AF_INET6 or not set.
+
+    if (preferredAddressFamily != AF_INET) {
+        inet_pton(AF_INET6, "::ffff:0.0.0.0", &mappedAny);
+
+        if (isEqualIPv6Addr(listenAddr, mappedAny)) {
+            for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
+                if (isEqualIPv6Addr(listenAddr, in6addr_any)) {
+                    listenAddr = ai;
+                    break;
+                }
+            }
+        }
     }
 
     err = startListening(listenAddr, &serverSocketFD, actualAddress);

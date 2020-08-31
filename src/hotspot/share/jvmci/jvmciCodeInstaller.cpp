@@ -1386,6 +1386,10 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
       case CRC_TABLE_ADDRESS:
       case LOG_OF_HEAP_REGION_GRAIN_BYTES:
       case INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED:
+      case VERIFY_OOPS:
+      case VERIFY_OOP_BITS:
+      case VERIFY_OOP_MASK:
+      case VERIFY_OOP_COUNT_ADDRESS:
         break;
       default:
         JVMCI_ERROR("invalid mark id: %d", id);

@@ -35,10 +35,12 @@
 #include "utilities/stack.hpp"
 
 class ContiguousSpace;
-class STWGCTimer;
 class CSpaceCounters;
+class DefNewYoungerGenClosure;
+class DefNewScanClosure;
 class ScanWeakRefClosure;
 class SerialHeap;
+class STWGCTimer;
 
 // DefNewGeneration is a young generation containing eden, from- and
 // to-space.
@@ -180,12 +182,12 @@ protected:
 
   class FastEvacuateFollowersClosure: public VoidClosure {
     SerialHeap* _heap;
-    FastScanClosure* _scan_cur_or_nonheap;
-    FastScanClosure* _scan_older;
+    DefNewScanClosure* _scan_cur_or_nonheap;
+    DefNewYoungerGenClosure* _scan_older;
   public:
     FastEvacuateFollowersClosure(SerialHeap* heap,
-                                 FastScanClosure* cur,
-                                 FastScanClosure* older);
+                                 DefNewScanClosure* cur,
+                                 DefNewYoungerGenClosure* older);
     void do_void();
   };
 

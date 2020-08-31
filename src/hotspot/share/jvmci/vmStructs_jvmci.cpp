@@ -472,6 +472,10 @@
   declare_constant(CodeInstaller::LOG_OF_HEAP_REGION_GRAIN_BYTES)         \
   declare_constant(CodeInstaller::INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED) \
   declare_constant(CodeInstaller::DEOPT_MH_HANDLER_ENTRY)                 \
+  declare_constant(CodeInstaller::VERIFY_OOP_COUNT_ADDRESS)               \
+  declare_constant(CodeInstaller::VERIFY_OOPS)                            \
+  declare_constant(CodeInstaller::VERIFY_OOP_BITS)                        \
+  declare_constant(CodeInstaller::VERIFY_OOP_MASK)                        \
   declare_constant(CodeInstaller::INVOKE_INVALID)                         \
                                                                           \
   declare_constant(vmIntrinsics::FIRST_MH_SIG_POLY)                       \
