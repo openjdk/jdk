@@ -4674,16 +4674,81 @@ void PhaseIdealLoop::dump_bad_graph(const char* msg, Node* n, Node* early, Node*
     }
   }
   tty->cr();
-  int ct = 0;
-  Node *dbg_legal = LCA;
-  while(!dbg_legal->is_Start() && ct < 100) {
-    tty->print("idom[%d] ",ct); dbg_legal->dump();
-    ct++;
-    dbg_legal = idom(dbg_legal);
-  }
+  tty->print_cr("idoms of early %d:", early->_idx);
+  dump_idom(early);
+  tty->cr();
+  tty->print_cr("idoms of (wrong) LCA %d:", LCA->_idx);
+  dump_idom(LCA);
+  tty->cr();
+  dump_real_LCA(early, LCA);
   tty->cr();
 }
-#endif
+
+// Find the real LCA of early and the wrongly assumed LCA.
+void PhaseIdealLoop::dump_real_LCA(Node* early, Node* wrong_lca) {
+  assert(!is_dominator(early, wrong_lca) && !is_dominator(early, wrong_lca),
+         "sanity check that one node does not dominate the other");
+  assert(!has_ctrl(early) && !has_ctrl(wrong_lca), "sanity check, no data nodes");
+
+  ResourceMark rm;
+  Node_List nodes_seen;
+  Node* real_LCA = NULL;
+  Node* n1 = wrong_lca;
+  Node* n2 = early;
+  uint count_1 = 0;
+  uint count_2 = 0;
+  // Add early and wrong_lca to simplify calculation of idom indices
+  nodes_seen.push(n1);
+  nodes_seen.push(n2);
+
+  // Walk the idom chain up from early and wrong_lca and stop when they intersect.
+  while (!n1->is_Start() && !n2->is_Start()) {
+    n1 = idom(n1);
+    n2 = idom(n2);
+    if (n1 == n2) {
+      // Both idom chains intersect at the same index
+      real_LCA = n1;
+      count_1 = nodes_seen.size() / 2;
+      count_2 = count_1;
+      break;
+    }
+    if (check_idom_chains_intersection(n1, count_1, count_2, &nodes_seen)) {
+      real_LCA = n1;
+      break;
+    }
+    if (check_idom_chains_intersection(n2, count_2, count_1, &nodes_seen)) {
+      real_LCA = n2;
+      break;
+    }
+    nodes_seen.push(n1);
+    nodes_seen.push(n2);
+  }
+
+  assert(real_LCA != NULL, "must always find an LCA");
+  tty->print_cr("Real LCA of early %d (idom[%d]) and (wrong) LCA %d (idom[%d]):", early->_idx, count_2, wrong_lca->_idx, count_1);
+  real_LCA->dump();
+}
+
+// Check if n is already on nodes_seen (i.e. idom chains of early and wrong_lca intersect at n). Determine the idom index of n
+// on both idom chains and return them in idom_idx_new and idom_idx_other, respectively.
+bool PhaseIdealLoop::check_idom_chains_intersection(const Node* n, uint& idom_idx_new, uint& idom_idx_other, const Node_List* nodes_seen) const {
+  if (nodes_seen->contains(n)) {
+    // The idom chain has just discovered n.
+    // Divide by 2 because nodes_seen contains the same amount of nodes from both chains.
+    idom_idx_new = nodes_seen->size() / 2;
+
+    // The other chain already contained n. Search the index.
+    for (uint i = 0; i < nodes_seen->size(); i++) {
+      if (nodes_seen->at(i) == n) {
+        // Divide by 2 because nodes_seen contains the same amount of nodes from both chains.
+        idom_idx_other = i / 2;
+      }
+    }
+    return true;
+  }
+  return false;
+}
+#endif // ASSERT
 
 #ifndef PRODUCT
 //------------------------------dump-------------------------------------------
@@ -4753,7 +4818,19 @@ void PhaseIdealLoop::dump(IdealLoopTree* loop, uint idx, Node_List &rpo_list) co
     }
   }
 }
-#endif
+
+void PhaseIdealLoop::dump_idom(Node* n) const {
+  if (has_ctrl(n)) {
+    tty->print_cr("No idom for data nodes");
+  } else {
+    for (int i = 0; i < 100 && !n->is_Start(); i++) {
+      tty->print("idom[%d] ", i);
+      n->dump();
+      n = idom(n);
+    }
+  }
+}
+#endif // NOT PRODUCT
 
 // Collect a R-P-O for the whole CFG.
 // Result list is in post-order (scan backwards for RPO)

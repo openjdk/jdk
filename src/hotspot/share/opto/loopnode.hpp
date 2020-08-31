@@ -1440,6 +1440,10 @@ private:
                                       uint idx_before_clone, Node_List &old_new);
 
   bool _created_loop_node;
+#ifdef ASSERT
+  void dump_real_LCA(Node* early, Node* wrong_lca);
+  bool check_idom_chains_intersection(const Node* n, uint& idom_idx_new, uint& idom_idx_other, const Node_List* nodes_seen) const;
+#endif
 
 public:
   void set_created_loop_node() { _created_loop_node = true; }
@@ -1452,6 +1456,7 @@ public:
 
 #ifndef PRODUCT
   void dump() const;
+  void dump_idom(Node* n) const;
   void dump(IdealLoopTree* loop, uint rpo_idx, Node_List &rpo_list) const;
   void verify() const;          // Major slow  :-)
   void verify_compare(Node* n, const PhaseIdealLoop* loop_verify, VectorSet &visited) const;
