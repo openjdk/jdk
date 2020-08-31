@@ -60,7 +60,7 @@ typedef struct {
 /*
  * Signal to unblock thread
  */
-static int sigWakeup = (__SIGRTMAX - 2);
+#define WAKEUP_SIGNAL (SIGRTMAX - 2)
 
 /*
  * fdTable holds one entry per file descriptor, up to a certain
@@ -152,10 +152,10 @@ static void __attribute((constructor)) init() {
     sa.sa_handler = sig_wakeup;
     sa.sa_flags   = 0;
     sigemptyset(&sa.sa_mask);
-    sigaction(sigWakeup, &sa, NULL);
+    sigaction(WAKEUP_SIGNAL, &sa, NULL);
 
     sigemptyset(&sigset);
-    sigaddset(&sigset, sigWakeup);
+    sigaddset(&sigset, WAKEUP_SIGNAL);
     sigprocmask(SIG_UNBLOCK, &sigset, NULL);
 }
 
@@ -305,7 +305,7 @@ static int closefd(int fd1, int fd2) {
         threadEntry_t *curr = fdEntry->threads;
         while (curr != NULL) {
             curr->intr = 1;
-            pthread_kill( curr->thr, sigWakeup );
+            pthread_kill( curr->thr, WAKEUP_SIGNAL);
             curr = curr->next;
         }
     }
