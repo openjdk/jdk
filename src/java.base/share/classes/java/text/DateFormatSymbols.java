@@ -517,7 +517,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @return the ampm strings.
      */
     public String[] getAmPmStrings() {
-        return Arrays.copyOf(ampms, ampms.length);
+        return Arrays.copyOf(ampms, 2);
     }
 
     /**
@@ -525,7 +525,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @param newAmpms the new ampm strings.
      */
     public void setAmPmStrings(String[] newAmpms) {
-        ampms = Arrays.copyOf(newAmpms, newAmpms.length);
+        ampms = Arrays.copyOf(newAmpms, Math.max(newAmpms.length, 2));
         cachedHashCode = 0;
     }
 

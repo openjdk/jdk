@@ -522,8 +522,6 @@ class Bundle {
                     if (pattern != null) {
                         // Perform date-time format pattern conversion which is
                         // applicable to both SimpleDateFormat and j.t.f.DateTimeFormatter.
-                        // For example, character 'B' is mapped with 'a', as 'B' is not
-                        // supported in either SimpleDateFormat or j.t.f.DateTimeFormatter
                         String transPattern = translateDateFormatLetters(calendarType, pattern, this::convertDateTimePatternLetter);
                         dateTimePatterns.add(i, transPattern);
                         // Additionally, perform SDF specific date-time format pattern conversion
@@ -653,17 +651,6 @@ class Bundle {
                 // as the best approximation
                 appendN('y', count, sb);
                 break;
-            case 'B':
-                // 'B' character (day period) is not supported by
-                // SimpleDateFormat and j.t.f.DateTimeFormatter,
-                // this is a workaround in which 'B' character
-                // appearing in CLDR date-time pattern is replaced
-                // with 'a' character and hence resolved with am/pm strings.
-                // This workaround is based on the the fallback mechanism
-                // specified in LDML spec for 'B' character, when a locale
-                // does not have data for day period ('B')
-                appendN('a', count, sb);
-                break;
             default:
                 appendN(cldrLetter, count, sb);
                 break;
@@ -718,6 +705,17 @@ class Bundle {
                 if (count == 4 || count == 5) {
                     sb.append("XXX");
                 }
+                break;
+
+            case 'B':
+                // 'B' character (day period) is not supported by SimpleDateFormat,
+                // this is a workaround in which 'B' character
+                // appearing in CLDR date-time pattern is replaced
+                // with 'a' character and hence resolved with am/pm strings.
+                // This workaround is based on the the fallback mechanism
+                // specified in LDML spec for 'B' character, when a locale
+                // does not have data for day period ('B')
+                appendN('a', count, sb);
                 break;
 
             default:

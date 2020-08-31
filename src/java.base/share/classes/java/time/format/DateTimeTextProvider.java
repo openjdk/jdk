@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ package java.time.format;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.ERA;
+import static java.time.temporal.ChronoField.FLEXIBLE_PERIOD_OF_DAY;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 
 import java.time.chrono.Chronology;
@@ -86,6 +87,7 @@ import java.util.Map.Entry;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.IntStream;
 
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -195,6 +197,9 @@ class DateTimeTextProvider {
         } else if (field == AMPM_OF_DAY) {
             fieldIndex = Calendar.AM_PM;
             fieldValue = (int) value;
+        } else if (field == FLEXIBLE_PERIOD_OF_DAY) {
+            fieldIndex = Calendar.AM_PM;
+            fieldValue = getFlexibleDayPeriod(locale, value);
         } else {
             return null;
         }
@@ -262,6 +267,7 @@ class DateTimeTextProvider {
             fieldIndex = Calendar.DAY_OF_WEEK;
             break;
         case AMPM_OF_DAY:
+        case FLEXIBLE_PERIOD_OF_DAY:
             fieldIndex = Calendar.AM_PM;
             break;
         default:
@@ -440,22 +446,37 @@ class DateTimeTextProvider {
             return new LocaleStore(styleMap);
         }
 
-        if (field == AMPM_OF_DAY) {
+        if (field == AMPM_OF_DAY ||
+            field == FLEXIBLE_PERIOD_OF_DAY) {
             for (TextStyle textStyle : TextStyle.values()) {
                 if (textStyle.isStandalone()) {
                     // Stand-alone isn't applicable to AM/PM.
                     continue;
                 }
-                Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
-                        "gregory", Calendar.AM_PM, textStyle.toCalendarStyle(), locale);
-                if (displayNames != null) {
-                    Map<Long, String> map = new HashMap<>();
-                    for (Entry<String, Integer> entry : displayNames.entrySet()) {
-                        map.put((long) entry.getValue(), entry.getKey());
+
+                Map<Long, String> map = new HashMap<>();
+                int calStyle = textStyle.toCalendarStyle();
+                if (field == AMPM_OF_DAY) {
+                    Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
+                            "gregory", Calendar.AM_PM, calStyle, locale);
+                    if (displayNames != null) {
+                        for (Entry<String, Integer> entry : displayNames.entrySet()) {
+                            map.put((long) entry.getValue(), entry.getKey());
+                        }
                     }
-                    if (!map.isEmpty()) {
-                        styleMap.put(textStyle, map);
-                    }
+                } else {
+                    assert field == FLEXIBLE_PERIOD_OF_DAY;
+                    IntStream.range(0, 24).forEach(hour -> {
+                        String displayName =
+                            CalendarDataUtility.retrieveJavaTimeFieldValueName("gregory", Calendar.AM_PM,
+                                        getFlexibleDayPeriod(locale, hour), calStyle, locale);
+                        if (displayName != null) {
+                            map.put((long) hour, displayName);
+                        }
+                    });
+                }
+                if (!map.isEmpty()) {
+                    styleMap.put(textStyle, map);
                 }
             }
             return new LocaleStore(styleMap);
@@ -514,6 +535,19 @@ class DateTimeTextProvider {
                                         CalendarDataUtility.findRegionOverride(locale));
         ResourceBundle rb = lr.getJavaTimeFormatData();
         return rb.containsKey(key) ? (T) rb.getObject(key) : null;
+    }
+
+    /**
+     * Returns the localized flexible period
+     *
+     * @param locale  the locale, not null
+     * @param hour hour of day
+     * @return the flexible period index
+     */
+    static int getFlexibleDayPeriod(Locale locale, long hour) {
+        return LocaleProviderAdapter.getResourceBundleBased()
+                .getCalendarDataProvider()
+                .getFlexibleDayPeriod(locale, (int)hour);
     }
 
     /**

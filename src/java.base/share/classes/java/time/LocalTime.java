@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -695,6 +695,7 @@ public final class LocalTime
             case MINUTE_OF_DAY: return hour * 60 + minute;
             case HOUR_OF_AMPM: return hour % 12;
             case CLOCK_HOUR_OF_AMPM: int ham = hour % 12; return (ham % 12 == 0 ? 12 : ham);
+            case FLEXIBLE_PERIOD_OF_DAY:
             case HOUR_OF_DAY: return hour;
             case CLOCK_HOUR_OF_DAY: return (hour == 0 ? 24 : hour);
             case AMPM_OF_DAY: return hour / 12;
