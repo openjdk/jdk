@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,17 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1YOUNGREMSETSAMPLINGTHREAD_HPP
-#define SHARE_GC_G1_G1YOUNGREMSETSAMPLINGTHREAD_HPP
+#ifndef SHARE_GC_G1_G1SERVICETHREAD_HPP
+#define SHARE_GC_G1_G1SERVICETHREAD_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
+#include "runtime/mutex.hpp"
 
-// The G1YoungRemSetSamplingThread is used to re-assess the validity of
-// the prediction for the remembered set lengths of the young generation.
-//
-// At the end of the GC G1 determines the length of the young gen based on
-// how much time the next GC can take, and when the next GC may occur
-// according to the MMU.
-//
-// The assumption is that a significant part of the GC is spent on scanning
-// the remembered sets (and many other components), so this thread constantly
-// reevaluates the prediction for the remembered set scanning costs, and potentially
-// G1Policy resizes the young gen. This may do a premature GC or even
-// increase the young gen size to keep pause time length goal.
-class G1YoungRemSetSamplingThread: public ConcurrentGCThread {
+// The G1ServiceThread is used to periodically do a number of different tasks:
+//   - re-assess the validity of the prediction for the
+//     remembered set lengths of the young generation.
+//   - check if a periodic GC should be scheduled.
+class G1ServiceThread: public ConcurrentGCThread {
 private:
   Monitor _monitor;
 
@@ -47,6 +40,17 @@ private:
 
   double _vtime_accum;  // Accumulated virtual time.
 
+  // Sample the current length of remembered sets for young.
+  //
+  // At the end of the GC G1 determines the length of the young gen based on
+  // how much time the next GC can take, and when the next GC may occur
+  // according to the MMU.
+  //
+  // The assumption is that a significant part of the GC is spent on scanning
+  // the remembered sets (and many other components), so this thread constantly
+  // reevaluates the prediction for the remembered set scanning costs, and potentially
+  // G1Policy resizes the young gen. This may do a premature GC or even
+  // increase the young gen size to keep pause time length goal.
   void sample_young_list_rs_length();
 
   void run_service();
@@ -59,8 +63,8 @@ private:
   bool should_start_periodic_gc();
 
 public:
-  G1YoungRemSetSamplingThread();
+  G1ServiceThread();
   double vtime_accum() { return _vtime_accum; }
 };
 
-#endif // SHARE_GC_G1_G1YOUNGREMSETSAMPLINGTHREAD_HPP
+#endif // SHARE_GC_G1_G1SERVICETHREAD_HPP
