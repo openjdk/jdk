@@ -62,7 +62,7 @@ class JfrChunkHeadWriter : public StackObj {
   JfrChunk* _chunk;
  public:
   void write_magic() {
-    _writer->bytes(_chunk->magic(), MAGIC_LEN);
+    _writer->write_bytes(_chunk->magic(), MAGIC_LEN);
   }
 
   void write_version() {
