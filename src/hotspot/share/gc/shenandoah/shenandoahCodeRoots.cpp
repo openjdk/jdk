@@ -193,7 +193,7 @@ private:
 
 public:
   ShenandoahDisarmNMethodsTask() :
-    AbstractGangTask("ShenandoahDisarmNMethodsTask"),
+    AbstractGangTask("Shenandoah Disarm NMethods"),
     _iterator(ShenandoahCodeRoots::table()) {
     assert(SafepointSynchronize::is_at_safepoint(), "Only at a safepoint");
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -297,7 +297,7 @@ private:
 
 public:
   ShenandoahUnlinkTask(bool unloading_occurred, ICRefillVerifier* verifier) :
-    AbstractGangTask("ShenandoahNMethodUnlinkTask"),
+    AbstractGangTask("Shenandoah Unlink NMethods"),
     _cl(unloading_occurred),
     _verifier(verifier),
     _iterator(ShenandoahCodeRoots::table()) {
@@ -359,7 +359,7 @@ private:
 
 public:
   ShenandoahNMethodPurgeTask() :
-    AbstractGangTask("ShenandoahNMethodPurgeTask"),
+    AbstractGangTask("Shenandoah Purge NMethods"),
     _cl(),
     _iterator(ShenandoahCodeRoots::table()) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
