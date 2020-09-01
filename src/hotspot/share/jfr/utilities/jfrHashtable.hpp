@@ -27,6 +27,7 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "runtime/atomic.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
