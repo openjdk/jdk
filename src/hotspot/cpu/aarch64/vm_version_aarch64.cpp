@@ -32,12 +32,14 @@
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 
 #include OS_HEADER_INLINE(os)
 
-#include <sys/auxv.h>
 #include <asm/hwcap.h>
+#include <sys/auxv.h>
+#include <sys/prctl.h>
 
 #ifndef HWCAP_AES
 #define HWCAP_AES   (1<<3)
@@ -67,6 +69,20 @@
 #define HWCAP_SHA512 (1 << 21)
 #endif
 
+#ifndef HWCAP_SVE
+#define HWCAP_SVE (1 << 22)
+#endif
+
+#ifndef HWCAP2_SVE2
+#define HWCAP2_SVE2 (1 << 1)
+#endif
+
+#ifndef PR_SVE_GET_VL
+// For old toolchains which do not have SVE related macros defined.
+#define PR_SVE_SET_VL   50
+#define PR_SVE_GET_VL   51
+#endif
+
 int VM_Version::_cpu;
 int VM_Version::_model;
 int VM_Version::_model2;
@@ -74,6 +90,7 @@ int VM_Version::_variant;
 int VM_Version::_revision;
 int VM_Version::_stepping;
 bool VM_Version::_dcpop;
+int VM_Version::_initial_sve_vector_length;
 VM_Version::PsrInfo VM_Version::_psr_info   = { 0, };
 
 static BufferBlob* stub_blob;
@@ -115,7 +132,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     return start;
   }
 };
-
 
 void VM_Version::get_processor_features() {
   _supports_cx8 = true;
@@ -167,6 +183,7 @@ void VM_Version::get_processor_features() {
   }
 
   uint64_t auxv = getauxval(AT_HWCAP);
+  uint64_t auxv2 = getauxval(AT_HWCAP2);
 
   char buf[512];
 
@@ -298,6 +315,8 @@ void VM_Version::get_processor_features() {
   if (auxv & HWCAP_SHA2)  strcat(buf, ", sha256");
   if (auxv & HWCAP_SHA512) strcat(buf, ", sha512");
   if (auxv & HWCAP_ATOMICS) strcat(buf, ", lse");
+  if (auxv & HWCAP_SVE) strcat(buf, ", sve");
+  if (auxv2 & HWCAP2_SVE2) strcat(buf, ", sve2");
 
   _features_string = os::strdup(buf);
 
@@ -437,6 +456,18 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
+  if (auxv & HWCAP_SVE) {
+    if (FLAG_IS_DEFAULT(UseSVE)) {
+      FLAG_SET_DEFAULT(UseSVE, (auxv2 & HWCAP2_SVE2) ? 2 : 1);
+    }
+    if (UseSVE > 0) {
+      _initial_sve_vector_length = prctl(PR_SVE_GET_VL);
+    }
+  } else if (UseSVE > 0) {
+    warning("UseSVE specified, but not supported on current CPU. Disabling SVE.");
+    FLAG_SET_DEFAULT(UseSVE, 0);
+  }
+
   // This machine allows unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
@@ -469,6 +500,50 @@ void VM_Version::get_processor_features() {
   }
   if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
     UseMontgomerySquareIntrinsic = true;
+  }
+
+  if (UseSVE > 0) {
+    if (FLAG_IS_DEFAULT(MaxVectorSize)) {
+      MaxVectorSize = _initial_sve_vector_length;
+    } else if (MaxVectorSize < 16) {
+      warning("SVE does not support vector length less than 16 bytes. Disabling SVE.");
+      UseSVE = 0;
+    } else if ((MaxVectorSize % 16) == 0 && is_power_of_2(MaxVectorSize)) {
+      int new_vl = prctl(PR_SVE_SET_VL, MaxVectorSize);
+      _initial_sve_vector_length = new_vl;
+      // If MaxVectorSize is larger than system largest supported SVE vector length, above prctl()
+      // call will set task vector length to the system largest supported value. So, we also update
+      // MaxVectorSize to that largest supported value.
+      if (new_vl < 0) {
+        vm_exit_during_initialization(
+          err_msg("Current system does not support SVE vector length for MaxVectorSize: %d",
+                  (int)MaxVectorSize));
+      } else if (new_vl != MaxVectorSize) {
+        warning("Current system only supports max SVE vector length %d. Set MaxVectorSize to %d",
+                new_vl, new_vl);
+      }
+      MaxVectorSize = new_vl;
+    } else {
+      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
+    }
+  }
+
+  if (UseSVE == 0) {  // NEON
+    int min_vector_size = 8;
+    int max_vector_size = 16;
+    if (!FLAG_IS_DEFAULT(MaxVectorSize)) {
+      if (!is_power_of_2(MaxVectorSize)) {
+        vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
+      } else if (MaxVectorSize < min_vector_size) {
+        warning("MaxVectorSize must be at least %i on this platform", min_vector_size);
+        FLAG_SET_DEFAULT(MaxVectorSize, min_vector_size);
+      } else if (MaxVectorSize > max_vector_size) {
+        warning("MaxVectorSize must be at most %i on this platform", max_vector_size);
+        FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
+      }
+    } else {
+      FLAG_SET_DEFAULT(MaxVectorSize, 16);
+    }
   }
 
   if (FLAG_IS_DEFAULT(OptoScheduling)) {

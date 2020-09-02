@@ -99,6 +99,9 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Avoid generating unaligned memory accesses")                 \
   product(bool, UseLSE, false,                                          \
           "Use LSE instructions")                                       \
+  product(uint, UseSVE, 0,                                              \
+          "Highest supported SVE instruction set version")              \
+          range(0, 2)                                                   \
   product(bool, UseBlockZeroing, true,                                  \
           "Use DC ZVA for block zeroing")                               \
   product(intx, BlockZeroingLowLimit, 256,                              \

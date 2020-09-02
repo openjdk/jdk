@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,13 @@ enum Opcodes {
   macro(RegF)                   // Machine float   register
   macro(RegD)                   // Machine double  register
   macro(RegL)                   // Machine long    register
+  macro(VecA)                   // Machine vectora register
   macro(VecS)                   // Machine vectors register
   macro(VecD)                   // Machine vectord register
   macro(VecX)                   // Machine vectorx register
   macro(VecY)                   // Machine vectory register
   macro(VecZ)                   // Machine vectorz register
+  macro(RegVMask)               // Vector mask/predicate register
   macro(RegFlags)               // Machine flags   register
   _last_machine_leaf,           // Split between regular opcodes and machine
 #include "classes.hpp"

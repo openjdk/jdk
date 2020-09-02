@@ -74,6 +74,7 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
   { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
 #else // all other
+  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, Op_VecS,              relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_VecD,              relocInfo::none          },  // VectorD
   { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX,              relocInfo::none          },  // VectorX
@@ -646,6 +647,10 @@ void Type::Initialize_shared(Compile* current) {
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= NULL;
 
+  if (Matcher::supports_scalable_vector()) {
+    TypeVect::VECTA = TypeVect::make(T_BYTE, Matcher::scalable_vector_reg_size(T_BYTE));
+  }
+
   // Vector predefined types, it needs initialized _const_basic_type[].
   if (Matcher::vector_size_supported(T_BYTE,4)) {
     TypeVect::VECTS = TypeVect::make(T_BYTE,4);
@@ -662,6 +667,8 @@ void Type::Initialize_shared(Compile* current) {
   if (Matcher::vector_size_supported(T_FLOAT,16)) {
     TypeVect::VECTZ = TypeVect::make(T_FLOAT,16);
   }
+
+  mreg2type[Op_VecA] = TypeVect::VECTA;
   mreg2type[Op_VecS] = TypeVect::VECTS;
   mreg2type[Op_VecD] = TypeVect::VECTD;
   mreg2type[Op_VecX] = TypeVect::VECTX;
@@ -981,6 +988,7 @@ const Type::TYPES Type::dual_type[Type::lastype] = {
 
   Bad,          // Tuple - handled in v-call
   Bad,          // Array - handled in v-call
+  Bad,          // VectorA - handled in v-call
   Bad,          // VectorS - handled in v-call
   Bad,          // VectorD - handled in v-call
   Bad,          // VectorX - handled in v-call
@@ -1881,7 +1889,6 @@ const TypeTuple *TypeTuple::LONG_PAIR;
 const TypeTuple *TypeTuple::INT_CC_PAIR;
 const TypeTuple *TypeTuple::LONG_CC_PAIR;
 
-
 //------------------------------make-------------------------------------------
 // Make a TypeTuple from the range of a method signature
 const TypeTuple *TypeTuple::make_range(ciSignature* sig) {
@@ -2252,6 +2259,7 @@ bool TypeAry::ary_must_be_exact() const {
 
 //==============================TypeVect=======================================
 // Convenience common pre-built types.
+const TypeVect *TypeVect::VECTA = NULL; // vector length agnostic
 const TypeVect *TypeVect::VECTS = NULL; //  32-bit vectors
 const TypeVect *TypeVect::VECTD = NULL; //  64-bit vectors
 const TypeVect *TypeVect::VECTX = NULL; // 128-bit vectors
@@ -2262,10 +2270,11 @@ const TypeVect *TypeVect::VECTZ = NULL; // 512-bit vectors
 const TypeVect* TypeVect::make(const Type *elem, uint length) {
   BasicType elem_bt = elem->array_element_basic_type();
   assert(is_java_primitive(elem_bt), "only primitive types in vector");
-  assert(length > 1 && is_power_of_2(length), "vector length is power of 2");
   assert(Matcher::vector_size_supported(elem_bt, length), "length in range");
   int size = length * type2aelembytes(elem_bt);
   switch (Matcher::vector_ideal_reg(size)) {
+  case Op_VecA:
+    return (TypeVect*)(new TypeVectA(elem, length))->hashcons();
   case Op_VecS:
     return (TypeVect*)(new TypeVectS(elem, length))->hashcons();
   case Op_RegL:
@@ -2297,7 +2306,7 @@ const Type *TypeVect::xmeet( const Type *t ) const {
 
   default:                      // All else is a mistake
     typerr(t);
-
+  case VectorA:
   case VectorS:
   case VectorD:
   case VectorX:
@@ -2352,6 +2361,8 @@ bool TypeVect::empty(void) const {
 #ifndef PRODUCT
 void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
   switch (base()) {
+  case VectorA:
+    st->print("vectora["); break;
   case VectorS:
     st->print("vectors["); break;
   case VectorD:

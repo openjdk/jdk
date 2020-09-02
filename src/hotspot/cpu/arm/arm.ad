@@ -1006,6 +1006,14 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
   return MaxVectorSize;
 }
 
+const bool Matcher::supports_scalable_vector() {
+  return false;
+}
+
+const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+  return -1;
+}
+
 // Vector ideal reg corresponding to specified size in bytes
 const uint Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize >= size, "");
