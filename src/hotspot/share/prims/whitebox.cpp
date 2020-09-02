@@ -503,11 +503,12 @@ WB_ENTRY(jlong, WB_DramReservedStart(JNIEnv* env, jobject o))
 #if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    HeapWord* base = g1h->reserved().start();
     if (g1h->is_heterogeneous_heap()) {
       uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_dram();
-      return (jlong)(g1h->base() + start_region * HeapRegion::GrainBytes);
+      return (jlong)(base + start_region * HeapRegion::GrainBytes);
     } else {
-      return (jlong)g1h->base();
+      return (jlong)base;
     }
   }
 #endif // INCLUDE_G1GC
@@ -529,11 +530,12 @@ WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
 #if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    HeapWord* base = g1h->reserved().start();
     if (g1h->is_heterogeneous_heap()) {
       uint end_region = HeterogeneousHeapRegionManager::manager()->end_index_of_dram();
-      return (jlong)(g1h->base() + (end_region + 1) * HeapRegion::GrainBytes - 1);
+      return (jlong)(base + (end_region + 1) * HeapRegion::GrainBytes - 1);
     } else {
-      return (jlong)g1h->base() + G1Arguments::heap_max_size_bytes();
+      return (jlong)base + G1Arguments::heap_max_size_bytes();
     }
   }
 #endif // INCLUDE_G1GC
@@ -557,7 +559,7 @@ WB_ENTRY(jlong, WB_NvdimmReservedStart(JNIEnv* env, jobject o))
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     if (g1h->is_heterogeneous_heap()) {
       uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
-      return (jlong)(g1h->base() + start_region * HeapRegion::GrainBytes);
+      return (jlong)(g1h->reserved().start() + start_region * HeapRegion::GrainBytes);
     } else {
       THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
     }
@@ -583,7 +585,7 @@ WB_ENTRY(jlong, WB_NvdimmReservedEnd(JNIEnv* env, jobject o))
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     if (g1h->is_heterogeneous_heap()) {
       uint end_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
-      return (jlong)(g1h->base() + (end_region + 1) * HeapRegion::GrainBytes - 1);
+      return (jlong)(g1h->reserved().start() + (end_region + 1) * HeapRegion::GrainBytes - 1);
     } else {
       THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
     }
