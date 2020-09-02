@@ -163,6 +163,9 @@ jint ShenandoahHeap::initialize() {
   assert(num_min_regions <= _num_regions, "sanity");
   _minimum_size = num_min_regions * reg_size_bytes;
 
+  // Default to max heap size.
+  _soft_max_size = _num_regions * reg_size_bytes;
+
   _committed = _initial_size;
 
   size_t heap_page_size   = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
@@ -538,8 +541,9 @@ void ShenandoahHeap::reset_mark_bitmap() {
 
 void ShenandoahHeap::print_on(outputStream* st) const {
   st->print_cr("Shenandoah Heap");
-  st->print_cr(" " SIZE_FORMAT "%s total, " SIZE_FORMAT "%s committed, " SIZE_FORMAT "%s used",
+  st->print_cr(" " SIZE_FORMAT "%s max, " SIZE_FORMAT "%s soft max, " SIZE_FORMAT "%s committed, " SIZE_FORMAT "%s used",
                byte_size_in_proper_unit(max_capacity()), proper_unit_for_byte_size(max_capacity()),
+               byte_size_in_proper_unit(soft_max_capacity()), proper_unit_for_byte_size(soft_max_capacity()),
                byte_size_in_proper_unit(committed()),    proper_unit_for_byte_size(committed()),
                byte_size_in_proper_unit(used()),         proper_unit_for_byte_size(used()));
   st->print_cr(" " SIZE_FORMAT " x " SIZE_FORMAT"%s regions",
@@ -676,6 +680,21 @@ size_t ShenandoahHeap::max_capacity() const {
   return _num_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
+size_t ShenandoahHeap::soft_max_capacity() const {
+  size_t v = Atomic::load(&_soft_max_size);
+  assert(min_capacity() <= v && v <= max_capacity(),
+         "Should be in bounds: " SIZE_FORMAT " <= " SIZE_FORMAT " <= " SIZE_FORMAT,
+         min_capacity(), v, max_capacity());
+  return v;
+}
+
+void ShenandoahHeap::set_soft_max_capacity(size_t v) {
+  assert(min_capacity() <= v && v <= max_capacity(),
+         "Should be in bounds: " SIZE_FORMAT " <= " SIZE_FORMAT " <= " SIZE_FORMAT,
+         min_capacity(), v, max_capacity());
+  Atomic::store(&_soft_max_size, v);
+}
+
 size_t ShenandoahHeap::min_capacity() const {
   return _minimum_size;
 }
@@ -690,7 +709,7 @@ bool ShenandoahHeap::is_in(const void* p) const {
   return p >= heap_base && p < last_region_end;
 }
 
-void ShenandoahHeap::op_uncommit(double shrink_before) {
+void ShenandoahHeap::op_uncommit(double shrink_before, size_t shrink_until) {
   assert (ShenandoahUncommit, "should be enabled");
 
   // Application allocates from the beginning of the heap, and GC allocates at
@@ -704,8 +723,7 @@ void ShenandoahHeap::op_uncommit(double shrink_before) {
     if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
       ShenandoahHeapLocker locker(lock());
       if (r->is_empty_committed()) {
-        // Do not uncommit below minimal capacity
-        if (committed() < min_capacity() + ShenandoahHeapRegion::region_size_bytes()) {
+        if (committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
           break;
         }
 
@@ -2960,12 +2978,12 @@ void ShenandoahHeap::entry_preclean() {
   }
 }
 
-void ShenandoahHeap::entry_uncommit(double shrink_before) {
+void ShenandoahHeap::entry_uncommit(double shrink_before, size_t shrink_until) {
   static const char *msg = "Concurrent uncommit";
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_uncommit, true /* log_heap_usage */);
   EventMark em("%s", msg);
 
-  op_uncommit(shrink_before);
+  op_uncommit(shrink_before, shrink_until);
 }
 
 void ShenandoahHeap::try_inject_alloc_failure() {
