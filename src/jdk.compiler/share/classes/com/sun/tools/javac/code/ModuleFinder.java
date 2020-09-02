@@ -31,7 +31,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.function.Function;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
@@ -39,6 +38,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
 
+import com.sun.tools.javac.code.Flags.TypeSymbolFlags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -328,7 +328,7 @@ public class ModuleFinder {
                         }
                         if (moduleLocationIterator.outer == StandardLocation.SYSTEM_MODULES ||
                             moduleLocationIterator.outer == StandardLocation.UPGRADE_MODULE_PATH) {
-                            msym.flags_field |= Flags.SYSTEM_MODULE;
+                            msym.setFlag(TypeSymbolFlags.SYSTEM_MODULE);
                         }
                         if (toFind == null ||
                             (toFind == msym && (msym.sourceLocation != null || msym.classLocation != null))) {
@@ -369,7 +369,7 @@ public class ModuleFinder {
                     fileManager.inferModuleName(msym.classLocation) : null;
                 if (moduleName != null) {
                     msym.module_info.classfile = null;
-                    msym.flags_field |= Flags.AUTOMATIC_MODULE;
+                    msym.setFlag(TypeSymbolFlags.AUTOMATIC_MODULE);
                 } else {
                     msym.kind = ERR;
                 }

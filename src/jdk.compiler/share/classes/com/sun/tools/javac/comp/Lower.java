@@ -2746,7 +2746,7 @@ public class Lower extends TreeTranslator {
                     fields.append((VarSymbol) sym);
             }
             for (VarSymbol field: fields) {
-                if ((field.flags_field & Flags.UNINITIALIZED_FIELD) != 0) {
+                if (field.isFlagSet(VarSymbolFlags.UNINITIALIZED_FIELD)) {
                     VarSymbol param = tree.params.stream().filter(p -> p.name == field.name).findFirst().get().sym;
                     make.at(tree.pos);
                     tree.body.stats = tree.body.stats.append(
@@ -2755,7 +2755,7 @@ public class Lower extends TreeTranslator {
                                             make.Select(make.This(field.owner.erasure(types)), field),
                                             make.Ident(param)).setType(field.erasure(types))));
                     // we don't need the flag at the field anymore
-                    field.flags_field &= ~Flags.UNINITIALIZED_FIELD;
+                    field.clearFlag(VarSymbolFlags.UNINITIALIZED_FIELD);
                 }
             }
         }

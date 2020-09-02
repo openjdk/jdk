@@ -1048,7 +1048,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
 //where
             private String className(Symbol sym, boolean longform) {
-                if (sym.name.isEmpty() && (sym.flags() & COMPOUND) != 0) {
+                if (sym.name.isEmpty() && sym.isFlagSet(TypeSymbolFlags.COMPOUND)) {
                     StringBuilder s = new StringBuilder(supertype_field.toString());
                     for (List<Type> is=interfaces_field; is.nonEmpty(); is = is.tail) {
                         s.append("&");
@@ -1245,7 +1245,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             // cannot put annotations directly on it.
             super(Type.noType, List.nil(), csym);
             this.allInterfaces = allInterfaces;
-            Assert.check((csym.flags() & COMPOUND) != 0);
+            Assert.check(csym.isFlagSet(TypeSymbolFlags.COMPOUND));
             supertype_field = bounds.head;
             interfaces_field = bounds.tail;
             Assert.check(!supertype_field.tsym.isCompleted() ||
@@ -2383,7 +2383,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
 
         public ErrorType(Name name, TypeSymbol container, Type originalType) {
-            this(new ClassSymbol(PUBLIC|STATIC|ACYCLIC, name, null, container), originalType);
+            this(new ClassSymbol(PUBLIC|STATIC, name, null, container), originalType);
+            tsym.setFlag(TypeSymbolFlags.ACYCLIC);
         }
 
         @Override

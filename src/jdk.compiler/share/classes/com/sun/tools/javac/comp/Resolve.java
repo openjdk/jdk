@@ -2709,7 +2709,7 @@ public class Resolve {
                     sym = super.access(env, pos, location, sym);
                 } else {
                     MethodSymbol msym = (MethodSymbol)sym;
-                    if ((msym.flags() & SIGNATURE_POLYMORPHIC) != 0) {
+                    if (msym.isFlagSet(MethodSymbolFlags.SIGNATURE_POLYMORPHIC)) {
                         env.info.pendingResolutionPhase = BASIC;
                         return findPolymorphicSignatureInstance(env, sym, argtypes);
                     }
@@ -2748,14 +2748,15 @@ public class Resolve {
         // Create the desired method
         // Retain static modifier is to support invocations to
         // MethodHandle.linkTo* methods
-        long flags = ABSTRACT | HYPOTHETICAL |
+        long flags = ABSTRACT |
                      spMethod.flags() & (Flags.AccessFlags | Flags.STATIC);
-        Symbol msym = new MethodSymbol(flags, spMethod.name, mtype, spMethod.owner) {
+        MethodSymbol msym = new MethodSymbol(flags, spMethod.name, mtype, spMethod.owner) {
             @Override
             public Symbol baseSymbol() {
                 return spMethod;
             }
         };
+        msym.setFlag(MethodSymbolFlags.HYPOTHETICAL);
         if (!mtype.isErroneous()) { // Cache only if kosher.
             polymorphicSignatureScope.enter(msym);
         }
@@ -3045,7 +3046,7 @@ public class Resolve {
         if (!res.fst.kind.isResolutionError()) {
             //handle sigpoly method references
             MethodSymbol msym = (MethodSymbol)res.fst;
-            if ((msym.flags() & SIGNATURE_POLYMORPHIC) != 0) {
+            if (msym.isFlagSet(MethodSymbolFlags.SIGNATURE_POLYMORPHIC)) {
                 env.info.pendingResolutionPhase = BASIC;
                 res = new Pair<>(findPolymorphicSignatureInstance(msym, descriptor), res.snd);
             }

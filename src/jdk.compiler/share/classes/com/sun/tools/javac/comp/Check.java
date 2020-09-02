@@ -662,7 +662,7 @@ public class Check {
                 Symbol sym = TreeInfo.symbol(apply.meth);
                 is292targetTypeCast = sym != null &&
                     sym.kind == MTH &&
-                    (sym.flags() & HYPOTHETICAL) != 0;
+                        sym.isFlagSet(MethodSymbolFlags.HYPOTHETICAL);
             }
             return is292targetTypeCast;
         }
@@ -1032,7 +1032,7 @@ public class Check {
                     assertConvertible(arg, arg.type, varArg, warn);
                     args = args.tail;
                 }
-            } else if ((sym.flags() & (VARARGS | SIGNATURE_POLYMORPHIC)) == VARARGS) {
+            } else if ((sym.flags() & VARARGS) == VARARGS && !sym.isFlagSet(MethodSymbolFlags.SIGNATURE_POLYMORPHIC)) {
                 // non-varargs call to varargs method
                 Type varParam = owntype.getParameterTypes().last();
                 Type lastArg = argtypes.last();
@@ -1765,7 +1765,7 @@ public class Check {
                    (other.flags() & STATIC) == 0) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
                       Errors.OverrideStatic(cannotOverride(m, other)));
-            m.flags_field |= BAD_OVERRIDE;
+            m.setFlag(MethodSymbolFlags.BAD_OVERRIDE);
             return;
         }
 
@@ -1777,7 +1777,7 @@ public class Check {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
                       Errors.OverrideMeth(cannotOverride(m, other),
                                           asFlagSet(other.flags() & (FINAL | STATIC))));
-            m.flags_field |= BAD_OVERRIDE;
+            m.setFlag(MethodSymbolFlags.BAD_OVERRIDE);
             return;
         }
 
@@ -1794,7 +1794,7 @@ public class Check {
                                                           "package") :
                               Errors.OverrideWeakerAccess(cannotOverride(m, other),
                                                           asFlagSet(other.flags() & AccessFlags)));
-            m.flags_field |= BAD_OVERRIDE;
+            m.setFlag(MethodSymbolFlags.BAD_OVERRIDE);
             return;
         }
 
@@ -1817,11 +1817,11 @@ public class Check {
                 log.error(TreeInfo.diagnosticPositionFor(m, tree),
                           Errors.OverrideIncompatibleRet(Fragments.CantHide(m, m.location(), other,
                                         other.location()), mtres, otres));
-                m.flags_field |= BAD_OVERRIDE;
+                m.setFlag(MethodSymbolFlags.BAD_OVERRIDE);
             } else {
                 log.error(TreeInfo.diagnosticPositionFor(m, tree),
                           Errors.OverrideIncompatibleRet(cannotOverride(m, other), mtres, otres));
-                m.flags_field |= BAD_OVERRIDE;
+                m.setFlag(MethodSymbolFlags.BAD_OVERRIDE);
             }
             return;
         } else if (overrideWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
@@ -1837,7 +1837,7 @@ public class Check {
         if (unhandledErased.nonEmpty()) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
                       Errors.OverrideMethDoesntThrow(cannotOverride(m, other), unhandledUnerased.head));
-            m.flags_field |= BAD_OVERRIDE;
+            m.setFlag(MethodSymbolFlags.BAD_OVERRIDE);
             return;
         }
         else if (unhandledUnerased.nonEmpty()) {
@@ -1955,7 +1955,7 @@ public class Check {
                                             Type t1,
                                             Type t2,
                                             Type site) {
-        if ((site.tsym.flags() & COMPOUND) != 0) {
+        if (site.tsym.isFlagSet(TypeSymbolFlags.COMPOUND)) {
             // special case for intersections: need to eliminate wildcards in supertypes
             t1 = types.capture(t1);
             t2 = types.capture(t2);
@@ -2137,7 +2137,7 @@ public class Check {
     }
 
     private Filter<Symbol> equalsHasCodeFilter = s -> MethodSymbol.implementation_filter.accepts(s) &&
-            (s.flags() & BAD_OVERRIDE) == 0;
+            !s.isFlagSet(MethodSymbolFlags.BAD_OVERRIDE);
 
     public void checkClassOverrideEqualsAndHashIfNeeded(DiagnosticPosition pos,
             ClassSymbol someClass) {
@@ -2240,7 +2240,7 @@ public class Check {
         CycleChecker cc = new CycleChecker();
         cc.scan(tree);
         if (!cc.errorFound && !cc.partialCheck) {
-            tree.sym.flags_field |= ACYCLIC;
+            tree.sym.setFlag(TypeSymbolFlags.ACYCLIC);
         }
     }
 
@@ -2307,7 +2307,7 @@ public class Check {
         }
 
         void checkClass(DiagnosticPosition pos, Symbol c, List<JCTree> supertypes) {
-            if ((c.flags_field & ACYCLIC) != 0)
+            if (c.isFlagSetNoComplete(TypeSymbolFlags.ACYCLIC))
                 return;
             if (seenClasses.contains(c)) {
                 errorFound = true;
@@ -2360,7 +2360,7 @@ public class Check {
 
     private void checkNonCyclic1(DiagnosticPosition pos, Type t, List<TypeVar> seen) {
         final TypeVar tv;
-        if  (t.hasTag(TYPEVAR) && (t.tsym.flags() & UNATTRIBUTED) != 0)
+        if  (t.hasTag(TYPEVAR) && t.tsym.isFlagSet(TypeSymbolFlags.UNATTRIBUTED))
             return;
         if (seen.contains(t)) {
             tv = (TypeVar)t;
@@ -2384,14 +2384,14 @@ public class Check {
     private boolean checkNonCyclicInternal(DiagnosticPosition pos, Type t) {
         boolean complete = true; // was the check complete?
         //- System.err.println("checkNonCyclicInternal("+t+");");//DEBUG
-        Symbol c = t.tsym;
-        if ((c.flags_field & ACYCLIC) != 0) return true;
+        TypeSymbol c = t.tsym;
+        if (c.isFlagSetNoComplete(TypeSymbolFlags.ACYCLIC)) return true;
 
-        if ((c.flags_field & LOCKED) != 0) {
+        if (c.isFlagSetNoComplete(TypeSymbolFlags.LOCKED)) {
             noteCyclic(pos, (ClassSymbol)c);
         } else if (!c.type.isErroneous()) {
             try {
-                c.flags_field |= LOCKED;
+                c.setFlag(TypeSymbolFlags.LOCKED);
                 if (c.type.hasTag(CLASS)) {
                     ClassType clazz = (ClassType)c.type;
                     if (clazz.interfaces_field != null)
@@ -2406,12 +2406,12 @@ public class Check {
                         complete &= checkNonCyclicInternal(pos, c.owner.type);
                 }
             } finally {
-                c.flags_field &= ~LOCKED;
+                c.clearFlag(TypeSymbolFlags.LOCKED);
             }
         }
         if (complete)
-            complete = ((c.flags_field & UNATTRIBUTED) == 0) && c.isCompleted();
-        if (complete) c.flags_field |= ACYCLIC;
+            complete = !c.isFlagSetNoComplete(TypeSymbolFlags.UNATTRIBUTED) && c.isCompleted();
+        if (complete) c.setFlag(TypeSymbolFlags.ACYCLIC);
         return complete;
     }
 
@@ -2424,7 +2424,7 @@ public class Check {
         if (st.hasTag(CLASS))
             ((ClassType)c.type).supertype_field = types.createErrorType((ClassSymbol)st.tsym, Type.noType);
         c.type = types.createErrorType(c, c.type);
-        c.flags_field |= ACYCLIC;
+        c.setFlag(TypeSymbolFlags.ACYCLIC);
     }
 
     /** Check that all methods which implement some
@@ -2673,8 +2673,8 @@ public class Check {
         if (msym1 != msym2 &&
                 Feature.DEFAULT_METHODS.allowedInSource(source) &&
                 lint.isEnabled(LintCategory.OVERLOADS) &&
-                (msym1.flags() & POTENTIALLY_AMBIGUOUS) == 0 &&
-                (msym2.flags() & POTENTIALLY_AMBIGUOUS) == 0) {
+                !msym1.isFlagSet(MethodSymbolFlags.POTENTIALLY_AMBIGUOUS) &&
+                !msym2.isFlagSet(MethodSymbolFlags.POTENTIALLY_AMBIGUOUS)) {
             Type mt1 = types.memberType(site, msym1);
             Type mt2 = types.memberType(site, msym2);
             //if both generic methods, adjust type variables
@@ -2708,8 +2708,8 @@ public class Check {
             if (potentiallyAmbiguous) {
                 //we found two incompatible functional interfaces with same arity
                 //this means a call site passing an implicit lambda would be ambiguous
-                msym1.flags_field |= POTENTIALLY_AMBIGUOUS;
-                msym2.flags_field |= POTENTIALLY_AMBIGUOUS;
+                msym1.setFlag(MethodSymbolFlags.POTENTIALLY_AMBIGUOUS);
+                msym2.setFlag(MethodSymbolFlags.POTENTIALLY_AMBIGUOUS);
                 log.warning(LintCategory.OVERLOADS, pos,
                             Warnings.PotentiallyAmbiguousOverload(msym1, msym1.location(),
                                                                   msym2, msym2.location()));
@@ -3521,7 +3521,7 @@ public class Check {
     }
 
     void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
-        if ((s.flags() & PROPRIETARY) != 0) {
+        if (s.isFlagSet(TypeSymbolFlags.PROPRIETARY)) {
             deferredLintHandler.report(() -> {
                 log.mandatoryWarning(pos, Warnings.SunProprietary(s));
             });
@@ -3529,7 +3529,7 @@ public class Check {
     }
 
     void checkProfile(final DiagnosticPosition pos, final Symbol s) {
-        if (profile != Profile.DEFAULT && (s.flags() & NOT_IN_PROFILE) != 0) {
+        if (profile != Profile.DEFAULT && s.isFlagSet(TypeSymbolFlags.NOT_IN_PROFILE)) {
             log.error(pos, Errors.NotInProfile(s, profile));
         }
     }
@@ -3552,37 +3552,37 @@ public class Check {
      */
     void checkNonCyclicElements(JCClassDecl tree) {
         if ((tree.sym.flags_field & ANNOTATION) == 0) return;
-        Assert.check((tree.sym.flags_field & LOCKED) == 0);
+        Assert.check(!tree.sym.isFlagSetNoComplete(TypeSymbolFlags.LOCKED));
         try {
-            tree.sym.flags_field |= LOCKED;
+            tree.sym.setFlag(TypeSymbolFlags.LOCKED);
             for (JCTree def : tree.defs) {
                 if (!def.hasTag(METHODDEF)) continue;
                 JCMethodDecl meth = (JCMethodDecl)def;
                 checkAnnotationResType(meth.pos(), meth.restype.type);
             }
         } finally {
-            tree.sym.flags_field &= ~LOCKED;
-            tree.sym.flags_field |= ACYCLIC_ANN;
+            tree.sym.clearFlag(TypeSymbolFlags.LOCKED);
+            tree.sym.setFlag(TypeSymbolFlags.ACYCLIC_ANN);
         }
     }
 
     void checkNonCyclicElementsInternal(DiagnosticPosition pos, TypeSymbol tsym) {
-        if ((tsym.flags_field & ACYCLIC_ANN) != 0)
+        if (tsym.isFlagSetNoComplete(TypeSymbolFlags.ACYCLIC_ANN))
             return;
-        if ((tsym.flags_field & LOCKED) != 0) {
+        if (tsym.isFlagSetNoComplete(TypeSymbolFlags.LOCKED)) {
             log.error(pos, Errors.CyclicAnnotationElement(tsym));
             return;
         }
         try {
-            tsym.flags_field |= LOCKED;
+            tsym.setFlag(TypeSymbolFlags.LOCKED);
             for (Symbol s : tsym.members().getSymbols(NON_RECURSIVE)) {
                 if (s.kind != MTH)
                     continue;
                 checkAnnotationResType(pos, ((MethodSymbol)s).type.getReturnType());
             }
         } finally {
-            tsym.flags_field &= ~LOCKED;
-            tsym.flags_field |= ACYCLIC_ANN;
+            tsym.clearFlag(TypeSymbolFlags.LOCKED);
+            tsym.setFlag(TypeSymbolFlags.ACYCLIC_ANN);
         }
     }
 
@@ -3608,24 +3608,25 @@ public class Check {
      *  constructors.
      */
     void checkCyclicConstructors(JCClassDecl tree) {
-        Map<Symbol,Symbol> callMap = new HashMap<>();
+        Map<MethodSymbol,MethodSymbol> callMap = new HashMap<>();
 
         // enter each constructor this-call into the map
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
             JCMethodInvocation app = TreeInfo.firstConstructorCall(l.head);
             if (app == null) continue;
             JCMethodDecl meth = (JCMethodDecl) l.head;
-            if (TreeInfo.name(app.meth) == names._this) {
-                callMap.put(meth.sym, TreeInfo.symbol(app.meth));
+            Symbol invConstr = TreeInfo.symbol(app.meth);
+            if (TreeInfo.name(app.meth) == names._this && invConstr != null && invConstr.kind == MTH) {
+                callMap.put(meth.sym, (MethodSymbol) invConstr);
             } else {
-                meth.sym.flags_field |= ACYCLIC;
+                meth.sym.setFlag(MethodSymbolFlags.ACYCLIC_CONSTRUCTOR);
             }
         }
 
         // Check for cycles in the map
-        Symbol[] ctors = new Symbol[0];
+        MethodSymbol[] ctors = new MethodSymbol[0];
         ctors = callMap.keySet().toArray(ctors);
-        for (Symbol caller : ctors) {
+        for (MethodSymbol caller : ctors) {
             checkCyclicConstructor(tree, caller, callMap);
         }
     }
@@ -3633,18 +3634,18 @@ public class Check {
     /** Look in the map to see if the given constructor is part of a
      *  call cycle.
      */
-    private void checkCyclicConstructor(JCClassDecl tree, Symbol ctor,
-                                        Map<Symbol,Symbol> callMap) {
-        if (ctor != null && (ctor.flags_field & ACYCLIC) == 0) {
-            if ((ctor.flags_field & LOCKED) != 0) {
+    private void checkCyclicConstructor(JCClassDecl tree, MethodSymbol ctor,
+                                        Map<MethodSymbol,MethodSymbol> callMap) {
+        if (ctor != null && !ctor.isFlagSet(MethodSymbolFlags.ACYCLIC_CONSTRUCTOR)) {
+            if (ctor.isFlagSet(MethodSymbolFlags.LOCKED_CONSTRUCTOR)) {
                 log.error(TreeInfo.diagnosticPositionFor(ctor, tree),
                           Errors.RecursiveCtorInvocation);
             } else {
-                ctor.flags_field |= LOCKED;
+                ctor.setFlag(MethodSymbolFlags.LOCKED_CONSTRUCTOR);
                 checkCyclicConstructor(tree, callMap.remove(ctor), callMap);
-                ctor.flags_field &= ~LOCKED;
+                ctor.clearFlag(MethodSymbolFlags.LOCKED_CONSTRUCTOR);
             }
-            ctor.flags_field |= ACYCLIC;
+            ctor.setFlag(MethodSymbolFlags.ACYCLIC_CONSTRUCTOR);
         }
     }
 
@@ -3704,9 +3705,9 @@ public class Check {
                     duplicateErasureError(pos, sym, byName);
                     sym.flags_field |= CLASH;
                     return true;
-                } else if ((sym.flags() & MATCH_BINDING) != 0 &&
-                           (byName.flags() & MATCH_BINDING) != 0 &&
-                           (byName.flags() & MATCH_BINDING_TO_OUTER) == 0) {
+                } else if (sym.isFlagSet(VarSymbolFlags.MATCH_BINDING) &&
+                           byName.isFlagSet(VarSymbolFlags.MATCH_BINDING) &&
+                           !byName.isFlagSet(VarSymbolFlags.MATCH_BINDING_TO_OUTER)) {
                     if (!sym.type.isErroneous()) {
                         log.error(pos, Errors.MatchBindingExists);
                         sym.flags_field |= CLASH;
@@ -3819,7 +3820,7 @@ public class Check {
      */
     void checkForBadAuxiliaryClassAccess(DiagnosticPosition pos, Env<AttrContext> env, ClassSymbol c) {
         if (lint.isEnabled(Lint.LintCategory.AUXILIARYCLASS) &&
-            (c.flags() & AUXILIARY) != 0 &&
+            c.isFlagSet(TypeSymbolFlags.AUXILIARY) &&
             rs.isAccessible(env, c) &&
             !fileManager.isSameFile(c.sourcefile, env.toplevel.sourcefile))
         {
@@ -4027,7 +4028,7 @@ public class Check {
 
         if (   toplevel.modle == syms.unnamedModule
             || toplevel.modle == syms.noModule
-            || (check.sym.flags() & COMPOUND) != 0) {
+            || check.sym.isFlagSet(TypeSymbolFlags.COMPOUND)) {
             return ;
         }
 
@@ -4186,7 +4187,7 @@ public class Check {
                     todo = todo.tail;
                     if (current == whatPackage.modle)
                         return ; //OK
-                    if ((current.flags() & Flags.AUTOMATIC_MODULE) != 0)
+                    if (current.isFlagSet(TypeSymbolFlags.AUTOMATIC_MODULE))
                         continue; //for automatic modules, don't look into their dependencies
                     for (RequiresDirective req : current.requires) {
                         if (req.isTransitive()) {
@@ -4210,7 +4211,7 @@ public class Check {
 
     void checkPackageExistsForOpens(final DiagnosticPosition pos, PackageSymbol packge) {
         if (packge.members().isEmpty() &&
-            ((packge.flags() & Flags.HAS_RESOURCE) == 0)) {
+            !packge.isFlagSet(TypeSymbolFlags.HAS_RESOURCE)) {
             deferredLintHandler.report(() -> {
                 if (lint.isEnabled(LintCategory.OPENS))
                     log.warning(pos, Warnings.PackageEmptyOrNotFound(packge));
@@ -4219,7 +4220,7 @@ public class Check {
     }
 
     void checkModuleRequires(final DiagnosticPosition pos, final RequiresDirective rd) {
-        if ((rd.module.flags() & Flags.AUTOMATIC_MODULE) != 0) {
+        if (rd.module.isFlagSet(TypeSymbolFlags.AUTOMATIC_MODULE)) {
             deferredLintHandler.report(() -> {
                 if (rd.isTransitive() && lint.isEnabled(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC)) {
                     log.warning(pos, Warnings.RequiresTransitiveAutomatic);

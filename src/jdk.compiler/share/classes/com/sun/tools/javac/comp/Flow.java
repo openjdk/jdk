@@ -1365,7 +1365,7 @@ public class Flow {
             Symbol sym = TreeInfo.symbol(tree.expr);
             if (sym != null &&
                 sym.kind == VAR &&
-                (sym.flags() & (FINAL | EFFECTIVELY_FINAL)) != 0 &&
+                sym.isFinalOrEffectivellyFinal() &&
                 preciseRethrowTypes.get(sym) != null) {
                 for (Type t : preciseRethrowTypes.get(sym)) {
                     markThrown(tree, t);
@@ -1797,7 +1797,7 @@ public class Flow {
             VarSymbol sym = varDecl.sym;
             vardecls = ArrayUtils.ensureCapacity(vardecls, nextadr);
             if ((sym.flags() & FINAL) == 0) {
-                sym.flags_field |= EFFECTIVELY_FINAL;
+                sym.setFlag(VarSymbolFlags.EFFECTIVELY_FINAL);
             }
             sym.adr = nextadr;
             vardecls[nextadr] = varDecl;
@@ -1810,19 +1810,19 @@ public class Flow {
          */
         void letInit(DiagnosticPosition pos, VarSymbol sym) {
             if (sym.adr >= firstadr && trackable(sym)) {
-                if ((sym.flags() & EFFECTIVELY_FINAL) != 0) {
+                if (sym.isFlagSet(VarSymbolFlags.EFFECTIVELY_FINAL)) {
                     if (!uninits.isMember(sym.adr)) {
                         //assignment targeting an effectively final variable
                         //makes the variable lose its status of effectively final
                         //if the variable is _not_ definitively unassigned
-                        sym.flags_field &= ~EFFECTIVELY_FINAL;
+                        sym.clearFlag(VarSymbolFlags.EFFECTIVELY_FINAL);
                     } else {
                         uninit(sym);
                     }
                 }
                 else if ((sym.flags() & FINAL) != 0) {
                     if ((sym.flags() & PARAMETER) != 0) {
-                        if ((sym.flags() & UNION) != 0) { //multi-catch parameter
+                        if (sym.isFlagSet(VarSymbolFlags.UNION)) { //multi-catch parameter
                             log.error(pos, Errors.MulticatchParameterMayNotBeAssigned(sym));
                         }
                         else {
@@ -2067,7 +2067,7 @@ public class Flow {
                 }
                 /*  Ignore synthetic methods, except for translated lambda methods.
                  */
-                if ((tree.sym.flags() & (SYNTHETIC | LAMBDA_METHOD)) == SYNTHETIC) {
+                if ((tree.sym.flags() & SYNTHETIC) == SYNTHETIC && !tree.sym.isFlagSet(MethodSymbolFlags.LAMBDA_METHOD)) {
                     return;
                 }
 
@@ -2119,10 +2119,10 @@ public class Flow {
                                     if (isInstanceRecordField) {
                                         boolean notInitialized = !inits.isMember(var.adr);
                                         if (notInitialized && uninits.isMember(var.adr) && tree.completesNormally) {
-                                        /*  this way we indicate Lower that it should generate an initialization for this field
-                                         *  in the compact constructor
-                                         */
-                                            var.flags_field |= UNINITIALIZED_FIELD;
+                                            /*  this way we indicate Lower that it should generate an initialization for this field
+                                             *  in the compact constructor
+                                             */
+                                            var.setFlag(VarSymbolFlags.UNINITIALIZED_FIELD);
                                         } else {
                                             checkInit(TreeInfo.diagEndPos(tree.body), var);
                                         }
@@ -2848,7 +2848,7 @@ public class Flow {
                             break;
                         }
                     case LAMBDA:
-                        if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0) {
+                        if (!sym.isFinalOrEffectivellyFinal()) {
                            reportEffectivelyFinalError(pos, sym);
                         }
                 }
@@ -2953,7 +2953,7 @@ public class Flow {
             for (JCTree resource : tree.resources) {
                 if (!resource.hasTag(VARDEF)) {
                     Symbol var = TreeInfo.symbol(resource);
-                    if (var != null && (var.flags() & (FINAL | EFFECTIVELY_FINAL)) == 0) {
+                    if (var != null && !var.isFinalOrEffectivellyFinal()) {
                         log.error(resource.pos(), Errors.TryWithResourcesExprEffectivelyFinalVar(var));
                     }
                 }

@@ -200,7 +200,7 @@ public class MemberEnter extends JCTree.Visitor {
         }
 
         if (types.isSignaturePolymorphic(m)) {
-            m.flags_field |= SIGNATURE_POLYMORPHIC;
+            m.setFlag(MethodSymbolFlags.SIGNATURE_POLYMORPHIC);
         }
 
         // Set m.params

@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.Flags;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
@@ -242,36 +243,35 @@ public class ClassFinder {
      * in the class file in ct.sym; in time, this information will be
      * available from the module system.
      */
-    long getSupplementaryFlags(ClassSymbol c) {
+    void addSupplementaryFlags(ClassSymbol c) {
         if (jrtIndex == null || !jrtIndex.isInJRT(c.classfile) || c.name == names.module_info) {
-            return 0;
+            return ;
         }
 
         if (supplementaryFlags == null) {
             supplementaryFlags = new HashMap<>();
         }
 
-        Long flags = supplementaryFlags.get(c.packge());
-        if (flags == null) {
-            long newFlags = 0;
-            try {
-                JRTIndex.CtSym ctSym = jrtIndex.getCtSym(c.packge().flatName());
-                Profile minProfile = Profile.DEFAULT;
-                if (ctSym.proprietary)
-                    newFlags |= PROPRIETARY;
-                if (ctSym.minProfile != null)
-                    minProfile = Profile.lookup(ctSym.minProfile);
-                if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
-                    newFlags |= NOT_IN_PROFILE;
+        JRTIndex.CtSym extra = supplementaryFlags.computeIfAbsent(c.packge(),
+                p -> {
+                    try {
+                        return jrtIndex.getCtSym(c.packge().flatName());
+                    } catch (IOException ignore) {
+                        return null;
+                    }
                 }
-            } catch (IOException ignore) {
-            }
-            supplementaryFlags.put(c.packge(), flags = newFlags);
+        );
+        Profile minProfile = Profile.DEFAULT;
+        if (extra.proprietary)
+            c.setFlag(TypeSymbolFlags.PROPRIETARY);
+        if (extra.minProfile != null)
+            minProfile = Profile.lookup(extra.minProfile);
+        if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
+            c.setFlag(TypeSymbolFlags.NOT_IN_PROFILE);
         }
-        return flags;
     }
 
-    private Map<PackageSymbol, Long> supplementaryFlags;
+    private Map<PackageSymbol, JRTIndex.CtSym> supplementaryFlags;
 
 /************************************************************************
  * Loading Classes
@@ -360,7 +360,7 @@ public class ClassFinder {
                 }
                 if (classfile.getKind() == JavaFileObject.Kind.CLASS) {
                     reader.readClassFile(c);
-                    c.flags_field |= getSupplementaryFlags(c);
+                    addSupplementaryFlags(c);
                 } else {
                     if (!sourceCompleter.isTerminal()) {
                         sourceCompleter.complete(c);
@@ -454,15 +454,15 @@ public class ClassFinder {
      *             is older.
      */
     protected void includeClassFile(PackageSymbol p, JavaFileObject file) {
-        if ((p.flags_field & EXISTS) == 0)
+        if (!p.isFlagSetNoComplete(TypeSymbolFlags.EXISTS))
             for (Symbol q = p; q != null && q.kind == PCK; q = q.owner)
-                q.flags_field |= EXISTS;
+                ((PackageSymbol) q).setFlag(TypeSymbolFlags.EXISTS);
         JavaFileObject.Kind kind = file.getKind();
-        int seen;
+        TypeSymbolFlags seen;
         if (kind == JavaFileObject.Kind.CLASS)
-            seen = CLASS_SEEN;
+            seen = TypeSymbolFlags.CLASS_SEEN;
         else
-            seen = SOURCE_SEEN;
+            seen = TypeSymbolFlags.SOURCE_SEEN;
         String binaryName = fileManager.inferBinaryName(currentLoc, file);
         int lastDot = binaryName.lastIndexOf(".");
         Name classname = names.fromString(binaryName.substring(lastDot + 1));
@@ -480,15 +480,16 @@ public class ClassFinder {
                 if (c.owner == p)  // it might be an inner class
                     p.members_field.enter(c);
             }
-        } else if (!preferCurrent && c.classfile != null && (c.flags_field & seen) == 0) {
+        } else if (!preferCurrent && c.classfile != null && !c.isFlagSetNoComplete(seen)) {
             // if c.classfile == null, we are currently compiling this class
             // and no further action is necessary.
             // if (c.flags_field & seen) != 0, we have already encountered
             // a file of the same kind; again no further action is necessary.
-            if ((c.flags_field & (CLASS_SEEN | SOURCE_SEEN)) != 0)
+            if (c.isFlagSetNoComplete(TypeSymbolFlags.CLASS_SEEN) ||
+                c.isFlagSetNoComplete(TypeSymbolFlags.SOURCE_SEEN))
                 c.classfile = preferredFileObject(file, c.classfile);
         }
-        c.flags_field |= seen;
+        c.setFlag(seen);
     }
 
     /** Implement policy to choose to derive information from a source
@@ -751,7 +752,7 @@ public class ClassFinder {
 
                             if (fo.getKind() != Kind.CLASS &&
                                 fo.getKind() != Kind.SOURCE) {
-                                p.flags_field |= Flags.HAS_RESOURCE;
+                                p.setFlag(TypeSymbolFlags.HAS_RESOURCE);
                             }
 
                             if (kinds.contains(fo.getKind())) {

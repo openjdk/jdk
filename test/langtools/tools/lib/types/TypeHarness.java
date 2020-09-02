@@ -31,6 +31,7 @@ import javax.tools.SimpleJavaFileObject;
 
 import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Flags.TypeSymbolFlags;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.code.Symtab;
@@ -367,7 +368,8 @@ public class TypeHarness {
         }
 
         public ClassType Intersection(Type classBound, Type... intfBounds) {
-            ClassType ct = Class(Flags.COMPOUND);
+            ClassType ct = Class();
+            ct.tsym.setFlag(TypeSymbolFlags.COMPOUND);
             ct.supertype_field = classBound;
             ct.interfaces_field = List.from(intfBounds);
             return ct;

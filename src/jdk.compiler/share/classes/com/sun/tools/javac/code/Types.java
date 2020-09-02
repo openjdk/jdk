@@ -2450,12 +2450,14 @@ public class Types {
             bounds = bounds.prepend(syms.objectType);
         }
         ClassSymbol bc =
-            new ClassSymbol(ABSTRACT|PUBLIC|SYNTHETIC|COMPOUND|ACYCLIC,
+            new ClassSymbol(ABSTRACT|PUBLIC|SYNTHETIC,
                             Type.moreInfo
                                 ? names.fromString(bounds.toString())
                                 : names.empty,
                             null,
                             syms.noSymbol);
+        bc.setFlag(TypeSymbolFlags.COMPOUND);
+        bc.setFlag(TypeSymbolFlags.ACYCLIC);
         IntersectionClassType intersectionType = new IntersectionClassType(bounds, bc, allInterfaces);
         bc.type = intersectionType;
         bc.erasure_field = (bounds.head.hasTag(TYPEVAR)) ?

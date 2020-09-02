@@ -1471,7 +1471,7 @@ public class ClassWriter extends ClassFile {
     void writeMethods(Scope s) {
         List<MethodSymbol> methods = List.nil();
         for (Symbol sym : s.getSymbols(NON_RECURSIVE)) {
-            if (sym.kind == MTH && (sym.flags() & HYPOTHETICAL) == 0)
+            if (sym.kind == MTH && !sym.isFlagSet(MethodSymbolFlags.HYPOTHETICAL))
                 methods = methods.prepend((MethodSymbol)sym);
         }
         while (methods.nonEmpty()) {
@@ -1523,7 +1523,7 @@ public class ClassWriter extends ClassFile {
      */
     public void writeClassFile(OutputStream out, ClassSymbol c)
         throws IOException, PoolOverflow, StringOverflow {
-        Assert.check((c.flags() & COMPOUND) == 0);
+        Assert.check(!c.isFlagSet(TypeSymbolFlags.COMPOUND));
         databuf.reset();
         poolbuf.reset();
 
@@ -1564,7 +1564,7 @@ public class ClassWriter extends ClassFile {
         for (Symbol sym : c.members().getSymbols(NON_RECURSIVE)) {
             switch (sym.kind) {
             case VAR: fieldsCount++; break;
-            case MTH: if ((sym.flags() & HYPOTHETICAL) == 0) methodsCount++;
+            case MTH: if (!sym.isFlagSet(MethodSymbolFlags.HYPOTHETICAL)) methodsCount++;
                       break;
             case TYP: poolWriter.enterInner((ClassSymbol)sym); break;
             default : Assert.error();

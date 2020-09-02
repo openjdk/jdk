@@ -26,6 +26,7 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Flags.VarSymbolFlags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.BindingSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -263,7 +264,7 @@ public class TransPatterns extends TreeTranslator {
     @Override
     public void visitIdent(JCIdent tree) {
         VarSymbol bindingVar = null;
-        if ((tree.sym.flags() & Flags.MATCH_BINDING) != 0) {
+        if (tree.sym.isFlagSet(VarSymbolFlags.MATCH_BINDING)) {
             bindingVar = bindingContext.getBindingFor((BindingSymbol)tree.sym);
         }
         if (bindingVar == null) {

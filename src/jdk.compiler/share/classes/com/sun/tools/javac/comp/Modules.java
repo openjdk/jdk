@@ -110,7 +110,7 @@ import com.sun.tools.javac.util.Options;
 import static com.sun.tools.javac.code.Flags.ABSTRACT;
 import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.PUBLIC;
-import static com.sun.tools.javac.code.Flags.UNATTRIBUTED;
+import com.sun.tools.javac.code.Flags.TypeSymbolFlags;
 
 import com.sun.tools.javac.code.Kinds;
 
@@ -373,7 +373,7 @@ public class Modules extends JCTree.Visitor {
                         ModuleSymbol msym = moduleFinder.findModule(name);
                         tree.modle = msym;
                         rootModules.add(msym);
-                        patchesAutomaticModules |= (msym.flags_field & Flags.AUTOMATIC_MODULE) != 0;
+                        patchesAutomaticModules |= msym.isFlagSetNoComplete(TypeSymbolFlags.AUTOMATIC_MODULE);
 
                         if (msplocn != null) {
                             Name mspname = names.fromString(fileManager.inferModuleName(msplocn));
@@ -462,7 +462,7 @@ public class Modules extends JCTree.Visitor {
                             if (moduleOverride != null) {
                                 defaultModule = moduleFinder.findModule(names.fromString(moduleOverride));
                                 defaultModule.patchOutputLocation = StandardLocation.CLASS_OUTPUT;
-                                if ((defaultModule.flags_field & Flags.AUTOMATIC_MODULE) == 0) {
+                                if (!defaultModule.isFlagSetNoComplete(TypeSymbolFlags.AUTOMATIC_MODULE)) {
                                     checkNoAllModulePath();
                                 }
                             } else {
@@ -631,7 +631,7 @@ public class Modules extends JCTree.Visitor {
             if (msym.kind == ERR) {
                 //make sure the module is initialized:
                 initErrModule(msym);
-            } else if ((msym.flags_field & Flags.AUTOMATIC_MODULE) != 0) {
+            } else if (msym.isFlagSetNoComplete(TypeSymbolFlags.AUTOMATIC_MODULE)) {
                 setupAutomaticModule(msym);
             } else {
                 try {
@@ -708,7 +708,7 @@ public class Modules extends JCTree.Visitor {
         for (ModuleSymbol ms : allModules()) {
             if (ms == syms.unnamedModule || ms == msym)
                 continue;
-            Set<RequiresFlag> flags = (ms.flags_field & Flags.AUTOMATIC_MODULE) != 0 ?
+            Set<RequiresFlag> flags = ms.isFlagSetNoComplete(TypeSymbolFlags.AUTOMATIC_MODULE) ?
                     EnumSet.of(RequiresFlag.TRANSITIVE) : EnumSet.noneOf(RequiresFlag.class);
             RequiresDirective d = new RequiresDirective(ms, flags);
             directives.add(d);
@@ -728,7 +728,7 @@ public class Modules extends JCTree.Visitor {
             @Override
             public void complete(Symbol sym) throws CompletionFailure {
                 ModuleSymbol msym = (ModuleSymbol) sym;
-                msym.flags_field |= UNATTRIBUTED;
+                msym.setFlag(TypeSymbolFlags.UNATTRIBUTED);
                 ModuleVisitor v = new ModuleVisitor();
                 JavaFileObject prev = log.useSource(tree.sourcefile);
                 JCModuleDecl moduleDecl = tree.getModuleDecl();
@@ -741,7 +741,7 @@ public class Modules extends JCTree.Visitor {
                 } finally {
                     log.useSource(prev);
                     deferredLintHandler.setPos(prevLintPos);
-                    msym.flags_field &= ~UNATTRIBUTED;
+                    msym.clearFlag(TypeSymbolFlags.UNATTRIBUTED);
                 }
             }
 
@@ -1250,7 +1250,7 @@ public class Modules extends JCTree.Visitor {
 
         Predicate<ModuleSymbol> observablePred = sym ->
              (observable == null) ? (moduleFinder.findModule(sym).kind != ERR) : observable.contains(sym);
-        Predicate<ModuleSymbol> systemModulePred = sym -> (sym.flags() & Flags.SYSTEM_MODULE) != 0;
+        Predicate<ModuleSymbol> systemModulePred = sym -> sym.isFlagSet(TypeSymbolFlags.SYSTEM_MODULE);
         Set<ModuleSymbol> enabledRoot = new LinkedHashSet<>();
 
         if (rootModules.contains(syms.unnamedModule)) {
@@ -1359,7 +1359,7 @@ public class Modules extends JCTree.Visitor {
     }
     //where:
         private static final Predicate<ModuleSymbol> IS_AUTOMATIC =
-                m -> (m.flags_field & Flags.AUTOMATIC_MODULE) != 0;
+                m -> m.isFlagSetNoComplete(TypeSymbolFlags.AUTOMATIC_MODULE);
 
     public boolean isInModuleGraph(ModuleSymbol msym) {
         return allModules == null || allModules.contains(msym);
@@ -1397,7 +1397,7 @@ public class Modules extends JCTree.Visitor {
                 }
                 if (observable != null && !observable.contains(current))
                     continue;
-                if (!result.add(current) || current == syms.unnamedModule || ((current.flags_field & Flags.AUTOMATIC_MODULE) != 0))
+                if (!result.add(current) || current == syms.unnamedModule || current.isFlagSetNoComplete(TypeSymbolFlags.AUTOMATIC_MODULE))
                     continue;
                 current.complete();
                 if (current.kind == ERR && (isPrimaryTodo || base.contains(current)) && warnedMissing.add(current)) {
@@ -1462,7 +1462,7 @@ public class Modules extends JCTree.Visitor {
             return ;
         }
 
-        if ((msym.flags_field & Flags.AUTOMATIC_MODULE) != 0) {
+        if (msym.isFlagSetNoComplete(TypeSymbolFlags.AUTOMATIC_MODULE)) {
             completeAutomaticModule(msym);
         }
 
@@ -1485,7 +1485,7 @@ public class Modules extends JCTree.Visitor {
                         log.useSource(origSource);
                     }
                 } else {
-                    Assert.check((msym.flags() & Flags.AUTOMATIC_MODULE) == 0);
+                    Assert.check(!msym.isFlagSet(TypeSymbolFlags.AUTOMATIC_MODULE));
                 }
                 msym.requires = List.filter(msym.requires, requires.head);
             }
@@ -1647,7 +1647,7 @@ public class Modules extends JCTree.Visitor {
             if (!isValidName(packageName))
                 continue;
 
-            if (!allowAccessIntoSystem && (msym.flags() & Flags.SYSTEM_MODULE) != 0) {
+            if (!allowAccessIntoSystem && msym.isFlagSet(TypeSymbolFlags.SYSTEM_MODULE)) {
                 log.error(Errors.AddExportsWithRelease(msym));
                 continue;
             }
@@ -1727,7 +1727,7 @@ public class Modules extends JCTree.Visitor {
                 continue;
             }
 
-            if (!allowAccessIntoSystem && (msym.flags() & Flags.SYSTEM_MODULE) != 0) {
+            if (!allowAccessIntoSystem && msym.isFlagSet(TypeSymbolFlags.SYSTEM_MODULE)) {
                 log.error(Errors.AddReadsWithRelease(msym));
                 continue;
             }
@@ -1766,7 +1766,7 @@ public class Modules extends JCTree.Visitor {
                 if (!nonSyntheticDeps.add(current))
                     continue;
                 current.complete();
-                if ((current.flags() & Flags.AUTOMATIC_MODULE) != 0)
+                if (current.isFlagSet(TypeSymbolFlags.AUTOMATIC_MODULE))
                     continue;
                 Assert.checkNonNull(current.requires, current::toString);
                 for (RequiresDirective dep : current.requires) {

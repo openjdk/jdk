@@ -923,7 +923,7 @@ public class ClassReader {
                     if (c.owner.kind == PCK &&
                         sn.endsWith(".java") &&
                         !sn.equals(c.name.toString()+".java")) {
-                        c.flags_field |= AUXILIARY;
+                        c.setFlag(TypeSymbolFlags.AUXILIARY);
                     }
                 }
             },
@@ -1416,15 +1416,17 @@ public class ClassReader {
         }
         ListBuffer<CompoundAnnotationProxy> proxies = new ListBuffer<>();
         for (CompoundAnnotationProxy proxy : annotations) {
-            if (proxy.type.tsym.flatName() == syms.proprietaryType.tsym.flatName())
-                sym.flags_field |= PROPRIETARY;
-            else if (proxy.type.tsym.flatName() == syms.profileType.tsym.flatName()) {
-                if (profile != Profile.DEFAULT) {
+            if (proxy.type.tsym.flatName() == syms.proprietaryType.tsym.flatName()) {
+                if (sym instanceof TypeSymbol) {
+                    ((TypeSymbol) sym).setFlag(TypeSymbolFlags.PROPRIETARY);
+                }
+            } else if (proxy.type.tsym.flatName() == syms.profileType.tsym.flatName()) {
+                if (profile != Profile.DEFAULT && sym instanceof TypeSymbol) {
                     for (Pair<Name, Attribute> v : proxy.values) {
                         if (v.fst == names.value && v.snd instanceof Attribute.Constant) {
                             Attribute.Constant c = (Attribute.Constant)v.snd;
                             if (c.type == syms.intType && ((Integer)c.value) > profile.value) {
-                                sym.flags_field |= NOT_IN_PROFILE;
+                                ((TypeSymbol) sym).setFlag(TypeSymbolFlags.NOT_IN_PROFILE);
                             }
                         }
                     }
@@ -2230,7 +2232,7 @@ public class ClassReader {
         }
         MethodSymbol m = new MethodSymbol(flags, name, type, currentOwner);
         if (types.isSignaturePolymorphic(m)) {
-            m.flags_field |= SIGNATURE_POLYMORPHIC;
+            m.setFlag(MethodSymbolFlags.SIGNATURE_POLYMORPHIC);
         }
         if (saveParameterNames)
             initParameterNames(m);
@@ -2373,12 +2375,12 @@ public class ClassReader {
     // names read from the MethodParameters, or by synthesizing a name that
     // is not on the 'exclude' list.
     private VarSymbol parameter(int index, Type t, MethodSymbol owner, Set<Name> exclude) {
-        long flags = PARAMETER;
+        boolean nameFilled = false;
         Name argName;
         if (parameterNameIndices != null && index < parameterNameIndices.length
                 && parameterNameIndices[index] != 0) {
             argName = optPoolEntry(parameterNameIndices[index], poolReader::getName, names.empty);
-            flags |= NAME_FILLED;
+            nameFilled = true;
         } else {
             String prefix = "arg";
             while (true) {
@@ -2389,7 +2391,11 @@ public class ClassReader {
             }
         }
         exclude.add(argName);
-        return new ParamSymbol(flags, argName, t, owner);
+        ParamSymbol psym = new ParamSymbol(PARAMETER, argName, t, owner);
+        if (nameFilled) {
+            psym.setFlag(VarSymbolFlags.NAME_FILLED);
+        }
+        return psym;
     }
 
     /**

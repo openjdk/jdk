@@ -71,6 +71,7 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Flags.TypeSymbolFlags;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
 import com.sun.tools.javac.code.Scope.WriteableScope;
@@ -406,7 +407,7 @@ public class JavacTrees extends DocTrees {
                 if (t.hasTag(JCTree.Tag.CLASSDEF)) {
                     JCClassDecl ct = (JCClassDecl) t;
                     if (ct.sym != null) {
-                        if ((ct.sym.flags_field & Flags.UNATTRIBUTED) != 0) {
+                        if (ct.sym.isFlagSetNoComplete(TypeSymbolFlags.UNATTRIBUTED)) {
                             attr.attribClass(ct.pos(), ct.sym);
                             sym = TreeInfo.symbolFor(tree);
                         }
@@ -995,7 +996,7 @@ public class JavacTrees extends DocTrees {
         Map<JCClassDecl, Name> flatNameForClass = new HashMap<>();
         Symbol enclClass = env.enclClass.sym;
 
-        if (enclClass != null && (enclClass.flags_field & Flags.UNATTRIBUTED) != 0) {
+        if (enclClass != null && enclClass.isFlagSetNoComplete(TypeSymbolFlags.UNATTRIBUTED)) {
             ListBuffer<ClassSymbol> toClear = new ListBuffer<>();
             new TreeScanner() {
                 Symbol owner;

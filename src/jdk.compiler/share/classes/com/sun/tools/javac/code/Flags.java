@@ -66,7 +66,7 @@ public class Flags {
                 flags &= ~flag.value;
             }
         }
-        Assert.check(flags == 0);
+        Assert.check((flags & (LAST_FLAT_BIT * 2 - 1)) == 0);
         return flagSet;
     }
 
@@ -113,268 +113,127 @@ public class Flags {
      * Internal compiler flags (no bits in the lower 16).
      *****************************************/
 
+    //on all Symbols:
     /** Flag is set if symbol is deprecated.  See also DEPRECATED_REMOVAL.
      */
     public static final int DEPRECATED   = 1<<17;
 
-    /** Flag is set for a variable symbol if the variable's definition
-     *  has an initializer part.
-     */
-    public static final int HASINIT          = 1<<18;
-
-    /** Flag is set for compiler-generated anonymous method symbols
-     *  that `own' an initializer block.
-     */
-    public static final int BLOCK            = 1<<20;
-
-    /** Flag bit 21 is available. (used earlier to tag compiler-generated abstract methods that implement
-     *  an interface method (Miranda methods)).
-     */
-
-    /** Flag is set for nested classes that do not access instance members
-     *  or `this' of an outer class and therefore don't need to be passed
-     *  a this$n reference.  This value is currently set only for anonymous
-     *  classes in superclass constructor calls.
-     *  todo: use this value for optimizing away this$n parameters in
-     *  other cases.
-     */
-    public static final int NOOUTERTHIS  = 1<<22;
-
-    /** Flag is set for package symbols if a package has a member or
-     *  directory and therefore exists.
-     */
-    public static final int EXISTS           = 1<<23;
-
-    /** Flag is set for compiler-generated compound classes
-     *  representing multiple variable bounds
-     */
-    public static final int COMPOUND     = 1<<24;
-
-    /** Flag is set for class symbols if a class file was found for this class.
-     */
-    public static final int CLASS_SEEN   = 1<<25;
-
-    /** Flag is set for class symbols if a source file was found for this
-     *  class.
-     */
-    public static final int SOURCE_SEEN  = 1<<26;
-
-    /* State flags (are reset during compilation).
-     */
-
-    /** Flag for class symbols is set and later re-set as a lock in
-     *  Enter to detect cycles in the superclass/superinterface
-     *  relations.  Similarly for constructor call cycle detection in
-     *  Attr.
-     */
-    public static final int LOCKED           = 1<<27;
-
-    /** Flag for class symbols is set and later re-set to indicate that a class
-     *  has been entered but has not yet been attributed.
-     */
-    public static final int UNATTRIBUTED = 1<<28;
-
-    /** Flag for synthesized default constructors of anonymous classes.
-     */
-    public static final int ANONCONSTR   = 1<<29;
-
-    /** Flag for class symbols to indicate it has been checked and found
-     *  acyclic.
-     */
-    public static final int ACYCLIC          = 1<<30;
-
-    /** Flag that marks bridge methods.
-     */
-    public static final long BRIDGE          = 1L<<31;
-
-    /** Flag that marks formal parameters.
-     */
-    public static final long PARAMETER   = 1L<<33;
-
-    /** Flag that marks varargs methods.
-     */
-    public static final long VARARGS   = 1L<<34;
-
-    /** Flag for annotation type symbols to indicate it has been
-     *  checked and found acyclic.
-     */
-    public static final long ACYCLIC_ANN      = 1L<<35;
-
-    /** Flag that marks a generated default constructor.
-     */
-    public static final long GENERATEDCONSTR   = 1L<<36;
-
-    /** Flag that marks a hypothetical method that need not really be
-     *  generated in the binary, but is present in the symbol table to
-     *  simplify checking for erasure clashes - also used for 292 poly sig methods.
-     */
-    public static final long HYPOTHETICAL   = 1L<<37;
-
-    /**
-     * Flag that marks an internal proprietary class.
-     */
-    public static final long PROPRIETARY = 1L<<38;
-
-    /**
-     * Flag that marks a multi-catch parameter.
-     */
-    public static final long UNION = 1L<<39;
-
-    // Flag bit (1L << 40) is available.
-
-    /**
-     * Flag that marks an 'effectively final' local variable.
-     */
-    public static final long EFFECTIVELY_FINAL = 1L<<41;
-
-    /**
-     * Flag that marks non-override equivalent methods with the same signature,
-     * or a conflicting match binding (BindingSymbol).
-     */
-    public static final long CLASH = 1L<<42;
-
-    /**
-     * Flag that marks either a default method or an interface containing default methods.
-     */
-    public static final long DEFAULT = 1L<<43;
-
-    /**
-     * Flag that marks class as auxiliary, ie a non-public class following
-     * the public class in a source file, that could block implicit compilation.
-     */
-    public static final long AUXILIARY = 1L<<44;
-
-    /**
-     * Flag that marks that a symbol is not available in the current profile
-     */
-    public static final long NOT_IN_PROFILE = 1L<<45;
-
-    /**
-     * Flag that indicates that an override error has been detected by Check.
-     */
-    public static final long BAD_OVERRIDE = 1L<<45;
-
-    /**
-     * Flag that indicates a signature polymorphic method (292).
-     */
-    public static final long SIGNATURE_POLYMORPHIC = 1L<<46;
-
-    /**
-     * Flag that indicates that an inference variable is used in a 'throws' clause.
-     */
-    public static final long THROWS = 1L<<47;
-
-    /**
-     * Flag that marks potentially ambiguous overloads
-     */
-    public static final long POTENTIALLY_AMBIGUOUS = 1L<<48;
-
-    /**
-     * Flag that marks a synthetic method body for a lambda expression
-     */
-    public static final long LAMBDA_METHOD = 1L<<49;
-
-    /**
-     * Flag to control recursion in TransTypes
-     */
-    public static final long TYPE_TRANSLATED = 1L<<50;
-
-    /**
-     * Flag to indicate class symbol is for module-info
-     */
-    public static final long MODULE = 1L<<51;
-
-    /**
-     * Flag to indicate the given ModuleSymbol is an automatic module.
-     */
-    public static final long AUTOMATIC_MODULE = 1L<<52; //ModuleSymbols only
-
-    /**
-     * Flag to indicate the given PackageSymbol contains any non-.java and non-.class resources.
-     */
-    public static final long HAS_RESOURCE = 1L<<52; //PackageSymbols only
-
-    /**
-     * Flag to indicate the given ParamSymbol has a user-friendly name filled.
-     */
-    public static final long NAME_FILLED = 1L<<52; //ParamSymbols only
-
-    /**
-     * Flag to indicate the given ModuleSymbol is a system module.
-     */
-    public static final long SYSTEM_MODULE = 1L<<53;
-
     /**
      * Flag to indicate the given symbol has a @Deprecated annotation.
      */
-    public static final long DEPRECATED_ANNOTATION = 1L<<54;
+    public static final long DEPRECATED_ANNOTATION = 1L<<18;
 
     /**
      * Flag to indicate the given symbol has been deprecated and marked for removal.
      */
-    public static final long DEPRECATED_REMOVAL = 1L<<55;
+    public static final long DEPRECATED_REMOVAL = 1L<<19;
 
     /**
      * Flag to indicate the API element in question is for a preview API.
      */
-    public static final long PREVIEW_API = 1L<<56; //any Symbol kind
+    public static final long PREVIEW_API = 1L<<20; //any Symbol kind
+
+    /**
+     * Flag to indicate the API element in question is for a preview API.
+     */
+    public static final long PREVIEW_ESSENTIAL_API = 1L<<21; //any Symbol kind
+
+    //classfile flags:
+    /** Flag that marks bridge methods.
+     */
+    public static final long BRIDGE          = 1L<<22;
+
+    /** Flag that marks formal parameters.
+     */
+    public static final long PARAMETER   = 1L<<23;
+
+    /** Flag that marks varargs methods.
+     */
+    public static final long VARARGS   = 1L<<24;
+
+    /**
+     * Flag that marks either a default method or an interface containing default methods.
+     */
+    public static final long DEFAULT = 1L<<25;
+
+    /**
+     * Flag to indicate class symbol is for module-info
+     */
+    public static final long MODULE = 1L<<26;
+
+    //used on trees:
+    /** Flag for synthesized default constructors of anonymous classes.
+     */
+    public static final int ANONCONSTR   = 1<<27;
 
     /**
      * Flag for synthesized default constructors of anonymous classes that have an enclosing expression.
      */
-    public static final long ANONCONSTR_BASED = 1L<<57;
+    public static final long ANONCONSTR_BASED = 1L<<28;
+
+    /** Flag that marks a generated default constructor.
+     */
+    public static final long GENERATEDCONSTR   = 1L<<29;
+
+    /**
+     * Flag to mark a record constructor as a compact one
+     */
+    public static final long COMPACT_RECORD_CONSTRUCTOR = 1L<<30; // MethodSymbols only
 
     /**
      * Flag that marks finalize block as body-only, should not be copied into catch clauses.
      * Used to implement try-with-resources.
      */
-    public static final long BODY_ONLY_FINALIZE = 1L<<17; //blocks only
-
-    /**
-     * Flag to indicate the API element in question is for a preview API.
-     */
-    public static final long PREVIEW_ESSENTIAL_API = 1L<<58; //any Symbol kind
-
-    /**
-     * Flag to indicate the given variable is a match binding variable.
-     */
-    public static final long MATCH_BINDING = 1L<<59;
-
-    /**
-     * A flag to indicate a match binding variable whose scope extends after the current statement.
-     */
-    public static final long MATCH_BINDING_TO_OUTER = 1L<<60;
-
+    public static final long BODY_ONLY_FINALIZE = 1L<<31;
+    
+    //other:
     /**
      * Flag to indicate that a class is a record. The flag is also used to mark fields that are
      * part of the state vector of a record and to mark the canonical constructor
      */
-    public static final long RECORD = 1L<<61; // ClassSymbols, MethodSymbols and VarSymbols
-
-    /**
-     * Flag to mark a record constructor as a compact one
-     */
-    public static final long COMPACT_RECORD_CONSTRUCTOR = 1L<<51; // MethodSymbols only
-
-    /**
-     * Flag to mark a record field that was not initialized in the compact constructor
-     */
-    public static final long UNINITIALIZED_FIELD= 1L<<51; // VarSymbols only
+    public static final long RECORD = 1L<<32; // ClassSymbols, MethodSymbols and VarSymbols
 
     /** Flag is set for compiler-generated record members, it could be applied to
      *  accessors and fields
      */
-    public static final int GENERATED_MEMBER = 1<<24; // MethodSymbols and VarSymbols
+    public static final long GENERATED_MEMBER = 1L<<33; // MethodSymbols and VarSymbols
+
+    /**
+     * Flag that marks non-override equivalent methods with the same signature,
+     * or a conflicting match binding (BindingSymbol).
+     */
+    public static final long CLASH = 1L<<34;
+
+    /** Flag is set for compiler-generated anonymous method symbols
+     *  that `own' an initializer block.
+     */
+    public static final long BLOCK            = 1L<<35;
+
+    /** Flag is set for a variable symbol if the variable's definition
+     *  has an initializer part.
+     */
+    public static final long HASINIT          = 1L<<36;
+
+    /**
+     * Flag that indicates that an inference variable is used in a 'throws' clause.
+     */
+    public static final long THROWS = 1L<<37;
 
     /**
      * Flag to indicate sealed class/interface declaration.
      */
-    public static final long SEALED = 1L<<62; // ClassSymbols
+    public static final long SEALED = 1L<<38; // ClassSymbols
 
     /**
      * Flag to indicate that the class/interface was declared with the non-sealed modifier.
      */
-    public static final long NON_SEALED = 1L<<63; // ClassSymbols
+    public static final long NON_SEALED = 1L<<39; // ClassSymbols
+
+    /**
+     * The last bit used by the "flat" flags above. Should be updated when a new
+     * flag is added.
+     */
+    public static final long LAST_FLAT_BIT = NON_SEALED;
 
     /** Modifier masks.
      */
@@ -446,6 +305,190 @@ public class Flags {
         return symbol.getConstValue() != null;
     }
 
+    public enum TypeSymbolFlags {
+        //PackageSymbols:
+        /** Flag is set for package symbols if a package has a member or
+         *  directory and therefore exists.
+         */
+        EXISTS,
+
+        /**
+         * Flag to indicate the given PackageSymbol contains any non-.java and non-.class resources.
+         */
+        HAS_RESOURCE,
+
+        //ClassSymbols:
+        /** Flag is set for nested classes that do not access instance members
+         *  or `this' of an outer class and therefore don't need to be passed
+         *  a this$n reference.  This value is currently set only for anonymous
+         *  classes in superclass constructor calls.
+         *  todo: use this value for optimizing away this$n parameters in
+         *  other cases.
+         */
+        NOOUTERTHIS,
+
+        /** Flag is set for compiler-generated compound classes
+         *  representing multiple variable bounds
+         */
+        COMPOUND,
+
+        /** Flag is set for class symbols if a class file was found for this class.
+         */
+        CLASS_SEEN,
+
+        /** Flag is set for class symbols if a source file was found for this
+         *  class.
+         */
+        SOURCE_SEEN,
+
+        /** Flag for class symbols is set and later re-set as a lock in
+         *  Enter to detect cycles in the superclass/superinterface
+         *  relations.  Similarly for constructor call cycle detection in
+         *  Attr.
+         */
+        LOCKED,
+
+        /** Flag for class symbols is set and later re-set to indicate that a class
+         *  has been entered but has not yet been attributed.
+         */
+        UNATTRIBUTED,
+
+        /** Flag for class symbols to indicate it has been checked and found
+         *  acyclic.
+         */
+        ACYCLIC,
+
+        /** Flag for annotation type symbols to indicate it has been
+         *  checked and found acyclic.
+         */
+        ACYCLIC_ANN,
+
+        /**
+         * Flag that marks an internal proprietary class.
+         */
+        PROPRIETARY,
+
+        /**
+         * Flag that marks class as auxiliary, ie a non-public class following
+         * the public class in a source file, that could block implicit compilation.
+         */
+        AUXILIARY,
+
+        /**
+         * Flag to control recursion in TransTypes
+         */
+        TYPE_TRANSLATED,
+
+        /**
+         * Flag that marks that a symbol is not available in the current profile
+         */
+        NOT_IN_PROFILE,
+
+        //ModuleSymbols:
+        /**
+         * Flag to indicate the given ModuleSymbol is an automatic module.
+         */
+        AUTOMATIC_MODULE,
+
+        /**
+         * Flag to indicate the given ModuleSymbol is a system module.
+         */
+        SYSTEM_MODULE,
+        ;
+
+        final long mask;
+        private TypeSymbolFlags() {
+            this.mask = (1L << ordinal()) * LAST_FLAT_BIT * 2;
+            Assert.check(this.mask > 0);
+        }
+        
+    }
+
+    public enum MethodSymbolFlags {
+        /** Flag that marks a hypothetical method that need not really be
+         *  generated in the binary, but is present in the symbol table to
+         *  simplify checking for erasure clashes - also used for 292 poly sig methods.
+         */
+        HYPOTHETICAL,
+
+        /**
+         * Flag that indicates that an override error has been detected by Check.
+         */
+        BAD_OVERRIDE,
+
+        /**
+         * Flag that indicates a signature polymorphic method (292).
+         */
+        SIGNATURE_POLYMORPHIC,
+
+        /**
+         * Flag that marks potentially ambiguous overloads
+         */
+        POTENTIALLY_AMBIGUOUS,
+
+        /**
+         * Flag that marks a synthetic method body for a lambda expression
+         */
+        LAMBDA_METHOD,
+
+        /** Flag for class symbols to indicate it has been checked and found
+         *  acyclic.
+         */
+        ACYCLIC_CONSTRUCTOR,
+
+        /** Flag for class symbols is set and later re-set as a lock in
+         *  Enter to detect cycles in the superclass/superinterface
+         *  relations.  Similarly for constructor call cycle detection in
+         *  Attr.
+         */
+        LOCKED_CONSTRUCTOR,
+        ;
+
+        final long mask;
+        private MethodSymbolFlags() {
+            this.mask = (1L << ordinal()) * LAST_FLAT_BIT * 2;
+            Assert.check(this.mask > 0);
+        }
+    }
+
+    public enum VarSymbolFlags {
+        /**
+         * Flag that marks an 'effectively final' local variable.
+         */
+        EFFECTIVELY_FINAL,
+
+        /**
+         * Flag to indicate the given ParamSymbol has a user-friendly name filled.
+         */
+        NAME_FILLED,
+
+        /**
+         * Flag to indicate the given variable is a match binding variable.
+         */
+        MATCH_BINDING,
+
+        /**
+         * A flag to indicate a match binding variable whose scope extends after the current statement.
+         */
+        MATCH_BINDING_TO_OUTER,
+
+        /**
+         * Flag to mark a record field that was not initialized in the compact constructor
+         */
+        UNINITIALIZED_FIELD,
+
+        /**
+         * Flag that marks a multi-catch parameter.
+         */
+        UNION,
+        ;
+
+        final long mask;
+        private VarSymbolFlags() {
+            this.mask = (1L << ordinal()) * LAST_FLAT_BIT * 2;
+            Assert.check(this.mask > 0);
+        }
+    }
 
     public enum Flag {
         PUBLIC(Flags.PUBLIC),
@@ -461,53 +504,30 @@ public class Flags {
         ABSTRACT(Flags.ABSTRACT),
         DEFAULT(Flags.DEFAULT),
         STRICTFP(Flags.STRICTFP),
-        BRIDGE(Flags.BRIDGE),
         SYNTHETIC(Flags.SYNTHETIC),
         ANNOTATION(Flags.ANNOTATION),
         DEPRECATED(Flags.DEPRECATED),
-        HASINIT(Flags.HASINIT),
-        BLOCK(Flags.BLOCK),
         ENUM(Flags.ENUM),
         MANDATED(Flags.MANDATED),
-        NOOUTERTHIS(Flags.NOOUTERTHIS),
-        EXISTS(Flags.EXISTS),
-        COMPOUND(Flags.COMPOUND),
-        CLASS_SEEN(Flags.CLASS_SEEN),
-        SOURCE_SEEN(Flags.SOURCE_SEEN),
-        LOCKED(Flags.LOCKED),
-        UNATTRIBUTED(Flags.UNATTRIBUTED),
-        ANONCONSTR(Flags.ANONCONSTR),
-        ACYCLIC(Flags.ACYCLIC),
-        PARAMETER(Flags.PARAMETER),
-        VARARGS(Flags.VARARGS),
-        ACYCLIC_ANN(Flags.ACYCLIC_ANN),
-        GENERATEDCONSTR(Flags.GENERATEDCONSTR),
-        HYPOTHETICAL(Flags.HYPOTHETICAL),
-        PROPRIETARY(Flags.PROPRIETARY),
-        UNION(Flags.UNION),
-        EFFECTIVELY_FINAL(Flags.EFFECTIVELY_FINAL),
-        CLASH(Flags.CLASH),
-        AUXILIARY(Flags.AUXILIARY),
-        NOT_IN_PROFILE(Flags.NOT_IN_PROFILE),
-        BAD_OVERRIDE(Flags.BAD_OVERRIDE),
-        SIGNATURE_POLYMORPHIC(Flags.SIGNATURE_POLYMORPHIC),
-        THROWS(Flags.THROWS),
-        LAMBDA_METHOD(Flags.LAMBDA_METHOD),
-        TYPE_TRANSLATED(Flags.TYPE_TRANSLATED),
-        MODULE(Flags.MODULE),
-        AUTOMATIC_MODULE(Flags.AUTOMATIC_MODULE),
-        SYSTEM_MODULE(Flags.SYSTEM_MODULE),
         DEPRECATED_ANNOTATION(Flags.DEPRECATED_ANNOTATION),
         DEPRECATED_REMOVAL(Flags.DEPRECATED_REMOVAL),
-        HAS_RESOURCE(Flags.HAS_RESOURCE),
-        POTENTIALLY_AMBIGUOUS(Flags.POTENTIALLY_AMBIGUOUS),
-        ANONCONSTR_BASED(Flags.ANONCONSTR_BASED),
-        NAME_FILLED(Flags.NAME_FILLED),
         PREVIEW_API(Flags.PREVIEW_API),
         PREVIEW_ESSENTIAL_API(Flags.PREVIEW_ESSENTIAL_API),
-        MATCH_BINDING(Flags.MATCH_BINDING),
-        MATCH_BINDING_TO_OUTER(Flags.MATCH_BINDING_TO_OUTER),
+        BRIDGE(Flags.BRIDGE),
+        PARAMETER(Flags.PARAMETER),
+        VARARGS(Flags.VARARGS),
+        MODULE(Flags.MODULE),
+        ANONCONSTR(Flags.ANONCONSTR),
+        ANONCONSTR_BASED(Flags.ANONCONSTR_BASED),
+        GENERATEDCONSTR(Flags.GENERATEDCONSTR),
+        COMPACT_RECORD_CONSTRUCTOR(Flags.COMPACT_RECORD_CONSTRUCTOR),
+        BODY_ONLY_FINALIZE(Flags.BODY_ONLY_FINALIZE),
         RECORD(Flags.RECORD),
+        GENERATED_MEMBER(Flags.GENERATED_MEMBER),
+        CLASH(Flags.CLASH),
+        BLOCK(Flags.BLOCK),
+        HASINIT(Flags.HASINIT),
+        THROWS(Flags.THROWS),
         SEALED(Flags.SEALED),
         NON_SEALED(Flags.NON_SEALED) {
             @Override

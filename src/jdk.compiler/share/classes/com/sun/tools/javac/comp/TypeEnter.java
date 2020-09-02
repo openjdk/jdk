@@ -186,20 +186,22 @@ public class TypeEnter implements Completer {
         // Suppress some (recursive) MemberEnter invocations
         if (!completionEnabled) {
             // Re-install same completer for next time around and return.
-            Assert.check((sym.flags() & Flags.COMPOUND) == 0);
+            Assert.check(!sym.isFlagSet(TypeSymbolFlags.COMPOUND));
             sym.completer = this;
             return;
         }
 
         try {
+            ClassSymbol csym = (ClassSymbol) sym;
+
             annotate.blockAnnotations();
-            sym.flags_field |= UNATTRIBUTED;
+            csym.setFlag(TypeSymbolFlags.UNATTRIBUTED);
 
             List<Env<AttrContext>> queue;
 
             dependencies.push((ClassSymbol) sym, CompletionCause.MEMBER_ENTER);
             try {
-                queue = completeClass.completeEnvs(List.of(typeEnvs.get((ClassSymbol) sym)));
+                queue = completeClass.completeEnvs(List.of(typeEnvs.get(csym)));
             } finally {
                 dependencies.pop();
             }
@@ -897,7 +899,7 @@ public class TypeEnter implements Completer {
             }
             if (sym.owner.kind == PCK && (sym.flags_field & PUBLIC) == 0 &&
                 !env.toplevel.sourcefile.isNameCompatible(sym.name.toString(),JavaFileObject.Kind.SOURCE)) {
-                sym.flags_field |= AUXILIARY;
+                sym.setFlag(TypeSymbolFlags.AUXILIARY);
             }
         }
     }

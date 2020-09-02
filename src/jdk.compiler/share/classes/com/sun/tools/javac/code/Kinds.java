@@ -320,7 +320,7 @@ public class Kinds {
      */
     public static KindName typeKindName(Type t) {
         if (t.hasTag(TYPEVAR) ||
-            t.hasTag(CLASS) && (t.tsym.flags() & COMPOUND) != 0)
+            t.hasTag(CLASS) && t.tsym.isFlagSet(TypeSymbolFlags.COMPOUND))
             return KindName.BOUND;
         else if (t.hasTag(PACKAGE))
             return KindName.PACKAGE;

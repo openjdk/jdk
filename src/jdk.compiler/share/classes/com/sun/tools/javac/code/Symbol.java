@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.Flags;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Inherited;
 import java.util.Collections;
@@ -93,7 +94,6 @@ import static com.sun.tools.javac.jvm.ByteCodes.string_add;
  *  deletion without notice.</b>
  */
 public abstract class Symbol extends AnnoConstruct implements PoolConstant, Element {
-
     /** The kind of this symbol.
      *  @see Kinds
      */
@@ -366,6 +366,19 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
     }
 
+    public boolean isFlagSet(TypeSymbolFlags flag) {
+        return false;
+    }
+    public boolean isFlagSetNoComplete(TypeSymbolFlags flag) {
+        return false;
+    }
+    public boolean isFlagSet(MethodSymbolFlags flag) {
+        return false;
+    }
+    public boolean isFlagSet(VarSymbolFlags flag) {
+        return false;
+    }
+
     public boolean isDeprecated() {
         return (flags_field & DEPRECATED) != 0;
     }
@@ -434,6 +447,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         return (flags_field & FINAL) != 0;
     }
 
+    public boolean isFinalOrEffectivellyFinal() {
+        return isFinal() ||
+                this.isFlagSet(VarSymbolFlags.EFFECTIVELY_FINAL);
+    }
+
    /** Is this symbol declared (directly or indirectly) local
      *  to a method or variable initializer?
      *  Also includes fields of inner classes which are in
@@ -500,7 +518,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
      */
     public boolean hasOuterInstance() {
         return
-            type.getEnclosingType().hasTag(CLASS) && (flags() & (INTERFACE | NOOUTERTHIS)) == 0;
+            type.getEnclosingType().hasTag(CLASS) && (flags() & INTERFACE) == 0 && !this.isFlagSet(TypeSymbolFlags.NOOUTERTHIS);
     }
 
     /** The closest enclosing class of this symbol's declaration.
@@ -631,7 +649,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                     sup = sup.type.getUpperBound().tsym;
                 if (sup.type.isErroneous())
                     return true; // error recovery
-                if ((sup.flags() & COMPOUND) != 0)
+                if (sup.isFlagSet(TypeSymbolFlags.COMPOUND))
                     continue;
                 if (sup.packge() != thisPackage)
                     return false;
@@ -823,6 +841,22 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             if (prefix == null || prefix == prefix.table.names.empty)
                 return name;
             else return prefix.append(sep, name);
+        }
+
+        public boolean isFlagSet(TypeSymbolFlags flag) {
+            return (flags() & flag.mask) != 0;
+        }
+
+        public boolean isFlagSetNoComplete(TypeSymbolFlags flag) {
+            return (flags_field & flag.mask) != 0;
+        }
+
+        public void setFlag(TypeSymbolFlags flag) {
+            flags_field |= flag.mask;
+        }
+
+        public void clearFlag(TypeSymbolFlags flag) {
+            flags_field &= ~flag.mask;
         }
 
         /**
@@ -1208,7 +1242,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
          *  been seen within it.
          */
         public boolean exists() {
-            return (flags_field & EXISTS) != 0;
+            return this.isFlagSetNoComplete(TypeSymbolFlags.EXISTS);
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
@@ -1688,6 +1722,18 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return new VarSymbol(flags_field, name, types.memberType(site, this), owner);
         }
 
+        public boolean isFlagSet(VarSymbolFlags flag) {
+            return (flags_field & flag.mask) != 0;
+        }
+
+        public void setFlag(VarSymbolFlags flag) {
+            flags_field |= flag.mask;
+        }
+
+        public void clearFlag(VarSymbolFlags flag) {
+            flags_field &= ~flag.mask;
+        }
+
         @DefinedBy(Api.LANGUAGE_MODEL)
         public ElementKind getKind() {
             long flags = flags();
@@ -1702,7 +1748,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 return ElementKind.FIELD;
             } else if (isResourceVariable()) {
                 return ElementKind.RESOURCE_VARIABLE;
-            } else if ((flags & MATCH_BINDING) != 0) {
+            } else if (this.isFlagSet(VarSymbolFlags.MATCH_BINDING)) {
                 @SuppressWarnings("preview")
                 ElementKind kind = ElementKind.BINDING_VARIABLE;
                 return kind;
@@ -1825,8 +1871,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
         @Override
         public Name getSimpleName() {
-            if ((flags_field & NAME_FILLED) == 0) {
-                flags_field |= NAME_FILLED;
+            if (!this.isFlagSet(VarSymbolFlags.NAME_FILLED)) {
+                this.setFlag(VarSymbolFlags.NAME_FILLED);
                 Symbol rootPack = this;
                 while (rootPack != null && !(rootPack instanceof RootPackageSymbol)) {
                     rootPack = rootPack.owner;
@@ -1847,7 +1893,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
     public static class BindingSymbol extends VarSymbol {
 
         public BindingSymbol(Name name, Type type, Symbol owner) {
-            super(Flags.FINAL | Flags.HASINIT | Flags.MATCH_BINDING, name, type, owner);
+            super(Flags.FINAL | Flags.HASINIT, name, type, owner);
+            this.setFlag(VarSymbolFlags.MATCH_BINDING);
         }
 
         public boolean isAliasFor(BindingSymbol b) {
@@ -1859,11 +1906,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         public void preserveBinding() {
-            flags_field |= Flags.MATCH_BINDING_TO_OUTER;
+            this.setFlag(VarSymbolFlags.MATCH_BINDING_TO_OUTER);
         }
 
         public boolean isPreserved() {
-            return (flags_field & Flags.MATCH_BINDING_TO_OUTER) != 0;
+            return this.isFlagSet(VarSymbolFlags.MATCH_BINDING_TO_OUTER);
         }
     }
 
@@ -1894,6 +1941,18 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         public MethodSymbol(long flags, Name name, Type type, Symbol owner) {
             super(MTH, flags, name, type, owner);
             if (owner.type.hasTag(TYPEVAR)) Assert.error(owner + "." + name);
+        }
+
+        public boolean isFlagSet(MethodSymbolFlags flag) {
+            return (flags_field & flag.mask) != 0;
+        }
+
+        public void setFlag(MethodSymbolFlags flag) {
+            flags_field |= flag.mask;
+        }
+
+        public void clearFlag(MethodSymbolFlags flag) {
+            flags_field &= ~flag.mask;
         }
 
         /** Clone this symbol with new owner.
@@ -2124,7 +2183,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         public boolean isLambdaMethod() {
-            return (flags() & LAMBDA_METHOD) == LAMBDA_METHOD;
+            return this.isFlagSet(MethodSymbolFlags.LAMBDA_METHOD);
         }
 
         /** override this method to point to the original enclosing method if this method symbol represents a synthetic

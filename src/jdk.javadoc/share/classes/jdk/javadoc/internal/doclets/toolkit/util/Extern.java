@@ -46,6 +46,7 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.DocumentationTool;
 
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Flags.TypeSymbolFlags;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -451,7 +452,7 @@ public class Extern {
             return false;
         } else {
             ModuleSymbol msym = (ModuleSymbol) me;
-            return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
+            return msym.isFlagSet(TypeSymbolFlags.AUTOMATIC_MODULE);
         }
     }
 

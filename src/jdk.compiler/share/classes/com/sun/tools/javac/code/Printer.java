@@ -298,7 +298,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
      */
     protected String className(ClassType t, boolean longform, Locale locale) {
         Symbol sym = t.tsym;
-        if (sym.name.length() == 0 && (sym.flags() & COMPOUND) != 0) {
+        if (sym.name.length() == 0 && sym.isFlagSet(TypeSymbolFlags.COMPOUND)) {
             StringBuilder s = new StringBuilder(visit(t.supertype_field, locale));
             for (List<Type> is = t.interfaces_field; is.nonEmpty(); is = is.tail) {
                 s.append('&');

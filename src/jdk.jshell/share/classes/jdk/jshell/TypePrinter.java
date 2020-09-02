@@ -24,7 +24,7 @@
  */
 package jdk.jshell;
 
-import static com.sun.tools.javac.code.Flags.COMPOUND;
+import com.sun.tools.javac.code.Flags.TypeSymbolFlags;
 import static com.sun.tools.javac.code.Kinds.Kind.PCK;
 import com.sun.tools.javac.code.Printer;
 import com.sun.tools.javac.code.Symbol;
@@ -130,7 +130,7 @@ class TypePrinter extends Printer {
     @Override
     protected String className(ClassType t, boolean longform, Locale locale) {
         TypeSymbol sym = t.tsym;
-        if (sym.name.length() == 0 && (sym.flags() & COMPOUND) != 0) {
+        if (sym.name.length() == 0 && sym.isFlagSet(TypeSymbolFlags.COMPOUND)) {
             if (printIntersectionTypes) {
                 return ((IntersectionClassType) t).getExplicitComponents()
                                                   .stream()

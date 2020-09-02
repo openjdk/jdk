@@ -366,7 +366,8 @@ public class Symtab {
         ClassType type = (ClassType)enterClass(java_base, names.fromString(name)).type;
         ClassSymbol sym = (ClassSymbol)type.tsym;
         sym.completer = Completer.NULL_COMPLETER;
-        sym.flags_field = PUBLIC|ACYCLIC|ANNOTATION|INTERFACE;
+        sym.flags_field = PUBLIC|ANNOTATION|INTERFACE;
+        sym.setFlag(TypeSymbolFlags.ACYCLIC);
         sym.erasure_field = type;
         sym.members_field = WriteableScope.create(sym);
         type.typarams_field = List.nil();
@@ -447,10 +448,12 @@ public class Symtab {
         };
 
         // create the error symbols
-        errSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.any, null, rootPackage);
+        errSymbol = new ClassSymbol(PUBLIC|STATIC, names.any, null, rootPackage);
+        errSymbol.setFlag(TypeSymbolFlags.ACYCLIC);
         errType = new ErrorType(errSymbol, Type.noType);
 
-        unknownSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.fromString("<any?>"), null, rootPackage);
+        unknownSymbol = new ClassSymbol(PUBLIC|STATIC, names.fromString("<any?>"), null, rootPackage);
+        unknownSymbol.setFlag(TypeSymbolFlags.ACYCLIC);
         unknownSymbol.members_field = new Scope.ErrorScope(unknownSymbol);
         unknownSymbol.type = unknownType;
 
@@ -469,18 +472,22 @@ public class Symtab {
         initType(unknownType, unknownSymbol);
 
         // the builtin class of all arrays
-        arrayClass = new ClassSymbol(PUBLIC|ACYCLIC, names.Array, noSymbol);
+        arrayClass = new ClassSymbol(PUBLIC, names.Array, noSymbol);
+        arrayClass.setFlag(TypeSymbolFlags.ACYCLIC);
 
         // VGJ
-        boundClass = new ClassSymbol(PUBLIC|ACYCLIC, names.Bound, noSymbol);
+        boundClass = new ClassSymbol(PUBLIC, names.Bound, noSymbol);
+        boundClass.setFlag(TypeSymbolFlags.ACYCLIC);
         boundClass.members_field = new Scope.ErrorScope(boundClass);
 
         // the builtin class of all methods
-        methodClass = new ClassSymbol(PUBLIC|ACYCLIC, names.Method, noSymbol);
+        methodClass = new ClassSymbol(PUBLIC, names.Method, noSymbol);
+        methodClass.setFlag(TypeSymbolFlags.ACYCLIC);
         methodClass.members_field = new Scope.ErrorScope(boundClass);
 
         // Create class to hold all predefined constants and operations.
-        predefClass = new ClassSymbol(PUBLIC|ACYCLIC, names.empty, rootPackage);
+        predefClass = new ClassSymbol(PUBLIC, names.empty, rootPackage);
+        predefClass.setFlag(TypeSymbolFlags.ACYCLIC);
         WriteableScope scope = WriteableScope.create(predefClass);
         predefClass.members_field = scope;
 
@@ -546,11 +553,12 @@ public class Symtab {
         classLoaderType = enterClass("java.lang.ClassLoader");
         enumSym = enterClass(java_base, names.java_lang_Enum);
         enumFinalFinalize =
-            new MethodSymbol(PROTECTED|FINAL|HYPOTHETICAL,
+            new MethodSymbol(PROTECTED|FINAL,
                              names.finalize,
                              new MethodType(List.nil(), voidType,
                                             List.nil(), methodClass),
                              enumSym);
+        enumFinalFinalize.setFlag(MethodSymbolFlags.HYPOTHETICAL);
         listType = enterClass("java.util.List");
         collectionsType = enterClass("java.util.Collections");
         comparableType = enterClass("java.lang.Comparable");
@@ -797,7 +805,7 @@ public class Symtab {
         unnamedPackage.modle = module;
         //we cannot use a method reference below, as initialCompleter might be null now
         unnamedPackage.completer = s -> initialCompleter.complete(s);
-        unnamedPackage.flags_field |= EXISTS;
+        unnamedPackage.setFlag(TypeSymbolFlags.EXISTS);
         module.unnamedPackage = unnamedPackage;
     }
 

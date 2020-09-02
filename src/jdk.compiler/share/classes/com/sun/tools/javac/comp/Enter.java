@@ -370,7 +370,7 @@ public class Enter extends JCTree.Visitor {
                 typeEnvs.put(tree.packge, packageEnv);
 
                 for (Symbol q = tree.packge; q != null && q.kind == PCK; q = q.owner)
-                    q.flags_field |= EXISTS;
+                    ((PackageSymbol) q).setFlag(TypeSymbolFlags.EXISTS);
 
                 Name name = names.package_info;
                 ClassSymbol c = syms.enterClass(tree.modle, name, tree.packge);
@@ -399,7 +399,7 @@ public class Enter extends JCTree.Visitor {
             // We are seeing a toplevel class.
             PackageSymbol packge = (PackageSymbol)owner;
             for (Symbol q = packge; q != null && q.kind == PCK; q = q.owner)
-                q.flags_field |= EXISTS;
+                ((PackageSymbol) q).setFlag(TypeSymbolFlags.EXISTS);
             c = syms.enterClass(env.toplevel.modle, tree.name, packge);
             packge.members().enterIfAbsent(c);
             if ((tree.mods.flags & PUBLIC) != 0 && !classNameMatchesFileName(c, env)) {

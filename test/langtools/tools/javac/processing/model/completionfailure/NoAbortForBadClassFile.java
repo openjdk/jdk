@@ -28,7 +28,7 @@
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
- *      jdk.compiler/com.sun.tools.javac.code
+ *      jdk.compiler/com.sun.tools.javac.code:+open
  *      jdk.compiler/com.sun.tools.javac.comp
  *      jdk.compiler/com.sun.tools.javac.jvm
  *      jdk.compiler/com.sun.tools.javac.main
@@ -52,6 +52,7 @@ import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.DeferredCompletionFailureHandler;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Flags.TypeSymbolFlags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symtab;
@@ -60,6 +61,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
+import java.lang.reflect.Field;
 import toolbox.Task;
 import toolbox.Task.Expect;
 
@@ -213,7 +215,8 @@ public class NoAbortForBadClassFile extends TestRunner {
 
             long flags = sym.flags_field;
 
-            flags &= ~(Flags.CLASS_SEEN | Flags.SOURCE_SEEN);
+            flags &= ~(mask(TypeSymbolFlags.CLASS_SEEN) |
+                       mask(TypeSymbolFlags.SOURCE_SEEN));
 
             result.add("sym: " + sym.flatname + ", " + sym.owner.flatName() +
                        ", " + sym.type + ", " + sym.members_field + ", " + flags);
@@ -226,6 +229,15 @@ public class NoAbortForBadClassFile extends TestRunner {
         return p.getFileName().toString().replace(".class", "");
     }
 
+    private static long mask(TypeSymbolFlags flag) {
+        try {
+            Field mask = TypeSymbolFlags.class.getDeclaredField("mask");
+            mask.setAccessible(true);
+            return mask.getLong(flag);
+        } catch (ReflectiveOperationException ex) {
+            throw new AssertionError(ex.getMessage(), ex);
+        }
+    }
     private static class TestClassReader extends ClassReader {
         public static void preRegister(Context ctx) {
             ctx.put(classReaderKey, (Factory<ClassReader>) c -> new TestClassReader(ctx));

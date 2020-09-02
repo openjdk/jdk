@@ -911,10 +911,10 @@ public class TransTypes extends TreeTranslator {
         }
 
         Env<AttrContext> myEnv = enter.getEnv(c);
-        if (myEnv == null || (c.flags_field & TYPE_TRANSLATED) != 0) {
+        if (myEnv == null || c.isFlagSetNoComplete(TypeSymbolFlags.TYPE_TRANSLATED)) {
             return;
         }
-        c.flags_field |= TYPE_TRANSLATED;
+        c.setFlag(TypeSymbolFlags.TYPE_TRANSLATED);
 
         /*  The two assertions below are set for early detection of any attempt
          *  to translate a class that:
