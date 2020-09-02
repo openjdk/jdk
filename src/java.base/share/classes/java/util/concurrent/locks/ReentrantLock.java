@@ -118,22 +118,29 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     abstract static class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = -5179523762034025860L;
 
-        /**
-         * Performs non-fair tryLock.
-         */
+        // Performs non-fair tryLock.
+        // 非公正的方式获取锁
         @ReservedStackAccess
         final boolean tryLock() {
+            // 获取当前线程的引用
             Thread current = Thread.currentThread();
-            int c = getState();
-            if (c == 0) {
+            int concurrentState = getState();
+
+            // 如果锁没有被任何线程持有
+            if (concurrentState == 0) {
+                // 如果更新锁成功、则将当前线程设置有独占线程、并返回true
                 if (compareAndSetState(0, 1)) {
                     setExclusiveOwnerThread(current);
                     return true;
                 }
-            } else if (getExclusiveOwnerThread() == current) {
-                if (++c < 0) // overflow
+            }
+            // 如果持有锁的线程是当前线程，则更新状态重入次数
+            else if (getExclusiveOwnerThread() == current) {
+                if (++concurrentState < 0) // overflow
                     throw new Error("Maximum lock count exceeded");
-                setState(c);
+                // 上边代码++了，这里更新状态、以说明锁重入次数
+                // fixme Note：因为同一个线程不可能并行的走到这里，所以不可能发生并发state错误的问题
+                setState(concurrentState);
                 return true;
             }
             return false;
@@ -147,6 +154,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          */
         abstract boolean initialTryLock();
 
+        //
         @ReservedStackAccess
         final void lock() {
             if (!initialTryLock())
@@ -273,12 +281,19 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             return false;
         }
 
-        /**
-         * Acquires only if thread is first waiter or empty
-         */
+
+        // Acquires only if thread is first waiter or empty
+        // 只有当前线程是
+        //      第一个节点的waiter时(重入锁)
+        //      等待队列为空时
+        // 当前线程才会成功获取锁
         protected final boolean tryAcquire(int acquires) {
-            if (getState() == 0 && !hasQueuedPredecessors() &&
-                compareAndSetState(0, acquires)) {
+            /**
+             * 如果获取锁成功、则将当前线程设置为独占线程、并返回true
+             */
+            if (getState() == 0 &&  // 如果锁没有被任何线程持有
+                !hasQueuedPredecessors() && //当前线程之前没有任何线程在条件队列排队
+                compareAndSetState(0, acquires)) { // CAS更新锁状态成功
                 setExclusiveOwnerThread(Thread.currentThread());
                 return true;
             }

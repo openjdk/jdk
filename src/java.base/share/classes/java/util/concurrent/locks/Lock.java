@@ -170,10 +170,16 @@ public interface Lock {
 
     /**
      * Acquires the lock.
+     * 阻塞的获取锁。
      *
      * <p>If the lock is not available then the current thread becomes
-     * disabled for thread scheduling purposes and lies dormant until the
+     * disabled for thread scheduling purposes and lies dormant(休眠的) until the
      * lock has been acquired.
+     *
+     * 尝试获取锁，如果获取不了则线程会一直阻塞休眠、直到锁可以成功获取。
+     *
+     *
+     *
      *
      * <p><b>Implementation Considerations</b>
      *

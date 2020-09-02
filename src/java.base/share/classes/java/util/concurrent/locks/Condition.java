@@ -180,8 +180,8 @@ import java.util.concurrent.TimeUnit;
 public interface Condition {
 
     /**
-     * Causes the current thread to wait until it is signalled or
-     * {@linkplain Thread#interrupt interrupted}.
+     * Causes the current thread to wait until it is signalled or {@linkplain Thread#interrupt interrupted}.
+     * 阻塞的等待、直到其他线程唤醒、或者当前线程被中断。
      *
      * <p>The lock associated with this {@code Condition} is atomically
      * released and the current thread becomes disabled for thread scheduling
@@ -233,6 +233,7 @@ public interface Condition {
 
     /**
      * Causes the current thread to wait until it is signalled.
+     * 阻塞的等待、直到被其他线程唤醒，不可中断、即不感知中断状态。
      *
      * <p>The lock associated with this condition is atomically
      * released and the current thread becomes disabled for thread scheduling
@@ -268,8 +269,11 @@ public interface Condition {
     void awaitUninterruptibly();
 
     /**
-     * Causes the current thread to wait until it is signalled or interrupted,
+     * Causes the current thread to wait
+     * until it is signalled or interrupted,
      * or the specified waiting time elapses.
+     *
+     * 阻塞的等待、直到被唤醒、中断、或者过了指定时间。
      *
      * <p>The lock associated with this condition is atomically
      * released and the current thread becomes disabled for thread scheduling
@@ -363,9 +367,12 @@ public interface Condition {
 
     /**
      * Causes the current thread to wait until it is signalled or interrupted,
-     * or the specified waiting time elapses. This method is behaviorally
-     * equivalent to:
+     * or the specified waiting time elapses.
+     *
+     * This method is behaviorally equivalent to:
      * <pre> {@code awaitNanos(unit.toNanos(time)) > 0}</pre>
+     *
+     * 阻塞的等待、直到被唤醒、中断、或者过了指定时间。方法同awaitNanos一样的
      *
      * @param time the maximum time to wait
      * @param unit the time unit of the {@code time} argument
@@ -379,6 +386,8 @@ public interface Condition {
     /**
      * Causes the current thread to wait until it is signalled or interrupted,
      * or the specified deadline elapses.
+     *
+     * 阻塞、直到被唤醒、中断和到达指定时间。
      *
      * <p>The lock associated with this condition is atomically
      * released and the current thread becomes disabled for thread scheduling
@@ -455,19 +464,23 @@ public interface Condition {
 
     /**
      * Wakes up one waiting thread.
+     * 唤醒一个等待线程。
      *
-     * <p>If any threads are waiting on this condition then one
-     * is selected for waking up. That thread must then re-acquire the
-     * lock before returning from {@code await}.
+     * <p>If any threads are waiting on this condition then one is selected for waking up.
+     * That thread must then re-acquire the lock before returning from {@code await}.
+     *
+     * 选择任一等待在条件队列的线程唤醒、fixme 该线程在从 await() 状态苏醒前必须重新获取锁——保证原子性。
      *
      * <p><b>Implementation Considerations</b>
      *
-     * <p>An implementation may (and typically does) require that the
-     * current thread hold the lock associated with this {@code
-     * Condition} when this method is called. Implementations must
-     * document this precondition and any actions taken if the lock is
-     * not held. Typically, an exception such as {@link
-     * IllegalMonitorStateException} will be thrown.
+     * <p>An implementation may (and typically does) require that the current thread hold the lock
+     * associated with this {@code Condition} when this method is called.
+     * Implementations must document this precondition and any actions taken if the lock is not held.
+     * Typically, an exception such as {@link IllegalMonitorStateException} will be thrown.
+     *
+     * <p><b>注意事项</b>
+     *
+     *
      */
     void signal();
 

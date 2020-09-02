@@ -28,13 +28,17 @@ package jdk.internal;
 import java.lang.annotation.*;
 
 /**
+ * JVM会识别使用该注解标识的方法。该注解表示方法可能被HotSpotVM增强intrinsified。
+ *
+ * 该注解是java lib内部使用，因此不应该和任何应用代码产生关联。
+ *
  * The {@code @HotSpotIntrinsicCandidate} annotation is specific to the
  * HotSpot Virtual Machine. It indicates that an annotated method
- * may be (but is not guaranteed to be) intrinsified by the HotSpot VM. A method
+ * may be (but is not guaranteed to be) intrinsified(加强的) by the HotSpot VM. A method
  * is intrinsified if the HotSpot VM replaces the annotated method with hand-written
  * assembly and/or hand-written compiler IR -- a compiler intrinsic -- to improve
  * performance. The {@code @HotSpotIntrinsicCandidate} annotation is internal to the
- * Java libraries and is therefore not supposed to have any relevance for application
+ * Java libraries and is therefore not supposed to have any relevance(关联的) for application
  * code.
  *
  * Maintainers of the Java libraries must consider the following when

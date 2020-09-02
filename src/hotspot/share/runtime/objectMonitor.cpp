@@ -1610,10 +1610,15 @@ void ObjectMonitor::INotify(Thread * Self) {
 // that suggests a lost wakeup bug.
 
 void ObjectMonitor::notify(TRAPS) {
-  CHECK_OWNER();  // Throws IMSE if not owner.
+  // 检查当前线程是否可以调用notify()
+  // Throws IMSE if not owner.
+  CHECK_OWNER();
+
+  // 如果等待队列为空、则直接返回
   if (_WaitSet == NULL) {
     return;
   }
+
   DTRACE_MONITOR_PROBE(notify, this, object(), THREAD);
   INotify(THREAD);
   OM_PERFDATA_OP(Notifications, inc(1));

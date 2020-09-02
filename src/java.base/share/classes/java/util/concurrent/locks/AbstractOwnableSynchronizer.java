@@ -53,15 +53,14 @@ public abstract class AbstractOwnableSynchronizer
     /** Use serial ID even though all fields transient. */
     private static final long serialVersionUID = 3737899427754241961L;
 
+    // The current owner of exclusive mode synchronization.
+    // 拥有独占模式同步器的线程。fixme 该类都是此变量的 getter 和 setter 方法
+    private transient Thread exclusiveOwnerThread;
+
     /**
      * Empty constructor for use by subclasses.
      */
     protected AbstractOwnableSynchronizer() { }
-
-    /**
-     * The current owner of exclusive mode synchronization.
-     */
-    private transient Thread exclusiveOwnerThread;
 
     /**
      * Sets the thread that currently owns exclusive access.

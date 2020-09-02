@@ -2104,8 +2104,9 @@ public final class Unsafe {
     public native void putReferenceVolatile(Object o, long offset, Object x);
 
     /** Volatile version of {@link #getInt(Object, long)}  */
+
     @HotSpotIntrinsicCandidate
-    public native int     getIntVolatile(Object o, long offset);
+    public native int getIntVolatile(Object o, long offset);
 
     /** Volatile version of {@link #putInt(Object, long, int)}  */
     @HotSpotIntrinsicCandidate
@@ -3237,14 +3238,15 @@ public final class Unsafe {
     }
 
     /**
-     * Atomically replaces the current value of a field or array element within
-     * the given object with the result of bitwise AND between the current value
-     * and mask.
+     * "用当前值和掩码之间按位与的结果以原子方式替换给定对象内字段或数组元素的当前值。"
      *
-     * @param o object/array to update the field/element in
-     * @param offset field/element offset
-     * @param mask the mask value
-     * @return the previous value
+     * Atomically replaces the current value of a field or array element within the given object
+     * with the result of bitwise AND between the current value and mask.
+     *
+     * @param o object/array to update the field/element in 包含要被更新的 字段/元素 的 对象/数组
+     * @param offset field/element offset 字段/元素 的偏移量
+     * @param mask the mask value 掩码值
+     * @return the previous value 返回之前的值
      * @since 9
      */
     @ForceInline
@@ -3252,8 +3254,7 @@ public final class Unsafe {
         int current;
         do {
             current = getIntVolatile(o, offset);
-        } while (!weakCompareAndSetInt(o, offset,
-                                                current, current & mask));
+        } while (!weakCompareAndSetInt(o, offset, current, current & mask));
         return current;
     }
 

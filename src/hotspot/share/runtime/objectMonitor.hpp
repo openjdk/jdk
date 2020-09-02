@@ -40,17 +40,39 @@ class ObjectMonitor;
 // knows about ObjectWaiters, so we'll have to reconcile that code.
 // See next_waiter(), first_waiter(), etc.
 
+// 继承了StackObj类型
 class ObjectWaiter : public StackObj {
  public:
-  enum TStates { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER, TS_CXQ };
+    // 线程状态
+    enum TStates {
+        TS_UNDEF, // 未定义
+        TS_READY, // 就绪
+        TS_RUN,  // 运行
+        TS_WAIT, // 等待
+        TS_ENTER, // 持锁？
+        TS_CXQ // todo
+    };
+
+  // 等待 nomitor的下一个线程、前一个线程
   ObjectWaiter* volatile _next;
   ObjectWaiter* volatile _prev;
+
+  // 等待的线程对象
   Thread*       _thread;
+
+  // C++ long数据类型通常为32位。 jlong​​是64位
   jlong         _notifier_tid;
+
   ParkEvent *   _event;
   volatile int  _notified;
+
+  // 当前线程的状态
   volatile TStates TState;
-  bool          _active;           // Contention monitoring is enabled
+
+  // Contention monitoring is enabled
+  // 启用 "竞争 监控"
+  bool          _active;
+
  public:
   ObjectWaiter(Thread* thread);
 
@@ -127,28 +149,36 @@ class ObjectWaiter : public StackObj {
 #endif
 
 class ObjectMonitor {
+  // 关键字 friend class: 类的 友元函数/友元类 是定义在类外部，
+  // 但有权访问类的所有私有（private）成员和保护（protected）成员
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
 
+  // 同步代码期望头字段在偏移量为0的位置；
   // The sync code expects the header field to be at offset zero (0).
   // Enforced by the assert() in header_addr().
   volatile markWord _header;        // displaced object header word - mark
   void* volatile _object;           // backward object pointer - strong root
+
+  // 定义名称为 AllocationState/分配状态 的枚举：空闲、新、旧
   typedef enum {
     Free = 0,  // Free must be 0 for monitor to be free after memset(..,0,..).
     New,
     Old
   } AllocationState;
+
   AllocationState _allocation_state;
+
   // Separate _header and _owner on different cache lines since both can
   // have busy multi-threaded access. _header, _object and _allocation_state
-  // are set at initial inflation. _object and _allocation_state don't
+  // are set at initial inflation(通货膨胀). _object and _allocation_state don't
   // change until deflation so _object and _allocation_state are good
   // choices to share the cache line with _header.
-  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(volatile markWord) +
-                        sizeof(void* volatile) + sizeof(AllocationState));
+  // 将不同缓存行上的 _header 和 _owner分开，因为不同缓存上的_header、_owner可以有多线程的方法
+  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(volatile markWord) +sizeof(void* volatile) + sizeof(AllocationState));
+
   // Used by async deflation as a marker in the _owner field:
   #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
   void* volatile _owner;            // pointer to owning thread OR BasicLock
@@ -157,8 +187,8 @@ class ObjectMonitor {
   // both can have busy multi-threaded access. _previous_owner_tid is only
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
-  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
-                        sizeof(volatile jlong));
+  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +sizeof(volatile jlong));
+
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
   ObjectWaiter* volatile _EntryList;  // Threads blocked on entry or reentry.
@@ -177,7 +207,9 @@ class ObjectMonitor {
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectSynchronizer::deflate_monitor_using_JT().
  protected:
-  ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
+  // LL of threads wait()ing on the monitor
+  // 等待监视器的线程队列
+  ObjectWaiter* volatile _WaitSet;
   volatile jint  _waiters;          // number of waiting threads
  private:
   volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock

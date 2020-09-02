@@ -254,6 +254,7 @@ public class Thread implements Runnable {
 
     /**
      * Returns a reference to the currently executing thread object.
+     * 获取当前线程的引用。
      *
      * @return  the currently executing thread.
      */
@@ -1353,6 +1354,7 @@ public class Thread implements Runnable {
     }
 
     /**
+     * 等待次线程结束后在继续执行。
      * Waits for this thread to die.
      *
      * <p> An invocation of this method behaves in exactly the same
@@ -1775,40 +1777,53 @@ public class Thread implements Runnable {
      * @see #getState
      */
     public enum State {
-        /**
-         * Thread state for a thread which has not yet started.
-         */
+        // Thread state for a thread which has not yet started.
+        // 没有调用过 start() 的线程
         NEW,
 
         /**
-         * Thread state for a runnable thread.  A thread in the runnable
-         * state is executing in the Java virtual machine but it may
-         * be waiting for other resources from the operating system
-         * such as processor.
+         * 正在运行的线程状态。
+         *
+         * 一个RUNNABLE的线程在JVM层面是正在执行的，但是可能在等待系统资源、例如cpu时间片。
+         *
+         * Thread state for a runnable thread.
+         * A thread in the runnable state is executing in the Java virtual machine
+         * but it may be waiting for other resources from the operating system such as processor(处理器).
          */
         RUNNABLE,
 
         /**
+         * fixme
+         *      等待监视器锁的线程状态
+         *
          * Thread state for a thread blocked waiting for a monitor lock.
-         * A thread in the blocked state is waiting for a monitor lock
-         * to enter a synchronized block/method or
-         * reenter a synchronized block/method after calling
-         * {@link Object#wait() Object.wait}.
+         * A thread in the blocked state is waiting for a monitor lock to enter
+         * a synchronized block/method or reenter a synchronized block/method after calling。
+         *
+         * Object.wait: {@link Object#wait() }.
          */
         BLOCKED,
 
         /**
          * Thread state for a waiting thread.
-         * A thread is in the waiting state due to calling one of the
-         * following methods:
+         * A thread is in the waiting state due to calling one of the following methods:
+         * fixme:
+         *        调用如下之一的线程会处于WAITING状态
+         *        {
+         *              Object.wait()、没有超时时间； Thread.State: WAITING (on object monitor)
+         *              Thread.join()、没有超时时间； Thread.State: WAITING (on object monitor)
+         *              LockSupport.park(); Thread.State: WAITING (parking)、在 lock()方法中调用。
+         *        }
+         *        处于WAITING状态的线程是等待其他的线程执行一些动作、例如释放锁wait()和结束join
+         *        或者本身挂起来 lock()/没有时间
+         *
          * <ul>
          *   <li>{@link Object#wait() Object.wait} with no timeout</li>
          *   <li>{@link #join() Thread.join} with no timeout</li>
          *   <li>{@link LockSupport#park() LockSupport.park}</li>
          * </ul>
          *
-         * <p>A thread in the waiting state is waiting for another thread to
-         * perform a particular action.
+         * <p>A thread in the waiting state is waiting for another thread to perform a particular action.
          *
          * For example, a thread that has called {@code Object.wait()}
          * on an object is waiting for another thread to call
@@ -1819,6 +1834,10 @@ public class Thread implements Runnable {
         WAITING,
 
         /**
+         * fixme
+         *      和WAITING唯一的区别是、带有等待时长。
+         *
+         *
          * Thread state for a waiting thread with a specified waiting time.
          * A thread is in the timed waiting state due to calling one of
          * the following methods with a specified positive waiting time:
