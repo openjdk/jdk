@@ -28,6 +28,8 @@
  * @summary Unit tests for supplementary character support (JSR-204)
  */
 
+import java.util.HexFormat;
+
 public class Supplementary {
 
     public static void main(String[] args) {
@@ -401,15 +403,13 @@ public class Supplementary {
     }
 
     private static String toHexString(String s) {
-        StringBuffer sb = new StringBuffer();
+        HexFormat format = HexFormat.of();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
 
             sb.append(" 0x");
-            if (c < 0x10) sb.append('0');
-            if (c < 0x100) sb.append('0');
-            if (c < 0x1000) sb.append('0');
-            sb.append(Integer.toHexString(c));
+            sb.append(format.toHexDigits(c));
         }
         sb.append(' ');
         return sb.toString();

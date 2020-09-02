@@ -26,6 +26,7 @@
 package javax.net.ssl;
 
 import java.util.Arrays;
+import java.util.HexFormat;
 
 /**
  * Instances of this class represent a server name in a Server Name
@@ -51,9 +52,6 @@ public abstract class SNIServerName {
 
     // the encoded value of the server name
     private final byte[] encoded;
-
-    // the hex digitals
-    private static final char[] HEXES = "0123456789ABCDEF".toCharArray();
 
     /**
      * Creates an {@code SNIServerName} using the specified name type and
@@ -192,22 +190,7 @@ public abstract class SNIServerName {
         if (bytes.length == 0) {
             return "(empty)";
         }
-
-        StringBuilder sb = new StringBuilder(bytes.length * 3 - 1);
-        boolean isInitial = true;
-        for (byte b : bytes) {
-            if (isInitial) {
-                isInitial = false;
-            } else {
-                sb.append(':');
-            }
-
-            int k = b & 0xFF;
-            sb.append(HEXES[k >>> 4]);
-            sb.append(HEXES[k & 0xF]);
-        }
-
-        return sb.toString();
+        return HexFormat.ofDelimiter(":").withUppercase().formatHex(bytes);
     }
 }
 

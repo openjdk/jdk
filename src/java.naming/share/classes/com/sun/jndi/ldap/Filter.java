@@ -29,6 +29,7 @@ import javax.naming.NamingException;
 import javax.naming.directory.InvalidSearchFilterException;
 
 import java.io.IOException;
+import java.util.HexFormat;
 
 /**
  * LDAP (RFC-1960) and LDAPv3 (RFC-2254) search filters.
@@ -189,24 +190,6 @@ final class Filter {
 
     }
 
-    /**
-     * convert character 'c' that represents a hexadecimal digit to an integer.
-     * if 'c' is not a hexadecimal digit [0-9A-Fa-f], -1 is returned.
-     * otherwise the converted value is returned.
-     */
-    private static int hexchar2int( byte c ) {
-        if ( c >= '0' && c <= '9' ) {
-            return( c - '0' );
-        }
-        if ( c >= 'A' && c <= 'F' ) {
-            return( c - 'A' + 10 );
-        }
-        if ( c >= 'a' && c <= 'f' ) {
-            return( c - 'a' + 10 );
-        }
-        return( -1 );
-    }
-
     // called by the LdapClient.compare method
     static byte[] unescapeFilterValue(byte[] orig, int start, int end)
         throws NamingException {
@@ -225,7 +208,7 @@ final class Filter {
             ch = orig[i];
             if (escape) {
                 // Try LDAP V3 escape (\xx)
-                if ((ival = hexchar2int(ch)) < 0) {
+                if ((ival = Character.digit(ch, 16)) < 0) {
 
                     /**
                      * If there is no hex char following a '\' when

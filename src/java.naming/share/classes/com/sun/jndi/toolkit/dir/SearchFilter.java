@@ -27,6 +27,7 @@ package com.sun.jndi.toolkit.dir;
 import javax.naming.*;
 import javax.naming.directory.*;
 import java.util.Enumeration;
+import java.util.HexFormat;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.Locale;
@@ -466,26 +467,6 @@ public class SearchFilter implements AttrFilter {
         return answer;
     }
 
-    // Writes the hex representation of a byte to a StringBuffer.
-    private static void hexDigit(StringBuffer buf, byte x) {
-        char c;
-
-        c = (char) ((x >> 4) & 0xf);
-        if (c > 9)
-            c = (char) ((c-10) + 'A');
-        else
-            c = (char)(c + '0');
-
-        buf.append(c);
-        c = (char) (x & 0xf);
-        if (c > 9)
-            c = (char)((c-10) + 'A');
-        else
-            c = (char)(c + '0');
-        buf.append(c);
-    }
-
-
     /**
       * Returns the string representation of an object (such as an attr value).
       * If obj is a byte array, encode each item as \xx, where xx is hex encoding
@@ -506,13 +487,9 @@ public class SearchFilter implements AttrFilter {
 
         if (obj instanceof byte[]) {
             // binary data must be encoded as \hh where hh is a hex char
+            HexFormat hex = HexFormat.of().withUppercase().withPrefix("\\");
             byte[] bytes = (byte[])obj;
-            StringBuffer b1 = new StringBuffer(bytes.length*3);
-            for (int i = 0; i < bytes.length; i++) {
-                b1.append('\\');
-                hexDigit(b1, bytes[i]);
-            }
-            return b1.toString();
+            return hex.formatHex(bytes);
         }
         if (!(obj instanceof String)) {
             str = obj.toString();
