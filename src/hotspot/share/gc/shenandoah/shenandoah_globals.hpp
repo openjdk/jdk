@@ -106,26 +106,26 @@
           "How much heap should be free before some heuristics trigger the "\
           "initial (learning) cycles. Affects cycle frequency on startup "  \
           "and after drastic state changes, e.g. after degenerated/full "   \
-          "GC cycles. In percents of total heap size.")                     \
+          "GC cycles. In percents of (soft) max heap size.")                \
           range(0,100)                                                      \
                                                                             \
   experimental(uintx, ShenandoahMinFreeThreshold, 10,                       \
           "How much heap should be free before most heuristics trigger the "\
           "collection, even without other triggers. Provides the safety "   \
-          "margin for many heuristics. In percents of total heap size.")    \
+          "margin for many heuristics. In percents of (soft) max heap size.")\
           range(0,100)                                                      \
                                                                             \
   experimental(uintx, ShenandoahAllocationThreshold, 0,                     \
           "How many new allocations should happen since the last GC cycle " \
           "before some heuristics trigger the collection. In percents of "  \
-          "total heap size. Set to zero to effectively disable.")           \
+          "(soft) max heap size. Set to zero to effectively disable.")      \
           range(0,100)                                                      \
                                                                             \
   experimental(uintx, ShenandoahAllocSpikeFactor, 5,                        \
           "How much of heap should some heuristics reserve for absorbing "  \
           "the allocation spikes. Larger value wastes more memory in "      \
           "non-emergency cases, but provides more safety in emergency "     \
-          "cases. In percents of total heap size.")                         \
+          "cases. In percents of (soft) max heap size.")                    \
           range(0,100)                                                      \
                                                                             \
   experimental(uintx, ShenandoahLearningSteps, 5,                           \
