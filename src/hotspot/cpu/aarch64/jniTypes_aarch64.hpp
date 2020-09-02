@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,7 @@ class JNITypes : AllStatic {
   // I.e., they are functionally 'push' operations if they have a 'pos'
   // formal parameter.  Note that jlong's and jdouble's are written
   // _in reverse_ of the order in which they appear in the interpreter
-  // stack.  This is because call stubs (see stubGenerator_sparc.cpp)
+  // stack.  This is because call stubs (see stubGenerator_arm.cpp)
   // reverse the argument list constructed by JavaCallArguments (see
   // javaCalls.hpp).
 

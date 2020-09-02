@@ -3033,7 +3033,7 @@ void TemplateTable::putstatic(int byte_no) {
   putfield_or_static(byte_no, true);
 }
 
-// See SPARC. On PPC64, we have a different jvmti_post_field_mod which does the job.
+// On PPC64, we have a different jvmti_post_field_mod which does the job.
 void TemplateTable::jvmti_post_fast_field_mod() {
   __ should_not_reach_here();
 }

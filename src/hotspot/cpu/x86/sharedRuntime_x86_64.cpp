@@ -1120,7 +1120,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 }
 
 // On 64 bit we will store integer like items to the stack as
-// 64 bits items (sparc abi) even though java would only store
+// 64 bits items (x86_32/64 abi) even though java would only store
 // 32bits for a parameter. On 32bit it will simply be 32 bits
 // So this routine will do 32->32 on 32bit and 32->64 on 64bit
 static void move32_64(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
@@ -1246,7 +1246,6 @@ static void float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
   // The calling conventions assures us that each VMregpair is either
   // all really one physical register or adjacent stack slots.
-  // This greatly simplifies the cases here compared to sparc.
 
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
@@ -1275,7 +1274,6 @@ static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
   // The calling conventions assures us that each VMregpair is either
   // all really one physical register or adjacent stack slots.
-  // This greatly simplifies the cases here compared to sparc.
 
   if (src.is_single_phys_reg() ) {
     if (dst.is_single_phys_reg()) {
@@ -1301,7 +1299,6 @@ static void double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
   // The calling conventions assures us that each VMregpair is either
   // all really one physical register or adjacent stack slots.
-  // This greatly simplifies the cases here compared to sparc.
 
   if (src.is_single_phys_reg() ) {
     if (dst.is_single_phys_reg()) {
