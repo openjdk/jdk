@@ -485,7 +485,7 @@ uint G1RemSet::num_par_rem_sets() {
   return G1DirtyCardQueueSet::num_par_ids() + G1ConcurrentRefine::max_num_threads() + MAX2(ConcGCThreads, ParallelGCThreads);
 }
 
-void G1RemSet::initialize(size_t capacity, uint max_regions) {
+void G1RemSet::initialize(uint max_regions) {
   G1FromCardCache::initialize(num_par_rem_sets(), max_regions);
   _scan_state->initialize(max_regions);
 }
