@@ -1960,13 +1960,6 @@ class JavaThread: public Thread {
   void thread_main_inner();
   virtual void post_run();
 
-
- private:
-  GrowableArray<oop>* _array_for_gc;
- public:
-
-  void register_array_for_gc(GrowableArray<oop>* array) { _array_for_gc = array; }
-
  public:
   // Thread local information maintained by JVMTI.
   void set_jvmti_thread_state(JvmtiThreadState *value)                           { _jvmti_thread_state = value; }
