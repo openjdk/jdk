@@ -147,42 +147,38 @@ void ZPhysicalMemory::add_segment(const ZPhysicalMemorySegment& segment) {
 }
 
 bool ZPhysicalMemory::commit_segment(int index, size_t size) {
-  ZPhysicalMemorySegment& segment = _segments.at(index);
+  assert(size <= _segments.at(index).size(), "Invalid size");
+  assert(!_segments.at(index).is_committed(), "Invalid state");
 
-  assert(size <= segment.size(), "Invalid size");
-  assert(!segment.is_committed(), "Invalid state");
-
-  if (size == segment.size()) {
+  if (size == _segments.at(index).size()) {
     // Completely committed
-    segment.set_committed(true);
+    _segments.at(index).set_committed(true);
     return true;
   }
 
   if (size > 0) {
     // Partially committed, split segment
-    insert_segment(index + 1, segment.start() + size, segment.size() - size, false /* committed */);
-    replace_segment(index, segment.start(), size, true /* committed */);
+    insert_segment(index + 1, _segments.at(index).start() + size, _segments.at(index).size() - size, false /* committed */);
+    replace_segment(index, _segments.at(index).start(), size, true /* committed */);
   }
 
   return false;
 }
 
 bool ZPhysicalMemory::uncommit_segment(int index, size_t size) {
-  ZPhysicalMemorySegment& segment = _segments.at(index);
+  assert(size <= _segments.at(index).size(), "Invalid size");
+  assert(_segments.at(index).is_committed(), "Invalid state");
 
-  assert(size <= segment.size(), "Invalid size");
-  assert(segment.is_committed(), "Invalid state");
-
-  if (size == segment.size()) {
+  if (size == _segments.at(index).size()) {
     // Completely uncommitted
-    segment.set_committed(false);
+    _segments.at(index).set_committed(false);
     return true;
   }
 
   if (size > 0) {
     // Partially uncommitted, split segment
-    insert_segment(index + 1, segment.start() + size, segment.size() - size, true /* committed */);
-    replace_segment(index, segment.start(), size, false /* committed */);
+    insert_segment(index + 1, _segments.at(index).start() + size, _segments.at(index).size() - size, true /* committed */);
+    replace_segment(index, _segments.at(index).start(), size, false /* committed */);
   }
 
   return false;
