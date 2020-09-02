@@ -101,10 +101,10 @@ size_t ZVirtualMemoryManager::reserve_discontiguous(size_t size) {
 
 bool ZVirtualMemoryManager::reserve_contiguous(size_t size) {
   // Allow at most 8192 attempts spread evenly across [0, ZAddressOffsetMax)
-  const size_t end = ZAddressOffsetMax - size;
-  const size_t increment = align_up(end / 8192, ZGranuleSize);
+  const size_t unused = ZAddressOffsetMax - size;
+  const size_t increment = MAX2(align_up(unused / 8192, ZGranuleSize), ZGranuleSize);
 
-  for (size_t start = 0; start <= end; start += increment) {
+  for (size_t start = 0; start + size <= ZAddressOffsetMax; start += increment) {
     if (reserve_contiguous_platform(start, size)) {
       // Make the address range free
       _manager.free(start, size);
