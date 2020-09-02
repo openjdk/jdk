@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,19 @@
 
 extern "C" {
 
-
 #define PASSED 0
 #define STATUS_FAILED 2
 #define FAILED_NO_OOM 3
-#define MAX_CHUNK 1024*1024
+
+#define MAX_CHUNK 1024 * 1024
 
 // Limit total allocations to 8Gb.
 // Without this check we will loop forever if the OS does not
 // limit virtual memory (this usually happens on mac).
-#define MAX_CHUNK_COUNT 8*1024
+#define MAX_CHUNK_COUNT 8 * 1024
 
 static jvmtiEnv *jvmti = NULL;
 static jint result = PASSED;
-static jboolean printdump = JNI_FALSE;
 
 #ifdef STATIC_BUILD
 JNIEXPORT jint JNICALL Agent_OnLoad_alloc001(JavaVM *jvm, char *options, void *reserved) {
@@ -55,12 +54,9 @@ JNIEXPORT jint JNI_OnLoad_alloc001(JavaVM *jvm, char *options, void *reserved) {
     return JNI_VERSION_1_8;
 }
 #endif
+
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
-
-    if (options != NULL && strcmp(options, "printdump") == 0) {
-        printdump = JNI_TRUE;
-    }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
@@ -72,7 +68,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 }
 
 JNIEXPORT jint JNICALL
-Java_nsk_jvmti_Allocate_alloc001_check(JNIEnv *env, jclass cls) {
+Java_nsk_jvmti_Allocate_alloc001_Test_check(JNIEnv *env, jclass cls) {
     jvmtiError err;
     size_t size;
     void *prev = NULL;
@@ -84,22 +80,16 @@ Java_nsk_jvmti_Allocate_alloc001_check(JNIEnv *env, jclass cls) {
         return STATUS_FAILED;
     }
 
-    if (printdump == JNI_TRUE) {
-        printf(">>> Null pointer check ...\n");
-    }
+    printf(">>> Null pointer check ...\n");
     err = jvmti->Allocate((jlong)1, NULL);
     if (err != JVMTI_ERROR_NULL_POINTER) {
         printf("Error expected: JVMTI_ERROR_NULL_POINTER, got: %s\n",
                TranslateError(err));
         result = STATUS_FAILED;
     }
-    if (printdump == JNI_TRUE) {
-        printf(">>> ... done\n");
-    }
+    printf(">>> ... done\n");
 
-    if (printdump == JNI_TRUE) {
-        printf(">>> Accessibility check ...\n");
-    }
+    printf(">>> Accessibility check ...\n");
     for (size = sizeof(mem); size <= MAX_CHUNK; size <<= 1) {
         err = jvmti->Allocate(size, (unsigned char **)&mem);
         if (err == JVMTI_ERROR_NONE) {
@@ -115,13 +105,9 @@ Java_nsk_jvmti_Allocate_alloc001_check(JNIEnv *env, jclass cls) {
             break;
         }
     }
-    if (printdump == JNI_TRUE) {
-        printf(">>> ... done\n");
-    }
+    printf(">>> ... done\n");
 
-    if (printdump == JNI_TRUE) {
-        printf(">>> Out of memory check ...\n");
-    }
+    printf(">>> Out of memory check ...\n");
     while (err != JVMTI_ERROR_OUT_OF_MEMORY) {
         err = jvmti->Allocate((jlong)MAX_CHUNK, (unsigned char **)&mem);
         if (err == JVMTI_ERROR_NONE) {
@@ -142,17 +128,13 @@ Java_nsk_jvmti_Allocate_alloc001_check(JNIEnv *env, jclass cls) {
             break;
         }
 
-        if (printdump == JNI_TRUE && (memCount % 50 == 0)) {
+        if (memCount % 50 == 0) {
            printf(">>> ... done (%dMb)\n", memCount);
         }
     }
-    if (printdump == JNI_TRUE) {
-        printf(">>> ... done (%dMb)\n", memCount);
-    }
+    printf(">>> ... done (%dMb)\n", memCount);
 
-    if (printdump == JNI_TRUE) {
-        printf(">>> Deallocation ...\n");
-    }
+    printf(">>> Deallocation ...\n");
     while (prev != NULL) {
         mem = (void**) prev;
         prev = *mem;
@@ -164,9 +146,7 @@ Java_nsk_jvmti_Allocate_alloc001_check(JNIEnv *env, jclass cls) {
             break;
         }
     }
-    if (printdump == JNI_TRUE) {
-        printf(">>> ... done\n");
-    }
+    printf(">>> ... done\n");
 
     return result;
 }
