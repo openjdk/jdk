@@ -431,8 +431,12 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
     ZSetupArguments setup_arguments(masm, stub);
     __ mov(rscratch1, stub->slow_path());
     __ blr(rscratch1);
+    if (UseSVE > 0) {
+      // Reinitialize the ptrue predicate register, in case the external runtime
+      // call clobbers ptrue reg, as we may return to SVE compiled code.
+      __ reinitialize_ptrue();
+    }
   }
-
   // Stub exit
   __ b(*stub->continuation());
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -818,7 +818,7 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
       (vlen > 1) && is_power_of_2(vlen) &&
       Matcher::vector_size_supported(bt, vlen)) {
     int vopc = ReductionNode::opcode(opc, bt);
-    return vopc != opc && Matcher::match_rule_supported(vopc);
+    return vopc != opc && Matcher::match_rule_supported_vector(vopc, vlen, bt);
   }
   return false;
 }

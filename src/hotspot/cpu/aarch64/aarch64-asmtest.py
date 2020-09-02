@@ -68,6 +68,49 @@ class GeneralRegisterOrSp(Register):
         else:
             return self.astr("r")
 
+class SVEVectorRegister(FloatRegister):
+    def __str__(self):
+        return self.astr("z")
+
+class SVEPRegister(Register):
+    def __str__(self):
+        return self.astr("p")
+
+    def generate(self):
+        self.number = random.randint(0, 15)
+        return self
+
+class SVEGoverningPRegister(Register):
+    def __str__(self):
+        return self.astr("p")
+    def generate(self):
+        self.number = random.randint(0, 7)
+        return self
+
+class RegVariant(object):
+    def __init__(self, low, high):
+        self.number = random.randint(low, high)
+
+    def astr(self):
+        nameMap = {
+             0: ".b",
+             1: ".h",
+             2: ".s",
+             3: ".d",
+             4: ".q"
+        }
+        return nameMap.get(self.number)
+
+    def cstr(self):
+        nameMap = {
+             0: "__ B",
+             1: "__ H",
+             2: "__ S",
+             3: "__ D",
+             4: "__ Q"
+        }
+        return nameMap.get(self.number)
+
 class FloatZero(Operand):
 
     def __str__(self):
@@ -82,7 +125,10 @@ class OperandFactory:
               'w' : GeneralRegister,
               's' : FloatRegister,
               'd' : FloatRegister,
-              'z' : FloatZero}
+              'z' : FloatZero,
+              'p' : SVEPRegister,
+              'P' : SVEGoverningPRegister,
+              'Z' : SVEVectorRegister}
 
     @classmethod
     def create(cls, mode):
@@ -839,6 +885,100 @@ class FloatInstruction(Instruction):
                 % tuple([Instruction.astr(self)] +
                         [(self.reg[i].astr(self.modes[i])) for i in range(self.numRegs)]))
 
+class SVEVectorOp(Instruction):
+    def __init__(self, args):
+        name = args[0]
+        regTypes = args[1]
+        regs = []
+        for c in regTypes:
+            regs.append(OperandFactory.create(c).generate())
+        self.reg = regs
+        self.numRegs = len(regs)
+        if regTypes[0] != "p" and regTypes[1] == 'P':
+           self._isPredicated = True
+           self._merge = "/m"
+        else:
+           self._isPredicated = False
+           self._merge =""
+
+        self._bitwiseop = False
+        if name[0] == 'f':
+            self._width = RegVariant(2, 3)
+        elif not self._isPredicated and (name == "and" or name == "eor" or name == "orr"):
+            self._width = RegVariant(3, 3)
+            self._bitwiseop = True
+        else:
+            self._width = RegVariant(0, 3)
+        if len(args) > 2:
+            self._dnm = args[2]
+        else:
+            self._dnm = None
+        Instruction.__init__(self, name)
+
+    def cstr(self):
+        formatStr = "%s%s" + ''.join([", %s" for i in range(0, self.numRegs)] + [");"])
+        if self._bitwiseop:
+            width = []
+            formatStr = "%s%s" + ''.join([", %s" for i in range(1, self.numRegs)] + [");"])
+        else:
+            width = [self._width.cstr()]
+        return (formatStr
+                % tuple(["__ sve_" + self._name + "("] +
+                        [str(self.reg[0])] +
+                        width +
+                        [str(self.reg[i]) for i in range(1, self.numRegs)]))
+    def astr(self):
+        formatStr = "%s%s" + ''.join([", %s" for i in range(1, self.numRegs)])
+        if self._dnm == 'dn':
+            formatStr += ", %s"
+            dnReg = [str(self.reg[0]) + self._width.astr()]
+        else:
+            dnReg = []
+
+        if self._isPredicated:
+            restRegs = [str(self.reg[1]) + self._merge] + dnReg + [str(self.reg[i]) + self._width.astr() for i in range(2, self.numRegs)]
+        else:
+            restRegs = dnReg + [str(self.reg[i]) + self._width.astr() for i in range(1, self.numRegs)]
+        return (formatStr
+                % tuple([Instruction.astr(self)] +
+                        [str(self.reg[0]) + self._width.astr()] +
+                        restRegs))
+    def generate(self):
+        return self
+
+class SVEReductionOp(Instruction):
+    def __init__(self, args):
+        name = args[0]
+        lowRegType = args[1]
+        self.reg = []
+        Instruction.__init__(self, name)
+        self.reg.append(OperandFactory.create('s').generate())
+        self.reg.append(OperandFactory.create('P').generate())
+        self.reg.append(OperandFactory.create('Z').generate())
+        self._width = RegVariant(lowRegType, 3)
+    def cstr(self):
+        return "__ sve_%s(%s, %s, %s, %s);" % (self.name(),
+                                              str(self.reg[0]),
+                                              self._width.cstr(),
+                                              str(self.reg[1]),
+                                              str(self.reg[2]))
+    def astr(self):
+        if self.name() == "uaddv":
+            dstRegName = "d" + str(self.reg[0].number)
+        else:
+            dstRegName = self._width.astr()[1] + str(self.reg[0].number)
+        formatStr = "%s %s, %s, %s"
+        if self.name() == "fadda":
+            formatStr += ", %s"
+            moreReg = [dstRegName]
+        else:
+            moreReg = []
+        return formatStr % tuple([self.name()] +
+                                 [dstRegName] +
+                                 [str(self.reg[1])] +
+                                 moreReg +
+                                 [str(self.reg[2]) + self._width.astr()])
+
 class LdStSIMDOp(Instruction):
     def __init__(self, args):
         self._name, self.regnum, self.arrangement, self.addresskind = args
@@ -1160,7 +1300,42 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["mov",    "__ mov(v1, __ T2S, 1, zr);",                         "mov\tv1.s[1], wzr"],
                         ["mov",    "__ mov(v1, __ T4H, 2, zr);",                         "mov\tv1.h[2], wzr"],
                         ["mov",    "__ mov(v1, __ T8B, 3, zr);",                         "mov\tv1.b[3], wzr"],
-                        ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"]])
+                        ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
+                        # SVE instructions
+                        ["cpy",    "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],
+                        ["inc",    "__ sve_inc(r0, __ S);",                              "incw\tx0"],
+                        ["dec",    "__ sve_dec(r1, __ H);",                              "dech\tx1"],
+                        ["lsl",    "__ sve_lsl(z0, __ B, z1, 7);",                       "lsl\tz0.b, z1.b, #7"],
+                        ["lsl",    "__ sve_lsl(z21, __ H, z1, 15);",                     "lsl\tz21.h, z1.h, #15"],
+                        ["lsl",    "__ sve_lsl(z0, __ S, z1, 31);",                      "lsl\tz0.s, z1.s, #31"],
+                        ["lsl",    "__ sve_lsl(z0, __ D, z1, 63);",                      "lsl\tz0.d, z1.d, #63"],
+                        ["lsr",    "__ sve_lsr(z0, __ B, z1, 7);",                       "lsr\tz0.b, z1.b, #7"],
+                        ["asr",    "__ sve_asr(z0, __ H, z11, 15);",                     "asr\tz0.h, z11.h, #15"],
+                        ["lsr",    "__ sve_lsr(z30, __ S, z1, 31);",                     "lsr\tz30.s, z1.s, #31"],
+                        ["asr",    "__ sve_asr(z0, __ D, z1, 63);",                      "asr\tz0.d, z1.d, #63"],
+                        ["addvl",  "__ sve_addvl(sp, r0, 31);",                          "addvl\tsp, x0, #31"],
+                        ["addpl",  "__ sve_addpl(r1, sp, -32);",                         "addpl\tx1, sp, -32"],
+                        ["cntp",   "__ sve_cntp(r8, __ B, p0, p1);",                     "cntp\tx8, p0, p1.b"],
+                        ["dup",    "__ sve_dup(z0, __ B, 127);",                         "dup\tz0.b, 127"],
+                        ["dup",    "__ sve_dup(z1, __ H, -128);",                        "dup\tz1.h, -128"],
+                        ["dup",    "__ sve_dup(z2, __ S, 32512);",                       "dup\tz2.s, 32512"],
+                        ["dup",    "__ sve_dup(z7, __ D, -32768);",                      "dup\tz7.d, -32768"],
+                        ["ld1b",   "__ sve_ld1b(z0, __ B, p0, Address(sp));",            "ld1b\t{z0.b}, p0/z, [sp]"],
+                        ["ld1h",   "__ sve_ld1h(z10, __ H, p1, Address(sp, -8));",       "ld1h\t{z10.h}, p1/z, [sp, #-8, MUL VL]"],
+                        ["ld1w",   "__ sve_ld1w(z20, __ S, p2, Address(r0, 7));",        "ld1w\t{z20.s}, p2/z, [x0, #7, MUL VL]"],
+                        ["ld1b",   "__ sve_ld1b(z30, __ B, p3, Address(sp, r8));",       "ld1b\t{z30.b}, p3/z, [sp, x8]"],
+                        ["ld1w",   "__ sve_ld1w(z0, __ S, p4, Address(sp, r28));",       "ld1w\t{z0.s}, p4/z, [sp, x28, LSL #2]"],
+                        ["ld1d",   "__ sve_ld1d(z11, __ D, p5, Address(r0, r1));",       "ld1d\t{z11.d}, p5/z, [x0, x1, LSL #3]"],
+                        ["st1b",   "__ sve_st1b(z22, __ B, p6, Address(sp));",           "st1b\t{z22.b}, p6, [sp]"],
+                        ["st1b",   "__ sve_st1b(z31, __ B, p7, Address(sp, -8));",       "st1b\t{z31.b}, p7, [sp, #-8, MUL VL]"],
+                        ["st1w",   "__ sve_st1w(z0, __ S, p1, Address(r0, 7));",         "st1w\t{z0.s}, p1, [x0, #7, MUL VL]"],
+                        ["st1b",   "__ sve_st1b(z0, __ B, p2, Address(sp, r1));",        "st1b\t{z0.b}, p2, [sp, x1]"],
+                        ["st1h",   "__ sve_st1h(z0, __ H, p3, Address(sp, r8));",        "st1h\t{z0.h}, p3, [sp, x8, LSL #1]"],
+                        ["st1d",   "__ sve_st1d(z0, __ D, p4, Address(r0, r18));",       "st1d\t{z0.d}, p4, [x0, x18, LSL #3]"],
+                        ["ldr",    "__ sve_ldr(z0, Address(sp));",                       "ldr\tz0, [sp]"],
+                        ["ldr",    "__ sve_ldr(z31, Address(sp, -256));",                "ldr\tz31, [sp, #-256, MUL VL]"],
+                        ["str",    "__ sve_str(z8, Address(r8, 255));",                  "str\tz8, [x8, #255, MUL VL]"],
+])
 
 print "\n// FloatImmediateOp"
 for float in ("2.0", "2.125", "4.0", "4.25", "8.0", "8.5", "16.0", "17.0", "0.125", 
@@ -1185,6 +1360,49 @@ for size in ("x", "w"):
                          ["ldumin", "ldumin", size, suffix],
                          ["ldumax", "ldumax", size, suffix]]);
 
+generate(SVEVectorOp, [["add", "ZZZ"],
+                       ["sub", "ZZZ"],
+                       ["fadd", "ZZZ"],
+                       ["fmul", "ZZZ"],
+                       ["fsub", "ZZZ"],
+                       ["abs", "ZPZ"],
+                       ["add", "ZPZ", "dn"],
+                       ["asr", "ZPZ", "dn"],
+                       ["cnt", "ZPZ"],
+                       ["lsl", "ZPZ", "dn"],
+                       ["lsr", "ZPZ", "dn"],
+                       ["mul", "ZPZ", "dn"],
+                       ["neg", "ZPZ"],
+                       ["not", "ZPZ"],
+                       ["smax", "ZPZ", "dn"],
+                       ["smin", "ZPZ", "dn"],
+                       ["sub", "ZPZ", "dn"],
+                       ["fabs", "ZPZ"],
+                       ["fadd", "ZPZ", "dn"],
+                       ["fdiv", "ZPZ", "dn"],
+                       ["fmax", "ZPZ", "dn"],
+                       ["fmin", "ZPZ", "dn"],
+                       ["fmul", "ZPZ", "dn"],
+                       ["fneg", "ZPZ"],
+                       ["frintm", "ZPZ"],
+                       ["frintn", "ZPZ"],
+                       ["frintp", "ZPZ"],
+                       ["fsqrt", "ZPZ"],
+                       ["fsub", "ZPZ", "dn"],
+                       ["fmla", "ZPZZ"],
+                       ["fmls", "ZPZZ"],
+                       ["fnmla", "ZPZZ"],
+                       ["fnmls", "ZPZZ"],
+                       ["mla", "ZPZZ"],
+                       ["mls", "ZPZZ"],
+                       ["and", "ZZZ"],
+                       ["eor", "ZZZ"],
+                       ["orr", "ZZZ"],
+                      ])
+
+generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
+                          ["fminv", 2], ["fmaxv", 2], ["fadda", 2], ["uaddv", 0]])
+
 print "\n    __ bind(forth);"
 outfile.write("forth:\n")
 
@@ -1193,8 +1411,8 @@ outfile.close()
 import subprocess
 import sys
 
-# compile for 8.1 and sha2 because of lse atomics and sha512 crypto extension.
-subprocess.check_call([AARCH64_AS, "-march=armv8.1-a+sha2", "aarch64ops.s", "-o", "aarch64ops.o"])
+# compile for sve with 8.1 and sha2 because of lse atomics and sha512 crypto extension.
+subprocess.check_call([AARCH64_AS, "-march=armv8.1-a+sha2+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*",
