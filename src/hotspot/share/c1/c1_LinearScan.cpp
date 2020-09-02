@@ -2704,7 +2704,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       if (!frame_map()->locations_for_slot(opr->double_stack_ix(), loc_type, &loc1, NULL)) {
         bailout("too large frame");
       }
-      // Does this reverse on x86 vs. sparc?
+
       first =  new LocationValue(loc1);
       second = _int_0_scope_value;
 #else

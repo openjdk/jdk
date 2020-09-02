@@ -244,7 +244,7 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
   case unwind_exception_id:
   case counter_overflow_id:
 #if defined(PPC32)
-  case handle_exception_nofpu_id:  // Unused on sparc
+  case handle_exception_nofpu_id:
 #endif
     expect_oop_map = false;
     break;

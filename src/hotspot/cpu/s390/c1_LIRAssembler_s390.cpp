@@ -96,7 +96,7 @@ void LIR_Assembler::clinit_barrier(ciMethod* method) {
 }
 
 void LIR_Assembler::osr_entry() {
-  // On-stack-replacement entry sequence (interpreter frame layout described in interpreter_sparc.cpp):
+  // On-stack-replacement entry sequence (interpreter frame layout described in frame_s390.hpp):
   //
   //   1. Create a new compiled activation.
   //   2. Initialize local variables in the compiled activation. The expression stack must be empty
@@ -2524,7 +2524,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   Label *failure_target = op->should_profile() ? &profile_cast_failure : failure;
   Label *success_target = op->should_profile() ? &profile_cast_success : success;
 
-  // Patching may screw with our temporaries on sparc,
+  // Patching may screw with our temporaries,
   // so let's do it before loading the class.
   if (k->is_loaded()) {
     metadata2reg(k->constant_encoding(), k_RInfo);

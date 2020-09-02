@@ -1941,7 +1941,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall *op) {
 }
 
 
-/* Currently, vtable-dispatch is only enabled for sparc platforms */
+/* vtable-dispatch is not enabled for arm platforms */
 void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   ShouldNotReachHere();
 }

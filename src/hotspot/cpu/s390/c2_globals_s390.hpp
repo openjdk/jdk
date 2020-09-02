@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,6 @@
 
 // Sets the default values for platform dependent flags used by the server compiler.
 // (see c2_globals.hpp).
-// Sorted according to sparc.
 
 define_pd_global(bool, BackgroundCompilation,        true);
 define_pd_global(bool, CICompileOSR,                 true);
