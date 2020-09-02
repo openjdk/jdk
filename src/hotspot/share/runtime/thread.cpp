@@ -1691,7 +1691,6 @@ void JavaThread::initialize() {
   _on_thread_list = false;
   _thread_state = _thread_new;
   _terminated = _not_terminated;
-  _array_for_gc = NULL;
   _suspend_equivalent = false;
   _in_deopt_handler = 0;
   _doing_unsafe_access = false;
@@ -3009,13 +3008,6 @@ void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   if (has_last_Java_frame()) {
     // Record JavaThread to GC thread
     RememberProcessedThread rpt(this);
-
-    // traverse the registered growable array
-    if (_array_for_gc != NULL) {
-      for (int index = 0; index < _array_for_gc->length(); index++) {
-        f->do_oop(_array_for_gc->adr_at(index));
-      }
-    }
 
     // Traverse the monitor chunks
     for (MonitorChunk* chunk = monitor_chunks(); chunk != NULL; chunk = chunk->next()) {

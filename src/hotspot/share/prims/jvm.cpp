@@ -1376,27 +1376,12 @@ JVM_ENTRY(jobject, JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls)
   return JNIHandles::make_local(THREAD, result);
 JVM_END
 
-class RegisterArrayForGC {
- private:
-  JavaThread *_thread;
- public:
-  RegisterArrayForGC(JavaThread *thread, GrowableArray<oop>* array)  {
-    _thread = thread;
-    _thread->register_array_for_gc(array);
-  }
-
-  ~RegisterArrayForGC() {
-    _thread->register_array_for_gc(NULL);
-  }
-};
-
-
 JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
   JVMWrapper("JVM_GetStackAccessControlContext");
   if (!UsePrivilegedStack) return NULL;
 
   ResourceMark rm(THREAD);
-  GrowableArray<oop>* local_array = new GrowableArray<oop>(12);
+  GrowableArray<Handle>* local_array = new GrowableArray<Handle>(12);
   JvmtiVMObjectAllocEventCollector oam;
 
   // count the protection domains on the execution stack. We collapse
@@ -1438,7 +1423,7 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
     }
 
     if ((previous_protection_domain != protection_domain) && (protection_domain != NULL)) {
-      local_array->push(protection_domain);
+      local_array->push(Handle(thread, protection_domain));
       previous_protection_domain = protection_domain;
     }
 
@@ -1455,13 +1440,11 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
     return JNIHandles::make_local(THREAD, result);
   }
 
-  // the resource area must be registered in case of a gc
-  RegisterArrayForGC ragc(thread, local_array);
   objArrayOop context = oopFactory::new_objArray(SystemDictionary::ProtectionDomain_klass(),
                                                  local_array->length(), CHECK_NULL);
   objArrayHandle h_context(thread, context);
   for (int index = 0; index < local_array->length(); index++) {
-    h_context->obj_at_put(index, local_array->at(index));
+    h_context->obj_at_put(index, local_array->at(index)());
   }
 
   oop result = java_security_AccessControlContext::create(h_context, is_privileged, privileged_context, CHECK_NULL);
