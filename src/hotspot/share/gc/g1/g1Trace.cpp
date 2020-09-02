@@ -118,8 +118,8 @@ void G1NewTracer::report_adaptive_ihop_statistics(size_t threshold,
                                                   bool prediction_active) {
   send_adaptive_ihop_statistics(threshold,
                                 internal_target_occupancy,
-                                additional_buffer_size,
                                 current_occupancy,
+                                additional_buffer_size,
                                 predicted_allocation_rate,
                                 predicted_marking_length,
                                 prediction_active);
