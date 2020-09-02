@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@ import com.sun.tools.javac.util.ByteBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Name.NameMapper;
 import com.sun.tools.javac.util.Names;
+
+import java.util.Arrays;
+import java.util.BitSet;
 
 import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Class;
 import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Double;
@@ -88,11 +91,27 @@ public class PoolReader {
         this.syms = syms;
     }
 
+    private static final BitSet classCP = new BitSet();
+    private static final BitSet constantCP = new BitSet();
+    private static final BitSet moduleCP = new BitSet();
+    private static final BitSet packageCP = new BitSet();
+    private static final BitSet utf8CP = new BitSet();
+    private static final BitSet nameAndTypeCP = new BitSet();
+
+    static {
+        classCP.set(CONSTANT_Class);
+        constantCP.set(CONSTANT_Integer, CONSTANT_String + 1); // the toIndex is exclusive
+        moduleCP.set(CONSTANT_Module);
+        packageCP.set(CONSTANT_Package);
+        utf8CP.set(CONSTANT_Utf8);
+        nameAndTypeCP.set(CONSTANT_NameandType);
+    }
+
     /**
      * Get a class symbol from the pool at given index.
      */
     ClassSymbol getClass(int index) {
-        return pool.readIfNeeded(index);
+        return pool.readIfNeeded(index, classCP);
     }
 
     /**
@@ -120,14 +139,14 @@ public class PoolReader {
      * Get a module symbol from the pool at given index.
      */
     ModuleSymbol getModule(int index) {
-        return pool.readIfNeeded(index);
+        return pool.readIfNeeded(index, moduleCP);
     }
 
     /**
      * Get a module symbol from the pool at given index.
      */
     PackageSymbol getPackage(int index) {
-        return pool.readIfNeeded(index);
+        return pool.readIfNeeded(index, packageCP);
     }
 
     /**
@@ -141,7 +160,7 @@ public class PoolReader {
      * Get a name from the pool at given index.
      */
     Name getName(int index) {
-        return pool.readIfNeeded(index);
+        return pool.readIfNeeded(index, utf8CP);
     }
 
     /**
@@ -155,14 +174,14 @@ public class PoolReader {
      * Get a name and type pair from the pool at given index.
      */
     NameAndType getNameAndType(int index) {
-        return pool.readIfNeeded(index);
+        return pool.readIfNeeded(index, nameAndTypeCP);
     }
 
     /**
      * Get a class symbol from the pool at given index.
      */
     Object getConstant(int index) {
-        return pool.readIfNeeded(index);
+        return pool.readIfNeeded(index, constantCP);
     }
 
     boolean hasTag(int index, int tag) {
@@ -171,12 +190,14 @@ public class PoolReader {
 
     private <Z> Z getUtf8(int index, NameMapper<Z> mapper) {
         int tag = pool.tag(index);
+        int offset = pool.offset(index);
         if (tag == CONSTANT_Utf8) {
-            int offset = pool.offset(index);
             int len = pool.poolbuf.getChar(offset);
             return mapper.map(pool.poolbuf.elems, offset + 2, len);
         } else {
-            throw new AssertionError("Unexpected constant tag: " + tag);
+            throw reader.badClassFile("unexpected.const.pool.tag.at",
+                                Integer.toString(tag),
+                                Integer.toString(offset - 1));
         }
     }
 
@@ -215,7 +236,9 @@ public class PoolReader {
                 return syms.enterModule(name);
             }
             default:
-                throw new AssertionError("Unexpected constant tag: " + tag);
+                throw reader.badClassFile("unexpected.const.pool.tag.at",
+                        Integer.toString(tag),
+                        Integer.toString(offset - 1));
         }
     }
 
@@ -311,11 +334,15 @@ public class PoolReader {
         }
 
         @SuppressWarnings("unchecked")
-        <P> P readIfNeeded(int index) {
+        <P> P readIfNeeded(int index, BitSet expectedTags) {
             Object v = values[checkIndex(index)];
             if (v != null) {
                 return (P)v;
             } else {
+                int currentTag = tag(index);
+                if (!expectedTags.get(currentTag)) {
+                    throw reader.badClassFile("unexpected.const.pool.tag.at", tag(index), offset(index));
+                }
                 P p = (P)resolve(poolbuf, tag(index), offset(index));
                 values[index] = p;
                 return p;

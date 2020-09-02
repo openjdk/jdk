@@ -293,10 +293,11 @@ void WriterHost<BE, IE, WriterPolicyImpl>::write(const JfrTickspan& time) {
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
-void WriterHost<BE, IE, WriterPolicyImpl>::bytes(const void* buf, size_t len) {
-  u1* const pos = this->ensure_size(len);
+void WriterHost<BE, IE, WriterPolicyImpl>::write_bytes(const void* buf, intptr_t len) {
+  assert(len >= 0, "invariant");
+  u1* const pos = this->ensure_size((size_t)len);
   if (pos != NULL) {
-    WriterPolicyImpl::bytes(pos, buf, len); // WriterPolicyImpl responsible for position update
+    WriterPolicyImpl::write_bytes(pos, buf, len); // WriterPolicyImpl responsible for position update
   }
 }
 

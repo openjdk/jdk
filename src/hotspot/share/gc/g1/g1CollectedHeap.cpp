@@ -63,7 +63,7 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YCTypes.hpp"
-#include "gc/g1/g1YoungRemSetSamplingThread.hpp"
+#include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -1419,7 +1419,7 @@ public:
 
 G1CollectedHeap::G1CollectedHeap() :
   CollectedHeap(),
-  _young_gen_sampling_thread(NULL),
+  _service_thread(NULL),
   _workers(NULL),
   _card_table(NULL),
   _collection_pause_end(Ticks::now()),
@@ -1556,10 +1556,10 @@ jint G1CollectedHeap::initialize_concurrent_refinement() {
   return ecode;
 }
 
-jint G1CollectedHeap::initialize_young_gen_sampling_thread() {
-  _young_gen_sampling_thread = new G1YoungRemSetSamplingThread();
-  if (_young_gen_sampling_thread->osthread() == NULL) {
-    vm_shutdown_during_initialization("Could not create G1YoungRemSetSamplingThread");
+jint G1CollectedHeap::initialize_service_thread() {
+  _service_thread = new G1ServiceThread();
+  if (_service_thread->osthread() == NULL) {
+    vm_shutdown_during_initialization("Could not create G1ServiceThread");
     return JNI_ENOMEM;
   }
   return JNI_OK;
@@ -1733,7 +1733,7 @@ jint G1CollectedHeap::initialize() {
     return ecode;
   }
 
-  ecode = initialize_young_gen_sampling_thread();
+  ecode = initialize_service_thread();
   if (ecode != JNI_OK) {
     return ecode;
   }
@@ -1779,7 +1779,7 @@ void G1CollectedHeap::stop() {
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
   _cr->stop();
-  _young_gen_sampling_thread->stop();
+  _service_thread->stop();
   _cm_thread->stop();
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::stop();
@@ -2534,7 +2534,7 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   tc->do_thread(_cm_thread);
   _cm->threads_do(tc);
   _cr->threads_do(tc);
-  tc->do_thread(_young_gen_sampling_thread);
+  tc->do_thread(_service_thread);
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::threads_do(tc);
   }
