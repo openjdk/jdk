@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@
  * @bug 8149330 8218227
  * @summary Capacity should not get close to Integer.MAX_VALUE unless
  *          necessary
- * @requires os.maxMemory >= 6G
+ * @requires (sun.arch.data.model == "64" & os.maxMemory >= 6G)
  * @run main/othervm -Xms5G -Xmx5G HugeCapacity
- * @ignore This test has huge memory requirements
  */
 
 public class HugeCapacity {
