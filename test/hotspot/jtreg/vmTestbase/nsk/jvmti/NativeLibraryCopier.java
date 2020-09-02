@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package nsk.jvmti;
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,7 +33,7 @@ import java.nio.file.Paths;
 
 public class NativeLibraryCopier {
     public static void main(String[] args) {
-        Path src = Paths.get( System.getProperty("test.nativepath", "."))
+        Path src = Paths.get(Utils.TEST_NATIVE_PATH)
                         .resolve(libname(args[0]))
                         .toAbsolutePath();
 
