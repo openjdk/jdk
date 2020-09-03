@@ -180,6 +180,7 @@ bool JfrStackTrace::record_thread(JavaThread& thread, frame& frame) {
   u4 count = 0;
   _reached_root = true;
 
+  _hash = 1;
   while (!st.at_end()) {
     if (count >= _max_frames) {
       _reached_root = false;
@@ -201,7 +202,9 @@ bool JfrStackTrace::record_thread(JavaThread& thread, frame& frame) {
     }
     const int lineno = method->line_number_from_bci(bci);
     // Can we determine if it's inlined?
-    _hash = (_hash << 2) + (unsigned int)(((size_t)mid >> 2) + (bci << 4) + type);
+    _hash = (_hash * 31) + mid;
+    _hash = (_hash * 31) + bci;
+    _hash = (_hash * 31) + type;
     _frames[count] = JfrStackFrame(mid, bci, type, lineno, method->method_holder());
     st.samples_next();
     count++;
