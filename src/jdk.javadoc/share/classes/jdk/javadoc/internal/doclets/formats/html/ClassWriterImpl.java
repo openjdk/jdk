@@ -198,13 +198,17 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         classInfoTree.add(hr);
         Content pre = new HtmlTree(TagName.PRE);
         addAnnotationInfo(typeElement, pre);
-        Content sep = null;
-        for (String modifiersPart : modifiers.split("record")) {
+        String sep = null;
+        for (String modifiersPart : modifiers.split(" ")) {
             if (sep != null) {
                 pre.add(sep);
             }
-            pre.add(modifiersPart);
-            sep = HtmlTree.SPAN(HtmlStyle.previewReference, new ContentBuilder().add("record"));
+            if ("record".equals(modifiersPart) || "sealed".equals(modifiersPart)) {
+                pre.add(HtmlTree.SPAN(HtmlStyle.previewReference, new ContentBuilder().add(modifiersPart)));
+            } else {
+                pre.add(modifiersPart);
+            }
+            sep = " ";
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.Kind.CLASS_SIGNATURE, typeElement);

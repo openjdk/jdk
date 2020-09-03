@@ -1747,8 +1747,8 @@ public class Utils {
             default -> throw new IllegalStateException("Unexpected: " + el.getKind());
         }
         Function<Content, Content> wrap = c -> {
-            return span ? HtmlTree.SPAN(HtmlStyle.previewReference, c)
-                        : HtmlTree.DIV(HtmlStyle.previewReference, c);
+            return /*span ? */HtmlTree.SPAN(HtmlStyle.previewReferenceNote, c);
+//                        : HtmlTree.DIV(HtmlStyle.previewReferenceNote, c);
         };
         if (isDeclaredUsingPreview(el)) {
             result.add(wrap.apply(new ContentBuilder().add(resources.getText("doclet.Declared_Using_Preview." + suffix))));

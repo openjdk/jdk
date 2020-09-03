@@ -81,6 +81,7 @@ public enum HtmlStyle {
     previewBlock,
     previewLabel,
     previewReference,
+    previewReferenceNote,
     searchTagLink,
     searchTagResult,
     serializedPackageContainer,
