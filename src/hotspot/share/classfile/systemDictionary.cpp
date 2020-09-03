@@ -2830,7 +2830,7 @@ Handle SystemDictionary::link_method_handle_constant(Klass* caller,
     // There's special logic on JDK side to handle them
     // (see MethodHandles.linkMethodHandleConstant() and MethodHandles.findVirtualForMH()).
   } else {
-    MethodHandles::resolve_MemberName(mname, caller, /*speculative_resolve*/false, CHECK_(empty));
+    MethodHandles::resolve_MemberName(mname, caller, 0, false /*speculative_resolve*/, CHECK_(empty));
   }
 
   // After method/field resolution succeeded, it's safe to resolve MH signature as well.
