@@ -249,11 +249,6 @@ bool compileBroker_init() {
 CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
-#if INCLUDE_JVMCI
-  if (task->is_blocking() && CompileBroker::compiler(task->comp_level())->is_jvmci()) {
-    task->set_jvmci_compiler_thread(thread);
-  }
-#endif
   CompileLog*     log  = thread->log();
   if (log != NULL && !task->is_unloaded())  task->log_task_start(log);
 }
@@ -277,7 +272,7 @@ CompileTaskWrapper::~CompileTaskWrapper() {
           // The waiting thread timed out and thus did not free the task.
           free_task = true;
         }
-        task->set_jvmci_compiler_thread(NULL);
+        task->set_blocking_jvmci_compile_state(NULL);
       }
 #endif
       if (!free_task) {
@@ -1585,18 +1580,22 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
 #if INCLUDE_JVMCI
 // The number of milliseconds to wait before checking if
 // JVMCI compilation has made progress.
-static const long JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE = 1000;
+static const long JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE = 500;
 
-// The number of JVMCI compilation progress checks that must fail
-// before unblocking a thread waiting for a blocking compilation.
-static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 10;
+// The number of above checks that must fail before unblocking a
+// thread waiting to enqueue a blocking compilation. A compilation
+// already being compiled will be immediately unblocked after the
+// first failed check.
+static const int JVMCI_COMPILATION_ENQUEUE_WAIT_ATTEMPTS = 10;
 
 /**
  * Waits for a JVMCI compiler to complete a given task. This thread
- * waits until either the task completes or it sees no JVMCI compilation
- * progress for N consecutive milliseconds where N is
- * JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE *
- * JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS.
+ * waits until:
+ * - the task completes,
+ * - a task already compiling makes no progress for
+ *   JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE milliseconds or
+ * - the task does not start compiling after JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE *
+ *   JVMCI_COMPILATION_ENQUEUE_WAIT_ATTEMPTS milliseconds.
  *
  * @return true if this thread needs to free/recycle the task
  */
@@ -1604,36 +1603,39 @@ bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask*
   assert(UseJVMCICompiler, "sanity");
   MonitorLocker ml(thread, task->lock());
   int progress_wait_attempts = 0;
-  int methods_compiled = jvmci->methods_compiled();
+  jint thread_jvmci_compilation_ticks = 0;
+  jint global_jvmci_compilation_ticks = jvmci->global_compilation_ticks();
   while (!task->is_complete() && !is_compilation_disabled_forever() &&
          ml.wait(JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE)) {
-    CompilerThread* jvmci_compiler_thread = task->jvmci_compiler_thread();
+    JVMCICompileState* jvmci_compile_state = task->blocking_jvmci_compile_state();
 
     bool progress;
-    if (jvmci_compiler_thread != NULL) {
-      // If the JVMCI compiler thread is not blocked or suspended, we deem it to be making progress.
-      progress = jvmci_compiler_thread->thread_state() != _thread_blocked &&
-        !jvmci_compiler_thread->is_external_suspend();
+    if (jvmci_compile_state != NULL) {
+      jint ticks = jvmci_compile_state->compilation_ticks();
+      progress = (ticks - thread_jvmci_compilation_ticks) != 0;
+      JVMCI_event_1("waiting on compilation %d [ticks=%d]", task->compile_id(), ticks);
+      thread_jvmci_compilation_ticks = ticks;
     } else {
       // Still waiting on JVMCI compiler queue. This thread may be holding a lock
-      // that all JVMCI compiler threads are blocked on. We use the counter for
-      // successful JVMCI compilations to determine whether JVMCI compilation
+      // that all JVMCI compiler threads are blocked on. We use the global JVMCI
+      // compilation ticks to determine whether JVMCI compilation
       // is still making progress through the JVMCI compiler queue.
-      progress = jvmci->methods_compiled() != methods_compiled;
+      jint ticks = jvmci->global_compilation_ticks();
+      progress = (ticks - global_jvmci_compilation_ticks) != 0;
+      JVMCI_event_1("waiting on compilation %d to be queued [ticks=%d]", task->compile_id(), ticks);
+      global_jvmci_compilation_ticks = ticks;
     }
 
     if (!progress) {
-      if (++progress_wait_attempts == JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS) {
+      if (jvmci_compile_state != NULL || ++progress_wait_attempts == JVMCI_COMPILATION_ENQUEUE_WAIT_ATTEMPTS) {
         if (PrintCompilation) {
           task->print(tty, "wait for blocking compilation timed out");
         }
+        JVMCI_event_1("waiting on compilation %d timed out", task->compile_id());
         break;
       }
     } else {
       progress_wait_attempts = 0;
-      if (jvmci_compiler_thread == NULL) {
-        methods_compiled = jvmci->methods_compiled();
-      }
     }
   }
   task->clear_waiter();
@@ -2152,7 +2154,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     TraceTime t1("compilation", &time);
     EventCompilation event;
-    JVMCICompileState compile_state(task);
+    JVMCICompileState compile_state(task, jvmci);
     JVMCIRuntime *runtime = NULL;
 
     if (JVMCI::in_shutdown()) {

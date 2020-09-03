@@ -132,7 +132,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   TRACE_CALL(result_type, jvmci_ ## name signature)  \
   JVMCI_VM_ENTRY_MARK;                               \
   ResourceMark rm;                                   \
-  JNI_JVMCIENV(thread, env);
+  JNI_JVMCIENV(JVMCI::compilation_tick(thread), env);
 
 static JavaThread* get_current_thread(bool allow_null=true) {
   Thread* thread = Thread::current_or_null_safe();
