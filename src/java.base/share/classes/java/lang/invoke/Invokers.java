@@ -661,7 +661,7 @@ class Invokers {
         MemberName member = new MemberName(Invokers.class, name, type, REF_invokeStatic);
         return new NamedFunction(
                 MemberName.getFactory()
-                        .resolveOrFail(REF_invokeStatic, member, Invokers.class, NoSuchMethodException.class));
+                        .resolveOrFail(REF_invokeStatic, member, Invokers.class, LM_TRUSTED, NoSuchMethodException.class));
     }
 
     private static class Lazy {
