@@ -30,37 +30,44 @@
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/semaphore.inline.hpp"
 #include "runtime/task.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/filterQueue.inline.hpp"
 #include "utilities/preserveException.hpp"
 
-
-class HandshakeOperation: public StackObj {
-  HandshakeClosure* _handshake_cl;
-  int32_t _pending_threads;
-  bool _executed;
-  bool _is_direct;
+class HandshakeOperation : public CHeapObj<mtThread> {
+  friend class HandshakeState;
+ protected:
+  HandshakeClosure*   _handshake_cl;
+  int32_t             _pending_threads;
+  JavaThread*         _target;
 public:
-  HandshakeOperation(HandshakeClosure* cl, bool is_direct = false) :
+  HandshakeOperation(HandshakeClosure* cl, JavaThread* target) :
     _handshake_cl(cl),
     _pending_threads(1),
-    _executed(false),
-    _is_direct(is_direct) {}
-
+    _target(target) {}
+  virtual ~HandshakeOperation() {}
   void do_handshake(JavaThread* thread);
   bool is_completed() {
     int32_t val = Atomic::load(&_pending_threads);
     assert(val >= 0, "_pending_threads=%d cannot be negative", val);
     return val == 0;
   }
-  void add_target_count(int count) { Atomic::add(&_pending_threads, count, memory_order_relaxed); }
-  bool executed() const { return _executed; }
-  const char* name() { return _handshake_cl->name(); }
+  void add_target_count(int count) { Atomic::add(&_pending_threads, count); }
+  const char* name()               { return _handshake_cl->name(); }
+  bool is_asynch()                 { return _handshake_cl->is_asynch(); }
+};
 
-  bool is_direct() { return _is_direct; }
+class AsyncHandshakeOperation : public HandshakeOperation {
+ private:
+  jlong _start_time_ns;
+ public:
+  AsyncHandshakeOperation(AsynchHandshakeClosure* cl, JavaThread* target, jlong start_ns)
+    : HandshakeOperation(cl, target), _start_time_ns(start_ns) {}
+  virtual ~AsyncHandshakeOperation() { delete _handshake_cl; };
+  jlong start_time()                 { return _start_time_ns; }
 };
 
 // Performing handshakes requires a custom yielding strategy because without it
@@ -76,10 +83,9 @@ class HandshakeSpinYield : public StackObj {
   jlong _last_spin_start_ns;
   jlong _spin_time_ns;
 
-  int _result_count[2][HandshakeState::_number_states];
+  int _result_count[2][HandshakeState::ProcessResult::_number_states];
   int _prev_result_pos;
 
-  int prev_result_pos() { return _prev_result_pos & 0x1; }
   int current_result_pos() { return (_prev_result_pos + 1) & 0x1; }
 
   void wait_raw(jlong now) {
@@ -98,7 +104,7 @@ class HandshakeSpinYield : public StackObj {
   }
 
   bool state_changed() {
-    for (int i = 0; i < HandshakeState::_number_states; i++) {
+    for (int i = 0; i < HandshakeState::ProcessResult::_number_states; i++) {
       if (_result_count[0][i] != _result_count[1][i]) {
         return true;
       }
@@ -108,7 +114,7 @@ class HandshakeSpinYield : public StackObj {
 
   void reset_state() {
     _prev_result_pos++;
-    for (int i = 0; i < HandshakeState::_number_states; i++) {
+    for (int i = 0; i < HandshakeState::ProcessResult::_number_states; i++) {
       _result_count[current_result_pos()][i] = 0;
     }
   }
@@ -125,7 +131,7 @@ class HandshakeSpinYield : public StackObj {
   }
 
   void add_result(HandshakeState::ProcessResult pr) {
-    _result_count[current_result_pos()][pr]++;
+    _result_count[current_result_pos()][pr.result()]++;
   }
 
   void process() {
@@ -177,7 +183,7 @@ bool VM_Handshake::handshake_has_timed_out(jlong start_time) {
 void VM_Handshake::handle_timeout() {
   LogStreamHandle(Warning, handshake) log_stream;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thr = jtiwh.next(); ) {
-    if (thr->has_handshake()) {
+    if (thr->handshake_state()->has_operation()) {
       log_stream.print("Thread " PTR_FORMAT " has not cleared its handshake op", p2i(thr));
       thr->print_thread_state_on(&log_stream);
     }
@@ -187,7 +193,7 @@ void VM_Handshake::handle_timeout() {
 }
 
 static void log_handshake_info(jlong start_time_ns, const char* name, int targets, int vmt_executed, const char* extra = NULL) {
-  if (start_time_ns != 0) {
+  if (log_is_enabled(Info, handshake)) {
     jlong completion_time = os::javaTimeNanos() - start_time_ns;
     log_info(handshake)("Handshake \"%s\", Targeted threads: %d, Executed by targeted threads: %d, Total completion time: " JLONG_FORMAT " ns%s%s",
                         name, targets,
@@ -198,66 +204,22 @@ static void log_handshake_info(jlong start_time_ns, const char* name, int target
   }
 }
 
-class VM_HandshakeOneThread: public VM_Handshake {
-  JavaThread* _target;
- public:
-  VM_HandshakeOneThread(HandshakeOperation* op, JavaThread* target) :
-    VM_Handshake(op), _target(target) {}
-
-  void doit() {
-    jlong start_time_ns = os::javaTimeNanos();
-
-    ThreadsListHandle tlh;
-    if (tlh.includes(_target)) {
-      _target->set_handshake_operation(_op);
-    } else {
-      log_handshake_info(start_time_ns, _op->name(), 0, 0, "(thread dead)");
-      return;
-    }
-
-    log_trace(handshake)("JavaThread " INTPTR_FORMAT " signaled, begin attempt to process by VMThtread", p2i(_target));
-    HandshakeState::ProcessResult pr = HandshakeState::_no_operation;
-    HandshakeSpinYield hsy(start_time_ns);
-    do {
-      if (handshake_has_timed_out(start_time_ns)) {
-        handle_timeout();
-      }
-      pr = _target->handshake_try_process(_op);
-      hsy.add_result(pr);
-      hsy.process();
-    } while (!_op->is_completed());
-
-    // This pairs up with the release store in do_handshake(). It prevents future
-    // loads from floating above the load of _pending_threads in is_completed()
-    // and thus prevents reading stale data modified in the handshake closure
-    // by the Handshakee.
-    OrderAccess::acquire();
-
-    log_handshake_info(start_time_ns, _op->name(), 1, (pr == HandshakeState::_success) ? 1 : 0);
-  }
-
-  VMOp_Type type() const { return VMOp_HandshakeOneThread; }
-
-  bool executed() const { return _op->executed(); }
-};
-
 class VM_HandshakeAllThreads: public VM_Handshake {
  public:
   VM_HandshakeAllThreads(HandshakeOperation* op) : VM_Handshake(op) {}
 
   void doit() {
     jlong start_time_ns = os::javaTimeNanos();
-    int handshake_executed_by_vm_thread = 0;
 
     JavaThreadIteratorWithHandle jtiwh;
     int number_of_threads_issued = 0;
     for (JavaThread *thr = jtiwh.next(); thr != NULL; thr = jtiwh.next()) {
-      thr->set_handshake_operation(_op);
+      thr->handshake_state()->add_operation(_op);
       number_of_threads_issued++;
     }
 
     if (number_of_threads_issued < 1) {
-      log_handshake_info(start_time_ns, _op->name(), 0, 0);
+      log_handshake_info(start_time_ns, _op->name(), 0, 0, "no threads alive");
       return;
     }
     // _op was created with a count == 1 so don't double count.
@@ -265,6 +227,7 @@ class VM_HandshakeAllThreads: public VM_Handshake {
 
     log_trace(handshake)("Threads signaled, begin processing blocked threads by VMThread");
     HandshakeSpinYield hsy(start_time_ns);
+    int executed_by_driver = 0;
     do {
       // Check if handshake operation has timed out
       if (handshake_has_timed_out(start_time_ns)) {
@@ -273,16 +236,14 @@ class VM_HandshakeAllThreads: public VM_Handshake {
 
       // Have VM thread perform the handshake operation for blocked threads.
       // Observing a blocked state may of course be transient but the processing is guarded
-      // by semaphores and we optimistically begin by working on the blocked threads
+      // by mutexes and we optimistically begin by working on the blocked threads
       jtiwh.rewind();
       for (JavaThread *thr = jtiwh.next(); thr != NULL; thr = jtiwh.next()) {
         // A new thread on the ThreadsList will not have an operation,
         // hence it is skipped in handshake_try_process.
-        HandshakeState::ProcessResult pr = thr->handshake_try_process(_op);
-        if (pr == HandshakeState::_success) {
-          handshake_executed_by_vm_thread++;
-        }
+        HandshakeState::ProcessResult pr = thr->handshake_state()->try_process();
         hsy.add_result(pr);
+        executed_by_driver += pr.processed();
       }
       hsy.process();
     } while (!_op->is_completed());
@@ -293,7 +254,7 @@ class VM_HandshakeAllThreads: public VM_Handshake {
     // by the Handshakee.
     OrderAccess::acquire();
 
-    log_handshake_info(start_time_ns, _op->name(), number_of_threads_issued, handshake_executed_by_vm_thread);
+    log_handshake_info(start_time_ns, _op->name(), number_of_threads_issued, executed_by_driver);
   }
 
   VMOp_Type type() const { return VMOp_HandshakeAllThreads; }
@@ -308,7 +269,6 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
   // Only actually execute the operation for non terminated threads.
   if (!thread->is_terminated()) {
     _handshake_cl->do_thread(thread);
-    _executed = true;
   }
 
   if (start_time_ns != 0) {
@@ -327,37 +287,35 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
   // It is no longer safe to refer to 'this' as the VMThread/Handshaker may have destroyed this operation
 }
 
-void Handshake::execute(HandshakeClosure* thread_cl) {
-  HandshakeOperation cto(thread_cl);
+void Handshake::execute(HandshakeClosure* hs_cl) {
+  HandshakeOperation cto(hs_cl, NULL);
   VM_HandshakeAllThreads handshake(&cto);
   VMThread::execute(&handshake);
 }
 
-bool Handshake::execute(HandshakeClosure* thread_cl, JavaThread* target) {
-  HandshakeOperation cto(thread_cl);
-  VM_HandshakeOneThread handshake(&cto, target);
-  VMThread::execute(&handshake);
-  return handshake.executed();
-}
-
-bool Handshake::execute_direct(HandshakeClosure* thread_cl, JavaThread* target) {
+void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
   JavaThread* self = JavaThread::current();
-  HandshakeOperation op(thread_cl, /*is_direct*/ true);
+  HandshakeOperation op(hs_cl, target);
 
   jlong start_time_ns = os::javaTimeNanos();
 
   ThreadsListHandle tlh;
   if (tlh.includes(target)) {
-    target->set_handshake_operation(&op);
+    target->handshake_state()->add_operation(&op);
   } else {
     log_handshake_info(start_time_ns, op.name(), 0, 0, "(thread dead)");
-    return false;
+    return;
   }
 
-  HandshakeState::ProcessResult pr =  HandshakeState::_no_operation;
+  int executed_by_driver = 0;
   HandshakeSpinYield hsy(start_time_ns);
   while (!op.is_completed()) {
-    HandshakeState::ProcessResult pr = target->handshake_try_process(&op);
+    HandshakeState::ProcessResult pr(0);
+    pr = target->handshake_state()->try_process();
+    executed_by_driver += pr.processed();
+    if (op.is_completed()) {
+      break;
+    }
     hsy.add_result(pr);
     // Check for pending handshakes to avoid possible deadlocks where our
     // target is trying to handshake us.
@@ -373,39 +331,61 @@ bool Handshake::execute_direct(HandshakeClosure* thread_cl, JavaThread* target) 
   // by the Handshakee.
   OrderAccess::acquire();
 
-  log_handshake_info(start_time_ns, op.name(), 1,  (pr == HandshakeState::_success) ? 1 : 0);
-
-  return op.executed();
+  log_handshake_info(start_time_ns, op.name(), 1, executed_by_driver);
 }
 
-HandshakeState::HandshakeState() :
-  _operation(NULL),
-  _operation_direct(NULL),
-  _handshake_turn_sem(1),
-  _processing_sem(1),
-  _thread_in_process_handshake(false),
-  _active_handshaker(NULL)
+void Handshake::execute(AsynchHandshakeClosure* hs_cl, JavaThread* target) {
+  jlong start_time_ns = os::javaTimeNanos();
+  AsyncHandshakeOperation* op = new AsyncHandshakeOperation(hs_cl, target, start_time_ns);
+
+  ThreadsListHandle tlh;
+  if (tlh.includes(target)) {
+    target->handshake_state()->add_operation(op);
+  } else {
+    log_handshake_info(start_time_ns, op->name(), 0, 0, "(thread dead)");
+    delete op;
+  }
+}
+
+HandshakeState::HandshakeState(JavaThread* thread) :
+  _handshakee(thread),
+  _queue(),
+  _lock(Monitor::leaf, "HandshakeState", Mutex::_allow_vm_block_flag, Monitor::_safepoint_check_never)
 {
 }
 
-void HandshakeState::set_operation(HandshakeOperation* op) {
-  if (!op->is_direct()) {
-    assert(Thread::current()->is_VM_thread(), "should be the VMThread");
-    _operation = op;
-  } else {
-    // Serialize direct handshakes so that only one proceeds at a time for a given target
-    _handshake_turn_sem.wait_with_safepoint_check(JavaThread::current());
-    _operation_direct = op;
-  }
+void HandshakeState::add_operation(HandshakeOperation* op) {
+  // Adds are done lock free and so is arming.
+  // Calling this method with lock held is considered an error.
+  assert(!_lock.owned_by_self(), "Lock should not be held");
+  _queue.add(op);
   SafepointMechanism::arm_local_poll_release(_handshakee);
 }
 
-void HandshakeState::clear_handshake(bool is_direct) {
-  if (!is_direct) {
-    _operation = NULL;
-  } else {
-    _operation_direct = NULL;
-    _handshake_turn_sem.signal();
+HandshakeOperation* HandshakeState::pop_for_self() {
+  assert(_lock.owned_by_self(), "Lock must be held");
+  return _queue.pop();
+};
+
+static bool processor_filter(HandshakeOperation* op) {
+  return !op->is_asynch();
+}
+
+bool HandshakeState::has_operation_for_processor() {
+  assert(_lock.owned_by_self(), "Lock must be held");
+  return _queue.contains(processor_filter);
+}
+
+HandshakeOperation* HandshakeState::pop_for_processor() {
+  assert(_lock.owned_by_self(), "Lock must be held");
+  return _queue.pop(processor_filter);
+};
+
+void HandshakeState::process_by_self() {
+  ThreadInVMForHandshake tivm(_handshakee);
+  {
+    NoSafepointVerifier nsv;
+    process_self_inner();
   }
 }
 
@@ -414,31 +394,25 @@ void HandshakeState::process_self_inner() {
   assert(!_handshakee->is_terminated(), "should not be a terminated thread");
   assert(_handshakee->thread_state() != _thread_blocked, "should not be in a blocked state");
   assert(_handshakee->thread_state() != _thread_in_native, "should not be in native");
-  JavaThread* self = _handshakee;
 
-  do {
-    ThreadInVMForHandshake tivm(self);
-    if (!_processing_sem.trywait()) {
-      _processing_sem.wait_with_safepoint_check(self);
-    }
-    if (has_operation()) {
-      HandleMark hm(self);
-      CautiouslyPreserveExceptionMark pem(self);
-      HandshakeOperation * op = _operation;
-      if (op != NULL) {
-        // Disarm before executing the operation
-        clear_handshake(/*is_direct*/ false);
-        op->do_handshake(self);
-      }
-      op = _operation_direct;
-      if (op != NULL) {
-        // Disarm before executing the operation
-        clear_handshake(/*is_direct*/ true);
-        op->do_handshake(self);
+  while (block_for_operation()) {
+    HandleMark hm(_handshakee);
+    CautiouslyPreserveExceptionMark pem(_handshakee);
+    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+    HandshakeOperation* op = pop_for_self();
+    if (op != NULL) {
+      assert(op->_target == NULL || op->_target == Thread::current(), "Wrong thread");
+      assert(_handshakee == Thread::current(), "Wrong thread");
+      bool asynch = op->is_asynch();
+      log_trace(handshake)("Proc handshake %s " INTPTR_FORMAT " on " INTPTR_FORMAT " by self",
+                           asynch ? "asynchronous" : "synchronous", p2i(op), p2i(_handshakee));
+      op->do_handshake(_handshakee);
+      if (asynch) {
+        log_handshake_info(((AsyncHandshakeOperation*)op)->start_time(), op->name(), 1, 0, "asynchronous");
+        delete op;
       }
     }
-    _processing_sem.signal();
-  } while (has_operation());
+  }
 }
 
 bool HandshakeState::can_process_handshake() {
@@ -465,60 +439,61 @@ bool HandshakeState::possibly_can_process_handshake() {
   }
 }
 
-bool HandshakeState::claim_handshake(bool is_direct) {
-  if (!_processing_sem.trywait()) {
+bool HandshakeState::claim_handshake() {
+  if (!_lock.try_lock()) {
     return false;
   }
-  if (has_specific_operation(is_direct)){
-    return true;
+  // Operations are added without lock and then the poll is armed.
+  // If all handshake operations for the handshakee are finished and someone
+  // just adds an operation we may see it here. But if the handshakee is not
+  // armed yet it is not safe to procced.
+  if (has_operation_for_processor()) {
+    if (SafepointMechanism::local_poll_armed(_handshakee)) {
+      return true;
+    }
   }
-  _processing_sem.signal();
+  _lock.unlock();
   return false;
 }
 
-HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* op) {
-  bool is_direct = op->is_direct();
-
-  if (!has_specific_operation(is_direct)){
+HandshakeState::ProcessResult HandshakeState::try_process() {
+  if (!has_operation()) {
     // JT has already cleared its handshake
-    return _no_operation;
+    return ProcessResult(HandshakeState::ProcessResult::_no_operation);
   }
 
   if (!possibly_can_process_handshake()) {
     // JT is observed in an unsafe state, it must notice the handshake itself
-    return _not_safe;
+    return ProcessResult(HandshakeState::ProcessResult::_not_safe);
   }
 
-  // Claim the semaphore if there still an operation to be executed.
-  if (!claim_handshake(is_direct)) {
-    return _state_busy;
+  // Claim the mutex if there still an operation to be executed.
+  if (!claim_handshake()) {
+    return ProcessResult(HandshakeState::ProcessResult::_claim_failed);
   }
 
-  // Check if the handshake operation is the same as the one we meant to execute. The
-  // handshake could have been already processed by the handshakee and a new handshake
-  // by another JavaThread might be in progress.
-  if (is_direct && op != _operation_direct) {
-    _processing_sem.signal();
-    return _no_operation;
-  }
-
-  // If we own the semaphore at this point and while owning the semaphore
+  // If we own the mutex at this point and while owning the mutex
   // can observe a safe state the thread cannot possibly continue without
-  // getting caught by the semaphore.
-  ProcessResult pr = _not_safe;
-  if (can_process_handshake()) {
-    guarantee(!_processing_sem.trywait(), "we should already own the semaphore");
-    log_trace(handshake)("Processing handshake by %s", Thread::current()->is_VM_thread() ? "VMThread" : "Handshaker");
-    _active_handshaker = Thread::current();
-    op->do_handshake(_handshakee);
-    _active_handshaker = NULL;
-    // Disarm after we have executed the operation.
-    clear_handshake(is_direct);
-    pr = _success;
+  // getting caught by the mutex.
+  if (!can_process_handshake()) {
+    _lock.unlock();
+    return ProcessResult(HandshakeState::ProcessResult::_not_safe);
   }
 
-  // Release the thread
-  _processing_sem.signal();
+  int executed = 0;
+  do {
+    HandshakeOperation* op = pop_for_processor();
+    if (op != NULL) {
+      assert(SafepointMechanism::local_poll_armed(_handshakee), "Must be");
+      assert(op->_target == NULL || _handshakee == op->_target, "Wrong thread");
+      log_trace(handshake)("Processing handshake " INTPTR_FORMAT " by %s", p2i(op), Thread::current()->is_VM_thread() ? "VMThread" : "Handshaker");
+      _active_handshaker = Thread::current();
+      op->do_handshake(_handshakee);
+      _active_handshaker = NULL;
+      executed++;
+    }
+  } while (has_operation_for_processor());
 
-  return pr;
+  _lock.unlock();
+  return ProcessResult(executed);
 }

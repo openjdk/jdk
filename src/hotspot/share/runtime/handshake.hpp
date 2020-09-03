@@ -27,8 +27,9 @@
 
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/semaphore.hpp"
-#include "utilities/autoRestore.hpp"
+#include "runtime/flags/flagSetting.hpp"
+#include "runtime/mutex.hpp"
+#include "utilities/filterQueue.hpp"
 
 class HandshakeOperation;
 class JavaThread;
@@ -39,72 +40,84 @@ class JavaThread;
 // the target thread in a blocked state. A handshake can be performed with a
 // single JavaThread as well. In that case, the callback is executed either
 // by the target JavaThread itself or, depending on whether the operation is
-// a direct handshake or not, by the JavaThread that requested the handshake
-// or the VMThread respectively.
-class HandshakeClosure : public ThreadClosure {
+// a single target/direct handshake or not, by the JavaThread that requested the
+// handshake or the VMThread respectively.
+class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   const char* const _name;
  public:
   HandshakeClosure(const char* name) : _name(name) {}
-  const char* name() const {
-    return _name;
-  }
+  virtual ~HandshakeClosure() {}
+  const char* name() const    { return _name; }
+  virtual bool is_asynch()    { return false; };
   virtual void do_thread(Thread* thread) = 0;
+};
+
+class AsynchHandshakeClosure : public HandshakeClosure {
+ public:
+   AsynchHandshakeClosure(const char* name) : HandshakeClosure(name) {}
+   virtual ~AsynchHandshakeClosure() {}
+   virtual bool is_asynch()          { return true; }
 };
 
 class Handshake : public AllStatic {
  public:
   // Execution of handshake operation
-  static void execute(HandshakeClosure* hs_cl);
-  static bool execute(HandshakeClosure* hs_cl, JavaThread* target);
-  static bool execute_direct(HandshakeClosure* hs_cl, JavaThread* target);
+  static void execute(HandshakeClosure*       hs_cl);
+  static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
+  static void execute(AsynchHandshakeClosure* hs_cl, JavaThread* target);
 };
 
 // The HandshakeState keeps track of an ongoing handshake for this JavaThread.
-// VMThread/Handshaker and JavaThread are serialized with semaphore _processing_sem
-// making sure the operation is only done by either VMThread/Handshaker on behalf
-// of the JavaThread or by the target JavaThread itself.
+// VMThread/Handshaker and JavaThread are serialized with _lock making sure the
+// operation is only done by either VMThread/Handshaker on behalf of the
+// JavaThread or by the target JavaThread itself.
 class HandshakeState {
   JavaThread* _handshakee;
-  HandshakeOperation* volatile _operation;
-  HandshakeOperation* volatile _operation_direct;
+  FilterQueue<HandshakeOperation*> _queue;
+  Mutex _lock;
 
-  Semaphore _handshake_turn_sem;  // Used to serialize direct handshakes for this JavaThread.
-  Semaphore _processing_sem;
-  bool _thread_in_process_handshake;
-
-  bool claim_handshake(bool is_direct);
+  bool claim_handshake();
   bool possibly_can_process_handshake();
   bool can_process_handshake();
-  void clear_handshake(bool is_direct);
-
   void process_self_inner();
 
-public:
-  HandshakeState();
+ public:
+  HandshakeState(JavaThread* thread);
 
-  void set_handshakee(JavaThread* thread) { _handshakee = thread; }
+  void add_operation(HandshakeOperation* op);
+  HandshakeOperation* pop_for_self();
+  HandshakeOperation* pop_for_processor();
 
-  void set_operation(HandshakeOperation* op);
-  bool has_operation() const { return _operation != NULL || _operation_direct != NULL; }
-  bool has_specific_operation(bool is_direct) const {
-    return is_direct ? _operation_direct != NULL : _operation != NULL;
+  bool has_operation_for_processor();
+  bool has_operation() {
+    return !_queue.is_empty();
+  }
+  bool block_for_operation() {
+    return !_queue.is_empty() || _lock.is_locked();
   }
 
-  void process_by_self() {
-    if (!_thread_in_process_handshake) {
-      AutoModifyRestore<bool> temporarily(_thread_in_process_handshake, true);
-      process_self_inner();
-    }
-  }
+  void process_by_self();
 
-  enum ProcessResult {
-    _no_operation = 0,
-    _not_safe,
-    _state_busy,
-    _success,
-    _number_states
+  class ProcessResult {
+   public:
+    enum Result {
+      _no_operation = 0,
+      _not_safe,
+      _claim_failed,
+      _success,
+      _number_states
+    };
+   private:
+    int _processed;
+    Result _result;
+   public:
+    ProcessResult(int processed) : _processed(processed), _result(_success)
+      { if (_processed <= 0) _result = _no_operation; }
+    ProcessResult(Result r) : _processed(0), _result(r)  {}
+    int processed() { return _processed; }
+    Result result() { return _processed > 0 ? _success : _result; }
   };
-  ProcessResult try_process(HandshakeOperation* op);
+  ProcessResult try_process();
 
   Thread* _active_handshaker;
   Thread* active_handshaker() const { return _active_handshaker; }

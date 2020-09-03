@@ -132,10 +132,6 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
   void transition_back() {
     // This can be invoked from transition states and must return to the original state properly
     assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
-    // Change to transition state and ensure it is seen by the VM thread.
-    _thread->set_thread_state_fence(_thread_in_vm_trans);
-
-    SafepointMechanism::process_if_requested(_thread);
 
     _thread->set_thread_state(_original_state);
 
@@ -156,6 +152,9 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
     }
 
     thread->set_thread_state(_thread_in_vm);
+
+    // Threads shouldn't block if they are in the middle of printing, but...
+    ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
   }
 
   ~ThreadInVMForHandshake() {

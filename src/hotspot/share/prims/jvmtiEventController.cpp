@@ -333,11 +333,10 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
   EnterInterpOnlyModeClosure hs;
   JavaThread *target = state->get_thread();
   Thread *current = Thread::current();
-  if (target == current || target->active_handshaker() == current) {
+  if (target->is_handshake_safe_for(current)) {
     hs.do_thread(target);
   } else {
-    bool executed = Handshake::execute_direct(&hs, target);
-    guarantee(executed, "Direct handshake failed. Target thread is not alive?");
+    Handshake::execute(&hs, target);
   }
 }
 

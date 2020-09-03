@@ -39,7 +39,6 @@ class SafepointMechanism : public AllStatic {
   static void* poll_armed_value()                     { return _poll_armed_value; }
   static void* poll_disarmed_value()                  { return _poll_disarmed_value; }
 
-  static inline bool local_poll_armed(JavaThread* thread);
 
   static inline void disarm_local_poll(JavaThread* thread);
   static inline void disarm_local_poll_release(JavaThread* thread);
@@ -58,6 +57,7 @@ class SafepointMechanism : public AllStatic {
   // between the armed and disarmed value by masking out this bit.
   const static intptr_t _poll_bit = 8;
 public:
+  static inline bool local_poll_armed(JavaThread* thread);
   static intptr_t poll_bit() { return _poll_bit; }
 
   static address get_polling_page()             { return _polling_page; }

@@ -649,9 +649,8 @@ JvmtiEnvBase::count_locked_objects(JavaThread *java_thread, Handle hobj) {
 
 jvmtiError
 JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThread *java_thread, jobject *monitor_ptr) {
-  JavaThread *current_jt = JavaThread::current();
-  assert(current_jt == java_thread ||
-         current_jt == java_thread->active_handshaker(),
+  Thread *current_thread = Thread::current();
+  assert(java_thread->is_handshake_safe_for(current_thread),
          "call by myself or at direct handshake");
   oop obj = NULL;
   // The ObjectMonitor* can't be async deflated since we are either
@@ -676,8 +675,8 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThre
   if (obj == NULL) {
     *monitor_ptr = NULL;
   } else {
-    HandleMark hm(current_jt);
-    Handle     hobj(current_jt, obj);
+    HandleMark hm(current_thread);
+    Handle     hobj(current_thread, obj);
     *monitor_ptr = jni_reference(calling_thread, hobj);
   }
   return JVMTI_ERROR_NONE;
@@ -687,15 +686,19 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThre
 jvmtiError
 JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread,
                                  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list) {
+  // Note:
+  // calling_thread is the thread that requested the list of monitors for java_thread.
+  // java_thread is thread owning the monitors.
+  // current_thread is thread executint this code, can be a non-JavaThread (e.g. VM Thread).
+  // And they all maybe different threads.
   jvmtiError err = JVMTI_ERROR_NONE;
-  JavaThread *current_jt = JavaThread::current();
-  assert(current_jt == java_thread ||
-         current_jt == java_thread->active_handshaker(),
+  Thread *current_thread = Thread::current();
+  assert(java_thread->is_handshake_safe_for(current_thread),
          "call by myself or at direct handshake");
 
   if (java_thread->has_last_Java_frame()) {
-    ResourceMark rm(current_jt);
-    HandleMark   hm(current_jt);
+    ResourceMark rm(current_thread);
+    HandleMark   hm(current_thread);
     RegisterMap  reg_map(java_thread);
 
     int depth = 0;
@@ -821,7 +824,7 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
   Thread *current_thread = Thread::current();
   assert(current_thread == java_thread ||
          SafepointSynchronize::is_at_safepoint() ||
-         current_thread == java_thread->active_handshaker(),
+         java_thread->is_handshake_safe_for(current_thread),
          "call by myself / at safepoint / at handshake");
   int count = 0;
   if (java_thread->has_last_Java_frame()) {
@@ -904,7 +907,7 @@ JvmtiEnvBase::get_frame_location(JavaThread *java_thread, jint depth,
 #endif
   Thread* current_thread = Thread::current();
   assert(current_thread == java_thread ||
-         current_thread == java_thread->active_handshaker(),
+         java_thread->is_handshake_safe_for(current_thread),
          "call by myself or at direct handshake");
   ResourceMark rm(current_thread);
 
@@ -1161,7 +1164,7 @@ MultipleStackTracesCollector::fill_frames(jthread jt, JavaThread *thr, oop threa
   Thread *current_thread = Thread::current();
   assert(current_thread == thr ||
          SafepointSynchronize::is_at_safepoint() ||
-         current_thread == thr->active_handshaker(),
+         thr->is_handshake_safe_for(current_thread),
          "call by myself / at safepoint / at handshake");
 #endif
 
@@ -1305,7 +1308,7 @@ VM_GetAllStackTraces::doit() {
 // HandleMark must be defined in the caller only.
 // It is to keep a ret_ob_h handle alive after return to the caller.
 jvmtiError
-JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_thread,
+JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
                               jvalue value, TosState tos, Handle* ret_ob_h) {
   ResourceMark rm(current_thread);
 
@@ -1368,7 +1371,7 @@ JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_threa
 
 jvmtiError
 JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState tos) {
-  JavaThread* current_thread = JavaThread::current();
+  Thread* current_thread = Thread::current();
   HandleMark   hm(current_thread);
   uint32_t debug_bits = 0;
 
