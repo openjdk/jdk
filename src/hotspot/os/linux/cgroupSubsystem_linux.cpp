@@ -267,7 +267,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     // as to avoid memory stomping of the _mount_path pointer later on in the cgroup v1
     // block in the hybrid case.
     //
-    if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %*s %s %*[^-]- %s cgroup2 %*s", tmp_mount_point, tmp_fs_type) == 2) {
+    if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %*s %s %*[^-]- %s %*s %*s", tmp_mount_point, tmp_fs_type) == 2) {
       // we likely have an early match return (e.g. cgroup fs match), be sure we have cgroup2 as fstype
       if (!cgroupv2_mount_point_found && strcmp("cgroup2", tmp_fs_type) == 0) {
         cgroupv2_mount_point_found = true;
@@ -289,7 +289,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
      * Example for host:
      * 34 28 0:29 / /sys/fs/cgroup/memory rw,nosuid,nodev,noexec,relatime shared:16 - cgroup cgroup rw,memory
      */
-    if (sscanf(p, "%*d %*d %*d:%*d %s %s %*[^-]- %s cgroup %s", tmproot, tmpmount, tmp_fs_type, tmpcgroups) == 4) {
+    if (sscanf(p, "%*d %*d %*d:%*d %s %s %*[^-]- %s %*s %s", tmproot, tmpmount, tmp_fs_type, tmpcgroups) == 4) {
       if (strcmp("cgroup", tmp_fs_type) != 0) {
         // Skip cgroup2 fs lines on hybrid or unified hierarchy.
         continue;
