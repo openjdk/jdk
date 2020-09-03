@@ -56,8 +56,8 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractElementVisitor9
  * @since 14
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=false)
+@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                             reflective=true)
 @SupportedSourceVersion(RELEASE_16)
 public abstract class AbstractElementVisitor14<R, P> extends AbstractElementVisitor9<R, P> {
     /**

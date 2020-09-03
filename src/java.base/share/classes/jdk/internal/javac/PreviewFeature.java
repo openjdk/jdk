@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal;
+package jdk.internal.javac;
 
 import java.lang.annotation.*;
 
@@ -51,7 +51,7 @@ public @interface PreviewFeature {
      */
     public Feature feature();
 
-    public boolean essentialAPI() default false;
+    public boolean reflective() default false;
 
     public enum Feature {
         PATTERN_MATCHING_IN_INSTANCEOF,
@@ -64,6 +64,10 @@ public @interface PreviewFeature {
         TEXT_BLOCKS,
         RECORDS,
         SEALED_CLASSES,
+        /**
+         * A key for testing.
+         */
+        TEST,
         ;
     }
 }

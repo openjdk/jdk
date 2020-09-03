@@ -68,8 +68,8 @@ import javax.lang.model.SourceVersion;
  * @see ElementKindVisitor9
  * @since 14
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=false)
+@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                             reflective=true)
 @SupportedSourceVersion(RELEASE_16)
 public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
     /**

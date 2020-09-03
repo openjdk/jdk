@@ -42,7 +42,9 @@ import com.sun.tools.javac.util.Options;
 
 import javax.tools.JavaFileObject;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static com.sun.tools.javac.main.Option.PREVIEW;
 
@@ -70,6 +72,7 @@ public class Preview {
     /** a mapping from classfile numbers to Java SE versions */
     private final Map<Integer, Source> majorVersionToSource;
 
+    private final Set<JavaFileObject> sourcesWithPreviewFeatures = new HashSet<>();
 
     private final Lint lint;
     private final Log log;
@@ -90,8 +93,9 @@ public class Preview {
         enabled = options.isSet(PREVIEW);
         log = Log.instance(context);
         lint = Lint.instance(context);
+        Source source = Source.instance(context);
         this.previewHandler =
-                new MandatoryWarningHandler(log, lint.isEnabled(LintCategory.PREVIEW), true, "preview", LintCategory.PREVIEW);
+                new MandatoryWarningHandler(log, source, lint.isEnabled(LintCategory.PREVIEW), true, "preview", LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
     }
@@ -128,6 +132,7 @@ public class Preview {
         Assert.check(isEnabled());
         Assert.check(isPreview(feature));
         if (!lint.isSuppressed(LintCategory.PREVIEW)) {
+            sourcesWithPreviewFeatures.add(log.currentSourceFile());
             previewHandler.report(pos, feature.isPlural() ?
                     Warnings.PreviewFeatureUsePlural(feature.nameFragment()) :
                     Warnings.PreviewFeatureUse(feature.nameFragment()));
@@ -141,14 +146,23 @@ public class Preview {
      */
     public void warnPreview(JavaFileObject classfile, int majorVersion) {
         Assert.check(isEnabled());
-        if (!lint.isSuppressed(LintCategory.PREVIEW)) {
-            previewHandler.report(null,
+        if (lint.isEnabled(LintCategory.PREVIEW)) {
+            sourcesWithPreviewFeatures.add(log.currentSourceFile());
+            log.mandatoryWarning(LintCategory.PREVIEW, null,
                     Warnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
         }
     }
 
+    public void markUsesPreview(DiagnosticPosition pos) {
+        sourcesWithPreviewFeatures.add(log.currentSourceFile());
+    }
+
     public void reportPreviewWarning(DiagnosticPosition pos, Warning warnKey) {
         previewHandler.report(pos, warnKey);
+    }
+
+    public boolean usesPreview(JavaFileObject file) {
+        return sourcesWithPreviewFeatures.contains(file);
     }
 
     /**

@@ -333,7 +333,7 @@ public class Flags {
     /**
      * Flag to indicate the API element in question is for a preview API.
      */
-    public static final long PREVIEW_ESSENTIAL_API = 1L<<58; //any Symbol kind
+    public static final long PREVIEW_REFLECTIVE = 1L<<58; //any Symbol kind
 
     /**
      * Flag to indicate the given variable is a match binding variable.
@@ -504,7 +504,7 @@ public class Flags {
         ANONCONSTR_BASED(Flags.ANONCONSTR_BASED),
         NAME_FILLED(Flags.NAME_FILLED),
         PREVIEW_API(Flags.PREVIEW_API),
-        PREVIEW_ESSENTIAL_API(Flags.PREVIEW_ESSENTIAL_API),
+        PREVIEW_REFLECTIVE(Flags.PREVIEW_REFLECTIVE),
         MATCH_BINDING(Flags.MATCH_BINDING),
         MATCH_BINDING_TO_OUTER(Flags.MATCH_BINDING_TO_OUTER),
         RECORD(Flags.RECORD),

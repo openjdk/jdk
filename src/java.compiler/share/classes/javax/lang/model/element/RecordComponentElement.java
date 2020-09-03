@@ -37,8 +37,8 @@ package javax.lang.model.element;
  *
  * @since 14
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=false)
+@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                             reflective=true)
 public interface RecordComponentElement extends Element {
     /**
      * Returns the enclosing element of this record component.

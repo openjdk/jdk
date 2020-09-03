@@ -53,8 +53,7 @@ import java.util.Objects;
  *
  * @since 14
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=false)
+@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS)
 public class ObjectMethods {
 
     private ObjectMethods() { }

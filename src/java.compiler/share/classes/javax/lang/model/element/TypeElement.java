@@ -198,8 +198,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @since 14
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                                 reflective=true)
     @SuppressWarnings("preview")
     default List<? extends RecordComponentElement> getRecordComponents() {
         return List.of();
@@ -222,8 +222,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @since 15
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SEALED_CLASSES,
-                                 essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES,
+                                 reflective=true)
     default List<? extends TypeMirror> getPermittedSubclasses() {
         return List.of();
     }

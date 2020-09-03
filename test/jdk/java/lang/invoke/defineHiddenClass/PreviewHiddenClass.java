@@ -56,7 +56,7 @@ public class PreviewHiddenClass {
         // compile a class with --enable-preview
         Path sourceFile = SRC_DIR.resolve("HiddenInterface.java");
         String[] options = new String[] {
-                "--enable-preview", "-source", String.valueOf(Runtime.version().feature()) };
+                "--enable-preview", "-source", String.valueOf(Runtime.version().feature()), "-XDforcePreview" };
         if (!CompilerUtils.compile(sourceFile, CLASSES_DIR, options)) {
             throw new RuntimeException("Compilation of the test failed: " + sourceFile);
         }

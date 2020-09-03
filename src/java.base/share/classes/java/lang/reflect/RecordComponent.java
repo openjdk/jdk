@@ -53,8 +53,8 @@ import java.util.Objects;
  * @jls 8.10 Record Types
  * @since 14
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=false)
+@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                             reflective=true)
 public final class RecordComponent implements AnnotatedElement {
     // declaring class
     private Class<?> clazz;

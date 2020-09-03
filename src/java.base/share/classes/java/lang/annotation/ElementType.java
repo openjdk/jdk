@@ -133,7 +133,7 @@ public enum ElementType {
      *
      * @since 14
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=true)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                                 reflective=false)
     RECORD_COMPONENT;
 }

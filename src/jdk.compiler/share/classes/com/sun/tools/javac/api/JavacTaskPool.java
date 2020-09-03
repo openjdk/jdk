@@ -44,6 +44,7 @@ import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -251,6 +252,9 @@ public class JavacTaskPool {
         }
 
         void clear() {
+            //when patching modules (esp. java.base), it may be impossible to
+            //clear the symbols read from the patch path:
+            polluted |= get(JavaFileManager.class).hasLocation(StandardLocation.PATCH_MODULE_PATH);
             drop(Arguments.argsKey);
             drop(DiagnosticListener.class);
             drop(Log.outKey);

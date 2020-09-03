@@ -64,8 +64,8 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleElementVisitor9
  * @since 14
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=false)
+@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                             reflective=true)
 @SupportedSourceVersion(RELEASE_16)
 public class SimpleElementVisitor14<R, P> extends SimpleElementVisitor9<R, P> {
     /**

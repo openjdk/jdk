@@ -234,8 +234,8 @@ public class ElementKindVisitor6<R, P>
      *
      * @since 14
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                                 reflective=true)
     public R visitTypeAsRecord(TypeElement e, P p) {
         return visitUnknown(e, p);
     }

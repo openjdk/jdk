@@ -657,8 +657,8 @@ public interface Elements {
      * component accessor
      * @since 14
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                                 reflective=true)
     @SuppressWarnings("preview")
     default RecordComponentElement recordComponentFor(ExecutableElement accessor) {
         if (accessor.getEnclosingElement().getKind() == ElementKind.RECORD) {

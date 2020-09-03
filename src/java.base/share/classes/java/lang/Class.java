@@ -2387,8 +2387,8 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 8.10 Record Types
      * @since 14
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                                 reflective=true)
     @SuppressWarnings("preview")
     @CallerSensitive
     public RecordComponent[] getRecordComponents() {
@@ -3709,8 +3709,8 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 8.10 Record Types
      * @since 14
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                                 reflective=true)
     public boolean isRecord() {
         return getSuperclass() == JAVA_LANG_RECORD_CLASS && isRecord0();
     }
@@ -4405,7 +4405,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 9.1 Interface Declarations
      * @since 15
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SEALED_CLASSES, essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES, reflective=true)
     public ClassDesc[] permittedSubclasses() {
         String[] subclassNames;
         if (isArray() || isPrimitive() || (subclassNames = getPermittedSubclasses0()).length == 0) {
@@ -4441,7 +4441,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 9.1 Interface Declarations
      * @since 15
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SEALED_CLASSES, essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES, reflective=true)
     @SuppressWarnings("preview")
     public boolean isSealed() {
         if (isArray() || isPrimitive()) {

@@ -42,6 +42,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor8;
 
 import com.sun.source.doctree.DocTree;
+import javax.lang.model.element.ElementKind;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
@@ -197,7 +198,14 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         classInfoTree.add(hr);
         Content pre = new HtmlTree(TagName.PRE);
         addAnnotationInfo(typeElement, pre);
-        pre.add(modifiers);
+        Content sep = null;
+        for (String modifiersPart : modifiers.split("record")) {
+            if (sep != null) {
+                pre.add(sep);
+            }
+            pre.add(modifiersPart);
+            sep = HtmlTree.SPAN(HtmlStyle.previewReference, new ContentBuilder().add("record"));
+        }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.Kind.CLASS_SIGNATURE, typeElement);
         //Let's not link to ourselves in the signature.
@@ -223,7 +231,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                     pre.add("extends ");
                     Content link = getLink(new LinkInfoImpl(configuration,
                             LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
-                            superclass));
+                            superclass)
+                    .checkPreviewAPI(typeElement.getKind() != ElementKind.RECORD));
                     pre.add(link);
                 }
             }
@@ -519,6 +528,12 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                     addInlineDeprecatedComment(typeElement, deprs.get(0), div);
                 }
             }
+            classInfoTree.add(div);
+        }
+        for (Content previewNote : utils.getPreviewNotes(typeElement, false)) {
+            HtmlTree div = new HtmlTree(TagName.DIV);
+            div.setStyle(HtmlStyle.previewBlock);
+            div.add(HtmlTree.SPAN(HtmlStyle.previewLabel, previewNote));
             classInfoTree.add(div);
         }
     }

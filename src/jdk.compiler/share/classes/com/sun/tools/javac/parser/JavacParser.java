@@ -2645,6 +2645,7 @@ public class JavacParser implements Parser {
             }
         }
         if (isRecordStart() && allowRecords) {
+            checkSourceLevel(Feature.RECORDS);
             dc = token.comment(CommentStyle.JAVADOC);
             return List.of(recordDeclaration(F.at(pos).Modifiers(0), dc));
         } else {
@@ -3708,6 +3709,7 @@ public class JavacParser implements Parser {
         if (token.kind == CLASS) {
             return classDeclaration(mods, dc);
         } if (isRecordStart()) {
+             checkSourceLevel(Feature.RECORDS);
             return recordDeclaration(mods, dc);
         } else if (token.kind == INTERFACE) {
             return interfaceDeclaration(mods, dc);
@@ -4212,7 +4214,6 @@ public class JavacParser implements Parser {
             (peekToken(TokenKind.IDENTIFIER, TokenKind.LPAREN) ||
              peekToken(TokenKind.IDENTIFIER, TokenKind.EOF) ||
              peekToken(TokenKind.IDENTIFIER, TokenKind.LT))) {
-             checkSourceLevel(Feature.RECORDS);
             return true;
         } else {
             return false;

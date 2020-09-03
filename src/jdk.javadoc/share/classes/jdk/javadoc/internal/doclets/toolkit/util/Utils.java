@@ -119,6 +119,11 @@ import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
+import java.util.function.Function;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.toolkit.Content;
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 /**
@@ -1703,6 +1708,81 @@ public class Utils {
         return sb.toString().trim();
     }
 
+    @SuppressWarnings("preview")
+    public List<Content> getPreviewNotes(Element el, boolean span) {
+        List<Content> result = new ArrayList<>();
+        List<TypeElement> usedInDeclaration = new ArrayList<>();
+        String suffix;
+        switch (el.getKind()) {
+            case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -> {
+                suffix = "type";
+                //TODO: annotations
+                TypeElement te = (TypeElement) el;
+                for (TypeParameterElement tpe : te.getTypeParameters()) {
+                    usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
+                }
+                usedInDeclaration.addAll(types2Classes(List.of(te.getSuperclass())));
+                usedInDeclaration.addAll(types2Classes(te.getInterfaces()));
+                usedInDeclaration.addAll(types2Classes(te.getPermittedSubclasses()));
+                usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(c -> c.asType()).collect(Collectors.toList()))); //TODO: annotations on record components???
+            }
+            case CONSTRUCTOR, METHOD -> {
+                suffix = "method";
+                //TODO: annotations
+                ExecutableElement ee = (ExecutableElement) el;
+                for (TypeParameterElement tpe : ee.getTypeParameters()) {
+                    usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
+                }
+                usedInDeclaration.addAll(types2Classes(List.of(ee.getReturnType())));
+                usedInDeclaration.addAll(types2Classes(List.of(ee.getReceiverType())));
+                usedInDeclaration.addAll(types2Classes(ee.getThrownTypes()));
+                usedInDeclaration.addAll(types2Classes(ee.getParameters().stream().map(p -> p.asType()).collect(Collectors.toList())));
+            }
+            case FIELD, ENUM_CONSTANT -> {
+                suffix = "field";
+                //TODO: annotations
+                VariableElement ve = (VariableElement) el;
+                usedInDeclaration.addAll(types2Classes(List.of(ve.asType())));
+            }
+            default -> throw new IllegalStateException("Unexpected: " + el.getKind());
+        }
+        Function<Content, Content> wrap = c -> {
+            return span ? HtmlTree.SPAN(HtmlStyle.previewReference, c)
+                        : HtmlTree.DIV(HtmlStyle.previewReference, c);
+        };
+        if (isDeclaredUsingPreview(el)) {
+            result.add(wrap.apply(new ContentBuilder().add(resources.getText("doclet.Declared_Using_Preview." + suffix))));
+        }
+        Set<PreviewAPIType> previewAPITypes = getPreviewAPITypes(usedInDeclaration);
+        if (previewAPITypes.contains(PreviewAPIType.PREVIEW)) {
+            result.add(wrap.apply(new ContentBuilder().add(resources.getText("doclet.PreviewAPI." + suffix))));
+        }
+        if (previewAPITypes.contains(PreviewAPIType.REFLECTIVE)) {
+            result.add(wrap.apply(new ContentBuilder().add(resources.getText("doclet.ReflectivePreviewAPI." + suffix))));
+        }
+        if (previewAPITypes.contains(PreviewAPIType.DECLARED_USING_PREVIEW)) {
+            result.add(wrap.apply(new ContentBuilder().add(resources.getText("doclet.UsesDeclaredUsingPreview." + suffix))));
+        }
+        return result;
+    }
+
+    private Collection<TypeElement> types2Classes(List<? extends TypeMirror> types) {
+        List<TypeElement> result = new ArrayList<>();
+        List<TypeMirror> todo = new ArrayList<>(types);
+        
+        while (!todo.isEmpty()) {
+            TypeMirror type = todo.remove(todo.size() - 1);
+
+            if (type.getKind() == DECLARED) {
+                DeclaredType dt = (DeclaredType) type;
+                result.add((TypeElement) dt.asElement());
+                todo.addAll(dt.getTypeArguments());
+            }
+        }
+
+        return result;
+    }
+
     private static class DocCollator {
         private final Map<String, CollationKey> keys;
         private final Collator instance;
@@ -2937,4 +3017,44 @@ public class Utils {
             return first + ":" + second;
         }
     }
+
+    /**
+     * Return true if the given Element is deprecated.
+     *
+     * @param e the Element to check.
+     * @return true if the given Element is deprecated.
+     */
+    @SuppressWarnings("preview")
+    public boolean isDeclaredUsingPreview(Element e) {
+        return e.getKind() == ElementKind.RECORD ||
+               e.getModifiers().contains(Modifier.SEALED);
+    }
+
+    public Set<PreviewAPIType> getPreviewAPITypes(Iterable<TypeElement> elements) {
+        Set<PreviewAPIType> result = new TreeSet<>();
+
+        for (TypeElement type : elements) {
+            result.add(getPreviewAPIType(type));
+        }
+
+        result.remove(PreviewAPIType.STANDARD);
+
+        return result;
+    }
+
+    public PreviewAPIType getPreviewAPIType(TypeElement el) {
+        //TODO: PREVIEW+DECLARED_USING_PREVIEW?
+        if (isDeclaredUsingPreview(el)) {
+            return PreviewAPIType.DECLARED_USING_PREVIEW;
+        }
+        return configuration.workArounds.getPreviewAPIType(el);
+    }
+
+    public enum PreviewAPIType {
+        STANDARD,
+        REFLECTIVE,
+        PREVIEW,
+        DECLARED_USING_PREVIEW;
+    }
+
 }

@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
@@ -231,6 +232,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     addSummaryComment(klass, description);
                 }
                 table.addRow(classLink, description);
+                for (Content c : utils.getPreviewNotes(klass, true)) {
+                    table.addRow(HtmlTree.TD(HtmlStyle.colFirst, c).put(HtmlAttr.COLSPAN, "2")); //TODO: "2"!!
+                }
             }
             summaryContentTree.add(HtmlTree.LI(table));
         }

@@ -139,8 +139,9 @@ module java.base {
     exports com.sun.security.ntlm to
         java.security.sasl;
     exports jdk.internal to
+        jdk.jfr;
+    exports jdk.internal.javac to
         java.compiler,
-        jdk.jfr,
         jdk.compiler,
         jdk.jshell;
     exports jdk.internal.access to

@@ -88,8 +88,8 @@ package java.lang;
  * @jls 8.10 Record Types
  * @since 14
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=true)
+@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                             reflective=false)
 public abstract class Record {
     /**
      * Constructor for record classes to call.

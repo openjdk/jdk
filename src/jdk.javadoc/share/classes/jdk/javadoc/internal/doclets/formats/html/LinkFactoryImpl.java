@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -36,12 +37,17 @@ import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewAPIType;
 import jdk.javadoc.internal.doclets.toolkit.util.links.LinkFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
 
@@ -78,25 +84,36 @@ public class LinkFactoryImpl extends LinkFactory {
         // Create a tool tip if we are linking to a class or interface.  Don't
         // create one if we are linking to a member.
         String title = "";
-        if (classLinkInfo.where == null || classLinkInfo.where.length() == 0) {
+        boolean hasWhere = classLinkInfo.where != null && classLinkInfo.where.length() != 0;
+        if (!hasWhere) {
             boolean isTypeLink = classLinkInfo.type != null &&
                      utils.isTypeVariable(utils.getComponentType(classLinkInfo.type));
             title = getClassToolTip(typeElement, isTypeLink);
         }
         Content label = classLinkInfo.getClassLinkLabel(configuration);
 
+        Function<Content, Content> wrapWithPreviewNotice = c -> {
+            if (!hasWhere) {
+                boolean previewWarning = utils.isDeclaredUsingPreview(typeElement) || utils.getPreviewAPIType(typeElement) != PreviewAPIType.STANDARD;
+                if (previewWarning) {
+                    HtmlTree span = HtmlTree.SPAN(HtmlStyle.previewReference, c);
+                    c = span;
+                }
+            }
+            return c;
+        };
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
             if (configuration.isGeneratedDoc(typeElement)) {
                 DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf ||
                                 !(docPaths.forName(typeElement)).equals(m_writer.filename)) {
-                        link.add(m_writer.links.createLink(
+                        link.add(wrapWithPreviewNotice.apply(m_writer.links.createLink(
                                 filename.fragment(classLinkInfo.where),
                                 label,
                                 classLinkInfo.isStrong,
                                 title,
-                                classLinkInfo.target));
+                                classLinkInfo.target)));
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
                             link.add(getTypeParameterLinks(linkInfo));
                         }
@@ -108,7 +125,7 @@ public class LinkFactoryImpl extends LinkFactory {
                 typeElement, classLinkInfo.where,
                 label, classLinkInfo.isStrong, true);
             if (crossLink != null) {
-                link.add(crossLink);
+                link.add(wrapWithPreviewNotice.apply(crossLink));
                 if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
                     link.add(getTypeParameterLinks(linkInfo));
                 }
@@ -116,7 +133,7 @@ public class LinkFactoryImpl extends LinkFactory {
             }
         }
         // Can't link so just write label.
-        link.add(label);
+        link.add(wrapWithPreviewNotice.apply(label));
         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
             link.add(getTypeParameterLinks(linkInfo));
         }

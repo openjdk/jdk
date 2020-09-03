@@ -602,7 +602,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
 
         List<String> expected = List.of(
             "Base.java:1:46: compiler.err.cant.inherit.from.sealed: a.Base",
-            "- compiler.note.preview.filename: Base.java",
+            "- compiler.note.preview.plural: DEFAULT",
             "- compiler.note.preview.recompile",
             "1 error"
         );

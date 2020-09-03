@@ -77,6 +77,7 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
 import static javax.lang.model.element.ElementKind.*;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewAPIType;
 
 /**
  * A quarantine class to isolate all the workarounds and bridges to
@@ -613,4 +614,18 @@ public class WorkArounds {
                 ? utils.elementUtils.getPackageElement(parsedPackageName)
                 : ((JavacElements) utils.elementUtils).getPackageElement(encl, parsedPackageName);
     }
+
+    public PreviewAPIType getPreviewAPIType(TypeElement el) {
+        Symbol sym = (Symbol) el;
+        if ((sym.flags() & Flags.PREVIEW_API) != 0) {
+            if ((sym.flags() & Flags.PREVIEW_REFLECTIVE) != 0) {
+                return PreviewAPIType.REFLECTIVE;
+            } else {
+                return PreviewAPIType.PREVIEW;
+            }
+        } else {
+            return PreviewAPIType.STANDARD;
+        }
+    }
+
 }

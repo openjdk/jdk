@@ -62,6 +62,8 @@ import static javax.lang.model.element.Modifier.NATIVE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STRICTFP;
 import static javax.lang.model.element.Modifier.SYNCHRONIZED;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
+import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
  * The base class for member writers.
@@ -281,6 +283,10 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             Content div = HtmlTree.DIV(HtmlStyle.deprecationBlock, deprecatedContent);
             contentTree.add(div);
         }
+        for (Content note : utils.getPreviewNotes(member, false)) {
+            Content div = HtmlTree.DIV(HtmlStyle.previewBlock, note);
+            contentTree.add(div);
+        }
     }
 
     /**
@@ -397,6 +403,10 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         writer.addSummaryLinkComment(this, member, firstSentenceTags, desc);
         rowContents.add(desc);
         table.addRow(member, rowContents);
+        List<Content> notes = utils.getPreviewNotes(member, true);
+        for (Content c : notes) {
+            table.addRow(member, HtmlTree.TD(HtmlStyle.colFirst, c).put(HtmlAttr.COLSPAN, "3")); //TODO: "3"!!
+        }
     }
 
     /**

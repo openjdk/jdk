@@ -124,8 +124,8 @@ public class ElementFilter {
      * @param elements the elements to filter
      * @since 14
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                                 reflective=true)
     @SuppressWarnings("preview")
     public static List<RecordComponentElement>
         recordComponentsIn(Iterable<? extends Element> elements) {
@@ -145,8 +145,8 @@ public class ElementFilter {
      * @param elements the elements to filter
      * @since 14
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
+                                 reflective=true)
     @SuppressWarnings("preview")
     public static Set<RecordComponentElement>
     recordComponentsIn(Set<? extends Element> elements) {

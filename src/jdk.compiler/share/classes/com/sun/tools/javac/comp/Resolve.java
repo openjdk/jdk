@@ -2847,7 +2847,7 @@ public class Resolve {
                                     typeargtypes, allowBoxing,
                                     useVarargs);
         chk.checkDeprecated(pos, env.info.scope.owner, sym);
-        chk.checkPreview(pos, sym);
+        chk.checkPreview(pos, env.info.scope.owner, sym);
         return sym;
     }
 

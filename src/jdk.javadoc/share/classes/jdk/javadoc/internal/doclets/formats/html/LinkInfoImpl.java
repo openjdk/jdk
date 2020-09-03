@@ -300,6 +300,14 @@ public class LinkInfoImpl extends LinkInfo {
     }
 
     /**
+     * Set the checkPreviewAPI flag.
+     */
+    public LinkInfoImpl checkPreviewAPI(boolean checkPreviewAPI) {
+        this.checkPreviewAPI = checkPreviewAPI;
+        return this;
+    }
+
+    /**
      * Set whether or not the link should be strong.
      */
     public LinkInfoImpl strong(boolean strong) {
