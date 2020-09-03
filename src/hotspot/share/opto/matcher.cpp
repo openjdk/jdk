@@ -2282,6 +2282,14 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_CopySignD:
+    case Op_SignumF:
+    case Op_SignumD: {
+      Node* pair = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair);
+      n->del_req(3);
+      break;
+    }
     default:
       break;
   }

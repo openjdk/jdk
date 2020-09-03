@@ -13585,6 +13585,77 @@ instruct roundD_reg(vRegD dst, vRegD src, immI rmode) %{
   ins_pipe(fp_uop_d);
 %}
 
+instruct copySignD_reg(vRegD dst, vRegD src1, vRegD src2, vRegD zero) %{
+  match(Set dst (CopySignD src1 (Binary src2 zero)));
+  effect(TEMP_DEF dst, USE src1, USE src2, USE zero);
+  format %{ "CopySignD  $dst $src1 $src2" %}
+  ins_encode %{
+    FloatRegister dst = as_FloatRegister($dst$$reg),
+                  src1 = as_FloatRegister($src1$$reg),
+                  src2 = as_FloatRegister($src2$$reg),
+                  zero = as_FloatRegister($zero$$reg);
+    __ fnegd(dst, zero);
+    __ bsl(dst, __ T8B, src2, src1);
+  %}
+  ins_pipe(fp_uop_d);
+%}
+
+instruct copySignF_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (CopySignF src1 src2));
+  effect(TEMP_DEF dst, USE src1, USE src2);
+  format %{ "CopySignF  $dst $src1 $src2" %}
+  ins_encode %{
+    FloatRegister dst = as_FloatRegister($dst$$reg),
+                  src1 = as_FloatRegister($src1$$reg),
+                  src2 = as_FloatRegister($src2$$reg);
+    __ movi(dst, __ T2S, 0x80, 24);
+    __ bsl(dst, __ T8B, src2, src1);
+  %}
+  ins_pipe(fp_uop_d);
+%}
+
+instruct signumD_reg(vRegD dst, vRegD src, vRegD zero, vRegD one) %{
+  match(Set dst (SignumD src (Binary zero one)));
+  effect(TEMP_DEF dst, USE src, USE zero, USE one);
+  format %{ "signumD  $dst, $src" %}
+  ins_encode %{
+    FloatRegister src = as_FloatRegister($src$$reg),
+                  dst = as_FloatRegister($dst$$reg),
+                  zero = as_FloatRegister($zero$$reg),
+                  one = as_FloatRegister($one$$reg);
+    __ facgtd(dst, src, zero); // dst=0 for +-0.0 and NaN. 0xFFF..F otherwise
+    __ ushrd(dst, dst, 1);     // dst=0 for +-0.0 and NaN. 0x7FF..F otherwise
+    // Bit selection instruction gets bit from "one" for each enabled bit in
+    // "dst", otherwise gets a bit from "src". For "src" that contains +-0.0 or
+    // NaN the whole "src" will be copied because "dst" is zero. For all other
+    // "src" values dst is 0x7FF..F, which means only the sign bit is copied
+    // from "src", and all other bits are copied from 1.0.
+    __ bsl(dst, __ T8B, one, src);
+  %}
+  ins_pipe(fp_uop_d);
+%}
+
+instruct signumF_reg(vRegF dst, vRegF src, vRegF zero, vRegF one) %{
+  match(Set dst (SignumF src (Binary zero one)));
+  effect(TEMP_DEF dst, USE src, USE zero, USE one);
+  format %{ "signumF  $dst, $src" %}
+  ins_encode %{
+    FloatRegister src = as_FloatRegister($src$$reg),
+                  dst = as_FloatRegister($dst$$reg),
+                  zero = as_FloatRegister($zero$$reg),
+                  one = as_FloatRegister($one$$reg);
+    __ facgts(dst, src, zero);    // dst=0 for +-0.0 and NaN. 0xFFF..F otherwise
+    __ ushr(dst, __ T2S, dst, 1); // dst=0 for +-0.0 and NaN. 0x7FF..F otherwise
+    // Bit selection instruction gets bit from "one" for each enabled bit in
+    // "dst", otherwise gets a bit from "src". For "src" that contains +-0.0 or
+    // NaN the whole "src" will be copied because "dst" is zero. For all other
+    // "src" values dst is 0x7FF..F, which means only the sign bit is copied
+    // from "src", and all other bits are copied from 1.0.
+    __ bsl(dst, __ T8B, one, src);
+  %}
+  ins_pipe(fp_uop_d);
+%}
+
 // ============================================================================
 // Logical Instructions
 

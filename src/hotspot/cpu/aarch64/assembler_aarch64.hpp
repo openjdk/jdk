@@ -2013,6 +2013,21 @@ public:
 #undef INSN
 #undef INSN1
 
+// Floating-point compare. 3-registers versions (scalar).
+#define INSN(NAME, sz, e)                                             \
+  void NAME(FloatRegister Vd, FloatRegister Vn, FloatRegister Vm) {   \
+    starti;                                                           \
+    f(0b01111110, 31, 24), f(e, 23), f(sz, 22), f(1, 21), rf(Vm, 16); \
+    f(0b111011, 15, 10), rf(Vn, 5), rf(Vd, 0);                        \
+  }                                                                   \
+
+  INSN(facged, 1, 0); // facge-double
+  INSN(facges, 0, 0); // facge-single
+  INSN(facgtd, 1, 1); // facgt-double
+  INSN(facgts, 0, 1); // facgt-single
+
+#undef INSN
+
   // Floating-point Move (immediate)
 private:
   unsigned pack(double value);
@@ -2491,6 +2506,20 @@ public:
   INSN(shl,  0, 0b010101, /* isSHR = */ false);
   INSN(sshr, 0, 0b000001, /* isSHR = */ true);
   INSN(ushr, 1, 0b000001, /* isSHR = */ true);
+
+#undef INSN
+
+#define INSN(NAME, opc, opc2, isSHR)                                    \
+  void NAME(FloatRegister Vd, FloatRegister Vn, int shift){             \
+    starti;                                                             \
+    int encodedShift = isSHR ? 128 - shift : 64 + shift;                \
+    f(0b01, 31, 30), f(opc, 29), f(0b111110, 28, 23),                   \
+    f(encodedShift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0);     \
+  }
+
+  INSN(shld,  0, 0b010101, /* isSHR = */ false);
+  INSN(sshrd, 0, 0b000001, /* isSHR = */ true);
+  INSN(ushrd, 1, 0b000001, /* isSHR = */ true);
 
 #undef INSN
 
