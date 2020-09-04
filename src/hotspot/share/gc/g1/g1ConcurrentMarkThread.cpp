@@ -117,7 +117,7 @@ void G1ConcurrentMarkThread::delay_to_keep_mmu(bool remark) {
 
 class G1ConcPhaseTimer : public GCTraceConcTimeImpl<LogLevel::Info, LOG_TAGS(gc, marking)> {
   G1ConcurrentMark* _cm;
-  const char* _t;
+
  public:
   G1ConcPhaseTimer(G1ConcurrentMark* cm, const char* title) :
     GCTraceConcTimeImpl<LogLevel::Info,  LogTag::_gc, LogTag::_marking>(title),
@@ -183,30 +183,68 @@ bool G1ConcurrentMarkThread::phase_scan_root_regions() {
   return _cm->has_aborted();
 }
 
-bool G1ConcurrentMarkThread::phase_mark_from_roots() {
+bool G1ConcurrentMarkThread::phase_mark_loop() {
+  Ticks mark_start = Ticks::now();
+  log_info(gc, marking)("Concurrent Mark (%.3fs)", mark_start.seconds());
+
+  uint iter = 1;
+  while (true) {
+    // Subphase 1: Mark From Roots.
+    if (subphase_mark_from_roots()) return true;
+
+    // Subphase 2: Preclean (optional)
+    if (G1UseReferencePrecleaning) {
+      if (subphase_preclean()) return true;
+    }
+
+    // Subphase 3: Wait for Remark.
+    if (subphase_delay_to_keep_mmu_before_remark()) return true;
+
+    // Subphase 4: Remark pause
+    if (subphase_remark()) return true;
+
+    // Check if we need to restart the marking loop.
+    if (!mark_loop_needs_restart()) break;
+
+    log_info(gc, marking)("Concurrent Mark Restart for Mark Stack Overflow (iteration #%u)",
+                          iter++);
+  }
+
+  Ticks mark_end = Ticks::now();
+  log_info(gc, marking)("Concurrent Mark (%.3fs, %.3fs) %.3fms",
+                        mark_start.seconds(), mark_end.seconds(),
+                        (mark_end - mark_start).seconds() * 1000.0);
+
+  return false;
+}
+
+bool G1ConcurrentMarkThread::mark_loop_needs_restart() const {
+  return _cm->has_overflown();
+}
+
+bool G1ConcurrentMarkThread::subphase_mark_from_roots() {
   ConcurrentGCBreakpoints::at("AFTER MARKING STARTED");
   G1ConcPhaseTimer p(_cm, "Concurrent Mark From Roots");
   _cm->mark_from_roots();
   return _cm->has_aborted();
 }
 
-bool G1ConcurrentMarkThread::phase_preclean() {
+bool G1ConcurrentMarkThread::subphase_preclean() {
   G1ConcPhaseTimer p(_cm, "Concurrent Preclean");
   _cm->preclean();
   return _cm->has_aborted();
 }
 
-bool G1ConcurrentMarkThread::phase_delay_to_keep_mmu_before_remark() {
+bool G1ConcurrentMarkThread::subphase_delay_to_keep_mmu_before_remark() {
   delay_to_keep_mmu(true /* remark */);
   return _cm->has_aborted();
 }
 
-bool G1ConcurrentMarkThread::phase_remark(bool& has_overflown) {
+bool G1ConcurrentMarkThread::subphase_remark() {
   ConcurrentGCBreakpoints::at("BEFORE MARKING COMPLETED");
   CMRemark cl(_cm);
   VM_G1Concurrent op(&cl, "Pause Remark");
   VMThread::execute(&op);
-  has_overflown = _cm->has_overflown();
   return _cm->has_aborted();
 }
 
@@ -251,46 +289,19 @@ void G1ConcurrentMarkThread::full_concurrent_cycle_do() {
   // Phase 2: Scan root regions.
   if (phase_scan_root_regions()) return;
 
-  Ticks mark_start = Ticks::now();
-  log_info(gc, marking)("Concurrent Mark (%.3fs)", mark_start.seconds());
+  // Phase 3: Actual mark loop.
+  if (phase_mark_loop()) return;
 
-  bool needs_restart;
-  uint iter = 1;
-  do {
-   // Phase 3: Mark From Roots.
-    if (phase_mark_from_roots()) return;
-
-    // Phase 4: Preclean (optional)
-    if (G1UseReferencePrecleaning) {
-      if (phase_preclean()) return;
-    }
-
-    // Phase 5: Wait for Remark.
-    if (phase_delay_to_keep_mmu_before_remark()) return;
-
-    // Phase 6: Remark pause
-    if (phase_remark(needs_restart)) return;
-    if (needs_restart) {
-      log_info(gc, marking)("Concurrent Mark Restart for Mark Stack Overflow (iteration #%u)",
-                            iter++);
-    }
-  } while (needs_restart);
-
-  Ticks mark_end = Ticks::now();
-  log_info(gc, marking)("Concurrent Mark (%.3fs, %.3fs) %.3fms",
-                        mark_start.seconds(), mark_end.seconds(),
-                        (mark_end - mark_start).seconds() * 1000.0);
-
-  // Phase 7: Rebuild remembered sets.
+  // Phase 4: Rebuild remembered sets.
   if (phase_rebuild_remembered_sets()) return;
 
-  // Phase 8: Wait for Cleanup.
+  // Phase 5: Wait for Cleanup.
   if (phase_delay_to_keep_mmu_before_cleanup()) return;
 
-  // Phase 9: Cleanup pause
+  // Phase 6: Cleanup pause
   if (phase_cleanup()) return;
 
-  // Phase 10: Clear bitmap for next mark.
+  // Phase 7: Clear bitmap for next mark.
   phase_clear_bitmap_for_next_mark();
 }
 

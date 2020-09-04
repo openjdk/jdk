@@ -65,10 +65,13 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   bool phase_concurrent_cycle_start();
   bool phase_clear_cld_claimed_marks();
   bool phase_scan_root_regions();
-  bool phase_mark_from_roots();
-  bool phase_preclean();
-  bool phase_delay_to_keep_mmu_before_remark();
-  bool phase_remark(bool& has_overflown);
+
+  bool phase_mark_loop();
+  bool mark_loop_needs_restart() const;
+  bool subphase_mark_from_roots();
+  bool subphase_preclean();
+  bool subphase_delay_to_keep_mmu_before_remark();
+  bool subphase_remark();
   bool phase_rebuild_remembered_sets();
   bool phase_delay_to_keep_mmu_before_cleanup();
   bool phase_cleanup();

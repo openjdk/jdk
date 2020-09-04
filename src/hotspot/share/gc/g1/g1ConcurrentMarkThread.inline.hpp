@@ -35,7 +35,6 @@ inline double G1ConcurrentMarkThread::vtime_accum() {
 
 // Marking virtual time so far
 inline double G1ConcurrentMarkThread::vtime_mark_accum() {
-  // The G1ConcurrentMarkThread does not do any marking at all.
   return _cm->all_task_accum_vtime();
 }
 
