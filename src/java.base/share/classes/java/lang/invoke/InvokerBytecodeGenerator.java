@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static java.lang.invoke.GenerateJLIClassesHelper.traceLambdaForm;
 import static java.lang.invoke.LambdaForm.BasicType;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.LambdaForm.*;
@@ -696,10 +697,7 @@ class InvokerBytecodeGenerator {
     private static MemberName resolveFrom(String name, MethodType type, Class<?> holder) {
         MemberName member = new MemberName(holder, name, type, REF_invokeStatic);
         MemberName resolvedMember = MemberName.getFactory().resolveOrNull(REF_invokeStatic, member, holder, LM_TRUSTED);
-        if (TRACE_RESOLVE) {
-            System.out.println("[LF_RESOLVE] " + holder.getName() + " " + name + " " +
-                    shortenSignature(basicTypeSignature(type)) + (resolvedMember != null ? " (success)" : " (fail)") );
-        }
+        traceLambdaForm(name, type, holder, resolvedMember);
         return resolvedMember;
     }
 
