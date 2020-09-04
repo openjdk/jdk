@@ -48,39 +48,32 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
 
   volatile ServiceState _state;
 
-  // Wait for next cycle. Returns true if we should stop the service.
+  // Wait for next cycle. Returns false if the service should be stopped.
   bool wait_for_next_cycle();
+
+  bool mark_loop_needs_restart() const;
 
   // Phases and subphases for the full concurrent marking cycle in order.
   //
-  // We have to ensure that we finish scanning the root regions
-  // before the next GC takes place. To ensure this we have to
-  // make sure that we do not join the STS until the root regions
-  // have been scanned. If we did then it's possible that a
-  // subsequent GC could block us from joining the STS and proceed
-  // without the root regions have been scanned which would be a
-  // correctness issue.
-  // ConcurrentGCBreakpoints must not be placed before the the root
-  // region scan phase too for this reason.
-  //
-  // All these methods return true if the marking should be aborted.
-  bool phase_concurrent_cycle_start();
-  bool phase_clear_cld_claimed_marks();
+  // All these methods return true if the marking should be aborted. Except
+  // phase_clear_cld_claimed_marks() because we must not abort before
+  // scanning the root regions because of a potential deadlock otherwise.
+  void phase_clear_cld_claimed_marks();
   bool phase_scan_root_regions();
 
   bool phase_mark_loop();
-  bool mark_loop_needs_restart() const;
   bool subphase_mark_from_roots();
   bool subphase_preclean();
   bool subphase_delay_to_keep_mmu_before_remark();
   bool subphase_remark();
+
   bool phase_rebuild_remembered_sets();
   bool phase_delay_to_keep_mmu_before_cleanup();
   bool phase_cleanup();
   bool phase_clear_bitmap_for_next_mark();
 
   void concurrent_cycle_start();
-  // Perform a full concurrent cycle.
+
   void full_concurrent_cycle_do();
   void concurrent_cycle_end();
 

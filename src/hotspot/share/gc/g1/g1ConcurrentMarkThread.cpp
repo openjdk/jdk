@@ -134,10 +134,7 @@ class G1ConcPhaseTimer : public GCTraceConcTimeImpl<LogLevel::Info, LOG_TAGS(gc,
 void G1ConcurrentMarkThread::run_service() {
   _vtime_start = os::elapsedVTime();
 
-  while (!should_terminate()) {
-    if (wait_for_next_cycle()) {
-      break;
-    }
+  while (wait_for_next_cycle()) {
 
     GCIdMark gc_id_mark;
     GCTraceConcTime(Info, gc) tt("Concurrent Cycle");
@@ -168,13 +165,12 @@ bool G1ConcurrentMarkThread::wait_for_next_cycle() {
     set_in_progress();
   }
 
-  return should_terminate();
+  return !should_terminate();
 }
 
-bool G1ConcurrentMarkThread::phase_clear_cld_claimed_marks() {
+void G1ConcurrentMarkThread::phase_clear_cld_claimed_marks() {
   G1ConcPhaseTimer p(_cm, "Concurrent Clear Claimed Marks");
   ClassLoaderDataGraph::clear_claimed_marks();
-  return _cm->has_aborted();
 }
 
 bool G1ConcurrentMarkThread::phase_scan_root_regions() {
@@ -185,10 +181,9 @@ bool G1ConcurrentMarkThread::phase_scan_root_regions() {
 
 bool G1ConcurrentMarkThread::phase_mark_loop() {
   Ticks mark_start = Ticks::now();
-  log_info(gc, marking)("Concurrent Mark (%.3fs)", mark_start.seconds());
+  log_info(gc, marking)("Concurrent Mark");
 
-  uint iter = 1;
-  while (true) {
+  for (uint iter = 1; true; ++iter) {
     // Subphase 1: Mark From Roots.
     if (subphase_mark_from_roots()) return true;
 
@@ -207,13 +202,11 @@ bool G1ConcurrentMarkThread::phase_mark_loop() {
     if (!mark_loop_needs_restart()) break;
 
     log_info(gc, marking)("Concurrent Mark Restart for Mark Stack Overflow (iteration #%u)",
-                          iter++);
+                          iter);
   }
 
-  Ticks mark_end = Ticks::now();
-  log_info(gc, marking)("Concurrent Mark (%.3fs, %.3fs) %.3fms",
-                        mark_start.seconds(), mark_end.seconds(),
-                        (mark_end - mark_start).seconds() * 1000.0);
+  log_info(gc, marking)("Concurrent Mark %.3fms",
+                        (Ticks::now() - mark_start).seconds() * 1000.0);
 
   return false;
 }
@@ -283,8 +276,19 @@ void G1ConcurrentMarkThread::full_concurrent_cycle_do() {
   // Phase 1: Clear CLD claimed marks.
   phase_clear_cld_claimed_marks();
 
-  // Do not return before the scan root regions phase as a GC waits for a
+  // We have to ensure that we finish scanning the root regions
+  // before the next GC takes place. To ensure this we have to
+  // make sure that we do not join the STS until the root regions
+  // have been scanned. If we did then it's possible that a
+  // subsequent GC could block us from joining the STS and proceed
+  // without the root regions have been scanned which would be a
+  // correctness issue.
+  //
+  // So do not return before the scan root regions phase as a GC waits for a
   // notification from it.
+  //
+  // For the same reason ConcurrentGCBreakpoints (in the phase methods) before
+  // here risk deadlock, because a young GC must wait for root region scanning.
 
   // Phase 2: Scan root regions.
   if (phase_scan_root_regions()) return;
