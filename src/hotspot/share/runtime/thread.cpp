@@ -2613,9 +2613,17 @@ int JavaThread::java_suspend_self() {
 void JavaThread::java_suspend_self_with_safepoint_check() {
   assert(this == Thread::current(), "invariant");
   JavaThreadState state = thread_state();
-  set_thread_state(_thread_blocked);
-  java_suspend_self();
-  set_thread_state_fence(state);
+
+  do {
+    set_thread_state(_thread_blocked);
+    java_suspend_self();
+    // The current thread could have been suspended again. We have to check for
+    // suspend after restoring the saved state. Without this the current thread
+    // might return to _thread_in_Java and execute bytecodes for an arbitrary
+    // long time.
+    set_thread_state_fence(state);
+  } while (is_external_suspend());
+
   // Since we are not using a regular thread-state transition helper here,
   // we must manually emit the instruction barrier after leaving a safe state.
   OrderAccess::cross_modify_fence();
