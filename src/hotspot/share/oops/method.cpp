@@ -2187,7 +2187,7 @@ void Method::ensure_jmethod_ids(ClassLoaderData* loader_data, int capacity) {
     // Have to add jmethod_ids() to class loader data thread-safely.
     // Also have to add the method to the list safely, which the cld lock
     // protects as well.
-    MutexLocker ml(cld->metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
     if (cld->jmethod_ids() == NULL) {
       cld->set_jmethod_ids(new JNIMethodBlock(capacity));
     } else {
@@ -2211,7 +2211,7 @@ jmethodID Method::make_jmethod_id(ClassLoaderData* loader_data, Method* m) {
     // Have to add jmethod_ids() to class loader data thread-safely.
     // Also have to add the method to the list safely, which the cld lock
     // protects as well.
-    MutexLocker ml(cld->metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
     if (cld->jmethod_ids() == NULL) {
       cld->set_jmethod_ids(new JNIMethodBlock());
     }
