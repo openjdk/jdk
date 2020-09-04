@@ -45,7 +45,6 @@
  * @run main/othervm
  *      -XX:-UseGCOverheadLimit
  *      -Xss2048k
- *      PropertyResolvingWrapper
  *      nsk.sysdict.share.ChainTest
  *      -jarpath leans.jar${path.separator}fats.jar
  */
