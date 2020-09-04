@@ -37,22 +37,51 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
 
   double _vtime_start;  // Initial virtual time.
   double _vtime_accum;  // Accumulated virtual time.
-  double _vtime_mark_accum;
 
   G1ConcurrentMark* _cm;
 
-  enum State {
+  enum ServiceState {
     Idle,
     Started,
     InProgress
   };
 
-  volatile State _state;
+  volatile ServiceState _state;
 
-  void sleep_before_next_cycle();
-  // Delay marking to meet MMU.
-  void delay_to_keep_mmu(G1Policy* g1_policy, bool remark);
-  double mmu_delay_end(G1Policy* g1_policy, bool remark);
+  // Wait for next cycle. Returns true if we should stop the service.
+  bool wait_for_next_cycle();
+
+  // Phases for the full concurrent marking cycle in order.
+  //
+  // We have to ensure that we finish scanning the root regions
+  // before the next GC takes place. To ensure this we have to
+  // make sure that we do not join the STS until the root regions
+  // have been scanned. If we did then it's possible that a
+  // subsequent GC could block us from joining the STS and proceed
+  // without the root regions have been scanned which would be a
+  // correctness issue.
+  // ConcurrentGCBreakpoints must not be placed before the the root
+  // region scan phase too for this reason.
+  bool phase_concurrent_cycle_start();
+  bool phase_clear_cld_claimed_marks();
+  bool phase_scan_root_regions();
+  bool phase_mark_from_roots();
+  bool phase_preclean();
+  bool phase_delay_to_keep_mmu_before_remark();
+  bool phase_remark(bool& has_overflown);
+  bool phase_rebuild_remembered_sets();
+  bool phase_delay_to_keep_mmu_before_cleanup();
+  bool phase_cleanup();
+  bool phase_clear_bitmap_for_next_mark();
+
+  void concurrent_cycle_start();
+  // Perform a full concurrent cycle.
+  void full_concurrent_cycle_do();
+  void concurrent_cycle_end();
+
+  // Delay pauses to meet MMU.
+  void delay_to_keep_mmu(bool remark);
+  double mmu_delay_end(G1Policy* policy, bool remark);
 
   void run_service();
   void stop_service();
