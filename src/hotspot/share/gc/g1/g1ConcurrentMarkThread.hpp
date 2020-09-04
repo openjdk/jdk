@@ -51,7 +51,7 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   // Wait for next cycle. Returns true if we should stop the service.
   bool wait_for_next_cycle();
 
-  // Phases for the full concurrent marking cycle in order.
+  // Phases and subphases for the full concurrent marking cycle in order.
   //
   // We have to ensure that we finish scanning the root regions
   // before the next GC takes place. To ensure this we have to
@@ -62,6 +62,8 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   // correctness issue.
   // ConcurrentGCBreakpoints must not be placed before the the root
   // region scan phase too for this reason.
+  //
+  // All these methods return true if the marking should be aborted.
   bool phase_concurrent_cycle_start();
   bool phase_clear_cld_claimed_marks();
   bool phase_scan_root_regions();
