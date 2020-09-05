@@ -80,6 +80,9 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // available for allocation.
   bool _old_gen_is_full;
 
+  int _objarray_scan_chunk_size;
+  int _objarray_length_offset_in_bytes;
+
   G1RedirtyCardsQueue& redirty_cards_queue()     { return _rdcq; }
   G1CardTable* ct()                              { return _ct; }
 
@@ -157,6 +160,7 @@ public:
 
 private:
   inline void do_partial_array(PartialArrayScanTask task);
+  inline oop start_partial_objArray(G1HeapRegionAttr dest_dir, oop from, oop to);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                oop old,
