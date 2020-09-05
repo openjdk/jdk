@@ -23,6 +23,8 @@
 # questions.
 #
 
+# This is just a test
+
 ###
 ### This file is just a very small wrapper needed to run the real make/Init.gmk.
 ### It also performs some sanity checks on make.
