@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,8 +191,11 @@ void JvmtiEnvThreadState::compare_and_set_current_location(Method* new_method,
 
 
 JvmtiFramePops* JvmtiEnvThreadState::get_frame_pops() {
-  assert(get_thread() == Thread::current() || SafepointSynchronize::is_at_safepoint(),
-         "frame pop data only accessible from same thread or at safepoint");
+#ifdef ASSERT
+  Thread *current = Thread::current();
+#endif
+  assert(get_thread() == current || current == get_thread()->active_handshaker(),
+         "frame pop data only accessible from same thread or direct handshake");
   if (_frame_pops == NULL) {
     _frame_pops = new JvmtiFramePops();
     assert(_frame_pops != NULL, "_frame_pops != NULL");
@@ -206,32 +209,44 @@ bool JvmtiEnvThreadState::has_frame_pops() {
 }
 
 void JvmtiEnvThreadState::set_frame_pop(int frame_number) {
-  assert(get_thread() == Thread::current() || SafepointSynchronize::is_at_safepoint(),
-         "frame pop data only accessible from same thread or at safepoint");
+#ifdef ASSERT
+  Thread *current = Thread::current();
+#endif
+  assert(get_thread() == current || current == get_thread()->active_handshaker(),
+         "frame pop data only accessible from same thread or direct handshake");
   JvmtiFramePop fpop(frame_number);
   JvmtiEventController::set_frame_pop(this, fpop);
 }
 
 
 void JvmtiEnvThreadState::clear_frame_pop(int frame_number) {
-  assert(get_thread() == Thread::current() || SafepointSynchronize::is_at_safepoint(),
-         "frame pop data only accessible from same thread or at safepoint");
+#ifdef ASSERT
+  Thread *current = Thread::current();
+#endif
+  assert(get_thread() == current || current == get_thread()->active_handshaker(),
+         "frame pop data only accessible from same thread or direct handshake");
   JvmtiFramePop fpop(frame_number);
   JvmtiEventController::clear_frame_pop(this, fpop);
 }
 
 
 void JvmtiEnvThreadState::clear_to_frame_pop(int frame_number)  {
-  assert(get_thread() == Thread::current() || SafepointSynchronize::is_at_safepoint(),
-         "frame pop data only accessible from same thread or at safepoint");
+#ifdef ASSERT
+  Thread *current = Thread::current();
+#endif
+  assert(get_thread() == current || current == get_thread()->active_handshaker(),
+         "frame pop data only accessible from same thread or direct handshake");
   JvmtiFramePop fpop(frame_number);
   JvmtiEventController::clear_to_frame_pop(this, fpop);
 }
 
 
 bool JvmtiEnvThreadState::is_frame_pop(int cur_frame_number) {
-  assert(get_thread() == Thread::current() || SafepointSynchronize::is_at_safepoint(),
-         "frame pop data only accessible from same thread or at safepoint");
+#ifdef ASSERT
+  Thread *current = Thread::current();
+#endif
+  assert(get_thread() == current || current == get_thread()->active_handshaker(),
+         "frame pop data only accessible from same thread or direct handshake");
   if (!get_thread()->is_interp_only_mode() || _frame_pops == NULL) {
     return false;
   }
@@ -240,25 +255,25 @@ bool JvmtiEnvThreadState::is_frame_pop(int cur_frame_number) {
 }
 
 
-class VM_GetCurrentLocation : public VM_Operation {
+class GetCurrentLocationClosure : public HandshakeClosure {
  private:
-   JavaThread *_thread;
    jmethodID _method_id;
    int _bci;
 
  public:
-  VM_GetCurrentLocation(JavaThread *thread) {
-     _thread = thread;
-   }
-  VMOp_Type type() const { return VMOp_GetCurrentLocation; }
-  void doit() {
-    ResourceMark rmark; // _thread != Thread::current()
-    RegisterMap rm(_thread, false);
+  GetCurrentLocationClosure()
+    : HandshakeClosure("GetCurrentLocation"),
+      _method_id(NULL),
+      _bci(0) {}
+  void do_thread(Thread *target) {
+    JavaThread *jt = (JavaThread *)target;
+    ResourceMark rmark; // jt != Thread::current()
+    RegisterMap rm(jt, false);
     // There can be a race condition between a VM_Operation reaching a safepoint
     // and the target thread exiting from Java execution.
     // We must recheck the last Java frame still exists.
-    if (!_thread->is_exiting() && _thread->has_last_Java_frame()) {
-      javaVFrame* vf = _thread->last_java_vframe(&rm);
+    if (!jt->is_exiting() && jt->has_last_Java_frame()) {
+      javaVFrame* vf = jt->last_java_vframe(&rm);
       assert(vf != NULL, "must have last java frame");
       Method* method = vf->method();
       _method_id = method->jmethod_id();
@@ -307,9 +322,15 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
       jmethodID method_id;
       int bci;
       // The java thread stack may not be walkable for a running thread
-      // so get current location at safepoint.
-      VM_GetCurrentLocation op(_thread);
-      VMThread::execute(&op);
+      // so get current location with direct handshake.
+      GetCurrentLocationClosure op;
+      Thread *current = Thread::current();
+      if (current == _thread || _thread->active_handshaker() == current) {
+        op.do_thread(_thread);
+      } else {
+        bool executed = Handshake::execute_direct(&op, _thread);
+        guarantee(executed, "Direct handshake failed. Target thread is not alive?");
+      }
       op.get_current_location(&method_id, &bci);
       set_current_location(method_id, bci);
     }

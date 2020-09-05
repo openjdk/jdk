@@ -1365,11 +1365,9 @@ class JavaThread: public Thread {
     return _handshake.try_process(op);
   }
 
-#ifdef ASSERT
   Thread* active_handshaker() const {
     return _handshake.active_handshaker();
   }
-#endif
 
   // Suspend/resume support for JavaThread
  private:

@@ -383,9 +383,9 @@ HandshakeState::HandshakeState() :
   _operation_direct(NULL),
   _handshake_turn_sem(1),
   _processing_sem(1),
-  _thread_in_process_handshake(false)
+  _thread_in_process_handshake(false),
+  _active_handshaker(NULL)
 {
-  DEBUG_ONLY(_active_handshaker = NULL;)
 }
 
 void HandshakeState::set_operation(HandshakeOperation* op) {
@@ -510,9 +510,9 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* op
   if (can_process_handshake()) {
     guarantee(!_processing_sem.trywait(), "we should already own the semaphore");
     log_trace(handshake)("Processing handshake by %s", Thread::current()->is_VM_thread() ? "VMThread" : "Handshaker");
-    DEBUG_ONLY(_active_handshaker = Thread::current();)
+    _active_handshaker = Thread::current();
     op->do_handshake(_handshakee);
-    DEBUG_ONLY(_active_handshaker = NULL;)
+    _active_handshaker = NULL;
     // Disarm after we have executed the operation.
     clear_handshake(is_direct);
     pr = _success;
