@@ -26,7 +26,7 @@
 /**
  * RecordCompilationTests
  *
- * @test 8250629 8252307
+ * @test 8250629 8252307 8247352
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -393,6 +393,9 @@ public class RecordCompilationTests extends CompilationTestCase {
         // first invocation should be one to the canonical
         assertFail("compiler.err.first.statement.must.be.call.to.another.constructor",
                 "record R(int x, int y) { public R(int y, int x, int z) { this.x = this.y = 0; } }");
+
+        assertFail("compiler.err.first.statement.must.be.call.to.another.constructor",
+                "record R(int x, int y) { public R(int y, int x, int z) { super(); this.x = this.y = 0; } }");
 
         assertOK("record R(int x, int y) { " +
                  "    public R(int x, int y, int z) { this(x, y); } " +
