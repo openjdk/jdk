@@ -102,7 +102,7 @@ public final class Signal {
         if (this == other) {
             return true;
         }
-        if (other == null || !(other instanceof Signal)) {
+        if (!(other instanceof Signal)) {
             return false;
         }
         Signal other1 = (Signal)other;

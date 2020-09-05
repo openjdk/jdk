@@ -798,7 +798,7 @@ class WindowsPath implements Path {
 
     @Override
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof WindowsPath)) {
+        if (obj instanceof WindowsPath) {
             return compareTo((Path)obj) == 0;
         }
         return false;

@@ -119,7 +119,7 @@ public class InetSocketAddress
 
         @Override
         public final boolean equals(Object obj) {
-            if (obj == null || !(obj instanceof InetSocketAddressHolder))
+            if (!(obj instanceof InetSocketAddressHolder))
                 return false;
             InetSocketAddressHolder that = (InetSocketAddressHolder)obj;
             boolean sameIP;
@@ -409,7 +409,7 @@ public class InetSocketAddress
      */
     @Override
     public final boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof InetSocketAddress))
+        if (!(obj instanceof InetSocketAddress))
             return false;
         return holder.equals(((InetSocketAddress) obj).holder);
     }

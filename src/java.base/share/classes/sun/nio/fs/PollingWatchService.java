@@ -149,7 +149,7 @@ class PollingWatchService
                 });
         } catch (PrivilegedActionException pae) {
             Throwable cause = pae.getCause();
-            if (cause != null && cause instanceof IOException)
+            if (cause instanceof IOException)
                 throw (IOException)cause;
             throw new AssertionError(pae);
         }

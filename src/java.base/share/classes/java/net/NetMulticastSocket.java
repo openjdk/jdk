@@ -801,7 +801,7 @@ final class NetMulticastSocket extends MulticastSocket {
         if (isClosed())
             throw new SocketException("Socket is closed");
 
-        if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
+        if (!(mcastaddr instanceof InetSocketAddress))
             throw new IllegalArgumentException("Unsupported address type");
 
         if (oldImpl)
@@ -826,7 +826,7 @@ final class NetMulticastSocket extends MulticastSocket {
         if (isClosed())
             throw new SocketException("Socket is closed");
 
-        if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
+        if (!(mcastaddr instanceof InetSocketAddress))
             throw new IllegalArgumentException("Unsupported address type");
 
         if (oldImpl)

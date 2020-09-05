@@ -146,7 +146,7 @@ public class Proxy {
      * @see java.net.InetSocketAddress#equals(java.lang.Object)
      */
     public final boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof Proxy))
+        if (!(obj instanceof Proxy))
             return false;
         Proxy p = (Proxy) obj;
         if (p.type() == type()) {

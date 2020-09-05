@@ -878,7 +878,7 @@ class Inet6Address extends InetAddress {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof Inet6Address))
+        if (!(obj instanceof Inet6Address))
             return false;
 
         Inet6Address inetAddr = (Inet6Address)obj;

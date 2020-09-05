@@ -504,7 +504,7 @@ public class DatagramSocketAdaptor
      * @throws SocketException if group is not a multicast address
      */
     private static InetAddress checkGroup(SocketAddress mcastaddr) throws SocketException {
-        if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
+        if (!(mcastaddr instanceof InetSocketAddress))
             throw new IllegalArgumentException("Unsupported address type");
         InetAddress group = ((InetSocketAddress) mcastaddr).getAddress();
         if (group == null)
