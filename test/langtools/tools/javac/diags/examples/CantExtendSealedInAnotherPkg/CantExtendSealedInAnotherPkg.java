@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.local.classes.cant.extend.sealed
-// key: compiler.err.sealed.class.must.have.subclasses
+// key: compiler.err.class.in.unnamed.module.cant.extend.sealed.in.diff.package
 // key: compiler.note.preview.filename
 // key: compiler.note.preview.recompile
-// key: compiler.misc.local
 // options: --enable-preview -source ${jdk.version}
-
-sealed class C {
-    void m() {
-        final class D extends C { }
-    }
-}
-

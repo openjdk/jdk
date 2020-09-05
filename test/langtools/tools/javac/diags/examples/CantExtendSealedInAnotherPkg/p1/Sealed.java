@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.local.classes.cant.extend.sealed
-// key: compiler.err.sealed.class.must.have.subclasses
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// key: compiler.misc.local
-// options: --enable-preview -source ${jdk.version}
+package p1;
 
-sealed class C {
-    void m() {
-        final class D extends C { }
-    }
-}
+import p2.*;
 
+public sealed class Sealed permits p2.Sub {}
