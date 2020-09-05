@@ -4325,10 +4325,6 @@ void Threads::create_vm_init_agents() {
   JvmtiExport::enter_primordial_phase();
 }
 
-extern "C" {
-  typedef void (JNICALL *Agent_OnUnload_t)(JavaVM *);
-}
-
 void Threads::shutdown_vm_agents() {
   // Send any Agent_OnUnload notifications
   const char *on_unload_symbols[] = AGENT_ONUNLOAD_SYMBOLS;

@@ -2641,7 +2641,9 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
   void* library = NULL;
   jint result = JNI_ERR;
   const char *on_attach_symbols[] = AGENT_ONATTACH_SYMBOLS;
-  size_t num_symbol_entries = ARRAY_SIZE(on_attach_symbols);
+  size_t num_onattach_symbol_entries = ARRAY_SIZE(on_attach_symbols);
+  const char *on_unload_symbols[] = AGENT_ONUNLOAD_SYMBOLS;
+  size_t num_onunload_symbol_entries = ARRAY_SIZE(on_unload_symbols);
 
   // The abs paramter should be "true" or "false"
   bool is_absolute_path = (absParam != NULL) && (strcmp(absParam,"true")==0);
@@ -2653,7 +2655,7 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
   // absolute we attempt to load the library. Otherwise we try to load it
   // from the standard dll directory.
 
-  if (!os::find_builtin_agent(agent_lib, on_attach_symbols, num_symbol_entries)) {
+  if (!os::find_builtin_agent(agent_lib, on_attach_symbols, num_onattach_symbol_entries)) {
     if (is_absolute_path) {
       library = os::dll_load(agent, ebuf, sizeof ebuf);
     } else {
@@ -2677,10 +2679,13 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
   // If the library was loaded then we attempt to invoke the Agent_OnAttach
   // function
   if (agent_lib->valid()) {
+    JavaThread* THREAD = JavaThread::current();
+    extern struct JavaVM_ main_vm;
+
     // Lookup the Agent_OnAttach function
     OnAttachEntry_t on_attach_entry = NULL;
     on_attach_entry = CAST_TO_FN_PTR(OnAttachEntry_t,
-       os::find_agent_function(agent_lib, false, on_attach_symbols, num_symbol_entries));
+       os::find_agent_function(agent_lib, false, on_attach_symbols, num_onattach_symbol_entries));
     if (on_attach_entry == NULL) {
       // Agent_OnAttach missing - unload library
       if (!agent_lib->is_static_lib()) {
@@ -2691,9 +2696,7 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       delete agent_lib;
     } else {
       // Invoke the Agent_OnAttach function
-      JavaThread* THREAD = JavaThread::current();
       {
-        extern struct JavaVM_ main_vm;
         JvmtiThreadEventMark jem(THREAD);
         JvmtiJavaThreadEventTransition jet(THREAD);
 
@@ -2710,6 +2713,23 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       if (result == JNI_OK) {
         Arguments::add_loaded_agent(agent_lib);
       } else {
+        // Find the Agent_OnUnload function.
+        Agent_OnUnload_t unload_entry = CAST_TO_FN_PTR(Agent_OnUnload_t,
+                                                       os::find_agent_function(agent_lib,
+                                                       false,
+                                                       on_unload_symbols,
+                                                       num_onunload_symbol_entries));
+        // Invoke the Agent_OnUnload function
+        if (unload_entry != NULL) {
+          JvmtiThreadEventMark jem(THREAD);
+          JvmtiJavaThreadEventTransition jet(THREAD);
+
+          (*unload_entry)(&main_vm);
+        }
+
+        if (!agent_lib->is_static_lib()) {
+          os::dll_unload(library);
+        }
         delete agent_lib;
       }
 

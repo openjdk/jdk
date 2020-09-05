@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,11 @@
 
 // Must be included after jvmti.h.
 #include "jvmticmlr.h"
+
+// type for the Agent_OnUnload entry point
+extern "C" {
+  typedef void (JNICALL *Agent_OnUnload_t)(JavaVM *);
+}
 
 // Forward declarations
 
