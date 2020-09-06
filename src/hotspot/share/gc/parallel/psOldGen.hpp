@@ -52,6 +52,9 @@ class PSOldGen : public CHeapObj<mtGC> {
   const size_t _min_gen_size;
   const size_t _max_gen_size;
 
+  // Block size for parallel iteration
+  const size_t _iterate_block_size;
+
 #ifdef ASSERT
   void assert_block_in_covered_region(MemRegion new_memregion) {
     // Explictly capture current covered_region in a local
@@ -123,6 +126,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   MemRegion reserved() const { return _reserved; }
   size_t max_gen_size() const { return _max_gen_size; }
   size_t min_gen_size() const { return _min_gen_size; }
+  size_t iterate_block_size() const { return _iterate_block_size; }
 
   bool is_in(const void* p) const           {
     return _virtual_space->contains((void *)p);
@@ -162,6 +166,9 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Iteration.
   void oop_iterate(OopIterateClosure* cl) { object_space()->oop_iterate(cl); }
   void object_iterate(ObjectClosure* cl) { object_space()->object_iterate(cl); }
+  // Iterate block with given block_index
+  void block_iterate(ObjectClosure* cl, uint block_index);
+
 
   // Debugging - do not use for time critical operations
   void print() const;

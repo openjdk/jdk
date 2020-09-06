@@ -539,6 +539,79 @@ void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
   old_gen()->object_iterate(cl);
 }
 
+void ParallelScavengeHeap::object_iterate_parallel(ObjectClosure* cl,
+                                                   uint worker_id,
+                                                   HeapBlockClaimer* claimer) {
+  uint block_index;
+  // Iterate until all blocks are claimed
+  while (claimer->claim_and_get_block(&block_index)) {
+    if (block_index == HeapBlockClaimer::eden_index) {
+      young_gen()->eden_space()->object_iterate(cl);
+    } else if (block_index == HeapBlockClaimer::survivor_index) {
+      young_gen()->from_space()->object_iterate(cl);
+      young_gen()->to_space()->object_iterate(cl);
+    } else {
+      uint index = block_index - HeapBlockClaimer::num_inseparable_spaces;
+      old_gen()->block_iterate(cl, index);
+    }
+  }
+}
+
+HeapBlockClaimer::HeapBlockClaimer(uint n_workers) :
+    _n_workers(n_workers), _n_blocks(0), _claims(NULL) {
+  assert(n_workers > 0, "Need at least one worker.");
+  size_t old_gen_used = ParallelScavengeHeap::heap()->old_gen()->used_in_bytes();
+  size_t block_size = ParallelScavengeHeap::heap()->old_gen()->iterate_block_size();
+  uint n_blocks_in_old = old_gen_used / block_size + 1;
+  _n_blocks = n_blocks_in_old + num_inseparable_spaces;
+  _unclaimed_index = 0;
+  uint* new_claims = NEW_C_HEAP_ARRAY(uint, _n_blocks, mtGC);
+  memset(new_claims, Unclaimed, sizeof(*_claims) * _n_blocks);
+  _claims = new_claims;
+}
+
+HeapBlockClaimer::~HeapBlockClaimer() {
+   FREE_C_HEAP_ARRAY(uint, _claims);
+}
+
+bool HeapBlockClaimer::claim_and_get_block(uint* block_index) {
+  assert(block_index != NULL, "Invalid index pointer");
+  uint next_index = Atomic::load(&_unclaimed_index);
+  while (true) {
+    if (next_index >= _n_blocks) {
+      return false;
+    }
+    uint old_val = Atomic::cmpxchg(&_claims[next_index], Unclaimed, Claimed);
+    if (old_val == Unclaimed) {
+      *block_index = next_index;
+      Atomic::inc(&_unclaimed_index);
+      return true;
+    }
+    next_index = Atomic::load(&_unclaimed_index);
+  }
+}
+
+class PSScavengeParallelObjectIterator : public ParallelObjectIterator {
+private:
+  uint _thread_num;
+  ParallelScavengeHeap*  _heap;
+  HeapBlockClaimer      _claimer;
+
+public:
+  PSScavengeParallelObjectIterator(uint thread_num) :
+      _thread_num(thread_num),
+      _heap(ParallelScavengeHeap::heap()),
+      _claimer(thread_num == 0 ? ParallelScavengeHeap::heap()->workers().active_workers() : thread_num) {}
+
+  virtual void object_iterate(ObjectClosure* cl, uint worker_id) {
+    _heap->object_iterate_parallel(cl, worker_id, &_claimer);
+  }
+};
+
+ParallelObjectIterator* ParallelScavengeHeap::parallel_object_iterator(uint thread_num) {
+  return new PSScavengeParallelObjectIterator(thread_num);
+}
+
 HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
   if (young_gen()->is_in_reserved(addr)) {
     assert(young_gen()->is_in(addr),

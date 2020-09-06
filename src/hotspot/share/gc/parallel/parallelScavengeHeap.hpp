@@ -45,6 +45,7 @@
 
 class AdjoiningGenerations;
 class GCHeapSummary;
+class HeapBlockClaimer;
 class MemoryManager;
 class MemoryPool;
 class PSAdaptiveSizePolicy;
@@ -53,6 +54,7 @@ class PSHeapSummary;
 
 class ParallelScavengeHeap : public CollectedHeap {
   friend class VMStructs;
+  friend class HeapBlockClaimer;
  private:
   static PSYoungGen* _young_gen;
   static PSOldGen*   _old_gen;
@@ -209,6 +211,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
   void object_iterate(ObjectClosure* cl);
+  void object_iterate_parallel(ObjectClosure* cl, uint worker_id, HeapBlockClaimer* claimer);
+  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num);
 
   HeapWord* block_start(const void* addr) const;
   bool block_is_obj(const HeapWord* addr) const;
@@ -286,6 +290,32 @@ class AdaptiveSizePolicyOutput : AllStatic {
       size_policy->print();
     }
   }
+};
+
+// The HeapBlockClaimer is used during parallel iteration over heap,
+// allowing workers to claim heap blocks, gaining exclusive rights to these blocks.
+// The eden, survivor spaces are treated as single blocks as it is hard to divide
+// these spaces.
+// The old spaces are divided into serveral fixed-size blocks.
+class HeapBlockClaimer : public StackObj {
+  uint           _n_workers;
+  uint           _n_blocks;
+  uint           _unclaimed_index;
+  volatile uint* _claims;
+
+  static const uint Unclaimed = 0;
+  static const uint Claimed   = 1;
+
+  public:
+  HeapBlockClaimer(uint n_workers);
+  ~HeapBlockClaimer();
+
+  // Claim the block and get the block index.
+  bool claim_and_get_block(uint* block_index);
+
+  static const uint eden_index = 0;
+  static const uint survivor_index = 1;
+  static const uint num_inseparable_spaces = 2;
 };
 
 #endif // SHARE_GC_PARALLEL_PARALLELSCAVENGEHEAP_HPP
