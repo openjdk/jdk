@@ -105,7 +105,7 @@ import java.util.Locale;
  */
 public enum Month implements TemporalAccessor, TemporalAdjuster {
 
-    /**31田
+    /**
      * The singleton instance for the month of January with 31 days.
      * This has the numeric value of {@code 1}.
      */

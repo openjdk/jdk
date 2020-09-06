@@ -31,6 +31,9 @@ package java.lang.ref;
  * determines that their referents may otherwise be reclaimed.  Phantom
  * references are most often used to schedule post-mortem cleanup actions.
  *
+ * fixme 跟踪对象什么时候被回收：是否加入到队列中
+ *      讲解：https://blog.csdn.net/cooliceman/article/details/5665104
+ *
  * <p> Suppose the garbage collector determines at a certain point in time
  * that an object is <a href="package-summary.html#reachability">
  * phantom reachable</a>.  At that time it will atomically clear

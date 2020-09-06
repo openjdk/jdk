@@ -26,7 +26,7 @@
 package java.lang;
 import jdk.internal.misc.TerminatingThreadLocal;
 
-import java.lang.ref.*;
+import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -159,9 +159,12 @@ public class ThreadLocal<T> {
      * @return the current thread's value of this thread-local
      */
     public T get() {
+        // 获取当前线程
         Thread t = Thread.currentThread();
+        // 获取当前线程的 对象属性ThreadLocalMap
         ThreadLocalMap map = getMap(t);
         if (map != null) {
+            // 当前 threadLocal 对应的 value
             ThreadLocalMap.Entry e = map.getEntry(this);
             if (e != null) {
                 @SuppressWarnings("unchecked")
@@ -216,9 +219,13 @@ public class ThreadLocal<T> {
      *        this thread-local.
      */
     public void set(T value) {
+        // 获取当前线程
         Thread t = Thread.currentThread();
+        // 换取线程的 对象属性ThreadLocalMap
         ThreadLocalMap map = getMap(t);
+
         if (map != null) {
+            //<threadLocal,value> 线程上的map属性
             map.set(this, value);
         } else {
             createMap(t, value);
@@ -237,18 +244,22 @@ public class ThreadLocal<T> {
      * @since 1.5
      */
      public void remove() {
+         // 获取当前线程中、存放此threadLocal、的ThreadLocalMap
+         // 直接引用属性 thread.threadLocals
          ThreadLocalMap m = getMap(Thread.currentThread());
+
+         // 如果m!=null，说明该线程执行过程中、调用过ThreadLocal相关初始方法方法
          if (m != null) {
              m.remove(this);
          }
      }
 
     /**
-     * Get the map associated with a ThreadLocal. Overridden in
-     * InheritableThreadLocal.
+     * Get the map associated with a ThreadLocal.
+     * Overridden in Inheritable(可继承的) ThreadLocal.
      *
-     * @param  t the current thread
-     * @return the map
+     * @param  t the current thread 当前线程
+     * @return the map 和ThreadLocal相关的ThreadLocalMap
      */
     ThreadLocalMap getMap(Thread t) {
         return t.threadLocals;
@@ -325,11 +336,15 @@ public class ThreadLocal<T> {
          * == null) mean that the key is no longer referenced, so the
          * entry can be expunged from table.  Such entries are referred to
          * as "stale entries" in the code that follows.
+         *
+         * 继承了弱引用
          */
         static class Entry extends WeakReference<ThreadLocal<?>> {
+            // 和此ThreadLocal绑定的值
             /** The value associated with this ThreadLocal. */
             Object value;
 
+            // 弱引用执行threadLocal对象-k
             Entry(ThreadLocal<?> k, Object v) {
                 super(k);
                 value = v;
@@ -467,9 +482,13 @@ public class ThreadLocal<T> {
 
         /**
          * Set the value associated with key.
+         * 设置和key相关的值。
          *
          * @param key the thread local object
+         *            threadLocal对象
+         *
          * @param value the value to be set
+         *              threadLocal对象绑定的值
          */
         private void set(ThreadLocal<?> key, Object value) {
 
@@ -498,6 +517,7 @@ public class ThreadLocal<T> {
                 }
             }
 
+            // 弱引用执行threadLocal对象-k
             tab[i] = new Entry(key, value);
             int sz = ++size;
             if (!cleanSomeSlots(i, sz) && sz >= threshold)

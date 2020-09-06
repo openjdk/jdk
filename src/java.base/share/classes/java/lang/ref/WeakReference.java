@@ -28,18 +28,22 @@ package java.lang.ref;
 
 /**
  * Weak reference objects, which do not prevent their referents from being
- * made finalizable, finalized, and then reclaimed.  Weak references are most
- * often used to implement canonicalizing mappings.
+ * made finalizable(可终结), finalized(中止), and then reclaimed(回收).
+ * Weak references are most often used to implement canonicalizing(规范化、正规化、标准化) mappings.
+ * fixme 弱引用的使用场景是映射。
  *
- * <p> Suppose that the garbage collector determines at a certain point in time
- * that an object is <a href="package-summary.html#reachability">weakly
- * reachable</a>.  At that time it will atomically clear all weak references to
+ * <p> Suppose that the garbage collector determines(查明) at a certain point in time
+ * that an object is <a href="package-summary.html#reachability">weakly reachable</a>.
+ *
+ * At that time it will atomically clear all weak references to
  * that object and all weak references to any other weakly-reachable objects
  * from which that object is reachable through a chain of strong and soft
  * references.  At the same time it will declare all of the formerly
  * weakly-reachable objects to be finalizable.  At the same time or at some
  * later time it will enqueue those newly-cleared weak references that are
  * registered with reference queues.
+ *
+ * -  determines: V-T To determine a fact means to discover it as a result of investigation.
  *
  * @author   Mark Reinhold
  * @since    1.2
@@ -48,10 +52,13 @@ package java.lang.ref;
 public class WeakReference<T> extends Reference<T> {
 
     /**
-     * Creates a new weak reference that refers to the given object.  The new
-     * reference is not registered with any queue.
+     * Creates a new weak reference that refers to the given object.
+     * The new reference is not registered with any queue.
+     *
+     * fixme 创建一个新的弱引用执行给定的对象，新的引用不会注册到任何队列中。
      *
      * @param referent object the new weak reference will refer to
+     *                 fixme: 弱引用指定的对象
      */
     public WeakReference(T referent) {
         super(referent);
@@ -63,7 +70,7 @@ public class WeakReference<T> extends Reference<T> {
      *
      * @param referent object the new weak reference will refer to
      * @param q the queue with which the reference is to be registered,
-     *          or {@code null} if registration is not required
+     *          or {@code null} if registration(组册) is not required
      */
     public WeakReference(T referent, ReferenceQueue<? super T> q) {
         super(referent, q);

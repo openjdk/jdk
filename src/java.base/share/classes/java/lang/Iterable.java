@@ -31,10 +31,17 @@ import java.util.Spliterators;
 import java.util.function.Consumer;
 
 /**
- * Implementing this interface allows an object to be the target of the enhanced
- * {@code for} statement (sometimes called the "for-each loop" statement).
+ * Implementing this interface allows an object to be the target of
+ * the enhanced {@code for} statement (sometimes called the "for-each loop" statement).
  *
  * @param <T> the type of elements returned by the iterator
+ *
+ * fixme
+ *      继承此接口的方法，允许使用 for-each 方法遍历元素
+ *      T：元素类型；
+ *
+ * todo
+ *     iterator 咋用
  *
  * @since 1.5
  * @jls 14.14.2 The enhanced {@code for} statement
@@ -49,10 +56,14 @@ public interface Iterable<T> {
 
     /**
      * Performs the given action for each element of the {@code Iterable}
-     * until all elements have been processed or the action throws an
-     * exception.  Actions are performed in the order of iteration, if that
-     * order is specified.  Exceptions thrown by the action are relayed to the
-     * caller.
+     * until all elements have been processed or the action throws an exception.
+     * Actions are performed in the order of iteration, if that order is specified.
+     * Exceptions thrown by the action are relayed to the caller.
+     * fixme
+     *      对于每一个元素执行action: action.accept(t)，直到处理完每个元素或者抛异常；
+     *      如果有顺序、则按照顺序遍历。
+     *
+     *
      * <p>
      * The behavior of this method is unspecified if the action performs
      * side-effects that modify the underlying source of elements, unless an

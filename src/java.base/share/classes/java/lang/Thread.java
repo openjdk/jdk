@@ -1851,9 +1851,8 @@ public class Thread implements Runnable {
          */
         TIMED_WAITING,
 
-        /**
-         * Thread state for a terminated thread.
-         * The thread has completed execution.
+        /**线程结束执行
+         * Thread state for a terminated thread. The thread has completed execution.
          */
         TERMINATED;
     }

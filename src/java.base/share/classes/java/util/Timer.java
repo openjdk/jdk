@@ -523,8 +523,10 @@ class TimerThread extends Thread {
                 boolean taskFired;
                 synchronized(queue) {
                     // Wait for queue to become non-empty
-                    while (queue.isEmpty() && newTasksMayBeScheduled)
+                    while (queue.isEmpty() && newTasksMayBeScheduled){
                         queue.wait();
+                    }
+
                     if (queue.isEmpty())
                         break; // Queue is empty and will forever remain; die
 

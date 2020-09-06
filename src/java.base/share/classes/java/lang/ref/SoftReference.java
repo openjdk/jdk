@@ -27,9 +27,14 @@ package java.lang.ref;
 
 
 /**
- * Soft reference objects, which are cleared at the discretion of the garbage
- * collector in response to memory demand.  Soft references are most often used
- * to implement memory-sensitive caches.
+ * Soft reference objects, which are cleared(清除) at the discretion of the garbage collector in response to memory demand(需求).
+ * Soft references are most often used to implement memory-sensitive caches. fixme 用来实现内存敏感的缓存
+ *
+ * fixme
+ *      软引用在在内存溢出前回收，经常用来实现内存敏感的缓存。
+ *      at the discretion(判定) of: 由 ... 决定
+ *      in response to ： 响应
+ *
  *
  * <p> Suppose that the garbage collector determines at a certain point in time
  * that an object is <a href="package-summary.html#reachability">softly

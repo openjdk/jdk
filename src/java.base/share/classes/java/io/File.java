@@ -1265,6 +1265,7 @@ public class File
         for (String s : ss)
             if ((filter == null) || filter.accept(this, s))
                 files.add(new File(s, this));
+        // fixme array-list转数组的高效方法
         return files.toArray(new File[files.size()]);
     }
 

@@ -469,7 +469,7 @@ public abstract class AbstractQueuedSynchronizer extends AbstractOwnableSynchron
 
     // in a condition wait
     // 在条件队列中等待
-    static final int COND      = 2;
+    static final int COND = 2;
 
     // Head of the wait queue, lazily initialized.
     // 等待队列的头节点、懒加载
@@ -1058,17 +1058,17 @@ public abstract class AbstractQueuedSynchronizer extends AbstractOwnableSynchron
     }
 
     /**
-     * Returns {@code true} if synchronization is held exclusively with
-     * respect to the current (calling) thread.  This method is invoked
-     * upon each call to a {@link ConditionObject} method.
+     * fixme 同步器是否被 当前线程/方法调用线程 以独占的模式被持有。
+     * Returns {@code true} if synchronization is held exclusively with respect to the current (calling) thread.
+     * This method is invoked upon each call to a {@link ConditionObject} method.
      *
      * <p>The default implementation throws {@link
      * UnsupportedOperationException}. This method is invoked
      * internally only within {@link ConditionObject} methods, so need
      * not be defined if conditions are not used.
      *
-     * @return {@code true} if synchronization is held exclusively;
-     *         {@code false} otherwise
+     * @return {@code true} if synchronization is held exclusively; {@code false} otherwise
+     *
      * @throws UnsupportedOperationException if conditions are not supported
      */
     protected boolean isHeldExclusively() {
@@ -1608,23 +1608,34 @@ public abstract class AbstractQueuedSynchronizer extends AbstractOwnableSynchron
      */
     public class ConditionObject implements Condition, java.io.Serializable {
         private static final long serialVersionUID = 1173984872572414699L;
-        /** First node of condition queue. */
+
+        /**
+         * 头节点、尾节点，每个节点还有一个next指针，nextWaiter
+         */
+
+        // First node of condition queue
+        // 条件队列的第一个节点：头节点
         private transient ConditionNode firstWaiter;
-        /** Last node of condition queue. */
+
+        // Last node of condition queue.
+        // 条件队列的最后一个节点：尾节点
         private transient ConditionNode lastWaiter;
 
-        /**
-         * Creates a new {@code ConditionObject} instance.
-         */
+        // Creates a new {@code ConditionObject} instance.
+        // 创建一个 ConditionObject 对象
         public ConditionObject() { }
 
-        // Signalling methods
-
         /**
-         * Removes and transfers one or all waiters to sync queue.
+         * Signalling methods
          */
+
+        // Removes and transfers one or all waiters to sync queue.
+        // 移除并转移到 一个/所有 waiter 到同步队列
+        // fixme 被signal() 和 signalAll() 调用
         private void doSignal(ConditionNode first, boolean all) {
+            // 当前节点不为null
             while (first != null) {
+                // 获取
                 ConditionNode next = first.nextWaiter;
                 if ((firstWaiter = next) == null)
                     lastWaiter = null;
@@ -1671,14 +1682,22 @@ public abstract class AbstractQueuedSynchronizer extends AbstractOwnableSynchron
         // Waiting methods
 
         /**
+         * fixme 将当前节点加入到条件队列、并且释放锁
          * Adds node to condition list and releases lock.
          *
          * @param node the node
          * @return savedState to reacquire after wait
          */
         private int enableWait(ConditionNode node) {
+            // 同步器是否被 当前线程/方法调用线程 以独占的模式被持有。
             if (isHeldExclusively()) {
+                // waiter线程为当前线程
                 node.waiter = Thread.currentThread();
+
+                // 更新状态值
+                // COND = 2 = 10(二进制)
+                // WAITING = 1 = 01(二进制)
+                // result = 2 = 11(二进制)
                 node.setStatusRelaxed(COND | WAITING);
                 ConditionNode last = lastWaiter;
                 if (last == null)
@@ -1822,12 +1841,19 @@ public abstract class AbstractQueuedSynchronizer extends AbstractOwnableSynchron
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * </ol>
          */
-        public final long awaitNanos(long nanosTimeout)
-                throws InterruptedException {
-            if (Thread.interrupted())
+        public final long awaitNanos(long nanosTimeout) throws InterruptedException {
+            // 如果线程中断、则抛异常
+            if (Thread.interrupted()){
                 throw new InterruptedException();
+            }
+
+            // 条件节点
             ConditionNode node = new ConditionNode();
+
+            // 将当前节点加入到条件队列、并且释放锁
             int savedState = enableWait(node);
+
+
             long nanos = (nanosTimeout < 0L) ? 0L : nanosTimeout;
             long deadline = System.nanoTime() + nanos;
             boolean cancelled = false, interrupted = false;

@@ -39,19 +39,32 @@ import java.util.Collection;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
- * A counting semaphore.  Conceptually, a semaphore maintains a set of
- * permits.  Each {@link #acquire} blocks if necessary until a permit is
- * available, and then takes it.  Each {@link #release} adds a permit,
- * potentially releasing a blocking acquirer.
- * However, no actual permit objects are used; the {@code Semaphore} just
- * keeps a count of the number available and acts accordingly.
+ * A counting semaphore.  Conceptually, a semaphore(信号量) maintains a set of permits(许可).
+ * Each {@link #acquire} blocks if necessary until a permit is available, and then takes it.
  *
- * <p>Semaphores are often used to restrict the number of threads than can
- * access some (physical or logical) resource. For example, here is
- * a class that uses a semaphore to control access to a pool of items:
+ * Each {@link #release} adds a permit, potentially releasing a blocking acquirer.
+ * 没释放一个方法、都会潜在的释放一个阻塞的线程。
+ *
+ * However, no actual(实际的) permit objects are used; the {@code Semaphore} just
+ * keeps a count of the number available and acts accordingly(相应的).
+ * 但实际上，信号量并没有持有任何 许可对象，只是使用AQS保存的状态值反应许可的获取、释放情况。
+ *
+ * fixme
+ *      信号量可以看作是一些许可的合集：acquire 会阻塞、直到可以获取到许可，可中断；release 方法会释放当前线程的许可；
+ *
+ * <p>Semaphores are often used to restrict(限制) the number of threads
+ * than can access some (physical or logical) resource.
+ * For example, here is a class that uses a semaphore to control access to a pool of items:
+ *
+ * todo than can -> that can??
+ *      信号量常常用来限制对某些有限的 物理/逻辑 资源访问的线程数量。
+ *      如下是使用信号量实现对资源池访问控制的一个示例。
+ *
+ *
  * <pre> {@code
  * class Pool {
  *   private static final int MAX_AVAILABLE = 100;
+ *   // 公平获取
  *   private final Semaphore available = new Semaphore(MAX_AVAILABLE, true);
  *
  *   public Object getItem() throws InterruptedException {
@@ -157,17 +170,55 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * in another thread.
  *
  * @since 1.5
- * @author Doug Lea
+ *
+ * fixme
+ *      信号量只是保证了对许可的更改是原子(立即返回、指定时间、阻塞、可中断)的
+ *      1. 但是并没有限制对许可进行操作的线程、是否是之前申请许可的线程;
+ *      2. 甚至可以提前调用 release()，逻辑上增加许可数量；
  */
 public class Semaphore implements java.io.Serializable {
     private static final long serialVersionUID = -3222578661600680210L;
-    /** All mechanics via AbstractQueuedSynchronizer subclass */
+
+    // All mechanics via AbstractQueuedSynchronizer subclass
+    // fixme
+    //  AQS的子类：通过继承AQS实现的同步机制
+    //  分为 FairSync 和 NonfairSync 两个版本，默认非公平
     private final Sync sync;
 
     /**
+     * Creates a {@code Semaphore} with the given number of permits and non-fair fairness setting.
+     * fixme 使用给定的许可数量、创建非公平锁
+     *
+     *
+     * @param permits the initial number of permits available.
+     *        This value may be negative, in which case releases
+     *        must occur before any acquires will be granted.
+     *        fixme 许可数量可以是负数，
+     */
+    public Semaphore(int permits) {
+        sync = new NonfairSync(permits);
+    }
+
+    /**
+     * Creates a {@code Semaphore} with the given number of permits and the given fairness setting.
+     * fixme
+     *
+     * @param permits the initial number of permits available.
+     *        This value may be negative, in which case releases
+     *        must occur before any acquires will be granted.
+     * @param fair {@code true} if this semaphore will guarantee
+     *        first-in first-out granting of permits under contention,
+     *        else {@code false}
+     */
+    public Semaphore(int permits, boolean fair) {
+        sync = fair ? new FairSync(permits) : new NonfairSync(permits);
+    }
+
+    /**
      * Synchronization implementation for semaphore.  Uses AQS state
-     * to represent permits. Subclassed into fair and nonfair
-     * versions.
+     * to represent permits. Subclassed into fair and non-fair versions.
+     *
+     * 信号量实现，有公平策略和非公平策略版本。fixme: 使用AQS的状态表示许可的数量。
      */
     abstract static class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = 1192457210091910933L;
@@ -190,6 +241,7 @@ public class Semaphore implements java.io.Serializable {
             }
         }
 
+        @Override
         protected final boolean tryReleaseShared(int releases) {
             for (;;) {
                 int current = getState();
@@ -257,33 +309,6 @@ public class Semaphore implements java.io.Serializable {
                     return remaining;
             }
         }
-    }
-
-    /**
-     * Creates a {@code Semaphore} with the given number of
-     * permits and nonfair fairness setting.
-     *
-     * @param permits the initial number of permits available.
-     *        This value may be negative, in which case releases
-     *        must occur before any acquires will be granted.
-     */
-    public Semaphore(int permits) {
-        sync = new NonfairSync(permits);
-    }
-
-    /**
-     * Creates a {@code Semaphore} with the given number of
-     * permits and the given fairness setting.
-     *
-     * @param permits the initial number of permits available.
-     *        This value may be negative, in which case releases
-     *        must occur before any acquires will be granted.
-     * @param fair {@code true} if this semaphore will guarantee
-     *        first-in first-out granting of permits under contention,
-     *        else {@code false}
-     */
-    public Semaphore(int permits, boolean fair) {
-        sync = fair ? new FairSync(permits) : new NonfairSync(permits);
     }
 
     /**

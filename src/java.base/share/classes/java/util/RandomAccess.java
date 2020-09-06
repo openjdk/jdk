@@ -27,19 +27,27 @@ package java.util;
 
 /**
  * Marker interface used by {@code List} implementations to indicate that
- * they support fast (generally constant time) random access.  The primary
- * purpose of this interface is to allow generic algorithms to alter their
- * behavior to provide good performance when applied to either random or
- * sequential access lists.
+ * they support fast (generally constant time 常量时间) random access.
+ * The primary purpose of this interface is to allow generic algorithms
+ * to alter their behavior to provide good performance
+ * when applied to either random or sequential access lists.
  *
- * <p>The best algorithms for manipulating random access lists (such as
- * {@code ArrayList}) can produce quadratic behavior when applied to
- * sequential access lists (such as {@code LinkedList}).  Generic list
- * algorithms are encouraged to check whether the given list is an
- * {@code instanceof} this interface before applying an algorithm that would
- * provide poor performance if it were applied to a sequential access list,
- * and to alter their behavior if necessary to guarantee acceptable
- * performance.
+ * fixme
+ *      标记 支持快速随机访问 的List实现类，即O(1)时间访问list中的元素；
+ *      这个接口的主要目的是，当随机或者顺序访问列表的时候，
+ *      允许常用的方法修改列表的行为、提供好的性能。
+ *
+ *      随机访问列表：ArrayList；
+ *      顺序访问列表：LinkedList；
+ *
+ *
+ * <p>The best algorithms for manipulating random access lists (such as {@code ArrayList})
+ * can produce quadratic(二次方的) behavior when applied to sequential access lists (such as {@code LinkedList}).
+ *
+ * Generic list algorithms are encouraged to check whether the given list is an
+ * {@code instanceof} RandomAccess before applying an algorithm
+ * that would provide poor performance if it were applied to a sequential(顺序访问列表) access list,
+ * and to alter their behavior if necessary to guarantee acceptable performance.
  *
  * <p>It is recognized that the distinction between random and sequential
  * access is often fuzzy.  For example, some {@code List} implementations

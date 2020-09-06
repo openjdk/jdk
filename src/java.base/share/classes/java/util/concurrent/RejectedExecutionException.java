@@ -36,13 +36,14 @@
 package java.util.concurrent;
 
 /**
- * Exception thrown by an {@link Executor} when a task cannot be
- * accepted for execution.
+ * Exception thrown by an {@link Executor} when a task cannot be accepted for execution.
+ * fixme 当任务无法被线程池接受时抛出的异常
  *
  * @since 1.5
  * @author Doug Lea
  */
 public class RejectedExecutionException extends RuntimeException {
+    // 异常信息是可序列化为二进制byte流的，方便保存为文件、或者在分布式系统间传输
     private static final long serialVersionUID = -375805702767069545L;
 
     /**

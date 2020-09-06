@@ -428,9 +428,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Read an object from the ObjectInputStream.  The class of the object, the
-     * signature of the class, and the values of the non-transient and
-     * non-static fields of the class and all of its supertypes are read.
+     * Read an object from the ObjectInputStream.
+     * The class of the object, the signature of the class,
+     * and the values of the non-transient and non-static fields of the class and all of its supertypes are read.
      * Default deserializing for a class can be overridden using the writeObject
      * and readObject methods.  Objects referenced by this object are read
      * transitively so that a complete equivalent graph of objects is
@@ -461,8 +461,7 @@ public class ObjectInputStream
      *          stream instead of objects.
      * @throws  IOException Any of the usual Input/Output related exceptions.
      */
-    public final Object readObject()
-        throws IOException, ClassNotFoundException {
+    public final Object readObject() throws IOException, ClassNotFoundException {
         return readObject(Object.class);
     }
 
@@ -492,9 +491,7 @@ public class ObjectInputStream
      * @throws  ClassNotFoundException Class of a serialized object cannot be
      *          found.
      */
-    private final Object readObject(Class<?> type)
-        throws IOException, ClassNotFoundException
-    {
+    private final Object readObject(Class<?> type) throws IOException, ClassNotFoundException {
         if (enableOverride) {
             return readObjectOverride();
         }
@@ -620,16 +617,18 @@ public class ObjectInputStream
     }
 
     /**
-     * Read the non-static and non-transient fields of the current class from
-     * this stream.  This may only be called from the readObject method of the
-     * class being deserialized. It will throw the NotActiveException if it is
-     * called otherwise.
+     * Read the non-static and non-transient fields of the current class from this stream.
+     * This may only be called from the readObject method of the class being deserialized.
+     * It will throw the NotActiveException if it is called otherwise.
      *
-     * @throws  ClassNotFoundException if the class of a serialized object
-     *          could not be found.
+     * fixme
+     *
+     *
+     * @throws  ClassNotFoundException if the class of a serialized object could not be found.
+     *
      * @throws  IOException if an I/O error occurs.
-     * @throws  NotActiveException if the stream is not currently reading
-     *          objects.
+     *
+     * @throws  NotActiveException if the stream is not currently reading objects.
      */
     public void defaultReadObject()
         throws IOException, ClassNotFoundException

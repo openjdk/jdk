@@ -36,8 +36,11 @@ import java.security.cert.*;
  * one of the getInstance() methods. All methods defined in this class
  * must be safe for concurrent use by multiple threads.<p>
  *
+ * fixme
+ *      1.
+ *
  * The model is that a Validator instance is created specifying validation
- * settings, such as trust anchors or PKIX parameters. Then one or more
+ * settings, such as trust anchors(信任锚点) or PKIX(工作组) parameters. Then one or more
  * paths are validated using those parameters. In some cases, additional
  * information can be provided per path validation. This is independent of
  * the validation parameters and currently only used for TLS server validation.

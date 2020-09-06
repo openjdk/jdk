@@ -178,8 +178,12 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws NullPointerException if the specified collection is null
      */
     public ArrayList(Collection<? extends E> c) {
+        // Arrays.copyOf(elementData, size);
         Object[] a = c.toArray();
+
+        // 如果集合元素不为空
         if ((size = a.length) != 0) {
+            // 如果复制的是ArrayList，则直接赋值
             if (c.getClass() == ArrayList.class) {
                 elementData = a;
             } else {
@@ -362,8 +366,7 @@ public class ArrayList<E> extends AbstractList<E>
      * <p>This method acts as bridge between array-based and collection-based
      * APIs.
      *
-     * @return an array containing all of the elements in this list in
-     *         proper sequence
+     * @return an array containing all of the elements in this list in proper sequence
      */
     public Object[] toArray() {
         return Arrays.copyOf(elementData, size);

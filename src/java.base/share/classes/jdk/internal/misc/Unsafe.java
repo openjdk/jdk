@@ -156,6 +156,8 @@ public final class Unsafe {
 
     /**
      * Stores a value into a given Java variable.
+     * fixme 给指定的对象设置变量值。
+     *
      * <p>
      * The first two parameters are interpreted exactly as with
      * {@link #getInt(Object, long)} to refer to a specific
@@ -165,8 +167,8 @@ public final class Unsafe {
      * The variable must be of the same type as the method
      * parameter {@code x}.
      *
-     * @param o Java heap object in which the variable resides, if any, else
-     *        null
+     * @param o Java heap object in which the variable resides(居住/存在), if any, else null
+     *
      * @param offset indication of where the variable resides in a Java heap
      *        object, if any, else a memory address locating the variable
      *        statically

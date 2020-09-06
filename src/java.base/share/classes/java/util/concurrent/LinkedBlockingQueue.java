@@ -1072,6 +1072,8 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E> implements Blocking
     }
 
     /**
+     * 使用Predicate筛选节点后进行批量删除
+     *
      * @throws NullPointerException {@inheritDoc}
      */
     public boolean removeIf(Predicate<? super E> filter) {
@@ -1080,6 +1082,8 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E> implements Blocking
     }
 
     /**
+     * 移除所有在指定节点的数据，包含关系
+     *
      * @throws NullPointerException {@inheritDoc}
      */
     public boolean removeAll(Collection<?> c) {
@@ -1109,7 +1113,8 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E> implements Blocking
         return ancestor;
     }
 
-    /** Implementation of bulk remove methods. */
+    // 批量删除
+    /** Implementation of bulk(大量、整体) remove methods. */
     @SuppressWarnings("unchecked")
     private boolean bulkRemove(Predicate<? super E> filter) {
         boolean removed = false;
@@ -1192,22 +1197,32 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E> implements Blocking
     }
 
     /**
-     * Reconstitutes this queue from a stream (that is, deserializes it).
+     * Reconstitutes(重新设立) this queue from a stream (that is, deserializes(反序列化) it).
+     * 从流中获取一个数据，重新设置队列。
+     *
      * @param s the stream
-     * @throws ClassNotFoundException if the class of a serialized object
-     *         could not be found
+     *          流
+     *
+     * @throws ClassNotFoundException if the class of a serialized object could not be found
+     *                                如果找不到被序列化的对象
+     *
      * @throws java.io.IOException if an I/O error occurs
+     *                             如果出现IO错误
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         // Read in capacity, and any hidden stuff
         s.defaultReadObject();
 
+        // 计数器设置为0
         count.set(0);
+        // 头尾指针都指向哑节点
         last = head = new Node<E>(null);
 
         // Read in all elements and place in queue
+        // 读取所有元素，然后放到队列中
         for (;;) {
+            // 从流中解析元素
             @SuppressWarnings("unchecked")
             E item = (E)s.readObject();
             if (item == null)
