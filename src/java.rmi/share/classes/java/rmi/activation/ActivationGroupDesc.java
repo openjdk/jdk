@@ -308,11 +308,15 @@ public final class ActivationGroupDesc implements Serializable {
          *
          * <p>This method reads this object's serialized form for this
          * class as follows:
-         *
          * <p>This method first invokes <code>defaultReadObject</code> on
          * the specified object input stream, and if <code>options</code>
          * is <code>null</code>, then <code>options</code> is set to a
          * zero-length array of <code>String</code>.
+         *
+         * @param  in the {@code ObjectInputStream} from which data is read
+         * @throws IOException if an I/O error occurs
+         * @throws ClassNotFoundException if a serialized class cannot be loaded
+         *
          */
         private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException
