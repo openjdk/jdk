@@ -590,3 +590,10 @@ uint32_t CollectedHeap::hash_oop(oop obj) const {
   const uintptr_t addr = cast_from_oop<uintptr_t>(obj);
   return static_cast<uint32_t>(addr >> LogMinObjAlignment);
 }
+
+// It's the caller's responsibility to ensure glitch-freedom
+// (if required).
+void CollectedHeap::update_heap_info_at_gc() {
+  _heap_capacity_at_last_gc = capacity();
+  _heap_used_at_last_gc     = used();
+}

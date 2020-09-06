@@ -437,6 +437,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   virtual void initialize_serviceability() = 0;
 
+  // Historic gc information
+  size_t _heap_capacity_at_last_gc;
+  size_t _heap_used_at_last_gc;
+
  public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
@@ -512,6 +516,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual void deduplicate_string(oop str);
 
   virtual bool is_oop(oop object) const;
+
+  // Historic gc information
+  size_t get_heap_free_at_last_gc()    { return _heap_capacity_at_last_gc - _heap_used_at_last_gc; }
+  size_t get_heap_used_at_last_gc()    { return _heap_used_at_last_gc; }
+  void update_heap_info_at_gc();
 
   // Non product verification and debugging.
 #ifndef PRODUCT
