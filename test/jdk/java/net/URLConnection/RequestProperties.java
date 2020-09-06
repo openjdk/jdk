@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,16 @@
 
 /**
  * @test
- * @bug 4485208
- * @summary  file: and ftp: URL handlers need to throw NPE in setRequestProperty
+ * @bug 4485208 8252767
+ * @summary  Validate java.net.URLConnection#setRequestProperty throws NPE and IllegalStateException
  */
 
-import java.net.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public class RequestProperties {
     static int failed;
@@ -43,13 +46,15 @@ public class RequestProperties {
             urls.add("ftp://foo:bar@foobar.com/etc/passwd");
 
         for (String urlStr : urls)
-            test(new URL(urlStr));
+            testSetRequestPropNPE(new URL(urlStr));
 
         if (failed != 0)
             throw new RuntimeException(failed + " errors") ;
+
+        testRequestPropIllegalStateException();
     }
 
-    static void test(URL url) throws Exception {
+    static void testSetRequestPropNPE(URL url) throws Exception {
         URLConnection urlc = url.openConnection();
         try {
             urlc.setRequestProperty(null, null);
@@ -77,6 +82,79 @@ public class RequestProperties {
         } catch (java.net.MalformedURLException x) {
             System.out.println("FTP not supported by this runtime.");
             return false;
+        }
+    }
+
+    /**
+     * Test that various request property handling methods on {@link java.net.URLConnection}  throw
+     * an {@link IllegalStateException} when already connected
+     */
+    private static void testRequestPropIllegalStateException() throws Exception {
+        final URL url = Path.of(System.getProperty("java.io.tmpdir")).toUri().toURL();
+        final URLConnection conn = url.openConnection();
+        conn.connect();
+        try {
+            // test setRequestProperty
+            expectIllegalStateException(
+                    () -> {
+                        conn.setRequestProperty("foo", "bar");
+                        return null;
+                    }, "setRequestProperty on " + conn.getClass().getName()
+                            + " for " + url + " was expected to throw"
+                            + " IllegalStateException, but didn't");
+            // test addRequestProperty
+            expectIllegalStateException(
+                    () -> {
+                        conn.addRequestProperty("foo", "bar");
+                        return null;
+                    }, "addRequestProperty on " + conn.getClass().getName()
+                            + " for " + url + " was expected to throw"
+                            + " IllegalStateException, but didn't");
+            // test getRequestProperty
+            expectIllegalStateException(
+                    () -> {
+                        conn.getRequestProperty("foo");
+                        return null;
+                    }, "getRequestProperty on " + conn.getClass().getName()
+                            + " for " + url + " was expected to throw"
+                            + " IllegalStateException, but didn't");
+            // test getRequestProperties
+            expectIllegalStateException(
+                    () -> {
+                        conn.getRequestProperties();
+                        return null;
+                    }, "getRequestProperties on " + conn.getClass().getName()
+                            + " for " + url + " was expected to throw"
+                            + " IllegalStateException, but didn't");
+        } finally {
+            try {
+                conn.getInputStream().close();
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+
+    }
+
+    /**
+     * Calls the {@code operation} and expects it to throw an {@link IllegalStateException}.
+     * If no such exception is thrown then this method throws a {@link RuntimeException}
+     * with the passed {@code unmetExpectationErrorMessage} as the exception's message.
+     *
+     * @param operation                    The operation to invoke
+     * @param unmetExpectationErrorMessage The error message to be set in the
+     *                                     RuntimeException that will be thrown if the operation
+     *                                     doesn't result in an IllegalStateException
+     */
+    private static void expectIllegalStateException(final Callable<Void> operation,
+                                                    final String unmetExpectationErrorMessage)
+            throws Exception {
+        try {
+            operation.call();
+            // the expected IllegalStateException wasn't throw
+            throw new RuntimeException(unmetExpectationErrorMessage);
+        } catch (IllegalStateException ise) {
+            // expected
         }
     }
 }
