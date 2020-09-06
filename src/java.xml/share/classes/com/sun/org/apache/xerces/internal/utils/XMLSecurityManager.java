@@ -528,14 +528,14 @@ public final class XMLSecurityManager {
     private boolean getSystemProperty(Limit limit, String sysPropertyName) {
         try {
             String value = SecuritySupport.getSystemProperty(sysPropertyName);
-            if (value != null && !value.equals("")) {
+            if (value != null && !value.isEmpty()) {
                 values[limit.ordinal()] = Integer.parseInt(value);
                 states[limit.ordinal()] = State.SYSTEMPROPERTY;
                 return true;
             }
 
             value = SecuritySupport.readJAXPProperty(sysPropertyName);
-            if (value != null && !value.equals("")) {
+            if (value != null && !value.isEmpty()) {
                 values[limit.ordinal()] = Integer.parseInt(value);
                 states[limit.ordinal()] = State.JAXPDOTPROPERTIES;
                 return true;

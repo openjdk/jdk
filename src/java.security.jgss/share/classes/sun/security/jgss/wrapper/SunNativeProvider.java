@@ -80,7 +80,7 @@ public final class SunNativeProvider extends Provider {
                         String[] gssLibs;
                         String defaultLib
                                 = System.getProperty("sun.security.jgss.lib");
-                        if (defaultLib == null || defaultLib.trim().equals("")) {
+                        if (defaultLib == null || defaultLib.trim().isEmpty()) {
                             String osname = System.getProperty("os.name");
                             if (osname.startsWith("Linux")) {
                                 gssLibs = new String[]{

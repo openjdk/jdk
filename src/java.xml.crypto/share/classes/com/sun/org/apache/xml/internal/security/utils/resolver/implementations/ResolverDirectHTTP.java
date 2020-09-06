@@ -210,7 +210,7 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
             return false;
         }
 
-        if (context.uriToResolve.equals("") || context.uriToResolve.charAt(0) == '#') {
+        if (context.uriToResolve.isEmpty() || context.uriToResolve.charAt(0) == '#') {
             LOG.debug("quick fail for empty URIs and local ones");
             return false;
         }

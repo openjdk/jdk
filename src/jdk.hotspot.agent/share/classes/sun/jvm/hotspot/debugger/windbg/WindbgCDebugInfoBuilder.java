@@ -278,7 +278,7 @@ class WindbgCDebugInfoBuilder
         case LF_ENUM: {
           String name = iter.getEnumName();
           BasicEnumType enumType = null;
-          if ((name == null) || (name.equals(""))) {
+          if ((name == null) || (name.isEmpty())) {
             if (unnamedEnum == null) {
               unnamedEnum = new BasicEnumType(null, getTypeByIndex(iter.getEnumType()));
             }

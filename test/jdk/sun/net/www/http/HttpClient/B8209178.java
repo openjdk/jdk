@@ -290,7 +290,7 @@ public class B8209178 {
 
                         // Read all headers until we find the empty line that
                         // signals the end of all headers.
-                        while (!requestLine.equals("")) {
+                        while (!requestLine.isEmpty()) {
                             System.out.println("Tunnel: Reading header: "
                                     + (requestLine = readLine(ccis)));
                         }

@@ -280,7 +280,7 @@ public class TextStyleChooser extends AbstractTextStyleChooser {
         if (foreground != null) {
             result = result + foreground.toString() + " foreground, ";
         }
-        if (result.equals("")) {
+        if (result.isEmpty()) {
             result = "any, ";
         }
         return result.substring(0, result.length() - 2) + " font";

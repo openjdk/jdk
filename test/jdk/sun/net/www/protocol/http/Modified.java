@@ -53,7 +53,7 @@ public class Modified implements Runnable {
                 if (str.startsWith("If-Modified-Since")) {
                     gotIfModified = true;
                 }
-                if (str.equals("")) {
+                if (str.isEmpty()) {
                     break;
                 }
             } while (str != null);

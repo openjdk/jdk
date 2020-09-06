@@ -224,7 +224,7 @@ public class signature001 {
                         log.display("ClassUnloadEvent is received for " + refSignature);
 
                         // check that received event is for checked class
-                        if ((refSignature == null) || (refSignature.equals(""))) {
+                        if ((refSignature == null) || (refSignature.isEmpty())) {
 
                             log.complain("FAILURE 3: ClassUnloadEvent.classSignature() returns null or empty string");
                             testFailed = true;

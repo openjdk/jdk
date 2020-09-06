@@ -542,7 +542,7 @@ public class DocumentImpl
     {
         // We can't dispatch to blank type-name, and of course we need
         // a listener to dispatch to
-        if (type == null || type.equals("") || listener == null)
+        if (type == null || type.isEmpty() || listener == null)
             return;
 
         // Each listener may be registered only once per type per phase.
@@ -586,7 +586,7 @@ public class DocumentImpl
                                        boolean useCapture)
     {
         // If this couldn't be a valid listener registration, ignore request
-        if (type == null || type.equals("") || listener == null)
+        if (type == null || type.isEmpty() || listener == null)
             return;
         List<LEntry> nodeListeners = getEventListeners(node);
         if (nodeListeners == null)
@@ -690,7 +690,7 @@ public class DocumentImpl
 
         // VALIDATE -- must have been initialized at least once, must have
         // a non-null non-blank name.
-        if(!evt.initialized || evt.type == null || evt.type.equals("")) {
+        if(!evt.initialized || evt.type == null || evt.type.isEmpty()) {
             String msg = DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "UNSPECIFIED_EVENT_TYPE_ERR", null);
             throw new EventException(EventException.UNSPECIFIED_EVENT_TYPE_ERR, msg);
         }

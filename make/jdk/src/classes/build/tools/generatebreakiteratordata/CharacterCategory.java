@@ -119,7 +119,7 @@ class CharacterCategory {
          * Generates data in older format (1.4.X and earlier) and creates
          * the old CategoryMap if "oldFilename" is not null.
          */
-        if (!oldDatafile.equals("")) {
+        if (!oldDatafile.isEmpty()) {
             generateOldData();
             generateOldDatafile();
         }

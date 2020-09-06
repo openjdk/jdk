@@ -1179,7 +1179,7 @@ final class ManualLaunchedDebugee extends Debugee {
             System.out.print(" [" + defaultAnswer + "] ");
             System.out.flush();
             String answer = bin.readLine();
-            if (answer.equals(""))
+            if (answer.isEmpty())
                 return defaultAnswer;
             return answer;
         } catch (IOException e) {

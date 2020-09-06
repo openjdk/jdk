@@ -510,7 +510,7 @@ public interface JSONValue {
         }
 
         public JSONValue parse(String s) {
-            if (s == null || s.equals("")) {
+            if (s == null || s.isEmpty()) {
                 return null;
             }
 

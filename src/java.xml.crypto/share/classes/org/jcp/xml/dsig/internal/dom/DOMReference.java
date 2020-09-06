@@ -165,7 +165,7 @@ public final class DOMReference extends DOMStructure
         }
         this.digestMethod = dm;
         this.uri = uri;
-        if (uri != null && !uri.equals("")) {
+        if (uri != null && !uri.isEmpty()) {
             try {
                 new URI(uri);
             } catch (URISyntaxException e) {

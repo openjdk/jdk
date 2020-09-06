@@ -146,7 +146,7 @@ public class BundleManager {
     public Bundle load()
             throws IOException, FileNotFoundException {
         if (System.getProperty("jemmy.resources") != null
-                && !System.getProperty("jemmy.resources").equals("")) {
+                && !System.getProperty("jemmy.resources").isEmpty()) {
             return loadBundleFromFile(System.getProperty("jemmy.resources"), "");
         }
         return null;

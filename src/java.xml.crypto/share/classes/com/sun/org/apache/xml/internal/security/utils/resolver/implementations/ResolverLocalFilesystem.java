@@ -115,7 +115,7 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
             return false;
         }
 
-        if (context.uriToResolve.equals("") || context.uriToResolve.charAt(0) == '#' ||
+        if (context.uriToResolve.isEmpty() || context.uriToResolve.charAt(0) == '#' ||
             context.uriToResolve.startsWith("http:")) {
             return false;
         }

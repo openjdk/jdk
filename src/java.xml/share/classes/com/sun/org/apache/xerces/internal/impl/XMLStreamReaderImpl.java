@@ -1051,7 +1051,7 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
                 || fEventType == XMLEvent.NAMESPACE) {
             //namespaceContext is dynamic object.
             String prefix = fScanner.getNamespaceContext().getDeclaredPrefixAt(index);
-            return prefix.equals("") ? null : prefix;
+            return prefix.isEmpty() ? null : prefix;
         } else {
             throw new IllegalStateException("Current state " + getEventTypeString(fEventType)
                     + " is not among the states " + getEventTypeString(XMLEvent.START_ELEMENT)

@@ -127,7 +127,7 @@ public class OptionProcessor extends AbstractProcessor {
         }
 
         String optionName = getAnnotationValue(annotation, "name", String.class);
-        if (optionName.equals("")) {
+        if (optionName.isEmpty()) {
             optionName = fieldName;
         }
 

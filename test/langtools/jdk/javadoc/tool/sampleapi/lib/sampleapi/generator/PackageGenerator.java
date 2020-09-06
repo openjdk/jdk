@@ -582,7 +582,7 @@ public class PackageGenerator {
                 JCBlock body = null;
                 if (needBody && (declFlags & Flags.ABSTRACT) == 0) { // create body
                     List<JCStatement> bodyStatements = List.<JCStatement>nil();
-                    if (!type.equals("") && !type.equals("void")) { // create return statement
+                    if (!type.isEmpty() && !type.equals("void")) { // create return statement
                         Type retType = getTypeByName(type);
                         bodyStatements = List.<JCStatement>of(
                                              make.Return(

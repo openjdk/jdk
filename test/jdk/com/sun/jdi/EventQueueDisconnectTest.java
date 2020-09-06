@@ -65,7 +65,7 @@ public class EventQueueDisconnectTest {
                                        VirtualMachine.TRACE_NONE);
         connection.setConnectorArg("main", "EventQueueDisconnectTarg");
         String debuggeeVMOptions = VMConnection.getDebuggeeVMOptions();
-        if (!debuggeeVMOptions.equals("")) {
+        if (!debuggeeVMOptions.isEmpty()) {
             if (connection.connectorArg("options").length() > 0) {
                 throw new IllegalArgumentException("VM options in two places");
             }

@@ -34,7 +34,7 @@ public class FedObjectFactory implements ObjectFactory {
     @Override
     public Object getObjectInstance(Object obj, Name name, Context nameCtx,
             Hashtable<?, ?> environment) {
-        if (name != null && name.get(name.size() - 1).equals("")) {
+        if (name != null && name.get(name.size() - 1).isEmpty()) {
             System.out.println("got nns name");
             return FedSubordinateNs.getRoot();
         }

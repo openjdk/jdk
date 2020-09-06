@@ -211,7 +211,7 @@ class SourceFile {
                 top.add(line);
             } else {
                 trimmed = line.trim();
-                if (!trimmed.equals("") && !trimmed.startsWith("//") && !trimmed.startsWith("#")) {
+                if (!trimmed.isEmpty() && !trimmed.startsWith("//") && !trimmed.startsWith("#")) {
                     error("only comments and blank lines allowed between functions");
                 }
                 before.add(line);

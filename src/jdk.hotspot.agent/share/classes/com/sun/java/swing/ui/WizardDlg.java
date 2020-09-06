@@ -265,7 +265,7 @@ public class WizardDlg extends JDialog
         JPanel panel = (JPanel)panels.elementAt(cardShowing - 1);
         String newTitle = title;
         String panelTitle = panel.getName();
-        if(panelTitle != null && panelTitle.equals(""))
+        if(panelTitle != null && panelTitle.isEmpty())
         {
             newTitle = newTitle + " - ";
             newTitle = newTitle + panelTitle;

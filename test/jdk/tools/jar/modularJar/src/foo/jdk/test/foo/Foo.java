@@ -47,24 +47,24 @@ public class Foo {
 
         sj = new StringJoiner(",");
         md.exports().stream().map(Exports::source).sorted().forEach(sj::add);
-        if (!sj.toString().equals(""))
+        if (!sj.toString().isEmpty())
             System.out.println("exports:" + sj.toString());
 
         sj = new StringJoiner(",");
         md.uses().stream().sorted().forEach(sj::add);
-        if (!sj.toString().equals(""))
+        if (!sj.toString().isEmpty())
             System.out.println("uses:" + sj.toString());
 
         sj = new StringJoiner(",");
         md.provides().stream().map(Provides::service).sorted().forEach(sj::add);
-        if (!sj.toString().equals(""))
+        if (!sj.toString().isEmpty())
             System.out.println("provides:" + sj.toString());
 
         sj = new StringJoiner(",");
         Set<String> concealed = new HashSet<>(md.packages());
         md.exports().stream().map(Exports::source).forEach(concealed::remove);
         concealed.forEach(sj::add);
-        if (!sj.toString().equals(""))
+        if (!sj.toString().isEmpty())
             System.out.println("contains:" + sj.toString());
     }
 }

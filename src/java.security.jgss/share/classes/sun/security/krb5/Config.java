@@ -1361,7 +1361,7 @@ public class Config {
             kdcs += srvs[i].trim() + " ";
         }
         kdcs = kdcs.trim();
-        if (kdcs.equals("")) {
+        if (kdcs.isEmpty()) {
             return null;
         }
         return kdcs;

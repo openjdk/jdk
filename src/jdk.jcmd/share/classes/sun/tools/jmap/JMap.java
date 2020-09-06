@@ -174,7 +174,7 @@ public class JMap {
 
         for (int i = 0; i < subopts.length; i++) {
             String subopt = subopts[i];
-            if (subopt.equals("") || subopt.equals("all")) {
+            if (subopt.isEmpty() || subopt.equals("all")) {
                 // pass
             } else if (subopt.equals("live")) {
                 liveopt = "-live";
@@ -212,7 +212,7 @@ public class JMap {
 
         for (int i = 0; i < subopts.length; i++) {
             String subopt = subopts[i];
-            if (subopt.equals("") || subopt.equals("all")) {
+            if (subopt.isEmpty() || subopt.equals("all")) {
                 // pass
             } else if (subopt.equals("live")) {
                 liveopt = "-live";

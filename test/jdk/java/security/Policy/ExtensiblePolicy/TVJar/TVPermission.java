@@ -84,7 +84,7 @@ public class TVPermission extends Permission {
     private synchronized int[] parseNum(String num)
             throws Exception {
 
-        if (num == null || num.equals("") || num.equals("*")) {
+        if (num == null || num.isEmpty() || num.equals("*")) {
             wildcard = true;
             return new int[]{NUM_MIN, NUM_MAX};
         }
@@ -104,7 +104,7 @@ public class TVPermission extends Permission {
             String high = num.substring(dash + 1);
             int l, h;
 
-            if (low.equals("")) {
+            if (low.isEmpty()) {
                 l = NUM_MIN;
             } else {
                 try {
@@ -114,7 +114,7 @@ public class TVPermission extends Permission {
                 }
             }
 
-            if (high.equals("")) {
+            if (high.isEmpty()) {
                 h = NUM_MAX;
             } else {
                 try {

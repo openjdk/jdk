@@ -504,7 +504,7 @@ public class BrokenConnectionTest {
             System.out.println("Test " + i + (thisok ? " passed" : " FAILED"));
             breakable.setBroken(false);
         }
-        if (failed.equals(""))
+        if (failed.isEmpty())
             return true;
         else {
             System.out.println("FAILING CASES:" + failed);

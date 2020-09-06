@@ -260,7 +260,7 @@ public class CompileProperties {
             }
 
             String packageString = "";
-            if (packageName != null && !packageName.equals("")) {
+            if (packageName != null && !packageName.isEmpty()) {
                 packageString = "package " + packageName + ";\n\n";
             }
 

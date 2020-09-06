@@ -175,7 +175,7 @@ public class BindServer implements Finalizable {
         }
 
         String windir = argHandler.getDebugeeWinDir();
-        if (!(windir == null || windir.equals(""))) {
+        if (!(windir == null || windir.isEmpty())) {
             logger.display("Using WINDIR: \n"
                          + "  " + argHandler.getDebugeeWinDir());
         }
@@ -201,7 +201,7 @@ public class BindServer implements Finalizable {
                     stdIn.close();
                     stdIn = null;
                     break;
-                } else if (userInput.trim().equals("")) {
+                } else if (userInput.trim().isEmpty()) {
                     continue;
                 } else {
                     System.out.println("ERROR: Unknown command: " + userInput);
@@ -1027,7 +1027,7 @@ public class BindServer implements Finalizable {
                 String[] classPathes = convertPathes(request.classPathes, request.slash, "CLASSPATH", true);
                 String windir = argHandler.getDebugeeWinDir();
 
-                boolean win = (!(windir == null || windir.equals("")));
+                boolean win = (!(windir == null || windir.isEmpty()));
                 String[] envp = new String[win ? 3 : 1] ;
                 envp[0] = "CLASSPATH=" + ArgumentParser.joinArguments(classPathes, "", pathSeparator);
                 if (win) {
@@ -1737,7 +1737,7 @@ public class BindServer implements Finalizable {
             if (option.equals("DEBUGGER_TESTED_JAVA_HOME")
                     || option.equals("DEBUGGER_WORKDIR")
                     || option.equals("DEBUGGER_TESTBASE")) {
-                if (value == null || value.equals("")) {
+                if (value == null || value.isEmpty()) {
                     throw new BadOption("Empty value of bind-file option " + option);
                 }
                 return true;
@@ -1746,7 +1746,7 @@ public class BindServer implements Finalizable {
             if (option.equals("DEBUGGEE_TESTED_JAVA_HOME")
                     || option.equals("DEBUGGEE_WORKDIR")
                     || option.equals("DEBUGGEE_TESTBASE")) {
-                if (value == null || value.equals("")) {
+                if (value == null || value.isEmpty()) {
                     throw new BadOption("Empty value of bind-file option " + option);
                 }
                 checkDir(option, value);
@@ -1754,7 +1754,7 @@ public class BindServer implements Finalizable {
             }
 
             if (option.equals("DEBUGGEE_WINDIR")) {
-                if (!(value == null || value.equals(""))) {
+                if (!(value == null || value.isEmpty())) {
                     checkDir(option, value);
                 }
                 return true;

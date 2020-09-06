@@ -114,7 +114,7 @@ public class CheckFQDN extends UnicastRemoteObject
         try {
             String propOption = "";
             String equal = "";
-            if (!property.equals("")) {
+            if (!property.isEmpty()) {
                 propOption = " -D";
                 equal = "=";
             }

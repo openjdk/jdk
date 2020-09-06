@@ -196,7 +196,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
            file = new SmartFileObject((JavaFileObject) file);
            packageName = ":" + packageNameFromFileName(relativeName);
         }
-        if (packageName.equals("")) {
+        if (packageName.isEmpty()) {
             packageName = ":";
         }
         addArtifact(packageName, file.toUri());

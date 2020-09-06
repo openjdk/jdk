@@ -135,7 +135,7 @@ public class SALauncherLoader extends URLClassLoader {
         String[] tmp = cp.split(File.pathSeparator);
         File[] paths = new File[tmp.length];
         for (int i = 0; i < paths.length; i++) {
-            paths[i] = new File(tmp[i].equals("")? "." : tmp[i]);
+            paths[i] = new File(tmp[i].isEmpty()? "." : tmp[i]);
         }
         return paths;
     }

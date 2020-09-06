@@ -339,7 +339,7 @@ public final class ServicePermission extends Permission
             throw new NullPointerException("action can't be null");
         }
 
-        if (action.equals("")) {
+        if (action.isEmpty()) {
             throw new IllegalArgumentException("action can't be empty");
         }
 

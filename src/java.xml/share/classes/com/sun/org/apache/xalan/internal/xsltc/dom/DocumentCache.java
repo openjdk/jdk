@@ -256,7 +256,7 @@ public final class DocumentCache implements DOMCache {
         CachedDocument doc;
 
     String uri = href;
-    if (baseURI != null && !baseURI.equals("")) {
+    if (baseURI != null && !baseURI.isEmpty()) {
         try {
             uri = SystemIDResolver.getAbsoluteURI(uri, baseURI);
         } catch (TransformerException te) {

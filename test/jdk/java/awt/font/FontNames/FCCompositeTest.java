@@ -91,7 +91,7 @@ public class FCCompositeTest {
                 String fcname = br.readLine();
                 if (fcname == null) break;
                 fcFullName = fcname;
-                if (fcname.equals("")) {
+                if (fcname.isEmpty()) {
                     System.out.println("Skip if no fullname");
                     return;
                 }

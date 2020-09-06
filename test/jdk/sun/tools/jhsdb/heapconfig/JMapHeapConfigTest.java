@@ -83,7 +83,7 @@ public class JMapHeapConfigTest {
                 continue;
             }
 
-            if (shouldParse && !line.equals("")) {
+            if (shouldParse && !line.isEmpty()) {
                 String[] lv = line.split("\\s+");
                 try {
                     heapConfigMap.put(lv[0], lv[2]);

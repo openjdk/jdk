@@ -912,7 +912,7 @@ public class LdapLoginModule implements LoginModule {
             // ignore
         }
 
-        if (userDN.equals("")) {
+        if (userDN.isEmpty()) {
             throw (LoginException)
                 new FailedLoginException("Cannot find user's LDAP entry");
         } else {

@@ -43,6 +43,6 @@ public class VirtualObjectFormattingTest extends VirtualObjectTestBase {
         // asserting.
         VirtualObject virtual = VirtualObject.get(klass, 0);
         virtual.setValues(kinds, values);
-        Assert.assertTrue(!virtual.toString().equals(""));
+        Assert.assertTrue(!virtual.toString().isEmpty());
     }
 }

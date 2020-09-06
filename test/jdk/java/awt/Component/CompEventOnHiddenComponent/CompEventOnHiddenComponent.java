@@ -121,7 +121,7 @@ public class CompEventOnHiddenComponent
 
         robot.waitForIdle();
 
-        if (passed.equals("")){
+        if (passed.isEmpty()){
             CompEventOnHiddenComponent.pass();
         } else {
             CompEventOnHiddenComponent.fail(passed);

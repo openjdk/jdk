@@ -103,7 +103,7 @@ public class getloggerlevel001 {
             // be returned.
             testLog1.setLevel(null);
             String returnedLevel = loggingMonitor.getLoggerLevel(testLog1Name);
-            if (returnedLevel == null || !returnedLevel.equals("")) {
+            if (returnedLevel == null || !returnedLevel.isEmpty()) {
 
                 testFailed = true;
                 log.complain("Failure 3.");

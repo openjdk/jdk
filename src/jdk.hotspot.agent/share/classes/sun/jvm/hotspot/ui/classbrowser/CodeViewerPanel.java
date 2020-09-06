@@ -89,7 +89,7 @@ public class CodeViewerPanel extends JPanel {
     }
 
     private void viewAddress() {
-        if (address.getText() != null && !address.getText().equals("")) {
+        if (address.getText() != null && !address.getText().isEmpty()) {
             contentEditor.setText(htmlGen.genHTMLForAddress(address.getText()));
         }
     }

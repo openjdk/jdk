@@ -246,7 +246,7 @@ public class JDBCAdapter extends AbstractTableModel {
             // that editing is possible, we'll just lock on everything.
             for (int col = 0; col < getColumnCount(); col++) {
                 String colName = getColumnName(col);
-                if (colName.equals("")) {
+                if (colName.isEmpty()) {
                     continue;
                 }
                 if (col != 0) {

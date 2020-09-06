@@ -219,7 +219,7 @@ public class classname001 {
 
                         // check that received event is for checked class
                         log.display("ClassUnloadEvent is received for " + refName);
-                        if ((refName == null) || (refName.equals(""))) {
+                        if ((refName == null) || (refName.isEmpty())) {
                             log.complain("FAILURE 3: ClassUnloadEvent.className() returns null or empty string");
                             testFailed = true;
                         } else if (refName.equals(CHECKED_CLASS)) {

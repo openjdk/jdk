@@ -157,7 +157,7 @@ public class refType001 {
                                 } else {
 
                                     String refName = refType.name();
-                                    if ((refName == null) || (refName.equals(""))) {
+                                    if ((refName == null) || (refName.isEmpty())) {
                                         log.complain("FAILURE 4: Reference has invalid empty name");
                                         testFailed = true;
                                     } else {

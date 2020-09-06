@@ -1152,21 +1152,21 @@ public class GUIBrowser extends JFrame {
                     }
                     showAll
                             = props.getProperty("guibrowser.showall") == null
-                            || props.getProperty("guibrowser.showall").equals("")
+                            || props.getProperty("guibrowser.showall").isEmpty()
                             || props.getProperty("guibrowser.showall").equals("on");
                     visibleCombo.setSelectedIndex(showAll ? 1 : 0);
                     if (props.getProperty("guibrowser.viewpage_0") != null
-                            && !props.getProperty("guibrowser.viewpage_0").equals("")) {
+                            && !props.getProperty("guibrowser.viewpage_0").isEmpty()) {
                         viewTabs.removeAllElements();
                         viewTabs.addElement(props.getProperty("guibrowser.viewpage_0"));
                         viewTabs.addElement(props.getProperty("guibrowser.viewpage_1"));
                         viewTabs.addElement(props.getProperty("guibrowser.viewpage_2"));
                         if (props.getProperty("guibrowser.viewpage_3") != null
-                                && !props.getProperty("guibrowser.viewpage_3").equals("")) {
+                                && !props.getProperty("guibrowser.viewpage_3").isEmpty()) {
                             viewTabs.addElement(props.getProperty("guibrowser.viewpage_3"));
                         }
                         if (props.getProperty("guibrowser.viewpage_4") != null
-                                && !props.getProperty("guibrowser.viewpage_4").equals("")) {
+                                && !props.getProperty("guibrowser.viewpage_4").isEmpty()) {
                             viewTabs.addElement(props.getProperty("guibrowser.viewpage_4"));
                         }
                     }

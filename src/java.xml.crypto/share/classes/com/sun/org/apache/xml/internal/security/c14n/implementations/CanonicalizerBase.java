@@ -592,7 +592,7 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
             String NName = e.getPrefix();
             String NValue = e.getNamespaceURI();
             String Name;
-            if (NName == null || NName.equals("")) {
+            if (NName == null || NName.isEmpty()) {
                 NName = XMLNS;
                 Name = XMLNS;
             } else {

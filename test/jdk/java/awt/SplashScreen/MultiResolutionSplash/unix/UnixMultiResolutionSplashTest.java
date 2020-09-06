@@ -190,7 +190,7 @@ public class UnixMultiResolutionSplashTest {
             @Override
             public void paint(Graphics g) {
                 String scaleStr = System.getenv("GDK_SCALE");
-                if (scaleStr != null && !scaleStr.equals("")) {
+                if (scaleStr != null && !scaleStr.isEmpty()) {
                     try {
                         scaleFactors[0] = Float.valueOf(scaleStr);
                     } catch (NumberFormatException ex) {

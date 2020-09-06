@@ -126,7 +126,7 @@ public class WbmpDefaultImageMetadataTest {
         }
         Node child = node.getFirstChild();
 
-        if (node.getNodeValue() != null && !node.getNodeValue().equals("") ) {
+        if (node.getNodeValue() != null && !node.getNodeValue().isEmpty() ) {
             System.out.println(">");
             indent(level);
             System.out.println(node.getNodeValue());

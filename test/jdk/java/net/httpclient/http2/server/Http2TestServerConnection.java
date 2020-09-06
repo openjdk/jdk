@@ -400,7 +400,7 @@ public class Http2TestServerConnection {
                 }
                 nextstream = 1;
             } else if (sslSocket.getApplicationProtocol().equals("http/1.1") ||
-                       sslSocket.getApplicationProtocol().equals("")) {
+                       sslSocket.getApplicationProtocol().isEmpty()) {
                 standardHTTP11Response(readHttp1Request());
                 socket.shutdownOutput();
                 socket.close();

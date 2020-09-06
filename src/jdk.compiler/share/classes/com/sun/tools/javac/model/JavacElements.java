@@ -134,7 +134,7 @@ public class JavacElements implements Elements {
         if (modules.getDefaultModule() == syms.noModule)
             return null;
         String strName = name.toString();
-        if (strName.equals(""))
+        if (strName.isEmpty())
             return syms.unnamedModule;
         return modules.getObservableModule(names.fromString(strName));
     }

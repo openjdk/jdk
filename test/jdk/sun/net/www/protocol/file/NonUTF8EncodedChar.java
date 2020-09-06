@@ -48,7 +48,7 @@ public class NonUTF8EncodedChar
             ioe.printStackTrace();
         } catch (IllegalArgumentException iae) {
             String message = iae.getMessage();
-            if (message == null || message.equals("")) {
+            if (message == null || message.isEmpty()) {
                 System.out.println("No message");
                 throw new RuntimeException("Failed: No message in Exception");
             }

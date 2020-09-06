@@ -227,7 +227,7 @@ public class LocaleTest extends IntlTest {
                 errln("  Country code mismatch: " + testLocale.getCountry() + " versus "
                         + dataTable[CTRY][i]);
             }
-            if (!testLocale.getVariant().equals("")) {
+            if (!testLocale.getVariant().isEmpty()) {
                 errln("  Variant code mismatch: " + testLocale.getVariant() + " versus \"\"");
             }
         }
@@ -337,34 +337,34 @@ public class LocaleTest extends IntlTest {
             String expectedName;
 
             expectedLang = dataTable[compareIndex][i];
-            if (expectedLang.equals("") && defaultIsFrench) {
+            if (expectedLang.isEmpty() && defaultIsFrench) {
                 expectedLang = dataTable[DLANG_EN][i];
             }
-            if (expectedLang.equals("")) {
+            if (expectedLang.isEmpty()) {
                 expectedLang = dataTable[DLANG_ROOT][i];
             }
 
             expectedCtry = dataTable[compareIndex + 1][i];
-            if (expectedCtry.equals("") && defaultIsFrench) {
+            if (expectedCtry.isEmpty() && defaultIsFrench) {
                 expectedCtry = dataTable[DCTRY_EN][i];
             }
-            if (expectedCtry.equals("")) {
+            if (expectedCtry.isEmpty()) {
                 expectedCtry = dataTable[DCTRY_ROOT][i];
             }
 
             expectedVar = dataTable[compareIndex + 2][i];
-            if (expectedVar.equals("") && defaultIsFrench) {
+            if (expectedVar.isEmpty() && defaultIsFrench) {
                 expectedVar = dataTable[DVAR_EN][i];
             }
-            if (expectedVar.equals("")) {
+            if (expectedVar.isEmpty()) {
                 expectedVar = dataTable[DVAR_ROOT][i];
             }
 
             expectedName = dataTable[compareIndex + 3][i];
-            if (expectedName.equals("") && defaultIsFrench) {
+            if (expectedName.isEmpty() && defaultIsFrench) {
                 expectedName = dataTable[DNAME_EN][i];
             }
-            if (expectedName.equals("")) {
+            if (expectedName.isEmpty()) {
                 expectedName = dataTable[DNAME_ROOT][i];
             }
 
@@ -825,7 +825,7 @@ test commented out pending API-change approval
             errln("Thai currency prefix wrong: expected \"\u0e3f\", got \""
                     + thaiCurrency.getPositivePrefix() + "\"");
         }
-        if (!thaiCurrency.getPositiveSuffix().equals("")) {
+        if (!thaiCurrency.getPositiveSuffix().isEmpty()) {
             errln("Thai currency suffix wrong: expected \"\", got \""
                     + thaiCurrency.getPositiveSuffix() + "\"");
         }

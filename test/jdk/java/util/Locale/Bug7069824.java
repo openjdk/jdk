@@ -405,7 +405,7 @@ public class Bug7069824 {
         }
 
         List<Locale> localeList = new ArrayList<>();
-        if (tags.equals("")) {
+        if (tags.isEmpty()) {
             return localeList;
         }
         String[] t = tags.split(", ");

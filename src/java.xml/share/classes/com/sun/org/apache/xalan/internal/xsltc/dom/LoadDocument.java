@@ -159,13 +159,13 @@ public final class LoadDocument {
         MultiDOM multiplexer = (MultiDOM)dom;
 
         // Prepend URI base to URI (from context)
-        if (base != null && !base.equals("")) {
+        if (base != null && !base.isEmpty()) {
             uri = SystemIDResolver.getAbsoluteURI(uri, base);
         }
 
         // Return an empty iterator if the URI is clearly invalid
         // (to prevent some unncessary MalformedURL exceptions).
-        if (uri == null || uri.equals("")) {
+        if (uri == null || uri.isEmpty()) {
             return(EmptyIterator.getInstance());
         }
 

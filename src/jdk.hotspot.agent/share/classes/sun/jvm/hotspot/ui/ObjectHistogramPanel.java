@@ -288,7 +288,7 @@ public class ObjectHistogramPanel extends JPanel implements ActionListener {
     private void findObject() {
         String findText = toolbar.getFindText();
 
-        if (findText == null || findText.equals("")) {
+        if (findText == null || findText.isEmpty()) {
             return;
         }
 

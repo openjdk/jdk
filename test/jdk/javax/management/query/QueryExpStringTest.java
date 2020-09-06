@@ -284,7 +284,7 @@ public class QueryExpStringTest {
         String back = ss[0];
         if (!skip(ss, " "))
                 return lhs;
-        if (ss[0].equals("") || "+-*/".indexOf(ss[0].charAt(0)) < 0) {
+        if (ss[0].isEmpty() || "+-*/".indexOf(ss[0].charAt(0)) < 0) {
             ss[0] = back;
                 return lhs;
         }

@@ -78,7 +78,7 @@ public class GetUninitializedStringValue extends TestScaffold {
          */
         StackFrame frame = bpe.thread().frame(0);
         StringReference sr = (StringReference)frame.thisObject();
-        if (!sr.value().equals("")) {
+        if (!sr.value().isEmpty()) {
             throw new Exception("Unexpected value for the uninitialized String");
         }
 

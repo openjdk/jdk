@@ -93,17 +93,17 @@ public class LocaleNameProviderTest extends ProviderTest {
                 String jreslang = null;
                 String jresctry = null;
                 String jresvrnt = null;
-                if (!lang.equals("")) {
+                if (!lang.isEmpty()) {
                     try {
                         jreslang = rb.getString(lang);
                     } catch (MissingResourceException mre) {}
                 }
-                if (!ctry.equals("")) {
+                if (!ctry.isEmpty()) {
                     try {
                         jresctry = rb.getString(ctry);
                     } catch (MissingResourceException mre) {}
                 }
-                if (!vrnt.equals("")) {
+                if (!vrnt.isEmpty()) {
                     try {
                         jresvrnt = rb.getString("%%"+vrnt);
                     } catch (MissingResourceException mre) {}

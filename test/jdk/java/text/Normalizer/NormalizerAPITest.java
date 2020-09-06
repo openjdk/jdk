@@ -205,7 +205,7 @@ public class NormalizerAPITest extends IntlTest {
         for (int i = 0; i < forms.length; i++) {
             try {
                 String s = Normalizer.normalize("", forms[i]);
-                if (!s.equals("")) {
+                if (!s.isEmpty()) {
                     error = true;
                 }
             }
@@ -230,7 +230,7 @@ public class NormalizerAPITest extends IntlTest {
             for (int i = 0; i < forms.length; i++) {
                 try {
                     String s = sun.text.Normalizer.normalize("", forms[i], options[j]);
-                    if (!s.equals("")) {
+                    if (!s.isEmpty()) {
                         error = true;
                     }
                 }

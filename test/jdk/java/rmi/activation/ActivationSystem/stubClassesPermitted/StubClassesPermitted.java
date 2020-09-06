@@ -161,7 +161,7 @@ public class StubClassesPermitted
                 ps.flush();
                 String trace = new String(bout.toByteArray());
                 if ((trace.indexOf("exceptionReceivedFromServer") >= 0) ||
-                    trace.equals(""))
+                    trace.isEmpty())
                 {
                     throw e;
                 }

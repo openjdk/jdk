@@ -149,7 +149,7 @@ public class constprop02 {
     boolean verify(String str) {
         boolean st = true;
 
-        if (null == str || str.equals(""))
+        if (null == str || str.isEmpty())
             System.out.println("OK");
         else {
             st = false;

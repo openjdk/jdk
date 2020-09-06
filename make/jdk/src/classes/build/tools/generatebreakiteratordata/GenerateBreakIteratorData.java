@@ -161,8 +161,8 @@ public class GenerateBreakIteratorData {
      * Make locale name ("_language_country_valiant")
      */
     private static String getLocaleName() {
-        if (language.equals("")) {
-            if (!country.equals("") || !valiant.equals("")) {
+        if (language.isEmpty()) {
+            if (!country.isEmpty() || !valiant.isEmpty()) {
                 language = "en";
             } else {
                 return "";
@@ -172,10 +172,10 @@ public class GenerateBreakIteratorData {
         StringBuffer sb = new StringBuffer();
         sb.append('_');
         sb.append(language);
-        if (!country.equals("") || !valiant.equals("")) {
+        if (!country.isEmpty() || !valiant.isEmpty()) {
             sb.append('_');
             sb.append(country);
-            if (!valiant.equals("")) {
+            if (!valiant.isEmpty()) {
                 sb.append('_');
                 sb.append(valiant);
             }

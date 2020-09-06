@@ -106,7 +106,7 @@ public class ResolvePossiblyCachedConstantInPoolTest {
         Object constantInPool = CompilerToVMHelper.resolvePossiblyCachedConstantInPool(constantPoolCTVM, index);
         String stringToVerify = (String) constantInPool;
         String stringToRefer = entry.name;
-        if (stringToRefer.equals("") && cpci != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT) {
+        if (stringToRefer.isEmpty() && cpci != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT) {
             stringToRefer = null; // tested method returns null for cached empty strings
         }
         String msg = String.format("Wrong string accessed by %sconstant pool index %d", cached, index);

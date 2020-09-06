@@ -195,7 +195,7 @@ public class Http2TestServer implements AutoCloseable {
     }
 
     Http2Handler getHandlerFor(String path) {
-        if (path == null || path.equals(""))
+        if (path == null || path.isEmpty())
             path = "/";
 
         final String fpath = path;

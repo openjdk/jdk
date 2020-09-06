@@ -82,7 +82,7 @@ public final class ClientCallbackHandler extends TextCallbackHandler {
                 } else {
                     System.err.print("Enter choice number: ");
                     String result = readLine();
-                    if (result.equals("")) {
+                    if (result.isEmpty()) {
                         selection = rcb.getDefaultChoice();
                     } else {
                         selection = Integer.parseInt(result);
@@ -108,7 +108,7 @@ public final class ClientCallbackHandler extends TextCallbackHandler {
                     System.err.flush();
 
                     String result = readLine();
-                    if (result.equals("")) {
+                    if (result.isEmpty()) {
                         result = realm;
                     }
                     rcb.setText(result);

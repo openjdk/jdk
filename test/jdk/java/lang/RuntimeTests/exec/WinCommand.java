@@ -81,7 +81,7 @@ public class WinCommand {
             CommandRunner cr = new CommandRunner(args);
             if (cr.exitValue != 0)
                 fail("exitValue != 0");
-            if (! cr.err.equals(""))
+            if (! cr.err.isEmpty())
                 fail("stderr: " + cr.err);
             return cr.out.replaceFirst("[\r\n]+$", "");
         } catch (Exception e) {
@@ -163,7 +163,7 @@ public class WinCommand {
 //      if (new File(systemDirW, "command.com").exists()
 //          // no output if running without a console;
 //          // fix this in Mustang
-//          && ! outputOf("command.com", "/C", "CD").equals("")) {
+//          && ! outputOf("command.com", "/C", "CD").isEmpty()) {
 //          out.println("Running command.com tests...");
 //          checkCD("command.com",
 //                  systemDirM + "/command.com",
@@ -172,7 +172,7 @@ public class WinCommand {
 
         // Win9x systems have a %SYSTEMDRIVE%\command.com
 //      if (new File("C:\\COMMAND.COM").exists()
-//          && ! outputOf("COMMAND.COM", "/C", "CD").equals("")) {
+//          && ! outputOf("COMMAND.COM", "/C", "CD").isEmpty()) {
 //          out.println("Running COMMAND.COM tests...");
 //          checkCD("C:/command.com",
 //                  "C:\\command.com");

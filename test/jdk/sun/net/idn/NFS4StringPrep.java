@@ -151,7 +151,7 @@ public final class NFS4StringPrep {
             String prefixString = s.substring(0,index);
             int i= findStringIndex(special_prefixes, prefixString);
             String suffixString = s.substring(index+1, s.length());
-            if(i>-1 && !suffixString.equals("")){
+            if(i>-1 && !suffixString.isEmpty()){
                 throw new ParseException("Suffix following a special index", -1);
             }
             UCharacterIterator prefix = UCharacterIterator.getInstance(prefixString);

@@ -216,7 +216,7 @@ public class CompatibleConnectors {
 
                 if (connector_arg.mustSpecify()) {
                     String value = connector_arg.value();
-                    if (value.equals("")) {
+                    if (value.isEmpty()) {
                         value = null;
                     }
                     if (value == null) {

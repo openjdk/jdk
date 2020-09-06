@@ -138,7 +138,7 @@ public final class SecurityManager {
 
                 try {
                         String value = System.getProperty(Constants.ENTITY_EXPANSION_LIMIT);
-                        if(value != null && !value.equals("")){
+                        if(value != null && !value.isEmpty()){
                                 entityExpansionLimit = Integer.parseInt(value);
                                 if (entityExpansionLimit < 0)
                                         entityExpansionLimit = DEFAULT_ENTITY_EXPANSION_LIMIT;
@@ -149,7 +149,7 @@ public final class SecurityManager {
 
                 try {
                         String value = System.getProperty(Constants.MAX_OCCUR_LIMIT);
-                        if(value != null && !value.equals("")){
+                        if(value != null && !value.isEmpty()){
                                 maxOccurLimit = Integer.parseInt(value);
                                 if (maxOccurLimit < 0)
                                         maxOccurLimit = DEFAULT_MAX_OCCUR_NODE_LIMIT;
@@ -160,7 +160,7 @@ public final class SecurityManager {
 
                 try {
                         String value = System.getProperty(Constants.ELEMENT_ATTRIBUTE_LIMIT);
-                        if(value != null && !value.equals("")){
+                        if(value != null && !value.isEmpty()){
                                 fElementAttributeLimit = Integer.parseInt(value);
                                 if ( fElementAttributeLimit < 0)
                                         fElementAttributeLimit = DEFAULT_ELEMENT_ATTRIBUTE_LIMIT;

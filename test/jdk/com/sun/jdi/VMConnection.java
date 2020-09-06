@@ -73,7 +73,7 @@ class VMConnection {
 
     static public String[] insertDebuggeeVMOptions(String[] cmdLine) {
         String opts = getDebuggeeVMOptions();
-        if (opts.equals("")) {
+        if (opts.isEmpty()) {
             return cmdLine;
         }
         // Insert the options at position 1.  Blanks in args are not allowed!

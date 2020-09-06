@@ -45,7 +45,7 @@ public class TestOptimizeStringConcat {
         } else {
             if (value == null) {
                 rc = "the value null is not allowed, it is missing";
-            } else if (value != null && minchar > 0 && value.trim().equals("")) {
+            } else if (value != null && minchar > 0 && value.trim().isEmpty()) {
                 rc = "the value must not be empty";
             } else if (value != null) {
                 if (value.length() < minchar || value.length() > maxchar) {

@@ -220,7 +220,7 @@ public class thread001 {
                         }
 
                         String threadName = eventThread.name();
-                        if ((threadName == null) || (threadName.equals(""))) {
+                        if ((threadName == null) || (threadName.isEmpty())) {
                             log.complain("FAILURE 3: thread reference has invalid empty name");
                             testFailed = true;
                         } else {

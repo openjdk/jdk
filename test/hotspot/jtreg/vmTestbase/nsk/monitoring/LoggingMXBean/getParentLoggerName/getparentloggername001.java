@@ -89,7 +89,7 @@ public class getparentloggername001 {
             // result will be an empty string.
             String parentName = loggingMonitor.getParentLoggerName(
                 testLogParentName);
-            if (parentName == null || !parentName.equals("")) {
+            if (parentName == null || !parentName.isEmpty()) {
 
                 testFailed = true;
                 log.complain("Failure 3.");

@@ -265,7 +265,7 @@ public class MouseModifiersUnitTest_Standard {
                 break;
             }
         }
-        if (!excplicitModifier.equals("")){
+        if (!excplicitModifier.isEmpty()){
             if (modifierElements.contains(excplicitModifier)){
                 modifierElements.remove(excplicitModifier);
             } else {
@@ -308,7 +308,7 @@ public class MouseModifiersUnitTest_Standard {
             }
         }//switch
 
-        if (!extraModifiers.equals("")){
+        if (!extraModifiers.isEmpty()){
             if (modifierElements.contains(extraModifiers)){
                 modifierElements.remove(extraModifiers);
             } else {
@@ -321,7 +321,7 @@ public class MouseModifiersUnitTest_Standard {
             }
         }
 
-        if (!extraModifiersButton3.equals("")){
+        if (!extraModifiersButton3.isEmpty()){
             if (modifierElements.contains(extraModifiersButton3)){
                 modifierElements.remove(extraModifiersButton3);
             } else {

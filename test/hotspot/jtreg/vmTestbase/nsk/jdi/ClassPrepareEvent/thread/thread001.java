@@ -173,7 +173,7 @@ public class thread001 {
                                 if (eventThread == null) {
                                     log.complain("FAILURE 3: ClassPrepareEvent.thread() returns null");
                                     testFailed = true;
-                                } else if ((threadName == null) || (threadName.equals(""))) {
+                                } else if ((threadName == null) || (threadName.isEmpty())) {
                                     log.complain("FAILURE 4: thread reference has invalid empty name");
                                     testFailed = true;
                                 }

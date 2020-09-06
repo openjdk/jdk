@@ -1693,7 +1693,7 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                         // Read all headers until we find the empty line that
                         // signals the end of all headers.
                         String line = requestLine;
-                        while(!line.equals("")) {
+                        while(!line.isEmpty()) {
                             System.out.println(now() + "Tunnel: Reading header: "
                                                + (line = readLine(ccis)));
                             headers.append(line).append("\r\n");

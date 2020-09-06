@@ -1147,7 +1147,7 @@ public class HTTPTestServer extends HTTPTest {
 
                 // Read all headers until we find the empty line that
                 // signals the end of all headers.
-                while(!requestLine.equals("")) {
+                while(!requestLine.isEmpty()) {
                     System.out.println("Tunnel: Reading header: "
                             + (requestLine = readLine(ccis)));
                 }

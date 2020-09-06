@@ -148,7 +148,7 @@ public class Assortment {
                 null : this.extra;
             check(name.equals(e.getName()));
             check(method == e.getMethod());
-            check((((comment == null) || comment.equals(""))
+            check((((comment == null) || comment.isEmpty())
                    && (e.getComment() == null))
                   || comment.equals(e.getComment()));
             check(equalsExtraData(extra, e.getExtra()));

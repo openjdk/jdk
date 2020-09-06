@@ -146,7 +146,7 @@ public class JMap extends Tool {
                                 System.exit(1);
                             }
                         } else if (keyValue[0].equals("file")) {
-                            if ((keyValue[1] == null) || keyValue[1].equals("")) {
+                            if ((keyValue[1] == null) || keyValue[1].isEmpty()) {
                                 System.err.println("File name must be set.");
                                 System.exit(1);
                             }

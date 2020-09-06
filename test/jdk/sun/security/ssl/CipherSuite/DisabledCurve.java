@@ -89,7 +89,7 @@ public class DisabledCurve extends SSLSocketTemplate {
     public static void main(String[] args) throws Exception {
         String expected = args[1];
         String disabledName = ("DISABLE_NONE".equals(args[0]) ? "" : args[0]);
-        if (disabledName.equals("")) {
+        if (disabledName.isEmpty()) {
             Security.setProperty("jdk.disabled.namedCurves", "");
         }
         System.setProperty("jdk.sunec.disableNative", "false");

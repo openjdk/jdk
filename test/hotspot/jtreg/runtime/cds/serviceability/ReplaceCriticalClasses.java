@@ -179,7 +179,7 @@ public class ReplaceCriticalClasses {
                        shared,
                        klassName);
 
-        final boolean expectDisable = !early.equals("");
+        final boolean expectDisable = !early.isEmpty();
         final boolean checkSubgraph = subgraph;
         final boolean expectShared = shared.equals("-shared");
         CDSTestUtils.run(opts).assertNormalExit(out -> {

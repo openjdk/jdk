@@ -159,7 +159,7 @@ public final class ScopeImpl implements DebugContext.Scope {
         this.unqualifiedName = unqualifiedName;
         this.interceptDisabled = interceptDisabled;
         if (parent != null) {
-            emptyScope = unqualifiedName.equals("");
+            emptyScope = unqualifiedName.isEmpty();
         } else {
             if (unqualifiedName.isEmpty()) {
                 throw new IllegalArgumentException("root scope name must be non-empty");

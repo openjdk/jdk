@@ -80,7 +80,7 @@ public class VerifyLocale implements Doclet {
                 continue;
             }
 
-            if (!language.equals("")) {
+            if (!language.isEmpty()) {
                 List<String> options = List.of("-locale", loc.toLanguageTag());
                 System.err.println("test options: " + options);
                 DocumentationTask t = tool.getTask(null, null, null,

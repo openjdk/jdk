@@ -342,7 +342,7 @@ public class CompileJavaPackages implements Transformer {
                 // Accumulate this information onto this chunk.
                 cc.numDependents += ss.size();
             }
-            if (from == null || from.trim().equals("")) from = justPkgName;
+            if (from == null || from.trim().isEmpty()) from = justPkgName;
             cc.pkgNames.append(justPkgName+"("+s.size()+") ");
             cc.pkgFromTos = from+" to "+justPkgName;
         }

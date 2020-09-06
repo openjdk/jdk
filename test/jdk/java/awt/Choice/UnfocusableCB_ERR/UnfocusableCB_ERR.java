@@ -77,7 +77,7 @@ public class UnfocusableCB_ERR
         } catch (Throwable e) {
             UnfocusableCB_ERR.fail("Test failed. Exception thrown: "+e);
         }
-        if (failed.equals("")){
+        if (failed.isEmpty()){
             UnfocusableCB_ERR.pass();
         } else {
             UnfocusableCB_ERR.fail("Test failed:");

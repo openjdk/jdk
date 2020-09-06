@@ -430,7 +430,7 @@ public class CookieHeaderTest implements HttpServerAdapters {
                     // signals the end of all headers.
                     String line = requestLine;
                     String cookies = null;
-                    while (!line.equals("")) {
+                    while (!line.isEmpty()) {
                         System.out.println(now() + getName() + ": Reading header: "
                                 + (line = readLine(ccis)));
                         if (line.startsWith("Cookie:")) {

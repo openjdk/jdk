@@ -184,7 +184,7 @@ abstract class InputImageTests extends InputTests {
             String klass = spi.getClass().getName();
             String format = spi.getFormatNames()[0].toLowerCase();
             String suffix = spi.getFileSuffixes()[0].toLowerCase();
-            if (suffix == null || suffix.equals("")) {
+            if (suffix == null || suffix.isEmpty()) {
                 suffix = format;
             }
             String shortName;

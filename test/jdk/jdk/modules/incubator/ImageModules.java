@@ -317,7 +317,7 @@ public class ImageModules {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
         String[] options = Stream.concat(Stream.of(getJava(image)),
-                                         Stream.of(opts).filter(s -> !s.equals("")))
+                                         Stream.of(opts).filter(s -> !s.isEmpty()))
                                  .toArray(String[]::new);
 
         ProcessBuilder pb = new ProcessBuilder(options);
@@ -333,7 +333,7 @@ public class ImageModules {
         PrintStream ps = new PrintStream(baos);
         List<String> filteredArgs = Stream.of(args)
                                           .map(s -> s.split(" ")).flatMap(Stream::of)
-                                          .filter(s -> !s.equals(""))
+                                          .filter(s -> !s.isEmpty())
                                           .collect(Collectors.toList());
         System.out.println(tool + " " + filteredArgs);
         int ec = tool.run(ps, ps, filteredArgs.toArray(new String[] {}));

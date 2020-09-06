@@ -265,7 +265,7 @@ public class ResourceBundleTest extends RBTestFmwk {
         test = ResourceBundle.getBundle("TestResource",
                         new Locale("fr", "BE", ""));
         locale = test.getLocale();
-        if (!(locale.getLanguage().equals("fr")) || !(locale.getCountry().equals("")))
+        if (!(locale.getLanguage().equals("fr")) || !(locale.getCountry().isEmpty()))
             errln("Actual locale for TestResource_fr_BE should have been fr, got " + locale);
 
         // try to find TestResource_iw_IL, which doesn't exist.  Should get root locale
@@ -274,7 +274,7 @@ public class ResourceBundleTest extends RBTestFmwk {
                         new Locale("iw", "IL", ""),
                         Control.getNoFallbackControl(Control.FORMAT_DEFAULT));
         locale = test.getLocale();
-        if (!(locale.getLanguage().equals("")) || !(locale.getCountry().equals("")))
+        if (!(locale.getLanguage().isEmpty()) || !(locale.getCountry().isEmpty()))
             errln("Actual locale for TestResource_iw_IL should have been the root locale, got "
                             + locale);
     }

@@ -339,7 +339,7 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
             String NName = e.getPrefix();
             String NValue = e.getNamespaceURI();
             String Name;
-            if (NName == null || NName.equals("")) {
+            if (NName == null || NName.isEmpty()) {
                 NName = "xmlns";
                 Name = "xmlns";
             } else {

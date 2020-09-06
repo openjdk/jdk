@@ -2022,7 +2022,7 @@ class RuleBasedBreakIteratorBuilder {
         final String outputDir;
         String tmpbuf = GenerateBreakIteratorData.getOutputDirectory();
 
-        if (tmpbuf.equals("")) {
+        if (tmpbuf.isEmpty()) {
             filename = datafile;
             outputDir = "";
         } else {
@@ -2039,7 +2039,7 @@ class RuleBasedBreakIteratorBuilder {
         }
 
         try {
-            if (!outputDir.equals("")) {
+            if (!outputDir.isEmpty()) {
                 new File(outputDir).mkdirs();
             }
             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(filename));

@@ -380,7 +380,7 @@ public class Timeouts {
     public void load()
             throws FileNotFoundException, IOException {
         if (System.getProperty("jemmy.timeouts") != null
-                && !System.getProperty("jemmy.timeouts").equals("")) {
+                && !System.getProperty("jemmy.timeouts").isEmpty()) {
             load(System.getProperty("jemmy.timeouts"));
         }
     }

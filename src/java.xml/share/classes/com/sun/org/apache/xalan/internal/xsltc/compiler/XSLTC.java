@@ -460,7 +460,7 @@ public final class XSLTC {
                 if (name != null) {
                     setClassName(name);
                 }
-                else if (systemId != null && !systemId.equals("")) {
+                else if (systemId != null && !systemId.isEmpty()) {
                     setClassName(Util.baseName(systemId));
                 }
 
@@ -770,7 +770,7 @@ public final class XSLTC {
             _attributes.put(name.toString(), code);
             final String uri = name.getNamespace();
             final String local = "@"+name.getLocalPart();
-            if ((uri != null) && (!uri.equals("")))
+            if ((uri != null) && (!uri.isEmpty()))
                 _namesIndex.add(uri+":"+local);
             else
                 _namesIndex.add(local);
@@ -810,7 +810,7 @@ public final class XSLTC {
         code = _nextGType++;
         _namespacePrefixes.put(name.toString(), code);
         final String uri = name.getNamespace();
-        if ((uri != null) && (!uri.equals(""))){
+        if ((uri != null) && (!uri.isEmpty())){
             // namespace::ext2:ped2 will be made empty in TypedNamespaceIterator
             _namesIndex.add("?");
         } else{

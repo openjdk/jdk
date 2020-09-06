@@ -100,7 +100,7 @@ public class ConsumeNextKeyTypedOnModalShowTest {
 
         Util.waitForIdle(robot);
 
-        if (tf1.getText().equals("")) {
+        if (tf1.getText().isEmpty()) {
             throw new RuntimeException("Test failed: couldn't type a char!");
         }
         System.out.println("Test passed.");

@@ -89,7 +89,7 @@ public class resexhausted003 {
                 classesDir = testpaths[i];
             }
         }
-        if (classesDir.equals("")) {
+        if (classesDir.isEmpty()) {
             System.err.println("TEST BUG: Classes directory not found in test,class.path.");
             return Consts.TEST_FAILED;
         }

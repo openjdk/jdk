@@ -404,7 +404,7 @@ public class zip {
         }
         name = entryName(name);
 
-        if (name.equals("") || name.equals(".") || name.equals(zname)) {
+        if (name.isEmpty() || name.equals(".") || name.equals(zname)) {
             return;
         }
 

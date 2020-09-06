@@ -325,7 +325,7 @@ public class CommonUI
     {
         String string = "";
         String separator;
-        if(delim == null || delim.equals(""))
+        if(delim == null || delim.isEmpty())
             separator = " ";
         else
             separator = delim;
@@ -346,7 +346,7 @@ public class CommonUI
     public static String[] stringArrayFromString(String string, String delim)
     {
         StringTokenizer st;
-        if(delim == null || delim.equals(""))
+        if(delim == null || delim.isEmpty())
             st = new StringTokenizer(string);
         else
             st = new StringTokenizer(string, delim);

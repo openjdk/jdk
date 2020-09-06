@@ -842,8 +842,8 @@ public class NumberRegression extends IntlTest {
         String currency = fmt.getCurrencySymbol();
         String intlCurrency = fmt.getInternationalCurrencySymbol();
         char monDecSeparator = fmt.getMonetaryDecimalSeparator();
-        if (currency.equals("") ||
-            intlCurrency.equals("") ||
+        if (currency.isEmpty() ||
+            intlCurrency.isEmpty() ||
             monDecSeparator == 0) {
             errln("getCurrencySymbols failed, got empty string.");
         }

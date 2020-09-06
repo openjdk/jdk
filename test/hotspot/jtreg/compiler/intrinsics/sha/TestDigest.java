@@ -102,7 +102,7 @@ public class TestDigest {
 
         testDigest(provider, algorithm, msgSize, offset, iters, warmupIters);
 
-        if (algorithm2.equals("") == false) {
+        if (!algorithm2.isEmpty()) {
             testDigest(provider, algorithm2, msgSize, offset, iters, warmupIters);
         }
     }

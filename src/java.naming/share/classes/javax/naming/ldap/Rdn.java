@@ -195,7 +195,7 @@ public class Rdn implements Serializable, Comparable<Object> {
         if (value == null) {
             throw new NullPointerException("Cannot set value to null");
         }
-        if (type.equals("") || isEmptyValue(value)) {
+        if (type.isEmpty() || isEmptyValue(value)) {
             throw new InvalidNameException(
                 "type or value cannot be empty, type:" + type +
                 " value:" + value);

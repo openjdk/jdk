@@ -93,10 +93,10 @@ public class RMID extends JavaVM {
         //" -Djava.compiler= ";
 
         // if test params set, want to propagate them
-        if (!TestParams.testSrc.equals("")) {
+        if (!TestParams.testSrc.isEmpty()) {
             options += " -Dtest.src=" + TestParams.testSrc + " ";
         }
-        //if (!TestParams.testClasses.equals("")) {
+        //if (!TestParams.testClasses.isEmpty()) {
         //    options += " -Dtest.classes=" + TestParams.testClasses + " ";
         //}
         options += " -Dtest.classes=" + TestParams.testClasses //;
@@ -154,20 +154,20 @@ public class RMID extends JavaVM {
         //      " -C-Djava.compiler= ";
 
         // if test params set, want to propagate them
-        if (!TestParams.testSrc.equals("")) {
+        if (!TestParams.testSrc.isEmpty()) {
             args += " -C-Dtest.src=" + TestParams.testSrc;
         }
-        if (!TestParams.testClasses.equals("")) {
+        if (!TestParams.testClasses.isEmpty()) {
             args += " -C-Dtest.classes=" + TestParams.testClasses;
         }
 
-        if (!TestParams.testJavaOpts.equals("")) {
+        if (!TestParams.testJavaOpts.isEmpty()) {
             for (String a : TestParams.testJavaOpts.split(" +")) {
                 args += " -C" + a;
             }
         }
 
-        if (!TestParams.testVmOpts.equals("")) {
+        if (!TestParams.testVmOpts.isEmpty()) {
             for (String a : TestParams.testVmOpts.split(" +")) {
                 args += " -C" + a;
             }

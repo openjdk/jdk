@@ -147,7 +147,7 @@ public class InfoSupportTest {
         if (!(mmbi.getNotifications() instanceof ModelMBeanNotificationInfo[]))
             bad += " notifications";
 
-        if (bad.equals("")) {
+        if (bad.isEmpty()) {
             System.out.println("..." + what + ": OK");
             return true;
         } else {

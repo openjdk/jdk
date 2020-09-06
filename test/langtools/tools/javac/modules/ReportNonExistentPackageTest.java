@@ -138,7 +138,7 @@ public class ReportNonExistentPackageTest extends ModuleTestBase {
                 .run(Task.Expect.SUCCESS)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
-        if (!log.equals(""))
+        if (!log.isEmpty())
             throw new Exception("expected output not found, actual output: " + log);
     }
 
@@ -160,7 +160,7 @@ public class ReportNonExistentPackageTest extends ModuleTestBase {
                 .run()
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
-        if (!log.equals(""))
+        if (!log.isEmpty())
             throw new Exception("expected output not found, actual output: " + log);
     }
 }

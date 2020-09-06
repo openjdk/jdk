@@ -75,10 +75,10 @@ public enum PBEAlgorithm {
     public String getTransformation() {
         StringJoiner sj = new StringJoiner("/");
         sj.add(baseAlgo);
-        if (!mode.equals("")) {
+        if (!mode.isEmpty()) {
             sj.add(this.mode);
         }
-        if (!padding.equals("")) {
+        if (!padding.isEmpty()) {
             sj.add(this.padding);
         }
         return sj.toString();

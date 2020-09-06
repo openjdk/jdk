@@ -45,7 +45,7 @@ public class LingeredAppTest {
             // Propagate test.vm.options to LingeredApp, filter out possible empty options
             String testVmOpts[] = System.getProperty("test.vm.opts","").split("\\s+");
             for (String s : testVmOpts) {
-                if (!s.equals("")) {
+                if (!s.isEmpty()) {
                     cmd.add(s);
                 }
             }

@@ -151,7 +151,7 @@ public class SelectToolTask extends Task {
         }
 
         // finally, return required values, if any
-        if (toolProperty != null && !(toolName == null || toolName.equals(""))) {
+        if (toolProperty != null && !(toolName == null || toolName.isEmpty())) {
             p.setProperty(toolProperty, toolName);
 
             if (argsProperty != null && toolArgs != null)
@@ -169,7 +169,7 @@ public class SelectToolTask extends Task {
         toolName = tool.toolName;
         toolArgs = argsField.getText();
         if (defaultCheck.isSelected()) {
-            if (toolName.equals("")) {
+            if (toolName.isEmpty()) {
                 fileProps.remove("tool.name");
                 fileProps.remove("tool.bootstrap");
             } else {
@@ -243,7 +243,7 @@ public class SelectToolTask extends Task {
 
         final JOptionPane p = new JOptionPane(body);
         okButton = new JButton("OK");
-        okButton.setEnabled(toolProperty == null || (toolName != null && !toolName.equals("")));
+        okButton.setEnabled(toolProperty == null || (toolName != null && !toolName.isEmpty()));
         okButton.addActionListener(e -> {
             JDialog d = (JDialog) SwingUtilities.getAncestorOfClass(JDialog.class, p);
             d.setVisible(false);
@@ -304,7 +304,7 @@ public class SelectToolTask extends Task {
         if (tool == null)
             return "";
         String toolName = tool.toolName;
-        return toolName.equals("") ? "" : props.getProperty(toolName + ".args", "");
+        return toolName.isEmpty() ? "" : props.getProperty(toolName + ".args", "");
     }
 
     // Ant task parameters

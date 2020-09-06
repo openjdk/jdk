@@ -197,7 +197,7 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
             String attURI = attrs.getURI(i);
             String type = (attrs.getType(i) == null) ?
                     XMLSymbols.fCDATASymbol : attrs.getType(i);
-            if (attrs.getLocalName(i).equals("")) {
+            if (attrs.getLocalName(i).isEmpty()) {
                 tmp.setAttribute(attQName, attrs.getValue(i));
                 if (type.equals("ID")) {
                     tmp.setIdAttribute(attQName, true);

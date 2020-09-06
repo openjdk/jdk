@@ -56,7 +56,7 @@ public class CheckPackageMatching {
     private static List<String> actual() {
         String prop = Security.getProperty("package.access");
         List<String> packages = new ArrayList<>();
-        if (prop != null && !prop.equals("")) {
+        if (prop != null && !prop.isEmpty()) {
             StringTokenizer tok = new StringTokenizer(prop, ",");
             while (tok.hasMoreElements()) {
                 String s = tok.nextToken().trim();

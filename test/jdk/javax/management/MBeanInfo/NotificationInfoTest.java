@@ -271,7 +271,7 @@ public class NotificationInfoTest {
         for (int i = 0; i < files.length; i++) {
             File f = files[i];
             String name = f.getName();
-            String p = (prefix.equals("")) ? name : prefix + "." + name;
+            String p = (prefix.isEmpty()) ? name : prefix + "." + name;
             if (f.isDirectory())
                 scanDir(f, p, names);
             else if (name.endsWith(".class")) {

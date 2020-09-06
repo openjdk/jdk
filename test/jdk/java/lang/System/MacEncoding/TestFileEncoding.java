@@ -95,7 +95,7 @@ public class TestFileEncoding {
         LinkedList<String> cmdList = new LinkedList<>();
         cmdList.add(TestHelper.javaCmd);
         for (String vmOpt : vmOpts) {
-            if (vmOpt != null && !vmOpt.equals("")) {
+            if (vmOpt != null && !vmOpt.isEmpty()) {
                 cmdList.add(vmOpt);
             }
         }

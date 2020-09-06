@@ -112,7 +112,7 @@ public final class DOMRetrievalMethod extends DOMStructure
             }
         }
         this.uri = uri;
-        if (!uri.equals("")) {
+        if (!uri.isEmpty()) {
             try {
                 new URI(uri);
             } catch (URISyntaxException e) {

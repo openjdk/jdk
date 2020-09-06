@@ -119,7 +119,7 @@ public class CheckExampleVectors {
     }
 
     private static byte[] stringToBytes(String v) {
-        if (v.equals("")) {
+        if (v.isEmpty()) {
             return null;
         }
         return Base64.getDecoder().decode(v);

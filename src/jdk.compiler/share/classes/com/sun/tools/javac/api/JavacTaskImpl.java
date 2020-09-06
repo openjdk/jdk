@@ -523,7 +523,7 @@ public class JavacTaskImpl extends BasicJavacTask {
      * @throws IllegalArgumentException if the type expression of null or empty
      */
     public Type parseType(String expr, TypeElement scope) {
-        if (expr == null || expr.equals(""))
+        if (expr == null || expr.isEmpty())
             throw new IllegalArgumentException();
         compiler = JavaCompiler.instance(context);
         JavaFileObject prev = compiler.log.useSource(null);

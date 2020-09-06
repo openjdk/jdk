@@ -169,7 +169,7 @@ public class OpenTypeConverter {
             else
                 continue;
 
-            if (rest.equals("") || method.getParameterTypes().length > 0
+            if (rest.isEmpty() || method.getParameterTypes().length > 0
                 || type == void.class || rest.equals("Class"))
                 continue;
 

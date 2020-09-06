@@ -91,7 +91,7 @@ public class LoggingMXBeanTest2
         }
         String l2 = mbean.getLoggerLevel(LOGGER_NAME_2);
         System.out.println("  : Level for Logger " + LOGGER_NAME_2 + " : " + l2);
-        if (!l2.equals("")) {
+        if (!l2.isEmpty()) {
             throw new RuntimeException(
                 "Expected level for " + LOGGER_NAME_2 + " = \"\"" +
                  " but got " + l2);
@@ -171,7 +171,7 @@ public class LoggingMXBeanTest2
         }
         String p2 = mbean.getParentLoggerName("");
         System.out.println("  : Parent Logger for \"\" : " + p2);
-        if (!p2.equals("")) {
+        if (!p2.isEmpty()) {
             throw new RuntimeException(
                 "Expected parent for root logger \"\" = \"\"" +
                 " but got " + p2);

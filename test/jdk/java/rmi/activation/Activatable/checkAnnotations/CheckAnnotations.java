@@ -183,8 +183,8 @@ public class CheckAnnotations
             outString = rmidOut.toString();
             errString = rmidErr.toString();
 
-            if ((!outString.equals("")) &&
-                (!errString.equals("")))
+            if ((!outString.isEmpty()) &&
+                (!errString.isEmpty()))
             {
                 System.err.println("obtained annotations");
                 break;

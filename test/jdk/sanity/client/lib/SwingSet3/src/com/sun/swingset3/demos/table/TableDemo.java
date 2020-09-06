@@ -411,7 +411,7 @@ public class TableDemo extends JPanel {
     }
 
     protected boolean hasFilterString() {
-        return filterString != null && !filterString.equals("");
+        return filterString != null && !filterString.isEmpty();
     }
 
     protected void configureFilters() {

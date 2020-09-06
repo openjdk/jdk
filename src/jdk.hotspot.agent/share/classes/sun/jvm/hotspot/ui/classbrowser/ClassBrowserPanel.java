@@ -144,7 +144,7 @@ public class ClassBrowserPanel extends JPanel implements ActionListener {
 
    private void findClasses() {
       String findText = toolBar.getFindText();
-      if (findText == null || findText.equals("")) {
+      if (findText == null || findText.isEmpty()) {
          return;
       }
 

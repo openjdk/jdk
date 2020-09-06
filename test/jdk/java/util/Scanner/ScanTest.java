@@ -157,7 +157,7 @@ public class ScanTest {
                 failCount++;
             if (sc.nextInt() != 2)
                 failCount++;
-            if (!sc.next().equals(""))
+            if (!sc.next().isEmpty())
                 failCount++;
             if (sc.nextInt() != 5)
                 failCount++;
@@ -426,7 +426,7 @@ public class ScanTest {
         if (!sc.hasNextLine()) failCount++;
         if (sc.nextInt() != 2) failCount++;
         if (!sc.hasNextLine()) failCount++;
-        if (!sc.nextLine().equals("")) failCount++;
+        if (!sc.nextLine().isEmpty()) failCount++;
         if (!sc.hasNextLine()) failCount++;
         if (sc.nextInt() != 3) failCount++;
         if (!sc.hasNextLine()) failCount++;
@@ -463,7 +463,7 @@ public class ScanTest {
             failCount++;
         if (sc.nextInt() != 2)
             failCount++;
-        if (!sc.nextLine().equals(""))
+        if (!sc.nextLine().isEmpty())
            failCount++;
         if (sc.nextInt() != 3)
             failCount++;
@@ -493,7 +493,7 @@ public class ScanTest {
                 failCount++;
             for (int k=0; k<i; k++) {
                 String empty = sc.next();
-                if (!empty.equals(""))
+                if (!empty.isEmpty())
                     failCount++;
             }
         }

@@ -164,7 +164,7 @@ final class Collector {
         CompilationSpec compilationRestrictions = new CompilationSpec();
         String methodListFileName = main.options.methodList;
 
-        if (methodListFileName != null && !methodListFileName.equals("")) {
+        if (methodListFileName != null && !methodListFileName.isEmpty()) {
             try {
                 FileReader methListFile = new FileReader(methodListFileName);
                 BufferedReader readBuf = new BufferedReader(methListFile);
@@ -187,7 +187,7 @@ final class Collector {
                                     System.out.println("Unrecognized command " + directive + ". Ignoring\n\t" + line + "\n encountered in " + methodListFileName);
                             }
                         } else {
-                            if (!trimmedLine.equals("")) {
+                            if (!trimmedLine.isEmpty()) {
                                 System.out.println("Ignoring malformed line:\n\t " + line + "\n");
                             }
                         }

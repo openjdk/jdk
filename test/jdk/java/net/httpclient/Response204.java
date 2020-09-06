@@ -77,7 +77,7 @@ public class Response204 {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 204)
                 throw new RuntimeException("wrong response code");
-            if (response.body() != null && !response.body().equals(""))
+            if (response.body() != null && !response.body().isEmpty())
                 throw new RuntimeException("should have received empty response");
             System.out.println(response.headers().firstValue("content-length").orElse("nichts"));
             System.out.println ("OK 1");
@@ -112,7 +112,7 @@ public class Response204 {
         System.out.println("Received headers:" + response.headers());
         if (response.statusCode() != 204)
             throw new RuntimeException("Expected 204, got:" + response.statusCode());
-        if (response.body() != null && !response.body().equals(""))
+        if (response.body() != null && !response.body().isEmpty())
             throw new RuntimeException("Expected empty response, got: " + response.body());
         if (response.headers().firstValueAsLong("Content-Length").orElse(-1L) != 0L)
             throw new RuntimeException("Expected Content-Length:0, in: " + response.headers());

@@ -136,7 +136,7 @@ public class CompositeDataSupport
         SortedMap<String, Object> map = new TreeMap<String, Object>();
         for (int i = 0; i < itemNames.length; i++) {
             String name = itemNames[i];
-            if (name == null || name.equals(""))
+            if (name == null || name.isEmpty())
                 throw new IllegalArgumentException("Null or empty item name");
             if (map.containsKey(name))
                 throw new OpenDataException("Duplicate item name " + name);
@@ -264,7 +264,7 @@ public class CompositeDataSupport
      */
     public Object get(String key) {
 
-        if ( (key == null) || (key.trim().equals("")) ) {
+        if ( (key == null) || (key.trim().isEmpty()) ) {
             throw new IllegalArgumentException("Argument key cannot be a null or empty String.");
         }
         if ( ! contents.containsKey(key.trim())) {
@@ -302,7 +302,7 @@ public class CompositeDataSupport
      */
     public boolean containsKey(String key) {
 
-        if ( (key == null) || (key.trim().equals("")) ) {
+        if ( (key == null) || (key.trim().isEmpty()) ) {
             return false;
         }
         return contents.containsKey(key);

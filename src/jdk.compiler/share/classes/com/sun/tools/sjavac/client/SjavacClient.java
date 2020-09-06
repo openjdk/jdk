@@ -101,7 +101,7 @@ public class SjavacClient implements Sjavac {
         keepalive = Util.extractIntOption("keepalive", serverConf, 120);
 
         this.poolsize = poolsize > 0 ? poolsize : Runtime.getRuntime().availableProcessors();
-        settings = (serverConf.equals("")) ? "id="+id+",portfile="+portfileName : serverConf;
+        settings = (serverConf.isEmpty()) ? "id="+id+",portfile="+portfileName : serverConf;
     }
 
     /**

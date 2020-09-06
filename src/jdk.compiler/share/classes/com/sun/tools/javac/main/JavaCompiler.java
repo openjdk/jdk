@@ -725,7 +725,7 @@ public class JavaCompiler {
      * @param name      The identifier to resolve
      */
     public Symbol resolveIdent(ModuleSymbol msym, String name) {
-        if (name.equals(""))
+        if (name.isEmpty())
             return syms.errSymbol;
         JavaFileObject prev = log.useSource(null);
         try {

@@ -179,7 +179,7 @@ public class DateFormatProviderTest extends ProviderTest {
             for (String type : TYPES) {
                 for (String modifier : MODIFIERS) {
                     String pattern, expected;
-                    if (modifier.equals("")) {
+                    if (modifier.isEmpty()) {
                         pattern = String.format("%s={0,%s}", type, type);
                     } else {
                         pattern = String.format("%s={0,%s,%s}", type, type, modifier);

@@ -341,9 +341,9 @@ public class Basic {
                 else
                     redirectIO(pb, INHERIT, INHERIT, INHERIT);
                 ProcessResults r = run(pb);
-                if (! r.out().equals(""))
+                if (! r.out().isEmpty())
                     System.exit(7);
-                if (! r.err().equals(""))
+                if (! r.err().isEmpty())
                     System.exit(8);
                 if (r.exitValue() != 0)
                     System.exit(9);

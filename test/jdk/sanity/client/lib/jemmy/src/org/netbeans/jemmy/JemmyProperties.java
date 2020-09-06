@@ -500,13 +500,13 @@ public class JemmyProperties {
                 props.load(fileStream);
             }
             if (props.getProperty("TIMEOUTS_FILE") != null
-                    && !props.getProperty("TIMEOUTS_FILE").equals("")) {
+                    && !props.getProperty("TIMEOUTS_FILE").isEmpty()) {
                 getOutput().printLine("Loading timeouts from " + props.getProperty("TIMEOUTS_FILE")
                         + " file");
                 getTimeouts().loadDefaults(props.getProperty("TIMEOUTS_FILE"));
             }
             if (props.getProperty("RESOURCE_FILE") != null
-                    && !props.getProperty("RESOURCE_FILE").equals("")) {
+                    && !props.getProperty("RESOURCE_FILE").isEmpty()) {
                 getOutput().printLine("Loading resources from " + props.getProperty("RESOURCE_FILE")
                         + " file");
                 getBundleManager().loadBundleFromFile(props.getProperty("RESOURCE_FILE"), "");
@@ -524,7 +524,7 @@ public class JemmyProperties {
      */
     public void initProperties() {
         if (System.getProperty("jemmy.properties") != null
-                && !System.getProperty("jemmy.properties").equals("")) {
+                && !System.getProperty("jemmy.properties").isEmpty()) {
             initProperties(System.getProperty("jemmy.properties"));
         } else {
             try {
@@ -615,19 +615,19 @@ public class JemmyProperties {
         boolean srmask = ((getDefaultDispatchingModel() & SMOOTH_ROBOT_MODEL_MASK) != 0);
         boolean smask = ((getDefaultDispatchingModel() & SHORTCUT_MODEL_MASK) != 0);
         if (System.getProperty("jemmy.queue_dispatching") != null
-                && !System.getProperty("jemmy.queue_dispatching").equals("")) {
+                && !System.getProperty("jemmy.queue_dispatching").isEmpty()) {
             qmask = System.getProperty("jemmy.queue_dispatching").equals("on");
         }
         if (System.getProperty("jemmy.robot_dispatching") != null
-                && !System.getProperty("jemmy.robot_dispatching").equals("")) {
+                && !System.getProperty("jemmy.robot_dispatching").isEmpty()) {
             rmask = System.getProperty("jemmy.robot_dispatching").equals("on");
         }
         if (System.getProperty("jemmy.smooth_robot_dispatching") != null
-                && !System.getProperty("jemmy.smooth_robot_dispatching").equals("")) {
+                && !System.getProperty("jemmy.smooth_robot_dispatching").isEmpty()) {
             srmask = System.getProperty("jemmy.smooth_robot_dispatching").equals("on");
         }
         if (System.getProperty("jemmy.shortcut_events") != null
-                && !System.getProperty("jemmy.shortcut_events").equals("")) {
+                && !System.getProperty("jemmy.shortcut_events").isEmpty()) {
             smask = System.getProperty("jemmy.shortcut_events").equals("on");
         }
         initDispatchingModel(qmask, rmask, smask, srmask);
