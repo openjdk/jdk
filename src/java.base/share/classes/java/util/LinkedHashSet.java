@@ -42,12 +42,12 @@ package java.util;
  * increased cost associated with {@link TreeSet}.  It can be used to
  * produce a copy of a set that has the same order as the original, regardless
  * of the original set's implementation:
- * <pre>
- *     void foo(Set s) {
- *         Set copy = new LinkedHashSet(s);
+ * <pre>{@code
+ *     void foo(Set<String> s) {
+ *         Set<String> copy = new LinkedHashSet<>(s);
  *         ...
  *     }
- * </pre>
+ * }</pre>
  * This technique is particularly useful if a module takes a set on input,
  * copies it, and later returns results whose order is determined by that of
  * the copy.  (Clients generally appreciate having things returned in the same
