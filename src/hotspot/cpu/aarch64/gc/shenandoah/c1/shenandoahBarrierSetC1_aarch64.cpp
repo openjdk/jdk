@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,8 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
     newval = tmp2;
   }
 
-  ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), addr, cmpval, newval, /*acquire*/ false, /*release*/ true, /*is_cae*/ false, result);
+  ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), addr, cmpval, newval, /*acquire*/ true, /*release*/ true, /*is_cae*/ false, result);
+  __ membar(__ AnyAny);
 }
 
 #undef __
