@@ -40,8 +40,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.function.Supplier;
+
 import jdk.internal.net.http.HttpRequestBuilderImpl;
 import jdk.internal.net.http.RequestPublishers;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -653,6 +655,38 @@ public abstract class HttpRequest {
          */
         public static BodyPublisher noBody() {
             return new RequestPublishers.EmptyPublisher();
+        }
+
+        /**
+         * Creates a {@code BodyPublisher} that publishes a request
+         * body consisting of the aggregation of the bytes published
+         * by a sequence of publishers.
+         *
+         * <p> If the sequence is empty an {@linkplain #noBody() empty} publisher
+         * is returned. Otherwise each publisher is lazily subscribed to in turn,
+         * until all the body bytes are published, an error occurs, or the
+         * returned publisher's subscription is cancelled.
+         *
+         * <p> The request body published by the aggregate body publisher
+         * is logically equivalent to the request body that would have
+         * been published by aggregating all the bytes of each publisher
+         * in sequence. However, an implementation is free to split
+         * the sequence of bytes in any way it chooses.
+         *
+         * @implNote If the aggregate
+         * publisher's subscription is {@linkplain Flow.Subscription#cancel()
+         * cancelled}, or an error occurs while publishing the bytes, not all
+         * publishers in the sequence may be subscribed to.
+         * A publisher may be subscribed several times in sequence if the
+         * request needs to be resent.
+         *
+         * @param publishers a sequence of publishers.
+         * @return An aggregate publisher that publishes a request body
+         * logically equivalent to the concatenation of all bytes published
+         * by each publisher in the sequence.
+         */
+        public static BodyPublisher concat(BodyPublisher... publishers) {
+            return RequestPublishers.concat(Objects.requireNonNull(publishers));
         }
     }
 }
