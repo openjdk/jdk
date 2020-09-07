@@ -261,14 +261,12 @@ void ServiceThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   JavaThread::oops_do(f, cf);
   // The ServiceThread "owns" the JVMTI Deferred events, scan them here
   // to keep them alive until they are processed.
-  if (cf != NULL) {
-    if (_jvmti_event != NULL) {
-      _jvmti_event->oops_do(f, cf);
-    }
-    // Requires a lock, because threads can be adding to this queue.
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-    _jvmti_service_queue.oops_do(f, cf);
+  if (_jvmti_event != NULL) {
+    _jvmti_event->oops_do(f, cf);
   }
+  // Requires a lock, because threads can be adding to this queue.
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  _jvmti_service_queue.oops_do(f, cf);
 }
 
 void ServiceThread::nmethods_do(CodeBlobClosure* cf) {

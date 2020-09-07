@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -53,7 +53,9 @@ import java.awt.Canvas;
 import java.awt.AlphaComposite;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ByteLookupTable;
@@ -79,6 +81,8 @@ import javax.swing.JComponent;
 public abstract class ImageTests extends GraphicsTests {
     public static boolean hasVolatileImage;
     public static boolean hasTransparentVolatileImage;
+    public static boolean hasShapedWindow;
+    public static boolean hasOpacityWindow;
     public static boolean hasCompatImage;
 
     static {
@@ -95,6 +99,16 @@ public abstract class ImageTests extends GraphicsTests {
             new Canvas().getMousePosition();
             hasTransparentVolatileImage = true;
         } catch (NoSuchMethodError e) {
+        }
+        try {
+            new Window(null).setShape(new Rectangle());
+            hasShapedWindow = true;
+        } catch (Exception e) {
+        }
+        try {
+            new Window(null).setOpacity(0.5f);
+            hasOpacityWindow = true;
+        } catch (Exception e) {
         }
     }
 

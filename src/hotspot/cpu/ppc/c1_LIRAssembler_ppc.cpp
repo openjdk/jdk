@@ -705,6 +705,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 }
 
 
+/* vtable_call is not enabled for ppc platform */
 void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   ShouldNotReachHere(); // ic_call is used instead.
 }

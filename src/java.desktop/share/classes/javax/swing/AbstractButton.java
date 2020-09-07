@@ -236,6 +236,11 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
     private boolean hideActionText = false;
 
     /**
+     * Constructor for subclasses to call.
+     */
+    protected AbstractButton() {}
+
+    /**
      * Sets the <code>hideActionText</code> property, which determines
      * whether the button displays text from the <code>Action</code>.
      * This is useful only if an <code>Action</code> has been

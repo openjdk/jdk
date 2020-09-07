@@ -50,6 +50,11 @@ import javax.swing.plaf.*;
 public class MetalCheckBoxIcon implements Icon, UIResource, Serializable {
 
     /**
+     * Constructs a {@code MetalCheckBoxIcon}.
+     */
+    public MetalCheckBoxIcon() {}
+
+    /**
      * Returns the size of the control.
      *
      * @return the size of the control

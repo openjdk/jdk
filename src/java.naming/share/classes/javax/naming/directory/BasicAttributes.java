@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,13 +279,20 @@ public class BasicAttributes implements Attributes {
     }
 
     /**
-     * Overridden to avoid exposing implementation details.
-     * @serialData Default field (ignoreCase flag -- a boolean), followed by
+     * The writeObject method is called to save the state of the
+     * {@code BasicAttributes} to a stream.
+     *
+     * @serialData Default field (ignoreCase flag - a {@code boolean}), followed by
      * the number of attributes in the set
-     * (an int), and then the individual Attribute objects.
+     * (an {@code int}), and then the individual {@code Attribute} objects.
+     *
+     * @param s the {@code ObjectOutputStream} to write to
+     * @throws java.io.IOException if an I/O error occurs
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException {
+        // Overridden to avoid exposing implementation details
         s.defaultWriteObject(); // write out the ignoreCase flag
         s.writeInt(attrs.size());
         Enumeration<Attribute> attrEnum = attrs.elements();
@@ -295,10 +302,20 @@ public class BasicAttributes implements Attributes {
     }
 
     /**
-     * Overridden to avoid exposing implementation details.
+     * The readObject method is called to restore the state of
+     * the {@code BasicAttributes} from a stream.
+     *
+     * See {@code writeObject} for a description of the serial form.
+     *
+     * @param s the {@code ObjectInputStream} to read from
+     * @throws java.io.IOException if an I/O error occurs
+     * @throws ClassNotFoundException if the class of a serialized object
+     *         could not be found
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
             throws java.io.IOException, ClassNotFoundException {
+        // Overridden to avoid exposing implementation details.
         s.defaultReadObject();  // read in the ignoreCase flag
         int n = s.readInt();    // number of attributes
         attrs = (n >= 1)
@@ -374,5 +391,6 @@ class IDEnumImpl implements NamingEnumeration<String> {
     /**
      * Use serialVersionUID from JNDI 1.1.1 for interoperability.
      */
+    @java.io.Serial
     private static final long serialVersionUID = 4980164073184639448L;
 }

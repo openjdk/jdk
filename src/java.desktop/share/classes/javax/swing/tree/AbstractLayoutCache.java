@@ -64,6 +64,10 @@ public abstract class AbstractLayoutCache implements RowMapper {
       */
     protected int                rowHeight;
 
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected AbstractLayoutCache() {}
 
     /**
      * Sets the renderer that is responsible for drawing nodes in the tree
@@ -510,6 +514,11 @@ public abstract class AbstractLayoutCache implements RowMapper {
      * and x origin of a particular node.
      */
     public abstract static class NodeDimensions {
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected NodeDimensions() {}
+
         /**
          * Returns, by reference in bounds, the size and x origin to
          * place value at. The calling method is responsible for determining

@@ -331,10 +331,14 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
   EC_TRACE(("[%s] # Entering interpreter only mode",
             JvmtiTrace::safe_get_thread_name(state->get_thread())));
   EnterInterpOnlyModeClosure hs;
-  if (SafepointSynchronize::is_at_safepoint()) {
-    hs.do_thread(state->get_thread());
+  assert(state->get_thread()->is_Java_thread(), "just checking");
+  JavaThread *target = (JavaThread *)state->get_thread();
+  Thread *current = Thread::current();
+  if (target == current || target->active_handshaker() == current) {
+    hs.do_thread(target);
   } else {
-    Handshake::execute_direct(&hs, state->get_thread());
+    bool executed = Handshake::execute_direct(&hs, target);
+    guarantee(executed, "Direct handshake failed. Target thread is not alive?");
   }
 }
 
@@ -980,21 +984,21 @@ JvmtiEventController::set_extension_event_callback(JvmtiEnvBase *env,
 
 void
 JvmtiEventController::set_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  MutexLocker mu(SafepointSynchronize::is_at_safepoint() ? NULL : JvmtiThreadState_lock);
+  assert_lock_strong(JvmtiThreadState_lock);
   JvmtiEventControllerPrivate::set_frame_pop(ets, fpop);
 }
 
 
 void
 JvmtiEventController::clear_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  MutexLocker mu(SafepointSynchronize::is_at_safepoint() ? NULL : JvmtiThreadState_lock);
+  assert_lock_strong(JvmtiThreadState_lock);
   JvmtiEventControllerPrivate::clear_frame_pop(ets, fpop);
 }
 
 
 void
 JvmtiEventController::clear_to_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  MutexLocker mu(SafepointSynchronize::is_at_safepoint() ? NULL : JvmtiThreadState_lock);
+  assert_lock_strong(JvmtiThreadState_lock);
   JvmtiEventControllerPrivate::clear_to_frame_pop(ets, fpop);
 }
 

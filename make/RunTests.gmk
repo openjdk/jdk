@@ -172,6 +172,10 @@ define SetupAotModuleBody
     $1_JAOTC_OPTS += --compile-with-assertions
   endif
 
+  ifneq ($$(filter -XX:+VerifyOops, $$($1_VM_OPTIONS)), )
+    $1_JAOTC_OPTS += -J-Dgraal.AOTVerifyOops=true
+  endif
+
   $$($1_AOT_LIB): $$(JDK_UNDER_TEST)/release \
       $$(call DependOnVariable, $1_JAOTC_OPTS) \
       $$(call DependOnVariable, JDK_UNDER_TEST)

@@ -112,7 +112,7 @@ typedef uint64_t julong;
 #if defined(__APPLE__)
 inline int g_isnan(double f) { return isnan(f); }
 #elif defined(LINUX) || defined(_ALLBSD_SOURCE)
-inline int g_isnan(float  f) { return isnanf(f); }
+inline int g_isnan(float  f) { return isnan(f); }
 inline int g_isnan(double f) { return isnan(f); }
 #else
 #error "missing platform-specific definition here"

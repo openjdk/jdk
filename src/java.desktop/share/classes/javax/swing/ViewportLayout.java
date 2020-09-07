@@ -64,6 +64,11 @@ public class ViewportLayout implements LayoutManager, Serializable
     static ViewportLayout SHARED_INSTANCE = new ViewportLayout();
 
     /**
+     * Constructs a {@code ViewportLayout}.
+     */
+    public ViewportLayout() {}
+
+    /**
      * Adds the specified component to the layout. Not used by this class.
      * @param name the name of the component
      * @param c the component to be added

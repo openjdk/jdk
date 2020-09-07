@@ -106,11 +106,8 @@ public:
   };
   ProcessResult try_process(HandshakeOperation* op);
 
-#ifdef ASSERT
   Thread* _active_handshaker;
   Thread* active_handshaker() const { return _active_handshaker; }
-#endif
-
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP

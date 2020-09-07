@@ -55,6 +55,11 @@ import java.beans.*;
 public class MetalComboBoxUI extends BasicComboBoxUI {
 
     /**
+     * Constructs a {@code MetalComboBoxUI}.
+     */
+    public MetalComboBoxUI() {}
+
+    /**
      * Constructs an instance of {@code MetalComboBoxUI}.
      *
      * @param c a component
@@ -210,6 +215,11 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
      * Instantiate it only within subclasses of {@code MetalComboBoxUI}.
      */
     public class MetalPropertyChangeListener extends BasicComboBoxUI.PropertyChangeHandler {
+        /**
+         * Constructs a {@code MetalPropertyChangeListener}.
+         */
+        public MetalPropertyChangeListener() {}
+
         public void propertyChange(PropertyChangeEvent e) {
             super.propertyChange( e );
             String propertyName = e.getPropertyName();
@@ -255,6 +265,11 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
      * Instantiate it only within subclasses of {@code MetalComboBoxUI}.
      */
     public class MetalComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
+        /**
+         * Constructs a {@code MetalComboBoxLayoutManager}.
+         */
+        public MetalComboBoxLayoutManager() {}
+
         public void layoutContainer( Container parent ) {
             layoutComboBox( parent, this );
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -74,6 +73,7 @@ public class FlatMapOpTest extends OpTestCase {
         assertCountSum(countTo(10).stream().flatMap(mfId), 10, 55);
         assertCountSum(countTo(10).stream().flatMap(mfNull), 0, 0);
         assertCountSum(countTo(3).stream().flatMap(mfLt), 6, 4);
+        assertCountSum(countTo(10).stream().flatMap(e -> Stream.empty()), 0, 0);
 
         exerciseOps(TestData.Factory.ofArray("stringsArray", stringsArray), s -> s.flatMap(flattenChars));
         exerciseOps(TestData.Factory.ofArray("LONG_STRING", new String[] {LONG_STRING}), s -> s.flatMap(flattenChars));

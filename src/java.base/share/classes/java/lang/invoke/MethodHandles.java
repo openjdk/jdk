@@ -1409,14 +1409,7 @@ public class MethodHandles {
 
         // This is just for calling out to MethodHandleImpl.
         private Class<?> lookupClassOrNull() {
-            if (allowedModes == TRUSTED) {
-                return null;
-            }
-            if (allowedModes == UNCONDITIONAL) {
-                // use Object as the caller to pass to VM doing resolution
-                return Object.class;
-            }
-            return lookupClass;
+            return (allowedModes == TRUSTED) ? null : lookupClass;
         }
 
         /** Tells which access-protection classes of members this lookup object can produce.
@@ -3442,7 +3435,7 @@ return mh1;
             checkSymbolicClass(refc);  // do this before attempting to resolve
             Objects.requireNonNull(name);
             Objects.requireNonNull(type);
-            return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(),
+            return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(), allowedModes,
                                             NoSuchFieldException.class);
         }
 
@@ -3451,7 +3444,7 @@ return mh1;
             Objects.requireNonNull(name);
             Objects.requireNonNull(type);
             checkMethodName(refKind, name);  // NPE check on name
-            return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(),
+            return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(), allowedModes,
                                             NoSuchMethodException.class);
         }
 
@@ -3459,7 +3452,7 @@ return mh1;
             checkSymbolicClass(member.getDeclaringClass());  // do this before attempting to resolve
             Objects.requireNonNull(member.getName());
             Objects.requireNonNull(member.getType());
-            return IMPL_NAMES.resolveOrFail(refKind, member, lookupClassOrNull(),
+            return IMPL_NAMES.resolveOrFail(refKind, member, lookupClassOrNull(), allowedModes,
                                             ReflectiveOperationException.class);
         }
 
@@ -3470,7 +3463,7 @@ return mh1;
             }
             Objects.requireNonNull(member.getName());
             Objects.requireNonNull(member.getType());
-            return IMPL_NAMES.resolveOrNull(refKind, member, lookupClassOrNull());
+            return IMPL_NAMES.resolveOrNull(refKind, member, lookupClassOrNull(), allowedModes);
         }
 
         void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
@@ -3774,7 +3767,7 @@ return mh1;
                                         method.getName(),
                                         method.getMethodType(),
                                         REF_invokeSpecial);
-                    m2 = IMPL_NAMES.resolveOrNull(refKind, m2, lookupClassOrNull());
+                    m2 = IMPL_NAMES.resolveOrNull(refKind, m2, lookupClassOrNull(), allowedModes);
                 } while (m2 == null &&         // no method is found yet
                          refc != refcAsSuper); // search up to refc
                 if (m2 == null)  throw new InternalError(method.toString());

@@ -131,8 +131,8 @@
           range(0, max_intx)                                                \
                                                                             \
   product(uintx, G1ConcRefinementServiceIntervalMillis, 300,                \
-          "The last concurrent refinement thread wakes up every "           \
-          "specified number of milliseconds to do miscellaneous work.")     \
+          "The G1 service thread wakes up every specified number of "       \
+          "milliseconds to do miscellaneous work.")                         \
           range(0, max_jint)                                                \
                                                                             \
   product(size_t, G1ConcRefinementThresholdStep, 2,                         \

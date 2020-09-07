@@ -46,7 +46,10 @@ import javax.swing.plaf.basic.*;
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalSplitPaneUI extends BasicSplitPaneUI
 {
-
+    /**
+     * Constructs a {@code MetalSplitPaneUI}.
+     */
+    public MetalSplitPaneUI() {}
 
     /**
      * Creates a new {@code MetalSplitPaneUI} instance

@@ -44,6 +44,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/java.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vmOperations.hpp"
@@ -566,6 +567,10 @@ void AOTCodeHeap::link_stub_routines_symbols() {
 
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_stub_routines_throw_delayed_StackOverflowError_entry", address, StubRoutines::_throw_delayed_StackOverflowError_entry);
 
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_verify_oops", intptr_t, VerifyOops);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_verify_oop_count_address", jint *, &StubRoutines::_verify_oop_count);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_verify_oop_bits", intptr_t, Universe::verify_oop_bits());
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_verify_oop_mask", intptr_t, Universe::verify_oop_mask());
 }
 
 void AOTCodeHeap::link_os_symbols() {

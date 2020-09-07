@@ -175,6 +175,8 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
             g.setColor(UIManager.getColor("controlHighlight"));
             g.fillRect(r.x,r.y,r.width,r.height);
         }
+        // Empty out the renderer pane, allowing renderers to be gc'ed.
+        currentValuePane.removeAll();
     }
 
     public void paintCurrentValue(Graphics g,Rectangle bounds,boolean hasFocus) {

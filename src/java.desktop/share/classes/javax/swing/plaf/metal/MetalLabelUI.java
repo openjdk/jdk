@@ -57,6 +57,11 @@ public class MetalLabelUI extends BasicLabelUI
     private static final Object METAL_LABEL_UI_KEY = new Object();
 
     /**
+     * Constructs a {@code MetalLabelUI}.
+     */
+    public MetalLabelUI() {}
+
+    /**
      * Returns an instance of {@code MetalLabelUI}.
      *
      * @param c a component

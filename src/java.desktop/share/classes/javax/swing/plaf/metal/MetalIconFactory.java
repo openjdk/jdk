@@ -102,6 +102,11 @@ public class MetalIconFactory implements Serializable {
      */
     public static final boolean LIGHT = true;
 
+    /**
+     * Constructs a {@code MetalIconFactory}.
+     */
+    public MetalIconFactory() {}
+
     // Accessor functions for Icons. Does the caching work.
     /**
      * Returns the instance of {@code FileChooserDetailViewIcon}.
@@ -644,6 +649,11 @@ public class MetalIconFactory implements Serializable {
      */
     public static class PaletteCloseIcon implements Icon, UIResource, Serializable{
         int iconSize = 7;
+
+        /**
+         * Constructs a {@code PaletteCloseIcon}.
+         */
+        public PaletteCloseIcon() {}
 
         public void paintIcon(Component c, Graphics g, int x, int y) {
             JButton parentButton = (JButton)c;
@@ -1648,6 +1658,11 @@ public class MetalIconFactory implements Serializable {
 
         ImageCacher imageCacher;
 
+        /**
+         * Constructs a {@code FolderIcon16}.
+         */
+        public FolderIcon16() {}
+
         public void paintIcon(Component c, Graphics g, int x, int y) {
             GraphicsConfiguration gc = c.getGraphicsConfiguration();
             if (imageCacher == null) {
@@ -1739,6 +1754,11 @@ public class MetalIconFactory implements Serializable {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     public static class TreeFolderIcon extends FolderIcon16 {
+        /**
+         * Constructs a {@code TreeFolderIcon}.
+         */
+        public TreeFolderIcon() {}
+
         public int getShift() { return -1; }
         public int getAdditionalHeight() { return 2; }
     }
@@ -1761,6 +1781,11 @@ public class MetalIconFactory implements Serializable {
     public static class FileIcon16 implements Icon, Serializable {
 
         ImageCacher imageCacher;
+
+        /**
+         * Constructs a {@code FileIcon16}.
+         */
+        public FileIcon16() {}
 
         public void paintIcon(Component c, Graphics g, int x, int y) {
             GraphicsConfiguration gc = c.getGraphicsConfiguration();
@@ -1839,6 +1864,10 @@ public class MetalIconFactory implements Serializable {
      * The class represents a tree leaf icon.
      */
     public static class TreeLeafIcon extends FileIcon16 {
+        /**
+         * Constructs a {@code TreeLeafIcon}.
+         */
+        public TreeLeafIcon() {}
         public int getShift() { return 2; }
         public int getAdditionalHeight() { return 4; }
     }

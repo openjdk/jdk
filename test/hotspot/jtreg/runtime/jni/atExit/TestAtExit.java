@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -57,7 +59,7 @@ public class TestAtExit {
         // We mustn't load Tester in this VM so we exec by name.
         String main = "TestAtExit$Tester";
 
-        String jlp = "-Djava.library.path=" + System.getProperty("test.nativepath");
+        String jlp = "-Djava.library.path=" + Utils.TEST_NATIVE_PATH;
         // First run will terminate via DestroyJavaVM
         OutputAnalyzer output = ProcessTools.executeTestJvm(jlp, main);
         output.shouldNotContain("Unexpected");

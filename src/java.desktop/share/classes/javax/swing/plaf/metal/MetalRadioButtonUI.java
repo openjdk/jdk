@@ -80,6 +80,11 @@ public class MetalRadioButtonUI extends BasicRadioButtonUI {
     // ********************************
 
     /**
+     * Constructs a {@code MetalRadioButtonUI}.
+     */
+    public MetalRadioButtonUI() {}
+
+    /**
      * Returns an instance of {@code MetalRadioButtonUI}.
      *
      * @param c a component

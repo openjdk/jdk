@@ -471,12 +471,9 @@ public final class DynamicLinkerFactory {
     }
 
     private static ClassLoader getThreadContextClassLoader() {
-        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-            @Override
-            public ClassLoader run() {
-                return Thread.currentThread().getContextClassLoader();
-            }
-        }, GET_CLASS_LOADER_CONTEXT);
+        return AccessController.doPrivileged(
+            (PrivilegedAction<ClassLoader>) () -> Thread.currentThread().getContextClassLoader(),
+            GET_CLASS_LOADER_CONTEXT);
     }
 
     private static void addClasses(final Set<Class<? extends GuardingDynamicLinker>> knownLinkerClasses,

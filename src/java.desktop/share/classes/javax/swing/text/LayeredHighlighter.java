@@ -35,6 +35,11 @@ import java.awt.Shape;
  */
 public abstract class LayeredHighlighter implements Highlighter {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected LayeredHighlighter() {}
+
+    /**
      * When leaf Views (such as LabelView) are rendering they should
      * call into this method. If a highlight is in the given region it will
      * be drawn immediately.
@@ -56,6 +61,11 @@ public abstract class LayeredHighlighter implements Highlighter {
      * Layered highlight renderer.
      */
     public abstract static class LayerPainter implements Highlighter.HighlightPainter {
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected LayerPainter() {}
+
         /**
          * @return a shape
          * @param g Graphics used to draw

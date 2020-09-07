@@ -65,6 +65,11 @@ public abstract class FocusManager extends DefaultKeyboardFocusManager {
     private static boolean enabled = true;
 
     /**
+     * Constructor for subclasses to call.
+     */
+    protected FocusManager() {}
+
+    /**
      * Returns the current <code>KeyboardFocusManager</code> instance
      * for the calling thread's context.
      *

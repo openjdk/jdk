@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,11 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  * @since 1.3
  */
 public abstract class AudioFileReader {
+
+    /**
+     * Constructs an {@code AudioFileReader}.
+     */
+    protected AudioFileReader() {}
 
     /**
      * Obtains the audio file format of the input stream provided. The stream

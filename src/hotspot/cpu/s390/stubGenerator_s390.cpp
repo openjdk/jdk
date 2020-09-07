@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -652,7 +652,7 @@ class StubGenerator: public StubCodeGenerator {
       assert(Universe::heap() != NULL, "java heap must be initialized to generate partial_subtype_check stub");
     }
 
-    // Always take the slow path (see SPARC).
+    // Always take the slow path.
     __ check_klass_subtype_slow_path(Rsubklass, Rsuperklass,
                                      Rarray_ptr, Rlength, NULL, &miss);
 

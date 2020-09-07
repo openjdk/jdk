@@ -50,6 +50,11 @@ import java.awt.Shape;
  */
 public class NavigationFilter {
     /**
+     * Constructs a {@code NavigationFilter}.
+     */
+    public NavigationFilter() {}
+
+    /**
      * Invoked prior to the Caret setting the dot. The default implementation
      * calls directly into the <code>FilterBypass</code> with the passed
      * in arguments. Subclasses may wish to conditionally
@@ -121,6 +126,11 @@ public class NavigationFilter {
      * @since 1.4
      */
     public abstract static class FilterBypass {
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected FilterBypass() {}
+
         /**
          * Returns the Caret that is changing.
          *

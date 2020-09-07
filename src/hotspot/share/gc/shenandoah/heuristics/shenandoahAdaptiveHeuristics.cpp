@@ -60,7 +60,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // we hit max_cset. When max_cset is hit, we terminate the cset selection. Note that in this scheme,
   // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
 
-  size_t capacity    = ShenandoahHeap::heap()->max_capacity();
+  size_t capacity    = ShenandoahHeap::heap()->soft_max_capacity();
   size_t max_cset    = (size_t)((1.0 * capacity / 100 * ShenandoahEvacReserve) / ShenandoahEvacWaste);
   size_t free_target = (capacity / 100 * ShenandoahMinFreeThreshold) + max_cset;
   size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
@@ -102,8 +102,13 @@ void ShenandoahAdaptiveHeuristics::record_cycle_start() {
 
 bool ShenandoahAdaptiveHeuristics::should_start_gc() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  size_t capacity = heap->max_capacity();
+  size_t max_capacity = heap->max_capacity();
+  size_t capacity = heap->soft_max_capacity();
   size_t available = heap->free_set()->available();
+
+  // Make sure the code below treats available without the soft tail.
+  size_t soft_tail = max_capacity - capacity;
+  available = (available > soft_tail) ? (available - soft_tail) : 0;
 
   // Check if we are falling below the worst limit, time to trigger the GC, regardless of
   // anything else.

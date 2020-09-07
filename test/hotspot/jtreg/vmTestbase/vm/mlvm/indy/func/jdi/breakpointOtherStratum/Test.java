@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /*
  * @test
  *
@@ -49,7 +48,7 @@
  *      vm.mlvm.share.StratumClassesBuilder
  *      vmTestbase/vm/mlvm/share/jpda/INDIFY_SDE_DebuggeeBase.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      vm.mlvm.indy.func.jdi.breakpointOtherStratum.Test
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -71,7 +70,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Test extends JDIBreakpointTest {
-
     @Override
     protected List<BreakpointInfo> getBreakpoints(String debuggeeClassName) {
         List<BreakpointInfo> result = new ArrayList<>();
@@ -100,6 +98,7 @@ public class Test extends JDIBreakpointTest {
             info.stratumInfo = new StratumInfo("Logo", "INDIFY_SDE_DebuggeeBase.logo", 5);
             result.add(info);
         }
+
         return result;
     }
 

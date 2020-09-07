@@ -45,7 +45,7 @@ public class GTestWrapper {
     public static void main(String[] args) throws Throwable {
         // gtestLauncher is located in <test_image>/hotspot/gtest/<vm_variant>/
         // nativePath points either to <test_image>/hotspot/jtreg/native or to <test_image>/hotspot/gtest
-        Path nativePath = Paths.get(System.getProperty("test.nativepath"));
+        Path nativePath = Paths.get(Utils.TEST_NATIVE_PATH);
         String jvmVariantDir = getJVMVariantSubDir();
         // let's assume it's <test_image>/hotspot/gtest
         Path path = nativePath.resolve(jvmVariantDir);

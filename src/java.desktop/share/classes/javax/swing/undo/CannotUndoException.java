@@ -41,4 +41,8 @@ package javax.swing.undo;
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class CannotUndoException extends RuntimeException {
+    /**
+     * Constructs a {@code CannotUndoException}.
+     */
+    public CannotUndoException() {}
 }

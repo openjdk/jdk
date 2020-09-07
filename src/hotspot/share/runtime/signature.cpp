@@ -308,6 +308,12 @@ BasicType Signature::basic_type(int ch) {
   return btcode;
 }
 
+Symbol* Signature::strip_envelope(const Symbol* signature) {
+  assert(has_envelope(signature), "precondition");
+  return SymbolTable::new_symbol((char*) signature->bytes() + 1,
+                                 signature->utf8_length() - 2);
+}
+
 static const int jl_len = 10, object_len = 6, jl_object_len = jl_len + object_len;
 static const char jl_str[] = "java/lang/";
 

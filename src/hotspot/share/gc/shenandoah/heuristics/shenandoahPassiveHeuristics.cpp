@@ -58,8 +58,8 @@ void ShenandoahPassiveHeuristics::choose_collection_set_from_regiondata(Shenando
 
   // Do not select too large CSet that would overflow the available free space.
   // Take at least the entire evacuation reserve, and be free to overflow to free space.
-  size_t capacity  = ShenandoahHeap::heap()->max_capacity();
-  size_t available = MAX2(capacity / 100 * ShenandoahEvacReserve, actual_free);
+  size_t max_capacity = ShenandoahHeap::heap()->max_capacity();
+  size_t available = MAX2(max_capacity / 100 * ShenandoahEvacReserve, actual_free);
   size_t max_cset  = (size_t)(available / ShenandoahEvacWaste);
 
   log_info(gc, ergo)("CSet Selection. Actual Free: " SIZE_FORMAT "%s, Max CSet: " SIZE_FORMAT "%s",

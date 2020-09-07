@@ -351,5 +351,9 @@ public class DefaultListCellRenderer extends JLabel
     public static class UIResource extends DefaultListCellRenderer
         implements javax.swing.plaf.UIResource
     {
+        /**
+         * Constructs a {@code UIResource}.
+         */
+        public UIResource() {}
     }
 }

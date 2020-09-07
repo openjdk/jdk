@@ -29,13 +29,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import jdk.internal.access.JavaLangInvokeAccess;
@@ -72,33 +69,11 @@ public final class GenerateJLIClassesPlugin implements Plugin {
 
     private static final String DEFAULT_TRACE_FILE = "default_jli_trace.txt";
 
-    private static final String DIRECT_HOLDER = "java/lang/invoke/DirectMethodHandle$Holder";
-    private static final String DMH_INVOKE_VIRTUAL = "invokeVirtual";
-    private static final String DMH_INVOKE_STATIC = "invokeStatic";
-    private static final String DMH_INVOKE_SPECIAL = "invokeSpecial";
-    private static final String DMH_NEW_INVOKE_SPECIAL = "newInvokeSpecial";
-    private static final String DMH_INVOKE_INTERFACE = "invokeInterface";
-    private static final String DMH_INVOKE_STATIC_INIT = "invokeStaticInit";
-    private static final String DMH_INVOKE_SPECIAL_IFC = "invokeSpecialIFC";
-
-    private static final String DELEGATING_HOLDER = "java/lang/invoke/DelegatingMethodHandle$Holder";
-    private static final String BASIC_FORMS_HOLDER = "java/lang/invoke/LambdaForm$Holder";
-
-    private static final String INVOKERS_HOLDER_NAME = "java.lang.invoke.Invokers$Holder";
-    private static final String INVOKERS_HOLDER_INTERNAL_NAME = INVOKERS_HOLDER_NAME.replace('.', '/');
-
     private static final JavaLangInvokeAccess JLIA
             = SharedSecrets.getJavaLangInvokeAccess();
 
-    private final TreeSet<String> speciesTypes = new TreeSet<>();
-
-    private final TreeSet<String> invokerTypes = new TreeSet<>();
-
-    private final TreeSet<String> callSiteTypes = new TreeSet<>();
-
-    private final Map<String, Set<String>> dmhMethods = new TreeMap<>();
-
-    String mainArgument;
+    private String mainArgument;
+    private Stream<String> traceFileStream;
 
     public GenerateJLIClassesPlugin() {
     }
@@ -128,39 +103,9 @@ public final class GenerateJLIClassesPlugin implements Plugin {
        return PluginsResourceBundle.getArgument(NAME);
     }
 
-    private static int DMH_INVOKE_VIRTUAL_TYPE = 0;
-    private static int DMH_INVOKE_INTERFACE_TYPE = 4;
-
-    // Map from DirectMethodHandle method type to internal ID, matching values
-    // of the corresponding constants in java.lang.invoke.MethodTypeForm
-    private static final Map<String, Integer> DMH_METHOD_TYPE_MAP =
-            Map.of(
-                DMH_INVOKE_VIRTUAL,     DMH_INVOKE_VIRTUAL_TYPE,
-                DMH_INVOKE_STATIC,      1,
-                DMH_INVOKE_SPECIAL,     2,
-                DMH_NEW_INVOKE_SPECIAL, 3,
-                DMH_INVOKE_INTERFACE,   DMH_INVOKE_INTERFACE_TYPE,
-                DMH_INVOKE_STATIC_INIT, 5,
-                DMH_INVOKE_SPECIAL_IFC, 20
-            );
-
     @Override
     public void configure(Map<String, String> config) {
         mainArgument = config.get(NAME);
-    }
-
-    private void addSpeciesType(String type) {
-        speciesTypes.add(expandSignature(type));
-    }
-
-    private void addInvokerType(String methodType) {
-        validateMethodType(methodType);
-        invokerTypes.add(methodType);
-    }
-
-    private void addCallSiteType(String csType) {
-        validateMethodType(csType);
-        callSiteTypes.add(csType);
     }
 
     public void initialize(ResourcePool in) {
@@ -170,9 +115,7 @@ public final class GenerateJLIClassesPlugin implements Plugin {
             try (InputStream traceFile =
                     this.getClass().getResourceAsStream(DEFAULT_TRACE_FILE)) {
                 if (traceFile != null) {
-                    readTraceConfig(
-                        new BufferedReader(
-                            new InputStreamReader(traceFile)).lines());
+                    traceFileStream = new BufferedReader(new InputStreamReader(traceFile)).lines();
                 }
             } catch (Exception e) {
                 throw new PluginException("Couldn't read " + DEFAULT_TRACE_FILE, e);
@@ -180,55 +123,9 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         } else {
             File file = new File(mainArgument.substring(1));
             if (file.exists()) {
-                readTraceConfig(fileLines(file));
+                traceFileStream = fileLines(file);
             }
         }
-    }
-
-    private void readTraceConfig(Stream<String> lines) {
-        lines.map(line -> line.split(" "))
-             .forEach(parts -> {
-                switch (parts[0]) {
-                    case "[SPECIES_RESOLVE]":
-                        // Allow for new types of species data classes being resolved here
-                        if (parts.length == 3 && parts[1].startsWith("java.lang.invoke.BoundMethodHandle$Species_")) {
-                            String species = parts[1].substring("java.lang.invoke.BoundMethodHandle$Species_".length());
-                            if (!"L".equals(species)) {
-                                addSpeciesType(species);
-                            }
-                        }
-                        break;
-                    case "[LF_RESOLVE]":
-                        String methodType = parts[3];
-                        if (parts[1].equals(INVOKERS_HOLDER_NAME)) {
-                            if ("linkToTargetMethod".equals(parts[2]) ||
-                                    "linkToCallSite".equals(parts[2])) {
-                                addCallSiteType(methodType);
-                            } else {
-                                addInvokerType(methodType);
-                            }
-                        } else if (parts[1].contains("DirectMethodHandle")) {
-                            String dmh = parts[2];
-                            // ignore getObject etc for now (generated
-                            // by default)
-                            if (DMH_METHOD_TYPE_MAP.containsKey(dmh)) {
-                                addDMHMethodType(dmh, methodType);
-                            }
-                        }
-                        break;
-                    default: break; // ignore
-                }
-            });
-    }
-
-    private void addDMHMethodType(String dmh, String methodType) {
-        validateMethodType(methodType);
-        Set<String> methodTypes = dmhMethods.get(dmh);
-        if (methodTypes == null) {
-            methodTypes = new TreeSet<>();
-            dmhMethods.put(dmh, methodTypes);
-        }
-        methodTypes.add(methodType);
     }
 
     private Stream<String> fileLines(File file) {
@@ -236,25 +133,6 @@ public final class GenerateJLIClassesPlugin implements Plugin {
             return Files.lines(file.toPath());
         } catch (IOException io) {
             throw new PluginException("Couldn't read file");
-        }
-    }
-
-    private void validateMethodType(String type) {
-        String[] typeParts = type.split("_");
-        // check return type (second part)
-        if (typeParts.length != 2 || typeParts[1].length() != 1
-                || "LJIFDV".indexOf(typeParts[1].charAt(0)) == -1) {
-            throw new PluginException(
-                    "Method type signature must be of form [LJIFD]*_[LJIFDV]");
-        }
-        // expand and check arguments (first part)
-        expandSignature(typeParts[0]);
-    }
-
-    private static void requireBasicType(char c) {
-        if ("LIJFD".indexOf(c) < 0) {
-            throw new PluginException(
-                    "Character " + c + " must correspond to a basic field type: LIJFD");
         }
     }
 
@@ -275,213 +153,28 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                 }
             }, out);
 
-        // Generate BMH Species classes
-        speciesTypes.forEach(types -> generateBMHClass(types, out));
-
-        // Generate LambdaForm Holder classes
-        generateHolderClasses(out);
-
-        // Let it go
-        speciesTypes.clear();
-        invokerTypes.clear();
-        callSiteTypes.clear();
-        dmhMethods.clear();
-
+        // Generate Holder classes
+        if (traceFileStream != null) {
+            try {
+                JLIA.generateHolderClasses(traceFileStream)
+                    .forEach((cn, bytes) -> {
+                        String entryName = "/java.base/" + cn + ".class";
+                        ResourcePoolEntry ndata = ResourcePoolEntry.create(entryName, bytes);
+                        out.add(ndata);
+                    });
+            } catch (Exception ex) {
+                throw new PluginException(ex);
+            }
+        }
         return out.build();
     }
 
-    private void generateBMHClass(String types, ResourcePoolBuilder out) {
-        try {
-            // Generate class
-            Map.Entry<String, byte[]> result =
-                    JLIA.generateConcreteBMHClassBytes(types);
-            String className = result.getKey();
-            byte[] bytes = result.getValue();
-
-            // Add class to pool
-            ResourcePoolEntry ndata = ResourcePoolEntry.create(
-                    "/java.base/" + className + ".class",
-                    bytes);
-            out.add(ndata);
-        } catch (Exception ex) {
-            throw new PluginException(ex);
-        }
-    }
-
-    private void generateHolderClasses(ResourcePoolBuilder out) {
-        int count = 0;
-        for (Set<String> entry : dmhMethods.values()) {
-            count += entry.size();
-        }
-        MethodType[] directMethodTypes = new MethodType[count];
-        int[] dmhTypes = new int[count];
-        int index = 0;
-        for (Map.Entry<String, Set<String>> entry : dmhMethods.entrySet()) {
-            String dmhType = entry.getKey();
-            for (String type : entry.getValue()) {
-                // The DMH type to actually ask for is retrieved by removing
-                // the first argument, which needs to be of Object.class
-                MethodType mt = asMethodType(type);
-                if (mt.parameterCount() < 1 ||
-                    mt.parameterType(0) != Object.class) {
-                    throw new PluginException(
-                            "DMH type parameter must start with L: " + dmhType + " " + type);
-                }
-
-                // Adapt the method type of the LF to retrieve
-                directMethodTypes[index] = mt.dropParameterTypes(0, 1);
-
-                // invokeVirtual and invokeInterface must have a leading Object
-                // parameter, i.e., the receiver
-                dmhTypes[index] = DMH_METHOD_TYPE_MAP.get(dmhType);
-                if (dmhTypes[index] == DMH_INVOKE_INTERFACE_TYPE ||
-                    dmhTypes[index] == DMH_INVOKE_VIRTUAL_TYPE) {
-                    if (mt.parameterCount() < 2 ||
-                        mt.parameterType(1) != Object.class) {
-                        throw new PluginException(
-                                "DMH type parameter must start with LL: " + dmhType + " " + type);
-                    }
-                }
-                index++;
-            }
-        }
-
-        // The invoker type to ask for is retrieved by removing the first
-        // and the last argument, which needs to be of Object.class
-        MethodType[] invokerMethodTypes = new MethodType[this.invokerTypes.size()];
-        int i = 0;
-        for (String invokerType : invokerTypes) {
-            MethodType mt = asMethodType(invokerType);
-            final int lastParam = mt.parameterCount() - 1;
-            if (mt.parameterCount() < 2 ||
-                    mt.parameterType(0) != Object.class ||
-                    mt.parameterType(lastParam) != Object.class) {
-                throw new PluginException(
-                        "Invoker type parameter must start and end with Object: " + invokerType);
-            }
-            mt = mt.dropParameterTypes(lastParam, lastParam + 1);
-            invokerMethodTypes[i] = mt.dropParameterTypes(0, 1);
-            i++;
-        }
-
-        // The callSite type to ask for is retrieved by removing the last
-        // argument, which needs to be of Object.class
-        MethodType[] callSiteMethodTypes = new MethodType[this.callSiteTypes.size()];
-        i = 0;
-        for (String callSiteType : callSiteTypes) {
-            MethodType mt = asMethodType(callSiteType);
-            final int lastParam = mt.parameterCount() - 1;
-            if (mt.parameterCount() < 1 ||
-                    mt.parameterType(lastParam) != Object.class) {
-                throw new PluginException(
-                        "CallSite type parameter must end with Object: " + callSiteType);
-            }
-            callSiteMethodTypes[i] = mt.dropParameterTypes(lastParam, lastParam + 1);
-            i++;
-        }
-        try {
-            byte[] bytes = JLIA.generateDirectMethodHandleHolderClassBytes(
-                    DIRECT_HOLDER, directMethodTypes, dmhTypes);
-            ResourcePoolEntry ndata = ResourcePoolEntry
-                    .create(DIRECT_METHOD_HOLDER_ENTRY, bytes);
-            out.add(ndata);
-
-            bytes = JLIA.generateDelegatingMethodHandleHolderClassBytes(
-                    DELEGATING_HOLDER, directMethodTypes);
-            ndata = ResourcePoolEntry.create(DELEGATING_METHOD_HOLDER_ENTRY, bytes);
-            out.add(ndata);
-
-            bytes = JLIA.generateInvokersHolderClassBytes(INVOKERS_HOLDER_INTERNAL_NAME,
-                    invokerMethodTypes, callSiteMethodTypes);
-            ndata = ResourcePoolEntry.create(INVOKERS_HOLDER_ENTRY, bytes);
-            out.add(ndata);
-
-            bytes = JLIA.generateBasicFormsClassBytes(BASIC_FORMS_HOLDER);
-            ndata = ResourcePoolEntry.create(BASIC_FORMS_HOLDER_ENTRY, bytes);
-            out.add(ndata);
-        } catch (Exception ex) {
-            throw new PluginException(ex);
-        }
-    }
     private static final String DIRECT_METHOD_HOLDER_ENTRY =
-            "/java.base/" + DIRECT_HOLDER + ".class";
+            "/java.base/java/lang/invoke/DirectMethodHandle$Holder.class";
     private static final String DELEGATING_METHOD_HOLDER_ENTRY =
-            "/java.base/" + DELEGATING_HOLDER + ".class";
+            "/java.base/java/lang/invoke/DelegatingMethodHandle$Holder.class";
     private static final String BASIC_FORMS_HOLDER_ENTRY =
-            "/java.base/" + BASIC_FORMS_HOLDER + ".class";
+            "/java.base/java/lang/invoke/LambdaForm$Holder.class";
     private static final String INVOKERS_HOLDER_ENTRY =
-            "/java.base/" + INVOKERS_HOLDER_INTERNAL_NAME + ".class";
-
-    // Convert LL -> LL, L3 -> LLL
-    public static String expandSignature(String signature) {
-        StringBuilder sb = new StringBuilder();
-        char last = 'X';
-        int count = 0;
-        for (int i = 0; i < signature.length(); i++) {
-            char c = signature.charAt(i);
-            if (c >= '0' && c <= '9') {
-                count *= 10;
-                count += (c - '0');
-            } else {
-                requireBasicType(c);
-                for (int j = 1; j < count; j++) {
-                    sb.append(last);
-                }
-                sb.append(c);
-                last = c;
-                count = 0;
-            }
-        }
-
-        // ended with a number, e.g., "L2": append last char count - 1 times
-        if (count > 1) {
-            requireBasicType(last);
-            for (int j = 1; j < count; j++) {
-                sb.append(last);
-            }
-        }
-        return sb.toString();
-    }
-
-    private static MethodType asMethodType(String basicSignatureString) {
-        String[] parts = basicSignatureString.split("_");
-        assert(parts.length == 2);
-        assert(parts[1].length() == 1);
-        String parameters = expandSignature(parts[0]);
-        Class<?> rtype = simpleType(parts[1].charAt(0));
-        if (parameters.isEmpty()) {
-            return MethodType.methodType(rtype);
-        } else {
-            Class<?>[] ptypes = new Class<?>[parameters.length()];
-            for (int i = 0; i < ptypes.length; i++) {
-                ptypes[i] = simpleType(parameters.charAt(i));
-            }
-            return MethodType.methodType(rtype, ptypes);
-        }
-    }
-
-    private static Class<?> simpleType(char c) {
-        switch (c) {
-            case 'F':
-                return float.class;
-            case 'D':
-                return double.class;
-            case 'I':
-                return int.class;
-            case 'L':
-                return Object.class;
-            case 'J':
-                return long.class;
-            case 'V':
-                return void.class;
-            case 'Z':
-            case 'B':
-            case 'S':
-            case 'C':
-                throw new IllegalArgumentException("Not a valid primitive: " + c +
-                        " (use I instead)");
-            default:
-                throw new IllegalArgumentException("Not a primitive: " + c);
-        }
-    }
+            "/java.base/java/lang/invoke/Invokers$Holder.class";
 }

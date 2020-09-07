@@ -151,6 +151,10 @@ import java.util.StringTokenizer;
  */
 public abstract class LookAndFeel
 {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected LookAndFeel() {}
 
     /**
      * Convenience method for setting a component's foreground

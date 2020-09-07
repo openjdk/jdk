@@ -90,11 +90,10 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
 
 template <typename OopClosureType>
 void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
-  cl->set_generation(this);
   eden()->oop_since_save_marks_iterate(cl);
   to()->oop_since_save_marks_iterate(cl);
   from()->oop_since_save_marks_iterate(cl);
-  cl->reset_generation();
+
   save_marks();
 }
 

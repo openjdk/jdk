@@ -105,6 +105,11 @@ public class EventListenerList implements Serializable {
     protected transient volatile Object[] listenerList = NULL_ARRAY;
 
     /**
+     * Constructs a {@code EventListenerList}.
+     */
+    public EventListenerList() {}
+
+    /**
      * Passes back the event listener list as an array
      * of ListenerType-listener pairs.  Note that for
      * performance reasons, this implementation passes back

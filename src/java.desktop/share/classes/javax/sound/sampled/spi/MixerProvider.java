@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,11 @@ import javax.sound.sampled.Mixer;
  * @since 1.3
  */
 public abstract class MixerProvider {
+
+    /**
+     * Constructs a {@code MixerProvider}.
+     */
+    protected MixerProvider() {}
 
     /**
      * Indicates whether the mixer provider supports the mixer represented by

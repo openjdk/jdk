@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1613,6 +1613,14 @@ const int Matcher::min_vector_size(const BasicType bt) {
   // Min size which can be loaded into vector is 4 bytes.
   int size = (type2aelembytes(bt) == 1) ? 4 : 2;
   return MIN2(size,max_size);
+}
+
+const bool Matcher::supports_scalable_vector() {
+  return false;
+}
+
+const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+  return -1;
 }
 
 // Vector ideal reg corresponding to specified size in bytes

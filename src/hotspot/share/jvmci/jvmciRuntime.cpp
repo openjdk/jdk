@@ -43,7 +43,9 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/reflectionUtils.hpp"
 #include "runtime/sharedRuntime.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1ThreadLocalData.hpp"
@@ -1325,7 +1327,7 @@ Method* JVMCIRuntime::lookup_method(InstanceKlass* accessor,
   assert(check_klass_accessibility(accessor, holder), "holder not accessible");
 
   Method* dest_method;
-  LinkInfo link_info(holder, name, sig, accessor, LinkInfo::AccessCheck::required, tag);
+  LinkInfo link_info(holder, name, sig, accessor, LinkInfo::AccessCheck::required, LinkInfo::LoaderConstraintCheck::required, tag);
   switch (bc) {
   case Bytecodes::_invokestatic:
     dest_method =

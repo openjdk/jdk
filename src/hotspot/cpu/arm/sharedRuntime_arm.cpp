@@ -1617,7 +1617,7 @@ void SharedRuntime::generate_deopt_blob() {
 #ifdef COMPILER2
 
 //------------------------------generate_uncommon_trap_blob--------------------
-// Ought to generate an ideal graph & compile, but here's some SPARC ASM
+// Ought to generate an ideal graph & compile, but here's some ASM
 // instead.
 void SharedRuntime::generate_uncommon_trap_blob() {
   // allocate space for the code

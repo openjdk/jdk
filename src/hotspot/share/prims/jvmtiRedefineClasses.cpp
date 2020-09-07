@@ -24,8 +24,9 @@
 
 #include "precompiled.hpp"
 #include "aot/aotLoader.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"

@@ -192,10 +192,9 @@ protected:
 public:
   G1BiasedMappedArray() {}
 
-  // Allocate and initialize this array to cover the heap addresses in the range
-  // of [bottom, end).
-  void initialize(HeapWord* bottom, HeapWord* end, size_t mapping_granularity) {
-    G1BiasedMappedArrayBase::initialize(bottom, end, sizeof(T), mapping_granularity);
+  // Allocate and initialize this array to cover the heap addresses in the given MemRegion.
+  void initialize(MemRegion region, size_t mapping_granularity) {
+    G1BiasedMappedArrayBase::initialize(region.start(), region.end(), sizeof(T), mapping_granularity);
     this->clear();
   }
 };

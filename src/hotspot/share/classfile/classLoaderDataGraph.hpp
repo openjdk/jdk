@@ -85,7 +85,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void packages_do(void f(PackageEntry*));
   static void packages_unloading_do(void f(PackageEntry*));
   static void loaded_classes_do(KlassClosure* klass_closure);
-  static void unlocked_loaded_classes_do(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
   static bool do_unloading();
 

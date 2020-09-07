@@ -103,9 +103,11 @@ class PlainHttpConnection extends HttpConnection {
 
     final class ConnectEvent extends AsyncEvent {
         private final CompletableFuture<Void> cf;
+        private final Exchange<?> exchange;
 
-        ConnectEvent(CompletableFuture<Void> cf) {
+        ConnectEvent(CompletableFuture<Void> cf, Exchange<?> exchange) {
             this.cf = cf;
+            this.exchange = exchange;
         }
 
         @Override
@@ -126,10 +128,10 @@ class PlainHttpConnection extends HttpConnection {
                 if (debug.on())
                     debug.log("ConnectEvent: finishing connect");
                 boolean finished = chan.finishConnect();
-                assert finished : "Expected channel to be connected";
                 if (debug.on())
-                    debug.log("ConnectEvent: connect finished: %s Local addr: %s",
-                              finished, chan.getLocalAddress());
+                    debug.log("ConnectEvent: connect finished: %s, cancelled: %s, Local addr: %s",
+                              finished, exchange.multi.requestCancelled(), chan.getLocalAddress());
+                assert finished || exchange.multi.requestCancelled() : "Expected channel to be connected";
                 // complete async since the event runs on the SelectorManager thread
                 cf.completeAsync(() -> null, client().theExecutor());
             } catch (Throwable e) {
@@ -173,8 +175,9 @@ class PlainHttpConnection extends HttpConnection {
                 cf.complete(null);
             } else {
                 if (debug.on()) debug.log("registering connect event");
-                client().registerEvent(new ConnectEvent(cf));
+                client().registerEvent(new ConnectEvent(cf, exchange));
             }
+            cf = exchange.checkCancelled(cf, this);
         } catch (Throwable throwable) {
             cf.completeExceptionally(Utils.toConnectException(throwable));
             try {

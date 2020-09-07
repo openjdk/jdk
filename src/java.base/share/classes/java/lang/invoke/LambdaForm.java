@@ -40,7 +40,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
+import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 
 /**
@@ -1758,10 +1758,10 @@ class LambdaForm {
             MemberName idMem = new MemberName(LambdaForm.class, "identity_"+btChar, idType, REF_invokeStatic);
             MemberName zeMem = null;
             try {
-                idMem = IMPL_NAMES.resolveOrFail(REF_invokeStatic, idMem, null, NoSuchMethodException.class);
+                idMem = IMPL_NAMES.resolveOrFail(REF_invokeStatic, idMem, null, LM_TRUSTED, NoSuchMethodException.class);
                 if (!isVoid) {
                     zeMem = new MemberName(LambdaForm.class, "zero_"+btChar, zeType, REF_invokeStatic);
-                    zeMem = IMPL_NAMES.resolveOrFail(REF_invokeStatic, zeMem, null, NoSuchMethodException.class);
+                    zeMem = IMPL_NAMES.resolveOrFail(REF_invokeStatic, zeMem, null, LM_TRUSTED, NoSuchMethodException.class);
                 }
             } catch (IllegalAccessException|NoSuchMethodException ex) {
                 throw newInternalError(ex);

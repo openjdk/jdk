@@ -1446,10 +1446,6 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   LIRItem cmp   (x->argument_at(2), this);  // value to compare with field
   LIRItem val   (x->argument_at(3), this);  // replace field with val if matches cmp
   assert(obj.type()->tag() == objectTag, "invalid type");
-
-  // In 64bit the type can be long, sparc doesn't have this assert
-  // assert(offset.type()->tag() == intTag, "invalid type");
-
   assert(cmp.type()->tag() == type->tag(), "invalid type");
   assert(val.type()->tag() == type->tag(), "invalid type");
 

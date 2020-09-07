@@ -64,6 +64,10 @@ public abstract class AbstractSpinnerModel implements SpinnerModel, Serializable
      */
     protected EventListenerList listenerList = new EventListenerList();
 
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected AbstractSpinnerModel() {}
 
     /**
      * Adds a ChangeListener to the model's listener list.  The

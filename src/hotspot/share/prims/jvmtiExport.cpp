@@ -1645,7 +1645,10 @@ void JvmtiExport::post_method_exit(JavaThread *thread, Method* method, frame cur
           }
         }
         // remove the frame's entry
-        ets->clear_frame_pop(cur_frame_number);
+        {
+          MutexLocker mu(JvmtiThreadState_lock);
+          ets->clear_frame_pop(cur_frame_number);
+        }
       }
     }
   }

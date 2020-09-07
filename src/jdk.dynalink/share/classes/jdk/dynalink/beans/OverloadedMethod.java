@@ -135,7 +135,7 @@ class OverloadedMethod {
             MethodHandle.class, Object[].class);
 
     @SuppressWarnings("unused")
-    private MethodHandle selectMethod(final Object[] args) throws NoSuchMethodException {
+    private MethodHandle selectMethod(final Object[] args) {
         final Class<?>[] argTypes = new Class<?>[args.length];
         for(int i = 0; i < argTypes.length; ++i) {
             final Object arg = args[i];

@@ -58,6 +58,11 @@ public class DefaultListModel<E> extends AbstractListModel<E>
     private Vector<E> delegate = new Vector<E>();
 
     /**
+     * Constructs a {@code DefaultListModel}.
+     */
+    public DefaultListModel() {}
+
+    /**
      * Returns the number of components in this list.
      * <p>
      * This method is identical to {@code size}, which implements the

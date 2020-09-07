@@ -1542,7 +1542,7 @@ public class JavacParserTest extends TestCase {
                       """;
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, List.of("-XDdev"),
                 null, Arrays.asList(new MyFileObject(code)));
-        String ast = ct.parse().iterator().next().toString();
+        String ast = ct.parse().iterator().next().toString().replaceAll("\\R", "\n");
         String expected = """
                           package t;
                           \n\

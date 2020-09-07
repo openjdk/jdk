@@ -343,6 +343,7 @@ AwtToolkit::AwtToolkit() {
     ::GetKeyboardState(m_lastKeyboardState);
 
     m_waitEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
+    m_inputMethodWaitEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
     isInDoDragDropLoop = FALSE;
     eventNumber = 0;
 }
@@ -777,6 +778,7 @@ BOOL AwtToolkit::Dispose() {
     delete tk.m_cmdIDs;
 
     ::CloseHandle(m_waitEvent);
+    ::CloseHandle(m_inputMethodWaitEvent);
 
     tk.m_isDisposed = TRUE;
 
@@ -1087,11 +1089,17 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
       // it returs with no error. (This restriction is not documented)
       // So we must use thse messages to call these APIs in main thread.
       case WM_AWT_CREATECONTEXT: {
-        return reinterpret_cast<LRESULT>(
+          AwtToolkit& tk = AwtToolkit::GetInstance();
+          tk.m_inputMethodData = reinterpret_cast<LRESULT>(
             reinterpret_cast<void*>(ImmCreateContext()));
+          ::SetEvent(tk.m_inputMethodWaitEvent);
+          return tk.m_inputMethodData;
       }
       case WM_AWT_DESTROYCONTEXT: {
           ImmDestroyContext((HIMC)wParam);
+          AwtToolkit& tk = AwtToolkit::GetInstance();
+          tk.m_inputMethodData = 0;
+          ::SetEvent(tk.m_inputMethodWaitEvent);
           return 0;
       }
       case WM_AWT_ASSOCIATECONTEXT: {
@@ -1117,17 +1125,21 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           }
 
           delete data;
+          AwtToolkit& tk = AwtToolkit::GetInstance();
+          tk.m_inputMethodData = 0;
+          ::SetEvent(tk.m_inputMethodWaitEvent);
           return 0;
       }
       case WM_AWT_GET_DEFAULT_IME_HANDLER: {
           LRESULT ret = (LRESULT)FALSE;
           jobject peer = (jobject)wParam;
+          AwtToolkit& tk = AwtToolkit::GetInstance();
 
           AwtComponent* comp = (AwtComponent*)JNI_GET_PDATA(peer);
           if (comp != NULL) {
               HWND defaultIMEHandler = ImmGetDefaultIMEWnd(comp->GetHWnd());
               if (defaultIMEHandler != NULL) {
-                  AwtToolkit::GetInstance().SetInputMethodWindow(defaultIMEHandler);
+                  tk.SetInputMethodWindow(defaultIMEHandler);
                   ret = (LRESULT)TRUE;
               }
           }
@@ -1135,6 +1147,8 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           if (peer != NULL) {
               env->DeleteGlobalRef(peer);
           }
+          tk.m_inputMethodData = ret;
+          ::SetEvent(tk.m_inputMethodWaitEvent);
           return ret;
       }
       case WM_AWT_HANDLE_NATIVE_IME_EVENT: {
@@ -1170,6 +1184,9 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           Changed to commit it according to the flag 10/29/98*/
           ImmNotifyIME((HIMC)wParam, NI_COMPOSITIONSTR,
                        (lParam ? CPS_COMPLETE : CPS_CANCEL), 0);
+          AwtToolkit& tk = AwtToolkit::GetInstance();
+          tk.m_inputMethodData = 0;
+          ::SetEvent(tk.m_inputMethodWaitEvent);
           return 0;
       }
       case WM_AWT_SETCONVERSIONSTATUS: {
@@ -1177,12 +1194,18 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           DWORD smode;
           ImmGetConversionStatus((HIMC)wParam, (LPDWORD)&cmode, (LPDWORD)&smode);
           ImmSetConversionStatus((HIMC)wParam, (DWORD)LOWORD(lParam), smode);
+          AwtToolkit& tk = AwtToolkit::GetInstance();
+          tk.m_inputMethodData = 0;
+          ::SetEvent(tk.m_inputMethodWaitEvent);
           return 0;
       }
       case WM_AWT_GETCONVERSIONSTATUS: {
           DWORD cmode;
           DWORD smode;
           ImmGetConversionStatus((HIMC)wParam, (LPDWORD)&cmode, (LPDWORD)&smode);
+          AwtToolkit& tk = AwtToolkit::GetInstance();
+          tk.m_inputMethodData = cmode;
+          ::SetEvent(tk.m_inputMethodWaitEvent);
           return cmode;
       }
       case WM_AWT_ACTIVATEKEYBOARDLAYOUT: {
@@ -1217,6 +1240,9 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           // instead of LOWORD and HIWORD
           p->OpenCandidateWindow(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
           env->DeleteGlobalRef(peerObject);
+          AwtToolkit& tk = AwtToolkit::GetInstance();
+          tk.m_inputMethodData = 0;
+          ::SetEvent(tk.m_inputMethodWaitEvent);
           return 0;
       }
 
@@ -1238,10 +1264,16 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
 
       case WM_AWT_SETOPENSTATUS: {
           ImmSetOpenStatus((HIMC)wParam, (BOOL)lParam);
+          AwtToolkit& tk = AwtToolkit::GetInstance();
+          tk.m_inputMethodData = 0;
+          ::SetEvent(tk.m_inputMethodWaitEvent);
           return 0;
       }
       case WM_AWT_GETOPENSTATUS: {
-          return (DWORD)ImmGetOpenStatus((HIMC)wParam);
+          AwtToolkit& tk = AwtToolkit::GetInstance();
+          tk.m_inputMethodData = (DWORD)ImmGetOpenStatus((HIMC)wParam);
+          ::SetEvent(tk.m_inputMethodWaitEvent);
+          return tk.m_inputMethodData;
       }
       case WM_DISPLAYCHANGE: {
           // Reinitialize screens
@@ -3166,3 +3198,33 @@ BOOL AwtToolkit::TICloseTouchInputHandle(HTOUCHINPUT hTouchInput) {
     }
     return m_pCloseTouchInputHandle(hTouchInput);
 }
+
+/*
+ * The fuction intended for access to an IME API. It posts IME message to the queue and
+ * waits untill the message processing is completed.
+ *
+ * On Windows 10 the IME may process the messages send via SenMessage() from other threads
+ * when the IME is called by TranslateMessage(). This may cause an reentrancy issue when
+ * the windows procedure processing the sent message call an IME function and leaves
+ * the IME functionality in an unexpected state.
+ * This function avoids reentrancy issue and must be used for sending of all IME messages
+ * instead of SendMessage().
+ */
+LRESULT AwtToolkit::InvokeInputMethodFunction(UINT msg, WPARAM wParam, LPARAM lParam) {
+    /*
+     * DND runs on the main thread. So it is  necessary to use SendMessage() to call an IME
+     * function once the DND is active; otherwise a hang is possible since DND may wait for
+     * the IME completion.
+     */
+    if (isInDoDragDropLoop) {
+        return SendMessage(msg, wParam, lParam);
+    } else {
+        CriticalSection::Lock lock(m_inputMethodLock);
+        if (PostMessage(msg, wParam, lParam)) {
+            ::WaitForSingleObject(m_inputMethodWaitEvent, INFINITE);
+            return m_inputMethodData;
+        }
+        return 0;
+    }
+}
+

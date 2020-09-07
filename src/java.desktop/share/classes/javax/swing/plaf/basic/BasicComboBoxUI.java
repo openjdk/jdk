@@ -944,6 +944,8 @@ public class BasicComboBoxUI extends ComboBoxUI {
             paintCurrentValueBackground(g,r,hasFocus);
             paintCurrentValue(g,r,hasFocus);
         }
+        // Empty out the renderer pane, allowing renderers to be gc'ed.
+        currentValuePane.removeAll();
     }
 
     @Override

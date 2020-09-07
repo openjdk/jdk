@@ -51,6 +51,11 @@ public class MetalProgressBarUI extends BasicProgressBarUI {
     private Rectangle box;
 
     /**
+     * Constructs a {@code MetalProgressBarUI}.
+     */
+    public MetalProgressBarUI() {}
+
+    /**
      * Constructs an instance of {@code MetalProgressBarUI}.
      *
      * @param c a component

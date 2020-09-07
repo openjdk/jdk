@@ -31,6 +31,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public interface JavaLangInvokeAccess {
     /**
@@ -68,47 +69,12 @@ public interface JavaLangInvokeAccess {
     Class<?> getDeclaringClass(Object mname);
 
     /**
-     * Returns a {@code byte[]} representation of a class implementing
-     * DirectMethodHandle of each pairwise combination of {@code MethodType} and
-     * an {@code int} representing method type.  Used by
-     * GenerateJLIClassesPlugin to generate such a class during the jlink phase.
+     * Returns a map of class name in internal forms to its corresponding
+     * class bytes per the given stream of LF_RESOLVE and SPECIES_RESOLVE
+     * trace logs. Used by GenerateJLIClassesPlugin to enable generation
+     * of such classes during the jlink phase.
      */
-    byte[] generateDirectMethodHandleHolderClassBytes(String className,
-            MethodType[] methodTypes, int[] types);
-
-    /**
-     * Returns a {@code byte[]} representation of a class implementing
-     * DelegatingMethodHandles of each {@code MethodType} kind in the
-     * {@code methodTypes} argument.  Used by GenerateJLIClassesPlugin to
-     * generate such a class during the jlink phase.
-     */
-    byte[] generateDelegatingMethodHandleHolderClassBytes(String className,
-            MethodType[] methodTypes);
-
-    /**
-     * Returns a {@code byte[]} representation of {@code BoundMethodHandle}
-     * species class implementing the signature defined by {@code types}. Used
-     * by GenerateJLIClassesPlugin to enable generation of such classes during
-     * the jlink phase. Should do some added validation since this string may be
-     * user provided.
-     */
-    Map.Entry<String, byte[]> generateConcreteBMHClassBytes(
-            final String types);
-
-    /**
-     * Returns a {@code byte[]} representation of a class implementing
-     * the zero and identity forms of all {@code LambdaForm.BasicType}s.
-     */
-    byte[] generateBasicFormsClassBytes(final String className);
-
-    /**
-     * Returns a {@code byte[]} representation of a class implementing
-     * the invoker forms for the set of supplied {@code invokerMethodTypes}
-     * and {@code callSiteMethodTypes}.
-     */
-    byte[] generateInvokersHolderClassBytes(String className,
-            MethodType[] invokerMethodTypes,
-            MethodType[] callSiteMethodTypes);
+    Map<String, byte[]> generateHolderClasses(Stream<String> traces);
 
     /**
      * Returns a var handle view of a given memory address.

@@ -566,9 +566,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     CFLAGS_windows = -DCC_NOEX, \
     EXTRA_HEADER_DIRS := $(LIBFONTMANAGER_EXTRA_HEADER_DIRS), \
     WARNINGS_AS_ERRORS_xlc := false, \
-    DISABLED_WARNINGS_gcc := sign-compare unused-function int-to-pointer-cast, \
-    DISABLED_WARNINGS_clang := sign-compare, \
-    DISABLED_WARNINGS_microsoft := 4018 4146 4244 4996, \
     LDFLAGS := $(subst -Xlinker -z -Xlinker defs,, \
         $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB))) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

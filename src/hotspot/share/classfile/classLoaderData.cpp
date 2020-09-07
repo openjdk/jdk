@@ -65,6 +65,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutex.hpp"
@@ -299,7 +300,9 @@ bool ClassLoaderData::try_claim(int claim) {
 // it is being defined, therefore _keep_alive is not volatile or atomic.
 void ClassLoaderData::inc_keep_alive() {
   if (has_class_mirror_holder()) {
-    assert(_keep_alive > 0, "Invalid keep alive increment count");
+    if (!Arguments::is_dumping_archive()) {
+      assert(_keep_alive > 0, "Invalid keep alive increment count");
+    }
     _keep_alive++;
   }
 }

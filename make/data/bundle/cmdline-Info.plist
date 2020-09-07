@@ -6,13 +6,12 @@
         <string>@@ID@@</string>
         <key>CFBundleInfoDictionaryVersion</key>
         <string>6.0</string>
-        <key>CFBundleName</key>
-        <string>OpenJDK Command</string>
         <key>CFBundleShortVersionString</key>
-        <string>1.0</string>
-        <key>CFBundleVersion</key>
         <string>@@VERSION@@</string>
-        <key>SecTaskAccess</key>
-        <string>allowed</string>
+        <key>CFBundleVersion</key>
+        <string>@@BUILD_VERSION@@</string>
+        <key>NSMicrophoneUsageDescription</key>
+        <string>The application is requesting access to the microphone.</string>
+        @@EXTRA@@
 </dict>
 </plist>

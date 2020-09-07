@@ -76,6 +76,11 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
      */
     private transient boolean didDrag;
 
+    /**
+     * Constructs a {@code DefaultDesktopManager}.
+     */
+    public DefaultDesktopManager() {}
+
     /** Normally this method will not be called. If it is, it
       * tries to determine the appropriate parent from the desktopIcon of the frame.
       * Will remove the desktopIcon from its parent if it successfully adds the frame.

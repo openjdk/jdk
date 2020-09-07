@@ -31,7 +31,8 @@
 
 template <typename T>
 inline bool UnBufferedWriteToChunk<T>::write(T* t, const u1* data, size_t size) {
-  _writer.write_unbuffered(data, size);
+  assert((intptr_t)size >= 0, "invariant");
+  _writer.write_unbuffered(data, (intptr_t)size);
   ++_elements;
   _size += size;
   return true;
@@ -56,6 +57,7 @@ inline bool ConcurrentWriteOp<Operation>::process(typename Operation::Type* t) {
   // acquire_critical_section_top() must be read before pos() for stable access
   const u1* const top = is_retired ? t->top() : t->acquire_critical_section_top();
   const size_t unflushed_size = get_unflushed_size(top, t);
+  assert((intptr_t)unflushed_size >= 0, "invariant");
   if (unflushed_size == 0) {
     if (is_retired) {
       t->set_top(top);
@@ -78,6 +80,7 @@ inline bool MutexedWriteOp<Operation>::process(typename Operation::Type* t) {
   assert(t != NULL, "invariant");
   const u1* const top = t->top();
   const size_t unflushed_size = get_unflushed_size(top, t);
+  assert((intptr_t)unflushed_size >= 0, "invariant");
   if (unflushed_size == 0) {
     return true;
   }
@@ -113,6 +116,7 @@ inline bool DiscardOp<Operation>::process(typename Operation::Type* t) {
   assert(t != NULL, "invariant");
   const u1* const top = _mode == concurrent ? t->acquire_critical_section_top() : t->top();
   const size_t unflushed_size = get_unflushed_size(top, t);
+  assert((intptr_t)unflushed_size >= 0, "invariant");
   if (unflushed_size == 0) {
     if (_mode == concurrent) {
       t->release_critical_section_top(top);
@@ -141,6 +145,7 @@ inline bool EpochDispatchOp<Operation>::process(typename Operation::Type* t) {
   assert(t != NULL, "invariant");
   const u1* const current_top = _previous_epoch ? t->start() : t->top();
   const size_t unflushed_size = Atomic::load_acquire(t->pos_address()) - current_top;
+  assert((intptr_t)unflushed_size >= 0, "invariant");
   if (unflushed_size == 0) {
     return true;
   }

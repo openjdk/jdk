@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,9 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.nio.file.Paths;
-import jdk.test.lib.dcmd.*;
+
 import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
+import jdk.test.lib.dcmd.CommandExecutor;
+import jdk.test.lib.dcmd.JMXExecutor;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
+
+import java.nio.file.Paths;
+
 import org.testng.annotations.Test;
 
 public abstract class AttachFailedTestBase {
@@ -42,18 +48,18 @@ public abstract class AttachFailedTestBase {
             libname = "lib" + name + ".so";
         }
 
-        return Paths.get(System.getProperty("test.nativepath"), libname)
+        return Paths.get(Utils.TEST_NATIVE_PATH, libname)
                     .toAbsolutePath()
                     .toString();
     }
 
     @Test
-    public void jmx() throws Throwable {
+    public void jmx() {
         run(new JMXExecutor());
     }
 
     @Test
-    public void cli() throws Throwable {
+    public void cli() {
         run(new PidJcmdExecutor());
     }
 }

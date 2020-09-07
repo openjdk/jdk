@@ -59,6 +59,11 @@ Serializable {
     private int index = -1;
 
     /**
+     * Constructs a {@code DefaultSingleSelectionModel}.
+     */
+    public DefaultSingleSelectionModel() {}
+
+    /**
      * {@inheritDoc}
      */
     public int getSelectedIndex() {

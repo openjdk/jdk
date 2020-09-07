@@ -61,6 +61,11 @@ package javax.swing.text;
  */
 public class DocumentFilter {
     /**
+     * Constructs a {@code DocumentFilter}.
+     */
+    public DocumentFilter() {}
+
+    /**
      * Invoked prior to removal of the specified region in the
      * specified Document. Subclasses that want to conditionally allow
      * removal should override this and only call supers implementation as
@@ -130,6 +135,11 @@ public class DocumentFilter {
      * @since 1.4
      */
     public abstract static class FilterBypass {
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected FilterBypass() {}
+
         /**
          * Returns the Document the mutation is occurring on.
          *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import static java.lang.System.out;
 
 /**
  * @test
+ * @bug 8245462
  * @summary Basic test for interrupted blocking send
  * @run main/othervm InterruptedBlockingSend
  */
@@ -68,6 +69,15 @@ public class InterruptedBlockingSend {
                 throw new RuntimeException("Expected InterruptedException, got " + throwable);
             } else {
                 out.println("Caught expected InterruptedException: " + throwable);
+            }
+
+            out.println("Interrupting before send");
+            try {
+                Thread.currentThread().interrupt();
+                client.send(request, BodyHandlers.discarding());
+                throw new AssertionError("Expected InterruptedException not thrown");
+            } catch (InterruptedException x) {
+                out.println("Got expected exception: " + x);
             }
         }
     }

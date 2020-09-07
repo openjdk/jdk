@@ -63,7 +63,6 @@ package jdk.dynalink.support;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.LinkedList;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.linker.GuardedInvocation;
@@ -150,12 +149,9 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
 
         // First, prune the chain of invalidated switchpoints, we always do this
         // We also remove any catches if the remove catches flag is set
-        for(final Iterator<GuardedInvocation> it = newInvocations.iterator(); it.hasNext();) {
-            final GuardedInvocation inv = it.next();
-            if(inv.hasBeenInvalidated() || (removeCatches && inv.getException() != null)) {
-                it.remove();
-            }
-        }
+        newInvocations.removeIf(inv ->
+            inv.hasBeenInvalidated() || (removeCatches && inv.getException() != null)
+        );
 
         // prune() is allowed to invoke this method with invocation == null meaning we're just pruning the chain and not
         // adding any new invocations to it.

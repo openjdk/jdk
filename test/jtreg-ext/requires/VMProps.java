@@ -389,11 +389,6 @@ public class VMProps implements Callable<Map<String, String>> {
             return "false";
         }
 
-        if (WB.getBooleanVMFlag("VerifyOops")) {
-            // Should be enabled when JDK-8209961 is fixed
-            return "false";
-        }
-
         switch (GC.selected()) {
             case Serial:
             case Parallel:

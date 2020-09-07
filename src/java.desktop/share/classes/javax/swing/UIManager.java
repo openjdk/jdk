@@ -235,6 +235,11 @@ public class UIManager implements Serializable
     private static final Object classLock = new Object();
 
     /**
+     * Constructs a {@code UIManager}.
+     */
+    public UIManager() {}
+
+    /**
      * Return the <code>LAFState</code> object, lazily create one if necessary.
      * All access to the <code>LAFState</code> fields is done via this method,
      * for example:

@@ -78,6 +78,11 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      */
     protected boolean leadAnchorNotificationEnabled = true;
 
+    /**
+     * Constructs a {@code DefaultListSelectionModel}.
+     */
+    public DefaultListSelectionModel() {}
+
     /** {@inheritDoc} */
     public int getMinSelectionIndex() { return isSelectionEmpty() ? -1 : minIndex; }
 

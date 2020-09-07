@@ -63,7 +63,7 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YCTypes.hpp"
-#include "gc/g1/g1YoungRemSetSamplingThread.hpp"
+#include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -98,6 +98,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
@@ -1418,7 +1419,7 @@ public:
 
 G1CollectedHeap::G1CollectedHeap() :
   CollectedHeap(),
-  _young_gen_sampling_thread(NULL),
+  _service_thread(NULL),
   _workers(NULL),
   _card_table(NULL),
   _collection_pause_end(Ticks::now()),
@@ -1555,10 +1556,10 @@ jint G1CollectedHeap::initialize_concurrent_refinement() {
   return ecode;
 }
 
-jint G1CollectedHeap::initialize_young_gen_sampling_thread() {
-  _young_gen_sampling_thread = new G1YoungRemSetSamplingThread();
-  if (_young_gen_sampling_thread->osthread() == NULL) {
-    vm_shutdown_during_initialization("Could not create G1YoungRemSetSamplingThread");
+jint G1CollectedHeap::initialize_service_thread() {
+  _service_thread = new G1ServiceThread();
+  if (_service_thread->osthread() == NULL) {
+    vm_shutdown_during_initialization("Could not create G1ServiceThread");
     return JNI_ENOMEM;
   }
   return JNI_OK;
@@ -1683,7 +1684,7 @@ jint G1CollectedHeap::initialize() {
   guarantee(heap_rs.base() >= (char*)G1CardTable::card_size, "Java heap must not start within the first card.");
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this, _card_table, _hot_card_cache);
-  _rem_set->initialize(max_reserved_capacity(), max_regions());
+  _rem_set->initialize(max_regions());
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
   guarantee(HeapRegion::CardsPerRegion > 0, "make sure it's initialized");
@@ -1692,15 +1693,13 @@ jint G1CollectedHeap::initialize() {
 
   FreeRegionList::set_unrealistically_long_length(max_expandable_regions() + 1);
 
-  _bot = new G1BlockOffsetTable(reserved_region(), bot_storage);
+  _bot = new G1BlockOffsetTable(reserved(), bot_storage);
 
   {
-    HeapWord* start = _hrm->reserved().start();
-    HeapWord* end = _hrm->reserved().end();
     size_t granularity = HeapRegion::GrainBytes;
 
-    _region_attr.initialize(start, end, granularity);
-    _humongous_reclaim_candidates.initialize(start, end, granularity);
+    _region_attr.initialize(reserved(), granularity);
+    _humongous_reclaim_candidates.initialize(reserved(), granularity);
   }
 
   _workers = new WorkGang("GC Thread", ParallelGCThreads,
@@ -1732,7 +1731,7 @@ jint G1CollectedHeap::initialize() {
     return ecode;
   }
 
-  ecode = initialize_young_gen_sampling_thread();
+  ecode = initialize_service_thread();
   if (ecode != JNI_OK) {
     return ecode;
   }
@@ -1778,7 +1777,7 @@ void G1CollectedHeap::stop() {
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
   _cr->stop();
-  _young_gen_sampling_thread->stop();
+  _service_thread->stop();
   _cm_thread->stop();
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::stop();
@@ -2273,7 +2272,7 @@ bool G1CollectedHeap::is_in(const void* p) const {
 
 #ifdef ASSERT
 bool G1CollectedHeap::is_in_exact(const void* p) const {
-  bool contains = reserved_region().contains(p);
+  bool contains = reserved().contains(p);
   bool available = _hrm->is_available(addr_to_region((HeapWord*)p));
   if (contains && available) {
     return true;
@@ -2393,10 +2392,6 @@ size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
 
 size_t G1CollectedHeap::max_capacity() const {
   return _hrm->max_expandable_length() * HeapRegion::GrainBytes;
-}
-
-size_t G1CollectedHeap::max_reserved_capacity() const {
-  return _hrm->max_length() * HeapRegion::GrainBytes;
 }
 
 void G1CollectedHeap::deduplicate_string(oop str) {
@@ -2533,7 +2528,7 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   tc->do_thread(_cm_thread);
   _cm->threads_do(tc);
   _cr->threads_do(tc);
-  tc->do_thread(_young_gen_sampling_thread);
+  tc->do_thread(_service_thread);
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::threads_do(tc);
   }
