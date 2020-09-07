@@ -24,7 +24,7 @@ reviewers=1
 ignore=duke
 
 [checks "committer"]
-role=contributor
+role=committer
 
 [checks "issues"]
 pattern=^([124-8][0-9]{6}): (\S.*)$
