@@ -71,7 +71,9 @@ class LockUnlockThread extends Thread {
                 Thread.sleep(DELAY_BETWEEN_LOCKS);
             }
         } catch (InterruptedException e) {
-            throw new Error("TESTBUG: lockUnlocker thread was unexpectedly interrupted", e);
+            if (isActive) {
+                throw new Error("TESTBUG: LockUnlockThread was unexpectedly interrupted", e);
+            }
         } finally {
             Helper.WHITE_BOX.unlockCompilation();
         }
@@ -79,7 +81,6 @@ class LockUnlockThread extends Thread {
 }
 
 public class OverloadCompileQueueTest implements Runnable {
-    private static final LockUnlockThread lockUnlockThread = new LockUnlockThread();
     private static final String METHOD_TO_ENQUEUE = "method";
     private static final int LEVEL_SIMPLE = 1;
     private static final int LEVEL_FULL_OPTIMIZATION = 4;
@@ -103,6 +104,7 @@ public class OverloadCompileQueueTest implements Runnable {
     }
 
     public static void main(String[] args) throws InterruptedException {
+        LockUnlockThread lockUnlockThread = new LockUnlockThread();
         lockUnlockThread.start();
 
         if (Platform.isInt()) {
@@ -111,6 +113,7 @@ public class OverloadCompileQueueTest implements Runnable {
         new CodeCacheStressRunner(new OverloadCompileQueueTest()).runTest();
 
         lockUnlockThread.isActive = false;
+        lockUnlockThread.interrupt();
         lockUnlockThread.join();
     }
 
