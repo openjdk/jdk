@@ -139,15 +139,15 @@
 //
 
 // Default value if probing is not implemented for a certain platform: 128TB
-#define DEFAULT_MAX_ADDRESS_BIT 47
+static const size_t DEFAULT_MAX_ADDRESS_BIT = 47;
 // Minimum value returned, if probing fails: 64GB
-#define MINIMUM_MAX_ADDRESS_BIT 36
+static const size_t MINIMUM_MAX_ADDRESS_BIT = 36;
 
 static size_t probe_valid_max_address_bit() {
 #ifdef LINUX
   size_t max_address_bit = 0;
   const size_t page_size = os::vm_page_size();
-  for (int i = DEFAULT_MAX_ADDRESS_BIT; i > MINIMUM_MAX_ADDRESS_BIT && max_address_bit == 0; --i) {
+  for (size_t i = DEFAULT_MAX_ADDRESS_BIT; i > MINIMUM_MAX_ADDRESS_BIT; --i) {
     const uintptr_t base_addr = ((uintptr_t) 1U) << i;
     if (msync((void*)base_addr, page_size, MS_ASYNC) == 0) {
       // msync suceeded, the address is valid, and maybe even already mapped.
@@ -160,19 +160,20 @@ static size_t probe_valid_max_address_bit() {
 #ifdef ASSERT
       fatal("Received %s while probing the address space for the highest valid bit", os::errno_name(errno));
 #else // ASSERT
-      log_warning(gc)("Received %s while probing the address space for the highest valid bit", os::errno_name(errno));
+      log_warning_p(gc)("Received %s while probing the address space for the highest valid bit", os::errno_name(errno));
 #endif // ASSERT
       continue;
     }
     // Since msync failed with ENOMEM, the page might not be mapped.
     // Try to map it, to see if the address is valid.
     void* result_addr = mmap((void*) base_addr, page_size, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
+    if (result_addr != MAP_FAILED) {
+      munmap(result_addr, page_size);
+    }
     if ((uintptr_t) result_addr == base_addr) {
       // address is valid
       max_address_bit = i;
-    }
-    if (result_addr != MAP_FAILED) {
-      munmap(result_addr, page_size);
+      break;
     }
   }
   if (max_address_bit == 0) {
@@ -195,8 +196,8 @@ static size_t probe_valid_max_address_bit() {
 }
 
 size_t ZPlatformAddressOffsetBits() {
-  const static size_t valid_max_address_bit = probe_valid_max_address_bit();
-  const size_t max_address_offset_bits = valid_max_address_bit - 3;
+  const static size_t valid_max_address_offset_bits = probe_valid_max_address_bit() + 1;
+  const size_t max_address_offset_bits = valid_max_address_offset_bits - 3;
   const size_t min_address_offset_bits = max_address_offset_bits - 2;
   const size_t address_offset = round_up_power_of_2(MaxHeapSize * ZVirtualToPhysicalRatio);
   const size_t address_offset_bits = log2_intptr(address_offset);
