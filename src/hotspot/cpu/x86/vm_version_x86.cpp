@@ -761,6 +761,8 @@ void VM_Version::get_processor_features() {
   if (is_intel()) { // Intel cpus specific settings
     if (is_knights_family()) {
       _features &= ~CPU_VZEROUPPER;
+      _features &= ~CPU_AVX512BW;
+      _features &= ~CPU_AVX512VL;
     }
   }
 
@@ -1162,7 +1164,7 @@ void VM_Version::get_processor_features() {
 #endif // COMPILER2 && ASSERT
 
   if (!FLAG_IS_DEFAULT(AVX3Threshold)) {
-    if (!is_power_of_2(AVX3Threshold)) {
+    if (AVX3Threshold !=0 && !is_power_of_2(AVX3Threshold)) {
       warning("AVX3Threshold must be a power of 2");
       FLAG_SET_DEFAULT(AVX3Threshold, 4096);
     }

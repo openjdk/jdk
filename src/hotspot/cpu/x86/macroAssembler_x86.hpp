@@ -1727,6 +1727,23 @@ public:
 
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
+
+  void copy32_masked_avx(Register dst, Register src, XMMRegister xmm,
+                         KRegister mask, Register length, Register temp,
+                         BasicType type, int offset=0);
+
+  void copy64_masked_avx(Register dst, Register src, XMMRegister xmm,
+                         KRegister mask, Register length, Register temp,
+                         BasicType type, int offset=0, bool use64byteVector=false);
+
+  void copy64_avx(Register dst, Register src, XMMRegister xmm,
+                  int offset=0, bool use64byteVector=false);
+
+  void copy64_conjoint_avx(Register dst, Register src, XMMRegister xmm,
+                           int offset=0, bool use64byteVector=false);
+
+  void copy32_avx(Register dst, Register src, XMMRegister xmm, int offset=0);
+
 #endif // _LP64
 
   void vallones(XMMRegister dst, int vector_len);

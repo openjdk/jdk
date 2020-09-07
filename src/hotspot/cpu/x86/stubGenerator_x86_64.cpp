@@ -1124,59 +1124,28 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
     if (UseUnalignedLoadStores) {
       Label L_end;
-      // Copy 64-bytes per iteration
-      if (UseAVX > 2) {
-        Label L_loop_avx512, L_loop_avx2, L_32_byte_head, L_above_threshold, L_below_threshold;
-
-        __ BIND(L_copy_bytes);
-        __ cmpptr(qword_count, (-1 * AVX3Threshold / 8));
-        __ jccb(Assembler::less, L_above_threshold);
-        __ jmpb(L_below_threshold);
-
-        __ bind(L_loop_avx512);
-        __ evmovdqul(xmm0, Address(end_from, qword_count, Address::times_8, -56), Assembler::AVX_512bit);
-        __ evmovdqul(Address(end_to, qword_count, Address::times_8, -56), xmm0, Assembler::AVX_512bit);
-        __ bind(L_above_threshold);
-        __ addptr(qword_count, 8);
-        __ jcc(Assembler::lessEqual, L_loop_avx512);
-        __ jmpb(L_32_byte_head);
-
-        __ bind(L_loop_avx2);
+      __ BIND(L_loop);
+      if (UseAVX >= 2) {
         __ vmovdqu(xmm0, Address(end_from, qword_count, Address::times_8, -56));
         __ vmovdqu(Address(end_to, qword_count, Address::times_8, -56), xmm0);
         __ vmovdqu(xmm1, Address(end_from, qword_count, Address::times_8, -24));
         __ vmovdqu(Address(end_to, qword_count, Address::times_8, -24), xmm1);
-        __ bind(L_below_threshold);
-        __ addptr(qword_count, 8);
-        __ jcc(Assembler::lessEqual, L_loop_avx2);
-
-        __ bind(L_32_byte_head);
-        __ subptr(qword_count, 4);  // sub(8) and add(4)
-        __ jccb(Assembler::greater, L_end);
       } else {
-        __ BIND(L_loop);
-        if (UseAVX == 2) {
-          __ vmovdqu(xmm0, Address(end_from, qword_count, Address::times_8, -56));
-          __ vmovdqu(Address(end_to, qword_count, Address::times_8, -56), xmm0);
-          __ vmovdqu(xmm1, Address(end_from, qword_count, Address::times_8, -24));
-          __ vmovdqu(Address(end_to, qword_count, Address::times_8, -24), xmm1);
-        } else {
-          __ movdqu(xmm0, Address(end_from, qword_count, Address::times_8, -56));
-          __ movdqu(Address(end_to, qword_count, Address::times_8, -56), xmm0);
-          __ movdqu(xmm1, Address(end_from, qword_count, Address::times_8, -40));
-          __ movdqu(Address(end_to, qword_count, Address::times_8, -40), xmm1);
-          __ movdqu(xmm2, Address(end_from, qword_count, Address::times_8, -24));
-          __ movdqu(Address(end_to, qword_count, Address::times_8, -24), xmm2);
-          __ movdqu(xmm3, Address(end_from, qword_count, Address::times_8, - 8));
-          __ movdqu(Address(end_to, qword_count, Address::times_8, - 8), xmm3);
-        }
-
-        __ BIND(L_copy_bytes);
-        __ addptr(qword_count, 8);
-        __ jcc(Assembler::lessEqual, L_loop);
-        __ subptr(qword_count, 4);  // sub(8) and add(4)
-        __ jccb(Assembler::greater, L_end);
+        __ movdqu(xmm0, Address(end_from, qword_count, Address::times_8, -56));
+        __ movdqu(Address(end_to, qword_count, Address::times_8, -56), xmm0);
+        __ movdqu(xmm1, Address(end_from, qword_count, Address::times_8, -40));
+        __ movdqu(Address(end_to, qword_count, Address::times_8, -40), xmm1);
+        __ movdqu(xmm2, Address(end_from, qword_count, Address::times_8, -24));
+        __ movdqu(Address(end_to, qword_count, Address::times_8, -24), xmm2);
+        __ movdqu(xmm3, Address(end_from, qword_count, Address::times_8, - 8));
+        __ movdqu(Address(end_to, qword_count, Address::times_8, - 8), xmm3);
       }
+
+      __ BIND(L_copy_bytes);
+      __ addptr(qword_count, 8);
+      __ jcc(Assembler::lessEqual, L_loop);
+      __ subptr(qword_count, 4);  // sub(8) and add(4)
+      __ jccb(Assembler::greater, L_end);
       // Copy trailing 32 bytes
       if (UseAVX >= 2) {
         __ vmovdqu(xmm0, Address(end_from, qword_count, Address::times_8, -24));
@@ -1232,60 +1201,29 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
     if (UseUnalignedLoadStores) {
       Label L_end;
-      // Copy 64-bytes per iteration
-      if (UseAVX > 2) {
-        Label L_loop_avx512, L_loop_avx2, L_32_byte_head, L_above_threshold, L_below_threshold;
-
-        __ BIND(L_copy_bytes);
-        __ cmpptr(qword_count, (AVX3Threshold / 8));
-        __ jccb(Assembler::greater, L_above_threshold);
-        __ jmpb(L_below_threshold);
-
-        __ BIND(L_loop_avx512);
-        __ evmovdqul(xmm0, Address(from, qword_count, Address::times_8, 0), Assembler::AVX_512bit);
-        __ evmovdqul(Address(dest, qword_count, Address::times_8, 0), xmm0, Assembler::AVX_512bit);
-        __ bind(L_above_threshold);
-        __ subptr(qword_count, 8);
-        __ jcc(Assembler::greaterEqual, L_loop_avx512);
-        __ jmpb(L_32_byte_head);
-
-        __ bind(L_loop_avx2);
+      __ BIND(L_loop);
+      if (UseAVX >= 2) {
         __ vmovdqu(xmm0, Address(from, qword_count, Address::times_8, 32));
         __ vmovdqu(Address(dest, qword_count, Address::times_8, 32), xmm0);
-        __ vmovdqu(xmm1, Address(from, qword_count, Address::times_8, 0));
-        __ vmovdqu(Address(dest, qword_count, Address::times_8, 0), xmm1);
-        __ bind(L_below_threshold);
-        __ subptr(qword_count, 8);
-        __ jcc(Assembler::greaterEqual, L_loop_avx2);
-
-        __ bind(L_32_byte_head);
-        __ addptr(qword_count, 4);  // add(8) and sub(4)
-        __ jccb(Assembler::less, L_end);
+        __ vmovdqu(xmm1, Address(from, qword_count, Address::times_8,  0));
+        __ vmovdqu(Address(dest, qword_count, Address::times_8,  0), xmm1);
       } else {
-        __ BIND(L_loop);
-        if (UseAVX == 2) {
-          __ vmovdqu(xmm0, Address(from, qword_count, Address::times_8, 32));
-          __ vmovdqu(Address(dest, qword_count, Address::times_8, 32), xmm0);
-          __ vmovdqu(xmm1, Address(from, qword_count, Address::times_8,  0));
-          __ vmovdqu(Address(dest, qword_count, Address::times_8,  0), xmm1);
-        } else {
-          __ movdqu(xmm0, Address(from, qword_count, Address::times_8, 48));
-          __ movdqu(Address(dest, qword_count, Address::times_8, 48), xmm0);
-          __ movdqu(xmm1, Address(from, qword_count, Address::times_8, 32));
-          __ movdqu(Address(dest, qword_count, Address::times_8, 32), xmm1);
-          __ movdqu(xmm2, Address(from, qword_count, Address::times_8, 16));
-          __ movdqu(Address(dest, qword_count, Address::times_8, 16), xmm2);
-          __ movdqu(xmm3, Address(from, qword_count, Address::times_8,  0));
-          __ movdqu(Address(dest, qword_count, Address::times_8,  0), xmm3);
-        }
-
-        __ BIND(L_copy_bytes);
-        __ subptr(qword_count, 8);
-        __ jcc(Assembler::greaterEqual, L_loop);
-
-        __ addptr(qword_count, 4);  // add(8) and sub(4)
-        __ jccb(Assembler::less, L_end);
+        __ movdqu(xmm0, Address(from, qword_count, Address::times_8, 48));
+        __ movdqu(Address(dest, qword_count, Address::times_8, 48), xmm0);
+        __ movdqu(xmm1, Address(from, qword_count, Address::times_8, 32));
+        __ movdqu(Address(dest, qword_count, Address::times_8, 32), xmm1);
+        __ movdqu(xmm2, Address(from, qword_count, Address::times_8, 16));
+        __ movdqu(Address(dest, qword_count, Address::times_8, 16), xmm2);
+        __ movdqu(xmm3, Address(from, qword_count, Address::times_8,  0));
+        __ movdqu(Address(dest, qword_count, Address::times_8,  0), xmm3);
       }
+
+      __ BIND(L_copy_bytes);
+      __ subptr(qword_count, 8);
+      __ jcc(Assembler::greaterEqual, L_loop);
+
+      __ addptr(qword_count, 4);  // add(8) and sub(4)
+      __ jccb(Assembler::less, L_end);
       // Copy trailing 32 bytes
       if (UseAVX >= 2) {
         __ vmovdqu(xmm0, Address(from, qword_count, Address::times_8, 0));
@@ -1323,6 +1261,552 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::greater, L_copy_8_bytes); // Copy trailing qwords
   }
 
+#ifndef PRODUCT
+    int& get_profile_ctr(int shift) {
+      if ( 0 == shift)
+        return SharedRuntime::_jbyte_array_copy_ctr;
+      else if(1 == shift)
+        return SharedRuntime::_jshort_array_copy_ctr;
+      else if(2 == shift)
+        return SharedRuntime::_jint_array_copy_ctr;
+      else
+        return SharedRuntime::_jlong_array_copy_ctr;
+    }
+#endif
+
+  void generate_arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
+                                             Register to, Register count, int shift,
+                                             BasicType type_shift, Register byte_size, Register temp,
+                                             bool use64byteVector, Label& L_entry, Label& L_exit) {
+    Label L_entry_64, L_entry_96, L_entry_128;
+    Label L_entry_160, L_entry_192;
+
+    // Case A) Special case for length less than equal to 32 bytes.
+    __ cmpq(byte_size, 32);
+    __ jccb(Assembler::greater, L_entry_64);
+    __ copy32_masked_avx(to, from, xmm, mask, count, temp, type_shift);
+    __ jmp(L_exit);
+
+    // Case B) Special case for length less than equal to 64 bytes.
+    __ BIND(L_entry_64);
+    __ cmpq(byte_size, 64);
+    __ jccb(Assembler::greater, L_entry_96);
+    __ copy64_masked_avx(to, from, xmm, mask, count, temp, type_shift, 0, use64byteVector);
+    __ jmp(L_exit);
+
+    // Case C) Special case for length less than equal to 96 bytes.
+    __ BIND(L_entry_96);
+    __ cmpq(byte_size, 96);
+    __ jccb(Assembler::greater, L_entry_128);
+    __ copy64_avx(to, from, xmm, 0, use64byteVector);
+    __ subq(count, 64 >> shift);
+    __ copy32_masked_avx(to, from, xmm, mask, count, temp, type_shift, 64);
+    __ jmp(L_exit);
+
+    // Case D) Special case for length less than equal to 128 bytes.
+    __ BIND(L_entry_128);
+    __ cmpq(byte_size, 128);
+    __ jccb(Assembler::greater, L_entry_160);
+    __ copy64_avx(to, from, xmm, 0, use64byteVector);
+    __ copy32_avx(to, from, xmm, 64);
+    __ subq(count, 96 >> shift);
+    __ copy32_masked_avx(to, from, xmm, mask, count, temp, type_shift, 96);
+    __ jmp(L_exit);
+
+    // Case E) Special case for length less than equal to 160 bytes.
+    __ BIND(L_entry_160);
+    __ cmpq(byte_size, 160);
+    __ jccb(Assembler::greater, L_entry_192);
+    __ copy64_avx(to, from, xmm, 0, use64byteVector);
+    __ copy64_avx(to, from, xmm, 64, use64byteVector);
+    __ subq(count, 128 >> shift);
+    __ copy32_masked_avx(to, from, xmm, mask, count, temp, type_shift, 128);
+    __ jmp(L_exit);
+
+    // Case F) Special case for length less than equal to 192 bytes.
+    __ BIND(L_entry_192);
+    __ cmpq(byte_size, 192);
+    __ jcc(Assembler::greater, L_entry);
+    __ copy64_avx(to, from, xmm, 0, use64byteVector);
+    __ copy64_avx(to, from, xmm, 64, use64byteVector);
+    __ copy32_avx(to, from, xmm, 128);
+    __ subq(count, 160 >> shift);
+    __ copy32_masked_avx(to, from, xmm, mask, count, temp, type_shift, 160);
+    __ jmp(L_exit);
+  }
+
+  void generate_arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
+                                                      Register to, Register from_end, Register to_end,
+                                                      Register count, int shift, BasicType type_shift,
+                                                      Register byte_size, Register temp,
+                                                      bool use64byteVector, Label& L_entry, Label& L_exit) {
+    Label L_entry_64, L_entry_96, L_entry_128;
+    Label L_entry_160, L_entry_192;
+    bool avx3 = MaxVectorSize > 32 && AVX3Threshold == 0;
+
+    // Case A) Special case for length less than equal to 32 bytes.
+    __ cmpq(byte_size, 32);
+    __ jccb(Assembler::greater, L_entry_64);
+    __ copy32_masked_avx(to, from, xmm, mask, count, temp, type_shift);
+    __ jmp(L_exit);
+
+    // Case B) Special case for length less than equal to 64 bytes.
+    __ BIND(L_entry_64);
+    __ cmpq(byte_size, 64);
+    __ jccb(Assembler::greater, L_entry_96);
+    if (avx3) {
+       __ copy64_masked_avx(to, from, xmm, mask, count, temp, type_shift, 0, true);
+    } else {
+       __ copy32_avx(to_end, from_end, xmm, -32);
+       __ subq(count, 32 >> shift);
+       __ copy32_masked_avx(to, from, xmm, mask, count, temp, type_shift);
+    }
+    __ jmp(L_exit);
+
+    // Case C) Special case for length less than equal to 96 bytes.
+    __ BIND(L_entry_96);
+    __ cmpq(byte_size, 96);
+    __ jccb(Assembler::greater, L_entry_128);
+    __ copy64_conjoint_avx(to_end, from_end, xmm, -64, use64byteVector);
+    __ subq(count, 64 >> shift);
+    __ copy32_masked_avx(to, from, xmm, mask, count, temp, type_shift);
+    __ jmp(L_exit);
+
+    // Case D) Special case for length less than equal to 128 bytes.
+    __ BIND(L_entry_128);
+    __ cmpq(byte_size, 128);
+    __ jccb(Assembler::greater, L_entry_160);
+    __ copy64_conjoint_avx(to_end, from_end, xmm, -64, use64byteVector);
+    __ copy32_avx(to_end, from_end, xmm, -96);
+    __ subq(count, 96 >> shift);
+    __ copy32_masked_avx(to, from, xmm, mask, count, temp, type_shift);
+    __ jmp(L_exit);
+
+    // Case E) Special case for length less than equal to 160 bytes.
+    __ BIND(L_entry_160);
+    __ cmpq(byte_size, 160);
+    __ jccb(Assembler::greater, L_entry_192);
+    __ copy64_conjoint_avx(to_end, from_end, xmm, -64, use64byteVector);
+    __ copy64_conjoint_avx(to_end, from_end, xmm, -128, use64byteVector);
+    __ subq(count, 128 >> shift);
+    __ copy32_masked_avx(to, from, xmm, mask, count, temp, type_shift);
+    __ jmp(L_exit);
+
+    // Case F) Special case for length less than equal to 192 bytes.
+    __ BIND(L_entry_192);
+    __ cmpq(byte_size, 192);
+    __ jcc(Assembler::greater, L_entry);
+    __ copy64_conjoint_avx(to_end, from_end, xmm, -64, use64byteVector);
+    __ copy64_conjoint_avx(to_end, from_end, xmm, -128, use64byteVector);
+    __ copy32_avx(to_end, from_end, xmm, -160);
+    __ subq(count, 160 >> shift);
+    __ copy32_masked_avx(to, from, xmm, mask, count, temp, type_shift);
+    __ jmp(L_exit);
+  }
+
+  // Arguments:
+  //   name    - stub name string
+  //
+  // Inputs:
+  //   c_rarg0   - source array address
+  //   c_rarg1   - destination array address
+  //   c_rarg2   - element count, treated as ssize_t, can be zero
+  //
+  //
+  address generate_conjoint_copy_avx3_masked(address* entry, const char *name, int shift,
+                                             address nooverlap_target) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    bool use64byteVector = false;
+
+    Label L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
+    Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
+    const Register from        = rdi;  // source array address
+    const Register to          = rsi;  // destination array address
+    const Register count       = rdx;  // elements count
+    const Register from_end    = r8;
+    const Register to_end      = rcx;
+    const Register temp2       = r11;
+    const Register temp3       = rax;
+    // End pointers are inclusive, and if count is not zero they point
+    // to the last unit copied:  end_to[0] := end_from[0]
+
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+    assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
+
+    if (entry != NULL) {
+      *entry = __ pc();
+       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+      BLOCK_COMMENT("Entry:");
+    }
+
+    array_overlap_test(nooverlap_target, (Address::ScaleFactor)(shift));
+
+    setup_arg_regs(); // from => rdi, to => rsi, count => rdx
+                      // r9 and r10 may be used to save non-volatile registers
+    {
+      // Type(shift)           byte(0), short(1), int(2),   long(3)
+      int loop_size[]        = { 192,     96,       48,      24};
+      BasicType type_const[] = { T_BYTE,  T_SHORT,  T_INT,   T_LONG};
+
+      // UnsafeCopyMemory page error: continue after ucm
+      UnsafeCopyMemoryMark ucmm(this, true, true);
+      // 'from', 'to' and 'count' are now valid
+
+      // Zero length check.
+      __ BIND(L_tail);
+      __ cmpq(count, 0);
+      __ jcc(Assembler::lessEqual, L_exit);
+
+      __ movq(temp2, count);
+      if(shift) {
+        __ shlptr(temp2, shift);
+      }
+
+      // Special cases using 32 byte [masked] vector copy operations.
+      __ movq(from_end, from);
+      __ movq(to_end, to);
+      __ addptr(from_end, temp2);
+      __ addptr(to_end, temp2);
+      generate_arraycopy_avx3_special_cases_conjoint(xmm1, k2, from, to, from_end, to_end, count, shift, type_const[shift],
+                                                     temp2, temp3, use64byteVector, L_entry, L_exit);
+
+      // PRE-MAIN-POST loop for aligned copy.
+      __ BIND(L_entry);
+
+      if (MaxVectorSize > 32 && AVX3Threshold != 0) {
+        __ cmpq(temp2, AVX3Threshold);
+        __ jcc(Assembler::greaterEqual, L_pre_main_post_64);
+      }
+
+      if (MaxVectorSize < 64  || AVX3Threshold != 0) {
+        // Partial copy to make dst address 32 byte aligned.
+        __ movq(temp3, to_end);
+        __ andq(temp3, 31);
+        __ jcc(Assembler::equal, L_main_pre_loop);
+
+        if(shift) {
+          __ subptr(to_end, temp3);
+          __ subptr(from_end, temp3);
+          __ shrq(temp3, shift);
+          __ copy32_masked_avx(to_end, from_end, xmm1, k2, temp3, temp2, type_const[shift]);
+          __ subq(count, temp3);
+        } else {
+          __ subptr(to_end, temp3);
+          __ subptr(from_end, temp3);
+          __ copy32_masked_avx(to_end, from_end, xmm1, k2, temp3, temp2, type_const[shift]);
+          __ subq(count, temp3);
+        }
+        __ cmpq(count, loop_size[shift]);
+        __ jcc(Assembler::less, L_tail);
+
+        __ BIND(L_main_pre_loop);
+        __ subq(count, loop_size[shift]);
+
+        // Main loop with aligned copy block size of 192 bytes at 32 byte granularity.
+        __ BIND(L_main_loop);
+           __ copy64_conjoint_avx(to_end, from_end, xmm1, -64);
+           __ copy64_conjoint_avx(to_end, from_end, xmm1, -128);
+           __ copy64_conjoint_avx(to_end, from_end, xmm1, -192);
+           __ subptr(to_end, 192);
+           __ subptr(from_end, 192);
+           __ subq(count, loop_size[shift]);
+           __ jcc(Assembler::greater, L_main_loop);
+
+        __ addq(count, loop_size[shift]);
+
+        // Tail loop.
+        __ jmp(L_tail);
+      }
+
+      if (MaxVectorSize > 32) {
+        __ BIND(L_pre_main_post_64);
+        // Partial copy to make dst address 64 byte aligned.
+        __ movq(temp3, to_end);
+        __ andq(temp3, 63);
+        __ jcc(Assembler::equal, L_main_pre_loop_64bytes);
+        if(shift) {
+          __ subptr(to_end, temp3);
+          __ subptr(from_end, temp3);
+          __ shrq(temp3, shift);
+          __ subq(count, temp3);
+          __ copy64_masked_avx(to_end, from_end, xmm1, k2, temp3, temp2, type_const[shift], 0, true);
+        } else {
+          __ subptr(to_end, temp3);
+          __ subptr(from_end, temp3);
+          __ subq(count, temp3);
+          __ copy64_masked_avx(to_end, from_end, xmm1, k2, temp3, temp2, type_const[shift], 0, true);
+        }
+        __ cmpq(count, loop_size[shift]);
+        __ jcc(Assembler::less, L_tail64);
+
+        __ BIND(L_main_pre_loop_64bytes);
+        __ subq(count, loop_size[shift]);
+
+        // Main loop with aligned copy block size of 192 bytes at
+        // 64 byte copy granularity.
+        __ BIND(L_main_loop_64bytes);
+           __ copy64_conjoint_avx(to_end, from_end, xmm1, -64 , true);
+           __ copy64_conjoint_avx(to_end, from_end, xmm1, -128, true);
+           __ copy64_conjoint_avx(to_end, from_end, xmm1, -192, true);
+           __ subptr(to_end, 192);
+           __ subptr(from_end, 192);
+           __ subq(count, loop_size[shift]);
+           __ jcc(Assembler::greater, L_main_loop_64bytes);
+
+        __ addq(count, loop_size[shift]);
+        // Zero length check.
+        __ jcc(Assembler::lessEqual, L_exit);
+
+        __ BIND(L_tail64);
+        __ movq(temp2, count);
+        if(shift) {
+          __ shlptr(temp2, shift);
+        }
+
+        // Tail handling using 64 byte [masked] vector copy operations.
+        use64byteVector = true;
+        generate_arraycopy_avx3_special_cases_conjoint(xmm1, k2, from, to, from_end, to_end, count,
+                                                       shift, type_const[shift], temp2, temp3,
+                                                       use64byteVector, L_entry, L_exit);
+      }
+      __ BIND(L_exit);
+    }
+
+    address ucme_exit_pc = __ pc();
+    restore_arg_regs();
+    inc_counter_np(get_profile_ctr(shift)); // Update counter after rscratch1 is free
+    __ xorptr(rax, rax); // return 0
+    __ vzeroupper();
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+    return start;
+  }
+
+
+  // Arguments:
+  //   name    - stub name string
+  //
+  // Inputs:
+  //   c_rarg0   - source array address
+  //   c_rarg1   - destination array address
+  //   c_rarg2   - element count, treated as ssize_t, can be zero
+  //
+  //
+  // Side Effects:
+  //   disjoint_copy_avx3_masked is set to the no-overlap entry point
+  //   used by generate_conjoint_[byte/int/short/long]_copy().
+  //
+  address generate_disjoint_copy_avx3_masked(address* entry, const char *name, int shift) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    bool use64byteVector = false;
+    Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
+    Label L_repmovs, L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
+    const Register from        = rdi;  // source array address
+    const Register to          = rsi;  // destination array address
+    const Register count       = rdx;  // elements count
+    const Register temp1       = r8;
+    const Register temp2       = r11;
+    const Register temp3       = rax;
+    const Register temp4       = rcx;
+    // End pointers are inclusive, and if count is not zero they point
+    // to the last unit copied:  end_to[0] := end_from[0]
+
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+    assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
+
+    if (entry != NULL) {
+      *entry = __ pc();
+       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+      BLOCK_COMMENT("Entry:");
+    }
+
+    setup_arg_regs(); // from => rdi, to => rsi, count => rdx
+                      // r9 and r10 may be used to save non-volatile registers
+    {
+      // Type(shift)           byte(0), short(1), int(2),   long(3)
+      int loop_size[]        = { 192,     96,       48,      24};
+      int rep_movesize[]     = { 4096,    2048,     1024,    512};
+      BasicType type_const[] = { T_BYTE,  T_SHORT,  T_INT,   T_LONG};
+
+      // UnsafeCopyMemory page error: continue after ucm
+      UnsafeCopyMemoryMark ucmm(this, true, true);
+      // 'from', 'to' and 'count' are now valid
+
+      // Zero length check.
+      __ BIND(L_tail);
+      __ cmpq(count, 0);
+      __ jcc(Assembler::lessEqual, L_exit);
+
+      __ movq(temp2, count);
+      if(shift) {
+        __ shlptr(temp2, shift);
+      }
+
+      // Special cases using 32 byte [masked] vector copy operations.
+      generate_arraycopy_avx3_special_cases(xmm1, k2, from, to, count, shift, type_const[shift],
+                                            temp2, temp3, use64byteVector, L_entry, L_exit);
+
+      // PRE-MAIN-POST loop for aligned copy.
+      __ BIND(L_entry);
+      __ movptr(temp1, to);
+
+      if (MaxVectorSize > 32 && AVX3Threshold != 0) {
+        __ cmpq(temp2, AVX3Threshold);
+        __ jcc(Assembler::greaterEqual, L_pre_main_post_64);
+      }
+
+      if (MaxVectorSize < 64  || AVX3Threshold != 0) {
+        // If MaxVectorSize == 32 and copy size is more than 4096 bytes,
+        // REP MOVS offer a faster copy path.
+        __ cmpq(count, rep_movesize[shift]);
+        __ jcc(Assembler::greaterEqual, L_repmovs);
+
+        // Partial copy to make dst address 32 byte aligned.
+        __ andq(temp1, 31);
+        __ jcc(Assembler::equal, L_main_pre_loop);
+
+        if(shift) {
+          __ negptr(temp1);
+          __ addq(temp1, 32);
+          __ movq(temp4, temp1);
+          __ shrq(temp1, shift);
+          __ movq(temp2, temp1);
+          __ copy32_masked_avx(to, from, xmm1, k2, temp2, temp3, type_const[shift]);
+          __ addptr(to, temp4);
+          __ addptr(from, temp4);
+          __ subq(count, temp1);
+        } else {
+          __ movq(temp4, temp1);
+          __ negptr(temp4);
+          __ addq(temp4, 32);
+          __ movq(temp1, temp4);
+          __ copy32_masked_avx(to, from, xmm1, k2, temp1, temp2, type_const[shift]);
+          __ addptr(to, temp4);
+          __ addptr(from, temp4);
+          __ subq(count, temp4);
+        }
+        __ cmpq(count, loop_size[shift]);
+        __ jcc(Assembler::less, L_tail);
+
+        __ BIND(L_main_pre_loop);
+        __ subq(count, loop_size[shift]);
+
+        // Main loop with aligned copy block size of 192 bytes at 32 byte granularity.
+        __ BIND(L_main_loop);
+           __ copy64_avx(to, from, xmm1);
+           __ copy64_avx(to, from, xmm1, 64);
+           __ copy64_avx(to, from, xmm1, 128);
+           __ addptr(to, 192);
+           __ addptr(from, 192);
+           __ subq(count, loop_size[shift]);
+           __ jcc(Assembler::greater, L_main_loop);
+
+        __ addq(count, loop_size[shift]);
+
+        // Tail loop.
+        __ jmp(L_tail);
+
+        __ BIND(L_repmovs);
+          __ movq(temp2, count);
+          // Swap to(RSI) and from(RDI) addresses.
+          __ movq(temp1, to);
+          __ movq(to,  from);
+          __ movq(from, temp1);
+          if(shift < 3) {
+            __ shrq(temp2, 3-shift);     // quad word count
+          }
+          __ movq(temp4 , temp2);        // move quad ward count into temp4(RCX).
+          __ rep_mov();
+          __ shlq(temp2, 3);             // convert quad words into byte count.
+          if(shift) {
+            __ shrq(temp2, shift);       // type specific count.
+          }
+          __ subq(count, temp2);         // tailing part (less than a quad ward size).
+          __ movq(temp1, to);
+          __ movq(to,  from);
+          __ movq(from, temp1);
+          __ jmp(L_tail);
+      }
+
+      if (MaxVectorSize > 32) {
+        __ BIND(L_pre_main_post_64);
+        // Partial copy to make dst address 64 byte aligned.
+        __ andq(temp1, 63);
+        __ jcc(Assembler::equal, L_main_pre_loop_64bytes);
+
+        if(shift) {
+          __ negptr(temp1);
+          __ addq(temp1, 64);
+          __ movq(temp4, temp1);
+          __ shrq(temp1, shift);
+          __ movq(temp2, temp1);
+          __ copy64_masked_avx(to, from, xmm1, k2, temp2, temp3, type_const[shift], 0, true);
+          __ addptr(to, temp4);
+          __ addptr(from, temp4);
+          __ subq(count, temp1);
+        } else {
+          __ movq(temp4, temp1);
+          __ negptr(temp4);
+          __ addq(temp4, 64);
+          __ movq(temp1, temp4);
+          __ copy64_masked_avx(to, from, xmm1, k2, temp1, temp2, type_const[shift], 0, true);
+          __ addptr(to, temp4);
+          __ addptr(from, temp4);
+          __ subq(count, temp4);
+        }
+
+        __ cmpq(count, loop_size[shift]);
+        __ jcc(Assembler::less, L_tail64);
+
+        __ BIND(L_main_pre_loop_64bytes);
+        __ subq(count, loop_size[shift]);
+
+        // Main loop with aligned copy block size of 192 bytes at
+        // 64 byte copy granularity.
+        __ BIND(L_main_loop_64bytes);
+           __ copy64_avx(to, from, xmm1, 0 , true);
+           __ copy64_avx(to, from, xmm1, 64, true);
+           __ copy64_avx(to, from, xmm1, 128, true);
+           __ addptr(to, 192);
+           __ addptr(from, 192);
+           __ subq(count, loop_size[shift]);
+           __ jcc(Assembler::greater, L_main_loop_64bytes);
+
+        __ addq(count, loop_size[shift]);
+        // Zero length check.
+        __ jcc(Assembler::lessEqual, L_exit);
+
+        __ BIND(L_tail64);
+        __ movq(temp2, count);
+        if(shift) {
+          __ shlptr(temp2, shift);
+        }
+
+        // Tail handling using 64 byte [masked] vector copy operations.
+        use64byteVector = true;
+        generate_arraycopy_avx3_special_cases(xmm1, k2, from, to, count, shift, type_const[shift],
+                                              temp2, temp3, use64byteVector, L_entry, L_exit);
+      }
+      __ BIND(L_exit);
+    }
+
+    address ucme_exit_pc = __ pc();
+    restore_arg_regs();
+    inc_counter_np(get_profile_ctr(shift)); // Update counter after rscratch1 is free
+    __ xorptr(rax, rax); // return 0
+    __ vzeroupper();
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+    return start;
+  }
+
+
   // Arguments:
   //   aligned - true => Input and output aligned on a HeapWord == 8-byte boundary
   //             ignored
@@ -1343,6 +1827,9 @@ class StubGenerator: public StubCodeGenerator {
   //   used by generate_conjoint_byte_copy().
   //
   address generate_disjoint_byte_copy(bool aligned, address* entry, const char *name) {
+    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+       return generate_disjoint_copy_avx3_masked(entry, "jbyte_disjoint_arraycopy_avx3", 0);
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1453,6 +1940,10 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_conjoint_byte_copy(bool aligned, address nooverlap_target,
                                       address* entry, const char *name) {
+    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+       return generate_conjoint_copy_avx3_masked(entry, "jbyte_conjoint_arraycopy_avx3", 0,
+                                                 nooverlap_target);
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1558,6 +2049,10 @@ class StubGenerator: public StubCodeGenerator {
   //   used by generate_conjoint_short_copy().
   //
   address generate_disjoint_short_copy(bool aligned, address *entry, const char *name) {
+    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+       return generate_disjoint_copy_avx3_masked(entry, "jshort_disjoint_arraycopy_avx3", 1);
+    }
+
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1682,6 +2177,10 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_conjoint_short_copy(bool aligned, address nooverlap_target,
                                        address *entry, const char *name) {
+    if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
+       return generate_conjoint_copy_avx3_masked(entry, "jshort_conjoint_arraycopy_avx3", 1,
+                                                 nooverlap_target);
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1780,6 +2279,10 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_int_oop_copy(bool aligned, bool is_oop, address* entry,
                                          const char *name, bool dest_uninitialized = false) {
+    if (VM_Version::supports_avx512vlbw() && false == is_oop && MaxVectorSize  >= 32) {
+       return generate_disjoint_copy_avx3_masked(entry, "jint_disjoint_arraycopy_avx3", 2);
+    }
+
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1884,6 +2387,10 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_int_oop_copy(bool aligned, bool is_oop, address nooverlap_target,
                                          address *entry, const char *name,
                                          bool dest_uninitialized = false) {
+    if (VM_Version::supports_avx512vlbw() && false == is_oop && MaxVectorSize  >= 32) {
+       return generate_conjoint_copy_avx3_masked(entry, "jint_conjoint_arraycopy_avx3", 2,
+                                                 nooverlap_target);
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1991,6 +2498,9 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_long_oop_copy(bool aligned, bool is_oop, address *entry,
                                           const char *name, bool dest_uninitialized = false) {
+    if (VM_Version::supports_avx512vlbw() && false == is_oop && MaxVectorSize  >= 32) {
+       return generate_disjoint_copy_avx3_masked(entry, "jlong_disjoint_arraycopy_avx3", 3);
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -2095,6 +2605,10 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_long_oop_copy(bool aligned, bool is_oop,
                                           address nooverlap_target, address *entry,
                                           const char *name, bool dest_uninitialized = false) {
+    if (VM_Version::supports_avx512vlbw() && false == is_oop && MaxVectorSize  >= 32) {
+       return generate_conjoint_copy_avx3_masked(entry, "jlong_conjoint_arraycopy_avx3", 3,
+                                                 nooverlap_target);
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
