@@ -81,6 +81,7 @@ public final class MetadataLoader {
         private final boolean startTime;
         private final boolean stackTrace;
         private final boolean cutoff;
+        private final boolean rateLimit;
         private final boolean isEvent;
         private final boolean isRelation;
         private final boolean experimental;
@@ -101,6 +102,7 @@ public final class MetadataLoader {
             startTime = dis.readBoolean();
             period = dis.readUTF();
             cutoff = dis.readBoolean();
+            rateLimit = dis.readBoolean();
             experimental = dis.readBoolean();
             id = dis.readLong();
             isEvent = dis.readBoolean();
@@ -303,6 +305,9 @@ public final class MetadataLoader {
                 }
                 if (t.cutoff) {
                     aes.add(new AnnotationElement(Cutoff.class, Cutoff.INFINITY));
+                }
+                if (t.rateLimit) {
+                    aes.add(new AnnotationElement(RateLimit.class, RateLimit.DEFAULT));
                 }
             }
             if (t.experimental) {

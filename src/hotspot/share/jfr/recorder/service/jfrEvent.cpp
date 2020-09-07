@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jfr/recorder/service/jfrEvent.hpp"
+#include "jfr/recorder/service/jfrEventSampler.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
 
@@ -61,3 +62,9 @@ bool JfrEventVerifier::committed() const {
 }
 
 #endif // ASSERT
+
+bool JfrEventSamplerAccess::is_sampled(JfrEventId event_id) {
+  JfrEventSampler* sampler = JfrEventSampler::for_event(event_id);
+  // a sampler instance may not be yet registered for the event - in that case assume all events are passing through
+  return sampler != NULL ? sampler->should_sample() : true;
+}

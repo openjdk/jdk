@@ -59,6 +59,7 @@ public final class PlatformEventType extends Type {
     private boolean hasDuration = true;
     private boolean hasPeriod = true;
     private boolean hasCutoff = false;
+    private boolean hasRateLimit = false;
     private boolean isInstrumented;
     private boolean markForInstrumentation;
     private boolean registered = true;
@@ -142,10 +143,20 @@ public final class PlatformEventType extends Type {
        this.hasCutoff = hasCutoff;
     }
 
+    public void setHasRateLimit(boolean hasRateLimit) {
+        this.hasRateLimit = hasRateLimit;
+    }
+
     public void setCutoff(long cutoffNanos) {
         if (isJVM) {
             long cutoffTicks = Utils.nanosToTicks(cutoffNanos);
             JVM.getJVM().setCutoff(getId(), cutoffTicks);
+        }
+    }
+
+    public void setRateLimit(long rateLimitHz) {
+        if (isJVM) {
+            JVM.getJVM().setRateLimit(getId(), rateLimitHz);
         }
     }
 
@@ -167,6 +178,10 @@ public final class PlatformEventType extends Type {
 
     public boolean hasCutoff() {
         return this.hasCutoff;
+    }
+
+    public boolean hasRateLimit() {
+        return this.hasRateLimit;
     }
 
     public boolean isEnabled() {

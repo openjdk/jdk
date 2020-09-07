@@ -175,6 +175,10 @@ NO_TRANSITION(jboolean, jfr_set_cutoff(JNIEnv* env, jobject jvm, jlong event_typ
   return JfrEventSetting::set_cutoff(event_type_id, cutoff_ticks) ? JNI_TRUE : JNI_FALSE;
 NO_TRANSITION_END
 
+NO_TRANSITION(jboolean, jfr_set_ratelimit(JNIEnv* env, jobject jvm, jlong event_type_id, jlong rate_limit_hz))
+  return JfrEventSetting::set_ratelimit(event_type_id, rate_limit_hz) ? JNI_TRUE : JNI_FALSE;
+NO_TRANSITION_END
+
 NO_TRANSITION(jboolean, jfr_should_rotate_disk(JNIEnv* env, jobject jvm))
   return JfrChunkRotation::should_rotate() ? JNI_TRUE : JNI_FALSE;
 NO_TRANSITION_END

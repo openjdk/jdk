@@ -132,6 +132,8 @@ jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jobject jvm);
 
 jboolean JNICALL jfr_set_cutoff(JNIEnv* env, jobject jvm, jlong event_type_id, jlong cutoff_ticks);
 
+jboolean JNICALL jfr_set_ratelimit(JNIEnv* env, jobject jvm, jlong event_type_id, jlong rate_limit_hz);
+
 void JNICALL jfr_emit_old_object_samples(JNIEnv* env, jobject jvm, jlong cutoff_ticks, jboolean, jboolean);
 
 jboolean JNICALL jfr_should_rotate_disk(JNIEnv* env, jobject jvm);

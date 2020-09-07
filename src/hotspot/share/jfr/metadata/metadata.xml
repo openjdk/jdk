@@ -614,6 +614,14 @@
     <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
   </Event>
 
+  <Event name="ObjectAllocationSample" category="Java Application" label="Allocation sample" description="Allocation sample"
+    thread="true" stackTrace="true" startTime="false" rateLimit="true">
+    <Field type="Class" name="objectClass" label="Object Class" description="Class of allocated object" />
+    <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
+    <Field type="ulong" contentType="bytes" name="allocatedSinceLast" label="Allocated since last sample"/>
+    <Field type="ulong" name="skippedEvents" label="Number of events skipped since last sample"/>
+  </Event>
+
   <Event name="OldObjectSample" category="Java Virtual Machine, Profiling" label="Old Object Sample" description="A potential memory leak" stackTrace="true" thread="true"
     startTime="false" cutoff="true">
     <Field type="Ticks" name="allocationTime" label="Allocation Time" />

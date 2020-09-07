@@ -76,6 +76,7 @@ public final class MetadataRepository {
                 pEventType.setHasDuration(eventType.getAnnotation(Threshold.class) != null);
                 pEventType.setHasStackTrace(eventType.getAnnotation(StackTrace.class) != null);
                 pEventType.setHasCutoff(eventType.getAnnotation(Cutoff.class) != null);
+                pEventType.setHasRateLimit(eventType.getAnnotation(RateLimit.class) != null);
                 pEventType.setHasPeriod(eventType.getAnnotation(Period.class) != null);
                 // Must add hook before EventControl is created as it removes
                 // annotations, such as Period and Threshold.

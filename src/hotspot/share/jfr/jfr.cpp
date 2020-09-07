@@ -28,9 +28,11 @@
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
+#include "jfr/recorder/service/jfrEventSampler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "gc/shared/allocTracer.hpp"
 #include "runtime/java.hpp"
 #include "runtime/thread.hpp"
 
@@ -50,6 +52,7 @@ void Jfr::on_create_vm_1() {
   if (!JfrRecorder::on_create_vm_1()) {
     vm_exit_during_initialization("Failure when starting JFR on_create_vm_1");
   }
+  JfrEventSampler::initialize();
 }
 
 void Jfr::on_create_vm_2() {

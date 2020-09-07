@@ -24,13 +24,35 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/allocTracer.hpp"
-#include "jfr/jfrEvents.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrAllocationTracer.hpp"
 #endif
+
+namespace {
+  static THREAD_LOCAL size_t _skipped_allocations = 0;
+  static THREAD_LOCAL size_t _skipped_events = 0;
+
+  static void send_allocation_sample(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, Thread* thread) {
+    EventObjectAllocationSample event;
+    if (event.should_commit()) {
+      event.set_objectClass(klass);
+      event.set_allocationSize(alloc_size);
+      event.set_allocatedSinceLast(_skipped_allocations + tlab_size + alloc_size);
+      event.set_skippedEvents(_skipped_events);
+      event.commit();
+      _skipped_allocations = 0;
+      _skipped_events = 0;
+    } else {
+      _skipped_events++;
+      _skipped_allocations += (tlab_size + alloc_size);
+    }
+  }
+}
 
 void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size_t alloc_size, Thread* thread) {
   JFR_ONLY(JfrAllocationTracer tracer(obj, alloc_size, thread);)
@@ -40,6 +62,7 @@ void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size
     event.set_allocationSize(alloc_size);
     event.commit();
   }
+  send_allocation_sample(klass, obj, 0, alloc_size, thread);
 }
 
 void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, Thread* thread) {
@@ -51,6 +74,7 @@ void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_
     event.set_tlabSize(tlab_size);
     event.commit();
   }
+  send_allocation_sample(klass, obj, tlab_size, alloc_size, thread);
 }
 
 void AllocTracer::send_allocation_requiring_gc_event(size_t size, uint gcId) {

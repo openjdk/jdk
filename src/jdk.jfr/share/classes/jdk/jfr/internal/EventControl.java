@@ -48,6 +48,7 @@ import jdk.jfr.internal.EventInstrumentation.SettingInfo;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
+import jdk.jfr.internal.settings.RateLimitSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 
@@ -69,6 +70,7 @@ public final class EventControl {
     private static final Type TYPE_STACK_TRACE = TypeLibrary.createType(StackTraceSetting.class);
     private static final Type TYPE_PERIOD = TypeLibrary.createType(PeriodSetting.class);
     private static final Type TYPE_CUTOFF = TypeLibrary.createType(CutoffSetting.class);
+    private static final Type TYPE_RATELIMIT = TypeLibrary.createType(RateLimitSetting.class);
 
     private final ArrayList<SettingInfo> settingInfos = new ArrayList<>();
     private final ArrayList<NamedControl> namedControls = new ArrayList<>(5);
@@ -89,6 +91,9 @@ public final class EventControl {
         if (eventType.hasCutoff()) {
             addControl(Cutoff.NAME, defineCutoff(eventType));
         }
+        if (eventType.hasRateLimit()) {
+            addControl(RateLimit.NAME, defineRateLimit(eventType));
+        }
 
         ArrayList<AnnotationElement> aes = new ArrayList<>(eventType.getAnnotationElements());
         remove(eventType, aes, Threshold.class);
@@ -96,6 +101,7 @@ public final class EventControl {
         remove(eventType, aes, Enabled.class);
         remove(eventType, aes, StackTrace.class);
         remove(eventType, aes, Cutoff.class);
+        remove(eventType, aes, RateLimit.class);
         aes.trimToSize();
         eventType.setAnnotations(aes);
         this.type = eventType;
@@ -252,6 +258,15 @@ public final class EventControl {
         return new Control(new CutoffSetting(type), def);
     }
 
+    private static Control defineRateLimit(PlatformEventType type) {
+        RateLimit limit = type.getAnnotation(RateLimit.class);
+        String def = RateLimit.DEFAULT;
+        if (limit != null) {
+            def = limit.value();
+        }
+        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_RATELIMIT, RateLimit.NAME, def, Collections.emptyList()));
+        return new Control(new RateLimitSetting(type), def);
+    }
 
     private static Control definePeriod(PlatformEventType type) {
         Period period = type.getAnnotation(Period.class);

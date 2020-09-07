@@ -57,6 +57,12 @@ class JfrEventVerifier {
 };
 #endif // ASSERT
 
+// TODO: Got weird linker errors when trying to invoke JfrEventSampler::for_event() directly from this header file - so had to use this split access pattern
+class JfrEventSamplerAccess : public AllStatic {
+  public:
+  static bool is_sampled(JfrEventId event_id);
+};
+
 template <typename T>
 class JfrEvent {
  private:
@@ -71,7 +77,11 @@ class JfrEvent {
 #endif
   {
     if (T::is_enabled()) {
-      _started = true;
+      if (T::hasRateLimit) {
+        _started = JfrEventSamplerAccess::is_sampled(T::eventId);;
+      } else {
+        _started = true;
+      }
       if (TIMED == timing && !T::isInstant) {
         set_starttime(JfrTicks::now());
       }

@@ -172,6 +172,7 @@ public class GenerateJfrFiles {
         boolean startTime;
         String period = "";
         boolean cutoff;
+        boolean rateLimit;
         boolean experimental;
         long id;
         boolean isEvent;
@@ -194,6 +195,7 @@ public class GenerateJfrFiles {
             pos.writeBoolean(startTime);
             pos.writeUTF(period);
             pos.writeBoolean(cutoff);
+            pos.writeBoolean(rateLimit);
             pos.writeBoolean(experimental);
             pos.writeLong(id);
             pos.writeBoolean(isEvent);
@@ -490,6 +492,7 @@ public class GenerateJfrFiles {
                 currentType.startTime = getBoolean(attributes, "startTime", true);
                 currentType.period = getString(attributes, "period");
                 currentType.cutoff = getBoolean(attributes, "cutoff", false);
+                currentType.rateLimit = getBoolean(attributes, "rateLimit", false);
                 currentType.commitState = getString(attributes, "commitState");
                 currentType.isEvent = "Event".equals(qName);
                 currentType.isRelation = "Relation".equals(qName);
@@ -613,6 +616,7 @@ public class GenerateJfrFiles {
             out.write("struct jfrNativeEventSetting {");
             out.write("  jlong  threshold_ticks;");
             out.write("  jlong  cutoff_ticks;");
+            out.write("  jlong  ratelimit_hz;");
             out.write("  u1     stacktrace;");
             out.write("  u1     enabled;");
             out.write("  u1     large;");
@@ -820,6 +824,7 @@ public class GenerateJfrFiles {
             out.write("  static const bool hasStackTrace = " + event.stackTrace + ";");
             out.write("  static const bool isInstant = " + !event.startTime + ";");
             out.write("  static const bool hasCutoff = " + event.cutoff + ";");
+            out.write("  static const bool hasRateLimit = " + event.rateLimit + ";");
             out.write("  static const bool isRequestable = " + !event.period.isEmpty() + ";");
             out.write("  static const JfrEventId eventId = Jfr" + event.name + "Event;");
             out.write("");

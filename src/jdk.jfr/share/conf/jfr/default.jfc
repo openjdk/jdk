@@ -614,6 +614,12 @@
       <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.ObjectAllocationSample">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="rateLimit">200</setting>
+    </event>
+
     <event name="jdk.NativeLibrary">
       <setting name="enabled">true</setting>
       <setting name="period">everyChunk</setting>
