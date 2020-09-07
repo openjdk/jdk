@@ -128,9 +128,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 
   LogTarget(Trace, nmethod, barrier) out;
   if (out.is_enabled()) {
-    Thread* thread = Thread::current();
-    assert(thread->is_Java_thread(), "must be JavaThread");
-    JavaThread* jth = (JavaThread*) thread;
+    JavaThread* jth = JavaThread::current();
     ResourceMark mark;
     log_trace(nmethod, barrier)("deoptimize(nmethod: %p, return_addr: %p, osr: %d, thread: %p(%s), making rsp: %p) -> %p",
                                nm, (address *) return_address_ptr, nm->is_osr_method(), jth,

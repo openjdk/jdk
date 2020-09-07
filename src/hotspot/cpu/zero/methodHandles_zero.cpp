@@ -38,7 +38,7 @@
 
 void MethodHandles::invoke_target(Method* method, TRAPS) {
 
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   ZeroStack *stack = thread->zero_stack();
   InterpreterFrame *frame = thread->top_zero_frame()->as_interpreter_frame();
   interpreterState istate = frame->interpreter_state();
@@ -55,7 +55,7 @@ void MethodHandles::invoke_target(Method* method, TRAPS) {
 
 oop MethodHandles::popFromStack(TRAPS) {
 
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   InterpreterFrame *frame = thread->top_zero_frame()->as_interpreter_frame();
   interpreterState istate = frame->interpreter_state();
   intptr_t* topOfStack = istate->stack();
@@ -70,7 +70,7 @@ oop MethodHandles::popFromStack(TRAPS) {
 
 void MethodHandles::throw_AME(Klass* rcvr, Method* interface_method, TRAPS) {
 
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   // Set up the frame anchor if it isn't already
   bool has_last_Java_frame = thread->has_last_Java_frame();
   if (!has_last_Java_frame) {
@@ -101,7 +101,7 @@ void MethodHandles::throw_AME(Klass* rcvr, Method* interface_method, TRAPS) {
 
 int MethodHandles::method_handle_entry_invokeBasic(Method* method, intptr_t UNUSED, TRAPS) {
 
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   InterpreterFrame *frame = thread->top_zero_frame()->as_interpreter_frame();
   interpreterState istate = frame->interpreter_state();
   intptr_t* topOfStack = istate->stack();
@@ -132,7 +132,7 @@ int MethodHandles::method_handle_entry_linkToStaticOrSpecial(Method* method, int
 }
 
 int MethodHandles::method_handle_entry_linkToInterface(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   InterpreterFrame *frame = thread->top_zero_frame()->as_interpreter_frame();
   interpreterState istate = frame->interpreter_state();
 
@@ -172,7 +172,7 @@ int MethodHandles::method_handle_entry_linkToInterface(Method* method, intptr_t 
 }
 
 int MethodHandles::method_handle_entry_linkToVirtual(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
 
   InterpreterFrame *frame = thread->top_zero_frame()->as_interpreter_frame();
   interpreterState istate = frame->interpreter_state();

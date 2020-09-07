@@ -41,6 +41,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
 
 
@@ -48,9 +49,9 @@
 static bool must_be_in_vm() {
   Thread* thread = Thread::current();
   if (thread->is_Java_thread())
-    return ((JavaThread*)thread)->thread_state() == _thread_in_vm;
+    return thread->as_Java_thread()->thread_state() == _thread_in_vm;
   else
-    return true;  //something like this: thread->is_VM_thread();
+    return thread->is_VM_thread();
 }
 #endif //ASSERT
 

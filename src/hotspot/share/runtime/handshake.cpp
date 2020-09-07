@@ -141,7 +141,7 @@ class HandshakeSpinYield : public StackObj {
       // On UP this is always true.
       Thread* self = Thread::current();
       if (self->is_Java_thread()) {
-        wait_blocked((JavaThread*)self, now);
+        wait_blocked(self->as_Java_thread(), now);
       } else {
         wait_raw(now);
       }
@@ -393,7 +393,6 @@ void HandshakeState::set_operation(HandshakeOperation* op) {
     assert(Thread::current()->is_VM_thread(), "should be the VMThread");
     _operation = op;
   } else {
-    assert(Thread::current()->is_Java_thread(), "should be a JavaThread");
     // Serialize direct handshakes so that only one proceeds at a time for a given target
     _handshake_turn_sem.wait_with_safepoint_check(JavaThread::current());
     _operation_direct = op;

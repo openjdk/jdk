@@ -98,6 +98,8 @@ DEBUG_ONLY(class ResourceMark;)
 
 class WorkerThread;
 
+class JavaThread;
+
 // Class hierarchy
 // - Thread
 //   - JavaThread
@@ -501,6 +503,14 @@ class Thread: public ThreadShadow {
 
   // Casts
   virtual WorkerThread* as_Worker_thread() const     { return NULL; }
+  JavaThread* as_Java_thread() {
+    assert(is_Java_thread(), "incorrect cast to JavaThread");
+    return (JavaThread*)this;
+  }
+  JavaThread * as_const_Java_thread() const {
+    assert(is_Java_thread(), "incorrect cast to JavaThread");
+    return (JavaThread*)this;
+  }
 
   virtual char* name() const { return (char*)"Unknown thread"; }
 
@@ -2110,9 +2120,7 @@ public:
 
 // Inline implementation of JavaThread::current
 inline JavaThread* JavaThread::current() {
-  Thread* thread = Thread::current();
-  assert(thread->is_Java_thread(), "just checking");
-  return (JavaThread*)thread;
+  return Thread::current()->as_Java_thread();
 }
 
 inline CompilerThread* JavaThread::as_CompilerThread() {

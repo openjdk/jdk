@@ -31,10 +31,7 @@
 JfrEpochSynchronization::JfrEpochSynchronization() {
   if (JfrTraceIdEpoch::is_synchronizing()) {
     // only at a safepoint
-    Thread* thread = Thread::current();
-    assert(thread != NULL, "invariant");
-    assert(thread->is_Java_thread(), "invariant");
-    JavaThread* const jt = (JavaThread*)thread;
+    JavaThread* const jt = JavaThread::current();
     assert(jt->thread_state() == _thread_in_native, "invariant");
     // use ordinary transition to have the thread block and await the new epoch
     ThreadInVMfromNative transition(jt);

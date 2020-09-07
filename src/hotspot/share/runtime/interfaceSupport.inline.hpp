@@ -75,7 +75,7 @@ class ThreadStateTransition : public StackObj {
  public:
   ThreadStateTransition(JavaThread *thread) {
     _thread = thread;
-    assert(thread != NULL && thread->is_Java_thread(), "must be Java thread");
+    assert(thread != NULL, "must be active Java thread");
   }
 
   // Change threadstate in a manner, so safepoint can detect changes.
@@ -186,7 +186,7 @@ class ThreadInVMfromUnknown {
   ThreadInVMfromUnknown() : _thread(NULL) {
     Thread* t = Thread::current();
     if (t->is_Java_thread()) {
-      JavaThread* t2 = (JavaThread*) t;
+      JavaThread* t2 = t->as_Java_thread();
       if (t2->thread_state() == _thread_in_native) {
         _thread = t2;
         ThreadStateTransition::transition_from_native(t2, _thread_in_vm);

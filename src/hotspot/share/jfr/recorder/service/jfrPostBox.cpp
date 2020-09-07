@@ -62,7 +62,7 @@ JfrPostBox::JfrPostBox() :
 
 static bool is_thread_lock_aversive() {
   Thread* const thread = Thread::current();
-  return (thread->is_Java_thread() && ((JavaThread*)thread)->thread_state() != _thread_in_vm) || thread->is_VM_thread();
+  return (thread->is_Java_thread() && thread->as_Java_thread()->thread_state() != _thread_in_vm) || thread->is_VM_thread();
 }
 
 static bool is_synchronous(int messages) {
