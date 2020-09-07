@@ -31,15 +31,19 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1Trace.hpp"
+#include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            G1RedirtyCardsQueueSet* rdcqs,
                                            uint worker_id,
+                                           uint n_workers,
                                            size_t young_cset_length,
                                            size_t optional_cset_length)
   : _g1h(g1h),
@@ -60,8 +64,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _surviving_young_words(NULL),
     _surviving_words_length(young_cset_length + 1),
     _old_gen_is_full(false),
-    _objarray_scan_chunk_size(ParGCArrayScanChunk),
-    _objarray_length_offset_in_bytes(arrayOopDesc::length_offset_in_bytes()),
+    _partial_objarray_chunk_size(ParGCArrayScanChunk),
+    _partial_array_stepper(n_workers),
     _num_optional_regions(optional_cset_length),
     _numa(g1h->numa()),
     _obj_alloc_stat(NULL)
@@ -208,33 +212,27 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
   assert(to_obj->is_objArray(), "must be obj array");
   objArrayOop to_array = objArrayOop(to_obj);
 
-  // The next chunk index is in the length field of the to-space object.
-  // Atomically increment by the chunk size to claim the associated chunk.
-  char* to_addr = cast_from_oop<char*>(to_array);
-  char* length_addr_raw = (to_addr + _objarray_length_offset_in_bytes);
-  volatile int* length_addr = reinterpret_cast<int*>(length_addr_raw);
-  int end = Atomic::add(length_addr, _objarray_scan_chunk_size, memory_order_relaxed);
-#ifdef ASSERT
-  // The from-space object contains the real length.
-  int length = objArrayOop(from_obj)->length();
-  assert(end <= length, "invariant: end %d, length %d", end, length);
-  assert(((length - end) % _objarray_scan_chunk_size) == 0,
-         "invariant: end %d, length %d, chunk size %d",
-         end, length, _objarray_scan_chunk_size);
-#endif // ASSERT
+  PartialArrayTaskStepper::Step step
+    = _partial_array_stepper.next(objArrayOop(from_obj),
+                                  to_array,
+                                  _partial_objarray_chunk_size);
+  for (uint i = 0; i < step._ncreate; ++i) {
+    push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
+  }
 
   HeapRegion* hr = _g1h->heap_region_containing(to_array);
   G1ScanInYoungSetter x(&_scanner, hr->is_young());
-  // Process claimed chunk.  Note that the length field of
-  // to_obj_array is not correct.  Fortunately, the iteration ignores
-  // the length and just relies on start / end.  However, it does
-  // return the (incorrect) length, but we ignore it.
-  to_array->oop_iterate_range(&_scanner, end - _objarray_scan_chunk_size, end);
+  // Process claimed task.  The length of to_array is not correct, but
+  // fortunately the iteration ignores the length field and just relies
+  // on start/end.
+  to_array->oop_iterate_range(&_scanner,
+                              step._index,
+                              step._index + _partial_objarray_chunk_size);
 }
 
-oop G1ParScanThreadState::start_partial_objArray(G1HeapRegionAttr dest_attr,
-                                                 oop from_obj,
-                                                 oop to_obj) {
+void G1ParScanThreadState::start_partial_objArray(G1HeapRegionAttr dest_attr,
+                                                  oop from_obj,
+                                                  oop to_obj) {
   assert(from_obj->is_objArray(), "precondition");
   assert(from_obj->is_forwarded(), "precondition");
   assert(from_obj->forwardee() == to_obj, "precondition");
@@ -243,34 +241,23 @@ oop G1ParScanThreadState::start_partial_objArray(G1HeapRegionAttr dest_attr,
 
   objArrayOop to_array = objArrayOop(to_obj);
 
-  int length = objArrayOop(from_obj)->length();
-  int chunks = length / _objarray_scan_chunk_size;
-  int end = length % _objarray_scan_chunk_size;
-  assert(end <= length, "invariant");
-  assert(((length - end) % _objarray_scan_chunk_size) == 0, "invariant");
-  // The value of end can be 0, either because of a 0-length array or
-  // because length is a multiple of the chunk size.  Both of those
-  // are rare and handled in the normal course of the iteration, so
-  // not worth doing anything special about here.
+  PartialArrayTaskStepper::Step step
+    = _partial_array_stepper.start(objArrayOop(from_obj),
+                                   to_array,
+                                   _partial_objarray_chunk_size);
 
-  // Set to's length to end of initial chunk.  Partial tasks use that
-  // length field as the start of the next chunk to process.  Must be
-  // done before enqueuing partial scan tasks, in case other threads
-  // steal any of those tasks.
-  to_array->set_length(end);
-  // Push partial scan tasks for all but the initial chunk.  Pushed
-  // before processing the initial chunk to allow other workers to
-  // steal while we're processing.
-  for (int i = 0; i < chunks; ++i) {
+  // Push any needed partial scan tasks.  Pushed before processing the
+  // intitial chunk to allow other workers to steal while we're processing.
+  for (uint i = 0; i < step._ncreate; ++i) {
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
+
   G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module. The length of to_array is not correct, but fortunately
   // the iteration ignores that length field and relies on start/end.
-  to_array->oop_iterate_range(&_scanner, 0, end);
-  return to_array;
+  to_array->oop_iterate_range(&_scanner, 0, step._index);
 }
 
 void G1ParScanThreadState::dispatch_task(ScannerTask task) {
@@ -494,19 +481,18 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       obj->set_mark_raw(old_mark);
     }
 
-    // Most objects are not arrays, so do one array check rather than both
-    // typeArray and objArray checks for each object.
+    // Most objects are not arrays, so do one array check rather than
+    // checking for each array category for each object.
     if (klass->is_array_klass()) {
-      if (klass->is_typeArray_klass()) {
+      if (klass->is_objArray_klass()) {
+        start_partial_objArray(dest_attr, old, obj);
+      } else {
         // Nothing needs to be done for typeArrays.  Body doesn't contain
         // any oops to scan, and the type in the klass will already be handled
         // by processing the built-in module.
-        return obj;
-      } else if (klass->is_objArray_klass()) {
-        // Do special handling for objArray.
-        return start_partial_objArray(dest_attr, old, obj);
+        assert(klass->is_typeArray_klass(), "invariant");
       }
-      // Not a special array, so fall through to generic handling.
+      return obj;
     }
 
     if (G1StringDedup::is_enabled() && (klass == SystemDictionary::String_klass())) {
@@ -544,7 +530,9 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
   assert(worker_id < _n_workers, "out of bounds access");
   if (_states[worker_id] == NULL) {
     _states[worker_id] =
-      new G1ParScanThreadState(_g1h, _rdcqs, worker_id, _young_cset_length, _optional_cset_length);
+      new G1ParScanThreadState(_g1h, _rdcqs,
+                               worker_id, _n_workers,
+                               _young_cset_length, _optional_cset_length);
   }
   return _states[worker_id];
 }

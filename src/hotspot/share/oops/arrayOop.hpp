@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,12 +104,19 @@ class arrayOopDesc : public oopDesc {
 
   // Accessors for instance variable which is not a C++ declared nonstatic
   // field.
-  int length() const {
-    return *(int*)(((intptr_t)this) + length_offset_in_bytes());
+  int length() const { return *length_addr(); }
+  void set_length(int length) { *length_addr() = length; }
+
+  int* length_addr() {
+    char* base = reinterpret_cast<char*>(this);
+    char* addr = base +  length_offset_in_bytes();
+    return reinterpret_cast<int*>(addr);
   }
-  void set_length(int length) {
-    set_length((HeapWord*)this, length);
+
+  const int* length_addr() const {
+    return const_cast<arrayOopDesc*>(this)->length_addr();
   }
+
   static void set_length(HeapWord* mem, int length) {
     *(int*)(((char*)mem) + length_offset_in_bytes()) = length;
   }
