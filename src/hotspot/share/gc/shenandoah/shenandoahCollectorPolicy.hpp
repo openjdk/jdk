@@ -27,7 +27,6 @@
 
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahTracer.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
 
