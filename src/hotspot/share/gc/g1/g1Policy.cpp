@@ -910,15 +910,10 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
   // that in this case we are not running in a "normal" operating mode.
   if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
-    // IHOP control wants to know the expected young gen length if it were not
-    // restrained by the heap reserve. Using the actual length would make the
-    // prediction too small and the limit the young gen every time we get to the
-    // predicted target occupancy.
-    size_t last_unrestrained_young_length = update_young_list_max_and_target_length();
+    update_young_length_bounds();
 
     _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * HeapRegion::GrainBytes);
     update_ihop_prediction(app_time_ms / 1000.0,
-                           last_unrestrained_young_length * HeapRegion::GrainBytes,
                            is_young_only_pause(this_pause));
 
     _ihop_control->send_trace_event(_g1h->gc_tracer_stw());
@@ -969,7 +964,6 @@ G1IHOPControl* G1Policy::create_ihop_control(const G1OldGenAllocationTracker* ol
 }
 
 void G1Policy::update_ihop_prediction(double mutator_time_s,
-                                      size_t young_gen_size,
                                       bool this_gc_was_young_only) {
   // Always try to update IHOP prediction. Even evacuation failures give information
   // about e.g. whether to start IHOP earlier next time.
@@ -997,6 +991,11 @@ void G1Policy::update_ihop_prediction(double mutator_time_s,
   // marking, which makes any prediction useless. This increases the accuracy of the
   // prediction.
   if (this_gc_was_young_only && mutator_time_s > min_valid_time) {
+    // IHOP control wants to know the expected young gen length if it were not
+    // restrained by the heap reserve. Using the actual length would make the
+    // prediction too small and the limit the young gen every time we get to the
+    // predicted target occupancy.
+    size_t young_gen_size = young_list_desired_length() * HeapRegion::GrainBytes;
     _ihop_control->update_allocation_info(mutator_time_s, young_gen_size);
     report = true;
   }

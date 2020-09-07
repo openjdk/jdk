@@ -60,7 +60,6 @@ class G1Policy: public CHeapObj<mtGC> {
                                             const G1Predictions* predictor);
   // Update the IHOP control with necessary statistics.
   void update_ihop_prediction(double mutator_time_s,
-                              size_t young_gen_size,
                               bool this_gc_was_young_only);
   void report_ihop_statistics();
 
