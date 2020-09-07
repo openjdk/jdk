@@ -42,6 +42,9 @@ import java.util.List;
 
 public class RequestProperties {
 
+    private static final Class NPE = NullPointerException.class;
+    private static final Class ISE = IllegalStateException.class;
+
     @DataProvider(name = "urls")
     private Object[][] urls() {
         final List<String> urls = new ArrayList<>();
@@ -66,14 +69,7 @@ public class RequestProperties {
     @Test(dataProvider = "urls")
     public void testSetRequestPropertyNullPointerException(final String url) throws Exception {
         final URLConnection conn = new URL(url).openConnection();
-        try {
-            conn.setRequestProperty(null, "bar");
-            Assert.fail("setRequestProperty on " + conn.getClass().getName()
-                    + " for " + conn.getURL() + " was expected to throw"
-                    + " NullPointerException, but didn't");
-        } catch (NullPointerException npe) {
-            // expected
-        }
+        Assert.assertThrows(NPE, () -> conn.setRequestProperty(null, "bar"));
         // expected to pass
         conn.setRequestProperty("key", null);
     }
@@ -85,14 +81,7 @@ public class RequestProperties {
     @Test(dataProvider = "urls")
     public void testAddRequestPropertyNullPointerException(final String url) throws Exception {
         final URLConnection conn = new URL(url).openConnection();
-        try {
-            conn.addRequestProperty(null, "hello");
-            Assert.fail("addRequestProperty on " + conn.getClass().getName()
-                    + " for " + conn.getURL() + " was expected to throw"
-                    + " NullPointerException, but didn't");
-        } catch (NullPointerException npe) {
-            // expected
-        }
+        Assert.assertThrows(NPE, () -> conn.addRequestProperty(null, "hello"));
         // expected to pass
         conn.addRequestProperty("key", null);
     }
@@ -116,12 +105,7 @@ public class RequestProperties {
     public void testSetRequestPropertyIllegalStateException() throws Exception {
         final URLConnection conn = createAndConnectURLConnection();
         try {
-            conn.setRequestProperty("foo", "bar");
-            Assert.fail("setRequestProperty on " + conn.getClass().getName()
-                    + " for " + conn.getURL() + " was expected to throw"
-                    + " IllegalStateException, but didn't");
-        } catch (IllegalStateException ise) {
-            // expected
+            Assert.assertThrows(ISE, () -> conn.setRequestProperty("foo", "bar"));
         } finally {
             safeClose(conn);
         }
@@ -135,12 +119,7 @@ public class RequestProperties {
     public void testAddRequestPropertyIllegalStateException() throws Exception {
         final URLConnection conn = createAndConnectURLConnection();
         try {
-            conn.addRequestProperty("foo", "bar");
-            Assert.fail("addRequestProperty on " + conn.getClass().getName()
-                    + " for " + conn.getURL() + " was expected to throw"
-                    + " IllegalStateException, but didn't");
-        } catch (IllegalStateException ise) {
-            // expected
+            Assert.assertThrows(ISE, () -> conn.addRequestProperty("foo", "bar"));
         } finally {
             safeClose(conn);
         }
@@ -154,12 +133,7 @@ public class RequestProperties {
     public void testGetRequestPropertyIllegalStateException() throws Exception {
         final URLConnection conn = createAndConnectURLConnection();
         try {
-            conn.getRequestProperty("hello");
-            Assert.fail("getRequestProperty on " + conn.getClass().getName()
-                    + " for " + conn.getURL() + " was expected to throw"
-                    + " IllegalStateException, but didn't");
-        } catch (IllegalStateException ise) {
-            // expected
+            Assert.assertThrows(ISE, () -> conn.getRequestProperty("hello"));
         } finally {
             safeClose(conn);
         }
@@ -173,12 +147,7 @@ public class RequestProperties {
     public void testGetRequestPropertiesIllegalStateException() throws Exception {
         final URLConnection conn = createAndConnectURLConnection();
         try {
-            conn.getRequestProperties();
-            Assert.fail("getRequestProperties on " + conn.getClass().getName()
-                    + " for " + conn.getURL() + " was expected to throw"
-                    + " IllegalStateException, but didn't");
-        } catch (IllegalStateException ise) {
-            // expected
+            Assert.assertThrows(ISE, () -> conn.getRequestProperties());
         } finally {
             safeClose(conn);
         }
