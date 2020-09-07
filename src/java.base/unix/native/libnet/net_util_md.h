@@ -29,6 +29,8 @@
 #include <netdb.h>
 #include <poll.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/un.h>
 
 /************************************************************************
  * Macros and constants
@@ -69,6 +71,7 @@ typedef union {
     struct sockaddr     sa;
     struct sockaddr_in  sa4;
     struct sockaddr_in6 sa6;
+    struct sockaddr_un  saun;
 } SOCKETADDRESS;
 
 /************************************************************************

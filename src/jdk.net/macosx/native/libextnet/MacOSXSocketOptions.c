@@ -23,6 +23,7 @@
  * questions.
  */
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -122,6 +123,23 @@ JNIEXPORT jint JNICALL Java_jdk_net_MacOSXSocketOptions_getTcpkeepAliveProbes0
     handleError(env, rv, "get option TCP_KEEPCNT failed");
     return optval;
 }
+
+/*
+ * Class:     jdk_net_MacOSXSocketOptions
+ * Method:    getSoPeerCred0
+ * Signature: (I[I)I
+ */
+JNIEXPORT void JNICALL Java_jdk_net_MacOSXSocketOptions_getSoPeerCred0
+  (JNIEnv *env, jclass clazz, jint fd, jintArray result) {
+
+    int *rr = (int *)(*env)->GetIntArrayElements(env, result, NULL);
+
+    jint rv;
+    rv = getpeereid(fd, (uid_t *)&rr[0], (gid_t *)&rr[1]);
+    (*env)->ReleaseIntArrayElements(env, result, rr, 0);
+    handleError(env, rv, "get peer eid failed");
+}
+
 
 /*
  * Class:     jdk_net_MacOSXSocketOptions

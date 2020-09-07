@@ -170,8 +170,8 @@ public class StateTest {
         /*
          * Launch service with a SocketChannel (tcp nowait)
          */
-        System.err.println("launchWithSocketChannel");
-        SocketChannel sc = Launcher.launchWithSocketChannel(TEST_SERVICE, options, arg);
+        System.err.println("launchWithInetSocketChannel");
+        SocketChannel sc = Launcher.launchWithInetSocketChannel(TEST_SERVICE, options, arg);
         System.err.println("Waiting for test results");
         waitForTestResult(ssc, expectFail);
         sc.close();
@@ -181,8 +181,8 @@ public class StateTest {
          * launchWithServerSocketChannel establishes a connection to the service
          * and the returned SocketChannel is connected to the service.
          */
-        System.err.println("launchWithServerSocketChannel");
-        sc = Launcher.launchWithServerSocketChannel(TEST_SERVICE, options, arg);
+        System.err.println("launchWithInetServerSocketChannel");
+        sc = Launcher.launchWithInetServerSocketChannel(TEST_SERVICE, options, arg);
         waitForTestResult(ssc, expectFail);
         sc.close();
 

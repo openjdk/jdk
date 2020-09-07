@@ -66,6 +66,16 @@ import java.util.StringTokenizer;
  *   </tr>
  *
  * <tr>
+ *   <th scope="row">accessUnixDomainSocket</th>
+ *   <td>The ability to accept, bind, connect or get the local address
+ *   of a <i>Unix Domain</i> socket.
+ *   </td>
+ *   <td>Malicious code could connect to local processes using Unix domain sockets
+ *    or impersonate local processes, by binding to the same pathnames (assuming they
+ *    have the required Operating System permissions.</td>
+ * </tr>
+ *
+ * <tr>
  *   <th scope="row">getCookieHandler</th>
  *   <td>The ability to get the cookie handler that processes highly
  *   security sensitive cookie information for an Http session.</td>

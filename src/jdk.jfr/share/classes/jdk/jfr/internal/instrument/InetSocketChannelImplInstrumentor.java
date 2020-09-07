@@ -27,21 +27,19 @@ package jdk.jfr.internal.instrument;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-
 import jdk.jfr.events.Handlers;
 import jdk.jfr.internal.handlers.EventHandler;
 
 /**
  * See {@link JITracer} for an explanation of this code.
  */
-@JIInstrumentationTarget("sun.nio.ch.SocketChannelImpl")
-final class SocketChannelImplInstrumentor {
+@JIInstrumentationTarget("sun.nio.ch.InetSocketChannelImpl")
+final class InetSocketChannelImplInstrumentor {
 
-    private SocketChannelImplInstrumentor() {
+    private InetSocketChannelImplInstrumentor() {
     }
-
-    private InetSocketAddress remoteAddress;
 
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
@@ -50,6 +48,7 @@ final class SocketChannelImplInstrumentor {
         if (!handler.isEnabled()) {
             return read(dst);
         }
+        InetSocketAddress remoteAddress = (InetSocketAddress)getRemoteAddress();
         int bytesRead = 0;
         long start  = 0;
         try {
@@ -81,6 +80,7 @@ final class SocketChannelImplInstrumentor {
         if (!handler.isEnabled()) {
             return read(dsts, offset, length);
         }
+        InetSocketAddress remoteAddress = (InetSocketAddress)getRemoteAddress();
 
         long bytesRead = 0;
         long start = 0;
@@ -113,6 +113,7 @@ final class SocketChannelImplInstrumentor {
         if (!handler.isEnabled()) {
             return write(buf);
         }
+        InetSocketAddress remoteAddress = (InetSocketAddress)getRemoteAddress();
         int bytesWritten = 0;
         long start = 0;
         try {
@@ -134,6 +135,11 @@ final class SocketChannelImplInstrumentor {
         return bytesWritten;
     }
 
+    public SocketAddress getRemoteAddress() throws IOException {
+        // gets replaced by call to instrumented class
+        return null;
+    }
+
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
@@ -141,6 +147,7 @@ final class SocketChannelImplInstrumentor {
         if (!handler.isEnabled()) {
             return write(srcs, offset, length);
         }
+        InetSocketAddress remoteAddress = (InetSocketAddress)getRemoteAddress();
         long bytesWritten = 0;
         long start = 0;
         try {

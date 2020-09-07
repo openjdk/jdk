@@ -265,6 +265,8 @@ module java.base {
         jdk.incubator.foreign;
     exports sun.nio.cs to
         jdk.charsets;
+    exports sun.nio.fs to
+        jdk.net;
     exports sun.reflect.annotation to
         jdk.compiler;
     exports sun.reflect.generics.reflectiveObjects to

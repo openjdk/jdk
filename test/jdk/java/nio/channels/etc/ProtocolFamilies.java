@@ -39,6 +39,7 @@ import static java.lang.Boolean.parseBoolean;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static jdk.test.lib.net.IPSupport.*;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 
 /*
@@ -327,28 +328,40 @@ public class ProtocolFamilies {
 
     // Helper methods
 
+    private static StandardProtocolFamily expectedFamily(StandardProtocolFamily family) {
+        if (family == null) {
+            return preferIPv4 ? INET : INET6;
+        } else {
+            return family;
+        }
+    }
+
     private static SocketChannel openSC(StandardProtocolFamily family)
             throws IOException {
-        return family == null ? SocketChannel.open()
+        SocketChannel chan = family == null ? SocketChannel.open()
                 : SocketChannel.open(family);
+        return chan;
     }
 
     private static ServerSocketChannel openSSC(StandardProtocolFamily family)
             throws IOException {
-        return family == null ? ServerSocketChannel.open()
+        ServerSocketChannel chan = family == null ? ServerSocketChannel.open()
                 : ServerSocketChannel.open(family);
+        return chan;
     }
 
     private static DatagramChannel openDC(StandardProtocolFamily family)
             throws IOException {
-        return family == null ? DatagramChannel.open()
+        DatagramChannel chan = family == null ? DatagramChannel.open()
                 : DatagramChannel.open(family);
+        return chan;
     }
 
     private static SocketAddress getSocketAddress(StandardProtocolFamily family) {
         return family == null ? null : switch (family) {
             case INET -> new InetSocketAddress(ia4, 0);
             case INET6 -> new InetSocketAddress(ia6, 0);
+            default -> throw new RuntimeException("Unexpected protocol family");
         };
     }
 

@@ -557,4 +557,14 @@ public abstract class UnixFileSystemProvider
             }
         };
     }
+
+    @Override
+    public byte[] getUnixDomainPathInBytes(Path file) {
+        if (file == null)
+            return null;
+        if (!(file instanceof UnixPath))
+            throw new IllegalArgumentException();
+        UnixPath up = (UnixPath)file;
+        return up.getByteArrayForSysCalls();
+    }
 }

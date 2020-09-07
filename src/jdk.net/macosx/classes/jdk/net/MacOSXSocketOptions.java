@@ -25,9 +25,12 @@
 package jdk.net;
 
 import java.net.SocketException;
+import java.nio.file.attribute.UserPrincipal;
+import java.nio.file.attribute.GroupPrincipal;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
+import sun.nio.fs.UnixUserGroupUtil;
 
 class MacOSXSocketOptions extends PlatformSocketOptions {
 
@@ -50,6 +53,11 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
     }
 
     @Override
+    boolean peerCredentialsSupported() {
+        return true;
+    }
+
+    @Override
     void setTcpKeepAliveIntvl(int fd, final int value) throws SocketException {
         setTcpKeepAliveIntvl0(fd, value);
     }
@@ -69,12 +77,23 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
         return getTcpKeepAliveIntvl0(fd);
     }
 
+    @Override
+    UnixDomainPrincipal getSoPeerCred(int fd) throws SocketException {
+        int[] result = new int[2];
+
+        getSoPeerCred0(fd, result);
+        UserPrincipal user = UnixUserGroupUtil.fromUid(result[0]);
+        GroupPrincipal group = UnixUserGroupUtil.fromGid(result[1]);
+        return new UnixDomainPrincipal(user, group);
+    }
+
     private static native void setTcpkeepAliveProbes0(int fd, int value) throws SocketException;
     private static native void setTcpKeepAliveTime0(int fd, int value) throws SocketException;
     private static native void setTcpKeepAliveIntvl0(int fd, int value) throws SocketException;
     private static native int getTcpkeepAliveProbes0(int fd) throws SocketException;
     private static native int getTcpKeepAliveTime0(int fd) throws SocketException;
     private static native int getTcpKeepAliveIntvl0(int fd) throws SocketException;
+    private static native void getSoPeerCred0(int fd, int[] result) throws SocketException;
     private static native boolean keepAliveOptionsSupported0();
     static {
         if (System.getSecurityManager() == null) {

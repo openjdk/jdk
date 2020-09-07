@@ -31,8 +31,13 @@ package sun.nio.ch;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
+import java.net.StandardProtocolFamily;
 import java.nio.*;
 import java.nio.channels.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.channels.spi.*;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -103,23 +108,20 @@ class PipeImpl
                 ServerSocketChannel ssc = null;
                 SocketChannel sc1 = null;
                 SocketChannel sc2 = null;
+                // Loopback address
+                SocketAddress sa = null;
 
                 try {
                     // Create secret with a backing array.
                     ByteBuffer secret = ByteBuffer.allocate(NUM_SECRET_BYTES);
                     ByteBuffer bb = ByteBuffer.allocate(NUM_SECRET_BYTES);
 
-                    // Loopback address
-                    InetAddress lb = InetAddress.getLoopbackAddress();
-                    assert(lb.isLoopbackAddress());
-                    InetSocketAddress sa = null;
                     for(;;) {
                         // Bind ServerSocketChannel to a port on the loopback
                         // address
                         if (ssc == null || !ssc.isOpen()) {
-                            ssc = ServerSocketChannel.open();
-                            ssc.socket().bind(new InetSocketAddress(lb, 0));
-                            sa = new InetSocketAddress(lb, ssc.socket().getLocalPort());
+                            ssc = getServer();
+                            sa = ssc.getLocalAddress();
                         }
 
                         // Establish connection (assume connections are eagerly
@@ -160,6 +162,8 @@ class PipeImpl
                     try {
                         if (ssc != null)
                             ssc.close();
+                        if (sa instanceof UnixDomainSocketAddress)
+                            Files.delete(((UnixDomainSocketAddress)sa).getPath());
                     } catch (IOException e2) {}
                 }
             }
@@ -180,6 +184,19 @@ class PipeImpl
 
     public SinkChannel sink() {
         return sink;
+    }
+
+    private static ServerSocketChannel getServer() throws IOException {
+        ServerSocketChannel server;
+        try {
+            server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+            server.bind(null);
+        } catch (UnsupportedOperationException e) {
+            server = ServerSocketChannel.open();
+            InetAddress lb = InetAddress.getLoopbackAddress();
+            server.bind(new InetSocketAddress(lb, 0));
+        }
+        return server;
     }
 
 }

@@ -27,12 +27,14 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.net.ProtocolFamily;
+import java.net.StandardProtocolFamily;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.Pipe;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Objects;
 
 public abstract class SelectorProviderImpl
     extends SelectorProvider
@@ -65,21 +67,37 @@ public abstract class SelectorProviderImpl
 
     @Override
     public ServerSocketChannel openServerSocketChannel() throws IOException {
-        return new ServerSocketChannelImpl(this);
+        return new InetServerSocketChannelImpl(this);
     }
 
     @Override
     public SocketChannel openSocketChannel() throws IOException {
-        return new SocketChannelImpl(this);
+        return new InetSocketChannelImpl(this);
     }
 
     @Override
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
-        return new SocketChannelImpl(this, family);
+        Objects.requireNonNull(family, "'family' is null");
+        if (family == StandardProtocolFamily.INET6 && !Net.isIPv6Available()) {
+            throw new UnsupportedOperationException("IPv6 not available");
+        } else if (family == StandardProtocolFamily.INET || family == StandardProtocolFamily.INET6)  {
+            return new InetSocketChannelImpl(this, family);
+        } else if (family == StandardProtocolFamily.UNIX && UnixDomainNet.isSupported()) {
+            return new UnixDomainSocketChannelImpl(this, UnixDomainNet.socket(), false);
+        } else
+            return super.openSocketChannel(family);
     }
 
     @Override
-    public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) {
-        return new ServerSocketChannelImpl(this, family);
+    public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
+        Objects.requireNonNull(family, "'family' is null");
+        if (family == StandardProtocolFamily.INET6 && !Net.isIPv6Available()) {
+            throw new UnsupportedOperationException("IPv6 not available");
+        } else if (family == StandardProtocolFamily.INET || family == StandardProtocolFamily.INET6)  {
+            return new InetServerSocketChannelImpl(this, family);
+        } else if (family == StandardProtocolFamily.UNIX && UnixDomainNet.isSupported()) {
+            return new UnixDomainServerSocketChannelImpl(this);
+        } else
+            return super.openServerSocketChannel(family);
     }
 }

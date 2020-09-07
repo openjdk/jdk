@@ -28,6 +28,7 @@ package sun.nio.fs;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.channels.*;
+import java.nio.charset.StandardCharsets;
 import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.io.*;
@@ -622,4 +623,16 @@ class WindowsFileSystemProvider
         String target = WindowsLinkSupport.readLink(link);
         return WindowsPath.createFromNormalizedPath(fs, target);
     }
+
+    @Override
+    public byte[] getUnixDomainPathInBytes(Path file) throws IOException {
+        if (file == null)
+            return null;
+        if (!(file instanceof WindowsPath))
+            throw new IllegalArgumentException();
+        WindowsPath wp = (WindowsPath)file;
+        String s = wp.getUTF8Path();
+        return s.getBytes(StandardCharsets.UTF_8);
+    }
+
 }

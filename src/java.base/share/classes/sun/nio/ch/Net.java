@@ -57,6 +57,11 @@ public class Net {
 
     private Net() { }
 
+    static {
+        // Load all required native libs
+        UnixDomainNet.init();
+    }
+
     // unspecified protocol family
     static final ProtocolFamily UNSPEC = new ProtocolFamily() {
         public String name() {
@@ -499,6 +504,7 @@ public class Net {
     /*
      * Returns 1 for Windows and -1 for Linux/Mac OS
      */
+
     private static native int isExclusiveBindAvailable();
 
     private static native boolean shouldSetBothIPv4AndIPv6Options0();

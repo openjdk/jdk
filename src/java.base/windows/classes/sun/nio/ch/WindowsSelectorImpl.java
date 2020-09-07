@@ -144,7 +144,7 @@ class WindowsSelectorImpl extends SelectorImpl {
 
         // Disable the Nagle algorithm so that the wakeup is more immediate
         SinkChannelImpl sink = (SinkChannelImpl)wakeupPipe.sink();
-        (sink.sc).socket().setTcpNoDelay(true);
+        sink.setNoDelay();
         wakeupSinkFd = ((SelChImpl)sink).getFDVal();
 
         pollWrapper.addWakeupSocket(wakeupSourceFd, 0);
@@ -419,7 +419,7 @@ class WindowsSelectorImpl extends SelectorImpl {
                 // OOB data queued to the socket. If there is OOB data then it
                 // is discarded and the key is not added to the selected set.
                 if (isExceptFds &&
-                    (sk.channel() instanceof SocketChannelImpl) &&
+                    (sk.channel() instanceof InetSocketChannelImpl) &&
                     discardUrgentData(desc))
                 {
                     continue;

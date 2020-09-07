@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * A test service for use in the inetd/System.inheritedChannel unit
  * tests.
  *
- * The test checks that the channel returned by System.inheritiedChannel
+ * The test checks that the channel returned by System.inheritedChannel
  * is in blocking mode and is bound. In addition, in the case of a
  * SocketChannel checks that the socket is connected.
  *
