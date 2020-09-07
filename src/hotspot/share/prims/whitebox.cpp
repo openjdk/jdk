@@ -2289,6 +2289,14 @@ WB_ENTRY(jboolean, WB_IsJVMTIIncluded(JNIEnv* env, jobject wb))
   return INCLUDE_JVMTI ? JNI_TRUE : JNI_FALSE;
 WB_END
 
+WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
+  ThreadToNativeFromVM ttn(thread);
+  jstring info_string = env->NewStringUTF(XSTR(LIBC));
+  CHECK_JNI_EXCEPTION_(env, NULL);
+
+  return info_string;
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2540,6 +2548,7 @@ static JNINativeMethod methods[] = {
   {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
   {CC"getKlassMetadataSize", CC"(Ljava/lang/Class;)I",(void*)&WB_GetKlassMetadataSize},
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
+  {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
 };
 
 

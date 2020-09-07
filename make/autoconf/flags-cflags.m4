@@ -558,6 +558,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     fi
   fi
 
+  OS_CFLAGS="$OS_CFLAGS -DLIBC=$OPENJDK_TARGET_LIBC"
+  if test "x$OPENJDK_TARGET_LIBC" = xmusl; then
+    OS_CFLAGS="$OS_CFLAGS -DMUSL_LIBC"
+  fi
+
   # Where does this really belong??
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     PICFLAG="-fPIC"
