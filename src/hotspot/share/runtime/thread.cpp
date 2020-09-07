@@ -2628,7 +2628,7 @@ void JavaThread::java_suspend_self_with_safepoint_check() {
   // we must manually emit the instruction barrier after leaving a safe state.
   OrderAccess::cross_modify_fence();
   if (state != _thread_in_native) {
-    SafepointMechanism::block_if_requested(this);
+    SafepointMechanism::process_if_requested(this);
   }
 }
 
@@ -2658,7 +2658,7 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
   if (thread->is_external_suspend()) {
     thread->java_suspend_self_with_safepoint_check();
   } else {
-    SafepointMechanism::block_if_requested(thread);
+    SafepointMechanism::process_if_requested(thread);
   }
 
   JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(thread);)
