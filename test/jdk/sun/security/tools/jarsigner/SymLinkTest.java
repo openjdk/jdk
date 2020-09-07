@@ -45,7 +45,7 @@ public class SymLinkTest {
             "protected by the signature.";
 
     public static void main(String[] args) throws Exception {
-
+        Files.deleteIfExists(Paths.get(ZIPFILENAME));
         try (FileOutputStream fos = new FileOutputStream(ZIPFILENAME)) {
             fos.write(ZIPBYTES);
         }
