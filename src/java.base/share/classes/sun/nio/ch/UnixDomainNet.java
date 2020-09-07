@@ -31,12 +31,13 @@ import java.net.NetPermission;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.UnsupportedAddressTypeException;
+import java.nio.file.FileSystems;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import sun.nio.fs.PathUtil;
+import sun.nio.fs.AbstractFileSystemProvider;
 
 class UnixDomainNet {
 
@@ -151,17 +152,23 @@ class UnixDomainNet {
         );
     }
 
+    static byte[] getPathBytes(Path path) throws IOException {
+        AbstractFileSystemProvider provider = (AbstractFileSystemProvider)
+            FileSystems.getDefault().provider();
+        return provider.getUnixDomainPathInBytes(path);
+    }
+
     public static FileDescriptor socket() throws IOException {
         return IOUtil.newFD(socket0());
     }
 
     public static void bind(FileDescriptor fd, Path addr) throws IOException {
-        byte[] path = PathUtil.getByteArray(addr);
+        byte[] path = getPathBytes(addr);
         bind0(fd, path);
     }
 
     public static int connect(FileDescriptor fd, Path addr) throws IOException {
-        byte[] path = PathUtil.getByteArray(addr);
+        byte[] path = getPathBytes(addr);
         return connect0(fd, path);
     }
 

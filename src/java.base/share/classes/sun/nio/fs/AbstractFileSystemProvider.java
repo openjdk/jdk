@@ -159,5 +159,5 @@ public abstract class AbstractFileSystemProvider extends FileSystemProvider {
      * Get a pathname of a Unix domain socket in raw bytes. Different encodings
      * may be used for these names on some platforms.
      */
-    public abstract byte[] getUnixDomainPathInBytes(Path file);
+    public abstract byte[] getUnixDomainPathInBytes(Path file) throws IOException;
 }

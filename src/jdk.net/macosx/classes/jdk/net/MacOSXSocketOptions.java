@@ -30,7 +30,7 @@ import java.nio.file.attribute.GroupPrincipal;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
-import sun.nio.fs.UnixUserGroupUtil;
+import sun.nio.fs.UnixUserPrincipals;
 
 class MacOSXSocketOptions extends PlatformSocketOptions {
 
@@ -82,8 +82,8 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
         int[] result = new int[2];
 
         getSoPeerCred0(fd, result);
-        UserPrincipal user = UnixUserGroupUtil.fromUid(result[0]);
-        GroupPrincipal group = UnixUserGroupUtil.fromGid(result[1]);
+        UserPrincipal user = UnixUserPrincipals.fromUid(result[0]);
+        GroupPrincipal group = UnixUserPrincipals.fromGid(result[1]);
         return new UnixDomainPrincipal(user, group);
     }
 

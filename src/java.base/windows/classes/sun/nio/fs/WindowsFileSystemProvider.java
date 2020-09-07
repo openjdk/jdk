@@ -631,7 +631,7 @@ class WindowsFileSystemProvider
         if (!(file instanceof WindowsPath))
             throw new IllegalArgumentException();
         WindowsPath wp = (WindowsPath)file;
-        String s = wp.getUTF8Path();
+        String s = wp.toString();
         return s.getBytes(StandardCharsets.UTF_8);
     }
 

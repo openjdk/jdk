@@ -33,7 +33,7 @@ import static sun.nio.fs.UnixNativeDispatcher.*;
  * Unix implementation of java.nio.file.attribute.UserPrincipal
  */
 
-class UnixUserPrincipals {
+public class UnixUserPrincipals {
     private static User createSpecial(String name) { return new User(-1, name); }
 
     static final User SPECIAL_OWNER = createSpecial("OWNER@");
@@ -108,7 +108,7 @@ class UnixUserPrincipals {
     }
 
     // return UserPrincipal representing given uid
-    static User fromUid(int uid) {
+    public static User fromUid(int uid) {
         String name;
         try {
             name = Util.toString(getpwuid(uid));
@@ -119,7 +119,7 @@ class UnixUserPrincipals {
     }
 
     // return GroupPrincipal representing given gid
-    static Group fromGid(int gid) {
+    public static Group fromGid(int gid) {
         String name;
         try {
             name = Util.toString(getgrgid(gid));
