@@ -113,6 +113,7 @@ public:
   void append_inline(InlineMatcher* m);
   bool should_inline(ciMethod* inlinee);
   bool should_not_inline(ciMethod* inlinee);
+  bool should_blackhole(ciMethod* m);
   void print_inline(outputStream* st);
   DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
   bool is_exclusive_copy() { return _directive == NULL; }

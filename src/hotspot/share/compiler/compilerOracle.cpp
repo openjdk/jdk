@@ -83,6 +83,7 @@ enum OracleCommand {
   InlineCommand,
   DontInlineCommand,
   CompileOnlyCommand,
+  BlackholeCommand,
   LogCommand,
   OptionCommand,
   QuietCommand,
@@ -98,6 +99,7 @@ static const char * command_names[] = {
   "inline",
   "dontinline",
   "compileonly",
+  "blackhole",
   "log",
   "option",
   "quiet",
@@ -354,7 +356,9 @@ bool CompilerOracle::should_inline(const methodHandle& method) {
 }
 
 bool CompilerOracle::should_not_inline(const methodHandle& method) {
-  return check_predicate(DontInlineCommand, method) || check_predicate(ExcludeCommand, method);
+  return check_predicate(DontInlineCommand, method)
+    || check_predicate(ExcludeCommand, method)
+    || check_predicate(BlackholeCommand, method);
 }
 
 bool CompilerOracle::should_print(const methodHandle& method) {
@@ -373,6 +377,10 @@ bool CompilerOracle::should_log(const methodHandle& method) {
 
 bool CompilerOracle::should_break_at(const methodHandle& method) {
   return check_predicate(BreakCommand, method);
+}
+
+bool CompilerOracle::should_blackhole(const methodHandle& method) {
+  return (check_predicate(BlackholeCommand, method));
 }
 
 static OracleCommand parse_command_name(const char * line, int* bytes_read) {
@@ -404,6 +412,7 @@ static void usage() {
   tty->print_cr("  exclude,<pattern>     - don't compile or inline");
   tty->print_cr("  inline,<pattern>      - always inline");
   tty->print_cr("  dontinline,<pattern>  - don't inline");
+  tty->print_cr("  blackhole,<pattern>   - eliminate the call and blackhole all arguments");
   tty->print_cr("  compileonly,<pattern> - compile only");
   tty->print_cr("  log,<pattern>         - log compilation");
   tty->print_cr("  option,<pattern>,<option type>,<option name>,<value>");

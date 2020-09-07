@@ -2026,6 +2026,17 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     code = Bytecodes::_invokespecial;
   }
 
+  // check if we need to blackhole the method
+  if (target->is_loaded() && target->return_type()->basic_type() == T_VOID &&
+      compilation()->directive()->should_blackhole(target)) {
+    if (try_blackhole(target)) {
+      print_inlining(target, "blackhole", /*success*/ true);
+      return;
+    } else {
+      assert(false, "Blackholing should always work");
+    }
+  }
+
   // check if we could do inlining
   if (!PatchALot && Inline && target->is_loaded() &&
       (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
@@ -3452,6 +3463,17 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
   return false;
 }
 
+bool GraphBuilder::try_blackhole(ciMethod* callee) {
+  Values* args = state()->pop_arguments(callee->arg_size());
+
+  // Blackhole everything except the receiver itself
+  int start = callee->flags().is_static() ? 0 : 1;
+  for (int c = start; c < args->length(); c++) {
+    append(new Blackhole(args->at(c)));
+  }
+
+  return true;
+}
 
 const char* GraphBuilder::check_can_parse(ciMethod* callee) const {
   // Certain methods cannot be parsed at all:

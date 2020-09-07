@@ -1041,6 +1041,11 @@ const bool Matcher::misaligned_vectors_ok() {
   return false;
 }
 
+const bool Matcher::supports_blackholes() {
+  // Not implemented yet.
+  return false;
+}
+
 const bool Matcher::convL2FSupported(void) {
   return false;
 }

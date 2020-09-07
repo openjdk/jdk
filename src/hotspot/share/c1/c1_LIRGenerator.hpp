@@ -596,6 +596,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_RuntimeCall    (RuntimeCall*     x);
   virtual void do_MemBar         (MemBar*          x);
   virtual void do_RangeCheckPredicate(RangeCheckPredicate* x);
+  virtual void do_Blackhole      (Blackhole* x);
 #ifdef ASSERT
   virtual void do_Assert         (Assert*          x);
 #endif

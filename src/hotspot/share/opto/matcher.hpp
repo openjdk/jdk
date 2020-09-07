@@ -351,6 +351,8 @@ public:
   // CPU supports misaligned vectors store/load.
   static const bool misaligned_vectors_ok();
 
+  static const bool supports_blackholes();
+
   // Used to determine a "low complexity" 64-bit constant.  (Zero is simple.)
   // The standard of comparison is one (StoreL ConL) vs. two (StoreI ConI).
   // Depends on the details of 64-bit constant generation on the CPU.

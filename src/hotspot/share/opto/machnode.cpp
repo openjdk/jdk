@@ -732,6 +732,8 @@ bool MachCallJavaNode::cmp( const Node &n ) const {
 void MachCallJavaNode::dump_spec(outputStream *st) const {
   if (_method_handle_invoke)
     st->print("MethodHandle ");
+  if (_blackhole)
+    st->print("blackhole ");
   if (_method) {
     _method->print_short_name(st);
     st->print(" ");
@@ -742,6 +744,12 @@ void MachCallJavaNode::dump_spec(outputStream *st) const {
 
 //------------------------------Registers--------------------------------------
 const RegMask &MachCallJavaNode::in_RegMask(uint idx) const {
+  // Fake the incoming arguments mask for blackholes: accept all registers and all stack slots.
+  // This must avoid moving the arguments for the call that never happens.
+  if (is_blackhole()) {
+    return RegMask::All;
+  }
+
   // Values in the domain use the users calling convention, embodied in the
   // _in_rms array of RegMasks.
   if (idx < tf()->domain()->cnt()) {

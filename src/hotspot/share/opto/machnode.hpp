@@ -923,9 +923,14 @@ public:
   bool      _optimized_virtual;      // Tells if node is a static call or an optimized virtual
   bool      _method_handle_invoke;   // Tells if the call has to preserve SP
   bool      _arg_escape;             // ArgEscape in parameter list
+  bool      _blackhole;              // Tells if the call has to be blackholed
+
   MachCallJavaNode() : MachCallNode(), _override_symbolic_info(false) {
     init_class_id(Class_MachCallJava);
   }
+
+  void set_blackhole(bool b)      { _blackhole = b; }
+  bool is_blackhole() const       { return _blackhole; }
 
   virtual const RegMask &in_RegMask(uint) const;
 

@@ -109,6 +109,7 @@ class   ProfileInvoke;
 class   RuntimeCall;
 class   MemBar;
 class   RangeCheckPredicate;
+class   Blackhole;
 #ifdef ASSERT
 class   Assert;
 #endif
@@ -208,6 +209,7 @@ class InstructionVisitor: public StackObj {
   virtual void do_RuntimeCall    (RuntimeCall*     x) = 0;
   virtual void do_MemBar         (MemBar*          x) = 0;
   virtual void do_RangeCheckPredicate(RangeCheckPredicate* x) = 0;
+  virtual void do_Blackhole      (Blackhole*       x) = 0;
 #ifdef ASSERT
   virtual void do_Assert         (Assert*          x) = 0;
 #endif
@@ -2607,6 +2609,21 @@ LEAF(MemBar, Instruction)
   LIR_Code code()           { return _code; }
 
   virtual void input_values_do(ValueVisitor*)   {}
+};
+
+LEAF(Blackhole, Instruction)
+private:
+  Value       _v;
+
+public:
+  // creation
+  Blackhole(Value v);
+
+  // accessors
+  Value v() { return _v; }
+
+  // generic
+  virtual void input_values_do(ValueVisitor* f)  { f->visit(&_v); }
 };
 
 class BlockPair: public CompilationResourceObj {

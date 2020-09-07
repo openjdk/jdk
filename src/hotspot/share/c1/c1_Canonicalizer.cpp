@@ -1053,6 +1053,7 @@ void Canonicalizer::do_ProfileReturnType(ProfileReturnType* x) {}
 void Canonicalizer::do_ProfileInvoke(ProfileInvoke* x) {}
 void Canonicalizer::do_RuntimeCall(RuntimeCall* x) {}
 void Canonicalizer::do_RangeCheckPredicate(RangeCheckPredicate* x) {}
+void Canonicalizer::do_Blackhole(Blackhole* x) {}
 #ifdef ASSERT
 void Canonicalizer::do_Assert(Assert* x) {}
 #endif

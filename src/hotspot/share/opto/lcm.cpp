@@ -887,7 +887,9 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       proj->_rout.OR(Matcher::method_handle_invoke_SP_save_mask());
   }
 
-  add_call_kills(proj, regs, save_policy, exclude_soe);
+  if (mcall->isa_MachCallJava() == NULL || !mcall->as_MachCallJava()->is_blackhole()) {
+    add_call_kills(proj, regs, save_policy, exclude_soe);
+  }
 
   return node_cnt;
 }

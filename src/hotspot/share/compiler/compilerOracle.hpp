@@ -66,6 +66,9 @@ class CompilerOracle : AllStatic {
   // Tells whether to break when compiling method
   static bool should_break_at(const methodHandle& method);
 
+  // Tells whether to blackhole when compiling method
+  static bool should_blackhole(const methodHandle& method);
+
   // Check to see if this method has option set for it
   static bool has_option_string(const methodHandle& method, const char * option);
 

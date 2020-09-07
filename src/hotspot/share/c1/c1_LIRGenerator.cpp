@@ -3625,6 +3625,12 @@ void LIRGenerator::do_RangeCheckPredicate(RangeCheckPredicate *x) {
   }
 }
 
+void LIRGenerator::do_Blackhole(Blackhole *x) {
+  // Load the argument
+  LIRItem vitem(x->v(), this);
+  vitem.load_item();
+  // ...and leave it unused.
+}
 
 LIR_Opr LIRGenerator::call_runtime(Value arg1, address entry, ValueType* result_type, CodeEmitInfo* info) {
   LIRItemList args(1);

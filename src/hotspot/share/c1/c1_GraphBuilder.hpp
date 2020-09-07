@@ -354,6 +354,8 @@ class GraphBuilder {
   bool try_inline_full(      ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = NULL);
   bool try_inline_jsr(int jsr_dest_bci);
 
+  bool try_blackhole(ciMethod* callee);
+
   const char* check_can_parse(ciMethod* callee) const;
   const char* should_not_inline(ciMethod* callee) const;
 

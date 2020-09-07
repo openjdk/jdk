@@ -1023,6 +1023,36 @@ bool CallJavaNode::validate_symbolic_info() const {
 }
 #endif
 
+Node* CallJavaNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  Node* node = CallNode::Ideal(phase, can_reshape);
+  if (node != NULL) {
+    return node;
+  }
+
+  if (can_reshape && should_blackhole()) {
+    // Purge debug info for blackholed method
+    bool progress = false;
+    Node* top = Compile::current()->top();
+    uint dbg_start = tf()->domain()->cnt();
+    for (uint i = dbg_start; i < req(); i++) {
+      if (in(i) != top) {
+        set_req(i, top);
+        progress = true;
+      }
+    }
+    return progress ? this : NULL;
+  }
+
+  return NULL;
+}
+
+bool CallJavaNode::should_blackhole() const {
+  return Matcher::supports_blackholes() &&
+         method() != NULL && method()->is_loaded() &&
+         method()->return_type()->basic_type() == T_VOID &&
+         Compile::current()->directive()->should_blackhole(method());
+}
+
 #ifndef PRODUCT
 void CallJavaNode::dump_spec(outputStream *st) const {
   if( _method ) _method->print_short_name(st);

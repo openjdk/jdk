@@ -861,6 +861,15 @@ void InstructionPrinter::do_RangeCheckPredicate(RangeCheckPredicate* x) {
   }
 }
 
+void InstructionPrinter::do_Blackhole(Blackhole* x) {
+  if (x->v() != NULL) {
+    output()->print("blackhole ");
+    print_value(x->v());
+  } else {
+    output()->print("incorrect blackhole");
+  }
+}
+
 #ifdef ASSERT
 void InstructionPrinter::do_Assert(Assert* x) {
   output()->print("assert ");

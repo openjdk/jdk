@@ -12350,6 +12350,7 @@ instruct safePoint_poll_tls(rFlagsReg cr, rRegP poll)
 //       compute_padding() functions will have to be adjusted.
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);
+  predicate(!n->as_CallJava()->should_blackhole());
   effect(USE meth);
 
   ins_cost(300);
@@ -12360,12 +12361,24 @@ instruct CallStaticJavaDirect(method meth) %{
   ins_alignment(4);
 %}
 
+instruct CallStaticJavaDirect_Blackhole(method meth) %{
+  match(CallStaticJava);
+  predicate(n->as_CallJava()->should_blackhole());
+  effect(USE meth);
+
+  ins_cost(1);
+  format %{ "call,static,blackhole " %}
+  ins_encode(); // Encode to nothing: blackhole.
+  ins_pipe(empty);
+%}
+
 // Call Java Dynamic Instruction
 // Note: If this code changes, the corresponding ret_addr_offset() and
 //       compute_padding() functions will have to be adjusted.
 instruct CallDynamicJavaDirect(method meth)
 %{
   match(CallDynamicJava);
+  predicate(!n->as_CallJava()->should_blackhole());
   effect(USE meth);
 
   ins_cost(300);
@@ -12374,6 +12387,18 @@ instruct CallDynamicJavaDirect(method meth)
   ins_encode(clear_avx, Java_Dynamic_Call(meth), call_epilog);
   ins_pipe(pipe_slow);
   ins_alignment(4);
+%}
+
+instruct CallDynamicJavaDirect_Blackhole(method meth)
+%{
+  match(CallDynamicJava);
+  predicate(n->as_CallJava()->should_blackhole());
+  effect(USE meth);
+
+  ins_cost(300);
+  format %{ "call,dynamic,blackhole " %}
+  ins_encode(); // Encode to nothing: blackhole.
+  ins_pipe(empty);
 %}
 
 // Call Runtime Instruction

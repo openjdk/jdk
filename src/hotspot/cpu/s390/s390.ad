@@ -1588,6 +1588,11 @@ const bool Matcher::misaligned_vectors_ok() {
   return true;
 }
 
+const bool Matcher::supports_blackholes() {
+  // Not implemented yet.
+  return false;
+}
+
 // RETURNS: whether this branch offset is short enough that a short
 // branch can be used.
 //

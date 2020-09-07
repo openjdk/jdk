@@ -693,7 +693,15 @@ public:
   bool  arg_escape() const                 { return _arg_escape; }
   void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt);
 
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+
   DEBUG_ONLY( bool validate_symbolic_info() const; )
+
+  bool should_blackhole() const;
+
+  // Safepoint is guaranteed only if method is not blackholed. Otherwise,
+  // there is no safepoint in the method body.
+  virtual bool guaranteed_safepoint()      { return !should_blackhole(); }
 
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;

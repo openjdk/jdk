@@ -1261,6 +1261,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       if( mcall_java->is_MachCallDynamicJava() )
         mcall_java->as_MachCallDynamicJava()->_vtable_index =
          call_java->as_CallDynamicJava()->_vtable_index;
+
+      mcall_java->set_blackhole(call_java->should_blackhole());
     }
     else if( mcall->is_MachCallRuntime() ) {
       mcall->as_MachCallRuntime()->_name = call->as_CallRuntime()->_name;
@@ -1371,7 +1373,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   if( _out_arg_limit < out_arg_limit_per_call)
     _out_arg_limit = out_arg_limit_per_call;
 
-  if (mcall) {
+  if (mcall && !(mcall->is_MachCallJava() && mcall->as_MachCallJava()->is_blackhole())) {
     // Kill the outgoing argument area, including any non-argument holes and
     // any legacy C-killed slots.  Use Fat-Projections to do the killing.
     // Since the max-per-method covers the max-per-call-site and debug info

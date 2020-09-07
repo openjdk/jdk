@@ -1899,6 +1899,9 @@ const bool Matcher::misaligned_vectors_ok() {
   return true;
 }
 
+const bool Matcher::supports_blackholes() {
+  return true;
+}
 
 const bool Matcher::convi2l_type_required = true;
 

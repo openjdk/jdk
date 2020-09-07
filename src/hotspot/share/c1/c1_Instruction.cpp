@@ -1042,3 +1042,7 @@ void RangeCheckPredicate::check_state() {
 void ProfileInvoke::state_values_do(ValueVisitor* f) {
   if (state() != NULL) state()->values_do(f);
 }
+
+Blackhole::Blackhole(Value v) : Instruction(illegalType), _v(v) {
+  pin();
+}

@@ -456,6 +456,17 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
   return false;
 }
 
+bool DirectiveSet::should_blackhole(ciMethod* m) {
+  m->check_is_loaded();
+  VM_ENTRY_MARK;
+  methodHandle mh(THREAD, m->get_Method());
+
+  if (!CompilerDirectivesIgnoreCompileCommandsOption) {
+    return CompilerOracle::should_blackhole(mh);
+  }
+  return false;
+}
+
 bool DirectiveSet::parse_and_add_inline(char* str, const char*& error_msg) {
   InlineMatcher* m = InlineMatcher::parse_inline_pattern(str, error_msg);
   if (m != NULL) {
