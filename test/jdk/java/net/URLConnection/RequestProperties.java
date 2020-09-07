@@ -24,137 +24,188 @@
 /**
  * @test
  * @bug 4485208 8252767
- * @summary  Validate java.net.URLConnection#setRequestProperty throws NPE and IllegalStateException
+ * @summary Validate various request property methods on java.net.URLConnection
+ * throw NullPointerException and IllegalStateException when expected
+ * @run testng RequestProperties
  */
 
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 public class RequestProperties {
-    static int failed;
 
-    public static void main (String args[]) throws Exception {
-        List<String> urls = new ArrayList<>();
+    @DataProvider(name = "urls")
+    private Object[][] urls() {
+        final List<String> urls = new ArrayList<>();
         urls.add("http://foo.com/bar/");
         urls.add("jar:http://foo.com/bar.html!/foo/bar");
         urls.add("file:/etc/passwd");
-        if (hasFtp())
+        if (hasFtp()) {
             urls.add("ftp://foo:bar@foobar.com/etc/passwd");
-
-        for (String urlStr : urls)
-            testSetRequestPropNPE(new URL(urlStr));
-
-        if (failed != 0)
-            throw new RuntimeException(failed + " errors") ;
-
-        testRequestPropIllegalStateException();
+        }
+        final Object[][] data = new Object[urls.size()][1];
+        for (int i = 0; i < urls.size(); i++) {
+            data[i][0] = urls.get(i);
+        }
+        return data;
     }
 
-    static void testSetRequestPropNPE(URL url) throws Exception {
-        URLConnection urlc = url.openConnection();
-        try {
-            urlc.setRequestProperty(null, null);
-            System.out.println(url.getProtocol()
-                               + ": setRequestProperty(null,) did not throw NPE");
-            failed++;
-        } catch (NullPointerException e) { /* Expected */ }
-        try {
-            urlc.addRequestProperty(null, null);
-            System.out.println(url.getProtocol()
-                               + ": addRequestProperty(null,) did not throw NPE");
-            failed++;
-        } catch (NullPointerException e)  { /* Expected */ }
 
-        if (urlc.getRequestProperty(null) != null) {
-            System.out.println(url.getProtocol()
-                               + ": getRequestProperty(null,) did not return null");
-            failed++;
+    /**
+     * Test that {@link java.net.URLConnection#setRequestProperty(String, String)} throws
+     * a {@link NullPointerException} when passed null key
+     */
+    @Test(dataProvider = "urls")
+    public void testSetRequestPropertyNullPointerException(final String url) throws Exception {
+        final URLConnection conn = new URL(url).openConnection();
+        try {
+            conn.setRequestProperty(null, "bar");
+            Assert.fail("setRequestProperty on " + conn.getClass().getName()
+                    + " for " + conn.getURL() + " was expected to throw"
+                    + " NullPointerException, but didn't");
+        } catch (NullPointerException npe) {
+            // expected
+        }
+        // expected to pass
+        conn.setRequestProperty("key", null);
+    }
+
+    /**
+     * Test that {@link java.net.URLConnection#addRequestProperty(String, String)} throws
+     * a {@link NullPointerException} when passed null key
+     */
+    @Test(dataProvider = "urls")
+    public void testAddRequestPropertyNullPointerException(final String url) throws Exception {
+        final URLConnection conn = new URL(url).openConnection();
+        try {
+            conn.addRequestProperty(null, "hello");
+            Assert.fail("addRequestProperty on " + conn.getClass().getName()
+                    + " for " + conn.getURL() + " was expected to throw"
+                    + " NullPointerException, but didn't");
+        } catch (NullPointerException npe) {
+            // expected
+        }
+        // expected to pass
+        conn.addRequestProperty("key", null);
+    }
+
+    /**
+     * Test that {@link java.net.URLConnection#getRequestProperty(String)} returns
+     * null when the passed key is null
+     */
+    @Test(dataProvider = "urls")
+    public void testGetRequestPropertyReturnsNull(final String url) throws Exception {
+        final URLConnection conn = new URL(url).openConnection();
+        Assert.assertNull(conn.getRequestProperty(null),
+                "getRequestProperty was expected to return null for null key");
+    }
+
+    /**
+     * Test that {@link java.net.URLConnection#setRequestProperty(String, String)} throws
+     * an {@link IllegalStateException} when already connected
+     */
+    @Test
+    public void testSetRequestPropertyIllegalStateException() throws Exception {
+        final URLConnection conn = createAndConnectURLConnection();
+        try {
+            conn.setRequestProperty("foo", "bar");
+            Assert.fail("setRequestProperty on " + conn.getClass().getName()
+                    + " for " + conn.getURL() + " was expected to throw"
+                    + " IllegalStateException, but didn't");
+        } catch (IllegalStateException ise) {
+            // expected
+        } finally {
+            safeClose(conn);
+        }
+    }
+
+    /**
+     * Test that {@link java.net.URLConnection#addRequestProperty(String, String)} throws
+     * an {@link IllegalStateException} when already connected
+     */
+    @Test
+    public void testAddRequestPropertyIllegalStateException() throws Exception {
+        final URLConnection conn = createAndConnectURLConnection();
+        try {
+            conn.addRequestProperty("foo", "bar");
+            Assert.fail("addRequestProperty on " + conn.getClass().getName()
+                    + " for " + conn.getURL() + " was expected to throw"
+                    + " IllegalStateException, but didn't");
+        } catch (IllegalStateException ise) {
+            // expected
+        } finally {
+            safeClose(conn);
+        }
+    }
+
+    /**
+     * Test that {@link java.net.URLConnection#getRequestProperty(String)} throws
+     * an {@link IllegalStateException} when already connected
+     */
+    @Test
+    public void testGetRequestPropertyIllegalStateException() throws Exception {
+        final URLConnection conn = createAndConnectURLConnection();
+        try {
+            conn.getRequestProperty("hello");
+            Assert.fail("getRequestProperty on " + conn.getClass().getName()
+                    + " for " + conn.getURL() + " was expected to throw"
+                    + " IllegalStateException, but didn't");
+        } catch (IllegalStateException ise) {
+            // expected
+        } finally {
+            safeClose(conn);
+        }
+    }
+
+    /**
+     * Test that {@link URLConnection#getRequestProperties()} throws
+     * an {@link IllegalStateException} when already connected
+     */
+    @Test
+    public void testGetRequestPropertiesIllegalStateException() throws Exception {
+        final URLConnection conn = createAndConnectURLConnection();
+        try {
+            conn.getRequestProperties();
+            Assert.fail("getRequestProperties on " + conn.getClass().getName()
+                    + " for " + conn.getURL() + " was expected to throw"
+                    + " IllegalStateException, but didn't");
+        } catch (IllegalStateException ise) {
+            // expected
+        } finally {
+            safeClose(conn);
+        }
+    }
+
+    private static URLConnection createAndConnectURLConnection() throws IOException {
+        final URL url = Path.of(System.getProperty("java.io.tmpdir")).toUri().toURL();
+        final URLConnection conn = url.openConnection();
+        conn.connect();
+        return conn;
+    }
+
+    private static void safeClose(final URLConnection conn) {
+        try {
+            conn.getInputStream().close();
+        } catch (Exception e) {
+            // ignore
         }
     }
 
     private static boolean hasFtp() {
         try {
-            return new java.net.URL("ftp://") != null;
+            new java.net.URL("ftp://");
+            return true;
         } catch (java.net.MalformedURLException x) {
             System.out.println("FTP not supported by this runtime.");
             return false;
-        }
-    }
-
-    /**
-     * Test that various request property handling methods on {@link java.net.URLConnection}  throw
-     * an {@link IllegalStateException} when already connected
-     */
-    private static void testRequestPropIllegalStateException() throws Exception {
-        final URL url = Path.of(System.getProperty("java.io.tmpdir")).toUri().toURL();
-        final URLConnection conn = url.openConnection();
-        conn.connect();
-        try {
-            // test setRequestProperty
-            expectIllegalStateException(
-                    () -> {
-                        conn.setRequestProperty("foo", "bar");
-                        return null;
-                    }, "setRequestProperty on " + conn.getClass().getName()
-                            + " for " + url + " was expected to throw"
-                            + " IllegalStateException, but didn't");
-            // test addRequestProperty
-            expectIllegalStateException(
-                    () -> {
-                        conn.addRequestProperty("foo", "bar");
-                        return null;
-                    }, "addRequestProperty on " + conn.getClass().getName()
-                            + " for " + url + " was expected to throw"
-                            + " IllegalStateException, but didn't");
-            // test getRequestProperty
-            expectIllegalStateException(
-                    () -> {
-                        conn.getRequestProperty("foo");
-                        return null;
-                    }, "getRequestProperty on " + conn.getClass().getName()
-                            + " for " + url + " was expected to throw"
-                            + " IllegalStateException, but didn't");
-            // test getRequestProperties
-            expectIllegalStateException(
-                    () -> {
-                        conn.getRequestProperties();
-                        return null;
-                    }, "getRequestProperties on " + conn.getClass().getName()
-                            + " for " + url + " was expected to throw"
-                            + " IllegalStateException, but didn't");
-        } finally {
-            try {
-                conn.getInputStream().close();
-            } catch (Exception e) {
-                // ignore
-            }
-        }
-
-    }
-
-    /**
-     * Calls the {@code operation} and expects it to throw an {@link IllegalStateException}.
-     * If no such exception is thrown then this method throws a {@link RuntimeException}
-     * with the passed {@code unmetExpectationErrorMessage} as the exception's message.
-     *
-     * @param operation                    The operation to invoke
-     * @param unmetExpectationErrorMessage The error message to be set in the
-     *                                     RuntimeException that will be thrown if the operation
-     *                                     doesn't result in an IllegalStateException
-     */
-    private static void expectIllegalStateException(final Callable<Void> operation,
-                                                    final String unmetExpectationErrorMessage)
-            throws Exception {
-        try {
-            operation.call();
-            // the expected IllegalStateException wasn't throw
-            throw new RuntimeException(unmetExpectationErrorMessage);
-        } catch (IllegalStateException ise) {
-            // expected
         }
     }
 }
