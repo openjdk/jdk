@@ -25,6 +25,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -187,7 +188,7 @@ static size_t probe_valid_max_address_bit() {
       munmap(result_addr, page_size);
     }
   }
-  log_info_p(gc, init)("Probing address space for the highest valid bit: %zu", max_address_bit);
+  log_info_p(gc, init)("Probing address space for the highest valid bit: " SIZE_FORMAT, max_address_bit);
   if (max_address_bit < MINIMUM_MAX_ADDRESS_BIT) {
     return MINIMUM_MAX_ADDRESS_BIT;
   }
