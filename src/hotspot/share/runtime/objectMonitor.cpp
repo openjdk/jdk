@@ -1783,7 +1783,7 @@ int ObjectMonitor::TrySpin(Thread * Self) {
     // This is in keeping with the "no loitering in runtime" rule.
     // We periodically check to see if there's a safepoint pending.
     if ((ctr & 0xFF) == 0) {
-      if (SafepointMechanism::should_block(Self)) {
+      if (SafepointMechanism::should_process(Self)) {
         goto Abort;           // abrupt spin egress
       }
       SpinPause();
