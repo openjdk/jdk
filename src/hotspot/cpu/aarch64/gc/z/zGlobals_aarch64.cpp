@@ -28,7 +28,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#ifdef LINUX
 #include <sys/mman.h>
+#endif // LINUX
 
 //
 // The heap can have three different layouts, depending on the max heap size.
