@@ -552,6 +552,11 @@ public class FormView extends ComponentView implements ActionListener {
      */
     protected class MouseEventListener extends MouseAdapter {
 
+        /**
+         * Constructs a {@code MouseEventListener}.
+         */
+        public MouseEventListener() {}
+
         public void mouseReleased(MouseEvent evt) {
             String imageData = getImageData(evt.getPoint());
             imageSubmit(imageData);

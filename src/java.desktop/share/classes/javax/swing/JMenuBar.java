@@ -511,6 +511,11 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
         implements AccessibleSelection {
 
         /**
+         * Constructs a {@code AccessibleJMenuBar}.
+         */
+        public AccessibleJMenuBar() {}
+
+        /**
          * Get the accessible state set of this object.
          *
          * @return an instance of AccessibleState containing the current state

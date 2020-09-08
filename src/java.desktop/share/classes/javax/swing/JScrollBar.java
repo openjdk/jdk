@@ -856,6 +856,11 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
         implements AccessibleValue {
 
         /**
+         * Constructs a {@code AccessibleJScrollBar}.
+         */
+        public AccessibleJScrollBar() {}
+
+        /**
          * Get the state set of this object.
          *
          * @return an instance of AccessibleState containing the current state

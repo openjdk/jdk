@@ -383,6 +383,11 @@ public class Box extends JComponent implements Accessible {
          */
         @SuppressWarnings("serial")
         protected class AccessibleBoxFiller extends AccessibleAWTComponent {
+            /**
+             * Constructs a {@code AccessibleBoxFiller}.
+             */
+            public AccessibleBoxFiller() {}
+
             // AccessibleContext methods
             //
             /**
@@ -425,6 +430,11 @@ public class Box extends JComponent implements Accessible {
      */
     @SuppressWarnings("serial")
     protected class AccessibleBox extends AccessibleAWTContainer {
+        /**
+         * Constructs a {@code AccessibleBox}.
+         */
+        public AccessibleBox() {}
+
         // AccessibleContext methods
         //
         /**

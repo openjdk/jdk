@@ -244,6 +244,11 @@ public class CellRendererPane extends Container implements Accessible
      * <code>CellRendererPane</code> class.
      */
     protected class AccessibleCellRendererPane extends AccessibleAWTContainer {
+        /**
+         * Constructs a {@code AccessibleCellRendererPane}.
+         */
+        public AccessibleCellRendererPane() {}
+
         // AccessibleContext methods
         //
         /**

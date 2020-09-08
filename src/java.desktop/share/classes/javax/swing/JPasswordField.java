@@ -407,6 +407,11 @@ public class JPasswordField extends JTextField {
     protected class AccessibleJPasswordField extends AccessibleJTextField {
 
         /**
+         * Constructs a {@code AccessibleJPasswordField}.
+         */
+        public AccessibleJPasswordField() {}
+
+        /**
          * Gets the role of this object.
          *
          * @return an instance of AccessibleRole describing the role of the

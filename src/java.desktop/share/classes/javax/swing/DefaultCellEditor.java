@@ -303,6 +303,11 @@ public class DefaultCellEditor extends AbstractCellEditor
         /**  The value of this cell. */
         protected Object value;
 
+        /**
+         * Constructs a {@code EditorDelegate}.
+         */
+        public EditorDelegate() {}
+
        /**
         * Returns the value of this cell.
         * @return the value of this cell

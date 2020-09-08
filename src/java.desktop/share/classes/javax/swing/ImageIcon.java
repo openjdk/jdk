@@ -596,6 +596,11 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     protected class AccessibleImageIcon extends AccessibleContext
         implements AccessibleIcon, Serializable {
 
+        /**
+         * Constructs a {@code AccessibleImageIcon}.
+         */
+        public AccessibleImageIcon() {}
+
         /*
          * AccessibleContest implementation -----------------
          */

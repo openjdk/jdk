@@ -882,6 +882,11 @@ public class JFrame  extends Frame implements WindowConstants,
      */
     protected class AccessibleJFrame extends AccessibleAWTFrame {
 
+        /**
+         * Constructs a {@code AccessibleJFrame}.
+         */
+        public AccessibleJFrame() {}
+
         // AccessibleContext methods
         /**
          * Get the accessible name of this object.

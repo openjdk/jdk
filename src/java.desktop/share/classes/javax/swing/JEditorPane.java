@@ -1660,6 +1660,11 @@ public class JEditorPane extends JTextComponent {
     protected class AccessibleJEditorPane extends AccessibleJTextComponent {
 
         /**
+         * Constructs a {@code AccessibleJEditorPane}.
+         */
+        public AccessibleJEditorPane() {}
+
+        /**
          * Gets the accessibleDescription property of this object.  If this
          * property isn't set, returns the content type of this
          * <code>JEditorPane</code> instead (e.g. "plain/text", "html/text").

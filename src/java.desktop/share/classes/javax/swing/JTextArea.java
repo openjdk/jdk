@@ -784,6 +784,11 @@ public class JTextArea extends JTextComponent {
     protected class AccessibleJTextArea extends AccessibleJTextComponent {
 
         /**
+         * Constructs a {@code AccessibleJTextArea}.
+         */
+        public AccessibleJTextArea() {}
+
+        /**
          * Gets the state set of this object.
          *
          * @return an instance of AccessibleStateSet describing the states
