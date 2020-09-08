@@ -782,7 +782,10 @@ private:
   void calculate_collection_set(G1EvacuationInfo& evacuation_info, double target_pause_time_ms);
 
   // Actually do the work of evacuating the parts of the collection set.
-  void evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states);
+  // The may_do_optional_evacuation flag indicates whether some or more optional evacuation
+  // steps will follow.
+  void evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states,
+                                       bool may_do_optional_evacuation);
   void evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states);
 private:
   // Evacuate the next set of optional regions.
