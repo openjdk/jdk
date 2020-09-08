@@ -35,6 +35,7 @@ import java.lang.reflect.Field;
 
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.TRACE_METHOD_LINKAGE;
+import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
@@ -687,6 +688,7 @@ class MethodHandleNatives {
      * LambdaForms cannot use condy via MethodHandles.classData
      */
     static Object classData(Class<?> c) {
+        UNSAFE.ensureClassInitialized(c);
         return JLA.classData(c);
     }
 }

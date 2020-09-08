@@ -157,7 +157,7 @@ class MemoryAccessVarHandleGenerator {
             debugWriteClassToFile(classBytes);
         }
         try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClassWithClassData(classBytes, classData);
+            MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClassWithClassData(classBytes, classData, true);
             Class<?> implCls = lookup.lookupClass();
             Class<?>[] components = new Class<?>[dimensions];
             Arrays.fill(components, long.class);

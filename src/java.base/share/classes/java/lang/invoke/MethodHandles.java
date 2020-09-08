@@ -56,6 +56,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -271,20 +272,21 @@ public class MethodHandles {
 
     /**
      * Returns the <em>class data</em> associated with the lookup class
-     * of the specified {@code Lookup} object, or {@code null}.
+     * of the given {@code caller} lookup object, or {@code null}.
      *
-     * <p> Classes can be created with class data by calling
-     * {@link Lookup#defineHiddenClassWithClassData(byte[], Object, Lookup.ClassOption...)
-     * Lookup::defineHiddenClassWithClassData}.
-     * A hidden class with a class data behaves as if the hidden class
-     * has a private static final unnamed field pre-initialized with
-     * the class data and this method is equivalent as if calling
+     * <p> A hidden class with class data can be created by calling
+     * {@link Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
+     * Lookup::defineHiddenClassWithClassData}.  The class data
+     * is associated with the hidden class as if assigned to a private
+     * static final unnamed field.  This method is equivalent as if calling
      * {@link ConstantBootstraps#getStaticFinal(Lookup, String, Class)} to
      * obtain the value of such field corresponding to the class data.
+     * This method will cause the static class initializer of the lookup
+     * class of the given {@code caller} lookup object be executed if
+     * it has not been initialized.
      *
      * <p> The {@linkplain Lookup#lookupModes() lookup modes} for this lookup
-     * must have {@link Lookup#ORIGINAL ORIGINAL} access in order to retrieve
-     * the class data.
+     * must have full privilege access in order to retrieve the class data.
      *
      * @apiNote
      * This method can be called as a bootstrap method for a dynamically computed
@@ -309,15 +311,94 @@ public class MethodHandles {
      * original caller access
      * @throws ClassCastException if the class data cannot be converted to
      * the specified {@code type}
-     * @see Lookup#defineHiddenClassWithClassData(byte[], Object, Lookup.ClassOption...)
+     * @see Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
      * @since 15
+     * @jvms 5.5 Initialization
      */
-    static <T> T classData(Lookup caller, String name, Class<T> type) throws IllegalAccessException {
+     public static <T> T classData(Lookup caller, String name, Class<T> type) throws IllegalAccessException {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(type);
+
         if (!caller.hasFullPrivilegeAccess()) {
             throw new IllegalAccessException(caller + " does not have full privilege access");
         }
-        Object classData = MethodHandleNatives.classData(caller.lookupClass);
-        return type.cast(classData);
+        try {
+            Object result = MethodHandleNatives.classData(caller.lookupClass);
+            return BootstrapMethodInvoker.widenAndCast(result, type);
+        } catch (Throwable e) {
+            throw new InternalError(e);
+        }
+    }
+
+    /**
+     * Returns the value associated with the given key contained in the
+     * {@linkplain #classData(Lookup, String, Class) class data}.
+     * If the class data is not present in this lookup class, this method returns
+     * {@code null}.  Otherwise, if the class data is of {@code List} type, then
+     * the given key is the index of the element in the list
+     * and this method is equivalent to calling
+     * <blockquote>
+     * {@code classData(caller, key, List.class).get(Integer.parseInt(key)}
+     * </blockquote>
+     * If the class data is of {@code Map} type and the given key is used to
+     * map to a value and this method is equivalent to calling
+     * <blockquote>
+     * {@code classData(caller, key, Map.class).get(key))}
+     * </blockquote>
+     *
+     * <p> The {@linkplain Lookup#lookupModes() lookup modes} for this lookup
+     * must have full privilege access in order to retrieve
+     * the class data.
+     *
+     * @param <T> the type to cast the result object to
+     * @param caller the lookup context describing the class performing the
+     * operation (normally stacked by the JVM)
+     * @param key the key whose associated value contained in the class data
+     *            to be returned.
+     * @param type the type of the value associated with the given key
+     * @param classDataType the type of the class data
+     * @return the value represented by the given key contained in the class data
+     * if present in the lookup class; otherwise {@code null}
+     * @throws IllegalArgumentException if the class data is not of type {@code List},
+     * not of type {@code Map} type or the key is not an integer if {@code classDataType}
+     * is a {@code List}
+     * @throws IllegalAccessException if the lookup context does not have
+     * original caller access
+     * @throws ClassCastException if the class data cannot be converted to
+     * the specified {@code type}
+     * @see #classData(Lookup, String, Class)
+     */
+    public static <T> T classDataAt(Lookup caller, String key, Class<T> type, Class<?> classDataType)
+            throws IllegalAccessException
+    {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(classDataType);
+
+        if (!caller.hasFullPrivilegeAccess()) {
+            throw new IllegalAccessException(caller + " does not have full privilege access");
+        }
+        if (!List.class.isAssignableFrom(classDataType) && !Map.class.isAssignableFrom(classDataType)) {
+            throw new IllegalArgumentException("type must be List or Map: " + classDataType);
+        }
+
+        try {
+            Object classdata = MethodHandleNatives.classData(caller.lookupClass);
+            if (classdata == null) return null;
+
+            if (List.class.isAssignableFrom(classDataType)) {
+                int index = Integer.parseInt(key);
+                @SuppressWarnings("unchecked")
+                List<T> classData = List.class.cast(classdata);
+                return BootstrapMethodInvoker.widenAndCast(classData.get(index), type);
+            } else {
+                @SuppressWarnings("unchecked")
+                Map<?,T> classData = Map.class.cast(classdata);
+                return BootstrapMethodInvoker.widenAndCast(classData.get(key), type);
+            }
+        } catch (Throwable e) {
+            throw new InternalError(e);
+        }
     }
 
     /**
@@ -1964,17 +2045,17 @@ public class MethodHandles {
          * returning a {@code Lookup} on the newly created class or interface.
          *
          * <p> This method is equivalent to calling
-         * {@link #defineHiddenClass(byte[], boolean, ClassOption...) defineHiddenClass(bytes, true, options)}
+         * {@link #defineHiddenClass(byte[], boolean, ClassOption...) defineHiddenClass(bytes, initialize, options)}
          * as if the hidden class has a private static final unnamed field whose value
-         * is initialized to {@code classData} right before the class initializer is
-         * executed.  The newly created class is linked and initialized by the Java
-         * Virtual Machine.
+         * is initialized to {@code classData} as the first instruction of the class initializer.
+         * The newly created class is linked and initialized by the Java Virtual Machine.
          *
          * <p> The {@link MethodHandles#classData(Lookup, String, Class) MethodHandles::classData}
          * method can be used to retrieve the {@code classData}.
          *
          * @param bytes     the class bytes
          * @param classData pre-initialized class data
+         * @param initialize if {@code true} the class will be initialized.
          * @param options   {@linkplain ClassOption class options}
          * @return the {@code Lookup} object on the hidden class
          *
@@ -2000,7 +2081,7 @@ public class MethodHandles {
          * @see Lookup#defineHiddenClass(byte[], boolean, ClassOption...)
          * @see Class#isHidden()
          */
-        /* package-private */ Lookup defineHiddenClassWithClassData(byte[] bytes, Object classData, ClassOption... options)
+        /* package-private */ Lookup defineHiddenClassWithClassData(byte[] bytes, Object classData, boolean initialize, ClassOption... options)
                 throws IllegalAccessException
         {
             Objects.requireNonNull(bytes);
@@ -2013,7 +2094,7 @@ public class MethodHandles {
             }
 
             return makeHiddenClassDefiner(bytes.clone(), Set.of(options), false)
-                       .defineClassAsLookup(true, classData);
+                       .defineClassAsLookup(initialize, classData);
         }
 
         static class ClassFile {
@@ -2244,8 +2325,6 @@ public class MethodHandles {
             }
 
             Lookup defineClassAsLookup(boolean initialize, Object classData) {
-                // initialize must be true if classData is non-null
-                assert classData == null || initialize == true;
                 Class<?> c = defineClass(initialize, classData);
                 return new Lookup(c, null, FULL_POWER_MODES);
             }
@@ -4093,7 +4172,7 @@ return mh1;
      *     {@code short}, {@code char}, {@code int}, {@code long},
      *     {@code float}, or {@code double} then numeric atomic update access
      *     modes are unsupported.
-     * <li>if the component type is anything other than {@code boolean},
+     * <li>if the field type is anything other than {@code boolean},
      *     {@code byte}, {@code short}, {@code char}, {@code int} or
      *     {@code long} then bitwise atomic update access modes are
      *     unsupported.
