@@ -336,24 +336,23 @@ class JvmtiEnvIterator : public StackObj {
   JvmtiEnv* next(JvmtiEnvBase* env) { return env->next_environment(); }
 };
 
-// VM operation to update for pop top frame.
-class VM_UpdateForPopTopFrame : public VM_Operation {
+// HandshakeClosure to update for pop top frame.
+class UpdateForPopTopFrameClosure : public HandshakeClosure {
 private:
   JvmtiThreadState* _state;
   jvmtiError _result;
 
 public:
-  VM_UpdateForPopTopFrame(JvmtiThreadState* state) {
-    _state = state;
-    _result = JVMTI_ERROR_NONE;
-  }
-  VMOp_Type type() const { return VMOp_UpdateForPopTopFrame; }
+  UpdateForPopTopFrameClosure(JvmtiThreadState* state)
+    : HandshakeClosure("UpdateForPopTopFrame"),
+      _state(state),
+      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {}
   jvmtiError result() { return _result; }
-  void doit();
+  void do_thread(Thread *target);
 };
 
-// VM operation to set frame pop.
-class VM_SetFramePop : public VM_Operation {
+// HandshakeClosure to set frame pop.
+class SetFramePopClosure : public HandshakeClosure {
 private:
   JvmtiEnv *_env;
   JvmtiThreadState* _state;
@@ -361,15 +360,14 @@ private:
   jvmtiError _result;
 
 public:
-  VM_SetFramePop(JvmtiEnv *env, JvmtiThreadState* state, jint depth) {
-    _env = env;
-    _state = state;
-    _depth = depth;
-    _result = JVMTI_ERROR_NONE;
-  }
-  VMOp_Type type() const { return VMOp_SetFramePop; }
+  SetFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, jint depth)
+    : HandshakeClosure("SetFramePop"),
+      _env(env),
+      _state(state),
+      _depth(depth),
+      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {}
   jvmtiError result() { return _result; }
-  void doit();
+  void do_thread(Thread *target);
 };
 
 

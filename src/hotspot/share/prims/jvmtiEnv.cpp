@@ -1714,15 +1714,18 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
     // shall be posted for this PopFrame.
 
     // It is only safe to perform the direct operation on the current
-    // thread. All other usage needs to use a vm-safepoint-op for safety.
-    if (java_thread == JavaThread::current()) {
-      state->update_for_pop_top_frame();
-    } else {
-      VM_UpdateForPopTopFrame op(state);
-      VMThread::execute(&op);
-      jvmtiError err = op.result();
-      if (err != JVMTI_ERROR_NONE) {
-        return err;
+    // thread. All other usage needs to use a handshake for safety.
+    {
+      MutexLocker mu(JvmtiThreadState_lock);
+      if (java_thread == JavaThread::current()) {
+        state->update_for_pop_top_frame();
+      } else {
+        UpdateForPopTopFrameClosure op(state);
+        bool executed = Handshake::execute_direct(&op, java_thread);
+        jvmtiError err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
+        if (err != JVMTI_ERROR_NONE) {
+          return err;
+        }
       }
     }
 
@@ -1796,13 +1799,14 @@ JvmtiEnv::NotifyFramePop(JavaThread* java_thread, jint depth) {
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a vm-safepoint-op for safety.
+  MutexLocker mu(JvmtiThreadState_lock);
   if (java_thread == JavaThread::current()) {
     int frame_number = state->count_frames() - depth;
     state->env_thread_state(this)->set_frame_pop(frame_number);
   } else {
-    VM_SetFramePop op(this, state, depth);
-    VMThread::execute(&op);
-    err = op.result();
+    SetFramePopClosure op(this, state, depth);
+    bool executed = Handshake::execute_direct(&op, java_thread);
+    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
   return err;
 } /* end NotifyFramePop */

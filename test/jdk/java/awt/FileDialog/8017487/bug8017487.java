@@ -22,6 +22,7 @@
  */
 
 /* @test
+   @key headful
    @bug 8017487 8167988
    @summary filechooser in Windows-Libraries folder: columns are mixed up
    @author Semyon Sadetsky

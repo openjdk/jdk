@@ -425,6 +425,10 @@ public class CheckGraalIntrinsics extends GraalTest {
 
         if (isJDK16OrHigher()) {
             add(toBeInvestigated,
+                            "java/lang/Math.copySign(DD)D",
+                            "java/lang/Math.copySign(FF)F",
+                            "java/lang/Math.signum(D)D",
+                            "java/lang/Math.signum(F)F",
                             "sun/security/provider/MD5.implCompress0([BI)V");
         }
 

@@ -94,8 +94,11 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 //------------------------------transform_loop---------------------------
 void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   assert(UseSuperWord, "should be");
-  // Do vectors exist on this architecture?
-  if (Matcher::vector_width_in_bytes(T_BYTE) < 2) return;
+  // SuperWord only works with power of two vector sizes.
+  int vector_width = Matcher::vector_width_in_bytes(T_BYTE);
+  if (vector_width < 2 || !is_power_of_2(vector_width)) {
+    return;
+  }
 
   assert(lpt->_head->is_CountedLoop(), "must be");
   CountedLoopNode *cl = lpt->_head->as_CountedLoop();
