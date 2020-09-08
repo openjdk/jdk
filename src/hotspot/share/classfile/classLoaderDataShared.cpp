@@ -48,6 +48,7 @@ class ArchivedClassLoaderData {
 public:
   ArchivedClassLoaderData() : _packages(NULL), _modules(NULL) {}
 
+  void iterate_symbols(ClassLoaderData* loader_data, MetaspaceClosure* closure);
   void allocate(ClassLoaderData* loader_data);
   void init_archived_entries(ClassLoaderData* loader_data);
   void init_archived_oops(ClassLoaderData* loader_data);
@@ -65,12 +66,23 @@ static ArchivedClassLoaderData _archived_platform_loader_data;
 static ArchivedClassLoaderData _archived_system_loader_data;
 static ModuleEntry* _archived_javabase_moduleEntry = NULL;
 
+void ArchivedClassLoaderData::iterate_symbols(ClassLoaderData* loader_data, MetaspaceClosure* closure) {
+  assert(DumpSharedSpaces, "must be");
+  assert_valid(loader_data);
+  if (loader_data != NULL) {
+    loader_data->packages()->iterate_symbols(closure);
+    loader_data->modules() ->iterate_symbols(closure);
+  }
+}
+
 void ArchivedClassLoaderData::allocate(ClassLoaderData* loader_data) {
   assert(DumpSharedSpaces, "must be");
   assert_valid(loader_data);
   if (loader_data != NULL) {
-    // We can't create a hashtable at dump time because the hashcode dependes on the
+    // We can't create hashtables at dump time because the hashcode dependes on the
     // address of the Symbols, which may be relocated at run time due to ASLR.
+    // So we store the packages/modules in a Arrays. At run time, we create
+    // the hashtables using these arrays.
     _packages = loader_data->packages()->allocate_archived_entries();
     _modules  = loader_data->modules() ->allocate_archived_entries();
   }
@@ -125,6 +137,13 @@ ClassLoaderData* ClassLoaderDataShared::java_platform_loader_data_or_null() {
 
 ClassLoaderData* ClassLoaderDataShared::java_system_loader_data_or_null() {
   return ClassLoaderData::class_loader_data_or_null(SystemDictionary::java_system_loader());
+}
+
+void ClassLoaderDataShared::iterate_symbols(MetaspaceClosure* closure) {
+  assert(DumpSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
+  _archived_boot_loader_data.iterate_symbols    (null_class_loader_data(), closure);
+  _archived_platform_loader_data.iterate_symbols(java_platform_loader_data_or_null(), closure);
+  _archived_system_loader_data.iterate_symbols  (java_system_loader_data_or_null(), closure);
 }
 
 void ClassLoaderDataShared::allocate_archived_tables() {

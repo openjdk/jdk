@@ -251,7 +251,6 @@ class MetaspaceShared : AllStatic {
   static void relocate_klass_ptr(oop o);
 
   static Klass* get_relocated_klass(Klass *k, bool is_final=false);
-  static Symbol* get_relocated_symbol(Symbol* orig_symbol);
 
   static void allocate_cloned_cpp_vtptrs();
   static intptr_t* get_archived_cpp_vtable(MetaspaceObj::Type msotype, address obj);

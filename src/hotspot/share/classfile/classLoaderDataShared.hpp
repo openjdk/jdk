@@ -37,6 +37,7 @@ private:
   static ClassLoaderData* java_system_loader_data_or_null();
 public:
   static void allocate_archived_tables();
+  static void iterate_symbols(MetaspaceClosure* closure);
   static void init_archived_tables();
   static void init_archived_oops();
   static void serialize(SerializeClosure* f);

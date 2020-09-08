@@ -29,6 +29,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "logging/log.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.hpp"
@@ -428,6 +429,12 @@ GrowableArray<ModuleEntry*>* ModuleEntry::read_archived_entry_array(Array<Module
   return array;
 }
 
+void ModuleEntry::iterate_symbols(MetaspaceClosure* closure) {
+  closure->push(literal_addr()); // name
+  closure->push(&_version);
+  closure->push(&_location);
+}
+
 void ModuleEntry::init_as_archived_entry() {
   Array<ModuleEntry*>* archived_reads = write_archived_entry_array(_reads);
 
@@ -436,15 +443,15 @@ void ModuleEntry::init_as_archived_entry() {
   _loader_data = NULL;  // re-init at runtime
   _shared_path_index = FileMapInfo::get_module_shared_path_index(_location);
   if (literal() != NULL) {
-    set_literal(MetaspaceShared::get_relocated_symbol(literal()));
+    set_literal(ArchiveBuilder::get_relocated_symbol(literal()));
     ArchivePtrMarker::mark_pointer((address*)literal_addr());
   }
   _reads = (GrowableArray<ModuleEntry*>*)archived_reads;
   if (_version != NULL) {
-    _version = MetaspaceShared::get_relocated_symbol(_version);
+    _version = ArchiveBuilder::get_relocated_symbol(_version);
   }
   if (_location != NULL) {
-    _location = MetaspaceShared::get_relocated_symbol(_location);
+    _location = ArchiveBuilder::get_relocated_symbol(_location);
   }
 
   ArchivePtrMarker::mark_pointer((address*)&_reads);
@@ -489,6 +496,14 @@ void ModuleEntry::restore_archive_oops(ClassLoaderData* loader_data) {
 static int compare_module_by_name(ModuleEntry* a, ModuleEntry* b) {
   assert(a == b || a->name() != b->name(), "no duplicated names");
   return a->name()->fast_compare(b->name());
+}
+
+void ModuleEntryTable::iterate_symbols(MetaspaceClosure* closure) {
+  for (int i = 0; i < table_size(); ++i) {
+    for (ModuleEntry* m = bucket(i); m != NULL; m = m->next()) {
+      m->iterate_symbols(closure);
+    }
+  }
 }
 
 Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {

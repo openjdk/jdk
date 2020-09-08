@@ -48,6 +48,7 @@
 #define JAVA_BASE_NAME_LEN 9
 
 template <class T> class Array;
+class MetaspaceClosure;
 class ModuleClosure;
 
 // A ModuleEntry describes a module that has been defined by a call to JVM_DefineModule.
@@ -193,6 +194,7 @@ public:
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
 #if INCLUDE_CDS_JAVA_HEAP
+  void iterate_symbols(MetaspaceClosure* closure);
   ModuleEntry* allocate_archived_entry() const;
   void init_as_archived_entry();
   void init_archived_oops();
@@ -286,6 +288,7 @@ public:
   void verify();
 
 #if INCLUDE_CDS_JAVA_HEAP
+  void iterate_symbols(MetaspaceClosure* closure);
   Array<ModuleEntry*>* allocate_archived_entries();
   void init_archived_entries(Array<ModuleEntry*>* archived_modules);
   void init_archived_oops(Array<ModuleEntry*>* archived_modules);

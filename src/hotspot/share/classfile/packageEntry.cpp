@@ -26,6 +26,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "logging/log.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
@@ -224,11 +225,15 @@ PackageEntry* PackageEntry::get_archived_entry(PackageEntry* orig_entry) {
   return *ptr;
 }
 
+void PackageEntry::iterate_symbols(MetaspaceClosure* closure) {
+  closure->push(literal_addr()); // name
+}
+
 void PackageEntry::init_as_archived_entry() {
   Array<ModuleEntry*>* archived_qualified_exports = ModuleEntry::write_archived_entry_array(_qualified_exports);
 
   set_next(NULL);
-  set_literal(MetaspaceShared::get_relocated_symbol(literal()));
+  set_literal(ArchiveBuilder::get_relocated_symbol(literal()));
   set_hash(0x0);  // re-init at runtime
   _module = ModuleEntry::get_archived_entry(_module);
   _qualified_exports = (GrowableArray<ModuleEntry*>*)archived_qualified_exports;
@@ -247,6 +252,14 @@ void PackageEntry::load_from_archive() {
 static int compare_package_by_name(PackageEntry* a, PackageEntry* b) {
   assert(a == b || a->name() != b->name(), "no duplicated names");
   return a->name()->fast_compare(b->name());
+}
+
+void PackageEntryTable::iterate_symbols(MetaspaceClosure* closure) {
+  for (int i = 0; i < table_size(); ++i) {
+    for (PackageEntry* p = bucket(i); p != NULL; p = p->next()) {
+      p->iterate_symbols(closure);
+    }
+  }
 }
 
 Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
