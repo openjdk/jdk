@@ -276,7 +276,7 @@ void ConstantOopReadValue::print_on(outputStream* st) const {
   if (value()() != NULL) {
     value()()->print_value_on(st);
   } else {
-    st->print_cr("NULL");
+    st->print("NULL");
   }
 }
 
