@@ -90,6 +90,7 @@ public final class ActivationGroupDesc implements Serializable {
     private Properties props;
 
     /** indicate compatibility with the Java 2 SDK v1.2 version of class */
+    @java.io.Serial
     private static final long serialVersionUID = -4936225423168276595L;
 
     /**
@@ -204,6 +205,7 @@ public final class ActivationGroupDesc implements Serializable {
      * @since 1.2
      */
     public static class CommandEnvironment implements Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 6165754737887770191L;
 
         /**
@@ -318,6 +320,7 @@ public final class ActivationGroupDesc implements Serializable {
          * @throws ClassNotFoundException if a serialized class cannot be loaded
          *
          */
+        @java.io.Serial
         private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException
         {

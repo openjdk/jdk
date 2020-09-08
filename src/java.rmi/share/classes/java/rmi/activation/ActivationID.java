@@ -90,6 +90,7 @@ public class ActivationID implements Serializable {
     private transient UID uid = new UID();
 
     /** indicate compatibility with the Java 2 SDK v1.2 version of class */
+    @java.io.Serial
     private static final long serialVersionUID = -4608673054848209235L;
 
     /** an AccessControlContext with no permissions */
@@ -296,6 +297,7 @@ public class ActivationID implements Serializable {
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      *
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
     {

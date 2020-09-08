@@ -196,6 +196,7 @@ public class UnicastRemoteObject extends RemoteServer {
     private RMIServerSocketFactory ssf = null;
 
     /* indicate compatibility with JDK 1.1.x version of class */
+    @java.io.Serial
     private static final long serialVersionUID = 4974527148936298033L;
 
     /**
@@ -266,6 +267,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      *
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream in)
         throws java.io.IOException, java.lang.ClassNotFoundException
     {
