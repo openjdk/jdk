@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,10 @@
  * questions.
  */
 
+#ifdef HEADLESS
+    #error This file should not be included in headless library
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -32,11 +36,8 @@
 #include <sizecalc.h>
 #include "sun_awt_UNIXToolkit.h"
 
-#ifndef HEADLESS
 #include "awt.h"
 #include "gtk_interface.h"
-#endif /* !HEADLESS */
-
 
 static jclass this_class = NULL;
 static jmethodID icon_upcall_method = NULL;
@@ -49,11 +50,7 @@ static jmethodID icon_upcall_method = NULL;
  */
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_UNIXToolkit_check_1gtk(JNIEnv *env, jclass klass, jint version) {
-#ifndef HEADLESS
     return (jboolean)gtk_check_version(version);
-#else
-    return JNI_FALSE;
-#endif /* !HEADLESS */
 }
 
 
@@ -65,11 +62,7 @@ Java_sun_awt_UNIXToolkit_check_1gtk(JNIEnv *env, jclass klass, jint version) {
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_UNIXToolkit_load_1gtk(JNIEnv *env, jclass klass, jint version,
                                                              jboolean verbose) {
-#ifndef HEADLESS
     return (jboolean)gtk_load(env, version, verbose);
-#else
-    return JNI_FALSE;
-#endif /* !HEADLESS */
 }
 
 
@@ -81,11 +74,7 @@ Java_sun_awt_UNIXToolkit_load_1gtk(JNIEnv *env, jclass klass, jint version,
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_UNIXToolkit_unload_1gtk(JNIEnv *env, jclass klass)
 {
-#ifndef HEADLESS
     return (jboolean)gtk->unload();
-#else
-    return JNI_FALSE;
-#endif /* !HEADLESS */
 }
 
 jboolean init_method(JNIEnv *env, jobject this)
@@ -111,7 +100,6 @@ JNIEXPORT jboolean JNICALL
 Java_sun_awt_UNIXToolkit_load_1gtk_1icon(JNIEnv *env, jobject this,
         jstring filename)
 {
-#ifndef HEADLESS
     int len;
     jsize jlen;
     char *filename_str = NULL;
@@ -142,9 +130,6 @@ Java_sun_awt_UNIXToolkit_load_1gtk_1icon(JNIEnv *env, jobject this,
     free(filename_str);
 
     return result;
-#else /* HEADLESS */
-    return JNI_FALSE;
-#endif /* !HEADLESS */
 }
 
 /*
@@ -159,7 +144,6 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
         jint widget_type, jstring stock_id, jint icon_size,
         jint text_direction, jstring detail)
 {
-#ifndef HEADLESS
     int len;
     jsize jlen;
     char *stock_id_str = NULL;
@@ -206,9 +190,6 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
     free(detail_str);
 
     return result;
-#else /* HEADLESS */
-    return JNI_FALSE;
-#endif /* !HEADLESS */
 }
 
 /*
@@ -219,11 +200,9 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
 JNIEXPORT void JNICALL
 Java_sun_awt_UNIXToolkit_nativeSync(JNIEnv *env, jobject this)
 {
-#ifndef HEADLESS
     AWT_LOCK();
     XSync(awt_display, False);
     AWT_UNLOCK();
-#endif /* !HEADLESS */
 }
 
 /*
@@ -275,9 +254,5 @@ Java_sun_awt_UNIXToolkit_gtkCheckVersionImpl(JNIEnv *env, jobject this,
 JNIEXPORT jint JNICALL
 Java_sun_awt_UNIXToolkit_get_1gtk_1version(JNIEnv *env, jclass klass)
 {
-#ifndef HEADLESS
     return gtk ? gtk->version : GTK_ANY;
-#else
-    return GTK_ANY;
-#endif /* !HEADLESS */
 }
