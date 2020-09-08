@@ -43,7 +43,8 @@ class DumpedInternedStrings;
 
 struct ArchivableStaticFieldInfo {
   const char* klass_name;
-  const char* field_name;
+  int full_module_graph_only;
+  const char* field_name;  
   InstanceKlass* klass;
   int offset;
   BasicType type;
@@ -245,7 +246,10 @@ private:
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
 
+  static void check_module_oop(oop orig_module_obj);
+
  public:
+  static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache() {
     _archived_object_cache =
       new (ResourceObj::C_HEAP, mtClass)ArchivedObjectCache();

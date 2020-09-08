@@ -23,9 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -45,6 +49,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/bitMap.inline.hpp"
 #if INCLUDE_G1GC
@@ -68,20 +73,23 @@ DumpedInternedStrings *HeapShared::_dumped_interned_strings = NULL;
 // region. Warning: Objects in the subgraphs should not have reference fields
 // assigned at runtime.
 static ArchivableStaticFieldInfo closed_archive_subgraph_entry_fields[] = {
-  {"java/lang/Integer$IntegerCache",           "archivedCache"},
-  {"java/lang/Long$LongCache",                 "archivedCache"},
-  {"java/lang/Byte$ByteCache",                 "archivedCache"},
-  {"java/lang/Short$ShortCache",               "archivedCache"},
-  {"java/lang/Character$CharacterCache",       "archivedCache"},
-  {"java/util/jar/Attributes$Name",            "KNOWN_NAMES"},
-  {"sun/util/locale/BaseLocale",               "constantBaseLocales"},
+  {"java/lang/Integer$IntegerCache",              0, "archivedCache"},
+  {"java/lang/Long$LongCache",                    0, "archivedCache"},
+  {"java/lang/Byte$ByteCache",                    0, "archivedCache"},
+  {"java/lang/Short$ShortCache",                  0, "archivedCache"},
+  {"java/lang/Character$CharacterCache",          0, "archivedCache"},
+  {"java/util/jar/Attributes$Name",               0, "KNOWN_NAMES"},
+  {"sun/util/locale/BaseLocale",                  0, "constantBaseLocales"},
 };
 // Entry fields for subgraphs archived in the open archive heap region.
 static ArchivableStaticFieldInfo open_archive_subgraph_entry_fields[] = {
-  {"jdk/internal/module/ArchivedModuleGraph",  "archivedModuleGraph"},
-  {"java/util/ImmutableCollections",           "archivedObjects"},
-  {"java/lang/module/Configuration",           "EMPTY_CONFIGURATION"},
-  {"jdk/internal/math/FDBigInteger",           "archivedCaches"},
+  {"jdk/internal/loader/ArchivedClassLoaders",                    1, "archivedClassLoaders"},
+  {"jdk/internal/module/ArchivedBootLayer",                       1, "archivedBootLayer"},
+  {"jdk/internal/module/ArchivedModuleGraph",                     0, "archivedModuleGraph"},
+  {"java/util/ImmutableCollections",                              0, "archivedObjects"},
+  {"java/lang/Module$ArchivedData",                               1, "archivedData"},
+  {"java/lang/module/Configuration",                              0, "EMPTY_CONFIGURATION"},
+  {"jdk/internal/math/FDBigInteger",                              0, "archivedCaches"},
 };
 
 const static int num_closed_archive_subgraph_entry_fields =
@@ -106,6 +114,36 @@ unsigned HeapShared::oop_hash(oop const& p) {
          "this object should never have been locked");  // so identity_hash won't safepoin
   unsigned hash = (unsigned)p->identity_hash();
   return hash;
+}
+
+static void reset_states(oop obj, TRAPS) {
+  Handle h_obj(THREAD, obj);
+  InstanceKlass* klass = InstanceKlass::cast(obj->klass());
+  TempNewSymbol method_name = SymbolTable::new_symbol("resetArchivedStates");
+  Symbol* method_sig = vmSymbols::void_method_signature();
+
+  while (klass != NULL) {
+    Method* method = klass->find_method(method_name, method_sig);
+    if (method != NULL) {
+      assert(method->is_private(), "must be");
+      if (log_is_enabled(Debug, cds)) {
+        ResourceMark rm(THREAD);
+        log_debug(cds)("  calling %s", method->name_and_sig_as_C_string());
+      }
+      JavaValue result(T_VOID);
+      JavaCalls::call_special(&result, h_obj, klass,
+                              method_name, method_sig, CHECK);
+    }
+    klass = klass->java_super();
+  }
+}
+
+void HeapShared::reset_archived_object_states(TRAPS) {
+  assert(DumpSharedSpaces, "dump-time only");
+  log_debug(cds)("Resetting platform loader");
+  reset_states(SystemDictionary::java_platform_loader(), THREAD);
+  log_debug(cds)("Resetting system loader");
+  reset_states(SystemDictionary::java_system_loader(), THREAD);
 }
 
 HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = NULL;
@@ -237,6 +275,10 @@ void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion> *closed,
 
     log_info(cds)("Dumping objects to open archive heap region ...");
     copy_open_archive_heap_objects(open);
+
+    if (MetaspaceShared::use_full_module_graph()) {
+      ClassLoaderDataShared::init_archived_oops();
+    }
 
     destroy_archived_object_cache();
   }
@@ -470,6 +512,15 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k) {
   }
   assert(!DumpSharedSpaces, "Should not be called with DumpSharedSpaces");
 
+  if (!MetaspaceShared::use_full_module_graph()) {
+    for (int i = 0; i < num_open_archive_subgraph_entry_fields; i++) {
+      const ArchivableStaticFieldInfo* info = &open_archive_subgraph_entry_fields[i];
+      if (info->full_module_graph_only && k->name()->equals(info->klass_name)) {
+        return;
+      }
+    }
+  }
+
   unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(k);
   const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
 
@@ -628,6 +679,25 @@ void HeapShared::check_closed_archive_heap_region_object(InstanceKlass* k,
   }
 }
 
+void HeapShared::check_module_oop(oop orig_module_obj) {
+  assert(DumpSharedSpaces, "must be");
+  assert(java_lang_Module::is_instance(orig_module_obj), "must be");
+  ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
+  if (orig_module_ent == NULL) {
+    // These special Module objects are created in Java code. They are not
+    // defined via Modules::define_module(), so they don't have a ModuleEntry:
+    //     java.lang.Module::ALL_UNNAMED_MODULE
+    //     java.lang.Module::EVERYONE_MODULE
+    //     jdk.internal.loader.ClassLoaders$BootClassLoader::unnamedModule
+    assert(java_lang_Module::name(orig_module_obj) == NULL, "must be unnamed");
+    log_info(cds, heap)("Module oop with No ModuleEntry* @[" PTR_FORMAT "]", p2i(orig_module_obj));
+  } else {
+    ClassLoaderData* loader_data = orig_module_ent->loader_data();
+    assert(loader_data->is_builtin_class_loader_data(), "must be");
+  }
+}
+
+
 // (1) If orig_obj has not been archived yet, archive it.
 // (2) If orig_obj has not been seen yet (since start_recording_subgraph() was called),
 //     trace all  objects that are reachable from it, and make sure these objects are archived.
@@ -694,6 +764,18 @@ oop HeapShared::archive_reachable_objects_from(int level,
         // we have a real use case.
         vm_exit(1);
       }
+    }
+
+    if (java_lang_Module::is_instance(orig_obj)) {
+      check_module_oop(orig_obj);
+      java_lang_Module::set_module_entry(archived_obj, NULL);
+      java_lang_Module::set_loader(archived_obj, NULL);
+    } else if (java_lang_ClassLoader::is_instance(orig_obj)) {
+      // class_data will be restored explicitly at run time. 
+      guarantee(orig_obj == SystemDictionary::java_platform_loader() ||
+                orig_obj == SystemDictionary::java_system_loader() ||
+                java_lang_ClassLoader::loader_data_raw(orig_obj) == NULL, "must be");
+      java_lang_ClassLoader::release_set_loader_data(archived_obj, NULL);
     }
   }
 
@@ -996,9 +1078,12 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
       if (f->klass_name != klass_name) {
         break;
       }
-      archive_reachable_objects_from_static_field(f->klass, f->klass_name,
-                                                  f->offset, f->field_name,
-                                                  is_closed_archive, CHECK);
+
+      if (!info->full_module_graph_only || MetaspaceShared::use_full_module_graph()) {
+        archive_reachable_objects_from_static_field(f->klass, f->klass_name,
+                                                    f->offset, f->field_name,
+                                                    is_closed_archive, CHECK);
+      }
     }
     done_recording_subgraph(info->klass, klass_name);
   }

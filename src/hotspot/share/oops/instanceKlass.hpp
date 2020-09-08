@@ -1329,6 +1329,7 @@ public:
   virtual void remove_unshareable_info();
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
+  void init_shared_package_entry();
 
   // jvm support
   jint compute_modifier_flags(TRAPS) const;

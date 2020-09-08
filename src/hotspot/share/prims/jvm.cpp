@@ -1230,6 +1230,11 @@ JVM_ENTRY (void, JVM_AddReadsModule(JNIEnv *env, jobject from_module, jobject so
   Modules::add_reads_module(from_module, source_module, CHECK);
 JVM_END
 
+JVM_ENTRY(void, JVM_DefineArchivedModules(JNIEnv *env, jobject platform_loader, jobject system_loader))
+  JVMWrapper("JVM_DefineArchivedModules");
+  Modules::define_archived_modules(platform_loader, system_loader, CHECK);
+JVM_END
+
 // Reflection support //////////////////////////////////////////////////////////////////////////////
 
 JVM_ENTRY(jstring, JVM_InitClassName(JNIEnv *env, jclass cls))

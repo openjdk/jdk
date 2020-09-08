@@ -233,6 +233,9 @@ public:
   static Symbol* get_relocated_symbol(Symbol* orig_symbol) {
     return (Symbol*)singleton()->get_dumped_addr((address)orig_symbol);
   }
+  static Symbol* get_relocated_symbol(Symbol* orig_symbol) {
+    return (Symbol*)singleton()->get_dumped_addr((address)orig_symbol);
+  }
 
   void print_stats(int ro_all, int rw_all, int mc_all);
 };
