@@ -997,7 +997,7 @@ bool universe_post_init() {
   // it's an input to soft ref clearing policy.
   {
     MutexLocker x(THREAD, Heap_lock);
-    Universe::heap()->update_heap_info_at_gc();
+    Universe::heap()->update_capacity_and_used_at_gc();
   }
 
   // ("weak") refs processing infrastructure initialization

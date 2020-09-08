@@ -110,6 +110,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
  private:
   GCHeapLog* _gc_heap_log;
 
+  // Historic gc information
+  size_t _capacity_at_last_gc;
+  size_t _used_at_last_gc;
+
  protected:
   // Not used by all GCs
   MemRegion _reserved;
@@ -238,6 +242,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   // Returns unused capacity.
   virtual size_t unused() const;
+
+  // Historic gc information
+  size_t free_at_last_gc()    { return _capacity_at_last_gc - _used_at_last_gc; }
+  size_t used_at_last_gc()    { return _used_at_last_gc; }
+  void update_capacity_and_used_at_gc();
 
   // Return "true" if the part of the heap that allocates Java
   // objects has reached the maximal committed limit that it can
@@ -437,10 +446,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   virtual void initialize_serviceability() = 0;
 
-  // Historic gc information
-  size_t _heap_capacity_at_last_gc;
-  size_t _heap_used_at_last_gc;
-
  public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
@@ -516,11 +521,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual void deduplicate_string(oop str);
 
   virtual bool is_oop(oop object) const;
-
-  // Historic gc information
-  size_t get_heap_free_at_last_gc()    { return _heap_capacity_at_last_gc - _heap_used_at_last_gc; }
-  size_t get_heap_used_at_last_gc()    { return _heap_used_at_last_gc; }
-  void update_heap_info_at_gc();
 
   // Non product verification and debugging.
 #ifndef PRODUCT

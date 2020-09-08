@@ -190,6 +190,8 @@ bool CollectedHeap::is_oop(oop object) const {
 
 
 CollectedHeap::CollectedHeap() :
+  _capacity_at_last_gc(0),
+  _used_at_last_gc(0),
   _is_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
@@ -593,7 +595,7 @@ uint32_t CollectedHeap::hash_oop(oop obj) const {
 
 // It's the caller's responsibility to ensure glitch-freedom
 // (if required).
-void CollectedHeap::update_heap_info_at_gc() {
-  _heap_capacity_at_last_gc = capacity();
-  _heap_used_at_last_gc     = used();
+void CollectedHeap::update_capacity_and_used_at_gc() {
+  _capacity_at_last_gc = capacity();
+  _used_at_last_gc     = used();
 }
