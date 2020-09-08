@@ -45,6 +45,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.inline.hpp"
 #include "services/threadService.hpp"
 #include "utilities/stringUtils.hpp"
 

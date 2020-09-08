@@ -41,6 +41,7 @@
 #include "oops/typeArrayKlass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"
 
 TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,

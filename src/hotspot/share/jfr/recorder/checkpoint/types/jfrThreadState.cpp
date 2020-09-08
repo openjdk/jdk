@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "runtime/osThread.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 
 struct jvmti_thread_state {
   u8 id;

@@ -32,6 +32,24 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 
+inline JavaThread* Thread::as_Java_thread() {
+  assert(is_Java_thread(), "incorrect cast to JavaThread");
+  return static_cast<JavaThread*>(this);
+}
+
+inline const JavaThread* Thread::as_const_Java_thread() const {
+  assert(is_Java_thread(), "incorrect cast to const JavaThread");
+  return static_cast<const JavaThread*>(this);
+}
+
+inline JavaThread* JavaThread::current() {
+  return Thread::current()->as_Java_thread();
+}
+
+inline CompilerThread* CompilerThread::current() {
+  return JavaThread::current()->as_CompilerThread();
+}
+
 inline void Thread::set_suspend_flag(SuspendFlags f) {
   uint32_t flags;
   do {

@@ -27,7 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 
 class CompileTask;
 class JVMCIObject;

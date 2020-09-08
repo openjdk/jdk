@@ -503,14 +503,8 @@ class Thread: public ThreadShadow {
 
   // Casts
   virtual WorkerThread* as_Worker_thread() const     { return NULL; }
-  JavaThread* as_Java_thread() {
-    assert(is_Java_thread(), "incorrect cast to JavaThread");
-    return (JavaThread*)this;
-  }
-  JavaThread * as_const_Java_thread() const {
-    assert(is_Java_thread(), "incorrect cast to JavaThread");
-    return (JavaThread*)this;
-  }
+  JavaThread* as_Java_thread();
+  const JavaThread* as_const_Java_thread() const;
 
   virtual char* name() const { return (char*)"Unknown thread"; }
 
@@ -1395,20 +1389,7 @@ class JavaThread: public Thread {
   void java_suspend_self_with_safepoint_check();
 
  public:
-  void check_and_wait_while_suspended() {
-    assert(JavaThread::current() == this, "sanity check");
-
-    bool do_self_suspend;
-    do {
-      // were we externally suspended while we were waiting?
-      do_self_suspend = handle_special_suspend_equivalent_condition();
-      if (do_self_suspend) {
-        // don't surprise the thread that suspended us by returning
-        java_suspend_self();
-        set_suspend_equivalent();
-      }
-    } while (do_self_suspend);
-  }
+  void check_and_wait_while_suspended();
   static void check_safepoint_and_suspend_for_native_trans(JavaThread *thread);
   // Check for async exception in addition to safepoint and suspend request.
   static void check_special_condition_for_native_trans(JavaThread *thread);
@@ -1952,7 +1933,7 @@ class JavaThread: public Thread {
 
  public:
   // Returns the running thread as a JavaThread
-  static inline JavaThread* current();
+  static JavaThread* current();
 
   // Returns the active Java thread.  Do not use this if you know you are calling
   // from a JavaThread, as it's slower than JavaThread::current.  If called from
@@ -2118,11 +2099,6 @@ public:
   static OopStorage* thread_oop_storage();
 };
 
-// Inline implementation of JavaThread::current
-inline JavaThread* JavaThread::current() {
-  return Thread::current()->as_Java_thread();
-}
-
 inline CompilerThread* JavaThread::as_CompilerThread() {
   assert(is_Compiler_thread(), "just checking");
   return (CompilerThread*)this;
@@ -2216,10 +2192,6 @@ class CompilerThread : public JavaThread {
   CompileTask* task()                      { return _task; }
   void         set_task(CompileTask* task) { _task = task; }
 };
-
-inline CompilerThread* CompilerThread::current() {
-  return JavaThread::current()->as_CompilerThread();
-}
 
 // The active thread queue. It also keeps track of the current used
 // thread priorities.

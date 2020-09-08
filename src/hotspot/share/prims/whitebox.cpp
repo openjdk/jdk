@@ -75,7 +75,7 @@
 #include "runtime/os.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memoryService.hpp"

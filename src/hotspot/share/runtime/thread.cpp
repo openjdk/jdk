@@ -3449,6 +3449,21 @@ Klass* JavaThread::security_get_caller_class(int depth) {
   return NULL;
 }
 
+void JavaThread::check_and_wait_while_suspended() {
+  assert(JavaThread::current() == this, "sanity check");
+
+  bool do_self_suspend;
+  do {
+    // were we externally suspended while we were waiting?
+    do_self_suspend = handle_special_suspend_equivalent_condition();
+    if (do_self_suspend) {
+      // don't surprise the thread that suspended us by returning
+      java_suspend_self();
+      set_suspend_equivalent();
+    }
+  } while (do_self_suspend);
+}
+
 // java.lang.Thread.sleep support
 // Returns true if sleep time elapsed as expected, and false
 // if the thread was interrupted.
