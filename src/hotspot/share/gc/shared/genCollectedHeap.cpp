@@ -66,6 +66,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/autoRestore.hpp"
