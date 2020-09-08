@@ -398,9 +398,10 @@ ModuleEntry* ModuleEntry::get_archived_entry(ModuleEntry* orig_entry) {
   return *ptr;
 }
 
-// GrowableArrays cannot be directly archived, as they need to be expandable at runtime.
+// This function is used to archive ModuleEntry::_reads and PackageEntry::_qualified_exports.
+// GrowableArray cannot be directly archived, as it needs to be expandable at runtime.
 // Write it out as an Array, and convert it back to GrowableArray at runtime.
-Array<ModuleEntry*>* ModuleEntry::write_archived_entry_array(GrowableArray<ModuleEntry*>* array) {
+Array<ModuleEntry*>* ModuleEntry::write_growable_array(GrowableArray<ModuleEntry*>* array) {
   Array<ModuleEntry*>* archived_array = NULL;
   int length = (array == NULL) ? 0 : array->length();
   if (length > 0) {
@@ -415,7 +416,7 @@ Array<ModuleEntry*>* ModuleEntry::write_archived_entry_array(GrowableArray<Modul
   return archived_array;
 }
 
-GrowableArray<ModuleEntry*>* ModuleEntry::read_archived_entry_array(Array<ModuleEntry*>* archived_array) {
+GrowableArray<ModuleEntry*>* ModuleEntry::restore_growable_array(Array<ModuleEntry*>* archived_array) {
   GrowableArray<ModuleEntry*>* array = NULL;
   int length = (archived_array == NULL) ? 0 : archived_array->length();
   if (length > 0) {
@@ -436,7 +437,7 @@ void ModuleEntry::iterate_symbols(MetaspaceClosure* closure) {
 }
 
 void ModuleEntry::init_as_archived_entry() {
-  Array<ModuleEntry*>* archived_reads = write_archived_entry_array(_reads);
+  Array<ModuleEntry*>* archived_reads = write_growable_array(_reads);
 
   set_next(NULL);
   set_hash(0x0);        // re-init at runtime
@@ -475,7 +476,7 @@ void ModuleEntry::init_archived_oops() {
 
 void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
   set_loader_data(loader_data);
-  _reads = read_archived_entry_array((Array<ModuleEntry*>*)_reads);
+  _reads = restore_growable_array((Array<ModuleEntry*>*)_reads);
   JFR_ONLY(INIT_ID(this);)
 }
 

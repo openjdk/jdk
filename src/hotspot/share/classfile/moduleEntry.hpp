@@ -199,8 +199,8 @@ public:
   void init_as_archived_entry();
   void init_archived_oops();
   static ModuleEntry* get_archived_entry(ModuleEntry* orig_entry);
-  static Array<ModuleEntry*>* write_archived_entry_array(GrowableArray<ModuleEntry*>* array);
-  static GrowableArray<ModuleEntry*>* read_archived_entry_array(Array<ModuleEntry*>* archived_array);
+  static Array<ModuleEntry*>* write_growable_array(GrowableArray<ModuleEntry*>* array);
+  static GrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
   void load_from_archive(ClassLoaderData* loader_data);
   void restore_archive_oops(ClassLoaderData* loader_data);
 #endif

@@ -230,7 +230,7 @@ void PackageEntry::iterate_symbols(MetaspaceClosure* closure) {
 }
 
 void PackageEntry::init_as_archived_entry() {
-  Array<ModuleEntry*>* archived_qualified_exports = ModuleEntry::write_archived_entry_array(_qualified_exports);
+  Array<ModuleEntry*>* archived_qualified_exports = ModuleEntry::write_growable_array(_qualified_exports);
 
   set_next(NULL);
   set_literal(ArchiveBuilder::get_relocated_symbol(literal()));
@@ -245,7 +245,7 @@ void PackageEntry::init_as_archived_entry() {
 }
 
 void PackageEntry::load_from_archive() {
-  _qualified_exports = ModuleEntry::read_archived_entry_array((Array<ModuleEntry*>*)_qualified_exports);
+  _qualified_exports = ModuleEntry::restore_growable_array((Array<ModuleEntry*>*)_qualified_exports);
   JFR_ONLY(INIT_ID(this);)
 }
 
