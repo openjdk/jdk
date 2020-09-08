@@ -1061,10 +1061,11 @@ public:
   // The current number of regions in the heap.
   uint num_regions() const { return _hrm->length(); }
 
-  // The max number of regions in the heap.
+  // The max number of regions reserved for the heap. Except for static array
+  // sizing purposes you probably want max_expandable_regions().
   uint max_regions() const { return _hrm->max_length(); }
 
-  // Max number of regions that can be comitted.
+  // Max number of regions that can be committed.
   uint max_expandable_regions() const { return _hrm->max_expandable_length(); }
 
   // The number of regions that are completely free.

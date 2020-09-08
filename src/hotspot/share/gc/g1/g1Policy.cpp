@@ -533,9 +533,9 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
   // every time we calculate / recalculate the target young length.
   update_survivors_policy();
 
-  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_regions(),
+  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_expandable_regions(),
          "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
-         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_regions());
+         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_expandable_regions());
   assert_used_and_recalculate_used_equal(_g1h);
 
   phase_times()->record_cur_collection_start_sec(start_time_sec);

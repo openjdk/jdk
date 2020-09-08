@@ -85,11 +85,11 @@ HeapRegionManager* HeapRegionManager::create_manager(G1CollectedHeap* heap) {
 }
 
 void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
-                               G1RegionToSpaceMapper* prev_bitmap,
-                               G1RegionToSpaceMapper* next_bitmap,
-                               G1RegionToSpaceMapper* bot,
-                               G1RegionToSpaceMapper* cardtable,
-                               G1RegionToSpaceMapper* card_counts) {
+                                   G1RegionToSpaceMapper* prev_bitmap,
+                                   G1RegionToSpaceMapper* next_bitmap,
+                                   G1RegionToSpaceMapper* bot,
+                                   G1RegionToSpaceMapper* cardtable,
+                                   G1RegionToSpaceMapper* card_counts) {
   _allocated_heapregions_length = 0;
 
   _heap_mapper = heap_storage;
@@ -184,7 +184,8 @@ HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
 
 void HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkGang* pretouch_gang) {
   guarantee(num_regions > 0, "Must commit more than zero regions");
-  guarantee(_num_committed + num_regions <= max_length(), "Cannot commit more than the maximum amount of regions");
+  guarantee(num_regions <= available(),
+            "Cannot commit more than the maximum amount of regions");
 
   _num_committed += (uint)num_regions;
 
@@ -321,16 +322,19 @@ void HeapRegionManager::expand_exact(uint start, uint num_regions, WorkGang* pre
 
 uint HeapRegionManager::expand_on_preferred_node(uint preferred_index) {
   uint expand_candidate = UINT_MAX;
-  for (uint i = 0; i < max_length(); i++) {
-    if (is_available(i)) {
-      // Already in use continue
-      continue;
-    }
-    // Always save the candidate so we can expand later on.
-    expand_candidate = i;
-    if (is_on_preferred_index(expand_candidate, preferred_index)) {
-      // We have found a candidate on the preffered node, break.
-      break;
+
+  if (available() >= 1) {
+    for (uint i = 0; i < max_length(); i++) {
+      if (is_available(i)) {
+        // Already in use continue
+        continue;
+      }
+      // Always save the candidate so we can expand later on.
+      expand_candidate = i;
+      if (is_on_preferred_index(expand_candidate, preferred_index)) {
+        // We have found a candidate on the preferred node, break.
+        break;
+      }
     }
   }
 
@@ -403,6 +407,10 @@ uint HeapRegionManager::find_contiguous_in_free_list(uint num_regions) {
 }
 
 uint HeapRegionManager::find_contiguous_allow_expand(uint num_regions) {
+  // Check if we can actually satisfy the allocation.
+  if (num_regions > available()) {
+    return G1_NO_HRM_INDEX;
+  }
   // Find any candidate.
   return find_contiguous_in_range(0, max_length(), num_regions);
 }
@@ -452,6 +460,8 @@ HeapRegionRange HeapRegionManager::find_unavailable_from_idx(uint index) const {
   assert(!_available_map.at(end - 1), "Last region (" SIZE_FORMAT ") in range is not unavailable", end - 1);
   assert(end == _available_map.size() || _available_map.at(end), "Region (" SIZE_FORMAT ") is not available", end);
 
+  // Shrink returned range to number of regions left to commit if necessary.
+  end = MIN2(start + available(), end);
   return HeapRegionRange((uint) start, (uint) end);
 }
 
@@ -614,6 +624,9 @@ void HeapRegionManager::verify() {
   guarantee(_allocated_heapregions_length <= max_length(),
             "invariant: _allocated_length: %u _max_length: %u",
             _allocated_heapregions_length, max_length());
+  guarantee(_num_committed <= max_expandable_length(),
+            "invariant: _num_committed: %u max_expandable_length: %u",
+            _num_committed, max_expandable_length());
 
   bool prev_committed = true;
   uint num_committed = 0;
@@ -744,7 +757,7 @@ void HeapRegionManager::rebuild_free_list(WorkGang* workers) {
   // Abandon current free list to allow a rebuild.
   _free_list.abandon();
 
-  uint const num_workers = clamp(max_length(), 1u, workers->active_workers());
+  uint const num_workers = clamp(max_expandable_length(), 1u, workers->active_workers());
   G1RebuildFreeListTask task(this, num_workers);
 
   log_debug(gc, ergo)("Running %s using %u workers for rebuilding free list of regions",
