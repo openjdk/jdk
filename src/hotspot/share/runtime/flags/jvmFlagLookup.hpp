@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,41 @@
  *
  */
 
-#ifndef SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
-#define SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
+#ifndef SHARE_RUNTIME_FLAGS_JVMFLAGLOOKUP_HPP
+#define SHARE_RUNTIME_FLAGS_JVMFLAGLOOKUP_HPP
 
+#include "runtime/globals_extension.hpp"
 #include "runtime/flags/jvmFlag.hpp"
-#include "utilities/globalDefinitions.hpp"
 
-// Parallel Subconstraints
-#define PARALLEL_GC_CONSTRAINTS(f)                          \
-  f(uint, ParallelGCThreadsConstraintFuncParallel)          \
-  f(uintx, InitialTenuringThresholdConstraintFuncParallel)  \
-  f(uintx, MaxTenuringThresholdConstraintFuncParallel)
+class JVMFlagLookup {
+  static const int NUM_BUCKETS = 277;
+  short _buckets[NUM_BUCKETS];
+  short _table[NUM_JVMFlagsEnum];
+  u2    _hashes[NUM_JVMFlagsEnum];
 
-PARALLEL_GC_CONSTRAINTS(DECLARE_CONSTRAINT)
+  static constexpr unsigned int hash_code(const char* s) {
+    unsigned int h = 0;
+    while (*s != 0) {
+      h = 31*h + (unsigned int) *s;
+      s++;
+    }
+    return h;
+  }
 
-#endif // SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
+  static constexpr unsigned int hash_code(const char* s, size_t len) {
+    unsigned int h = 0;
+    while (len -- > 0) {
+      h = 31*h + (unsigned int) *s;
+      s++;
+    }
+    return h;
+  }
+
+  JVMFlag* find_impl(const char* flag_name, size_t length) const;
+
+public:
+  constexpr JVMFlagLookup();
+  static JVMFlag* find(const char* flag_name, size_t length);
+};
+
+#endif // SHARE_RUNTIME_FLAGS_JVMFLAGLOOKUP_HPP
