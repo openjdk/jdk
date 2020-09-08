@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ StackValueCollection* compiledVFrame::locals() const {
 
   // Replace the original values with any stores that have been
   // performed through compiledVFrame::update_locals.
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = thread()->deferred_locals();
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
   if (list != NULL ) {
     // In real life this never happens or is typically a single element search
     for (int i = 0; i < list->length(); i++) {
@@ -103,7 +103,7 @@ void compiledVFrame::update_monitor(int index, MonitorInfo* val) {
 
 void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue value) {
   assert(fr().is_deoptimized_frame(), "frame must be scheduled for deoptimization");
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = thread()->deferred_locals();
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = JvmtiDeferredUpdates::deferred_locals(thread());
   jvmtiDeferredLocalVariableSet* locals = NULL;
   if (deferred != NULL ) {
     // See if this vframe has already had locals with deferred writes
@@ -117,8 +117,8 @@ void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue val
   } else {
     // No deferred updates pending for this thread.
     // allocate in C heap
-    deferred =  new(ResourceObj::C_HEAP, mtCompiler) GrowableArray<jvmtiDeferredLocalVariableSet*> (1, mtCompiler);
-    thread()->set_deferred_locals(deferred);
+    JvmtiDeferredUpdates::create_for(thread());
+    deferred = JvmtiDeferredUpdates::deferred_locals(thread());
   }
   if (locals == NULL) {
     locals = new jvmtiDeferredLocalVariableSet(method(), bci(), fr().id(), vframe_id());
@@ -144,7 +144,7 @@ StackValueCollection* compiledVFrame::expressions() const {
 
   // Replace the original values with any stores that have been
   // performed through compiledVFrame::update_stack.
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = thread()->deferred_locals();
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
   if (list != NULL ) {
     // In real life this never happens or is typically a single element search
     for (int i = 0; i < list->length(); i++) {
@@ -218,7 +218,7 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
 
   // Replace the original values with any stores that have been
   // performed through compiledVFrame::update_monitors.
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = thread()->deferred_locals();
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
   if (list != NULL ) {
     // In real life this never happens or is typically a single element search
     for (int i = 0; i < list->length(); i++) {
@@ -309,6 +309,24 @@ bool compiledVFrame::should_reexecute() const {
   return scope()->should_reexecute();
 }
 
+bool compiledVFrame::has_ea_local_in_scope() const {
+  if (scope() == NULL) {
+    // native nmethod, all objs escape
+    assert(code()->as_nmethod()->is_native_method(), "must be native");
+    return false;
+  }
+  return (scope()->objects() != NULL) || scope()->has_ea_local_in_scope();
+}
+
+bool compiledVFrame::arg_escape() const {
+  if (scope() == NULL) {
+    // native nmethod, all objs escape
+    assert(code()->as_nmethod()->is_native_method(), "must be native");
+    return false;
+  }
+  return scope()->arg_escape();
+}
+
 vframe* compiledVFrame::sender() const {
   const frame f = fr();
   if (scope() == NULL) {
@@ -323,6 +341,18 @@ vframe* compiledVFrame::sender() const {
   }
 }
 
+void JvmtiDeferredUpdates::create_for(JavaThread* thread) {
+  assert(thread->deferred_updates() == NULL, "already allocated");
+  thread->set_deferred_updates(new JvmtiDeferredUpdates());
+}
+
+void JvmtiDeferredUpdates::inc_relock_count_after_wait(JavaThread* thread) {
+  if (thread->deferred_updates() == NULL) {
+    create_for(thread);
+  }
+  thread->deferred_updates()->inc_relock_count_after_wait();
+}
+
 jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int bci, intptr_t* id, int vframe_id) {
   _method = method;
   _bci = bci;
@@ -330,6 +360,7 @@ jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int
   _vframe_id = vframe_id;
   // Alway will need at least one, must be on C heap
   _locals = new(ResourceObj::C_HEAP, mtCompiler) GrowableArray<jvmtiDeferredLocalVariable*> (1, mtCompiler);
+  _objects_are_deoptimized = false;
 }
 
 jvmtiDeferredLocalVariableSet::~jvmtiDeferredLocalVariableSet() {
@@ -424,7 +455,11 @@ void jvmtiDeferredLocalVariableSet::update_monitors(GrowableArray<MonitorInfo*>*
     if (val->index() >= method()->max_locals() + method()->max_stack()) {
       int lock_index = val->index() - (method()->max_locals() + method()->max_stack());
       MonitorInfo* info = monitors->at(lock_index);
-      MonitorInfo* new_info = new MonitorInfo((oopDesc*)val->value().l, info->lock(), info->eliminated(), info->owner_is_scalar_replaced());
+      // Originally the owner may have been scalar replaced but as an update
+      // exists it must have been deoptimized, i.e. reallocated to the heap, and
+      // now it is considered not to be scalar replaced.
+      MonitorInfo* new_info = new MonitorInfo((oopDesc*)val->value().l, info->lock(),
+                                              info->eliminated(), false);
       monitors->at_put(lock_index, new_info);
     }
   }

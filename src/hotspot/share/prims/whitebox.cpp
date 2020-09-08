@@ -77,6 +77,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
@@ -877,6 +878,20 @@ WB_ENTRY(jint, WB_DeoptimizeFrames(JNIEnv* env, jobject o, jboolean make_not_ent
   VM_WhiteBoxDeoptimizeFrames op(make_not_entrant == JNI_TRUE);
   VMThread::execute(&op);
   return op.result();
+WB_END
+
+WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
+  JavaThread* t = JavaThread::current();
+  bool result = false;
+  if (t->has_last_Java_frame()) {
+    RegisterMap reg_map(t);
+    javaVFrame *jvf = t->last_java_vframe(&reg_map);
+    for (jint d = 0; d < depth && jvf != NULL; d++) {
+      jvf = jvf->java_sender();
+    }
+    result = jvf != NULL && jvf->fr().is_deoptimized_frame();
+  }
+  return result;
 WB_END
 
 WB_ENTRY(void, WB_DeoptimizeAll(JNIEnv* env, jobject o))
@@ -2336,6 +2351,7 @@ static JNINativeMethod methods[] = {
   {CC"NMTArenaMalloc",      CC"(JJ)V",                (void*)&WB_NMTArenaMalloc     },
 #endif // INCLUDE_NMT
   {CC"deoptimizeFrames",   CC"(Z)I",                  (void*)&WB_DeoptimizeFrames  },
+  {CC"isFrameDeoptimized", CC"(I)Z",                  (void*)&WB_IsFrameDeoptimized},
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
   {CC"deoptimizeMethod0",   CC"(Ljava/lang/reflect/Executable;Z)I",
                                                       (void*)&WB_DeoptimizeMethod  },

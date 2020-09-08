@@ -240,6 +240,7 @@ public class WhiteBox {
   public native int     matchesInline(Executable method, String pattern);
   public native boolean shouldPrintAssembly(Executable method, int comp_level);
   public native int     deoptimizeFrames(boolean makeNotEntrant);
+  public native boolean isFrameDeoptimized(int depth);
   public native void    deoptimizeAll();
 
   public        boolean isMethodCompiled(Executable method) {

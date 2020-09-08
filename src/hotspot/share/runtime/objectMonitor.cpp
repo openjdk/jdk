@@ -44,6 +44,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/vframe_hp.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
@@ -1517,7 +1518,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   jt->set_current_waiting_monitor(NULL);
 
   guarantee(_recursions == 0, "invariant");
-  _recursions = save;     // restore the old recursion count
+  _recursions = save      // restore the old recursion count
+                + JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(jt); //  increased by the deferred relock count
   _waiters--;             // decrement the number of waiters
 
   // Verify a few postconditions

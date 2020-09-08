@@ -1310,6 +1310,13 @@ JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_threa
                               jvalue value, TosState tos, Handle* ret_ob_h) {
   ResourceMark rm(current_thread);
 
+  if (java_thread->frames_to_pop_failed_realloc() > 0) {
+    // VM is in the process of popping the top frame because it has scalar replaced objects
+    // which could not be reallocated on the heap.
+    // Return JVMTI_ERROR_OUT_OF_MEMORY to avoid interfering with the VM.
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+
   vframe *vf = vframeFor(java_thread, 0);
   NULL_CHECK(vf, JVMTI_ERROR_NO_MORE_FRAMES);
 
@@ -1324,6 +1331,12 @@ JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_threa
       return JVMTI_ERROR_OPAQUE_FRAME;
     }
     Deoptimization::deoptimize_frame(java_thread, jvf->fr().id());
+    // Eagerly reallocate scalar replaced objects.
+    EscapeBarrier eb(current_thread, java_thread, true);
+    if (!eb.deoptimize_objects(jvf->fr().id())) {
+      // Reallocation of scalar replaced objects failed -> return with error
+      return JVMTI_ERROR_OUT_OF_MEMORY;
+    }
   }
 
   // Get information about method return type

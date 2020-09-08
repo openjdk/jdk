@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,13 @@ class ObjectValue;
 class AutoBoxObjectValue;
 class ScopeValue;
 class compiledVFrame;
+class EscapeBarrier;
 
 template<class E> class GrowableArray;
 
 class Deoptimization : AllStatic {
   friend class VMStructs;
+  friend class EscapeBarrier;
 
  public:
   // What condition caused the deoptimization?
@@ -134,7 +136,8 @@ class Deoptimization : AllStatic {
     Unpack_exception            = 1, // exception is pending
     Unpack_uncommon_trap        = 2, // redo last byte code (C2 only)
     Unpack_reexecute            = 3, // reexecute bytecode (C1 only)
-    Unpack_LIMIT                = 4
+    Unpack_none                 = 4, // not deoptimizing the frame, just reallocating/relocking for JVMTI
+    Unpack_LIMIT                = 5
   };
 
 #if INCLUDE_JVMCI
@@ -152,6 +155,9 @@ class Deoptimization : AllStatic {
   // Revoke biased locks at deopt.
   static void revoke_from_deopt_handler(JavaThread* thread, frame fr, RegisterMap* map);
 
+  static void revoke_for_object_deoptimization(JavaThread* deoptee_thread, frame fr,
+                                               RegisterMap* map, JavaThread* thread);
+
  public:
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.
   static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);
@@ -166,6 +172,11 @@ class Deoptimization : AllStatic {
   static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);
 
 #if COMPILER2_OR_JVMCI
+  // Deoptimize objects, that is reallocate and relock them, just before they
+  // escape through JVMTI.  The given vframes cover one physical frame.
+  static bool deoptimize_objects_internal(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk,
+                                          bool& realloc_failures);
+
  public:
 
   // Support for restoring non-escaping objects
@@ -173,7 +184,8 @@ class Deoptimization : AllStatic {
   static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
   static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
   static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal);
-  static void relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaThread* thread, bool realloc_failures);
+  static bool relock_objects(JavaThread* thread, GrowableArray<MonitorInfo*>* monitors,
+                             JavaThread* deoptee_thread, frame& fr, int exec_mode, bool realloc_failures);
   static void pop_frames_failed_reallocs(JavaThread* thread, vframeArray* array);
   NOT_PRODUCT(static void print_objects(GrowableArray<ScopeValue*>* objects, bool realloc_failures);)
 #endif // COMPILER2_OR_JVMCI
@@ -464,6 +476,93 @@ class Deoptimization : AllStatic {
 
  public:
   static void update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason);
+};
+
+// EscapeBarriers should be put on execution paths where JVMTI agents can access object
+// references held by java threads.
+// They provide means to revert optimizations based on escape analysis in a well synchronized manner
+// just before local references escape through JVMTI.
+class EscapeBarrier : StackObj {
+#if COMPILER2_OR_JVMCI
+  JavaThread* const _calling_thread;
+  JavaThread* const _deoptee_thread;
+  bool        const _barrier_active;
+
+  static bool _deoptimizing_objects_for_all_threads;
+  static bool _self_deoptimization_in_progress;
+
+  void sync_and_suspend_one();
+  void sync_and_suspend_all();
+  void resume_one();
+  void resume_all();
+
+  // Deoptimize the given frame and deoptimize objects with optimizations based on escape analysis.
+  bool deoptimize_objects_internal(JavaThread* deoptee, intptr_t* fr_id);
+
+public:
+  // Revert ea based optimizations for given deoptee thread
+  EscapeBarrier(JavaThread* calling_thread, JavaThread* deoptee_thread, bool barrier_active)
+    : _calling_thread(calling_thread), _deoptee_thread(deoptee_thread),
+      _barrier_active(barrier_active && (JVMCI_ONLY(UseJVMCICompiler) NOT_JVMCI(false)
+                      COMPILER2_PRESENT(|| DoEscapeAnalysis)))
+  {
+    if (_barrier_active) sync_and_suspend_one();
+  }
+
+  // Revert ea based optimizations for all java threads
+  EscapeBarrier(JavaThread* calling_thread, bool barrier_active)
+    : _calling_thread(calling_thread), _deoptee_thread(NULL),
+      _barrier_active(barrier_active && (JVMCI_ONLY(UseJVMCICompiler) NOT_JVMCI(false)
+                      COMPILER2_PRESENT(|| DoEscapeAnalysis)))
+  {
+    if (_barrier_active) sync_and_suspend_all();
+  }
+#else
+public:
+  EscapeBarrier(JavaThread* calling_thread, JavaThread* deoptee_thread, bool barrier_active) { }
+  EscapeBarrier(JavaThread* calling_thread, bool barrier_active) { }
+  static bool deoptimizing_objects_for_all_threads() { return false; }
+  bool barrier_active() const                        { return false; }
+#endif // COMPILER2_OR_JVMCI
+
+  // Deoptimize objects, i.e. reallocate and relock them. The target frames are deoptimized.
+  // The methods return false iff at least one reallocation failed.
+  bool deoptimize_objects(intptr_t* fr_id) {
+    return true COMPILER2_OR_JVMCI_PRESENT(&& deoptimize_objects_internal(deoptee_thread(), fr_id));
+  }
+  bool deoptimize_objects(int depth)                           NOT_COMPILER2_OR_JVMCI_RETURN_(true);
+  // Find and deoptimize non escaping objects and the holding frames on all stacks.
+  bool deoptimize_objects_all_threads()                        NOT_COMPILER2_OR_JVMCI_RETURN_(true);
+
+  // A java thread was added to the list of threads
+  static void thread_added(JavaThread* jt)                     NOT_COMPILER2_OR_JVMCI_RETURN;
+  // A java thread was removed from the list of threads
+  static void thread_removed(JavaThread* jt)                   NOT_COMPILER2_OR_JVMCI_RETURN;
+
+#if COMPILER2_OR_JVMCI
+  // Returns true iff objects were reallocated and relocked because of access through JVMTI
+  static bool objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id);
+
+  static bool deoptimizing_objects_for_all_threads() { return _deoptimizing_objects_for_all_threads; }
+
+  ~EscapeBarrier() {
+    if (!barrier_active()) return;
+    if (all_threads()) {
+      resume_all();
+    } else {
+      resume_one();
+    }
+  }
+
+
+  bool all_threads()    const { return _deoptee_thread == NULL; }            // Should revert optimizations for all threads.
+  bool self_deopt()     const { return _calling_thread == _deoptee_thread; } // Current thread deoptimizes its own objects.
+  bool barrier_active() const { return _barrier_active; }                    // Inactive barriers are created if no local objects can escape.
+
+  // accessors
+  JavaThread* calling_thread() const     { return _calling_thread; }
+  JavaThread* deoptee_thread() const     { return _deoptee_thread; }
+#endif // COMPILER2_OR_JVMCI
 };
 
 class DeoptimizationMarker : StackObj {  // for profiling

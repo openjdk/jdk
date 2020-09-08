@@ -295,7 +295,7 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
     return true;
   }
 
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* const list = jt->deferred_locals();
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* const list = JvmtiDeferredUpdates::deferred_locals(jt);
   if (list != NULL) {
     for (int i = 0; i < list->length(); i++) {
       list->at(i)->oops_do(&rcl);
