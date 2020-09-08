@@ -1668,13 +1668,13 @@ public final class Long extends Number
      * @since 1.8
      */
     public static long divideUnsigned(long dividend, long divisor) {
-        // See Hacker's Delight (2nd ed), section 9.3
+        /* See Hacker's Delight (2nd ed), section 9.3 */
         if (divisor >= 0) {
             final long q = (dividend >>> 1) / divisor << 1;
             final long r = dividend - q * divisor;
-            return q + ((r | ~(r - divisor)) >>> Long.SIZE - 1);
+            return q + ((r | ~(r - divisor)) >>> (Long.SIZE - 1));
         }
-        return (dividend & ~(dividend - divisor)) >>> Long.SIZE - 1;
+        return (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1);
     }
 
     /**
@@ -1690,13 +1690,33 @@ public final class Long extends Number
      * @since 1.8
      */
     public static long remainderUnsigned(long dividend, long divisor) {
-        // See Hacker's Delight (2nd ed), section 9.3
+        /* See Hacker's Delight (2nd ed), section 9.3 */
         if (divisor >= 0) {
             final long q = (dividend >>> 1) / divisor << 1;
             final long r = dividend - q * divisor;
-            return r - (~(r - divisor) >> Long.SIZE - 1 & divisor);
+            /*
+             * Here, 0 <= r < 2 * divisor
+             * (1) When 0 <= r < divisor, the remainder is simply r.
+             * (2) Otherwise the remainder is r - divisor.
+             *
+             * In case (1), r - divisor < 0. Applying ~ produces a long with
+             * sign bit 0, so >> produces 0. The returned value is thus r.
+             *
+             * In case (2), a similar reasoning shows that >> produces -1,
+             * so the returned value is r - divisor.
+             */
+            return r - ((~(r - divisor) >> (Long.SIZE - 1)) & divisor);
         }
-        return dividend - ((dividend & ~(dividend - divisor)) >> Long.SIZE - 1 & divisor);
+        /*
+         * (1) When dividend >= 0, the remainder is dividend.
+         * (2) Otherwise
+         *      (2.1) When dividend < divisor, the remainder is dividend.
+         *      (2.2) Otherwise the remainder is dividend - divisor
+         *
+         * A reasoning similar to the above shows that the returned value
+         * is as expected.
+         */
+        return dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor);
     }
 
     // Bit Twiddling
