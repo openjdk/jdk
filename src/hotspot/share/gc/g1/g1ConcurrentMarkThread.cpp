@@ -80,7 +80,7 @@ public:
 double G1ConcurrentMarkThread::mmu_delay_end(G1Policy* g1_policy, bool remark) {
   // There are 3 reasons to use SuspendibleThreadSetJoiner.
   // 1. To avoid concurrency problem.
-  //    - G1MMUTracker::add_pause(), when_sec() and its variation(when_ms() etc..) can be called
+  //    - G1MMUTracker::add_pause(), when_sec() and when_max_gc_sec() can be called
   //      concurrently from ConcurrentMarkThread and VMThread.
   // 2. If currently a gc is running, but it has not yet updated the MMU,
   //    we will not forget to consider that pause in the MMU calculation.
