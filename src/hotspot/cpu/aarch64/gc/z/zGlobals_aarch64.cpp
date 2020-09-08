@@ -161,15 +161,15 @@ static size_t probe_valid_max_address_bit() {
       // Some error occured. This should never happen, but msync
       // has some undefined behavior, hence ignore this bit.
 #ifdef ASSERT
-      fatal("Received %s while probing the address space for the highest valid bit", os::errno_name(errno));
+      fatal("Received '%s' while probing the address space for the highest valid bit", os::errno_name(errno));
 #else // ASSERT
-      log_warning_p(gc)("Received %s while probing the address space for the highest valid bit", os::errno_name(errno));
+      log_warning_p(gc)("Received '%s' while probing the address space for the highest valid bit", os::errno_name(errno));
 #endif // ASSERT
       continue;
     }
     // Since msync failed with ENOMEM, the page might not be mapped.
     // Try to map it, to see if the address is valid.
-    void* result_addr = mmap((void*) base_addr, page_size, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
+    void* const result_addr = mmap((void*) base_addr, page_size, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
     if (result_addr != MAP_FAILED) {
       munmap(result_addr, page_size);
     }
@@ -181,8 +181,8 @@ static size_t probe_valid_max_address_bit() {
   }
   if (max_address_bit == 0) {
     // probing failed, allocate a very high page and take that bit as the maximum
-    uintptr_t high_addr = ((uintptr_t) 1U) << DEFAULT_MAX_ADDRESS_BIT;
-    void* result_addr = mmap((void*) high_addr, page_size, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
+    const uintptr_t high_addr = ((uintptr_t) 1U) << DEFAULT_MAX_ADDRESS_BIT;
+    void* const result_addr = mmap((void*) high_addr, page_size, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
     if (result_addr != MAP_FAILED) {
       max_address_bit = BitsPerSize_t - count_leading_zeros((size_t) result_addr) - 1;
       munmap(result_addr, page_size);
