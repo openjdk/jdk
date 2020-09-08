@@ -32,7 +32,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/task.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/preserveException.hpp"

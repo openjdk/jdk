@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/support/jfrAllocationTracer.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 JfrAllocationTracer::JfrAllocationTracer(HeapWord* obj, size_t alloc_size, Thread* thread) : _tl(NULL) {
   if (LeakProfiler::is_running()) {

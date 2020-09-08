@@ -47,7 +47,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memTracker.hpp"

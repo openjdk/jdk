@@ -26,7 +26,7 @@
 
 #include "gc/z/zFuture.hpp"
 #include "runtime/semaphore.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 template <typename T>
 inline ZFuture<T>::ZFuture() :

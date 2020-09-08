@@ -32,7 +32,7 @@
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/oopMap.hpp"
 #include "oops/methodData.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 class CompileTask;
 

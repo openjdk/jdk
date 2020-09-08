@@ -37,7 +37,6 @@
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrKlassExtension.hpp"

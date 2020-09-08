@@ -51,7 +51,7 @@ static bool must_be_in_vm() {
   if (thread->is_Java_thread())
     return thread->as_Java_thread()->thread_state() == _thread_in_vm;
   else
-    return true;  //something like this: thread->is_VM_thread();
+    return thread->is_VM_thread();
 }
 #endif //ASSERT
 
