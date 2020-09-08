@@ -58,6 +58,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -165,9 +166,14 @@ JRT_END
 
 #if COMPILER2_OR_JVMCI
 static bool eliminate_allocations(JavaThread* thread, int exec_mode, CompiledMethod* compiled_method,
-                                  frame& deoptee, RegisterMap& map, GrowableArray<compiledVFrame*>* chunk) {
+                                  frame& deoptee, RegisterMap& map, GrowableArray<compiledVFrame*>* chunk,
+                                  bool& deoptimized_objects) {
   bool realloc_failures = false;
   assert (chunk->at(0)->scope() != NULL,"expect only compiled java frames");
+
+  JavaThread* deoptee_thread = chunk->at(0)->thread();
+  assert(exec_mode == Deoptimization::Unpack_none || (deoptee_thread == thread),
+         "a frame can only be deoptimized by the owner thread");
 
   GrowableArray<ScopeValue*>* objects = chunk->at(0)->scope()->objects();
 
@@ -195,15 +201,23 @@ static bool eliminate_allocations(JavaThread* thread, int exec_mode, CompiledMet
     }
   }
   if (objects != NULL) {
-    JRT_BLOCK
+    if (exec_mode == Deoptimization::Unpack_none) {
+      assert(thread->thread_state() == _thread_in_vm, "assumption");
+      Thread* THREAD = thread;
+      // Clear pending OOM if reallocation fails and return true indicating allocation failure
+      realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, CHECK_AND_CLEAR_(true));
+      deoptimized_objects = true;
+    } else {
+      JRT_BLOCK
       realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, THREAD);
-    JRT_END
+      JRT_END
+    }
     bool skip_internal = (compiled_method != NULL) && !compiled_method->is_compiled_by_jvmci();
     Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal);
 #ifndef PRODUCT
     if (TraceDeoptimization) {
       ttyLocker ttyl;
-      tty->print_cr("REALLOC OBJECTS in thread " INTPTR_FORMAT, p2i(thread));
+      tty->print_cr("REALLOC OBJECTS in thread " INTPTR_FORMAT, p2i(deoptee_thread));
       Deoptimization::print_objects(objects, realloc_failures);
     }
 #endif
@@ -215,7 +229,10 @@ static bool eliminate_allocations(JavaThread* thread, int exec_mode, CompiledMet
   return realloc_failures;
 }
 
-static void eliminate_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures) {
+static void eliminate_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures,
+                            frame& deoptee, int exec_mode, bool& deoptimized_objects) {
+  JavaThread* deoptee_thread = chunk->at(0)->thread();
+  assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, deoptee.id()), "must relock just once");
   assert(thread == Thread::current(), "should be");
   HandleMark hm(thread);
 #ifndef PRODUCT
@@ -226,7 +243,9 @@ static void eliminate_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* 
     assert (cvf->scope() != NULL,"expect only compiled java frames");
     GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
     if (monitors->is_nonempty()) {
-      Deoptimization::relock_objects(monitors, thread, realloc_failures);
+      bool relocked = Deoptimization::relock_objects(thread, monitors, deoptee_thread, deoptee,
+                                                     exec_mode, realloc_failures);
+      deoptimized_objects = deoptimized_objects || relocked;
 #ifndef PRODUCT
       if (PrintDeoptimizationDetails) {
         ttyLocker ttyl;
@@ -236,6 +255,13 @@ static void eliminate_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* 
             if (first) {
               first = false;
               tty->print_cr("RELOCK OBJECTS in thread " INTPTR_FORMAT, p2i(thread));
+            }
+            if (exec_mode == Deoptimization::Unpack_none) {
+              ObjectMonitor* monitor = deoptee_thread->current_waiting_monitor();
+              if (monitor != NULL && (oop)monitor->object() == mi->owner()) {
+                tty->print_cr("     object <" INTPTR_FORMAT "> DEFERRED relocking after wait", p2i(mi->owner()));
+                continue;
+              }
             }
             if (mi->owner_is_scalar_replaced()) {
               Klass* k = java_lang_Class::as_Klass(mi->owner_klass());
@@ -249,6 +275,36 @@ static void eliminate_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* 
 #endif // !PRODUCT
     }
   }
+}
+
+// Deoptimize objects, that is reallocate and relock them, just before they escape through JVMTI.
+// The given vframes cover one physical frame.
+bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk,
+                                                 bool& realloc_failures) {
+  frame deoptee = chunk->at(0)->fr();
+  JavaThread* deoptee_thread = chunk->at(0)->thread();
+  CompiledMethod* cm = deoptee.cb()->as_compiled_method_or_null();
+  RegisterMap map(chunk->at(0)->register_map());
+  bool deoptimized_objects = false;
+
+  bool const jvmci_enabled = JVMCI_ONLY(UseJVMCICompiler) NOT_JVMCI(false);
+
+  // Reallocate the non-escaping objects and restore their fields.
+  if (jvmci_enabled COMPILER2_PRESENT(|| (DoEscapeAnalysis && EliminateAllocations))) {
+    realloc_failures = eliminate_allocations(thread, Unpack_none, cm, deoptee, map, chunk, deoptimized_objects);
+  }
+
+  // Revoke biases of objects with eliminated locks in the given frame.
+  Deoptimization::revoke_for_object_deoptimization(deoptee_thread, deoptee, &map, thread);
+
+  // MonitorInfo structures used in eliminate_locks are not GC safe.
+  NoSafepointVerifier no_safepoint;
+
+  // Now relock objects if synchronization on them was eliminated.
+  if (jvmci_enabled COMPILER2_PRESENT(|| ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks))) {
+    eliminate_locks(thread, chunk, realloc_failures, deoptee, Unpack_none, deoptimized_objects);
+  }
+  return deoptimized_objects;
 }
 #endif // COMPILER2_OR_JVMCI
 
@@ -304,7 +360,8 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Reallocate the non-escaping objects and restore their fields. Then
   // relock objects if synchronization on them was eliminated.
   if (jvmci_enabled COMPILER2_PRESENT( || (DoEscapeAnalysis && EliminateAllocations) )) {
-    realloc_failures = eliminate_allocations(thread, exec_mode, cm, deoptee, map, chunk);
+    bool unused;
+    realloc_failures = eliminate_allocations(thread, exec_mode, cm, deoptee, map, chunk, unused);
   }
 #endif // COMPILER2_OR_JVMCI
 
@@ -319,8 +376,10 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   NoSafepointVerifier no_safepoint;
 
 #if COMPILER2_OR_JVMCI
-  if (jvmci_enabled COMPILER2_PRESENT( || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks) )) {
-    eliminate_locks(thread, chunk, realloc_failures);
+  if ((jvmci_enabled COMPILER2_PRESENT( || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks) ))
+      && !EscapeBarrier::objs_are_deoptimized(thread, deoptee.id())) {
+    bool unused;
+    eliminate_locks(thread, chunk, realloc_failures, deoptee, exec_mode, unused);
   }
 #endif // COMPILER2_OR_JVMCI
 
@@ -351,8 +410,8 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // added by jvmti then we can free up that structure as the data is now in the
   // vframeArray
 
-  if (thread->deferred_locals() != NULL) {
-    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = thread->deferred_locals();
+  if (JvmtiDeferredUpdates::deferred_locals(thread) != NULL) {
+    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread);
     int i = 0;
     do {
       // Because of inlining we could have multiple vframes for a single frame
@@ -367,9 +426,10 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
       }
     } while ( i < list->length() );
     if (list->length() == 0) {
-      thread->set_deferred_locals(NULL);
-      // free the list and elements back to C heap.
-      delete list;
+      JvmtiDeferredUpdates* updates = thread->deferred_updates();
+      thread->set_deferred_updates(NULL);
+      // free deferred updates.
+      delete updates;
     }
 
   }
@@ -1353,11 +1413,14 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
 
 
 // relock objects for which synchronization was eliminated
-void Deoptimization::relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaThread* thread, bool realloc_failures) {
+bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInfo*>* monitors,
+                                    JavaThread* deoptee_thread, frame& fr, int exec_mode, bool realloc_failures) {
+  bool relocked_objects = false;
   for (int i = 0; i < monitors->length(); i++) {
     MonitorInfo* mon_info = monitors->at(i);
     if (mon_info->eliminated()) {
       assert(!mon_info->owner_is_scalar_replaced() || realloc_failures, "reallocation was missed");
+      relocked_objects = true;
       if (!mon_info->owner_is_scalar_replaced()) {
         Handle obj(thread, mon_info->owner());
         markWord mark = obj->mark();
@@ -1366,17 +1429,37 @@ void Deoptimization::relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaT
           // Also the deoptimized method may called methods with synchronization
           // where the thread-local object is bias locked to the current thread.
           assert(mark.is_biased_anonymously() ||
-                 mark.biased_locker() == thread, "should be locked to current thread");
+                 mark.biased_locker() == deoptee_thread, "should be locked to current thread");
           // Reset mark word to unbiased prototype.
           markWord unbiased_prototype = markWord::prototype().set_age(mark.age());
           obj->set_mark(unbiased_prototype);
+        } else if (exec_mode == Unpack_none) {
+          if (mark.has_locker() && fr.sp() > (intptr_t*)mark.locker()) {
+            // With exec_mode == Unpack_none obj may be thread local and locked in
+            // a callee frame. In this case the bias was revoked before in revoke_for_object_deoptimization().
+            // Make the lock in the callee a recursive lock and restore the displaced header.
+            markWord dmw = mark.displaced_mark_helper();
+            mark.locker()->set_displaced_header(markWord::encode((BasicLock*) NULL));
+            obj->set_mark(dmw);
+          }
+          if (mark.has_monitor()) {
+            // defer relocking if the deoptee thread is currently waiting for obj
+            ObjectMonitor* waiting_monitor = deoptee_thread->current_waiting_monitor();
+            if (waiting_monitor != NULL && (oop)waiting_monitor->object() == obj()) {
+              assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
+              mon_info->lock()->set_displaced_header(markWord::unused_mark());
+              JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
+              continue;
+            }
+          }
         }
         BasicLock* lock = mon_info->lock();
-        ObjectSynchronizer::enter(obj, lock, thread);
+        ObjectSynchronizer::enter(obj, lock, deoptee_thread);
         assert(mon_info->owner()->is_locked(), "object must be locked now");
       }
     }
   }
+  return relocked_objects;
 }
 
 
@@ -1494,18 +1577,22 @@ void Deoptimization::pop_frames_failed_reallocs(JavaThread* thread, vframeArray*
 }
 #endif
 
-static void collect_monitors(compiledVFrame* cvf, GrowableArray<Handle>* objects_to_revoke) {
+static void collect_monitors(compiledVFrame* cvf, GrowableArray<Handle>* objects_to_revoke,
+                             bool only_eliminated) {
   GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
   Thread* thread = Thread::current();
   for (int i = 0; i < monitors->length(); i++) {
     MonitorInfo* mon_info = monitors->at(i);
-    if (!mon_info->eliminated() && mon_info->owner() != NULL) {
+    if (mon_info->eliminated() == only_eliminated &&
+        !mon_info->owner_is_scalar_replaced() &&
+        mon_info->owner() != NULL) {
       objects_to_revoke->append(Handle(thread, mon_info->owner()));
     }
   }
 }
 
-static void get_monitors_from_stack(GrowableArray<Handle>* objects_to_revoke, JavaThread* thread, frame fr, RegisterMap* map) {
+static void get_monitors_from_stack(GrowableArray<Handle>* objects_to_revoke, JavaThread* thread,
+                                    frame fr, RegisterMap* map, bool only_eliminated) {
   // Unfortunately we don't have a RegisterMap available in most of
   // the places we want to call this routine so we need to walk the
   // stack again to update the register map.
@@ -1525,10 +1612,10 @@ static void get_monitors_from_stack(GrowableArray<Handle>* objects_to_revoke, Ja
   compiledVFrame* cvf = compiledVFrame::cast(vf);
   // Revoke monitors' biases in all scopes
   while (!cvf->is_top()) {
-    collect_monitors(cvf, objects_to_revoke);
+    collect_monitors(cvf, objects_to_revoke, only_eliminated);
     cvf = compiledVFrame::cast(cvf->sender());
   }
-  collect_monitors(cvf, objects_to_revoke);
+  collect_monitors(cvf, objects_to_revoke, only_eliminated);
 }
 
 void Deoptimization::revoke_from_deopt_handler(JavaThread* thread, frame fr, RegisterMap* map) {
@@ -1539,7 +1626,7 @@ void Deoptimization::revoke_from_deopt_handler(JavaThread* thread, frame fr, Reg
   ResourceMark rm(thread);
   HandleMark hm(thread);
   GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
-  get_monitors_from_stack(objects_to_revoke, thread, fr, map);
+  get_monitors_from_stack(objects_to_revoke, thread, fr, map, false);
 
   int len = objects_to_revoke->length();
   for (int i = 0; i < len; i++) {
@@ -1549,6 +1636,37 @@ void Deoptimization::revoke_from_deopt_handler(JavaThread* thread, frame fr, Reg
   }
 }
 
+// Revoke the bias of objects with eliminated locking to prepare subsequent relocking.
+void Deoptimization::revoke_for_object_deoptimization(JavaThread* deoptee_thread, frame fr,
+                                                      RegisterMap* map, JavaThread* thread) {
+  if (!UseBiasedLocking) {
+    return;
+  }
+  GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
+  // Collect monitors but only those with eliminated locking.
+  get_monitors_from_stack(objects_to_revoke, deoptee_thread, fr, map, true);
+
+  int len = objects_to_revoke->length();
+  for (int i = 0; i < len; i++) {
+    oop obj = (objects_to_revoke->at(i))();
+    markWord mark = obj->mark();
+    if (!mark.has_bias_pattern() ||
+        mark.is_biased_anonymously() || // eliminated locking does not bias an object if it wasn't before
+        !obj->klass()->prototype_header().has_bias_pattern() || // bulk revoke ignores eliminated monitors
+        (obj->klass()->prototype_header().bias_epoch() != mark.bias_epoch())) { // bulk rebias ignores eliminated monitors
+      // We reach here regularly if there's just eliminated locking on obj.
+      // We must not call BiasedLocking::revoke_own_lock() in this case, as we
+      // would hit assertions because it is a prerequisite that there has to be
+      // non-eliminated locking on obj by deoptee_thread.
+      // Luckily we don't have to revoke here because obj has to be a
+      // non-escaping obj and can be relocked without revoking the bias. See
+      // Deoptimization::relock_objects().
+      continue;
+    }
+    BiasedLocking::revoke(objects_to_revoke->at(i), thread);
+    assert(!objects_to_revoke->at(i)->mark().has_bias_pattern(), "biases should be revoked by now");
+  }
+}
 
 void Deoptimization::deoptimize_single_frame(JavaThread* thread, frame fr, Deoptimization::DeoptReason reason) {
   assert(fr.can_be_deoptimized(), "checking frame type");
@@ -2601,6 +2719,341 @@ void Deoptimization::print_statistics() {
     if (xtty != NULL)  xtty->tail("statistics");
   }
 }
+
+// Returns true iff objects were reallocated and relocked because of access through JVMTI
+bool EscapeBarrier::objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
+  // first/oldest update holds the flag
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread);
+  bool result = false;
+  if (list != NULL) {
+    for (int i = 0; i < list->length(); i++) {
+      if (list->at(i)->matches(fr_id)) {
+        result = list->at(i)->objects_are_deoptimized();
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+// Object references of frames up to the given depth are about to be
+// accessed. Frames with optimizations based on escape state that is potentially
+// changed by the accesses need to be deoptimized and the referenced objects
+// need to be reallocated and relocked.  Up to depth this is done for frames
+// with not escaping objects in scope. For deeper frames it is done only if
+// they pass not escaping objects as arguments because they potentially escape
+// from callee frames within the given depth.
+// The search for deeper frames is ended if an entry frame is found because
+// arguments to native methods are considered to escape globally.
+bool EscapeBarrier::deoptimize_objects(int depth) {
+  if (barrier_active() && deoptee_thread()->has_last_Java_frame()) {
+    assert(calling_thread() == Thread::current(), "should be");
+    ResourceMark rm(calling_thread());
+    HandleMark   hm(calling_thread());
+    RegisterMap  reg_map(deoptee_thread());
+    vframe* vf = deoptee_thread()->last_java_vframe(&reg_map);
+    int cur_depth = 0;
+    while (vf != NULL && ((cur_depth <= depth) || !vf->is_entry_frame())) {
+      if (vf->is_compiled_frame()) {
+        compiledVFrame* cvf = compiledVFrame::cast(vf);
+        // Deoptimize frame and local objects if any exist.
+        // If cvf is deeper than depth, then we deoptimize iff local objects are passed as args.
+        bool should_deopt = cur_depth <= depth ? cvf->has_ea_local_in_scope() : cvf->arg_escape();
+        if (should_deopt && !deoptimize_objects(cvf->fr().id())) {
+          // reallocation of scalar replaced objects failed because heap is exhausted
+          return false;
+        }
+
+        // move to top frame
+        while(!vf->is_top()) {
+          cur_depth++;
+          vf = vf->sender();
+        }
+      }
+
+      // move to next physical frame
+      cur_depth++;
+      vf = vf->sender();
+    }
+  }
+  return true;
+}
+
+bool EscapeBarrier::deoptimize_objects_all_threads() {
+  if (!barrier_active()) return true;
+  ResourceMark rm(calling_thread());
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+    if (jt->has_last_Java_frame()) {
+      RegisterMap reg_map(jt);
+      vframe* vf = jt->last_java_vframe(&reg_map);
+      assert(jt->frame_anchor()->walkable(),
+             "The stack of JavaThread " PTR_FORMAT " is not walkable. Thread state is %d",
+             p2i(jt), jt->thread_state());
+      while (vf != NULL) {
+        if (vf->is_compiled_frame()) {
+          compiledVFrame* cvf = compiledVFrame::cast(vf);
+          if ((cvf->has_ea_local_in_scope() || cvf->arg_escape()) &&
+              !deoptimize_objects_internal(jt, cvf->fr().id())) {
+            return false; // reallocation failure
+          }
+          // move to top frame
+          while(!vf->is_top()) {
+            vf = vf->sender();
+          }
+        }
+        // move to next physical frame
+        vf = vf->sender();
+      }
+    }
+  }
+  return true; // success
+}
+
+bool EscapeBarrier::_deoptimizing_objects_for_all_threads = false;
+bool EscapeBarrier::_self_deoptimization_in_progress      = false;
+
+class EscapeBarrierSuspendHandshake : public HandshakeClosure {
+  JavaThread* _excluded_thread;
+ public:
+  EscapeBarrierSuspendHandshake(JavaThread* excluded_thread, const char* name) :
+    HandshakeClosure(name),
+    _excluded_thread(excluded_thread) {}
+  void do_thread(Thread* th) {
+    if (th->is_Java_thread() && !th->is_hidden_from_external_view() && (th != _excluded_thread)) {
+      th->set_obj_deopt_flag();
+    }
+  }
+};
+
+void EscapeBarrier::sync_and_suspend_one() {
+  assert(_calling_thread != NULL, "calling thread must not be NULL");
+  assert(_deoptee_thread != NULL, "deoptee thread must not be NULL");
+  assert(barrier_active(), "should not call");
+
+  // Sync with other threads that might be doing deoptimizations
+  {
+    // Need to switch to _thread_blocked for the wait() call
+    ThreadBlockInVM tbivm(_calling_thread);
+    MonitorLocker ml(_calling_thread, EscapeBarrier_lock, Mutex::_no_safepoint_check_flag);
+    while (_self_deoptimization_in_progress || _deoptee_thread->is_obj_deopt_suspend()) {
+      ml.wait();
+    }
+
+    if (self_deopt()) {
+      _self_deoptimization_in_progress = true;
+      return;
+    }
+
+    // set suspend flag for target thread
+    _deoptee_thread->set_obj_deopt_flag();
+  }
+
+  // suspend target thread
+  EscapeBarrierSuspendHandshake sh(NULL, "EscapeBarrierSuspendOne");
+  Handshake::execute_direct(&sh, _deoptee_thread);
+  assert(!_deoptee_thread->has_last_Java_frame() || _deoptee_thread->frame_anchor()->walkable(),
+         "stack should be walkable now");
+}
+
+void EscapeBarrier::sync_and_suspend_all() {
+  assert(barrier_active(), "should not call");
+  assert(_calling_thread != NULL, "calling thread must not be NULL");
+  assert(all_threads(), "sanity");
+
+  // Sync with other threads that might be doing deoptimizations
+  {
+    // Need to switch to _thread_blocked for the wait() call
+    ThreadBlockInVM tbivm(_calling_thread);
+    MonitorLocker ml(_calling_thread, EscapeBarrier_lock, Mutex::_no_safepoint_check_flag);
+
+    bool deopt_in_progress;
+    do {
+      deopt_in_progress = _self_deoptimization_in_progress;
+      for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+        deopt_in_progress = (deopt_in_progress || jt->is_obj_deopt_suspend());
+        if (deopt_in_progress) {
+          break;
+        }
+      }
+      if (deopt_in_progress) {
+        ml.wait(); // then check again
+      }
+    } while(deopt_in_progress);
+
+    _self_deoptimization_in_progress = true;
+    _deoptimizing_objects_for_all_threads = true;
+  }
+
+  EscapeBarrierSuspendHandshake sh(_calling_thread, "EscapeBarrierSuspendAll");
+  Handshake::execute(&sh);
+#ifdef ASSERT
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+    if (jt->is_hidden_from_external_view()) continue;
+    assert(!jt->has_last_Java_frame() || jt->frame_anchor()->walkable(),
+           "The stack of JavaThread " PTR_FORMAT " is not walkable. Thread state is %d",
+           p2i(jt), jt->thread_state());
+  }
+#endif // ASSERT
+}
+
+void EscapeBarrier::resume_one() {
+  assert(barrier_active(), "should not call");
+  assert(!all_threads(), "use resume_all()");
+  MonitorLocker ml(_calling_thread, EscapeBarrier_lock, Mutex::_no_safepoint_check_flag);
+  if (self_deopt()) {
+    assert(_self_deoptimization_in_progress, "incorrect synchronization");
+    _self_deoptimization_in_progress = false;
+  } else {
+    _deoptee_thread->clear_obj_deopt_flag();
+  }
+  ml.notify_all();
+}
+
+void EscapeBarrier::resume_all() {
+  assert(barrier_active(), "should not call");
+  assert(all_threads(), "use resume_one()");
+  MonitorLocker ml(_calling_thread, EscapeBarrier_lock, Mutex::_no_safepoint_check_flag);
+  assert(_self_deoptimization_in_progress, "incorrect synchronization");
+  _deoptimizing_objects_for_all_threads = false;
+  _self_deoptimization_in_progress = false;
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+    jt->clear_obj_deopt_flag();
+  }
+  ml.notify_all();
+}
+
+void EscapeBarrier::thread_added(JavaThread* jt) {
+  if (!jt->is_hidden_from_external_view()) {
+    MutexLocker ml(EscapeBarrier_lock, Mutex::_no_safepoint_check_flag);
+    if (_deoptimizing_objects_for_all_threads) {
+      jt->set_obj_deopt_flag();
+    }
+  }
+}
+
+void EscapeBarrier::thread_removed(JavaThread* jt) {
+  MonitorLocker ml(EscapeBarrier_lock, Mutex::_no_safepoint_check_flag);
+  if (jt->is_obj_deopt_suspend()) {
+    // jt terminated before it self suspended.
+    // Other threads might be waiting to perform deoptimizations for it.
+    jt->clear_obj_deopt_flag();
+    ml.notify_all();
+  }
+}
+
+// Remember that objects were reallocated and relocked for the compiled frame with the given id
+static void set_objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
+  // set in first/oldest update
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* list =
+    JvmtiDeferredUpdates::deferred_locals(thread);
+  DEBUG_ONLY(bool found = false);
+  if (list != NULL) {
+    for (int i = 0; i < list->length(); i++) {
+      if (list->at(i)->matches(fr_id)) {
+        DEBUG_ONLY(found = true);
+        list->at(i)->set_objs_are_deoptimized();
+        break;
+      }
+    }
+  }
+  assert(found, "variable set should exist at least for one vframe");
+}
+
+// Deoptimize the given frame and deoptimize objects with optimizations based on
+// escape analysis, i.e. reallocate scalar replaced objects on the heap and
+// relock objects if locking has been eliminated.
+// Deoptimized objects are kept as JVMTI deferred updates until the compiled
+// frame is replaced with interpreter frames.  Returns false iff at least one
+// reallocation failed.
+bool EscapeBarrier::deoptimize_objects_internal(JavaThread* deoptee, intptr_t* fr_id) {
+  if (!barrier_active()) return true;
+
+  JavaThread* ct = calling_thread();
+  bool realloc_failures = false;
+
+  if (!objs_are_deoptimized(deoptee, fr_id)) {
+    // Make sure the frame identified by fr_id is deoptimized and fetch its last vframe
+    compiledVFrame* last_cvf;
+    bool fr_is_deoptimized;
+    do {
+      StackFrameStream fst(deoptee);
+      while (fst.current()->id() != fr_id && !fst.is_done()) {
+        fst.next();
+      }
+      assert(fst.current()->id() == fr_id, "frame not found");
+      assert(fst.current()->is_compiled_frame(),
+             "only compiled frames can contain stack allocated objects");
+      fr_is_deoptimized = fst.current()->is_deoptimized_frame();
+      if (!fr_is_deoptimized) {
+        // Execution must not continue in the compiled method, so we deoptimize the frame.
+        Deoptimization::deoptimize_frame(deoptee, fr_id);
+      } else {
+        last_cvf = compiledVFrame::cast(vframe::new_vframe(fst.current(), fst.register_map(), deoptee));
+      }
+    } while(!fr_is_deoptimized);
+
+    // collect inlined frames
+    compiledVFrame* cvf = last_cvf;
+    GrowableArray<compiledVFrame*>* vfs = new GrowableArray<compiledVFrame*>(10);
+    while (!cvf->is_top()) {
+      vfs->push(cvf);
+      cvf = compiledVFrame::cast(cvf->sender());
+    }
+    vfs->push(cvf);
+
+    // reallocate and relock optimized objects
+    bool deoptimized_objects = Deoptimization::deoptimize_objects_internal(ct, vfs, realloc_failures);
+    if (!realloc_failures && deoptimized_objects) {
+      // now do the updates
+      for (int frame_index = 0; frame_index < vfs->length(); frame_index++) {
+        cvf = vfs->at(frame_index);
+
+        // locals
+        GrowableArray<ScopeValue*>* scopeLocals = cvf->scope()->locals();
+        StackValueCollection* locals = cvf->locals();
+        if (locals != NULL) {
+          for (int i2 = 0; i2 < locals->size(); i2++) {
+            StackValue* var = locals->at(i2);
+            if (var->type() == T_OBJECT && scopeLocals->at(i2)->is_object()) {
+              jvalue val;
+              val.l = cast_from_oop<jobject>(locals->at(i2)->get_obj()());
+              cvf->update_local(T_OBJECT, i2, val);
+            }
+          }
+        }
+
+        // expressions
+        GrowableArray<ScopeValue*>* scopeExpressions = cvf->scope()->expressions();
+        StackValueCollection* expressions = cvf->expressions();
+        if (expressions != NULL) {
+          for (int i2 = 0; i2 < expressions->size(); i2++) {
+            StackValue* var = expressions->at(i2);
+            if (var->type() == T_OBJECT && scopeExpressions->at(i2)->is_object()) {
+              jvalue val;
+              val.l = cast_from_oop<jobject>(expressions->at(i2)->get_obj()());
+              cvf->update_stack(T_OBJECT, i2, val);
+            }
+          }
+        }
+
+        // monitors
+        GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
+        if (monitors != NULL) {
+          for (int i2 = 0; i2 < monitors->length(); i2++) {
+            if (monitors->at(i2)->eliminated()) {
+              assert(!monitors->at(i2)->owner_is_scalar_replaced(),
+                     "reallocation failure, should not update");
+              cvf->update_monitor(i2, monitors->at(i2));
+            }
+          }
+        }
+      }
+      set_objs_are_deoptimized(deoptee, fr_id);
+    }
+  }
+  return !realloc_failures;
+}
+
 #else // COMPILER2_OR_JVMCI
 
 

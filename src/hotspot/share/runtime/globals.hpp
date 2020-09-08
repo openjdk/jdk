@@ -378,6 +378,29 @@ const size_t minimumSymbolTableSize = 1024;
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
                                                                             \
+  develop(bool, DeoptimizeObjectsALot, false,                               \
+          "For testing purposes concurrent threads revert optimizations "   \
+          "based on escape analysis at intervals given with "               \
+          "DeoptimizeObjectsALotInterval=n. The thread count is given "     \
+          "with DeoptimizeObjectsALotThreadCountSingle and "                \
+          "DeoptimizeObjectsALotThreadCountAll.")                           \
+                                                                            \
+  develop(uint64_t, DeoptimizeObjectsALotInterval, 5,                       \
+          "Interval for DeoptimizeObjectsALot.")                            \
+          range(0, max_jlong)                                               \
+                                                                            \
+  develop(int, DeoptimizeObjectsALotThreadCountSingle, 1,                   \
+          "The number of threads that revert optimizations based on "       \
+          "escape analysis for a single thread if DeoptimizeObjectsALot "   \
+          "is enabled. The target thread is selected round robin." )        \
+          range(0, max_jint)                                                \
+                                                                            \
+  develop(int, DeoptimizeObjectsALotThreadCountAll, 1,                      \
+          "The number of threads that revert optimizations based on "       \
+          "escape analysis for all threads if DeoptimizeObjectsALot "       \
+          "is enabled." )                                                   \
+          range(0, max_jint)                                                \
+                                                                            \
   product(bool, Debugging, false,                                           \
           "Set when executing debug methods in debug.cpp "                  \
           "(to prevent triggering assertions)")                             \

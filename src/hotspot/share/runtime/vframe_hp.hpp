@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ class compiledVFrame: public javaVFrame {
   StackValueCollection*        expressions()        const;
   GrowableArray<MonitorInfo*>* monitors()           const;
   int                          vframe_id()          const { return _vframe_id; }
+  bool                         has_ea_local_in_scope() const;
+  bool                         arg_escape()         const; // at call with arg escape in parameter list
 
   void set_locals(StackValueCollection* values) const;
 
@@ -95,6 +97,48 @@ class compiledVFrame: public javaVFrame {
 #endif
 };
 
+// Holds updates for compiled frames by JVMTI agents that cannot be performed immediately.
+class jvmtiDeferredLocalVariableSet;
+class JvmtiDeferredUpdates : public CHeapObj<mtCompiler> {
+
+  // Relocking has to be deferred if the lock owning thread is currently waiting on the monitor.
+  int _relock_count_after_wait;
+
+  // Deferred updates of locals, expressions, and monitors
+  GrowableArray<jvmtiDeferredLocalVariableSet*> _deferred_locals_updates;
+
+  void inc_relock_count_after_wait() {
+    _relock_count_after_wait++;
+  }
+
+  int get_and_reset_relock_count_after_wait() {
+    int result = _relock_count_after_wait;
+    _relock_count_after_wait = 0;
+    return result;
+  }
+
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals() { return &_deferred_locals_updates; }
+
+  JvmtiDeferredUpdates() :
+    _relock_count_after_wait(0),
+    _deferred_locals_updates((ResourceObj::set_allocation_type((address) &_deferred_locals_updates,
+                              ResourceObj::C_HEAP), 1), mtCompiler) { }
+
+public:
+  static void create_for(JavaThread* thread);
+
+  static GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals(JavaThread* jt) {
+    return jt->deferred_updates() == NULL ? NULL : jt->deferred_updates()->deferred_locals();
+  }
+
+  // Relocking has to be deferred if the lock owning thread is currently waiting on the monitor.
+  static int get_and_reset_relock_count_after_wait(JavaThread* jt) {
+    return jt->deferred_updates() == NULL ? 0 : jt->deferred_updates()->get_and_reset_relock_count_after_wait();
+  }
+  static void inc_relock_count_after_wait(JavaThread* thread);
+};
+
+
 // In order to implement set_locals for compiled vframes we must
 // store updated locals in a data structure that contains enough
 // information to recognize equality with a vframe and to store
@@ -111,6 +155,7 @@ private:
   intptr_t* _id;
   int _vframe_id;
   GrowableArray<jvmtiDeferredLocalVariable*>* _locals;
+  bool _objects_are_deoptimized;
 
   void                              update_value(StackValueCollection* locals, BasicType type, int index, jvalue value);
 
@@ -122,13 +167,17 @@ private:
   int                               bci()            const  { return _bci; }
   intptr_t*                         id()             const  { return _id; }
   int                               vframe_id()      const  { return _vframe_id; }
+  bool                              objects_are_deoptimized() const { return _objects_are_deoptimized; }
 
   void                              update_locals(StackValueCollection* locals);
   void                              update_stack(StackValueCollection* locals);
   void                              update_monitors(GrowableArray<MonitorInfo*>* monitors);
+  void                              set_objs_are_deoptimized() { _objects_are_deoptimized = true; }
 
   // Does the vframe match this jvmtiDeferredLocalVariableSet
   bool                              matches(const vframe* vf);
+  // Does the underlying physical frame match this jvmtiDeferredLocalVariableSet
+  bool                              matches(intptr_t* fr_id) { return id() == fr_id; }
   // GC
   void                              oops_do(OopClosure* f);
 

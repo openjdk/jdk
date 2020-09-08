@@ -1684,7 +1684,7 @@ void JavaThread::initialize() {
   set_vm_result_2(NULL);
   set_vframe_array_head(NULL);
   set_vframe_array_last(NULL);
-  set_deferred_locals(NULL);
+  set_deferred_updates(NULL);
   set_deopt_mark(NULL);
   set_deopt_compiled_method(NULL);
   set_monitor_chunks(NULL);
@@ -1913,7 +1913,7 @@ JavaThread::~JavaThread() {
     delete old_array;
   }
 
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = deferred_locals();
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = JvmtiDeferredUpdates::deferred_locals(this);
   if (deferred != NULL) {
     // This can only happen if thread is destroyed before deoptimization occurs.
     assert(deferred->length() != 0, "empty array!");
@@ -1923,7 +1923,7 @@ JavaThread::~JavaThread() {
       // individual jvmtiDeferredLocalVariableSet are CHeapObj's
       delete dlv;
     } while (deferred->length() != 0);
-    delete deferred;
+    delete deferred_updates();
   }
 
   // All Java related clean up happens in exit
@@ -2432,6 +2432,11 @@ void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
     check_and_handle_async_exceptions();
   }
 
+  if (is_obj_deopt_suspend()) {
+    frame_anchor()->make_walkable(this);
+    wait_for_object_deoptimization();
+  }
+
   JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(this);)
 }
 
@@ -2632,6 +2637,59 @@ void JavaThread::java_suspend_self_with_safepoint_check() {
   }
 }
 
+void JavaThread::wait_for_object_deoptimization() {
+  assert(!has_last_Java_frame() || frame_anchor()->walkable(), "should have walkable stack");
+  assert(this == Thread::current(), "invariant");
+  JavaThreadState state = thread_state();
+
+  bool should_spin_wait = true;
+  do {
+    set_thread_state(_thread_blocked);
+    set_suspend_equivalent();
+    {
+      MonitorLocker ml(this, EscapeBarrier_lock, Monitor::_no_safepoint_check_flag);
+      if (EscapeBarrier::deoptimizing_objects_for_all_threads() ||
+          (is_obj_deopt_suspend() && !should_spin_wait)) {
+        ml.wait();
+      }
+      should_spin_wait = should_spin_wait && is_obj_deopt_suspend();
+    }
+    // A single deoptimization is typically very short. Microbenchmarks
+    // showed 5% better performance when spinning.
+    if (should_spin_wait) {
+      // Inspired by HandshakeSpinYield
+      const jlong max_spin_time_ns = 100 /* us */ * (NANOUNITS / MICROUNITS);
+      const int free_cpus = os::active_processor_count() - 1;
+      jlong spin_time_ns = (5 /* us */ * (NANOUNITS / MICROUNITS)) * free_cpus; // zero on UP
+      spin_time_ns = spin_time_ns > max_spin_time_ns ? max_spin_time_ns : spin_time_ns;
+      jlong spin_start = os::javaTimeNanos();
+      while (is_obj_deopt_suspend()) {
+        os::naked_yield();
+        if ((os::javaTimeNanos() - spin_start) > spin_time_ns) {
+          should_spin_wait = false;
+          break;
+        }
+      }
+    }
+    set_thread_state_fence(state);
+
+    if (handle_special_suspend_equivalent_condition()) {
+      java_suspend_self_with_safepoint_check();
+    }
+
+    // Since we are not using a regular thread-state transition helper here,
+    // we must manually emit the instruction barrier after leaving a safe state.
+    OrderAccess::cross_modify_fence();
+    if (state != _thread_in_native) {
+      SafepointMechanism::process_if_requested(this);
+    }
+
+    // Check for another deopt suspend _after_ checking for safepoint/handshake,
+    // or otherwise a stale value can be seen if the flag was changed with a
+    // handshake while the current thread was _thread_blocked above.
+  } while (is_obj_deopt_suspend());
+}
+
 #ifdef ASSERT
 // Verify the JavaThread has not yet been published in the Threads::list, and
 // hence doesn't need protection from concurrent access at this stage.
@@ -2659,6 +2717,10 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
     thread->java_suspend_self_with_safepoint_check();
   } else {
     SafepointMechanism::process_if_requested(thread);
+  }
+
+  if (thread->is_obj_deopt_suspend()) {
+    thread->wait_for_object_deoptimization();
   }
 
   JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(thread);)
@@ -3031,7 +3093,7 @@ void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   assert(vframe_array_head() == NULL, "deopt in progress at a safepoint!");
   // If we have deferred set_locals there might be oops waiting to be
   // written
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = deferred_locals();
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(this);
   if (list != NULL) {
     for (int i = 0; i < list->length(); i++) {
       list->at(i)->oops_do(f);
@@ -4591,6 +4653,9 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   // Possible GC point.
   Events::log(p, "Thread added: " INTPTR_FORMAT, p2i(p));
+
+  // Make new thread known to active EscapeBarrier
+  EscapeBarrier::thread_added(p);
 }
 
 void Threads::remove(JavaThread* p, bool is_daemon) {
@@ -4624,6 +4689,9 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     // to do callbacks into the safepoint code. However, the safepoint code is not aware
     // of this thread since it is removed from the queue.
     p->set_terminated_value();
+
+    // Notify threads waiting in EscapeBarriers
+    EscapeBarrier::thread_removed(p);
   } // unlock Threads_lock
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock

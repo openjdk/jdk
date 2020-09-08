@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1093,7 +1093,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   // if reallocation fails during deoptimization we'll pop all
   // interpreter frames for this compiled frame and that won't play
   // nice with JVMTI popframe.
-  if (!EliminateAllocations || JvmtiExport::can_pop_frame() || !alloc->_is_non_escaping) {
+  if (!EliminateAllocations || !alloc->_is_non_escaping) {
     return false;
   }
   Node* klass = alloc->in(AllocateNode::KlassNode);
