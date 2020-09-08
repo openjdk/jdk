@@ -253,6 +253,28 @@ void ZCollectedHeap::object_iterate(ObjectClosure* cl) {
   _heap.object_iterate(cl, true /* visit_weaks */);
 }
 
+class ZHeapParallelObjectIterator : public ParallelObjectIterator {
+private:
+  uint    _thread_num;
+  ZHeap*  _heap;
+  ZHeapIterator _iter;
+public:
+  ZHeapParallelObjectIterator(uint thread_num, ZHeap* heap) :
+      _thread_num(thread_num), _heap(heap), _iter(_thread_num) {
+    // prepare work queue, enqueue all roots serially.
+    _heap->process_roots_for_par_iterate(&_iter, true /* visit_weaks */);
+  }
+
+  virtual void object_iterate(ObjectClosure* cl, uint worker_id) {
+    // process references from roots.
+    _heap->par_references_iterate(cl, &_iter, worker_id, true /* visit_weaks*/);
+  }
+};
+
+ParallelObjectIterator* ZCollectedHeap::parallel_object_iterator(uint thread_num) {
+  return new ZHeapParallelObjectIterator(thread_num, &_heap);
+}
+
 void ZCollectedHeap::keep_alive(oop obj) {
   _heap.keep_alive(obj);
 }

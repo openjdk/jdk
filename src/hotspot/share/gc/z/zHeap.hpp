@@ -26,6 +26,7 @@
 
 #include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zForwardingTable.hpp"
+#include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPage.hpp"
@@ -141,6 +142,9 @@ public:
 
   // Iteration
   void object_iterate(ObjectClosure* cl, bool visit_weaks);
+  void process_roots_for_par_iterate(ZHeapIterator* iter, bool visit_weaks);
+  void par_references_iterate(ObjectClosure* cl, ZHeapIterator* iter,
+                              uint worker_id, bool visit_weaks);
   void pages_do(ZPageClosure* cl);
 
   // Serviceability

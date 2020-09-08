@@ -26,7 +26,6 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
@@ -439,6 +438,17 @@ void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {
 
   ZHeapIterator iter;
   iter.objects_do(cl, visit_weaks);
+}
+
+void ZHeap::process_roots_for_par_iterate(ZHeapIterator* iter, bool visit_weaks) {
+  iter->enqueue_roots(visit_weaks);
+}
+
+void ZHeap::par_references_iterate(ObjectClosure* cl,
+                                   ZHeapIterator* iter,
+                                   uint worker_id,
+                                   bool visit_weaks) {
+  iter->drain_queue(cl, visit_weaks, worker_id);
 }
 
 void ZHeap::pages_do(ZPageClosure* cl) {

@@ -52,6 +52,10 @@ public:
     _map.set_bit(index);
     return true;
   }
+
+  inline bool par_try_set_bit(size_t index) {
+    return _map.par_set_bit(index);
+  }
 };
 
 template <bool Concurrent, bool Weak>
@@ -85,11 +89,12 @@ public:
   }
 };
 
-template <bool VisitReferents>
+template <bool VisitReferents, bool ParallelIter>
 class ZHeapIteratorOopClosure : public ClaimMetadataVisitingOopIterateClosure {
 private:
   ZHeapIterator* const _iter;
   const oop            _base;
+  ZHeapIterTaskQueue*     _queue;
 
   oop load_oop(oop* p) {
     if (VisitReferents) {
@@ -100,10 +105,11 @@ private:
   }
 
 public:
-  ZHeapIteratorOopClosure(ZHeapIterator* iter, oop base) :
+  ZHeapIteratorOopClosure(ZHeapIterator* iter, oop base, ZHeapIterTaskQueue* q = NULL) :
       ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_other),
       _iter(iter),
-      _base(base) {}
+      _base(base),
+      _queue(q) {}
 
   virtual ReferenceIterationMode reference_iteration_mode() {
     return VisitReferents ? DO_FIELDS : DO_FIELDS_EXCEPT_REFERENT;
@@ -111,7 +117,11 @@ public:
 
   virtual void do_oop(oop* p) {
     const oop obj = load_oop(p);
-    _iter->push(obj);
+    if (ParallelIter == false) {
+      _iter->push(obj);
+    } else {
+      _iter->par_enqueue(obj, _queue);
+    }
   }
 
   virtual void do_oop(narrowOop* p) {
@@ -125,14 +135,39 @@ public:
 #endif
 };
 
-ZHeapIterator::ZHeapIterator() :
+ZHeapIterator::ZHeapIterator(uint num_workers) :
     _visit_stack(),
-    _visit_map(ZAddressOffsetMax) {}
+    _visit_map(ZAddressOffsetMax),
+    _num_workers(num_workers),
+    _map_lock(),
+    _task_queues(NULL) {
+  if (_num_workers > 1) {
+    // prepare process queue.
+    _task_queues = new ZHeapIterTaskQueueSet((int) _num_workers);
+    for (uint i = 0; i < _num_workers; i++) {
+      ZHeapIterTaskQueue* q = new ZHeapIterTaskQueue();
+      q->initialize();
+      _task_queues->register_queue(i, q);
+    }
+  }
+}
 
 ZHeapIterator::~ZHeapIterator() {
   ZVisitMapIterator iter(&_visit_map);
   for (ZHeapIteratorBitMap* map; iter.next(&map);) {
     delete map;
+  }
+  // reclaim task queues
+  if (_task_queues != NULL) {
+    for (uint i = 0; i < _num_workers; i++) {
+      ZHeapIterTaskQueue* q = _task_queues->queue(i);
+      if (q != NULL) {
+        delete q;
+        q = NULL;
+      }
+    }
+    delete _task_queues;
+    _task_queues = NULL;
   }
   ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_other);
 }
@@ -152,13 +187,22 @@ ZHeapIteratorBitMap* ZHeapIterator::object_map(oop obj) {
   const uintptr_t offset = ZAddress::offset(ZOop::to_address(obj));
   ZHeapIteratorBitMap* map = _visit_map.get(offset);
   if (map == NULL) {
-    map = new ZHeapIteratorBitMap(object_index_max());
-    _visit_map.put(offset, map);
+    if (_num_workers > 1) {
+      // Parallel iterate, holding lock to update _visit_map
+      ZLocker<ZLock> locker(&_map_lock);
+      if (map == NULL) {
+        map = new ZHeapIteratorBitMap(object_index_max());
+        _visit_map.put(offset, map);
+      }
+    } else {
+      map = new ZHeapIteratorBitMap(object_index_max());
+      _visit_map.put(offset, map);
+    }
   }
-
   return map;
 }
 
+// push objects in to _visit_stack, used by RootOopClosure.
 void ZHeapIterator::push(oop obj) {
   if (obj == NULL) {
     // Ignore
@@ -183,9 +227,9 @@ void ZHeapIterator::push_roots() {
   roots.oops_do(&cl);
 }
 
-template <bool VisitReferents>
-void ZHeapIterator::push_fields(oop obj) {
-  ZHeapIteratorOopClosure<VisitReferents> cl(this, obj);
+template <bool VisitReferents, bool ParallelIter>
+void ZHeapIterator::push_fields(oop obj, ZHeapIterTaskQueue* queue) {
+  ZHeapIteratorOopClosure<VisitReferents, ParallelIter> cl(this, obj, queue);
   obj->oop_iterate(&cl);
 }
 
@@ -213,10 +257,65 @@ void ZHeapIterator::objects_do(ObjectClosure* cl) {
   }
 }
 
+// Used only in serial iteration
 void ZHeapIterator::objects_do(ObjectClosure* cl, bool visit_weaks) {
   if (visit_weaks) {
     objects_do<true /* VisitWeaks */>(cl);
   } else {
     objects_do<false /* VisitWeaks */>(cl);
   }
+}
+
+// Parallel iteration support
+void ZHeapIterator::enqueue_roots(bool visit_weaks) {
+  ZStatTimerDisable disable;
+  // Push roots to visit
+  push_roots<ZRootsIterator,                     false /* Concurrent */, false /* Weak */>();
+  push_roots<ZConcurrentRootsIteratorClaimOther, true  /* Concurrent */, false /* Weak */>();
+  if (visit_weaks) {
+    push_roots<ZWeakRootsIterator,           false /* Concurrent */, true  /* Weak */>();
+    push_roots<ZConcurrentWeakRootsIterator, true  /* Concurrent */, true  /* Weak */>();
+  }
+  // Divide roots into thread queue.
+  size_t roots_num = _visit_stack.size();
+  for (uint i = 0; i < roots_num; i++) {
+    uint worker_id = i % _num_workers;
+    oop obj = _visit_stack.pop();
+    _task_queues->queue(worker_id)->push(obj);
+  }
+}
+
+void ZHeapIterator::drain_queue(ObjectClosure* cl, bool visit_weaks, uint worker_id) {
+  ZStatTimerDisable disable;
+  ZHeapIterTaskQueue* q = _task_queues->queue(worker_id);
+  assert(q != NULL, "Heap iteration task queue must not NULL");
+  // Drain stack
+  oop obj;
+  while (q->pop_overflow(obj) || q->pop_local(obj) || _task_queues->steal(worker_id, obj)) {
+    // Visit object
+    cl->do_object(obj);
+    // Push fields to visit
+    if (visit_weaks = true) {
+      push_fields<true, true /* ParallelIter */>(obj, q);
+    } else {
+      push_fields<false, true /* ParallelIter */>(obj, q);
+    }
+  }
+}
+
+void ZHeapIterator::par_enqueue(oop obj, ZHeapIterTaskQueue* q) {
+   if (obj == NULL) {
+    // Ignore
+    return;
+  }
+
+  ZHeapIteratorBitMap* const map = object_map(obj);
+  const size_t index = object_index(obj);
+  if (!map->par_try_set_bit(index)) {
+    // Already pushed
+    return;
+  }
+
+  // Push
+  q->push(obj);
 }

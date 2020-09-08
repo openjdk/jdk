@@ -33,6 +33,7 @@
 
 class ZDirector;
 class ZDriver;
+class ZHeapParallelObjectIterator;
 class ZStat;
 
 class ZCollectedHeap : public CollectedHeap {
@@ -97,6 +98,7 @@ public:
   virtual GrowableArray<MemoryPool*> memory_pools();
 
   virtual void object_iterate(ObjectClosure* cl);
+  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num);
 
   virtual void keep_alive(oop obj);
 
