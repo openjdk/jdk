@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,10 @@
  */
 
 package com.sun.net.httpserver;
-import java.net.InetSocketAddress;
-//BEGIN_TIGER_EXCLUDE
 import javax.net.ssl.SSLParameters;
+import java.net.InetSocketAddress;
+
+//BEGIN_TIGER_EXCLUDE
 //END_TIGER_EXCLUDE
 
 /**
@@ -56,16 +57,23 @@ public abstract class HttpsParameters {
     private boolean wantClientAuth;
     private boolean needClientAuth;
 
+    /**
+     * Creates a HttpsParameters.
+     */
     protected HttpsParameters() {}
 
     /**
      * Returns the HttpsConfigurator for this HttpsParameters.
+     *
+     * @returns HttpsConfigurator for this instance of HttpsParameters.
      */
     public abstract HttpsConfigurator getHttpsConfigurator();
 
     /**
      * Returns the address of the remote client initiating the
      * connection.
+     *
+     * @returns Address of the remote client initiating the connection.
      */
     public abstract InetSocketAddress getClientAddress();
 
