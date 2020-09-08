@@ -312,7 +312,7 @@ public:
     unsigned int hash = HASH(key);
     int index = BasicHashtable<F>::hash_to_index(hash);
     for (KVHashtableEntry* e = bucket(index); e != NULL; e = e->next()) {
-      if (e->hash() == hash && e->_key == key) {
+      if (e->hash() == hash && EQUALS(e->_key, key)) {
         return &(e->_value);
       }
     }
@@ -324,11 +324,11 @@ public:
   // If no entry for the key exists, create a new entry from key and value and return a
   //  pointer to the value.
   // *p_created is true if entry was created, false if entry pre-existed.
-  V* add_if_absent(K const& key, V const& value, bool* p_created) {
+  V* add_if_absent(K key, V value, bool* p_created) {
     unsigned int hash = HASH(key);
     int index = BasicHashtable<F>::hash_to_index(hash);
     for (KVHashtableEntry* e = bucket(index); e != NULL; e = e->next()) {
-      if (e->hash() == hash && e->_key == key) {
+      if (e->hash() == hash && EQUALS(e->_key, key)) {
         *p_created = false;
         return &(e->_value);
       }
