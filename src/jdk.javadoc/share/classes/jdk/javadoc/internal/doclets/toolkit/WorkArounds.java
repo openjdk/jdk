@@ -615,7 +615,7 @@ public class WorkArounds {
                 : ((JavacElements) utils.elementUtils).getPackageElement(encl, parsedPackageName);
     }
 
-    public PreviewAPIType getPreviewAPIType(TypeElement el) {
+    public PreviewAPIType getPreviewAPIType(Element el) {
         Symbol sym = (Symbol) el;
         if ((sym.flags() & Flags.PREVIEW_API) != 0) {
             if ((sym.flags() & Flags.PREVIEW_REFLECTIVE) != 0) {

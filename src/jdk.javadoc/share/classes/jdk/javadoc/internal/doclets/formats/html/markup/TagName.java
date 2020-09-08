@@ -83,6 +83,7 @@ public enum TagName {
     SPAN,
     STRONG,
     SUB,
+    SUP,
     TABLE,
     TBODY,
     THEAD,

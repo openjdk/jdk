@@ -73,7 +73,7 @@ public class Preview implements Taglet {
         if (Arrays.stream(stackTrace).anyMatch(isSummary)) {
             return "<div style=\"display:inline-block; font-weight:bold\">" + summary + "</div><br>";
         }
-        return "<div style=\"border: 1px solid red; border-radius: 5px; padding: 5px; display:inline-block; font-size: larger\">" + details + "</div><br>";
+        return "<a id='preview'><h3>Preview</h3></a><div style=\"border: 1px solid red; border-radius: 5px; padding: 5px; display:inline-block; font-size: larger\">" + details + "</div><br>";
     }
 }
 

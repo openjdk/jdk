@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -40,6 +41,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -47,6 +49,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewAPIType;
 import jdk.javadoc.internal.doclets.toolkit.util.links.LinkFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
@@ -91,29 +94,35 @@ public class LinkFactoryImpl extends LinkFactory {
             title = getClassToolTip(typeElement, isTypeLink);
         }
         Content label = classLinkInfo.getClassLinkLabel(configuration);
+        Set<ElementFlag> flags = utils.elementFlags(typeElement);
 
-        Function<Content, Content> wrapWithPreviewNotice = c -> {
-            if (!hasWhere) {
-                boolean previewWarning = utils.isDeclaredUsingPreview(typeElement) || utils.getPreviewAPIType(typeElement) != PreviewAPIType.STANDARD;
-                if (previewWarning) {
-                    HtmlTree span = HtmlTree.SPAN(HtmlStyle.previewReference, c);
-                    c = span;
-                }
-            }
-            return c;
-        };
+//        Function<Content, Content> wrapWithPreviewNotice = c -> {
+//            if (!hasWhere) {
+//                if (previewWarning) {
+//                    ContentBuilder cb = new ContentBuilder(c, new HtmlTree(TagName.SUP).add(HtmlTree.A("#", new ContentBuilder().add("PREVIEW"))));
+//                    HtmlTree span = HtmlTree.SPAN(HtmlStyle.previewReference, cb);
+//                    c = span;
+//                }
+//            }
+//            return c;
+//        };
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
             if (configuration.isGeneratedDoc(typeElement)) {
                 DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf ||
                                 !(docPaths.forName(typeElement)).equals(m_writer.filename)) {
-                        link.add(wrapWithPreviewNotice.apply(m_writer.links.createLink(
+                        link.add(m_writer.links.createLink(
                                 filename.fragment(classLinkInfo.where),
                                 label,
                                 classLinkInfo.isStrong,
                                 title,
-                                classLinkInfo.target)));
+                                classLinkInfo.target));
+                        if (flags.contains(ElementFlag.PREVIEW) && !hasWhere/*XXX*/) {
+                            link.add(new HtmlTree(TagName.SUP).add(m_writer.links.createLink(
+                                    filename.fragment("preview"),
+                                    new ContentBuilder().add("PREVIEW"))));
+                        }
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
                             link.add(getTypeParameterLinks(linkInfo));
                         }
@@ -125,7 +134,14 @@ public class LinkFactoryImpl extends LinkFactory {
                 typeElement, classLinkInfo.where,
                 label, classLinkInfo.isStrong, true);
             if (crossLink != null) {
-                link.add(wrapWithPreviewNotice.apply(crossLink));
+                link.add(crossLink);
+                if (flags.contains(ElementFlag.PREVIEW) && !hasWhere/*XXX*/) {
+                    link.add(new HtmlTree(TagName.SUP).add(m_writer.getCrossClassLink(
+                            typeElement,
+                            "preview",
+                            new ContentBuilder().add("PREVIEW"),
+                            false, false)));
+                }
                 if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
                     link.add(getTypeParameterLinks(linkInfo));
                 }
@@ -133,7 +149,7 @@ public class LinkFactoryImpl extends LinkFactory {
             }
         }
         // Can't link so just write label.
-        link.add(wrapWithPreviewNotice.apply(label));
+        link.add(label);
         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
             link.add(getTypeParameterLinks(linkInfo));
         }

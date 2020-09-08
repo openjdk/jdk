@@ -232,9 +232,6 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     addSummaryComment(klass, description);
                 }
                 table.addRow(classLink, description);
-                for (Content c : utils.getPreviewNotes(klass, true)) {
-                    table.addRow(HtmlTree.TD(HtmlStyle.colFirst, c).put(HtmlAttr.COLSPAN, "2")); //TODO: "2"!!
-                }
             }
             summaryContentTree.add(HtmlTree.LI(table));
         }

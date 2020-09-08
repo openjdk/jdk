@@ -917,7 +917,7 @@ public class HtmlTree extends Content {
     public boolean isInline() {
         switch (tagName) {
             case A: case BUTTON: case BR: case CODE: case EM: case I: case IMG:
-            case LABEL: case SMALL: case SPAN: case STRONG: case SUB:
+            case LABEL: case SMALL: case SPAN: case STRONG: case SUB: case SUP:
                 return true;
             default:
                 return false;

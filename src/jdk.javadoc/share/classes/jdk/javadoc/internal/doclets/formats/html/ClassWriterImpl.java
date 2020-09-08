@@ -42,6 +42,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor8;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.tools.doclint.HtmlTag;
 import javax.lang.model.element.ElementKind;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -198,18 +199,18 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         classInfoTree.add(hr);
         Content pre = new HtmlTree(TagName.PRE);
         addAnnotationInfo(typeElement, pre);
-        String sep = null;
-        for (String modifiersPart : modifiers.split(" ")) {
-            if (sep != null) {
-                pre.add(sep);
-            }
-            if ("record".equals(modifiersPart) || "sealed".equals(modifiersPart)) {
-                pre.add(HtmlTree.SPAN(HtmlStyle.previewReference, new ContentBuilder().add(modifiersPart)));
-            } else {
-                pre.add(modifiersPart);
-            }
-            sep = " ";
-        }
+//        String sep = null;
+//        for (String modifiersPart : modifiers.split(" ")) {
+//            if (sep != null) {
+//                pre.add(sep);
+//            }
+//            if ("record".equals(modifiersPart) || "sealed".equals(modifiersPart)) {
+//                pre.add(HtmlTree.SPAN(HtmlStyle.previewReference, new ContentBuilder().add(modifiersPart)));
+//            } else {
+//                pre.add(modifiersPart);
+//            }
+//            sep = " ";
+//        }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.Kind.CLASS_SIGNATURE, typeElement);
         //Let's not link to ourselves in the signature.
@@ -318,6 +319,15 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             if (!utils.getFullBody(typeElement).isEmpty()) {
                 addInlineComment(typeElement, classInfoTree);
             }
+        }
+        List<Content> previewNotes = utils.getPreviewNotes(typeElement, true);
+        if (!previewNotes.isEmpty()) {
+            classInfoTree.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview").add(HtmlTree.HEADING(TagName.H3, new ContentBuilder().add("Preview"))));
+            HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewReferenceNote);
+            for (Content note : previewNotes) {
+                previewDiv.add(HtmlTree.DIV(note));
+            }
+            classInfoTree.add(previewDiv);
         }
     }
 
@@ -532,12 +542,6 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                     addInlineDeprecatedComment(typeElement, deprs.get(0), div);
                 }
             }
-            classInfoTree.add(div);
-        }
-        for (Content previewNote : utils.getPreviewNotes(typeElement, false)) {
-            HtmlTree div = new HtmlTree(TagName.DIV);
-            div.setStyle(HtmlStyle.previewBlock);
-            div.add(HtmlTree.SPAN(HtmlStyle.previewLabel, previewNote));
             classInfoTree.add(div);
         }
     }

@@ -1747,7 +1747,8 @@ public class Utils {
             default -> throw new IllegalStateException("Unexpected: " + el.getKind());
         }
         Function<Content, Content> wrap = c -> {
-            return /*span ? */HtmlTree.SPAN(HtmlStyle.previewReferenceNote, c);
+            return c;
+//            return /*span ? */HtmlTree.SPAN(HtmlStyle.previewReferenceNote, c);
 //                        : HtmlTree.DIV(HtmlStyle.previewReferenceNote, c);
         };
         if (isDeclaredUsingPreview(el)) {
@@ -3057,4 +3058,17 @@ public class Utils {
         DECLARED_USING_PREVIEW;
     }
 
+    public Set<ElementFlag> elementFlags(Element el) {
+        Set<ElementFlag> flags = EnumSet.noneOf(ElementFlag.class);
+
+        if (isDeclaredUsingPreview(el) || configuration.workArounds.getPreviewAPIType(el) != PreviewAPIType.STANDARD)  {
+            flags.add(ElementFlag.PREVIEW);
+        }
+
+        return flags;
+    }
+
+    public enum ElementFlag {
+        PREVIEW;
+    }
 }
