@@ -75,17 +75,17 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-	public static void latin1_mixed_String() {
+    public static void latin1_mixed_String() {
         int ret = 0;
-		for (String what : latn1_mixedLength) {
-			ret += what.indexOf("a");
-		}
+        for (String what : latn1_mixedLength) {
+            ret += what.indexOf("a");
+        }
     }
 
     @Benchmark
     public static void utf16_mixed_String() {
         int ret = 0;
-		for (String what : utf16_mixedLength) {
+        for (String what : utf16_mixedLength) {
             ret += what.indexOf("a");
         }
     }

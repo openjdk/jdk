@@ -583,7 +583,7 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1,
     clz(tmp1, tmp1);
     add(cnt1_neg, cnt1_neg, tmp1, LSR, 3);
     b(MATCH);
-  
+
   BIND(DO1_SHORT);
     mov(result_tmp, cnt1);
     lea(str1, Address(str1, cnt1));
