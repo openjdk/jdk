@@ -771,7 +771,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
       java_lang_Module::set_module_entry(archived_obj, NULL);
       java_lang_Module::set_loader(archived_obj, NULL);
     } else if (java_lang_ClassLoader::is_instance(orig_obj)) {
-      // class_data will be restored explicitly at run time. 
+      // class_data will be restored explicitly at run time.
       guarantee(orig_obj == SystemDictionary::java_platform_loader() ||
                 orig_obj == SystemDictionary::java_system_loader() ||
                 java_lang_ClassLoader::loader_data_raw(orig_obj) == NULL, "must be");

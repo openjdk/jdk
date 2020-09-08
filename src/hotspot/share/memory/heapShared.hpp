@@ -44,7 +44,7 @@ class DumpedInternedStrings;
 struct ArchivableStaticFieldInfo {
   const char* klass_name;
   int full_module_graph_only;
-  const char* field_name;  
+  const char* field_name;
   InstanceKlass* klass;
   int offset;
   BasicType type;

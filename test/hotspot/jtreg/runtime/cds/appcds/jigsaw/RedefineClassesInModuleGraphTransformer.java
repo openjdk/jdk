@@ -31,8 +31,8 @@ public class RedefineClassesInModuleGraphTransformer implements ClassFileTransfo
                             ProtectionDomain pd, byte[] buffer) throws IllegalClassFormatException {
         System.out.println("transforming " + name);
 
-        if (name.equals("java/lang/Module")  || 
-            name.equals("java/lang/ModuleLayer")  || 
+        if (name.equals("java/lang/Module")  ||
+            name.equals("java/lang/ModuleLayer")  ||
             name.equals("java/lang/module/ResolvedModule")) {
             throw new RuntimeException("Classes used by the module graph should never be transformed by Java agent");
         }

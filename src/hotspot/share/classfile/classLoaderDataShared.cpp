@@ -111,7 +111,7 @@ void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entr
   if (_modules != NULL) { // Could be NULL if we have archived no modules for platform/system loaders
     ModuleEntryTable* modules = loader_data->modules();
     PackageEntryTable* packages = loader_data->packages();
- 
+
     MutexLocker m1(Module_lock);
     if (do_entries) {
       modules->load_archived_entries(loader_data, _modules);

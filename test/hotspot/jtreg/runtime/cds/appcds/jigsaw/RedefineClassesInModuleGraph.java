@@ -45,7 +45,7 @@ public class RedefineClassesInModuleGraph {
     };
 
     private static final String MANIFEST =
-        "Manifest-Version: 1.0\n" + 
+        "Manifest-Version: 1.0\n" +
         "Premain-Class: RedefineClassesInModuleGraphAgent\n" +
         "Can-Retransform-Classes: true\n" +
         "Can-Redefine-Classes: true\n";

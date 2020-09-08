@@ -1083,7 +1083,7 @@ void VM_PopulateDumpSharedSpace::doit() {
     _mc_region.pack(&_rw_region);
     builder.dump_rw_region();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (MetaspaceShared::use_full_module_graph()) {    
+    if (MetaspaceShared::use_full_module_graph()) {
       // Archive the ModuleEntry's and PackageEntry's of the 3 built-in loaders
       char* start = _rw_region.top();
       ClassLoaderDataShared::allocate_archived_tables();
@@ -1095,7 +1095,7 @@ void VM_PopulateDumpSharedSpace::doit() {
     _rw_region.pack(&_ro_region);
     builder.dump_ro_region();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (MetaspaceShared::use_full_module_graph()) {    
+    if (MetaspaceShared::use_full_module_graph()) {
       char* start = _ro_region.top();
       ClassLoaderDataShared::init_archived_tables();
       ArchiveBuilder::alloc_stats()->record_modules(_ro_region.top() - start, /*read_only*/true);

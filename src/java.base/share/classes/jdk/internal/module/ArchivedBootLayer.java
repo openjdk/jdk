@@ -45,7 +45,7 @@ class ArchivedBootLayer {
     ModuleLayer bootLayer() {
         return bootLayer;
     }
-    
+
     IllegalAccessLogger.Builder illegalAccessLoggerBuilder() {
         return builder;
     }
