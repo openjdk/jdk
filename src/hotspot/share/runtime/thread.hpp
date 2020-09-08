@@ -503,14 +503,8 @@ class Thread: public ThreadShadow {
 
   // Casts
   virtual WorkerThread* as_Worker_thread() const     { return NULL; }
-  JavaThread* as_Java_thread() {
-    assert(is_Java_thread(), "incorrect cast to JavaThread");
-    return (JavaThread*)this;
-  }
-  JavaThread * as_const_Java_thread() const {
-    assert(is_Java_thread(), "incorrect cast to JavaThread");
-    return (JavaThread*)this;
-  }
+  inline JavaThread* as_Java_thread();
+  inline const JavaThread* as_Java_thread() const;
 
   virtual char* name() const { return (char*)"Unknown thread"; }
 
@@ -2216,6 +2210,16 @@ class CompilerThread : public JavaThread {
   CompileTask* task()                      { return _task; }
   void         set_task(CompileTask* task) { _task = task; }
 };
+
+inline JavaThread* Thread::as_Java_thread() {
+  assert(is_Java_thread(), "incorrect cast to JavaThread");
+  return static_cast<JavaThread*>(this);
+}
+
+inline const JavaThread* Thread::as_Java_thread() const {
+  assert(is_Java_thread(), "incorrect cast to const JavaThread");
+  return static_cast<const JavaThread*>(this);
+}
 
 inline CompilerThread* CompilerThread::current() {
   return JavaThread::current()->as_CompilerThread();
