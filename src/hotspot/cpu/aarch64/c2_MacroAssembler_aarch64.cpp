@@ -548,10 +548,10 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1,
   Register result_tmp = rscratch2;
 
   cbz(cnt1, NOMATCH);
-  
+
   cmp(cnt1, (u1)8);
   br(LT, DO1_SHORT);
-  
+
   orr(ch, ch, ch, LSL, 8);
   orr(ch, ch, ch, LSL, 16);
   orr(ch, ch, ch, LSL, 32);
@@ -566,7 +566,7 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1,
   BIND(CH1_LOOP);
     ldr(ch1, Address(str1, cnt1_neg));
     eor(ch1, ch, ch1);
-    sub(tmp1, ch1, tmp3); 
+    sub(tmp1, ch1, tmp3);
     orr(tmp2, ch1, 0x7f7f7f7f7f7f7f7f);
     bics(tmp1, tmp1, tmp2);
     br(NE, HAS_ZERO);

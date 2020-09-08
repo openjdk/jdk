@@ -1,7 +1,7 @@
 /*
  * @test
  * @bug 8173585
- * @summary Test intrinsification of StringLatin1.indexOf(char). Note that 
+ * @summary Test intrinsification of StringLatin1.indexOf(char). Note that
  * differing code paths are taken contingent upon the length of the input String.
  * Hence we must test against differing string lengths in order to validate
  * correct functionality
@@ -50,14 +50,14 @@ public class TestStringLatin1IndexOfChar{
 
                 int intri = totest.indexOf(wanted, lastInst);
                 int nonintri = indexOfChar(totest, wanted, lastInst);
-                
+
                 Asserts.assertEQ(intri, nonintri);
                 if(intri == -1 || intri == strLength-1){
                     break;
                 }
                 lastIndexOf.put(wanted, intri+1);
             }
-            
+
             Asserts.assertEQ(totest.indexOf('d'), -1);
         }
     }
@@ -69,7 +69,7 @@ public class TestStringLatin1IndexOfChar{
         }
         return sb.toString();
     }
-    
+
     private static int indexOfChar(String value, int ch, int fromIndex) {
         //non intrinsic version of indexOfChar
         byte c = (byte)ch;

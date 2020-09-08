@@ -47,7 +47,7 @@ public class IndexOfBenchmark {
         StringBuilder sb = new StringBuilder(length);
         if(length > 0){
             sb.append(isUtf16?'☺':'b');
-    
+
             for (int i = 1; i < length-1; i++) {
                 sb.append((char)('b' + rng.nextInt(26)));
             }
@@ -59,22 +59,21 @@ public class IndexOfBenchmark {
 
 
     @Benchmark
-	public static void latin1_mixed_char() {
+    public static void latin1_mixed_char() {
         int ret = 0;
-		for (String what : latn1_mixedLength) {
-			ret += what.indexOf('a');
-		}
+        for (String what : latn1_mixedLength) {
+            ret += what.indexOf('a');
+        }
     }
 
     @Benchmark
-	public static void utf16_mixed_char() {
+    public static void utf16_mixed_char() {
         int ret = 0;
-		for (String what : utf16_mixedLength) {
-			ret += what.indexOf('a');
-		}
+        for (String what : utf16_mixedLength) {
+            ret += what.indexOf('a');
+        }
     }
 
-    
     @Benchmark
 	public static void latin1_mixed_String() {
         int ret = 0;
@@ -84,15 +83,15 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-	public static void utf16_mixed_String() {
+    public static void utf16_mixed_String() {
         int ret = 0;
 		for (String what : utf16_mixedLength) {
-			ret += what.indexOf("a");
-		}
+            ret += what.indexOf("a");
+        }
     }
 
     ////////// more detailed code path dependent tests //////////
-    
+
     @Benchmark
     public static void latin1_Short_char() {
         int ret = 0;
@@ -108,7 +107,7 @@ public class IndexOfBenchmark {
             ret += what.indexOf('a');
         }
     }
-    
+
     @Benchmark
     public static void latin1_AVX2_char() {
         int ret = 0;
@@ -116,7 +115,7 @@ public class IndexOfBenchmark {
             ret += what.indexOf('a');
         }
     }
-    
+
     @Benchmark
     public static int utf16_Short_char() {
         int ret = 0;
@@ -134,7 +133,7 @@ public class IndexOfBenchmark {
         }
         return ret;
     }
-    
+
     @Benchmark
     public static int utf16_AVX2_char() {
         int ret = 0;
@@ -143,7 +142,7 @@ public class IndexOfBenchmark {
         }
         return ret;
     }
-    
+
     @Benchmark
     public static int latin1_Short_String() {
         int ret = 0;
@@ -188,7 +187,7 @@ public class IndexOfBenchmark {
         }
         return ret;
     }
-    
+
     @Benchmark
     public static int utf16_AVX2_String() {
         int ret = 0;
