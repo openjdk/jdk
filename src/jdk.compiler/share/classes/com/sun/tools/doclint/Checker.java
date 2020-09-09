@@ -295,18 +295,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     public Void visitEntity(EntityTree tree, Void ignore) {
         checkAllowsText(tree);
         markEnclosingTag(Flag.HAS_TEXT);
-        String name = tree.getName().toString();
-        if (name.startsWith("#")) {
-            int v = StringUtils.toLowerCase(name).startsWith("#x")
-                    ? Integer.parseInt(name.substring(2), 16)
-                    : Integer.parseInt(name.substring(1), 10);
-            if (!Entity.isValid(v)) {
-                env.messages.error(HTML, tree, "dc.entity.invalid", name);
-            }
-        } else if (!Entity.isValid(name)) {
-            env.messages.error(HTML, tree, "dc.entity.invalid", name);
+        String s = env.trees.getCharacters(tree);
+        if (s == null) {
+            env.messages.error(HTML, tree, "dc.entity.invalid", tree.getName());
         }
         return null;
+
     }
 
     void checkAllowsText(DocTree tree) {

@@ -29,7 +29,6 @@
  */
 
 import com.sun.tools.doclint.Checker;
-import com.sun.tools.doclint.Entity;
 import com.sun.tools.doclint.HtmlTag;
 import com.sun.tools.doclint.Messages;
 import java.util.Objects;
