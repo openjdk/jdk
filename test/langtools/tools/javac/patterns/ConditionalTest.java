@@ -34,8 +34,8 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
- * @compile --enable-preview -source ${jdk.version} ConditionalTest.java
- * @run main/othervm --enable-preview ConditionalTest
+ * @compile ConditionalTest.java
+ * @run main ConditionalTest
  */
 
 import combo.ComboInstance;
