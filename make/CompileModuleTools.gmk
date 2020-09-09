@@ -33,8 +33,20 @@ include JavaCompilation.gmk
 
 TOOLS_CLASSES_DIR := $(BUILDTOOLS_OUTPUTDIR)/tools_jigsaw_classes
 
+# When using an external BUILDJDK, make it possible to shortcut building of
+# these tools using the BUILD_JAVAC instead of having to build the complete
+# exploded image first.
+ifeq ($(EXTERNAL_BUILDJDK), true)
+  COMPILER := buildjdk
+  TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK)
+else
+  COMPILER := interim
+  TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED)
+endif
+
 $(eval $(call SetupJavaCompilation, BUILD_JIGSAW_TOOLS, \
-    TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
+    TARGET_RELEASE := $(TARGET_RELEASE), \
+    COMPILER := $(COMPILER), \
     SRC := $(TOPDIR)/make/jdk/src/classes, \
     INCLUDES := build/tools/deps \
                 build/tools/docs \
