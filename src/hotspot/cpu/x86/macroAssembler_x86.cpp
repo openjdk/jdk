@@ -4413,7 +4413,7 @@ void MacroAssembler::store_klass_gap(Register dst, Register src) {
 void MacroAssembler::verify_heapbase(const char* msg) {
   assert (UseCompressedOops, "should be compressed");
   assert (Universe::heap() != NULL, "java heap should be initialized");
-  if (CheckCompressedOops) {
+  if (CheckCompressedOops && has_heapbase()) {
     Label ok;
     push(rscratch1); // cmpptr trashes rscratch1
     cmpptr(r12_heapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
@@ -4535,8 +4535,8 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
   // Also do not verify_oop as this is called by verify_oop.
   if (CompressedOops::shift() != 0) {
     assert(LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
-    if (LogMinObjAlignmentInBytes == Address::times_8) {
-      leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
+    if (has_heapbase() && LogMinObjAlignmentInBytes == Address::times_8) {
+       leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
     } else {
       if (dst != src) {
         movq(dst, src);
@@ -4699,15 +4699,44 @@ void  MacroAssembler::cmp_narrow_klass(Address dst, Klass* k) {
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
     if (Universe::heap() != NULL) {
-      if (CompressedOops::base() == NULL) {
-        MacroAssembler::xorptr(r12_heapbase, r12_heapbase);
-      } else {
+      if (has_heapbase()) {
         mov64(r12_heapbase, (int64_t)CompressedOops::ptrs_base());
       }
-    } else {
+    } else if (UseJVMCICompiler) {
+      // JVMCI compilers assume heap base is always available.
       movptr(r12_heapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
+    } else {
+      // Heap is not available. Unable to tell whether r12_heapbase needs
+      // updating or not. Emit the runtime check that might disambiguate
+      // has_heapbase(). If shift=0, we are running in 32-bit mode.
+      Label L_zero;
+      push(rscratch1);
+      movptr(rscratch1, ExternalAddress((address)CompressedOops::shift_addr()));
+      testl(rscratch1, rscratch1);
+      jcc(Assembler::zero, L_zero);
+      movptr(r12_heapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
+      bind(L_zero);
+      pop(rscratch1);
     }
   }
+}
+
+bool MacroAssembler::has_heapbase() {
+  // Only 32-bit compressed oops do not need heapbase.
+  //
+  // Zero-based compressed oops use (base, scale, index, offset) encoding that requires base.
+  // This method is can be used when CompressedOops::base() is not yet available, before heap
+  // is initialized, therefore need to poll the mode directly.
+  //
+  // JVMCI compilers assume heap base is always available.
+  return UseCompressedOops && (UseJVMCICompiler || (CompressedOops::mode() != CompressedOops::UnscaledNarrowOop));
+}
+
+bool MacroAssembler::has_zero_heapbase() {
+  // Only zero-based compressed oops have zero heap base. CompressedOops::base() is only
+  // valid when heap is already initialized.
+  assert(Universe::heap() != NULL, "Heap should be initialized already");
+  return has_heapbase() && (CompressedOops::base() == NULL);
 }
 
 #endif // _LP64

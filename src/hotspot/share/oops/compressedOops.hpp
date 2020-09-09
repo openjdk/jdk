@@ -87,6 +87,7 @@ public:
   static address  end()                      { return (address)_heap_address_range.end(); }
   static bool     is_base(void* addr)        { return (base() == (address)addr); }
   static int      shift()                    { return _narrow_oop._shift; }
+  static int*     shift_addr()               { return &_narrow_oop._shift; }
   static bool     use_implicit_null_checks() { return _narrow_oop._use_implicit_null_checks; }
 
   static address* ptrs_base_addr()           { return &_narrow_oop._base; }

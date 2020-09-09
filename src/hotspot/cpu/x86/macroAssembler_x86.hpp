@@ -373,6 +373,12 @@ class MacroAssembler: public Assembler {
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
 
+  // tell if heapbase register is used
+  static bool has_heapbase();
+
+  // tell if heapbase register is used and is zero
+  static bool has_zero_heapbase();
+
   DEBUG_ONLY(void verify_heapbase(const char* msg);)
 
 #endif // _LP64
