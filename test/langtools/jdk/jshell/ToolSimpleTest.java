@@ -77,7 +77,7 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testSwitchExpression() {
-        test(false, new String[]{"--enable-preview", "--no-startup"},
+        test(false, new String[]{"--no-startup"},
                 (a) -> assertCommand(a, "enum Day {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY }", "|  created enum Day"),
                 (a) -> assertCommand(a, "Day day = Day.FRIDAY;", "day ==> FRIDAY"),
                 (a) -> assertCommand(a, "switch (day) {", ""),
@@ -91,7 +91,7 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testSwitchExpressionCompletion() {
-        test(false, new String[]{"--enable-preview", "--no-startup"},
+        test(false, new String[]{"--no-startup"},
                 (a) -> assertCommand(a, "enum Day {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY }", "|  created enum Day"),
                 (a) -> assertCommand(a, "Day day = Day.FRIDAY;", "day ==> FRIDAY"),
                 (a) -> assertCommand(a, "switch (day) {", ""),
