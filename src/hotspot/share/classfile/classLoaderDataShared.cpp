@@ -125,17 +125,17 @@ void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entr
 
 // ------------------------------
 
-ClassLoaderData* ClassLoaderDataShared::null_class_loader_data() {
+static ClassLoaderData* null_class_loader_data() {
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   assert(loader_data != NULL, "must be");
   return loader_data;
 }
 
-ClassLoaderData* ClassLoaderDataShared::java_platform_loader_data_or_null() {
+static ClassLoaderData* java_platform_loader_data_or_null() {
   return ClassLoaderData::class_loader_data_or_null(SystemDictionary::java_platform_loader());
 }
 
-ClassLoaderData* ClassLoaderDataShared::java_system_loader_data_or_null() {
+static ClassLoaderData* java_system_loader_data_or_null() {
   return ClassLoaderData::class_loader_data_or_null(SystemDictionary::java_system_loader());
 }
 
@@ -168,7 +168,7 @@ void ClassLoaderDataShared::init_archived_oops() {
   _archived_system_loader_data.init_archived_oops  (java_system_loader_data_or_null());
 }
 
-void ClassLoaderDataShared::serialize(class SerializeClosure* f) {
+void ClassLoaderDataShared::serialize(SerializeClosure* f) {
   _archived_boot_loader_data.serialize(f);
   _archived_platform_loader_data.serialize(f);
   _archived_system_loader_data.serialize(f);

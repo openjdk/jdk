@@ -25,16 +25,14 @@
 #ifndef SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
 #define SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
 
-#include "utilities/exceptions.hpp"
+#include "memory/allStatic.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-class SerializeClosure;
 class ClassLoaderData;
+class MetaspaceClosure;
+class SerializeClosure;
 
 class ClassLoaderDataShared : AllStatic {
-private:
-  static ClassLoaderData* null_class_loader_data();
-  static ClassLoaderData* java_platform_loader_data_or_null();
-  static ClassLoaderData* java_system_loader_data_or_null();
 public:
   static void allocate_archived_tables();
   static void iterate_symbols(MetaspaceClosure* closure);

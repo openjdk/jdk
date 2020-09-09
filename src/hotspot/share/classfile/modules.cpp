@@ -492,7 +492,7 @@ void Modules::check_cds_restrictions(TRAPS) {
               "During -Xshare:dump, module system cannot be modified after it's initialized");
   }
 }
-#endif
+#endif // INCLUDE_CDS_JAVA_HEAP
 
 void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
   ResourceMark rm(THREAD);
