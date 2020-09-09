@@ -2547,7 +2547,7 @@ void InstanceKlass::remove_unshareable_info() {
   _oop_map_cache = NULL;
   // clear _nest_host to ensure re-load at runtime
   _nest_host = NULL;
-  _package_entry = NULL; // TODO -- point it to the archived PackageEntry (JDK-8249262)
+  _package_entry = NULL;
   _dep_context_last_cleaned = 0;
 }
 
