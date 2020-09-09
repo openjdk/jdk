@@ -64,15 +64,13 @@ class JVMFlagLimit {
   static int _last_checked;
 
 protected:
-  enum Kind {
-    HAS_RANGE = 1,
-    HAS_CONSTRAINT = 2
-  };
+  static constexpr int HAS_RANGE = 1;
+  static constexpr int HAS_CONSTRAINT = 2;
 
 private:
-  static const JVMFlagLimit* get_kind_at(int flag_enum, Kind kind) {
+  static const JVMFlagLimit* get_kind_at(int flag_enum, int required_kind) {
     const JVMFlagLimit* limit = at(flag_enum);
-    if (limit != NULL && (limit->_kind & int(kind)) != 0) {
+    if (limit != NULL && (limit->_kind & required_kind) != 0) {
       _last_checked = flag_enum;
       return limit;
     } else {

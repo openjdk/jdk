@@ -43,7 +43,7 @@
 #define CONSTRAINT_ENUM_(type, func)  CONSTRAINT_ENUM(func),
 #define CONSTRAINT_FUNC(type, func)   (void*)&func,
 
-enum JVMFlagConstraintsEnum {
+enum JVMFlagConstraintsEnum : int {
   ALL_CONSTRAINTS(CONSTRAINT_ENUM_)
   NUM_JVMFlagConstraintsEnum
 };

@@ -28,8 +28,13 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 
+// This is a hashtable that maps from (const char*) to (JVMFlag*) to speed up
+// the processing of JVM command-line argument at runtime.
+//
+// With constexpr, this table is generated at C++ compile time so there's
+// no set up cost at runtime.
 class JVMFlagLookup {
-  static const int NUM_BUCKETS = 277;
+  static constexpr int NUM_BUCKETS = 277;
   short _buckets[NUM_BUCKETS];
   short _table[NUM_JVMFlagsEnum];
   u2    _hashes[NUM_JVMFlagsEnum];

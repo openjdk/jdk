@@ -40,7 +40,6 @@
 constexpr JVMFlagLookup::JVMFlagLookup() : _buckets(), _table(), _hashes() {
   for (int i = 0; i < NUM_BUCKETS; i++) {
     _buckets[i] = -1;
-    _hashes[i] = 0;
   }
 
   ALL_FLAGS(DO_FLAG,

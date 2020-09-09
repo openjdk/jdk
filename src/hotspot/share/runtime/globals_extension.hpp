@@ -40,7 +40,7 @@
 #define FLAG_MEMBER_ENUM_PD_DEVELOP(type, name, ...)          FLAG_MEMBER_ENUM_(name)
 #define FLAG_MEMBER_ENUM_NOTPRODUCT(type, name, value, ...)   FLAG_MEMBER_ENUM_(name)
 
-typedef enum {
+typedef enum : int {
   ALL_FLAGS(FLAG_MEMBER_ENUM_DEVELOP,
             FLAG_MEMBER_ENUM_PD_DEVELOP,
             FLAG_MEMBER_ENUM_PRODUCT,

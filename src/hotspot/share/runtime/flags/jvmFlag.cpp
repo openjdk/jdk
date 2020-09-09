@@ -710,13 +710,16 @@ static JVMFlag flagTable[NUM_JVMFlagsEnum + 1] = {
   JVMFlag() // The iteration code wants a flag with a NULL name at the end of the table.
 };
 
-// We want flagTable to be completely initialized at C++ compilation time, which requires
+// We want flagTable[] to be completely initialized at C++ compilation time, which requires
 // that all arguments passed to JVMFlag() constructors to be constexpr. The following line
-// ensures this -- if any non-constexpr arguments are passed, the C++ compiler will generate
-// an error.
+// checks for this this -- if any non-constexpr arguments are passed, the C++ compiler will
+// generate an error.
 //
-// constexpr implies internal linkage, so the following symbol will not be included in
-// jvmFlag.o.
+// constexpr implies internal linkage. This means the flagTable_verify_constexpr[] variable
+// will not be included in jvmFlag.o, so there's no footprint cost for having this variable.
+//
+// Note that we cannot declare flagTable[] as constexpr because JVMFlag::_flags is modified
+// at runtime.
 constexpr JVMFlag flagTable_verify_constexpr[] = { MATERIALIZE_ALL_FLAGS };
 
 JVMFlag* JVMFlag::flags = flagTable;
