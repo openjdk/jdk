@@ -1305,7 +1305,9 @@ G1Policy::PauseKind G1Policy::young_gc_pause_kind() const {
 }
 
 void G1Policy::update_pause_time_stats(PauseKind kind, double start_time_sec, double end_time_sec){
+
   double pause_time_sec = end_time_sec - start_time_sec;
+
   double pause_time_ms = pause_time_sec * 1000.0;
 
   _analytics->compute_pause_time_ratios(end_time_sec, pause_time_ms);
