@@ -26,14 +26,16 @@
  * @bug 8003280
  * @summary Add lambda tests
  *   Test bridge methods for certain SAM conversions
- *   Tests that jdk.internal.lambda.disableEagerInitialization=true creates a
- *   get$Lambda method for non-capturing lambdas
+ *   Test the set of generate fields
+ *   Test the set of generated methods
  * @compile LambdaTest6.java
  * @run main LambdaTest6
  * @run main/othervm -Djdk.internal.lambda.disableEagerInitialization=true LambdaTest6
  */
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -69,6 +71,31 @@ public class LambdaTest6<T> {
         return s;
     }
 
+    private static Set<String> allowedStaticFields() {
+        Set<String> s = new HashSet<>();
+        if (Boolean.getBoolean("jdk.internal.lambda.disableEagerInitialization")) {
+            s.add("LAMBDA_INSTANCE$");
+        }
+        return s;
+    }
+
+    private static Set<String> checkNonCapturingFields(Class<?> c) {
+        Set<String> s = new HashSet<>();
+        for (Field f : c.getDeclaredFields()) {
+            if (f.getName().equals("LAMBDA_INSTANCE$") && Modifier.isStatic(f.getModifiers())) {
+                if (Boolean.getBoolean("jdk.internal.lambda.disableEagerInitialization")) {
+                    continue;
+                }
+            }
+            if (Modifier.isStatic(f.getModifiers())) {
+                s.add("static " + f.getName());
+            } else {
+                s.add(f.getName());
+            }
+        }
+        return s;
+    }
+
     private static boolean matchingMethodNames(Method[] methods) {
         Set<String> methodNames = new HashSet<>();
         for (Method m : methods) {
@@ -84,6 +111,7 @@ public class LambdaTest6<T> {
         Class<? extends L> c1 = la.getClass();
         Method[] methods = c1.getDeclaredMethods();
         assertTrue(matchingMethodNames(methods));
+        assertTrue(checkNonCapturingFields(c1).isEmpty());
         Set<String> types = setOfStringObject();
         for(Method m : methods) {
             if ("m".equals(m.getName())) {
@@ -102,6 +130,7 @@ public class LambdaTest6<T> {
         Class<? extends KM> c2 = km.getClass();
         Method[] methods = c2.getDeclaredMethods();
         assertTrue(matchingMethodNames(methods));
+        assertTrue(checkNonCapturingFields(c2).isEmpty());
         Set<String> types = setOfStringObject();
         for(Method m : methods) {
             if ("m".equals(m.getName())) {
@@ -121,6 +150,7 @@ public class LambdaTest6<T> {
         Class<? extends N> c3 = na.getClass();
         Method[] methods = c3.getDeclaredMethods();
         assertTrue(matchingMethodNames(methods));
+        assertTrue(checkNonCapturingFields(c3).isEmpty());
         Set<String> types = setOfStringObject();
         for(Method m : methods) {
             if ("m".equals(m.getName())) {
