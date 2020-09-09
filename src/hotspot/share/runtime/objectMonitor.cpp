@@ -706,9 +706,6 @@ void ObjectMonitor::EnterI(TRAPS) {
 
   assert(_owner == Self, "invariant");
   assert(object() != NULL, "invariant");
-  // I'd like to write:
-  //   guarantee (((oop)(object()))->mark() == markWord::encode(this), "invariant") ;
-  // but as we're at a safepoint that's not safe.
 
   UnlinkAfterAcquire(Self, &node);
   if (_succ == Self) _succ = NULL;
