@@ -186,10 +186,6 @@ bool JVMFlag::is_develop() const {
   return (_flags & KIND_DEVELOP) != 0;
 }
 
-bool JVMFlag::is_read_write() const {
-  return (_flags & KIND_READ_WRITE) != 0;
-}
-
 /**
  * Returns if this flag is a constant in the binary.  Right now this is
  * true for notproduct and develop flags in product builds.
@@ -267,7 +263,7 @@ JVMFlag::MsgType JVMFlag::get_locked_message(char* buf, int buflen) const {
 }
 
 bool JVMFlag::is_writeable() const {
-  return is_manageable() || (is_product() && is_read_write());
+  return is_manageable() || is_product();
 }
 
 // All flags except "manageable" are assumed to be internal flags.
@@ -516,7 +512,6 @@ void JVMFlag::print_kind(outputStream* st, unsigned int width) const {
     { KIND_NOT_PRODUCT, "notproduct" },
     { KIND_DEVELOP, "develop" },
     { KIND_LP64_PRODUCT, "lp64_product" },
-    { KIND_READ_WRITE, "rw" },
     { -1, "" }
   };
 
@@ -657,7 +652,7 @@ const int first_flag_enum_C2     = first_flag_enum_C1    + num_flags_C1;
 const int first_flag_enum_ARCH   = first_flag_enum_C2    + num_flags_C2;
 const int first_flag_enum_other  = first_flag_enum_ARCH  + num_flags_ARCH;
 
-static constexpr inline int flag_group(int flag_enum) {
+static constexpr int flag_group(int flag_enum) {
   if (flag_enum < first_flag_enum_JVMCI) return JVMFlag::KIND_LP64_PRODUCT;
   if (flag_enum < first_flag_enum_C1)    return JVMFlag::KIND_JVMCI;
   if (flag_enum < first_flag_enum_C2)    return JVMFlag::KIND_C1;
@@ -1223,11 +1218,34 @@ void JVMFlag::verify() {
   assert(Arguments::check_vm_args_consistency(), "Some flag settings conflict");
 }
 
+#endif // PRODUCT
+
+#ifdef ASSERT
+
 void JVMFlag::assert_valid_flag_enum(int i) {
   assert(0 <= i && i < NUM_JVMFlagsEnum, "must be");
 }
 
-#endif // PRODUCT
+void JVMFlag::check_all_flag_declarations() {
+  for (JVMFlag* current = &flagTable[0]; current->_name != NULL; current++) {
+    int flags = static_cast<int>(current->_flags);
+    // Backwards compatibility. This will be relaxed/removed in JDK-7123237.
+    int mask = JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_MANAGEABLE | JVMFlag::KIND_EXPERIMENTAL;
+    if ((flags & mask) != 0) {
+      assert((flags & mask) == JVMFlag::KIND_DIAGNOSTIC ||
+             (flags & mask) == JVMFlag::KIND_MANAGEABLE ||
+             (flags & mask) == JVMFlag::KIND_EXPERIMENTAL,
+             "%s can be declared with at most one of "
+             "DIAGNOSTIC, MANAGEABLE or EXPERIMENTAL", current->_name);
+      assert((flags & KIND_NOT_PRODUCT) == 0 &&
+             (flags & KIND_DEVELOP) == 0,
+             "%s has an optional DIAGNOSTIC, MANAGEABLE or EXPERIMENTAL "
+             "attribute; it must be declared as a product flag", current->_name);
+    }
+  }
+}
+
+#endif // ASSERT
 
 void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges, bool skipDefaults) {
   // Print the flags sorted by name

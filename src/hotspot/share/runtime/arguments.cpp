@@ -3897,6 +3897,7 @@ bool Arguments::handle_deprecated_print_gc_flags() {
 
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   assert(verify_special_jvm_flags(false), "deprecated and obsolete flag table inconsistent");
+  JVMFlag::check_all_flag_declarations();
 
   // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
   const char* hotspotrc = ".hotspotrc";

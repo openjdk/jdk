@@ -63,7 +63,6 @@ struct JVMFlag {
     KIND_ARCH               = 1 << 13,
     KIND_LP64_PRODUCT       = 1 << 14,
     KIND_JVMCI              = 1 << 15,
-    KIND_READ_WRITE         = 1 << 16,
 
     // set this bit if the flag was set on the command line
     ORIG_COMMAND_LINE       = 1 << 17,
@@ -124,11 +123,11 @@ private:
 public:
   constexpr JVMFlag() : _type(), _name(), _addr(), _flags() NOT_PRODUCT(COMMA _doc()) {}
 
-  constexpr inline JVMFlag(int flag_enum, const char* type, const char* name,
-                           void* addr, int flags, int extra_flags, const char* doc);
+  constexpr JVMFlag(int flag_enum, const char* type, const char* name,
+                    void* addr, int flags, int extra_flags, const char* doc);
 
-  constexpr inline JVMFlag(int flag_enum,  const char* type, const char* name,
-                           void* addr, int flags, const char* doc);
+  constexpr JVMFlag(int flag_enum,  const char* type, const char* name,
+                    void* addr, int flags, const char* doc);
 
   static JVMFlag* find_flag(const char* name) {
     return find_flag(name, strlen(name), false, false);
@@ -150,12 +149,18 @@ public:
   static const char* get_size_t_default_range_str();
   static const char* get_double_default_range_str();
 
-  static void assert_valid_flag_enum(int i) PRODUCT_RETURN;
+  static void assert_valid_flag_enum(int i) NOT_DEBUG_RETURN;
+  static void check_all_flag_declarations() NOT_DEBUG_RETURN;
 
   inline int flag_enum() const {
     int i = this - JVMFlag::flags;
     assert_valid_flag_enum(i);
     return i;
+  }
+
+  static JVMFlag* flag_from_enum(int flag_enum) {
+    assert_valid_flag_enum(flag_enum);
+    return &JVMFlag::flags[flag_enum];
   }
 
   bool is_bool() const;
@@ -210,7 +215,6 @@ public:
   bool is_experimental() const;
   bool is_notproduct() const;
   bool is_develop() const;
-  bool is_read_write() const;
 
   bool is_constant_in_binary() const;
 

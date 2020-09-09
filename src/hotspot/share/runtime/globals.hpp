@@ -38,23 +38,37 @@
 // develop flags are settable / visible only during development and are constant in the PRODUCT version
 // product flags are always settable / visible
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
+// develop_pd/product_pd flags are the same as develop/product, except that their default values
+// are specified in platform-dependent header files.
+
+// Flags must be declared with the following number of parameters:
+// non-pd flags:
+//    (type, name, default_value, doc), or
+//    (type, name, default_value, extra_attrs, doc)
+// pd flags:
+//    (type, name, doc), or
+//    (type, name, extra_attrs, doc)
 
 // A flag must be declared with one of the following types:
 // bool, int, uint, intx, uintx, size_t, ccstr, ccstrlist, double, or uint64_t.
 // The type "ccstr" and "ccstrlist" are an alias for "const char*" and is used
 // only in this file, because the macrology requires single-token type names.
 
-// Note: Diagnostic options not meant for VM tuning or for product modes.
-// They are to be used for VM quality assurance or field diagnosis
-// of VM bugs.  They are hidden so that users will not be encouraged to
-// try them as if they were VM ordinary execution options.  However, they
-// are available in the product version of the VM.  Under instruction
-// from support engineers, VM customers can turn them on to collect
-// diagnostic information about VM problems.  To use a VM diagnostic
-// option, you must first specify +UnlockDiagnosticVMOptions.
-// (This master switch also affects the behavior of -Xprintflags.)
+// The optional extra_attrs parameter may have one of the following values:
+// DIAGNOSTIC, EXPERIMENTAL, or MANAGEABLE. Currently extra_attrs can be used
+// only with product/product_pd flags.
 //
-// experimental flags are in support of features that are not
+// DIAGNOSTIC options are not meant for VM tuning or for product modes.
+//    They are to be used for VM quality assurance or field diagnosis
+//    of VM bugs.  They are hidden so that users will not be encouraged to
+//    try them as if they were VM ordinary execution options.  However, they
+//    are available in the product version of the VM.  Under instruction
+//    from support engineers, VM customers can turn them on to collect
+//    diagnostic information about VM problems.  To use a VM diagnostic
+//    option, you must first specify +UnlockDiagnosticVMOptions.
+//    (This master switch also affects the behavior of -Xprintflags.)
+//
+// EXPERIMENTAL flags are in support of features that are not
 //    part of the officially supported product, but are available
 //    for experimenting with. They could, for example, be performance
 //    features that may not have undergone full or rigorous QA, but which may
@@ -70,7 +84,7 @@
 //    and they are not supported on production loads, except under explicit
 //    direction from support engineers.
 //
-// manageable flags are writeable external product flags.
+// MANAGEABLE flags are writeable external product flags.
 //    They are dynamically writeable through the JDK management interface
 //    (com.sun.management.HotSpotDiagnosticMXBean API) and also through JConsole.
 //    These flags are external exported interface (see CCC).  The list of
@@ -84,20 +98,7 @@
 //      and not reuse state related to the flag state at any given time.
 //    - you want the flag to be queried programmatically by the customers.
 //
-// product_rw flags are writeable internal product flags.
-//    They are like "manageable" flags but for internal/private use.
-//    The list of product_rw flags are internal/private flags which
-//    may be changed/removed in a future release.  It can be set
-//    through the management interface to get/set value
-//    when the name of flag is supplied.
-//
-//    A flag can be made as "product_rw" only if
-//    - the VM implementation supports dynamic setting of the flag.
-//      This implies that the VM must *always* query the flag variable
-//      and not reuse state related to the flag state at any given time.
-//
-// Note that when there is a need to support develop flags to be writeable,
-// it can be done in the same way as product_rw.
+
 //
 // range is a macro that will expand to min and max arguments for range
 //    checking code if provided - see jvmFlagRangeList.hpp

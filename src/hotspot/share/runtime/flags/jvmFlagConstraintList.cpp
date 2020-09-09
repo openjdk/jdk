@@ -217,7 +217,7 @@ bool JVMFlagConstraintList::check_constraints(JVMFlagConstraint::ConstraintType 
   _validating_type = type;
 
   bool status = true;
-  for (int i=0; i<NUM_JVMFlagsEnum; i++) {
+  for (int i = 0; i < NUM_JVMFlagsEnum; i++) {
     JVMFlagConstraintChecker constraint(&JVMFlag::flags[i], JVMFlagLimit::get_constraint_at(i));
     if (!constraint.exists()) continue;
     if (type != constraint.type()) continue;

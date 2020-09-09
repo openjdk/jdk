@@ -54,7 +54,7 @@ static void* const flagConstraintTable[NUM_JVMFlagConstraintsEnum] = {
 
 void* JVMFlagLimit::constraint_func() const {
   int i = _constraint_func;
-  assert(0 <= i && i <NUM_JVMFlagConstraintsEnum, "sanity");
+  assert(0 <= i && i < NUM_JVMFlagConstraintsEnum, "sanity");
   return flagConstraintTable[i];
 }
 
@@ -88,16 +88,16 @@ public:
     return NULL;
   }
 
-  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>*p, int dummy, T min, T max) {
+  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy, T min, T max) {
     return p;
   }
-  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>*p, int dummy, ConstraintMarker dummy2, short func, int phase) {
+  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy, ConstraintMarker dummy2, short func, int phase) {
     return p;
   }
-  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>*p, int dummy, T min, T max, ConstraintMarker dummy2, short func, int phase) {
+  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy, T min, T max, ConstraintMarker dummy2, short func, int phase) {
     return p;
   }
-  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>*p, int dummy, ConstraintMarker dummy2, short func, int phase, T min, T max) {
+  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy, ConstraintMarker dummy2, short func, int phase, T min, T max) {
     return p;
   }
 };

@@ -242,21 +242,21 @@ public:
   }
 };
 
-#define DEFINE_RANGE_CHECK(T)                                                           \
-JVMFlag::Error JVMFlagRangeChecker::check_ ## T(T value, bool verbose) const {          \
-  assert(exists(), "must be");                                                          \
-  JVMFlagRange_ ## T range(_flag, _limit->as_##T()->min(), _limit->as_ ## T()->max());  \
-  return range.check_ ## T(value, verbose);                                             \
+#define DEFINE_RANGE_CHECK(T)                                                            \
+JVMFlag::Error JVMFlagRangeChecker::check_ ## T(T value, bool verbose) const {           \
+  assert(exists(), "must be");                                                           \
+  JVMFlagRange_ ## T range(_flag, _limit->as_ ## T()->min(), _limit->as_ ## T()->max()); \
+  return range.check_ ## T(value, verbose);                                              \
 }
 
 ALL_RANGE_TYPES(DEFINE_RANGE_CHECK)
 
 
 JVMFlag::Error JVMFlagRangeChecker::check(bool verbose) const {
-#define CHECK_RANGE(T)                                                                    \
-  if (_flag->is_ ## T()) {                                                                \
-    JVMFlagRange_ ## T range(_flag, _limit->as_##T()->min(), _limit->as_ ## T()->max());  \
-    return range.check(verbose);                                                          \
+#define CHECK_RANGE(T)                                                                     \
+  if (_flag->is_ ## T()) {                                                                 \
+    JVMFlagRange_ ## T range(_flag, _limit->as_ ## T()->min(), _limit->as_ ## T()->max()); \
+    return range.check(verbose);                                                           \
   }
 
   ALL_RANGE_TYPES(CHECK_RANGE);
@@ -266,11 +266,11 @@ JVMFlag::Error JVMFlagRangeChecker::check(bool verbose) const {
 }
 
 void JVMFlagRangeChecker::print(outputStream* out) const {
-#define PRINT_RANGE(T)                                                                    \
-  if (_flag->is_ ## T()) {                                                                \
-    JVMFlagRange_ ## T range(_flag, _limit->as_##T()->min(), _limit->as_ ## T()->max());  \
-    range.print(out);                                                                     \
-    return;                                                                               \
+#define PRINT_RANGE(T)                                                                     \
+  if (_flag->is_ ## T()) {                                                                 \
+    JVMFlagRange_ ## T range(_flag, _limit->as_ ## T()->min(), _limit->as_ ## T()->max()); \
+    range.print(out);                                                                      \
+    return;                                                                                \
   }
 
   ALL_RANGE_TYPES(PRINT_RANGE);
@@ -287,8 +287,8 @@ void JVMFlagRangeList::print(outputStream* st, const JVMFlag* flag, RangeStrFunc
     if (limit != NULL) {
       void* func = limit->constraint_func();
 
-      // Two special cases who's range lower limit is an os:: function call and cannot
-      // be initialized at compile time with constexpr.
+      // Two special cases where the lower limit of the range is defined by an os:: function call
+      // and cannot be initialized at compile time with constexpr.
       if (func == (void*)VMPageSizeConstraintFunc) {
         uintx min = (uintx)os::vm_page_size();
         uintx max = max_uintx;

@@ -41,19 +41,49 @@
 
 template <typename T> class JVMTypedFlagLimit;
 
+
+// A JVMFlagLimit is created for each JVMFlag that has a range() and/or constraint() in its declaration in
+// the globals_xxx.hpp file.
+//
+// To query the range information of a JVMFlag:
+//     JVMFlagLimit::get_range(JVMFlag*)
+//     JVMFlagLimit::get_range_at(int flag_enum)
+// If the given flag doesn't have a range, NULL is returned.
+//
+// To query the constraint information of a JVMFlag:
+//     JVMFlagLimit::get_constraint(JVMFlag*)
+//     JVMFlagLimit::get_constraint_at(int flag_enum)
+// If the given flag doesn't have a constraint, NULL is returned.
+
 class JVMFlagLimit {
   short _constraint_func;
   char  _phase;
   char  _kind;
 
- static const JVMFlagLimit* const* flagLimits;
+  static const JVMFlagLimit* const* flagLimits;
   static int _last_checked;
 
 protected:
-  enum {
+  enum Kind {
     HAS_RANGE = 1,
     HAS_CONSTRAINT = 2
   };
+
+private:
+  static const JVMFlagLimit* get_kind_at(int flag_enum, Kind kind) {
+    const JVMFlagLimit* limit = at(flag_enum);
+    if (limit != NULL && (limit->_kind & int(kind)) != 0) {
+      _last_checked = flag_enum;
+      return limit;
+    } else {
+      return NULL;
+    }
+  }
+
+  static const JVMFlagLimit* at(int flag_enum) {
+    JVMFlag::assert_valid_flag_enum(flag_enum);
+    return flagLimits[flag_enum];
+  }
 
 public:
   void* constraint_func() const;
@@ -66,30 +96,19 @@ public:
     return get_range_at(flag->flag_enum());
   }
   static const JVMFlagLimit* get_range_at(int flag_enum) {
-    const JVMFlagLimit* limit = flagLimits[flag_enum];
-    if (limit != NULL && (limit->_kind & HAS_RANGE) != 0) {
-      _last_checked = flag_enum;
-      return limit;
-    } else {
-      return NULL;
-    }
+    return get_kind_at(flag_enum, HAS_RANGE);
   }
 
   static const JVMFlagLimit* get_constraint(const JVMFlag* flag) {
     return get_constraint_at(flag->flag_enum());
   }
   static const JVMFlagLimit* get_constraint_at(int flag_enum) {
-    const JVMFlagLimit* limit = flagLimits[flag_enum];
-    if (limit != NULL && (limit->_kind & HAS_CONSTRAINT) != 0) {
-      _last_checked = flag_enum;
-      return limit;
-    } else {
-      return NULL;
-    }
+    return get_kind_at(flag_enum, HAS_CONSTRAINT);
   }
+
   static const JVMFlag* last_checked_flag() {
     if (_last_checked >= 0) {
-      return &JVMFlag::flags[_last_checked];
+      return JVMFlag::flag_from_enum(_last_checked);
     } else {
       return NULL;
     }
