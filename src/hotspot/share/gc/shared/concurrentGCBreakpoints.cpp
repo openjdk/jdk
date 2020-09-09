@@ -60,8 +60,12 @@ bool ConcurrentGCBreakpoints::is_controlled() {
   return _want_idle || _is_stopped || (_run_to != NULL);
 }
 
+#define assert_Java_thread() \
+  assert(Thread::current()->is_Java_thread(), "precondition")
+
 void ConcurrentGCBreakpoints::run_to_idle_impl(bool acquiring_control) {
-  MonitorLocker ml(JavaThread::current(), monitor());
+  assert_Java_thread();
+  MonitorLocker ml(monitor());
   if (acquiring_control) {
     assert(!is_controlled(), "precondition");
     log_trace(gc, breakpoint)("acquire_control");
@@ -82,7 +86,8 @@ void ConcurrentGCBreakpoints::acquire_control() {
 }
 
 void ConcurrentGCBreakpoints::release_control() {
-  MonitorLocker ml(JavaThread::current(), monitor());
+  assert_Java_thread();
+  MonitorLocker ml(monitor());
   log_trace(gc, breakpoint)("release_control");
   reset_request_state();
   ml.notify_all();
@@ -93,9 +98,10 @@ void ConcurrentGCBreakpoints::run_to_idle() {
 }
 
 bool ConcurrentGCBreakpoints::run_to(const char* breakpoint) {
+  assert_Java_thread();
   assert(breakpoint != NULL, "precondition");
 
-  MonitorLocker ml(JavaThread::current(), monitor());
+  MonitorLocker ml(monitor());
   assert(is_controlled(), "precondition");
   log_trace(gc, breakpoint)("run_to %s", breakpoint);
   reset_request_state();
