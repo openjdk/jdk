@@ -243,7 +243,7 @@ void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, const char* file, int l
 void JVMCIEnv::describe_pending_exception(bool clear) {
   JavaThread* THREAD = JavaThread::current();
   if (!is_hotspot()) {
-    JNIAccessMark jni(this);
+    JNIAccessMark jni(this, THREAD);
     if (jni()->ExceptionCheck()) {
       jthrowable ex = !clear ? jni()->ExceptionOccurred() : NULL;
       jni()->ExceptionDescribe();

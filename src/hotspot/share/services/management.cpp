@@ -2071,7 +2071,7 @@ JVM_ENTRY(jlong, jmm_GetOneThreadAllocatedMemory(JNIEnv *env, jlong thread_id))
                "Invalid thread ID", -1);
   }
 
-if (thread_id == 0) { // current thread
+  if (thread_id == 0) { // current thread
     return thread->cooked_allocated_bytes();
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ void BarrierSet::set_barrier_set(BarrierSet* barrier_set) {
   // This is the only thread that can exist at this point; the Thread
   // constructor objects to other threads being created before the
   // barrier set is available.
+  assert(Thread::current()->is_Java_thread(),
+         "Expected main thread to be a JavaThread");
   assert(!JavaThread::current()->on_thread_list(),
          "Main thread already on thread list.");
   _barrier_set->on_thread_create(Thread::current());

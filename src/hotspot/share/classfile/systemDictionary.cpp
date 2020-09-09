@@ -1643,16 +1643,16 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, TRAPS) {
   ClassLoaderData* loader_data = k->class_loader_data();
   Handle class_loader_h(THREAD, loader_data->class_loader());
 
- // for bootstrap and other parallel classloaders don't acquire lock,
- // use placeholder token
- // If a parallelCapable class loader calls define_instance_class instead of
- // find_or_define_instance_class to get here, we have a timing
- // hole with systemDictionary updates and check_constraints
- if (!class_loader_h.is_null() && !is_parallelCapable(class_loader_h)) {
-   assert(ObjectSynchronizer::current_thread_holds_lock(THREAD->as_Java_thread(),
-         compute_loader_lock_object(class_loader_h, THREAD)),
-         "define called without lock");
- }
+  // for bootstrap and other parallel classloaders don't acquire lock,
+  // use placeholder token
+  // If a parallelCapable class loader calls define_instance_class instead of
+  // find_or_define_instance_class to get here, we have a timing
+  // hole with systemDictionary updates and check_constraints
+  if (!class_loader_h.is_null() && !is_parallelCapable(class_loader_h)) {
+    assert(ObjectSynchronizer::current_thread_holds_lock(THREAD->as_Java_thread(),
+           compute_loader_lock_object(class_loader_h, THREAD)),
+           "define called without lock");
+  }
 
   // Check class-loading constraints. Throw exception if violation is detected.
   // Grabs and releases SystemDictionary_lock
