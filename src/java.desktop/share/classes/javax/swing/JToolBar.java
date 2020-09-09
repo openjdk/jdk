@@ -832,9 +832,9 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
     protected class AccessibleJToolBar extends AccessibleJComponent {
 
         /**
-         * Constructs a {@code AccessibleJToolBar}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJToolBar() {}
+        protected AccessibleJToolBar() {}
 
         /**
          * Get the state of this object.

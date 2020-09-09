@@ -600,9 +600,9 @@ public class JColorChooser extends JComponent implements Accessible {
     protected class AccessibleJColorChooser extends AccessibleJComponent {
 
         /**
-         * Constructs a {@code AccessibleJColorChooser}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJColorChooser() {}
+        protected AccessibleJColorChooser() {}
 
         /**
          * Get the role of this object.

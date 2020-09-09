@@ -628,9 +628,9 @@ public class JDesktopPane extends JLayeredPane implements Accessible
     protected class AccessibleJDesktopPane extends AccessibleJComponent {
 
         /**
-         * Constructs a {@code AccessibleJDesktopPane}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJDesktopPane() {}
+        protected AccessibleJDesktopPane() {}
 
         /**
          * Get the role of this object.

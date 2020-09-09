@@ -290,9 +290,9 @@ public class JTabbedPane extends JComponent
      */
     protected class ModelListener implements ChangeListener, Serializable {
         /**
-         * Constructs a {@code ModelListener}.
+         * Constructor for subclasses to call.
          */
-        public ModelListener() {}
+        protected ModelListener() {}
 
         public void stateChanged(ChangeEvent e) {
             fireStateChanged();

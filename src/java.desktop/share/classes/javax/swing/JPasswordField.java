@@ -407,9 +407,9 @@ public class JPasswordField extends JTextField {
     protected class AccessibleJPasswordField extends AccessibleJTextField {
 
         /**
-         * Constructs a {@code AccessibleJPasswordField}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJPasswordField() {}
+        protected AccessibleJPasswordField() {}
 
         /**
          * Gets the role of this object.

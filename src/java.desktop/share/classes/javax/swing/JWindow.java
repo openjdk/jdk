@@ -655,9 +655,9 @@ public class JWindow extends Window implements Accessible,
     protected class AccessibleJWindow extends AccessibleAWTWindow {
         // everything is in the new parent, AccessibleAWTWindow
         /**
-         * Constructs a {@code AccessibleJWindow}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJWindow() {}
+        protected AccessibleJWindow() {}
     }
 
 }

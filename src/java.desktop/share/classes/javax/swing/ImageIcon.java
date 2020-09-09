@@ -597,9 +597,9 @@ public class ImageIcon implements Icon, Serializable, Accessible {
         implements AccessibleIcon, Serializable {
 
         /**
-         * Constructs a {@code AccessibleImageIcon}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleImageIcon() {}
+        protected AccessibleImageIcon() {}
 
         /*
          * AccessibleContest implementation -----------------

@@ -848,9 +848,9 @@ public class JRootPane extends JComponent implements Accessible {
     protected class RootLayout implements LayoutManager2, Serializable
     {
         /**
-         * Constructs a {@code RootLayout}.
+         * Constructor for subclasses to call.
          */
-        public RootLayout() {}
+        protected RootLayout() {}
 
         /**
          * Returns the amount of space the layout would like to have.
@@ -1018,9 +1018,9 @@ public class JRootPane extends JComponent implements Accessible {
     @SuppressWarnings("serial")
     protected class AccessibleJRootPane extends AccessibleJComponent {
         /**
-         * Constructs a {@code AccessibleJRootPane}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJRootPane() {}
+        protected AccessibleJRootPane() {}
 
         /**
          * Get the role of this object.

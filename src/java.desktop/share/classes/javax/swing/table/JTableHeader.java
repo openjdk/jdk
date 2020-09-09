@@ -809,9 +809,9 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
     protected class AccessibleJTableHeader extends AccessibleJComponent {
 
         /**
-         * Constructs a {@code AccessibleJTableHeader}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJTableHeader() {}
+        protected AccessibleJTableHeader() {}
 
         /**
          * Get the role of this object.

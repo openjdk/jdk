@@ -1406,9 +1406,9 @@ public class JViewport extends JComponent implements Accessible
     protected class ViewListener extends ComponentAdapter implements Serializable
     {
         /**
-         * Constructs a {@code ViewListener}.
+         * Constructor for subclasses to call.
          */
-        public ViewListener() {}
+        protected ViewListener() {}
 
         public void componentResized(ComponentEvent e) {
             fireStateChanged();
@@ -1882,9 +1882,9 @@ public class JViewport extends JComponent implements Accessible
     protected class AccessibleJViewport extends AccessibleJComponent {
 
         /**
-         * Constructs a {@code AccessibleJViewport}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJViewport() {}
+        protected AccessibleJViewport() {}
 
         /**
          * Get the role of this object.

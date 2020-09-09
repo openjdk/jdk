@@ -279,9 +279,9 @@ public class JRadioButtonMenuItem extends JMenuItem implements Accessible {
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJRadioButtonMenuItem extends AccessibleJMenuItem {
         /**
-         * Constructs a {@code AccessibleJRadioButtonMenuItem}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJRadioButtonMenuItem() {}
+        protected AccessibleJRadioButtonMenuItem() {}
 
         /**
          * Get the role of this object.

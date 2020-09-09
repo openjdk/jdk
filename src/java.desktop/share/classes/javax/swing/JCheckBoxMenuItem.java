@@ -305,9 +305,9 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJCheckBoxMenuItem extends AccessibleJMenuItem {
         /**
-         * Constructs a {@code AccessibleJCheckBoxMenuItem}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJCheckBoxMenuItem() {}
+        protected AccessibleJCheckBoxMenuItem() {}
 
         /**
          * Get the role of this object.

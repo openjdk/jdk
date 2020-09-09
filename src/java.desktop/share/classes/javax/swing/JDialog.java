@@ -1239,9 +1239,9 @@ public class JDialog extends Dialog implements WindowConstants,
     protected class AccessibleJDialog extends AccessibleAWTDialog {
 
         /**
-         * Constructs a {@code AccessibleJDialog}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJDialog() {}
+        protected AccessibleJDialog() {}
 
         // AccessibleContext methods
         //

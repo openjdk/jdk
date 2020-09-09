@@ -767,9 +767,9 @@ public class JLayeredPane extends JComponent implements Accessible {
     protected class AccessibleJLayeredPane extends AccessibleJComponent {
 
         /**
-         * Constructs a {@code AccessibleJLayeredPane}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJLayeredPane() {}
+        protected AccessibleJLayeredPane() {}
 
         /**
          * Get the role of this object.

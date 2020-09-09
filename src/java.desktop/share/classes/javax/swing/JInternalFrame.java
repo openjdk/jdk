@@ -2012,9 +2012,9 @@ public class JInternalFrame extends JComponent implements
         implements AccessibleValue {
 
         /**
-         * Constructs a {@code AccessibleJInternalFrame}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJInternalFrame() {}
+        protected AccessibleJInternalFrame() {}
 
         /**
          * Get the accessible name of this object.
@@ -2308,9 +2308,9 @@ public class JInternalFrame extends JComponent implements
             implements AccessibleValue {
 
             /**
-             * Constructs a {@code AccessibleJDesktopIcon}.
+             * Constructor for subclasses to call.
              */
-            public AccessibleJDesktopIcon() {}
+            protected AccessibleJDesktopIcon() {}
 
             /**
              * Gets the role of this object.

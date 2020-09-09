@@ -1136,9 +1136,9 @@ public class JSplitPane extends JComponent implements Accessible
     protected class AccessibleJSplitPane extends AccessibleJComponent
         implements AccessibleValue {
         /**
-         * Constructs a {@code AccessibleJSplitPane}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJSplitPane() {}
+        protected AccessibleJSplitPane() {}
 
         /**
          * Gets the state set of this object.

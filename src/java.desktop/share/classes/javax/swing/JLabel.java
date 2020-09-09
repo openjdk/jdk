@@ -1044,9 +1044,9 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
         implements AccessibleText, AccessibleExtendedComponent {
 
         /**
-         * Constructs a {@code AccessibleJLabel}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJLabel() {}
+        protected AccessibleJLabel() {}
 
         /**
          * Get the accessible name of this object.

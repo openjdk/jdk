@@ -1660,9 +1660,9 @@ public class JEditorPane extends JTextComponent {
     protected class AccessibleJEditorPane extends AccessibleJTextComponent {
 
         /**
-         * Constructs a {@code AccessibleJEditorPane}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJEditorPane() {}
+        protected AccessibleJEditorPane() {}
 
         /**
          * Gets the accessibleDescription property of this object.  If this

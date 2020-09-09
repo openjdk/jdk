@@ -286,9 +286,9 @@ public class JRadioButton extends JToggleButton implements Accessible {
     protected class AccessibleJRadioButton extends AccessibleJToggleButton {
 
         /**
-         * Constructs a {@code AccessibleJRadioButton}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJRadioButton() {}
+        protected AccessibleJRadioButton() {}
 
         /**
          * Get the role of this object.

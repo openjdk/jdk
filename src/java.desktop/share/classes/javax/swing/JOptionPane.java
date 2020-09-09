@@ -2548,9 +2548,9 @@ public class JOptionPane extends JComponent implements Accessible
     protected class AccessibleJOptionPane extends AccessibleJComponent {
 
         /**
-         * Constructs a {@code AccessibleJOptionPane}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJOptionPane() {}
+        protected AccessibleJOptionPane() {}
 
         /**
          * Get the role of this object.

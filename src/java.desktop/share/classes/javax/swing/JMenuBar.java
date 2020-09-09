@@ -511,9 +511,9 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
         implements AccessibleSelection {
 
         /**
-         * Constructs a {@code AccessibleJMenuBar}.
+         * Constructor for subclasses to call.
          */
-        public AccessibleJMenuBar() {}
+        protected AccessibleJMenuBar() {}
 
         /**
          * Get the accessible state set of this object.
