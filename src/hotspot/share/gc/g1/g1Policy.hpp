@@ -440,7 +440,7 @@ public:
 
   void update_survivors_policy();
 
-  void update_pause_time_stats(double start_sec, double end_sec);
+  void update_pause_time_stats(PauseKind kind, double start_sec, double end_sec);
 
   virtual bool force_upgrade_to_full() {
     return false;

@@ -445,7 +445,6 @@ void G1Policy::record_full_collection_end() {
   // Consider this like a collection pause for the purposes of allocation
   // since last pause.
   double end_sec = os::elapsedTime();
-  update_pause_time_stats(_full_collection_start_sec, end_sec);
 
   collector_state()->set_in_full_gc(false);
 
@@ -561,7 +560,6 @@ void G1Policy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
-  _analytics->append_prev_collection_pause_end_ms(elapsed_time_ms);
 
   record_pause(Remark, _mark_remark_start_sec, end_time_sec);
 }
@@ -671,8 +669,6 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
     uint regions_allocated = _collection_set->eden_region_length();
     double alloc_rate_ms = (double) regions_allocated / app_time_ms;
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
-
-    update_pause_time_stats(start_time_sec, end_time_sec);
   }
 
   if (is_last_young_pause(this_pause)) {
@@ -1124,7 +1120,6 @@ void G1Policy::record_concurrent_mark_cleanup_end() {
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
   _analytics->report_concurrent_mark_cleanup_times_ms(elapsed_time_ms);
-  _analytics->append_prev_collection_pause_end_ms(elapsed_time_ms);
 
   record_pause(Cleanup, _mark_cleanup_start_sec, end_sec);
 }
@@ -1198,18 +1193,27 @@ G1Policy::PauseKind G1Policy::young_gc_pause_kind() const {
   }
 }
 
-void G1Policy::update_pause_time_stats(double start_time_sec, double end_time_sec){
+void G1Policy::update_pause_time_stats(PauseKind kind, double start_time_sec, double end_time_sec){
   double pause_time_sec = start_time_sec - end_time_sec;
   double pause_time_ms = pause_time_sec * 1000.0;
 
   _analytics->compute_pause_time_ratios(end_time_sec, pause_time_ms);
   _analytics->update_recent_gc_times(end_time_sec, pause_time_ms);
+  if (kind == Cleanup || kind == Remark) {
+    _analytics->append_prev_collection_pause_end_ms(pause_time_ms);
+  } else {
+    _analytics->set_prev_collection_pause_end_ms(end_time_sec*1000*0);
+  }
 }
 
 void G1Policy::record_pause(PauseKind kind, double start, double end) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
   if (kind != FullGC) {
     _mmu_tracker->add_pause(start, end);
+  }
+  bool update_stats = !_g1h->evacuation_failed();
+  if (update_stats){
+    update_pause_time_stats(kind, start, end);
   }
   // Manage the mutator time tracking from concurrent start to first mixed gc.
   switch (kind) {
