@@ -2407,7 +2407,7 @@ void JvmtiExport::post_data_dump() {
 }
 
 void JvmtiExport::post_monitor_contended_enter(JavaThread *thread, ObjectMonitor *obj_mntr) {
-  oop object = (oop)obj_mntr->object();
+  oop object = obj_mntr->object();
   JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == NULL) {
     return;
@@ -2438,7 +2438,7 @@ void JvmtiExport::post_monitor_contended_enter(JavaThread *thread, ObjectMonitor
 }
 
 void JvmtiExport::post_monitor_contended_entered(JavaThread *thread, ObjectMonitor *obj_mntr) {
-  oop object = (oop)obj_mntr->object();
+  oop object = obj_mntr->object();
   JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == NULL) {
     return;
@@ -2501,7 +2501,7 @@ void JvmtiExport::post_monitor_wait(JavaThread *thread, oop object,
 }
 
 void JvmtiExport::post_monitor_waited(JavaThread *thread, ObjectMonitor *obj_mntr, jboolean timed_out) {
-  oop object = (oop)obj_mntr->object();
+  oop object = obj_mntr->object();
   JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == NULL) {
     return;

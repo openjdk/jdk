@@ -463,7 +463,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, Thread* self, bool all) {
 
   if (mark.has_monitor()) {
     ObjectMonitor* const mon = mark.monitor();
-    assert(mon->object() == obj, "invariant");
+    assert(mon->object() == oop(obj), "invariant");
     if (mon->owner() != self) return false;  // slow-path for IMS exception
 
     if (mon->first_waiter() != NULL) {
@@ -686,7 +686,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, TRAPS) {
         // Java Monitor can be asynchronously inflated by a thread that
         // does not own the Java Monitor.
         ObjectMonitor* m = mark.monitor();
-        assert(((oop)(m->object()))->mark() == mark, "invariant");
+        assert(m->object()->mark() == mark, "invariant");
         assert(m->is_entered(THREAD), "invariant");
       }
     }
@@ -1428,7 +1428,7 @@ void ObjectSynchronizer::list_oops_do(ObjectMonitor* list, OopClosure* f) {
   // so no need to lock ObjectMonitors for the list traversal.
   for (ObjectMonitor* mid = list; mid != NULL; mid = unmarked_next(mid)) {
     if (mid->object() != NULL) {
-      f->do_oop((oop*)mid->object_addr());
+      f->do_oop(mid->object_addr());
     }
   }
 }
@@ -2149,7 +2149,7 @@ bool ObjectSynchronizer::deflate_monitor_using_JT(ObjectMonitor* mid,
             "must be no entering threads: EntryList=" INTPTR_FORMAT,
             p2i(mid->_EntryList));
 
-  const oop obj = (oop) mid->object();
+  const oop obj = mid->object();
   if (log_is_enabled(Trace, monitorinflation)) {
     ResourceMark rm;
     log_trace(monitorinflation)("deflate_monitor_using_JT: "
@@ -2531,6 +2531,7 @@ void ObjectSynchronizer::deflate_common_idle_monitors_using_JT(bool is_global, J
   if (ls != NULL) {
     if (is_global) {
       ls->print_cr("async-deflating global idle monitors, %3.7f secs, %d monitors", timer.seconds(), deflated_count);
+      GVars.stw_random = os::random();
     } else {
       ls->print_cr("jt=" INTPTR_FORMAT ": async-deflating per-thread idle monitors, %3.7f secs, %d monitors", p2i(target), timer.seconds(), deflated_count);
     }
@@ -2871,7 +2872,7 @@ void ObjectSynchronizer::chk_in_use_entry(JavaThread* jt, ObjectMonitor* n,
     }
     *error_cnt_p = *error_cnt_p + 1;
   }
-  const oop obj = (oop)n->object();
+  const oop obj = n->object();
   const markWord mark = obj->mark();
   if (!mark.has_monitor()) {
     if (jt != NULL) {
@@ -2981,7 +2982,7 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream * out) {
     if ((cur = get_list_head_locked(&om_list_globals._in_use_list)) != NULL) {
       // Marked the global in-use list head so process the list.
       while (true) {
-        const oop obj = (oop) cur->object();
+        const oop obj = cur->object();
         const markWord mark = cur->header();
         ResourceMark rm;
         out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(cur),
@@ -3011,7 +3012,7 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream * out) {
     if ((cur = get_list_head_locked(&jt->om_in_use_list)) != NULL) {
       // Marked the global in-use list head so process the list.
       while (true) {
-        const oop obj = (oop) cur->object();
+        const oop obj = cur->object();
         const markWord mark = cur->header();
         ResourceMark rm;
         out->print(INTPTR_FORMAT "  " INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT
