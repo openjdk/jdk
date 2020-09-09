@@ -263,7 +263,7 @@ JVMFlag::MsgType JVMFlag::get_locked_message(char* buf, int buflen) const {
 }
 
 bool JVMFlag::is_writeable() const {
-  return is_manageable() || is_product();
+  return is_manageable();
 }
 
 // All flags except "manageable" are assumed to be internal flags.
