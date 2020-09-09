@@ -43,6 +43,9 @@ import javax.lang.model.util.SimpleElementVisitor8;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.tools.doclint.HtmlTag;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.function.Function;
 import javax.lang.model.element.ElementKind;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -60,6 +63,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
 
 /**
  * Generate the Class Information Page.
@@ -199,18 +203,23 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         classInfoTree.add(hr);
         Content pre = new HtmlTree(TagName.PRE);
         addAnnotationInfo(typeElement, pre);
-//        String sep = null;
-//        for (String modifiersPart : modifiers.split(" ")) {
-//            if (sep != null) {
-//                pre.add(sep);
-//            }
-//            if ("record".equals(modifiersPart) || "sealed".equals(modifiersPart)) {
-//                pre.add(HtmlTree.SPAN(HtmlStyle.previewReference, new ContentBuilder().add(modifiersPart)));
-//            } else {
-//                pre.add(modifiersPart);
-//            }
-//            sep = " ";
-//        }
+        String sep = null;
+        for (String modifiersPart : modifiers.split(" ")) {
+            if (sep != null) {
+                pre.add(sep);
+            }
+            if ("record".equals(modifiersPart) || "sealed".equals(modifiersPart) || "permits".equals(modifiersPart)) {
+                pre.add(modifiersPart);
+                pre.add(new HtmlTree(TagName.SUP).add(HtmlTree.A("#preview", new ContentBuilder().add("PREVIEW"))));
+                pre.add(" ");
+            } else {
+                pre.add(modifiersPart);
+            }
+            sep = " ";
+        }
+        if (modifiers.endsWith(" ")) {
+            pre.add(" ");
+        }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.Kind.CLASS_SIGNATURE, typeElement);
         //Let's not link to ourselves in the signature.
@@ -320,7 +329,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 addInlineComment(typeElement, classInfoTree);
             }
         }
-        List<Content> previewNotes = utils.getPreviewNotes(typeElement, true);
+        List<Content> previewNotes = getPreviewNotes(typeElement);
         if (!previewNotes.isEmpty()) {
             classInfoTree.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview").add(HtmlTree.HEADING(TagName.H3, new ContentBuilder().add("Preview"))));
             HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewReferenceNote);
@@ -329,6 +338,73 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             }
             classInfoTree.add(previewDiv);
         }
+    }
+
+    @SuppressWarnings("preview")
+    public List<Content> getPreviewNotes(TypeElement el) {
+        List<Content> result = new ArrayList<>();
+        PreviewSummary previewAPITypes = utils.declaredUsingPreviewAPIs(el);
+        Set<TypeElement> memberPreviewAPI = new HashSet<>();
+        Set<TypeElement> memberReflectivePreviewAPI = new HashSet<>();
+        Set<TypeElement> memberDeclaredUsingPreviewFeature = new HashSet<>();
+        boolean memberIsDeclaredUsingPreviewFeature = false;
+        for (Element enclosed : el.getEnclosedElements()) {
+            if (!utils.isIncluded(enclosed)) {
+                continue;
+            }
+            PreviewSummary memberAPITypes = utils.declaredUsingPreviewAPIs(enclosed);
+            memberPreviewAPI.addAll(memberAPITypes.previewAPI);
+            memberReflectivePreviewAPI.addAll(memberAPITypes.reflectivePreviewAPI);
+            memberDeclaredUsingPreviewFeature.addAll(memberAPITypes.declaredUsingPreviewFeature);
+            memberIsDeclaredUsingPreviewFeature |= utils.isDeclaredUsingPreview(enclosed);
+        }
+        if (utils.isDeclaredUsingPreview(el)) {
+            result.add(new ContentBuilder().add(resources.getText("doclet.Declared_Using_Preview.type")));
+        }
+        if (memberIsDeclaredUsingPreviewFeature) {
+            result.add(new ContentBuilder().add(resources.getText("doclet.Declared_Using_Preview.member")));
+        }
+        if (!previewAPITypes.previewAPI.isEmpty()) {
+            result.add(injectLinks("doclet.PreviewAPI.type", previewAPITypes.previewAPI));
+        }
+        if (!memberPreviewAPI.isEmpty()) {
+            result.add(injectLinks("doclet.PreviewAPI.member", memberPreviewAPI));
+        }
+        if (!previewAPITypes.reflectivePreviewAPI.isEmpty()) {
+            result.add(injectLinks("doclet.ReflectivePreviewAPI.type", previewAPITypes.reflectivePreviewAPI));
+        }
+        if (!memberReflectivePreviewAPI.isEmpty()) {
+            result.add(injectLinks("doclet.ReflectivePreviewAPI.member", memberReflectivePreviewAPI));
+        }
+        if (!previewAPITypes.declaredUsingPreviewFeature.isEmpty()) {
+            result.add(injectLinks("doclet.UsesDeclaredUsingPreview.type", previewAPITypes.declaredUsingPreviewFeature));
+        }
+        if (!memberDeclaredUsingPreviewFeature.isEmpty()) {
+            result.add(injectLinks("doclet.UsesDeclaredUsingPreview.member", memberDeclaredUsingPreviewFeature));
+        }
+        return result;
+    }
+
+    private Content injectLinks(String key, Set<TypeElement> elements) {
+        ContentBuilder result = new ContentBuilder();
+        String template = resources.getText(key);
+        int injectPoint = template.indexOf("{0}");
+        if (injectPoint == (-1)) {
+            result.add(template);
+            return result;
+        }
+        result.add(template.substring(0, injectPoint));
+        String[] sep = new String[] {""};
+        elements.stream()
+                .sorted((te1, te2) -> te1.getSimpleName().toString().compareTo(te2.getSimpleName().toString()))
+                .map(te -> getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS, te)))
+                .forEach(c -> {
+                    result.add(sep[0]);
+                    result.add(c);
+                    sep[0] = ", ";
+                });
+        result.add(template.substring(injectPoint + 3));
+        return result;
     }
 
     @Override

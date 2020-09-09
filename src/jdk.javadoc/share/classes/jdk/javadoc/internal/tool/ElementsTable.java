@@ -1280,7 +1280,7 @@ public class ElementsTable {
             switch (kind) {
                 case CLASS: case METHOD: case MODULE: case PACKAGE:
                     return kind;
-                case RECORD: case ANNOTATION_TYPE: case ENUM: case INTERFACE:
+                case RECORD: case ANNOTATION_TYPE: case ENUM: case INTERFACE: /*???*/case RECORD_COMPONENT:
                     return ElementKind.CLASS;
                 case CONSTRUCTOR: case ENUM_CONSTANT: case EXCEPTION_PARAMETER:
                 case FIELD: case INSTANCE_INIT: case LOCAL_VARIABLE: case PARAMETER:

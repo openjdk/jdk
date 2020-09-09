@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -230,11 +231,14 @@ public class LinkInfoImpl extends LinkInfo {
      */
     public String where = "";
 
+    public Element whereMember;
+
     /**
      * The value of the target.
      */
     public String target = "";
     public  final Utils utils;
+    
     /**
      * Construct a LinkInfo object.
      *
@@ -339,6 +343,11 @@ public class LinkInfoImpl extends LinkInfo {
         this.where = where;
         return this;
      }
+
+    public LinkInfoImpl whereMember(Element el) {
+        this.whereMember = el;
+        return this;
+    }
 
     public Kind getContext() {
         return context;

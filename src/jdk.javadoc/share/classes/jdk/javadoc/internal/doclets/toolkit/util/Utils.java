@@ -120,6 +120,8 @@ import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
 import java.util.function.Function;
+import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
+import jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -1708,65 +1710,6 @@ public class Utils {
         return sb.toString().trim();
     }
 
-    @SuppressWarnings("preview")
-    public List<Content> getPreviewNotes(Element el, boolean span) {
-        List<Content> result = new ArrayList<>();
-        List<TypeElement> usedInDeclaration = new ArrayList<>();
-        String suffix;
-        switch (el.getKind()) {
-            case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -> {
-                suffix = "type";
-                //TODO: annotations
-                TypeElement te = (TypeElement) el;
-                for (TypeParameterElement tpe : te.getTypeParameters()) {
-                    usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
-                }
-                usedInDeclaration.addAll(types2Classes(List.of(te.getSuperclass())));
-                usedInDeclaration.addAll(types2Classes(te.getInterfaces()));
-                usedInDeclaration.addAll(types2Classes(te.getPermittedSubclasses()));
-                usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(c -> c.asType()).collect(Collectors.toList()))); //TODO: annotations on record components???
-            }
-            case CONSTRUCTOR, METHOD -> {
-                suffix = "method";
-                //TODO: annotations
-                ExecutableElement ee = (ExecutableElement) el;
-                for (TypeParameterElement tpe : ee.getTypeParameters()) {
-                    usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
-                }
-                usedInDeclaration.addAll(types2Classes(List.of(ee.getReturnType())));
-                usedInDeclaration.addAll(types2Classes(List.of(ee.getReceiverType())));
-                usedInDeclaration.addAll(types2Classes(ee.getThrownTypes()));
-                usedInDeclaration.addAll(types2Classes(ee.getParameters().stream().map(p -> p.asType()).collect(Collectors.toList())));
-            }
-            case FIELD, ENUM_CONSTANT -> {
-                suffix = "field";
-                //TODO: annotations
-                VariableElement ve = (VariableElement) el;
-                usedInDeclaration.addAll(types2Classes(List.of(ve.asType())));
-            }
-            default -> throw new IllegalStateException("Unexpected: " + el.getKind());
-        }
-        Function<Content, Content> wrap = c -> {
-            return c;
-//            return /*span ? */HtmlTree.SPAN(HtmlStyle.previewReferenceNote, c);
-//                        : HtmlTree.DIV(HtmlStyle.previewReferenceNote, c);
-        };
-        if (isDeclaredUsingPreview(el)) {
-            result.add(wrap.apply(new ContentBuilder().add(resources.getText("doclet.Declared_Using_Preview." + suffix))));
-        }
-        Set<PreviewAPIType> previewAPITypes = getPreviewAPITypes(usedInDeclaration);
-        if (previewAPITypes.contains(PreviewAPIType.PREVIEW)) {
-            result.add(wrap.apply(new ContentBuilder().add(resources.getText("doclet.PreviewAPI." + suffix))));
-        }
-        if (previewAPITypes.contains(PreviewAPIType.REFLECTIVE)) {
-            result.add(wrap.apply(new ContentBuilder().add(resources.getText("doclet.ReflectivePreviewAPI." + suffix))));
-        }
-        if (previewAPITypes.contains(PreviewAPIType.DECLARED_USING_PREVIEW)) {
-            result.add(wrap.apply(new ContentBuilder().add(resources.getText("doclet.UsesDeclaredUsingPreview." + suffix))));
-        }
-        return result;
-    }
-
     private Collection<TypeElement> types2Classes(List<? extends TypeMirror> types) {
         List<TypeElement> result = new ArrayList<>();
         List<TypeMirror> todo = new ArrayList<>(types);
@@ -3031,16 +2974,73 @@ public class Utils {
                e.getModifiers().contains(Modifier.SEALED);
     }
 
-    public Set<PreviewAPIType> getPreviewAPITypes(Iterable<TypeElement> elements) {
-        Set<PreviewAPIType> result = new TreeSet<>();
+    public PreviewSummary getPreviewAPITypes(Iterable<TypeElement> elements) { //TODO: private/merge into declaredUsingPreviewAPIs?
+        Set<TypeElement> previewAPI = new HashSet<>();
+        Set<TypeElement> reflectivePreviewAPI = new HashSet<>();
+        Set<TypeElement> declaredUsingPreviewFeature = new HashSet<>();
 
         for (TypeElement type : elements) {
-            result.add(getPreviewAPIType(type));
+            if (!isIncluded(type)) {
+                continue;
+            }
+            switch (getPreviewAPIType(type)) {
+                case PREVIEW -> previewAPI.add(type);
+                case REFLECTIVE -> reflectivePreviewAPI.add(type);
+                case DECLARED_USING_PREVIEW -> declaredUsingPreviewFeature.add(type);
+            }
         }
 
-        result.remove(PreviewAPIType.STANDARD);
+        return new PreviewSummary(previewAPI, reflectivePreviewAPI, declaredUsingPreviewFeature);
+    }
 
-        return result;
+    @SuppressWarnings("preview")
+    public PreviewSummary declaredUsingPreviewAPIs(Element el) {
+        List<TypeElement> usedInDeclaration = new ArrayList<>();
+        switch (el.getKind()) {
+            case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -> {
+                //TODO: annotations
+                TypeElement te = (TypeElement) el;
+                for (TypeParameterElement tpe : te.getTypeParameters()) {
+                    usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
+                }
+                usedInDeclaration.addAll(types2Classes(List.of(te.getSuperclass())));
+                usedInDeclaration.addAll(types2Classes(te.getInterfaces()));
+                usedInDeclaration.addAll(types2Classes(te.getPermittedSubclasses()));
+                usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(c -> c.asType()).collect(Collectors.toList()))); //TODO: annotations on record components???
+            }
+            case CONSTRUCTOR, METHOD -> {
+                //TODO: annotations
+                ExecutableElement ee = (ExecutableElement) el;
+                for (TypeParameterElement tpe : ee.getTypeParameters()) {
+                    usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
+                }
+                usedInDeclaration.addAll(types2Classes(List.of(ee.getReturnType())));
+                usedInDeclaration.addAll(types2Classes(List.of(ee.getReceiverType())));
+                usedInDeclaration.addAll(types2Classes(ee.getThrownTypes()));
+                usedInDeclaration.addAll(types2Classes(ee.getParameters().stream().map(p -> p.asType()).collect(Collectors.toList())));
+            }
+            case FIELD, ENUM_CONSTANT, RECORD_COMPONENT -> {
+                //TODO: annotations
+                VariableElement ve = (VariableElement) el;
+                usedInDeclaration.addAll(types2Classes(List.of(ve.asType())));
+            }
+            default -> throw new IllegalStateException("Unexpected: " + el.getKind());
+        }
+        PreviewSummary previewAPITypes = getPreviewAPITypes(usedInDeclaration);
+        return previewAPITypes;
+    }
+
+    public static final class PreviewSummary {
+        public final Set<TypeElement> previewAPI;
+        public final Set<TypeElement> reflectivePreviewAPI;
+        public final Set<TypeElement> declaredUsingPreviewFeature;
+
+        public PreviewSummary(Set<TypeElement> previewAPI, Set<TypeElement> reflectivePreviewAPI, Set<TypeElement> declaredUsingPreviewFeature) {
+            this.previewAPI = previewAPI;
+            this.reflectivePreviewAPI = reflectivePreviewAPI;
+            this.declaredUsingPreviewFeature = declaredUsingPreviewFeature;
+        }
+        
     }
 
     public PreviewAPIType getPreviewAPIType(TypeElement el) {
@@ -3060,8 +3060,9 @@ public class Utils {
 
     public Set<ElementFlag> elementFlags(Element el) {
         Set<ElementFlag> flags = EnumSet.noneOf(ElementFlag.class);
+        PreviewSummary previewAPIs = declaredUsingPreviewAPIs(el);
 
-        if (isDeclaredUsingPreview(el) || configuration.workArounds.getPreviewAPIType(el) != PreviewAPIType.STANDARD)  {
+        if (isDeclaredUsingPreview(el) || configuration.workArounds.getPreviewAPIType(el) != PreviewAPIType.STANDARD || !previewAPIs.previewAPI.isEmpty() || !previewAPIs.reflectivePreviewAPI.isEmpty() || !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {
             flags.add(ElementFlag.PREVIEW);
         }
 

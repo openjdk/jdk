@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -94,18 +95,16 @@ public class LinkFactoryImpl extends LinkFactory {
             title = getClassToolTip(typeElement, isTypeLink);
         }
         Content label = classLinkInfo.getClassLinkLabel(configuration);
-        Set<ElementFlag> flags = utils.elementFlags(typeElement);
+        Set<ElementFlag> flags;
+        if (!hasWhere) {
+            flags = utils.elementFlags(typeElement);
+        } else if (classLinkInfo.whereMember != null) {
+            flags = utils.elementFlags(classLinkInfo.whereMember);
+        } else {
+            //TODO: no information?
+            flags = EnumSet.noneOf(ElementFlag.class);
+        }
 
-//        Function<Content, Content> wrapWithPreviewNotice = c -> {
-//            if (!hasWhere) {
-//                if (previewWarning) {
-//                    ContentBuilder cb = new ContentBuilder(c, new HtmlTree(TagName.SUP).add(HtmlTree.A("#", new ContentBuilder().add("PREVIEW"))));
-//                    HtmlTree span = HtmlTree.SPAN(HtmlStyle.previewReference, cb);
-//                    c = span;
-//                }
-//            }
-//            return c;
-//        };
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
             if (configuration.isGeneratedDoc(typeElement)) {
@@ -118,7 +117,7 @@ public class LinkFactoryImpl extends LinkFactory {
                                 classLinkInfo.isStrong,
                                 title,
                                 classLinkInfo.target));
-                        if (flags.contains(ElementFlag.PREVIEW) && !hasWhere/*XXX*/) {
+                        if (flags.contains(ElementFlag.PREVIEW)) {
                             link.add(new HtmlTree(TagName.SUP).add(m_writer.links.createLink(
                                     filename.fragment("preview"),
                                     new ContentBuilder().add("PREVIEW"))));
@@ -135,7 +134,7 @@ public class LinkFactoryImpl extends LinkFactory {
                 label, classLinkInfo.isStrong, true);
             if (crossLink != null) {
                 link.add(crossLink);
-                if (flags.contains(ElementFlag.PREVIEW) && !hasWhere/*XXX*/) {
+                if (flags.contains(ElementFlag.PREVIEW)) {
                     link.add(new HtmlTree(TagName.SUP).add(m_writer.getCrossClassLink(
                             typeElement,
                             "preview",
