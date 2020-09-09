@@ -1892,17 +1892,17 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* self, oop object,
     // CASE: stack-locked
     // Could be stack-locked either by this thread or by some other thread.
     //
-    // Note that we allocate the objectmonitor speculatively, _before_ attempting
+    // Note that we allocate the ObjectMonitor speculatively, _before_ attempting
     // to install INFLATING into the mark word.  We originally installed INFLATING,
-    // allocated the objectmonitor, and then finally STed the address of the
-    // objectmonitor into the mark.  This was correct, but artificially lengthened
-    // the interval in which INFLATED appeared in the mark, thus increasing
+    // allocated the ObjectMonitor, and then finally STed the address of the
+    // ObjectMonitor into the mark.  This was correct, but artificially lengthened
+    // the interval in which INFLATING appeared in the mark, thus increasing
     // the odds of inflation contention.
     //
-    // We now use per-thread private objectmonitor free lists.
+    // We now use per-thread private ObjectMonitor free lists.
     // These list are reprovisioned from the global free list outside the
     // critical INFLATING...ST interval.  A thread can transfer
-    // multiple objectmonitors en-mass from the global free list to its local free list.
+    // multiple ObjectMonitors en-mass from the global free list to its local free list.
     // This reduces coherency traffic and lock contention on the global free list.
     // Using such local free lists, it doesn't matter if the om_alloc() call appears
     // before or after the CAS(INFLATING) operation.
@@ -1912,7 +1912,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* self, oop object,
 
     if (mark.has_locker()) {
       ObjectMonitor* m = om_alloc(self);
-      // Optimistically prepare the objectmonitor - anticipate successful CAS
+      // Optimistically prepare the ObjectMonitor - anticipate successful CAS
       // We do this before the CAS in order to minimize the length of time
       // in which INFLATING appears in the mark.
       m->Recycle();
