@@ -34,13 +34,20 @@ class JVMFlagLookup {
   short _table[NUM_JVMFlagsEnum];
   u2    _hashes[NUM_JVMFlagsEnum];
 
-  static constexpr unsigned int hash_code(const char* s) {
-    unsigned int h = 0;
+  // Cannot use strlen() -- it's not constexpr.
+  static constexpr size_t string_len(const char* s) {
+    size_t len = 0;
     while (*s != 0) {
-      h = 31*h + (unsigned int) *s;
+      len ++;
       s++;
     }
-    return h;
+    return len;
+  }
+
+  // This is executed at build-time only, so it doesn't matter if we walk
+  // the string twice.
+  static constexpr unsigned int hash_code(const char* s) {
+    return hash_code(s, string_len(s));
   }
 
   static constexpr unsigned int hash_code(const char* s, size_t len) {

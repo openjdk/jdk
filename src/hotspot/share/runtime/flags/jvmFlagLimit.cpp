@@ -67,19 +67,7 @@ template <typename T>
 class LimitGetter {
 public:
   // These functions return NULL for develop flags in a PRODUCT build
-  static constexpr const JVMFlagLimit* no_limit(int dummy) {
-    return NULL;
-  }
-  static constexpr const JVMFlagLimit* no_limit(int dummy, T min, T max) {
-    return NULL;
-  }
-  static constexpr const JVMFlagLimit* no_limit(int dummy, ConstraintMarker dummy2, short func, int phase) {
-    return NULL;
-  }
-  static constexpr const JVMFlagLimit* no_limit(int dummy, T min, T max, ConstraintMarker dummy2, short func, int phase) {
-    return NULL;
-  }
-  static constexpr const JVMFlagLimit* no_limit(int dummy, ConstraintMarker dummy2, short func, int phase, T min, T max) {
+  static constexpr const JVMFlagLimit* no_limit(...) {
     return NULL;
   }
 
