@@ -105,7 +105,7 @@ public abstract class HttpServer {
      * The HttpServer is acquired from the currently installed {@link HttpServerProvider}
      * The server must be bound using {@link #bind(InetSocketAddress,int)} before it can be used.
      *
-     * @throws IOException if I/O error occurs
+     * @throws IOException if an I/O error occurs
      * @return An instance of HttpServer
      */
     public static HttpServer create () throws IOException {
@@ -127,7 +127,7 @@ public abstract class HttpServer {
      *          then a system default value is used.
      * @throws BindException if the server cannot bind to the requested address,
      *          or if the server is already bound.
-     * @throws IOException if I/O error occurs.
+     * @throws IOException if an I/O error occurs
      * @return An instance of HttpServer
      */
 
@@ -241,7 +241,7 @@ public abstract class HttpServer {
      * @throws IllegalArgumentException if path is invalid, or if a context
      *          already exists for this path
      * @throws NullPointerException if path is <code>null</code>
-     * @return An instance of HttpContext.
+     * @return An instance of HttpContext
      */
     public abstract HttpContext createContext (String path) ;
 

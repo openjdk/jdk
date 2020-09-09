@@ -42,7 +42,7 @@ import java.util.Map;
 public abstract class HttpContext {
 
     /**
-     * Creates a HttpContext.
+     * Constructor for subclasses to call.
      */
     protected HttpContext () {
     }
@@ -81,7 +81,7 @@ public abstract class HttpContext {
      * Every attribute stored in this Map will be visible to
      * every HttpExchange processed by this context
      *
-     * @return a map containing the attributes of this context.
+     * @return a map containing the attributes of this context
      */
     public abstract Map<String,Object> getAttributes() ;
 

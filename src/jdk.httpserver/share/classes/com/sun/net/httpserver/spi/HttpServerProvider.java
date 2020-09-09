@@ -52,7 +52,7 @@ public abstract class HttpServerProvider {
      *
      * @param  backlog
      *         the socket backlog. A value of {@code zero} means the systems default
-     * @throws IOException if I/O error occurs.
+     * @throws IOException if an I/O error occurs
      * @return An instance of HttpServer
      */
     public abstract HttpServer createHttpServer(InetSocketAddress addr,
@@ -67,7 +67,7 @@ public abstract class HttpServerProvider {
      *
      * @param  backlog
      *         the socket backlog. A value of {@code zero} means the systems default
-     * @throws IOException if I/O error occurs.
+     * @throws IOException if an I/O error occurs
      * @return An instance of HttpServer
      */
     public abstract HttpsServer createHttpsServer(InetSocketAddress addr,

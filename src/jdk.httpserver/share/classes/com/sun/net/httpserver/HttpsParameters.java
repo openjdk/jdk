@@ -24,10 +24,11 @@
  */
 
 package com.sun.net.httpserver;
-import javax.net.ssl.SSLParameters;
+
 import java.net.InetSocketAddress;
 
 //BEGIN_TIGER_EXCLUDE
+import javax.net.ssl.SSLParameters;
 //END_TIGER_EXCLUDE
 
 /**
@@ -58,14 +59,14 @@ public abstract class HttpsParameters {
     private boolean needClientAuth;
 
     /**
-     * Creates a HttpsParameters.
+     * Constructor for subclasses to call.
      */
     protected HttpsParameters() {}
 
     /**
      * Returns the HttpsConfigurator for this HttpsParameters.
      *
-     * @returns HttpsConfigurator for this instance of HttpsParameters.
+     * @return HttpsConfigurator for this instance of HttpsParameters
      */
     public abstract HttpsConfigurator getHttpsConfigurator();
 
@@ -73,7 +74,7 @@ public abstract class HttpsParameters {
      * Returns the address of the remote client initiating the
      * connection.
      *
-     * @returns Address of the remote client initiating the connection.
+     * @return Address of the remote client initiating the connection
      */
     public abstract InetSocketAddress getClientAddress();
 

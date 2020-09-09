@@ -65,7 +65,7 @@ public abstract class Authenticator {
          * Creates a {@code Failure} instance with given response code.
          *
          * @param responseCode The response code to associate with this
-         *                     {@code Failure} instance.
+         *                     {@code Failure} instance
          */
         public Failure (int responseCode) {
             this.responseCode = responseCode;
@@ -74,7 +74,7 @@ public abstract class Authenticator {
         /**
          * returns the response code to send to the client
          *
-         * @return The response code associated with this {@code Failure} instance.
+         * @return The response code associated with this {@code Failure} instance
          */
         public int getResponseCode() {
             return responseCode;
@@ -90,9 +90,9 @@ public abstract class Authenticator {
         private HttpPrincipal principal;
 
         /**
-         * Creates a {@code Success} instance with given Principal.
+         * Creates a {@code Success} instance with given {@code Principal}.
          *
-         * @param p The authenticated user you wish to set as Principal.
+         * @param p The authenticated user you wish to set as Principal
          */
         public Success (HttpPrincipal p) {
             principal = p;
@@ -100,7 +100,7 @@ public abstract class Authenticator {
         /**
          * returns the authenticated user Principal
          *
-         * @return The {@code Principal} instance associated with the authenticated user.
+         * @return The {@code Principal} instance associated with the authenticated user
          *
          */
         public HttpPrincipal getPrincipal() {
@@ -123,7 +123,7 @@ public abstract class Authenticator {
          * Creates a {@code Retry} instance with given response code.
          *
          * @param responseCode The response code to associate with this
-         *                     {@code Retry} instance.
+         *                     {@code Retry} instance
          */
         public Retry (int responseCode) {
             this.responseCode = responseCode;
@@ -132,7 +132,7 @@ public abstract class Authenticator {
         /**
          * returns the response code to send to the client
          *
-         * @return The response code associated with this {@code Retry} instance.
+         * @return The response code associated with this {@code Retry} instance
          */
         public int getResponseCode() {
             return responseCode;
@@ -155,8 +155,8 @@ public abstract class Authenticator {
      * given HttpExchange. The response code to be returned must be provided
      * in the Retry object. Retry may occur multiple times.
      *
-     * @param exch The HttpExchange upon which authenticate is called.
-     * @return The result.
+     * @param exch The HttpExchange upon which authenticate is called
+     * @return The result
      */
     public abstract Result authenticate (HttpExchange exch);
 }

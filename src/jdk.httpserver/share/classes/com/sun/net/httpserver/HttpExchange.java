@@ -66,7 +66,7 @@ import java.net.URI;
 public abstract class HttpExchange implements AutoCloseable {
 
     /**
-     * Creates a HttpExchange.
+     * Constructor for subclasses to call.
      */
     protected HttpExchange () {
     }
@@ -189,7 +189,7 @@ public abstract class HttpExchange implements AutoCloseable {
      *        if {@literal <= -1}, then no response body length is specified and
      *        no response body may be written.
      * @throws IOException An IOException will be thrown if an error occurs during
-     *         the sending of response headers, or if headers have already been sent.
+     *         the sending of response headers, or if headers have already been sent
      * @see HttpExchange#getResponseBody()
      */
     public abstract void sendResponseHeaders (int rCode, long responseLength) throws IOException ;

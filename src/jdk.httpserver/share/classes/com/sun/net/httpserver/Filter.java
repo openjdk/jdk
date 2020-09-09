@@ -42,7 +42,7 @@ import java.util.*;
 public abstract class Filter {
 
     /**
-     * Creates a Filter.
+     * Constructor for subclasses to call.
      */
     protected Filter () {}
 
@@ -61,9 +61,9 @@ public abstract class Filter {
         /**
          * Creates a {@code Chain} instance with given filters and handler.
          *
-         * @param filters The filters that make up the Chain.
+         * @param filters The filters that make up the Chain
          * @param handler The HttpHandler that will be invoked after the final
-         *                Filter has finished.
+         *                Filter has finished
          */
         public Chain (List<Filter> filters, HttpHandler handler) {
             iter = filters.listIterator();

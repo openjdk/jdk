@@ -73,7 +73,7 @@ public class HttpPrincipal implements Principal {
     /**
      * returns the username this object was created with.
      *
-     * @returns The name of the user assoicated with this object.
+     * @return The name of the user assoicated with this object
      */
     public String getUsername() {
         return username;
@@ -82,7 +82,7 @@ public class HttpPrincipal implements Principal {
     /**
      * returns the realm this object was created with.
      *
-     * @returns The realm associated with this object.
+     * @return The realm associated with this object
      */
     public String getRealm() {
         return realm;
