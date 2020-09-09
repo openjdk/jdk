@@ -51,31 +51,23 @@
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
-VM_QueueHead VMOperationQueue::_queue_head[VMOperationQueue::nof_priorities];
+VM_QueueHead VMOperationQueue::_queue_head;
 
 VMOperationQueue::VMOperationQueue() {
   // The queue is a circular doubled-linked list, which always contains
   // one element (i.e., one element means empty).
-  for(int i = 0; i < nof_priorities; i++) {
-    _queue_length[i] = 0;
-    _queue_counter = 0;
-    _queue[i] = &_queue_head[i];
-    _queue[i]->set_next(_queue[i]);
-    _queue[i]->set_prev(_queue[i]);
-  }
+  _queue = &_queue_head;
+  _queue->set_next(_queue);
+  _queue->set_prev(_queue);
 }
 
-
-bool VMOperationQueue::queue_empty(int prio) {
+bool VMOperationQueue::queue_empty() {
   // It is empty if there is exactly one element
-  bool empty = (_queue[prio] == _queue[prio]->next());
-  assert( (_queue_length[prio] == 0 && empty) ||
-          (_queue_length[prio] > 0  && !empty), "sanity check");
-  return _queue_length[prio] == 0;
+  return _queue->next() == &_queue_head;
 }
 
-// Inserts an element to the right of the q element
-void VMOperationQueue::insert(VM_Operation* q, VM_Operation* n) {
+void VMOperationQueue::queue_add(VM_Operation *n) {
+  VM_Operation* q = _queue->prev(); // Last
   assert(q->next()->prev() == q && q->prev()->next() == q, "sanity check");
   n->set_prev(q);
   n->set_next(q->next());
@@ -83,24 +75,16 @@ void VMOperationQueue::insert(VM_Operation* q, VM_Operation* n) {
   q->set_next(n);
 }
 
-void VMOperationQueue::queue_add(int prio, VM_Operation *op) {
-  _queue_length[prio]++;
-  insert(_queue[prio]->prev(), op);
-}
-
-
 void VMOperationQueue::unlink(VM_Operation* q) {
   assert(q->next()->prev() == q && q->prev()->next() == q, "sanity check");
   q->prev()->set_next(q->next());
   q->next()->set_prev(q->prev());
 }
 
-VM_Operation* VMOperationQueue::queue_remove_front(int prio) {
-  if (queue_empty(prio)) return NULL;
-  assert(_queue_length[prio] >= 0, "sanity check");
-  _queue_length[prio]--;
-  VM_Operation* r = _queue[prio]->next();
-  assert(r != _queue[prio], "cannot remove base element");
+VM_Operation* VMOperationQueue::remove_next() {
+  if (queue_empty()) return NULL;
+  VM_Operation* r = _queue->next();
+  assert(r != _queue, "cannot remove base element");
   unlink(r);
   return r;
 }
@@ -115,28 +99,7 @@ void VMOperationQueue::add(VM_Operation *op) {
 
   // Encapsulates VM queue policy. Currently, that
   // only involves putting them on the right list
-  queue_add(op->evaluate_at_safepoint() ? SafepointPriority : MediumPriority, op);
-}
-
-VM_Operation* VMOperationQueue::remove_next() {
-  // Assuming VMOperation queue is two-level priority queue. If there are
-  // more than two priorities, we need a different scheduling algorithm.
-  assert(SafepointPriority == 0 && MediumPriority == 1 && nof_priorities == 2,
-         "current algorithm does not work");
-
-  // simple counter based scheduling to prevent starvation of lower priority
-  // queue. -- see 4390175
-  int high_prio, low_prio;
-  if (_queue_counter++ < 10) {
-      high_prio = SafepointPriority;
-      low_prio  = MediumPriority;
-  } else {
-      _queue_counter = 0;
-      high_prio = MediumPriority;
-      low_prio  = SafepointPriority;
-  }
-
-  return queue_remove_front(queue_empty(high_prio) ? low_prio : high_prio);
+  queue_add(op);
 }
 
 //------------------------------------------------------------------------------------------------------------------
@@ -238,7 +201,7 @@ void VMThread::run() {
   }
   // Notify_lock is destroyed by Threads::create_vm()
 
-  int prio = (VMThreadPriority == -1)
+  int prio  = (VMThreadPriority == -1)
     ? os::java_to_os_priority[NearMaxPriority]
     : VMThreadPriority;
   // Note that I cannot call os::set_priority because it expects Java
@@ -430,9 +393,9 @@ void VMThread::loop() {
           exit(-1);
         }
 
-        // If the queue contains a safepoint VM op,
-        // clean up will be done so we can skip this part.
-        if (!_vm_queue->peek_at_safepoint_priority()) {
+        // If the queue does not contains a op
+        // we check for no op safepoint.
+        if (!_vm_queue->queue_peek()) {
 
           // Have to unlock VMOperationQueue_lock just in case no_op_safepoint()
           // has to do a handshake when HandshakeALot is enabled.

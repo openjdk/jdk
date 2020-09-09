@@ -43,29 +43,18 @@ class VM_QueueHead : public VM_None {
 //
 class VMOperationQueue : public CHeapObj<mtInternal> {
  private:
-  enum Priorities {
-     SafepointPriority, // Highest priority (operation executed at a safepoint)
-     MediumPriority,    // Medium priority
-     nof_priorities
-  };
 
-  // We maintain a doubled linked list, with explicit count.
-  int           _queue_length[nof_priorities];
-  int           _queue_counter;
-  VM_Operation* _queue       [nof_priorities];
+  // We maintain a doubled linked list
+  VM_Operation* _queue;
 
-  static VM_QueueHead _queue_head[nof_priorities];
+  static VM_QueueHead _queue_head;
 
   // Double-linked non-empty list insert.
-  void insert(VM_Operation* q,VM_Operation* n);
   void unlink(VM_Operation* q);
 
   // Basic queue manipulation
-  bool queue_empty                (int prio);
-  void queue_add                  (int prio, VM_Operation *op);
-  VM_Operation* queue_remove_front(int prio);
-  // lock-free query: may return the wrong answer but must not break
-  bool queue_peek(int prio) { return _queue_length[prio] > 0; }
+  bool queue_empty                ();
+  void queue_add                  (VM_Operation *op);
 
  public:
   VMOperationQueue();
@@ -73,7 +62,9 @@ class VMOperationQueue : public CHeapObj<mtInternal> {
   // Highlevel operations. Encapsulates policy
   void add(VM_Operation *op);
   VM_Operation* remove_next();                        // Returns next or null
-  bool peek_at_safepoint_priority() { return queue_peek(SafepointPriority); }
+  
+  // lock-free query: may return the wrong answer but must not break
+  bool queue_peek() { return _queue != &_queue_head; }
 };
 
 
