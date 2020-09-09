@@ -74,11 +74,11 @@ int CgroupV2Subsystem::cpu_shares() {
 
 /* cpu_quota
  *
- * Return the number of milliseconds per period
+ * Return the number of microseconds per period
  * process is guaranteed to run.
  *
  * return:
- *    quota time in milliseconds
+ *    quota time in microseconds
  *    -1 for no quota
  *    OSCONTAINER_ERROR for not supported
  */
