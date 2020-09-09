@@ -442,8 +442,9 @@ public final class PrettyWriter extends EventPrintWriter {
             print(" (");
             print("id = ");
             print(String.valueOf(cl.getId()));
-            println(")");
+            print(")");
         }
+        println(postFix);
     }
 
     private void printJavaFrame(RecordedFrame f, String postFix) {
