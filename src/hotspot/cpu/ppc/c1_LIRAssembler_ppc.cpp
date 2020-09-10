@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -705,6 +705,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 }
 
 
+/* vtable_call is not enabled for ppc platform */
 void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   ShouldNotReachHere(); // ic_call is used instead.
 }

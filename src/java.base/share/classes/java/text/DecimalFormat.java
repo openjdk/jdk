@@ -338,9 +338,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <h3>Example</h3>
  *
- * <blockquote><pre>{@code
- * <strong>// Print out a number using the localized number, integer, currency,
- * // and percent format for each locale</strong>
+ * <blockquote><pre><strong>{@code
+ * // Print out a number using the localized number, integer, currency,
+ * // and percent format for each locale}</strong>{@code
  * Locale[] locales = NumberFormat.getAvailableLocales();
  * double myNumber = -1234.56;
  * NumberFormat form;

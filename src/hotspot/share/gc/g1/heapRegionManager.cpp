@@ -102,8 +102,7 @@ void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
 
   _card_counts_mapper = card_counts;
 
-  MemRegion reserved = heap_storage->reserved();
-  _regions.initialize(reserved.start(), reserved.end(), HeapRegion::GrainBytes);
+  _regions.initialize(heap_storage->reserved(), HeapRegion::GrainBytes);
 
   _available_map.initialize(_regions.length());
 }

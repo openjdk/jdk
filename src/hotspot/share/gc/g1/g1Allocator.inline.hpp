@@ -130,9 +130,7 @@ inline void G1ArchiveAllocator::enable_archive_object_check() {
   }
 
   _archive_check_enabled = true;
-  size_t length = G1CollectedHeap::heap()->max_reserved_capacity();
-  _archive_region_map.initialize(G1CollectedHeap::heap()->base(),
-                                 G1CollectedHeap::heap()->base() + length,
+  _archive_region_map.initialize(G1CollectedHeap::heap()->reserved(),
                                  HeapRegion::GrainBytes);
 }
 

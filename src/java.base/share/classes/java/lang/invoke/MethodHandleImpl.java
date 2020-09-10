@@ -1764,41 +1764,8 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public byte[] generateDirectMethodHandleHolderClassBytes(
-                    String className, MethodType[] methodTypes, int[] types) {
-                return GenerateJLIClassesHelper
-                        .generateDirectMethodHandleHolderClassBytes(
-                                className, methodTypes, types);
-            }
-
-            @Override
-            public byte[] generateDelegatingMethodHandleHolderClassBytes(
-                    String className, MethodType[] methodTypes) {
-                return GenerateJLIClassesHelper
-                        .generateDelegatingMethodHandleHolderClassBytes(
-                                className, methodTypes);
-            }
-
-            @Override
-            public Map.Entry<String, byte[]> generateConcreteBMHClassBytes(
-                    final String types) {
-                return GenerateJLIClassesHelper
-                        .generateConcreteBMHClassBytes(types);
-            }
-
-            @Override
-            public byte[] generateBasicFormsClassBytes(final String className) {
-                return GenerateJLIClassesHelper
-                        .generateBasicFormsClassBytes(className);
-            }
-
-            @Override
-            public byte[] generateInvokersHolderClassBytes(final String className,
-                    MethodType[] invokerMethodTypes,
-                    MethodType[] callSiteMethodTypes) {
-                return GenerateJLIClassesHelper
-                        .generateInvokersHolderClassBytes(className,
-                                invokerMethodTypes, callSiteMethodTypes);
+            public Map<String, byte[]> generateHolderClasses(Stream<String> traces) {
+                return GenerateJLIClassesHelper.generateHolderClasses(traces);
             }
 
             @Override

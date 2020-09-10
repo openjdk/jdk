@@ -2313,7 +2313,7 @@ int ObjectSynchronizer::deflate_monitor_list_using_JT(ObjectMonitor** list_p,
       mid = next;  // mid keeps non-NULL next's locked state
       next = next_next;
 
-      if (SafepointMechanism::should_block(self) &&
+      if (SafepointMechanism::should_process(self) &&
           // Acquire semantics are not needed on this list load since
           // it is not dependent on the following load which does have
           // acquire semantics.
@@ -2507,7 +2507,7 @@ void ObjectSynchronizer::deflate_common_idle_monitors_using_JT(bool is_global, J
         } else {
           log_debug(monitorinflation)("jt=" INTPTR_FORMAT ": pausing deflation of per-thread idle monitors for a safepoint.", p2i(target));
         }
-        assert(SafepointMechanism::should_block(self), "sanity check");
+        assert(SafepointMechanism::should_process(self), "sanity check");
         ThreadBlockInVM blocker(self);
       }
       // Prepare for another loop after the safepoint.

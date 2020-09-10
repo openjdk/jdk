@@ -25,7 +25,6 @@
 #ifndef SHARE_RUNTIME_SIGNATURE_HPP
 #define SHARE_RUNTIME_SIGNATURE_HPP
 
-#include "classfile/symbolTable.hpp"
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
 
@@ -131,11 +130,7 @@ class Signature : AllStatic {
   // inside the envelope, by stripping 'L' and ';'.
   // Caller is responsible for decrementing the newly created
   // Symbol's refcount, use TempNewSymbol.
-  static Symbol* strip_envelope(const Symbol* signature) {
-    assert(has_envelope(signature), "precondition");
-    return SymbolTable::new_symbol((char*) signature->bytes() + 1,
-                                   signature->utf8_length() - 2);
-  }
+  static Symbol* strip_envelope(const Symbol* signature);
 
   // Assuming it's either a field or method descriptor, determine
   // whether it is in fact a method descriptor:

@@ -194,6 +194,8 @@ class MetaspaceShared : AllStatic {
 
   static bool try_link_class(InstanceKlass* ik, TRAPS);
   static void link_and_cleanup_shared_classes(TRAPS) NOT_CDS_RETURN;
+  static bool link_class_for_cds(InstanceKlass* ik, TRAPS) NOT_CDS_RETURN_(false);
+  static bool linking_required(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 
 #if INCLUDE_CDS
   static size_t reserved_space_alignment();

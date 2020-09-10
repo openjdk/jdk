@@ -48,6 +48,7 @@ compiler.err.unsupported.cross.fp.lit                   # Scanner: host system d
 compiler.misc.bad.class.signature                       # bad class file
 compiler.misc.bad.const.pool.tag                        # bad class file
 compiler.misc.bad.const.pool.tag.at                     # bad class file
+compiler.misc.unexpected.const.pool.tag.at              # bad class file
 compiler.misc.bad.const.pool.index                      # bad class file
 compiler.misc.bad.constant.range                        # bad class file
 compiler.misc.bad.constant.value                        # bad class file
@@ -76,6 +77,8 @@ compiler.misc.kindname.static
 compiler.misc.kindname.type.variable
 compiler.misc.kindname.type.variable.bound
 compiler.misc.kindname.value
+compiler.misc.method.descriptor.invalid                 # bad class file
+compiler.misc.module.info.definition.expected           # bad class file
 compiler.misc.module.name.mismatch
 compiler.misc.module.non.zero.opens                     # bad class file
 compiler.misc.no.unique.minimal.instance.exists

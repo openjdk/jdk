@@ -62,6 +62,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/reflectionUtils.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/thread.inline.hpp"

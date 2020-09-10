@@ -48,7 +48,6 @@
 //    31 bits, see os::random().  Also, 64-bit vm's require
 //    a hash value no bigger than 32 bits because they will not
 //    properly generate a mask larger than that: see library_call.cpp
-//    and c1_CodePatterns_sparc.cpp.
 //
 //  - the biased lock pattern is used to bias a lock toward a given
 //    thread. When this pattern is set in the low three bits, the lock

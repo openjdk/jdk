@@ -36,6 +36,7 @@
 #include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/java.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"

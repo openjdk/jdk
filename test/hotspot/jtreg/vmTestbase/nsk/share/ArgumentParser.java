@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 package nsk.share;
 
-import java.util.*;
-
 import nsk.share.test.StressOptions;
-import nsk.share.test.Stresser;
+
+import java.util.ArrayList;
+import java.util.Properties;
 
 /**
  * Parser for JDI test's command-line arguments.
@@ -56,7 +56,7 @@ import nsk.share.test.Stresser;
  * <li> <code>-option <i>value</i></code>
  * </ul>
  * List of the recognized options with their values may be obtained by
- * invoking method <code>getOptions()</code> that returnes
+ * invoking method <code>getOptions()</code> that returns
  * a <code>Properties</code> object with options values.
  * It is not recommended to get options value directly. An appropriate methods
  * such as <code>verbose()</code>, <code>getArch()</code>, etc. should be used
@@ -68,7 +68,7 @@ import nsk.share.test.Stresser;
  * Full list of the test arguments in the same order as they appears in the command line
  * may be obtained by invoking method <code>getArguments()</code>.
  * <p>
- * Following is the list of basic options accepted by AgrumentParser:
+ * Following is the list of basic options accepted by ArgumentParser:
  * <ul>
  * <li> <code>-arch=</code>&lt;<i>${ARCH}</i>&gt; -
  *   architecture name
@@ -79,7 +79,7 @@ import nsk.share.test.Stresser;
  * <li> <code>-trace.time</code> -
  *   prefix log messages with timestamps (default is no)
  * </ul>
- * Also AgrumentParser supports following stress options (see nsk.share.test.StressOptions for details):
+ * Also ArgumentParser supports following stress options (see nsk.share.test.StressOptions for details):
  * <ul>
  * <li> <code>-stressTime</code>
  * <li> <code>-stressIterationsFactor</code>
@@ -87,15 +87,13 @@ import nsk.share.test.Stresser;
  * <li> <code>-stressDebug</code>
  * </ul>
  * <p>
- * Note, that the tests from the particular subsuites have its own argument handlers
- * wich accepts additional options. See <code>jpda.DebugeeArgumentHandler</code>,
- * <code>jdi.ArgumentHandler</code>, <code>jdwp.ArgumentHandler</code>.
+ * Note that the tests from the particular suites have its own argument handlers
+ * which accepts additional options.
  *
  * @see #setRawArguments(String[])
  * @see #getRawArguments()
  * @see #getArguments()
  * @see #getOptions()
- *
  * @see nsk.share.jpda.DebugeeArgumentHandler
  * @see nsk.share.jdwp.ArgumentHandler
  * @see nsk.share.jdi.ArgumentHandler
@@ -103,14 +101,13 @@ import nsk.share.test.Stresser;
  * @see nsk.monitoring.share.ArgumentHandler
  */
 public class ArgumentParser {
-
     /**
      * Raw array of command-line arguments.
      *
      * @see #setRawArguments(String[])
      * @see #getRawArguments()
      */
-    protected String rawArguments[] = null;
+    protected String[] rawArguments = null;
 
     /**
      * Refined arguments -- raw arguments but options.
@@ -118,7 +115,7 @@ public class ArgumentParser {
      * @see #options
      * @see #getArguments()
      */
-    protected String arguments[] = null;
+    protected String[] arguments = null;
 
     /**
      * Recognized options for ArgumentParser class.
@@ -129,42 +126,59 @@ public class ArgumentParser {
     protected Properties options = new Properties();
 
     /**
-     * Make new ArgumentParser object with default values of otions.
+     * Make new ArgumentParser object with default values of options.
      * This constructor is used only to obtain default values of options.
      *
      * @see #setRawArguments(String[])
      */
     protected ArgumentParser() {
-        String[] args = new String[0];
-        setRawArguments(args);
+        this(new String[0]);
     }
 
     /**
      * Keep a copy of raw command-line arguments and parse them;
      * but throw an exception on parsing error.
      *
-     * @param  args  Array of the raw command-line arguments.
-     *
-     * @throws  BadOption  If option values are invalid.
-     *
+     * @param args Array of the raw command-line arguments.
+     * @throws BadOption If option values are invalid.
      * @see #setRawArguments(String[])
      * @see BadOption
      */
-    public ArgumentParser(String args[]) {
-        setRawArguments(args);
+    public ArgumentParser(String[] args) {
+        ArrayList<String> list = new ArrayList<>(args.length);
+        for (int i = 0; i < args.length; ++i) {
+            StringBuilder arg = new StringBuilder(args[i]);
+            // jtreg splits the command string into arguments by space symbol
+            // and doesn't keep arguments within double quotes as one argument,
+            // so we need to join them back
+            long doubleQuotes = numberOfDoubleQuotes(args[i]);
+            while (i < args.length - 1 && (doubleQuotes % 2) != 0) {
+                arg.append(" ").append(args[++i]);
+                doubleQuotes += numberOfDoubleQuotes(args[i]);
+            }
+            if (doubleQuotes % 2 != 0) {
+                throw new TestBug("command-line has odd number of double quotes:" + String.join(" ", args));
+            }
+
+            list.add(arg.toString());
+        }
+        setRawArguments(list.toArray(String[]::new));
+    }
+
+    private static long numberOfDoubleQuotes(String s) {
+        return s.chars().filter(c -> c == '"').count();
     }
 
     /**
      * Return a copy of the raw command-line arguments kept by
      * this ArgumentParser instance.
      *
-     * @throws  NullPointerException  If raw arguments were not
-     *                                set for this instance.
-     *
+     * @throws NullPointerException If raw arguments were not
+     *                              set for this instance.
      * @see #setRawArguments(String[])
      */
     public String[] getRawArguments() {
-        return (String[]) rawArguments.clone();
+        return rawArguments.clone();
     }
 
     /**
@@ -174,30 +188,29 @@ public class ArgumentParser {
      * @return value of raw argument
      */
     public String getRawArgument(int index) {
-            return rawArguments[index];
+        return rawArguments[index];
     }
 
     /**
      * Return refined array of test arguments (only those of the raw
      * arguments which are not recognized as options for ArgumentParser).
      *
-     * <p>Note, that sintax of test arguments was not checked;
+     * <p>Note, that syntax of test arguments was not checked;
      * while syntax of arguments describing ArgumentParser's options
      * was checked while raw arguments were set to this ArgumentParser
      * instance.
      *
-     * @throws  NullPointerException  If raw arguments were not
-     *                                set for this instance.
-     *
+     * @throws NullPointerException If raw arguments were not
+     *                              set for this instance.
      * @see #setRawArguments(String[])
      * @see #getOptions()
      */
     public String[] getArguments() {
-        return (String[]) arguments.clone();
+        return arguments.clone();
     }
 
     /**
-     * Return list of recognized otions with their values in the form of
+     * Return list of recognized options with their values in the form of
      * <code>Properties</code> object.
      * If no options has been recognized, this list will be empty.
      *
@@ -212,31 +225,31 @@ public class ArgumentParser {
      * Join specified arguments into one line using given quoting
      * and separator symbols.
      *
-     * @param args Array of the command-line arguments
-     * @param quote Symbol used to quote each argument
-     * @param separator Symbol used as separator between argumnets
+     * @param args      Array of the command-line arguments
+     * @param quote     Symbol used to quote each argument
+     * @param separator Symbol used as separator between arguments
      * @return Single line with arguments
      */
-    static public String joinArguments(String args[], String quote, String separator) {
+    static public String joinArguments(String[] args, String quote, String separator) {
         if (args.length <= 0) {
             return "";
         }
-        String line = quote + args[0] + quote;
+        StringBuilder line = new StringBuilder(quote).append(args[0]).append(quote);
         for (int i = 1; i < args.length; i++) {
-            line += separator + quote + args[i] + quote;
+            line.append(separator).append(quote).append(args[i]).append(quote);
         }
-        return line;
+        return line.toString();
     }
 
     /**
      * Join specified arguments into one line using given quoting symbol
      * and space as a separator symbol.
      *
-     * @param args Array of the command-line arguments
+     * @param args  Array of the command-line arguments
      * @param quote Symbol used to quote each argument
      * @return Single line with arguments
      */
-    static public String joinArguments(String args[], String quote) {
+    static public String joinArguments(String[] args, String quote) {
         return joinArguments(args, quote, " ");
     }
 
@@ -244,15 +257,13 @@ public class ArgumentParser {
      * Keep a copy of command-line arguments and parse them;
      * but throw an exception on parsing error.
      *
-     * @param  args  Array of the raw command-line arguments.
-     *
-     * @throws  BadOption  If an option has invalid value.
-     *
+     * @param args Array of the raw command-line arguments.
+     * @throws BadOption If an option has invalid value.
      * @see #getRawArguments()
      * @see #getArguments()
      */
-    public void setRawArguments(String args[]) {
-        this.rawArguments = (String[]) args.clone();
+    public void setRawArguments(String[] args) {
+        this.rawArguments = args.clone();
         parseArguments();
     }
 
@@ -281,9 +292,7 @@ public class ArgumentParser {
 
         if (!found) {
             String[] newRawArguments = new String[length + 1];
-            for (int i = 0; i < length; i++) {
-                newRawArguments[i] = rawArguments[i];
-            }
+            System.arraycopy(rawArguments, 0, newRawArguments, 0, length);
             newRawArguments[length] = arg;
             rawArguments = newRawArguments;
         }
@@ -304,7 +313,7 @@ public class ArgumentParser {
 
     /**
      * Timeout (in minutes) for test's critical section like:
-     * (a) awaiting for an event, or conversly (b) making sure
+     * (a) awaiting for an event, or conversely (b) making sure
      * that there is no unexpected event.
      *
      * <p>By default, <i>2</i> minutes is returned if option
@@ -354,7 +363,7 @@ public class ArgumentParser {
     }
 
     /**
-     * Return level of printing tracing mesages for debugging purpose.
+     * Return level of printing tracing messages for debugging purpose.
      * Level <i>0</i> means no tracing messages at all.
      *
      * <p>Note that by default no tracing messages will be printed out
@@ -365,32 +374,30 @@ public class ArgumentParser {
     public int getTraceLevel() {
         String value = options.getProperty("trace.level", Integer.toString(Log.TraceLevel.DEFAULT));
         try {
-            int level = Integer.parseInt(value);
-            return level;
+            return Integer.parseInt(value);
         } catch (NumberFormatException e) {
             throw new Failure("Not integer value of -trace.level option: " + value);
         }
     }
 
     /**
-     * Parse arguments from rawArgumnets, extact recognized options,
+     * Parse arguments from rawArguments, extract recognized options,
      * check legality of options values options and store non-option
      * arguments.
      *
-     * @throws  NullPointerException  If raw arguments were not set
-     *                                for this ArgumentParser instance.
-     * @throws  BadOption If Option name is not accepted or
-     *                    option has illegal value.
-     *
+     * @throws NullPointerException If raw arguments were not set
+     *                              for this ArgumentParser instance.
+     * @throws BadOption            If Option name is not accepted or
+     *                              option has illegal value.
      * @see #setRawArguments(String[])
      * @see #checkOption(String, String)
      * @see #checkOptions()
      */
     protected void parseArguments() {
-        String selected[] = new String [rawArguments.length];
+        String[] selected = new String[rawArguments.length];
         Properties properties = new Properties();
         int count = 0;
-        for (int i=0; i<rawArguments.length; i++) {
+        for (int i = 0; i < rawArguments.length; i++) {
             String argument = rawArguments[i];
             if (argument.startsWith("-")) {
                 int pos = argument.indexOf("=", 1);
@@ -400,12 +407,14 @@ public class ArgumentParser {
                     if (i + 1 < rawArguments.length && !rawArguments[i + 1].startsWith("-")) {
                         value = rawArguments[i + 1];
                         ++i;
-                    } else
+                    } else {
                         value = "";
+                    }
                 } else {
                     option = argument.substring(1, pos);
                     value = argument.substring(pos + 1);
                 }
+
                 if (!checkOption(option, value)) {
                     throw new BadOption("Unrecognized command line option: " + argument);
                 }
@@ -415,8 +424,8 @@ public class ArgumentParser {
             }
         }
         // Strip away the dummy tail of the selected[] array:
-        arguments = new String [count];
-        System.arraycopy(selected,0,arguments,0,count);
+        arguments = new String[count];
+        System.arraycopy(selected, 0, arguments, 0, count);
         options = properties;
         checkOptions();
     }
@@ -428,21 +437,18 @@ public class ArgumentParser {
     /**
      * Check if the specified option is allowed and has legal value.
      * <p>
-     * Derived classes for hadling test arguments in particular sub-suites
+     * Derived classes for handling test arguments in particular sub-suites
      * override this method to allow to accept sub-suite specific options.
-     * However, they should invoke this method of the base class to enshure
+     * However, they should invoke this method of the base class to ensure
      * that the basic options will be accepted too.
      *
-     * @return <i>true</i> if option is allowed and has legel value
-     *         <i>false</I> if option is unknown
-     *
-     * @throws  BadOption  If value of the allowed option is illegal.
-     *
+     * @return <i>true</i> if option is allowed and has legal value
+     * <i>false</i> if option is unknown
+     * @throws BadOption If value of the allowed option is illegal.
      * @see #setRawArguments(String[])
      * @see #parseArguments()
      */
     protected boolean checkOption(String option, String value) {
-
         // accept arguments of nsk.share.test.StressOptions
         if (StressOptions.isValidStressOption(option))
             return true;
@@ -454,7 +460,7 @@ public class ArgumentParser {
 
         // options with positive integer value
         if (option.equals("waittime")
-            || option.equals("trace.level")) {
+                || option.equals("trace.level")) {
             try {
                 int number = Integer.parseInt(value);
                 if (number < 0) {
@@ -468,8 +474,8 @@ public class ArgumentParser {
 
         // options without any value
         if (option.equals("verbose")
-            || option.equals("vbs")
-            || option.equals("trace.time")) {
+                || option.equals("vbs")
+                || option.equals("trace.time")) {
             if (!(value == null || value.length() <= 0)) {
                 throw new BadOption(option + ": no value must be specified");
             }
@@ -483,8 +489,7 @@ public class ArgumentParser {
      * Check that the value of all options are not inconsistent.
      * This method is invoked by <code>parseArguments()</code>
      *
-     * @throws  BadOption  If value of the options are inconsistent
-     *
+     * @throws BadOption If value of the options are inconsistent
      * @see #parseArguments()
      */
     protected void checkOptions() {
@@ -498,7 +503,7 @@ public class ArgumentParser {
         /**
          * Explain the reason.
          *
-         * @param  message   Printing message.
+         * @param message Printing message.
          */
         public BadOption(String message) {
             super(message);

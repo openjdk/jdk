@@ -80,7 +80,7 @@ class G1CollectionSet;
 class G1Policy;
 class G1HotCardCache;
 class G1RemSet;
-class G1YoungRemSetSamplingThread;
+class G1ServiceThread;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
 class G1ConcurrentRefine;
@@ -154,7 +154,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1CheckRegionAttrTableClosure;
 
 private:
-  G1YoungRemSetSamplingThread* _young_gen_sampling_thread;
+  G1ServiceThread* _service_thread;
 
   WorkGang* _workers;
   G1CardTable* _card_table;
@@ -547,7 +547,7 @@ private:
   void verify_numa_regions(const char* desc);
 
 public:
-  G1YoungRemSetSamplingThread* sampling_thread() const { return _young_gen_sampling_thread; }
+  G1ServiceThread* service_thread() const { return _service_thread; }
 
   WorkGang* workers() const { return _workers; }
 
@@ -968,7 +968,7 @@ public:
 
 private:
   jint initialize_concurrent_refinement();
-  jint initialize_young_gen_sampling_thread();
+  jint initialize_service_thread();
 public:
   // Initialize the G1CollectedHeap to have the initial and
   // maximum sizes and remembered and barrier sets
@@ -1141,16 +1141,12 @@ public:
   inline G1HeapRegionAttr region_attr(const void* obj) const;
   inline G1HeapRegionAttr region_attr(uint idx) const;
 
-  MemRegion reserved_region() const {
-    return _reserved;
-  }
-
-  HeapWord* base() const {
-    return _reserved.start();
+  MemRegion reserved() const {
+    return _hrm->reserved();
   }
 
   bool is_in_reserved(const void* addr) const {
-    return _reserved.contains(addr);
+    return reserved().contains(addr);
   }
 
   G1HotCardCache* hot_card_cache() const { return _hot_card_cache; }
@@ -1281,9 +1277,6 @@ public:
 
   // Print the maximum heap capacity.
   virtual size_t max_capacity() const;
-
-  // Return the size of reserved memory. Returns different value than max_capacity() when AllocateOldGenAt is used.
-  virtual size_t max_reserved_capacity() const;
 
   Tickspan time_since_last_collection() const { return Ticks::now() - _collection_pause_end; }
 

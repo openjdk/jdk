@@ -321,7 +321,7 @@ bool os::have_special_privileges() {
 
 
 #ifndef SYS_gettid
-// i386: 224, ia64: 1105, amd64: 186, sparc 143
+// i386: 224, ia64: 1105, amd64: 186, sparc: 143
   #ifdef __ia64__
     #define SYS_gettid 1105
   #else

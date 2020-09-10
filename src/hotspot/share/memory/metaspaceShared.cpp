@@ -1225,47 +1225,74 @@ Klass* MetaspaceShared::get_relocated_klass(Klass *k, bool is_final) {
   return k;
 }
 
-class LinkSharedClassesClosure : public KlassClosure {
-  Thread* THREAD;
-  bool    _made_progress;
- public:
-  LinkSharedClassesClosure(Thread* thread) : THREAD(thread), _made_progress(false) {}
+static GrowableArray<ClassLoaderData*>* _loaded_cld = NULL;
 
-  void reset()               { _made_progress = false; }
-  bool made_progress() const { return _made_progress; }
-
-  void do_klass(Klass* k) {
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
-      bool do_linking = DumpSharedSpaces ? true : !ik->is_shared_unregistered_class();
-      if (do_linking) {
-        // Link the class to cause the bytecodes to be rewritten and the
-        // cpcache to be created. Class verification is done according
-        // to -Xverify setting.
-        _made_progress |= MetaspaceShared::try_link_class(ik, THREAD);
-        guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
-
-        if (DumpSharedSpaces) {
-          // The following function is used to resolve all Strings in the statically
-          // dumped classes to archive all the Strings. The archive heap is not supported
-          // for the dynamic archive.
-          ik->constants()->resolve_class_constants(THREAD);
-        }
-      }
+class CollectCLDClosure : public CLDClosure {
+  void do_cld(ClassLoaderData* cld) {
+    if (_loaded_cld == NULL) {
+      _loaded_cld = new (ResourceObj::C_HEAP, mtClassShared)GrowableArray<ClassLoaderData*>(10, mtClassShared);
+    }
+    if (!cld->is_unloading()) {
+      cld->inc_keep_alive();
+      _loaded_cld->append(cld);
     }
   }
 };
 
+bool MetaspaceShared::linking_required(InstanceKlass* ik) {
+  // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
+  return DumpSharedSpaces ? true : !ik->is_shared_unregistered_class();
+}
+
+bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
+  // Link the class to cause the bytecodes to be rewritten and the
+  // cpcache to be created. Class verification is done according
+  // to -Xverify setting.
+  bool res = MetaspaceShared::try_link_class(ik, THREAD);
+  guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
+
+  if (DumpSharedSpaces) {
+    // The following function is used to resolve all Strings in the statically
+    // dumped classes to archive all the Strings. The archive heap is not supported
+    // for the dynamic archive.
+    ik->constants()->resolve_class_constants(THREAD);
+  }
+  return res;
+}
+
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
-  // We need to iterate because verification may cause additional classes
-  // to be loaded.
-  LinkSharedClassesClosure link_closure(THREAD);
-  do {
-    link_closure.reset();
-    ClassLoaderDataGraph::unlocked_loaded_classes_do(&link_closure);
-    guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
-  } while (link_closure.made_progress());
+  // Collect all loaded ClassLoaderData.
+  CollectCLDClosure collect_cld;
+  {
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    ClassLoaderDataGraph::loaded_cld_do(&collect_cld);
+  }
+
+  while (true) {
+    bool has_linked = false;
+    for (int i = 0; i < _loaded_cld->length(); i++) {
+      ClassLoaderData* cld = _loaded_cld->at(i);
+      for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
+        if (klass->is_instance_klass()) {
+          InstanceKlass* ik = InstanceKlass::cast(klass);
+          if (linking_required(ik)) {
+            has_linked |= link_class_for_cds(ik, THREAD);
+          }
+        }
+      }
+    }
+
+    if (!has_linked) {
+      break;
+    }
+    // Class linking includes verification which may load more classes.
+    // Keep scanning until we have linked no more classes.
+  }
+
+  for (int i = 0; i < _loaded_cld->length(); i++) {
+    ClassLoaderData* cld = _loaded_cld->at(i);
+    cld->dec_keep_alive();
+  }
 }
 
 void MetaspaceShared::prepare_for_dumping() {
@@ -1388,7 +1415,7 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
 // Returns true if the class's status has changed
 bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
   Arguments::assert_is_dumping_archive();
-  if (ik->init_state() < InstanceKlass::linked &&
+  if (ik->is_loaded() && !ik->is_linked() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == NULL) {

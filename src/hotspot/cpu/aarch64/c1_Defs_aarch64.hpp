@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,7 +58,7 @@ enum {
 
   pd_nof_cpu_regs_linearscan = 32, // number of registers visible to linear scan
   pd_nof_fpu_regs_linearscan = pd_nof_fpu_regs_frame_map, // number of registers visible to linear scan
-  pd_nof_xmm_regs_linearscan = 0, // like sparc we don't have any of these
+  pd_nof_xmm_regs_linearscan = 0,  // don't have vector registers
   pd_first_cpu_reg = 0,
   pd_last_cpu_reg = 16,
   pd_first_byte_reg = 0,

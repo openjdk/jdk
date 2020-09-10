@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8129559 8246353
+ * @bug 8129559 8246353 8247456
  * @summary Test the ignoring of comments and certain modifiers
  * @build KullaTesting TestingInputStream
  * @run testng IgnoreTest
@@ -65,8 +65,8 @@ public class IgnoreTest extends KullaTesting {
         assertVariableDeclSnippet(x2, "x2", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
         VarSnippet x3 = varKey(assertEval("private int x3;"));
         assertVariableDeclSnippet(x3, "x3", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
-        VarSnippet x4 = (VarSnippet) assertDeclareWarn1("static int x4;", "jdk.eval.warn.illegal.modifiers");
-        assertVariableDeclSnippet(x4, "x4", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 1);
+        VarSnippet x4 = varKey(assertEval("static int x4;"));
+        assertVariableDeclSnippet(x4, "x4", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
         VarSnippet x5 = varKey(assertEval("final int x5;"));
         assertVariableDeclSnippet(x5, "x5", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
     }
@@ -79,8 +79,8 @@ public class IgnoreTest extends KullaTesting {
         assertVariableDeclSnippet(x2, "x2", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
         VarSnippet x3 = varKey(assertEval("@A(value=111)private int x3;"));
         assertVariableDeclSnippet(x3, "x3", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
-        VarSnippet x4 = (VarSnippet) assertDeclareWarn1("@A static int x4;", "jdk.eval.warn.illegal.modifiers");
-        assertVariableDeclSnippet(x4, "x4", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 1);
+        VarSnippet x4 = varKey(assertEval("@A static int x4;"));
+        assertVariableDeclSnippet(x4, "x4", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
         VarSnippet x5 = varKey(assertEval("@A(1111) final int x5;"));
         assertVariableDeclSnippet(x5, "x5", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
     }
@@ -92,8 +92,8 @@ public class IgnoreTest extends KullaTesting {
         assertVariableDeclSnippet(x2, "x2", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
         VarSnippet x3 = varKey(assertEval("transient private int x3;"));
         assertVariableDeclSnippet(x3, "x3", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
-        VarSnippet x4 = (VarSnippet) assertDeclareWarn1("volatile static int x4;", "jdk.eval.warn.illegal.modifiers");
-        assertVariableDeclSnippet(x4, "x4", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 1);
+        VarSnippet x4 = varKey(assertEval("volatile static int x4;"));
+        assertVariableDeclSnippet(x4, "x4", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
         VarSnippet x5 = varKey(assertEval("transient final int x5;"));
         assertVariableDeclSnippet(x5, "x5", "int", VALID, VAR_DECLARATION_SUBKIND, 0, 0);
     }
@@ -105,23 +105,23 @@ public class IgnoreTest extends KullaTesting {
     }
 
     public void testMethodModifier() {
-        MethodSnippet m4 = (MethodSnippet) assertDeclareWarn1("static void m4() {}", "jdk.eval.warn.illegal.modifiers");
-        assertMethodDeclSnippet(m4, "m4", "()void", VALID, 0, 1);
+        MethodSnippet m4 = methodKey(assertEval("static void m4() {}"));
+        assertMethodDeclSnippet(m4, "m4", "()void", VALID, 0, 0);
         MethodSnippet m5 = methodKey(assertEval("final void m5() {}"));
         assertMethodDeclSnippet(m5, "m5", "()void", VALID, 0, 0);
     }
 
     public void testMethodModifierAnnotation() {
         assertEval("@interface A { int value() default 0; }");
-        MethodSnippet m4 = (MethodSnippet) assertDeclareWarn1("@A static void m4() {}", "jdk.eval.warn.illegal.modifiers");
-        assertMethodDeclSnippet(m4, "m4", "()void", VALID, 0, 1);
+        MethodSnippet m4 = methodKey(assertEval("@A static void m4() {}"));
+        assertMethodDeclSnippet(m4, "m4", "()void", VALID, 0, 0);
         MethodSnippet m5 = methodKey(assertEval("@A(value=66)final void m5() {}"));
         assertMethodDeclSnippet(m5, "m5", "()void", VALID, 0, 0);
     }
 
     public void testClassModifier() {
-        TypeDeclSnippet c4 = (TypeDeclSnippet) assertDeclareWarn1("static class C4 {}", "jdk.eval.warn.illegal.modifiers");
-        assertTypeDeclSnippet(c4, "C4", VALID, CLASS_SUBKIND, 0, 1);
+        TypeDeclSnippet c4 = classKey(assertEval("static class C4 {}"));
+        assertTypeDeclSnippet(c4, "C4", VALID, CLASS_SUBKIND, 0, 0);
         TypeDeclSnippet c5 = classKey(assertEval("final class C5 {}"));
         assertTypeDeclSnippet(c5, "C5", VALID, CLASS_SUBKIND, 0, 0);
     }

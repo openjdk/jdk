@@ -338,6 +338,10 @@ public:
             Matcher::min_vector_size(bt) <= size);
   }
 
+  static const bool supports_scalable_vector();
+  // Actual max scalable vector register length.
+  static const int scalable_vector_reg_size(const BasicType bt);
+
   // Vector ideal reg
   static const uint vector_ideal_reg(int len);
 

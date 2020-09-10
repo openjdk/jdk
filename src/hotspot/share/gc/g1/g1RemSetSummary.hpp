@@ -38,11 +38,11 @@ class G1RemSetSummary {
   size_t _num_vtimes;
   double* _rs_threads_vtimes;
 
-  double _sampling_thread_vtime;
+  double _service_thread_vtime;
 
   void set_rs_thread_vtime(uint thread, double value);
-  void set_sampling_thread_vtime(double value) {
-    _sampling_thread_vtime = value;
+  void set_service_thread_vtime(double value) {
+    _service_thread_vtime = value;
   }
 
   // update this summary with current data from various places
@@ -62,8 +62,8 @@ public:
 
   double rs_thread_vtime(uint thread) const;
 
-  double sampling_thread_vtime() const {
-    return _sampling_thread_vtime;
+  double service_thread_vtime() const {
+    return _service_thread_vtime;
   }
 
   size_t num_coarsenings() const {

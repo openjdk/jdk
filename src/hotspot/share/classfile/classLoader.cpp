@@ -29,6 +29,7 @@
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"

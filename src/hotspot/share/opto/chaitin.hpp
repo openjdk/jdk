@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,9 @@ public:
     _msize_valid=1;
     if (_is_vector) {
       assert(!_fat_proj, "sanity");
-      assert(_mask.is_aligned_sets(_num_regs), "mask is not aligned, adjacent sets");
+      if (!(_is_scalable && OptoReg::is_stack(_reg))) {
+        assert(_mask.is_aligned_sets(_num_regs), "mask is not aligned, adjacent sets");
+      }
     } else if (_num_regs == 2 && !_fat_proj) {
       assert(_mask.is_aligned_pairs(), "mask is not aligned, adjacent pairs");
     }
@@ -137,13 +139,36 @@ public:
   void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  debug_only(_msize_valid=0;) }
   void clear_to_sets()  { _mask.clear_to_sets(_num_regs); debug_only(_msize_valid=0;) }
 
-  // Number of registers this live range uses when it colors
 private:
+  // Number of registers this live range uses when it colors
   uint16_t _num_regs;           // 2 for Longs and Doubles, 1 for all else
                                 // except _num_regs is kill count for fat_proj
+
+  // For scalable register, num_regs may not be the actual physical register size.
+  // We need to get the actual physical length of scalable register when scalable
+  // register is spilled. The size of one slot is 32-bit.
+  uint _scalable_reg_slots;     // Actual scalable register length of slots.
+                                // Meaningful only when _is_scalable is true.
 public:
   int num_regs() const { return _num_regs; }
   void set_num_regs( int reg ) { assert( _num_regs == reg || !_num_regs, "" ); _num_regs = reg; }
+
+  uint scalable_reg_slots() { return _scalable_reg_slots; }
+  void set_scalable_reg_slots(uint slots) {
+    assert(_is_scalable, "scalable register");
+    assert(slots > 0, "slots of scalable register is not valid");
+    _scalable_reg_slots = slots;
+  }
+
+  bool is_scalable() {
+#ifdef ASSERT
+    if (_is_scalable) {
+      // Should only be a vector for now, but it could also be a RegVMask in future.
+      assert(_is_vector && (_num_regs == RegMask::SlotsPerVecA), "unexpected scalable reg");
+    }
+#endif
+    return _is_scalable;
+  }
 
 private:
   // Number of physical registers this live range uses when it colors
@@ -170,6 +195,8 @@ public:
   uint   _is_oop:1,             // Live-range holds an oop
          _is_float:1,           // True if in float registers
          _is_vector:1,          // True if in vector registers
+         _is_scalable:1,        // True if register size is scalable
+                                //      e.g. Arm SVE vector/predicate registers.
          _was_spilled1:1,       // True if prior spilling on def
          _was_spilled2:1,       // True if twice prior spilling on def
          _is_bound:1,           // live range starts life with no

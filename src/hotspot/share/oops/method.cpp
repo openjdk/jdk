@@ -67,6 +67,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/quickSort.hpp"
 #include "utilities/vmError.hpp"
@@ -2184,9 +2185,9 @@ void Method::ensure_jmethod_ids(ClassLoaderData* loader_data, int capacity) {
   ClassLoaderData* cld = loader_data;
   if (!SafepointSynchronize::is_at_safepoint()) {
     // Have to add jmethod_ids() to class loader data thread-safely.
-    // Also have to add the method to the list safely, which the cld lock
+    // Also have to add the method to the list safely, which the lock
     // protects as well.
-    MutexLocker ml(cld->metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
     if (cld->jmethod_ids() == NULL) {
       cld->set_jmethod_ids(new JNIMethodBlock(capacity));
     } else {
@@ -2208,9 +2209,9 @@ jmethodID Method::make_jmethod_id(ClassLoaderData* loader_data, Method* m) {
 
   if (!SafepointSynchronize::is_at_safepoint()) {
     // Have to add jmethod_ids() to class loader data thread-safely.
-    // Also have to add the method to the list safely, which the cld lock
+    // Also have to add the method to the list safely, which the lock
     // protects as well.
-    MutexLocker ml(cld->metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
     if (cld->jmethod_ids() == NULL) {
       cld->set_jmethod_ids(new JNIMethodBlock());
     }

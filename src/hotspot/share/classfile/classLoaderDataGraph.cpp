@@ -413,14 +413,6 @@ void ClassLoaderDataGraph::loaded_classes_do(KlassClosure* klass_closure) {
   }
 }
 
-// This case can block but cannot do unloading (called from CDS)
-void ClassLoaderDataGraph::unlocked_loaded_classes_do(KlassClosure* klass_closure) {
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    cld->loaded_classes_do(klass_closure);
-  }
-}
-
-
 void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   for (ClassLoaderData* cld = _unloading; cld != NULL; cld = cld->next()) {

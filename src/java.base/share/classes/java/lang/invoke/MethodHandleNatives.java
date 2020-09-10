@@ -51,7 +51,7 @@ class MethodHandleNatives {
 
     static native void init(MemberName self, Object ref);
     static native void expand(MemberName self);
-    static native MemberName resolve(MemberName self, Class<?> caller,
+    static native MemberName resolve(MemberName self, Class<?> caller, int lookupMode,
             boolean speculativeResolve) throws LinkageError, ClassNotFoundException;
     static native int getMembers(Class<?> defc, String matchName, String matchSig,
             int matchFlags, Class<?> caller, int skip, MemberName[] results);
@@ -149,6 +149,15 @@ class MethodHandleNatives {
             HIDDEN_CLASS              = 0x00000002,
             STRONG_LOADER_LINK        = 0x00000004,
             ACCESS_VM_ANNOTATIONS     = 0x00000008;
+
+        /**
+         * Lookup modes
+         */
+        static final int
+            LM_MODULE        = Lookup.MODULE,
+            LM_UNCONDITIONAL = Lookup.UNCONDITIONAL,
+            LM_TRUSTED       = -1;
+
     }
 
     static boolean refKindIsValid(int refKind) {
@@ -561,7 +570,7 @@ class MethodHandleNatives {
                     guardType, REF_invokeStatic);
 
             linker = MemberName.getFactory().resolveOrNull(REF_invokeStatic, linker,
-                                                           VarHandleGuards.class);
+                                                           VarHandleGuards.class, LM_TRUSTED);
             if (linker != null) {
                 return linker;
             }

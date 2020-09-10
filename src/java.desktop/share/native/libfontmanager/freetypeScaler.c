@@ -210,7 +210,7 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
             if (byteArray == NULL) {
                 return 0;
             } else {
-                jsize len = (*env)->GetArrayLength(env, byteArray);
+                unsigned long len = (*env)->GetArrayLength(env, byteArray);
                 if (len < numBytes) {
                     numBytes = len; // don't get more bytes than there are ..
                 }
@@ -241,7 +241,7 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
                                       scalerInfo->fontDataLength);
         if (bread <= 0) {
             return 0;
-        } else if (bread < numBytes) {
+        } else if ((unsigned long)bread < numBytes) {
            numBytes = bread;
         }
         memcpy(destBuffer, scalerInfo->fontData, numBytes);
@@ -1213,7 +1213,7 @@ static FT_Outline* getFTOutline(JNIEnv* env, jobject font2D,
 
     FT_Outline_Translate(&ftglyph->outline,
                          FloatToF26Dot6(xpos),
-                         -FloatToF26Dot6(ypos));
+                         FloatToF26Dot6(-ypos));
 
     return &ftglyph->outline;
 }
@@ -1519,7 +1519,7 @@ Java_sun_font_FreetypeFontScaler_getGlyphVectorOutlineNative(
              (FTScalerInfo*) jlong_to_ptr(pScaler);
 
     glyphs = NULL;
-    if (numGlyphs > 0 && 0xffffffffu / sizeof(jint) >= numGlyphs) {
+    if (numGlyphs > 0 && 0xffffffffu / sizeof(jint) >= (unsigned int)numGlyphs) {
         glyphs = (jint*) malloc(numGlyphs*sizeof(jint));
     }
     if (glyphs == NULL) {

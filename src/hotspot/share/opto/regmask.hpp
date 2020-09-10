@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 #include "opto/optoreg.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/count_trailing_zeros.hpp"
+
+class LRG;
 
 //-------------Non-zero bit search methods used by RegMask---------------------
 // Find lowest 1, undefined if empty/0
@@ -91,11 +93,13 @@ class RegMask {
   // requirement is internal to the allocator, and independent of any
   // particular platform.
   enum { SlotsPerLong = 2,
+         SlotsPerVecA = 8,
          SlotsPerVecS = 1,
          SlotsPerVecD = 2,
          SlotsPerVecX = 4,
          SlotsPerVecY = 8,
-         SlotsPerVecZ = 16 };
+         SlotsPerVecZ = 16,
+         };
 
   // A constructor only used by the ADLC output.  All mask fields are filled
   // in directly.  Calls to this look something like RM(1,2,3,4);
@@ -219,10 +223,14 @@ class RegMask {
   // Test for a single adjacent set of ideal register's size.
   bool is_bound(uint ireg) const;
 
+  // Check that whether given reg number with size is valid
+  // for current regmask, where reg is the highest number.
+  bool is_valid_reg(OptoReg::Name reg, const int size) const;
+
   // Find the lowest-numbered register set in the mask.  Return the
   // HIGHEST register number in the set, or BAD if no sets.
   // Assert that the mask contains only bit sets.
-  OptoReg::Name find_first_set(const int size) const;
+  OptoReg::Name find_first_set(LRG &lrg, const int size) const;
 
   // Clear out partial bits; leave only aligned adjacent bit sets of size.
   void clear_to_sets(const int size);
@@ -236,6 +244,7 @@ class RegMask {
 
   static bool is_vector(uint ireg);
   static int num_registers(uint ireg);
+  static int num_registers(uint ireg, LRG &lrg);
 
   // Fast overlap test.  Non-zero if any registers in common.
   int overlap(const RegMask &rm) const {

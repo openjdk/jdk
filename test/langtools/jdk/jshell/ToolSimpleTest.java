@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801 8210596 8210959 8215099 8199623 8236715 8239536
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801 8210596 8210959 8215099 8199623 8236715 8239536 8247456
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -77,7 +77,7 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testSwitchExpression() {
-        test(false, new String[]{"--enable-preview", "--no-startup"},
+        test(false, new String[]{"--no-startup"},
                 (a) -> assertCommand(a, "enum Day {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY }", "|  created enum Day"),
                 (a) -> assertCommand(a, "Day day = Day.FRIDAY;", "day ==> FRIDAY"),
                 (a) -> assertCommand(a, "switch (day) {", ""),
@@ -91,7 +91,7 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testSwitchExpressionCompletion() {
-        test(false, new String[]{"--enable-preview", "--no-startup"},
+        test(false, new String[]{"--no-startup"},
                 (a) -> assertCommand(a, "enum Day {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY }", "|  created enum Day"),
                 (a) -> assertCommand(a, "Day day = Day.FRIDAY;", "day ==> FRIDAY"),
                 (a) -> assertCommand(a, "switch (day) {", ""),
@@ -267,6 +267,18 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertCommandOutputStartsWith(a, "int g() { return x; }",
                         "|  created method g(), however, it cannot be invoked until variable x is declared"),
                 (a) -> assertCommand(a, "g()", "|  attempted to call method g() which cannot be invoked until variable x is declared")
+        );
+    }
+
+    @Test
+    public void testAbstractMethod() {
+        test(
+                (a) -> assertCommand(a, "abstract int f(int x);",
+                        "|  created method f(int), however, it cannot be invoked until method f(int) is declared"),
+                (a) -> assertCommand(a, "f(13)",
+                        "|  attempted to call method f(int) which cannot be invoked until method f(int) is declared"),
+                (a) -> assertCommand(a, " abstract void m(Blah b);",
+                        "|  created method m(Blah), however, it cannot be referenced until class Blah, and method m(Blah) are declared")
         );
     }
 

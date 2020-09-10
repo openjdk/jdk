@@ -2834,7 +2834,7 @@ frame
       RAX_H_num     // Op_RegL
     };
     // Excluded flags and vector registers.
-    assert(ARRAY_SIZE(hi) == _last_machine_leaf - 6, "missing type");
+    assert(ARRAY_SIZE(hi) == _last_machine_leaf - 8, "missing type");
     return OptoRegPair(hi[ideal_reg], lo[ideal_reg]);
   %}
 %}

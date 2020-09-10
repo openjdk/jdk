@@ -237,7 +237,6 @@ final class Unit {
             if (dl.hasErrors()) {
                 setDiagnostics(dl);
                 status = RECOVERABLE_NOT_DEFINED;
-                // overwrite orginal bytes
                 state.debug(DBG_GEN, "++smashingErrorDiagnostics %s\n%s\n-- diags: %s\n",
                         si, si.outerWrap().wrapped(), dl);
                 return true;

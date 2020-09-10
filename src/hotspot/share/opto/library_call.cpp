@@ -551,7 +551,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
-  case vmIntrinsics::_dpow:                     return inline_math_native(intrinsic_id());
+  case vmIntrinsics::_dpow:
+  case vmIntrinsics::_dcopySign:
+  case vmIntrinsics::_fcopySign:
+  case vmIntrinsics::_dsignum:
+  case vmIntrinsics::_fsignum:                  return inline_math_native(intrinsic_id());
 
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:                      return inline_min_max(intrinsic_id());
@@ -1815,6 +1819,8 @@ bool LibraryCallKit::inline_double_math(vmIntrinsics::ID id) {
   case vmIntrinsics::_ceil:   n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_ceil); break;
   case vmIntrinsics::_floor:  n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_floor); break;
   case vmIntrinsics::_rint:   n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_rint); break;
+  case vmIntrinsics::_dcopySign: n = CopySignDNode::make(_gvn, arg, round_double_node(argument(2))); break;
+  case vmIntrinsics::_dsignum: n = SignumDNode::make(_gvn, arg); break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -1832,6 +1838,8 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
   case vmIntrinsics::_fabs:   n = new AbsFNode(                arg);  break;
   case vmIntrinsics::_iabs:   n = new AbsINode(                arg);  break;
   case vmIntrinsics::_labs:   n = new AbsLNode(                arg);  break;
+  case vmIntrinsics::_fcopySign: n = new CopySignFNode(arg, argument(1)); break;
+  case vmIntrinsics::_fsignum: n = SignumFNode::make(_gvn, arg); break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -1915,6 +1923,11 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
       runtime_math(OptoRuntime::Math_DD_D_Type(), FN_PTR(SharedRuntime::dpow),  "POW");
   }
 #undef FN_PTR
+
+  case vmIntrinsics::_dcopySign: return inline_double_math(id);
+  case vmIntrinsics::_fcopySign: return inline_math(id);
+  case vmIntrinsics::_dsignum: return inline_double_math(id);
+  case vmIntrinsics::_fsignum: return inline_math(id);
 
    // These intrinsics are not yet correctly implemented
   case vmIntrinsics::_datan2:

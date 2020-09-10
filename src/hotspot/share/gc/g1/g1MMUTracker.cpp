@@ -76,8 +76,6 @@ double G1MMUTrackerQueue::calculate_gc_time(double current_time) {
 }
 
 void G1MMUTrackerQueue::add_pause(double start, double end) {
-  double duration = end - start;
-
   remove_expired_entries(end);
   if (_no_entries == QueueLength) {
     // OK, we've filled up the queue. There are a few ways
@@ -127,6 +125,11 @@ double G1MMUTrackerQueue::when_sec(double current_time, double pause_time) {
   if (is_double_leq_0(diff))
     return 0.0;
 
+  if (adjusted_pause_time == max_gc_time()) {
+    G1MMUTrackerQueueElem *elem = &_array[_head_index];
+    return elem->end_time() - limit;
+  }
+
   int index = _tail_index;
   while ( 1 ) {
     G1MMUTrackerQueueElem *elem = &_array[index];
@@ -136,7 +139,7 @@ double G1MMUTrackerQueue::when_sec(double current_time, double pause_time) {
       else
         diff -= elem->end_time() - limit;
       if (is_double_leq_0(diff))
-        return  elem->end_time() + diff + _time_slice - adjusted_pause_time - current_time;
+        return elem->end_time() + diff - limit;
     }
     index = trim_index(index+1);
     guarantee(index != trim_index(_head_index + 1), "should not go past head");

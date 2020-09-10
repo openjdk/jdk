@@ -31,7 +31,6 @@
 
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
-// Sorted according to sparc.
 
 define_pd_global(bool,  ImplicitNullChecks,          true);  // Generate code for implicit null checks.
 define_pd_global(bool,  TrapBasedNullChecks,         true);

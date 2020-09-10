@@ -488,6 +488,11 @@ class StubGenerator: public StubCodeGenerator {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
                          SharedRuntime::exception_handler_for_return_address),
                     rthread, c_rarg1);
+    if (UseSVE > 0 ) {
+      // Reinitialize the ptrue predicate register, in case the external runtime
+      // call clobbers ptrue reg, as we may return to SVE compiled code.
+      __ reinitialize_ptrue();
+    }
     // we should not really care that lr is no longer the callee
     // address. we saved the value the handler needs in r19 so we can
     // just copy it to r3. however, the C2 handler will push its own
@@ -5017,6 +5022,12 @@ class StubGenerator: public StubCodeGenerator {
 
     __ reset_last_Java_frame(true);
     __ maybe_isb();
+
+    if (UseSVE > 0) {
+      // Reinitialize the ptrue predicate register, in case the external runtime
+      // call clobbers ptrue reg, as we may return to SVE compiled code.
+      __ reinitialize_ptrue();
+    }
 
     __ leave();
 

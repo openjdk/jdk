@@ -44,6 +44,6 @@
  * @build vm.mlvm.mixed.stress.java.findDeadlock.INDIFY_Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm vm.mlvm.mixed.stress.java.findDeadlock.INDIFY_Test
+ * @run main/othervm -Xlog:gc,safepoint vm.mlvm.mixed.stress.java.findDeadlock.INDIFY_Test
  */
 

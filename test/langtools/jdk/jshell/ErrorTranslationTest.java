@@ -73,21 +73,6 @@ public class ErrorTranslationTest extends ReplToolTesting {
         );
     }
 
-    public void testWarnings() {
-        List<ReplTest> list = new ArrayList<>();
-        ExpectedDiagnostic[] diagnostics = new ExpectedDiagnostic[]{
-                newExpectedDiagnostic(0, 6, 0, -1, -1, Diagnostic.Kind.WARNING),
-                newExpectedDiagnostic(0, 5, 0, -1, -1, Diagnostic.Kind.WARNING)};
-        String[] mods = {"static"};
-        for (int i = 0; i < mods.length; ++i) {
-            for (String code : new String[] {"class A {}", "void f() {}", "int a;"}) {
-                final int finalI = i;
-                list.add(a -> assertDiagnostic(a, mods[finalI] + " " + code, diagnostics[finalI]));
-            }
-        }
-        test(list.toArray(new ReplTest[list.size()]));
-    }
-
     @Test(enabled = false) // TODO 8132147
     public void stressTest() {
         Compiler compiler = new Compiler();

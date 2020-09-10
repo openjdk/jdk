@@ -1365,11 +1365,9 @@ class JavaThread: public Thread {
     return _handshake.try_process(op);
   }
 
-#ifdef ASSERT
   Thread* active_handshaker() const {
     return _handshake.active_handshaker();
   }
-#endif
 
   // Suspend/resume support for JavaThread
  private:
@@ -1959,13 +1957,6 @@ class JavaThread: public Thread {
   virtual void run();
   void thread_main_inner();
   virtual void post_run();
-
-
- private:
-  GrowableArray<oop>* _array_for_gc;
- public:
-
-  void register_array_for_gc(GrowableArray<oop>* array) { _array_for_gc = array; }
 
  public:
   // Thread local information maintained by JVMTI.
