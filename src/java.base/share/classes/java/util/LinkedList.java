@@ -674,8 +674,7 @@ public class LinkedList<E>
      * @since 1.5
      */
     public E poll() {
-        final Node<E> f = first;
-        return (f == null) ? null : unlinkFirst(f);
+        return pollFirst();
     }
 
     /**
