@@ -67,9 +67,12 @@ class VMThread: public NamedThread {
 
   static VMOperationTimeoutTask* _timeout_task;
 
-  static VM_Operation* no_op_safepoint();
+  static bool handshake_alot();
+  static void cleanup_safepoint_alot();
 
   void evaluate_operation(VM_Operation* op);
+  void inner_execute(VM_Operation* op);
+  void wait_for_operation();
 
  public:
   // Constructor
@@ -122,9 +125,6 @@ class VMThread: public NamedThread {
   static VM_Operation*     _cur_vm_operation;   // Current VM operation
   static VM_Operation*     _next_vm_operation;  
 
-  void prepare_next_active_operation();
-  bool have_active_operation() { return _cur_vm_operation != NULL; }
-  void current_operation_completed() { _cur_vm_operation = NULL; }
   bool set_next_operation(VM_Operation *op);
 
   // Pointer to single-instance of VM thread
