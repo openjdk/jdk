@@ -384,9 +384,6 @@
   product(bool, UseOnlyInlinedBimorphic, true,                              \
           "Don't use BimorphicInlining if can't inline a second method")    \
                                                                             \
-  product(bool, InsertMemBarAfterArraycopy, true,                           \
-          "Insert memory barrier after arraycopy call")                     \
-                                                                            \
   develop(bool, SubsumeLoads, true,                                         \
           "Attempt to compile while subsuming loads into machine "          \
           "instructions.")                                                  \
