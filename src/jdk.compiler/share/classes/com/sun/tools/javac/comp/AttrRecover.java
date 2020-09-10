@@ -29,6 +29,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.code.Types;
@@ -98,7 +99,8 @@ public class AttrRecover {
             boolean repaired = false;
             RECOVER: if (todo.env.tree.hasTag(Tag.APPLY)) {
                 JCMethodInvocation mit = (JCMethodInvocation) todo.env.tree;
-                if ((todo.candSym.flags() & Flags.VARARGS) == 0 &&
+                boolean vararg = (todo.candSym.flags() & Flags.VARARGS) !=  0;
+                if (!vararg &&
                     mit.args.length() > todo.candSym.type.getParameterTypes().length()) {
                     break RECOVER; //too many actual parameters, skip
                 }
@@ -106,6 +108,8 @@ public class AttrRecover {
                 List<Type> formals = todo.candSym.type.getParameterTypes();
                 while (args.nonEmpty() && formals.nonEmpty()) {
                     JCExpression arg = args.head;
+                    Type formal = formals.tail.nonEmpty() || !vararg
+                            ? formals.head : ((ArrayType) formals.head).elemtype;
                     if (arg.hasTag(JCTree.Tag.LAMBDA)) {
                         final JCTree.JCLambda lambda = (JCLambda) arg;
                         if (lambda.paramKind == JCLambda.ParameterKind.IMPLICIT) {
@@ -113,8 +117,8 @@ public class AttrRecover {
                                 var.vartype = null; //reset type
                             }
                         }
-                        if (types.isFunctionalInterface(formals.head)) {
-                            Type functionalType = types.findDescriptorType(formals.head);
+                        if (types.isFunctionalInterface(formal)) {
+                            Type functionalType = types.findDescriptorType(formal);
                             boolean voidCompatible = functionalType.getReturnType().hasTag(TypeTag.VOID);
                             lambda.body = new TreeTranslator() {
                                 @Override
@@ -163,7 +167,9 @@ public class AttrRecover {
                         repaired = true;
                     }
                     args = args.tail;
-                    formals = formals.tail;
+                    if (formals.tail.nonEmpty() || !vararg) {
+                        formals = formals.tail;
+                    }
                 }
                 List<JCExpression> prevArgs = mit.args;
                 while (formals.nonEmpty()) {

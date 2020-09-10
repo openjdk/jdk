@@ -33,6 +33,8 @@ public class TestGetTypeMirrorReferenceData {
         consume(0, c5 -> {Object o = c5/*getTypeMirror:DECLARED:java.lang.Integer*/;});
         convertVarArgs(0, c6 -> {Object o = c6/*getTypeMirror:DECLARED:java.lang.Integer*/;}, 1, 2, 3, 4);
         consumeVarArgs(0, c7 -> {Object o = c7/*getTypeMirror:DECLARED:java.lang.Integer*/;}, 1, 2, 3, 4);
+        convertVarArgs2(0, c8 -> {Object o = c8/*getTypeMirror:DECLARED:java.lang.Integer*/;}, c8 -> {Object o = c8/*getTypeMirror:DECLARED:java.lang.Integer*/;});
+        consumeVarArgs2(0, c9 -> {Object o = c9/*getTypeMirror:DECLARED:java.lang.Integer*/;}, c9 -> {Object o = c9/*getTypeMirror:DECLARED:java.lang.Integer*/;});
     }
     public <T, R> R convert(T t, Function<T, R> f, int i) {
         return null;
@@ -43,6 +45,11 @@ public class TestGetTypeMirrorReferenceData {
         return null;
     }
     public <T> void consumeVarArgs(T t, Consumer<T> c, int... i) {
+    }
+    public <T, R> R convertVarArgs2(T t, Function<T, R>... c) {
+        return null;
+    }
+    public <T> void consumeVarArgs2(T t, Consumer<T>... c) {
     }
     public static class Test<T> {
         public static <T> Test<T> of(T t) {

@@ -88,6 +88,16 @@ public class TestGetTypeMirrorReference {
                         consumeVarArgs(0, (c7)->{
                             Object o = c7;
                         }, 1, 2, 3, 4);
+                        convertVarArgs2(0, (c8)->{
+                            Object o = c8;
+                        }, (c8)->{
+                            Object o = c8;
+                        });
+                        consumeVarArgs2(0, (c9)->{
+                            Object o = c9;
+                        }, (c9)->{
+                            Object o = c9;
+                        });
                     }
 
                     public <T, R>R convert(T t, Function<T, R> f, int i) {
@@ -102,6 +112,13 @@ public class TestGetTypeMirrorReference {
                     }
 
                     public <T>void consumeVarArgs(T t, Consumer<T> c, int... i) {
+                    }
+
+                    public <T, R>R convertVarArgs2(T t, Function<T, R>... c) {
+                        return null;
+                    }
+
+                    public <T>void consumeVarArgs2(T t, Consumer<T>... c) {
                     }
 
                     public static class Test<T> {
