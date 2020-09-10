@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,18 @@
 
 package sun.awt.image;
 
-import java.awt.Color;
-import java.awt.GraphicsEnvironment;
 import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.ImageCapabilities;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
+
+import sun.java2d.InvalidPipeException;
 import sun.java2d.SurfaceData;
 import sun.java2d.SurfaceDataProxy;
-import sun.java2d.loops.CompositeType;
 
 /**
  * The abstract base class that manages the various SurfaceData objects that
@@ -79,7 +79,7 @@ public abstract class SurfaceManager {
                 sMgr = new BufImgSurfaceManager(bi);
                 setManager(bi, sMgr);
             } catch (ClassCastException e) {
-                throw new IllegalArgumentException("Invalid Image variant");
+                throw new InvalidPipeException("Invalid Image variant");
             }
         }
         return sMgr;
