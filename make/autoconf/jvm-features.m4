@@ -395,7 +395,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_ZGC],
         AC_MSG_RESULT([no, $OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
         AVAILABLE=false
       fi
-    elif test "$OPENJDK_TARGET_CPU" = "aarch64"; then
+    elif test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
       if test "x$OPENJDK_TARGET_OS" = "xlinux" || \
           test "x$OPENJDK_TARGET_OS" = "xwindows"; then
         AC_MSG_RESULT([yes])
