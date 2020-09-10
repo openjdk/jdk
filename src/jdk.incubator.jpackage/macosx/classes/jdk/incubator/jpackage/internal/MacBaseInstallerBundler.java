@@ -187,7 +187,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                 Log.error(MessageFormat.format(I18N.getString(
                         "error.multiple.certs.found"), key, keychainName));
             }
-            Log.verbose("Using key '" + matchedKey + "'");
             return matchedKey;
         } catch (IOException ioe) {
             Log.verbose(ioe);

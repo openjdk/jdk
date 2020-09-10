@@ -94,7 +94,7 @@ public final class ToolValidator {
             }
 
             String[] version = new String[1];
-            Executor.of(pb).setOutputConsumer(lines -> {
+            Executor.of(pb).setQuiet(true).setOutputConsumer(lines -> {
                 if (versionParser != null && minimalVersion != null) {
                     version[0] = versionParser.apply(lines);
                     if (minimalVersion.compareTo(version[0]) < 0) {

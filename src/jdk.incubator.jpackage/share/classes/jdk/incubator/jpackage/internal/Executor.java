@@ -75,6 +75,11 @@ final public class Executor {
         return setProcessBuilder(new ProcessBuilder(cmdline));
     }
 
+    Executor setQuiet(boolean v) {
+        quietCommand = v;
+        return this;
+    }
+
     List<String> getOutput() {
         return output;
     }
@@ -84,7 +89,7 @@ final public class Executor {
         if (0 != ret) {
             throw new IOException(
                     String.format("Command %s exited with %d code",
-                            createLogMessage(pb), ret));
+                            createLogMessage(pb, false), ret));
         }
         return this;
     }
@@ -108,7 +113,7 @@ final public class Executor {
             pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
         }
 
-        Log.verbose(String.format("Running %s", createLogMessage(pb)));
+        Log.verbose(String.format("Running %s", createLogMessage(pb, true)));
         Process p = pb.start();
 
         int code = 0;
@@ -126,7 +131,7 @@ final public class Executor {
             Supplier<Stream<String>> outputStream;
 
             if (writeOutputToFile) {
-                savedOutput = Files.readAllLines(outputFile);
+                output = savedOutput = Files.readAllLines(outputFile);
                 Files.delete(outputFile);
                 outputStream = () -> {
                     if (savedOutput != null) {
@@ -134,27 +139,20 @@ final public class Executor {
                     }
                     return null;
                 };
-
-                if (Log.isVerbose()) {
-                    outputStream.get().forEach(Log::verbose);
-                }
-
                 if (outputConsumer != null) {
                     outputConsumer.accept(outputStream.get());
                 }
             } else {
                 try (var br = new BufferedReader(new InputStreamReader(
                         p.getInputStream()))) {
-                    // Need to save output if explicitely requested (saveOutput=true) or
-                    // if will be used used by multiple consumers
-                    if ((outputConsumer != null && Log.isVerbose()) || saveOutput) {
+
+                    if ((outputConsumer != null || Log.isVerbose())
+                            || saveOutput) {
                         savedOutput = br.lines().collect(Collectors.toList());
-                        if (saveOutput) {
-                            output = savedOutput;
-                        }
                     } else {
                         savedOutput = null;
                     }
+                    output = savedOutput;
 
                     outputStream = () -> {
                         if (savedOutput != null) {
@@ -162,11 +160,6 @@ final public class Executor {
                         }
                         return br.lines();
                     };
-
-                    if (Log.isVerbose()) {
-                        outputStream.get().forEach(Log::verbose);
-                    }
-
                     if (outputConsumer != null) {
                         outputConsumer.accept(outputStream.get());
                     }
@@ -188,6 +181,9 @@ final public class Executor {
             if (!writeOutputToFile) {
                 code = p.waitFor();
             }
+            if (!quietCommand) {
+                Log.verbose(pb.command(), getOutput(), code);
+            }
             return code;
         } catch (InterruptedException ex) {
             Log.verbose(ex);
@@ -203,7 +199,7 @@ final public class Executor {
                 return p.exitValue();
             } else {
                 Log.verbose(String.format("Command %s timeout after %d seconds",
-                            createLogMessage(pb), timeout));
+                            createLogMessage(pb, false), timeout));
                 p.destroy();
                 return -1;
             }
@@ -218,9 +214,9 @@ final public class Executor {
         return new Executor().setProcessBuilder(pb);
     }
 
-    private static String createLogMessage(ProcessBuilder pb) {
+    private static String createLogMessage(ProcessBuilder pb, boolean quiet) {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%s", pb.command()));
+        sb.append((quiet) ? pb.command().get(0) : pb.command());
         if (pb.directory() != null) {
             sb.append(String.format("in %s", pb.directory().getAbsolutePath()));
         }
@@ -232,6 +228,7 @@ final public class Executor {
     private ProcessBuilder pb;
     private boolean saveOutput;
     private boolean writeOutputToFile;
+    private boolean quietCommand;
     private long timeout = INFINITE_TIMEOUT;
     private List<String> output;
     private Consumer<Stream<String>> outputConsumer;
