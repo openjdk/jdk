@@ -98,10 +98,9 @@ public class LinkFactoryImpl extends LinkFactory {
         Set<ElementFlag> flags;
         if (!hasWhere) {
             flags = utils.elementFlags(typeElement);
-        } else if (classLinkInfo.whereMember != null) {
+        } else if (classLinkInfo.context == LinkInfoImpl.Kind.SEE_TAG && classLinkInfo.whereMember != null) {
             flags = utils.elementFlags(classLinkInfo.whereMember);
         } else {
-            //TODO: no information?
             flags = EnumSet.noneOf(ElementFlag.class);
         }
 

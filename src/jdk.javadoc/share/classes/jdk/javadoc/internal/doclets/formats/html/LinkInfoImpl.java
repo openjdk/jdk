@@ -342,7 +342,7 @@ public class LinkInfoImpl extends LinkInfo {
     public LinkInfoImpl where(String where) {
         this.where = where;
         return this;
-     }
+    }
 
     public LinkInfoImpl whereMember(Element el) {
         this.whereMember = el;

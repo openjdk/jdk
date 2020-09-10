@@ -928,7 +928,6 @@ public class HtmlDocletWriter {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
                 .where(links.getName(getAnchor(ee, isProperty)))
-                .whereMember(element)
                 .strong(strong));
         }
 
@@ -936,7 +935,6 @@ public class HtmlDocletWriter {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
                 .where(links.getName(element.getSimpleName().toString()))
-                .whereMember(element)
                 .strong(strong));
         }
 

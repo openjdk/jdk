@@ -559,23 +559,9 @@ h1.hidden {
 .package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link {
     font-weight:bold;
 }
-.preview-label {}
-.preview-reference-note {
+.preview-note {
     border: 1px solid red; border-radius: 5px; padding: 5px; display:inline-block; font-size: larger
 }
-.preview-reference {
-/*    border-style:solid;
-    border-width:thin;
-    border-radius:4px;
-    border-color:red;
-	padding-left: 4px;
-	padding-right: 4px;
-	background-color: #fdd;*/
-}
-/*.preview-reference:after {
-    content: "PREVIEW";
-    vertical-align: super;
-}*/
 .deprecation-comment, .help-footnote, .interface-name {
     font-style:italic;
 }

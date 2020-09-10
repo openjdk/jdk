@@ -2969,9 +2969,24 @@ public class Utils {
      * @return true if the given Element is deprecated.
      */
     @SuppressWarnings("preview")
-    public boolean isDeclaredUsingPreview(Element e) {
-        return e.getKind() == ElementKind.RECORD ||
-               e.getModifiers().contains(Modifier.SEALED);
+    public Set<String> previewLanguageFeaturesUsed(Element e) {
+        Set<String> result = new HashSet<>();
+
+        if (e.getKind() == ElementKind.RECORD) {
+            result.add("record");
+        }
+
+        if (e.getModifiers().contains(Modifier.SEALED)) {
+            result.add("sealed");
+            List<? extends TypeMirror> permits = ((TypeElement) e).getPermittedSubclasses();
+            boolean hasLinkablePermits = permits.stream()
+                                                .anyMatch(t -> isLinkable(asTypeElement(t)));
+            if (hasLinkablePermits) {
+                result.add("permits");
+            }
+        }
+
+        return result;
     }
 
     public PreviewSummary getPreviewAPITypes(Iterable<TypeElement> elements) { //TODO: private/merge into declaredUsingPreviewAPIs?
@@ -2980,7 +2995,7 @@ public class Utils {
         Set<TypeElement> declaredUsingPreviewFeature = new HashSet<>();
 
         for (TypeElement type : elements) {
-            if (!isIncluded(type)) {
+            if (!isIncluded(type) && !configuration.extern.isExternal(type)) {
                 continue;
             }
             switch (getPreviewAPIType(type)) {
@@ -3045,7 +3060,7 @@ public class Utils {
 
     public PreviewAPIType getPreviewAPIType(TypeElement el) {
         //TODO: PREVIEW+DECLARED_USING_PREVIEW?
-        if (isDeclaredUsingPreview(el)) {
+        if (!previewLanguageFeaturesUsed(el).isEmpty()) {
             return PreviewAPIType.DECLARED_USING_PREVIEW;
         }
         return configuration.workArounds.getPreviewAPIType(el);
@@ -3062,7 +3077,7 @@ public class Utils {
         Set<ElementFlag> flags = EnumSet.noneOf(ElementFlag.class);
         PreviewSummary previewAPIs = declaredUsingPreviewAPIs(el);
 
-        if (isDeclaredUsingPreview(el) || configuration.workArounds.getPreviewAPIType(el) != PreviewAPIType.STANDARD || !previewAPIs.previewAPI.isEmpty() || !previewAPIs.reflectivePreviewAPI.isEmpty() || !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {
+        if (!previewLanguageFeaturesUsed(el).isEmpty() || configuration.workArounds.getPreviewAPIType(el) != PreviewAPIType.STANDARD || !previewAPIs.previewAPI.isEmpty() || !previewAPIs.reflectivePreviewAPI.isEmpty() || !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {
             flags.add(ElementFlag.PREVIEW);
         }
 
