@@ -162,7 +162,7 @@ public:
 
 private:
   inline void do_partial_array(PartialArrayScanTask task);
-  inline void start_partial_objArray(G1HeapRegionAttr dest_dir, oop from, oop to);
+  inline void start_partial_objarray(G1HeapRegionAttr dest_dir, oop from, oop to);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                oop old,

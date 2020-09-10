@@ -61,6 +61,12 @@ class arrayOopDesc : public oopDesc {
     return (int)hs;
   }
 
+  // Returns the address of the length "field".  See length_offset_in_bytes().
+  static int* length_addr_impl(void* obj_ptr) {
+    char* ptr = static_cast<char*>(obj_ptr);
+    return reinterpret_cast<int*>(ptr + length_offset_in_bytes());
+  }
+
   // Check whether an element of a typeArrayOop with the given type must be
   // aligned 0 mod 8.  The typeArrayOop itself must be aligned at least this
   // strongly.
@@ -102,23 +108,17 @@ class arrayOopDesc : public oopDesc {
   // Tells whether index is within bounds.
   bool is_within_bounds(int index) const        { return 0 <= index && index < length(); }
 
-  // Accessors for instance variable which is not a C++ declared nonstatic
-  // field.
-  int length() const { return *length_addr(); }
-  void set_length(int length) { *length_addr() = length; }
+  // Accessors for array length.  There's not a member variable for
+  // it; see length_offset_in_bytes().
+  int length() const { return *length_addr_impl(const_cast<arrayOopDesc*>(this)); }
+  void set_length(int length) { *length_addr_impl(this) = length; }
 
   int* length_addr() {
-    char* base = reinterpret_cast<char*>(this);
-    char* addr = base +  length_offset_in_bytes();
-    return reinterpret_cast<int*>(addr);
-  }
-
-  const int* length_addr() const {
-    return const_cast<arrayOopDesc*>(this)->length_addr();
+    return length_addr_impl(this);
   }
 
   static void set_length(HeapWord* mem, int length) {
-    *(int*)(((char*)mem) + length_offset_in_bytes()) = length;
+    *length_addr_impl(mem) = length;
   }
 
   // Should only be called with constants as argument

@@ -230,7 +230,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
                               step._index + _partial_objarray_chunk_size);
 }
 
-void G1ParScanThreadState::start_partial_objArray(G1HeapRegionAttr dest_attr,
+void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                                   oop from_obj,
                                                   oop to_obj) {
   assert(from_obj->is_objArray(), "precondition");
@@ -485,7 +485,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     // checking for each array category for each object.
     if (klass->is_array_klass()) {
       if (klass->is_objArray_klass()) {
-        start_partial_objArray(dest_attr, old, obj);
+        start_partial_objarray(dest_attr, old, obj);
       } else {
         // Nothing needs to be done for typeArrays.  Body doesn't contain
         // any oops to scan, and the type in the klass will already be handled
@@ -495,7 +495,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       return obj;
     }
 
-    if (G1StringDedup::is_enabled() && (klass == SystemDictionary::String_klass())) {
+    if (G1StringDedup::is_enabled()) {
       const bool is_from_young = region_attr.is_young();
       const bool is_to_young = dest_attr.is_young();
       assert(is_from_young == from_region->is_young(),

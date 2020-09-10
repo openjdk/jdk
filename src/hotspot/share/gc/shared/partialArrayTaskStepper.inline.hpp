@@ -30,10 +30,11 @@
 #include "runtime/atomic.hpp"
 
 PartialArrayTaskStepper::Step
-PartialArrayTaskStepper::start(arrayOop from, arrayOop to, int chunk_size) {
+PartialArrayTaskStepper::start_impl(int length,
+                                    int* to_length_addr,
+                                    int chunk_size) const {
   assert(chunk_size > 0, "precondition");
 
-  int length = from->length();
   int end = length % chunk_size; // End of initial chunk.
   // Set to's length to end of initial chunk.  Partial tasks use that length
   // field as the start of the next chunk to process.  Must be done before
@@ -44,7 +45,7 @@ PartialArrayTaskStepper::start(arrayOop from, arrayOop to, int chunk_size) {
   // because length is a multiple of the chunk size.  Both of those are
   // relatively rare and handled in the normal course of the iteration, so
   // not worth doing anything special about here.
-  to->set_length(end);
+  *to_length_addr = end;
 
   // If the initial chunk is the complete array, then don't need any partial
   // tasks.  Otherwise, start with just one partial task; see new task
@@ -54,7 +55,14 @@ PartialArrayTaskStepper::start(arrayOop from, arrayOop to, int chunk_size) {
 }
 
 PartialArrayTaskStepper::Step
-PartialArrayTaskStepper::next(arrayOop from, arrayOop to, int chunk_size) {
+PartialArrayTaskStepper::start(arrayOop from, arrayOop to, int chunk_size) const {
+  return start_impl(from->length(), to->length_addr(), chunk_size);
+}
+
+PartialArrayTaskStepper::Step
+PartialArrayTaskStepper::next_impl(int length,
+                                   int* to_length_addr,
+                                   int chunk_size) const {
   assert(chunk_size > 0, "precondition");
 
   // The start of the next task is in the length field of the to-space object.
@@ -62,12 +70,10 @@ PartialArrayTaskStepper::next(arrayOop from, arrayOop to, int chunk_size) {
   // Because we limit the number of enqueued tasks to being no more than the
   // number of remaining chunks to process, we can use an atomic add for the
   // claim, rather than a CAS loop.
-  int start = Atomic::fetch_and_add(to->length_addr(),
+  int start = Atomic::fetch_and_add(to_length_addr,
                                     chunk_size,
                                     memory_order_relaxed);
 
-  // The from-space object contains the real length.
-  int length = from->length();
   assert(start < length, "invariant: start %d, length %d", start, length);
   assert(((length - start) % chunk_size) == 0,
          "invariant: start %d, length %d, chunk size %d",
@@ -101,6 +107,11 @@ PartialArrayTaskStepper::next(arrayOop from, arrayOop to, int chunk_size) {
   uint ncreate = MIN2(_task_fannout, MIN2(remaining_tasks, _task_limit + 1) - pending);
   Step result = { start, ncreate };
   return result;
+}
+
+PartialArrayTaskStepper::Step
+PartialArrayTaskStepper::next(arrayOop from, arrayOop to, int chunk_size) const {
+  return next_impl(from->length(), to->length_addr(), chunk_size);
 }
 
 #endif // SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_INLINE_HPP
