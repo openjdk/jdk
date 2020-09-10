@@ -212,9 +212,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             // unless we've suppressed eager initialization
             if (disableEagerInitialization) {
                 try {
-                    return new ConstantCallSite(caller.findStaticGetter(innerClass, LAMBDA_INSTANCE_FIELD, invokedType.returnType()));
+                    return new ConstantCallSite(caller.findStaticGetter(innerClass, LAMBDA_INSTANCE_FIELD,
+                            invokedType.returnType()));
                 } catch (ReflectiveOperationException e) {
-                    throw new LambdaConversionException("Exception finding " +  LAMBDA_INSTANCE_FIELD + " static field", e);
+                    throw new LambdaConversionException(
+                            "Exception finding " +  LAMBDA_INSTANCE_FIELD + " static field", e);
                 }
             } else {
                 final Constructor<?>[] ctrs = AccessController.doPrivileged(
@@ -418,7 +420,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         String lambdaTypeDescriptor = invokedType.returnType().descriptorString();
 
         // Generate the static final field that holds the lambda singleton
-        FieldVisitor fv = cw.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL, LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor, null, null);
+        FieldVisitor fv = cw.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL,
+                LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor, null, null);
         fv.visitEnd();
 
         // Instantiate the lambda and store it to the static final field
