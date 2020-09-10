@@ -886,6 +886,9 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
       _thread_status == java_lang_Thread::IN_OBJECT_WAIT_TIMED) {
 
     Handle obj = ThreadService::get_current_contended_monitor(thread);
+    // Need to re-set oop's to pass CheckUnhandledOops check
+    blocker_object = NULL;
+    blocker_object_owner = NULL;
     if (obj() == NULL) {
       // monitor no longer exists; thread is not blocked
       _thread_status = java_lang_Thread::RUNNABLE;
