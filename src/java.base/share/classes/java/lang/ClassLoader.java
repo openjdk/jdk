@@ -661,7 +661,7 @@ public abstract class ClassLoader {
     protected Object getClassLoadingLock(String className) {
         Object lock = this;
         if (parallelLockMap != null) {
-            Object newLock = new Object();
+            Object newLock = new String(className);
             lock = parallelLockMap.putIfAbsent(className, newLock);
             if (lock == null) {
                 lock = newLock;

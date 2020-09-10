@@ -172,11 +172,13 @@ public class ThreadInfo {
                 Object lock = monitors[i];
                 String className = lock.getClass().getName();
                 int identityHashCode = System.identityHashCode(lock);
+                String stringValue = String.valueOf(lock);
                 int depth = stackDepths[i];
                 StackTraceElement ste = (depth >= 0 ? stackTrace[depth]
                                                     : null);
                 lockedMonitors[i] = new MonitorInfo(className,
                                                     identityHashCode,
+                                                    stringValue,
                                                     depth,
                                                     ste);
             }

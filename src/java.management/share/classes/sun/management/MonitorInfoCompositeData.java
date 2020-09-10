@@ -62,6 +62,7 @@ public class MonitorInfoCompositeData extends LazyCompositeData {
                                              : null;
         // values may be null; can't use Map.of
         Map<String,Object> items = new HashMap<>();
+        items.put(STRING_VALUE,       lock.getStringValue());
         items.put(CLASS_NAME,         lock.getClassName());
         items.put(IDENTITY_HASH_CODE, lock.getIdentityHashCode());
         items.put(LOCKED_STACK_FRAME, steCData);
@@ -75,12 +76,14 @@ public class MonitorInfoCompositeData extends LazyCompositeData {
         }
     }
 
+    private static final String STRING_VALUE       = "stringValue";
     private static final String CLASS_NAME         = "className";
     private static final String IDENTITY_HASH_CODE = "identityHashCode";
     private static final String LOCKED_STACK_FRAME = "lockedStackFrame";
     private static final String LOCKED_STACK_DEPTH = "lockedStackDepth";
 
     private static final String[] MONITOR_INFO_ATTRIBUTES = {
+        STRING_VALUE,
         CLASS_NAME,
         IDENTITY_HASH_CODE,
         LOCKED_STACK_FRAME,
@@ -114,6 +117,10 @@ public class MonitorInfoCompositeData extends LazyCompositeData {
 
     static CompositeType v6CompositeType() {
         return V6_COMPOSITE_TYPE;
+    }
+
+    public static String getStringValue(CompositeData cd) {
+        return getString(cd, STRING_VALUE);
     }
 
     public static String getClassName(CompositeData cd) {

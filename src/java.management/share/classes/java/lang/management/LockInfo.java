@@ -57,6 +57,24 @@ public class LockInfo {
 
     private String className;
     private int    identityHashCode;
+    private String stringValue;
+
+    /**
+     * Constructs a {@code LockInfo} object.
+     *
+     * @param className the fully qualified name of the class of the lock object.
+     * @param identityHashCode the {@link System#identityHashCode
+     *                         identity hash code} of the lock object.
+     * @param stringValue the string value of the lock object.
+     */
+    public LockInfo(String className, int identityHashCode, String stringValue) {
+        if (className == null) {
+            throw new NullPointerException("Parameter className cannot be null");
+        }
+        this.className = className;
+        this.identityHashCode = identityHashCode;
+        this.stringValue = stringValue;
+    }
 
     /**
      * Constructs a {@code LockInfo} object.
@@ -77,6 +95,7 @@ public class LockInfo {
      * package-private constructors
      */
     LockInfo(Object lock) {
+        this.stringValue = String.valueOf(lock);
         this.className = lock.getClass().getName();
         this.identityHashCode = System.identityHashCode(lock);
     }
@@ -88,6 +107,15 @@ public class LockInfo {
      */
     public String getClassName() {
         return className;
+    }
+
+    /**
+     * Returns the string value of lock object.
+     *
+     * @return the string value of lock object.
+     */
+    public String getStringValue() {
+        return stringValue;
     }
 
     /**
