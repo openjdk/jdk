@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -129,9 +129,10 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
  public:
   enum {
     number_of_registers = 32,
-    max_slots_per_register = 4,
+    max_slots_per_register = 8,
     save_slots_per_register = 2,
-    extra_save_slots_per_register = max_slots_per_register - save_slots_per_register
+    slots_per_neon_register = 4,
+    extra_save_slots_per_neon_register = slots_per_neon_register - save_slots_per_register
   };
 
   // construction
@@ -187,6 +188,88 @@ CONSTANT_REGISTER_DECLARATION(FloatRegister, v29    , (29));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, v30    , (30));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, v31    , (31));
 
+// SVE vector registers, shared with the SIMD&FP v0-v31. Vn maps to Zn[127:0].
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z0     , ( 0));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z1     , ( 1));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z2     , ( 2));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z3     , ( 3));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z4     , ( 4));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z5     , ( 5));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z6     , ( 6));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z7     , ( 7));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z8     , ( 8));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z9     , ( 9));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z10    , (10));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z11    , (11));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z12    , (12));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z13    , (13));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z14    , (14));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z15    , (15));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z16    , (16));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z17    , (17));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z18    , (18));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z19    , (19));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z20    , (20));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z21    , (21));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z22    , (22));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z23    , (23));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z24    , (24));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z25    , (25));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z26    , (26));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z27    , (27));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z28    , (28));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z29    , (29));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z30    , (30));
+CONSTANT_REGISTER_DECLARATION(FloatRegister, z31    , (31));
+
+
+class PRegisterImpl;
+typedef PRegisterImpl* PRegister;
+inline PRegister as_PRegister(int encoding) {
+  return (PRegister)(intptr_t)encoding;
+}
+
+// The implementation of predicate registers for the architecture
+class PRegisterImpl: public AbstractRegisterImpl {
+ public:
+  enum {
+    number_of_registers = 16,
+    max_slots_per_register = 1
+  };
+
+  // construction
+  inline friend PRegister as_PRegister(int encoding);
+
+  VMReg as_VMReg();
+
+  // derived registers, offsets, and addresses
+  PRegister successor() const     { return as_PRegister(encoding() + 1); }
+
+  // accessors
+  int   encoding() const          { assert(is_valid(), "invalid register"); return (intptr_t)this; }
+  int   encoding_nocheck() const  { return (intptr_t)this; }
+  bool  is_valid() const          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
+  const char* name() const;
+};
+
+// The predicate registers of SVE.
+CONSTANT_REGISTER_DECLARATION(PRegister, p0,  ( 0));
+CONSTANT_REGISTER_DECLARATION(PRegister, p1,  ( 1));
+CONSTANT_REGISTER_DECLARATION(PRegister, p2,  ( 2));
+CONSTANT_REGISTER_DECLARATION(PRegister, p3,  ( 3));
+CONSTANT_REGISTER_DECLARATION(PRegister, p4,  ( 4));
+CONSTANT_REGISTER_DECLARATION(PRegister, p5,  ( 5));
+CONSTANT_REGISTER_DECLARATION(PRegister, p6,  ( 6));
+CONSTANT_REGISTER_DECLARATION(PRegister, p7,  ( 7));
+CONSTANT_REGISTER_DECLARATION(PRegister, p8,  ( 8));
+CONSTANT_REGISTER_DECLARATION(PRegister, p9,  ( 9));
+CONSTANT_REGISTER_DECLARATION(PRegister, p10, (10));
+CONSTANT_REGISTER_DECLARATION(PRegister, p11, (11));
+CONSTANT_REGISTER_DECLARATION(PRegister, p12, (12));
+CONSTANT_REGISTER_DECLARATION(PRegister, p13, (13));
+CONSTANT_REGISTER_DECLARATION(PRegister, p14, (14));
+CONSTANT_REGISTER_DECLARATION(PRegister, p15, (15));
+
 // Need to know the total number of registers of all sorts for SharedInfo.
 // Define a class that exports it.
 class ConcreteRegisterImpl : public AbstractRegisterImpl {
@@ -199,12 +282,14 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
 
     number_of_registers = (RegisterImpl::max_slots_per_register * RegisterImpl::number_of_registers +
                            FloatRegisterImpl::max_slots_per_register * FloatRegisterImpl::number_of_registers +
+                           PRegisterImpl::max_slots_per_register * PRegisterImpl::number_of_registers +
                            1) // flags
   };
 
   // added to make it compile
   static const int max_gpr;
   static const int max_fpr;
+  static const int max_pr;
 };
 
 // A set of registers

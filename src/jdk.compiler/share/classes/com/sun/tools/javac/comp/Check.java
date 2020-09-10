@@ -3388,6 +3388,9 @@ public class Check {
             } else if (target == names.TYPE_PARAMETER) {
                 if (s.kind == TYP && s.type.hasTag(TYPEVAR))
                     applicableTargets.add(names.TYPE_PARAMETER);
+            } else if (target == names.MODULE) {
+                if (s.kind == MDL)
+                    applicableTargets.add(names.MODULE);
             } else
                 return Optional.empty(); // Unknown ElementType. This should be an error at declaration site,
                                          // assume applicable.

@@ -1504,25 +1504,23 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
 }
 
 void
-VM_UpdateForPopTopFrame::doit() {
+UpdateForPopTopFrameClosure::do_thread(Thread *target) {
   JavaThread* jt = _state->get_thread();
-  ThreadsListHandle tlh;
-  if (jt != NULL && tlh.includes(jt) && !jt->is_exiting() && jt->threadObj() != NULL) {
+  assert(jt == target, "just checking");
+  if (!jt->is_exiting() && jt->threadObj() != NULL) {
     _state->update_for_pop_top_frame();
-  } else {
-    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+    _result = JVMTI_ERROR_NONE;
   }
 }
 
 void
-VM_SetFramePop::doit() {
+SetFramePopClosure::do_thread(Thread *target) {
   JavaThread* jt = _state->get_thread();
-  ThreadsListHandle tlh;
-  if (jt != NULL && tlh.includes(jt) && !jt->is_exiting() && jt->threadObj() != NULL) {
+  assert(jt == target, "just checking");
+  if (!jt->is_exiting() && jt->threadObj() != NULL) {
     int frame_number = _state->count_frames() - _depth;
     _state->env_thread_state((JvmtiEnvBase*)_env)->set_frame_pop(frame_number);
-  } else {
-    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+    _result = JVMTI_ERROR_NONE;
   }
 }
 

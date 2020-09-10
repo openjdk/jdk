@@ -2117,9 +2117,16 @@ int MacroAssembler::pop(unsigned int bitset, Register stack) {
 }
 
 // Push lots of registers in the bit set supplied.  Don't push sp.
-// Return the number of words pushed
+// Return the number of dwords pushed
 int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
   int words_pushed = 0;
+  bool use_sve = false;
+  int sve_vector_size_in_bytes = 0;
+
+#ifdef COMPILER2
+  use_sve = Matcher::supports_scalable_vector();
+  sve_vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
+#endif
 
   // Scan bitset to accumulate register pairs
   unsigned char regs[32];
@@ -2134,9 +2141,19 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
     return 0;
   }
 
+  // SVE
+  if (use_sve && sve_vector_size_in_bytes > 16) {
+    sub(stack, stack, sve_vector_size_in_bytes * count);
+    for (int i = 0; i < count; i++) {
+      sve_str(as_FloatRegister(regs[i]), Address(stack, i));
+    }
+    return count * sve_vector_size_in_bytes / 8;
+  }
+
+  // NEON
   if (count == 1) {
     strq(as_FloatRegister(regs[0]), Address(pre(stack, -wordSize * 2)));
-    return 1;
+    return 2;
   }
 
   bool odd = (count & 1) == 1;
@@ -2157,12 +2174,19 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
   }
 
   assert(words_pushed == count, "oops, pushed(%d) != count(%d)", words_pushed, count);
-  return count;
+  return count * 2;
 }
 
+// Return the number of dwords poped
 int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
   int words_pushed = 0;
+  bool use_sve = false;
+  int sve_vector_size_in_bytes = 0;
 
+#ifdef COMPILER2
+  use_sve = Matcher::supports_scalable_vector();
+  sve_vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
+#endif
   // Scan bitset to accumulate register pairs
   unsigned char regs[32];
   int count = 0;
@@ -2176,9 +2200,19 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
     return 0;
   }
 
+  // SVE
+  if (use_sve && sve_vector_size_in_bytes > 16) {
+    for (int i = count - 1; i >= 0; i--) {
+      sve_ldr(as_FloatRegister(regs[i]), Address(stack, i));
+    }
+    add(stack, stack, sve_vector_size_in_bytes * count);
+    return count * sve_vector_size_in_bytes / 8;
+  }
+
+  // NEON
   if (count == 1) {
     ldrq(as_FloatRegister(regs[0]), Address(post(stack, wordSize * 2)));
-    return 1;
+    return 2;
   }
 
   bool odd = (count & 1) == 1;
@@ -2199,7 +2233,7 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
 
   assert(words_pushed == count, "oops, pushed(%d) != count(%d)", words_pushed, count);
 
-  return count;
+  return count * 2;
 }
 
 #ifdef ASSERT
@@ -2647,23 +2681,39 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
   pop(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2) - exclude, sp);
 }
 
-void MacroAssembler::push_CPU_state(bool save_vectors) {
-  int step = (save_vectors ? 8 : 4) * wordSize;
+void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
+                                    int sve_vector_size_in_bytes) {
   push(0x3fffffff, sp);         // integer registers except lr & sp
-  mov(rscratch1, -step);
-  sub(sp, sp, step);
-  for (int i = 28; i >= 4; i -= 4) {
-    st1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
-        as_FloatRegister(i+3), save_vectors ? T2D : T1D, Address(post(sp, rscratch1)));
+  if (save_vectors && use_sve && sve_vector_size_in_bytes > 16) {
+    sub(sp, sp, sve_vector_size_in_bytes * FloatRegisterImpl::number_of_registers);
+    for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+      sve_str(as_FloatRegister(i), Address(sp, i));
+    }
+  } else {
+    int step = (save_vectors ? 8 : 4) * wordSize;
+    mov(rscratch1, -step);
+    sub(sp, sp, step);
+    for (int i = 28; i >= 4; i -= 4) {
+      st1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
+          as_FloatRegister(i+3), save_vectors ? T2D : T1D, Address(post(sp, rscratch1)));
+    }
+    st1(v0, v1, v2, v3, save_vectors ? T2D : T1D, sp);
   }
-  st1(v0, v1, v2, v3, save_vectors ? T2D : T1D, sp);
 }
 
-void MacroAssembler::pop_CPU_state(bool restore_vectors) {
-  int step = (restore_vectors ? 8 : 4) * wordSize;
-  for (int i = 0; i <= 28; i += 4)
-    ld1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
-        as_FloatRegister(i+3), restore_vectors ? T2D : T1D, Address(post(sp, step)));
+void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
+                                   int sve_vector_size_in_bytes) {
+  if (restore_vectors && use_sve && sve_vector_size_in_bytes > 16) {
+    for (int i = FloatRegisterImpl::number_of_registers - 1; i >= 0; i--) {
+      sve_ldr(as_FloatRegister(i), Address(sp, i));
+    }
+    add(sp, sp, sve_vector_size_in_bytes * FloatRegisterImpl::number_of_registers);
+  } else {
+    int step = (restore_vectors ? 8 : 4) * wordSize;
+    for (int i = 0; i <= 28; i += 4)
+      ld1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
+          as_FloatRegister(i+3), restore_vectors ? T2D : T1D, Address(post(sp, step)));
+  }
   pop(0x3fffffff, sp);         // integer registers except lr & sp
 }
 
@@ -2710,6 +2760,21 @@ Address MacroAssembler::spill_address(int size, int offset, Register tmp)
   }
 
   return Address(base, offset);
+}
+
+Address MacroAssembler::sve_spill_address(int sve_reg_size_in_bytes, int offset, Register tmp) {
+  assert(offset >= 0, "spill to negative address?");
+
+  Register base = sp;
+
+  // An immediate offset in the range 0 to 255 which is multiplied
+  // by the current vector or predicate register size in bytes.
+  if (offset % sve_reg_size_in_bytes == 0 && offset < ((1<<8)*sve_reg_size_in_bytes)) {
+    return Address(base, offset / sve_reg_size_in_bytes);
+  }
+
+  add(tmp, base, offset);
+  return Address(tmp);
 }
 
 // Checks whether offset is aligned.
@@ -5220,4 +5285,25 @@ void MacroAssembler::cache_wbsync(bool is_pre) {
   if (!is_pre) {
     membar(Assembler::AnyAny);
   }
+}
+
+void MacroAssembler::verify_sve_vector_length() {
+  Label verify_ok;
+  assert(UseSVE > 0, "should only be used for SVE");
+  movw(rscratch1, zr);
+  sve_inc(rscratch1, B);
+  subsw(zr, rscratch1, VM_Version::get_initial_sve_vector_length());
+  br(EQ, verify_ok);
+  stop("Error: SVE vector length has changed since jvm startup");
+  bind(verify_ok);
+}
+
+void MacroAssembler::verify_ptrue() {
+  Label verify_ok;
+  assert(UseSVE > 0, "should only be used for SVE");
+  sve_cntp(rscratch1, B, ptrue, ptrue); // get true elements count.
+  sve_dec(rscratch1, B);
+  cbz(rscratch1, verify_ok);
+  stop("Error: the preserved predicate register (p7) elements are not all true");
+  bind(verify_ok);
 }

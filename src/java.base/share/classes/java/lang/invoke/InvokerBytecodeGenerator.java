@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static java.lang.invoke.GenerateJLIClassesHelper.traceLambdaForm;
 import static java.lang.invoke.LambdaForm.BasicType;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.LambdaForm.*;
@@ -322,7 +323,9 @@ class InvokerBytecodeGenerator {
     private static MemberName resolveInvokerMember(Class<?> invokerClass, String name, MethodType type) {
         MemberName member = new MemberName(invokerClass, name, type, REF_invokeStatic);
         try {
-            member = MEMBERNAME_FACTORY.resolveOrFail(REF_invokeStatic, member, HOST_CLASS, ReflectiveOperationException.class);
+            member = MEMBERNAME_FACTORY.resolveOrFail(REF_invokeStatic, member,
+                                                      HOST_CLASS, LM_TRUSTED,
+                                                      ReflectiveOperationException.class);
         } catch (ReflectiveOperationException e) {
             throw newInternalError(e);
         }
@@ -693,11 +696,8 @@ class InvokerBytecodeGenerator {
 
     private static MemberName resolveFrom(String name, MethodType type, Class<?> holder) {
         MemberName member = new MemberName(holder, name, type, REF_invokeStatic);
-        MemberName resolvedMember = MemberName.getFactory().resolveOrNull(REF_invokeStatic, member, holder);
-        if (TRACE_RESOLVE) {
-            System.out.println("[LF_RESOLVE] " + holder.getName() + " " + name + " " +
-                    shortenSignature(basicTypeSignature(type)) + (resolvedMember != null ? " (success)" : " (fail)") );
-        }
+        MemberName resolvedMember = MemberName.getFactory().resolveOrNull(REF_invokeStatic, member, holder, LM_TRUSTED);
+        traceLambdaForm(name, type, holder, resolvedMember);
         return resolvedMember;
     }
 

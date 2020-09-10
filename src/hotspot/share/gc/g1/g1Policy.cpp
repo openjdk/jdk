@@ -1332,22 +1332,6 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
       break;
     }
 
-    // Stop adding regions if the remaining reclaimable space is
-    // not above G1HeapWastePercent.
-    size_t reclaimable_bytes = candidates->remaining_reclaimable_bytes();
-    double reclaimable_percent = reclaimable_bytes_percent(reclaimable_bytes);
-    double threshold = (double) G1HeapWastePercent;
-    if (reclaimable_percent <= threshold) {
-      // We've added enough old regions that the amount of uncollected
-      // reclaimable space is at or below the waste threshold. Stop
-      // adding old regions to the CSet.
-      log_debug(gc, ergo, cset)("Finish adding old regions to collection set (Reclaimable percentage below threshold). "
-                                "Reclaimable: " SIZE_FORMAT "%s (%1.2f%%) threshold: " UINTX_FORMAT "%%",
-                                byte_size_in_proper_unit(reclaimable_bytes), proper_unit_for_byte_size(reclaimable_bytes),
-                                reclaimable_percent, G1HeapWastePercent);
-      break;
-    }
-
     double predicted_time_ms = predict_region_total_time_ms(hr, false);
     time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
     // Add regions to old set until we reach the minimum amount

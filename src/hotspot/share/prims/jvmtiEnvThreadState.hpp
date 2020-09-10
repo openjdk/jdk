@@ -178,7 +178,6 @@ public:
 
   void set_frame_pop(int frame_number);
   void clear_frame_pop(int frame_number);
-  void clear_to_frame_pop(int frame_number);
 
 };
 

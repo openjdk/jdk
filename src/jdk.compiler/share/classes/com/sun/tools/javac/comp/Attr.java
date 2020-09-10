@@ -1075,7 +1075,7 @@ public class Attr extends JCTree.Visitor {
                         if (app == null ||
                                 TreeInfo.name(app.meth) != names._this ||
                                 !checkFirstConstructorStat(app, tree, false)) {
-                            log.error(tree, Errors.FirstStatementMustBeCallToAnotherConstructor);
+                            log.error(tree, Errors.FirstStatementMustBeCallToAnotherConstructor(env.enclClass.sym));
                         }
                     } else {
                         // but if it is the canonical:
@@ -5052,7 +5052,7 @@ public class Attr extends JCTree.Visitor {
                                 Errors.InvalidPermitsClause(Fragments.IsATypeVariable(subTypeSym.type)));
                     }
                     if (subTypeSym.isAnonymous() && !c.isEnum()) {
-                        log.error(TreeInfo.diagnosticPositionFor(subTypeSym, env.tree), Errors.CantInheritFromSealed(c));
+                        log.error(TreeInfo.diagnosticPositionFor(subTypeSym, env.tree),  Errors.LocalClassesCantExtendSealed(Fragments.Anonymous));
                     }
                     if (permittedTypes.contains(subTypeSym)) {
                         DiagnosticPosition pos =
@@ -5065,10 +5065,14 @@ public class Attr extends JCTree.Visitor {
                     }
                     if (sealedInUnnamed) {
                         if (subTypeSym.packge() != c.packge()) {
-                            log.error(TreeInfo.diagnosticPositionFor(subTypeSym, env.tree), Errors.CantInheritFromSealed(c));
+                            log.error(TreeInfo.diagnosticPositionFor(subTypeSym, env.tree),
+                                    Errors.ClassInUnnamedModuleCantExtendSealedInDiffPackage(c)
+                            );
                         }
                     } else if (subTypeSym.packge().modle != c.packge().modle) {
-                        log.error(TreeInfo.diagnosticPositionFor(subTypeSym, env.tree), Errors.CantInheritFromSealed(c));
+                        log.error(TreeInfo.diagnosticPositionFor(subTypeSym, env.tree),
+                                Errors.ClassInModuleCantExtendSealedInDiffModule(c, c.packge().modle)
+                        );
                     }
                     if (subTypeSym == c.type.tsym || types.isSuperType(subTypeSym.type, c.type)) {
                         log.error(TreeInfo.diagnosticPositionFor(subTypeSym, ((JCClassDecl)env.tree).permitting),
@@ -5107,7 +5111,7 @@ public class Attr extends JCTree.Visitor {
                 }
             } else {
                 if (c.isLocal() && !c.isEnum()) {
-                    log.error(TreeInfo.diagnosticPositionFor(c, env.tree), Errors.LocalClassesCantExtendSealed);
+                    log.error(TreeInfo.diagnosticPositionFor(c, env.tree), Errors.LocalClassesCantExtendSealed(c.isAnonymous() ? Fragments.Anonymous : Fragments.Local));
                 }
 
                 for (ClassSymbol supertypeSym : sealedSupers) {
