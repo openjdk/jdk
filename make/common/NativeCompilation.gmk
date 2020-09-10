@@ -1163,7 +1163,7 @@ define SetupNativeCompilationBody
                 # This only works if the openjdk_codesign identity is present on the system. Let
                 # silently fail otherwise.
                 ifneq ($(CODESIGN), )
-		  $(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime \
+		  $(CODESIGN) -f -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime \
 		      --entitlements $$(call GetEntitlementsFile, $$@) $$@
                 endif
   endif
