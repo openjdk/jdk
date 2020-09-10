@@ -604,6 +604,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_putLongUnaligned:
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
+  case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:
   case vmIntrinsics::_currentThread:
 #ifdef JFR_HAVE_INTRINSICS

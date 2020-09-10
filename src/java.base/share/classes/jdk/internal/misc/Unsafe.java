@@ -3441,15 +3441,14 @@ public final class Unsafe {
      * Ensures that stores before the fence will not be reordered with
      * stores after the fence.
      *
-     * @implNote
-     * This method is operationally equivalent to {@link #storeFence()}.
-     *
      * @since 9
      */
+    @IntrinsicCandidate
     public final void storeStoreFence() {
+        // Without the special intrinsic, default to a stronger storeFence,
+        // which is already intrinsified.
         storeFence();
     }
-
 
     /**
      * Throws IllegalAccessError; for use by the VM for access control
