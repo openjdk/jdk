@@ -4143,9 +4143,6 @@ void ArchDesc::buildInstructMatchCheck(FILE *fp_cpp) const {
 // Output the methods to Matcher which specify frame behavior
 void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   fprintf(fp_cpp,"\n\n");
-  // Stack Direction
-  fprintf(fp_cpp,"bool Matcher::stack_direction() const { return %s; }\n\n",
-          _frame->_direction ? "true" : "false");
   // Sync Stack Slots
   fprintf(fp_cpp,"int Compile::sync_stack_slots() const { return %s; }\n\n",
           _frame->_sync_stack_slots);
