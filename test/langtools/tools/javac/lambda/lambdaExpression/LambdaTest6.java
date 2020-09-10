@@ -26,11 +26,10 @@
  * @bug 8003280
  * @summary Add lambda tests
  *   Test bridge methods for certain SAM conversions
- *   Test the set of generate fields
+ *   Test the set of generated fields
  *   Test the set of generated methods
  * @compile LambdaTest6.java
  * @run main LambdaTest6
- * @run main/othervm -Djdk.internal.lambda.disableEagerInitialization=true LambdaTest6
  */
 
 import java.lang.reflect.Field;
@@ -68,14 +67,6 @@ public class LambdaTest6<T> {
     private static Set<String> allowedMethods() {
         Set<String> s = new HashSet<>();
         s.add("m");
-        return s;
-    }
-
-    private static Set<String> allowedStaticFields() {
-        Set<String> s = new HashSet<>();
-        if (Boolean.getBoolean("jdk.internal.lambda.disableEagerInitialization")) {
-            s.add("LAMBDA_INSTANCE$");
-        }
         return s;
     }
 
