@@ -1211,6 +1211,592 @@ void call_interface(JavaValue* result, Klass* spec_klass, Symbol* name, Symbol* 
   JavaCalls::call(result, method, args, CHECK);
 }
 
+// This closure is responsible for collecting required information about object reallocation
+// and field reassignment while at a safe point, so that it can be carried out after leaving
+// the safe point. A dedicated JNIHnandleBlock is passed in for oop handle allocation. Each
+// closure instance holds required allocation information in the ObjectSnapshot* array for one
+// vframe.
+class CollectingReallocClosure : public ReallocClosure {
+private:
+  Thread*           _thread;
+  JNIHandleBlock*   _handles;
+  ObjectSnapshot**  _object_array;
+  int               _object_array_length;
+  int               _next_available_index;
+public:
+  CollectingReallocClosure(Thread* thread, int objects_size, JNIHandleBlock *handles) {
+    assert(objects_size > 0, "just checking");
+    _thread = thread;
+    _object_array_length = objects_size;
+    // array is passed and stored inside a VFrameSnapshot, and freed there as well
+    _object_array = NEW_C_HEAP_ARRAY(ObjectSnapshot*, objects_size, mtInternal);
+    for (int i = 0; i < objects_size; i++) {
+      _object_array[i] = NULL;
+    }
+    _handles = handles;
+    _next_available_index = 0;
+  }
+
+  int get_object_array_length() { return _object_array_length; }
+  ObjectSnapshot** get_object_array() { return _object_array; }
+  void pre_alloc() {}
+  void post_single_alloc(ObjectSnapshot* object_snapshot) {}
+  void post_alloc(bool failures) {}
+
+  ObjectSnapshot* cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, InstanceKlass* klass) {
+    Klass* k = java_lang_Class::as_Klass(bv->klass()->as_ConstantOopReadValue()->value()());
+    BasicType box_type = SystemDictionary::box_klass_type(k);
+    if (box_type != T_OBJECT) {
+      StackValue *value = StackValue::create_stack_value(fr, reg_map, bv->field_at(box_type == T_LONG ? 1 : 0));
+      switch (box_type) {
+        case T_INT:
+        case T_CHAR:
+        case T_SHORT:
+        case T_BYTE:
+        case T_BOOLEAN:
+        case T_LONG: {
+          ObjectSnapshot* object_snapshot = new ObjectSnapshot(_thread, bv->id(), BOXED);
+          object_snapshot->set_box_type(box_type, value->get_int(), klass);
+          return object_snapshot;
+        }
+        default:
+          return NULL;
+      }
+    }
+    return NULL;
+  }
+
+  ObjectSnapshot* allocate_instance_klass(InstanceKlass* ik, int object_id) {
+    return new ObjectSnapshot(_thread, object_id, INSTANCE_KLASS, ik);
+  }
+
+  ObjectSnapshot* allocate_type_array_klass(TypeArrayKlass* ak, int len, int object_id) {
+    return new ObjectSnapshot(_thread, object_id, TYPE_ARRAY_KLASS, ak, len);
+  }
+
+  ObjectSnapshot *allocate_object_array_klass(ObjArrayKlass *ak, int len, int object_id) {
+    return new ObjectSnapshot(_thread, object_id, OBJECT_ARRAY, ak, len);
+  }
+
+  void update_value(ObjectValue *ov, ObjectSnapshot* obj) {
+    // store the wrapped obj in the collected array
+    _object_array[_next_available_index] = obj;
+    _next_available_index++;
+  }
+
+  ObjectSnapshot* get_value(ObjectValue* value) {
+    for (int i = 0; i < get_object_array_length(); i++) {
+     ObjectSnapshot* obj_snap = _object_array[i];
+     if (obj_snap != NULL && obj_snap->get_id() == value->id()) {
+       return obj_snap;
+     }
+    }
+    return NULL;
+  }
+
+  void obj_field_put(int offset, StackValue* sv, ObjectSnapshot* obj) {
+    if (sv->obj_is_scalar_replaced()) {
+      obj->put_obj_id(offset, sv->get_obj_id());
+    } else {
+      jvalue value;
+      value.l = _handles->allocate_handle(sv->get_obj()());
+      obj->put_value(offset, T_OBJECT, value);
+    }
+  }
+
+  void value_put(BasicType type, int offset, jvalue val, ObjectSnapshot* obj) {
+    obj->put_value(offset, type, val);
+  }
+
+  void byte_field_put(int offset, intptr_t val, ObjectSnapshot* obj) {
+    obj->put_byte_field(offset, val);
+  }
+
+  void obj_at_put(int index, oop value, ObjectValue* ov, ObjectSnapshot* obj) {
+    if (ov == NULL) {
+      jvalue val;
+      val.l = value != NULL ? _handles->allocate_handle(value) : NULL;
+      obj->at_put(index, T_OBJECT, val);
+    } else {
+      obj->obj_at_put(index, ov);
+    }
+  }
+
+  void value_at_put(BasicType type, int index, jvalue val, ObjectSnapshot* obj) {
+    obj->at_put(index, type, val);
+  }
+
+  void byte_at_put(int index, intptr_t val, int byte_count, ObjectSnapshot* obj) {
+    obj->byte_at_put(index, val, byte_count);
+  }
+};
+
+void collect_realloc_objects_at_safepoint(Thread* thread, ScopeDesc* scope, vframe* vf, VFrameSnapshot* vf_snapshot, JVMCIEnv* JVMCIENV, JNIHandleBlock* handles) {
+  GrowableArray<ScopeValue*>* objects = scope->objects();
+  RegisterMap* map = const_cast<RegisterMap*>(vf->register_map());
+
+  // collecting closure will collect data required to realloc objects
+  // and reassign fields after the safe point
+  CollectingReallocClosure f(thread, objects->length(), handles);
+  bool realloc_failures = Deoptimization::realloc_objects(vf->frame_pointer(), map, objects, &f);
+  Deoptimization::reassign_fields(vf->frame_pointer(), map, objects, realloc_failures, false, &f);
+  // store the collected realloc objects in static frame
+  vf_snapshot->set_realloc_object_array_size(objects->length());
+  vf_snapshot->set_realloc_objects_array(f.get_object_array());
+}
+
+void collect_locals(StackValueCollection* locals, VFrameSnapshot* vf_snapshot, JNIHandleBlock* handles) {
+  int size = locals->size();
+  GrowableArray<StackValueSnapshot*>* stackValues = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<StackValueSnapshot*>(size, mtInternal);
+  for (int i = 0; i < size; i++) {
+    StackValue* sv = locals->at(i);
+    if (sv->type() == T_OBJECT) {
+      StackValueSnapshot* ssv = new StackValueSnapshot(sv, handles);
+      stackValues->append(ssv);
+    } else {
+      stackValues->append(NULL);
+    }
+  }
+  vf_snapshot->set_locals(stackValues);
+}
+
+void handle_compiled_frame_at_safepoint(Thread* thread, compiledVFrame* cvf, VFrameSnapshot* vf_snapshot, JNIHandleBlock* handles, JVMCIEnv* JVMCIENV) {
+  vf_snapshot->set_bci(cvf->bci());
+  ScopeDesc* scope = cvf->scope();
+  // native wrappers do not have a scope
+  if (scope == NULL) {
+    vf_snapshot->set_locals_is_virtual(NULL);
+  } else {
+    if (scope->objects() != NULL && scope->objects()->length() > 0) {
+      collect_realloc_objects_at_safepoint(thread, scope, cvf, vf_snapshot, JVMCIENV, handles);
+    }
+    GrowableArray<ScopeValue*>* local_values = scope->locals();
+    bool array[local_values->length()];
+    for (int i = 0; i < local_values->length(); i++) {
+      array[i] = local_values->at(i)->is_object();
+    }
+    vf_snapshot->set_locals_is_virtual(array);
+
+    collect_locals(cvf->locals(), vf_snapshot, handles);
+  }
+}
+
+void handle_interpreted_frame_at_safepoint(vframe* vf, VFrameSnapshot* vf_snapshot, JNIHandleBlock* handles, JVMCIEnv* JVMCIENV) {
+  interpretedVFrame* ivf = interpretedVFrame::cast(vf);
+  vf_snapshot->set_bci(ivf->bci());
+  StackValueCollection* locals = ivf->locals();
+  // construct a StackValue array that will be retained after the safe point
+  GrowableArray<StackValueSnapshot*>* stackValues = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<StackValueSnapshot *>(0, mtInternal);
+  int size = locals->size();
+  for (int i = 0; i < size; i++) {
+    StackValue *sv = locals->at(i);
+    if (sv->type() == T_OBJECT) {
+      StackValueSnapshot* sst = new StackValueSnapshot(sv, handles);
+      stackValues->push(sst);
+    } else {
+      stackValues->push(NULL);
+    }
+  }
+  vf_snapshot->set_locals(stackValues);
+}
+
+void fill_in_frame_reference(instanceHandle thread_obj, Handle &frame_reference, StackValueCollection* locals, JVMCIEnv* JVMCIENV, jlong sp, int frame_number, jobject compilerToVM,
+                        TRAPS) {
+  HotSpotJVMCI::HotSpotStackFrameReference::set_compilerToVM(JVMCIENV, frame_reference(), JNIHandles::resolve(compilerToVM));
+  HotSpotJVMCI::HotSpotStackFrameReference::set_stackPointer(JVMCIENV, frame_reference(), sp);
+  HotSpotJVMCI::HotSpotStackFrameReference::set_frameNumber(JVMCIENV, frame_reference(), frame_number);
+  HotSpotJVMCI::HotSpotStackFrameReference::set_thread(JVMCIENV, frame_reference(), thread_obj());
+
+  // initialize the locals array
+  objArrayOop array_oop = oopFactory::new_objectArray(locals->size(), CHECK);
+  objArrayHandle array(THREAD, array_oop);
+  for (int i = 0; i < locals->size(); i++) {
+    StackValue* var = locals->at(i);
+    if (var != NULL && var->type() == T_OBJECT) {
+      array->obj_at_put(i, var->get_obj()());
+    }
+  }
+  HotSpotJVMCI::HotSpotStackFrameReference::set_locals(JVMCIENV, frame_reference(), array());
+  HotSpotJVMCI::HotSpotStackFrameReference::set_objectsMaterialized(JVMCIENV, frame_reference(), JNI_FALSE);
+}
+
+FramesDumpResult::FramesDumpResult(int num_threads) {
+  _num_threads = num_threads;
+  _num_snapshots = 0;
+  _last = NULL;
+  _snapshots = NULL;
+}
+
+FramesDumpResult::~FramesDumpResult() {
+  // free all the FramesSnapshot objects created during
+  // a VM_FramesDump operation
+  FramesSnapshot *ts = _snapshots;
+  while (ts != NULL) {
+    FramesSnapshot *p = ts;
+    ts = ts->next();
+    delete p;
+  }
+}
+
+void FramesDumpResult::add_frames_snapshot(FramesSnapshot* ts) {
+  assert(_num_snapshots < _num_threads,
+         "_num_snapshots must be less than _num_threads");
+  _num_snapshots++;
+  if (ts == NULL) {
+    ts = new FramesSnapshot();
+  }
+  if (_snapshots == NULL) {
+    _snapshots = ts;
+  } else {
+    _last->set_next(ts);
+  }
+  _last = ts;
+}
+
+void FramesDumpResult::dump_frames_at_safepoint(JavaThread* java_thread, jobjectArray initial_methods, jobjectArray match_methods, jint initialSkip, int max_frames,
+                                              JNIHandleBlock* handles, JVMCIEnv* JVMCIENV) {
+  assert(java_thread != NULL && java_thread->threadObj() != NULL && java_thread->has_last_Java_frame(), "invalid thread");
+
+  jobjectArray methods = initial_methods;
+
+  FramesSnapshot* frames_snapshot = new FramesSnapshot();
+  int frame_number = 0;
+
+  RegisterMap reg_map(java_thread);
+  vframe* vf = java_thread->last_java_vframe(&reg_map);
+
+  while (vf != NULL && (max_frames == -1 || frames_snapshot->frames_length() < max_frames)) {
+    VFrameSnapshot* vf_snapshot = new VFrameSnapshot();
+    Method* current_method = NULL;
+
+    if (vf->is_compiled_frame()) {
+      compiledVFrame* cvf = compiledVFrame::cast(vf);
+      if (methods == NULL || matches(methods, cvf->method(), JVMCIENV)) {
+        if (initialSkip > 0) {
+          initialSkip--;
+        } else {
+          current_method = cvf->method();
+          handle_compiled_frame_at_safepoint(java_thread, cvf, vf_snapshot, handles, JVMCIENV);
+        }
+      }
+    } else if (vf->is_interpreted_frame()) {
+      interpretedVFrame *ivf = interpretedVFrame::cast(vf);
+      if (methods == NULL || matches(methods, ivf->method(), JVMCIENV)) {
+        if (initialSkip > 0) {
+          initialSkip--;
+        } else {
+          vf_snapshot->set_interpreted_frame();
+          current_method = ivf->method();
+          handle_interpreted_frame_at_safepoint(vf, vf_snapshot, handles, JVMCIENV);
+        }
+      }
+    }
+    if (current_method != NULL) {
+      vf_snapshot->set_not_empty();
+      vf_snapshot->set_method(current_method);
+      vf_snapshot->set_sp(vf->frame_pointer()->sp());
+      vf_snapshot->set_frame_number(frame_number);
+      frames_snapshot->add_frame(vf_snapshot);
+
+      methods = match_methods;
+      assert(initialSkip == 0, "There should be no match before initialSkip == 0");
+    }
+    frame_number++;
+
+    if (vf->is_top()) {
+      // reset iteration state
+      frame_number = 0;
+    }
+    vf = vf->sender();
+  } // end vframe loop
+  add_frames_snapshot(frames_snapshot);
+}
+
+void allocate_object_snapshot(ObjectSnapshot* object_snapshot, TRAPS) {
+  assert(object_snapshot != NULL, "must be non null");
+
+  oop value = object_snapshot->get_value()();
+  AllocType type = object_snapshot->get_alloc_type();
+  if (type == BOXED) {
+    value = Deoptimization::get_cached_box(object_snapshot->get_box_type(), object_snapshot->get_box_value(), CHECK);
+    if (value == NULL) {
+      // not available from cached box
+      InstanceKlass* ik = InstanceKlass::cast(object_snapshot->get_klass());
+      value = ik->allocate_instance(CHECK);
+    }
+  } else if (type == INSTANCE_KLASS) {
+    InstanceKlass* ik = InstanceKlass::cast(object_snapshot->get_klass());
+    value = ik->allocate_instance(CHECK);
+  } else if (type == TYPE_ARRAY_KLASS) {
+    TypeArrayKlass* ak = TypeArrayKlass::cast(object_snapshot->get_klass());
+    value = ak->allocate(object_snapshot->get_array_length(), CHECK);
+  } else if (type == OBJECT_ARRAY) {
+    ObjArrayKlass* ak = ObjArrayKlass::cast(object_snapshot->get_klass());
+    value = ak->allocate(object_snapshot->get_array_length(), CHECK);
+  }
+  assert(value != NULL, "failed allocation");
+  object_snapshot->set_value(value);
+}
+
+void reassign_fields_for_object_snapshot(ObjectSnapshot* object_snapshot, ObjectSnapshot** obj_array, int obj_array_length) {
+  assert(object_snapshot != NULL, "must be non null");
+  assert(object_snapshot->get_value()() != NULL, "not allocated!");
+
+  GrowableArray<FieldValueSnapshot*>* reassign_array = object_snapshot->get_fields();
+  int len = reassign_array->length();
+  for (int i = 0; i < len; i++) {
+    FieldValueSnapshot* fvs = reassign_array->at(i);
+    BasicType type = fvs->type();
+    oop value = object_snapshot->get_value()();
+    switch (type) {
+      case T_OBJECT: {
+        if (fvs->offset() == -1) {
+          objArrayOop array_oop = (objArrayOop) value;
+          if (fvs->get_object_id() != -1) {
+            for (int j = 0; j < obj_array_length; j++) {
+              if (obj_array[j] != NULL && obj_array[j]->get_id() == fvs->get_object_id()) {
+                array_oop->obj_at_put(fvs->get_index(), obj_array[j]->get_value()());
+              }
+            }
+          } else {
+            array_oop->obj_at_put(fvs->get_index(), JNIHandles::resolve(fvs->get_value().l));
+          }
+        } else {
+          if (fvs->get_object_id() != -1) {
+            for (int j = 0; j < obj_array_length; j++) {
+              if (obj_array[j] != NULL && obj_array[j]->get_id() == fvs->get_object_id()) {
+                value->obj_field_put(fvs->offset(), obj_array[j]->get_value()());
+              }
+            }
+          } else {
+            value->obj_field_put(fvs->offset(), JNIHandles::resolve(fvs->get_value().l));
+          }
+        }
+        break;
+      }
+      case T_INT: {
+        if (fvs->offset() == -1) {
+          typeArrayOop array_oop = (typeArrayOop) value;
+          array_oop->int_at_put(fvs->get_index(), fvs->get_value().i);
+        } else {
+          value->int_field_put(fvs->offset(), fvs->get_value().i);
+        }
+        break;
+      }
+      case T_LONG: {
+        if (fvs->offset() == -1) {
+          typeArrayOop array_oop = (typeArrayOop) value;
+          array_oop->long_at_put(fvs->get_index(), fvs->get_value().j);
+        } else {
+          value->long_field_put(fvs->offset(), fvs->get_value().j);
+        }
+        break;
+      }
+      case T_CHAR: {
+        if (fvs->offset() == -1) {
+          typeArrayOop array_oop = (typeArrayOop) value;
+          array_oop->char_at_put(fvs->get_index(), fvs->get_value().c);
+        } else {
+          value->char_field_put(fvs->offset(), fvs->get_value().c);
+        }
+        break;
+      }
+      case T_BOOLEAN: {
+        if (fvs->offset() == -1) {
+          typeArrayOop array_oop = (typeArrayOop) value;
+          array_oop->bool_at_put(fvs->get_index(), fvs->get_value().z);
+        } else {
+          value->bool_field_put(fvs->offset(), fvs->get_value().z);
+        }
+        break;
+      }
+      case T_SHORT: {
+        if (fvs->offset() == -1) {
+          typeArrayOop array_oop = (typeArrayOop) value;
+          array_oop->short_at_put(fvs->get_index(), fvs->get_value().s);
+        } else {
+          value->short_field_put(fvs->offset(), fvs->get_value().s);
+        }
+        break;
+      }
+      case T_BYTE: {
+        if (fvs->offset() == -1) {
+          typeArrayOop type_array_obj = (typeArrayOop) object_snapshot->get_value()();
+          Deoptimization::byte_array_put(type_array_obj, fvs->get_byte(), fvs->get_index(), fvs->get_byte_count());
+        } else {
+          value->byte_field_put(fvs->offset(), fvs->get_byte());
+        }
+        break;
+      }
+      default:
+        ShouldNotReachHere();
+    }
+  }
+}
+
+C2V_VMENTRY_NULL(jobjectArray, getStackFrames, (JNIEnv* env, jobject compilerToVM, jobjectArray initial_methods, jobjectArray match_methods, jint initialSkip, jint max_frames, jobjectArray threads))
+
+  requireInHotSpot("getStackFrames", JVMCI_CHECK_NULL);
+  // Check if threads is null
+  if (threads == NULL) {
+    THROW_(vmSymbols::java_lang_NullPointerException(), 0);
+  }
+
+  tty->print_cr("getStackFrames...");
+
+  objArrayHandle ah(THREAD, objArrayOop(JNIHandles::resolve_non_null(threads)));
+  int num_threads = ah->length();
+  // check if threads is non-empty array
+  if (num_threads == 0) {
+    THROW_(vmSymbols::java_lang_IllegalArgumentException(), 0);
+  }
+
+  HotSpotJVMCI::HotSpotStackFrameReference::klass()->initialize(CHECK_NULL);
+  Klass* arrayKlass = HotSpotJVMCI::HotSpotStackFrameReference::klass()->array_klass(CHECK_NULL);
+  arrayKlass->initialize(CHECK_NULL);
+
+  // DO NOT use the naked oop `result` directly below these two lines.
+  // always use the handle to avoid GC reclaiming the naked oop
+  objArrayOop result = oopFactory::new_objArray(arrayKlass, num_threads, CHECK_NULL);
+  objArrayHandle res(THREAD, result);
+
+  GrowableArray<instanceHandle>* thread_handle_array = new GrowableArray<instanceHandle>(num_threads);
+  for (int i = 0; i < num_threads; i++) {
+    oop thread_obj = ah->obj_at(i);
+    instanceHandle h(THREAD, (instanceOop) thread_obj);
+    thread_handle_array->append(h);
+  }
+
+  {
+    JNIHandleMark hm(thread);
+    // allocate a dedicated JNI handle block chain for the operation
+    JNIHandleBlock* operation_handles = thread->active_handles();
+
+    FramesDumpResult dump_result(num_threads);
+    VM_FramesDump op(&dump_result,
+                     thread_handle_array,
+                     initial_methods,
+                     match_methods,
+                     initialSkip,
+                     max_frames,
+                     operation_handles,
+                     JVMCIENV);
+    VMThread::execute(&op);
+
+    assert(dump_result.num_snapshots() == num_threads, "must be same size");
+
+    tty->print_cr("after operation...");
+
+    // using the dump result, do the actual allocations on the Java heap
+    FramesSnapshot* snapshot = dump_result.snapshots();
+    int thread_index = 0;
+    while (snapshot != NULL) {
+      GrowableArray<VFrameSnapshot*>* frames_snapshot = snapshot->get_frames();
+
+      int frames_length = frames_snapshot->length();
+      // store the collected frames
+      objArrayOop frames = oopFactory::new_objArray(HotSpotJVMCI::HotSpotStackFrameReference::klass(), frames_length, CHECK_NULL);
+      objArrayHandle frames_handle(THREAD, frames);
+
+      GrowableArray<ObjectSnapshot*>* allocated_objects = new GrowableArray<ObjectSnapshot*>(0);
+      int reassigned_count = 0;
+      for (int j = 0; j < frames_length; j++) {
+        oop frame_oop = HotSpotJVMCI::HotSpotStackFrameReference::klass()->allocate_instance(CHECK_NULL);
+        Handle frame_reference(thread, frame_oop);
+        VFrameSnapshot* vf_snapshot = frames_snapshot->at(j);
+
+        GrowableArray<StackValueSnapshot*>* locals_snapshot = vf_snapshot->get_locals();
+        int locals_size = locals_snapshot->length();
+
+        if (vf_snapshot->is_compiled_frame()) {
+          // allocate objects and reassign fields from the collected dump
+          int size = vf_snapshot->get_realloc_objects_array_size();
+          ObjectSnapshot** array = vf_snapshot->get_realloc_objects_array();
+          // first allocate objects
+          for (int i = 0; i < size; i++) {
+            ObjectSnapshot* object_snapshot = array[i];
+            if (object_snapshot != NULL) {
+              bool allocated = false;
+              for (int l = 0; l < allocated_objects->length(); l++) {
+                if (allocated_objects->at(l)->get_id() == object_snapshot->get_id()) {
+                  allocated = true;
+                  break;
+                }
+              }
+              if (!allocated) {
+                allocate_object_snapshot(object_snapshot, CHECK_NULL);
+                allocated_objects->append(object_snapshot);
+              }
+            }
+          }
+          // then re-assign fields
+          for (int l = reassigned_count; l < allocated_objects->length(); l++) {
+            ObjectSnapshot* object_snapshot = allocated_objects->at(l);
+            reassign_fields_for_object_snapshot(object_snapshot, array, size);
+          }
+          reassigned_count = allocated_objects->length();
+          // update the local values
+          for (int i = 0; i < locals_snapshot->length(); i++) {
+            StackValueSnapshot* sv_snapshot = locals_snapshot->at(i);
+            if (sv_snapshot != NULL) {
+              int obj_id = sv_snapshot->get_id();
+              if (obj_id != -1) {
+                for (int k = 0; k < allocated_objects->length(); k++) {
+                  if (allocated_objects->at(k)->get_id() == obj_id) {
+                    oop the_oop = allocated_objects->at(k)->get_value()();
+                    sv_snapshot->set_obj(JNIHandles::make_local(the_oop));
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+        // is locals virtual array
+        bool *is_virtual_array = vf_snapshot->get_locals_is_virtual();
+        if (is_virtual_array == NULL) {
+          HotSpotJVMCI::HotSpotStackFrameReference::set_localIsVirtual(JVMCIENV, frame_reference(), NULL);
+        } else {
+          typeArrayOop array_oop = oopFactory::new_boolArray(locals_size, CHECK_NULL);
+          typeArrayHandle array(THREAD, array_oop);
+          for (int i = 0; i < locals_size; i++) {
+            array->bool_at_put(i, is_virtual_array[i]);
+          }
+          HotSpotJVMCI::HotSpotStackFrameReference::set_localIsVirtual(JVMCIENV, frame_reference(), array());
+        }
+        // locals
+        StackValueCollection* locals = new StackValueCollection(locals_size);
+        for (int i = 0; i < locals_size; i++) {
+          StackValueSnapshot *svs = locals_snapshot->at(i);
+          if (svs != NULL) {
+            Handle obj_handle(thread, JNIHandles::resolve(svs->get_obj()));
+            StackValue* sv = new StackValue(obj_handle);
+            locals->add(sv);
+          } else {
+            locals->add(NULL);
+          }
+        }
+        HotSpotJVMCI::HotSpotStackFrameReference::set_objectsMaterialized(JVMCIENV, frame_reference(), JNI_FALSE);
+        HotSpotJVMCI::HotSpotStackFrameReference::set_bci(JVMCIENV, frame_reference(), vf_snapshot->get_bci());
+        Method* method = vf_snapshot->get_method();
+
+        JVMCIObject jvmci_method = JVMCIENV->get_jvmci_method(methodHandle(thread, method), JVMCI_CHECK_NULL);
+        HotSpotJVMCI::HotSpotStackFrameReference::set_method(JVMCIENV, frame_reference(), JNIHandles::resolve(jvmci_method.as_jobject()));
+
+        fill_in_frame_reference(thread_handle_array->at(thread_index), frame_reference, locals, JVMCIENV, (jlong) vf_snapshot->get_sp(), vf_snapshot->get_frame_number(),
+          compilerToVM, CHECK_NULL);
+        frames_handle->obj_at_put(j, frame_reference());
+      }
+      res->obj_at_put(thread_index, frames_handle());
+      thread_index++;
+      snapshot = snapshot->next();
+    }
+    tty->print_cr("before ending block...");
+  } // end JNIHandleMark block
+  tty->print_cr("returning from getStackFrames...");
+  return (jobjectArray) JNIHandles::make_local(res());
+}
+
 C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, jobjectArray initial_methods, jobjectArray match_methods, jint initialSkip, jobject visitor_handle))
 
   if (!thread->has_last_Java_frame()) {
@@ -1223,151 +1809,142 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
   HotSpotJVMCI::HotSpotStackFrameReference::klass()->initialize(CHECK_NULL);
   Handle frame_reference = HotSpotJVMCI::HotSpotStackFrameReference::klass()->allocate_instance_handle(CHECK_NULL);
 
-  StackFrameStream fst(thread);
   jobjectArray methods = initial_methods;
 
+  bool realloc_called = false;
   int frame_number = 0;
-  vframe* vf = vframe::new_vframe(fst.current(), fst.register_map(), thread);
 
-  while (true) {
-    // look for the given method
-    bool realloc_called = false;
-    while (true) {
-      StackValueCollection* locals = NULL;
-      if (vf->is_compiled_frame()) {
-        // compiled method frame
-        compiledVFrame* cvf = compiledVFrame::cast(vf);
-        if (methods == NULL || matches(methods, cvf->method(), JVMCIENV)) {
-          if (initialSkip > 0) {
-            initialSkip--;
-          } else {
-            ScopeDesc* scope = cvf->scope();
-            // native wrappers do not have a scope
-            if (scope != NULL && scope->objects() != NULL) {
-              GrowableArray<ScopeValue*>* objects;
-              if (!realloc_called) {
-                objects = scope->objects();
-              } else {
-                // some object might already have been re-allocated, only reallocate the non-allocated ones
-                objects = new GrowableArray<ScopeValue*>(scope->objects()->length());
-                for (int i = 0; i < scope->objects()->length(); i++) {
-                  ObjectValue* sv = (ObjectValue*) scope->objects()->at(i);
-                  if (sv->value().is_null()) {
-                    objects->append(sv);
-                  }
-                }
-              }
-              bool realloc_failures = Deoptimization::realloc_objects(thread, fst.current(), fst.register_map(), objects, CHECK_NULL);
-              Deoptimization::reassign_fields(fst.current(), fst.register_map(), objects, realloc_failures, false);
-              realloc_called = true;
+  RegisterMap reg_map(thread);
+  vframe* vf = thread->last_java_vframe(&reg_map);
 
-              GrowableArray<ScopeValue*>* local_values = scope->locals();
-              assert(local_values != NULL, "NULL locals");
-              typeArrayOop array_oop = oopFactory::new_boolArray(local_values->length(), CHECK_NULL);
-              typeArrayHandle array(THREAD, array_oop);
-              for (int i = 0; i < local_values->length(); i++) {
-                ScopeValue* value = local_values->at(i);
-                if (value->is_object()) {
-                  array->bool_at_put(i, true);
-                }
-              }
-              HotSpotJVMCI::HotSpotStackFrameReference::set_localIsVirtual(JVMCIENV, frame_reference(), array());
+  while (vf != NULL) {
+    StackValueCollection* locals = NULL;
+    if (vf->is_compiled_frame()) {
+      compiledVFrame* cvf = compiledVFrame::cast(vf);
+
+      if (methods == NULL || matches(methods, cvf->method(), JVMCIENV)) {
+        if (initialSkip > 0) {
+          initialSkip--;
+        } else {
+          ScopeDesc* scope = cvf->scope();
+          // native wrappers do not have a scope
+          if (scope != NULL && scope->objects() != NULL) {
+            GrowableArray<ScopeValue *> *objects;
+            if (!realloc_called) {
+              objects = scope->objects();
             } else {
-              HotSpotJVMCI::HotSpotStackFrameReference::set_localIsVirtual(JVMCIENV, frame_reference(), NULL);
+              // some object might already have been re-allocated, only reallocate the non-allocated ones
+              objects = new GrowableArray<ScopeValue*>(scope->objects()->length());
+              for (int i = 0; i < scope->objects()->length(); i++) {
+                ObjectValue* sv = (ObjectValue*) scope->objects()->at(i);
+                if (sv->value().is_null()) {
+                  objects->append(sv);
+                }
+              }
             }
+            ImmediateReallocClosure f(thread);
+            RegisterMap* map = const_cast<RegisterMap *>(vf->register_map());
+            bool realloc_failures = Deoptimization::realloc_objects(vf->frame_pointer(), map, objects, &f);
+            Deoptimization::reassign_fields(vf->frame_pointer(), map, objects, realloc_failures, false, &f);
+            realloc_called = true;
 
-            locals = cvf->locals();
-            HotSpotJVMCI::HotSpotStackFrameReference::set_bci(JVMCIENV, frame_reference(), cvf->bci());
-            methodHandle mh(THREAD, cvf->method());
-            JVMCIObject method = JVMCIENV->get_jvmci_method(mh, JVMCI_CHECK_NULL);
-            HotSpotJVMCI::HotSpotStackFrameReference::set_method(JVMCIENV, frame_reference(), JNIHandles::resolve(method.as_jobject()));
-          }
-        }
-      } else if (vf->is_interpreted_frame()) {
-        // interpreted method frame
-        interpretedVFrame* ivf = interpretedVFrame::cast(vf);
-        if (methods == NULL || matches(methods, ivf->method(), JVMCIENV)) {
-          if (initialSkip > 0) {
-            initialSkip--;
+            GrowableArray<ScopeValue*>* local_values = scope->locals();
+            typeArrayOop array_oop = oopFactory::new_boolArray(local_values->length(), CHECK_NULL);
+            typeArrayHandle array(THREAD, array_oop);
+            for (int i = 0; i < local_values->length(); i++) {
+              ScopeValue *value = local_values->at(i);
+              if (value->is_object()) {
+                array->bool_at_put(i, true);
+              }
+            }
+            HotSpotJVMCI::HotSpotStackFrameReference::set_localIsVirtual(JVMCIENV, frame_reference(), array());
           } else {
-            locals = ivf->locals();
-            HotSpotJVMCI::HotSpotStackFrameReference::set_bci(JVMCIENV, frame_reference(), ivf->bci());
-            methodHandle mh(THREAD, ivf->method());
-            JVMCIObject method = JVMCIENV->get_jvmci_method(mh, JVMCI_CHECK_NULL);
-            HotSpotJVMCI::HotSpotStackFrameReference::set_method(JVMCIENV, frame_reference(), JNIHandles::resolve(method.as_jobject()));
             HotSpotJVMCI::HotSpotStackFrameReference::set_localIsVirtual(JVMCIENV, frame_reference(), NULL);
           }
+
+          locals = cvf->locals();
+          HotSpotJVMCI::HotSpotStackFrameReference::set_bci(JVMCIENV, frame_reference(), cvf->bci());
+          JVMCIObject method = JVMCIENV->get_jvmci_method(methodHandle(thread, cvf->method()), JVMCI_CHECK_NULL);
+          HotSpotJVMCI::HotSpotStackFrameReference::set_method(JVMCIENV, frame_reference(), JNIHandles::resolve(method.as_jobject()));
         }
       }
-
-      // locals != NULL means that we found a matching frame and result is already partially initialized
-      if (locals != NULL) {
-        methods = match_methods;
-        HotSpotJVMCI::HotSpotStackFrameReference::set_compilerToVM(JVMCIENV, frame_reference(), JNIHandles::resolve(compilerToVM));
-        HotSpotJVMCI::HotSpotStackFrameReference::set_stackPointer(JVMCIENV, frame_reference(), (jlong) fst.current()->sp());
-        HotSpotJVMCI::HotSpotStackFrameReference::set_frameNumber(JVMCIENV, frame_reference(), frame_number);
-
-        // initialize the locals array
-        objArrayOop array_oop = oopFactory::new_objectArray(locals->size(), CHECK_NULL);
-        objArrayHandle array(THREAD, array_oop);
-        for (int i = 0; i < locals->size(); i++) {
-          StackValue* var = locals->at(i);
-          if (var->type() == T_OBJECT) {
-            array->obj_at_put(i, locals->at(i)->get_obj()());
-          }
+    } else if (vf->is_interpreted_frame()) {
+      // interpreted method frame
+      interpretedVFrame* ivf = interpretedVFrame::cast(vf);
+      if (methods == NULL || matches(methods, ivf->method(), JVMCIENV)) {
+        if (initialSkip > 0) {
+          initialSkip--;
+        } else {
+          locals = ivf->locals();
+          HotSpotJVMCI::HotSpotStackFrameReference::set_bci(JVMCIENV, frame_reference(), ivf->bci());
+          JVMCIObject method = JVMCIENV->get_jvmci_method(methodHandle(thread, ivf->method()), JVMCI_CHECK_NULL);
+          HotSpotJVMCI::HotSpotStackFrameReference::set_method(JVMCIENV, frame_reference(), JNIHandles::resolve(method.as_jobject()));
+          HotSpotJVMCI::HotSpotStackFrameReference::set_localIsVirtual(JVMCIENV, frame_reference(), NULL);
         }
-        HotSpotJVMCI::HotSpotStackFrameReference::set_locals(JVMCIENV, frame_reference(), array());
-        HotSpotJVMCI::HotSpotStackFrameReference::set_objectsMaterialized(JVMCIENV, frame_reference(), JNI_FALSE);
-
-        JavaValue result(T_OBJECT);
-        JavaCallArguments args(visitor);
-        args.push_oop(frame_reference);
-        call_interface(&result, HotSpotJVMCI::InspectedFrameVisitor::klass(), vmSymbols::visitFrame_name(), vmSymbols::visitFrame_signature(), &args, CHECK_NULL);
-        if (result.get_jobject() != NULL) {
-          return JNIHandles::make_local(thread, (oop) result.get_jobject());
-        }
-        assert(initialSkip == 0, "There should be no match before initialSkip == 0");
-        if (HotSpotJVMCI::HotSpotStackFrameReference::objectsMaterialized(JVMCIENV, frame_reference()) == JNI_TRUE) {
-          // the frame has been deoptimized, we need to re-synchronize the frame and vframe
-          intptr_t* stack_pointer = (intptr_t*) HotSpotJVMCI::HotSpotStackFrameReference::stackPointer(JVMCIENV, frame_reference());
-          fst = StackFrameStream(thread);
-          while (fst.current()->sp() != stack_pointer && !fst.is_done()) {
-            fst.next();
-          }
-          if (fst.current()->sp() != stack_pointer) {
-            THROW_MSG_NULL(vmSymbols::java_lang_IllegalStateException(), "stack frame not found after deopt")
-          }
-          vf = vframe::new_vframe(fst.current(), fst.register_map(), thread);
-          if (!vf->is_compiled_frame()) {
-            THROW_MSG_NULL(vmSymbols::java_lang_IllegalStateException(), "compiled stack frame expected")
-          }
-          for (int i = 0; i < frame_number; i++) {
-            if (vf->is_top()) {
-              THROW_MSG_NULL(vmSymbols::java_lang_IllegalStateException(), "vframe not found after deopt")
-            }
-            vf = vf->sender();
-            assert(vf->is_compiled_frame(), "Wrong frame type");
-          }
-        }
-        frame_reference = HotSpotJVMCI::HotSpotStackFrameReference::klass()->allocate_instance_handle(CHECK_NULL);
-        HotSpotJVMCI::HotSpotStackFrameReference::klass()->initialize(CHECK_NULL);
       }
-
-      if (vf->is_top()) {
-        break;
-      }
-      frame_number++;
-      vf = vf->sender();
-    } // end of vframe loop
-
-    if (fst.is_done()) {
-      break;
     }
-    fst.next();
-    vf = vframe::new_vframe(fst.current(), fst.register_map(), thread);
-    frame_number = 0;
-  } // end of frame loop
 
+    // locals != NULL means that we found a matching frame and result is already partially initialized
+    if (locals != NULL) {
+      methods = match_methods;
+      HotSpotJVMCI::HotSpotStackFrameReference::set_compilerToVM(JVMCIENV, frame_reference(), JNIHandles::resolve(compilerToVM));
+      HotSpotJVMCI::HotSpotStackFrameReference::set_stackPointer(JVMCIENV, frame_reference(), (jlong) vf->frame_pointer()->sp());
+      HotSpotJVMCI::HotSpotStackFrameReference::set_frameNumber(JVMCIENV, frame_reference(), frame_number);
+      HotSpotJVMCI::HotSpotStackFrameReference::set_thread(JVMCIENV, frame_reference(), thread->threadObj());
+
+      // initialize the locals array
+      objArrayOop array_oop = oopFactory::new_objectArray(locals->size(), CHECK_NULL);
+      objArrayHandle array(THREAD, array_oop);
+      for (int i = 0; i < locals->size(); i++) {
+        StackValue* var = locals->at(i);
+        if (var->type() == T_OBJECT) {
+          array->obj_at_put(i, var->get_obj()());
+        }
+      }
+      HotSpotJVMCI::HotSpotStackFrameReference::set_locals(JVMCIENV, frame_reference(), array());
+      HotSpotJVMCI::HotSpotStackFrameReference::set_objectsMaterialized(JVMCIENV, frame_reference(), JNI_FALSE);
+
+      JavaValue result(T_OBJECT);
+      JavaCallArguments args(visitor);
+      args.push_oop(frame_reference);
+      call_interface(&result, HotSpotJVMCI::InspectedFrameVisitor::klass(), vmSymbols::visitFrame_name(), vmSymbols::visitFrame_signature(), &args, CHECK_NULL);
+      if (result.get_jobject() != NULL) {
+        return JNIHandles::make_local(thread, (oop) result.get_jobject());
+      }
+      assert(initialSkip == 0, "There should be no match before initialSkip == 0");
+      if (HotSpotJVMCI::HotSpotStackFrameReference::objectsMaterialized(JVMCIENV, frame_reference()) == JNI_TRUE) {
+        // the frame has been deoptimized, we need to re-synchronize the frame and vframe
+        intptr_t* stack_pointer = (intptr_t*) HotSpotJVMCI::HotSpotStackFrameReference::stackPointer(JVMCIENV, frame_reference());
+        RegisterMap reg_map_after_deopt(thread);
+        vframe* vfAfterDeopt = thread->last_java_vframe(&reg_map_after_deopt);
+        while (vfAfterDeopt != NULL && vfAfterDeopt->frame_pointer()->sp() != stack_pointer) {
+          vfAfterDeopt = vfAfterDeopt->sender();
+        }
+        if (vfAfterDeopt == NULL) {
+          THROW_MSG_NULL(vmSymbols::java_lang_IllegalStateException(), "stack frame not found after deopt")
+        }
+        if (!vfAfterDeopt->is_compiled_frame()) {
+          THROW_MSG_NULL(vmSymbols::java_lang_IllegalStateException(), "compiled stack frame expected")
+        }
+        vf = vfAfterDeopt;
+        for (int i = 0; i < frame_number; i++) {
+          if (vf->is_top()) {
+            THROW_MSG_NULL(vmSymbols::java_lang_IllegalStateException(), "vframe not found after deopt")
+          }
+          vf = vf->sender();
+          assert(vf->is_compiled_frame(), "Wrong frame type");
+        }
+      }
+      frame_reference = HotSpotJVMCI::HotSpotStackFrameReference::klass()->allocate_instance_handle(CHECK_NULL);
+    }
+    frame_number++;
+    if (vf->is_top()) {
+      // reset iteration state
+      frame_number = 0;
+      realloc_called = false;
+    }
+    vf = vf->sender();
+  } // end of vframe loop
   // the end was reached without finding a matching method
   return NULL;
 C2V_END
@@ -1461,51 +2038,68 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
 
   JVMCIENV->HotSpotStackFrameReference_initialize(JVMCI_CHECK);
 
-  // look for the given stack frame
-  StackFrameStream fst(thread, false);
-  intptr_t* stack_pointer = (intptr_t*) JVMCIENV->get_HotSpotStackFrameReference_stackPointer(hs_frame);
-  while (fst.current()->sp() != stack_pointer && !fst.is_done()) {
-    fst.next();
+  oop the_thread = JNIHandles::resolve(JVMCIENV->get_HotSpotStackFrameReference_thread(hs_frame).as_jobject());
+  JavaThread* java_thread = java_lang_Thread::thread(the_thread);
+
+  // sanity check that the thread is still alive after suspending
+  if (java_thread == NULL || java_thread->threadObj() == NULL) {
+    JVMCI_THROW_MSG(IllegalStateException, "thread is not live");
   }
-  if (fst.current()->sp() != stack_pointer) {
+
+  // look for the given stack frame
+  RegisterMap reg_map(java_thread);
+  vframe* vf = java_thread->last_java_vframe(&reg_map);
+  intptr_t* stack_pointer = (intptr_t *) JVMCIENV->get_HotSpotStackFrameReference_stackPointer(hs_frame);
+  while (vf != NULL && vf->frame_pointer()->sp() != stack_pointer) {
+    vf = vf->sender();
+  }
+  if (vf == NULL) {
     JVMCI_THROW_MSG(IllegalStateException, "stack frame not found");
   }
 
   if (invalidate) {
-    if (!fst.current()->is_compiled_frame()) {
+    if (!vf->frame_pointer()->is_compiled_frame()) {
       JVMCI_THROW_MSG(IllegalStateException, "compiled stack frame expected");
     }
-    assert(fst.current()->cb()->is_nmethod(), "nmethod expected");
-    ((nmethod*) fst.current()->cb())->make_not_entrant();
+    assert(vf->frame_pointer()->cb()->is_nmethod(), "nmethod expected");
+    ((nmethod*) vf->frame_pointer()->cb())->make_not_entrant();
   }
-  Deoptimization::deoptimize(thread, *fst.current(), Deoptimization::Reason_none);
+  Deoptimization::deoptimize(java_thread, *vf->frame_pointer(), Deoptimization::Reason_none);
   // look for the frame again as it has been updated by deopt (pc, deopt state...)
-  StackFrameStream fstAfterDeopt(thread);
-  while (fstAfterDeopt.current()->sp() != stack_pointer && !fstAfterDeopt.is_done()) {
-    fstAfterDeopt.next();
+  RegisterMap reg_map_after_deopt(java_thread);
+  vframe* vfAfterDeopt = java_thread->last_java_vframe(&reg_map_after_deopt);
+  while (vfAfterDeopt != NULL && vfAfterDeopt->frame_pointer()->sp() != stack_pointer) {
+    vfAfterDeopt = vfAfterDeopt->sender();
   }
-  if (fstAfterDeopt.current()->sp() != stack_pointer) {
+  if (vfAfterDeopt == NULL) {
     JVMCI_THROW_MSG(IllegalStateException, "stack frame not found after deopt");
   }
 
-  vframe* vf = vframe::new_vframe(fstAfterDeopt.current(), fstAfterDeopt.register_map(), thread);
-  if (!vf->is_compiled_frame()) {
+  if (!vfAfterDeopt->is_compiled_frame()) {
     JVMCI_THROW_MSG(IllegalStateException, "compiled stack frame expected");
   }
 
   GrowableArray<compiledVFrame*>* virtualFrames = new GrowableArray<compiledVFrame*>(10);
   while (true) {
-    assert(vf->is_compiled_frame(), "Wrong frame type");
-    virtualFrames->push(compiledVFrame::cast(vf));
-    if (vf->is_top()) {
+    assert(vfAfterDeopt->is_compiled_frame(), "Wrong frame type");
+    virtualFrames->push(compiledVFrame::cast(vfAfterDeopt));
+    if (vfAfterDeopt->is_top()) {
       break;
     }
-    vf = vf->sender();
+    vfAfterDeopt = vfAfterDeopt->sender();
   }
 
   int last_frame_number = JVMCIENV->get_HotSpotStackFrameReference_frameNumber(hs_frame);
   if (last_frame_number >= virtualFrames->length()) {
     JVMCI_THROW_MSG(IllegalStateException, "invalid frame number");
+  }
+
+  // validate the method
+  Method* actual_method = virtualFrames->at(last_frame_number)->method();
+  Method* expected_method = JVMCIENV->asMethod(JVMCIENV->get_HotSpotStackFrameReference_method(hs_frame));
+
+  if (actual_method != expected_method) {
+    JVMCI_THROW_MSG(IllegalStateException, "unexpected method found in compiled frame");
   }
 
   // Reallocate the non-escaping objects and restore their fields.
@@ -1517,8 +2111,9 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     return;
   }
 
-  bool realloc_failures = Deoptimization::realloc_objects(thread, fstAfterDeopt.current(), fstAfterDeopt.register_map(), objects, CHECK);
-  Deoptimization::reassign_fields(fstAfterDeopt.current(), fstAfterDeopt.register_map(), objects, realloc_failures, false);
+  ImmediateReallocClosure f(java_thread);
+  bool realloc_failures = Deoptimization::realloc_objects(vfAfterDeopt->frame_pointer(), const_cast<RegisterMap *>(vfAfterDeopt->register_map()), objects, &f);
+  Deoptimization::reassign_fields(vfAfterDeopt->frame_pointer(), const_cast<RegisterMap *>(vfAfterDeopt->register_map()), objects, realloc_failures, false, &f);
 
   for (int frame_index = 0; frame_index < virtualFrames->length(); frame_index++) {
     compiledVFrame* cvf = virtualFrames->at(frame_index);
@@ -1530,7 +2125,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
         StackValue* var = locals->at(i2);
         if (var->type() == T_OBJECT && scopeLocals->at(i2)->is_object()) {
           jvalue val;
-          val.l = cast_from_oop<jobject>(locals->at(i2)->get_obj()());
+          val.l = (jobject) locals->at(i2)->get_obj()();
           cvf->update_local(T_OBJECT, i2, val);
         }
       }
@@ -1543,7 +2138,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
         StackValue* var = expressions->at(i2);
         if (var->type() == T_OBJECT && scopeExpressions->at(i2)->is_object()) {
           jvalue val;
-          val.l = cast_from_oop<jobject>(expressions->at(i2)->get_obj()());
+          val.l = (jobject) expressions->at(i2)->get_obj()();
           cvf->update_stack(T_OBJECT, i2, val);
         }
       }
@@ -2681,6 +3276,7 @@ C2V_VMENTRY(void, notifyCompilerInliningEvent, (JNIEnv* env, jobject, jint compi
 #define STRING                  "Ljava/lang/String;"
 #define OBJECT                  "Ljava/lang/Object;"
 #define CLASS                   "Ljava/lang/Class;"
+#define _THREAD                 "Ljava/lang/Thread;"
 #define OBJECTCONSTANT          "Ljdk/vm/ci/hotspot/HotSpotObjectConstantImpl;"
 #define HANDLECONSTANT          "Ljdk/vm/ci/hotspot/IndirectHotSpotObjectConstantImpl;"
 #define EXECUTABLE              "Ljava/lang/reflect/Executable;"
@@ -2689,6 +3285,7 @@ C2V_VMENTRY(void, notifyCompilerInliningEvent, (JNIEnv* env, jobject, jint compi
 #define TARGET_DESCRIPTION      "Ljdk/vm/ci/code/TargetDescription;"
 #define BYTECODE_FRAME          "Ljdk/vm/ci/code/BytecodeFrame;"
 #define JAVACONSTANT            "Ljdk/vm/ci/meta/JavaConstant;"
+#define INSPECTED_FRAME         "Ljdk/vm/ci/code/stack/InspectedFrame;"
 #define INSPECTED_FRAME_VISITOR "Ljdk/vm/ci/code/stack/InspectedFrameVisitor;"
 #define RESOLVED_METHOD         "Ljdk/vm/ci/meta/ResolvedJavaMethod;"
 #define HS_RESOLVED_METHOD      "Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;"
@@ -2767,6 +3364,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "hasCompiledCodeForOSR",                        CC "(" HS_RESOLVED_METHOD "II)Z",                                                     FN_PTR(hasCompiledCodeForOSR)},
   {CC "getSymbol",                                    CC "(J)" STRING,                                                                      FN_PTR(getSymbol)},
   {CC "iterateFrames",                                CC "([" RESOLVED_METHOD "[" RESOLVED_METHOD "I" INSPECTED_FRAME_VISITOR ")" OBJECT,   FN_PTR(iterateFrames)},
+  {CC "getStackFrames",                               CC "([" RESOLVED_METHOD "[" RESOLVED_METHOD "II" "[" _THREAD ")" "[[" INSPECTED_FRAME,FN_PTR(getStackFrames)},
   {CC "materializeVirtualObjects",                    CC "(" HS_STACK_FRAME_REF "Z)V",                                                      FN_PTR(materializeVirtualObjects)},
   {CC "shouldDebugNonSafepoints",                     CC "()Z",                                                                             FN_PTR(shouldDebugNonSafepoints)},
   {CC "writeDebugOutput",                             CC "([BIIZZ)I",                                                                       FN_PTR(writeDebugOutput)},

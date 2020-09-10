@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ public class HotSpotStackFrameReference implements InspectedFrame {
     @SuppressWarnings("unused") private boolean objectsMaterialized;
 
     // information used to find the stack frame
+    private Thread thread;
     private long stackPointer;
     private int frameNumber;
 
@@ -42,6 +43,10 @@ public class HotSpotStackFrameReference implements InspectedFrame {
     private HotSpotResolvedJavaMethod method;
     private Object[] locals;
     private boolean[] localIsVirtual;
+
+    public Thread getThread() {
+        return thread;
+    }
 
     public long getStackPointer() {
         return stackPointer;

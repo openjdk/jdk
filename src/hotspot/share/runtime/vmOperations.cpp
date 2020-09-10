@@ -344,6 +344,50 @@ void VM_ThreadDump::snapshot_thread(JavaThread* java_thread, ThreadConcurrentLoc
   snapshot->set_concurrent_locks(tcl);
 }
 
+VM_FramesDump::VM_FramesDump(FramesDumpResult* result,
+                             GrowableArray<instanceHandle>* threads,
+                             jobjectArray initial_methods,
+                             jobjectArray match_methods,
+                             jint initialSkip,
+                             int max_depth,
+                             JNIHandleBlock* handles,
+                             JVMCIEnv* JVMCIENV) {
+  _result = result;
+  _threads = threads;
+  _max_depth = max_depth;
+  _initial_methods = initial_methods;
+  _match_methods = match_methods;
+  _initialSkip = initialSkip;
+  _handles = handles;
+  _JVMCIENV = JVMCIENV;
+}
+
+void VM_FramesDump::doit() {
+  // Snapshot frames in the given _threads array
+  for (int i = 0; i < _threads->length(); i++) {
+    instanceHandle th = _threads->at(i);
+    if (th() == NULL) {
+      // skip if the thread doesn't exist
+      // Add a NULL snapshot
+      _result->add_frames_snapshot(NULL);
+      continue;
+    }
+
+    // Dump thread stack only if the thread is alive and not exiting
+    // and not VM internal thread.
+    JavaThread* jt = java_lang_Thread::thread(th());
+    if (jt == NULL || /* thread not alive */
+        jt->is_exiting() ||
+        jt->is_hidden_from_external_view() ||
+        !jt->has_last_Java_frame())  {
+      // add a NULL snapshot if skipped
+      _result->add_frames_snapshot(NULL);
+      continue;
+    }
+    _result->dump_frames_at_safepoint(jt, _initial_methods, _match_methods, _initialSkip, _max_depth, _handles, _JVMCIENV);
+  }
+}
+
 volatile bool VM_Exit::_vm_exited = false;
 Thread * volatile VM_Exit::_shutdown_thread = NULL;
 

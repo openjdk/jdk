@@ -322,6 +322,7 @@
   end_class                                                                                                   \
   start_class(HotSpotStackFrameReference, jdk_vm_ci_hotspot_HotSpotStackFrameReference)                       \
     object_field(HotSpotStackFrameReference, compilerToVM, "Ljdk/vm/ci/hotspot/CompilerToVM;")                \
+    object_field(HotSpotStackFrameReference, thread, "Ljava/lang/Thread;")                                    \
     boolean_field(HotSpotStackFrameReference, objectsMaterialized)                                            \
     long_field(HotSpotStackFrameReference, stackPointer)                                                      \
     int_field(HotSpotStackFrameReference, frameNumber)                                                        \

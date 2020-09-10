@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ class vframeArray;
 class MonitorInfo;
 class MonitorValue;
 class ObjectValue;
+class ReallocClosure;
+class ObjectSnapshot;
 class AutoBoxObjectValue;
 class ScopeValue;
 class compiledVFrame;
@@ -159,6 +161,7 @@ class Deoptimization : AllStatic {
 #if INCLUDE_JVMCI
   static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);
   static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS);
+  static oop get_cached_box(BasicType box_type, intptr_t value, TRAPS);
 #endif
 
   private:
@@ -169,11 +172,12 @@ class Deoptimization : AllStatic {
  public:
 
   // Support for restoring non-escaping objects
-  static bool realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS);
-  static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
-  static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
-  static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal);
+  static bool realloc_objects(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, ReallocClosure* f);
+  static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, ObjectSnapshot* object_snapshot, BasicType type, ReallocClosure* f);
+  static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, ObjectSnapshot* object_snapshot, ReallocClosure* f);
+  static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal, ReallocClosure* f);
   static void relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaThread* thread, bool realloc_failures);
+  static void byte_array_put(typeArrayOop obj, intptr_t val, int index, int byte_count);
   static void pop_frames_failed_reallocs(JavaThread* thread, vframeArray* array);
   NOT_PRODUCT(static void print_objects(GrowableArray<ScopeValue*>* objects, bool realloc_failures);)
 #endif // COMPILER2_OR_JVMCI
@@ -472,6 +476,143 @@ public:
   DeoptimizationMarker()  { _is_active = true; }
   ~DeoptimizationMarker() { _is_active = false; }
   static bool is_active() { return _is_active; }
+};
+
+// marker types for reallocating objects after VM frames dump operation
+enum AllocType {
+  BOXED                 = 1,
+  INSTANCE_KLASS        = 2,
+  TYPE_ARRAY_KLASS      = 3,
+  OBJECT_ARRAY          = 4,
+  PRE_EXISTING          = 5,
+};
+
+// An instance of this class represents the value of a field or array element.
+// For fields an _offset is stored and for array elements an _index.
+// A FieldValueSnapshot instance stores primitive values directly (using jvalue),
+// scalar-replaced objects as an ObjectValue ID and already allocated objects as jobject (using jvalue).
+class FieldValueSnapshot : public CHeapObj<mtInternal> {
+private:
+  int                       _offset;
+  int                       _index;
+  BasicType                 _type;
+  int                       _object_id;
+  jvalue                    _val;
+  int                       _byte_count;
+  intptr_t                  _byte_val; // the raw intptr_t is needed for Deoptimization::byte_array_put() call
+
+public:
+  FieldValueSnapshot(BasicType type, int offset) {
+    _type = type;
+    _offset = offset;
+    _object_id = -1;
+    _index = -1;
+    _byte_count = -1;
+    _byte_val = -1;
+  }
+
+  BasicType type() { return _type; }
+  int offset() { return _offset; }
+  void set_index(int index) { _index = index; }
+  int get_index() { return _index; }
+  void set_object_id(int id) { _object_id = id; }
+  int get_object_id() { return _object_id; }
+  void set_value(jvalue value) { _val = value; }
+  jvalue get_value() { return _val; }
+  void set_byte(intptr_t val) { _byte_val = val; }
+  intptr_t get_byte() { return _byte_val; }
+  void set_byte_count(int byte_count) { _byte_count = byte_count; }
+  int get_byte_count() { return _byte_count; }
+};
+
+class StackValue;
+// An ObjectSnapshot represents the information required to allocate an object based on allocation type.
+// ObjectSnapshot instances are created by implementations of ReallocClosure while executing realloc_objects.
+class ObjectSnapshot : public CHeapObj<mtInternal> {
+private:
+  Thread*                  _thread;
+  Handle                   _value;
+  const int                _id;
+  const AllocType          _alloc_type;
+  BasicType                _box_type;
+  intptr_t                 _box_value_or_array_length;
+  Klass*                   _klass;
+  GrowableArray<FieldValueSnapshot*>* _fields;
+  bool                    _materialized;
+
+public:
+  ObjectSnapshot(Thread* thread, int id, Handle value, AllocType allocType = PRE_EXISTING);
+  ObjectSnapshot(Thread* thread, int id, AllocType alloc_type, Klass* klass = NULL, int array_length = 0);
+  ~ObjectSnapshot();
+
+  Handle get_value();
+  int get_id();
+  void set_value(oop value);
+  AllocType get_alloc_type();
+  Klass* get_klass();
+  int get_array_length();
+  void set_box_type(BasicType type, intptr_t i, Klass* klass);
+  BasicType get_box_type();
+  intptr_t get_box_value();
+  GrowableArray<FieldValueSnapshot*>* get_fields();
+  void set_klass(Klass *klass, int len = -1);
+  void put_obj_id(int offset, int id);
+  void put_byte_field(int offset, intptr_t val);
+  void put_value(int offset, BasicType type, jvalue value);
+  void at_put( int index, BasicType type, jvalue val);
+  void byte_at_put(int index, intptr_t val, int byte_count);
+  void obj_at_put(int index, ObjectValue* ov);
+};
+
+// ReallocClosure is the super class used to control a specific re-allocation
+// and reassign fields implementation.
+class ReallocClosure : public Closure {
+public:
+  virtual ObjectSnapshot* cached_box(AutoBoxObjectValue *bv, frame *fr, RegisterMap *reg_map, InstanceKlass *klass) = 0;
+  virtual ObjectSnapshot* allocate_instance_klass(InstanceKlass* ik, int object_id) = 0;
+  virtual ObjectSnapshot* allocate_type_array_klass(TypeArrayKlass* ak, int len, int object_id) = 0;
+  virtual ObjectSnapshot* allocate_object_array_klass(ObjArrayKlass* ak, int i, int object_id) = 0;
+  virtual void update_value(ObjectValue* ov, ObjectSnapshot* obj) = 0;
+  virtual ObjectSnapshot* get_value(ObjectValue* value) = 0;
+  virtual void obj_field_put(int offset, StackValue* sv, ObjectSnapshot* obj) = 0;
+  virtual void value_put(BasicType type, int offset, jvalue val, ObjectSnapshot* obj) = 0;
+  virtual void byte_field_put(int offset, intptr_t val, ObjectSnapshot* obj) = 0;
+  virtual void obj_at_put(int index, oop value, ObjectValue* ov, ObjectSnapshot* obj) = 0;
+  virtual void value_at_put(BasicType type, int index, jvalue val, ObjectSnapshot* obj) = 0;
+  virtual void byte_at_put(int index, intptr_t val, int byte_count, ObjectSnapshot* obj) = 0;
+  virtual void pre_alloc() = 0;
+  virtual void post_single_alloc(ObjectSnapshot* object_snapshot) = 0;
+  virtual void post_alloc(bool failures) = 0;
+};
+
+// An implementation of ReallocClosure that does object re-allocation and
+// reassign fields immediately.
+class ImmediateReallocClosure : public ReallocClosure {
+private:
+  Thread*                 _thread;
+  Handle                  _pending_exception;
+  const char*             _exception_file;
+  int                     _exception_line;
+public:
+  ImmediateReallocClosure(Thread* thread) {
+    _thread = thread;
+  }
+
+  void pre_alloc();
+  void post_single_alloc(ObjectSnapshot* object_snapshot);
+  void post_alloc(bool failures);
+  ObjectSnapshot* cached_box(AutoBoxObjectValue *bv, frame *fr, RegisterMap *reg_map, InstanceKlass *Klass);
+  ObjectSnapshot* allocate_instance_klass(InstanceKlass* ik, int object_id);
+  ObjectSnapshot* allocate_type_array_klass(TypeArrayKlass* ak, int len, int object_id);
+  ObjectSnapshot* allocate_object_array_klass(ObjArrayKlass* ak, int len, int object_id);
+  void update_value(ObjectValue* ov, ObjectSnapshot* object_snapshot);
+  ObjectSnapshot* get_value(ObjectValue* value);
+  void obj_field_put(int offset, StackValue* sv, ObjectSnapshot* object_snapshot);
+  void value_put(BasicType type, int offset, jvalue val, ObjectSnapshot* object_snapshot);
+  void byte_field_put(int offset, intptr_t val, ObjectSnapshot* object_snapshot);
+  void obj_at_put(int index, oop value, ObjectValue* ov, ObjectSnapshot *object_snapshot);
+  void value_at_put(BasicType type, int index, jvalue val, ObjectSnapshot* obj);
+  void byte_at_put(int index, intptr_t val, int byte_count, ObjectSnapshot* object_snapshot);
 };
 
 #endif // SHARE_RUNTIME_DEOPTIMIZATION_HPP

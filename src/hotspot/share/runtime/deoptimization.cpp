@@ -195,11 +195,12 @@ static bool eliminate_allocations(JavaThread* thread, int exec_mode, CompiledMet
     }
   }
   if (objects != NULL) {
+    ImmediateReallocClosure f(thread);
     JRT_BLOCK
-      realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, THREAD);
+      realloc_failures = Deoptimization::realloc_objects(&deoptee, &map, objects, &f);
     JRT_END
     bool skip_internal = (compiled_method != NULL) && !compiled_method->is_compiled_by_jvmci();
-    Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal);
+    Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal, &f);
 #ifndef PRODUCT
     if (TraceDeoptimization) {
       ttyLocker ttyl;
@@ -958,78 +959,299 @@ oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMa
    BasicType box_type = SystemDictionary::box_klass_type(k);
    if (box_type != T_OBJECT) {
      StackValue* value = StackValue::create_stack_value(fr, reg_map, bv->field_at(box_type == T_LONG ? 1 : 0));
-     switch(box_type) {
-       case T_INT:     return IntegerBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
-       case T_CHAR:    return CharacterBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
-       case T_SHORT:   return ShortBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
-       case T_BYTE:    return ByteBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
-       case T_BOOLEAN: return BooleanBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
-       case T_LONG:    return LongBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
-       default:;
-     }
+     return get_cached_box(box_type, value->get_int(), CHECK_NULL);
    }
    return NULL;
 }
+
+oop Deoptimization::get_cached_box(BasicType box_type, intptr_t value, TRAPS) {
+  switch(box_type) {
+    case T_INT:     return IntegerBoxCache::singleton(THREAD)->lookup_raw(value);
+    case T_CHAR:    return CharacterBoxCache::singleton(THREAD)->lookup_raw(value);
+    case T_SHORT:   return ShortBoxCache::singleton(THREAD)->lookup_raw(value);
+    case T_BYTE:    return ByteBoxCache::singleton(THREAD)->lookup_raw(value);
+    case T_BOOLEAN: return BooleanBoxCache::singleton(THREAD)->lookup_raw(value);
+    case T_LONG:    return LongBoxCache::singleton(THREAD)->lookup_raw(value);
+    default: return NULL;
+  }
+}
 #endif // INCLUDE_JVMCI || INCLUDE_AOT
 
+ObjectSnapshot::ObjectSnapshot(Thread* thread, int id, Handle value, AllocType alloc_type) : _id(id), _alloc_type(alloc_type) {
+  _thread = thread;
+  _value = value;
+  _fields = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<FieldValueSnapshot*>(0, mtInternal);
+  _klass = NULL;
+  _box_type = T_ILLEGAL;
+  _box_value_or_array_length = 0;
+  _materialized = false;
+}
+
+ObjectSnapshot::ObjectSnapshot(Thread* thread, int id, AllocType alloc_type, Klass* klass, int array_length) : _id(id), _alloc_type(alloc_type) {
+  _thread = thread;
+  _value = Handle();
+  _fields = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<FieldValueSnapshot*>(0, mtInternal);
+  _klass = klass;
+  _box_type = T_ILLEGAL;
+  _box_value_or_array_length = array_length;
+  _materialized = false;
+}
+
+ObjectSnapshot::~ObjectSnapshot() {
+  delete _fields;
+}
+
+Handle ObjectSnapshot::get_value() {
+  return _value;
+}
+
+int ObjectSnapshot::get_id() {
+  return _id;
+}
+
+void ObjectSnapshot::set_value(oop value) {
+  _value = Handle(_thread, value);
+}
+
+AllocType ObjectSnapshot::get_alloc_type() {
+  return _alloc_type;
+}
+
+Klass* ObjectSnapshot::get_klass() {
+  return _klass;
+}
+int ObjectSnapshot::get_array_length() {
+  return _box_value_or_array_length;
+}
+
+void ObjectSnapshot::set_box_type(BasicType type, intptr_t i, Klass* klass) {
+_box_type = type;
+_box_value_or_array_length = i;
+_klass = klass;
+}
+
+BasicType ObjectSnapshot::get_box_type() {
+  return _box_type;
+}
+
+intptr_t ObjectSnapshot::get_box_value() {
+  return _box_value_or_array_length;
+}
+
+GrowableArray<FieldValueSnapshot*>* ObjectSnapshot::get_fields() {
+  return _fields;
+}
+
+void ObjectSnapshot::set_klass(Klass *klass, int len) {
+_klass = klass;
+_box_value_or_array_length = len;
+}
+
+void ObjectSnapshot::put_obj_id(int offset, int id) {
+  FieldValueSnapshot* fvs = new FieldValueSnapshot(T_OBJECT, offset);
+  fvs->set_object_id(id);
+  _fields->append(fvs);
+}
+
+void ObjectSnapshot::put_byte_field(int offset, intptr_t val) {
+  FieldValueSnapshot* fvs = new FieldValueSnapshot(T_BYTE, offset);
+  fvs->set_byte(val);
+  _fields->append(fvs);
+}
+
+void ObjectSnapshot::put_value(int offset, BasicType type, jvalue value) {
+  FieldValueSnapshot* fvs = new FieldValueSnapshot(type, offset);
+  fvs->set_value(value);
+  _fields->append(fvs);
+}
+
+void ObjectSnapshot::at_put( int index, BasicType type, jvalue val) {
+  FieldValueSnapshot* fvs = new FieldValueSnapshot(type, -1);
+  fvs->set_index(index);
+  fvs->set_value(val);
+  _fields->append(fvs);
+}
+
+void ObjectSnapshot::byte_at_put(int index, intptr_t val, int byte_count) {
+  FieldValueSnapshot* fvs = new FieldValueSnapshot(T_BYTE, -1);
+  fvs->set_index(index);
+  fvs->set_byte(val);
+  fvs->set_byte_count(byte_count);
+  _fields->append(fvs);
+}
+
+void ObjectSnapshot::obj_at_put(int index, ObjectValue* ov) {
+  FieldValueSnapshot* fvs = new FieldValueSnapshot(T_OBJECT, -1);
+  fvs->set_index(index);
+  fvs->set_object_id(ov->id());
+  _fields->append(fvs);
+}
+
+void ImmediateReallocClosure::pre_alloc() {
+  // store and clear any pending exception before realloc
+  Handle pending_exception(_thread, _thread->pending_exception());
+  _pending_exception = pending_exception;
+  _exception_file = _thread->exception_file();
+  _exception_line = _thread->exception_line();
+  _thread->clear_pending_exception();
+}
+
+void ImmediateReallocClosure::post_single_alloc(ObjectSnapshot* object_snapshot) {
+  assert(object_snapshot != NULL || _thread->has_pending_exception(), "allocation should succeed or we should get an exception");
+  _thread->clear_pending_exception();
+}
+
+void ImmediateReallocClosure::post_alloc(bool failures) {
+  // handle failures and restore any pending exception
+  if (failures) {
+    JavaThread* current = JavaThread::current();
+    Exceptions::_throw_oop(current, current->exception_file(), current->exception_line(), Universe::out_of_memory_error_realloc_objects());
+  } else if (_pending_exception.not_null()) {
+    _thread->set_pending_exception(_pending_exception(), _exception_file, _exception_line);
+  }
+}
+
+ObjectSnapshot* ImmediateReallocClosure::cached_box(AutoBoxObjectValue *bv, frame *fr, RegisterMap *reg_map, InstanceKlass *klass) {
+  oop cached_value = Deoptimization::get_cached_box(bv, fr, reg_map, _thread);
+  if (cached_value != NULL) {
+    return new ObjectSnapshot(_thread, bv->id(), Handle(_thread, cached_value));
+  }
+  return NULL;
+}
+
+ObjectSnapshot* ImmediateReallocClosure::allocate_instance_klass(InstanceKlass *ik, int object_id) {
+  return new ObjectSnapshot(_thread, object_id, Handle(_thread, ik->allocate_instance(_thread)));
+}
+
+ObjectSnapshot* ImmediateReallocClosure::allocate_type_array_klass(TypeArrayKlass *ak, int len, int object_id) {
+  return new ObjectSnapshot(_thread, object_id, Handle(_thread, ak->allocate(len, _thread)));
+}
+
+ObjectSnapshot* ImmediateReallocClosure::allocate_object_array_klass(ObjArrayKlass* ak, int len, int object_id) {
+  return new ObjectSnapshot(_thread, object_id, Handle(_thread, ak->allocate(len, _thread)));
+}
+
+void ImmediateReallocClosure::update_value(ObjectValue* ov, ObjectSnapshot* object_snapshot) {
+  if (object_snapshot != NULL) {
+    ov->set_value(object_snapshot->get_value()());
+  }
+}
+
+ObjectSnapshot* ImmediateReallocClosure::get_value(ObjectValue* ov) {
+  return new ObjectSnapshot(_thread, ov->id(), ov->value());
+}
+
+void ImmediateReallocClosure::obj_field_put(int offset, StackValue *sv, ObjectSnapshot* object_snapshot) {
+  oop obj = object_snapshot->get_value()();
+  obj->obj_field_put(offset, sv->get_obj()());
+}
+
+void ImmediateReallocClosure::value_put(BasicType type, int offset, jvalue val, ObjectSnapshot* object_snapshot) {
+  oop obj = object_snapshot->get_value()();
+  switch (type) {
+    case T_INT:
+      obj->int_field_put(offset, val.i);
+      break;
+    case T_SHORT:
+      obj->short_field_put(offset, val.s);
+      break;
+    case T_CHAR:
+      obj->char_field_put(offset, val.c);
+      break;
+    case T_LONG:
+      obj->long_field_put(offset, val.j);
+      break;
+    case T_BOOLEAN:
+      obj->bool_field_put(offset, val.z);
+      break;
+    default: ShouldNotReachHere();
+  }
+}
+
+void ImmediateReallocClosure::byte_field_put(int offset, intptr_t val, ObjectSnapshot* object_snapshot) {
+  oop obj = object_snapshot->get_value()();
+  obj->byte_field_put(offset, (jbyte)*((jint*)&val));
+}
+
+void ImmediateReallocClosure::obj_at_put(int index, oop value, ObjectValue* ov, ObjectSnapshot* object_snapshot) {
+  objArrayOop obj = (objArrayOop) object_snapshot->get_value()();
+  obj->obj_at_put(index, value);
+}
+
+void ImmediateReallocClosure::value_at_put(BasicType type, int index, jvalue val, ObjectSnapshot* object_snapshot) {
+  typeArrayOop obj = (typeArrayOop) object_snapshot->get_value()();
+  switch (type) {
+    case T_INT:
+      obj->int_at_put(index, val.i);
+      break;
+    case T_SHORT:
+      obj->short_at_put(index, val.s);
+      break;
+    case T_CHAR:
+      obj->char_at_put(index, val.c);
+      break;
+    case T_LONG:
+      obj->long_at_put(index, val.j);
+      break;
+    case T_BOOLEAN:
+      obj->bool_at_put(index, val.z);
+      break;
+    default: ShouldNotReachHere();
+  }
+}
+
+void ImmediateReallocClosure::byte_at_put(int index, intptr_t val, int byte_count, ObjectSnapshot* object_snapshot) {
+  typeArrayOop obj = (typeArrayOop) object_snapshot->get_value()();
+  Deoptimization::byte_array_put(obj, val, index, byte_count);
+}
+
 #if COMPILER2_OR_JVMCI
-bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
-  Handle pending_exception(THREAD, thread->pending_exception());
-  const char* exception_file = thread->exception_file();
-  int exception_line = thread->exception_line();
-  thread->clear_pending_exception();
+bool Deoptimization::realloc_objects(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, ReallocClosure* f) {
 
   bool failures = false;
+  f->pre_alloc();
 
   for (int i = 0; i < objects->length(); i++) {
     assert(objects->at(i)->is_object(), "invalid debug information");
     ObjectValue* sv = (ObjectValue*) objects->at(i);
 
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
-    oop obj = NULL;
+    ObjectSnapshot* object_snapshot = NULL;
 
     if (k->is_instance_klass()) {
 #if INCLUDE_JVMCI || INCLUDE_AOT
       CompiledMethod* cm = fr->cb()->as_compiled_method_or_null();
       if (cm->is_compiled_by_jvmci() && sv->is_auto_box()) {
         AutoBoxObjectValue* abv = (AutoBoxObjectValue*) sv;
-        obj = get_cached_box(abv, fr, reg_map, THREAD);
-        if (obj != NULL) {
+        object_snapshot = f->cached_box(abv, fr, reg_map, InstanceKlass::cast(k));
+        if (object_snapshot != NULL) {
           // Set the flag to indicate the box came from a cache, so that we can skip the field reassignment for it.
           abv->set_cached(true);
         }
       }
 #endif // INCLUDE_JVMCI || INCLUDE_AOT
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      if (obj == NULL) {
-        obj = ik->allocate_instance(THREAD);
+      if (object_snapshot == NULL) {
+        InstanceKlass* ik = InstanceKlass::cast(k);
+        object_snapshot = f->allocate_instance_klass(ik, sv->id());
       }
     } else if (k->is_typeArray_klass()) {
       TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
-      obj = ak->allocate(len, THREAD);
+      object_snapshot = f->allocate_type_array_klass(ak, len, sv->id());
     } else if (k->is_objArray_klass()) {
-      ObjArrayKlass* ak = ObjArrayKlass::cast(k);
-      obj = ak->allocate(sv->field_size(), THREAD);
+      object_snapshot = f->allocate_object_array_klass(ObjArrayKlass::cast(k), sv->field_size(), sv->id());
     }
 
-    if (obj == NULL) {
+    if (object_snapshot == NULL) {
       failures = true;
     }
 
     assert(sv->value().is_null(), "redundant reallocation");
-    assert(obj != NULL || HAS_PENDING_EXCEPTION, "allocation should succeed or we should get an exception");
-    CLEAR_PENDING_EXCEPTION;
-    sv->set_value(obj);
+    f->post_single_alloc(object_snapshot);
+    f->update_value(sv, object_snapshot);
   }
-
-  if (failures) {
-    THROW_OOP_(Universe::out_of_memory_error_realloc_objects(), failures);
-  } else if (pending_exception.not_null()) {
-    thread->set_pending_exception(pending_exception(), exception_file, exception_line);
-  }
-
+  f->post_alloc(failures);
   return failures;
 }
 
@@ -1072,7 +1294,7 @@ static jbyte* check_alignment_get_addr(typeArrayOop obj, int index, int expected
     return res;
 }
 
-static void byte_array_put(typeArrayOop obj, intptr_t val, int index, int byte_count) {
+void Deoptimization::byte_array_put(typeArrayOop obj, intptr_t val, int index, int byte_count) {
   switch (byte_count) {
     case 1:
       obj->byte_at_put(index, (jbyte) *((jint *) &val));
@@ -1094,29 +1316,36 @@ static void byte_array_put(typeArrayOop obj, intptr_t val, int index, int byte_c
 
 
 // restore elements of an eliminated type array
-void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type) {
+void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, ObjectSnapshot* object_snapshot, BasicType type, ReallocClosure* f) {
   int index = 0;
   intptr_t val;
 
   for (int i = 0; i < sv->field_size(); i++) {
-    StackValue* value = StackValue::create_stack_value(fr, reg_map, sv->field_at(i));
+    StackValue* stack_value = StackValue::create_stack_value(fr, reg_map, sv->field_at(i));
+    if (stack_value->type() == T_CONFLICT) {
+      // skip fields with no values
+      index += (type == T_LONG || type == T_DOUBLE) ? 2 : 1;
+      continue;
+    }
+    jvalue value;
     switch(type) {
     case T_LONG: case T_DOUBLE: {
-      assert(value->type() == T_INT, "Agreement.");
+      assert(stack_value->type() == T_INT, "Agreement.");
       StackValue* low =
         StackValue::create_stack_value(fr, reg_map, sv->field_at(++i));
 #ifdef _LP64
       jlong res = (jlong)low->get_int();
 #else
-      jlong res = jlong_from((jint)value->get_int(), (jint)low->get_int());
+      jlong res = jlong_from((jint)stack_value->get_int(), (jint)low->get_int());
 #endif
-      obj->long_at_put(index, res);
+      value.j = res;
+      f->value_at_put(T_LONG, index, value, object_snapshot);
       break;
     }
 
     // Have to cast to INT (32 bits) pointer to avoid little/big-endian problem.
     case T_INT: case T_FLOAT: { // 4 bytes.
-      assert(value->type() == T_INT, "Agreement.");
+      assert(stack_value->type() == T_INT, "Agreement.");
       bool big_value = false;
       if (i + 1 < sv->field_size() && type == T_INT) {
         if (sv->field_at(i)->is_location()) {
@@ -1137,36 +1366,42 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
   #ifdef _LP64
         jlong res = (jlong)low->get_int();
   #else
-        jlong res = jlong_from((jint)value->get_int(), (jint)low->get_int());
+        jlong res = jlong_from((jint)stack_value->get_int(), (jint)low->get_int());
   #endif
-        obj->int_at_put(index, (jint)*((jint*)&res));
-        obj->int_at_put(++index, (jint)*(((jint*)&res) + 1));
+        value.i = (jint)*((jint*)&res);
+        f->value_at_put(T_INT, index, value, object_snapshot);
+        jvalue lower;
+        lower.i = (jint)*(((jint*)&res) + 1);
+        f->value_at_put(T_INT, ++index, lower, object_snapshot);
       } else {
-        val = value->get_int();
-        obj->int_at_put(index, (jint)*((jint*)&val));
+        val = stack_value->get_int();
+        value.i = (jint)*((jint*)&val);
+        f->value_at_put(T_INT, index, value, object_snapshot);
       }
       break;
     }
 
     case T_SHORT:
-      assert(value->type() == T_INT, "Agreement.");
-      val = value->get_int();
-      obj->short_at_put(index, (jshort)*((jint*)&val));
+      assert(stack_value->type() == T_INT, "Agreement.");
+      val = stack_value->get_int();
+      value.s = (jshort)*((jint*)&val);
+      f->value_at_put(T_SHORT, index, value, object_snapshot);
       break;
 
     case T_CHAR:
-      assert(value->type() == T_INT, "Agreement.");
-      val = value->get_int();
-      obj->char_at_put(index, (jchar)*((jint*)&val));
+      assert(stack_value->type() == T_INT, "Agreement.");
+      val = stack_value->get_int();
+      value.c = (jchar)*((jint*)&val);
+      f->value_at_put(T_CHAR, index, value, object_snapshot);
       break;
 
     case T_BYTE: {
-      assert(value->type() == T_INT, "Agreement.");
-      // The value we get is erased as a regular int. We will need to find its actual byte count 'by hand'.
-      val = value->get_int();
+      assert(stack_value->type() == T_INT, "Agreement.");
+      // The stack_value we get is erased as a regular int. We will need to find its actual byte count 'by hand'.
+      val = stack_value->get_int();
 #if INCLUDE_JVMCI
       int byte_count = count_number_of_bytes_for_entry(sv, i);
-      byte_array_put(obj, val, index, byte_count);
+      f->byte_at_put(index, val, byte_count, object_snapshot);
       // According to byte_count contract, the values from i + 1 to i + byte_count are illegal values. Skip.
       i += byte_count - 1; // Balance the loop counter.
       index += byte_count;
@@ -1179,9 +1414,10 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
     }
 
     case T_BOOLEAN: {
-      assert(value->type() == T_INT, "Agreement.");
-      val = value->get_int();
-      obj->bool_at_put(index, (jboolean)*((jint*)&val));
+      assert(stack_value->type() == T_INT, "Agreement.");
+      val = stack_value->get_int();
+      value.z = (jboolean)*((jint*)&val);
+      f->value_at_put(T_BOOLEAN, index, value, object_snapshot);
       break;
     }
 
@@ -1193,11 +1429,15 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
 }
 
 // restore fields of an eliminated object array
-void Deoptimization::reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj) {
+void Deoptimization::reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, ObjectSnapshot* object_snapshot, ReallocClosure* f) {
   for (int i = 0; i < sv->field_size(); i++) {
     StackValue* value = StackValue::create_stack_value(fr, reg_map, sv->field_at(i));
+    if (value->type() == T_CONFLICT) {
+      // skip fields with no values
+      continue;
+    }
     assert(value->type() == T_OBJECT, "object element expected");
-    obj->obj_at_put(i, value->get_obj()());
+    f->obj_at_put(i, value->get_obj()(), sv->field_at(i)->is_object() ? sv->field_at(i)->as_ObjectValue() : NULL, object_snapshot);
   }
 }
 
@@ -1218,7 +1458,7 @@ int compare(ReassignedField* left, ReassignedField* right) {
 
 // Restore fields of an eliminated instance object using the same field order
 // returned by HotSpotResolvedObjectTypeImpl.getInstanceFields(true)
-static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap* reg_map, ObjectValue* sv, int svIndex, oop obj, bool skip_internal) {
+static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap* reg_map, ObjectValue* sv, int svIndex, ObjectSnapshot* object_snapshot, bool skip_internal, ReallocClosure* f) {
   GrowableArray<ReassignedField>* fields = new GrowableArray<ReassignedField>();
   InstanceKlass* ik = klass;
   while (ik != NULL) {
@@ -1236,18 +1476,24 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
   for (int i = 0; i < fields->length(); i++) {
     intptr_t val;
     ScopeValue* scope_field = sv->field_at(svIndex);
-    StackValue* value = StackValue::create_stack_value(fr, reg_map, scope_field);
+    StackValue* stack_value = StackValue::create_stack_value(fr, reg_map, scope_field);
     int offset = fields->at(i)._offset;
     BasicType type = fields->at(i)._type;
+    if (stack_value->type() == T_CONFLICT) {
+      // skip fields with no values
+      svIndex += (type == T_LONG || type == T_DOUBLE) ? 2 : 1;
+      continue;
+    }
+    jvalue value;
     switch (type) {
       case T_OBJECT: case T_ARRAY:
-        assert(value->type() == T_OBJECT, "Agreement.");
-        obj->obj_field_put(offset, value->get_obj()());
+        assert(stack_value->type() == T_OBJECT, "Agreement.");
+        f->obj_field_put(offset, stack_value, object_snapshot);
         break;
 
       // Have to cast to INT (32 bits) pointer to avoid little/big-endian problem.
       case T_INT: case T_FLOAT: { // 4 bytes.
-        assert(value->type() == T_INT, "Agreement.");
+        assert(stack_value->type() == T_INT, "Agreement.");
         bool big_value = false;
         if (i+1 < fields->length() && fields->at(i+1)._type == T_INT) {
           if (scope_field->is_location()) {
@@ -1269,47 +1515,53 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
           assert(i < fields->length(), "second T_INT field needed");
           assert(fields->at(i)._type == T_INT, "T_INT field needed");
         } else {
-          val = value->get_int();
-          obj->int_field_put(offset, (jint)*((jint*)&val));
+          val = stack_value->get_int();
+          jvalue value;
+          value.i = (jint) *((jint *) &val);
+          f->value_put(T_INT, offset, value, object_snapshot);
           break;
         }
       }
         /* no break */
 
       case T_LONG: case T_DOUBLE: {
-        assert(value->type() == T_INT, "Agreement.");
+        assert(stack_value->type() == T_INT, "Agreement.");
         StackValue* low = StackValue::create_stack_value(fr, reg_map, sv->field_at(++svIndex));
 #ifdef _LP64
         jlong res = (jlong)low->get_int();
 #else
         jlong res = jlong_from((jint)value->get_int(), (jint)low->get_int());
 #endif
-        obj->long_field_put(offset, res);
+        value.j = res;
+        f->value_put(T_LONG, offset, value, object_snapshot);
         break;
       }
 
       case T_SHORT:
-        assert(value->type() == T_INT, "Agreement.");
-        val = value->get_int();
-        obj->short_field_put(offset, (jshort)*((jint*)&val));
+        assert(stack_value->type() == T_INT, "Agreement.");
+        val = stack_value->get_int();
+        value.s = (jshort)*((jint*)&val);
+        f->value_put(T_SHORT, offset, value, object_snapshot);
         break;
 
       case T_CHAR:
-        assert(value->type() == T_INT, "Agreement.");
-        val = value->get_int();
-        obj->char_field_put(offset, (jchar)*((jint*)&val));
+        assert(stack_value->type() == T_INT, "Agreement.");
+        val = stack_value->get_int();
+        value.c = (jchar)*((jint*)&val);
+        f->value_put(T_CHAR, offset, value, object_snapshot);
         break;
 
       case T_BYTE:
-        assert(value->type() == T_INT, "Agreement.");
-        val = value->get_int();
-        obj->byte_field_put(offset, (jbyte)*((jint*)&val));
+        assert(stack_value->type() == T_INT, "Agreement.");
+        val = stack_value->get_int();
+        f->byte_field_put(offset, (jbyte)*((jint*)&val), object_snapshot);
         break;
 
       case T_BOOLEAN:
-        assert(value->type() == T_INT, "Agreement.");
-        val = value->get_int();
-        obj->bool_field_put(offset, (jboolean)*((jint*)&val));
+        assert(stack_value->type() == T_INT, "Agreement.");
+        val = stack_value->get_int();
+        value.z = (jboolean)*((jint*)&val);
+        f->value_put(T_BOOLEAN, offset, value, object_snapshot);
         break;
 
       default:
@@ -1321,17 +1573,17 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 }
 
 // restore fields of all eliminated objects and arrays
-void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal) {
+void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal, ReallocClosure* f) {
   for (int i = 0; i < objects->length(); i++) {
     ObjectValue* sv = (ObjectValue*) objects->at(i);
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
-    Handle obj = sv->value();
-    assert(obj.not_null() || realloc_failures, "reallocation was missed");
+    ObjectSnapshot* obj_snapshot = f->get_value(sv);
+    assert(obj_snapshot != NULL || realloc_failures, "reallocation was missed");
+    if (obj_snapshot == NULL) {
+      continue;
+    }
     if (PrintDeoptimizationDetails) {
       tty->print_cr("reassign fields for object of type %s!", k->name()->as_C_string());
-    }
-    if (obj.is_null()) {
-      continue;
     }
 #if INCLUDE_JVMCI || INCLUDE_AOT
     // Don't reassign fields of boxes that came from a cache. Caches may be in CDS.
@@ -1341,12 +1593,12 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
 #endif // INCLUDE_JVMCI || INCLUDE_AOT
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), skip_internal);
+      reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj_snapshot, skip_internal, f);
     } else if (k->is_typeArray_klass()) {
       TypeArrayKlass* ak = TypeArrayKlass::cast(k);
-      reassign_type_array_elements(fr, reg_map, sv, (typeArrayOop) obj(), ak->element_type());
+      reassign_type_array_elements(fr, reg_map, sv, obj_snapshot, ak->element_type(), f);
     } else if (k->is_objArray_klass()) {
-      reassign_object_array_elements(fr, reg_map, sv, (objArrayOop) obj());
+      reassign_object_array_elements(fr, reg_map, sv, obj_snapshot, f);
     }
   }
 }

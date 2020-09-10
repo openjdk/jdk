@@ -41,6 +41,7 @@
   template(None)                                  \
   template(Cleanup)                               \
   template(ThreadDump)                            \
+  template(FramesDump)                            \
   template(PrintThreads)                          \
   template(FindDeadlocks)                         \
   template(ClearICs)                              \
@@ -384,6 +385,52 @@ class VM_ThreadDump : public VM_Operation {
   void doit_epilogue();
 };
 
+class FramesSnapshot;
+
+// The full dump taken of frames during a VM_FramesDump operation.
+// The first snapshot is looked up by means of the _snapshots field, of which
+// further iteration is possible by calling next() of current snapshot.
+class FramesDumpResult : public StackObj {
+private:
+  int                  _num_threads;
+  int                  _num_snapshots;
+  FramesSnapshot*      _snapshots;
+  FramesSnapshot*      _last;
+public:
+  FramesDumpResult(int num_threads);
+  ~FramesDumpResult();
+
+  void                 add_frames_snapshot(FramesSnapshot* ts);
+  void                 dump_frames_at_safepoint(JavaThread* java_thread, jobjectArray initial_methods, jobjectArray match_methods, jint initialSkip, int max_frames, JNIHandleBlock* handles, JVMCIEnv* JVMCIENV);
+  int                  num_threads()                    { return _num_threads; }
+  int                  num_snapshots()                  { return _num_snapshots; }
+  FramesSnapshot*      snapshots()                      { return _snapshots; }
+};
+
+class VM_FramesDump : public VM_Operation {
+private:
+  FramesDumpResult*              _result;
+  GrowableArray<instanceHandle>* _threads;
+  int                            _max_depth;
+  jobjectArray                   _initial_methods;
+  jobjectArray                   _match_methods;
+  jint                           _initialSkip;
+  JNIHandleBlock*                _handles;
+  JVMCIEnv*                      _JVMCIENV;
+
+public:
+  VM_FramesDump(FramesDumpResult* result,
+                GrowableArray<instanceHandle>* threads,
+                jobjectArray initial_methods,
+                jobjectArray match_methods,
+                jint initialSkip,
+                int max_depth, // -1 indicates entire stack
+                JNIHandleBlock* handles,
+                JVMCIEnv* JVMCIENV);
+
+  VMOp_Type type() const { return VMOp_FramesDump; }
+  void doit();
+};
 
 class VM_Exit: public VM_Operation {
  private:

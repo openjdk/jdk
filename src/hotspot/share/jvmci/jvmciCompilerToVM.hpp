@@ -24,12 +24,18 @@
 #ifndef SHARE_JVMCI_JVMCICOMPILERTOVM_HPP
 #define SHARE_JVMCI_JVMCICOMPILERTOVM_HPP
 
+#include "runtime/stackValueCollection.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/deoptimization.hpp"
 
 class JVMCIObjectArray;
+class FramesSnapshot;
+class VFrameSnapshot;
+class StackValueSnapshot;
+class ObjectSnapshot;
 
 class CompilerToVM {
  public:
@@ -181,6 +187,112 @@ class JNIHandleMark : public StackObj {
   private:
     static void push_jni_handle_block(JavaThread* thread);
     static void pop_jni_handle_block(JavaThread* thread);
+};
+
+// This class is used to collect stack values during a VM_FramesDump operation to snapshot
+// stack frames. An instance of this class represents a snapshot of a stack value that may
+// or may not be scalar replaced. The oop handle field is NULL for scalar-replaced objects,
+// while the ID field always holds the ObjectValue ID.
+class StackValueSnapshot : public CHeapObj<mtInternal> {
+private:
+  intptr_t  _id;            // the ObjectValue ID
+  jobject    _oop_handle;   // handle to the oop with above ObjectValue ID
+public:
+  StackValueSnapshot(StackValue *sv, JNIHandleBlock* handles) {
+    _id = sv->obj_is_scalar_replaced() ? sv->get_obj_id() : -1;
+    _oop_handle = sv->get_obj().is_null() ? NULL : handles->allocate_handle(sv->get_obj()());
+  }
+
+  void set_obj(jobject obj) { _oop_handle = obj; }
+  jobject get_obj() { return _oop_handle; }
+  intptr_t get_id() { return _id; }
+};
+
+// This class is used to collect information about vframes during a VM_FramesDump operation
+// to snapshot stack frames. All objects that are to be reallocated after the VM operation
+// are stored in the realloc object array field. Locals of the corresponding vframe are
+// stored by means of StackValueSnapshot objects.
+class VFrameSnapshot : public CHeapObj<mtInternal> {
+private:
+  bool                _empty;
+  bool                _interpreted_frame;
+  Method*             _method;
+  int                 _bci;
+  intptr_t*           _sp;
+  int                 _frame_number;
+  int                 _locals_size;
+  bool*               _locals_is_virtual;
+  ObjectSnapshot**    _realloc_objects_array;
+  int                 _realloc_objects_array_len;
+  GrowableArray<StackValueSnapshot*>* _locals;
+
+public:
+  VFrameSnapshot() {
+    _empty = true;
+    _interpreted_frame = false;
+    _method = NULL;
+    _bci = 0;
+    _sp = NULL;
+    _frame_number = 0;
+    _locals_size = 0;
+    _locals = NULL;
+    _locals_is_virtual = NULL;
+    _realloc_objects_array = NULL;
+    _realloc_objects_array_len = 0;
+  }
+
+  ~VFrameSnapshot() {
+    for (int i = 0; i < _realloc_objects_array_len; i++) {
+      delete _realloc_objects_array[i];
+    }
+    FREE_C_HEAP_ARRAY(ObjectSnapshot*, _realloc_objects_array);
+    delete _locals;
+  }
+
+  bool              is_empty() { return _empty; }
+  void              set_not_empty() { _empty = false; }
+  void              set_interpreted_frame() { _interpreted_frame = true; }
+  bool              is_interpreted_frame() { return _interpreted_frame; }
+  void              set_method(Method* method) { _method = method; }
+  Method*           get_method() { return _method; }
+  void              set_bci(int bci) { _bci = bci; }
+  int               get_bci() { return _bci; }
+  void              set_sp(intptr_t* sp) { _sp = sp; }
+  intptr_t*         get_sp() { return _sp; }
+  void              set_frame_number(int frame_number) { _frame_number = frame_number; }
+  int               get_frame_number() { return _frame_number; }
+  void              set_locals_is_virtual(bool array[]) { _locals_is_virtual = array; }
+  bool*             get_locals_is_virtual() { return _locals_is_virtual; }
+  void              set_realloc_object_array_size(int len) { _realloc_objects_array_len = len; }
+  void              set_realloc_objects_array(ObjectSnapshot** array) { _realloc_objects_array = array; }
+  ObjectSnapshot**  get_realloc_objects_array() { return _realloc_objects_array; }
+  int               get_realloc_objects_array_size() { return _realloc_objects_array_len; }
+  void              set_locals(GrowableArray<StackValueSnapshot*>* locals) { _locals = locals; }
+  bool              is_compiled_frame() { return !_interpreted_frame; }
+  GrowableArray<StackValueSnapshot*>* get_locals() { return _locals; }
+};
+
+// This class represents the dynamic array of frames that are to be collected
+// by a VM_FramesDump operation.
+class FramesSnapshot : public CHeapObj<mtInternal> {
+private:
+  FramesSnapshot*                     _next;
+  GrowableArray<VFrameSnapshot*>*     _frames_array;
+public:
+  FramesSnapshot() {
+    _next = NULL;
+    _frames_array = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<VFrameSnapshot*>(0, mtInternal);
+  }
+
+  ~FramesSnapshot() {
+    delete _frames_array;
+  }
+
+  void              set_next(FramesSnapshot* n) { _next = n; }
+  FramesSnapshot*   next() { return _next; }
+  void              add_frame(VFrameSnapshot* frame) { _frames_array->append(frame); }
+  int               frames_length() { return _frames_array->length(); }
+  GrowableArray<VFrameSnapshot*>*   get_frames() { return _frames_array; }
 };
 
 #endif // SHARE_JVMCI_JVMCICOMPILERTOVM_HPP

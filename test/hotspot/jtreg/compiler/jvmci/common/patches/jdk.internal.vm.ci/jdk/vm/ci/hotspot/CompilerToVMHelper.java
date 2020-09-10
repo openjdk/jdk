@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.vm.ci.hotspot;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.code.stack.InspectedFrame;
 import jdk.vm.ci.code.stack.InspectedFrameVisitor;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaConstant;
@@ -279,6 +280,15 @@ public class CompilerToVMHelper {
             int initialSkip,
             InspectedFrameVisitor<T> visitor) {
         return CTVM.iterateFrames(initialMethods, matchingMethods, initialSkip, visitor);
+    }
+
+    public static InspectedFrame[][] getStackFrames(
+            ResolvedJavaMethod[] initialMethods,
+            ResolvedJavaMethod[] matchingMethods,
+            int initialSkip,
+            int maxFrames,
+            Thread[] threads) {
+        return CTVM.getStackFrames(initialMethods, matchingMethods, initialSkip, maxFrames, threads);
     }
 
     public static void materializeVirtualObjects(

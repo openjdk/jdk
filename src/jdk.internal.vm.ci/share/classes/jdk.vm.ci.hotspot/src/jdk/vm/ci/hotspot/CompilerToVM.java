@@ -33,6 +33,7 @@ import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.code.stack.InspectedFrame;
 import jdk.vm.ci.code.stack.InspectedFrameVisitor;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
@@ -587,6 +588,11 @@ final class CompilerToVM {
      * @see jdk.vm.ci.code.stack.StackIntrospection#iterateFrames
      */
     native <T> T iterateFrames(ResolvedJavaMethod[] initialMethods, ResolvedJavaMethod[] matchingMethods, int initialSkip, InspectedFrameVisitor<T> visitor);
+
+    /**
+     * @see jdk.vm.ci.code.stack.StackIntrospection#getStackFrames
+     */
+    native InspectedFrame[][] getStackFrames(ResolvedJavaMethod[] initialMethods, ResolvedJavaMethod[] matchingMethods, int initialSkip, int maxFrames, Thread[] threads);
 
     /**
      * Materializes all virtual objects within {@code stackFrame} and updates its locals.

@@ -92,6 +92,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
       // Long   value in an aligned adjacent pair
       return new StackValue(*(intptr_t*)value_addr);
     case Location::narrowoop: {
+      assert(value_addr != NULL, "Location:narrowoop: must be non-null");
       union { intptr_t p; narrowOop noop;} value;
       value.p = (intptr_t) CONST64(0xDEADDEAFDEADDEAF);
       if (loc.is_register()) {
@@ -116,6 +117,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
     }
 #endif
     case Location::oop: {
+      assert(value_addr != NULL, "Location:oop: must be non-null");
       oop val = *(oop *)value_addr;
 #ifdef _LP64
       if (CompressedOops::is_base(val)) {
@@ -177,7 +179,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
 #endif
   } else if (sv->is_object()) { // Scalar replaced object in compiled frame
     Handle ov = ((ObjectValue *)sv)->value();
-    return new StackValue(ov, (ov.is_null()) ? 1 : 0);
+    return new StackValue(ov, (ov.is_null()) ? ((ObjectValue *)sv)->id() : -1);
   } else if (sv->is_marker()) {
     // Should never need to directly construct a marker.
     ShouldNotReachHere();

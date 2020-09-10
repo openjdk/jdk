@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,16 @@ class StackValue : public ResourceObj {
     _integer_value     = value;
   }
 
-  StackValue(Handle value, intptr_t scalar_replaced = 0) {
+  StackValue(Handle value, intptr_t scalar_replaced = -1) {
     _type                = T_OBJECT;
     _integer_value       = scalar_replaced;
     _handle_value        = value;
-    assert(_integer_value == 0 ||  _handle_value.is_null(), "not null object should not be marked as scalar replaced");
+    assert(_integer_value == -1 ||  _handle_value.is_null(), "not null object should not be marked as scalar replaced");
   }
 
   StackValue() {
     _type           = T_CONFLICT;
-    _integer_value  = 0;
+    _integer_value  = -1;
   }
 
   // Only used during deopt- preserve object type.
@@ -70,7 +70,12 @@ class StackValue : public ResourceObj {
 
   bool obj_is_scalar_replaced() const {
     assert(type() == T_OBJECT, "type check");
-    return _integer_value != 0;
+    return _integer_value != -1;
+  }
+
+  int get_obj_id() {
+    assert(obj_is_scalar_replaced(), "must be!");
+    return _integer_value;
   }
 
   void set_obj(Handle value) {
