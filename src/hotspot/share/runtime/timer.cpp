@@ -42,6 +42,11 @@ jlong TimeHelper::millis_to_counter(jlong millis) {
   return millis * freq;
 }
 
+jlong TimeHelper::micros_to_counter(jlong micros) {
+  jlong freq = os::elapsed_frequency() / MICROUNITS;
+  return micros * freq;
+}
+
 elapsedTimer::elapsedTimer(jlong time, jlong timeUnitsPerSecond) {
   _active = false;
   jlong osTimeUnitsPerSecond = os::elapsed_frequency();
