@@ -28,7 +28,6 @@
  * @summary Tests each of the 3 possible methods for rendering an upscaled
  * image via rendering hints for default, xrender and opengl pipelines.
  *
- * @author Vadim.Pakhnushev@oracle.com
  * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.xrender=false InterpolationQualityTest
  * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.xrender=True InterpolationQualityTest
  * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false InterpolationQualityTest
