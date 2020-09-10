@@ -711,8 +711,8 @@ static JVMFlag flagTable[NUM_JVMFlagsEnum + 1] = {
 };
 
 // We want flagTable[] to be completely initialized at C++ compilation time, which requires
-// that all arguments passed to JVMFlag() constructors to be constexpr. The following line
-// checks for this this -- if any non-constexpr arguments are passed, the C++ compiler will
+// that all arguments passed to JVMFlag() constructors be constexpr. The following line
+// checks for this -- if any non-constexpr arguments are passed, the C++ compiler will
 // generate an error.
 //
 // constexpr implies internal linkage. This means the flagTable_verify_constexpr[] variable

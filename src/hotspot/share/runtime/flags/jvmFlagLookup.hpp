@@ -29,7 +29,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 
 // This is a hashtable that maps from (const char*) to (JVMFlag*) to speed up
-// the processing of JVM command-line argument at runtime.
+// the processing of JVM command-line arguments at runtime.
 //
 // With constexpr, this table is generated at C++ compile time so there's
 // no set up cost at runtime.
@@ -43,7 +43,7 @@ class JVMFlagLookup {
   static constexpr size_t string_len(const char* s) {
     size_t len = 0;
     while (*s != 0) {
-      len ++;
+      len++;
       s++;
     }
     return len;
