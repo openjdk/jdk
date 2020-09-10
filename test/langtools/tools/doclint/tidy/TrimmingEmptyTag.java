@@ -3,7 +3,7 @@
  * @bug 8004832 8026368
  * @summary Add new doclint package
  * @library ..
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -ref TrimmingEmptyTag.out TrimmingEmptyTag.java
  */

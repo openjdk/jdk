@@ -70,4 +70,7 @@ module jdk.javadoc {
 
     provides javax.tools.Tool with
         jdk.javadoc.internal.api.JavadocTool;
+
+    provides com.sun.tools.doclint.DocLint with
+            jdk.javadoc.internal.doclint.DocLint;
 }

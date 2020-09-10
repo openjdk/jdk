@@ -25,10 +25,10 @@
  * @test
  * @bug 8004832
  * @summary Add new doclint package
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  */
 
-import com.sun.tools.doclint.DocLint;
+import jdk.javadoc.internal.doclint.DocLint;
 
 public class OptionTest {
     public static void main(String... args) throws Exception {
@@ -80,9 +80,10 @@ public class OptionTest {
     }
 
     void test(String[] tests, boolean expect) {
+        DocLint docLint = new DocLint();
         for (String test: tests) {
             System.err.println("test: " + test);
-            boolean found = DocLint.isValidOption(test);
+            boolean found = docLint.isValidOption(test);
             if (found != expect)
                 error("Unexpected result: " + found + ",expected: " + expect);
         }

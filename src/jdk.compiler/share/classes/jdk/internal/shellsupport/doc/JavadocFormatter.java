@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,7 +59,6 @@ import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
-import com.sun.tools.doclint.HtmlTag;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.StringUtils;
@@ -121,6 +121,27 @@ public class JavadocFormatter {
             return result.toString();
         } catch (URISyntaxException ex) {
             throw new InternalError("Unexpected exception", ex);
+        }
+    }
+
+    enum HtmlTag {
+        HTML,
+        H1, H2, H3, H4, H5, H6,
+        BLOCKQUOTE, P, PRE,
+        IMG,
+        OL, UL, LI,
+        DL, DT, DD,
+        TABLE, TR, TD, TH;
+
+        private static final Map<String, HtmlTag> index = new HashMap<>();
+        static {
+            for (HtmlTag t: values()) {
+                index.put(StringUtils.toLowerCase(t.name()), t);
+            }
+        }
+
+        public static HtmlTag get(Name tagName) {
+            return index.get(StringUtils.toLowerCase(tagName.toString()));
         }
     }
 

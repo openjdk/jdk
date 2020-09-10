@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.doclint;
+package jdk.javadoc.internal.doclint;
 
 
 import java.util.Arrays;

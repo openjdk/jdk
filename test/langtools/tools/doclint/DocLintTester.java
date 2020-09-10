@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.sun.tools.doclint.DocLint;
-import com.sun.tools.doclint.DocLint.BadArgs;
+import jdk.javadoc.internal.doclint.DocLint;
+import jdk.javadoc.internal.doclint.DocLint.BadArgs;
 
 public class DocLintTester {
 

@@ -25,7 +25,7 @@
  * @test
  * @bug 8194069
  * @summary ignore declarations in lambda expressions
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs:all SyntheticTest.java
  */
