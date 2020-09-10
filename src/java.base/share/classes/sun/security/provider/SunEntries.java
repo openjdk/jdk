@@ -54,9 +54,13 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  *   SHA-2 family of hash functions includes SHA-224, SHA-256, SHA-384,
  *   and SHA-512.
  *
- * - SHA-224withDSA/SHA-256withDSA are the signature schemes
+ * - [SHA-224|SHA-256|SHA-384|SHA-512]withDSA are the signature schemes
  *   described in FIPS 186-3. The associated object identifiers are
- *   "OID.2.16.840.1.101.3.4.3.1", and "OID.2.16.840.1.101.3.4.3.2".
+ *   "OID.2.16.840.1.101.3.4.3.[1|2|3|4]" respectively.
+ *
+ * - [SHA3-224|SHA3-256|SHA3-384|SHA3-512]withDSA are the signature schemes
+ *   using SHA-3 family of digests with DSA. The associated object identifiers
+ *   are "OID.2.16.840.1.101.3.4.3.[5|6|7|8]" respectively.
  *
  * - DSA is the key generation scheme as described in FIPS 186.
  *   Aliases for DSA include the OID strings "OID.1.3.14.3.2.12"
@@ -127,12 +131,29 @@ public final class SunEntries {
         addWithAlias(p, "Signature", "NONEwithDSA",
                 "sun.security.provider.DSA$RawDSA", attrs);
 
-        attrs.put("KeySize", "2048"); // for SHA224 and SHA256 DSA signatures
+        // for DSA signatures with 224/256-bit digests
+        attrs.put("KeySize", "2048");
 
         addWithAlias(p, "Signature", "SHA224withDSA",
                 "sun.security.provider.DSA$SHA224withDSA", attrs);
         addWithAlias(p, "Signature", "SHA256withDSA",
                 "sun.security.provider.DSA$SHA256withDSA", attrs);
+
+        addWithAlias(p, "Signature", "SHA3-224withDSA",
+                "sun.security.provider.DSA$SHA3_224withDSA", attrs);
+        addWithAlias(p, "Signature", "SHA3-256withDSA",
+                "sun.security.provider.DSA$SHA3_256withDSA", attrs);
+
+        attrs.put("KeySize", "3072"); // for DSA sig using 384/512-bit digests
+
+        addWithAlias(p, "Signature", "SHA384withDSA",
+                "sun.security.provider.DSA$SHA384withDSA", attrs);
+        addWithAlias(p, "Signature", "SHA512withDSA",
+                "sun.security.provider.DSA$SHA512withDSA", attrs);
+        addWithAlias(p, "Signature", "SHA3-384withDSA",
+                "sun.security.provider.DSA$SHA3_384withDSA", attrs);
+        addWithAlias(p, "Signature", "SHA3-512withDSA",
+                "sun.security.provider.DSA$SHA3_512withDSA", attrs);
 
         attrs.remove("KeySize");
 
@@ -144,7 +165,18 @@ public final class SunEntries {
                 "sun.security.provider.DSA$SHA224withDSAinP1363Format");
         add(p, "Signature", "SHA256withDSAinP1363Format",
                 "sun.security.provider.DSA$SHA256withDSAinP1363Format");
-
+        add(p, "Signature", "SHA384withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA384withDSAinP1363Format");
+        add(p, "Signature", "SHA512withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA512withDSAinP1363Format");
+        add(p, "Signature", "SHA3-224withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA3_224withDSAinP1363Format");
+        add(p, "Signature", "SHA3-256withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA3_256withDSAinP1363Format");
+        add(p, "Signature", "SHA3-384withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA3_384withDSAinP1363Format");
+        add(p, "Signature", "SHA3-512withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA3_512withDSAinP1363Format");
         /*
          *  Key Pair Generator engines
          */

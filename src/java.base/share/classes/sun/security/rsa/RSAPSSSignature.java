@@ -45,8 +45,8 @@ import sun.security.jca.JCAUtil;
  * PKCS#1 v2.2 RSASSA-PSS signatures with various message digest algorithms.
  * RSASSA-PSS implementation takes the message digest algorithm, MGF algorithm,
  * and salt length values through the required signature PSS parameters.
- * We support SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, and
- * SHA-512/256 message digest algorithms and MGF1 mask generation function.
+ * We support SHA-1, SHA-2 family and SHA3 family of message digest algorithms,
+ * and MGF1 mask generation function.
  *
  * @since   11
  */
@@ -81,24 +81,20 @@ public class RSAPSSSignature extends SignatureSpi {
 
     private static final byte[] EIGHT_BYTES_OF_ZEROS = new byte[8];
 
-    private static final Hashtable<String, Integer> DIGEST_LENGTHS =
-        new Hashtable<String, Integer>();
+    private static final Hashtable<KnownOIDs, Integer> DIGEST_LENGTHS =
+        new Hashtable<KnownOIDs, Integer>();
     static {
-        DIGEST_LENGTHS.put("SHA-1", 20);
-        DIGEST_LENGTHS.put("SHA", 20);
-        DIGEST_LENGTHS.put("SHA1", 20);
-        DIGEST_LENGTHS.put("SHA-224", 28);
-        DIGEST_LENGTHS.put("SHA224", 28);
-        DIGEST_LENGTHS.put("SHA-256", 32);
-        DIGEST_LENGTHS.put("SHA256", 32);
-        DIGEST_LENGTHS.put("SHA-384", 48);
-        DIGEST_LENGTHS.put("SHA384", 48);
-        DIGEST_LENGTHS.put("SHA-512", 64);
-        DIGEST_LENGTHS.put("SHA512", 64);
-        DIGEST_LENGTHS.put("SHA-512/224", 28);
-        DIGEST_LENGTHS.put("SHA512/224", 28);
-        DIGEST_LENGTHS.put("SHA-512/256", 32);
-        DIGEST_LENGTHS.put("SHA512/256", 32);
+        DIGEST_LENGTHS.put(KnownOIDs.SHA_1, 20);
+        DIGEST_LENGTHS.put(KnownOIDs.SHA_224, 28);
+        DIGEST_LENGTHS.put(KnownOIDs.SHA_256, 32);
+        DIGEST_LENGTHS.put(KnownOIDs.SHA_384, 48);
+        DIGEST_LENGTHS.put(KnownOIDs.SHA_512, 64);
+        DIGEST_LENGTHS.put(KnownOIDs.SHA_512$224, 28);
+        DIGEST_LENGTHS.put(KnownOIDs.SHA_512$256, 32);
+        DIGEST_LENGTHS.put(KnownOIDs.SHA3_224, 28);
+        DIGEST_LENGTHS.put(KnownOIDs.SHA3_256, 32);
+        DIGEST_LENGTHS.put(KnownOIDs.SHA3_384, 48);
+        DIGEST_LENGTHS.put(KnownOIDs.SHA3_512, 64);
     }
 
     // message digest implementation we use for hashing the data
@@ -219,13 +215,21 @@ public class RSAPSSSignature extends SignatureSpi {
             }
             // validate key length
             if (this.sigParams != null) {
-                Integer hLen =
-                    DIGEST_LENGTHS.get(this.sigParams.getDigestAlgorithm());
-                if (hLen == null) {
-                    throw new ProviderException("Unsupported digest algo: " +
-                        this.sigParams.getDigestAlgorithm());
+                String digestAlgo = this.sigParams.getDigestAlgorithm();
+                KnownOIDs ko = KnownOIDs.findMatch(digestAlgo);
+                if (ko != null) {
+                    Integer hLen = DIGEST_LENGTHS.get(ko);
+                    if (hLen != null) {
+                        checkKeyLength(rsaKey, hLen,
+                                this.sigParams.getSaltLength());
+                    } else {
+                        throw new ProviderException
+                                ("Unsupported digest algo: " + digestAlgo);
+                    }
+                } else {
+                    throw new ProviderException
+                            ("Unrecognized digest algo: " + digestAlgo);
                 }
-                checkKeyLength(rsaKey, hLen, this.sigParams.getSaltLength());
             }
             return rsaKey;
         } catch (SignatureException e) {
@@ -272,7 +276,7 @@ public class RSAPSSSignature extends SignatureSpi {
         // check key length again
         if (key != null) {
             try {
-                int hLen = DIGEST_LENGTHS.get(digestAlgo);
+                int hLen = DIGEST_LENGTHS.get(KnownOIDs.findMatch(digestAlgo));
                 checkKeyLength(key, hLen, params.getSaltLength());
             } catch (SignatureException e) {
                 throw new InvalidAlgorithmParameterException(e);

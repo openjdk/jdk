@@ -157,8 +157,20 @@ public final class SunEC extends Provider {
                     } else if (algo.equals("NONEwithECDSA")) {
                         return (inP1363? new ECDSASignature.RawinP1363Format() :
                             new ECDSASignature.Raw());
-                    }
-                } else  if (type.equals("KeyFactory")) {
+                    } else if (algo.equals("SHA3-224withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA3_224inP1363Format() :
+                            new ECDSASignature.SHA3_224());
+                    } else if (algo.equals("SHA3-256withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA3_256inP1363Format() :
+                            new ECDSASignature.SHA3_256());
+                    } else if (algo.equals("SHA3-384withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA3_384inP1363Format() :
+                            new ECDSASignature.SHA3_384());
+                    } else if (algo.equals("SHA3-512withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA3_512inP1363Format() :
+                            new ECDSASignature.SHA3_512());
+                     }
+                } else if (type.equals("KeyFactory")) {
                     if (algo.equals("EC")) {
                         return new ECKeyFactory();
                     } else if (algo.equals("XDH")) {
@@ -304,6 +316,18 @@ public final class SunEC extends Provider {
         putService(new ProviderServiceA(this, "Signature",
             "SHA512withECDSA", "sun.security.ec.ECDSASignature$SHA512",
             ATTRS));
+        putService(new ProviderServiceA(this, "Signature",
+            "SHA3-224withECDSA", "sun.security.ec.ECDSASignature$SHA3_224",
+            ATTRS));
+        putService(new ProviderServiceA(this, "Signature",
+            "SHA3-256withECDSA", "sun.security.ec.ECDSASignature$SHA3_256",
+            ATTRS));
+        putService(new ProviderServiceA(this, "Signature",
+            "SHA3-384withECDSA", "sun.security.ec.ECDSASignature$SHA3_384",
+            ATTRS));
+        putService(new ProviderServiceA(this, "Signature",
+            "SHA3-512withECDSA", "sun.security.ec.ECDSASignature$SHA3_512",
+            ATTRS));
 
         putService(new ProviderService(this, "Signature",
              "NONEwithECDSAinP1363Format",
@@ -323,6 +347,19 @@ public final class SunEC extends Provider {
         putService(new ProviderService(this, "Signature",
             "SHA512withECDSAinP1363Format",
             "sun.security.ec.ECDSASignature$SHA512inP1363Format"));
+
+        putService(new ProviderService(this, "Signature",
+             "SHA3-224withECDSAinP1363Format",
+             "sun.security.ec.ECDSASignature$SHA3_224inP1363Format"));
+        putService(new ProviderService(this, "Signature",
+             "SHA3-256withECDSAinP1363Format",
+             "sun.security.ec.ECDSASignature$SHA3_256inP1363Format"));
+        putService(new ProviderService(this, "Signature",
+            "SHA3-384withECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$SHA3_384inP1363Format"));
+        putService(new ProviderService(this, "Signature",
+            "SHA3-512withECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$SHA3_512inP1363Format"));
 
         /*
          *  Key Pair Generator engine
