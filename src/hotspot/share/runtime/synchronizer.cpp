@@ -2531,7 +2531,6 @@ void ObjectSynchronizer::deflate_common_idle_monitors_using_JT(bool is_global, J
   if (ls != NULL) {
     if (is_global) {
       ls->print_cr("async-deflating global idle monitors, %3.7f secs, %d monitors", timer.seconds(), deflated_count);
-      GVars.stw_random = os::random();
     } else {
       ls->print_cr("jt=" INTPTR_FORMAT ": async-deflating per-thread idle monitors, %3.7f secs, %d monitors", p2i(target), timer.seconds(), deflated_count);
     }
