@@ -2676,7 +2676,7 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   MemoryService::track_memory_usage();
   // We have just completed a GC. Update the soft reference
   // policy with the new heap occupancy
-  Universe::update_heap_info_at_gc();
+  Universe::heap()->update_capacity_and_used_at_gc();
 
   // Print NUMA statistics.
   _numa->print_statistics();
