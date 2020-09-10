@@ -243,10 +243,6 @@ const size_t minimumSymbolTableSize = 1024;
   develop(bool, TraceRelocator, false,                                      \
           "Trace the bytecode relocator")                                   \
                                                                             \
-  develop(bool, TraceLongCompiles, false,                                   \
-          "Print out every time compilation is longer than "                \
-          "a given threshold")                                              \
-                                                                            \
   diagnostic(bool, SafepointALot, false,                                    \
           "Generate a lot of safepoints. This works with "                  \
           "GuaranteedSafepointInterval")                                    \
@@ -1913,10 +1909,6 @@ const size_t minimumSymbolTableSize = 1024;
   /* new oopmap storage allocation */                                       \
   develop(intx, MinOopMapAllocation,     8,                                 \
           "Minimum number of OopMap entries in an OopMapSet")               \
-                                                                            \
-  /* Background Compilation */                                              \
-  develop(intx, LongCompileThreshold,     50,                               \
-          "Used with +TraceLongCompiles")                                   \
                                                                             \
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
