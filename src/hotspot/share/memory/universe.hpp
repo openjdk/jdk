@@ -162,10 +162,6 @@ class Universe: AllStatic {
   // otherwise return the given default error.
   static oop        gen_out_of_memory_error(oop default_err);
 
-  // Historic gc information
-  static size_t _heap_capacity_at_last_gc;
-  static size_t _heap_used_at_last_gc;
-
   static OopStorage* _vm_weak;
   static OopStorage* _vm_global;
 
@@ -308,11 +304,6 @@ class Universe: AllStatic {
 
   // Reserve Java heap and determine CompressedOops mode
   static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
-
-  // Historic gc information
-  static size_t get_heap_free_at_last_gc()             { return _heap_capacity_at_last_gc - _heap_used_at_last_gc; }
-  static size_t get_heap_used_at_last_gc()             { return _heap_used_at_last_gc; }
-  static void update_heap_info_at_gc();
 
   // Global OopStorages
   static OopStorage* vm_weak();
