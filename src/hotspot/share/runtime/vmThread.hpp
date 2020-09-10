@@ -115,7 +115,7 @@ class VMThread: public NamedThread {
   static void create();
   static void destroy();
 
-  static void set_for_execution(VM_Operation* op);
+  static void until_executed(VM_Operation* op);
 
  private:
   // VM_Operation support

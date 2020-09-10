@@ -276,8 +276,6 @@ void VMThread::evaluate_operation(VM_Operation* op) {
                      op->evaluate_at_safepoint() ? 0 : 1);
   }
 
-  // Mark as completed
-  op->calling_thread()->increment_vm_operation_completed_count();
 }
 
 static VM_None    safepointALot_op("SafepointALot");
@@ -334,7 +332,7 @@ bool VMThread::set_next_operation(VM_Operation *op) {
   return true;
 }
 
-void VMThread::set_for_execution(VM_Operation* op) {
+void VMThread::until_executed(VM_Operation* op) {
   MonitorLocker ml(VMOperation_lock,
                    Thread::current()->is_Java_thread() ? 
                      Mutex::_safepoint_check_flag : 
@@ -344,6 +342,11 @@ void VMThread::set_for_execution(VM_Operation* op) {
       ml.notify_all();
       break;
     }
+    ml.notify_all();
+    ml.wait();
+  }
+  while (_next_vm_operation == op ||
+         _cur_vm_operation  == op) {
     ml.notify_all();
     ml.wait();
   }
@@ -446,7 +449,7 @@ void VMThread::loop() {
     //
     //  Notify (potential) waiting Java thread(s)
     { 
-      MonitorLocker mu(VMOperationRequest_lock, Mutex::_no_safepoint_check_flag);
+      MonitorLocker mu(VMOperation_lock, Mutex::_no_safepoint_check_flag);
       mu.notify_all();
     }
   }
@@ -493,23 +496,13 @@ void VMThread::execute(VM_Operation* op) {
     // Setup VM_operations for execution
     op->set_calling_thread(t);
 
-    // Get ticket number for the VM operation
-    int ticket = t->vm_operation_ticket();
-
     // Add VM operation to list of waiting threads. We are guaranteed not to block while holding the
     // VMOperationQueue_lock, so we can block without a safepoint check. This allows vm operation requests
     // to be queued up during a safepoint synchronization.
-    set_for_execution(op);
-    {
-      // Wait for completion of request
-      // Note: only a JavaThread triggers the safepoint check when locking
-      MonitorLocker ml(VMOperationRequest_lock,
-                       t->is_Java_thread() ? Mutex::_safepoint_check_flag : Mutex::_no_safepoint_check_flag);
-      while(t->vm_operation_completed_count() < ticket) {
-        ml.wait();
-      }
-    }
+    until_executed(op);
+    
     op->doit_epilogue();
+
   } else {
     // invoked by VM thread; usually nested VM operation
     assert(t->is_VM_thread(), "must be a VM thread");
