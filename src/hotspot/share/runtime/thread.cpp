@@ -355,8 +355,8 @@ void Thread::record_stack_base_and_size() {
 
   // Set stack limits after thread is initialized.
   if (is_Java_thread()) {
-    this->as_Java_thread()->set_stack_overflow_limit();
-    this->as_Java_thread()->set_reserved_stack_activation(stack_base());
+    as_Java_thread()->set_stack_overflow_limit();
+    as_Java_thread()->set_reserved_stack_activation(stack_base());
   }
 }
 

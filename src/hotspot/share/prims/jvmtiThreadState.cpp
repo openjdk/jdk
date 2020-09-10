@@ -274,7 +274,7 @@ void JvmtiThreadState::decr_cur_stack_depth() {
 int JvmtiThreadState::cur_stack_depth() {
   JavaThread *current = JavaThread::current();
   guarantee(current == get_thread() || current == get_thread()->active_handshaker(),
-                    "must be current thread or direct handshake");
+            "must be current thread or direct handshake");
 
   if (!is_interp_only_mode() || _cur_stack_depth == UNKNOWN_STACK_DEPTH) {
     _cur_stack_depth = count_frames();
