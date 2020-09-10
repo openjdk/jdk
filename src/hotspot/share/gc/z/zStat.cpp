@@ -1029,7 +1029,7 @@ public:
 uint64_t  ZStatCycle::_nwarmup_cycles = 0;
 Ticks     ZStatCycle::_start_of_last;
 Ticks     ZStatCycle::_end_of_last;
-NumberSeq ZStatCycle::_normalized_duration(0.3 /* alpha */);
+NumberSeq ZStatCycle::_normalized_duration(0.7 /* alpha */);
 
 void ZStatCycle::at_start() {
   _start_of_last = Ticks::now();
