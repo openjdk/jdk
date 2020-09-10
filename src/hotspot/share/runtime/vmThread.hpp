@@ -30,44 +30,6 @@
 #include "runtime/task.hpp"
 #include "runtime/vmOperations.hpp"
 
-class VM_QueueHead : public VM_None {
- public:
-  VM_QueueHead() : VM_None("QueueHead") {}
-};
-
-//
-// Prioritized queue of VM operations.
-//
-// Encapsulates both queue management and
-// and priority policy
-//
-class VMOperationQueue : public CHeapObj<mtInternal> {
- private:
-
-  // We maintain a doubled linked list
-  VM_Operation* _queue;
-
-  static VM_QueueHead _queue_head;
-
-  // Double-linked non-empty list insert.
-  void unlink(VM_Operation* q);
-
-  // Basic queue manipulation
-  bool queue_empty                ();
-  void queue_add                  (VM_Operation *op);
-
- public:
-  VMOperationQueue();
-
-  // Highlevel operations. Encapsulates policy
-  void add(VM_Operation *op);
-  VM_Operation* remove_next();                        // Returns next or null
-  
-  // lock-free query: may return the wrong answer but must not break
-  bool queue_peek() { return _queue != &_queue_head; }
-};
-
-
 // VM operation timeout handling: warn or abort the VM when VM operation takes
 // too long. Periodic tasks do not participate in safepoint protocol, and therefore
 // can fire when application threads are stopped.
@@ -143,7 +105,8 @@ class VMThread: public NamedThread {
   void verify();
 
   // Performance measurement
-  static PerfCounter* perf_accumulated_vm_operation_time()               { return _perf_accumulated_vm_operation_time; }
+  static PerfCounter* perf_accumulated_vm_operation_time()  
+    { return _perf_accumulated_vm_operation_time; }
 
   // Entry for starting vm thread
   virtual void run();
@@ -152,10 +115,17 @@ class VMThread: public NamedThread {
   static void create();
   static void destroy();
 
+  static void set_for_execution(VM_Operation* op);
+
  private:
   // VM_Operation support
   static VM_Operation*     _cur_vm_operation;   // Current VM operation
-  static VMOperationQueue* _vm_queue;           // Queue (w/ policy) of VM operations
+  static VM_Operation*     _next_vm_operation;  
+
+  void prepare_next_active_operation();
+  bool have_active_operation() { return _cur_vm_operation != NULL; }
+  void current_operation_completed() { _cur_vm_operation = NULL; }
+  bool set_next_operation(VM_Operation *op);
 
   // Pointer to single-instance of VM thread
   static VMThread*     _vm_thread;
