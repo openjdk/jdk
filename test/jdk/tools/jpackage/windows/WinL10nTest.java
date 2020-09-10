@@ -95,9 +95,7 @@ public class WinL10nTest {
     private final static Stream<String> getLightCommandLine(
             Executor.Result result) {
         return result.getOutput().stream()
-                .filter(s -> s.contains("Running"))
-                .filter(s -> s.contains("light.exe"))
-                .filter(s -> !s.contains("/?"));
+                .filter(s -> s.trim().startsWith("light.exe"));
     }
 
     @Test
