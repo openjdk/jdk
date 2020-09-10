@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -511,7 +511,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * to a version value.
      */
     private int versionMadeBy(ZipEntry e, int version) {
-        return (e.posixPerms < 0) ? version :
+        return (e.extraAttributes < 0) ? version :
                 VERSION_MADE_BY_BASE_UNIX | (version & 0xff);
     }
 
@@ -606,8 +606,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         }
         writeShort(0);              // starting disk number
         writeShort(0);              // internal file attributes (unused)
-        // external file attributes, used for storing posix permissions
-        writeInt(e.posixPerms > 0 ? e.posixPerms << 16 : 0);
+        // extra file attributes, used for storing posix permissions etc.
+        writeInt(e.extraAttributes > 0 ? e.extraAttributes << 16 : 0);
         writeInt(offset);           // relative offset of local header
         writeBytes(nameBytes, 0, nameBytes.length);
 

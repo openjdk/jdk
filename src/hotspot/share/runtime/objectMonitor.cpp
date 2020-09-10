@@ -706,9 +706,6 @@ void ObjectMonitor::EnterI(TRAPS) {
 
   assert(_owner == Self, "invariant");
   assert(object() != NULL, "invariant");
-  // I'd like to write:
-  //   guarantee (((oop)(object()))->mark() == markWord::encode(this), "invariant") ;
-  // but as we're at a safepoint that's not safe.
 
   UnlinkAfterAcquire(Self, &node);
   if (_succ == Self) _succ = NULL;
@@ -1783,7 +1780,7 @@ int ObjectMonitor::TrySpin(Thread * Self) {
     // This is in keeping with the "no loitering in runtime" rule.
     // We periodically check to see if there's a safepoint pending.
     if ((ctr & 0xFF) == 0) {
-      if (SafepointMechanism::should_block(Self)) {
+      if (SafepointMechanism::should_process(Self)) {
         goto Abort;           // abrupt spin egress
       }
       SpinPause();

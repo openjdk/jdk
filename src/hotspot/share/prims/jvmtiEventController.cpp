@@ -979,27 +979,16 @@ JvmtiEventController::set_extension_event_callback(JvmtiEnvBase *env,
   }
 }
 
-
-
-
 void
 JvmtiEventController::set_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  assert_lock_strong(JvmtiThreadState_lock);
+  assert(JvmtiThreadState_lock->is_locked(), "Must be locked.");
   JvmtiEventControllerPrivate::set_frame_pop(ets, fpop);
 }
 
-
 void
 JvmtiEventController::clear_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  assert_lock_strong(JvmtiThreadState_lock);
+  assert(JvmtiThreadState_lock->is_locked(), "Must be locked.");
   JvmtiEventControllerPrivate::clear_frame_pop(ets, fpop);
-}
-
-
-void
-JvmtiEventController::clear_to_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  assert_lock_strong(JvmtiThreadState_lock);
-  JvmtiEventControllerPrivate::clear_to_frame_pop(ets, fpop);
 }
 
 void

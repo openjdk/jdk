@@ -333,14 +333,12 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref,
 
   FollowMode follow_mode = get_follow_mode(ref);
   SourceObjInfo src_info(ref, read_only, follow_mode);
-  bool created = false;
-  SourceObjInfo* p = _src_obj_table.lookup(src_obj);
-  if (p == NULL) {
-    p = _src_obj_table.add(src_obj, src_info);
+  bool created;
+  SourceObjInfo* p = _src_obj_table.add_if_absent(src_obj, src_info, &created);
+  if (created) {
     if (_src_obj_table.maybe_grow(MAX_TABLE_SIZE)) {
       log_info(cds, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
     }
-    created = true;
   }
 
   assert(p->read_only() == src_info.read_only(), "must be");
