@@ -188,8 +188,6 @@ public abstract class HttpExchange implements AutoCloseable {
      *        and an arbitrary number of bytes may be written.
      *        if {@literal <= -1}, then no response body length is specified and
      *        no response body may be written.
-     * @throws IOException An IOException will be thrown if an error occurs during
-     *         the sending of response headers, or if headers have already been sent
      * @see HttpExchange#getResponseBody()
      */
     public abstract void sendResponseHeaders (int rCode, long responseLength) throws IOException ;
