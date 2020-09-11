@@ -688,7 +688,7 @@ Handle SystemDictionaryShared::get_shared_jar_manifest(int shared_path_index, TR
   if (shared_jar_manifest(shared_path_index) == NULL) {
     SharedClassPathEntry* ent = FileMapInfo::shared_path(shared_path_index);
     size_t size = (size_t)ent->manifest_size();
-    if (size <= 0) {
+    if (size == 0) {
       return Handle();
     }
 
