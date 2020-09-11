@@ -2010,10 +2010,6 @@ static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_
   PCMarkAndPushClosure mark_and_push_closure(cm);
 
   switch (root_type) {
-    case ParallelRootType::object_synchronizer:
-      ObjectSynchronizer::oops_do(&mark_and_push_closure);
-      break;
-
     case ParallelRootType::class_loader_data:
       {
         CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
@@ -2224,7 +2220,6 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
 
   // General strong roots.
   Threads::oops_do(&oop_closure, NULL);
-  ObjectSynchronizer::oops_do(&oop_closure);
   OopStorageSet::strong_oops_do(&oop_closure);
   CLDToOopClosure cld_closure(&oop_closure, ClassLoaderData::_claim_strong);
   ClassLoaderDataGraph::cld_do(&cld_closure);

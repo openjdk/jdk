@@ -49,14 +49,6 @@ public:
   void oops_do(OopClosure* cl, uint worker_id);
 };
 
-class ShenandoahSerialRoots {
-private:
-  ShenandoahSerialRoot  _object_synchronizer_root;
-public:
-  ShenandoahSerialRoots(ShenandoahPhaseTimings::Phase phase);
-  void oops_do(OopClosure* cl, uint worker_id);
-};
-
 class ShenandoahWeakSerialRoot {
   typedef void (*WeakOopsDo)(BoolObjectClosure*, OopClosure*);
 private:
@@ -199,7 +191,6 @@ public:
 
 class ShenandoahRootScanner : public ShenandoahRootProcessor {
 private:
-  ShenandoahSerialRoots                                     _serial_roots;
   ShenandoahThreadRoots                                     _thread_roots;
 
 public:
@@ -238,7 +229,6 @@ public:
 // root scanning
 class ShenandoahHeapIterationRootScanner : public ShenandoahRootProcessor {
 private:
-  ShenandoahSerialRoots                                    _serial_roots;
   ShenandoahThreadRoots                                    _thread_roots;
   ShenandoahVMRoots<false /*concurrent*/>                  _vm_roots;
   ShenandoahClassLoaderDataRoots<false /*concurrent*/, true /*single threaded*/>
@@ -257,7 +247,6 @@ public:
 // Evacuate all roots at a safepoint
 class ShenandoahRootEvacuator : public ShenandoahRootProcessor {
 private:
-  ShenandoahSerialRoots                                     _serial_roots;
   ShenandoahVMRoots<false /*concurrent*/>                   _vm_roots;
   ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
                                                             _cld_roots;
@@ -278,7 +267,6 @@ public:
 // Update all roots at a safepoint
 class ShenandoahRootUpdater : public ShenandoahRootProcessor {
 private:
-  ShenandoahSerialRoots                                     _serial_roots;
   ShenandoahVMRoots<false /*concurrent*/>                   _vm_roots;
   ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
                                                             _cld_roots;
@@ -298,7 +286,6 @@ public:
 // Adjuster all roots at a safepoint during full gc
 class ShenandoahRootAdjuster : public ShenandoahRootProcessor {
 private:
-  ShenandoahSerialRoots                                     _serial_roots;
   ShenandoahVMRoots<false /*concurrent*/>                   _vm_roots;
   ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
                                                             _cld_roots;

@@ -92,7 +92,11 @@ public class ObjectMonitor extends VMObject {
   public long recursions() { return recursionsField.getValue(addr); }
 
   public OopHandle object() {
-    return addr.getOopHandleAt(objectFieldOffset);
+    Address objAddr = addr.getAddressAt(objectFieldOffset);
+    if (objAddr == null) {
+      return null;
+    }
+    return objAddr.getOopHandleAt(0);
   }
 
   public int contentions() {

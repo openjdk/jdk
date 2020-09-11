@@ -3017,13 +3017,6 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
     return false;
   }
 
-  // Inflated monitors
-  blk.set_kind(JVMTI_HEAP_REFERENCE_MONITOR);
-  ObjectSynchronizer::oops_do(&blk);
-  if (blk.stopped()) {
-    return false;
-  }
-
   // threads are now handled in collect_stack_roots()
 
   // Other kinds of roots maintained by HotSpot
