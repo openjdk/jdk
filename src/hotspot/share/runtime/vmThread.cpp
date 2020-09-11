@@ -443,9 +443,6 @@ void VMThread::loop() {
             // something. This will run all the clean-up processing that needs
             // to be done at a safepoint.
             SafepointSynchronize::begin();
-            #ifdef ASSERT
-            if (GCALotAtAllSafepoints) InterfaceSupport::check_gc_alot();
-            #endif
             SafepointSynchronize::end();
             _cur_vm_operation = NULL;
           }
