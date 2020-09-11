@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Premain-Class: TransformerDeadlockTest
+Can-Redefine-Classes: true
+Can-Retransform-Classes: true
