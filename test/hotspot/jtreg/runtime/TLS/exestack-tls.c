@@ -57,7 +57,7 @@ JNIEnv* create_vm(JavaVM **jvm, char* argTLS) {
     return env;
 }
 
-#if defined(__GLIBC)
+#ifdef __GLIBC__
 // glibc 2.15 introduced __pthread_get_minstack
 int glibc_has_pthread_get_minstack() {
   const char* glibc_vers = gnu_get_libc_version();

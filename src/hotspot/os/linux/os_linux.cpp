@@ -622,8 +622,8 @@ void os::Linux::libpthread_init() {
 #ifdef MUSL_LIBC
   // confstr() from musl libc returns EINVAL for
   // _CS_GNU_LIBC_VERSION and _CS_GNU_LIBPTHREAD_VERSION
-  os::Linux::set_libc_version("unknown");
-  os::Linux::set_libpthread_version("unknown");
+  os::Linux::set_libc_version("musl - unknown");
+  os::Linux::set_libpthread_version("musl - unknown");
 #else
   size_t n = confstr(_CS_GNU_LIBC_VERSION, NULL, 0);
   assert(n > 0, "cannot retrieve glibc version");
