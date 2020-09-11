@@ -286,8 +286,7 @@ bool ObjectMonitor::enter(TRAPS) {
 
   assert(_owner != Self, "invariant");
   assert(_succ != Self, "invariant");
-  assert(Self->is_Java_thread(), "invariant");
-  JavaThread * jt = (JavaThread *) Self;
+  JavaThread * jt = Self->as_Java_thread();
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(jt->thread_state() != _thread_blocked, "invariant");
 
@@ -506,8 +505,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
 
 void ObjectMonitor::EnterI(TRAPS) {
   Thread * const Self = THREAD;
-  assert(Self->is_Java_thread(), "invariant");
-  assert(((JavaThread *) Self)->thread_state() == _thread_blocked, "invariant");
+  assert(Self->as_Java_thread()->thread_state() == _thread_blocked, "invariant");
 
   // Try the lock - TATAS
   if (TryLock (Self) > 0) {
@@ -773,8 +771,9 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   assert(SelfNode->_thread == Self, "invariant");
   assert(_waiters > 0, "invariant");
   assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
-  assert(((JavaThread *)Self)->thread_state() != _thread_blocked, "invariant");
-  JavaThread * jt = (JavaThread *) Self;
+
+  JavaThread * jt = Self->as_Java_thread();
+  assert(jt->thread_state() != _thread_blocked, "invariant");
 
   int nWakeups = 0;
   for (;;) {
@@ -1227,8 +1226,7 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
 // thread due to contention.
 intx ObjectMonitor::complete_exit(TRAPS) {
   Thread * const Self = THREAD;
-  assert(Self->is_Java_thread(), "Must be Java thread!");
-  JavaThread *jt = (JavaThread *)THREAD;
+  JavaThread * jt = Self->as_Java_thread();
 
   assert(InitDone, "Unexpectedly not initialized");
 
@@ -1253,8 +1251,7 @@ intx ObjectMonitor::complete_exit(TRAPS) {
 // complete_exit/reenter operate as a wait without waiting
 bool ObjectMonitor::reenter(intx recursions, TRAPS) {
   Thread * const Self = THREAD;
-  assert(Self->is_Java_thread(), "Must be Java thread!");
-  JavaThread *jt = (JavaThread *)THREAD;
+  JavaThread * jt = Self->as_Java_thread();
 
   guarantee(_owner != Self, "reenter already owner");
   if (!enter(THREAD)) {
@@ -1319,8 +1316,7 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
 // will need to be replicated in complete_exit
 void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   Thread * const Self = THREAD;
-  assert(Self->is_Java_thread(), "Must be Java thread!");
-  JavaThread *jt = (JavaThread *)THREAD;
+  JavaThread * jt = Self->as_Java_thread();
 
   assert(InitDone, "Unexpectedly not initialized");
 
@@ -1948,12 +1944,12 @@ ObjectWaiter::ObjectWaiter(Thread* thread) {
 }
 
 void ObjectWaiter::wait_reenter_begin(ObjectMonitor * const mon) {
-  JavaThread *jt = (JavaThread *)this->_thread;
+  JavaThread *jt = this->_thread->as_Java_thread();
   _active = JavaThreadBlockedOnMonitorEnterState::wait_reenter_begin(jt, mon);
 }
 
 void ObjectWaiter::wait_reenter_end(ObjectMonitor * const mon) {
-  JavaThread *jt = (JavaThread *)this->_thread;
+  JavaThread *jt = this->_thread->as_Java_thread();
   JavaThreadBlockedOnMonitorEnterState::wait_reenter_end(jt, _active);
 }
 

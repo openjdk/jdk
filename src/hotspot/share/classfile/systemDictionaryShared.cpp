@@ -1616,8 +1616,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
   loaded_lambda->link_class(CHECK_NULL);
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
-    assert(THREAD->is_Java_thread(), "thread->is_Java_thread()");
-    JvmtiExport::post_class_load((JavaThread *) THREAD, loaded_lambda);
+    JvmtiExport::post_class_load(THREAD->as_Java_thread(), loaded_lambda);
   }
   if (class_load_start_event.should_commit()) {
     SystemDictionary::post_class_load_event(&class_load_start_event, loaded_lambda, ClassLoaderData::class_loader_data(class_loader()));
