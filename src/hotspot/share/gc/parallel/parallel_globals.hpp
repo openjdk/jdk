@@ -29,13 +29,7 @@
                           develop_pd,                                       \
                           product,                                          \
                           product_pd,                                       \
-                          diagnostic,                                       \
-                          diagnostic_pd,                                    \
-                          experimental,                                     \
                           notproduct,                                       \
-                          manageable,                                       \
-                          product_rw,                                       \
-                          lp64_product,                                     \
                           range,                                            \
                           constraint)                                       \
   product(uintx, HeapMaximumCompactionInterval, 20,                         \
@@ -66,5 +60,7 @@
                                                                             \
   product(bool, PSChunkLargeArrays, true,                                   \
           "Process large arrays in chunks")
+
+// end of GC_PARALLEL_FLAGS
 
 #endif // SHARE_GC_PARALLEL_PARALLEL_GLOBALS_HPP
