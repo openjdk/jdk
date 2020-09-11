@@ -98,7 +98,7 @@ void JfrCheckpointThreadClosure::do_thread(Thread* t) {
   if (t->is_Java_thread()) {
     _writer.write(name);
     _writer.write(JfrThreadId::id(t));
-    _writer.write(JfrThreadGroup::thread_group_id((JavaThread*)t, _curthread));
+    _writer.write(JfrThreadGroup::thread_group_id(t->as_Java_thread(), _curthread));
     return;
   }
   _writer.write((const char*)NULL); // java name
@@ -274,7 +274,7 @@ void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
   if (_thread->is_Java_thread()) {
     writer.write(name);
     writer.write(JfrThreadId::id(_thread));
-    JavaThread* const jt = (JavaThread*)_thread;
+    JavaThread* const jt = _thread->as_Java_thread();
     const traceid thread_group_id = JfrThreadGroup::thread_group_id(jt, jt);
     writer.write(thread_group_id);
     JfrThreadGroup::serialize(&writer, thread_group_id);

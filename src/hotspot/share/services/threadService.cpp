@@ -422,8 +422,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
         Thread* owner = waitingToLockRawMonitor->owner();
         if (owner != NULL && // the raw monitor could be released at any time
             owner->is_Java_thread()) {
-          // only JavaThreads can be reported here
-          currentThread = (JavaThread*) owner;
+          currentThread = owner->as_Java_thread();
         }
       } else if (waitingToLockMonitor != NULL) {
         address currentOwner = (address)waitingToLockMonitor->owner();
@@ -986,7 +985,7 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
       // Could be NULL as the raw monitor could be released at any time if held by non-JavaThread
       if (owner != NULL) {
         if (owner->is_Java_thread()) {
-          currentThread = (JavaThread*) owner;
+          currentThread = owner->as_Java_thread();
           st->print_cr("%s \"%s\"", owner_desc, currentThread->get_thread_name());
         } else {
           st->print_cr(",\n  which has now been released");

@@ -449,8 +449,7 @@ static ObjectMonitor* take_from_start_of_om_free_list(Thread* self) {
 
 bool ObjectSynchronizer::quick_notify(oopDesc* obj, Thread* self, bool all) {
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(self->is_Java_thread(), "invariant");
-  assert(((JavaThread *) self)->thread_state() == _thread_in_Java, "invariant");
+  assert(self->as_Java_thread()->thread_state() == _thread_in_Java, "invariant");
   NoSafepointVerifier nsv;
   if (obj == NULL) return false;  // slow-path for invalid obj
   const markWord mark = obj->mark();
@@ -499,8 +498,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, Thread* self, bool all) {
 bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
                                      BasicLock * lock) {
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(self->is_Java_thread(), "invariant");
-  assert(((JavaThread *) self)->thread_state() == _thread_in_Java, "invariant");
+  assert(self->as_Java_thread()->thread_state() == _thread_in_Java, "invariant");
   NoSafepointVerifier nsv;
   if (obj == NULL) return false;       // Need to throw NPE
 
@@ -560,8 +558,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
 
 // Handle notifications when synchronizing on primitive wrappers
 void ObjectSynchronizer::handle_sync_on_primitive_wrapper(Handle obj, Thread* current) {
-  assert(current->is_Java_thread(), "must be for java object synchronization");
-  JavaThread* self = (JavaThread*) current;
+  JavaThread* self = current->as_Java_thread();
 
   frame last_frame = self->last_frame();
   if (last_frame.is_interpreted_frame()) {
@@ -2426,7 +2423,6 @@ void ObjectSynchronizer::deflate_idle_monitors_using_JT() {
 // Deflate global idle ObjectMonitors using a JavaThread.
 //
 void ObjectSynchronizer::deflate_global_idle_monitors_using_JT() {
-  assert(Thread::current()->is_Java_thread(), "precondition");
   JavaThread* self = JavaThread::current();
 
   deflate_common_idle_monitors_using_JT(true /* is_global */, self);

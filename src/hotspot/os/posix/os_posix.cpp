@@ -2073,9 +2073,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   // since we are doing a lock-free update to _counter.
   if (Atomic::xchg(&_counter, 0) > 0) return;
 
-  Thread* thread = Thread::current();
-  assert(thread->is_Java_thread(), "Must be JavaThread");
-  JavaThread *jt = (JavaThread *)thread;
+  JavaThread *jt = JavaThread::current();
 
   // Optional optimization -- avoid state transitions if there's
   // an interrupt pending.
@@ -2120,7 +2118,7 @@ void Parker::park(bool isAbsolute, jlong time) {
     return;
   }
 
-  OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
+  OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
   jt->set_suspend_equivalent();
   // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
 
