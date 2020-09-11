@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,8 @@
 
 JfrAllocationTracer::JfrAllocationTracer(HeapWord* obj, size_t alloc_size, Thread* thread) : _tl(NULL) {
   if (LeakProfiler::is_running()) {
-    assert(thread->is_Java_thread(), "invariant");
     _tl = thread->jfr_thread_local();
-    LeakProfiler::sample(obj, alloc_size, (JavaThread*)thread);
+    LeakProfiler::sample(obj, alloc_size, thread->as_Java_thread());
   }
 }
 

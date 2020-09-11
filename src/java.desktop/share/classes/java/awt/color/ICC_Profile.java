@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,9 @@ import sun.java2d.cmm.ProfileDeferralMgr;
  */
 public class ICC_Profile implements Serializable {
 
+    /**
+     * Use serialVersionUID from JDK 1.2 for interoperability.
+     */
     private static final long serialVersionUID = -3938515861990936766L;
 
     private transient Profile cmmProfile;
@@ -137,177 +140,178 @@ public class ICC_Profile implements Serializable {
      */
     public static final int CLASS_NAMEDCOLOR = 6;
 
+
     /**
      * ICC Profile Color Space Type Signature: 'XYZ '.
      */
-    public static final int icSigXYZData        = 0x58595A20;    /* 'XYZ ' */
+    public static final int icSigXYZData = 0x58595A20;
 
     /**
      * ICC Profile Color Space Type Signature: 'Lab '.
      */
-    public static final int icSigLabData        = 0x4C616220;    /* 'Lab ' */
+    public static final int icSigLabData = 0x4C616220;
 
     /**
      * ICC Profile Color Space Type Signature: 'Luv '.
      */
-    public static final int icSigLuvData        = 0x4C757620;    /* 'Luv ' */
+    public static final int icSigLuvData = 0x4C757620;
 
     /**
      * ICC Profile Color Space Type Signature: 'YCbr'.
      */
-    public static final int icSigYCbCrData        = 0x59436272;    /* 'YCbr' */
+    public static final int icSigYCbCrData = 0x59436272;
 
     /**
      * ICC Profile Color Space Type Signature: 'Yxy '.
      */
-    public static final int icSigYxyData        = 0x59787920;    /* 'Yxy ' */
+    public static final int icSigYxyData = 0x59787920;
 
     /**
      * ICC Profile Color Space Type Signature: 'RGB '.
      */
-    public static final int icSigRgbData        = 0x52474220;    /* 'RGB ' */
+    public static final int icSigRgbData = 0x52474220;
 
     /**
      * ICC Profile Color Space Type Signature: 'GRAY'.
      */
-    public static final int icSigGrayData        = 0x47524159;    /* 'GRAY' */
+    public static final int icSigGrayData = 0x47524159;
 
     /**
      * ICC Profile Color Space Type Signature: 'HSV'.
      */
-    public static final int icSigHsvData        = 0x48535620;    /* 'HSV ' */
+    public static final int icSigHsvData = 0x48535620;
 
     /**
      * ICC Profile Color Space Type Signature: 'HLS'.
      */
-    public static final int icSigHlsData        = 0x484C5320;    /* 'HLS ' */
+    public static final int icSigHlsData = 0x484C5320;
 
     /**
      * ICC Profile Color Space Type Signature: 'CMYK'.
      */
-    public static final int icSigCmykData        = 0x434D594B;    /* 'CMYK' */
+    public static final int icSigCmykData = 0x434D594B;
 
     /**
      * ICC Profile Color Space Type Signature: 'CMY '.
      */
-    public static final int icSigCmyData        = 0x434D5920;    /* 'CMY ' */
+    public static final int icSigCmyData = 0x434D5920;
 
     /**
      * ICC Profile Color Space Type Signature: '2CLR'.
      */
-    public static final int icSigSpace2CLR        = 0x32434C52;    /* '2CLR' */
+    public static final int icSigSpace2CLR = 0x32434C52;
 
     /**
      * ICC Profile Color Space Type Signature: '3CLR'.
      */
-    public static final int icSigSpace3CLR        = 0x33434C52;    /* '3CLR' */
+    public static final int icSigSpace3CLR = 0x33434C52;
 
     /**
      * ICC Profile Color Space Type Signature: '4CLR'.
      */
-    public static final int icSigSpace4CLR        = 0x34434C52;    /* '4CLR' */
+    public static final int icSigSpace4CLR = 0x34434C52;
 
     /**
      * ICC Profile Color Space Type Signature: '5CLR'.
      */
-    public static final int icSigSpace5CLR        = 0x35434C52;    /* '5CLR' */
+    public static final int icSigSpace5CLR = 0x35434C52;
 
     /**
      * ICC Profile Color Space Type Signature: '6CLR'.
      */
-    public static final int icSigSpace6CLR        = 0x36434C52;    /* '6CLR' */
+    public static final int icSigSpace6CLR = 0x36434C52;
 
     /**
      * ICC Profile Color Space Type Signature: '7CLR'.
      */
-    public static final int icSigSpace7CLR        = 0x37434C52;    /* '7CLR' */
+    public static final int icSigSpace7CLR = 0x37434C52;
 
     /**
      * ICC Profile Color Space Type Signature: '8CLR'.
      */
-    public static final int icSigSpace8CLR        = 0x38434C52;    /* '8CLR' */
+    public static final int icSigSpace8CLR = 0x38434C52;
 
     /**
      * ICC Profile Color Space Type Signature: '9CLR'.
      */
-    public static final int icSigSpace9CLR        = 0x39434C52;    /* '9CLR' */
+    public static final int icSigSpace9CLR = 0x39434C52;
 
     /**
      * ICC Profile Color Space Type Signature: 'ACLR'.
      */
-    public static final int icSigSpaceACLR        = 0x41434C52;    /* 'ACLR' */
+    public static final int icSigSpaceACLR = 0x41434C52;
 
     /**
      * ICC Profile Color Space Type Signature: 'BCLR'.
      */
-    public static final int icSigSpaceBCLR        = 0x42434C52;    /* 'BCLR' */
+    public static final int icSigSpaceBCLR = 0x42434C52;
 
     /**
      * ICC Profile Color Space Type Signature: 'CCLR'.
      */
-    public static final int icSigSpaceCCLR        = 0x43434C52;    /* 'CCLR' */
+    public static final int icSigSpaceCCLR = 0x43434C52;
 
     /**
      * ICC Profile Color Space Type Signature: 'DCLR'.
      */
-    public static final int icSigSpaceDCLR        = 0x44434C52;    /* 'DCLR' */
+    public static final int icSigSpaceDCLR = 0x44434C52;
 
     /**
      * ICC Profile Color Space Type Signature: 'ECLR'.
      */
-    public static final int icSigSpaceECLR        = 0x45434C52;    /* 'ECLR' */
+    public static final int icSigSpaceECLR = 0x45434C52;
 
     /**
      * ICC Profile Color Space Type Signature: 'FCLR'.
      */
-    public static final int icSigSpaceFCLR        = 0x46434C52;    /* 'FCLR' */
+    public static final int icSigSpaceFCLR = 0x46434C52;
 
 
     /**
      * ICC Profile Class Signature: 'scnr'.
      */
-    public static final int icSigInputClass       = 0x73636E72;    /* 'scnr' */
+    public static final int icSigInputClass = 0x73636E72;
 
     /**
      * ICC Profile Class Signature: 'mntr'.
      */
-    public static final int icSigDisplayClass     = 0x6D6E7472;    /* 'mntr' */
+    public static final int icSigDisplayClass = 0x6D6E7472;
 
     /**
      * ICC Profile Class Signature: 'prtr'.
      */
-    public static final int icSigOutputClass      = 0x70727472;    /* 'prtr' */
+    public static final int icSigOutputClass = 0x70727472;
 
     /**
      * ICC Profile Class Signature: 'link'.
      */
-    public static final int icSigLinkClass        = 0x6C696E6B;    /* 'link' */
+    public static final int icSigLinkClass = 0x6C696E6B;
 
     /**
      * ICC Profile Class Signature: 'abst'.
      */
-    public static final int icSigAbstractClass    = 0x61627374;    /* 'abst' */
+    public static final int icSigAbstractClass = 0x61627374;
 
     /**
      * ICC Profile Class Signature: 'spac'.
      */
-    public static final int icSigColorSpaceClass  = 0x73706163;    /* 'spac' */
+    public static final int icSigColorSpaceClass = 0x73706163;
 
     /**
      * ICC Profile Class Signature: 'nmcl'.
      */
-    public static final int icSigNamedColorClass  = 0x6e6d636c;    /* 'nmcl' */
+    public static final int icSigNamedColorClass = 0x6e6d636c;
 
 
     /**
      * ICC Profile Rendering Intent: Perceptual.
      */
-    public static final int icPerceptual            = 0;
+    public static final int icPerceptual = 0;
 
     /**
      * ICC Profile Rendering Intent: RelativeColorimetric.
      */
-    public static final int icRelativeColorimetric    = 1;
+    public static final int icRelativeColorimetric = 1;
 
     /**
      * ICC Profile Rendering Intent: Media-RelativeColorimetric.
@@ -319,12 +323,12 @@ public class ICC_Profile implements Serializable {
     /**
      * ICC Profile Rendering Intent: Saturation.
      */
-    public static final int icSaturation            = 2;
+    public static final int icSaturation = 2;
 
     /**
      * ICC Profile Rendering Intent: AbsoluteColorimetric.
      */
-    public static final int icAbsoluteColorimetric    = 3;
+    public static final int icAbsoluteColorimetric = 3;
 
     /**
      * ICC Profile Rendering Intent: ICC-AbsoluteColorimetric.
@@ -337,392 +341,388 @@ public class ICC_Profile implements Serializable {
     /**
      * ICC Profile Tag Signature: 'head' - special.
      */
-    public static final int icSigHead      = 0x68656164; /* 'head' - special */
+    public static final int icSigHead = 0x68656164;
 
     /**
      * ICC Profile Tag Signature: 'A2B0'.
      */
-    public static final int icSigAToB0Tag         = 0x41324230;    /* 'A2B0' */
+    public static final int icSigAToB0Tag = 0x41324230;
 
     /**
      * ICC Profile Tag Signature: 'A2B1'.
      */
-    public static final int icSigAToB1Tag         = 0x41324231;    /* 'A2B1' */
+    public static final int icSigAToB1Tag = 0x41324231;
 
     /**
      * ICC Profile Tag Signature: 'A2B2'.
      */
-    public static final int icSigAToB2Tag         = 0x41324232;    /* 'A2B2' */
+    public static final int icSigAToB2Tag = 0x41324232;
 
     /**
      * ICC Profile Tag Signature: 'bXYZ'.
      */
-    public static final int icSigBlueColorantTag  = 0x6258595A;    /* 'bXYZ' */
+    public static final int icSigBlueColorantTag = 0x6258595A;
 
     /**
      * ICC Profile Tag Signature: 'bXYZ'.
      *
      * @since 1.5
      */
-    public static final int icSigBlueMatrixColumnTag = 0x6258595A; /* 'bXYZ' */
+    public static final int icSigBlueMatrixColumnTag = 0x6258595A;
 
     /**
      * ICC Profile Tag Signature: 'bTRC'.
      */
-    public static final int icSigBlueTRCTag       = 0x62545243;    /* 'bTRC' */
+    public static final int icSigBlueTRCTag = 0x62545243;
 
     /**
      * ICC Profile Tag Signature: 'B2A0'.
      */
-    public static final int icSigBToA0Tag         = 0x42324130;    /* 'B2A0' */
+    public static final int icSigBToA0Tag = 0x42324130;
 
     /**
      * ICC Profile Tag Signature: 'B2A1'.
      */
-    public static final int icSigBToA1Tag         = 0x42324131;    /* 'B2A1' */
+    public static final int icSigBToA1Tag = 0x42324131;
 
     /**
      * ICC Profile Tag Signature: 'B2A2'.
      */
-    public static final int icSigBToA2Tag         = 0x42324132;    /* 'B2A2' */
+    public static final int icSigBToA2Tag = 0x42324132;
 
     /**
      * ICC Profile Tag Signature: 'calt'.
      */
     public static final int icSigCalibrationDateTimeTag = 0x63616C74;
-                                                                   /* 'calt' */
 
     /**
      * ICC Profile Tag Signature: 'targ'.
      */
-    public static final int icSigCharTargetTag    = 0x74617267;    /* 'targ' */
+    public static final int icSigCharTargetTag = 0x74617267;
 
     /**
      * ICC Profile Tag Signature: 'cprt'.
      */
-    public static final int icSigCopyrightTag     = 0x63707274;    /* 'cprt' */
+    public static final int icSigCopyrightTag = 0x63707274;
 
     /**
      * ICC Profile Tag Signature: 'crdi'.
      */
-    public static final int icSigCrdInfoTag       = 0x63726469;    /* 'crdi' */
+    public static final int icSigCrdInfoTag = 0x63726469;
 
     /**
      * ICC Profile Tag Signature: 'dmnd'.
      */
-    public static final int icSigDeviceMfgDescTag = 0x646D6E64;    /* 'dmnd' */
+    public static final int icSigDeviceMfgDescTag = 0x646D6E64;
 
     /**
      * ICC Profile Tag Signature: 'dmdd'.
      */
-    public static final int icSigDeviceModelDescTag = 0x646D6464;  /* 'dmdd' */
+    public static final int icSigDeviceModelDescTag = 0x646D6464;
 
     /**
      * ICC Profile Tag Signature: 'devs'.
      */
-    public static final int icSigDeviceSettingsTag =  0x64657673;  /* 'devs' */
+    public static final int icSigDeviceSettingsTag = 0x64657673;
 
     /**
      * ICC Profile Tag Signature: 'gamt'.
      */
-    public static final int icSigGamutTag         = 0x67616D74;    /* 'gamt' */
+    public static final int icSigGamutTag = 0x67616D74;
 
     /**
      * ICC Profile Tag Signature: 'kTRC'.
      */
-    public static final int icSigGrayTRCTag       = 0x6b545243;    /* 'kTRC' */
+    public static final int icSigGrayTRCTag = 0x6b545243;
 
     /**
      * ICC Profile Tag Signature: 'gXYZ'.
      */
-    public static final int icSigGreenColorantTag = 0x6758595A;    /* 'gXYZ' */
+    public static final int icSigGreenColorantTag = 0x6758595A;
 
     /**
      * ICC Profile Tag Signature: 'gXYZ'.
      *
      * @since 1.5
      */
-    public static final int icSigGreenMatrixColumnTag = 0x6758595A;/* 'gXYZ' */
+    public static final int icSigGreenMatrixColumnTag = 0x6758595A;
 
     /**
      * ICC Profile Tag Signature: 'gTRC'.
      */
-    public static final int icSigGreenTRCTag      = 0x67545243;    /* 'gTRC' */
+    public static final int icSigGreenTRCTag = 0x67545243;
 
     /**
      * ICC Profile Tag Signature: 'lumi'.
      */
-    public static final int icSigLuminanceTag     = 0x6C756d69;    /* 'lumi' */
+    public static final int icSigLuminanceTag = 0x6C756d69;
 
     /**
      * ICC Profile Tag Signature: 'meas'.
      */
-    public static final int icSigMeasurementTag   = 0x6D656173;    /* 'meas' */
+    public static final int icSigMeasurementTag = 0x6D656173;
 
     /**
      * ICC Profile Tag Signature: 'bkpt'.
      */
-    public static final int icSigMediaBlackPointTag = 0x626B7074;  /* 'bkpt' */
+    public static final int icSigMediaBlackPointTag = 0x626B7074;
 
     /**
      * ICC Profile Tag Signature: 'wtpt'.
      */
-    public static final int icSigMediaWhitePointTag = 0x77747074;  /* 'wtpt' */
+    public static final int icSigMediaWhitePointTag = 0x77747074;
 
     /**
      * ICC Profile Tag Signature: 'ncl2'.
      */
-    public static final int icSigNamedColor2Tag   = 0x6E636C32;    /* 'ncl2' */
+    public static final int icSigNamedColor2Tag = 0x6E636C32;
 
     /**
      * ICC Profile Tag Signature: 'resp'.
      */
-    public static final int icSigOutputResponseTag = 0x72657370;   /* 'resp' */
+    public static final int icSigOutputResponseTag = 0x72657370;
 
     /**
      * ICC Profile Tag Signature: 'pre0'.
      */
-    public static final int icSigPreview0Tag      = 0x70726530;    /* 'pre0' */
+    public static final int icSigPreview0Tag = 0x70726530;
 
     /**
      * ICC Profile Tag Signature: 'pre1'.
      */
-    public static final int icSigPreview1Tag      = 0x70726531;    /* 'pre1' */
+    public static final int icSigPreview1Tag = 0x70726531;
 
     /**
      * ICC Profile Tag Signature: 'pre2'.
      */
-    public static final int icSigPreview2Tag      = 0x70726532;    /* 'pre2' */
+    public static final int icSigPreview2Tag = 0x70726532;
 
     /**
      * ICC Profile Tag Signature: 'desc'.
      */
     public static final int icSigProfileDescriptionTag = 0x64657363;
-                                                                   /* 'desc' */
 
     /**
      * ICC Profile Tag Signature: 'pseq'.
      */
     public static final int icSigProfileSequenceDescTag = 0x70736571;
-                                                                   /* 'pseq' */
 
     /**
      * ICC Profile Tag Signature: 'psd0'.
      */
-    public static final int icSigPs2CRD0Tag       = 0x70736430;    /* 'psd0' */
+    public static final int icSigPs2CRD0Tag = 0x70736430;
 
     /**
      * ICC Profile Tag Signature: 'psd1'.
      */
-    public static final int icSigPs2CRD1Tag       = 0x70736431;    /* 'psd1' */
+    public static final int icSigPs2CRD1Tag = 0x70736431;
 
     /**
      * ICC Profile Tag Signature: 'psd2'.
      */
-    public static final int icSigPs2CRD2Tag       = 0x70736432;    /* 'psd2' */
+    public static final int icSigPs2CRD2Tag = 0x70736432;
 
     /**
      * ICC Profile Tag Signature: 'psd3'.
      */
-    public static final int icSigPs2CRD3Tag       = 0x70736433;    /* 'psd3' */
+    public static final int icSigPs2CRD3Tag = 0x70736433;
 
     /**
      * ICC Profile Tag Signature: 'ps2s'.
      */
-    public static final int icSigPs2CSATag        = 0x70733273;    /* 'ps2s' */
+    public static final int icSigPs2CSATag = 0x70733273;
 
     /**
      * ICC Profile Tag Signature: 'ps2i'.
      */
     public static final int icSigPs2RenderingIntentTag = 0x70733269;
-                                                                   /* 'ps2i' */
 
     /**
      * ICC Profile Tag Signature: 'rXYZ'.
      */
-    public static final int icSigRedColorantTag   = 0x7258595A;    /* 'rXYZ' */
+    public static final int icSigRedColorantTag = 0x7258595A;
 
     /**
      * ICC Profile Tag Signature: 'rXYZ'.
      *
      * @since 1.5
      */
-    public static final int icSigRedMatrixColumnTag = 0x7258595A;  /* 'rXYZ' */
+    public static final int icSigRedMatrixColumnTag = 0x7258595A;
 
     /**
      * ICC Profile Tag Signature: 'rTRC'.
      */
-    public static final int icSigRedTRCTag        = 0x72545243;    /* 'rTRC' */
+    public static final int icSigRedTRCTag = 0x72545243;
 
     /**
      * ICC Profile Tag Signature: 'scrd'.
      */
-    public static final int icSigScreeningDescTag = 0x73637264;    /* 'scrd' */
+    public static final int icSigScreeningDescTag = 0x73637264;
 
     /**
      * ICC Profile Tag Signature: 'scrn'.
      */
-    public static final int icSigScreeningTag     = 0x7363726E;    /* 'scrn' */
+    public static final int icSigScreeningTag = 0x7363726E;
 
     /**
      * ICC Profile Tag Signature: 'tech'.
      */
-    public static final int icSigTechnologyTag    = 0x74656368;    /* 'tech' */
+    public static final int icSigTechnologyTag = 0x74656368;
 
     /**
      * ICC Profile Tag Signature: 'bfd '.
      */
-    public static final int icSigUcrBgTag         = 0x62666420;    /* 'bfd ' */
+    public static final int icSigUcrBgTag = 0x62666420;
 
     /**
      * ICC Profile Tag Signature: 'vued'.
      */
-    public static final int icSigViewingCondDescTag = 0x76756564;  /* 'vued' */
+    public static final int icSigViewingCondDescTag = 0x76756564;
 
     /**
      * ICC Profile Tag Signature: 'view'.
      */
-    public static final int icSigViewingConditionsTag = 0x76696577;/* 'view' */
+    public static final int icSigViewingConditionsTag = 0x76696577;
 
     /**
      * ICC Profile Tag Signature: 'chrm'.
      */
-    public static final int icSigChromaticityTag  = 0x6368726d;    /* 'chrm' */
+    public static final int icSigChromaticityTag = 0x6368726d;
 
     /**
      * ICC Profile Tag Signature: 'chad'.
      *
      * @since 1.5
      */
-    public static final int icSigChromaticAdaptationTag = 0x63686164;/* 'chad' */
+    public static final int icSigChromaticAdaptationTag = 0x63686164;
 
     /**
      * ICC Profile Tag Signature: 'clro'.
      *
      * @since 1.5
      */
-    public static final int icSigColorantOrderTag = 0x636C726F;    /* 'clro' */
+    public static final int icSigColorantOrderTag = 0x636C726F;
 
     /**
      * ICC Profile Tag Signature: 'clrt'.
      *
      * @since 1.5
      */
-    public static final int icSigColorantTableTag = 0x636C7274;    /* 'clrt' */
+    public static final int icSigColorantTableTag = 0x636C7274;
 
 
     /**
      * ICC Profile Header Location: profile size in bytes.
      */
-    public static final int icHdrSize         = 0;  /* Profile size in bytes */
+    public static final int icHdrSize = 0;
 
     /**
      * ICC Profile Header Location: CMM for this profile.
      */
-    public static final int icHdrCmmId        = 4;  /* CMM for this profile */
+    public static final int icHdrCmmId = 4;
 
     /**
      * ICC Profile Header Location: format version number.
      */
-    public static final int icHdrVersion      = 8;  /* Format version number */
+    public static final int icHdrVersion = 8;
 
     /**
      * ICC Profile Header Location: type of profile.
      */
-    public static final int icHdrDeviceClass  = 12; /* Type of profile */
+    public static final int icHdrDeviceClass = 12;
 
     /**
      * ICC Profile Header Location: color space of data.
      */
-    public static final int icHdrColorSpace   = 16; /* Color space of data */
+    public static final int icHdrColorSpace = 16;
 
     /**
      * ICC Profile Header Location: PCS - XYZ or Lab only.
      */
-    public static final int icHdrPcs          = 20; /* PCS - XYZ or Lab only */
+    public static final int icHdrPcs = 20;
 
     /**
      * ICC Profile Header Location: date profile was created.
      */
-    public static final int icHdrDate       = 24; /* Date profile was created */
+    public static final int icHdrDate = 24;
 
     /**
      * ICC Profile Header Location: icMagicNumber.
      */
-    public static final int icHdrMagic        = 36; /* icMagicNumber */
+    public static final int icHdrMagic = 36;
 
     /**
      * ICC Profile Header Location: primary platform.
      */
-    public static final int icHdrPlatform     = 40; /* Primary Platform */
+    public static final int icHdrPlatform = 40;
 
     /**
      * ICC Profile Header Location: various bit settings.
      */
-    public static final int icHdrFlags        = 44; /* Various bit settings */
+    public static final int icHdrFlags = 44;
 
     /**
      * ICC Profile Header Location: device manufacturer.
      */
-    public static final int icHdrManufacturer = 48; /* Device manufacturer */
+    public static final int icHdrManufacturer = 48;
 
     /**
      * ICC Profile Header Location: device model number.
      */
-    public static final int icHdrModel        = 52; /* Device model number */
+    public static final int icHdrModel = 52;
 
     /**
      * ICC Profile Header Location: device attributes.
      */
-    public static final int icHdrAttributes   = 56; /* Device attributes */
+    public static final int icHdrAttributes = 56;
 
     /**
      * ICC Profile Header Location: rendering intent.
      */
-    public static final int icHdrRenderingIntent = 64; /* Rendering intent */
+    public static final int icHdrRenderingIntent = 64;
 
     /**
      * ICC Profile Header Location: profile illuminant.
      */
-    public static final int icHdrIlluminant   = 68; /* Profile illuminant */
+    public static final int icHdrIlluminant = 68;
 
     /**
      * ICC Profile Header Location: profile creator.
      */
-    public static final int icHdrCreator      = 80; /* Profile creator */
+    public static final int icHdrCreator = 80;
 
     /**
      * ICC Profile Header Location: profile's ID.
      *
      * @since 1.5
      */
-    public static final int icHdrProfileID = 84; /* Profile's ID */
+    public static final int icHdrProfileID = 84;
 
 
     /**
      * ICC Profile Constant: tag type signature.
      */
-    public static final int icTagType          = 0;    /* tag type signature */
+    public static final int icTagType = 0;
 
     /**
      * ICC Profile Constant: reserved.
      */
-    public static final int icTagReserved      = 4;    /* reserved */
+    public static final int icTagReserved = 4;
 
     /**
      * ICC Profile Constant: curveType count.
      */
-    public static final int icCurveCount       = 8;    /* curveType count */
+    public static final int icCurveCount = 8;
 
     /**
      * ICC Profile Constant: curveType data.
      */
-    public static final int icCurveData        = 12;   /* curveType data */
+    public static final int icCurveData = 12;
 
     /**
      * ICC Profile Constant: XYZNumber X.
      */
-    public static final int icXYZNumberX       = 8;    /* XYZNumber X */
+    public static final int icXYZNumberX = 8;
 
 
     /**

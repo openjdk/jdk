@@ -142,7 +142,7 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
   const char * source_file = NULL;
   const char * trace = "explicit";
   InstanceKlass* caller = NULL;
-  JavaThread* jthread = (JavaThread*) THREAD;
+  JavaThread* jthread = THREAD->as_Java_thread();
   if (jthread->has_last_Java_frame()) {
     vframeStream vfst(jthread);
 
@@ -611,8 +611,7 @@ JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mod
                                      jint skip_frames, jint frame_count, jint start_index,
                                      jobjectArray frames))
   JVMWrapper("JVM_CallStackWalk");
-  JavaThread* jt = (JavaThread*) THREAD;
-  if (!jt->is_Java_thread() || !jt->has_last_Java_frame()) {
+  if (!thread->has_last_Java_frame()) {
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: no stack trace", NULL);
   }
 
@@ -671,7 +670,7 @@ JVM_ENTRY(void, JVM_MonitorWait(JNIEnv* env, jobject handle, jlong ms))
   Handle obj(THREAD, JNIHandles::resolve_non_null(handle));
   JavaThreadInObjectWaitState jtiows(thread, ms != 0);
   if (JvmtiExport::should_post_monitor_wait()) {
-    JvmtiExport::post_monitor_wait((JavaThread *)THREAD, (oop)obj(), ms);
+    JvmtiExport::post_monitor_wait(thread, (oop)obj(), ms);
 
     // The current thread already owns the monitor and it has not yet
     // been added to the wait queue so the current thread cannot be
@@ -921,7 +920,7 @@ static void is_lock_held_by_thread(Handle loader, PerfCounter* counter, TRAPS) {
 
   // check whether the current caller thread holds the lock or not.
   // If not, increment the corresponding counter
-  if (ObjectSynchronizer::query_lock_ownership((JavaThread*)THREAD, loader) !=
+  if (ObjectSynchronizer::query_lock_ownership(THREAD->as_Java_thread(), loader) !=
       ObjectSynchronizer::owner_self) {
     counter->inc();
   }
@@ -934,8 +933,7 @@ static jclass jvm_define_class_common(const char *name,
                                       TRAPS) {
   if (source == NULL)  source = "__JVM_DefineClass__";
 
-  assert(THREAD->is_Java_thread(), "must be a JavaThread");
-  JavaThread* jt = (JavaThread*) THREAD;
+  JavaThread* jt = THREAD->as_Java_thread();
 
   PerfClassTraceTime vmtimer(ClassLoader::perf_define_appclass_time(),
                              ClassLoader::perf_define_appclass_selftime(),
@@ -989,7 +987,6 @@ enum {
 static jclass jvm_lookup_define_class(jclass lookup, const char *name,
                                       const jbyte *buf, jsize len, jobject pd,
                                       jboolean init, int flags, jobject classData, TRAPS) {
-  assert(THREAD->is_Java_thread(), "must be a JavaThread");
   ResourceMark rm(THREAD);
 
   Klass* lookup_k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(lookup));
@@ -3310,12 +3307,11 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj))
   JVMWrapper("JVM_HoldsLock");
-  assert(THREAD->is_Java_thread(), "sanity check");
   if (obj == NULL) {
     THROW_(vmSymbols::java_lang_NullPointerException(), JNI_FALSE);
   }
   Handle h_obj(THREAD, JNIHandles::resolve(obj));
-  return ObjectSynchronizer::current_thread_holds_lock((JavaThread*)THREAD, h_obj);
+  return ObjectSynchronizer::current_thread_holds_lock(thread, h_obj);
 JVM_END
 
 
