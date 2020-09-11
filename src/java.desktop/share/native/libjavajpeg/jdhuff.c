@@ -121,8 +121,7 @@ start_pass_huff_decoder (j_decompress_ptr cinfo)
     compptr = cinfo->cur_comp_info[ci];
     /* Precalculate which table to use for each block */
     entropy->dc_cur_tbls[blkn] = entropy->dc_derived_tbls[compptr->dc_tbl_no];
-    entropy->ac_cur_tbls[blkn] =    /* AC needs no table when not present */
-      cinfo->lim_Se ? entropy->ac_derived_tbls[compptr->ac_tbl_no] : NULL;
+    entropy->ac_cur_tbls[blkn] = entropy->ac_derived_tbls[compptr->ac_tbl_no];
     /* Decide whether we really care about the coefficient values */
     if (compptr->component_needed) {
       entropy->dc_needed[blkn] = TRUE;

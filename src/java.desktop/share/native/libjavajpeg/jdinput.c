@@ -74,39 +74,6 @@ initial_setup (j_decompress_ptr cinfo)
                                    compptr->v_samp_factor);
   }
 
-  /* Derive lim_Se */
-  if (cinfo->is_baseline || (cinfo->progressive_mode &&
-      cinfo->comps_in_scan)) { /* no pseudo SOS marker */
-    cinfo->lim_Se = DCTSIZE2-1;
-  } else {
-    switch (cinfo->Se) {
-    case (1*1-1):
-    case (2*2-1):
-    case (3*3-1):
-    case (4*4-1):
-    case (5*5-1):
-    case (6*6-1):
-    case (7*7-1):
-         cinfo->lim_Se = cinfo->Se;
-         break;
-    case (8*8-1):
-    case (9*9-1):
-    case (10*10-1):
-    case (11*11-1):
-    case (12*12-1):
-    case (13*13-1):
-    case (14*14-1):
-    case (15*15-1):
-    case (16*16-1):
-         cinfo->lim_Se = DCTSIZE2-1;
-         break;
-    default:
-      ERREXIT4(cinfo, JERR_BAD_PROGRESSION,
-               cinfo->Ss, cinfo->Se, cinfo->Ah, cinfo->Al);
-      break;
-    }
-  }
-
   /* We initialize DCT_scaled_size and min_DCT_scaled_size to DCTSIZE.
    * In the full decompressor, this will be overridden by jdmaster.c;
    * but in the transcoder, jdmaster.c is not used, so we must do it here.

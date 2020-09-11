@@ -539,7 +539,6 @@ struct jpeg_decompress_struct {
   jpeg_component_info * comp_info;
   /* comp_info[i] describes component that appears i'th in SOF */
 
-  boolean is_baseline;          /* TRUE if Baseline SOF0 encountered */
   boolean progressive_mode;     /* TRUE if SOFn specifies progressive mode */
   boolean arith_code;           /* TRUE=arithmetic coding, FALSE=Huffman */
 
@@ -611,8 +610,6 @@ struct jpeg_decompress_struct {
   /* i'th block in an MCU */
 
   int Ss, Se, Ah, Al;           /* progressive JPEG parameters for scan */
-
-  int lim_Se;                   /* min( Se, DCTSIZE2-1 ) for entropy decode */
 
   /* This field is shared between entropy decoder and marker parser.
    * It is either zero or the code of a JPEG marker that has been
