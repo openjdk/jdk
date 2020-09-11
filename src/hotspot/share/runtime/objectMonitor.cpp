@@ -276,9 +276,9 @@ bool ObjectMonitor::enter(TRAPS) {
   if (TrySpin(Self) > 0) {
     assert(_owner == Self, "must be Self: owner=" INTPTR_FORMAT, p2i(_owner));
     assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
-    assert(((oop)object())->mark() == markWord::encode(this),
+    assert(object()->mark() == markWord::encode(this),
            "object mark must match encoded this: mark=" INTPTR_FORMAT
-           ", encoded this=" INTPTR_FORMAT, ((oop)object())->mark().value(),
+           ", encoded this=" INTPTR_FORMAT, object()->mark().value(),
            markWord::encode(this).value());
     Self->_Stalled = 0;
     return true;
@@ -296,7 +296,7 @@ bool ObjectMonitor::enter(TRAPS) {
     // Async deflation is in progress and our contentions increment
     // above lost the race to async deflation. Undo the work and
     // force the caller to retry.
-    const oop l_object = (oop)object();
+    const oop l_object = object();
     if (l_object != NULL) {
       // Attempt to restore the header/dmw to the object's header so that
       // we only retry once if the deflater thread happens to be slow.
@@ -310,8 +310,8 @@ bool ObjectMonitor::enter(TRAPS) {
   JFR_ONLY(JfrConditionalFlushWithStacktrace<EventJavaMonitorEnter> flush(jt);)
   EventJavaMonitorEnter event;
   if (event.should_commit()) {
-    event.set_monitorClass(((oop)this->object())->klass());
-    event.set_address((uintptr_t)(this->object_addr()));
+    event.set_monitorClass(object()->klass());
+    event.set_address((uintptr_t)object_addr());
   }
 
   { // Change java thread status to indicate blocked on monitor enter.
@@ -374,7 +374,7 @@ bool ObjectMonitor::enter(TRAPS) {
   assert(_recursions == 0, "invariant");
   assert(_owner == Self, "invariant");
   assert(_succ != Self, "invariant");
-  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
+  assert(object()->mark() == markWord::encode(this), "invariant");
 
   // The thread -- now the owner -- is back in vm mode.
   // Report the glorious news via TI,DTrace and jvmstat.
@@ -446,7 +446,7 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
     OrderAccess::loadload();
   }
 
-  const oop l_object = (oop)object();
+  const oop l_object = object();
   if (l_object == NULL) {
     // ObjectMonitor's object ref has already been cleared by async
     // deflation so we're done here.
@@ -770,7 +770,7 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   assert(SelfNode != NULL, "invariant");
   assert(SelfNode->_thread == Self, "invariant");
   assert(_waiters > 0, "invariant");
-  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
+  assert(object()->mark() == markWord::encode(this), "invariant");
 
   JavaThread * jt = Self->as_Java_thread();
   assert(jt->thread_state() != _thread_blocked, "invariant");
@@ -839,7 +839,7 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   // In addition, Self.TState is stable.
 
   assert(_owner == Self, "invariant");
-  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
+  assert(object()->mark() == markWord::encode(this), "invariant");
   UnlinkAfterAcquire(Self, SelfNode);
   if (_succ == Self) _succ = NULL;
   assert(_succ != Self, "invariant");
@@ -1301,7 +1301,7 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
                                     bool timedout) {
   assert(event != NULL, "invariant");
   assert(monitor != NULL, "invariant");
-  event->set_monitorClass(((oop)monitor->object())->klass());
+  event->set_monitorClass(monitor->object()->klass());
   event->set_timeout(timeout);
   event->set_address((uintptr_t)monitor->object_addr());
   event->set_notifier(notifier_tid);
@@ -1519,7 +1519,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // Verify a few postconditions
   assert(_owner == Self, "invariant");
   assert(_succ != Self, "invariant");
-  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
+  assert(object()->mark() == markWord::encode(this), "invariant");
 
   // check if the notification happened
   if (!WasNotified) {
@@ -2103,7 +2103,7 @@ void ObjectMonitor::print() const { print_on(tty); }
 void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
   st->print_cr("  _header = " INTPTR_FORMAT, header().value());
-  st->print_cr("  _object = " INTPTR_FORMAT, p2i(_object));
+  st->print_cr("  _object = " INTPTR_FORMAT, p2i(object()));
   st->print("  _allocation_state = ");
   if (is_free()) {
     st->print("Free");

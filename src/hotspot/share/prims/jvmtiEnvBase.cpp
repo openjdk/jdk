@@ -663,13 +663,13 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThre
     mon = java_thread->current_pending_monitor();
     if (mon != NULL) {
       // The thread is trying to enter() an ObjectMonitor.
-      obj = (oop)mon->object();
+      obj = mon->object();
       assert(obj != NULL, "ObjectMonitor should have a valid object!");
     }
     // implied else: no contended ObjectMonitor
   } else {
     // thread is doing an Object.wait() call
-    obj = (oop)mon->object();
+    obj = mon->object();
     assert(obj != NULL, "Object.wait() should have an object");
   }
 
@@ -741,7 +741,7 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
     // Save object of current wait() call (if any) for later comparison.
     ObjectMonitor *mon = java_thread->current_waiting_monitor();
     if (mon != NULL) {
-      wait_obj = (oop)mon->object();
+      wait_obj = mon->object();
     }
   }
   oop pending_obj = NULL;
@@ -752,7 +752,7 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
     // Save object of current enter() call (if any) for later comparison.
     ObjectMonitor *mon = java_thread->current_pending_monitor();
     if (mon != NULL) {
-      pending_obj = (oop)mon->object();
+      pending_obj = mon->object();
     }
   }
 
@@ -1434,7 +1434,7 @@ JvmtiMonitorClosure::do_monitor(ObjectMonitor* mon) {
   }
   if (mon->owner() == _java_thread ) {
     // Filter out on stack monitors collected during stack walk.
-    oop obj = (oop)mon->object();
+    oop obj = mon->object();
     bool found = false;
     for (int j = 0; j < _owned_monitors_list->length(); j++) {
       jobject jobj = ((jvmtiMonitorStackDepthInfo*)_owned_monitors_list->at(j))->monitor;
