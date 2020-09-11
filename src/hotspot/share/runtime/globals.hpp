@@ -263,9 +263,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, TraceRelocator, false,                                      \
           "Trace the bytecode relocator")                                   \
                                                                             \
-  develop(bool, TraceLongCompiles, false,                                   \
-          "Print out every time compilation is longer than "                \
-          "a given threshold")                                              \
                                                                             \
   product(bool, SafepointALot, false, DIAGNOSTIC,                           \
           "Generate a lot of safepoints. This works with "                  \
@@ -1932,10 +1929,6 @@ const intx ObjectAlignmentInBytes = 8;
   /* new oopmap storage allocation */                                       \
   develop(intx, MinOopMapAllocation,     8,                                 \
           "Minimum number of OopMap entries in an OopMapSet")               \
-                                                                            \
-  /* Background Compilation */                                              \
-  develop(intx, LongCompileThreshold,     50,                               \
-          "Used with +TraceLongCompiles")                                   \
                                                                             \
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
