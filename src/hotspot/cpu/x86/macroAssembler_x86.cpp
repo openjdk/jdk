@@ -3454,6 +3454,73 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   }
 }
 
+void MacroAssembler::lookup_interface_method_in_stub(Register recv_klass,
+                                                     Register holder_klass,
+                                                     Register resolved_klass,
+                                                     int itable_index,
+                                                     Register method_result,
+                                                     Register scan_temp,
+                                                     Register count,
+                                                     Label& L_no_such_interface) {
+  assert_different_registers(recv_klass, holder_klass, resolved_klass);
+  assert_different_registers(method_result, scan_temp, count);
+
+  // Compute start of first itableOffsetEntry (which is at the end of the vtable)
+  int vtable_base = in_bytes(Klass::vtable_start_offset());
+  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int scan_step   = itableOffsetEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size_in_bytes();
+  Address::ScaleFactor times_vte_scale = Address::times_ptr;
+  Label L_fast_loop, L_slow_loop, L_next_check, L_slow_loop_tail, L_exit;
+
+  assert(vte_size == wordSize, "else adjust times_vte_scale");
+
+  movl(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
+  lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
+
+  assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
+  lea(recv_klass, Address(recv_klass, itable_index, Address::times_ptr, itentry_off));
+  movl(count, 2);
+
+  cmpptr(holder_klass, resolved_klass);
+  jcc(Assembler::notEqual, L_slow_loop);
+
+  // fast loop, check holder_klass only
+  bind(L_fast_loop);
+  movptr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+  testptr(method_result, method_result);
+  jcc(Assembler::zero, L_no_such_interface);
+  addptr(scan_temp, scan_step);
+  cmpptr(holder_klass, method_result);
+  jccb(Assembler::notEqual, L_fast_loop);
+  movptr(holder_klass, Address(scan_temp, -scan_step + itableOffsetEntry::offset_offset_in_bytes()));
+  jmp(L_exit);
+
+  // slow loop, search both resolved_klass and holder_klass
+  bind(L_slow_loop);
+  movptr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+  testptr(method_result, method_result);
+  jcc(Assembler::zero, L_no_such_interface);
+
+  cmpptr(holder_klass, method_result);
+  jccb(Assembler::notEqual, L_next_check);
+  movptr(holder_klass, Address(scan_temp, itableOffsetEntry::offset_offset_in_bytes()));
+  decrement(count);
+
+  bind(L_next_check);
+  cmpptr(resolved_klass, method_result);
+  jccb(Assembler::notEqual, L_slow_loop_tail);
+  decrement(count);
+
+  bind(L_slow_loop_tail);
+  addptr(scan_temp, scan_step);
+  testl(count, count);
+  jcc(Assembler::notZero, L_slow_loop);
+
+  // Got a hit.
+  bind(L_exit);
+  movptr(method_result, Address(recv_klass, holder_klass, Address::times_1));
+}
 
 // virtual method calling
 void MacroAssembler::lookup_virtual_method(Register recv_klass,

@@ -909,6 +909,16 @@ public:
                                Label& no_such_interface,
                    bool return_method = true);
 
+  // for itable_stub
+  void lookup_interface_method_in_stub(Register recv_klass,
+                                       Register resolved_klass,
+                                       Register holder_klass,
+                                       int itable_index,
+                                       Register method_result,
+                                       Register scan_temp,
+                                       Register count,
+                                       Label& no_such_interface);
+
   // virtual method calling
   // n.b. x86 allows RegisterOrConstant for vtable_index
   void lookup_virtual_method(Register recv_klass,

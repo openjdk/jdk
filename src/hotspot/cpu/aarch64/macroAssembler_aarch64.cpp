@@ -1035,6 +1035,88 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   }
 }
 
+void MacroAssembler::lookup_interface_method_in_stub(Register recv_klass,
+                                                     Register resolved_klass,
+                                                     Register holder_klass,
+                                                     int itable_index,
+                                                     Register method_result,
+                                                     Register scan_temp,
+                                                     Register count,
+                                                     Label& L_no_such_interface
+) {
+  assert_different_registers(recv_klass, resolved_klass, holder_klass);
+  assert_different_registers(method_result, scan_temp, count);
+
+  // Compute start of first itableOffsetEntry (which is at the end of the vtable)
+  int vtable_base = in_bytes(Klass::vtable_start_offset());
+  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int scan_step   = itableOffsetEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size_in_bytes();
+  assert(vte_size == wordSize, "else adjust times_vte_scale");
+
+  ldrw(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
+
+  // %%% Could store the aligned, prescaled offset in the klassoop.
+  lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(3)));
+  add(scan_temp, scan_temp, vtable_base);
+  mov(count, -2);
+
+  // Adjust recv_klass by scaled itable_index, so we can free itable_index.
+  assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
+  if (itable_index != 0) {
+    lea(recv_klass, Address(recv_klass, itable_index, Address::lsl(3)));
+  }
+  if (itentry_off) {
+    add(recv_klass, recv_klass, itentry_off);
+  }
+
+  Label L_fast_loop, L_slow_loop, L_slow_loop_tail, L_exit;
+
+  cmp(holder_klass, resolved_klass);
+  br(Assembler::NE, L_slow_loop);
+
+  // fast loop, check holder klass only
+  bind(L_fast_loop);
+  if (itableOffsetEntry::interface_offset_in_bytes() == 0 ) {
+    ldr(method_result, Address(post(scan_temp, scan_step)));
+  } else {
+    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+    add(scan_temp, scan_temp, scan_step);
+  }
+  cbz(method_result, L_no_such_interface);
+  // check holder_klass
+  cmp(holder_klass, method_result);
+  br(Assembler::NE, L_fast_loop);
+  // found, holder_klass can be free for other use
+  ldrw(holder_klass, Address(scan_temp, -scan_step + itableOffsetEntry::offset_offset_in_bytes()));
+  b(L_exit);
+
+  // slow loop, search both resolved_klass and holder_klass
+  bind(L_slow_loop);
+  if (itableOffsetEntry::interface_offset_in_bytes() == 0 ) {
+    ldr(method_result, Address(post(scan_temp, scan_step)));
+  } else {
+    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+    add(scan_temp, scan_temp, scan_step);
+  }
+  cbz(method_result, L_no_such_interface);
+  // check resolved_klass
+  cmp(resolved_klass, method_result);
+  csinc(count, count, count, Assembler::NE);
+  // check holder_klass
+  cmp(holder_klass, method_result);
+  br(Assembler::NE, L_slow_loop_tail);
+  increment(count);
+  // holder_klass can be free for other use
+  ldrw(holder_klass, Address(scan_temp, -scan_step + itableOffsetEntry::offset_offset_in_bytes()));
+  bind(L_slow_loop_tail);
+  cbnz(count, L_slow_loop);
+
+  // Got a hit.
+  bind(L_exit);
+  ldr(method_result, Address(recv_klass, holder_klass, Address::uxtw(0)));
+}
+
 // virtual method calling
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,

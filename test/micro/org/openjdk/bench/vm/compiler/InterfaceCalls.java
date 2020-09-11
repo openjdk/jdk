@@ -24,6 +24,7 @@ package org.openjdk.bench.vm.compiler;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
@@ -52,6 +53,17 @@ public class InterfaceCalls {
 
     interface AloneInterface {
         public int getNumber();
+    }
+
+    interface SuperInterface {
+        public int getInt();
+    }
+
+    interface SuperInterface2 extends SuperInterface {
+        default int getInt2() {return 2;}
+    }
+
+    interface SubInterface extends SuperInterface2 {
     }
 
     class SingleImplementor implements OnlyHasOneImplInterface {
@@ -88,6 +100,76 @@ public class InterfaceCalls {
     }
 
     class FifthClass implements AnInterface {
+        public int getInt() {
+            return -5;
+        }
+    }
+
+    class FirstClassNotInline implements AnInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getInt() {
+            return 1;
+        }
+    }
+
+    class SecondClassNotInline implements AnInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getInt() {
+            return 2;
+        }
+    }
+
+    class ThirdClassNotInline implements AnInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getInt() {
+            return -3;
+        }
+    }
+
+    class FourthClassNotInline implements AnInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getInt() {
+            return -4;
+        }
+    }
+
+    class FifthClassNotInline implements AnInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getInt() {
+            return -5;
+        }
+    }
+
+    class FirstSubClassNotInline implements SubInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getInt() {
+            return 1;
+        }
+    }
+
+    class SecondSubClassNotInline implements SubInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getInt() {
+            return 2;
+        }
+    }
+
+    class ThirdSubClassNotInline implements SubInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getInt() {
+            return -3;
+        }
+    }
+
+    class FourthSubClassNotInline implements SubInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getInt() {
+            return -4;
+        }
+    }
+
+    class FifthSubClassNotInline implements SubInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
         public int getInt() {
             return -5;
         }
@@ -132,6 +214,8 @@ public class InterfaceCalls {
     public Object multic, multic2;
 
     public AnInterface[] as = new AnInterface[5];
+    public AnInterface[] as2 = new AnInterface[5];
+    public SubInterface[] as3 = new SubInterface[5];
 
     public AnInterface multi;
 
@@ -153,6 +237,16 @@ public class InterfaceCalls {
         as[2] = new ThirdClass();
         as[3] = new FourthClass();
         as[4] = new FifthClass();
+        as2[0] = new FirstClassNotInline();
+        as2[1] = new SecondClassNotInline();
+        as2[2] = new ThirdClassNotInline();
+        as2[3] = new FourthClassNotInline();
+        as2[4] = new FifthClassNotInline();
+        as3[0] = new FirstSubClassNotInline();
+        as3[1] = new SecondSubClassNotInline();
+        as3[2] = new ThirdSubClassNotInline();
+        as3[3] = new FourthSubClassNotInline();
+        as3[4] = new FifthSubClassNotInline();
         MultiClass1 mc1 = new MultiClass1();
         multi1a = mc1;
         multi1b = mc1;
@@ -260,8 +354,40 @@ public class InterfaceCalls {
     /** Interface call with five different receivers. */
     @Benchmark
     public void testCallPoly5(Blackhole bh) {
-        for (int kk = 0; kk < 3; kk++) {
+        for (int kk = 0; kk < 5; kk++) {
             bh.consume(as[kk].getInt());
+        }
+    }
+
+    /** Interface methods are not inline, test itable stub */
+    @Benchmark
+    public void testStubPoly3(Blackhole bh) {
+        for (int kk = 0; kk < 3; kk++) {
+            bh.consume(as2[kk].getInt());
+        }
+    }
+
+    /** Interface methods are not inline, test itable stub */
+    @Benchmark
+    public void testStubPoly5(Blackhole bh) {
+        for (int kk = 0; kk < 5; kk++) {
+            bh.consume(as2[kk].getInt());
+        }
+    }
+
+    /** Interface methods are not inline, test itable stub in slow loop*/
+    @Benchmark
+    public void testSlowStubPoly3(Blackhole bh) {
+        for (int kk = 0; kk < 3; kk++) {
+            bh.consume(as3[kk].getInt());
+        }
+    }
+
+    /** Interface methods are not inline, test itable stub in slow loop*/
+    @Benchmark
+    public void testSlowStubPoly5(Blackhole bh) {
+        for (int kk = 0; kk < 5; kk++) {
+            bh.consume(as3[kk].getInt());
         }
     }
 
