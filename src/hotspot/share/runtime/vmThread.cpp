@@ -484,22 +484,7 @@ void VMThread::loop() {
 
       } else {  // not a safepoint operation
         log_debug(vmthread)("Evaluating non-safepoint VM operation: %s", _cur_vm_operation->name());
-        if (TraceLongCompiles) {
-          elapsedTimer t;
-          t.start();
-          evaluate_operation(_cur_vm_operation);
-          t.stop();
-          double secs = t.seconds();
-          if (secs * 1e3 > LongCompileThreshold) {
-            // XXX - _cur_vm_operation should not be accessed after
-            // the completed count has been incremented; the waiting
-            // thread may have already freed this memory.
-            tty->print_cr("vm %s: %3.7f secs]", _cur_vm_operation->name(), secs);
-          }
-        } else {
-          evaluate_operation(_cur_vm_operation);
-        }
-
+        evaluate_operation(_cur_vm_operation);
         _cur_vm_operation = NULL;
       }
     }
