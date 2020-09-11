@@ -92,22 +92,22 @@ inline void ObjectMonitor::clear_common() {
   assert(contentions() <= 0, "must not be positive: contentions=%d", contentions());
   assert(_waiters == 0, "must be 0: waiters=%d", _waiters);
   assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
-  assert(_object != NULL, "must be non-NULL");
+  assert(object() != NULL, "must be non-NULL");
 
   set_allocation_state(Free);
-  _object = NULL;
+  set_object(NULL);
 }
 
-inline void* ObjectMonitor::object() const {
-  return _object;
+inline oop ObjectMonitor::object() const {
+  return (oop)_object;
 }
 
-inline void* ObjectMonitor::object_addr() {
-  return (void *)(&_object);
+inline oop* ObjectMonitor::object_addr() {
+  return (oop*)&_object;
 }
 
-inline void ObjectMonitor::set_object(void* obj) {
-  _object = obj;
+inline void ObjectMonitor::set_object(oop obj) {
+  _object = (void*)obj;
 }
 
 // Return number of threads contending for this monitor.
