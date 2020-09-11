@@ -25,7 +25,7 @@
 
 package com.sun.crypto.provider;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 import java.io.*;
 import java.security.*;
 import javax.crypto.*;
@@ -426,6 +426,49 @@ final class GaloisCounterMode extends FeedbackCipher {
         }
     }
 
+    // Process en/decryption all the way to the last block.  It takes both
+    // For input it takes the ibuffer which is wrapped in 'buffer' and 'src'
+    // from doFinal.
+    void doLastBlock(ByteBuffer buffer, ByteBuffer src, ByteBuffer dst)
+        throws IllegalBlockSizeException {
+
+        processed = 0;
+        if (buffer != null && buffer.remaining() > 0) {
+            // en/decrypt on how much buffer there is in AES_BLOCK_SIZE
+            processed = gctrPAndC.update(buffer, dst);
+
+            // Process the remainder in the buffer
+            if (buffer.remaining() > 0) {
+                // Copy the remainder of the buffer into the extra block
+                byte[] block = new byte[AES_BLOCK_SIZE];
+                int over = buffer.remaining();
+                int len = over;  // how much is processed by in the extra block
+                buffer.get(block, 0, over);
+
+                // if src is empty, update the final block and wait for later
+                // to finalize operation
+                if (src.remaining() > 0) {
+                    // Fill out block with what is in data
+                    if (src.remaining() > AES_BLOCK_SIZE - over) {
+                        src.get(block, over, AES_BLOCK_SIZE - over);
+                        len += AES_BLOCK_SIZE - over;
+                    } else {
+                        // If the remaining in buffer + data does not fill a
+                        // block, complete the ghash operation
+                        int l = src.remaining();
+                        src.get(block, over, l);
+                        len += l;
+                    }
+                }
+                gctrPAndC.update(block, 0, AES_BLOCK_SIZE, dst);
+                processed += len;
+            }
+        }
+
+        // en/decrypt whatever remains in src.
+        // If src has been consumed, this will be a no-op
+        processed += gctrPAndC.doFinal(src, dst);
+    }
 
     /**
      * Performs encryption operation.
@@ -462,6 +505,54 @@ final class GaloisCounterMode extends FeedbackCipher {
         return len;
     }
 
+    int decrypt(ByteBuffer src, ByteBuffer dst) {
+        if (src.remaining() > 0) {
+            byte[] b = new byte[src.remaining()];
+            src.get(b);
+            try {
+                ibuffer.write(b);
+            } catch (IOException e) {
+                throw new ProviderException("Unable to add remaining input to the buffer", e);
+            }
+        }
+        return 0;
+    }
+
+
+    int encrypt(ByteBuffer src, ByteBuffer dst) {
+        int len = src.remaining();
+        if (len == 0) {
+            return 0;
+        }
+
+        ArrayUtil.blockSizeCheck(src.remaining(), blockSize);
+        checkDataLength(processed, src.remaining());
+        processAAD();
+
+        if (len >= AES_BLOCK_SIZE) {
+            ByteBuffer data = src.duplicate();
+            len = gctrPAndC.update(data, dst);
+        } else {
+            if (src.remaining() > 0) {
+                byte[] b = new byte[src.remaining()];
+                src.get(b);
+                try {
+                    ibuffer.write(b);
+                } catch (IOException e) {
+                    throw new ProviderException(
+                        "Unable to add remaining input to the buffer", e);
+                }
+            }
+            return 0;
+        }
+
+        processed += len;
+        ghashAllToS.update(src, len);
+        return len;
+    }
+
+
+
     /**
      * Performs encryption operation for the last time.
      *
@@ -494,16 +585,88 @@ final class GaloisCounterMode extends FeedbackCipher {
             doLastBlock(in, inOfs, len, out, outOfs, true);
         }
 
-        byte[] lengthBlock =
-            getLengthBlock(sizeOfAAD, processed);
-        ghashAllToS.update(lengthBlock);
+        byte[] block = getLengthBlock(sizeOfAAD, processed);
+        ghashAllToS.update(block);
         byte[] s = ghashAllToS.digest();
-        byte[] sOut = new byte[s.length];
+        if (tagLenBytes > block.length) {
+            block = new byte[tagLenBytes];
+        }
         GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
-        gctrForSToTag.doFinal(s, 0, s.length, sOut, 0);
+        gctrForSToTag.doFinal(s, 0, s.length, block, 0);
 
-        System.arraycopy(sOut, 0, out, (outOfs + len), tagLenBytes);
+        System.arraycopy(block, 0, out, (outOfs + len), tagLenBytes);
         return (len + tagLenBytes);
+    }
+
+    int encryptFinal(ByteBuffer src, ByteBuffer dst)
+        throws IllegalBlockSizeException, ShortBufferException {
+        int len = src.remaining();
+        dst.mark();
+        if (len > MAX_BUF_SIZE - tagLenBytes) {
+            throw new ShortBufferException
+                ("Can't fit both data and tag into one buffer");
+        }
+
+        // PRINT
+        /*
+        {
+            byte[] data = new byte[src.remaining()];
+            System.out.println("encryptFinal src");
+            src.get(data);
+            for (byte b : data) {
+                System.out.printf("%02X", b);
+            }
+            src.position(pos);
+        }
+        System.out.println();
+
+         */
+
+
+        if (dst.remaining() < len + tagLenBytes) {
+            throw new ShortBufferException("Output buffer too small");
+        }
+
+        checkDataLength(processed, len);
+
+        processAAD();
+        if (len > 0) {
+            doLastBlock((ibuffer == null || ibuffer.size() == 0) ?
+                    null : ByteBuffer.wrap(ibuffer.toByteArray()), src, dst);
+            dst.reset();
+            ghashAllToS.doLastBlock(dst, processed);
+        }
+
+        byte[] block = getLengthBlock(sizeOfAAD, processed);
+        ghashAllToS.update(block);
+
+        byte[] s = ghashAllToS.digest();
+        if (tagLenBytes > block.length) {
+            block = new byte[tagLenBytes];
+        }
+        GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
+        gctrForSToTag.doFinal(s, 0, s.length, block, 0);
+        //System.arraycopy(sOut, 0, out, (outOfs + len), tagLenBytes);
+        dst.put(block, 0, tagLenBytes);
+
+        // PRINT
+        /*
+        {
+            int posx = dst.position();
+            dst.position(pos);
+            byte[] data = new byte[dst.remaining()];
+            System.out.println("encryptFinal dst");
+            dst.get(data);
+            for (byte b : data) {
+                System.out.printf("%02X", b);
+            }
+            dst.position(posx);
+            System.out.println();
+        }
+
+         */
+
+        return (processed + tagLenBytes);
     }
 
     /**
@@ -602,19 +765,21 @@ final class GaloisCounterMode extends FeedbackCipher {
             doLastBlock(in, inOfs, len, out, outOfs, false);
         }
 
-        byte[] lengthBlock =
-            getLengthBlock(sizeOfAAD, processed);
-        ghashAllToS.update(lengthBlock);
+        byte[] block = getLengthBlock(sizeOfAAD, processed);
+        ghashAllToS.update(block);
 
         byte[] s = ghashAllToS.digest();
-        byte[] sOut = new byte[s.length];
+        //byte[] sOut = new byte[s.length];
+        if (tagLenBytes != block.length) {
+            block = new byte[tagLenBytes];
+        }
         GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
-        gctrForSToTag.doFinal(s, 0, s.length, sOut, 0);
+        gctrForSToTag.doFinal(s, 0, tagLenBytes, block, 0);
 
         // check entire authentication tag for time-consistency
         int mismatch = 0;
         for (int i = 0; i < tagLenBytes; i++) {
-            mismatch |= tag[i] ^ sOut[i];
+            mismatch |= tag[i] ^ block[i];
         }
 
         if (mismatch != 0) {
@@ -624,6 +789,181 @@ final class GaloisCounterMode extends FeedbackCipher {
         return len;
     }
 
+    // Note: In-place operations do not need an intermediary copy because
+    // the GHASH check was performed before the decryption.
+    int decryptFinal(ByteBuffer src, ByteBuffer dst)
+        throws IllegalBlockSizeException, AEADBadTagException,
+        ShortBufferException {
+        // Length of the input
+        ByteBuffer tag;
+        ByteBuffer data = src.duplicate();
+        data.mark();
+
+        // PRINT
+        /*
+        {
+            byte[] data = new byte[src.remaining()];
+            System.out.println("decryptFinal src");
+            src.get(data);
+            for (byte b : data) {
+                System.out.printf("%02X", b);
+            }
+            src.position(pos);
+            System.out.println();
+        }
+
+         */
+
+        ByteBuffer buffer = ((ibuffer == null || ibuffer.size() == 0) ? null :
+            ByteBuffer.wrap(ibuffer.toByteArray()));
+        int len;
+
+        if (data.remaining() >= tagLenBytes) {
+            tag = src.duplicate();
+            tag.position(data.limit() - tagLenBytes);
+            data.limit(data.limit() - tagLenBytes);
+            len = data.remaining();
+            if (buffer != null) {
+                len += buffer.remaining();
+            }
+        } else if (buffer != null && buffer.remaining() >= tagLenBytes) {
+            // It's unlikely the tag will be between the buffer and data
+            tag = ByteBuffer.allocate(tagLenBytes);
+            int limit = buffer.remaining() - tagLenBytes - data.remaining();
+            buffer.position(limit);
+            tag.put(buffer);
+            // reset buffer to data only
+            buffer.position(0);  // ibuffer should always start at zero.
+            buffer.limit(limit);
+            data.mark();  // Maybe data position is not zero
+            tag.put(data);
+            tag.flip();
+            data.reset();
+            // Limit is how much of the ibuffer has been chopped off.
+            len = buffer.remaining();
+        } else {
+            throw new AEADBadTagException("Input too short - need tag");
+        }
+
+        // do this check here can also catch the potential integer overflow
+        // scenario for the subsequent output buffer capacity check.
+        checkDataLength(0, len);
+
+        if ((ibuffer.size() + data.remaining()) - tagLenBytes >
+            dst.remaining()) {
+            throw new ShortBufferException("Output buffer too small");
+        }
+
+        processAAD();
+
+        // If there is data stored in the buffer
+        if (buffer != null && buffer.remaining() > 0) {
+            System.err.println("Update GHASH");
+            ghashAllToS.update(buffer, buffer.remaining());
+            // Process the overage
+            if (buffer.remaining() > 0) {
+                // Fill out block between two buffers
+                if (data.remaining() > 0) {
+                    int over = buffer.remaining();
+                    byte[] block = new byte[AES_BLOCK_SIZE];
+                    // Copy the remainder of the buffer into the extra block
+                    buffer.get(block, 0, over);
+
+                    // Fill out block with what is in data
+                    if (data.remaining() > AES_BLOCK_SIZE - over) {
+                        data.get(block, over, AES_BLOCK_SIZE - over);
+                        ghashAllToS.update(block, 0, AES_BLOCK_SIZE);
+                    } else {
+                        // If the remaining in buffer + data does not fill a
+                        // block, complete the ghash operation
+                        int l = data.remaining();
+                        data.get(block, over, l);
+                        ghashAllToS.doLastBlock(ByteBuffer.wrap(block), over + l);
+                    }
+                    processed += AES_BLOCK_SIZE;
+                } else {
+                    // data is empty, so complete the ghash op with the
+                    // remaining buffer
+                    ghashAllToS.doLastBlock(buffer, buffer.remaining());
+                }
+            }
+        }
+
+        if (data.remaining() > 0) {
+            ghashAllToS.doLastBlock(data, data.remaining());
+        }
+        byte[] block = getLengthBlock(sizeOfAAD, len);
+        ghashAllToS.update(block);
+        byte[] s = ghashAllToS.digest();
+        if (tagLenBytes > block.length) {
+            block = new byte[tagLenBytes];
+        }
+       // byte[] sOut = new byte[s.length];
+        GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
+        gctrForSToTag.doFinal(s, 0, s.length, block, 0);
+
+        // check entire authentication tag for time-consistency
+        int mismatch = 0;
+        for (int i = 0; i < tagLenBytes; i++) {
+            mismatch |= tag.get() ^ block[i];
+        }
+            /*
+            if (tag.length < tagLenBytes) {
+                gsrc.limit(gsrc.position() + tagLenBytes - limit);
+                tag = new byte[tagLenBytes - limit];
+                gsrc.get(tag);
+                for (int i = 0; i < tag.length; i++) {
+                    mismatch |= tag[i] ^ block[i];
+                }
+            }
+             */
+
+        if (mismatch != 0) {
+            throw new AEADBadTagException("Tag mismatch!");
+        }
+
+        // Reset the buffers for the data decryption phase
+        data.reset();
+        if (buffer != null) {
+            buffer.flip();
+        }
+
+        // Decrypt the all the input data and put it into dst
+        doLastBlock(buffer, data, dst);
+        dst.limit(dst.position());
+
+        //PRINT
+        /*
+        {
+            int posx = dst.position();
+            dst.position(pos);
+            byte[] data = new byte[dst.remaining()];
+            System.out.println("decryptFinal dst");
+            dst.get(data);
+            for (byte b : data) {
+                System.out.printf("%02X", b);
+            }
+            dst.position(posx);
+        }
+         */
+
+        // 'processed' from the gctr decryption operation, not ghash
+        return processed;
+    }
+
+    boolean getBlockFromBuffer(ByteBuffer b1, ByteBuffer b2, byte[] b) {
+        if (b1.remaining() > b.length) {
+            b1.get(b);
+            return false;
+        } else {
+            int l = b1.remaining();
+            if (l > 0) {
+                b1.get(b, 0, l);
+            }
+            b2.get(b, l, b.length - l);
+        }
+        return true;
+    }
     // return tag length in bytes
     int getTagLen() {
         return this.tagLenBytes;

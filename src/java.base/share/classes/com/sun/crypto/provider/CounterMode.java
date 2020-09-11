@@ -25,6 +25,7 @@
 
 package com.sun.crypto.provider;
 
+import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
@@ -153,6 +154,16 @@ class CounterMode extends FeedbackCipher {
     // CTR encrypt and decrypt are identical
     int decrypt(byte[] in, int inOff, int len, byte[] out, int outOff) {
         return crypt(in, inOff, len, out, outOff);
+    }
+
+    @Override
+    public int encryptFinal(ByteBuffer src, ByteBuffer dst) {
+        throw new UnsupportedOperationException("ByteBuffer unsupported directly");
+    }
+
+    @Override
+    public int decryptFinal(ByteBuffer src, ByteBuffer dst) {
+        throw new UnsupportedOperationException("ByteBuffer unsupported directly");
     }
 
     /**
