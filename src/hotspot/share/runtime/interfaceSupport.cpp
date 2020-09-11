@@ -107,7 +107,7 @@ void InterfaceSupport::gc_alot() {
   Thread *thread = Thread::current();
   if (!thread->is_Java_thread()) return; // Avoid concurrent calls
   // Check for new, not quite initialized thread. A thread in new mode cannot initiate a GC.
-  JavaThread *current_thread = (JavaThread *)thread;
+  JavaThread *current_thread = thread->as_Java_thread();
   if (current_thread->active_handles() == NULL) return;
 
   // Short-circuit any possible re-entrant gc-a-lot attempt

@@ -179,7 +179,7 @@ TRACE_REQUEST_FUNC(CPULoad) {
   {
     // Can take some time on certain platforms, especially under heavy load.
     // Transition to native to avoid unnecessary stalls for pending safepoint synchronizations.
-    ThreadToNativeFromVM transition((JavaThread*)Thread::current());
+    ThreadToNativeFromVM transition(JavaThread::current());
     ret_val = JfrOSInterface::cpu_loads_process(&u, &s, &t);
   }
   if (ret_val == OS_ERR) {
@@ -259,7 +259,7 @@ TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
   {
     // Can take some time on certain platforms, especially under heavy load.
     // Transition to native to avoid unnecessary stalls for pending safepoint synchronizations.
-    ThreadToNativeFromVM transition((JavaThread*)Thread::current());
+    ThreadToNativeFromVM transition(JavaThread::current());
     ret_val = JfrOSInterface::context_switch_rate(&rate);
   }
   if (ret_val == OS_ERR) {
@@ -643,4 +643,3 @@ TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
   }
 #endif
 }
-

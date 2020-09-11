@@ -150,9 +150,7 @@ void VM_DeoptimizeAll::doit() {
 
 
 void VM_ZombieAll::doit() {
-  JavaThread *thread = (JavaThread *)calling_thread();
-  assert(thread->is_Java_thread(), "must be a Java thread");
-  thread->make_zombies();
+  calling_thread()->as_Java_thread()->make_zombies();
 }
 
 #endif // !PRODUCT

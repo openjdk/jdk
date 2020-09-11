@@ -255,7 +255,7 @@ class GetCurrentLocationClosure : public HandshakeClosure {
       _method_id(NULL),
       _bci(0) {}
   void do_thread(Thread *target) {
-    JavaThread *jt = (JavaThread *)target;
+    JavaThread *jt = target->as_Java_thread();
     ResourceMark rmark; // jt != Thread::current()
     RegisterMap rm(jt, false);
     // There can be a race condition between a VM_Operation reaching a safepoint

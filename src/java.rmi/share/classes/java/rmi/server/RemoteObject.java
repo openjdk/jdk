@@ -25,6 +25,7 @@
 
 package java.rmi.server;
 
+import java.io.IOException;
 import java.rmi.Remote;
 import java.rmi.NoSuchObjectException;
 import java.lang.reflect.Proxy;
@@ -47,6 +48,7 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
     transient protected RemoteRef ref;
 
     /** indicate compatibility with JDK 1.1.x version of class */
+    @java.io.Serial
     private static final long serialVersionUID = -3215090123894869218L;
 
     /**
@@ -357,7 +359,11 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      * <code>"UnicastServerRef2"</code>, no data is written by the
      * <code>writeExternal</code> method or read by the
      * <code>readExternal</code> method.
+     *
+     * @param  out the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream out)
         throws java.io.IOException
     {
@@ -418,7 +424,12 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      * class corresponding to that external ref type name, in which
      * case this object's <code>ref</code> field will be set to an
      * instance of that implementation-specific class.
+     *
+     * @param  in the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream in)
         throws java.io.IOException, java.lang.ClassNotFoundException
     {

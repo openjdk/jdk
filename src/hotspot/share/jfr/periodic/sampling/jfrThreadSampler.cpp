@@ -174,7 +174,7 @@ void OSThreadSampler::do_task(const os::SuspendedThreadTaskContext& context) {
 * using a signal handler / __try block. Don't take locks, rely on destructors or
 * leave memory (in case of signal / exception) in an inconsistent state. */
 void OSThreadSampler::protected_task(const os::SuspendedThreadTaskContext& context) {
-  JavaThread* jth = (JavaThread*)context.thread();
+  JavaThread* jth = context.thread()->as_Java_thread();
   // Skip sample if we signaled a thread that moved to other state
   if (!thread_state_in_java(jth)) {
     return;

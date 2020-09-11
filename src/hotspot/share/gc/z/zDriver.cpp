@@ -380,7 +380,7 @@ public:
     ZStatCycle::at_end(_gc_cause, boost_factor);
 
     // Update data used by soft reference policy
-    Universe::update_heap_info_at_gc();
+    Universe::heap()->update_capacity_and_used_at_gc();
 
     // Signal that we have completed a visit to all live objects
     Universe::heap()->record_whole_heap_examined_timestamp();
