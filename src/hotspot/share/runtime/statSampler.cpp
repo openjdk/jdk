@@ -232,11 +232,6 @@ static const char* property_counters_ss[] = {
   NULL
 };
 
-// unstable interface, supported counters
-static const char* property_counters_us[] = {
-  NULL
-};
-
 // unstable interface, unsupported counters
 static const char* property_counters_uu[] = {
   "sun.boot.library.path",
@@ -250,7 +245,6 @@ typedef struct {
 
 static PropertyCounters property_counters[] = {
   { property_counters_ss, JAVA_PROPERTY },
-  { property_counters_us, COM_PROPERTY },
   { property_counters_uu, SUN_PROPERTY },
   { NULL, SUN_PROPERTY }
 };
