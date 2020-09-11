@@ -110,6 +110,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
  private:
   GCHeapLog* _gc_heap_log;
 
+  // Historic gc information
+  size_t _capacity_at_last_gc;
+  size_t _used_at_last_gc;
+
  protected:
   // Not used by all GCs
   MemRegion _reserved;
@@ -238,6 +242,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   // Returns unused capacity.
   virtual size_t unused() const;
+
+  // Historic gc information
+  size_t free_at_last_gc() const { return _capacity_at_last_gc - _used_at_last_gc; }
+  size_t used_at_last_gc() const { return _used_at_last_gc; }
+  void update_capacity_and_used_at_gc();
 
   // Return "true" if the part of the heap that allocates Java
   // objects has reached the maximal committed limit that it can

@@ -73,7 +73,7 @@ void JfrTraceIdLoadBarrier::do_klasses(klass_callback callback, bool previous_ep
 
 traceid JfrTraceIdLoadBarrier::load(jclass jc) {
   assert(jc != NULL, "invariant");
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_vm, "invariant");
+  assert(JavaThread::current()->thread_state() == _thread_in_vm, "invariant");
   const oop my_oop = JNIHandles::resolve(jc);
   assert(my_oop != NULL, "invariant");
   return load(java_lang_Class::as_Klass(my_oop));

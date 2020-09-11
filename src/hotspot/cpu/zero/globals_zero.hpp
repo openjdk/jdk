@@ -73,19 +73,18 @@ define_pd_global(bool, PreserveFramePointer, false);
 // No performance work done here yet.
 define_pd_global(bool, CompactStrings, false);
 
-#define ARCH_FLAGS(develop, \
-                   product, \
-                   diagnostic, \
-                   experimental, \
-                   notproduct, \
-                   range, \
-                   constraint)  \
+#define ARCH_FLAGS(develop,                                                 \
+                   product,                                                 \
+                   notproduct,                                              \
+                   range,                                                   \
+                   constraint)                                              \
                                                                             \
   product(bool, UseFastEmptyMethods, true,                                  \
           "Use fast method entry code for empty methods")                   \
                                                                             \
   product(bool, UseFastAccessorMethods, true,                               \
-          "Use fast method entry code for accessor methods")                \
-                                                                            \
+          "Use fast method entry code for accessor methods")
+
+// end of ARCH_FLAGS
 
 #endif // CPU_ZERO_GLOBALS_ZERO_HPP
