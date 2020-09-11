@@ -4118,9 +4118,6 @@ encode %{
 // Definition of frame structure and management information.
 
 frame %{
-  // What direction does stack grow in (assumed to be same for native & Java).
-  stack_direction(TOWARDS_LOW);
-
   // These two registers define part of the calling convention between
   // compiled code and the interpreter.
 
