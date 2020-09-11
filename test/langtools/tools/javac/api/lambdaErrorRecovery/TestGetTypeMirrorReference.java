@@ -49,10 +49,24 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+/*
+ * This test verifies proper error recovery for method invocations which need
+ * type inference, and have lambdas as arguments.
+ *
+ * The test will read the adjacent TestGetTypeMirrorReferenceData.java, parse and
+ * attribute it, and call Trees.getTypeMirror on each place marked, in a block
+ * comment, with:
+ * getTypeMirror:<expected-typemirror-kind>:<expected-typemirror-toString>
+ * The actual retrieved TypeMirror will be checked against the provided description,
+ * verifying the return value of TypeMirror.getKind and TypeMirror.toString().
+ *
+ * The AST for TestGetTypeMirrorReferenceData.java will also be printed using
+ * Tree.toString(), and compared to the expected AST form.
+ */
 public class TestGetTypeMirrorReference {
 
     private static final String JDK_VERSION =
-            Integer.toString(Runtime.getRuntime().version().feature());
+            Integer.toString(Runtime.version().feature());
 
     public static void main(String... args) throws IOException {
         analyze("TestGetTypeMirrorReferenceData.java",
