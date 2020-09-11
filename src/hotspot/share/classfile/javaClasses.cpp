@@ -408,8 +408,7 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
 
   jstring js = NULL;
   {
-    assert(THREAD->is_Java_thread(), "must be java thread");
-    JavaThread* thread = (JavaThread*)THREAD;
+    JavaThread* thread = THREAD->as_Java_thread();
     HandleMark hm(thread);
     ThreadToNativeFromVM ttn(thread);
     js = (_to_java_string_fn)(thread->jni_environment(), str);
@@ -435,8 +434,7 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
   }
 
   char *native_platform_string;
-  { JavaThread* thread = (JavaThread*)THREAD;
-    assert(thread->is_Java_thread(), "must be java thread");
+  { JavaThread* thread = THREAD->as_Java_thread();
     jstring js = (jstring) JNIHandles::make_local(thread, java_string());
     bool is_copy;
     HandleMark hm(thread);
@@ -2416,7 +2414,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   clear_stacktrace(throwable());
 
   int max_depth = MaxJavaStackTraceDepth;
-  JavaThread* thread = (JavaThread*)THREAD;
+  JavaThread* thread = THREAD->as_Java_thread();
 
   BacktraceBuilder bt(CHECK);
 

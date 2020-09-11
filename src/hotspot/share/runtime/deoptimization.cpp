@@ -810,7 +810,7 @@ class DeoptimizeMarkedClosure : public HandshakeClosure {
  public:
   DeoptimizeMarkedClosure() : HandshakeClosure("Deoptimize") {}
   void do_thread(Thread* thread) {
-    JavaThread* jt = (JavaThread*)thread;
+    JavaThread* jt = thread->as_Java_thread();
     jt->deoptimize_marked_methods();
   }
 };
@@ -1697,8 +1697,7 @@ void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool
     // to the runtime the stack is no longer guarded. Reguard the
     // stack otherwise if we return to the uncommon trap blob and the
     // stack bang causes a stack overflow we crash.
-    assert(THREAD->is_Java_thread(), "only a java thread can be here");
-    JavaThread* thread = (JavaThread*)THREAD;
+    JavaThread* thread = THREAD->as_Java_thread();
     bool guard_pages_enabled = thread->stack_guards_enabled();
     if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
     assert(guard_pages_enabled, "stack banging in uncommon trap blob may cause crash");

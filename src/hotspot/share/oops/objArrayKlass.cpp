@@ -321,7 +321,7 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
     if (or_null) return NULL;
 
     ResourceMark rm;
-    JavaThread *jt = (JavaThread *)THREAD;
+    JavaThread *jt = THREAD->as_Java_thread();
     {
       // Ensure atomic creation of higher dimensions
       MutexLocker mu(THREAD, MultiArray_lock);
