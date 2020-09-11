@@ -35,21 +35,18 @@
 // Defines all globals flags used by the server compiler.
 //
 
-#define C2_FLAGS(develop, \
-                 develop_pd, \
-                 product, \
-                 product_pd, \
-                 diagnostic, \
-                 diagnostic_pd, \
-                 experimental, \
-                 notproduct, \
-                 range, \
-                 constraint) \
+#define C2_FLAGS(develop,                                                   \
+                 develop_pd,                                                \
+                 product,                                                   \
+                 product_pd,                                                \
+                 notproduct,                                                \
+                 range,                                                     \
+                 constraint)                                                \
                                                                             \
-  diagnostic(bool, StressLCM, false,                                        \
+  product(bool, StressLCM, false, DIAGNOSTIC,                               \
           "Randomize instruction scheduling in LCM")                        \
                                                                             \
-  diagnostic(bool, StressGCM, false,                                        \
+  product(bool, StressGCM, false, DIAGNOSTIC,                               \
           "Randomize instruction scheduling in GCM")                        \
                                                                             \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
@@ -116,7 +113,7 @@
           "Check performance difference allowing FP "                       \
           "associativity and commutativity...")                             \
                                                                             \
-  diagnostic_pd(bool, IdealizeClearArrayNode,                               \
+  product_pd(bool, IdealizeClearArrayNode, DIAGNOSTIC,                      \
           "Replace ClearArrayNode by subgraph of basic operations.")        \
                                                                             \
   develop(bool, OptoBreakpoint, false,                                      \
@@ -137,7 +134,7 @@
   notproduct(bool, PrintOptoStatistics, false,                              \
           "Print New compiler statistics")                                  \
                                                                             \
-  diagnostic(bool, PrintOptoAssembly, false,                                \
+  product(bool, PrintOptoAssembly, false, DIAGNOSTIC,                       \
           "Print New compiler assembly output")                             \
                                                                             \
   develop_pd(bool, OptoPeephole,                                            \
@@ -177,13 +174,13 @@
            "Map number of unrolls for main loop via "                       \
            "Superword Level Parallelism analysis")                          \
                                                                             \
-  experimental(bool, PostLoopMultiversioning, false,                        \
+  product(bool, PostLoopMultiversioning, false, EXPERIMENTAL,               \
            "Multi versioned post loops to eliminate range checks")          \
                                                                             \
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
           "Trace what Superword Level Parallelism analysis applies")        \
                                                                             \
-  diagnostic(bool, UseVectorMacroLogic, true,                               \
+  product(bool, UseVectorMacroLogic, true, DIAGNOSTIC,                      \
           "Use ternary macro logic instructions")                           \
                                                                             \
   product(intx,  LoopUnrollMin, 4,                                          \
@@ -482,11 +479,11 @@
   notproduct(bool, PrintLockStatistics, false,                              \
           "Print precise statistics on the dynamic lock usage")             \
                                                                             \
-  diagnostic(bool, PrintPreciseBiasedLockingStatistics, false,              \
+  product(bool, PrintPreciseBiasedLockingStatistics, false, DIAGNOSTIC,     \
           "(Deprecated) Print per-lock-site statistics of biased locking "  \
           "in JVM")                                                         \
                                                                             \
-  diagnostic(bool, PrintPreciseRTMLockingStatistics, false,                 \
+  product(bool, PrintPreciseRTMLockingStatistics, false, DIAGNOSTIC,        \
           "Print per-lock-site statistics of rtm locking in JVM")           \
                                                                             \
   notproduct(bool, PrintEliminateLocks, false,                              \
@@ -499,7 +496,7 @@
           "Sets max value cached by the java.lang.Integer autobox cache")   \
           range(0, max_jint)                                                \
                                                                             \
-  diagnostic(bool, AggressiveUnboxing, true,                                \
+  product(bool, AggressiveUnboxing, true, DIAGNOSTIC,                       \
           "Control optimizations for aggressive boxing elimination")        \
                                                                             \
   develop(bool, TracePostallocExpand, false, "Trace expanding nodes after"  \
@@ -554,7 +551,7 @@
           "Maximum times call Label_Root to prevent stack overflow")        \
           range(100, max_jint)                                              \
                                                                             \
-  diagnostic(intx, DominatorSearchLimit, 1000,                              \
+  product(intx, DominatorSearchLimit, 1000, DIAGNOSTIC,                     \
           "Iterations limit in Node::dominates")                            \
           range(0, max_jint)                                                \
                                                                             \
@@ -569,26 +566,26 @@
   product(bool, BlockLayoutRotateLoops, true,                               \
           "Allow back branches to be fall throughs in the block layout")    \
                                                                             \
-  diagnostic(bool, InlineReflectionGetCallerClass, true,                    \
+  product(bool, InlineReflectionGetCallerClass, true, DIAGNOSTIC,           \
           "inline sun.reflect.Reflection.getCallerClass(), known to be "    \
           "part of base library DLL")                                       \
                                                                             \
-  diagnostic(bool, InlineObjectCopy, true,                                  \
+  product(bool, InlineObjectCopy, true, DIAGNOSTIC,                         \
           "inline Object.clone and Arrays.copyOf[Range] intrinsics")        \
                                                                             \
-  diagnostic(bool, SpecialStringCompareTo, true,                            \
+  product(bool, SpecialStringCompareTo, true, DIAGNOSTIC,                   \
           "special version of string compareTo")                            \
                                                                             \
-  diagnostic(bool, SpecialStringIndexOf, true,                              \
+  product(bool, SpecialStringIndexOf, true, DIAGNOSTIC,                     \
           "special version of string indexOf")                              \
                                                                             \
-  diagnostic(bool, SpecialStringEquals, true,                               \
+  product(bool, SpecialStringEquals, true, DIAGNOSTIC,                      \
           "special version of string equals")                               \
                                                                             \
-  diagnostic(bool, SpecialArraysEquals, true,                               \
+  product(bool, SpecialArraysEquals, true, DIAGNOSTIC,                      \
           "special version of Arrays.equals(char[],char[])")                \
                                                                             \
-  diagnostic(bool, SpecialEncodeISOArray, true,                             \
+  product(bool, SpecialEncodeISOArray, true, DIAGNOSTIC,                    \
           "special version of ISO_8859_1$Encoder.encodeISOArray")           \
                                                                             \
   develop(bool, BailoutToInterpreterForThrows, false,                       \
@@ -610,10 +607,10 @@
   develop(bool, PrintDominators, false,                                     \
           "Print out dominator trees for GVN")                              \
                                                                             \
-  diagnostic(bool, TraceSpilling, false,                                    \
+  product(bool, TraceSpilling, false, DIAGNOSTIC,                           \
           "Trace spilling")                                                 \
                                                                             \
-  diagnostic(bool, TraceTypeProfile, false,                                 \
+  product(bool, TraceTypeProfile, false, DIAGNOSTIC,                        \
           "Trace type profile")                                             \
                                                                             \
   develop(bool, PoisonOSREntry, true,                                       \
@@ -629,19 +626,19 @@
           "% of major receiver type to all profiled receivers")             \
           range(0, 100)                                                     \
                                                                             \
-  diagnostic(bool, PrintIntrinsics, false,                                  \
+  product(bool, PrintIntrinsics, false, DIAGNOSTIC,                         \
           "prints attempted and successful inlining of intrinsics")         \
                                                                             \
   develop(bool, StressReflectiveCode, false,                                \
           "Use inexact types at allocations, etc., to test reflection")     \
                                                                             \
-  diagnostic(bool, DebugInlinedCalls, true,                                 \
+  product(bool, DebugInlinedCalls, true, DIAGNOSTIC,                        \
          "If false, restricts profiled locations to the root method only")  \
                                                                             \
   notproduct(bool, VerifyLoopOptimizations, false,                          \
           "verify major loop optimizations")                                \
                                                                             \
-  diagnostic(bool, ProfileDynamicTypes, true,                               \
+  product(bool, ProfileDynamicTypes, true, DIAGNOSTIC,                      \
           "do extra type profiling and use it more aggressively")           \
                                                                             \
   develop(bool, TraceIterativeGVN, false,                                   \
@@ -710,34 +707,34 @@
           "max number of live nodes in a method")                           \
           range(0, max_juint / 8)                                           \
                                                                             \
-  diagnostic(bool, OptimizeExpensiveOps, true,                              \
+  product(bool, OptimizeExpensiveOps, true, DIAGNOSTIC,                     \
           "Find best control for expensive operations")                     \
                                                                             \
-  diagnostic(bool, UseMathExactIntrinsics, true,                            \
+  product(bool, UseMathExactIntrinsics, true, DIAGNOSTIC,                   \
           "Enables intrinsification of various java.lang.Math functions")   \
                                                                             \
-  diagnostic(bool, UseCharacterCompareIntrinsics, false,                    \
+  product(bool, UseCharacterCompareIntrinsics, false, DIAGNOSTIC,           \
           "Enables intrinsification of java.lang.Character functions")      \
                                                                             \
-  diagnostic(bool, UseMultiplyToLenIntrinsic, false,                        \
+  product(bool, UseMultiplyToLenIntrinsic, false, DIAGNOSTIC,               \
           "Enables intrinsification of BigInteger.multiplyToLen()")         \
                                                                             \
-  diagnostic(bool, UseSquareToLenIntrinsic, false,                          \
+  product(bool, UseSquareToLenIntrinsic, false, DIAGNOSTIC,                 \
           "Enables intrinsification of BigInteger.squareToLen()")           \
                                                                             \
-  diagnostic(bool, UseMulAddIntrinsic, false,                               \
+  product(bool, UseMulAddIntrinsic, false, DIAGNOSTIC,                      \
           "Enables intrinsification of BigInteger.mulAdd()")                \
                                                                             \
-  diagnostic(bool, UseMontgomeryMultiplyIntrinsic, false,                   \
+  product(bool, UseMontgomeryMultiplyIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of BigInteger.montgomeryMultiply()")    \
                                                                             \
-  diagnostic(bool, UseMontgomerySquareIntrinsic, false,                     \
+  product(bool, UseMontgomerySquareIntrinsic, false, DIAGNOSTIC,            \
           "Enables intrinsification of BigInteger.montgomerySquare()")      \
                                                                             \
   product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \
                                                                             \
-  diagnostic(bool, UseInlineDepthForSpeculativeTypes, true,                 \
+  product(bool, UseInlineDepthForSpeculativeTypes, true, DIAGNOSTIC,        \
           "Carry inline depth of profile point with speculative type "      \
           "and give priority to profiling from lower inline depth")         \
                                                                             \
@@ -768,7 +765,9 @@
   product(bool, UseProfiledLoopPredicate, true,                             \
           "Move predicates out of loops based on profiling data")           \
                                                                             \
-  diagnostic(bool, ExpandSubTypeCheckAtParseTime, false,                    \
-          "Do not use subtype check macro node")                            \
+  product(bool, ExpandSubTypeCheckAtParseTime, false, DIAGNOSTIC,           \
+          "Do not use subtype check macro node")
+
+// end of C2_FLAGS
 
 #endif // SHARE_OPTO_C2_GLOBALS_HPP

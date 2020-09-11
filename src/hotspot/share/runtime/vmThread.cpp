@@ -309,8 +309,7 @@ void VMThread::run() {
 // Notify the VMThread that the last non-daemon JavaThread has terminated,
 // and wait until operation is performed.
 void VMThread::wait_for_vm_thread_exit() {
-  assert(Thread::current()->is_Java_thread(), "Should be a JavaThread");
-  assert(((JavaThread*)Thread::current())->is_terminated(), "Should be terminated");
+  assert(JavaThread::current()->is_terminated(), "Should be terminated");
   { MonitorLocker mu(VMOperationQueue_lock, Mutex::_no_safepoint_check_flag);
     _should_terminate = true;
     mu.notify();
@@ -377,9 +376,7 @@ class HandshakeALotClosure : public HandshakeClosure {
   HandshakeALotClosure() : HandshakeClosure("HandshakeALot") {}
   void do_thread(Thread* thread) {
 #ifdef ASSERT
-    assert(thread->is_Java_thread(), "must be");
-    JavaThread* jt = (JavaThread*)thread;
-    jt->verify_states_for_handshake();
+    thread->as_Java_thread()->verify_states_for_handshake();
 #endif
   }
 };

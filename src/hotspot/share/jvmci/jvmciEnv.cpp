@@ -241,9 +241,9 @@ void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, const char* file, int l
 
 // Prints a pending exception (if any) and its stack trace.
 void JVMCIEnv::describe_pending_exception(bool clear) {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current();
   if (!is_hotspot()) {
-    JNIAccessMark jni(this);
+    JNIAccessMark jni(this, THREAD);
     if (jni()->ExceptionCheck()) {
       jthrowable ex = !clear ? jni()->ExceptionOccurred() : NULL;
       jni()->ExceptionDescribe();
@@ -253,7 +253,7 @@ void JVMCIEnv::describe_pending_exception(bool clear) {
     }
   } else {
     if (HAS_PENDING_EXCEPTION) {
-      JVMCIRuntime::describe_pending_hotspot_exception((JavaThread*) THREAD, clear);
+      JVMCIRuntime::describe_pending_hotspot_exception(THREAD, clear);
     }
   }
 }
@@ -292,8 +292,9 @@ JVMCIEnv::~JVMCIEnv() {
     if (is_hotspot()) {
       // Nothing to do
     } else {
-      if (Thread::current()->is_Java_thread()) {
-        JavaThread* THREAD = JavaThread::current();
+      Thread* thread = Thread::current();
+      if (thread->is_Java_thread()) {
+        JavaThread* THREAD = thread->as_Java_thread();
         if (HAS_PENDING_EXCEPTION) {
           Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
           CLEAR_PENDING_EXCEPTION;

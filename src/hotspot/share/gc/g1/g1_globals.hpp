@@ -35,13 +35,7 @@
                     develop_pd,                                             \
                     product,                                                \
                     product_pd,                                             \
-                    diagnostic,                                             \
-                    diagnostic_pd,                                          \
-                    experimental,                                           \
                     notproduct,                                             \
-                    manageable,                                             \
-                    product_rw,                                             \
-                    lp64_product,                                           \
                     range,                                                  \
                     constraint)                                             \
                                                                             \
@@ -51,7 +45,7 @@
           "attempts to start marking in time based on application "         \
           "behavior.")                                                      \
                                                                             \
-  experimental(size_t, G1AdaptiveIHOPNumInitialSamples, 3,                  \
+  product(size_t, G1AdaptiveIHOPNumInitialSamples, 3, EXPERIMENTAL,         \
           "How many completed time periods from concurrent start to first " \
           "mixed gc are required to use the input values for prediction "   \
           "of the optimal occupancy to start marking.")                     \
@@ -61,7 +55,7 @@
           "Confidence level for MMU/pause predictions")                     \
           range(0, 100)                                                     \
                                                                             \
-  diagnostic(intx, G1SummarizeRSetStatsPeriod, 0,                           \
+  product(intx, G1SummarizeRSetStatsPeriod, 0, DIAGNOSTIC,                  \
           "The period (in number of GCs) at which we will generate "        \
           "update buffer processing info "                                  \
           "(0 means do not periodically generate this info); "              \
@@ -79,11 +73,11 @@
           "draining concurrent marking work queues.")                       \
           range(1, INT_MAX)                                                 \
                                                                             \
-  experimental(bool, G1UseReferencePrecleaning, true,                       \
+  product(bool, G1UseReferencePrecleaning, true, EXPERIMENTAL,              \
                "Concurrently preclean java.lang.ref.references instances "  \
                "before the Remark pause.")                                  \
                                                                             \
-  experimental(double, G1LastPLABAverageOccupancy, 50.0,                    \
+  product(double, G1LastPLABAverageOccupancy, 50.0, EXPERIMENTAL,           \
                "The expected average occupancy of the last PLAB in "        \
                "percent.")                                                  \
                range(0.001, 100.0)                                          \
@@ -104,7 +98,7 @@
           "specifies that mutator threads should not do such filtering.")   \
           range(0, 100)                                                     \
                                                                             \
-  experimental(intx, G1ExpandByPercentOfAvailable, 20,                      \
+  product(intx, G1ExpandByPercentOfAvailable, 20, EXPERIMENTAL,             \
           "When expanding, % of uncommitted space to claim.")               \
           range(0, 100)                                                     \
                                                                             \
@@ -212,19 +206,19 @@
           "Raise a fatal VM exit out of memory failure in the event "       \
           " that heap expansion fails due to running out of swap.")         \
                                                                             \
-  experimental(uintx, G1MaxNewSizePercent, 60,                              \
+  product(uintx, G1MaxNewSizePercent, 60, EXPERIMENTAL,                     \
           "Percentage (0-100) of the heap size to use as default "          \
           " maximum young gen size.")                                       \
           range(0, 100)                                                     \
           constraint(G1MaxNewSizePercentConstraintFunc,AfterErgo)           \
                                                                             \
-  experimental(uintx, G1NewSizePercent, 5,                                  \
+  product(uintx, G1NewSizePercent, 5, EXPERIMENTAL,                         \
           "Percentage (0-100) of the heap size to use as default "          \
           "minimum young gen size.")                                        \
           range(0, 100)                                                     \
           constraint(G1NewSizePercentConstraintFunc,AfterErgo)              \
                                                                             \
-  experimental(uintx, G1MixedGCLiveThresholdPercent, 85,                    \
+  product(uintx, G1MixedGCLiveThresholdPercent, 85, EXPERIMENTAL,           \
           "Threshold for regions to be considered for inclusion in the "    \
           "collection set of mixed GCs. "                                   \
           "Regions with live bytes exceeding this will not be collected.")  \
@@ -239,18 +233,18 @@
           "The target number of mixed GCs after a marking cycle.")          \
           range(0, max_uintx)                                               \
                                                                             \
-  experimental(bool, G1EagerReclaimHumongousObjects, true,                  \
+  product(bool, G1EagerReclaimHumongousObjects, true, EXPERIMENTAL,         \
           "Try to reclaim dead large objects at every young GC.")           \
                                                                             \
-  experimental(bool, G1EagerReclaimHumongousObjectsWithStaleRefs, true,     \
+  product(bool, G1EagerReclaimHumongousObjectsWithStaleRefs, true, EXPERIMENTAL, \
           "Try to reclaim dead large objects that have a few stale "        \
           "references at every young GC.")                                  \
                                                                             \
-  experimental(size_t, G1RebuildRemSetChunkSize, 256 * K,                   \
+  product(size_t, G1RebuildRemSetChunkSize, 256 * K, EXPERIMENTAL,          \
           "Chunk size used for rebuilding the remembered set.")             \
           range(4 * K, 32 * M)                                              \
                                                                             \
-  experimental(uintx, G1OldCSetRegionThresholdPercent, 10,                  \
+  product(uintx, G1OldCSetRegionThresholdPercent, 10, EXPERIMENTAL,         \
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
           range(0, 100)                                                     \
@@ -283,17 +277,17 @@
           "Force use of evacuation failure handling during mixed "          \
           "evacuation pauses")                                              \
                                                                             \
-  diagnostic(bool, G1VerifyRSetsDuringFullGC, false,                        \
+  product(bool, G1VerifyRSetsDuringFullGC, false, DIAGNOSTIC,               \
           "If true, perform verification of each heap region's "            \
           "remembered set when verifying the heap during a full GC.")       \
                                                                             \
-  diagnostic(bool, G1VerifyHeapRegionCodeRoots, false,                      \
+  product(bool, G1VerifyHeapRegionCodeRoots, false, DIAGNOSTIC,             \
           "Verify the code root lists attached to each heap region.")       \
                                                                             \
   develop(bool, G1VerifyBitmaps, false,                                     \
           "Verifies the consistency of the marking bitmaps")                \
                                                                             \
-  manageable(uintx, G1PeriodicGCInterval, 0,                                \
+  product(uintx, G1PeriodicGCInterval, 0, MANAGEABLE,                       \
           "Number of milliseconds after a previous GC to wait before "      \
           "triggering a periodic gc. A value of zero disables periodically "\
           "enforced gc cycles.")                                            \
@@ -303,21 +297,22 @@
           "perform a concurrent GC as periodic GC, otherwise use a STW "    \
           "Full GC.")                                                       \
                                                                             \
-  manageable(double, G1PeriodicGCSystemLoadThreshold, 0.0,                  \
+  product(double, G1PeriodicGCSystemLoadThreshold, 0.0, MANAGEABLE,         \
           "Maximum recent system wide load as returned by the 1m value "    \
           "of getloadavg() at which G1 triggers a periodic GC. A load "     \
           "above this value cancels a given periodic GC. A value of zero "  \
           "disables this check.")                                           \
           range(0.0, (double)max_uintx)                                     \
                                                                             \
-  experimental(uintx, G1YoungExpansionBufferPercent, 10,                    \
+  product(uintx, G1YoungExpansionBufferPercent, 10, EXPERIMENTAL,           \
                "When heterogenous heap is enabled by AllocateOldGenAt "     \
                "option, after every GC, young gen is re-sized which "       \
                "involves system calls to commit/uncommit memory. To "       \
                "reduce these calls, we keep a buffer of extra regions to "  \
                "absorb small changes in young gen length. This flag takes " \
                "the buffer size as an percentage of young gen length")      \
-               range(0, 100)                                                \
+               range(0, 100)
 
+// end of GC_G1_FLAGS
 
 #endif // SHARE_GC_G1_G1_GLOBALS_HPP
