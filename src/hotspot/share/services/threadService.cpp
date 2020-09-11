@@ -878,6 +878,8 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   _is_ext_suspended = thread->is_being_ext_suspended();
   _is_in_native = (thread->thread_state() == _thread_in_native);
 
+  Handle obj = ThreadService::get_current_contended_monitor(thread);
+
   oop blocker_object = NULL;
   oop blocker_object_owner = NULL;
 
@@ -885,10 +887,6 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
       _thread_status == java_lang_Thread::IN_OBJECT_WAIT ||
       _thread_status == java_lang_Thread::IN_OBJECT_WAIT_TIMED) {
 
-    Handle obj = ThreadService::get_current_contended_monitor(thread);
-    // Need to re-set oop's to pass CheckUnhandledOops check
-    blocker_object = NULL;
-    blocker_object_owner = NULL;
     if (obj() == NULL) {
       // monitor no longer exists; thread is not blocked
       _thread_status = java_lang_Thread::RUNNABLE;
