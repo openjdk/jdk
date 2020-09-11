@@ -73,7 +73,6 @@ JvmtiAgentThread::start_function_wrapper(JavaThread *thread, TRAPS) {
     // It is expected that any Agent threads will be created as
     // Java Threads.  If this is the case, notification of the creation
     // of the thread is given in JavaThread::thread_main().
-    assert(thread->is_Java_thread(), "debugger thread should be a Java Thread");
     assert(thread == JavaThread::current(), "sanity check");
 
     JvmtiAgentThread *dthread = (JvmtiAgentThread *)thread;

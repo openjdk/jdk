@@ -711,7 +711,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     // a subsequent store that would make this object accessible by
     // other threads.
     insert_mem_bar(ctrl, &out_mem, Op_MemBarStoreStore);
-  } else if (InsertMemBarAfterArraycopy) {
+  } else {
     insert_mem_bar(ctrl, &out_mem, Op_MemBarCPUOrder);
   }
 
@@ -1101,9 +1101,6 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     merge_mem = MergeMemNode::make(mem);
     transform_later(merge_mem);
 
-    RegionNode* slow_region = new RegionNode(1);
-    transform_later(slow_region);
-
     AllocateArrayNode* alloc = NULL;
     if (ac->is_alloc_tightly_coupled()) {
       alloc = AllocateArrayNode::Ideal_array_allocation(dest, &_igvn);
@@ -1176,15 +1173,6 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
                                    // If a  negative length guard was generated for the ArrayCopyNode,
                                    // the length of the array can never be negative.
                                    false, ac->has_negative_length_guard());
-
-    // Do not let reads from the destination float above the arraycopy.
-    // Since we cannot type the arrays, we don't know which slices
-    // might be affected.  We could restrict this barrier only to those
-    // memory slices which pertain to array elements--but don't bother.
-    if (!InsertMemBarAfterArraycopy) {
-      // (If InsertMemBarAfterArraycopy, there is already one in place.)
-      insert_mem_bar(&ctrl, &mem, Op_MemBarCPUOrder);
-    }
     return;
   }
 
