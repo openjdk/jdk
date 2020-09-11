@@ -243,12 +243,12 @@ void ObjectMonitor::operator delete[] (void *p) {
 
 // Check that object() and set_object() are called from the right context:
 static void check_object_context() {
-  Thread *self = Thread::current();
+  Thread* self = Thread::current();
   // ThreadService::get_current_contended_monitor() can call here via
   // the VMThread so sanity check it.
   guarantee(self->is_Java_thread() || self->is_VM_thread(), "must be");
   if (self->is_Java_thread()) {
-    JavaThread* jt = (JavaThread*)self;
+    JavaThread* jt = self->as_Java_thread();
     switch (jt->thread_state()) {
     case _thread_in_vm:    // the usual case
     case _thread_in_Java:  // during deopt
