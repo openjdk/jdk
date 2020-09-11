@@ -27,10 +27,51 @@ package sun.nio.ch;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 class UnixDomainHelper {
+
     static Charset getCharset() {
         return StandardCharsets.UTF_8;
     }
+
+    /**
+     * Return the temp directory for storing automatically bound
+     * server sockets.
+     *
+     * On Windows we search the following directories in sequence:
+     *
+     * 1. ${jdk.nio.channels.tmpdir} if set, Use that unconditionally
+     * 2. %TEMP%
+     * 3. ${java.io.tmpdir}
+     *
+     */
+    static Path getTempDir() {
+        return AccessController.doPrivileged(
+            (PrivilegedAction<Path>) () -> {
+                try {
+                    String s = System.getProperty("jdk.nio.channels.tmpdir");
+                    if (s != null) {
+                        return Path.of(s);
+                    }
+                    String temp = System.getenv("TEMP");
+                    if (temp != null) {
+                        Path p = Path.of(temp);
+                        if (Files.exists(p)) {
+                            return p;
+                        }
+                    }
+                    return Path.of(System.getProperty("java.io.tmpdir"));
+                } catch (InvalidPathException ipe) {
+                    return null;
+                }
+            }
+        );
+    }
+
 }
 

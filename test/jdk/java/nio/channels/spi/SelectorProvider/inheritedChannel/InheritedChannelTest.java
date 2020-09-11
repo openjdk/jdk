@@ -108,7 +108,6 @@ public class InheritedChannelTest {
 
         List<String> args = new ArrayList<>();
         args.add(JDKToolFinder.getJDKTool("java"));
-        args.add("-Djdk.nio.channels.tmpdir=/tmp");
         args.addAll(asList(Utils.getTestJavaOpts()));
         args.addAll(List.of("--add-opens", "java.base/java.io=ALL-UNNAMED",
                             "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED"));

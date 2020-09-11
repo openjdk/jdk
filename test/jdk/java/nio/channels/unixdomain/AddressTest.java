@@ -25,7 +25,7 @@
  * @test
  * @bug 8231358
  * @build AddressTest DummyPath
- * @run main/othervm -Djdk.nio.channels.tmpdir=/tmp AddressTest
+ * @run main/othervm AddressTest
  */
 
 import java.net.UnixDomainSocketAddress;

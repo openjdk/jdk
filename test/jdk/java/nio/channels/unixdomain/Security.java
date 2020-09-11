@@ -24,8 +24,8 @@
 /**
  * @test
  * @bug 8231358
- * @run main/othervm -Djdk.nio.channels.tmpdir=/tmp Security policy1
- * @run main/othervm -Djdk.nio.channels.tmpdir=/tmp Security policy2
+ * @run main/othervm Security policy1
+ * @run main/othervm Security policy2
  * @summary Security test for Unix Domain socket and server socket channels
  */
 
@@ -132,6 +132,7 @@ public class Security {
             client.connect(saddr);
         }, SE);
         close(server, client);
+        Files.deleteIfExists(servername);
     }
 
     // All permissions
@@ -149,5 +150,6 @@ public class Security {
             client.connect(saddr);
         }, null);
         close(server, client);
+        Files.deleteIfExists(servername);
     }
 }

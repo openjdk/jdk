@@ -134,23 +134,7 @@ class UnixDomainNet {
         return parent.equals(tempDir);
     }
 
-    static final Path tempDir = getTempDir();
-
-    private static Path getTempDir() {
-        return AccessController.doPrivileged(
-            (PrivilegedAction<Path>) () -> {
-                try {
-                    String s = System.getProperty("jdk.nio.channels.tmpdir");
-                    if (s == null) {
-                        s = System.getProperty("java.io.tmpdir");
-                    }
-                    return Path.of(s);
-                } catch (InvalidPathException ipe) {
-                    return null;
-                }
-            }
-        );
-    }
+    static final Path tempDir = UnixDomainHelper.getTempDir();
 
     static byte[] getPathBytes(Path path) throws IOException {
         AbstractFileSystemProvider provider = (AbstractFileSystemProvider)

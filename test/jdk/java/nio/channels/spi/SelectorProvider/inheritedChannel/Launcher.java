@@ -52,7 +52,7 @@ public class Launcher {
         int optsLen = (options == null) ? 0 : options.length;
         int argsLen = (args == null) ? 0 : args.length;
         int len = 1 + optsLen + 1 + argsLen;
-        String cmdarray[] = new String[len+1]; // extra arg added below
+        String cmdarray[] = new String[len];
         int pos = 0;
         cmdarray[pos++] = Util.javaCommand();
         if (options != null) {
@@ -60,7 +60,6 @@ public class Launcher {
                 cmdarray[pos++] = opt;
             }
         }
-        cmdarray[pos++] = "-Djdk.nio.channels.tmpdir=/tmp";
         cmdarray[pos++] = className;
         if (args != null) {
             for (String arg: args) {

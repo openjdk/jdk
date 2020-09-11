@@ -25,7 +25,7 @@
  * @test
  * @summary Test UnixDomainSocketAddress constructor
  * @library /test/lib
- * @run testng/othervm -Djdk.nio.channels.tmpdir=/tmp LengthTest
+ * @run testng/othervm LengthTest
  */
 
 import org.testng.annotations.BeforeTest;

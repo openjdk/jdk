@@ -26,9 +26,53 @@
 package sun.nio.ch;
 
 import java.nio.charset.Charset;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
+/**
+ * Platform specific helper functions
+ */
 class UnixDomainHelper {
     static Charset getCharset() {
         return Charset.defaultCharset();
+    }
+
+    /**
+     * Return the temp directory for storing automatically bound
+     * server sockets.
+     *
+     * On UNIX we search the following directories in sequence:
+     *
+     * 1. ${jdk.nio.channels.tmpdir} if set, Use that unconditionally
+     * 2. /tmp
+     * 3. /var/tmp
+     * 4. ${java.io.tmpdir}
+     *
+     */
+    static Path getTempDir() {
+        return AccessController.doPrivileged(
+            (PrivilegedAction<Path>) () -> {
+                try {
+                    String s = System.getProperty("jdk.nio.channels.tmpdir");
+                    if (s != null) {
+                        return Path.of(s);
+                    }
+                    Path p = Path.of("/tmp");
+                    if (Files.exists(p)) {
+                        return p;
+                    }
+                    p = Path.of("/var/tmp");
+                    if (Files.exists(p)) {
+                        return p;
+                    }
+                    return Path.of(System.getProperty("java.io.tmpdir"));
+                } catch (InvalidPathException ipe) {
+                    return null;
+                }
+            }
+        );
     }
 }

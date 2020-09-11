@@ -191,7 +191,9 @@ class PipeImpl
         try {
             server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
             server.bind(null);
-        } catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException | IOException e) {
+            // IOException is most likely to be caused by the temporary directory
+            // name being too long. Possibly should log this.
             server = ServerSocketChannel.open();
             InetAddress lb = InetAddress.getLoopbackAddress();
             server.bind(new InetSocketAddress(lb, 0));
