@@ -28,6 +28,7 @@ package jdk.incubator.jpackage.internal;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Log
@@ -115,6 +116,25 @@ public class Log {
             }
         }
 
+        public void verbose(List<String> strings,
+                List<String> output, int returnCode) {
+            if (verbose) {
+                StringBuffer sb = new StringBuffer("Command:\n   ");
+                for (String s : strings) {
+                    sb.append(" " + s);
+                }
+                verbose(new String(sb));
+                if (output != null && !output.isEmpty()) {
+                    sb = new StringBuffer("Output:");
+                    for (String s : output) {
+                        sb.append("\n    " + s);
+                    }
+                    verbose(new String(sb));
+                }
+                verbose("Returned: " + returnCode + "\n");
+            }
+        }
+
         private String addTimestamp(String msg) {
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
             Date time = new Date(System.currentTimeMillis());
@@ -173,4 +193,11 @@ public class Log {
            delegate.verbose(t);
         }
     }
+
+    public static void verbose(List<String> strings, List<String> out, int ret) {
+        if (delegate != null) {
+           delegate.verbose(strings, out, ret);
+        }
+    }
+
 }

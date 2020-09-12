@@ -228,6 +228,7 @@ public class IOUtils {
         t.start();
 
         int ret = p.waitFor();
+        Log.verbose(pb.command(), list, ret);
 
         result.clear();
         result.addAll(list);
