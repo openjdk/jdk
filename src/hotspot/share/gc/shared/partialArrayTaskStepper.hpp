@@ -69,7 +69,7 @@ private:
   // Limit on the number of partial array tasks to create for a given array.
   uint _task_limit;
   // Maximum number of new tasks to create when processing an existing task.
-  uint _task_fannout;
+  uint _task_fanout;
 
   // Split start/next into public part dealing with oops and private
   // impl dealing with lengths and pointers to lengths, for unit testing.

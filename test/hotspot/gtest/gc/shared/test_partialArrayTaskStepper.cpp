@@ -50,9 +50,9 @@ public:
 using StepperSupport = PartialArrayTaskStepper::TestSupport;
 
 static int simulate(const Stepper* stepper,
-                     int length,
-                     int* to_length_addr,
-                     uint chunk_size) {
+                    int length,
+                    int* to_length_addr,
+                    uint chunk_size) {
   Step init = StepperSupport::start(stepper, length, to_length_addr, chunk_size);
   uint queue_count = init._ncreate;
   int task = 0;

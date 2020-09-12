@@ -33,10 +33,10 @@ static uint compute_task_limit(uint n_workers) {
   return n_workers;
 }
 
-static uint compute_task_fannout(uint task_limit) {
+static uint compute_task_fanout(uint task_limit) {
   assert(task_limit > 0, "precondition");
   // There is a tradeoff between providing parallelism more quickly and
-  // number of enqueued tasks.  A constant fannout may be too slow when
+  // number of enqueued tasks.  A constant fanout may be too slow when
   // parallelism (and so task_limit) is large.  A constant fraction might
   // be overly eager.  Using log2 attempts to balance between those.
   uint result = log2_uint(task_limit);
@@ -49,5 +49,5 @@ static uint compute_task_fannout(uint task_limit) {
 
 PartialArrayTaskStepper::PartialArrayTaskStepper(uint n_workers) :
   _task_limit(compute_task_limit(n_workers)),
-  _task_fannout(compute_task_fannout(_task_limit))
+  _task_fanout(compute_task_fanout(_task_limit))
 {}

@@ -86,15 +86,15 @@ PartialArrayTaskStepper::next_impl(int length,
   uint remaining_tasks = (length - start) / chunk_size;
   assert(remaining_tasks > 0, "invariant");
   // Compute number of pending tasks, including this one.  The maximum number
-  // of tasks is a function of task_num (N) and _task_fannout (F).
+  // of tasks is a function of task_num (N) and _task_fanout (F).
   //   1    : current task
   //   N    : number of preceeding tasks
   //   F*N  : maximum created for preceeding tasks
   // => F*N - N + 1 : maximum number of tasks
   // => (F-1)*N + 1
   assert(_task_limit > 0, "precondition");
-  assert(_task_fannout > 0, "precondition");
-  uint max_pending = (_task_fannout - 1) * task_num + 1;
+  assert(_task_fanout > 0, "precondition");
+  uint max_pending = (_task_fanout - 1) * task_num + 1;
 
   // The actual pending may be less than that.  Bound by remaining_tasks to
   // not overrun.  Also bound by _task_limit to avoid spawning an excessive
@@ -104,7 +104,7 @@ PartialArrayTaskStepper::next_impl(int length,
   // processing.  That's okay; we just need to determine the correct number
   // of tasks to add for this task.
   uint pending = MIN3(max_pending, remaining_tasks, _task_limit);
-  uint ncreate = MIN2(_task_fannout, MIN2(remaining_tasks, _task_limit + 1) - pending);
+  uint ncreate = MIN2(_task_fanout, MIN2(remaining_tasks, _task_limit + 1) - pending);
   Step result = { start, ncreate };
   return result;
 }
