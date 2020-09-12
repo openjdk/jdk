@@ -173,12 +173,12 @@ void StatSampler::collect_sample() {
 }
 
 /*
- * method to upcall into Java to return the value of the specified
- * property as a utf8 string, or NULL if does not exist. The caller
- * is responsible for setting a ResourceMark for proper cleanup of
- * the utf8 strings.
+ * method to upcall into Java to check the value of the specified
+ * property as a utf8 string, or NULL if does not exist.
  */
-const char* StatSampler::get_system_property(const char* name, TRAPS) {
+bool StatSampler::check_system_property(const char* name, const char* value, TRAPS) {
+
+  ResourceMark rm(THREAD);
 
   // setup the arguments to getProperty
   Handle key_str   = java_lang_String::create_from_str(name, CHECK_NULL);
@@ -196,13 +196,13 @@ const char* StatSampler::get_system_property(const char* name, TRAPS) {
 
   oop value_oop = (oop)result.get_jobject();
   if (value_oop == NULL) {
-    return NULL;
+    return false;
   }
 
   // convert Java String to utf8 string
-  char* value = java_lang_String::as_utf8_string(value_oop);
+  char* system_value = java_lang_String::as_utf8_string(value_oop);
 
-  return value;
+  return strcmp(value, system_value);
 }
 
 /*
@@ -249,7 +249,6 @@ static PropertyCounters property_counters[] = {
   { NULL, SUN_PROPERTY }
 };
 
-
 /*
  * Method to create PerfData string instruments that contain the values
  * of various system properties. String instruments are created for each
@@ -259,8 +258,6 @@ static PropertyCounters property_counters[] = {
  */
 void StatSampler::create_system_property_instrumentation(TRAPS) {
 
-  ResourceMark rm;
-
   for (int i = 0; property_counters[i].property_list != NULL; i++) {
 
     for (int j = 0; property_counters[i].property_list[j] != NULL; j++) {
@@ -268,10 +265,14 @@ void StatSampler::create_system_property_instrumentation(TRAPS) {
       const char* property_name = property_counters[i].property_list[j];
       assert(property_name != NULL, "property name should not be NULL");
 
-      const char* value = get_system_property(property_name, CHECK);
+      const char* value = Arguments::get_property(property_name);
 
       // the property must exist
       assert(value != NULL, "property name should be valid");
+
+      // these properties must not have mutated compared to what's published
+      // in System.props
+      assert(check_system_property(property_name, value));
 
       if (value != NULL) {
         // create the property counter
