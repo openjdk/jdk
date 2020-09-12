@@ -252,17 +252,17 @@ void StatSampler::add_property_constant(CounterNS name_space, const char* name, 
 void StatSampler::create_system_property_instrumentation(TRAPS) {
 
   // Non-writeable, constant properties
-  add_property_constant(JAVA_PROPERTY, "java.vm.specification.name", "Java Virtual Machine Specification");
-  add_property_constant(JAVA_PROPERTY, "java.vm.version", VM_Version::vm_release());
-  add_property_constant(JAVA_PROPERTY, "java.vm.name", VM_Version::vm_name());
-  add_property_constant(JAVA_PROPERTY, "java.vm.vendor", VM_Version::vm_vendor());
-  add_property_constant(JAVA_PROPERTY, "jdk.debug", VM_Version::jdk_debug_level());
+  add_property_constant(JAVA_PROPERTY, "java.vm.specification.name", "Java Virtual Machine Specification", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.vm.version", VM_Version::vm_release(), CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.vm.name", VM_Version::vm_name(), CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.vm.vendor", VM_Version::vm_vendor(), CHECK);
+  add_property_constant(JAVA_PROPERTY, "jdk.debug", VM_Version::jdk_debug_level(), CHECK);
 
   // Get remaining property constants via Arguments::get_property,
   // which does a linear search over the internal system properties list.
 
   // SUN_PROPERTY properties
-  add_property_constant(SUN_PROPERTY, "sun.boot.library.path", Arguments::get_property("sun.boot.library.path"));
+  add_property_constant(SUN_PROPERTY, "sun.boot.library.path", Arguments::get_property("sun.boot.library.path"), CHECK);
 
   // JAVA_PROPERTY properties
   for (int i = 0; stable_java_property_counters[i] != NULL; i++) {
