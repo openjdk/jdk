@@ -236,7 +236,7 @@ void StatSampler::add_property_constant(CounterNS name_space, const char* name, 
   assert(value != NULL, "property name should be valid");
   // the property value must not have changed compared to what's published
   // in System.props
-  assert(check_system_property(name, value), "property value mustn't differ from System.getProperty");
+  assert(check_system_property(name, value, CHECK), "property value mustn't differ from System.getProperty");
   if (value != NULL) {
     // create the property counter
     PerfDataManager::create_string_constant(name_space, name, value, CHECK);
