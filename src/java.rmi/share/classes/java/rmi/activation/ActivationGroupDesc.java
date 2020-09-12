@@ -90,6 +90,7 @@ public final class ActivationGroupDesc implements Serializable {
     private Properties props;
 
     /** indicate compatibility with the Java 2 SDK v1.2 version of class */
+    @java.io.Serial
     private static final long serialVersionUID = -4936225423168276595L;
 
     /**
@@ -204,6 +205,7 @@ public final class ActivationGroupDesc implements Serializable {
      * @since 1.2
      */
     public static class CommandEnvironment implements Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 6165754737887770191L;
 
         /**
@@ -308,12 +310,17 @@ public final class ActivationGroupDesc implements Serializable {
          *
          * <p>This method reads this object's serialized form for this
          * class as follows:
-         *
          * <p>This method first invokes <code>defaultReadObject</code> on
          * the specified object input stream, and if <code>options</code>
          * is <code>null</code>, then <code>options</code> is set to a
          * zero-length array of <code>String</code>.
+         *
+         * @param  in the {@code ObjectInputStream} from which data is read
+         * @throws IOException if an I/O error occurs
+         * @throws ClassNotFoundException if a serialized class cannot be loaded
+         *
          */
+        @java.io.Serial
         private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException
         {

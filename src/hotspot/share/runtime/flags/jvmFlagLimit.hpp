@@ -1,0 +1,155 @@
+/*
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_RUNTIME_FLAGS_JVMFLAGLIMIT_HPP
+#define SHARE_RUNTIME_FLAGS_JVMFLAGLIMIT_HPP
+
+#include "runtime/flags/jvmFlag.hpp"
+
+#define ALL_LIMIT_TYPES(f)  \
+  f(int)                    \
+  f(intx)                   \
+  f(uint)                   \
+  f(uintx)                  \
+  f(uint64_t)               \
+  f(size_t)                 \
+  f(double)
+
+#define ALL_RANGE_TYPES(f) ALL_LIMIT_TYPES(f)
+#define ALL_CONSTRAINT_TYPES(f) ALL_LIMIT_TYPES(f) f(bool)
+
+template <typename T> class JVMTypedFlagLimit;
+
+
+// A JVMFlagLimit is created for each JVMFlag that has a range() and/or constraint() in its declaration in
+// the globals_xxx.hpp file.
+//
+// To query the range information of a JVMFlag:
+//     JVMFlagLimit::get_range(JVMFlag*)
+//     JVMFlagLimit::get_range_at(int flag_enum)
+// If the given flag doesn't have a range, NULL is returned.
+//
+// To query the constraint information of a JVMFlag:
+//     JVMFlagLimit::get_constraint(JVMFlag*)
+//     JVMFlagLimit::get_constraint_at(int flag_enum)
+// If the given flag doesn't have a constraint, NULL is returned.
+
+class JVMFlagLimit {
+  short _constraint_func;
+  char  _phase;
+  char  _kind;
+
+  static const JVMFlagLimit* const* flagLimits;
+  static int _last_checked;
+
+protected:
+  static constexpr int HAS_RANGE = 1;
+  static constexpr int HAS_CONSTRAINT = 2;
+
+private:
+  static const JVMFlagLimit* get_kind_at(int flag_enum, int required_kind) {
+    const JVMFlagLimit* limit = at(flag_enum);
+    if (limit != NULL && (limit->_kind & required_kind) != 0) {
+      _last_checked = flag_enum;
+      return limit;
+    } else {
+      return NULL;
+    }
+  }
+
+  static const JVMFlagLimit* at(int flag_enum) {
+    JVMFlag::assert_valid_flag_enum(flag_enum);
+    return flagLimits[flag_enum];
+  }
+
+public:
+  void* constraint_func() const;
+  char phase() const { return _phase; }
+  char kind()  const { return _kind; }
+
+  constexpr JVMFlagLimit(short func, short phase, short kind) : _constraint_func(func), _phase(phase), _kind(kind) {}
+
+  static const JVMFlagLimit* get_range(const JVMFlag* flag) {
+    return get_range_at(flag->flag_enum());
+  }
+  static const JVMFlagLimit* get_range_at(int flag_enum) {
+    return get_kind_at(flag_enum, HAS_RANGE);
+  }
+
+  static const JVMFlagLimit* get_constraint(const JVMFlag* flag) {
+    return get_constraint_at(flag->flag_enum());
+  }
+  static const JVMFlagLimit* get_constraint_at(int flag_enum) {
+    return get_kind_at(flag_enum, HAS_CONSTRAINT);
+  }
+
+  static const JVMFlag* last_checked_flag() {
+    if (_last_checked >= 0) {
+      return JVMFlag::flag_from_enum(_last_checked);
+    } else {
+      return NULL;
+    }
+  }
+
+#define AS_TYPED_LIMIT(type) inline JVMTypedFlagLimit<type>* as_ ## type() const { return (JVMTypedFlagLimit<type>*)this; }
+  ALL_RANGE_TYPES(AS_TYPED_LIMIT)
+
+};
+
+enum ConstraintMarker {
+  next_two_args_are_constraint,
+};
+
+template <typename T>
+class JVMTypedFlagLimit : public JVMFlagLimit {
+  const T _min;
+  const T _max;
+
+public:
+  // dummy - no range or constraint. This object will not be emitted into the .o file
+  // because we declare it as "const" but has no reference to it.
+  constexpr JVMTypedFlagLimit(int dummy) :
+    JVMFlagLimit(0, 0, 0), _min(0), _max(0) {}
+
+  // range only
+  constexpr JVMTypedFlagLimit(int dummy, T min, T max) :
+    JVMFlagLimit(0, 0, HAS_RANGE), _min(min), _max(max) {}
+
+  // constraint only
+  constexpr JVMTypedFlagLimit(int dummy, ConstraintMarker dummy2, short func, int phase) :
+    JVMFlagLimit(func, phase, HAS_CONSTRAINT), _min(0), _max(0) {}
+
+  // range and constraint
+  constexpr JVMTypedFlagLimit(int dummy, T min, T max, ConstraintMarker dummy2, short func, int phase)  :
+    JVMFlagLimit(func, phase, HAS_RANGE | HAS_CONSTRAINT), _min(min), _max(max) {}
+
+  // constraint and range
+  constexpr JVMTypedFlagLimit(int dummy, ConstraintMarker dummy2, short func, int phase, T min, T max)  :
+    JVMFlagLimit(func, phase, HAS_RANGE | HAS_CONSTRAINT), _min(min), _max(max) {}
+
+  T min() const { return _min; }
+  T max() const { return _max; }
+};
+
+#endif // SHARE_RUNTIME_FLAGS_JVMFLAGLIMIT_HPP
