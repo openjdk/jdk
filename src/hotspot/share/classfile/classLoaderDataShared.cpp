@@ -79,9 +79,9 @@ void ArchivedClassLoaderData::allocate(ClassLoaderData* loader_data) {
   assert(DumpSharedSpaces, "must be");
   assert_valid(loader_data);
   if (loader_data != NULL) {
-    // We can't create hashtables at dump time because the hashcode dependes on the
-    // address of the Symbols, which may be relocated at run time due to ASLR.
-    // So we store the packages/modules in a Arrays. At run time, we create
+    // We can't create hashtables at dump time because the hashcode depends on the
+    // address of the Symbols, which may be relocated at runtime due to ASLR.
+    // So we store the packages/modules in Arrays. At runtime, we create
     // the hashtables using these arrays.
     _packages = loader_data->packages()->allocate_archived_entries();
     _modules  = loader_data->modules() ->allocate_archived_entries();

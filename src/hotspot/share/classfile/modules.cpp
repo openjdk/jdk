@@ -459,7 +459,7 @@ void Modules::define_archived_modules(jobject platform_loader, jobject system_lo
   assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
 
   // We don't want the classes used by the archived full module graph to be redefined by JVMTI.
-  // Luckily, such classes are loaded in the JVMTI "early" phase, and CDS is disable if a JVMTI
+  // Luckily, such classes are loaded in the JVMTI "early" phase, and CDS is disabled if a JVMTI
   // agent wants to redefine classes in this phase.
   JVMTI_ONLY(assert(JvmtiExport::is_early_phase(), "must be"));
   assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),

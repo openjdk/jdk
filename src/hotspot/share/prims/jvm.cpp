@@ -3727,7 +3727,7 @@ JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
   JVMWrapper("JVM_InitializeFromArchive");
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
   assert(k->is_klass(), "just checking");
-  HeapShared::initialize_from_archived_subgraph(k);
+  HeapShared::initialize_from_archived_subgraph(k, THREAD);
 JVM_END
 
 JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
