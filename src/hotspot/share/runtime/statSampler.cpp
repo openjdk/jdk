@@ -215,16 +215,11 @@ bool StatSampler::check_system_property(const char* name, const char* value, TRA
  * creates other property based instrumentation conditionally.
  */
 
-// stable interface, supported counters
-static const char* property_counters_ss[] = {
+// stable interface, supported counters in the JAVA_PROPERTY name space
+static const char* stable_java_property_counters[] = {
   "java.vm.specification.version",
-  "java.vm.specification.name",
   "java.vm.specification.vendor",
-  "java.vm.version",
-  "java.vm.name",
-  "java.vm.vendor",
   "java.vm.info",
-  "jdk.debug",
   "java.library.path",
   "java.class.path",
   "java.version",
@@ -232,54 +227,48 @@ static const char* property_counters_ss[] = {
   NULL
 };
 
-// unstable interface, unsupported counters
-static const char* property_counters_uu[] = {
-  "sun.boot.library.path",
-  NULL
-};
-
-typedef struct {
-  const char** property_list;
-  CounterNS name_space;
-} PropertyCounters;
-
-static PropertyCounters property_counters[] = {
-  { property_counters_ss, JAVA_PROPERTY },
-  { property_counters_uu, SUN_PROPERTY },
-  { NULL, SUN_PROPERTY }
-};
+/*
+ * Adds the constant instrument for a property. Asserts if the
+ * value for the system property differs from what's in System.props
+ */
+void StatSampler::add_property_constant(CounterNS name_space, const char* name, const char* value, TRAPS) {
+  // the property must exist
+  assert(value != NULL, "property name should be valid");
+  // the property value must not have changed compared to what's published
+  // in System.props
+  assert(check_system_property(name, value);
+  if (value != NULL) {
+    // create the property counter
+    PerfDataManager::create_string_constant(name_space, name, value, CHECK);
+  }
+}
 
 /*
  * Method to create PerfData string instruments that contain the values
- * of various system properties. String instruments are created for each
- * property specified in the property lists provided in property_counters[].
+ * of various system properties.
  * Property counters have a counter name space prefix prepended to the
- * property name as indicated in property_counters[].
+ * property name.
  */
 void StatSampler::create_system_property_instrumentation(TRAPS) {
 
-  for (int i = 0; property_counters[i].property_list != NULL; i++) {
+  // Non-writeable, constant properties
+  add_property_constant(JAVA_PROPERTY, "java.vm.specification.name", "Java Virtual Machine Specification");
+  add_property_constant(JAVA_PROPERTY, "java.vm.version", VM_Version::vm_release());
+  add_property_constant(JAVA_PROPERTY, "java.vm.name", VM_Version::vm_name());
+  add_property_constant(JAVA_PROPERTY, "java.vm.vendor", VM_Version::vm_vendor());
+  add_property_constant(JAVA_PROPERTY, "jdk.debug", VM_Version::jdk_debug_level());
 
-    for (int j = 0; property_counters[i].property_list[j] != NULL; j++) {
+  // Get remaining property constants via Arguments::get_property,
+  // which does a linear search over the internal system properties list.
 
-      const char* property_name = property_counters[i].property_list[j];
-      assert(property_name != NULL, "property name should not be NULL");
+  // SUN_PROPERTY properties
+  add_property_constant(SUN_PROPERTY, "sun.boot.library.path", Arguments::get_property("sun.boot.library.path"));
 
-      const char* value = Arguments::get_property(property_name);
-
-      // the property must exist
-      assert(value != NULL, "property name should be valid");
-
-      // these properties must not have mutated compared to what's published
-      // in System.props
-      assert(check_system_property(property_name, value));
-
-      if (value != NULL) {
-        // create the property counter
-        PerfDataManager::create_string_constant(property_counters[i].name_space,
-                                                property_name, value, CHECK);
-      }
-    }
+  // JAVA_PROPERTY properties
+  for (int i = 0; stable_java_property_counters[i] != NULL; i++) {
+    const char* property_name = stable_java_property_counters[i];
+    const char* value = Arguments::get_property(property_name);
+    add_property_constant(JAVA_PROPERTY, property_name, value, CHECK);
   }
 }
 
