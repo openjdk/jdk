@@ -304,7 +304,9 @@ void HeapShared::copy_closed_archive_heap_objects(
 
   archive_object_subgraphs(closed_archive_subgraph_entry_fields,
                            num_closed_archive_subgraph_entry_fields,
-                           true /* is_closed_archive */, THREAD);
+                           true /* is_closed_archive */,
+                           false /* is_full_module_graph */,
+                           THREAD);
 
   G1CollectedHeap::heap()->end_archive_alloc_range(closed_archive,
                                                    os::vm_allocation_granularity());
@@ -324,11 +326,13 @@ void HeapShared::copy_open_archive_heap_objects(
   archive_object_subgraphs(open_archive_subgraph_entry_fields,
                            num_open_archive_subgraph_entry_fields,
                            false /* is_closed_archive */,
+                           false /* is_full_module_graph */,
                            THREAD);
   if (MetaspaceShared::use_full_module_graph()) {
     archive_object_subgraphs(fmg_open_archive_subgraph_entry_fields,
                              num_fmg_open_archive_subgraph_entry_fields,
                              false /* is_closed_archive */,
+                             true /* is_full_module_graph */,
                              THREAD);
   }
 
@@ -353,8 +357,9 @@ HeapShared::RunTimeKlassSubGraphInfoTable   HeapShared::_run_time_subgraph_info_
 KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_graph) {
   assert(DumpSharedSpaces, "dump time only");
   bool created;
+  Klass* relocated_k = MetaspaceShared::get_relocated_klass(k);
   KlassSubGraphInfo* info =
-    _dump_time_subgraph_info_table->put_if_absent(k, KlassSubGraphInfo(k, is_full_module_graph),
+    _dump_time_subgraph_info_table->put_if_absent(relocated_k, KlassSubGraphInfo(relocated_k, is_full_module_graph),
                                                   &created);
   assert(created, "must not initialize twice");
   return info;
@@ -362,7 +367,8 @@ KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_
 
 KlassSubGraphInfo* HeapShared::get_subgraph_info(Klass* k) {
   assert(DumpSharedSpaces, "dump time only");
-  KlassSubGraphInfo* info = _dump_time_subgraph_info_table->get(k);
+  Klass* relocated_k = MetaspaceShared::get_relocated_klass(k);
+  KlassSubGraphInfo* info = _dump_time_subgraph_info_table->get(relocated_k);
   assert(info != NULL, "must have been initialized");
   return info;
 }
@@ -440,7 +446,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass *relocate
 
 // Initialize an archived subgraph_info_record from the given KlassSubGraphInfo.
 void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
-  _k = MetaspaceShared::get_relocated_klass(info->klass());
+  _k = info->klass();
   _entry_field_records = NULL;
   _subgraph_object_klasses = NULL;
   _is_full_module_graph = info->is_full_module_graph();
@@ -491,7 +497,7 @@ struct CopyKlassSubGraphInfoToArchive : StackObj {
         (ArchivedKlassSubGraphInfoRecord*)MetaspaceShared::read_only_space_alloc(sizeof(ArchivedKlassSubGraphInfoRecord));
       record->init(&info);
 
-      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(MetaspaceShared::get_relocated_klass(klass));
+      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(klass);
       u4 delta = MetaspaceShared::object_delta_u4(record);
       _writer->add(hash, delta);
     }
@@ -974,8 +980,9 @@ void HeapShared::set_has_been_seen_during_subgraph_recording(oop obj) {
   ++ _num_new_walked_objs;
 }
 
-void HeapShared::start_recording_subgraph(InstanceKlass *k, const char* class_name) {
+void HeapShared::start_recording_subgraph(InstanceKlass *k, const char* class_name, bool is_full_module_graph) {
   log_info(cds, heap)("Start recording subgraph(s) for archived fields in %s", class_name);
+  init_subgraph_info(k, is_full_module_graph);
   init_seen_objects_table();
   _num_new_walked_objs = 0;
   _num_new_archived_objs = 0;
@@ -1020,8 +1027,7 @@ public:
 };
 
 void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
-                                            int num, bool is_full_module_graph,
-                                            Thread* THREAD) {
+                                            int num, Thread* THREAD) {
   for (int i = 0; i < num; i++) {
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name =  SymbolTable::new_symbol(info->klass_name);
@@ -1041,7 +1047,6 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
 
     info->klass = ik;
     info->offset = finder.offset();
-    init_subgraph_info(ik, is_full_module_graph);
   }
 }
 
@@ -1050,14 +1055,14 @@ void HeapShared::init_subgraph_entry_fields(Thread* THREAD) {
 
   init_subgraph_entry_fields(closed_archive_subgraph_entry_fields,
                              num_closed_archive_subgraph_entry_fields,
-                             false, THREAD);
+                             THREAD);
   init_subgraph_entry_fields(open_archive_subgraph_entry_fields,
                              num_open_archive_subgraph_entry_fields,
-                             false, THREAD);
+                             THREAD);
   if (MetaspaceShared::use_full_module_graph()) {
     init_subgraph_entry_fields(fmg_open_archive_subgraph_entry_fields,
                                num_fmg_open_archive_subgraph_entry_fields,
-                               true, THREAD);
+                               THREAD);
   }
 }
 
@@ -1068,6 +1073,7 @@ void HeapShared::init_for_dumping(Thread* THREAD) {
 
 void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                           int num, bool is_closed_archive,
+                                          bool is_full_module_graph,
                                           Thread* THREAD) {
   _num_total_subgraph_recordings = 0;
   _num_total_walked_objs = 0;
@@ -1085,7 +1091,7 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
   for (i = 0; i < num; ) {
     ArchivableStaticFieldInfo* info = &fields[i];
     const char* klass_name = info->klass_name;
-    start_recording_subgraph(info->klass, klass_name);
+    start_recording_subgraph(info->klass, klass_name, is_full_module_graph);
 
     // If you have specified consecutive fields of the same klass in
     // fields[], these will be archived in the same
@@ -1099,8 +1105,7 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
 
       archive_reachable_objects_from_static_field(f->klass, f->klass_name,
                                                   f->offset, f->field_name,
-                                                  is_closed_archive,
-                                                  CHECK);
+                                                  is_closed_archive, CHECK);
     }
     done_recording_subgraph(info->klass, klass_name);
   }

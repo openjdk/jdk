@@ -191,6 +191,7 @@ private:
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        int num,
                                        bool is_closed_archive,
+                                       bool is_full_module_graph,
                                        Thread* THREAD);
 
   // Archive object sub-graph starting from the given static field
@@ -209,7 +210,7 @@ private:
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
 
   static void init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
-                                         int num, bool is_full_module_graph, Thread* THREAD);
+                                         int num, Thread* THREAD);
 
   // Used by decode_from_archive
   static address _narrow_oop_base;
@@ -245,7 +246,8 @@ private:
   static int _num_total_recorded_klasses;
   static int _num_total_verifications;
 
-  static void start_recording_subgraph(InstanceKlass *k, const char* klass_name);
+  static void start_recording_subgraph(InstanceKlass *k, const char* klass_name,
+                                       bool is_full_module_graph);
   static void done_recording_subgraph(InstanceKlass *k, const char* klass_name);
 
   static bool has_been_seen_during_subgraph_recording(oop obj);
