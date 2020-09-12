@@ -176,12 +176,12 @@ void StatSampler::collect_sample() {
  * method to upcall into Java to check the value of the specified
  * property as a utf8 string, or NULL if does not exist.
  */
-bool StatSampler::check_system_property(const char* name, const char* value) {
-
-  ResourceMark rm;
+void StatSampler::assert_system_property(const char* name, const char* value, TRAPS) {
+#ifdef ASSERT
+  ResourceMark rm(THREAD);
 
   // setup the arguments to getProperty
-  Handle key_str   = java_lang_String::create_from_str(name, CHECK_NULL);
+  Handle key_str   = java_lang_String::create_from_str(name, CHECK);
 
   // return value
   JavaValue result(T_OBJECT);
@@ -192,7 +192,7 @@ bool StatSampler::check_system_property(const char* name, const char* value) {
                          vmSymbols::getProperty_name(),
                          vmSymbols::string_string_signature(),
                          key_str,
-                         CHECK_NULL);
+                         CHECK);
 
   oop value_oop = (oop)result.get_jobject();
   if (value_oop == NULL) {
@@ -202,7 +202,8 @@ bool StatSampler::check_system_property(const char* name, const char* value) {
   // convert Java String to utf8 string
   char* system_value = java_lang_String::as_utf8_string(value_oop);
 
-  return strcmp(value, system_value);
+  assert(strcmp(value, system_value) == 0, "property value mustn't differ from System.getProperty");
+#endif // ASSERT
 }
 
 /*
@@ -236,7 +237,7 @@ void StatSampler::add_property_constant(CounterNS name_space, const char* name, 
   assert(value != NULL, "property name should be valid");
   // the property value must not have changed compared to what's published
   // in System.props
-  assert(check_system_property(name, value), "property value mustn't differ from System.getProperty");
+  assert_system_property(name, value, CHECK);
   if (value != NULL) {
     // create the property counter
     PerfDataManager::create_string_constant(name_space, name, value, CHECK);
