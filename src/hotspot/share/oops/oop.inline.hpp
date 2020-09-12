@@ -217,7 +217,7 @@ bool oopDesc::is_objArray()  const { return klass()->is_objArray_klass();  }
 bool oopDesc::is_typeArray() const { return klass()->is_typeArray_klass(); }
 
 void*    oopDesc::field_addr_raw(int offset)     const { return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
-void*    oopDesc::field_addr(int offset)         const { return Access<>::resolve(as_oop())->field_addr_raw(offset); }
+void*    oopDesc::field_addr(int offset)         const { return as_oop()->field_addr_raw(offset); }
 
 template <class T>
 T*       oopDesc::obj_field_addr_raw(int offset) const { return (T*) field_addr_raw(offset); }

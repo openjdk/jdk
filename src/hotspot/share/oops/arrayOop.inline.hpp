@@ -29,8 +29,7 @@
 #include "oops/arrayOop.hpp"
 
 void* arrayOopDesc::base(BasicType type) const {
-  oop resolved_obj = Access<>::resolve(as_oop());
-  return arrayOop(resolved_obj)->base_raw(type);
+  return arrayOop(as_oop())->base_raw(type);
 }
 
 void* arrayOopDesc::base_raw(BasicType type) const {
