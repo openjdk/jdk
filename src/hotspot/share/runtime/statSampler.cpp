@@ -176,9 +176,9 @@ void StatSampler::collect_sample() {
  * method to upcall into Java to check the value of the specified
  * property as a utf8 string, or NULL if does not exist.
  */
-bool StatSampler::check_system_property(const char* name, const char* value, TRAPS) {
+bool StatSampler::check_system_property(const char* name, const char* value) {
 
-  ResourceMark rm(THREAD);
+  ResourceMark rm;
 
   // setup the arguments to getProperty
   Handle key_str   = java_lang_String::create_from_str(name, CHECK_NULL);
@@ -236,7 +236,7 @@ void StatSampler::add_property_constant(CounterNS name_space, const char* name, 
   assert(value != NULL, "property name should be valid");
   // the property value must not have changed compared to what's published
   // in System.props
-  assert(check_system_property(name, value, CHECK), "property value mustn't differ from System.getProperty");
+  assert(check_system_property(name, value), "property value mustn't differ from System.getProperty");
   if (value != NULL) {
     // create the property counter
     PerfDataManager::create_string_constant(name_space, name, value, CHECK);
