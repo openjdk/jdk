@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -106,7 +106,7 @@ public abstract class Type implements Constants {
     }
 
     /**
-     * Returns true if this type has no object representaion. Redefined in
+     * Returns true if this type has no object representation. Redefined in
      * ResultTreeType.
      */
     public boolean implementedAsMethod() {
@@ -191,7 +191,7 @@ public abstract class Type implements Constants {
     public void translateTo(ClassGenerator classGen, MethodGenerator methodGen,
                             Class<?> clazz) {
         ErrorMsg err = new ErrorMsg(ErrorMsg.DATA_CONVERSION_ERR,
-                                    toString(), clazz.getClass().toString());
+                                    toString(), clazz.toString());
         classGen.getParser().reportError(Constants.FATAL, err);
     }
 
@@ -203,7 +203,7 @@ public abstract class Type implements Constants {
     public void translateFrom(ClassGenerator classGen, MethodGenerator methodGen,
                               Class<?> clazz) {
         ErrorMsg err = new ErrorMsg(ErrorMsg.DATA_CONVERSION_ERR,
-                                    clazz.getClass().toString(), toString());
+                                    clazz.toString(), toString());
         classGen.getParser().reportError(Constants.FATAL, err);
     }
 

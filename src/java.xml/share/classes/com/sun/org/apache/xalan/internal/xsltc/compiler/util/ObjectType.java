@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -154,7 +154,7 @@ public final class ObjectType extends Type {
             methodGen.getInstructionList().append(NOP);
         else {
             ErrorMsg err = new ErrorMsg(ErrorMsg.DATA_CONVERSION_ERR,
-                               toString(), clazz.getClass().toString());
+                               toString(), clazz.toString());
             classGen.getParser().reportError(Constants.FATAL, err);
         }
     }
