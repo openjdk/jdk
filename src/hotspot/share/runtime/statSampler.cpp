@@ -232,7 +232,7 @@ static const char* stable_java_property_counters[] = {
  */
 void StatSampler::add_property_constant(CounterNS name_space, const char* name, const char* value, TRAPS) {
   // the property must exist
-  assert(value != NULL, "property name should be valid");
+  assert(value != NULL, "property name should be have a value: %s", name);
   // the property value must not have changed compared to what's published
   // in System.props
   assert_system_property(name, value, CHECK);
