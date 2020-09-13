@@ -121,6 +121,7 @@ ifneq ($(call check-jvm-feature, cds), true)
       classListParser.cpp \
       classLoaderDataShared.cpp \
       classLoaderExt.cpp \
+      cppVtables.cpp \
       dumpAllocStats.cpp \
       dynamicArchive.cpp \
       filemap.cpp \

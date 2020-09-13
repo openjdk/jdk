@@ -168,13 +168,6 @@ class MetaspaceShared : AllStatic {
 
   static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
 
-  static char* allocate_cpp_vtable_clones();
-  static void clone_cpp_vtables(intptr_t* p);
-  static void zero_cpp_vtable_clones_for_writing();
-  static void patch_cpp_vtable_pointers();
-  static void serialize_cloned_cpp_vtptrs(SerializeClosure* sc);
-
-  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 
   static MetaspaceSharedStats* stats() {
@@ -252,8 +245,6 @@ class MetaspaceShared : AllStatic {
 
   static Klass* get_relocated_klass(Klass *k, bool is_final=false);
 
-  static void allocate_cloned_cpp_vtptrs();
-  static intptr_t* get_archived_cpp_vtable(MetaspaceObj::Type msotype, address obj);
   static void initialize_ptr_marker(CHeapBitMap* ptrmap);
 
   // This is the base address as specified by -XX:SharedBaseAddress during -Xshare:dump.
