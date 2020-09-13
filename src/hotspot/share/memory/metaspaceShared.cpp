@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/classListParser.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/loaderConstraints.hpp"
@@ -40,6 +41,7 @@
 #include "logging/logMessage.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.inline.hpp"
+#include "memory/dumpAllocStats.hpp"
 #include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
@@ -87,6 +89,7 @@ void* MetaspaceShared::_shared_metaspace_static_top = NULL;
 intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
 bool MetaspaceShared::_use_optimized_module_handling = true;
+bool MetaspaceShared::_use_full_module_graph = true;
 
 // The CDS archive is divided into the following regions:
 //     mc  - misc code (the method entry trampolines, c++ vtables)
@@ -149,6 +152,10 @@ char* MetaspaceShared::misc_code_space_alloc(size_t num_bytes) {
 
 char* MetaspaceShared::read_only_space_alloc(size_t num_bytes) {
   return _ro_region.allocate(num_bytes);
+}
+
+char* MetaspaceShared::read_write_space_alloc(size_t num_bytes) {
+  return _rw_region.allocate(num_bytes);
 }
 
 size_t MetaspaceShared::reserved_space_alignment() { return os::vm_allocation_granularity(); }
@@ -499,6 +506,8 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   serialize_cloned_cpp_vtptrs(soc);
   soc->do_tag(--tag);
+
+  CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc));
 
   soc->do_tag(666);
 }
@@ -1070,10 +1079,29 @@ void VM_PopulateDumpSharedSpace::doit() {
   char* cloned_vtables = _mc_region.top();
   MetaspaceShared::allocate_cpp_vtable_clones();
 
-  _mc_region.pack(&_rw_region);
-  builder.dump_rw_region();
-  _rw_region.pack(&_ro_region);
-  builder.dump_ro_region();
+  {
+    _mc_region.pack(&_rw_region);
+    builder.dump_rw_region();
+#if INCLUDE_CDS_JAVA_HEAP
+    if (MetaspaceShared::use_full_module_graph()) {
+      // Archive the ModuleEntry's and PackageEntry's of the 3 built-in loaders
+      char* start = _rw_region.top();
+      ClassLoaderDataShared::allocate_archived_tables();
+      ArchiveBuilder::alloc_stats()->record_modules(_rw_region.top() - start, /*read_only*/false);
+    }
+#endif
+  }
+  {
+    _rw_region.pack(&_ro_region);
+    builder.dump_ro_region();
+#if INCLUDE_CDS_JAVA_HEAP
+    if (MetaspaceShared::use_full_module_graph()) {
+      char* start = _ro_region.top();
+      ClassLoaderDataShared::init_archived_tables();
+      ArchiveBuilder::alloc_stats()->record_modules(_ro_region.top() - start, /*read_only*/true);
+    }
+#endif
+  }
   builder.relocate_pointers();
 
   dump_shared_symbol_table(builder.symbols());
@@ -1365,6 +1393,12 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     // are implemented by K are not verified.
     link_and_cleanup_shared_classes(CATCH);
     log_info(cds)("Rewriting and linking classes: done");
+
+#if INCLUDE_CDS_JAVA_HEAP
+    if (use_full_module_graph()) {
+      HeapShared::reset_archived_object_states(THREAD);
+    }
+#endif
 
     VM_PopulateDumpSharedSpace op;
     MutexLocker ml(THREAD, HeapShared::is_heap_object_archiving_allowed() ?
@@ -1749,7 +1783,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           static_mapinfo->map_heap_regions();
         }
       });
-    log_info(cds)("Using optimized module handling %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
   } else {
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);
@@ -2072,6 +2107,17 @@ void MetaspaceShared::report_out_of_space(const char* name, size_t needed_bytes)
 intx MetaspaceShared::final_delta() {
   return intx(MetaspaceShared::requested_base_address())  // We want the base archive to be mapped to here at runtime
        - intx(SharedBaseAddress);                         // .. but the base archive is mapped at here at dump time
+}
+
+bool MetaspaceShared::use_full_module_graph() {
+  bool result = _use_optimized_module_handling && _use_full_module_graph &&
+    (UseSharedSpaces || DumpSharedSpaces) && HeapShared::is_heap_object_archiving_allowed();
+  if (result && UseSharedSpaces) {
+    // Classes used by the archived full module graph are loaded in JVMTI early phase.
+    assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
+           "CDS should be disabled if early class hooks are enabled");
+  }
+  return result;
 }
 
 void MetaspaceShared::print_on(outputStream* st) {

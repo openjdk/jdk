@@ -78,6 +78,7 @@ class MetaspaceShared : AllStatic {
   static intx _relocation_delta;
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
+  static bool _use_full_module_graph;
  public:
   enum {
     // core archive spaces
@@ -215,17 +216,22 @@ class MetaspaceShared : AllStatic {
   // Allocate a block of memory from the "mc" or "ro" regions.
   static char* misc_code_space_alloc(size_t num_bytes);
   static char* read_only_space_alloc(size_t num_bytes);
+  static char* read_write_space_alloc(size_t num_bytes);
 
   template <typename T>
   static Array<T>* new_ro_array(int length) {
-#if INCLUDE_CDS
     size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
     Array<T>* array = (Array<T>*)read_only_space_alloc(byte_size);
     array->initialize(length);
     return array;
-#else
-    return NULL;
-#endif
+  }
+
+  template <typename T>
+  static Array<T>* new_rw_array(int length) {
+    size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
+    Array<T>* array = (Array<T>*)read_write_space_alloc(byte_size);
+    array->initialize(length);
+    return array;
   }
 
   template <typename T>
@@ -270,8 +276,12 @@ class MetaspaceShared : AllStatic {
                                          GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps);
 
   // Can we skip some expensive operations related to modules?
-  static bool use_optimized_module_handling()     { return _use_optimized_module_handling;  }
+  static bool use_optimized_module_handling() { return NOT_CDS(false) CDS_ONLY(_use_optimized_module_handling); }
   static void disable_optimized_module_handling() { _use_optimized_module_handling = false; }
+
+  // Can we use the full archived modue graph?
+  static bool use_full_module_graph() NOT_CDS_RETURN_(false);
+  static void disable_full_module_graph() { _use_full_module_graph = false; }
 
 private:
 #if INCLUDE_CDS
