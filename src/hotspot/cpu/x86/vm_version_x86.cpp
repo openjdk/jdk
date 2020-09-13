@@ -761,6 +761,8 @@ void VM_Version::get_processor_features() {
   if (is_intel()) { // Intel cpus specific settings
     if (is_knights_family()) {
       _features &= ~CPU_VZEROUPPER;
+      _features &= ~CPU_AVX512BW;
+      _features &= ~CPU_AVX512VL;
     }
   }
 
@@ -1162,7 +1164,7 @@ void VM_Version::get_processor_features() {
 #endif // COMPILER2 && ASSERT
 
   if (!FLAG_IS_DEFAULT(AVX3Threshold)) {
-    if (!is_power_of_2(AVX3Threshold)) {
+    if (AVX3Threshold !=0 && !is_power_of_2(AVX3Threshold)) {
       warning("AVX3Threshold must be a power of 2");
       FLAG_SET_DEFAULT(AVX3Threshold, 4096);
     }
@@ -1411,6 +1413,29 @@ void VM_Version::get_processor_features() {
         MaxLoopPad = 11;
       }
 #endif // COMPILER2
+
+      if (FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) ||
+          (!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) &&
+           ArrayCopyPartialInlineSize != 0 &&
+           ArrayCopyPartialInlineSize != 32 &&
+           ArrayCopyPartialInlineSize != 64)) {
+        int pi_size = 0;
+        if (MaxVectorSize > 32 && AVX3Threshold == 0) {
+          pi_size = 64;
+        } else if (MaxVectorSize >= 32) {
+          pi_size = 32;
+        }
+        if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
+          warning("Setting ArrayCopyPartialInlineSize as %d", pi_size);
+        }
+        ArrayCopyPartialInlineSize = pi_size;
+      }
+
+      if (ArrayCopyPartialInlineSize > MaxVectorSize) {
+        ArrayCopyPartialInlineSize = MaxVectorSize;
+        warning("Setting ArrayCopyPartialInlineSize as MaxVectorSize");
+      }
+
       if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
         UseXMMForArrayCopy = true; // use SSE2 movq on new Intel cpus
       }

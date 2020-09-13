@@ -85,6 +85,7 @@ void ArrayCopyNode::connect_outputs(GraphKit* kit, bool deoptimize_on_exception)
   kit->set_all_memory_call(this);
 }
 
+
 #ifndef PRODUCT
 const char* ArrayCopyNode::_kind_names[] = {"arraycopy", "arraycopy, validated arguments", "clone", "oop array clone", "CopyOf", "CopyOfRange"};
 
@@ -670,6 +671,7 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTra
   CallNode* call = NULL;
   guarantee(c != NULL, "step_over_gc_barrier failed, there must be something to step to.");
   if (c->is_Region()) {
+    PhiNode* phi = NULL;
     for (uint i = 1; i < c->req(); i++) {
       if (c->in(i) != NULL) {
         Node* n = c->in(i)->in(0);
@@ -677,6 +679,20 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTra
           ac = call->isa_ArrayCopy();
           assert(c == mb->in(0), "only for clone");
           return true;
+        } else if (n != NULL && n->is_Region() &&
+                   (phi = n->as_Region()->has_phi()) &&
+                    phi->in(1)->Opcode() == Op_VectorMaskedStore) {
+          return true;
+        } else  {
+          for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
+            Node* phi = c->fast_out(i);
+            if (phi->is_Phi()) {
+              assert(phi->in(0) == c, "phi region validation");
+              if(phi->in(1) && phi->in(1)->Opcode() == Op_VectorMaskedStore) {
+                return true;
+              }
+            }
+          }
         }
       }
     }
@@ -733,4 +749,17 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransf
     }
   }
   return false;
+}
+
+// As an optimization, choose optimum vector size for copy length known at compile time.
+int ArrayCopyNode::get_partial_inline_vector_lane_count(BasicType type, int con_len) {
+  int lane_count = ArrayCopyPartialInlineSize/type2aelembytes(type);
+  if (con_len > 0) {
+    int size_in_bytes = con_len * type2aelembytes(type);
+    if (size_in_bytes <= 16)
+      lane_count = 16/type2aelembytes(type);
+    else if (size_in_bytes > 16 && size_in_bytes <= 32)
+      lane_count = 32/type2aelembytes(type);
+  }
+  return lane_count;
 }
