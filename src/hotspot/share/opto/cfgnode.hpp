@@ -95,7 +95,9 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const RegMask &out_RegMask() const;
+  bool is_self_loop(Node* n);
   bool try_clean_mem_phi(PhaseGVN *phase);
+  bool try_phi_disintegration(PhaseGVN *phase);
   bool optimize_trichotomy(PhaseIterGVN* igvn);
 };
 

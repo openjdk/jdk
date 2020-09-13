@@ -749,6 +749,63 @@ class StoreVectorNode : public StoreNode {
 };
 
 
+class VectorMaskedStoreNode : public StoreVectorNode {
+ public:
+  VectorMaskedStoreNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
+   : StoreVectorNode(c, mem, dst, at, src) {
+    assert(mask->bottom_type()->is_long(), "sanity");
+    init_class_id(Class_StoreVector);
+    set_mismatched_access();
+    add_req(mask);
+  }
+
+  virtual int Opcode() const;
+
+  virtual uint match_edge(uint idx) const {
+    return idx > 1;
+  }
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+  static VectorMaskedStoreNode* make(int opc, Node* ctl, Node* mem, Node* dst, Node* src,
+                                    const TypePtr* atype, Node* mask);
+};
+
+class VectorMaskedLoadNode : public LoadVectorNode {
+ public:
+  VectorMaskedLoadNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask)
+   : LoadVectorNode(c, mem, src, at, vt) {
+    assert(mask->bottom_type()->is_long(), "sanity");
+    init_class_id(Class_LoadVector);
+    set_mismatched_access();
+    add_req(mask);
+  }
+
+  virtual int Opcode() const;
+
+  virtual uint match_edge(uint idx) const {
+    return idx > 1;
+  }
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+  static VectorMaskedLoadNode* make(int opc, Node* ctl, Node* mem, Node* src,
+                                const TypePtr* atype, const TypeVect* vt,
+                                Node* mask);
+};
+
+class VectorMaskGenNode : public TypeNode {
+ public:
+  VectorMaskGenNode(Node* src, const Type* ty, const Type* ety): TypeNode(ty, 2), _elemType(ety) {
+    init_req(1, src);
+  }
+
+  virtual int Opcode() const;
+  const Type* get_elem_type()  { return _elemType;}
+
+  static VectorMaskGenNode* make(int opc, Node* src, const Type* ty, const Type* ety);
+  private:
+   const Type* _elemType;
+};
+
 //=========================Promote_Scalar_to_Vector============================
 
 //------------------------------ReplicateBNode---------------------------------

@@ -93,6 +93,7 @@ public:
   void reduceI(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
 #ifdef _LP64
   void reduceL(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
+  void genmask(Register dst, Register len, Register temp);
 #endif // _LP64
 
   // dst = reduce(op, src2) using vtmp as temps
