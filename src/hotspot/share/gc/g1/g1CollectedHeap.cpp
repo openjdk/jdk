@@ -750,7 +750,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
   HeapWord* prev_last_addr = NULL;
   HeapRegion* prev_last_region = NULL;
   size_t size_used = 0;
-  size_t uncommitted_regions = 0;
+  size_t shrink_count = 0;
 
   // For each Memregion, free the G1 regions that constitute it, and
   // notify mark-sweep that the range is no longer to be considered 'archive.'
@@ -800,16 +800,16 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
         curr_region = NULL;
       }
       _hrm->shrink_at(curr_index, 1);
-      uncommitted_regions++;
+      shrink_count++;
     }
 
     // Notify mark-sweep that this is no longer an archive range.
     G1ArchiveAllocator::clear_range_archive(ranges[i]);
   }
 
-  if (uncommitted_regions != 0) {
-    log_debug(gc, ergo, heap)("Attempt heap shrinking (uncommitted archive regions). Total size: " SIZE_FORMAT "B",
-                              HeapRegion::GrainWords * HeapWordSize * uncommitted_regions);
+  if (shrink_count != 0) {
+    log_debug(gc, ergo, heap)("Attempt heap shrinking (archive regions). Total size: " SIZE_FORMAT "B",
+                              HeapRegion::GrainWords * HeapWordSize * shrink_count);
   }
   decrease_used(size_used);
 }

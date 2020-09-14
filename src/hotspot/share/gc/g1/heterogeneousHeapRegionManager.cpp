@@ -190,7 +190,7 @@ uint HeterogeneousHeapRegionManager::expand_in_range(uint start, uint end, uint 
   while (so_far < num_regions &&
          (num_last_found = find_unavailable_in_range(start, end, &chunk_start)) > 0) {
     uint to_commit = MIN2(num_regions - so_far, num_last_found);
-    make_regions_available(chunk_start, to_commit, pretouch_gang);
+    expand(chunk_start, to_commit, pretouch_gang);
     so_far += to_commit;
     start = chunk_start + to_commit + 1;
   }
@@ -223,6 +223,7 @@ uint HeterogeneousHeapRegionManager::shrink_in_range(uint start, uint end, uint 
     if(update_free_list) {
       _free_list.remove_starting_at(at(idx_last_found + num_last_found - to_uncommit), to_uncommit);
     }
+    deactivate_regions(idx_last_found + num_last_found - to_uncommit, to_uncommit);
     uncommit_regions(idx_last_found + num_last_found - to_uncommit, to_uncommit);
     so_far += to_uncommit;
     end = idx_last_found;
@@ -497,6 +498,7 @@ void HeterogeneousHeapRegionManager::prepare_for_full_collection_end() {
   while (so_far < shrink_size &&
          (num_last_found = find_empty_in_range_reverse(0, end, &idx_last_found)) > 0) {
     uint to_uncommit = MIN2(shrink_size - so_far, num_last_found);
+    deactivate_regions(idx_last_found + num_last_found - to_uncommit, to_uncommit);
     uncommit_regions(idx_last_found + num_last_found - to_uncommit, to_uncommit);
     so_far += to_uncommit;
     end = idx_last_found;

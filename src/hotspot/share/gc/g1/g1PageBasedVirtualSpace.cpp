@@ -193,7 +193,9 @@ void G1PageBasedVirtualSpace::pretouch_internal(size_t start_page, size_t end_pa
 
 bool G1PageBasedVirtualSpace::commit(size_t start_page, size_t size_in_pages) {
   // We need to make sure to commit all pages covered by the given area.
-  guarantee(is_area_uncommitted(start_page, size_in_pages), "Specified area is not uncommitted");
+  guarantee(is_area_uncommitted(start_page, size_in_pages),
+            "Specified area is not uncommitted, start page: " SIZE_FORMAT ", page count: " SIZE_FORMAT,
+            start_page, size_in_pages);
 
   bool zero_filled = true;
   size_t end_page = start_page + size_in_pages;

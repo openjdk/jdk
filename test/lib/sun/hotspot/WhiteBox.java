@@ -163,6 +163,7 @@ public class WhiteBox {
 
   // G1
   public native boolean g1InConcurrentMark();
+  public native boolean g1HasRegionsToUncommit();
   private native boolean g1IsHumongous0(Object o);
   public         boolean g1IsHumongous(Object o) {
     Objects.requireNonNull(o);

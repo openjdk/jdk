@@ -54,6 +54,13 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
   MemTracker::record_virtual_memory_type((address)rs.base(), type);
 }
 
+// Used to manually signal a mapper to handle a set of regions as committed.
+// Setting the 'zero_filled' parameter to false signals the mapper that the
+// regions have not been cleared by the OS.
+void G1RegionToSpaceMapper::signal_mapping_changed(uint start_idx, size_t num_regions) {
+  fire_on_commit(start_idx, num_regions, false);
+}
+
 // G1RegionToSpaceMapper implementation where the region granularity is larger than
 // or the same as the commit granularity.
 // Basically, the space corresponding to one region region spans several OS pages.
