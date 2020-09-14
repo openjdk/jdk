@@ -201,13 +201,19 @@ private:
   // Calculate and return the minimum desired eden length based on the MMU target.
   uint calculate_desired_eden_length_by_mmu() const;
 
-  // Calculate and return the desired eden length that can fit into the pause time goal.
+  // Calculate the desired eden length meeting the pause time goal.
   // The parameters are: rs_length represents the prediction of how large the
   // young RSet lengths will be, min_eden_length and max_eden_length are the bounds
   // (inclusive) within eden can grow.
   uint calculate_desired_eden_length_by_pause(double base_time_ms,
                                               uint min_eden_length,
                                               uint max_eden_length) const;
+
+  // Calculate the desired eden length that can fit into the pause time
+  // goal before young only gcs.
+  uint calculate_desired_eden_length_before_young_only(double base_time_ms,
+                                                       uint min_eden_length,
+                                                       uint max_eden_length) const;
 
   // Calculates the desired eden length before mixed gc so that after adding the
   // minimum amount of old gen regions from the collection set, the eden fits into

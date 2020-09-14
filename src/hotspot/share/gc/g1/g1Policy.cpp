@@ -226,7 +226,7 @@ void G1Policy::update_young_length_bounds(size_t rs_length) {
 // We may enter with already allocated eden and survivor regions, that may be
 // higher than the maximum, or the above goals may result in a desired value
 // smaller than are already allocated.
-// The main reason is revising young length, with our without the GCLocker being
+// The main reason is revising young length, with or without the GCLocker being
 // active.
 //
 uint G1Policy::calculate_young_desired_length(size_t rs_length) const {
@@ -250,7 +250,7 @@ uint G1Policy::calculate_young_desired_length(size_t rs_length) const {
   const uint allocated_young_length = _g1h->young_regions_count();
   // This is the absolute minimum young length that we can return. Ensure that we
   // don't go below any user-defined minimum bound; but we might have already
-  // allocated more than that for reasons. In this case, use that.
+  // allocated more than that for various reasons. In this case, use that.
   uint absolute_min_young_length = MAX2(allocated_young_length, min_young_length_by_sizer);
   // Calculate the absolute max bounds. After evac failure or when revising the
   // young length we might have exceeded absolute min length or absolute_max_length,
@@ -259,7 +259,6 @@ uint G1Policy::calculate_young_desired_length(size_t rs_length) const {
 
   uint desired_eden_length_by_mmu = 0;
   uint desired_eden_length_by_pause = 0;
-  uint desired_eden_length_before_mixed = 0;
 
   uint desired_young_length = 0;
   if (use_adaptive_young_list_length()) {
@@ -268,28 +267,17 @@ uint G1Policy::calculate_young_desired_length(size_t rs_length) const {
     const size_t pending_cards = _analytics->predict_pending_cards();
     double survivor_base_time_ms = predict_base_elapsed_time_ms(pending_cards, rs_length);
 
-    if (!next_gc_should_be_mixed(NULL, NULL)) {
-      desired_eden_length_by_pause =
-        calculate_desired_eden_length_by_pause(survivor_base_time_ms,
-                                               absolute_min_young_length - survivor_length,
-                                               absolute_max_young_length - survivor_length);
-    } else {
-      desired_eden_length_before_mixed =
-        calculate_desired_eden_length_before_mixed(survivor_base_time_ms,
-                                                   absolute_min_young_length - survivor_length,
-                                                   absolute_max_young_length - survivor_length);
-    }
-    // Above either sets desired_eden_length_by_pause or desired_eden_length_before_mixed,
-    // the other is zero. Use the one that has been set below.
-    uint desired_eden_length = MAX2(desired_eden_length_by_pause,
-                                    desired_eden_length_before_mixed);
+    desired_eden_length_by_pause =
+      calculate_desired_eden_length_by_pause(survivor_base_time_ms,
+                                             absolute_min_young_length - survivor_length,
+                                             absolute_max_young_length - survivor_length);
 
-    // Finally incorporate MMU concerns; assume that it overrides the pause time
+    // Incorporate MMU concerns; assume that it overrides the pause time
     // goal, as the default value has been chosen to effectively disable it.
     // Also request at least one eden region, see above for reasons.
-    desired_eden_length = MAX3(desired_eden_length,
-                               desired_eden_length_by_mmu,
-                               MinDesiredEdenLength);
+    uint desired_eden_length = MAX3(desired_eden_length_by_pause,
+                                    desired_eden_length_by_mmu,
+                                    MinDesiredEdenLength);
 
     desired_young_length = desired_eden_length + survivor_length;
   } else {
@@ -307,13 +295,11 @@ uint G1Policy::calculate_young_desired_length(size_t rs_length) const {
                             "absolute max young length %u "
                             "desired eden length by mmu %u "
                             "desired eden length by pause %u "
-                            "desired eden length before mixed %u"
                             "desired eden length by default %u",
                             desired_young_length, survivor_length,
                             allocated_young_length, absolute_min_young_length,
                             absolute_max_young_length, desired_eden_length_by_mmu,
                             desired_eden_length_by_pause,
-                            desired_eden_length_before_mixed,
                             MinDesiredEdenLength);
 
   assert(desired_young_length >= allocated_young_length, "must be");
@@ -414,6 +400,21 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
 uint G1Policy::calculate_desired_eden_length_by_pause(double base_time_ms,
                                                       uint min_eden_length,
                                                       uint max_eden_length) const {
+  if (!next_gc_should_be_mixed(NULL, NULL)) {
+    return calculate_desired_eden_length_before_young_only(base_time_ms,
+                                                           min_eden_length,
+                                                           max_eden_length);
+  } else {
+    return calculate_desired_eden_length_before_mixed(base_time_ms,
+                                                      min_eden_length,
+                                                      max_eden_length);
+  }
+}
+
+
+uint G1Policy::calculate_desired_eden_length_before_young_only(double base_time_ms,
+                                                               uint min_eden_length,
+                                                               uint max_eden_length) const {
   assert(use_adaptive_young_list_length(), "pre-condition");
 
   assert(min_eden_length <= max_eden_length, "must be %u %u", min_eden_length, max_eden_length);
@@ -496,9 +497,9 @@ uint G1Policy::calculate_desired_eden_length_before_mixed(double survivor_base_t
     predicted_region_evac_time_ms += predict_region_total_time_ms(r, false);
   }
   uint desired_eden_length_by_min_cset_length =
-     calculate_desired_eden_length_by_pause(predicted_region_evac_time_ms,
-                                            min_eden_length,
-                                            max_eden_length);
+     calculate_desired_eden_length_before_young_only(predicted_region_evac_time_ms,
+                                                     min_eden_length,
+                                                     max_eden_length);
 
   return desired_eden_length_by_min_cset_length;
 }
@@ -1110,11 +1111,9 @@ uint G1Policy::calculate_young_max_length(uint target_young_length) const {
     // We use ceiling so that if expansion_region_num_d is > 0.0 (but
     // less than 1.0) we'll get 1.
     expansion_region_num = (uint) ceil(expansion_region_num_d);
-  } else {
-    assert(expansion_region_num == 0, "sanity");
   }
   uint max_length = target_young_length + expansion_region_num;
-  assert(target_young_length <= max_length, "post-condition");
+  assert(target_young_length <= max_length, "overflow");
   return max_length;
 }
 
@@ -1363,14 +1362,22 @@ bool G1Policy::next_gc_should_be_mixed(const char* true_action_str,
   double threshold = (double) G1HeapWastePercent;
   if (reclaimable_percent <= threshold) {
     if (false_action_str != NULL) {
-      log_debug(gc, ergo)("%s (reclaimable percentage not over threshold). candidate old regions: %u reclaimable: " SIZE_FORMAT " (%1.2f) threshold: " UINTX_FORMAT,
-                          false_action_str, candidates->num_remaining(), reclaimable_bytes, reclaimable_percent, G1HeapWastePercent);
+      log_debug(gc, ergo)("%s (reclaimable percentage below threshold). "
+                          "candidate old regions: %u reclaimable: " SIZE_FORMAT " (%1.2f) "
+                          "threshold: " UINTX_FORMAT,
+                          false_action_str,
+                          candidates->num_remaining(), reclaimable_bytes, reclaimable_percent,
+                          G1HeapWastePercent);
     }
     return false;
   }
   if (true_action_str != NULL) {
-    log_debug(gc, ergo)("%s (candidate old regions available). candidate old regions: %u reclaimable: " SIZE_FORMAT " (%1.2f) threshold: " UINTX_FORMAT,
-                        true_action_str, candidates->num_remaining(), reclaimable_bytes, reclaimable_percent, G1HeapWastePercent);
+    log_debug(gc, ergo)("%s (candidate old regions available). "
+                        "candidate old regions: %u reclaimable: " SIZE_FORMAT " (%1.2f) "
+                        "threshold: " UINTX_FORMAT,
+                        true_action_str,
+                        candidates->num_remaining(), reclaimable_bytes, reclaimable_percent,
+                        G1HeapWastePercent);
   }
   return true;
 }
