@@ -72,7 +72,7 @@ public class TestBoxFiller
                 frame.setVisible(true);
                 tf1.requestFocusInWindow();
 	    });
-	    robot.waitForIdle();
+            robot.waitForIdle();
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
 	} finally {
