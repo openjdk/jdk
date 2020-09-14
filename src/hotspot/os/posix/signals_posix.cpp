@@ -701,7 +701,7 @@ void* os::signal(int signal_number, void* handler) {
   struct sigaction sigAct, oldSigAct;
 
   sigfillset(&(sigAct.sa_mask));
-  
+
 #if defined(AIX)
   // Do not block out synchronous signals in the signal handler.
   // Blocking synchronous signals only makes sense if you can really
@@ -718,7 +718,7 @@ void* os::signal(int signal_number, void* handler) {
   sigdelset(&(sigAct.sa_mask), SIGFPE);
   sigdelset(&(sigAct.sa_mask), SIGTRAP);
 #endif
-  
+
   sigAct.sa_flags   = SA_RESTART|SA_SIGINFO;
   sigAct.sa_handler = CAST_TO_FN_PTR(sa_handler_t, handler);
 
@@ -1143,7 +1143,7 @@ bool PosixSignals::are_signal_handlers_installed() {
 void PosixSignals::install_signal_handlers() {
   if (!signal_handlers_are_installed) {
     signal_handlers_are_installed = true;
-    
+
     // signal-chaining
     typedef void (*signal_setting_t)();
     signal_setting_t begin_signal_setting = NULL;
@@ -1500,7 +1500,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
     if (state == os::SuspendResume::SR_SUSPENDED) {
       sigset_t suspend_set;  // signals for sigsuspend()
       sigemptyset(&suspend_set);
-      
+
       // get current set of blocked signals and unblock resume signal
       pthread_sigmask(SIG_BLOCK, NULL, &suspend_set);
       sigdelset(&suspend_set, SR_signum);

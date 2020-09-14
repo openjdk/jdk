@@ -37,7 +37,7 @@ static int SR_signum = SIGUSR2;
 class PosixSignals : public AllStatic {
 
 public:
-  
+
   static bool are_signal_handlers_installed();
   static void install_signal_handlers();
 
@@ -53,7 +53,7 @@ public:
   static address ucontext_get_pc(const ucontext_t* ctx);
   // Set PC into context. Needed for continuation after signal.
   static void ucontext_set_pc(ucontext_t* ctx, address pc);
-  
+
   // Suspend-resume
   static int SR_initialize();
   static bool do_suspend(OSThread* osthread);
@@ -61,7 +61,7 @@ public:
 
   // For signal-chaining
   static bool chained_handler(int sig, siginfo_t* siginfo, void* context);
-  
+
   // sun.misc.Signal support
   static void jdk_misc_signal_init();
 };
