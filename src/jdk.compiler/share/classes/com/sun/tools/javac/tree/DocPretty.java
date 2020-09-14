@@ -494,7 +494,6 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
                 print(" ");
                 print(attrs, " ");
                 DocTree last = node.getAttributes().get(attrs.size() - 1);
-                assert last instanceof AttributeTree : (last.getKind() + ", " + last.getClass());
                 if (node.isSelfClosing() && last instanceof AttributeTree
                         && ((AttributeTree) last).getValueKind() == ValueKind.UNQUOTED)
                     print(" ");

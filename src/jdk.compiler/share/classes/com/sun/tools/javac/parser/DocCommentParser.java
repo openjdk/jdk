@@ -287,7 +287,6 @@ public class DocCommentParser {
     }
 
     protected void inlineTag(ListBuffer<DCTree> list) {
-        assert buf[bp] == '{' : buf[bp];
         newline = false;
         nextChar();
         if (ch == '@') {
@@ -309,7 +308,6 @@ public class DocCommentParser {
      * Malformed tags may be returned as {@link ErroneousTree}.
      */
     protected DCTree inlineTag() {
-        assert buf[bp] == '@' : buf[bp];
         int p = bp - 1;
         try {
             nextChar();
@@ -334,7 +332,6 @@ public class DocCommentParser {
                             return tree.setEndPos(bp);
                         }
                     } else { // handle block tags (for example, @see) in inline content
-                        assert tp.getKind() == TagParser.Kind.BLOCK : tp.getKind();
                         inlineText(WhitespaceRetentionPolicy.REMOVE_ALL); // skip content
                         nextChar();
                     }
