@@ -47,14 +47,17 @@ import sun.security.jca.JCAUtil;
  * Standards and Technology (NIST), using SHA digest algorithms
  * from FIPS180-3.
  *
- * This file contains both the signature implementation for the
- * commonly used SHA1withDSA (DSS), SHA224withDSA, SHA256withDSA,
- * SHA384withDSA, SHA512withDSA, SHA3-224withDSA, SHA3-256withDSA,
- * SHA3-384withDSA, SHA3-512withDSA, as well as RawDSA, used by
- * TLS among others. RawDSA expects the 20 byte SHA-1 digest as
- * input via update rather than the original data like other signature
- * implementations.
+ * This file contains the signature implementation for the
+ * SHA1withDSA (DSS), SHA224withDSA, SHA256withDSA, SHA384withDSA,
+ * SHA512withDSA, SHA3-224withDSA, SHA3-256withDSA, SHA3-384withDSA,
+ * SHA3-512withDSA, as well as RawDSA, used by TLS among others.
+ * RawDSA expects the 20 byte SHA-1 digest as input via update rather
+ * than the original data like other signature implementations.
  *
+ * In addition, IEEE P1363 signature format is supported. The
+ * corresponding implementation is registered under <sig>inP1363Format,
+ * e.g. SHA256withDSAinP1363Format.
+ * 
  * @author Benjamin Renaud
  *
  * @since   1.1
@@ -506,44 +509,72 @@ abstract class DSA extends SignatureSpi {
         return printable;
     }
 
+    /**
+     * SHA3-224withDSA implementation.
+     */
     public static final class SHA3_224withDSA extends DSA {
         public SHA3_224withDSA() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA3-224"));
         }
     }
+    
+    /**
+     * SHA3-224withDSA implementation that uses the IEEE P1363 format.
+     */
     public static final class SHA3_224withDSAinP1363Format extends DSA {
         public SHA3_224withDSAinP1363Format() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA3-224"), true);
         }
     }
 
+    /**
+     * Standard SHA3-256withDSA implementation.
+     */
     public static final class SHA3_256withDSA extends DSA {
         public SHA3_256withDSA() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA3-256"));
         }
     }
+    
+    /**
+     * Standard SHA3-256withDSA implementation that uses the IEEE P1363 format.
+     */
     public static final class SHA3_256withDSAinP1363Format extends DSA {
         public SHA3_256withDSAinP1363Format() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA3-256"), true);
         }
     }
 
+    /**
+     * Standard SHA3-384withDSA implementation.
+     */
     public static final class SHA3_384withDSA extends DSA {
         public SHA3_384withDSA() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA3-384"));
         }
     }
+    
+    /**
+     * Standard SHA3-384withDSA implementation that uses the IEEE P1363 format.
+     */
     public static final class SHA3_384withDSAinP1363Format extends DSA {
         public SHA3_384withDSAinP1363Format() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA3-384"), true);
         }
     }
 
+    /**
+     * Standard SHA3-512withDSA implementation.
+     */
     public static final class SHA3_512withDSA extends DSA {
         public SHA3_512withDSA() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA3-512"));
         }
     }
+    
+    /**
+     * Standard SHA3-512withDSA implementation that uses the IEEE P1363 format.
+     */
     public static final class SHA3_512withDSAinP1363Format extends DSA {
         public SHA3_512withDSAinP1363Format() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA3-512"), true);
