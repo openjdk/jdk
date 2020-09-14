@@ -1040,13 +1040,12 @@ bool os::create_attached_thread(JavaThread* thread) {
     // enabling yellow zone first will crash JVM on SuSE Linux), so there
     // is no gap between the last two virtual memory regions.
 
-    JavaThread *jt = (JavaThread *)thread;
-    address addr = jt->stack_reserved_zone_base();
+    address addr = thread->stack_reserved_zone_base();
     assert(addr != NULL, "initialization problem?");
-    assert(jt->stack_available(addr) > 0, "stack guard should not be enabled");
+    assert(thread->stack_available(addr) > 0, "stack guard should not be enabled");
 
     osthread->set_expanding_stack();
-    os::Linux::manually_expand_stack(jt, addr);
+    os::Linux::manually_expand_stack(thread, addr);
     osthread->clear_expanding_stack();
   }
 
@@ -1781,7 +1780,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
                 "'execstack -c <libfile>', or link it with '-z noexecstack'.",
                 filename);
 
-        assert(Thread::current()->is_Java_thread(), "must be Java thread");
         JavaThread *jt = JavaThread::current();
         if (jt->thread_state() != _thread_in_native) {
           // This happens when a compiler thread tries to load a hsdis-<arch>.so file

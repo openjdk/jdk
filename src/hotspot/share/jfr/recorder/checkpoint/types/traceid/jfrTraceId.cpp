@@ -154,7 +154,7 @@ traceid JfrTraceId::assign_thread_id() {
 
 traceid JfrTraceId::load_raw(jclass jc) {
   assert(jc != NULL, "invariant");
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_vm, "invariant");
+  assert(JavaThread::current()->thread_state() == _thread_in_vm, "invariant");
   const oop my_oop = JNIHandles::resolve(jc);
   assert(my_oop != NULL, "invariant");
   return load_raw(java_lang_Class::as_Klass(my_oop));
@@ -190,7 +190,7 @@ void JfrTraceId::restore(const Klass* k) {
 
 bool JfrTraceId::in_visible_set(const jclass jc) {
   assert(jc != NULL, "invariant");
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_vm, "invariant");
+  assert(JavaThread::current()->thread_state() == _thread_in_vm, "invariant");
   const oop mirror = JNIHandles::resolve(jc);
   assert(mirror != NULL, "invariant");
   return in_visible_set(java_lang_Class::as_Klass(mirror));

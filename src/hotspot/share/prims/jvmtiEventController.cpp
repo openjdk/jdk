@@ -198,7 +198,7 @@ class EnterInterpOnlyModeClosure : public HandshakeClosure {
 public:
   EnterInterpOnlyModeClosure() : HandshakeClosure("EnterInterpOnlyMode") { }
   void do_thread(Thread* th) {
-    JavaThread* jt = (JavaThread*) th;
+    JavaThread* jt = th->as_Java_thread();
     JvmtiThreadState* state = jt->jvmti_thread_state();
 
     // Set up the current stack depth for later tracking
@@ -331,8 +331,7 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
   EC_TRACE(("[%s] # Entering interpreter only mode",
             JvmtiTrace::safe_get_thread_name(state->get_thread())));
   EnterInterpOnlyModeClosure hs;
-  assert(state->get_thread()->is_Java_thread(), "just checking");
-  JavaThread *target = (JavaThread *)state->get_thread();
+  JavaThread *target = state->get_thread();
   Thread *current = Thread::current();
   if (target == current || target->active_handshaker() == current) {
     hs.do_thread(target);
@@ -645,7 +644,6 @@ JvmtiEventControllerPrivate::recompute_enabled() {
 
 void
 JvmtiEventControllerPrivate::thread_started(JavaThread *thread) {
-  assert(thread->is_Java_thread(), "Must be JavaThread");
   assert(thread == Thread::current(), "must be current thread");
   assert(JvmtiEnvBase::environments_might_exist(), "to enter event controller, JVM TI environments must exist");
 

@@ -985,9 +985,6 @@ void ADLParser::frame_parse(void) {
             parse_err(SYNERR, "missing identifier inside frame block.\n");
             return;
       }
-      if (strcmp(token,"stack_direction")==0) {
-        stack_dir_parse(frame);
-      }
       if (strcmp(token,"sync_stack_slots")==0) {
         sync_stack_slots_parse(frame);
       }
@@ -1107,21 +1104,6 @@ void ADLParser::frame_parse(void) {
   // Create the EncodeForm for the architecture description.
   _AD.addForm(frame);
   // skipws();
-}
-
-//------------------------------stack_dir_parse--------------------------------
-void ADLParser::stack_dir_parse(FrameForm *frame) {
-  char *direction = parse_one_arg("stack direction entry");
-  if (strcmp(direction, "TOWARDS_LOW") == 0) {
-    frame->_direction = false;
-  }
-  else if (strcmp(direction, "TOWARDS_HIGH") == 0) {
-    frame->_direction = true;
-  }
-  else {
-    parse_err(SYNERR, "invalid value inside stack direction entry.\n");
-    return;
-  }
 }
 
 //------------------------------sync_stack_slots_parse-------------------------

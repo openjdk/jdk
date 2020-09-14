@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,12 @@ static void buffer_concat(char* buffer, const char* src) {
 }
 
 static void print_flag_error_message_bounds(const JVMFlag* flag, char* buffer) {
-  JVMFlagRange* range = JVMFlagRangeList::find(flag);
-  if (range != NULL) {
+  JVMFlagRangeChecker range = JVMFlagRangeList::find(flag);
+  if (range.exists()) {
     buffer_concat(buffer, "must have value in range ");
 
     stringStream stream;
-    range->print(&stream);
+    range.print(&stream);
     const char* range_string = stream.as_string();
     size_t j = strlen(buffer);
     for (size_t i=0; j<TEMP_BUF_SIZE-1; i++) {

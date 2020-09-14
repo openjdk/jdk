@@ -104,8 +104,7 @@ public class BuiltinClassLoader
     private final BuiltinClassLoader parent;
 
     // the URL class path, or null if there is no class path
-    private final URLClassPath ucp;
-
+    private @Stable URLClassPath ucp;
 
     /**
      * A module defined/loaded by a built-in class loader.
@@ -156,10 +155,26 @@ public class BuiltinClassLoader
         }
     }
 
-
     // maps package name to loaded module for modules in the boot layer
-    private static final Map<String, LoadedModule> packageToModule
-        = new ConcurrentHashMap<>(1024);
+    private static final Map<String, LoadedModule> packageToModule;
+    static {
+        ArchivedClassLoaders archivedClassLoaders = ArchivedClassLoaders.get();
+        if (archivedClassLoaders != null) {
+            @SuppressWarnings("unchecked")
+            Map<String, LoadedModule> map
+                = (Map<String, LoadedModule>) archivedClassLoaders.packageToModule();
+            packageToModule = map;
+        } else {
+            packageToModule = new ConcurrentHashMap<>(1024);
+        }
+    }
+
+    /**
+     * Invoked by ArchivedClassLoaders to archive the package-to-module map.
+     */
+    static Map<String, ?> packageToModule() {
+        return packageToModule;
+    }
 
     // maps a module name to a module reference
     private final Map<String, ModuleReference> nameToModule;
@@ -183,6 +198,21 @@ public class BuiltinClassLoader
 
         this.nameToModule = new ConcurrentHashMap<>(32);
         this.moduleToReader = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * Appends to the given file path to the class path.
+     */
+    void appendClassPath(String path) {
+        // assert ucp != null;
+        ucp.addFile(path);
+    }
+
+    /**
+     * Sets the class path, called to reset the class path during -Xshare:dump
+     */
+    void setClassPath(URLClassPath ucp) {
+        this.ucp = ucp;
     }
 
     /**
@@ -1041,5 +1071,10 @@ public class BuiltinClassLoader
      */
     private static URL checkURL(URL url) {
         return URLClassPath.checkURL(url);
+    }
+
+    // Called from VM only, during -Xshare:dump
+    private void resetArchivedStates() {
+        ucp = null;
     }
 }

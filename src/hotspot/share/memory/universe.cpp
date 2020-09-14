@@ -141,9 +141,6 @@ bool            Universe::_bootstrapping = false;
 bool            Universe::_module_initialized = false;
 bool            Universe::_fully_initialized = false;
 
-size_t          Universe::_heap_capacity_at_last_gc;
-size_t          Universe::_heap_used_at_last_gc = 0;
-
 OopStorage*     Universe::_vm_weak = NULL;
 OopStorage*     Universe::_vm_global = NULL;
 
@@ -865,14 +862,6 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   return ReservedHeapSpace(0, 0, false);
 }
 
-
-// It's the caller's responsibility to ensure glitch-freedom
-// (if required).
-void Universe::update_heap_info_at_gc() {
-  _heap_capacity_at_last_gc = heap()->capacity();
-  _heap_used_at_last_gc     = heap()->used();
-}
-
 OopStorage* Universe::vm_weak() {
   return Universe::_vm_weak;
 }
@@ -1008,7 +997,7 @@ bool universe_post_init() {
   // it's an input to soft ref clearing policy.
   {
     MutexLocker x(THREAD, Heap_lock);
-    Universe::update_heap_info_at_gc();
+    Universe::heap()->update_capacity_and_used_at_gc();
   }
 
   // ("weak") refs processing infrastructure initialization
