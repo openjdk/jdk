@@ -58,7 +58,7 @@ class JVMFlagLookup {
   static constexpr u2 hash_code(const char* s, size_t len) {
     u2 h = 0;
     while (len -- > 0) {
-      h = (u2)(h*31 + (u2) *s);
+      h = (u2)(31*h + (u2) *s);
       s++;
     }
     return h;
