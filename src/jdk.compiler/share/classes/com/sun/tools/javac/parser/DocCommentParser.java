@@ -248,7 +248,7 @@ public class DocCommentParser {
      */
     protected List<DCTree> blockTags() {
         ListBuffer<DCTree> tags = new ListBuffer<>();
-        while (ch == '@')
+        while (bp < buflen && ch == '@')
             tags.add(blockTag());
         return tags.toList();
     }
@@ -354,7 +354,7 @@ public class DocCommentParser {
      * Matching pairs of { } are skipped; the text is terminated by the first
      * unmatched }. It is an error if the beginning of the next tag is detected.
      */
-    private DCTree inlineText(WhitespaceRetentionPolicy whitespacePolicy) throws ParseException {
+    private DCText inlineText(WhitespaceRetentionPolicy whitespacePolicy) throws ParseException {
         switch (whitespacePolicy) {
             case REMOVE_ALL:
                 skipWhitespace();
@@ -663,14 +663,14 @@ public class DocCommentParser {
             nextChar();
             if (isDecimalDigit(ch)) {
                 nextChar();
-                while (isDecimalDigit(ch))
+                while (bp < buflen && isDecimalDigit(ch))
                     nextChar();
                 name = names.fromChars(buf, namep, bp - namep);
             } else if (ch == 'x' || ch == 'X') {
                 nextChar();
                 if (isHexDigit(ch)) {
                     nextChar();
-                    while (isHexDigit(ch))
+                    while (bp < buflen && isHexDigit(ch))
                         nextChar();
                     name = names.fromChars(buf, namep, bp - namep);
                 }
@@ -843,7 +843,7 @@ public class DocCommentParser {
                     nextChar();
                     while (bp < buflen) {
                         int dash = 0;
-                        while (ch == '-') {
+                        while (bp < buflen && ch == '-') {
                             dash++;
                             nextChar();
                         }
@@ -890,7 +890,7 @@ public class DocCommentParser {
         skipWhitespace();
 
         loop:
-        while (isIdentifierStart(ch)) {
+        while (bp < buflen && isIdentifierStart(ch)) {
             int namePos = bp;
             Name name = readAttributeName();
             skipWhitespace();
@@ -1057,7 +1057,7 @@ public class DocCommentParser {
     }
 
     protected void skipWhitespace() {
-        while (isWhitespace(ch)) {
+        while (bp < buflen && isWhitespace(ch)) {
             nextChar();
         }
     }
@@ -1118,9 +1118,9 @@ public class DocCommentParser {
             new TagParser(TagParser.Kind.INLINE, DCTree.Kind.CODE, true) {
                 @Override
                 public DCTree parse(int pos) throws ParseException {
-                    DCTree text = inlineText(WhitespaceRetentionPolicy.REMOVE_FIRST_SPACE);
+                    DCText text = inlineText(WhitespaceRetentionPolicy.REMOVE_FIRST_SPACE);
                     nextChar();
-                    return m.at(pos).newCodeTree((DCText) text);
+                    return m.at(pos).newCodeTree(text);
                 }
             },
 
@@ -1228,9 +1228,9 @@ public class DocCommentParser {
             new TagParser(TagParser.Kind.INLINE, DCTree.Kind.LITERAL, true) {
                 @Override
                 public DCTree parse(int pos) throws ParseException {
-                    DCTree text = inlineText(WhitespaceRetentionPolicy.REMOVE_FIRST_SPACE);
+                    DCText text = inlineText(WhitespaceRetentionPolicy.REMOVE_FIRST_SPACE);
                     nextChar();
-                    return m.at(pos).newLiteralTree((DCText) text);
+                    return m.at(pos).newLiteralTree(text);
                 }
             },
 
