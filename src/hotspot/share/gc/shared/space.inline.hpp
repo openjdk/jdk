@@ -171,9 +171,6 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
       cur_obj += size;
       end_of_live = cur_obj;
     } else {
-      assert(!space->scanned_block_is_obj(cur_obj) || oop(cur_obj)->mark_raw().is_unlocked() ||
-             oop(cur_obj)->mark_raw().has_bias_pattern() || oop(cur_obj)->mark_raw().has_monitor(),
-             "these are the only valid states during a mark sweep");
       // run over all the contiguous dead objects
       HeapWord* end = cur_obj;
       do {
