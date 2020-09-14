@@ -273,6 +273,13 @@ For rpm-based distributions (Fedora, Red Hat, etc), try this:
 sudo yum groupinstall "Development Tools"
 ```
 
+For Alpine Linux, aside from basic tooling, install the GNU versions of some
+programs:
+
+```
+sudo apk add build-base bash grep zip
+```
+
 ### AIX
 
 Please consult the AIX section of the [Supported Build Platforms](
@@ -431,6 +438,7 @@ rather than bundling the JDK's own copy.
     libfreetype6-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     freetype-devel`.
+  * To install on Alpine Linux, try running `sudo apk add freetype-dev`.
 
 Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
 if `configure` does not automatically locate the platform FreeType files.
@@ -445,6 +453,7 @@ your operating system.
     libcups2-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     cups-devel`.
+  * To install on Alpine Linux, try running `sudo apk add cups-dev`.
 
 Use `--with-cups=<path>` if `configure` does not properly locate your CUPS
 files.
@@ -458,6 +467,8 @@ Linux.
     libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel`.
+  * To install on Alpine Linux, try running `sudo apk add libx11-dev
+    libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev`.
 
 Use `--with-x=<path>` if `configure` does not properly locate your X11 files.
 
@@ -470,6 +481,7 @@ required on Linux. At least version 0.9.1 of ALSA is required.
     libasound2-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     alsa-lib-devel`.
+  * To install on Alpine Linux, try running `sudo apk add alsa-lib-dev`.
 
 Use `--with-alsa=<path>` if `configure` does not properly locate your ALSA
 files.
@@ -484,6 +496,7 @@ Hotspot.
     libffi-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     libffi-devel`.
+  * To install on Alpine Linux, try running `sudo apk add libffi-dev`.
 
 Use `--with-libffi=<path>` if `configure` does not properly locate your libffi
 files.
@@ -499,6 +512,7 @@ platforms. At least version 2.69 is required.
     autoconf`.
   * To install on an rpm-based Linux, try running `sudo yum install
     autoconf`.
+  * To install on Alpine Linux, try running `sudo apk add autoconf`.
   * To install on macOS, try running `brew install autoconf`.
   * To install on Windows, try running `<path to Cygwin setup>/setup-x86_64 -q
     -P autoconf`.
@@ -1112,6 +1126,25 @@ useful to set the ABI profile. A number of pre-defined ABI profiles are
 available using `--with-abi-profile`: arm-vfp-sflt, arm-vfp-hflt, arm-sflt,
 armv5-vfp-sflt, armv6-vfp-hflt. Note that soft-float ABIs are no longer
 properly supported by the JDK.
+
+### Building for musl
+
+Just like it's possible to cross-compile for a different CPU, it's possible to
+cross-compile for musl libc on a glibc-based *build* system.
+A devkit suitable for most target CPU architectures can be obtained from
+[musl.cc](https://musl.cc). After installing the required packages in the
+sysroot, configure the build with `--openjdk-target`:
+
+```
+sh ./configure --with-jvm-variants=server \
+--with-boot-jdk=$BOOT_JDK \
+--with-build-jdk=$BUILD_JDK \
+--openjdk-target=x86_64-unknown-linux-musl \
+--with-devkit=$DEVKIT \
+--with-sysroot=$SYSROOT
+```
+
+and run `make` normally.
 
 ### Verifying the Build
 
