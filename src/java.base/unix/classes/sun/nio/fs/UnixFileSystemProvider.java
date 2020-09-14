@@ -559,7 +559,7 @@ public abstract class UnixFileSystemProvider
     }
 
     @Override
-    public byte[] getUnixDomainPathInBytes(Path file) {
+    public byte[] getByteArrayForSocket(Path file) {
         if (file == null)
             return null;
         if (!(file instanceof UnixPath))

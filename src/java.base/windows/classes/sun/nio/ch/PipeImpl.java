@@ -62,6 +62,8 @@ class PipeImpl
     // Source and sink channels
     private SourceChannel source;
     private SinkChannel sink;
+    // Allowed to buffer data if set
+    private final boolean buffering;
 
     private class Initializer
         implements PrivilegedExceptionAction<Void>
@@ -120,7 +122,7 @@ class PipeImpl
                         // Bind ServerSocketChannel to a port on the loopback
                         // address
                         if (ssc == null || !ssc.isOpen()) {
-                            ssc = getServer();
+                            ssc = createListener();
                             sa = ssc.getLocalAddress();
                         }
 
@@ -149,7 +151,7 @@ class PipeImpl
 
                     // Create source and sink channels
                     source = new SourceChannelImpl(sp, sc1);
-                    sink = new SinkChannelImpl(sp, sc2);
+                    sink = new SinkChannelImpl(sp, sc2, buffering);
                 } catch (IOException e) {
                     try {
                         if (sc1 != null)
@@ -171,6 +173,11 @@ class PipeImpl
     }
 
     PipeImpl(final SelectorProvider sp) throws IOException {
+        this(sp, true);
+    }
+
+    PipeImpl(final SelectorProvider sp, boolean buffering) throws IOException {
+        this.buffering = buffering;
         try {
             AccessController.doPrivileged(new Initializer(sp));
         } catch (PrivilegedActionException x) {
@@ -186,19 +193,25 @@ class PipeImpl
         return sink;
     }
 
-    private static ServerSocketChannel getServer() throws IOException {
-        ServerSocketChannel server;
+    private static volatile boolean tryUnixDomain = true;
+
+    private static ServerSocketChannel createListener() throws IOException {
+        ServerSocketChannel listener = null;
         try {
-            server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
-            server.bind(null);
+            if (tryUnixDomain) {
+                listener = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+                return listener.bind(null);
+            }
         } catch (UnsupportedOperationException | IOException e) {
             // IOException is most likely to be caused by the temporary directory
             // name being too long. Possibly should log this.
-            server = ServerSocketChannel.open();
-            InetAddress lb = InetAddress.getLoopbackAddress();
-            server.bind(new InetSocketAddress(lb, 0));
+            tryUnixDomain = false;
+            if (listener != null)
+                listener.close();
         }
-        return server;
+        listener = ServerSocketChannel.open();
+        InetAddress lb = InetAddress.getLoopbackAddress();
+        listener.bind(new InetSocketAddress(lb, 0));
+        return listener;
     }
-
 }

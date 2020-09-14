@@ -625,7 +625,7 @@ class WindowsFileSystemProvider
     }
 
     @Override
-    public byte[] getUnixDomainPathInBytes(Path file) throws IOException {
+    public byte[] getByteArrayForSocket(Path file) throws IOException {
         if (file == null)
             return null;
         if (!(file instanceof WindowsPath))

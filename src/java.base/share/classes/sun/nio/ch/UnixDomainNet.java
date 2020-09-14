@@ -139,7 +139,7 @@ class UnixDomainNet {
     static byte[] getPathBytes(Path path) throws IOException {
         AbstractFileSystemProvider provider = (AbstractFileSystemProvider)
             FileSystems.getDefault().provider();
-        return provider.getUnixDomainPathInBytes(path);
+        return provider.getByteArrayForSocket(path);
     }
 
     public static FileDescriptor socket() throws IOException {

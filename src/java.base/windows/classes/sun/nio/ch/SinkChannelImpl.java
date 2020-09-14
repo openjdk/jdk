@@ -55,16 +55,13 @@ class SinkChannelImpl
         return ((SocketChannelImpl)sc).getFDVal();
     }
 
-    void setNoDelay() throws IOException {
-        if (sc instanceof InetSocketChannelImpl) {
+    SinkChannelImpl(SelectorProvider sp, SocketChannel sc, boolean buffering) throws IOException {
+        super(sp);
+        this.sc = sc;
+        if (!buffering && sc instanceof InetSocketChannelImpl) {
             InetSocketChannelImpl isc = (InetSocketChannelImpl)sc;
             isc.setOption(StandardSocketOptions.TCP_NODELAY, true);
         }
-    }
-
-    SinkChannelImpl(SelectorProvider sp, SocketChannel sc) {
-        super(sp);
-        this.sc = sc;
     }
 
     protected void implCloseSelectableChannel() throws IOException {

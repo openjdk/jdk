@@ -139,12 +139,11 @@ class WindowsSelectorImpl extends SelectorImpl {
     WindowsSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
         pollWrapper = new PollArrayWrapper(INIT_CAP);
-        wakeupPipe = Pipe.open();
+        wakeupPipe = new PipeImpl(sp, false);
         wakeupSourceFd = ((SelChImpl)wakeupPipe.source()).getFDVal();
 
         // Disable the Nagle algorithm so that the wakeup is more immediate
         SinkChannelImpl sink = (SinkChannelImpl)wakeupPipe.sink();
-        sink.setNoDelay();
         wakeupSinkFd = ((SelChImpl)sink).getFDVal();
 
         pollWrapper.addWakeupSocket(wakeupSourceFd, 0);
