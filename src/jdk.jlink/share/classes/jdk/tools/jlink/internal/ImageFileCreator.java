@@ -264,14 +264,13 @@ public final class ImageFileCreator {
             }
         });
         archives.stream()
-                .sorted(Comparator.comparing(Archive::moduleName))
-                .forEach((archive) -> {
-                    String mn = archive.moduleName();
+                .map(Archive::moduleName)
+                .sorted()
+                .flatMap(mn ->
                     entriesForModule.get(mn).stream()
                             .map(e -> new ArchiveEntryResourcePoolEntry(mn,
-                                    e.getResourcePoolEntryName(), e))
-                            .forEach(resources::add);
-                });
+                                    e.getResourcePoolEntryName(), e)))
+                .forEach(resources::add);
         return resources;
     }
 
