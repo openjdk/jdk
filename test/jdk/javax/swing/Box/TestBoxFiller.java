@@ -43,14 +43,14 @@ public class TestBoxFiller
     private static void showFocusOwner(PropertyChangeEvent e)
     {
         Object c = e.getNewValue();
-	if (c instanceof Box.Filler) {
+        if (c instanceof Box.Filler) {
             throw new RuntimeException("Box.Filler having focus");
-	}
+        }
     }
 
     public static void main(String[] args) throws Exception
     {
-	try {
+        try {
             Robot robot = new Robot();
             robot.setAutoDelay(100);
             SwingUtilities.invokeAndWait(() -> {
