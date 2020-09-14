@@ -1089,6 +1089,8 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
 
     HeapShared::init_for_dumping(THREAD);
 
+    // exercise the manifest processing code to ensure classes used by CDS are always archived
+    SystemDictionaryShared::create_jar_manifest("Manifest-Version: 1.0\n", strlen("Manifest-Version: 1.0\n"), THREAD);
     // Rewrite and link classes
     log_info(cds)("Rewriting and linking classes ...");
 
