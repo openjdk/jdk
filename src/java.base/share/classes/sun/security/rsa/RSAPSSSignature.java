@@ -206,35 +206,33 @@ public class RSAPSSSignature extends SignatureSpi {
      * internal signature parameters.
      */
     private RSAKey isValid(RSAKey rsaKey) throws InvalidKeyException {
-        try {
-            AlgorithmParameterSpec keyParams = rsaKey.getParams();
-            // validate key parameters
-            if (!isCompatible(rsaKey.getParams(), this.sigParams)) {
-                throw new InvalidKeyException
-                    ("Key contains incompatible PSS parameter values");
-            }
-            // validate key length
-            if (this.sigParams != null) {
-                String digestAlgo = this.sigParams.getDigestAlgorithm();
-                KnownOIDs ko = KnownOIDs.findMatch(digestAlgo);
-                if (ko != null) {
-                    Integer hLen = DIGEST_LENGTHS.get(ko);
-                    if (hLen != null) {
-                        checkKeyLength(rsaKey, hLen,
-                                this.sigParams.getSaltLength());
-                    } else {
-                        throw new ProviderException
-                                ("Unsupported digest algo: " + digestAlgo);
-                    }
-                } else {
-                    throw new ProviderException
-                            ("Unrecognized digest algo: " + digestAlgo);
-                }
-            }
-            return rsaKey;
-        } catch (SignatureException e) {
-            throw new InvalidKeyException(e);
+        AlgorithmParameterSpec keyParams = rsaKey.getParams();
+        // validate key parameters
+        if (!isCompatible(rsaKey.getParams(), this.sigParams)) {
+            throw new InvalidKeyException
+                ("Key contains incompatible PSS parameter values");
         }
+        // validate key length
+        if (this.sigParams != null) {
+            String digestAlgo = this.sigParams.getDigestAlgorithm();
+            KnownOIDs ko = KnownOIDs.findMatch(digestAlgo);
+            if (ko != null) {
+                Integer hLen = DIGEST_LENGTHS.get(ko);
+                if (hLen != null) {
+                    checkKeyLength(rsaKey, hLen,
+                            this.sigParams.getSaltLength());
+                } else {
+                    // should never happen; checked in validateSigParams()
+                    throw new ProviderException
+                            ("Unsupported digest algo: " + digestAlgo);
+                }
+            } else {
+                // should never happen; checked in validateSigParams()
+                throw new ProviderException
+                        ("Unrecognized digest algo: " + digestAlgo);
+            }
+        }
+        return rsaKey;
     }
 
     /**
@@ -272,14 +270,26 @@ public class RSAPSSSignature extends SignatureSpi {
                 ("Only supports TrailerFieldBC(1)");
 
         }
-        String digestAlgo = params.getDigestAlgorithm();
+
         // check key length again
         if (key != null) {
-            try {
-                int hLen = DIGEST_LENGTHS.get(KnownOIDs.findMatch(digestAlgo));
-                checkKeyLength(key, hLen, params.getSaltLength());
-            } catch (SignatureException e) {
-                throw new InvalidAlgorithmParameterException(e);
+            String digestAlgo = params.getDigestAlgorithm();
+            KnownOIDs ko = KnownOIDs.findMatch(digestAlgo);
+            if (ko != null) {
+                Integer hLen = DIGEST_LENGTHS.get(ko);
+                if (hLen != null) {
+                    try {
+                        checkKeyLength(key, hLen, params.getSaltLength());
+                    } catch (InvalidKeyException e) {
+                        throw new InvalidAlgorithmParameterException(e);
+                    }
+                } else {
+                    throw new InvalidAlgorithmParameterException
+                            ("Unsupported digest algo: " + digestAlgo);
+                }
+            } else {
+                throw new InvalidAlgorithmParameterException
+                        ("Unrecognized digest algo: " + digestAlgo);
             }
         }
         return params;
@@ -306,12 +316,12 @@ public class RSAPSSSignature extends SignatureSpi {
      * salt length
      */
     private static void checkKeyLength(RSAKey key, int digestLen,
-            int saltLen) throws SignatureException {
+            int saltLen) throws InvalidKeyException {
         if (key != null) {
             int keyLength = (getKeyLengthInBits(key) + 7) >> 3;
             int minLength = Math.addExact(Math.addExact(digestLen, saltLen), 2);
             if (keyLength < minLength) {
-                throw new SignatureException
+                throw new InvalidKeyException
                     ("Key is too short, need min " + minLength + " bytes");
             }
         }
