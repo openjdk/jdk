@@ -328,9 +328,9 @@ class ObjectMonitor {
 
  public:
 
-  void*     object() const;
-  void*     object_addr();
-  void      set_object(void* obj);
+  oop       object() const;
+  oop*      object_addr();
+  void      set_object(oop obj);
   void      release_set_allocation_state(AllocationState s);
   void      set_allocation_state(AllocationState s);
   AllocationState allocation_state() const;

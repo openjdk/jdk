@@ -1644,12 +1644,14 @@ void ClassLoader::create_javabase() {
 
   {
     MutexLocker ml(THREAD, Module_lock);
-    ModuleEntry* jb_module = null_cld_modules->locked_create_entry(Handle(),
+    if (ModuleEntryTable::javabase_moduleEntry() == NULL) {  // may have been inited by CDS.
+      ModuleEntry* jb_module = null_cld_modules->locked_create_entry(Handle(),
                                false, vmSymbols::java_base(), NULL, NULL, null_cld);
-    if (jb_module == NULL) {
-      vm_exit_during_initialization("Unable to create ModuleEntry for " JAVA_BASE_NAME);
+      if (jb_module == NULL) {
+        vm_exit_during_initialization("Unable to create ModuleEntry for " JAVA_BASE_NAME);
+      }
+      ModuleEntryTable::set_javabase_moduleEntry(jb_module);
     }
-    ModuleEntryTable::set_javabase_moduleEntry(jb_module);
   }
 }
 

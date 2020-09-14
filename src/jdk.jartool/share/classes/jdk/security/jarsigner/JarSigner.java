@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,7 +505,7 @@ public final class JarSigner {
     private final boolean externalSF; // leave the .SF out of the PKCS7 block
     private final String altSignerPath;
     private final String altSigner;
-    private boolean posixPermsDetected;
+    private boolean extraAttrsDetected;
 
     private JarSigner(JarSigner.Builder builder) {
 
@@ -949,12 +949,12 @@ public final class JarSigner {
         ze2.setTime(ze.getTime());
         ze2.setComment(ze.getComment());
         ze2.setExtra(ze.getExtra());
-        int perms = JUZFA.getPosixPerms(ze);
-        if (!posixPermsDetected && perms != -1) {
-            posixPermsDetected = true;
-            Event.report(Event.ReporterCategory.POSIXPERMS, "detected");
+        int extraAttrs = JUZFA.getExtraAttributes(ze);
+        if (!extraAttrsDetected && extraAttrs != -1) {
+            extraAttrsDetected = true;
+            Event.report(Event.ReporterCategory.ZIPFILEATTRS, "detected");
         }
-        JUZFA.setPosixPerms(ze2, perms);
+        JUZFA.setExtraAttributes(ze2, extraAttrs);
         if (ze.getMethod() == ZipEntry.STORED) {
             ze2.setSize(ze.getSize());
             ze2.setCrc(ze.getCrc());

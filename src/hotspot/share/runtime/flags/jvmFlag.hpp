@@ -34,7 +34,7 @@ class outputStream;
 typedef const char* (*RangeStrFunc)(void);
 
 struct JVMFlag {
-  enum Flags {
+  enum Flags : int {
     // latest value origin
     DEFAULT          = 0,
     COMMAND_LINE     = 1,
@@ -58,12 +58,11 @@ struct JVMFlag {
     KIND_NOT_PRODUCT        = 1 << 8,
     KIND_DEVELOP            = 1 << 9,
     KIND_PLATFORM_DEPENDENT = 1 << 10,
-    KIND_READ_WRITE         = 1 << 11,
-    KIND_C1                 = 1 << 12,
-    KIND_C2                 = 1 << 13,
-    KIND_ARCH               = 1 << 14,
-    KIND_LP64_PRODUCT       = 1 << 15,
-    KIND_JVMCI              = 1 << 16,
+    KIND_C1                 = 1 << 11,
+    KIND_C2                 = 1 << 12,
+    KIND_ARCH               = 1 << 13,
+    KIND_LP64_PRODUCT       = 1 << 14,
+    KIND_JVMCI              = 1 << 15,
 
     // set this bit if the flag was set on the command line
     ORIG_COMMAND_LINE       = 1 << 17,
@@ -109,9 +108,8 @@ struct JVMFlag {
   const char* _type;
   const char* _name;
   void* _addr;
-  NOT_PRODUCT(const char* _doc;)
   Flags _flags;
-  size_t _name_len;
+  NOT_PRODUCT(const char* _doc;)
 
   // points to all Flags static array
   static JVMFlag* flags;
@@ -123,13 +121,21 @@ private:
   static JVMFlag* find_flag(const char* name, size_t length, bool allow_locked, bool return_flag);
 
 public:
+  constexpr JVMFlag() : _type(), _name(), _addr(), _flags() NOT_PRODUCT(COMMA _doc()) {}
+
+  constexpr JVMFlag(int flag_enum, const char* type, const char* name,
+                    void* addr, int flags, int extra_flags, const char* doc);
+
+  constexpr JVMFlag(int flag_enum,  const char* type, const char* name,
+                    void* addr, int flags, const char* doc);
+
   static JVMFlag* find_flag(const char* name) {
     return find_flag(name, strlen(name), false, false);
   }
-  static const JVMFlag* find_declared_flag(const char* name, size_t length) {
+  static JVMFlag* find_declared_flag(const char* name, size_t length) {
     return find_flag(name, length, true, true);
   }
-  static const JVMFlag* find_declared_flag(const char* name) {
+  static JVMFlag* find_declared_flag(const char* name) {
     return find_declared_flag(name, strlen(name));
   }
 
@@ -143,52 +149,64 @@ public:
   static const char* get_size_t_default_range_str();
   static const char* get_double_default_range_str();
 
+  static void assert_valid_flag_enum(int i) NOT_DEBUG_RETURN;
+  static void check_all_flag_declarations() NOT_DEBUG_RETURN;
+
+  inline int flag_enum() const {
+    int i = this - JVMFlag::flags;
+    assert_valid_flag_enum(i);
+    return i;
+  }
+
+  static JVMFlag* flag_from_enum(int flag_enum) {
+    assert_valid_flag_enum(flag_enum);
+    return &JVMFlag::flags[flag_enum];
+  }
+
   bool is_bool() const;
   bool get_bool() const                       { return *((bool*) _addr); }
-  void set_bool(bool value)                   { *((bool*) _addr) = value; }
+  void set_bool(bool value) const             { *((bool*) _addr) = value; }
 
   bool is_int() const;
   int get_int() const                         { return *((int*) _addr); }
-  void set_int(int value)                     { *((int*) _addr) = value; }
+  void set_int(int value) const               { *((int*) _addr) = value; }
 
   bool is_uint() const;
   uint get_uint() const                       { return *((uint*) _addr); }
-  void set_uint(uint value)                   { *((uint*) _addr) = value; }
+  void set_uint(uint value) const             { *((uint*) _addr) = value; }
 
   bool is_intx() const;
   intx get_intx() const                       { return *((intx*) _addr); }
-  void set_intx(intx value)                   { *((intx*) _addr) = value; }
+  void set_intx(intx value) const             { *((intx*) _addr) = value; }
 
   bool is_uintx() const;
   uintx get_uintx() const                     { return *((uintx*) _addr); }
-  void set_uintx(uintx value)                 { *((uintx*) _addr) = value; }
+  void set_uintx(uintx value) const           { *((uintx*) _addr) = value; }
 
   bool is_uint64_t() const;
   uint64_t get_uint64_t() const               { return *((uint64_t*) _addr); }
-  void set_uint64_t(uint64_t value)           { *((uint64_t*) _addr) = value; }
+  void set_uint64_t(uint64_t value) const     { *((uint64_t*) _addr) = value; }
 
   bool is_size_t() const;
   size_t get_size_t() const                   { return *((size_t*) _addr); }
-  void set_size_t(size_t value)               { *((size_t*) _addr) = value; }
+  void set_size_t(size_t value) const         { *((size_t*) _addr) = value; }
 
   bool is_double() const;
   double get_double() const                   { return *((double*) _addr); }
-  void set_double(double value)               { *((double*) _addr) = value; }
+  void set_double(double value) const         { *((double*) _addr) = value; }
 
   bool is_ccstr() const;
   bool ccstr_accumulates() const;
   ccstr get_ccstr() const                     { return *((ccstr*) _addr); }
-  void set_ccstr(ccstr value)                 { *((ccstr*) _addr) = value; }
+  void set_ccstr(ccstr value) const           { *((ccstr*) _addr) = value; }
 
-  Flags get_origin();
+  Flags get_origin() const;
   void set_origin(Flags origin);
 
-  size_t get_name_length();
-
-  bool is_default();
-  bool is_ergonomic();
-  bool is_jimage_resource();
-  bool is_command_line();
+  bool is_default() const;
+  bool is_ergonomic() const;
+  bool is_jimage_resource() const;
+  bool is_command_line() const;
   void set_command_line();
 
   bool is_product() const;
@@ -197,7 +215,6 @@ public:
   bool is_experimental() const;
   bool is_notproduct() const;
   bool is_develop() const;
-  bool is_read_write() const;
 
   bool is_constant_in_binary() const;
 
@@ -214,10 +231,10 @@ public:
   JVMFlag::MsgType get_locked_message_ext(char*, int) const;
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
-  void print_on(outputStream* st, bool withComments = false, bool printRanges = false);
-  void print_kind(outputStream* st, unsigned int width);
-  void print_origin(outputStream* st, unsigned int width);
-  void print_as_flag(outputStream* st);
+  void print_on(outputStream* st, bool withComments = false, bool printRanges = false) const;
+  void print_kind(outputStream* st, unsigned int width) const;
+  void print_origin(outputStream* st, unsigned int width) const;
+  void print_as_flag(outputStream* st) const;
 
   static const char* flag_error_str(JVMFlag::Error error);
 
@@ -259,5 +276,7 @@ public:
 
   static void verify() PRODUCT_RETURN;
 };
+
+#define DECLARE_CONSTRAINT(type, func) JVMFlag::Error func(type value, bool verbose);
 
 #endif // SHARE_RUNTIME_FLAGS_JVMFLAG_HPP
