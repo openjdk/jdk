@@ -71,11 +71,11 @@ public class TestBoxFiller
                 frame.pack();
                 frame.setVisible(true);
                 tf1.requestFocusInWindow();
-	    });
+            });
             robot.waitForIdle();
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
-	} finally {
+        } finally {
             if (frame != null) {
                 SwingUtilities.invokeAndWait(frame::dispose);
             }
