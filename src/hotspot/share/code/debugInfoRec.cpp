@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "code/debugInfoRec.hpp"
 #include "code/scopeDesc.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/globals_extension.hpp"
 
 // Private definition.
 // There is one DIR_Chunk for each scope and values array.

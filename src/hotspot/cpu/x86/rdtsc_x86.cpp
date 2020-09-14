@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "rdtsc_x86.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 #include "vm_version_ext_x86.hpp"

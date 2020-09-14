@@ -22,6 +22,7 @@
  *
  */
 #include "precompiled.hpp"
+#include "runtime/globals_extension.hpp"
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcArguments.hpp"
