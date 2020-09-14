@@ -30,7 +30,7 @@
 #define DO_FLAG(type, name,...) DO_HASH(FLAG_MEMBER_ENUM(name), XSTR(name))
 
 #define DO_HASH(flag_enum, flag_name) {          \
-  u2 hash = hash_code(flag_name);      \
+  u2 hash = hash_code(flag_name);                \
   int bucket_index = (int)(hash % NUM_BUCKETS);  \
   _hashes[flag_enum] = hash;                     \
   _table[flag_enum] = _buckets[bucket_index];    \
