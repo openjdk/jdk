@@ -44,6 +44,7 @@ public class TestMethodSignature extends JavadocTester {
     public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
+                "--no-platform-link",
                 "pkg");
         checkExit(Exit.OK);
 

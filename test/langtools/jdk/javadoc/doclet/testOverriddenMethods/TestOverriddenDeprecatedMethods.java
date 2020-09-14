@@ -44,6 +44,7 @@ public class TestOverriddenDeprecatedMethods extends JavadocTester {
     public void test() {
         javadoc("-d", "out-deprecated",
                 "-sourcepath", testSrc,
+                "--no-platform-link",
                 "--override-methods","summary",
                 "pkg1");
 

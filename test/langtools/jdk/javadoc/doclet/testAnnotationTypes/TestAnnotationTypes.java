@@ -46,6 +46,7 @@ public class TestAnnotationTypes extends JavadocTester {
     public void test() {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
+                "--no-platform-link",
                 "pkg");
         checkExit(Exit.OK);
 
@@ -108,6 +109,7 @@ public class TestAnnotationTypes extends JavadocTester {
     public void testLinkSource() {
         javadoc("-d", "out-2",
                 "-linksource",
+                "--no-platform-link",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
