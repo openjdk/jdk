@@ -875,4 +875,3 @@
    do_name(     forEachRemaining_signature,                      "(Ljava/util/function/IntConsumer;)V")                 \
 
     /*end*/
-    
