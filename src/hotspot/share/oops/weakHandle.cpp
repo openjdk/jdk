@@ -34,7 +34,7 @@ WeakHandle::WeakHandle(OopStorage* storage, Handle obj) :
     WeakHandle(storage, obj()) {}
 
 WeakHandle::WeakHandle(OopStorage* storage, oop obj) :
-  _obj(storage->allocate()) {
+    _obj(storage->allocate()) {
   assert(obj != NULL, "no need to create weak null oop");
 
   if (_obj == NULL) {

@@ -241,13 +241,12 @@ void ObjectMonitor::operator delete[] (void *p) {
   operator delete(p);
 }
 
+#ifdef ASSERT
 // Check that object() and set_object() are called from the right context:
 static void check_object_context() {
   Thread* self = Thread::current();
-  // ThreadService::get_current_contended_monitor() can call here via
-  // the VMThread so sanity check it.
-  guarantee(self->is_Java_thread() || self->is_VM_thread(), "must be");
   if (self->is_Java_thread()) {
+    // Mostly called from JavaThreads so sanity check the thread state.
     JavaThread* jt = self->as_Java_thread();
     switch (jt->thread_state()) {
     case _thread_in_vm:    // the usual case
@@ -256,12 +255,19 @@ static void check_object_context() {
     default:
       fatal("called from an unsafe thread state");
     }
-    guarantee(jt->is_active_Java_thread(), "must be active JavaThread");
+    assert(jt->is_active_Java_thread(), "must be active JavaThread");
+  } else {
+    // However, ThreadService::get_current_contended_monitor()
+    // can call here via the VMThread so sanity check it.
+    assert(self->is_VM_thread(), "must be");
   }
 }
+#endif // ASSERT
 
 oop ObjectMonitor::object() const {
+#ifdef ASSERT
   check_object_context();
+#endif
   if (_object.is_null()) {
     return NULL;
   }
@@ -276,7 +282,9 @@ oop ObjectMonitor::object_peek() const {
 }
 
 void ObjectMonitor::set_object(oop obj) {
+#ifdef ASSERT
   check_object_context();
+#endif
   if (_object.is_null()) {
     _object = WeakHandle(_oop_storage, obj);
   } else {
