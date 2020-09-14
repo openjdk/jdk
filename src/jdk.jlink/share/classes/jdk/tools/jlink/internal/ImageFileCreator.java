@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -262,14 +263,15 @@ public final class ImageFileCreator {
                 return writer.getString(id);
             }
         });
-
-        for (Archive archive : archives) {
-            String mn = archive.moduleName();
-            entriesForModule.get(mn).stream()
-                .map(e -> new ArchiveEntryResourcePoolEntry(mn,
+        archives.stream()
+                .sorted(Comparator.comparing(Archive::moduleName))
+                .forEach((archive) -> {
+                    String mn = archive.moduleName();
+                    entriesForModule.get(mn).stream()
+                            .map(e -> new ArchiveEntryResourcePoolEntry(mn,
                                     e.getResourcePoolEntryName(), e))
-                .forEach(resources::add);
-        }
+                            .forEach(resources::add);
+                });
         return resources;
     }
 
