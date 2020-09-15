@@ -53,6 +53,7 @@ import java.util.regex.Pattern;
 public enum HtmlStyle {
     block,
     blockList,
+    caption,
     circle,
     classUses,
     deprecatedLabel,
@@ -86,6 +87,7 @@ public enum HtmlStyle {
     typeNameLabel,
     typeNameLink,
     verticalSeparator,
+    thead,
 
     //<editor-fold desc="navigation bar">
     //

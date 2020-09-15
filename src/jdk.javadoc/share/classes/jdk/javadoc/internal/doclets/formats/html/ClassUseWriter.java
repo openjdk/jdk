@@ -144,6 +144,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
 
         methodSubWriter = new MethodWriterImpl(this);
         constrSubWriter = new ConstructorWriterImpl(this);
+        constrSubWriter.setFoundNonPubConstructor(true);
         fieldSubWriter = new FieldWriterImpl(this);
         classSubWriter = new NestedClassWriterImpl(this);
         this.navBar = new Navigation(typeElement, configuration, PageMode.USE, path);
@@ -261,7 +262,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 "doclet.ClassUse_Packages.that.use.0",
                 getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)));
-        Table table = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -287,7 +288,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)));
 
-        Table table = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
