@@ -44,32 +44,32 @@ import static java.lang.invoke.MethodType.methodType;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Fork(value = 1, warmups = 0, jvmArgsAppend = "--add-exports=java.base/sun.net.www=ALL-UNNAMED")
+@Fork(value = 1, jvmArgsAppend = "--add-exports=java.base/sun.net.www=ALL-UNNAMED")
 public class ThreadLocalParseUtil {
 
-    private static URL url;
-    private static MethodHandles.Lookup LOOKUP;
-    private static MethodHandle MH_DECODE;
-    private static MethodHandle MH_TO_URI;
+    private static final MethodHandles.Lookup LOOKUP;
+    private static final MethodHandle MH_DECODE;
+    private static final MethodHandle MH_TO_URI;
 
-    @Setup
-    public void setup() throws Exception {
-        LOOKUP = MethodHandles.lookup();
-        url = new URL("https://example.com/xyz/abc/def?query=#30");
-        Class<?> c = Class.forName("sun.net.www.ParseUtil");
-        MH_DECODE = LOOKUP.findStatic(c, "decode", methodType(String.class, String.class));
-        MH_TO_URI = LOOKUP.findStatic(c, "toURI", methodType(URI.class, URL.class));
+    static {
+        try {
+            LOOKUP = MethodHandles.lookup();
+            Class<?> c = Class.forName("sun.net.www.ParseUtil");
+            MH_DECODE = LOOKUP.findStatic(c, "decode", methodType(String.class, String.class));
+            MH_TO_URI = LOOKUP.findStatic(c, "toURI", methodType(URI.class, URL.class));
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException e) {
+            throw new ExceptionInInitializerError(e);
+        }
     }
 
     @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public String decodeTest() throws Throwable {
         return (String) MH_DECODE.invokeExact("/xyz/\u00A0\u00A0");
     }
 
     @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public URI appendEncodedTest() throws Throwable {
+        URL url = new URL("https://example.com/xyz/abc/def?query=#30");
         return (URI) MH_TO_URI.invokeExact(url);
     }
 }
