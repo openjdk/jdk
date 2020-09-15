@@ -210,7 +210,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
 }
 
 //--------------------------clone_predicate-----------------------
-ProjNode* PhaseIdealLoop::clone_loop_predicate(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason,
+ProjNode* PhaseIdealLoop::clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason,
                                                bool is_slow_loop, uint idx_before_clone, Node_List &old_new) {
   ProjNode* new_predicate_proj = create_new_if_for_predicate(predicate_proj, new_entry, reason, Op_If);
   IfNode* iff = new_predicate_proj->in(0)->as_If();
@@ -225,13 +225,14 @@ ProjNode* PhaseIdealLoop::clone_loop_predicate(ProjNode* predicate_proj, Node* n
   register_new_node(bol, ctrl);
   _igvn.hash_delete(iff);
   iff->set_req(1, bol);
-  clone_concrete_loop_predicates(reason, predicate_proj, new_predicate_proj, is_slow_loop, idx_before_clone, old_new);
+  clone_skeleton_predicates_to_unswitched_loop(reason, predicate_proj, new_predicate_proj, is_slow_loop, idx_before_clone, old_new);
   return new_predicate_proj;
 }
 
-// Clones all non-empty loop predicates (including skeleton predicates) starting at 'old_predicate_proj' to 'new_predicate_proj'
-// and rewires the control edges of data nodes in the loop to the old predicates to the new cloned predicates.
-void PhaseIdealLoop::clone_concrete_loop_predicates(Deoptimization::DeoptReason reason, ProjNode* old_predicate_proj,
+// Clones skeleton predicates starting at 'old_predicate_proj' to
+// 'new_predicate_proj' and rewires the control edges of data nodes in
+// the loop from the old predicates to the new cloned predicates.
+void PhaseIdealLoop::clone_skeleton_predicates_to_unswitched_loop(Deoptimization::DeoptReason reason, ProjNode* old_predicate_proj,
                                                     ProjNode* new_predicate_proj, bool is_slow_loop, uint idx_before_clone,
                                                     Node_List &old_new) {
   assert(old_predicate_proj->is_Proj(), "must be projection");
@@ -249,7 +250,7 @@ void PhaseIdealLoop::clone_concrete_loop_predicates(Deoptimization::DeoptReason 
     uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
     if (uncommon_proj->unique_ctrl_out() != rgn)
       break;
-    if (iff->is_RangeCheck()) {
+    if (iff->in(1)->Opcode() == Op_Opaque4 && skeleton_predicate_has_opaque(iff)) {
       // Only need to clone range check predicates as those can be changed and duplicated by inserting pre/main/post loops
       // and doing loop unrolling. Push the original predicates on a list to later process them in reverse order to keep the
       // original predicate order.
@@ -274,11 +275,11 @@ void PhaseIdealLoop::clone_concrete_loop_predicates(Deoptimization::DeoptReason 
     predicate = list.at(i);
     assert(predicate->in(0)->is_If(), "must be If node");
     iff = predicate->in(0)->as_If();
-    assert(predicate->is_Proj() && predicate->as_Proj()->is_IfProj() && iff->is_RangeCheck(), "predicate must be a projection of a range check");
+    assert(predicate->is_Proj() && predicate->as_Proj()->is_IfProj(), "predicate must be a projection of an if node");
     IfProjNode* predicate_proj = predicate->as_IfProj();
 
     // cloned_proj is the same type of projection as the original predicate projection (IfTrue or IfFalse)
-    ProjNode* cloned_proj = create_new_if_for_predicate(new_predicate_proj, NULL, reason, Op_RangeCheck, predicate_proj->is_IfTrue());
+    ProjNode* cloned_proj = create_new_if_for_predicate(new_predicate_proj, NULL, reason, iff->Opcode(), predicate_proj->is_IfTrue());
 
     // Replace bool input by input from original predicate
     _igvn.replace_input_of(cloned_proj->in(0), 1, iff->in(1));
@@ -296,12 +297,6 @@ void PhaseIdealLoop::clone_concrete_loop_predicates(Deoptimization::DeoptReason 
           --i;
         }
         assert(slow_node->_idx <= idx_before_clone || old_new[slow_node->_idx] == NULL, "mapping of cloned nodes must be null");
-      }
-
-      // Let old predicates before unswitched loops which were cloned die if all their control edges were rewired
-      // to the cloned predicates in the unswitched loops.
-      if (predicate->outcnt() == 1) {
-        _igvn.replace_input_of(iff, 1, _igvn.intcon(predicate_proj->_con));
       }
     } else {
       // Fast loop
@@ -324,7 +319,7 @@ void PhaseIdealLoop::clone_concrete_loop_predicates(Deoptimization::DeoptReason 
 
 //--------------------------clone_loop_predicates-----------------------
 // Clone loop predicates to cloned loops when unswitching a loop.
-Node* PhaseIdealLoop::clone_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check,
+Node* PhaseIdealLoop::clone_predicates_to_unswitched_loop(Node* old_entry, Node* new_entry, bool clone_limit_check,
                                             bool is_slow_loop, uint idx_before_clone, Node_List &old_new) {
 #ifdef ASSERT
   assert(LoopUnswitching, "sanity - only called when unswitching a loop");
@@ -354,7 +349,7 @@ Node* PhaseIdealLoop::clone_loop_predicates(Node* old_entry, Node* new_entry, bo
   }
   if (predicate_proj != NULL) { // right pattern that can be used by loop predication
     // clone predicate
-    new_entry = clone_loop_predicate(predicate_proj, new_entry, Deoptimization::Reason_predicate, is_slow_loop,
+    new_entry = clone_predicate_to_unswitched_loop(predicate_proj, new_entry, Deoptimization::Reason_predicate, is_slow_loop,
                                      idx_before_clone, old_new);
     assert(new_entry != NULL && new_entry->is_Proj(), "IfTrue or IfFalse after clone predicate");
     if (TraceLoopPredicate) {
@@ -364,7 +359,7 @@ Node* PhaseIdealLoop::clone_loop_predicates(Node* old_entry, Node* new_entry, bo
   }
   if (profile_predicate_proj != NULL) { // right pattern that can be used by loop predication
     // clone predicate
-    new_entry = clone_loop_predicate(profile_predicate_proj, new_entry,Deoptimization::Reason_profile_predicate,
+    new_entry = clone_predicate_to_unswitched_loop(profile_predicate_proj, new_entry,Deoptimization::Reason_profile_predicate,
                                      is_slow_loop, idx_before_clone, old_new);
     assert(new_entry != NULL && new_entry->is_Proj(), "IfTrue or IfFalse after clone predicate");
     if (TraceLoopPredicate) {
@@ -376,7 +371,7 @@ Node* PhaseIdealLoop::clone_loop_predicates(Node* old_entry, Node* new_entry, bo
     // Clone loop limit check last to insert it before loop.
     // Don't clone a limit check which was already finalized
     // for this counted loop (only one limit check is needed).
-    new_entry = clone_loop_predicate(limit_check_proj, new_entry, Deoptimization::Reason_loop_limit_check,
+    new_entry = clone_predicate_to_unswitched_loop(limit_check_proj, new_entry, Deoptimization::Reason_loop_limit_check,
                                      is_slow_loop, idx_before_clone, old_new);
     assert(new_entry != NULL && new_entry->is_Proj(), "IfTrue or IfFalse after clone limit check");
     if (TraceLoopLimitCheck) {

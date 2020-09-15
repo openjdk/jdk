@@ -284,10 +284,10 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   assert(old_new[head->_idx]->is_Loop(), "" );
 
   // Fast (true) control
-  Node* iffast_pred = clone_loop_predicates(entry, iffast, !counted_loop, false, idx_before_clone, old_new);
+  Node* iffast_pred = clone_predicates_to_unswitched_loop(entry, iffast, !counted_loop, false, idx_before_clone, old_new);
 
   // Slow (false) control
-  Node* ifslow_pred = clone_loop_predicates(entry, ifslow, !counted_loop, true, idx_before_clone, old_new);
+  Node* ifslow_pred = clone_predicates_to_unswitched_loop(entry, ifslow, !counted_loop, true, idx_before_clone, old_new);
 
   Node* l = head->skip_strip_mined();
   _igvn.replace_input_of(l, LoopNode::EntryControl, iffast_pred);
