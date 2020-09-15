@@ -26,6 +26,7 @@
 #include "oops/markWord.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "utilities/ostream.hpp"
 
 void markWord::print_on(outputStream* st) const {
   if (is_marked()) {  // last bits = 11
