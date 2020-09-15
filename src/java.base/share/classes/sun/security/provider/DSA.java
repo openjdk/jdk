@@ -57,7 +57,7 @@ import sun.security.jca.JCAUtil;
  * In addition, IEEE P1363 signature format is supported. The
  * corresponding implementation is registered under <sig>inP1363Format,
  * e.g. SHA256withDSAinP1363Format.
- * 
+ *
  * @author Benjamin Renaud
  *
  * @since   1.1
@@ -517,7 +517,7 @@ abstract class DSA extends SignatureSpi {
             super(MessageDigest.getInstance("SHA3-224"));
         }
     }
-    
+
     /**
      * SHA3-224withDSA implementation that uses the IEEE P1363 format.
      */
@@ -535,7 +535,7 @@ abstract class DSA extends SignatureSpi {
             super(MessageDigest.getInstance("SHA3-256"));
         }
     }
-    
+
     /**
      * Standard SHA3-256withDSA implementation that uses the IEEE P1363 format.
      */
@@ -553,7 +553,7 @@ abstract class DSA extends SignatureSpi {
             super(MessageDigest.getInstance("SHA3-384"));
         }
     }
-    
+
     /**
      * Standard SHA3-384withDSA implementation that uses the IEEE P1363 format.
      */
@@ -571,7 +571,7 @@ abstract class DSA extends SignatureSpi {
             super(MessageDigest.getInstance("SHA3-512"));
         }
     }
-    
+
     /**
      * Standard SHA3-512withDSA implementation that uses the IEEE P1363 format.
      */
