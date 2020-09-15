@@ -87,13 +87,6 @@ public interface ClassTree extends StatementTree {
     List<? extends Tree> getImplementsClause();
 
     /**
-     * {@preview Associated with sealed classes, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>sealed classes</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns the subclasses permitted by this type declaration.
      *
      * @implSpec this implementation returns an empty list

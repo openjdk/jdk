@@ -25,11 +25,13 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
+import static java.lang.invoke.ConstantBootstraps.enumConstant;
 import java.util.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import jdk.javadoc.internal.doclets.formats.html.AbstractMemberWriter;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.ConstructorWriter;
@@ -133,6 +135,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
                 buildSignature(constructorDocTree);
                 buildDeprecationInfo(constructorDocTree);
                 buildConstructorComments(constructorDocTree);
+                ((AbstractMemberWriter) writer).addPreviewInfo(currentConstructor, constructorDocTree);
                 buildTagInfo(constructorDocTree);
 
                 memberList.add(writer.getMemberListItem(constructorDocTree));

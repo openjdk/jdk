@@ -232,6 +232,7 @@ public class LinkInfoImpl extends LinkInfo {
     public String where = "";
 
     public Element whereMember;
+    public boolean skipPreview;
 
     /**
      * The value of the target.
@@ -346,6 +347,11 @@ public class LinkInfoImpl extends LinkInfo {
 
     public LinkInfoImpl whereMember(Element el) {
         this.whereMember = el;
+        return this;
+    }
+
+    public LinkInfoImpl skipPreview(boolean skipPreview) {
+        this.skipPreview = skipPreview;
         return this;
     }
 

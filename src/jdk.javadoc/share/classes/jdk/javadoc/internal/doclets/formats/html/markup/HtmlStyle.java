@@ -78,6 +78,7 @@ public enum HtmlStyle {
     packageHierarchyLabel,
     packageUses,
     permitsNote,
+    previewLabel,
     previewNote,
     searchTagLink,
     searchTagResult,

@@ -31,6 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
+import jdk.javadoc.internal.doclets.formats.html.AbstractMemberWriter;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -124,6 +125,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
                 buildSignature(methodDocTree);
                 buildDeprecationInfo(methodDocTree);
                 buildMethodComments(methodDocTree);
+                ((AbstractMemberWriter) writer).addPreviewInfo(method, methodDocTree);
                 buildTagInfo(methodDocTree);
 
                 memberList.add(writer.getMemberListItem(methodDocTree));

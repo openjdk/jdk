@@ -707,6 +707,12 @@ public class HtmlDocletWriter {
      */
     public Content getCrossClassLink(TypeElement classElement, String refMemName,
                                     Content label, boolean strong, boolean code) {
+        return getCrossClassLink(classElement, refMemName, label, strong, code, true);
+    }
+
+    public Content getCrossClassLink(TypeElement classElement, String refMemName,
+                                    Content label, boolean strong, boolean code,
+                                    boolean showExternal) {
         if (classElement != null) {
             String className = utils.getSimpleName(classElement);
             PackageElement packageElement = utils.containingPackage(classElement);
@@ -727,7 +733,7 @@ public class HtmlDocletWriter {
                     (label == null) || label.isEmpty() ? defaultLabel : label,
                     strong,
                     resources.getText("doclet.Href_Class_Or_Interface_Title",
-                        utils.getPackageName(packageElement)), "", true);
+                        utils.getPackageName(packageElement)), "", showExternal);
             }
         }
         return null;

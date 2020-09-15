@@ -31,13 +31,6 @@ import static javax.lang.model.SourceVersion.*;
 import javax.lang.model.SourceVersion;
 
 /**
- * {@preview Associated with records, a preview feature of the Java language.
- *
- *           This class is associated with <i>records</i>, a preview
- *           feature of the Java language. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java language.}
- *
  * A visitor of program elements based on their {@linkplain
  * ElementKind kind} with default behavior appropriate for the {@link
  * SourceVersion#RELEASE_14 RELEASE_14} source version.

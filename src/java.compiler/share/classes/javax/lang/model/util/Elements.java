@@ -634,13 +634,6 @@ public interface Elements {
     boolean isFunctionalInterface(TypeElement type);
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns the record component for the given accessor. Returns null if the
      * given method is not a record component accessor.
      *

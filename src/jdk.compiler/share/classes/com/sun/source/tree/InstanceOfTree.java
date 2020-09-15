@@ -53,14 +53,6 @@ public interface InstanceOfTree extends ExpressionTree {
     Tree getType();
 
     /**
-     * {@preview Associated with pattern matching for instanceof, a preview feature of
-     *           the Java language.
-     *
-     *           This method is associated with <i>pattern matching for instanceof</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns the tested pattern, or null if this instanceof does not use
      * a pattern.
      *
@@ -79,5 +71,7 @@ public interface InstanceOfTree extends ExpressionTree {
      * @return the tested pattern, or null if this instanceof does not use a pattern
      * @since 14
      */
+    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
+                                       reflective=true)
     PatternTree getPattern();
 }

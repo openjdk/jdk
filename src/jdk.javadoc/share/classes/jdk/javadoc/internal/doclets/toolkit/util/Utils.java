@@ -119,6 +119,7 @@ import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
+import com.sun.source.doctree.UnknownInlineTagTree;
 import java.util.function.Function;
 import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
 import jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl;
@@ -2868,6 +2869,25 @@ public class Utils {
         return getBlockTags(element, USES);
     }
 
+    public DocTree getPreviewTree(Element element) {
+        return getBody(element).stream()
+                               .filter(t -> t.getKind() == Kind.UNKNOWN_INLINE_TAG)
+                               .filter(t -> "preview".equals(((UnknownInlineTagTree) t).getTagName()))
+                               .findAny()
+                               .orElse(null);
+    }
+
+    public Pair<String, String> getPreviewTreeSummaryAndDetails(DocTree t) {
+        //TODO: handle broken trees:
+        UnknownInlineTagTree previewTag = (UnknownInlineTagTree) t;
+        List<? extends DocTree> previewContent = previewTag.getContent();
+        String previewText = ((TextTree) previewContent.get(0)).getBody();
+        String[] summaryAndDetails = previewText.split("\n\r?\n\r?");
+        String summary = summaryAndDetails[0];
+        String details = summaryAndDetails.length > 1 ? summaryAndDetails[1] : summaryAndDetails[0];
+        return new Pair<>(summary, details);
+    }
+
     public List<? extends DocTree> getFirstSentenceTrees(Element element) {
         DocCommentTree dcTree = getDocCommentTree(element);
         if (dcTree == null) {
@@ -2969,24 +2989,37 @@ public class Utils {
      * @return true if the given Element is deprecated.
      */
     @SuppressWarnings("preview")
-    public Set<String> previewLanguageFeaturesUsed(Element e) {
-        Set<String> result = new HashSet<>();
+    public Set<DeclarationPreviewLanguageFeatures> previewLanguageFeaturesUsed(Element e) {
+        Set<DeclarationPreviewLanguageFeatures> result = new HashSet<>();
 
         if (e.getKind() == ElementKind.RECORD) {
-            result.add("record");
+            result.add(DeclarationPreviewLanguageFeatures.RECORD);
         }
 
         if (e.getModifiers().contains(Modifier.SEALED)) {
-            result.add("sealed");
             List<? extends TypeMirror> permits = ((TypeElement) e).getPermittedSubclasses();
             boolean hasLinkablePermits = permits.stream()
                                                 .anyMatch(t -> isLinkable(asTypeElement(t)));
             if (hasLinkablePermits) {
-                result.add("permits");
+                result.add(DeclarationPreviewLanguageFeatures.SEALED_PERMITS);
+            } else {
+                result.add(DeclarationPreviewLanguageFeatures.SEALED);
             }
         }
 
         return result;
+    }
+
+    public enum DeclarationPreviewLanguageFeatures {
+        SEALED(List.of("sealed")),
+        SEALED_PERMITS(List.of("sealed", "permits")),
+        RECORD(List.of("record"));
+        public final List<String> features;
+
+        private DeclarationPreviewLanguageFeatures(List<String> features) {
+            this.features = features;
+        }
+        
     }
 
     public PreviewSummary getPreviewAPITypes(Iterable<TypeElement> elements) { //TODO: private/merge into declaredUsingPreviewAPIs?
@@ -3058,7 +3091,7 @@ public class Utils {
         
     }
 
-    public PreviewAPIType getPreviewAPIType(TypeElement el) {
+    public PreviewAPIType getPreviewAPIType(Element el) {
         //TODO: PREVIEW+DECLARED_USING_PREVIEW?
         if (!previewLanguageFeaturesUsed(el).isEmpty()) {
             return PreviewAPIType.DECLARED_USING_PREVIEW;

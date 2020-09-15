@@ -29,6 +29,7 @@ import java.util.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import jdk.javadoc.internal.doclets.formats.html.AbstractMemberWriter;
 
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
@@ -153,6 +154,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
         buildSignature(annotationDocTree);
         buildDeprecationInfo(annotationDocTree);
         buildMemberComments(annotationDocTree);
+        ((AbstractMemberWriter) writer).addPreviewInfo(currentMember, annotationDocTree);
         buildTagInfo(annotationDocTree);
     }
 

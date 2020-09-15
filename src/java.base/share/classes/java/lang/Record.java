@@ -25,14 +25,6 @@
 package java.lang;
 
 /**
- * {@preview Associated with records, a preview feature of the Java language.
- *
- *           This class is associated with <i>records</i>, a preview
- *           feature of the Java language. Programs can only use this
- *           class when preview features are enabled. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java language.}
- *
  * This is the common base class of all Java language record classes.
  *
  * <p>More information about records, including descriptions of the

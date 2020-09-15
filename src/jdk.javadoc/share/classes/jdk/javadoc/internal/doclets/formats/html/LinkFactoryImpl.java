@@ -96,9 +96,9 @@ public class LinkFactoryImpl extends LinkFactory {
         }
         Content label = classLinkInfo.getClassLinkLabel(configuration);
         Set<ElementFlag> flags;
-        if (!hasWhere) {
+        if (!hasWhere && !classLinkInfo.skipPreview) {
             flags = utils.elementFlags(typeElement);
-        } else if (classLinkInfo.context == LinkInfoImpl.Kind.SEE_TAG && classLinkInfo.whereMember != null) {
+        } else if (classLinkInfo.context == LinkInfoImpl.Kind.SEE_TAG && classLinkInfo.whereMember != null && !classLinkInfo.skipPreview) {
             flags = utils.elementFlags(classLinkInfo.whereMember);
         } else {
             flags = EnumSet.noneOf(ElementFlag.class);
@@ -128,22 +128,25 @@ public class LinkFactoryImpl extends LinkFactory {
                 }
             }
         } else {
+            HtmlTree externalMarkSpan = new HtmlTree(TagName.SPAN);
+            externalMarkSpan.setStyle(HtmlStyle.externalLink);
             Content crossLink = m_writer.getCrossClassLink(
                 typeElement, classLinkInfo.where,
-                label, classLinkInfo.isStrong, true);
+                label, classLinkInfo.isStrong, true, false);
             if (crossLink != null) {
-                link.add(crossLink);
-                if (flags.contains(ElementFlag.PREVIEW)) {
-                    link.add(new HtmlTree(TagName.SUP).add(m_writer.getCrossClassLink(
-                            typeElement,
-                            "preview",
-                            new ContentBuilder().add("PREVIEW"),
-                            false, false)));
-                }
-                if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
-                    link.add(getTypeParameterLinks(linkInfo));
-                }
-                return link;
+                externalMarkSpan.add(crossLink);
+            if (flags.contains(ElementFlag.PREVIEW)) {
+                externalMarkSpan.add(new HtmlTree(TagName.SUP).add(m_writer.getCrossClassLink(
+                    typeElement,
+                    "preview",
+                    new ContentBuilder().add("PREVIEW"),
+                        false, false, false)));
+            }
+            link.add(externalMarkSpan);
+            if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
+                link.add(getTypeParameterLinks(linkInfo));
+            }
+            return link;
             }
         }
         // Can't link so just write label.

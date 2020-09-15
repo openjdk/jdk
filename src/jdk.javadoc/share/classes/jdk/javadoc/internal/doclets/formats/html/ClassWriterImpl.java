@@ -46,7 +46,10 @@ import com.sun.tools.doclint.HtmlTag;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.lang.model.element.ElementKind;
@@ -57,6 +60,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -66,6 +70,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.Pair;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewAPIType;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
 
 /**
@@ -334,27 +342,48 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 addInlineComment(typeElement, classInfoTree);
             }
         }
-        List<Content> previewNotes = getPreviewNotes(typeElement);
-        if (!previewNotes.isEmpty()) {
+        PreviewAPIType previewAPIType = utils.getPreviewAPIType(typeElement);
+        if (previewAPIType == PreviewAPIType.PREVIEW || previewAPIType == PreviewAPIType.REFLECTIVE) {
+            //in Java platform:
             HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewNote);
-            previewDiv.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview").add(new HtmlTree(TagName.STRONG).add(new ContentBuilder().add(resources.getText("doclet.PreviewLeadingNote")))));
-            for (Content note : previewNotes) {
-                previewDiv.add(HtmlTree.P(note));
+            DocTree previewTree = utils.getPreviewTree(typeElement);
+            if (previewTree != null) {
+                //TODO: tags/html inside 
+                previewDiv.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview").add(new RawHtml(utils.getPreviewTreeSummaryAndDetails(previewTree).second)));
+            } else {
+                previewDiv.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview").add(HtmlTree.P(replaceParams(resources.getText(previewAPIType == PreviewAPIType.PREVIEW ? "doclet.PreviewPlatformLeadingNote" : "doclet.ReflectivePreviewPlatformLeadingNote"), (param, result) -> result.add(HtmlTree.CODE(new StringContent(typeElement.getSimpleName())))))));
+                if (previewAPIType == PreviewAPIType.PREVIEW) {
+                    previewDiv.add(HtmlTree.P(replaceParams(resources.getText("doclet.PreviewTrailingNote1"), (param, result) -> result.add(HtmlTree.CODE(new StringContent(typeElement.getSimpleName()))))));
+                }
+                previewDiv.add(HtmlTree.P(replaceParams(resources.getText("doclet.PreviewTrailingNote2"), (param, result) -> result.add(HtmlTree.CODE(new StringContent(typeElement.getSimpleName()))))));
             }
-            previewDiv.add(HtmlTree.P(new ContentBuilder().add(resources.getText("doclet.PreviewTrailingNote1"))));
-            previewDiv.add(HtmlTree.P(new ContentBuilder().add(resources.getText("doclet.PreviewTrailingNote2"))));
             classInfoTree.add(previewDiv);
+        } else {
+            List<Content> previewNotes = getPreviewNotes(typeElement);
+            if (!previewNotes.isEmpty()) {
+                HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewNote);
+                previewDiv.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview").add(HtmlTree.P(replaceParams(resources.getText("doclet.PreviewLeadingNote"), (param, result) -> result.add(HtmlTree.CODE(new StringContent(typeElement.getSimpleName())))))));
+                HtmlTree ul = new HtmlTree(TagName.UL);
+                for (Content note : previewNotes) {
+                    ul.add(HtmlTree.LI(note));
+                }
+                previewDiv.add(ul);
+                previewDiv.add(HtmlTree.P(replaceParams(resources.getText("doclet.PreviewTrailingNote1"), (param, result) -> result.add(HtmlTree.CODE(new StringContent(typeElement.getSimpleName()))))));
+                previewDiv.add(HtmlTree.P(replaceParams(resources.getText("doclet.PreviewTrailingNote2"), (param, result) -> result.add(HtmlTree.CODE(new StringContent(typeElement.getSimpleName()))))));
+                classInfoTree.add(previewDiv);
+            }
         }
     }
 
     @SuppressWarnings("preview")
     public List<Content> getPreviewNotes(TypeElement el) {
+        String className = el.getSimpleName().toString();
         List<Content> result = new ArrayList<>();
         PreviewSummary previewAPITypes = utils.declaredUsingPreviewAPIs(el);
         Set<TypeElement> memberPreviewAPI = new HashSet<>();
         Set<TypeElement> memberReflectivePreviewAPI = new HashSet<>();
         Set<TypeElement> memberDeclaredUsingPreviewFeature = new HashSet<>();
-        Set<String> memberPreviewLanguageFeatures = new HashSet<>();
+        Set<DeclarationPreviewLanguageFeatures> memberPreviewLanguageFeatures = new HashSet<>();
         for (Element enclosed : el.getEnclosedElements()) {
             if (!utils.isIncluded(enclosed)) {
                 continue;
@@ -369,68 +398,86 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 memberDeclaredUsingPreviewFeature.add((TypeElement) enclosed);
             }
         }
-        Set<String> previewLanguageFeatures = utils.previewLanguageFeaturesUsed(el);
+        Set<DeclarationPreviewLanguageFeatures> previewLanguageFeatures = utils.previewLanguageFeaturesUsed(el);
         if (!previewLanguageFeatures.isEmpty() || !memberPreviewLanguageFeatures.isEmpty()) {
-            result.add(injectPreviewFeatures("doclet.Declared_Using_Preview", previewLanguageFeatures, memberPreviewLanguageFeatures));
+            Set<DeclarationPreviewLanguageFeatures> features = new HashSet<>();
+            features.addAll(previewLanguageFeatures);
+            features.addAll(memberPreviewLanguageFeatures);
+            if (features.contains(DeclarationPreviewLanguageFeatures.SEALED_PERMITS)) {
+                features.remove(DeclarationPreviewLanguageFeatures.SEALED);
+            }
+            for (DeclarationPreviewLanguageFeatures feature : features) {
+                result.add(injectPreviewFeatures("doclet.Declared_Using_Preview", className, resources.getText("doclet.Declared_Using_Preview." + feature.name()), feature.features));
+            }
         }
         if (!previewAPITypes.declaredUsingPreviewFeature.isEmpty() || !memberDeclaredUsingPreviewFeature.isEmpty()) {
-            result.add(injectLinks("doclet.UsesDeclaredUsingPreview", previewAPITypes.declaredUsingPreviewFeature, memberDeclaredUsingPreviewFeature));
+            result.add(injectLinks("doclet.UsesDeclaredUsingPreview", className, previewAPITypes.declaredUsingPreviewFeature, memberDeclaredUsingPreviewFeature));
         }
-        System.err.println("el=" + el + "/" + previewAPITypes.previewAPI);
         if (!previewAPITypes.previewAPI.isEmpty() || !memberPreviewAPI.isEmpty()) {
-            result.add(injectLinks("doclet.PreviewAPI", previewAPITypes.previewAPI, memberPreviewAPI));
+            result.add(injectLinks("doclet.PreviewAPI", className, previewAPITypes.previewAPI, memberPreviewAPI));
         }
         if (!previewAPITypes.reflectivePreviewAPI.isEmpty() || !memberReflectivePreviewAPI.isEmpty()) {
-            result.add(injectLinks("doclet.ReflectivePreviewAPI", previewAPITypes.reflectivePreviewAPI, memberReflectivePreviewAPI));
+            result.add(injectLinks("doclet.ReflectivePreviewAPI", className, previewAPITypes.reflectivePreviewAPI, memberReflectivePreviewAPI));
         }
         return result;
     }
 
-    private Content injectPreviewFeatures(String key, Set<String> features1, Set<String> features2) {
-        Set<String> features = new HashSet<>();
-        features.addAll(features1);
-        features.addAll(features2);
-        List<String> expectedOrder = new ArrayList<>(List.of("record", "sealed", "permits"));
-        expectedOrder.retainAll(features);
-        ContentBuilder result = new ContentBuilder();
+    private static final Pattern PARAMETER = Pattern.compile("\\{([0-9])\\}");
+
+    private Content injectPreviewFeatures(String key, String className, String featureName, List<String> features) {
         String template = resources.getText(key);
-        int injectPoint = template.indexOf("{0}");
-        if (injectPoint == (-1)) {
-            result.add(template);
-            return result;
-        }
-        result.add(template.substring(0, injectPoint));
-        String[] sep = new String[] {""};
-        expectedOrder.stream()
-                .forEach(c -> {
-                    result.add(sep[0]);
-                    result.add(HtmlTree.CODE(new ContentBuilder().add(c)));
-                    sep[0] = ", ";
-                });
-        result.add(template.substring(injectPoint + 3));
-        return result;
+        return replaceParams(template, (param, result) -> {
+            switch (param) {
+                case "0" -> result.add(HtmlTree.CODE(new StringContent(className)));
+                case "1" -> result.add(new HtmlTree(TagName.EM).add(featureName));
+                case "2" -> {
+                    String[] sep = new String[] {""};
+                    features.stream()
+                            .forEach(c -> {
+                                result.add(sep[0]);
+                                result.add(HtmlTree.CODE(new ContentBuilder().add(c)));
+                                sep[0] = ", ";
+                            });
+                }
+            }
+        });
     }
 
-    private Content injectLinks(String key, Set<TypeElement> elements1, Set<TypeElement> elements2) {
-        ContentBuilder result = new ContentBuilder();
+    private Content injectLinks(String key, String className, Set<TypeElement> elements1, Set<TypeElement> elements2) {
         String template = resources.getText(key);
-        int injectPoint = template.indexOf("{0}");
-        if (injectPoint == (-1)) {
-            result.add(template);
-            return result;
+        return replaceParams(template, (param, result) -> {
+            switch (param) {
+                case "0" -> result.add(HtmlTree.CODE(new StringContent(className)));
+                case "1" -> {
+                    String[] sep = new String[] {""};
+                    Stream.concat(elements1.stream(), elements2.stream())
+                          .sorted((te1, te2) -> te1.getSimpleName().toString().compareTo(te2.getSimpleName().toString()))
+                          .distinct()
+                          .map(te -> getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS, te).skipPreview(true)))
+                          .forEach(c -> {
+                              result.add(sep[0]);
+                              result.add(c);
+                              sep[0] = ", ";
+                          });
+                }
+            }
+        });
+    }
+
+    private Content replaceParams(String template, BiConsumer<String, ContentBuilder> fillParams) {
+        ContentBuilder result = new ContentBuilder();
+        int lastEnd = 0;
+        Matcher m = PARAMETER.matcher(template);
+
+        while (m.find()) {
+            result.add(template.substring(lastEnd, m.start()));
+            lastEnd = m.start();
+            fillParams.accept(m.group(1), result);
+            lastEnd = m.end();
         }
-        result.add(template.substring(0, injectPoint));
-        String[] sep = new String[] {""};
-        Stream.concat(elements1.stream(), elements2.stream())
-              .sorted((te1, te2) -> te1.getSimpleName().toString().compareTo(te2.getSimpleName().toString()))
-              .distinct()
-              .map(te -> getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS, te)))
-              .forEach(c -> {
-                  result.add(sep[0]);
-                  result.add(c);
-                  sep[0] = ", ";
-              });
-        result.add(template.substring(injectPoint + 3));
+
+        result.add(template.substring(lastEnd));
+
         return result;
     }
 

@@ -236,13 +236,6 @@ public abstract class Snippet {
         ENUM_SUBKIND(Kind.TYPE_DECL),
 
         /**
-         * {@preview Associated with records, a preview feature of the Java language.
-         *
-         *           This enum constant is associated with <i>records</i>, a preview
-         *           feature of the Java language. Preview features
-         *           may be removed in a future release, or upgraded to permanent
-         *           features of the Java language.}
-         *
          * A record declaration.
          * A {@code SubKind} of {@link Kind#TYPE_DECL}.
          * @jls 8.10 Record Types
