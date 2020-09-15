@@ -29,12 +29,15 @@ import java.util.spi.ToolProvider;
 /*
  * @test
  * @summary Make sure that jimages are consistent when created by jlink.
- * @bug 8241602
+ * @bug 8252730
  * @modules jdk.jlink
- *          java.se
- * @run main JLinkReproducible2Test
+ *          java.base
+ *          jdk.management
+ *          jdk.unsupported
+ *          jdk.charsets
+ * @run main JLinkReproducible3Test
  */
-public class JLinkReproducible2Test {
+public class JLinkReproducible3Test {
     static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
             .orElseThrow(() ->
                     new RuntimeException("jlink tool not found")
@@ -44,11 +47,12 @@ public class JLinkReproducible2Test {
         Path image1 = Paths.get("./image1");
         Path image2 = Paths.get("./image2");
 
-        JLINK_TOOL.run(System.out, System.err, "--add-modules", "java.se", "--output", image1.toString());
-        JLINK_TOOL.run(System.out, System.err, "--add-modules", "java.se", "--output", image2.toString());
+        JLINK_TOOL.run(System.out, System.err, "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image1.toString());
+        JLINK_TOOL.run(System.out, System.err, "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image2.toString());
 
         if (Files.mismatch(image1.resolve("lib").resolve("modules"), image2.resolve("lib").resolve("modules")) != -1L) {
-            throw new RuntimeException("jlink producing inconsistent result");
+            throw new RuntimeException("jlink producing inconsistent result in modules");
         }
     }
 }
+
