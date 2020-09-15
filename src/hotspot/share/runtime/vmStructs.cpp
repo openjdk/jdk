@@ -1008,7 +1008,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* -XX flags         */                                                                                                            \
   /*********************/                                                                                                            \
                                                                                                                                      \
-  nonstatic_field(JVMFlag,                     _type,                                         const char*)                           \
+  nonstatic_field(JVMFlag,                     _type,                                         int)                                   \
   nonstatic_field(JVMFlag,                     _name,                                         const char*)                           \
   unchecked_nonstatic_field(JVMFlag,           _addr,                                         sizeof(void*)) /* NOTE: no type */     \
   nonstatic_field(JVMFlag,                     _flags,                                        JVMFlag::Flags)                        \

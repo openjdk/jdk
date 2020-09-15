@@ -139,8 +139,8 @@ JVMFlag::Error VMPageSizeConstraintFunc(uintx value, bool verbose) {
     JVMFlag::printError(verbose,
                         "%s %s=" UINTX_FORMAT " is outside the allowed range [ " UINTX_FORMAT
                         " ... " UINTX_FORMAT " ]\n",
-                        JVMFlagLimit::last_checked_flag()->_type,
-                        JVMFlagLimit::last_checked_flag()->_name,
+                        JVMFlagLimit::last_checked_flag()->type_string(),
+                        JVMFlagLimit::last_checked_flag()->name(),
                         value, min, max_uintx);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }

@@ -101,10 +101,10 @@
 
 //
 // range is a macro that will expand to min and max arguments for range
-//    checking code if provided - see jvmFlagRangeList.hpp
+//    checking code if provided - see jvmFlagLimit.hpp
 //
 // constraint is a macro that will expand to custom function call
-//    for constraint checking if provided - see jvmFlagConstraintList.hpp
+//    for constraint checking if provided - see jvmFlagLimit.hpp
 
 // Default and minimum StringTable and SymbolTable size values
 // Must be powers of 2

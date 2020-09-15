@@ -1002,6 +1002,27 @@ public class VM {
     return (Flag) flagsMap.get(name);
   }
 
+  private static final String cmdFlagTypes[] = {
+    "bool",
+    "int",
+    "uint",
+    "intx",
+    "uintx",
+    "uint64_t",
+    "size_t",
+    "double",
+    "ccstr",
+    "ccstrlist"
+  };
+
+  private String getFlagTypeAsString(int typeIndex) {
+    if (0 <= typeIndex && typeIndex < cmdFlagTypes.length) {
+      return cmdFlagTypes[typeIndex];
+    } else {
+      return "unknown";
+    }
+  }
+
   private void readCommandLineFlags() {
     // get command line flags
     TypeDataBase db = getTypeDataBase();
@@ -1011,8 +1032,7 @@ public class VM {
     commandLineFlags = new Flag[numFlags - 1];
 
     Address flagAddr = flagType.getAddressField("flags").getValue();
-
-    AddressField typeFld = flagType.getAddressField("_type");
+    CIntField typeFld = new CIntField(flagType.getCIntegerField("_type"), 0);
     AddressField nameFld = flagType.getAddressField("_name");
     AddressField addrFld = flagType.getAddressField("_addr");
     CIntField flagsFld = new CIntField(flagType.getCIntegerField("_flags"), 0);
@@ -1021,7 +1041,8 @@ public class VM {
 
     // NOTE: last flag contains null values.
     for (int f = 0; f < numFlags - 1; f++) {
-      String type = CStringUtilities.getString(typeFld.getValue(flagAddr));
+      int typeIndex = (int)typeFld.getValue(flagAddr);
+      String type = getFlagTypeAsString(typeIndex);
       String name = CStringUtilities.getString(nameFld.getValue(flagAddr));
       Address addr = addrFld.getValue(flagAddr);
       int flags = (int)flagsFld.getValue(flagAddr);

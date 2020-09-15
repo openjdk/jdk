@@ -31,7 +31,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/globals_shared.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/defaultStream.hpp"
