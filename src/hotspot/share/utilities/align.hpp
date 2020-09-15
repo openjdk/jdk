@@ -60,8 +60,8 @@ constexpr bool is_aligned(T size, A alignment) {
 
 template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
 constexpr T align_down(T size, A alignment) {
-  // Convert mask to T before lognot.  Otherwise, if alignment is unsigned
-  // and smaller than T, the result of the lognot will be zero-extended
+  // Convert mask to T before logical_not.  Otherwise, if alignment is unsigned
+  // and smaller than T, the result of the logical_not will be zero-extended
   // by integral promotion, and upper bits of size will be discarded.
   T result = size & ~T(alignment_mask(alignment));
   assert(is_aligned(result, alignment),
