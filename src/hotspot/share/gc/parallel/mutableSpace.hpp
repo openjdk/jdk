@@ -56,7 +56,6 @@ class MutableSpace: public ImmutableSpace {
   MutableSpaceMangler* mangler() { return _mangler; }
 
   void numa_setup_pages(MemRegion mr, bool clear_space);
-  void pretouch_pages(MemRegion mr);
 
   void set_last_setup_region(MemRegion mr) { _last_setup_region = mr;   }
   MemRegion last_setup_region() const      { return _last_setup_region; }
@@ -87,7 +86,8 @@ class MutableSpace: public ImmutableSpace {
   virtual void initialize(MemRegion mr,
                           bool clear_space,
                           bool mangle_space,
-                          bool setup_pages = SetupPages);
+                          bool setup_pages = SetupPages,
+                          WorkGang* pretouch_gang = NULL);
 
   virtual void clear(bool mangle_space);
   // Does the usual initialization but optionally resets top to bottom.

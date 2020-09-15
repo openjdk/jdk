@@ -572,7 +572,8 @@ void MutableNUMASpace::merge_regions(MemRegion new_region, MemRegion* intersecti
 void MutableNUMASpace::initialize(MemRegion mr,
                                   bool clear_space,
                                   bool mangle_space,
-                                  bool setup_pages) {
+                                  bool setup_pages,
+                                  WorkGang* pretouch_gang) {
   assert(clear_space, "Reallocation will destroy data!");
   assert(lgrp_spaces()->length() > 0, "There should be at least one space");
 

@@ -189,9 +189,10 @@ void PSYoungGen::set_space_boundaries(size_t eden_size, size_t survivor_size) {
   MemRegion to_mr  ((HeapWord*)to_start, (HeapWord*)from_start);
   MemRegion from_mr((HeapWord*)from_start, (HeapWord*)from_end);
 
-  eden_space()->initialize(eden_mr, true, ZapUnusedHeapArea);
-    to_space()->initialize(to_mr  , true, ZapUnusedHeapArea);
-  from_space()->initialize(from_mr, true, ZapUnusedHeapArea);
+  WorkGang& pretouch_workers = ParallelScavengeHeap::heap()->workers();
+  eden_space()->initialize(eden_mr, true, ZapUnusedHeapArea, MutableSpace::SetupPages, &pretouch_workers);
+    to_space()->initialize(to_mr  , true, ZapUnusedHeapArea, MutableSpace::SetupPages, &pretouch_workers);
+  from_space()->initialize(from_mr, true, ZapUnusedHeapArea, MutableSpace::SetupPages, &pretouch_workers);
 }
 
 #ifndef PRODUCT

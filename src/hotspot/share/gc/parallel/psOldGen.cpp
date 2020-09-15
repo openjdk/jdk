@@ -131,7 +131,9 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
   _object_space = new MutableSpace(virtual_space()->alignment());
   object_space()->initialize(cmr,
                              SpaceDecorator::Clear,
-                             SpaceDecorator::Mangle);
+                             SpaceDecorator::Mangle,
+                             MutableSpace::SetupPages,
+                             &ParallelScavengeHeap::heap()->workers());
 
   // Update the start_array
   start_array()->set_covered_region(cmr);

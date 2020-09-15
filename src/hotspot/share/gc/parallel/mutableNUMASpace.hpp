@@ -195,7 +195,11 @@ class MutableNUMASpace : public MutableSpace {
   MutableNUMASpace(size_t alignment);
   virtual ~MutableNUMASpace();
   // Space initialization.
-  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space, bool setup_pages = SetupPages);
+  virtual void initialize(MemRegion mr,
+                          bool clear_space,
+                          bool mangle_space,
+                          bool setup_pages = SetupPages,
+                          WorkGang* pretouch_gang = NULL);
   // Update space layout if necessary. Do all adaptive resizing job.
   virtual void update();
   // Update allocation rate averages.
