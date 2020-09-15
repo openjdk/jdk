@@ -27,6 +27,7 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -39,7 +40,9 @@
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -268,6 +271,7 @@ void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRA
 
 void Modules::define_module(jobject module, jboolean is_open, jstring version,
                             jstring location, jobjectArray packages, TRAPS) {
+  check_cds_restrictions(CHECK);
   ResourceMark rm(THREAD);
 
   if (module == NULL) {
@@ -450,6 +454,46 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
   }
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
+void Modules::define_archived_modules(jobject platform_loader, jobject system_loader, TRAPS) {
+  assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
+
+  // We don't want the classes used by the archived full module graph to be redefined by JVMTI.
+  // Luckily, such classes are loaded in the JVMTI "early" phase, and CDS is disabled if a JVMTI
+  // agent wants to redefine classes in this phase.
+  JVMTI_ONLY(assert(JvmtiExport::is_early_phase(), "must be"));
+  assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
+         "CDS should be disabled if early class hooks are enabled");
+
+  Handle java_base_module(THREAD, ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data());
+  // Patch any previously loaded class's module field with java.base's java.lang.Module.
+  ModuleEntryTable::patch_javabase_entries(java_base_module);
+
+  if (platform_loader == NULL) {
+    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null platform loader object");
+  }
+
+  if (system_loader == NULL) {
+    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null system loader object");
+  }
+
+  Handle h_platform_loader(THREAD, JNIHandles::resolve_non_null(platform_loader));
+  ClassLoaderData* platform_loader_data = SystemDictionary::register_loader(h_platform_loader);
+  ClassLoaderDataShared::restore_java_platform_loader_from_archive(platform_loader_data);
+
+  Handle h_system_loader(THREAD, JNIHandles::resolve_non_null(system_loader));
+  ClassLoaderData* system_loader_data = SystemDictionary::register_loader(h_system_loader);
+  ClassLoaderDataShared::restore_java_system_loader_from_archive(system_loader_data);
+}
+
+void Modules::check_cds_restrictions(TRAPS) {
+  if (DumpSharedSpaces && Universe::is_module_initialized() && MetaspaceShared::use_full_module_graph()) {
+    THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(),
+              "During -Xshare:dump, module system cannot be modified after it's initialized");
+  }
+}
+#endif // INCLUDE_CDS_JAVA_HEAP
+
 void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
   ResourceMark rm(THREAD);
 
@@ -488,6 +532,7 @@ void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
 }
 
 void Modules::add_module_exports(jobject from_module, jstring package_name, jobject to_module, TRAPS) {
+  check_cds_restrictions(CHECK);
 
   if (package_name == NULL) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(),
@@ -555,6 +600,7 @@ void Modules::add_module_exports(jobject from_module, jstring package_name, jobj
 
 void Modules::add_module_exports_qualified(jobject from_module, jstring package,
                                            jobject to_module, TRAPS) {
+  check_cds_restrictions(CHECK);
   if (to_module == NULL) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(),
               "to_module is null");
@@ -563,6 +609,7 @@ void Modules::add_module_exports_qualified(jobject from_module, jstring package,
 }
 
 void Modules::add_reads_module(jobject from_module, jobject to_module, TRAPS) {
+  check_cds_restrictions(CHECK);
   if (from_module == NULL) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(),
               "from_module is null");
@@ -668,6 +715,7 @@ jobject Modules::get_named_module(Handle h_loader, const char* package_name, TRA
 
 // Export package in module to all unnamed modules.
 void Modules::add_module_exports_to_all_unnamed(jobject module, jstring package_name, TRAPS) {
+  check_cds_restrictions(CHECK);
   if (module == NULL) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(),
               "module is null");

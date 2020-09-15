@@ -218,6 +218,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _max_heap_size = MaxHeapSize;
   _narrow_klass_shift = CompressedKlassPointers::shift();
   _use_optimized_module_handling = MetaspaceShared::use_optimized_module_handling();
+  _use_full_module_graph = MetaspaceShared::use_full_module_graph();
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -2179,7 +2180,12 @@ bool FileMapHeader::validate() {
 
   if (!_use_optimized_module_handling) {
     MetaspaceShared::disable_optimized_module_handling();
-    log_info(cds)("use_optimized_module_handling disabled: archive was created without optimized module handling");
+    log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
+  }
+
+  if (!_use_full_module_graph) {
+    MetaspaceShared::disable_full_module_graph();
+    log_info(cds)("full module graph: disabled because archive was created without full module graph");
   }
 
   return true;

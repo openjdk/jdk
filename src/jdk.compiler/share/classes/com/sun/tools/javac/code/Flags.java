@@ -220,7 +220,11 @@ public class Flags {
      */
     public static final long UNION = 1L<<39;
 
-    // Flag bit (1L << 40) is available.
+    /**
+     * Flags an erroneous TypeSymbol as viable for recovery.
+     * TypeSymbols only.
+     */
+    public static final long RECOVERABLE = 1L<<40;
 
     /**
      * Flag that marks an 'effectively final' local variable.
@@ -508,6 +512,7 @@ public class Flags {
         MATCH_BINDING(Flags.MATCH_BINDING),
         MATCH_BINDING_TO_OUTER(Flags.MATCH_BINDING_TO_OUTER),
         RECORD(Flags.RECORD),
+        RECOVERABLE(Flags.RECOVERABLE),
         SEALED(Flags.SEALED),
         NON_SEALED(Flags.NON_SEALED) {
             @Override

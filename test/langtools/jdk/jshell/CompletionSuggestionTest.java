@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -696,6 +696,27 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("FI2<String, CharSequence> fi = C::|", true, "statConvert3");
         assertCompletion("FI2<String, String> fi = C::|", true, "statConvert3");
         assertCompletion("FI2<Object, String> fi = C::|", true, "statConvert1", "statConvert3");
+    }
+
+    public void testBrokenLambdaCompletion() {
+        assertEval("interface Consumer<T> { public void consume(T t); }");
+        assertEval("interface Function<T, R> { public R convert(T t); }");
+        assertEval("<T> void m1(T t, Consumer<T> f) { }");
+        assertCompletion("m1(\"\", x -> {x.tri|", "trim()");
+        assertEval("<T> void m2(T t, Function<T, String> f) { }");
+        assertCompletion("m2(\"\", x -> {x.tri|", "trim()");
+        assertEval("<T> void m3(T t, Consumer<T> f, int i) { }");
+        assertCompletion("m3(\"\", x -> {x.tri|", "trim()");
+        assertEval("<T> void m4(T t, Function<T, String> f, int i) { }");
+        assertCompletion("m4(\"\", x -> {x.tri|", "trim()");
+        assertEval("<T> T m5(Consumer<T> f) { return null; }");
+        assertCompletion("String s = m5(x -> {x.tri|", "trim()");
+        assertEval("<T> T m6(Function<T, String> f) { return null; }");
+        assertCompletion("String s = m6(x -> {x.tri|", "trim()");
+        assertEval("<T> T m7(Consumer<T> f, int i) { return null; }");
+        assertCompletion("String s = m7(x -> {x.tri|", "trim()");
+        assertEval("<T> T m8(Function<T, String> f, int i) { return null; }");
+        assertCompletion("String s = m8(x -> {x.tri|", "trim()");
     }
 
     @BeforeMethod
