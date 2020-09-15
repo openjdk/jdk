@@ -547,7 +547,7 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
   assert(_g1h->collection_set()->verify_young_ages(), "region age verification failed");
 }
 
-void G1Policy::record_concurrent_mark_init_end(double mark_init_elapsed_time_ms) {
+void G1Policy::record_concurrent_mark_init_end() {
   assert(!collector_state()->initiate_conc_mark_if_possible(), "we should have cleared it by now");
   collector_state()->set_in_concurrent_start_gc(false);
 }
@@ -631,7 +631,7 @@ double G1Policy::logged_cards_processing_time() const {
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1Policy::record_collection_pause_end(double pause_time_ms) {
+void G1Policy::record_collection_pause_end(double pause_time_ms, bool start_concurrent_mark_cycle) {
   G1GCPhaseTimes* p = phase_times();
 
   double end_time_sec = os::elapsedTime();
@@ -642,7 +642,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
   bool update_stats = should_update_gc_stats();
 
   if (is_concurrent_start_pause(this_pause)) {
-    record_concurrent_mark_init_end(0.0);
+    record_concurrent_mark_init_end();
   } else {
     maybe_start_marking();
   }
@@ -781,7 +781,10 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
   assert(!(is_concurrent_start_pause(this_pause) && collector_state()->mark_or_rebuild_in_progress()),
          "If the last pause has been concurrent start, we should not have been in the marking window");
   if (is_concurrent_start_pause(this_pause)) {
-    collector_state()->set_mark_or_rebuild_in_progress(true);
+    if (!start_concurrent_mark_cycle) {
+      abort_time_to_mixed_tracking();
+    }
+    collector_state()->set_mark_or_rebuild_in_progress(start_concurrent_mark_cycle);
   }
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
@@ -810,7 +813,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
     // for completing the marking, i.e. are faster than expected.
     // This skews the predicted marking length towards smaller values which might cause
     // the mark start being too late.
-    _concurrent_start_to_mixed.reset();
+    abort_time_to_mixed_tracking();
   }
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.

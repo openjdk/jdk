@@ -323,14 +323,14 @@ public:
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
-  virtual void record_collection_pause_end(double pause_time_ms);
+  virtual void record_collection_pause_end(double pause_time_ms, bool start_concurrent_mark_cycle);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
   virtual void record_full_collection_end();
 
   // Must currently be called while the world is stopped.
-  void record_concurrent_mark_init_end(double mark_init_elapsed_time_ms);
+  void record_concurrent_mark_init_end();
 
   // Record start and end of remark.
   void record_concurrent_mark_remark_start();

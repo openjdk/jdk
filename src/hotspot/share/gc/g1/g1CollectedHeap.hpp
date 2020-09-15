@@ -746,6 +746,11 @@ private:
   void reset_taskqueue_stats();
   #endif // TASKQUEUE_STATS
 
+  // Start a concurrent cycle. If is_mark_cycle is true, do a
+  // full mark cycle, otherwise only do concurrent mark undo
+  // processing. That is, clear the bitmap only.
+  void start_concurrent_cycle(bool is_mark_cycle);
+
   // Schedule the VM operation that will do an evacuation pause to
   // satisfy an allocation request of word_size. *succeeded will
   // return whether the VM operation was successful (it did do an
@@ -1306,16 +1311,6 @@ public:
 #ifdef ASSERT
   bool check_young_list_empty();
 #endif
-
-  // *** Stuff related to concurrent marking.  It's not clear to me that so
-  // many of these need to be public.
-
-  // The functions below are helper functions that a subclass of
-  // "CollectedHeap" can use in the implementation of its virtual
-  // functions.
-  // This performs a concurrent marking of the live objects in a
-  // bitmap off to the side.
-  void do_concurrent_mark();
 
   bool is_marked_next(oop obj) const;
 

@@ -684,7 +684,7 @@ public:
   }
 };
 
-void G1ConcurrentMark::pre_concurrent_start() {
+void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   assert_at_safepoint_on_vm_thread();
 
   // Reset marking state.
@@ -695,10 +695,16 @@ void G1ConcurrentMark::pre_concurrent_start() {
   _g1h->heap_region_iterate(&startcl);
 
   _root_regions.reset();
+
+  _gc_tracer_cm->set_gc_cause(cause);
 }
 
 
-void G1ConcurrentMark::post_concurrent_start() {
+void G1ConcurrentMark::post_concurrent_start(bool is_mark_cycle) {
+  if (!is_mark_cycle) {
+    root_regions()->cancel_scan();
+    return;
+  }
   // Start Concurrent Marking weak-reference discovery.
   ReferenceProcessor* rp = _g1h->ref_processor_cm();
   // enable ("weak") refs discovery
