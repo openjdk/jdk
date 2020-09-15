@@ -2165,12 +2165,6 @@ const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
 
-int Matcher::regnum_to_fpu_offset(int regnum) {
-  // No user for this method?
-  Unimplemented();
-  return 999;
-}
-
 const bool Matcher::convL2FSupported(void) {
   // fcfids can do the conversion (>= Power7).
   // fcfid + frsp showed rounding problem when result should be 0x3f800001.

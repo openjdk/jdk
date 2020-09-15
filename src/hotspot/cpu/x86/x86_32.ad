@@ -1371,10 +1371,6 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 //=============================================================================
 
-int Matcher::regnum_to_fpu_offset(int regnum) {
-  return regnum - 32; // The FP registers are in the second chunk
-}
-
 // This is UltraSparc specific, true just means we have fast l2f conversion
 const bool Matcher::convL2FSupported(void) {
   return true;

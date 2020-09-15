@@ -1,0 +1,101 @@
+[0.003s][info][cds] narrow_klass_base = 0x0000000800000000, narrow_klass_shift = 3
+[0.003s][info][cds] Allocated temporary class space: 1073741824 bytes at 0x00000008c0000000
+[0.003s][info][cds] Allocated shared space: 3221225472 bytes at 0x0000000800000000
+[0.003s][debug][cds] Expanding shared spaces by 1048576 bytes [total   1048576 bytes ending at 0x800100000]
+[0.003s][debug][cds] Expanding symbol spaces by 1048576 bytes [total   1048576 bytes ending at 0x7f99f4100000]
+[0.015s][debug][cds] JVM_GetRandomSeedForCDSDump() = 1364533100
+[0.045s][info ][cds] Loading classes to share ...
+[0.082s][debug][cds] Expanding symbol spaces by 1048576 bytes [total   2097152 bytes ending at 0x7f99f4200000]
+[0.125s][info ][cds] Loading classes to share: done.
+[0.125s][info ][cds] Shared spaces: preloaded 1180 classes
+[0.125s][info ][cds] Reading extra data: done.
+[0.127s][info ][cds] Rewriting and linking classes ...
+[0.132s][info ][cds] Rewriting and linking classes: done
+[0.132s][debug][cds] Resetting platform loader
+[0.132s][debug][cds]   calling jdk.internal.loader.BuiltinClassLoader.resetArchivedStates()V
+[0.132s][debug][cds]   calling java.security.SecureClassLoader.resetArchivedStates()V
+[0.132s][debug][cds]   calling java.lang.ClassLoader.resetArchivedStates()V
+[0.132s][debug][cds] Resetting system loader
+[0.132s][debug][cds]   calling jdk.internal.loader.ClassLoaders$AppClassLoader.resetArchivedStates()V
+[0.132s][debug][cds]   calling jdk.internal.loader.BuiltinClassLoader.resetArchivedStates()V
+[0.132s][debug][cds]   calling java.security.SecureClassLoader.resetArchivedStates()V
+[0.132s][debug][cds]   calling java.lang.ClassLoader.resetArchivedStates()V
+[0.133s][info ][cds] Run GC ...
+[0.136s][info ][cds] Run GC done
+[0.138s][info ][cds] Gathering classes and symbols ... 
+[0.175s][info ][cds] Number of classes 1262
+[0.175s][info ][cds]     instance classes   =  1189
+[0.175s][info ][cds]     obj array classes  =    65
+[0.175s][info ][cds]     type array classes =     8
+[0.175s][info ][cds] Sorting symbols and fixing identity hash ... 
+[0.177s][info ][cds] Sorting classes ... 
+[0.177s][info ][cds] Updating ConstMethods ... 
+[0.184s][info ][cds] done. 
+[0.184s][info ][cds] Removing unshareable information ... 
+[0.190s][info ][cds] done. 
+[0.190s][info ][cds] Gathering all archivable objects ... 
+[0.246s][info ][cds] Allocating RW objects ... 
+[0.248s][debug][cds] Expanding shared spaces by 1048576 bytes [total   2097152 bytes ending at 0x800200000]
+[0.249s][debug][cds] Expanding shared spaces by 1048576 bytes [total   3145728 bytes ending at 0x800300000]
+[0.250s][debug][cds] Expanding shared spaces by 1048576 bytes [total   4194304 bytes ending at 0x800400000]
+[0.251s][info ][cds] done (23870 objects)
+[0.251s][info ][cds] Allocating RO objects ... 
+[0.251s][debug][cds] Expanding shared spaces by 1048576 bytes [total   5242880 bytes ending at 0x800500000]
+[0.253s][debug][cds] Expanding shared spaces by 1048576 bytes [total   6291456 bytes ending at 0x800600000]
+[0.254s][debug][cds] Expanding shared spaces by 1048576 bytes [total   7340032 bytes ending at 0x800700000]
+[0.255s][debug][cds] Expanding shared spaces by 1048576 bytes [total   8388608 bytes ending at 0x800800000]
+[0.256s][debug][cds] Expanding shared spaces by 1048576 bytes [total   9437184 bytes ending at 0x800900000]
+[0.257s][debug][cds] Expanding shared spaces by 1048576 bytes [total  10485760 bytes ending at 0x800a00000]
+[0.258s][debug][cds] Expanding shared spaces by 1048576 bytes [total  11534336 bytes ending at 0x800b00000]
+[0.259s][info ][cds] done (74370 objects)
+[0.259s][info ][cds] Relocating embedded pointers ... 
+[0.280s][info ][cds] Relocating external roots ... 
+[0.281s][info ][cds] done
+[0.281s][info ][cds] Dumping symbol table ...
+[0.293s][debug][cds] Expanding shared spaces by 1048576 bytes [total  12582912 bytes ending at 0x800c00000]
+[0.295s][info ][cds] Dumping objects to closed archive heap region ...
+[0.298s][info ][cds] Dumping objects to open archive heap region ...
+[0.305s][info ][cds] Relocating SystemDictionary::_well_known_klasses[] ... 
+[0.305s][info ][cds] Removing java_mirror ... 
+[0.305s][info ][cds] done. 
+[0.309s][info ][cds] Dumping shared data to file: 
+[0.309s][info ][cds]    SharedArchiveFile3.jsa
+[0.309s][debug][cds] Shared file region (mc )  0:    11248 bytes, addr 0x0000000800000000 file offset 0x00001000 crc 0xeb7f01f3
+[0.312s][debug][cds] Shared file region (rw )  1:  4161840 bytes, addr 0x0000000800003000 file offset 0x00004000 crc 0x446d7a80
+[0.319s][debug][cds] Shared file region (ro )  2:  7635912 bytes, addr 0x00000008003fc000 file offset 0x003fd000 crc 0x4d44d9f0
+[0.323s][debug][cds] Shared file region (bm )  3:   216464 bytes, addr 0x0000000000000000 file offset 0x00b46000 crc 0xc57d496a
+[0.323s][debug][cds] Shared file region (ca0)  4:   507904 bytes, addr 0x00000000fff00000 file offset 0x00b7b000 crc 0x8ac7bc26
+[0.324s][debug][cds] Shared file region (oa0)  6:   512000 bytes, addr 0x00000000ffe00000 file offset 0x00bf7000 crc 0xcf95e166
+[0.324s][debug][cds] mc  space:     11248 [  0.1% of total] out of     12288 bytes [ 91.5% used] at 0x0000000800000000
+[0.324s][debug][cds] rw  space:   4161840 [ 31.9% of total] out of   4165632 bytes [ 99.9% used] at 0x0000000800003000
+[0.324s][debug][cds] ro  space:   7635912 [ 58.5% of total] out of   7639040 bytes [100.0% used] at 0x00000008003fc000
+[0.324s][debug][cds] bm  space:    216464 [  1.7% of total] out of    216464 bytes [100.0% used]
+[0.324s][debug][cds] ca0 space:    507904 [  3.9% of total] out of    507904 bytes [100.0% used] at 0x00000000fff00000
+[0.324s][debug][cds] oa0 space:    512000 [  3.9% of total] out of    512000 bytes [100.0% used] at 0x00000000ffe00000
+[0.324s][debug][cds] total    :  13045368 [100.0% of total] out of  13053952 bytes [ 99.9% used]
+[0.324s][debug][cds] Detailed metadata info (excluding st regions; rw stats include mc regions):
+[0.324s][debug][cds]                         ro_cnt   ro_bytes     % |   rw_cnt   rw_bytes     % |  all_cnt  all_bytes     %
+[0.324s][debug][cds] --------------------+---------------------------+---------------------------+--------------------------
+[0.324s][debug][cds] Class               :        0          0   0.0 |     1262     815432  19.5 |     1262     815432   6.9
+[0.324s][debug][cds] Symbol              :    38267    1513488  19.8 |        0          0   0.0 |    38267    1513488  12.8
+[0.324s][debug][cds] TypeArrayU1         :     9317     282280   3.7 |     1189     246912   5.9 |    10506     529192   4.5
+[0.324s][debug][cds] TypeArrayU2         :     3067     160792   2.1 |        0          0   0.0 |     3067     160792   1.4
+[0.324s][debug][cds] TypeArrayU4         :     1373      87088   1.1 |        0          0   0.0 |     1373      87088   0.7
+[0.324s][debug][cds] TypeArrayU8         :     2050     189936   2.5 |     1189     144192   3.5 |     3239     334128   2.8
+[0.324s][debug][cds] TypeArrayOther      :        0          0   0.0 |        0          0   0.0 |        0          0   0.0
+[0.324s][debug][cds] Method              :        0          0   0.0 |    19041    1682568  40.3 |    19041    1682568  14.2
+[0.324s][debug][cds] ConstMethod         :    19041    2986728  39.1 |        0          0   0.0 |    19041    2986728  25.3
+[0.324s][debug][cds] MethodData          :        0          0   0.0 |        0          0   0.0 |        0          0   0.0
+[0.324s][debug][cds] ConstantPool        :     1189    1961032  25.7 |        0          0   0.0 |     1189    1961032  16.6
+[0.324s][debug][cds] ConstantPoolCache   :        0          0   0.0 |     1189    1213960  29.1 |     1189    1213960  10.3
+[0.324s][debug][cds] Annotations         :       66       2112   0.0 |        0          0   0.0 |       66       2112   0.0
+[0.324s][debug][cds] MethodCounters      :        0          0   0.0 |        0          0   0.0 |        0          0   0.0
+[0.324s][debug][cds] RecordComponent     :        0          0   0.0 |        0          0   0.0 |        0          0   0.0
+[0.324s][debug][cds] SymbolHashentry     :    38267     302976   4.0 |        0          0   0.0 |    38267     302976   2.6
+[0.324s][debug][cds] SymbolBucket        :     9865      39472   0.5 |        0          0   0.0 |     9865      39472   0.3
+[0.324s][debug][cds] StringHashentry     :     7019      55704   0.7 |        0          0   0.0 |     7019      55704   0.5
+[0.324s][debug][cds] StringBucket        :     1756       7032   0.1 |        0          0   0.0 |     1756       7032   0.1
+[0.324s][debug][cds] ModulesNatives      :        0       4496   0.1 |        0      58776   1.4 |        0      63272   0.5
+[0.324s][debug][cds] Other               :        0      42776   0.6 |        0      11248   0.3 |        0      54024   0.5
+[0.324s][debug][cds] --------------------+---------------------------+---------------------------+--------------------------
+[0.324s][debug][cds] Total               :   131277    7635912 100.0 |    23870    4173088 100.0 |   155147   11809000 100.0

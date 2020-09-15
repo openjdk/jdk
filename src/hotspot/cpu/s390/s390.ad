@@ -1569,11 +1569,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return ret_value;  // Per default match rules are supported.
 }
 
-int Matcher::regnum_to_fpu_offset(int regnum) {
-  ShouldNotReachHere();
-  return regnum - 32; // The FP registers are in the second chunk.
-}
-
 const bool Matcher::has_predicated_vectors(void) {
   return false;
 }
