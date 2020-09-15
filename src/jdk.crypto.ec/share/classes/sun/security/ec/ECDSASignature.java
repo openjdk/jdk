@@ -46,12 +46,20 @@ import static sun.security.ec.ECOperations.IntermediateValueException;
  *   . "SHA256withECDSA"
  *   . "SHA384withECDSA"
  *   . "SHA512withECDSA"
+ *   . "SHA3-224withECDSA"
+ *   . "SHA3-256withECDSA"
+ *   . "SHA3-384withECDSA"
+ *   . "SHA3-512withECDSA"
  *   . "NONEwithECDSAinP1363Format"
  *   . "SHA1withECDSAinP1363Format"
  *   . "SHA224withECDSAinP1363Format"
  *   . "SHA256withECDSAinP1363Format"
  *   . "SHA384withECDSAinP1363Format"
  *   . "SHA512withECDSAinP1363Format"
+ *   . "SHA3-224withECDSAinP1363Format"
+ *   . "SHA3-256withECDSAinP1363Format"
+ *   . "SHA3-384withECDSAinP1363Format"
+ *   . "SHA3-512withECDSAinP1363Format"
  *
  * @since   1.7
  */
@@ -275,6 +283,62 @@ abstract class ECDSASignature extends SignatureSpi {
     public static final class SHA512inP1363Format extends ECDSASignature {
         public SHA512inP1363Format() {
             super("SHA-512", true);
+        }
+    }
+
+    // Nested class for SHA3_224withECDSA signatures
+    public static final class SHA3_224 extends ECDSASignature {
+        public SHA3_224() {
+           super("SHA3-224");
+        }
+    }
+
+    // Nested class for SHA3_224withECDSAinP1363Format signatures
+    public static final class SHA3_224inP1363Format extends ECDSASignature {
+        public SHA3_224inP1363Format() {
+            super("SHA3-224", true);
+        }
+    }
+
+    // Nested class for SHA3_256withECDSA signatures
+    public static final class SHA3_256 extends ECDSASignature {
+        public SHA3_256() {
+            super("SHA3-256");
+        }
+    }
+
+    // Nested class for SHA3_256withECDSAinP1363Format signatures
+    public static final class SHA3_256inP1363Format extends ECDSASignature {
+        public SHA3_256inP1363Format() {
+            super("SHA3-256", true);
+        }
+    }
+
+    // Nested class for SHA3_384withECDSA signatures
+    public static final class SHA3_384 extends ECDSASignature {
+        public SHA3_384() {
+            super("SHA3-384");
+        }
+    }
+
+    // Nested class for SHA3_384withECDSAinP1363Format signatures
+    public static final class SHA3_384inP1363Format extends ECDSASignature {
+        public SHA3_384inP1363Format() {
+            super("SHA3-384", true);
+        }
+    }
+
+    // Nested class for SHA3_512withECDSA signatures
+    public static final class SHA3_512 extends ECDSASignature {
+        public SHA3_512() {
+            super("SHA3-512");
+        }
+    }
+
+    // Nested class for SHA3_512withECDSAinP1363Format signatures
+    public static final class SHA3_512inP1363Format extends ECDSASignature {
+        public SHA3_512inP1363Format() {
+            super("SHA3-512", true);
         }
     }
 

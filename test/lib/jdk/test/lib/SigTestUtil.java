@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,14 @@ public class SigTestUtil {
     // collection of all supported digest algorithms
     // note that the entries are ordered by required key sizes
     private static final String[] DIGEST_ALGS = {
+        "SHA3-512",
         "SHA-512",
+        "SHA3-384",
         "SHA-384",
+        "SHA3-256",
         "SHA-256",
         "SHA-512/256",
+        "SHA3-224",
         "SHA-224",
         "SHA-512/224",
         "SHA-1",
@@ -66,14 +70,14 @@ public class SigTestUtil {
 
     // indice for message digest algorithms lookup
     // may need to be adjusted if new algorithms are added
-    private static final int PKCS1_5_INDEX_768 = 0;
-    private static final int PKCS1_5_INDEX_512 = 2;
+    private static final int PKCS1_5_INDEX_768 = 0; // 512, 384-bit digests
+    private static final int PKCS1_5_INDEX_512 = 4; // 256-bit digests
     private static final int PKCS1_5_INDEX_END = DIGEST_ALGS.length;
-    private static final int PSS_INDEX_2048 = 0;
-    private static final int PSS_INDEX_1024 = 1;
-    private static final int PSS_INDEX_768 = 2;
-    private static final int PSS_INDEX_512 = 4;
-    private static final int PSS_INDEX_END = 7;
+    private static final int PSS_INDEX_2048 = 0; // 512-bit digests
+    private static final int PSS_INDEX_1024 = 2; // 384-bit digests
+    private static final int PSS_INDEX_768 = 4; // 256-bit digests
+    private static final int PSS_INDEX_512 = 7; // 224-bit digests
+    private static final int PSS_INDEX_END = DIGEST_ALGS.length - 2;
 
     public static Iterable<String> getDigestAlgorithms(SignatureType type,
             int keysize) throws RuntimeException {
@@ -135,9 +139,8 @@ public class SigTestUtil {
             String mdAlg) throws RuntimeException {
         switch (type) {
         case RSA:
-            int idx = mdAlg.indexOf("-");
-            if (idx != -1) {
-                mdAlg = mdAlg.substring(0, idx) + mdAlg.substring(idx+1);
+            if (mdAlg.startsWith("SHA-")) {
+                mdAlg = mdAlg.substring(0, 3) + mdAlg.substring(4);
             }
             return mdAlg + "with" + type.toString();
         case RSASSA_PSS:
