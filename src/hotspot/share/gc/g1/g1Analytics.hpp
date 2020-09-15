@@ -114,6 +114,10 @@ public:
     _prev_collection_pause_end_ms += ms;
   }
 
+  void set_prev_collection_pause_end_ms(double ms) {
+    _prev_collection_pause_end_ms = ms;
+  }
+
   void report_concurrent_mark_remark_times_ms(double ms);
   void report_concurrent_mark_cleanup_times_ms(double ms);
   void report_alloc_rate_ms(double alloc_rate);

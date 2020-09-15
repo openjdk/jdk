@@ -98,8 +98,9 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _short_term_pause_time_ratio(0.0) {
 
   // Seed sequences with initial values.
-  _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
-  _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
+  double time_sec = os::elapsedTime();
+  _recent_prev_end_times_for_all_gcs_sec->add(time_sec);
+  _prev_collection_pause_end_ms = time_sec * 1000.0;
 
   int index = MIN2(ParallelGCThreads - 1, 7u);
 
@@ -151,7 +152,7 @@ void G1Analytics::report_alloc_rate_ms(double alloc_rate) {
 
 void G1Analytics::compute_pause_time_ratios(double end_time_sec, double pause_time_ms) {
   double long_interval_ms = (end_time_sec - oldest_known_gc_end_time_sec()) * 1000.0;
-  _long_term_pause_time_ratio = _recent_gc_times_ms->sum() / long_interval_ms;
+  _long_term_pause_time_ratio = (_recent_gc_times_ms->sum() + pause_time_ms) / long_interval_ms;
   _long_term_pause_time_ratio = clamp(_long_term_pause_time_ratio, 0.0, 1.0);
 
   double short_interval_ms = (end_time_sec - most_recent_gc_end_time_sec()) * 1000.0;
@@ -323,7 +324,6 @@ void G1Analytics::update_recent_gc_times(double end_time_sec,
                                          double pause_time_ms) {
   _recent_gc_times_ms->add(pause_time_ms);
   _recent_prev_end_times_for_all_gcs_sec->add(end_time_sec);
-  _prev_collection_pause_end_ms = end_time_sec * 1000.0;
 }
 
 void G1Analytics::report_concurrent_mark_cleanup_times_ms(double ms) {

@@ -529,7 +529,7 @@ void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_length) {
 
   if (rs_length > _rs_length_prediction) {
     // add 10% to avoid having to recalculate often
-    size_t rs_length_prediction = rs_length * 1100 / 1000;
+    size_t rs_length_prediction = rs_length * 110 / 100;
     update_rs_length_prediction(rs_length_prediction);
     update_young_length_bounds(rs_length_prediction);
   }
@@ -558,10 +558,6 @@ void G1Policy::record_full_collection_end() {
   // Consider this like a collection pause for the purposes of allocation
   // since last pause.
   double end_sec = os::elapsedTime();
-  double full_gc_time_sec = end_sec - _full_collection_start_sec;
-  double full_gc_time_ms = full_gc_time_sec * 1000.0;
-
-  _analytics->update_recent_gc_times(end_sec, full_gc_time_ms);
 
   collector_state()->set_in_full_gc(false);
 
@@ -664,7 +660,7 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
   assert(_g1h->collection_set()->verify_young_ages(), "region age verification failed");
 }
 
-void G1Policy::record_concurrent_mark_init_end(double mark_init_elapsed_time_ms) {
+void G1Policy::record_concurrent_mark_init_end() {
   assert(!collector_state()->initiate_conc_mark_if_possible(), "we should have cleared it by now");
   collector_state()->set_in_concurrent_start_gc(false);
 }
@@ -677,7 +673,6 @@ void G1Policy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
-  _analytics->append_prev_collection_pause_end_ms(elapsed_time_ms);
 
   record_pause(Remark, _mark_remark_start_sec, end_time_sec);
 }
@@ -753,20 +748,21 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
   G1GCPhaseTimes* p = phase_times();
 
   double end_time_sec = os::elapsedTime();
+  double start_time_sec = phase_times()->cur_collection_start_sec();
 
   PauseKind this_pause = young_gc_pause_kind();
 
   bool update_stats = !_g1h->evacuation_failed();
 
-  record_pause(this_pause, end_time_sec - pause_time_ms / 1000.0, end_time_sec);
+  record_pause(this_pause, start_time_sec, end_time_sec);
 
   if (is_concurrent_start_pause(this_pause)) {
-    record_concurrent_mark_init_end(0.0);
+    record_concurrent_mark_init_end();
   } else {
     maybe_start_marking();
   }
 
-  double app_time_ms = (phase_times()->cur_collection_start_sec() * 1000.0 - _analytics->prev_collection_pause_end_ms());
+  double app_time_ms = (start_time_sec * 1000.0 - _analytics->prev_collection_pause_end_ms());
   if (app_time_ms < MIN_TIMER_GRANULARITY) {
     // This usually happens due to the timer not having the required
     // granularity. Some Linuxes are the usual culprits.
@@ -786,9 +782,6 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
     uint regions_allocated = _collection_set->eden_region_length();
     double alloc_rate_ms = (double) regions_allocated / app_time_ms;
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
-
-    _analytics->compute_pause_time_ratios(end_time_sec, pause_time_ms);
-    _analytics->update_recent_gc_times(end_time_sec, pause_time_ms);
   }
 
   if (is_last_young_pause(this_pause)) {
@@ -1238,7 +1231,6 @@ void G1Policy::record_concurrent_mark_cleanup_end() {
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
   _analytics->report_concurrent_mark_cleanup_times_ms(elapsed_time_ms);
-  _analytics->append_prev_collection_pause_end_ms(elapsed_time_ms);
 
   record_pause(Cleanup, _mark_cleanup_start_sec, end_sec);
 }
@@ -1312,10 +1304,28 @@ G1Policy::PauseKind G1Policy::young_gc_pause_kind() const {
   }
 }
 
+void G1Policy::update_pause_time_stats(PauseKind kind, double start_time_sec, double end_time_sec){
+
+  double pause_time_sec = end_time_sec - start_time_sec;
+  double pause_time_ms = pause_time_sec * 1000.0;
+
+  _analytics->compute_pause_time_ratios(end_time_sec, pause_time_ms);
+  _analytics->update_recent_gc_times(end_time_sec, pause_time_ms);
+  if (kind == Cleanup || kind == Remark) {
+    _analytics->append_prev_collection_pause_end_ms(pause_time_ms);
+  } else {
+    _analytics->set_prev_collection_pause_end_ms(end_time_sec*1000*0);
+  }
+}
+
 void G1Policy::record_pause(PauseKind kind, double start, double end) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
   if (kind != FullGC) {
     _mmu_tracker->add_pause(start, end);
+  }
+  bool update_stats = !_g1h->evacuation_failed();
+  if (update_stats){
+    update_pause_time_stats(kind, start, end);
   }
   // Manage the mutator time tracking from concurrent start to first mixed gc.
   switch (kind) {
@@ -1395,11 +1405,9 @@ uint G1Policy::calc_min_old_cset_length() const {
 
   const size_t region_num = _collection_set->candidates()->num_regions();
   const size_t gc_num = (size_t) MAX2(G1MixedGCCountTarget, (uintx) 1);
-  size_t result = region_num / gc_num;
+
   // emulate ceiling
-  if (result * gc_num < region_num) {
-    result += 1;
-  }
+  size_t result = (region_num + gc_num -1) / gc_num;
   return (uint) result;
 }
 
@@ -1412,11 +1420,9 @@ uint G1Policy::calc_max_old_cset_length() const {
   const G1CollectedHeap* g1h = G1CollectedHeap::heap();
   const size_t region_num = g1h->num_regions();
   const size_t perc = (size_t) G1OldCSetRegionThresholdPercent;
-  size_t result = region_num * perc / 100;
+
   // emulate ceiling
-  if (100 * result < region_num * perc) {
-    result += 1;
-  }
+  size_t result = ((region_num * perc) + 99) / 100;
   return (uint) result;
 }
 
