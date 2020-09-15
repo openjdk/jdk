@@ -98,9 +98,8 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _short_term_pause_time_ratio(0.0) {
 
   // Seed sequences with initial values.
-  double time_sec = os::elapsedTime();
-  _recent_prev_end_times_for_all_gcs_sec->add(time_sec);
-  _prev_collection_pause_end_ms = time_sec * 1000.0;
+  _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
+  _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
 
   int index = MIN2(ParallelGCThreads - 1, 7u);
 

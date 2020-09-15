@@ -328,7 +328,7 @@ public:
   virtual void record_full_collection_end();
 
   // Must currently be called while the world is stopped.
-  void record_concurrent_mark_init_end();
+  void record_concurrent_mark_init_end(double mark_init_elapsed_time_ms);
 
   // Record start and end of remark.
   void record_concurrent_mark_remark_start();
@@ -439,7 +439,7 @@ public:
 
   void update_survivors_policy();
 
-  void update_pause_time_stats(PauseKind kind, double start_sec, double end_sec);
+  void update_gc_pause_time_ratios(PauseKind kind, double start_sec, double end_sec);
 
   virtual bool force_upgrade_to_full() {
     return false;
