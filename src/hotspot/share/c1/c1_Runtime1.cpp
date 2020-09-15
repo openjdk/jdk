@@ -465,9 +465,7 @@ static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, Meth
     }
     bci = branch_bci + offset;
   }
-  assert(!HAS_PENDING_EXCEPTION, "Should not have any exceptions pending");
   osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
-  assert(!HAS_PENDING_EXCEPTION, "Event handler should not throw any exceptions");
   return osr_nm;
 }
 
@@ -1416,6 +1414,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
     // that simply means we won't have an MDO to update.
     Method::build_interpreter_method_data(m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
+      // Only metaspace OOM is expected. No Java code executed.
       assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
       CLEAR_PENDING_EXCEPTION;
     }

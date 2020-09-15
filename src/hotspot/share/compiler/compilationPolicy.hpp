@@ -63,7 +63,7 @@ public:
   virtual int compiler_count(CompLevel comp_level) = 0;
   // main notification entry, return a pointer to an nmethod if the OSR is required,
   // returns NULL otherwise.
-  virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee, int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread) = 0;
+  virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee, int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, TRAPS) = 0;
   // safepoint() is called at the end of the safepoint
   virtual void do_safepoint_work() = 0;
   // reprofile request
@@ -90,8 +90,8 @@ class SimpleCompPolicy : public CompilationPolicy {
   static void trace_osr_completion(nmethod* osr_nm);
   void reset_counter_for_invocation_event(const methodHandle& method);
   void reset_counter_for_back_branch_event(const methodHandle& method);
-  void method_invocation_event(const methodHandle& m, JavaThread* thread);
-  void method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread);
+  void method_invocation_event(const methodHandle& m, TRAPS);
+  void method_back_branch_event(const methodHandle& m, int bci, TRAPS);
  public:
   SimpleCompPolicy() : _compiler_count(0) { }
   virtual CompLevel initial_compile_level(const methodHandle& m) { return CompLevel_highest_tier; }
@@ -102,7 +102,7 @@ class SimpleCompPolicy : public CompilationPolicy {
   virtual bool is_mature(Method* method);
   virtual void initialize();
   virtual CompileTask* select_task(CompileQueue* compile_queue);
-  virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee, int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread);
+  virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee, int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, TRAPS);
 };
 
 

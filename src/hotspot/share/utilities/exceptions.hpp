@@ -91,6 +91,9 @@ class ThreadShadow: public CHeapObj<mtThread> {
   // use CLEAR_PENDING_EXCEPTION whenever possible!
   void clear_pending_exception();
 
+  // use CLEAR_PENDING_NONASYNC_EXCEPTION to clear probable nonasync exception.
+  void clear_pending_nonasync_exception();
+
   ThreadShadow() : _pending_exception(NULL),
                    _exception_file(NULL), _exception_line(0) {}
 };
@@ -170,6 +173,8 @@ class Exceptions {
 
   static void throw_stack_overflow_exception(Thread* thread, const char* file, int line, const methodHandle& method);
 
+  static void throw_unsafe_access_internal_error(Thread* thread, const char* file, int line, const char* message);
+
   static void wrap_dynamic_exception(bool is_indy, Thread* thread);
 
   // Exception counting for error files of interesting exceptions that may have
@@ -226,12 +231,23 @@ class Exceptions {
 #define CHECK_false                              CHECK_(false)
 #define CHECK_JNI_ERR                            CHECK_(JNI_ERR)
 
+// CAUTION: These macros clears all exceptions including async exceptions, use it with caution.
 #define CHECK_AND_CLEAR                         THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; return;        } (void)(0
 #define CHECK_AND_CLEAR_(result)                THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; return result; } (void)(0
 #define CHECK_AND_CLEAR_0                       CHECK_AND_CLEAR_(0)
 #define CHECK_AND_CLEAR_NH                      CHECK_AND_CLEAR_(Handle())
 #define CHECK_AND_CLEAR_NULL                    CHECK_AND_CLEAR_(NULL)
 #define CHECK_AND_CLEAR_false                   CHECK_AND_CLEAR_(false)
+
+// CAUTION: These macros clears all exceptions except probable async exceptions j.l.InternalError and j.l.ThreadDeath.
+// So use it with caution.
+#define CLEAR_PENDING_NONASYNC_EXCEPTION        (((ThreadShadow*)THREAD)->clear_pending_nonasync_exception())
+#define CHECK_AND_CLEAR_NONASYNC                THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_NONASYNC_EXCEPTION; return; } (void)(0
+#define CHECK_AND_CLEAR_NONASYNC_(result)       THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_NONASYNC_EXCEPTION; return result; } (void)(0
+#define CHECK_AND_CLEAR_NONASYNC_0              CHECK_AND_CLEAR_NONASYNC_(0)
+#define CHECK_AND_CLEAR_NONASYNC_NH             CHECK_AND_CLEAR_NONASYNC_(Handle())
+#define CHECK_AND_CLEAR_NONASYNC_NULL           CHECK_AND_CLEAR_NONASYNC_(NULL)
+#define CHECK_AND_CLEAR_NONASYNC_false          CHECK_AND_CLEAR_NONASYNC_(false)
 
 // The THROW... macros should be used to throw an exception. They require a THREAD variable to be
 // visible within the scope containing the THROW. Usually this is achieved by declaring the function

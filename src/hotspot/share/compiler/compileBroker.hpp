@@ -303,7 +303,7 @@ public:
                                  const methodHandle& hot_method,
                                  int hot_count,
                                  CompileTask::CompileReason compile_reason,
-                                 Thread* thread);
+                                 TRAPS);
 
   static nmethod* compile_method(const methodHandle& method,
                                    int osr_bci,
@@ -312,7 +312,7 @@ public:
                                    int hot_count,
                                    CompileTask::CompileReason compile_reason,
                                    DirectiveSet* directive,
-                                   Thread* thread);
+                                   TRAPS);
 
   // Acquire any needed locks and assign a compile id
   static uint assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci);

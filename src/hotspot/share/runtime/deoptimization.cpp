@@ -528,8 +528,8 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   }
 #endif
 
-  if (thread->frames_to_pop_failed_realloc() > 0 && exec_mode != Unpack_uncommon_trap) {
-    assert(thread->has_pending_exception(), "should have thrown OOME");
+  if ((thread->has_pending_exception() || thread->frames_to_pop_failed_realloc() > 0) && exec_mode != Unpack_uncommon_trap) {
+    assert(thread->has_pending_exception(), "should have thrown OOME/Async");
     thread->set_exception_oop(thread->pending_exception());
     thread->clear_pending_exception();
     exec_mode = Unpack_exception;
@@ -1657,6 +1657,7 @@ Deoptimization::get_method_data(JavaThread* thread, const methodHandle& m,
     // that simply means we won't have an MDO to update.
     Method::build_interpreter_method_data(m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
+      // Only metaspace OOM is expected. No Java code executed.
       assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
       CLEAR_PENDING_EXCEPTION;
     }
@@ -1675,33 +1676,28 @@ void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool
   // So this whole "class index" feature should probably be removed.
 
   if (constant_pool->tag_at(index).is_unresolved_klass()) {
-    Klass* tk = constant_pool->klass_at_ignore_error(index, CHECK);
+    Klass* tk = constant_pool->klass_at_ignore_error(index, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // Exception happened during classloading. We ignore the exception here, since it
+      // is going to be rethrown since the current activation is going to be deoptimized and
+      // the interpreter will re-execute the bytecode.
+      // Do not clear probable Async Exceptions.
+      CLEAR_PENDING_NONASYNC_EXCEPTION;
+      // Class loading called java code which may have caused a stack
+      // overflow. If the exception was thrown right before the return
+      // to the runtime the stack is no longer guarded. Reguard the
+      // stack otherwise if we return to the uncommon trap blob and the
+      // stack bang causes a stack overflow we crash.
+      JavaThread* jt = THREAD->as_Java_thread();
+      bool guard_pages_enabled = jt->stack_guards_enabled();
+      if (!guard_pages_enabled) guard_pages_enabled = jt->reguard_stack();
+      assert(guard_pages_enabled, "stack banging in uncommon trap blob may cause crash");
+    }
     return;
   }
 
   assert(!constant_pool->tag_at(index).is_symbol(),
          "no symbolic names here, please");
-}
-
-
-void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool, int index) {
-  EXCEPTION_MARK;
-  load_class_by_index(constant_pool, index, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    // Exception happened during classloading. We ignore the exception here, since it
-    // is going to be rethrown since the current activation is going to be deoptimized and
-    // the interpreter will re-execute the bytecode.
-    CLEAR_PENDING_EXCEPTION;
-    // Class loading called java code which may have caused a stack
-    // overflow. If the exception was thrown right before the return
-    // to the runtime the stack is no longer guarded. Reguard the
-    // stack otherwise if we return to the uncommon trap blob and the
-    // stack bang causes a stack overflow we crash.
-    JavaThread* thread = THREAD->as_Java_thread();
-    bool guard_pages_enabled = thread->stack_guards_enabled();
-    if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
-    assert(guard_pages_enabled, "stack banging in uncommon trap blob may cause crash");
-  }
 }
 
 #if INCLUDE_JFR
@@ -1965,7 +1961,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     // Load class if necessary
     if (unloaded_class_index >= 0) {
       constantPoolHandle constants(THREAD, trap_method->constants());
-      load_class_by_index(constants, unloaded_class_index);
+      load_class_by_index(constants, unloaded_class_index, THREAD);
     }
 
     // Flush the nmethod if necessary and desirable.

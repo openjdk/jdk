@@ -313,6 +313,7 @@ void InterpreterRuntime::note_trap_inner(JavaThread* thread, int reason,
     if (trap_mdo == NULL) {
       Method::build_interpreter_method_data(trap_method, THREAD);
       if (HAS_PENDING_EXCEPTION) {
+        // Only metaspace OOM is expected. No Java code executed.
         assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())),
                "we expect only an OOM error here");
         CLEAR_PENDING_EXCEPTION;
@@ -975,6 +976,7 @@ JRT_END
 
 
 nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, address branch_bcp) {
+  // frequency_counter_overflow_inner can throw async exception.
   nmethod* nm = frequency_counter_overflow_inner(thread, branch_bcp);
   assert(branch_bcp != NULL || nm == NULL, "always returns null for non OSR requests");
   if (branch_bcp != NULL && nm != NULL) {
@@ -1016,9 +1018,6 @@ nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, addr
 
 JRT_ENTRY(nmethod*,
           InterpreterRuntime::frequency_counter_overflow_inner(JavaThread* thread, address branch_bcp))
-  if (HAS_PENDING_EXCEPTION) {
-    return NULL;
-  }
   // use UnlockFlagSaver to clear and restore the _do_not_unlock_if_synchronized
   // flag, in case this method triggers classloading which will call into Java.
   UnlockFlagSaver fs(thread);
@@ -1029,8 +1028,7 @@ JRT_ENTRY(nmethod*,
   const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : InvocationEntryBci;
   const int bci = branch_bcp != NULL ? method->bci_from(last_frame.bcp()) : InvocationEntryBci;
 
-  nmethod* osr_nm = CompilationPolicy::policy()->event(method, method, branch_bci, bci, CompLevel_none, NULL, thread);
-  assert(!HAS_PENDING_EXCEPTION, "Event handler should not throw any exceptions");
+  nmethod* osr_nm = CompilationPolicy::policy()->event(method, method, branch_bci, bci, CompLevel_none, NULL, THREAD);
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (osr_nm != NULL && bs_nm != NULL) {
@@ -1071,9 +1069,6 @@ JRT_LEAF(jint, InterpreterRuntime::bcp_to_di(Method* method, address cur_bcp))
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::profile_method(JavaThread* thread))
-  if (HAS_PENDING_EXCEPTION) {
-    return;
-  }
   // use UnlockFlagSaver to clear and restore the _do_not_unlock_if_synchronized
   // flag, in case this method triggers classloading which will call into Java.
   UnlockFlagSaver fs(thread);
@@ -1084,6 +1079,7 @@ JRT_ENTRY(void, InterpreterRuntime::profile_method(JavaThread* thread))
   methodHandle method(thread, last_frame.method());
   Method::build_interpreter_method_data(method, THREAD);
   if (HAS_PENDING_EXCEPTION) {
+    // Only metaspace OOM is expected. No Java code executed.
     assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
     CLEAR_PENDING_EXCEPTION;
     // and fall through...
@@ -1143,6 +1139,7 @@ JRT_END
 JRT_ENTRY(MethodCounters*, InterpreterRuntime::build_method_counters(JavaThread* thread, Method* m))
   MethodCounters* mcs = Method::build_method_counters(m, thread);
   if (HAS_PENDING_EXCEPTION) {
+    // Only metaspace OOM is expected. No Java code executed.
     assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
     CLEAR_PENDING_EXCEPTION;
   }

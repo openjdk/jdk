@@ -126,6 +126,7 @@ class TableStatistics;
   do_klass(ClassCastException_klass,                    java_lang_ClassCastException                          ) \
   do_klass(ArrayStoreException_klass,                   java_lang_ArrayStoreException                         ) \
   do_klass(VirtualMachineError_klass,                   java_lang_VirtualMachineError                         ) \
+  do_klass(InternalError_klass,                         java_lang_InternalError                               ) \
   do_klass(OutOfMemoryError_klass,                      java_lang_OutOfMemoryError                            ) \
   do_klass(StackOverflowError_klass,                    java_lang_StackOverflowError                          ) \
   do_klass(IllegalMonitorStateException_klass,          java_lang_IllegalMonitorStateException                ) \

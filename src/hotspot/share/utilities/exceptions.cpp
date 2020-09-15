@@ -69,6 +69,16 @@ void ThreadShadow::clear_pending_exception() {
   _exception_file    = NULL;
   _exception_line    = 0;
 }
+
+void ThreadShadow::clear_pending_nonasync_exception() {
+  // Do not clear probable async exceptions.
+  if (!_pending_exception->is_a(SystemDictionary::ThreadDeath_klass()) &&
+      (_pending_exception->klass() != SystemDictionary::InternalError_klass() ||
+       java_lang_InternalError::during_unsafe_access(_pending_exception) != JNI_TRUE)) {
+    clear_pending_exception();
+  }
+}
+
 // Implementation of Exceptions
 
 bool Exceptions::special_exception(Thread* thread, const char* file, int line, Handle h_exception) {
@@ -238,6 +248,12 @@ void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file
     exception = Handle(THREAD, THREAD->pending_exception());
   }
   _throw(THREAD, file, line, exception);
+}
+
+void Exceptions::throw_unsafe_access_internal_error(Thread* thread, const char* file, int line, const char* message) {
+  Handle h_exception = new_exception(thread, vmSymbols::java_lang_InternalError(), message);
+  java_lang_InternalError::set_during_unsafe_access(h_exception());
+  _throw(thread, file, line, h_exception, message);
 }
 
 void Exceptions::fthrow(Thread* thread, const char* file, int line, Symbol* h_name, const char* format, ...) {
