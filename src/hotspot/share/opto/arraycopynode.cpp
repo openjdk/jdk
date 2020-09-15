@@ -679,14 +679,14 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTra
           ac = call->isa_ArrayCopy();
           assert(c == mb->in(0), "only for clone");
           return true;
-        } else if (n != NULL && n->is_Region() &&
+        } else if (n != NULL && n->isa_Region() &&
                    (phi = n->as_Region()->has_phi()) &&
                     phi->in(1)->Opcode() == Op_VectorMaskedStore) {
           return true;
         } else  {
           for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
             Node* phi = c->fast_out(i);
-            if (phi->is_Phi()) {
+            if (phi->isa_Phi()) {
               assert(phi->in(0) == c, "phi region validation");
               if(phi->in(1) && phi->in(1)->Opcode() == Op_VectorMaskedStore) {
                 return true;
