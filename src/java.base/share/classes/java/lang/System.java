@@ -2248,6 +2248,9 @@ public final class System {
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
             }
+            public void bindToLoader(ModuleLayer layer, ClassLoader loader) {
+                layer.bindToLoader(loader);
+            }
             public Stream<ModuleLayer> layers(ModuleLayer layer) {
                 return layer.layers();
             }

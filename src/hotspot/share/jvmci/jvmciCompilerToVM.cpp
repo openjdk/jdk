@@ -2639,19 +2639,11 @@ C2V_VMENTRY_0(jlong, ticksNow, (JNIEnv* env, jobject))
   return CompilerEvent::ticksNow();
 }
 
-C2V_VMENTRY_0(jint, registerCompilerPhases, (JNIEnv* env, jobject, jobjectArray jphases))
+C2V_VMENTRY_0(jint, registerCompilerPhase, (JNIEnv* env, jobject, jstring jphase_name))
 #if INCLUDE_JFR
-  if (jphases == NULL) {
-    return -1;
-  }
-  JVMCIObjectArray phases = JVMCIENV->wrap(jphases);
-  int len = JVMCIENV->get_length(phases);
-  GrowableArray<const char*>* jvmci_phase_names = new GrowableArray<const char*>(len);
-  for (int i = 0; i < len; i++) {
-    JVMCIObject phase = JVMCIENV->get_object_at(phases, i);
-    jvmci_phase_names->append(strdup(JVMCIENV->as_utf8_string(phase)));
-  }
-  return CompilerEvent::PhaseEvent::register_phases(jvmci_phase_names);
+  JVMCIObject phase_name = JVMCIENV->wrap(jphase_name);
+  const char *name = JVMCIENV->as_utf8_string(phase_name);
+  return CompilerEvent::PhaseEvent::get_phase_id(name, true, true, true);
 #else
   return -1;
 #endif // !INCLUDE_JFR
@@ -2823,7 +2815,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "addFailedSpeculation",                         CC "(J[B)Z",                                                                          FN_PTR(addFailedSpeculation)},
   {CC "callSystemExit",                               CC "(I)V",                                                                            FN_PTR(callSystemExit)},
   {CC "ticksNow",                                     CC "()J",                                                                             FN_PTR(ticksNow)},
-  {CC "registerCompilerPhases",                       CC "([" STRING ")I",                                                                  FN_PTR(registerCompilerPhases)},
+  {CC "registerCompilerPhase",                        CC "(" STRING ")I",                                                                   FN_PTR(registerCompilerPhase)},
   {CC "notifyCompilerPhaseEvent",                     CC "(JIII)V",                                                                         FN_PTR(notifyCompilerPhaseEvent)},
   {CC "notifyCompilerInliningEvent",                  CC "(I" HS_RESOLVED_METHOD HS_RESOLVED_METHOD "ZLjava/lang/String;I)V",               FN_PTR(notifyCompilerInliningEvent)},
 };

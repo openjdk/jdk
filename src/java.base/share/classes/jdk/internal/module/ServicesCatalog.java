@@ -171,6 +171,16 @@ public final class ServicesCatalog {
         return catalog;
     }
 
+    /**
+     * Associates the given ServicesCatalog with the given class loader.
+     */
+    public static void putServicesCatalog(ClassLoader loader, ServicesCatalog catalog) {
+        ServicesCatalog previous = CLV.putIfAbsent(loader, catalog);
+        if (previous != null) {
+            throw new InternalError();
+        }
+    }
+
     // the ServicesCatalog registered to a class loader
     private static final ClassLoaderValue<ServicesCatalog> CLV = new ClassLoaderValue<>();
 }

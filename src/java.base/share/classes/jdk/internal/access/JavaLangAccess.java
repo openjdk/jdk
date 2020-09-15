@@ -257,6 +257,12 @@ public interface JavaLangAccess {
     ServicesCatalog getServicesCatalog(ModuleLayer layer);
 
     /**
+     * Record that this layer has at least one module defined to the given
+     * class loader.
+     */
+    void bindToLoader(ModuleLayer layer, ClassLoader loader);
+
+    /**
      * Returns an ordered stream of layers. The first element is the
      * given layer, the remaining elements are its parents, in DFS order.
      */
