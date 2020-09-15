@@ -32,7 +32,7 @@
 
 class PrimitiveConversions : public AllStatic {
 
-  // True if types are the same size and either is integral then int.
+  // True if types are the same size and either is integral.
   template<typename To, typename From>
   static constexpr bool check_cast() {
     return (sizeof(To) == sizeof(From)) &&
