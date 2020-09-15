@@ -423,7 +423,7 @@ public class JarFile extends ZipFile {
                     }
                     man = new Manifest(jv, new ByteArrayInputStream(b), getName());
                 } else {
-                    try (final InputStream is = super.getInputStream(manEntry)) {
+                    try (InputStream is = super.getInputStream(manEntry)) {
                         man = new Manifest(is, getName());
                     }
                 }
