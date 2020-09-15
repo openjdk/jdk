@@ -54,7 +54,6 @@ class     BoxLockNode;
 class     LockNode;
 class     UnlockNode;
 class JVMState;
-class OopMap;
 class State;
 class StartNode;
 class MachCallNode;
@@ -335,8 +334,6 @@ public:
     init_class_id(Class_SafePoint);
   }
 
-  // There is no OopMap field, the oop map is set after matching in
-  // OopFlow::compute_reach on the MachSafePointNode. (See buildOopMap.cpp)
   JVMState* const _jvms;      // Pointer to list of JVM State objects
   const TypePtr*  _adr_type;  // What type of memory does this node produce?
   ReplacedNodes   _replaced_nodes; // During parsing: list of pair of nodes from calls to GraphKit::replace_in_map()
