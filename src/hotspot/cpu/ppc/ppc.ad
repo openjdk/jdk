@@ -1370,31 +1370,6 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-// Macro used instead of the common __ to emulate the pipes of PPC.
-// Instead of e.g. __ ld(...) one hase to write ___(ld) ld(...) This enables the
-// micro scheduler to cope with "hand written" assembler like in the prolog. Though
-// still no scheduling of this code is possible, the micro scheduler is aware of the
-// code and can update its internal data. The following mechanism is used to achieve this:
-// The micro scheduler calls size() of each compound node during scheduling. size() does a
-// dummy emit and only during this dummy emit C->hb_scheduling() is not NULL.
-#if 0 // TODO: PPC port
-#define ___(op) if (UsePower6SchedulerPPC64 && C->hb_scheduling())                    \
-                  C->hb_scheduling()->_pdScheduling->PdEmulatePipe(ppc64Opcode_##op); \
-                _masm.
-#define ___stop if (UsePower6SchedulerPPC64 && C->hb_scheduling())                    \
-                  C->hb_scheduling()->_pdScheduling->PdEmulatePipe(archOpcode_none)
-#define ___advance if (UsePower6SchedulerPPC64 && C->hb_scheduling())                 \
-                  C->hb_scheduling()->_pdScheduling->advance_offset
-#else
-#define ___(op) if (UsePower6SchedulerPPC64)                                          \
-                  Unimplemented();                                                    \
-                _masm.
-#define ___stop if (UsePower6SchedulerPPC64)                                          \
-                  Unimplemented()
-#define ___advance if (UsePower6SchedulerPPC64)                                       \
-                  Unimplemented()
-#endif
-
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   C2_MacroAssembler _masm(&cbuf);
@@ -1414,10 +1389,10 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     // Add nop at beginning of all frameless methods to prevent any
     // oop instructions from getting overwritten by make_not_entrant
     // (patching attempt would fail).
-    ___(nop) nop();
+    __ nop();
   } else {
     // Get return pc.
-    ___(mflr) mflr(return_pc);
+    __ mflr(return_pc);
   }
 
   if (C->clinit_barrier_on_entry()) {
@@ -1477,9 +1452,9 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
       if (Assembler::is_simm(stdoffset, 16)) {
         // Signed 16 bit offset, a simple std is ok.
         if (UseLoadInstructionsForStackBangingPPC64) {
-          ___(ld) ld(R0,  (int)(signed short)stdoffset, R1_SP);
+          __ ld(R0,  (int)(signed short)stdoffset, R1_SP);
         } else {
-          ___(std) std(R0, (int)(signed short)stdoffset, R1_SP);
+          __ std(R0, (int)(signed short)stdoffset, R1_SP);
         }
       } else if (Assembler::is_simm(stdoffset, 31)) {
         // Use largeoffset calculations for addis & ld/std.
@@ -1487,11 +1462,11 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
         const int lo = MacroAssembler::largeoffset_si16_si16_lo(stdoffset);
 
         Register tmp = R11;
-        ___(addis) addis(tmp, R1_SP, hi);
+        __ addis(tmp, R1_SP, hi);
         if (UseLoadInstructionsForStackBangingPPC64) {
-          ___(ld) ld(R0, lo, tmp);
+          __ ld(R0, lo, tmp);
         } else {
-          ___(std) std(R0, lo, tmp);
+          __ std(R0, lo, tmp);
         }
       } else {
         ShouldNotReachHere();
@@ -1506,19 +1481,9 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   long offset = Assembler::align_addr(bytes, frame::alignment_in_bytes);
   ciMethod *currMethod = C->method();
 
-  // Optimized version for most common case.
-  if (UsePower6SchedulerPPC64 &&
-      !method_is_frameless && Assembler::is_simm((int)(-offset), 16) &&
-      !(false /* ConstantsALot TODO: PPC port*/)) {
-    ___(or) mr(callers_sp, R1_SP);
-    ___(std) std(return_pc, _abi(lr), R1_SP);
-    ___(stdu) stdu(R1_SP, -offset, R1_SP);
-    return;
-  }
-
   if (!method_is_frameless) {
     // Get callers sp.
-    ___(or) mr(callers_sp, R1_SP);
+    __ mr(callers_sp, R1_SP);
 
     // Push method's frame, modifies SP.
     assert(Assembler::is_uimm(framesize, 32U), "wrong type");
@@ -1527,17 +1492,17 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Register tmp = push_frame_temp;
     // Had to insert code of push_frame((unsigned int)framesize, push_frame_temp).
     if (Assembler::is_simm(-offset, 16)) {
-      ___(stdu) stdu(R1_SP, -offset, R1_SP);
+      __ stdu(R1_SP, -offset, R1_SP);
     } else {
       long x = -offset;
       // Had to insert load_const(tmp, -offset).
-      ___(addis)  lis( tmp, (int)((signed short)(((x >> 32) & 0xffff0000) >> 16)));
-      ___(ori)    ori( tmp, tmp, ((x >> 32) & 0x0000ffff));
-      ___(rldicr) sldi(tmp, tmp, 32);
-      ___(oris)   oris(tmp, tmp, (x & 0xffff0000) >> 16);
-      ___(ori)    ori( tmp, tmp, (x & 0x0000ffff));
+      __ lis( tmp, (int)((signed short)(((x >> 32) & 0xffff0000) >> 16)));
+      __ ori( tmp, tmp, ((x >> 32) & 0x0000ffff));
+      __ sldi(tmp, tmp, 32);
+      __ oris(tmp, tmp, (x & 0xffff0000) >> 16);
+      __ ori( tmp, tmp, (x & 0x0000ffff));
 
-      ___(stdux) stdux(R1_SP, R1_SP, tmp);
+      __ stdux(R1_SP, R1_SP, tmp);
     }
   }
 #if 0 // TODO: PPC port
@@ -1552,14 +1517,11 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 #endif
   if (!method_is_frameless) {
     // Save return pc.
-    ___(std) std(return_pc, _abi(lr), callers_sp);
+    __ std(return_pc, _abi(lr), callers_sp);
   }
 
   C->output()->set_frame_complete(cbuf.insts_size());
 }
-#undef ___
-#undef ___stop
-#undef ___advance
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
   // Variable size. determine dynamically.
@@ -1640,35 +1602,6 @@ int MachEpilogNode::reloc() const {
 const Pipeline * MachEpilogNode::pipeline() const {
   return MachNode::pipeline_class();
 }
-
-#if 0 // TODO: PPC port
-void MachLoadPollAddrLateNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
-  C2_MacroAssembler _masm(&cbuf);
-  if (LoadPollAddressFromThread) {
-    _masm.ld(R11, in_bytes(JavaThread::poll_address_offset()), R16_thread);
-  } else {
-    _masm.nop();
-  }
-}
-
-uint MachLoadPollAddrLateNode::size(PhaseRegAlloc* ra_) const {
-  if (LoadPollAddressFromThread) {
-    return 4;
-  } else {
-    return 4;
-  }
-}
-
-#ifndef PRODUCT
-void MachLoadPollAddrLateNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
-  st->print_cr(" LD R11, PollAddressOffset, R16_thread \t// LoadPollAddressFromThread");
-}
-#endif
-
-const RegMask &MachLoadPollAddrLateNode::out_RegMask() const {
-  return RSCRATCH1_BITS64_REG_mask();
-}
-#endif // PPC port
 
 // =============================================================================
 
@@ -1952,102 +1885,6 @@ uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
   return implementation(NULL, ra_, true, NULL);
 }
 
-#if 0 // TODO: PPC port
-ArchOpcode MachSpillCopyNode_archOpcode(MachSpillCopyNode *n, PhaseRegAlloc *ra_) {
-#ifndef PRODUCT
-  if (ra_->node_regs_max_index() == 0) return archOpcode_undefined;
-#endif
-  assert(ra_->node_regs_max_index() != 0, "");
-
-  // Get registers to move.
-  OptoReg::Name src_hi = ra_->get_reg_second(n->in(1));
-  OptoReg::Name src_lo = ra_->get_reg_first(n->in(1));
-  OptoReg::Name dst_hi = ra_->get_reg_second(n);
-  OptoReg::Name dst_lo = ra_->get_reg_first(n);
-
-  enum RC src_lo_rc = rc_class(src_lo);
-  enum RC dst_lo_rc = rc_class(dst_lo);
-
-  if (src_lo == dst_lo && src_hi == dst_hi)
-    return ppc64Opcode_none;            // Self copy, no move.
-
-  // --------------------------------------
-  // Memory->Memory Spill. Use R0 to hold the value.
-  if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
-    return ppc64Opcode_compound;
-  }
-
-  // --------------------------------------
-  // Check for float->int copy; requires a trip through memory.
-  if (src_lo_rc == rc_float && dst_lo_rc == rc_int) {
-    Unimplemented();
-  }
-
-  // --------------------------------------
-  // Check for integer reg-reg copy.
-  if (src_lo_rc == rc_int && dst_lo_rc == rc_int) {
-    Register Rsrc = as_Register(Matcher::_regEncode[src_lo]);
-    Register Rdst = as_Register(Matcher::_regEncode[dst_lo]);
-    if (Rsrc == Rdst) {
-      return ppc64Opcode_none;
-    } else {
-      return ppc64Opcode_or;
-    }
-  }
-
-  // Check for integer store.
-  if (src_lo_rc == rc_int && dst_lo_rc == rc_stack) {
-    if (src_hi != OptoReg::Bad) {
-      return ppc64Opcode_std;
-    } else {
-      return ppc64Opcode_stw;
-    }
-  }
-
-  // Check for integer load.
-  if (dst_lo_rc == rc_int && src_lo_rc == rc_stack) {
-    if (src_hi != OptoReg::Bad) {
-      return ppc64Opcode_ld;
-    } else {
-      return ppc64Opcode_lwz;
-    }
-  }
-
-  // Check for float reg-reg copy.
-  if (src_lo_rc == rc_float && dst_lo_rc == rc_float) {
-    return ppc64Opcode_fmr;
-  }
-
-  // Check for float store.
-  if (src_lo_rc == rc_float && dst_lo_rc == rc_stack) {
-    if (src_hi != OptoReg::Bad) {
-      return ppc64Opcode_stfd;
-    } else {
-      return ppc64Opcode_stfs;
-    }
-  }
-
-  // Check for float load.
-  if (dst_lo_rc == rc_float && src_lo_rc == rc_stack) {
-    if (src_hi != OptoReg::Bad) {
-      return ppc64Opcode_lfd;
-    } else {
-      return ppc64Opcode_lfs;
-    }
-  }
-
-  // --------------------------------------------------------------------
-  // Check for hi bits still needing moving. Only happens for misaligned
-  // arguments to native calls.
-  if (src_hi == dst_hi) {
-    return ppc64Opcode_none;               // Self copy; no move.
-  }
-
-  ShouldNotReachHere();
-  return ppc64Opcode_undefined;
-}
-#endif // PPC port
-
 #ifndef PRODUCT
 void MachNopNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("NOP \t// %d nops to pad for loops.", _count);
@@ -2142,13 +1979,6 @@ void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // Argument is valid and klass is as expected, continue.
 }
-
-#if 0 // TODO: PPC port
-// Optimize UEP code on z (save a load_const() call in main path).
-int MachUEPNode::ep_offset() {
-  return 0;
-}
-#endif
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
   // Variable size. Determine dynamically.
@@ -2678,23 +2508,19 @@ const bool Matcher::convi2l_type_required = true;
 // needs for encoding need to be specified.
 encode %{
   enc_class enc_unimplemented %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     C2_MacroAssembler _masm(&cbuf);
     __ unimplemented("Unimplemented mach node encoding in AD file.", 13);
   %}
 
   enc_class enc_untested %{
 #ifdef ASSERT
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     C2_MacroAssembler _masm(&cbuf);
     __ untested("Untested mach node encoding in AD file.");
 #else
-    // TODO: PPC port $archOpcode(ppc64Opcode_none);
 #endif
   %}
 
   enc_class enc_lbz(iRegIdst dst, memory mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lbz);
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ lbz($dst$$Register, Idisp, $mem$$base$$Register);
@@ -2702,7 +2528,6 @@ encode %{
 
   // Load acquire.
   enc_class enc_lbz_ac(iRegIdst dst, memory mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ lbz($dst$$Register, Idisp, $mem$$base$$Register);
@@ -2711,7 +2536,6 @@ encode %{
   %}
 
   enc_class enc_lhz(iRegIdst dst, memory mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lhz);
 
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
@@ -2720,7 +2544,6 @@ encode %{
 
   // Load acquire.
   enc_class enc_lhz_ac(iRegIdst dst, memory mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
 
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
@@ -2730,7 +2553,6 @@ encode %{
   %}
 
   enc_class enc_lwz(iRegIdst dst, memory mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lwz);
 
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
@@ -2739,7 +2561,6 @@ encode %{
 
   // Load acquire.
   enc_class enc_lwz_ac(iRegIdst dst, memory mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
 
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
@@ -2749,7 +2570,6 @@ encode %{
   %}
 
   enc_class enc_ld(iRegLdst dst, memoryAlg4 mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ld);
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     // Operand 'ds' requires 4-alignment.
@@ -2759,7 +2579,6 @@ encode %{
 
   // Load acquire.
   enc_class enc_ld_ac(iRegLdst dst, memoryAlg4 mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     // Operand 'ds' requires 4-alignment.
@@ -2770,14 +2589,12 @@ encode %{
   %}
 
   enc_class enc_lfd(RegF dst, memory mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lfd);
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ lfd($dst$$FloatRegister, Idisp, $mem$$base$$Register);
   %}
 
   enc_class enc_load_long_constL(iRegLdst dst, immL src, iRegLdst toc) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ld);
 
     C2_MacroAssembler _masm(&cbuf);
     int toc_offset = 0;
@@ -2801,7 +2618,6 @@ encode %{
   %}
 
   enc_class enc_load_long_constL_hi(iRegLdst dst, iRegLdst toc, immL src) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addis);
 
     C2_MacroAssembler _masm(&cbuf);
 
@@ -3036,7 +2852,6 @@ encode %{
   %}
 
   enc_class enc_load_long_constP(iRegLdst dst, immP src, iRegLdst toc) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ld);
 
     C2_MacroAssembler _masm(&cbuf);
     int toc_offset = 0;
@@ -3069,7 +2884,6 @@ encode %{
   %}
 
   enc_class enc_load_long_constP_hi(iRegLdst dst, immP src, iRegLdst toc) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addis);
 
     C2_MacroAssembler _masm(&cbuf);
     if (!ra_->C->output()->in_scratch_emit_size()) {
@@ -3204,14 +3018,12 @@ encode %{
   %}
 
   enc_class enc_stw(iRegIsrc src, memory mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_stw);
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ stw($src$$Register, Idisp, $mem$$base$$Register);
   %}
 
   enc_class enc_std(iRegIsrc src, memoryAlg4 mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_std);
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     // Operand 'ds' requires 4-alignment.
@@ -3220,14 +3032,12 @@ encode %{
   %}
 
   enc_class enc_stfs(RegF src, memory mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_stfs);
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ stfs($src$$FloatRegister, Idisp, $mem$$base$$Register);
   %}
 
   enc_class enc_stfd(RegF src, memory mem) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_stfd);
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ stfd($src$$FloatRegister, Idisp, $mem$$base$$Register);
@@ -3236,7 +3046,6 @@ encode %{
   // Use release_store for card-marking to ensure that previous
   // oop-stores are visible before the card-mark change.
   enc_class enc_cms_card_mark(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // FIXME: Implement this as a cmove and use a fixed condition code
     // register which is written on every transition to compiled code,
     // e.g. in call-stub and when returning from runtime stubs.
@@ -3252,18 +3061,8 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Label skip_storestore;
 
-#if 0 // TODO: PPC port
-    // Check CMSCollectorCardTableBarrierSetBSExt::_requires_release and do the
-    // StoreStore barrier conditionally.
-    __ lwz(R0, 0, $releaseFieldAddr$$Register);
-    __ cmpwi($crx$$CondRegister, R0, 0);
-    __ beq_predict_taken($crx$$CondRegister, skip_storestore);
-#endif
     __ li(R0, 0);
     __ membar(Assembler::StoreStore);
-#if 0 // TODO: PPC port
-    __ bind(skip_storestore);
-#endif
 
     // Do the store.
     if ($mem$$index == 0) {
@@ -3468,7 +3267,6 @@ encode %{
   %}
 
   enc_class enc_cmove_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src, cmpOp cmp) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
 
     C2_MacroAssembler _masm(&cbuf);
     int cc        = $cmp$$cmpcode;
@@ -3478,12 +3276,10 @@ encode %{
     // Branch if not (cmp crx).
     __ bc(cc_to_inverse_boint(cc), cc_to_biint(cc, flags_reg), done);
     __ mr($dst$$Register, $src$$Register);
-    // TODO PPC port __ endgroup_if_needed(_size == 12);
     __ bind(done);
   %}
 
   enc_class enc_cmove_imm(iRegIdst dst, flagsRegSrc crx, immI16 src, cmpOp cmp) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
 
     C2_MacroAssembler _masm(&cbuf);
     Label done;
@@ -3491,20 +3287,17 @@ encode %{
     // Branch if not (cmp crx).
     __ bc(cc_to_inverse_boint($cmp$$cmpcode), cc_to_biint($cmp$$cmpcode, $crx$$reg), done);
     __ li($dst$$Register, $src$$constant);
-    // TODO PPC port __ endgroup_if_needed(_size == 12);
     __ bind(done);
   %}
 
   // This enc_class is needed so that scheduler gets proper
   // input mapping for latency computation.
   enc_class enc_andc(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_andc);
     C2_MacroAssembler _masm(&cbuf);
     __ andc($dst$$Register, $src1$$Register, $src2$$Register);
   %}
 
   enc_class enc_convI2B_regI__cmove(iRegIdst dst, iRegIsrc src, flagsReg crx, immI16 zero, immI16 notzero) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
 
     C2_MacroAssembler _masm(&cbuf);
 
@@ -3517,7 +3310,6 @@ encode %{
   %}
 
   enc_class enc_convP2B_regP__cmove(iRegIdst dst, iRegPsrc src, flagsReg crx, immI16 zero, immI16 notzero) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
 
     C2_MacroAssembler _masm(&cbuf);
 
@@ -3530,30 +3322,25 @@ encode %{
   %}
 
   enc_class enc_cmove_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL mem ) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
 
     C2_MacroAssembler _masm(&cbuf);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     Label done;
     __ bso($crx$$CondRegister, done);
     __ ld($dst$$Register, Idisp, $mem$$base$$Register);
-    // TODO PPC port __ endgroup_if_needed(_size == 12);
     __ bind(done);
   %}
 
   enc_class enc_cmove_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
 
     C2_MacroAssembler _masm(&cbuf);
     Label done;
     __ bso($crx$$CondRegister, done);
     __ mffprd($dst$$Register, $src$$FloatRegister);
-    // TODO PPC port __ endgroup_if_needed(_size == 12);
     __ bind(done);
   %}
 
   enc_class enc_bc(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_bc);
 
     C2_MacroAssembler _masm(&cbuf);
     Label d;   // dummy
@@ -3583,7 +3370,6 @@ encode %{
   enc_class enc_bc_far(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
     // The scheduler doesn't know about branch shortening, so we set the opcode
     // to ppc64Opcode_bc in order to hide this detail from the scheduler.
-    // TODO: PPC port $archOpcode(ppc64Opcode_bc);
 
     C2_MacroAssembler _masm(&cbuf);
     Label d;    // dummy
@@ -3609,47 +3395,6 @@ encode %{
                   cc_to_biint(cc, flags_reg),
                   l,
                   MacroAssembler::bc_far_optimize_on_relocate);
-  %}
-
-  // Branch used with Power6 scheduling (can be shortened without changing the node).
-  enc_class enc_bc_short_far(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
-    // The scheduler doesn't know about branch shortening, so we set the opcode
-    // to ppc64Opcode_bc in order to hide this detail from the scheduler.
-    // TODO: PPC port $archOpcode(ppc64Opcode_bc);
-
-    C2_MacroAssembler _masm(&cbuf);
-    Label d;   // dummy
-    __ bind(d);
-    Label* p = ($lbl$$label);
-    // `p' is `NULL' when this encoding class is used only to
-    // determine the size of the encoded instruction.
-    Label& l = (NULL == p)? d : *(p);
-    int cc = $cmp$$cmpcode;
-    int flags_reg = $crx$$reg;
-    int bhint = Assembler::bhintNoHint;
-
-    if (UseStaticBranchPredictionForUncommonPathsPPC64) {
-      if (_prob <= PROB_NEVER) {
-        bhint = Assembler::bhintIsNotTaken;
-      } else if (_prob >= PROB_ALWAYS) {
-        bhint = Assembler::bhintIsTaken;
-      }
-    }
-
-#if 0 // TODO: PPC port
-    if (_size == 8) {
-      // Tell the conditional far branch to optimize itself when being relocated.
-      __ bc_far(Assembler::add_bhint_to_boint(bhint, cc_to_boint(cc)),
-                    cc_to_biint(cc, flags_reg),
-                    l,
-                    MacroAssembler::bc_far_optimize_on_relocate);
-    } else {
-      __ bc    (Assembler::add_bhint_to_boint(bhint, cc_to_boint(cc)),
-                    cc_to_biint(cc, flags_reg),
-                    l);
-    }
-#endif
-    Unimplemented();
   %}
 
   // Postalloc expand emitter for loading a replicatef float constant from
@@ -3698,7 +3443,6 @@ encode %{
   // This enc_class is needed so that scheduler gets proper
   // input mapping for latency computation.
   enc_class enc_poll(immI dst, iRegLdst poll) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ld);
     // Fake operand dst needed for PPC scheduler.
     assert($dst$$constant == 0x0, "dst must be 0x0");
 
@@ -3756,7 +3500,6 @@ encode %{
   //
   // Usage of r1 and r2 in the stubs allows to distinguish them.
   enc_class enc_java_static_call(method meth) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_bl);
 
     C2_MacroAssembler _masm(&cbuf);
     address entry_point = (address)$meth$$method;
@@ -3806,7 +3549,6 @@ encode %{
 
   // Second node of expanded dynamic call - the call.
   enc_class enc_java_dynamic_call_sched(method meth) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_bl);
 
     C2_MacroAssembler _masm(&cbuf);
 
@@ -3910,7 +3652,6 @@ encode %{
   // Toc is only passed so that it can be used in ins_encode statement.
   // In the code we have to use $constanttablebase.
   enc_class enc_java_dynamic_call(method meth, iRegLdst toc) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     C2_MacroAssembler _masm(&cbuf);
     int start_offset = __ offset();
 
@@ -3968,7 +3709,6 @@ encode %{
 
   // a runtime call
   enc_class enc_java_to_runtime_call (method meth) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
 
     C2_MacroAssembler _masm(&cbuf);
     const address start_pc = __ pc();
@@ -4002,7 +3742,6 @@ encode %{
   // This enc_class is needed so that scheduler gets proper
   // input mapping for latency computation.
   enc_class enc_leaf_call_mtctr(iRegLsrc src) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_mtctr);
     C2_MacroAssembler _masm(&cbuf);
     __ mtctr($src$$Register);
   %}
@@ -5511,7 +5250,6 @@ instruct convB2I_reg_2(iRegIdst dst, iRegIsrc src) %{
   format %{ "EXTSB   $dst, $src \t// byte->int" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_extsb);
     __ extsb($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -5669,7 +5407,6 @@ instruct loadS(iRegIdst dst, memory mem) %{
   format %{ "LHA     $dst, $mem" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lha);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ lha($dst$$Register, Idisp, $mem$$base$$Register);
   %}
@@ -5686,7 +5423,6 @@ instruct loadS_ac(iRegIdst dst, memory mem) %{
             "ISYNC" %}
   size(12);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ lha($dst$$Register, Idisp, $mem$$base$$Register);
     __ twi_0($dst$$Register);
@@ -5793,7 +5529,6 @@ instruct loadI2L(iRegLdst dst, memoryAlg4 mem) %{
   format %{ "LWA     $dst, $mem \t// loadI2L" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lwa);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ lwa($dst$$Register, Idisp, $mem$$base$$Register);
   %}
@@ -5810,7 +5545,6 @@ instruct loadI2L_ac(iRegLdst dst, memoryAlg4 mem) %{
             "ISYNC" %}
   size(12);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lwa);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ lwa($dst$$Register, Idisp, $mem$$base$$Register);
     __ twi_0($dst$$Register);
@@ -6012,7 +5746,6 @@ instruct loadF(regF dst, memory mem) %{
   format %{ "LFS     $dst, $mem" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lfs);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ lfs($dst$$FloatRegister, Idisp, $mem$$base$$Register);
   %}
@@ -6032,7 +5765,6 @@ instruct loadF_ac(regF dst, memory mem, flagsRegCR0 cr0) %{
             "ISYNC" %}
   size(16);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     Label next;
     __ lfs($dst$$FloatRegister, Idisp, $mem$$base$$Register);
@@ -6069,7 +5801,6 @@ instruct loadD_ac(regD dst, memory mem, flagsRegCR0 cr0) %{
             "ISYNC" %}
   size(16);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     Label next;
     __ lfd($dst$$FloatRegister, Idisp, $mem$$base$$Register);
@@ -6104,7 +5835,6 @@ instruct loadToc_hi(iRegLdst dst) %{
   format %{ "ADDIS   $dst, R29, DISP.hi \t// load TOC hi" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addis);
     __ calculate_address_from_global_toc_hi16only($dst$$Register, __ method_toc());
   %}
   ins_pipe(pipe_class_default);
@@ -6118,7 +5848,6 @@ instruct loadToc_lo(iRegLdst dst, iRegLdst src) %{
   format %{ "ADDI    $dst, $src, DISP.lo \t// load TOC lo" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ori);
     __ calculate_address_from_global_toc_lo16only($dst$$Register, __ method_toc());
   %}
   ins_pipe(pipe_class_default);
@@ -6131,7 +5860,6 @@ instruct loadConI16(iRegIdst dst, immI16 src) %{
   format %{ "LI      $dst, $src" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, (int)((short)($src$$constant & 0xFFFF)));
   %}
   ins_pipe(pipe_class_default);
@@ -6145,7 +5873,6 @@ instruct loadConIhi16(iRegIdst dst, immIhi16 src) %{
   format %{ "LIS     $dst, $src.hi" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addis);
     // Lis sign extends 16-bit src then shifts it 16 bit to the left.
     __ lis($dst$$Register, (int)((short)(($src$$constant & 0xFFFF0000) >> 16)));
   %}
@@ -6162,7 +5889,6 @@ instruct loadConI32_lo16(iRegIdst dst, iRegIsrc src1, immI16 src2) %{
   format %{ "ORI     $dst, $src1.hi, $src2.lo" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ori);
     __ ori($dst$$Register, $src1$$Register, ($src2$$constant) & 0xFFFF);
   %}
   ins_pipe(pipe_class_default);
@@ -6190,7 +5916,6 @@ instruct loadConL16(iRegLdst dst, immL16 src) %{
   format %{ "LI      $dst, $src \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, (int)((short) ($src$$constant & 0xFFFF)));
   %}
   ins_pipe(pipe_class_default);
@@ -6204,7 +5929,6 @@ instruct loadConL32hi16(iRegLdst dst, immL32hi16 src) %{
   format %{ "LIS     $dst, $src.hi \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addis);
     __ lis($dst$$Register, (int)((short)(($src$$constant & 0xFFFF0000) >> 16)));
   %}
   ins_pipe(pipe_class_default);
@@ -6220,7 +5944,6 @@ instruct loadConL32_lo16(iRegLdst dst, iRegLsrc src1, immL16 src2) %{
   format %{ "ORI     $dst, $src1, $src2.lo" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ori);
     __ ori($dst$$Register, $src1$$Register, ($src2$$constant) & 0xFFFF);
   %}
   ins_pipe(pipe_class_default);
@@ -6300,7 +6023,6 @@ instruct loadConL_lo(iRegLdst dst, immL src, iRegLdst base) %{
   format %{ "LD      $dst, offset, $base \t// load long $src from TOC (lo)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ld);
     int offset = ra_->C->output()->in_scratch_emit_size() ? 0 : _const_toc_offset_hi_node->_const_toc_offset;
     __ ld($dst$$Register, MacroAssembler::largeoffset_si16_si16_lo(offset), $base$$Register);
   %}
@@ -6327,7 +6049,6 @@ instruct loadConN0(iRegNdst dst, immN_0 src) %{
   format %{ "LI      $dst, $src \t// compressed ptr" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, 0);
   %}
   ins_pipe(pipe_class_default);
@@ -6341,7 +6062,6 @@ instruct loadConN_hi(iRegNdst dst, immN src) %{
   format %{ "LIS     $dst, $src \t// narrow oop hi" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addis);
     __ lis($dst$$Register, (int)(short)(($src$$constant >> 16) & 0xffff));
   %}
   ins_pipe(pipe_class_default);
@@ -6355,7 +6075,6 @@ instruct loadConN_lo(iRegNdst dst, iRegNsrc src1, immN src2) %{
   format %{ "ORI     $dst, $src1, $src2 \t// narrow oop lo" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     assert(__ oop_recorder() != NULL, "this assembler needs an OopRecorder");
     int oop_index = __ oop_recorder()->find_index((jobject)$src2$$constant);
     RelocationHolder rspec = oop_Relocation::spec(oop_index);
@@ -6386,7 +6105,6 @@ instruct clearMs32b(iRegNdst dst, iRegNsrc src) %{
   format %{ "MASK    $dst, $src, 0xFFFFFFFF" %} // mask
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ clrldi($dst$$Register, $src$$Register, 0x20);
   %}
   ins_pipe(pipe_class_default);
@@ -6399,7 +6117,6 @@ instruct loadBase(iRegLdst dst) %{
 
   format %{ "LoadConst $dst, heapbase" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ load_const_optimized($dst$$Register, CompressedOops::base(), R0);
   %}
   ins_pipe(pipe_class_default);
@@ -6447,7 +6164,6 @@ instruct loadConNKlass_hi(iRegNdst dst, immNKlass_NM src) %{
   format %{ "LIS     $dst, $src \t// narrow klass hi" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addis);
     intptr_t Csrc = CompressedKlassPointers::encode((Klass *)$src$$constant);
     __ lis($dst$$Register, (int)(short)((Csrc >> 16) & 0xffff));
   %}
@@ -6463,7 +6179,6 @@ instruct loadConNKlass_mask(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
   format %{ "MASK    $dst, $src2, 0xFFFFFFFF" %} // mask
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ clrldi($dst$$Register, $src2$$Register, 0x20);
   %}
   ins_pipe(pipe_class_default);
@@ -6479,7 +6194,6 @@ instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
   format %{ "ORI     $dst, $src1, $src2 \t// narrow klass lo" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ori);
     intptr_t Csrc = CompressedKlassPointers::encode((Klass *)$src1$$constant);
     assert(__ oop_recorder() != NULL, "this assembler needs an OopRecorder");
     int klass_index = __ oop_recorder()->find_index((Klass *)$src1$$constant);
@@ -6537,7 +6251,6 @@ instruct loadConP0or1(iRegPdst dst, immP_0or1 src) %{
   format %{ "LI      $dst, $src \t// ptr" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, (int)((short)($src$$constant & 0xFFFF)));
   %}
   ins_pipe(pipe_class_default);
@@ -6585,7 +6298,6 @@ instruct loadConP_lo(iRegPdst dst, immP_NM src, iRegLdst base) %{
   format %{ "LD      $dst, offset, $base \t// load ptr $src from TOC (lo)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ld);
     int offset = ra_->C->output()->in_scratch_emit_size() ? 0 : _const_toc_offset_hi_node->_const_toc_offset;
     __ ld($dst$$Register, MacroAssembler::largeoffset_si16_si16_lo(offset), $base$$Register);
   %}
@@ -6622,7 +6334,6 @@ instruct loadConF(regF dst, immF src, iRegLdst toc) %{
   format %{ "LFS     $dst, offset, $toc \t// load float $src from TOC" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lfs);
     address float_address = __ float_constant($src$$constant);
     if (float_address == NULL) {
       ciEnv::current()->record_out_of_memory_failure();
@@ -6645,7 +6356,6 @@ instruct loadConFComp(regF dst, immF src, iRegLdst toc) %{
             "ADDIS   $toc, $toc, -offset_hi"%}
   size(12);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     FloatRegister Rdst    = $dst$$FloatRegister;
     Register Rtoc         = $toc$$Register;
     address float_address = __ float_constant($src$$constant);
@@ -6686,7 +6396,6 @@ instruct loadConD(regD dst, immD src, iRegLdst toc) %{
   format %{ "LFD     $dst, offset, $toc \t// load double $src from TOC" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lfd);
     address float_address = __ double_constant($src$$constant);
     if (float_address == NULL) {
       ciEnv::current()->record_out_of_memory_failure();
@@ -6710,7 +6419,6 @@ instruct loadConDComp(regD dst, immD src, iRegLdst toc) %{
             "ADDIS   $toc, $toc, -offset_hi" %}
   size(12);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     FloatRegister Rdst    = $dst$$FloatRegister;
     Register      Rtoc    = $toc$$Register;
     address float_address = __ double_constant($src$$constant);
@@ -6753,7 +6461,6 @@ instruct prefetch_alloc_zero(indirectMemory mem, iRegLsrc src) %{
   format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many with zero" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_dcbtst);
     __ dcbz($src$$Register, $mem$$base$$Register);
   %}
   ins_pipe(pipe_class_memory);
@@ -6767,7 +6474,6 @@ instruct prefetch_alloc_zero_no_offset(indirectMemory mem) %{
   format %{ "PREFETCH $mem, 2 \t// Prefetch write-many with zero" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_dcbtst);
     __ dcbz($mem$$base$$Register);
   %}
   ins_pipe(pipe_class_memory);
@@ -6781,7 +6487,6 @@ instruct prefetch_alloc(indirectMemory mem, iRegLsrc src) %{
   format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_dcbtst);
     __ dcbtst($src$$Register, $mem$$base$$Register);
   %}
   ins_pipe(pipe_class_memory);
@@ -6795,7 +6500,6 @@ instruct prefetch_alloc_no_offset(indirectMemory mem) %{
   format %{ "PREFETCH $mem, 2 \t// Prefetch write-many" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_dcbtst);
     __ dcbtst($mem$$base$$Register);
   %}
   ins_pipe(pipe_class_memory);
@@ -6811,7 +6515,6 @@ instruct storeB(memory mem, iRegIsrc src) %{
   format %{ "STB     $src, $mem \t// byte" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_stb);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ stb($src$$Register, Idisp, $mem$$base$$Register);
   %}
@@ -6826,7 +6529,6 @@ instruct storeC(memory mem, iRegIsrc src) %{
   format %{ "STH     $src, $mem \t// short" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_sth);
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     __ sth($src$$Register, Idisp, $mem$$base$$Register);
   %}
@@ -6980,7 +6682,6 @@ instruct storeCM_G1(memory mem, immI_0 zero) %{
   format %{ "STB     #0, $mem \t// CMS card-mark byte store (G1)" %}
   size(8);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ li(R0, 0);
     //__ release(); // G1: oops are allowed to get visible after dirty marking
     guarantee($mem$$base$$Register != R1_SP, "use frame_slots_bias");
@@ -7002,7 +6703,6 @@ instruct encodeP_shift(iRegNdst dst, iRegNsrc src) %{
   format %{ "SRDI    $dst, $src, 3 \t// encode" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ srdi($dst$$Register, $src$$Register, CompressedOops::shift() & 0x3f);
   %}
   ins_pipe(pipe_class_default);
@@ -7016,7 +6716,6 @@ instruct encodeP_sub(iRegPdst dst, iRegPdst src) %{
 
   format %{ "SUB     $dst, $src, oop_base \t// encode" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ sub_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
   %}
   ins_pipe(pipe_class_default);
@@ -7032,7 +6731,6 @@ instruct cond_sub_base(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
             "SUB     $dst, $src1, heapbase \t// encode: subtract base if != NULL\n"
             "done:" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Label done;
     __ beq($crx$$CondRegister, done);
     __ sub_const_optimized($dst$$Register, $src1$$Register, CompressedOops::base(), R0);
@@ -7051,7 +6749,6 @@ instruct cond_set_0_oop(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   size(4);
   ins_encode %{
     // This is a Power7 instruction for which no machine description exists.
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7065,7 +6762,6 @@ instruct encodeP_Disjoint(iRegNdst dst, iRegPsrc src) %{
   format %{ "EXTRDI  $dst, $src, #32, #3 \t// encode with disjoint base" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ rldicl($dst$$Register, $src$$Register, 64-CompressedOops::shift(), 32);
   %}
   ins_pipe(pipe_class_default);
@@ -7104,7 +6800,6 @@ instruct encodeP_not_null_base_null(iRegNdst dst, iRegPsrc src) %{
   format %{ "SRDI    $dst, $src, #3 \t// encodeP, $src != NULL" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ srdi($dst$$Register, $src$$Register, CompressedOops::shift() & 0x3f);
   %}
   ins_pipe(pipe_class_default);
@@ -7119,7 +6814,6 @@ instruct encodeP_narrow_oop_shift_0(iRegNdst dst, iRegPsrc src) %{
   format %{ "MR      $dst, $src \t// Ptr->Narrow" %}
   // variable size, 0 or 4.
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
     __ mr_if_needed($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7136,7 +6830,6 @@ instruct decodeN_shift(iRegPdst dst, iRegPsrc src) %{
   format %{ "SLDI    $dst, $src, #3 \t// DecodeN" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicr);
     __ sldi($dst$$Register, $src$$Register, CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
@@ -7150,7 +6843,6 @@ instruct decodeN_add(iRegPdst dst, iRegPdst src) %{
 
   format %{ "ADD     $dst, $src, heapbase \t// DecodeN, add oop base" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ add_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
   %}
   ins_pipe(pipe_class_default);
@@ -7169,7 +6861,6 @@ instruct cond_add_base(iRegPdst dst, flagsRegSrc crx, iRegPsrc src) %{
             "ADD     $dst, $src, heapbase \t// DecodeN: add oop base if $src != NULL\n"
             "done:" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Label done;
     __ beq($crx$$CondRegister, done);
     __ add_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
@@ -7190,7 +6881,6 @@ instruct cond_set_0_ptr(iRegPdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   size(4);
   ins_encode %{
     // This is a Power7 instruction for which no machine description exists.
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7219,7 +6909,6 @@ instruct decodeN_nullBase(iRegPdst dst, iRegNsrc src) %{
   format %{ "SLDI    $dst, $src, #3 \t// DecodeN (zerobased)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicr);
     __ sldi($dst$$Register, $src$$Register, CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
@@ -7236,7 +6925,6 @@ instruct decodeN_mergeDisjoint(iRegPdst dst, iRegNsrc src, iRegLsrc base) %{
   format %{ "RLDIMI  $dst, $src, shift, 32-shift \t// DecodeN (disjoint base)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldimi);
     __ rldimi($dst$$Register, $src$$Register, CompressedOops::shift(), 32-CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
@@ -7347,7 +7035,6 @@ instruct decodeN_unscaled(iRegPdst dst, iRegNsrc src) %{
   format %{ "MR      $dst, $src \t// DecodeN (unscaled)" %}
   // variable size, 0 or 4.
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
     __ mr_if_needed($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7362,7 +7049,6 @@ instruct decodeN2I_unscaled(iRegIdst dst, iRegNsrc src) %{
   format %{ "MR      $dst, $src \t// (int)DecodeN (unscaled)" %}
   // variable size, 0 or 4.
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
     __ mr_if_needed($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7381,7 +7067,6 @@ instruct encodePKlass_shift(iRegNdst dst, iRegNsrc src) %{
   format %{ "SRDI    $dst, $src, 3 \t// encode" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ srdi($dst$$Register, $src$$Register, CompressedKlassPointers::shift());
   %}
   ins_pipe(pipe_class_default);
@@ -7396,7 +7081,6 @@ instruct encodePKlass_sub_base(iRegPdst dst, iRegLsrc base, iRegPdst src) %{
   format %{ "SUB     $dst, $base, $src \t// encode" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_subf);
     __ subf($dst$$Register, $base$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7410,7 +7094,6 @@ instruct encodePKlass_Disjoint(iRegNdst dst, iRegPsrc src) %{
   format %{ "EXTRDI  $dst, $src, #32, #3 \t// encode with disjoint base" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ rldicl($dst$$Register, $src$$Register, 64-CompressedKlassPointers::shift(), 32);
   %}
   ins_pipe(pipe_class_default);
@@ -7470,7 +7153,6 @@ instruct decodeNKlass_shift(iRegPdst dst, iRegPsrc src) %{
   format %{ "SLDI    $dst, $src, #3 \t// DecodeNKlass" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicr);
     __ sldi($dst$$Register, $src$$Register, CompressedKlassPointers::shift());
   %}
   ins_pipe(pipe_class_default);
@@ -7486,7 +7168,6 @@ instruct decodeNKlass_add_base(iRegPdst dst, iRegLsrc base, iRegPdst src) %{
   format %{ "ADD     $dst, $base, $src \t// DecodeNKlass, add klass base" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_add);
     __ add($dst$$Register, $base$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7550,7 +7231,6 @@ instruct membar_acquire() %{
   format %{ "MEMBAR-acquire" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lwsync);
     __ acquire();
   %}
   ins_pipe(pipe_class_default);
@@ -7584,7 +7264,6 @@ instruct membar_release() %{
   format %{ "MEMBAR-release" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lwsync);
     __ release();
   %}
   ins_pipe(pipe_class_default);
@@ -7597,7 +7276,6 @@ instruct membar_storestore() %{
   format %{ "MEMBAR-store-store" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lwsync);
     __ membar(Assembler::StoreStore);
   %}
   ins_pipe(pipe_class_default);
@@ -7620,7 +7298,6 @@ instruct membar_volatile() %{
   format %{ "MEMBAR-volatile" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_sync);
     __ fence();
   %}
   ins_pipe(pipe_class_default);
@@ -7679,7 +7356,6 @@ instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) 
   ins_encode %{
     // This is a Power7 instruction for which no machine description
     // exists. Anyways, the scheduler should be off on Power7.
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -7696,7 +7372,7 @@ instruct cmovI_reg(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler
-  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7709,7 +7385,7 @@ instruct cmovI_imm(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, immI16 src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler
-  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7725,7 +7401,6 @@ instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) 
   ins_encode %{
     // This is a Power7 instruction for which no machine description
     // exists. Anyways, the scheduler should be off on Power7.
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -7742,7 +7417,7 @@ instruct cmovL_reg(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7755,7 +7430,7 @@ instruct cmovL_imm(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, immL16 src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7771,7 +7446,6 @@ instruct cmovN_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) 
   ins_encode %{
     // This is a Power7 instruction for which no machine description
     // exists. Anyways, the scheduler should be off on Power7.
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -7789,7 +7463,7 @@ instruct cmovN_reg(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7802,7 +7476,7 @@ instruct cmovN_imm(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, immN_0 src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7818,7 +7492,6 @@ instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) 
   ins_encode %{
     // This is a Power7 instruction for which no machine description
     // exists. Anyways, the scheduler should be off on Power7.
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -7835,7 +7508,7 @@ instruct cmovP_reg(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegP_N2P src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7848,7 +7521,7 @@ instruct cmovP_imm(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, immP_0 src) %{
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
@@ -7861,15 +7534,13 @@ instruct cmovF_reg(cmpOp cmp, flagsRegSrc crx, regF dst, regF src) %{
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
+  size(8);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmovef);
     Label done;
     assert((Assembler::bcondCRbiIs1 & ~Assembler::bcondCRbiIs0) == 8, "check encoding");
     // Branch if not (cmp crx).
     __ bc(cc_to_inverse_boint($cmp$$cmpcode), cc_to_biint($cmp$$cmpcode, $crx$$reg), done);
     __ fmr($dst$$FloatRegister, $src$$FloatRegister);
-    // TODO PPC port __ endgroup_if_needed(_size == 12);
     __ bind(done);
   %}
   ins_pipe(pipe_class_default);
@@ -7883,15 +7554,13 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
+  size(8);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmovef);
     Label done;
     assert((Assembler::bcondCRbiIs1 & ~Assembler::bcondCRbiIs0) == 8, "check encoding");
     // Branch if not (cmp crx).
     __ bc(cc_to_inverse_boint($cmp$$cmpcode), cc_to_biint($cmp$$cmpcode, $crx$$reg), done);
     __ fmr($dst$$FloatRegister, $src$$FloatRegister);
-    // TODO PPC port __ endgroup_if_needed(_size == 12);
     __ bind(done);
   %}
   ins_pipe(pipe_class_default);
@@ -7913,7 +7582,6 @@ instruct storeLConditional_regP_regL_regL(flagsReg crx, indirect mem_ptr, iRegLs
   effect(TEMP cr0);
   format %{ "CMPXCHGD if ($crx = ($oldVal == *$mem_ptr)) *mem_ptr = $newVal; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ cmpxchgd($crx$$CondRegister, R0, $oldVal$$Register, $newVal$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarAcq, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, NULL, true);
@@ -7933,7 +7601,6 @@ instruct storePConditional_regP_regP_regP(flagsRegCR0 cr0, indirect mem_ptr, iRe
 
   format %{ "STDCX_  if ($cr0 = ($oldVal == *$mem_ptr)) *mem_ptr = $newVal; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_stdcx_);
     __ stdcx_($newVal$$Register, $mem_ptr$$Register);
   %}
   ins_pipe(pipe_class_memory);
@@ -7949,7 +7616,6 @@ instruct loadPLocked(iRegPdst dst, memory mem) %{
   format %{ "LDARX   $dst, $mem \t// loadPLocked\n\t" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ldarx);
     __ ldarx($dst$$Register, $mem$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
   %}
   ins_pipe(pipe_class_memory);
@@ -7969,7 +7635,6 @@ instruct compareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -7989,7 +7654,6 @@ instruct compareAndSwapB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIs
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8009,7 +7673,6 @@ instruct compareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8029,7 +7692,6 @@ instruct compareAndSwapS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIs
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8048,7 +7710,6 @@ instruct compareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8067,7 +7728,6 @@ instruct compareAndSwapN_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, iRegNsrc
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8086,7 +7746,6 @@ instruct compareAndSwapL_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, iRegLsrc
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8105,7 +7764,6 @@ instruct compareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iRegPsrc
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8127,7 +7785,6 @@ instruct weakCompareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone,
@@ -8142,7 +7799,6 @@ instruct weakCompareAndSwapB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 MacroAssembler::MemBarNone,
@@ -8157,7 +7813,6 @@ instruct weakCompareAndSwapB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
@@ -8172,7 +7827,6 @@ instruct weakCompareAndSwapB4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
@@ -8187,7 +7841,6 @@ instruct weakCompareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone,
@@ -8202,7 +7855,6 @@ instruct weakCompareAndSwapS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 MacroAssembler::MemBarNone,
@@ -8217,7 +7869,6 @@ instruct weakCompareAndSwapS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
@@ -8232,7 +7883,6 @@ instruct weakCompareAndSwapS4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
@@ -8247,7 +7897,6 @@ instruct weakCompareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone,
@@ -8262,7 +7911,6 @@ instruct weakCompareAndSwapI_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     // Acquire only needed in successful case. Weak node is allowed to report unsuccessful in additional rare cases and
     // value is never passed to caller.
@@ -8279,7 +7927,6 @@ instruct weakCompareAndSwapN_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone,
@@ -8294,7 +7941,6 @@ instruct weakCompareAndSwapN_acq_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     // Acquire only needed in successful case. Weak node is allowed to report unsuccessful in additional rare cases and
     // value is never passed to caller.
@@ -8311,7 +7957,6 @@ instruct weakCompareAndSwapL_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     // value is never passed to caller.
     __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
@@ -8327,7 +7972,6 @@ instruct weakCompareAndSwapL_acq_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGD acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     // Acquire only needed in successful case. Weak node is allowed to report unsuccessful in additional rare cases and
     // value is never passed to caller.
@@ -8344,7 +7988,6 @@ instruct weakCompareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone,
@@ -8359,7 +8002,6 @@ instruct weakCompareAndSwapP_acq_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGD acq $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     // Acquire only needed in successful case. Weak node is allowed to report unsuccessful in additional rare cases and
     // value is never passed to caller.
@@ -8378,7 +8020,6 @@ instruct compareAndExchangeB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgb(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8393,7 +8034,6 @@ instruct compareAndExchangeB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
   format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgb(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8408,7 +8048,6 @@ instruct compareAndExchangeB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgb(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8429,7 +8068,6 @@ instruct compareAndExchangeB4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
   format %{ "CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgb(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8450,7 +8088,6 @@ instruct compareAndExchangeS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgh(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8465,7 +8102,6 @@ instruct compareAndExchangeS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
   format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgh(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8480,7 +8116,6 @@ instruct compareAndExchangeS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgh(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8501,7 +8136,6 @@ instruct compareAndExchangeS4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
   format %{ "CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgh(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8522,7 +8156,6 @@ instruct compareAndExchangeI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgw(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8537,7 +8170,6 @@ instruct compareAndExchangeI_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgw(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8558,7 +8190,6 @@ instruct compareAndExchangeN_regP_regN_regN(iRegNdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as narrow oop" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgw(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8573,7 +8204,6 @@ instruct compareAndExchangeN_acq_regP_regN_regN(iRegNdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as narrow oop" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgw(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8594,7 +8224,6 @@ instruct compareAndExchangeL_regP_regL_regL(iRegLdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as long" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8609,7 +8238,6 @@ instruct compareAndExchangeL_acq_regP_regL_regL(iRegLdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD acq $res, $mem_ptr, $src1, $src2; as long" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8630,7 +8258,6 @@ instruct compareAndExchangeP_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as ptr; ptr" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8645,7 +8272,6 @@ instruct compareAndExchangeP_acq_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD acq $res, $mem_ptr, $src1, $src2; as ptr; ptr" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
@@ -8903,7 +8529,6 @@ instruct addI_reg_reg(iRegIdst dst, iRegIsrc_iRegL2Isrc src1, iRegIsrc_iRegL2Isr
   format %{ "ADD     $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_add);
     __ add($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -8916,7 +8541,6 @@ instruct addI_reg_reg_2(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "ADD     $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_add);
     __ add($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -8942,7 +8566,6 @@ instruct addI_reg_imm16(iRegIdst dst, iRegIsrc src1, immI16 src2) %{
   format %{ "ADDI    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ addi($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -8954,7 +8577,6 @@ instruct addI_reg_immhi16(iRegIdst dst, iRegIsrc src1, immIhi16 src2) %{
   format %{ "ADDIS   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addis);
     __ addis($dst$$Register, $src1$$Register, ($src2$$constant)>>16);
   %}
   ins_pipe(pipe_class_default);
@@ -8966,7 +8588,6 @@ instruct addL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "ADD     $dst, $src1, $src2 \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_add);
     __ add($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -8979,7 +8600,6 @@ instruct addL_reg_reg_2(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "ADD     $dst, $src1, $src2 \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_add);
     __ add($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9006,7 +8626,6 @@ instruct addI_regL_regL(iRegIdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "ADD     $dst, $src1, $src2 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_add);
     __ add($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9019,7 +8638,6 @@ instruct addL_reg_imm16(iRegLdst dst, iRegLsrc src1, immL16 src2) %{
   format %{ "ADDI    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ addi($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -9033,7 +8651,6 @@ instruct addL_reg_immhi16(iRegLdst dst, iRegLsrc src1, immL32hi16 src2) %{
   format %{ "ADDIS   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addis);
     __ addis($dst$$Register, $src1$$Register, ($src2$$constant)>>16);
   %}
   ins_pipe(pipe_class_default);
@@ -9045,7 +8662,6 @@ instruct addP_reg_reg(iRegPdst dst, iRegP_N2P src1, iRegLsrc src2) %{
   format %{ "ADD     $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_add);
     __ add($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9059,7 +8675,6 @@ instruct addP_reg_imm16(iRegPdst dst, iRegP_N2P src1, immL16 src2) %{
   format %{ "ADDI    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ addi($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -9073,7 +8688,6 @@ instruct addP_reg_immhi16(iRegPdst dst, iRegP_N2P src1, immL32hi16 src2) %{
   format %{ "ADDIS   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addis);
     __ addis($dst$$Register, $src1$$Register, ($src2$$constant)>>16);
   %}
   ins_pipe(pipe_class_default);
@@ -9088,7 +8702,6 @@ instruct subI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "SUBF    $dst, $src2, $src1" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_subf);
     __ subf($dst$$Register, $src2$$Register, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9105,7 +8718,6 @@ instruct subI_imm16_reg(iRegIdst dst, immI16 src1, iRegIsrc src2) %{
 
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_subfic);
     __ subfic($dst$$Register, $src2$$Register, $src1$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -9121,7 +8733,6 @@ instruct signmask32I_regI(iRegIdst dst, iRegIsrc src) %{
   format %{ "SRAWI   $dst, $src, #31" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_srawi);
     __ srawi($dst$$Register, $src$$Register, 0x1f);
   %}
   ins_pipe(pipe_class_default);
@@ -9145,7 +8756,6 @@ instruct negI_regI(iRegIdst dst, immI_0 zero, iRegIsrc src2) %{
   format %{ "NEG     $dst, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_neg);
     __ neg($dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9157,7 +8767,6 @@ instruct subL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "SUBF    $dst, $src2, $src1 \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_subf);
     __ subf($dst$$Register, $src2$$Register, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9170,7 +8779,6 @@ instruct subI_regL_regL(iRegIdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "SUBF    $dst, $src2, $src1 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_subf);
     __ subf($dst$$Register, $src2$$Register, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9186,7 +8794,6 @@ instruct signmask64I_regL(iRegIdst dst, iRegLsrc src) %{
   format %{ "SRADI   $dst, $src, #63" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_sradi);
     __ sradi($dst$$Register, $src$$Register, 0x3f);
   %}
   ins_pipe(pipe_class_default);
@@ -9202,7 +8809,6 @@ instruct signmask64L_regL(iRegLdst dst, iRegLsrc src) %{
   format %{ "SRADI   $dst, $src, #63" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_sradi);
     __ sradi($dst$$Register, $src$$Register, 0x3f);
   %}
   ins_pipe(pipe_class_default);
@@ -9227,7 +8833,6 @@ instruct negL_reg_reg(iRegLdst dst, immL_0 zero, iRegLsrc src2) %{
   format %{ "NEG     $dst, $src2 \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_neg);
     __ neg($dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9240,7 +8845,6 @@ instruct negI_con0_regL(iRegIdst dst, immL_0 zero, iRegLsrc src2) %{
   format %{ "NEG     $dst, $src2 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_neg);
     __ neg($dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9257,7 +8861,6 @@ instruct mulI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "MULLW   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_mullw);
     __ mullw($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9271,7 +8874,6 @@ instruct mulI_reg_imm16(iRegIdst dst, iRegIsrc src1, immI16 src2) %{
   format %{ "MULLI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_mulli);
     __ mulli($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -9284,7 +8886,6 @@ instruct mulL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "MULLD   $dst $src1, $src2 \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_mulld);
     __ mulld($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9298,7 +8899,6 @@ instruct mulHighL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "MULHD   $dst $src1, $src2 \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_mulhd);
     __ mulhd($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9312,7 +8912,6 @@ instruct mulL_reg_imm16(iRegLdst dst, iRegLsrc src1, immL16 src2) %{
   format %{ "MULLI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_mulli);
     __ mulli($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -9326,7 +8925,6 @@ instruct divI_reg_immIvalueMinus1(iRegIdst dst, iRegIsrc src1, immI_minus1 src2)
   format %{ "NEG     $dst, $src1 \t// /-1" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_neg);
     __ neg($dst$$Register, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9343,7 +8941,6 @@ instruct divI_reg_regnotMinus1(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "DIVW    $dst, $src1, $src2 \t// /not-1" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_divw);
     __ divw($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9357,13 +8954,11 @@ instruct cmovI_bne_negI_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src1) %{
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
+  size(8);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
     Label done;
     __ bne($crx$$CondRegister, done);
     __ neg($dst$$Register, $src1$$Register);
-    // TODO PPC port __ endgroup_if_needed(_size == 12);
     __ bind(done);
   %}
   ins_pipe(pipe_class_default);
@@ -9391,7 +8986,6 @@ instruct divL_reg_immLvalueMinus1(iRegLdst dst, iRegLsrc src1, immL_minus1 src2)
   format %{ "NEG     $dst, $src1 \t// /-1, long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_neg);
     __ neg($dst$$Register, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9406,7 +9000,6 @@ instruct divL_reg_regnotMinus1(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "DIVD    $dst, $src1, $src2 \t// /not-1, long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_divd);
     __ divd($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9420,13 +9013,11 @@ instruct cmovL_bne_negL_reg(iRegLdst dst, flagsRegSrc crx, iRegLsrc src1) %{
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT (InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
+  size(8);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
     Label done;
     __ bne($crx$$CondRegister, done);
     __ neg($dst$$Register, $src1$$Register);
-    // TODO PPC port __ endgroup_if_needed(_size == 12);
     __ bind(done);
   %}
   ins_pipe(pipe_class_default);
@@ -9496,7 +9087,6 @@ instruct maskI_reg_imm(iRegIdst dst, iRegIsrc src, uimmI6 mask) %{
   format %{ "MASK    $dst, $src, $mask \t// clear $mask upper bits" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ clrldi($dst$$Register, $src$$Register, $mask$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -9510,7 +9100,6 @@ instruct lShiftI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "SLW     $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_slw);
     __ slw($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9534,7 +9123,6 @@ instruct lShiftI_reg_imm(iRegIdst dst, iRegIsrc src1, immI src2) %{
   format %{ "SLWI    $dst, $src1, ($src2 & 0x1f)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rlwinm);
     __ slwi($dst$$Register, $src1$$Register, ($src2$$constant) & 0x1f);
   %}
   ins_pipe(pipe_class_default);
@@ -9548,7 +9136,6 @@ instruct lShiftI_andI_immInegpow2_imm5(iRegIdst dst, iRegIsrc src1, immInegpow2 
   format %{ "RLWINM  $dst, lShiftI(AndI($src1, $src2), $src3)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rlwinm); // FIXME: assert that rlwinm is equal to addi
     long src2      = $src2$$constant;
     long src3      = $src3$$constant;
     long maskbits  = src3 + log2_long((jlong) (julong) (juint) -src2);
@@ -9569,7 +9156,6 @@ instruct lShiftI_andI_immInegpow2_rShiftI_imm5(iRegIdst dst, iRegIsrc src1, immI
   format %{ "RLWINM  $dst, lShiftI(AndI(RShiftI($src1, $src3), $src2), $src3)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rlwinm); // FIXME: assert that rlwinm is equal to addi
     long src2      = $src2$$constant;
     long src3      = $src3$$constant;
     long maskbits  = src3 + log2_long((jlong) (julong) (juint) -src2);
@@ -9590,7 +9176,6 @@ instruct lShiftL_regL_regI(iRegLdst dst, iRegLsrc src1, iRegIsrc src2) %{
   format %{ "SLD     $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_sld);
     __ sld($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9614,7 +9199,6 @@ instruct lshiftL_regL_immI(iRegLdst dst, iRegLsrc src1, immI src2) %{
   format %{ "SLDI    $dst, $src1, ($src2 & 0x3f)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicr);
     __ sldi($dst$$Register, $src1$$Register, ($src2$$constant) & 0x3f);
   %}
   ins_pipe(pipe_class_default);
@@ -9628,7 +9212,6 @@ instruct lShiftL_regI_immGE32(iRegLdst dst, iRegIsrc src1, uimmI6_ge32 src2) %{
   size(4);
   format %{ "SLDI    $dst, i2l($src1), $src2" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicr);
     __ sldi($dst$$Register, $src1$$Register, ($src2$$constant) & 0x3f);
   %}
   ins_pipe(pipe_class_default);
@@ -9643,7 +9226,6 @@ instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIsrc src1,
   format %{ "SLDI    $dst, i2l(positive_int($src1)), $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldic);
     __ clrlsldi($dst$$Register, $src1$$Register, 0x20, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -9657,7 +9239,6 @@ instruct arShiftI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "SRAW    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_sraw);
     __ sraw($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9682,7 +9263,6 @@ instruct arShiftI_reg_imm(iRegIdst dst, iRegIsrc src1, immI src2) %{
   format %{ "SRAWI   $dst, $src1, ($src2 & 0x1f)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_srawi);
     __ srawi($dst$$Register, $src1$$Register, ($src2$$constant) & 0x1f);
   %}
   ins_pipe(pipe_class_default);
@@ -9696,7 +9276,6 @@ instruct arShiftL_regL_regI(iRegLdst dst, iRegLsrc src1, iRegIsrc src2) %{
   format %{ "SRAD    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_srad);
     __ srad($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9722,7 +9301,6 @@ instruct arShiftL_regL_immI(iRegLdst dst, iRegLsrc src1, immI src2) %{
   format %{ "SRADI   $dst, $src1, ($src2 & 0x3f)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_sradi);
     __ sradi($dst$$Register, $src1$$Register, ($src2$$constant) & 0x3f);
   %}
   ins_pipe(pipe_class_default);
@@ -9735,7 +9313,6 @@ instruct convL2I_arShiftL_regL_immI(iRegIdst dst, iRegLsrc src1, immI src2) %{
   format %{ "SRADI   $dst, $src1, ($src2 & 0x3f) \t// long + l2i" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_sradi);
     __ sradi($dst$$Register, $src1$$Register, ($src2$$constant) & 0x3f);
   %}
   ins_pipe(pipe_class_default);
@@ -9749,7 +9326,6 @@ instruct urShiftI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "SRW     $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_srw);
     __ srw($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9775,7 +9351,6 @@ instruct urShiftI_reg_imm(iRegIdst dst, iRegIsrc src1, immI src2) %{
   format %{ "SRWI    $dst, $src1, ($src2 & 0x1f)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rlwinm);
     __ srwi($dst$$Register, $src1$$Register, ($src2$$constant) & 0x1f);
   %}
   ins_pipe(pipe_class_default);
@@ -9789,7 +9364,6 @@ instruct urShiftL_regL_regI(iRegLdst dst, iRegLsrc src1, iRegIsrc src2) %{
   format %{ "SRD     $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_srd);
     __ srd($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9815,7 +9389,6 @@ instruct urShiftL_regL_immI(iRegLdst dst, iRegLsrc src1, immI src2) %{
   format %{ "SRDI    $dst, $src1, ($src2 & 0x3f)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ srdi($dst$$Register, $src1$$Register, ($src2$$constant) & 0x3f);
   %}
   ins_pipe(pipe_class_default);
@@ -9828,7 +9401,6 @@ instruct convL2I_urShiftL_regL_immI(iRegIdst dst, iRegLsrc src1, immI src2) %{
   format %{ "SRDI    $dst, $src1, ($src2 & 0x3f) \t// long + l2i" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ srdi($dst$$Register, $src1$$Register, ($src2$$constant) & 0x3f);
   %}
   ins_pipe(pipe_class_default);
@@ -9841,7 +9413,6 @@ instruct shrP_convP2X_reg_imm6(iRegLdst dst, iRegP_N2P src1, uimmI6 src2) %{
   format %{ "SRDI    $dst, $src1, $src2 \t// Cast ptr $src1 to long and shift" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ srdi($dst$$Register, $src1$$Register, ($src2$$constant) & 0x3f);
   %}
   ins_pipe(pipe_class_default);
@@ -9854,7 +9425,6 @@ instruct andI_urShiftI_regI_immI_immIpow2minus1(iRegIdst dst, iRegIsrc src1, imm
   format %{ "EXTRDI  $dst, $src1, shift=$src2, mask=$src3 \t// int bitfield extract" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     int rshift = ($src2$$constant) & 0x1f;
     int length = log2_long(((jlong) $src3$$constant) + 1);
     if (rshift + length > 32) {
@@ -9873,7 +9443,6 @@ instruct andL_urShiftL_regL_immI_immLpow2minus1(iRegLdst dst, iRegLsrc src1, imm
   format %{ "EXTRDI  $dst, $src1, shift=$src2, mask=$src3 \t// long bitfield extract" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     int rshift  = ($src2$$constant) & 0x3f;
     int length = log2_long(((jlong) $src3$$constant) + 1);
     if (rshift + length > 64) {
@@ -9891,7 +9460,6 @@ instruct sxtI_reg(iRegIdst dst, iRegIsrc src) %{
   format %{ "EXTSW   $dst, $src \t// int->int" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_extsw);
     __ extsw($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -9907,7 +9475,6 @@ instruct rotlI_reg_immi8(iRegIdst dst, iRegIsrc src, immI8 lshift, immI8 rshift)
   format %{ "ROTLWI  $dst, $src, $lshift" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rlwinm);
     __ rotlwi($dst$$Register, $src$$Register, $lshift$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -9921,7 +9488,6 @@ instruct rotrI_reg_immi8(iRegIdst dst, iRegIsrc src, immI8 rshift, immI8 lshift)
   format %{ "ROTRWI  $dst, $rshift" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rlwinm);
     __ rotrwi($dst$$Register, $src$$Register, $rshift$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -9936,7 +9502,6 @@ instruct addF_reg_reg(regF dst, regF src1, regF src2) %{
   format %{ "FADDS   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fadds);
     __ fadds($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9949,7 +9514,6 @@ instruct addD_reg_reg(regD dst, regD src1, regD src2) %{
   format %{ "FADD    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fadd);
     __ fadd($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9962,7 +9526,6 @@ instruct subF_reg_reg(regF dst, regF src1, regF src2) %{
   format %{ "FSUBS   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fsubs);
     __ fsubs($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9974,7 +9537,6 @@ instruct subD_reg_reg(regD dst, regD src1, regD src2) %{
   format %{ "FSUB    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fsub);
     __ fsub($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9986,7 +9548,6 @@ instruct mulF_reg_reg(regF dst, regF src1, regF src2) %{
   format %{ "FMULS   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fmuls);
     __ fmuls($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9998,7 +9559,6 @@ instruct mulD_reg_reg(regD dst, regD src1, regD src2) %{
   format %{ "FMUL    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fmul);
     __ fmul($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10010,7 +9570,6 @@ instruct divF_reg_reg(regF dst, regF src1, regF src2) %{
   format %{ "FDIVS   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fdivs);
     __ fdivs($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10022,7 +9581,6 @@ instruct divD_reg_reg(regD dst, regD src1, regD src2) %{
   format %{ "FDIV    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fdiv);
     __ fdiv($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10034,7 +9592,6 @@ instruct absF_reg(regF dst, regF src) %{
   format %{ "FABS    $dst, $src \t// float" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fabs);
     __ fabs($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10046,7 +9603,6 @@ instruct absD_reg(regD dst, regD src) %{
   format %{ "FABS    $dst, $src \t// double" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fabs);
     __ fabs($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10057,7 +9613,6 @@ instruct negF_reg(regF dst, regF src) %{
   format %{ "FNEG    $dst, $src \t// float" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fneg);
     __ fneg($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10068,7 +9623,6 @@ instruct negD_reg(regD dst, regD src) %{
   format %{ "FNEG    $dst, $src \t// double" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fneg);
     __ fneg($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10080,7 +9634,6 @@ instruct negF_absF_reg(regF dst, regF src) %{
   format %{ "FNABS   $dst, $src \t// float" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fnabs);
     __ fnabs($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10092,7 +9645,6 @@ instruct negD_absD_reg(regD dst, regD src) %{
   format %{ "FNABS   $dst, $src \t// double" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fnabs);
     __ fnabs($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10105,7 +9657,6 @@ instruct sqrtD_reg(regD dst, regD src) %{
   format %{ "FSQRT   $dst, $src" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fsqrt);
     __ fsqrt($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10120,7 +9671,6 @@ instruct sqrtF_reg(regF dst, regF src) %{
   format %{ "FSQRTS  $dst, $src" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fsqrts);
     __ fsqrts($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10157,7 +9707,6 @@ instruct maddF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   format %{ "FMADDS  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fmadds);
     __ fmadds($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10170,7 +9719,6 @@ instruct maddD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   format %{ "FMADD   $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fmadd);
     __ fmadd($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10184,7 +9732,6 @@ instruct mnsubF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   format %{ "FNMSUBS $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fnmsubs);
     __ fnmsubs($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10198,7 +9745,6 @@ instruct mnsubD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   format %{ "FNMSUB  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fnmsub);
     __ fnmsub($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10212,7 +9758,6 @@ instruct mnaddF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   format %{ "FNMADDS $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fnmadds);
     __ fnmadds($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10226,7 +9771,6 @@ instruct mnaddD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   format %{ "FNMADD  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fnmadd);
     __ fnmadd($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10239,7 +9783,6 @@ instruct msubF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   format %{ "FMSUBS  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fmsubs);
     __ fmsubs($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10252,7 +9795,6 @@ instruct msubD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   format %{ "FMSUB   $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fmsub);
     __ fmsub($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -10269,7 +9811,6 @@ instruct andI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "AND     $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_and);
     __ andr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10282,7 +9823,6 @@ instruct andI_reg_immIhi16(iRegIdst dst, iRegIsrc src1, immIhi16  src2, flagsReg
   format %{ "ANDIS   $dst, $src1, $src2.hi" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_andis_);
     __ andis_($dst$$Register, $src1$$Register, (int)((unsigned short)(($src2$$constant & 0xFFFF0000) >> 16)));
   %}
   ins_pipe(pipe_class_default);
@@ -10296,7 +9836,6 @@ instruct andI_reg_uimm16(iRegIdst dst, iRegIsrc src1, uimmI16 src2, flagsRegCR0 
   format %{ "ANDI    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_andi_);
     // FIXME: avoid andi_ ?
     __ andi_($dst$$Register, $src1$$Register, $src2$$constant);
   %}
@@ -10309,7 +9848,6 @@ instruct andI_reg_immInegpow2(iRegIdst dst, iRegIsrc src1, immInegpow2 src2) %{
   format %{ "ANDWI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicr);
     __ clrrdi($dst$$Register, $src1$$Register, log2_long((jlong)(julong)(juint)-($src2$$constant)));
   %}
   ins_pipe(pipe_class_default);
@@ -10320,7 +9858,6 @@ instruct andI_reg_immIpow2minus1(iRegIdst dst, iRegIsrc src1, immIpow2minus1 src
   format %{ "ANDWI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ clrldi($dst$$Register, $src1$$Register, 64-log2_long((((jlong) $src2$$constant)+1)));
   %}
   ins_pipe(pipe_class_default);
@@ -10332,7 +9869,6 @@ instruct andI_reg_immIpowerOf2(iRegIdst dst, iRegIsrc src1, immIpowerOf2 src2) %
   format %{ "ANDWI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rlwinm);
     __ rlwinm($dst$$Register, $src1$$Register, 0,
               (31-log2_long((jlong) $src2$$constant)) & 0x1f, (31-log2_long((jlong) $src2$$constant)) & 0x1f);
   %}
@@ -10347,7 +9883,6 @@ instruct andL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "AND     $dst, $src1, $src2 \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_and);
     __ andr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10361,7 +9896,6 @@ instruct andL_reg_uimm16(iRegLdst dst, iRegLsrc src1, uimmL16 src2, flagsRegCR0 
   format %{ "ANDI    $dst, $src1, $src2 \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_andi_);
     // FIXME: avoid andi_ ?
     __ andi_($dst$$Register, $src1$$Register, $src2$$constant);
   %}
@@ -10374,7 +9908,6 @@ instruct andL_reg_immLnegpow2(iRegLdst dst, iRegLsrc src1, immLnegpow2 src2) %{
   format %{ "ANDDI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicr);
     __ clrrdi($dst$$Register, $src1$$Register, log2_long((jlong)-$src2$$constant));
   %}
   ins_pipe(pipe_class_default);
@@ -10385,7 +9918,6 @@ instruct andL_reg_immLpow2minus1(iRegLdst dst, iRegLsrc src1, immLpow2minus1 src
   format %{ "ANDDI   $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ clrldi($dst$$Register, $src1$$Register, 64-log2_long((((jlong) $src2$$constant)+1)));
   %}
   ins_pipe(pipe_class_default);
@@ -10399,7 +9931,6 @@ instruct convL2I_andL_reg_immLpow2minus1(iRegIdst dst, iRegLsrc src1, immLpow2mi
   format %{ "ANDDI   $dst, $src1, $src2 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ clrldi($dst$$Register, $src1$$Register, 64-log2_long((((jlong) $src2$$constant)+1)));
   %}
   ins_pipe(pipe_class_default);
@@ -10413,7 +9944,6 @@ instruct orI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "OR      $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
     __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10426,7 +9956,6 @@ instruct orI_reg_reg_2(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "OR      $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
     __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10452,7 +9981,6 @@ instruct orI_reg_uimm16(iRegIdst dst, iRegIsrc src1, uimmI16 src2) %{
   format %{ "ORI     $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ori);
     __ ori($dst$$Register, $src1$$Register, ($src2$$constant) & 0xFFFF);
   %}
   ins_pipe(pipe_class_default);
@@ -10466,7 +9994,6 @@ instruct orL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   size(4);
   format %{ "OR      $dst, $src1, $src2 \t// long" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
     __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10480,7 +10007,6 @@ instruct orI_regL_regL(iRegIdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "OR      $dst, $src1, $src2 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
     __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10494,7 +10020,6 @@ instruct orL_reg_uimm16(iRegLdst dst, iRegLsrc src1, uimmL16 con) %{
   format %{ "ORI     $dst, $src1, $con \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_ori);
     __ ori($dst$$Register, $src1$$Register, ($con$$constant) & 0xFFFF);
   %}
   ins_pipe(pipe_class_default);
@@ -10508,7 +10033,6 @@ instruct xorI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "XOR     $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_xor);
     __ xorr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10521,7 +10045,6 @@ instruct xorI_reg_reg_2(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "XOR     $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_xor);
     __ xorr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10547,7 +10070,6 @@ instruct xorI_reg_uimm16(iRegIdst dst, iRegIsrc src1, uimmI16 src2) %{
   format %{ "XORI    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_xori);
     __ xori($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -10561,7 +10083,6 @@ instruct xorL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "XOR     $dst, $src1, $src2 \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_xor);
     __ xorr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10575,7 +10096,6 @@ instruct xorI_regL_regL(iRegIdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "XOR     $dst, $src1, $src2 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_xor);
     __ xorr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10589,7 +10109,6 @@ instruct xorL_reg_uimm16(iRegLdst dst, iRegLsrc src1, uimmL16 src2) %{
   format %{ "XORI    $dst, $src1, $src2 \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_xori);
     __ xori($dst$$Register, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -10602,7 +10121,6 @@ instruct notI_reg(iRegIdst dst, iRegIsrc src1, immI_minus1 src2) %{
   format %{ "NOT     $dst, $src1 ($src2)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_nor);
     __ nor($dst$$Register, $src1$$Register, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10615,7 +10133,6 @@ instruct notL_reg(iRegLdst dst, iRegLsrc src1, immL_minus1 src2) %{
   format %{ "NOT     $dst, $src1 ($src2) \t// long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_nor);
     __ nor($dst$$Register, $src1$$Register, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10641,7 +10158,6 @@ instruct andcL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "ANDC    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_andc);
     __ andc($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10768,7 +10284,6 @@ instruct moveI2F_stack_reg(regF dst, stackSlotI src) %{
   format %{ "LFS     $dst, $src \t// MoveI2F" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_lfs);
     int Idisp = $src$$disp + frame_slots_bias($src$$base, ra_);
     __ lfs($dst$$FloatRegister, Idisp, $src$$base$$Register);
   %}
@@ -10856,7 +10371,6 @@ instruct moveReg(iRegLdst dst, iRegIsrc src) %{
   format %{ "MR      $dst, $src \t// replicate " %}
   // variable size, 0 or 4.
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
     __ mr_if_needed($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10871,7 +10385,6 @@ instruct castX2P(iRegPdst dst, iRegLsrc src) %{
   format %{ "MR      $dst, $src \t// Long->Ptr" %}
   // variable size, 0 or 4.
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
     __ mr_if_needed($dst$$Register, $src$$Register);
   %}
  ins_pipe(pipe_class_default);
@@ -10884,7 +10397,6 @@ instruct castP2X(iRegLdst dst, iRegP_N2P src) %{
   format %{ "MR      $dst, $src \t// Ptr->Long" %}
   // variable size, 0 or 4.
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
     __ mr_if_needed($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -10999,7 +10511,6 @@ instruct convI2Bool_andI_reg_immIpowerOf2(iRegIdst dst, iRegIsrc src, immIpowerO
   format %{ "RLWINM  $dst, $src, $mask \t// convI2B(AndI($src, $mask))" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rlwinm);
     __ rlwinm($dst$$Register, $src$$Register, (32-log2_long((jlong)$mask$$constant)) & 0x1f, 31, 31);
   %}
   ins_pipe(pipe_class_default);
@@ -11101,7 +10612,6 @@ instruct cmpLTMask_reg_immI0(iRegIdst dst, iRegIsrc src1, immI_0 src2) %{
   format %{ "SRAWI   $dst, $src1, $src2 \t// CmpLTMask" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_srawi);
     __ srawi($dst$$Register, $src1$$Register, 0x1f);
   %}
   ins_pipe(pipe_class_default);
@@ -11119,7 +10629,6 @@ instruct convB2I_reg(iRegIdst dst, iRegIsrc src, immI_24 amount) %{
   format %{ "EXTSB   $dst, $src \t// byte->int" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_extsb);
     __ extsb($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -11141,7 +10650,6 @@ instruct convS2I_reg(iRegIdst dst, iRegIsrc src, immI_16 amount) %{
   format %{ "EXTSH   $dst, $src \t// short->int" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_extsh);
     __ extsh($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -11154,7 +10662,6 @@ instruct sxtI_L2L_reg(iRegLdst dst, iRegLsrc src) %{
   format %{ "EXTSW   $dst, $src \t// long->long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_extsw);
     __ extsw($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -11165,7 +10672,6 @@ instruct convL2I_reg(iRegIdst dst, iRegLsrc src) %{
   format %{ "MR      $dst, $src \t// long->int" %}
   // variable size, 0 or 4
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_or);
     __ mr_if_needed($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -11179,7 +10685,6 @@ instruct convD2IRaw_regD(regD dst, regD src) %{
   format %{ "FCTIWZ $dst, $src \t// convD2I, $src != NaN" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fctiwz);;
     __ fctiwz($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -11194,7 +10699,7 @@ instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
 
   format %{ "cmovI   $crx, $dst, $src" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT(InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
@@ -11208,7 +10713,7 @@ instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
 
   format %{ "cmovI   $crx, $dst, $src" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT(InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
@@ -11361,7 +10866,6 @@ instruct convF2IRaw_regF(regF dst, regF src) %{
   format %{ "FCTIWZ $dst, $src \t// convF2I, $src != NaN" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fctiwz);
     __ fctiwz($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -11406,7 +10910,6 @@ instruct convI2L_reg(iRegLdst dst, iRegIsrc src) %{
   format %{ "EXTSW   $dst, $src \t// int->long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_extsw);
     __ extsw($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -11420,7 +10923,6 @@ instruct zeroExtendL_regI(iRegLdst dst, iRegIsrc src, immL_32bits mask) %{
   format %{ "CLRLDI  $dst, $src, #32 \t// zero-extend int to long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ clrldi($dst$$Register, $src$$Register, 32);
   %}
   ins_pipe(pipe_class_default);
@@ -11434,7 +10936,6 @@ instruct zeroExtendL_regL(iRegLdst dst, iRegLsrc src, immL_32bits mask) %{
   format %{ "CLRLDI  $dst, $src, #32 \t// zero-extend int to long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ clrldi($dst$$Register, $src$$Register, 32);
   %}
   ins_pipe(pipe_class_default);
@@ -11448,7 +10949,6 @@ instruct convF2LRaw_regF(regF dst, regF src) %{
   format %{ "FCTIDZ $dst, $src \t// convF2L, $src != NaN" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fctiwz);
     __ fctidz($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -11463,7 +10963,7 @@ instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
 
   format %{ "cmovL   $crx, $dst, $src" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
@@ -11477,7 +10977,7 @@ instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
 
   format %{ "cmovL   $crx, $dst, $src" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8));
+  size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
@@ -11624,7 +11124,6 @@ instruct convD2LRaw_regD(regD dst, regD src) %{
   format %{ "FCTIDZ $dst, $src \t// convD2L $src != NaN" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fctiwz);
     __ fctidz($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -11673,7 +11172,6 @@ instruct convL2DRaw_regD(regD dst, regD src) %{
   format %{ "FCFID $dst, $src \t// convL2D" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fcfid);
     __ fcfid($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -11685,7 +11183,6 @@ instruct convD2F_reg(regF dst, regD src) %{
   format %{ "FRSP    $dst, $src \t// convD2F" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_frsp);
     __ frsp($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -11718,7 +11215,6 @@ instruct convL2FRaw_regF(regF dst, regD src) %{
   format %{ "FCFIDS $dst, $src \t// convL2F" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fcfid);
     __ fcfids($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -11847,7 +11343,6 @@ instruct convF2D_reg(regD dst, regF src) %{
   format %{ "FMR     $dst, $src \t// float->double" %}
   // variable size, 0 or 4
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fmr);
     __ fmr_if_needed($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -11862,7 +11357,6 @@ instruct cmpI_reg_reg(flagsReg crx, iRegIsrc src1, iRegIsrc src2) %{
   size(4);
   format %{ "CMPW    $crx, $src1, $src2" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmp);
     __ cmpw($crx$$CondRegister, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_compare);
@@ -11873,7 +11367,6 @@ instruct cmpI_reg_imm16(flagsReg crx, iRegIsrc src1, immI16 src2) %{
   format %{ "CMPWI   $crx, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmpi);
     __ cmpwi($crx$$CondRegister, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
@@ -11886,7 +11379,6 @@ instruct testI_reg_imm(flagsRegCR0 cr0, iRegIsrc src1, uimmI16 src2, immI_0 zero
   format %{ "ANDI    R0, $src1, $src2 \t// BTST int" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_andi_);
     __ andi_(R0, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
@@ -11897,7 +11389,6 @@ instruct cmpL_reg_reg(flagsReg crx, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "CMPD    $crx, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmp);
     __ cmpd($crx$$CondRegister, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_compare);
@@ -11908,7 +11399,6 @@ instruct cmpL_reg_imm16(flagsReg crx, iRegLsrc src1, immL16 src2) %{
   format %{ "CMPDI   $crx, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmpi);
     __ cmpdi($crx$$CondRegister, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
@@ -11920,7 +11410,6 @@ instruct cmpUL_reg_reg(flagsReg crx, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "CMPLD   $crx, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmpl);
     __ cmpld($crx$$CondRegister, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_compare);
@@ -11931,7 +11420,6 @@ instruct cmpUL_reg_imm16(flagsReg crx, iRegLsrc src1, uimmL16 src2) %{
   format %{ "CMPLDI  $crx, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmpli);
     __ cmpldi($crx$$CondRegister, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
@@ -11943,7 +11431,6 @@ instruct testL_reg_reg(flagsRegCR0 cr0, iRegLsrc src1, iRegLsrc src2, immL_0 zer
   format %{ "AND     R0, $src1, $src2 \t// BTST long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_and_);
     __ and_(R0, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_compare);
@@ -11955,7 +11442,6 @@ instruct testL_reg_imm(flagsRegCR0 cr0, iRegLsrc src1, uimmL16 src2, immL_0 zero
   format %{ "ANDI    R0, $src1, $src2 \t// BTST long" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_andi_);
     __ andi_(R0, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
@@ -11970,16 +11456,14 @@ instruct cmovI_conIvalueMinus1_conIvalue1(iRegIdst dst, flagsRegSrc crx) %{
 
   format %{ "cmovI   $crx, $dst, -1, 0, +1" %}
   // Worst case is branch + move + branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORTInsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 20 : 16));
+  size(16);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
     Label done;
     // li(Rdst, 0);              // equal -> 0
     __ beq($crx$$CondRegister, done);
     __ li($dst$$Register, 1);    // greater -> +1
     __ bgt($crx$$CondRegister, done);
     __ li($dst$$Register, -1);   // unordered or less -> -1
-    // TODO: PPC port__ endgroup_if_needed(_size == 20);
     __ bind(done);
   %}
   ins_pipe(pipe_class_compare);
@@ -12068,7 +11552,6 @@ instruct rangeCheck_iReg_uimm15(cmpOp cmp, iRegIsrc src_length, uimmI15 index, l
   format %{ "TWI     $index $cmp $src_length \t// RangeCheck => trap $labl" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_twi);
     if ($cmp$$cmpcode == 0x1 /* less_equal */) {
       __ trap_range_check_le($src_length$$Register, $index$$constant);
     } else {
@@ -12095,7 +11578,6 @@ instruct rangeCheck_iReg_iReg(cmpOp cmp, iRegIsrc src_index, iRegIsrc src_length
   format %{ "TW      $src_index $cmp $src_length \t// RangeCheck => trap $labl" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_tw);
     if ($cmp$$cmpcode == 0x0 /* greater_equal */) {
       __ trap_range_check_ge($src_index$$Register, $src_length$$Register);
     } else {
@@ -12122,7 +11604,6 @@ instruct rangeCheck_uimm15_iReg(cmpOp cmp, iRegIsrc src_index, uimmI15 length, l
   format %{ "TWI     $src_index $cmp $length \t// RangeCheck => trap $labl" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_twi);
     if ($cmp$$cmpcode == 0x0 /* greater_equal */) {
       __ trap_range_check_ge($src_index$$Register, $length$$constant);
     } else {
@@ -12140,7 +11621,6 @@ instruct compU_reg_reg(flagsReg crx, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "CMPLW   $crx, $src1, $src2 \t// unsigned" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmpl);
     __ cmplw($crx$$CondRegister, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_compare);
@@ -12151,7 +11631,6 @@ instruct compU_reg_uimm16(flagsReg crx, iRegIsrc src1, uimmI16 src2) %{
   size(4);
   format %{ "CMPLWI  $crx, $src1, $src2" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmpli);
     __ cmplwi($crx$$CondRegister, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
@@ -12173,7 +11652,6 @@ instruct zeroCheckN_iReg_imm0(cmpOp cmp, iRegNsrc value, immN_0 zero, label labl
   format %{ "TDI     $value $cmp $zero \t// ZeroCheckN => trap $labl" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_tdi);
     if ($cmp$$cmpcode == 0xA) {
       __ trap_null_check($value$$Register);
     } else {
@@ -12194,7 +11672,6 @@ instruct cmpN_reg_reg(flagsReg crx, iRegNsrc src1, iRegNsrc src2) %{
   ins_cost(2);
   format %{ "CMPLW   $crx, $src1, $src2 \t// compressed ptr" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmpl);
     __ cmplw($crx$$CondRegister, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_compare);
@@ -12208,7 +11685,6 @@ instruct cmpN_reg_imm0(flagsReg crx, iRegNsrc src1, immN_0 src2) %{
   format %{ "CMPLWI  $crx, $src1, $src2 \t// compressed ptr" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmpli);
     __ cmplwi($crx$$CondRegister, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
@@ -12230,7 +11706,6 @@ instruct zeroCheckP_reg_imm0(cmpOp cmp, iRegP_N2P value, immP_0 zero, label labl
   format %{ "TDI     $value $cmp $zero \t// ZeroCheckP => trap $labl" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_tdi);
     if ($cmp$$cmpcode == 0xA) {
       __ trap_null_check($value$$Register);
     } else {
@@ -12249,7 +11724,6 @@ instruct cmpP_reg_reg(flagsReg crx, iRegP_N2P src1, iRegP_N2P src2) %{
   format %{ "CMPLD   $crx, $src1, $src2 \t// ptr" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmpl);
     __ cmpld($crx$$CondRegister, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_compare);
@@ -12260,7 +11734,6 @@ instruct cmpP_reg_null(flagsReg crx, iRegP_N2P src1, immP_0or1 src2) %{
   format %{ "CMPLDI   $crx, $src1, $src2 \t// ptr" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmpl);
     __ cmpldi($crx$$CondRegister, $src1$$Register, (int)((short)($src2$$constant & 0xFFFF)));
   %}
   ins_pipe(pipe_class_compare);
@@ -12277,7 +11750,6 @@ instruct cmpP_reg_imm16(flagsReg crx, iRegPsrc src1, immL16 src2) %{
   format %{ "CMPDI   $crx, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmpi);
     __ cmpdi($crx$$CondRegister, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
@@ -12294,7 +11766,6 @@ instruct cmpFUnordered_reg_reg(flagsReg crx, regF src1, regF src2) %{
   format %{ "cmpFUrd $crx, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fcmpu);
     __ fcmpu($crx$$CondRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -12309,14 +11780,12 @@ instruct cmov_bns_less(flagsReg crx) %{
 
   format %{ "cmov    $crx" %}
   // Worst case is branch + move + stop, no stop without scheduler.
-  size((false /* TODO: PPC PORT(InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 16 : 12));
+  size(12);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cmovecr);
     Label done;
     __ bns($crx$$CondRegister, done);        // not unordered -> keep crx
     __ li(R0, 0);
     __ cmpwi($crx$$CondRegister, R0, 1);     // unordered -> set crx to 'less'
-    // TODO PPC port __ endgroup_if_needed(_size == 16);
     __ bind(done);
   %}
   ins_pipe(pipe_class_default);
@@ -12409,7 +11878,6 @@ instruct cmpDUnordered_reg_reg(flagsReg crx, regD src1, regD src2) %{
   format %{ "cmpFUrd $crx, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fcmpu);
     __ fcmpu($crx$$CondRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -12614,7 +12082,6 @@ instruct branch(label labl) %{
   format %{ "B       $labl" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_b);
      Label d;    // dummy
      __ bind(d);
      Label* p = $labl$$label;
@@ -12654,7 +12121,6 @@ instruct branchConFar(cmpOp cmp, flagsRegSrc crx, label lbl) %{
   // Same match rule as `branchCon'.
   match(If cmp crx);
   effect(USE crx, USE lbl);
-  predicate(!false /* TODO: PPC port HB_Schedule*/);
   // Higher cost than `branchCon'.
   ins_cost(5*BRANCH_COST);
 
@@ -12664,26 +12130,6 @@ instruct branchConFar(cmpOp cmp, flagsRegSrc crx, label lbl) %{
   format %{ "B_FAR$cmp $crx, $lbl" %}
   size(8);
   ins_encode( enc_bc_far(crx, cmp, lbl) );
-  ins_pipe(pipe_class_default);
-%}
-
-// Conditional Branch used with Power6 scheduler (can be far or short).
-instruct branchConSched(cmpOp cmp, flagsRegSrc crx, label lbl) %{
-  // Same match rule as `branchCon'.
-  match(If cmp crx);
-  effect(USE crx, USE lbl);
-  predicate(false /* TODO: PPC port HB_Schedule*/);
-  // Higher cost than `branchCon'.
-  ins_cost(5*BRANCH_COST);
-
-  // Actually size doesn't depend on alignment but on shortening.
-  ins_variable_size_depending_on_alignment(true);
-  // long variant.
-  ins_short_branch(0);
-
-  format %{ "B_FAR$cmp $crx, $lbl" %}
-  size(8); // worst case
-  ins_encode( enc_bc_short_far(crx, cmp, lbl) );
   ins_pipe(pipe_class_default);
 %}
 
@@ -12704,7 +12150,6 @@ instruct branchLoopEnd(cmpOp cmp, flagsRegSrc crx, label labl) %{
 instruct branchLoopEndFar(cmpOp cmp, flagsRegSrc crx, label labl) %{
   match(CountedLoopEnd cmp crx);
   effect(USE labl);
-  predicate(!false /* TODO: PPC port HB_Schedule */);
   ins_cost(BRANCH_COST);
 
   // Long variant.
@@ -12713,25 +12158,6 @@ instruct branchLoopEndFar(cmpOp cmp, flagsRegSrc crx, label labl) %{
   format %{ "B_FAR$cmp $crx, $labl \t// counted loop end" %}
   size(8);
   ins_encode( enc_bc_far(crx, cmp, labl) );
-  ins_pipe(pipe_class_default);
-%}
-
-// Conditional Branch used with Power6 scheduler (can be far or short).
-instruct branchLoopEndSched(cmpOp cmp, flagsRegSrc crx, label labl) %{
-  match(CountedLoopEnd cmp crx);
-  effect(USE labl);
-  predicate(false /* TODO: PPC port HB_Schedule */);
-  // Higher cost than `branchCon'.
-  ins_cost(5*BRANCH_COST);
-
-  // Actually size doesn't depend on alignment but on shortening.
-  ins_variable_size_depending_on_alignment(true);
-  // Long variant.
-  ins_short_branch(0);
-
-  format %{ "B_FAR$cmp $crx, $labl \t// counted loop end" %}
-  size(8); // worst case
-  ins_encode( enc_bc_short_far(crx, cmp, labl) );
   ins_pipe(pipe_class_default);
 %}
 
@@ -12754,7 +12180,6 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
 
   format %{ "PartialSubtypeCheck $result = ($subklass instanceOf $superklass) tmp: $tmp_klass, $tmp_arrayptr" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ check_klass_subtype_slow_path($subklass$$Register, $superklass$$Register, $tmp_arrayptr$$Register,
                                      $tmp_klass$$Register, NULL, $result$$Register);
   %}
@@ -12770,7 +12195,6 @@ instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iR
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                  $tmp1$$Register, $tmp2$$Register, /*tmp3*/ R0,
                                  UseBiasedLocking && !UseOptoBiasInlining);
@@ -12789,7 +12213,6 @@ instruct cmpFastLock_tm(flagsReg crx, iRegPdst oop, rarg2RegP box, iRegPdst tmp1
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2, $tmp3 (TM)" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                  $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                  /*Biased Locking*/ false,
@@ -12810,7 +12233,6 @@ instruct cmpFastUnlock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, 
 
   format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    UseBiasedLocking && !UseOptoBiasInlining,
@@ -12829,7 +12251,6 @@ instruct cmpFastUnlock_tm(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp
 
   format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2 (TM)" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    /*Biased Locking*/ false, /*TM*/ true);
@@ -12847,7 +12268,6 @@ instruct align_addr(iRegPdst dst, iRegPsrc src, immLnegpow2 mask) %{
   format %{ "ANDDI   $dst, $src, $mask \t// next aligned address" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldicr);
     __ clrrdi($dst$$Register, $src$$Register, log2_long((jlong)-$mask$$constant));
   %}
   ins_pipe(pipe_class_default);
@@ -12860,7 +12280,6 @@ instruct array_size(iRegLdst dst, iRegPsrc end, iRegPsrc start) %{
   format %{ "SUB     $dst, $end, $start \t// array size in bytes" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_subf);
     __ subf($dst$$Register, $start$$Register, $end$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -12874,7 +12293,6 @@ instruct inlineCallClearArrayShort(immLmax30 cnt, rarg2RegP base, Universe dummy
 
   format %{ "ClearArray $cnt, $base" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ clear_memory_constlen($base$$Register, $cnt$$constant, R0); // kills base, R0
   %}
   ins_pipe(pipe_class_default);
@@ -12888,7 +12306,6 @@ instruct inlineCallClearArrayLarge(immL cnt, rarg2RegP base, Universe dummy, iRe
 
   format %{ "ClearArray $cnt, $base \t// KILL $tmp" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ clear_memory_doubleword($base$$Register, $tmp$$Register, R0, $cnt$$constant); // kills base, R0
   %}
   ins_pipe(pipe_class_default);
@@ -12902,7 +12319,6 @@ instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, Universe dummy, reg
 
   format %{ "ClearArray $cnt, $base" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ clear_memory_doubleword($base$$Register, $cnt$$Register, R0); // kills cnt, base, R0
   %}
   ins_pipe(pipe_class_default);
@@ -12916,7 +12332,6 @@ instruct string_compareL(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt1, rarg4Re
   ins_cost(300);
   format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result \t// KILL $tmp" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register,
                       $tmp$$Register,
@@ -12933,7 +12348,6 @@ instruct string_compareU(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt1, rarg4Re
   ins_cost(300);
   format %{ "String Compare char[] $str1,$cnt1,$str2,$cnt2 -> $result \t// KILL $tmp" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register,
                       $tmp$$Register,
@@ -12950,7 +12364,6 @@ instruct string_compareLU(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt1, rarg4R
   ins_cost(300);
   format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result \t// KILL $tmp" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register,
                       $tmp$$Register,
@@ -12967,7 +12380,6 @@ instruct string_compareUL(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt1, rarg4R
   ins_cost(300);
   format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result \t// KILL $tmp" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ string_compare($str2$$Register, $str1$$Register,
                       $cnt2$$Register, $cnt1$$Register,
                       $tmp$$Register,
@@ -12984,7 +12396,6 @@ instruct string_equalsL(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt, iRegIdst 
   ins_cost(300);
   format %{ "String Equals byte[] $str1,$str2,$cnt -> $result \t// KILL $tmp" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ array_equals(false, $str1$$Register, $str2$$Register,
                     $cnt$$Register, $tmp$$Register,
                     $result$$Register, true /* byte */);
@@ -13000,7 +12411,6 @@ instruct string_equalsU(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt, iRegIdst 
   ins_cost(300);
   format %{ "String Equals char[]  $str1,$str2,$cnt -> $result \t// KILL $tmp" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ array_equals(false, $str1$$Register, $str2$$Register,
                     $cnt$$Register, $tmp$$Register,
                     $result$$Register, false /* byte */);
@@ -13016,7 +12426,6 @@ instruct array_equalsB(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
   ins_cost(300);
   format %{ "Array Equals $ary1,$ary2 -> $result \t// KILL $tmp1,$tmp2" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ array_equals(true, $ary1$$Register, $ary2$$Register,
                     $tmp1$$Register, $tmp2$$Register,
                     $result$$Register, true /* byte */);
@@ -13032,7 +12441,6 @@ instruct array_equalsC(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
   ins_cost(300);
   format %{ "Array Equals $ary1,$ary2 -> $result \t// KILL $tmp1,$tmp2" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ array_equals(true, $ary1$$Register, $ary2$$Register,
                     $tmp1$$Register, $tmp2$$Register,
                     $result$$Register, false /* byte */);
@@ -13054,7 +12462,6 @@ instruct indexOf_imm1_char_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt
             "-> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
 
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     immPOper *needleOper = (immPOper *)$needleImm;
     const TypeOopPtr *t = needleOper->type()->isa_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
@@ -13088,7 +12495,6 @@ instruct indexOf_imm1_char_L(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt
             "-> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
 
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     immPOper *needleOper = (immPOper *)$needleImm;
     const TypeOopPtr *t = needleOper->type()->isa_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
@@ -13115,7 +12521,6 @@ instruct indexOf_imm1_char_UL(iRegIdst result, iRegPsrc haystack, iRegIsrc haycn
             "-> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
 
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     immPOper *needleOper = (immPOper *)$needleImm;
     const TypeOopPtr *t = needleOper->type()->isa_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
@@ -13143,7 +12548,6 @@ instruct indexOf_imm1_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
     ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
@@ -13178,7 +12582,6 @@ instruct indexOf_imm1_L(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
     ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
@@ -13206,7 +12609,6 @@ instruct indexOf_imm1_UL(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
     ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
@@ -13229,7 +12631,6 @@ instruct indexOfChar_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
   format %{ "String IndexOfChar $haystack[0..$haycnt], $ch"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ string_indexof_char($result$$Register,
                            $haystack$$Register, $haycnt$$Register,
                            $ch$$Register, 0 /* this is not used if the character is already in a register */,
@@ -13254,7 +12655,6 @@ instruct indexOf_imm_U(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
     ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
 
@@ -13282,7 +12682,6 @@ instruct indexOf_imm_L(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
     ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
 
@@ -13310,7 +12709,6 @@ instruct indexOf_imm_UL(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
     ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
 
@@ -13335,7 +12733,6 @@ instruct indexOf_U(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt, iRe
   format %{ "String IndexOf $haystack[0..$haycnt], $needle[0..$needlecnt]"
              " -> $result \t// KILL $haycnt, $needlecnt, $tmp1, $tmp2, $tmp3, $tmp4, $cr0, $cr1" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
                       $needle$$Register, NULL, $needlecnt$$Register, 0,  // needlecnt not constant.
@@ -13357,7 +12754,6 @@ instruct indexOf_L(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt, iRe
   format %{ "String IndexOf $haystack[0..$haycnt], $needle[0..$needlecnt]"
              " -> $result \t// KILL $haycnt, $needlecnt, $tmp1, $tmp2, $tmp3, $tmp4, $cr0, $cr1" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
                       $needle$$Register, NULL, $needlecnt$$Register, 0,  // needlecnt not constant.
@@ -13379,7 +12775,6 @@ instruct indexOf_UL(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt, iR
   format %{ "String IndexOf $haystack[0..$haycnt], $needle[0..$needlecnt]"
              " -> $result \t// KILL $haycnt, $needlecnt, $tmp1, $tmp2, $tmp3, $tmp4, $cr0, $cr1" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
                       $needle$$Register, NULL, $needlecnt$$Register, 0,  // needlecnt not constant.
@@ -13397,7 +12792,6 @@ instruct string_compress(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst re
   ins_cost(300);
   format %{ "String Compress $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Label Lskip, Ldone;
     __ li($result$$Register, 0);
     __ string_compress_16($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register,
@@ -13420,7 +12814,6 @@ instruct string_inflate(Universe dummy, rarg1RegP src, rarg2RegP dst, iRegIsrc l
   ins_cost(300);
   format %{ "String Inflate $src,$dst,$len \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Label Ldone;
     __ string_inflate_16($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register,
                          $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, $tmp5$$Register);
@@ -13441,7 +12834,6 @@ instruct has_negatives(rarg1RegP ary1, iRegIsrc len, iRegIdst result, iRegLdst t
   ins_cost(300);
   format %{ "has negatives byte[] $ary1,$len -> $result \t// KILL $tmp1, $tmp2" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ has_negatives($ary1$$Register, $len$$Register, $result$$Register,
                      $tmp1$$Register, $tmp2$$Register);
   %}
@@ -13457,7 +12849,6 @@ instruct encode_iso_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst r
   ins_cost(300);
   format %{ "Encode array $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     Label Lslow, Lfailure1, Lfailure2, Ldone;
     __ string_compress_16($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register,
                           $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, Lfailure1);
@@ -13514,7 +12905,6 @@ instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_cost(DEFAULT_COST*2);
 
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ cmpw(CCR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CCR0, Assembler::less, /*invert*/false, $src1$$Register, $src2$$Register);
   %}
@@ -13548,7 +12938,6 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_cost(DEFAULT_COST*2);
 
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ cmpw(CCR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CCR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
   %}
@@ -13566,7 +12955,6 @@ instruct popCountI(iRegIdst dst, iRegIsrc src) %{
   format %{ "POPCNTW $dst, $src" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_popcntb);
     __ popcntw($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -13581,7 +12969,6 @@ instruct popCountL(iRegIdst dst, iRegLsrc src) %{
   format %{ "POPCNTD $dst, $src" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_popcntb);
     __ popcntd($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -13595,7 +12982,6 @@ instruct countLeadingZerosI(iRegIdst dst, iRegIsrc src) %{
   format %{ "CNTLZW  $dst, $src" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cntlzw);
     __ cntlzw($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -13609,7 +12995,6 @@ instruct countLeadingZerosL(iRegIdst dst, iRegLsrc src) %{
   format %{ "CNTLZD  $dst, $src" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cntlzd);
     __ cntlzd($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -13623,7 +13008,6 @@ instruct countLeadingZerosP(iRegIdst dst, iRegPsrc src) %{
   format %{ "CNTLZD  $dst, $src" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_cntlzd);
     __ cntlzd($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -13700,7 +13084,6 @@ instruct insrwi_a(iRegIdst dst, iRegIsrc src, immI16 pos, immI16 shift) %{
   format %{ "INSRWI  $dst, $src, $pos, $shift" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rlwimi);
     __ insrwi($dst$$Register, $src$$Register, $shift$$constant, $pos$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -13714,7 +13097,6 @@ instruct insrwi(iRegIdst dst, iRegIsrc src, immI16 pos, immI16 shift) %{
   format %{ "INSRWI  $dst, $src, $pos, $shift" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rlwimi);
     __ insrwi($dst$$Register, $src$$Register, $shift$$constant, $pos$$constant);
   %}
   ins_pipe(pipe_class_default);
@@ -14109,7 +13491,6 @@ instruct repl32(iRegLdst dst) %{
   format %{ "INSRDI  $dst, #0, $dst, #32 \t// replicate" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldimi);
     __ insrdi($dst$$Register, $dst$$Register, 32, 0);
   %}
   ins_pipe(pipe_class_default);
@@ -14123,7 +13504,6 @@ instruct repl48(iRegLdst dst) %{
   format %{ "INSRDI  $dst, #0, $dst, #48 \t// replicate" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldimi);
     __ insrdi($dst$$Register, $dst$$Register, 48, 0);
   %}
   ins_pipe(pipe_class_default);
@@ -14137,7 +13517,6 @@ instruct repl56(iRegLdst dst) %{
   format %{ "INSRDI  $dst, #0, $dst, #56 \t// replicate" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_rldimi);
     __ insrdi($dst$$Register, $dst$$Register, 56, 0);
   %}
   ins_pipe(pipe_class_default);
@@ -14160,7 +13539,6 @@ instruct repl8B_immI0(iRegLdst dst, immI_0 zero) %{
   format %{ "LI      $dst, #0 \t// replicate8B" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, (int)((short)($zero$$constant & 0xFFFF)));
   %}
   ins_pipe(pipe_class_default);
@@ -14172,7 +13550,6 @@ instruct repl8B_immIminus1(iRegLdst dst, immI_minus1 src) %{
   format %{ "LI      $dst, #-1 \t// replicate8B" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, (int)((short)($src$$constant & 0xFFFF)));
   %}
   ins_pipe(pipe_class_default);
@@ -14234,7 +13611,6 @@ instruct repl4S_immI0(iRegLdst dst, immI_0 zero) %{
   format %{ "LI      $dst, #0 \t// replicate4S" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, (int)((short)($zero$$constant & 0xFFFF)));
   %}
   ins_pipe(pipe_class_default);
@@ -14246,7 +13622,6 @@ instruct repl4S_immIminus1(iRegLdst dst, immI_minus1 src) %{
   format %{ "LI      $dst, -1 \t// replicate4S" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, (int)((short)($src$$constant & 0xFFFF)));
   %}
   ins_pipe(pipe_class_default);
@@ -14308,7 +13683,6 @@ instruct repl2I_immI0(iRegLdst dst, immI_0 zero) %{
   format %{ "LI      $dst, #0 \t// replicate2I" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, (int)((short)($zero$$constant & 0xFFFF)));
   %}
   ins_pipe(pipe_class_default);
@@ -14320,7 +13694,6 @@ instruct repl2I_immIminus1(iRegLdst dst, immI_minus1 src) %{
   format %{ "LI      $dst, -1 \t// replicate2I" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, (int)((short)($src$$constant & 0xFFFF)));
   %}
   ins_pipe(pipe_class_default);
@@ -14398,7 +13771,6 @@ instruct repl2F_immF0(iRegLdst dst, immF_0 zero) %{
 
   format %{ "LI      $dst, #0 \t// replicate2F" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, 0x0);
   %}
   ins_pipe(pipe_class_default);
@@ -14846,7 +14218,6 @@ instruct overflowAddL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
 
   format %{ "add_    $op1, $op2\t# overflow check long" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
     __ addo_(R0, $op1$$Register, $op2$$Register);
@@ -14859,7 +14230,6 @@ instruct overflowSubL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
 
   format %{ "subfo_  R0, $op2, $op1\t# overflow check long" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
     __ subfo_(R0, $op2$$Register, $op1$$Register);
@@ -14872,7 +14242,6 @@ instruct overflowNegL_reg(flagsRegCR0 cr0, immL_0 zero, iRegLsrc op2) %{
 
   format %{ "nego_   R0, $op2\t# overflow check long" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
     __ nego_(R0, $op2$$Register);
@@ -14885,7 +14254,6 @@ instruct overflowMulL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
 
   format %{ "mulldo_ R0, $op1, $op2\t# overflow check long" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
     __ mulldo_(R0, $op1$$Register, $op2$$Register);
@@ -15150,7 +14518,6 @@ instruct CallLeafDirect(method meth) %{
   format %{ "BCTRL     \t// leaf call $meth ==> " %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_bctrl);
     __ bctrl();
   %}
   ins_pipe(pipe_class_call);
@@ -15199,7 +14566,6 @@ instruct TailCalljmpInd(iRegPdstNoScratch jump_target, inline_cache_regP method_
             "BCTR         \t// tail call" %}
   size(8);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ mtctr($jump_target$$Register);
     __ bctr();
   %}
@@ -15212,7 +14578,6 @@ instruct Ret() %{
   format %{ "BLR      \t// branch to link register" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_blr);
     // LR is restored in MachEpilogNode. Just do the RET here.
     __ blr();
   %}
@@ -15234,7 +14599,6 @@ instruct tailjmpInd(iRegPdstNoScratch jump_target, rarg1RegP ex_oop) %{
             "BCTR     \t// TailJump, exception oop: $ex_oop" %}
   size(12);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ ld(R4_ARG2/* issuing pc */, _abi(lr), R1_SP);
     __ mtctr($jump_target$$Register);
     __ bctr();
@@ -15263,7 +14627,6 @@ instruct RethrowException() %{
 
   format %{ "Jmp     rethrow_stub" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     cbuf.set_insts_mark();
     __ b64_patchable((address)OptoRuntime::rethrow_stub(), relocInfo::runtime_call_type);
   %}
@@ -15278,7 +14641,6 @@ instruct ShouldNotReachHere() %{
   format %{ "ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      // TODO: PPC port $archOpcode(ppc64Opcode_tdi);
       __ stop(_halt_reason);
     }
   %}
@@ -15312,7 +14674,6 @@ instruct endGroup() %{
   format %{ "End Bundle (ori r1, r1, 0)" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_endgroup);
     __ endgroup();
   %}
   ins_pipe(pipe_class_default);
@@ -15328,7 +14689,6 @@ instruct fxNop() %{
   format %{ "fxNop" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fmr);
     __ nop();
   %}
   ins_pipe(pipe_class_default);
@@ -15342,7 +14702,6 @@ instruct fpNop0() %{
   format %{ "fpNop0" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fmr);
     __ fpnop0();
   %}
   ins_pipe(pipe_class_default);
@@ -15356,7 +14715,6 @@ instruct fpNop1() %{
   format %{ "fpNop1" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_fmr);
     __ fpnop1();
   %}
   ins_pipe(pipe_class_default);
@@ -15367,7 +14725,6 @@ instruct brNop0() %{
   size(4);
   format %{ "brNop0" %}
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_mcrf);
     __ brnop0();
   %}
   ins_is_nop(true);
@@ -15382,7 +14739,6 @@ instruct brNop1() %{
   format %{ "brNop1" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_mcrf);
     __ brnop1();
   %}
   ins_pipe(pipe_class_default);
@@ -15396,7 +14752,6 @@ instruct brNop2() %{
   format %{ "brNop2" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_mcrf);
     __ brnop2();
   %}
   ins_pipe(pipe_class_default);
