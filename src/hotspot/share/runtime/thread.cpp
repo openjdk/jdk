@@ -406,7 +406,6 @@ void Thread::call_run() {
 
   // Perform <ChildClass> tear-down actions
   DEBUG_ONLY(_run_state = POST_RUN;)
-
   this->post_run();
 
   // Note: at this point the thread object may already have deleted itself,
