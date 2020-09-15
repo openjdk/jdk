@@ -366,13 +366,13 @@ class frame {
   void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const;
 
   // Iteration of oops
-  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) const;
+  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map, bool use_interpreter_oop_map_cache) const;
   void oops_entry_do(OopClosure* f, const RegisterMap* map) const;
   void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const;
   int adjust_offset(Method* method, int index); // helper for above fn
  public:
   // Memory management
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map) const { oops_do_internal(f, cf, map, true); }
+  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const { oops_do_internal(f, cf, map, true); }
   void nmethods_do(CodeBlobClosure* cf) const;
 
   // RedefineClasses support for finding live interpreted methods on the stack
