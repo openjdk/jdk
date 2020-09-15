@@ -2714,6 +2714,17 @@ public abstract class ClassLoader {
         offset = unsafe.objectFieldOffset(k, name);
         return unsafe.compareAndSetReference(this, offset, null, obj);
     }
+
+    /**
+     * Called by the VM, during -Xshare:dump
+     */
+    private void resetArchivedStates() {
+        parallelLockMap.clear();
+        packages.clear();
+        package2certs.clear();
+        classes.clear();
+        classLoaderValueMap = null;
+    }
 }
 
 /*

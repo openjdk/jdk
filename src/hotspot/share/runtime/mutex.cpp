@@ -84,7 +84,7 @@ void Mutex::lock_contended(Thread* self) {
     // Is it a JavaThread participating in the safepoint protocol.
     if (is_active_Java_thread) {
       assert(rank() > Mutex::special, "Potential deadlock with special or lesser rank mutex");
-      { ThreadBlockInVMWithDeadlockCheck tbivmdc((JavaThread *) self, &in_flight_mutex);
+      { ThreadBlockInVMWithDeadlockCheck tbivmdc(self->as_Java_thread(), &in_flight_mutex);
         in_flight_mutex = this;  // save for ~ThreadBlockInVMWithDeadlockCheck
         _lock.lock();
       }
@@ -206,7 +206,7 @@ bool Monitor::wait_without_safepoint_check(int64_t timeout) {
 }
 
 bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
-  Thread* const self = Thread::current();
+  JavaThread* const self = JavaThread::current();
 
   // timeout is in milliseconds - with zero meaning never timeout
   assert(timeout >= 0, "negative timeout");
@@ -223,14 +223,14 @@ bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
   set_owner(NULL);
   // Check safepoint state after resetting owner and possible NSV.
   check_safepoint_state(self);
-  JavaThread *jt = (JavaThread *)self;
+
   Mutex* in_flight_mutex = NULL;
 
   {
-    ThreadBlockInVMWithDeadlockCheck tbivmdc(jt, &in_flight_mutex);
+    ThreadBlockInVMWithDeadlockCheck tbivmdc(self, &in_flight_mutex);
     OSThreadWaitState osts(self->osthread(), false /* not Object.wait() */);
     if (as_suspend_equivalent) {
-      jt->set_suspend_equivalent();
+      self->set_suspend_equivalent();
       // cleared by handle_special_suspend_equivalent_condition() or
       // java_suspend_self()
     }
@@ -239,13 +239,13 @@ bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
     in_flight_mutex = this;  // save for ~ThreadBlockInVMWithDeadlockCheck
 
     // were we externally suspended while we were waiting?
-    if (as_suspend_equivalent && jt->handle_special_suspend_equivalent_condition()) {
+    if (as_suspend_equivalent && self->handle_special_suspend_equivalent_condition()) {
       // Our event wait has finished and we own the lock, but
       // while we were waiting another thread suspended us. We don't
       // want to hold the lock while suspended because that
       // would surprise the thread that suspended us.
       _lock.unlock();
-      jt->java_suspend_self();
+      self->java_suspend_self();
       _lock.lock();
     }
   }

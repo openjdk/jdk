@@ -96,6 +96,7 @@ public class Resolve {
     Log log;
     Symtab syms;
     Attr attr;
+    AttrRecover attrRecover;
     DeferredAttr deferredAttr;
     Check chk;
     Infer infer;
@@ -126,6 +127,7 @@ public class Resolve {
         names = Names.instance(context);
         log = Log.instance(context);
         attr = Attr.instance(context);
+        attrRecover = AttrRecover.instance(context);
         deferredAttr = DeferredAttr.instance(context);
         chk = Check.instance(context);
         infer = Infer.instance(context);
@@ -4043,12 +4045,12 @@ public class Resolve {
 
         @Override
         public Symbol access(Name name, TypeSymbol location) {
-            Symbol sym = bestCandidate();
-            return types.createErrorType(name, location, sym != null ? sym.type : syms.errSymbol.type).tsym;
-        }
-
-        protected Symbol bestCandidate() {
-            return errCandidate().fst;
+            Pair<Symbol, JCDiagnostic> cand = errCandidate();
+            TypeSymbol errSymbol = types.createErrorType(name, location, cand != null ? cand.fst.type : syms.errSymbol.type).tsym;
+            if (cand != null) {
+                attrRecover.wrongMethodSymbolCandidate(errSymbol, cand.fst, cand.snd);
+            }
+            return errSymbol;
         }
 
         protected Pair<Symbol, JCDiagnostic> errCandidate() {
@@ -4181,11 +4183,12 @@ public class Resolve {
             }
 
         @Override
-        protected Symbol bestCandidate() {
+        protected Pair<Symbol, JCDiagnostic> errCandidate() {
             Map<Symbol, JCDiagnostic> candidatesMap = mapCandidates();
             Map<Symbol, JCDiagnostic> filteredCandidates = filterCandidates(candidatesMap);
             if (filteredCandidates.size() == 1) {
-                return filteredCandidates.keySet().iterator().next();
+                return Pair.of(filteredCandidates.keySet().iterator().next(),
+                               filteredCandidates.values().iterator().next());
             }
             return null;
         }

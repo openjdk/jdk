@@ -1459,7 +1459,14 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
   if (is_internal_module_property(key) ||
       strcmp(key, "jdk.module.main") == 0) {
     MetaspaceShared::disable_optimized_module_handling();
-    log_info(cds)("Using optimized module handling disabled due to incompatible property: %s=%s", key, value);
+    log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
+  }
+  if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
+      strcmp(key, "jdk.module.illegalAccess") == 0 ||
+      strcmp(key, "jdk.module.validation") == 0 ||
+      strcmp(key, "java.system.class.loader") == 0) {
+    MetaspaceShared::disable_full_module_graph();
+    log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
   }
 #endif
 
@@ -2508,7 +2515,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       Arguments::append_sysclasspath(tail);
 #if INCLUDE_CDS
       MetaspaceShared::disable_optimized_module_handling();
-      log_info(cds)("Using optimized module handling disabled due to bootclasspath was appended");
+      log_info(cds)("optimized module handling: disabled because bootclasspath was appended");
 #endif
     // -bootclasspath/p:
     } else if (match_option(option, "-Xbootclasspath/p:", &tail)) {
@@ -3898,10 +3905,7 @@ bool Arguments::handle_deprecated_print_gc_flags() {
 
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   assert(verify_special_jvm_flags(false), "deprecated and obsolete flag table inconsistent");
-
-  // Initialize ranges and constraints
-  JVMFlagRangeList::init();
-  JVMFlagConstraintList::init();
+  JVMFlag::check_all_flag_declarations();
 
   // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
   const char* hotspotrc = ".hotspotrc";

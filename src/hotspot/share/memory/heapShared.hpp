@@ -66,10 +66,12 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   // is_closed_archive flag.
   GrowableArray<juint>*  _subgraph_entry_fields;
 
+  bool _is_full_module_graph;
  public:
-  KlassSubGraphInfo(Klass* k) :
+  KlassSubGraphInfo(Klass* k, bool is_full_module_graph) :
     _k(k),  _subgraph_object_klasses(NULL),
-    _subgraph_entry_fields(NULL) {}
+    _subgraph_entry_fields(NULL),
+    _is_full_module_graph(is_full_module_graph) {}
   ~KlassSubGraphInfo() {
     if (_subgraph_object_klasses != NULL) {
       delete _subgraph_object_klasses;
@@ -93,6 +95,7 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
     return _subgraph_object_klasses == NULL ? 0 :
            _subgraph_object_klasses->length();
   }
+  bool is_full_module_graph() const { return _is_full_module_graph; }
 };
 
 // An archived record of object sub-graphs reachable from static
@@ -101,6 +104,7 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
 class ArchivedKlassSubGraphInfoRecord {
  private:
   Klass* _k;
+  bool _is_full_module_graph;
 
   // contains pairs of field offset and value for each subgraph entry field
   Array<juint>* _entry_field_records;
@@ -115,6 +119,7 @@ class ArchivedKlassSubGraphInfoRecord {
   Klass* klass() const { return _k; }
   Array<juint>*  entry_field_records() const { return _entry_field_records; }
   Array<Klass*>* subgraph_object_klasses() const { return _subgraph_object_klasses; }
+  bool is_full_module_graph() const { return _is_full_module_graph; }
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
 
@@ -186,6 +191,7 @@ private:
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        int num,
                                        bool is_closed_archive,
+                                       bool is_full_module_graph,
                                        Thread* THREAD);
 
   // Archive object sub-graph starting from the given static field
@@ -200,6 +206,7 @@ private:
   static void verify_reachable_objects_from(oop obj, bool is_archived) PRODUCT_RETURN;
   static void verify_subgraph_from(oop orig_obj) PRODUCT_RETURN;
 
+  static KlassSubGraphInfo* init_subgraph_info(Klass *k, bool is_full_module_graph);
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
 
   static void init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
@@ -239,13 +246,17 @@ private:
   static int _num_total_recorded_klasses;
   static int _num_total_verifications;
 
-  static void start_recording_subgraph(InstanceKlass *k, const char* klass_name);
+  static void start_recording_subgraph(InstanceKlass *k, const char* klass_name,
+                                       bool is_full_module_graph);
   static void done_recording_subgraph(InstanceKlass *k, const char* klass_name);
 
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
 
+  static void check_module_oop(oop orig_module_obj);
+
  public:
+  static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache() {
     _archived_object_cache =
       new (ResourceObj::C_HEAP, mtClass)ArchivedObjectCache();
@@ -321,7 +332,7 @@ private:
 
   inline static bool is_archived_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
-  static void initialize_from_archived_subgraph(Klass* k) NOT_CDS_JAVA_HEAP_RETURN;
+  static void initialize_from_archived_subgraph(Klass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
 
   // NarrowOops stored in the CDS archive may use a different encoding scheme
   // than CompressedOops::{base,shift} -- see FileMapInfo::map_heap_regions_impl.
