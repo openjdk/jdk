@@ -70,6 +70,7 @@ public class TestBoxFiller
                 frame.setFocusTraversalPolicy(new ContainerOrderFocusTraversalPolicy());
                 frame.pack();
                 frame.setVisible(true);
+                frame.setLocationRelativeTo(null);
                 tf1.requestFocusInWindow();
             });
             robot.waitForIdle();
