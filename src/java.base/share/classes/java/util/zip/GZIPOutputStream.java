@@ -52,7 +52,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      */
     private static final int TRAILER_SIZE = 8;
 
-    // OS header value
+    // Represents the default "unknown" value for OS header, per RFC-1952
     private static final byte OS_UNKNOWN = (byte) 255;
 
     /**
