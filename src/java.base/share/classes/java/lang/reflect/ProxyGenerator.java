@@ -32,6 +32,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import sun.security.action.GetBooleanAction;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,6 +63,7 @@ final class ProxyGenerator extends ClassWriter {
     private static final String JL_NO_CLASS_DEF_FOUND_ERROR = "java/lang/NoClassDefFoundError";
     private static final String JL_NO_SUCH_METHOD_EX = "java/lang/NoSuchMethodException";
     private static final String JL_NO_SUCH_METHOD_ERROR = "java/lang/NoSuchMethodError";
+    private static final String JLI_METHODHANDLES = "java/lang/invoke/MethodHandles";
 
     private static final String JLR_INVOCATION_HANDLER = "java/lang/reflect/InvocationHandler";
     private static final String JLR_PROXY = "java/lang/reflect/Proxy";
@@ -70,11 +72,13 @@ final class ProxyGenerator extends ClassWriter {
     private static final String LJL_CLASS = "Ljava/lang/Class;";
     private static final String LJLR_METHOD = "Ljava/lang/reflect/Method;";
     private static final String LJLR_INVOCATION_HANDLER = "Ljava/lang/reflect/InvocationHandler;";
+    private static final String LJLI_LOOKUP = "Ljava/lang/invoke/MethodHandles$Lookup;";
 
     private static final String MJLR_INVOCATIONHANDLER = "(Ljava/lang/reflect/InvocationHandler;)V";
 
     private static final String NAME_CTOR = "<init>";
     private static final String NAME_CLINIT = "<clinit>";
+    private static final String PROXY_LOOKUP = "$$proxyClassLookup$$";
 
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
 
@@ -493,6 +497,8 @@ final class ProxyGenerator extends ClassWriter {
         }
 
         generateStaticInitializer();
+        visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL, PROXY_LOOKUP,
+                   LJLI_LOOKUP, null, null);
 
         return toByteArray();
     }
@@ -578,6 +584,11 @@ final class ProxyGenerator extends ClassWriter {
         MethodVisitor mv = visitMethod(Modifier.STATIC, NAME_CLINIT,
                 "()V", null, null);
         mv.visitCode();
+        // initialize the Lookup object for this proxy class
+        mv.visitMethodInsn(INVOKESTATIC, JLI_METHODHANDLES, "lookup",
+                "()Ljava/lang/invoke/MethodHandles$Lookup;", false);
+        mv.visitFieldInsn(PUTSTATIC, dotToSlash(className), PROXY_LOOKUP, LJLI_LOOKUP);
+
         Label L_startBlock = new Label();
         Label L_endBlock = new Label();
         Label L_NoMethodHandler = new Label();

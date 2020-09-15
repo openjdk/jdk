@@ -71,17 +71,17 @@ public class Main {
         Module unnamed2 = ld2.getUnnamedModule();
 
         return new Data[] {
-            new Data(unnamed,  ld, Runnable.class),
-            new Data(unnamed,  ld, p.one.I.class),
-            new Data(unnamed,  ld, p.one.I.class, p.two.A.class),
-            new Data(unnamed,  ld, p.one.I.class, unnamedModuleClass),
-            new Data(unnamed2, ld2, Runnable.class),
-            new Data(unnamed2, ld2, p.one.I.class),
-            new Data(unnamed2, ld2, p.one.I.class, p.two.A.class),
-            new Data(unnamed2, ld2, p.one.I.class, unnamedModuleClass),
-            new Data(unnamed, m1.getClassLoader(), p.one.I.class),
-            new Data(unnamed, m2.getClassLoader(), p.two.A.class),
-            new Data(unnamed, m3.getClassLoader(), p.three.P.class),
+            new Data(ld, Runnable.class),
+            new Data(ld, p.one.I.class),
+            new Data(ld, p.one.I.class, p.two.A.class),
+            new Data(ld, p.one.I.class, unnamedModuleClass),
+            new Data(ld2, Runnable.class),
+            new Data(ld2, p.one.I.class),
+            new Data(ld2, p.one.I.class, p.two.A.class),
+            new Data(ld2, p.one.I.class, unnamedModuleClass),
+            new Data(m1.getClassLoader(), p.one.I.class),
+            new Data(m2.getClassLoader(), p.two.A.class),
+            new Data(m3.getClassLoader(), p.three.P.class),
         };
     }
 

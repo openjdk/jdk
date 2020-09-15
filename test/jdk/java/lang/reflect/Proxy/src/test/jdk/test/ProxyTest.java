@@ -96,7 +96,9 @@ public class ProxyTest {
         try {
             Constructor<?> cons = proxyClass.getConstructor(InvocationHandler.class);
             cons.newInstance(handler);
-            throw new RuntimeException("Expected IllegalAccessException: " + proxyClass);
+            if (!proxyClass.getPackageName().equals(m.getName())) { // non-exported
+                throw new RuntimeException("Expected IllegalAccessException: " + proxyClass);
+            }
         } catch (IllegalAccessException e) {
             // expected
         } catch (NoSuchMethodException|InstantiationException|InvocationTargetException e) {
