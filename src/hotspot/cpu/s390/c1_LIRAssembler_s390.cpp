@@ -1258,7 +1258,7 @@ void LIR_Assembler::emit_static_call_stub() {
 
   __ relocate(static_stub_Relocation::spec(call_pc));
 
-  // See also Matcher::interpreter_method_oop_reg().
+  // See also Matcher::interpreter_method_reg().
   AddressLiteral meta = __ allocate_metadata_address(NULL);
   bool success = __ load_const_from_toc(Z_method, meta);
 

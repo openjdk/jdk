@@ -115,7 +115,7 @@ protected:
   void interpreter_frame_pointer_parse(FrameForm *frame, bool native);
   void inline_cache_parse(FrameForm *frame, bool native);
   void interpreter_arg_ptr_parse(FrameForm *frame, bool native);
-  void interpreter_method_oop_parse(FrameForm *frame, bool native);
+  void interpreter_method_parse(FrameForm *frame, bool native);
   void cisc_spilling_operand_name_parse(FrameForm *frame, bool native);
   void stack_alignment_parse(FrameForm *frame);
   void return_addr_parse(FrameForm *frame, bool native);

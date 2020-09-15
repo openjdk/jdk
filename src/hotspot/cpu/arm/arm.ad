@@ -1667,7 +1667,7 @@ frame %{
   // These two registers define part of the calling convention
   // between compiled code and the interpreter.
   inline_cache_reg(R_Ricklass);          // Inline Cache Register or Method* for I2C
-  interpreter_method_oop_reg(R_Rmethod); // Method Oop Register when calling interpreter
+  interpreter_method_reg(R_Rmethod);     // Method Register when calling interpreter
 
   // Optional: name the operand used by cisc-spilling to access [stack_pointer + offset]
   cisc_spilling_operand_name(indOffset);
@@ -2527,7 +2527,7 @@ operand inline_cache_regP(iRegP reg) %{
   interface(REG_INTER);
 %}
 
-operand interpreter_method_oop_regP(iRegP reg) %{
+operand interpreter_method_regP(iRegP reg) %{
   constraint(ALLOC_IN_RC(Rmethod_regP));
   match(reg);
   format %{ %}
