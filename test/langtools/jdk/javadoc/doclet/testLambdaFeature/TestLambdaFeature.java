@@ -56,7 +56,8 @@ public class TestLambdaFeature extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 """
-                    <td class="col-first"><code>default void</code></td>""",
+                    <div class="col-first alt-color method-summary-table-tab2 method-summary-table-t\
+                    ab5 method-summary-table"><code>default void</code></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">default</span>&nbsp;<span \
                     class="return-type">void</span>&nbsp;<span class="member-name">defaultMethod</sp\
@@ -65,15 +66,19 @@ public class TestLambdaFeature extends JavadocTester {
                 """
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
                     e="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabin\
-                    dex="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Method\
-                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
-                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t2" class="table\
-                    -tab" onclick="show(2);">Instance Methods</button><button role="tab" aria-select\
-                    ed="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown\
-                    ="switchTab(event)" id="t3" class="table-tab" onclick="show(4);">Abstract Method\
-                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
-                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t5" class="table\
-                    -tab" onclick="show(16);">Default Methods</button></div>""",
+                    dex="0" onkeydown="switchTab(event)" id="method-summary-table-tab0" onclick="sho\
+                    w('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">A\
+                    ll Methods</button><button role="tab" aria-selected="false" aria-controls="metho\
+                    d-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="method-\
+                    summary-table-tab2" onclick="show('method-summary-table', 'method-summary-table-\
+                    tab2', 3)" class="table-tab">Instance Methods</button><button role="tab" aria-se\
+                    lected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkey\
+                    down="switchTab(event)" id="method-summary-table-tab3" onclick="show('method-sum\
+                    mary-table', 'method-summary-table-tab3', 3)" class="table-tab">Abstract Methods\
+                    </button><button role="tab" aria-selected="false" aria-controls="method-summary-\
+                    table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="method-summary-ta\
+                    ble-tab5" onclick="show('method-summary-table', 'method-summary-table-tab5', 3)"\
+                     class="table-tab">Default Methods</button></div>""",
                 """
                     <dl class="notes">
                     <dt>Functional Interface:</dt>

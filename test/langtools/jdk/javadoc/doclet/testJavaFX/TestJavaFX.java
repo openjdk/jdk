@@ -74,25 +74,24 @@ public class TestJavaFX extends JavadocTester {
                     <dl class="notes">
                     <dt>Property description:</dt>""",
                 """
-                    <td class="col-first"><code><a href="C.DoubleProperty.html" title="class in pkg1">C.DoubleProperty</a></code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#rateProperty">rate</a></span></code></th>
-                    <td class="col-last">
+                    <div class="col-first row-color"><code><a href="C.DoubleProperty.html" title="class in pkg1">C.DoubleProperty</a></code></div>
+                    <div class="col-second row-color"><code><span class="member-name-link"><a href="#rateProperty">rate</a></span></code></div>
+                    <div class="col-last row-color">
                     <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played.</div>
-                    </td>""",
+                     be played.</div>""",
                 "<dt>Default value:</dt>",
                 """
                     <dt>Since:</dt>
                     <dd>JavaFX 8.0</dd>""",
                 "<dt>Property description:</dt>",
                 """
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#setTestMethodProperty()">setTestMethodProperty</a></span>()</code></th>""",
+                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#setTes\
+                    tMethodProperty()">setTestMethodProperty</a></span>()</code></div>""",
                 """
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#pausedProperty">paused</a></span></code></th>
-                    <td class="col-last">
+                    <div class="col-second alt-color"><code><span class="member-name-link"><a href="\
+                    #pausedProperty">paused</a></span></code></div>
+                    <div class="col-last alt-color">
                     <div class="block">Defines if paused.</div>""",
                 """
                     <section class="detail" id="pausedProperty">
@@ -175,16 +174,13 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="property-summary" id="property.summary">
                     <h2>Property Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">
-                    <caption><span>Properties</span></caption>""",
+                    <div class="caption"><span>Properties</span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
-                    <tr class="alt-color">
-                    <td class="col-first"><code><a href="C.BooleanProperty.html" title="class in pkg1">C.BooleanProperty</a></code></td>
+                    <div class="col-first alt-color"><code><a href="C.BooleanProperty.html" title="class in pkg1">C.BooleanProperty</a></code></div>
                     """,
                 """
-                    <tr class="row-color">
-                    <td class="col-first"><code><a href="C.DoubleProperty.html" title="class in pkg1">C.DoubleProperty</a></code></td>
+                    <div class="col-first row-color"><code><a href="C.DoubleProperty.html" title="class in pkg1">C.DoubleProperty</a></code></div>
                     """);
 
         checkOutput("pkg1/C.html", false,
@@ -271,9 +267,8 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="property-summary" id="property.summary">
                     <h2>Property Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">
-                    <caption><span>Properties</span></caption>""");
+                    <div class="caption"><span>Properties</span></div>
+                    <div class="summary-table three-column-summary">""");
 
         checkOutput("pkg2/Test.html", false,
                 """
@@ -303,38 +298,40 @@ public class TestJavaFX extends JavadocTester {
         checkOutput("pkg2/Test.html", false, "<h2>Property Summary</h2>");
         checkOutput("pkg2/Test.html", true,
                 """
-                    <thead>
-                    <tr>
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Method</th>
-                    <th class="col-last" scope="col">Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr class="alt-color" id="i0">
-                    <td class="col-first"><code>&lt;T&gt;&nbsp;java.lang.Object</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#alphaProperty(java.util.List)">alphaProperty</a></span>&#8203;(java.util.List&\
-                    lt;T&gt;&nbsp;foo)</code></th>
-                    <td class="col-last">&nbsp;</td>
-                    </tr>
-                    <tr class="row-color" id="i1">
-                    <td class="col-first"><code>java.lang.Object</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#betaProperty()">betaProperty</a></span>()</code></th>
-                    <td class="col-last">&nbsp;</td>
-                    </tr>
-                    <tr class="alt-color" id="i2">
-                    <td class="col-first"><code>java.util.List&lt;java.util.Set&lt;? super java.lang.Object&gt;&gt;</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#deltaProperty()">deltaProperty</a></span>()</code></th>
-                    <td class="col-last">&nbsp;</td>
-                    </tr>
-                    <tr class="row-color" id="i3">
-                    <td class="col-first"><code>java.util.List&lt;java.lang.String&gt;</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#gammaProperty()">gammaProperty</a></span>()</code></th>
-                    <td class="col-last">&nbsp;</td>"""
+                    <div class="thead col-first">Modifier and Type</div>
+                    <div class="thead col-second">Method</div>
+                    <div class="thead col-last">Description</div>
+                    <div class="col-first alt-color method-summary-table-tab2 method-summary-table-t\
+                    ab4 method-summary-table"><code>&lt;T&gt;&nbsp;java.lang.Object</code></div>
+                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#alphaP\
+                    roperty(java.util.List)">alphaProperty</a></span>&#8203;(java.util.List&lt;T&gt;\
+                    &nbsp;foo)</code></div>
+                    <div class="col-last alt-color method-summary-table-tab2 method-summary-table-ta\
+                    b4 method-summary-table">&nbsp;</div>
+                    <div class="col-first row-color method-summary-table-tab2 method-summary-table-t\
+                    ab4 method-summary-table"><code>java.lang.Object</code></div>
+                    <div class="col-second row-color method-summary-table-tab2 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#betaPr\
+                    operty()">betaProperty</a></span>()</code></div>
+                    <div class="col-last row-color method-summary-table-tab2 method-summary-table-ta\
+                    b4 method-summary-table">&nbsp;</div>
+                    <div class="col-first alt-color method-summary-table-tab2 method-summary-table-t\
+                    ab4 method-summary-table"><code>java.util.List&lt;java.util.Set&lt;? super java.\
+                    lang.Object&gt;&gt;</code></div>
+                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#deltaP\
+                    roperty()">deltaProperty</a></span>()</code></div>
+                    <div class="col-last alt-color method-summary-table-tab2 method-summary-table-ta\
+                    b4 method-summary-table">&nbsp;</div>
+                    <div class="col-first row-color method-summary-table-tab2 method-summary-table-t\
+                    ab4 method-summary-table"><code>java.util.List&lt;java.lang.String&gt;</code></d\
+                    iv>
+                    <div class="col-second row-color method-summary-table-tab2 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#gammaP\
+                    roperty()">gammaProperty</a></span>()</code></div>
+                    <div class="col-last row-color method-summary-table-tab2 method-summary-table-ta\
+                    b4 method-summary-table">&nbsp;</div>"""
         );
     }
 

@@ -75,9 +75,9 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="overview-summary" id="all-packages-table">
-                    <table class="summary-table">
-                    <caption>""",
+                    <div id="all-packages-table">
+                    <div class="caption"><span>Packages</span></div>
+                    <div class="summary-table two-column-summary">""",
                 """
                     <header role="banner" class="flex-header">
                     <nav role="navigation">
@@ -95,8 +95,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="type-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
                     <header role="banner" class="flex-header">
                     <nav role="navigation">
@@ -114,12 +113,11 @@ public class TestHtmlVersion extends JavadocTester {
         // No package description
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <section class="summary">
-                    <ul class="summary-list">
-                    <li>
-                    <div class="type-summary">
-                    <table class="summary-table">
-                    <caption><span>Class Summary</span></caption>""");
+                        <section class="summary">
+                        <ul class="summary-list">
+                        <li>
+                        <div class="caption"><span>Class Summary</span></div>
+                        <div class="summary-table two-column-summary">""");
 
         // Test for package-tree page
         checkOutput("pkg/package-tree.html", true,
@@ -161,8 +159,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
                     <header role="banner" class="flex-header">
                     <nav role="navigation">
@@ -183,8 +180,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="constants-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table three-column-summary">""",
                 """
                     <header role="banner" class="flex-header">
                     <nav role="navigation">
@@ -213,8 +209,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="deprecated-summary" id="class">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
                     <header role="banner" class="flex-header">
                     <nav role="navigation">
@@ -362,18 +357,18 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <section class="nested-class-summary" id="nested.class.summary">
                     <h2>Nested Class Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Nested Classes</span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
                     <section class="field-summary" id="field.summary">
                     <h2>Field Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Fields</span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
                     <section class="constructor-summary" id="constructor.summary">
                     <h2>Constructor Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Constructors</span></div>
+                    <div class="summary-table two-column-summary">""",
                 """
                     <section class="method-summary" id="method.summary">
                     <h2>Method Summary</h2>""",
@@ -412,18 +407,16 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <section class="constants-summary" id="enum.constant.summary">
                     <h2>Enum Constant Summary</h2>
-                    <div class="member-summary">
+                    <div class="caption"><span>Enum Constants</span></div>
                     """,
                 """
-                    <table class="summary-table" aria-labelledby="t0">
+                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
                     """,
                 """
                     <section class="method-summary" id="method.summary">
                     <h2>Method Summary</h2>
-                    <div class="member-summary" id="method-summary-table">
+                    <div id="method-summary-table">
                     """,
-                """
-                    <table class="summary-table" aria-labelledby="t0">""",
                 """
                     <section class="constant-details" id="enum.constant.detail">
                     <h2>Enum Constant Details</h2>
@@ -455,10 +448,10 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <section class="method-summary" id="method.summary">
                     <h2>Method Summary</h2>
-                    <div class="member-summary" id="method-summary-table">
+                    <div id="method-summary-table">
                     """,
                 """
-                    <table class="summary-table" aria-labelledby="t0">
+                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
                     """,
                 """
                     <section class="method-details" id="method.detail">
@@ -541,13 +534,13 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <section class="member-summary" id="annotation.type.required.element.summary">
                     <h2>Required Element Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Required Elements</span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
                     <section class="member-summary" id="annotation.type.optional.element.summary">
                     <h2>Optional Element Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Optional Elements</span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
                     <section class="details" id="annotation.type.element.detail">
                     <ul class="details-list">
@@ -576,14 +569,15 @@ public class TestHtmlVersion extends JavadocTester {
                     <main role="main">
                     <div class="header">""",
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
                     <section class="detail" id="pkg">
                     <h2>Uses of <a href="../RegClass.html" title="class in pkg1">RegClass</a> in <a \
                     href="../../pkg/package-summary.html">pkg</a></h2>
-                    <div class="use-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Fields in <a href="../../pkg/package-summary.html">pk\
+                    g</a> declared as <a href="../RegClass.html" title="class in pkg1">RegClass</a><\
+                    /span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
                     <footer role="contentinfo">
                     <nav role="navigation">

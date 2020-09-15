@@ -59,8 +59,8 @@ public class TestAnnotationTypes extends JavadocTester {
                 "<!-- =========== FIELD SUMMARY =========== -->",
                 "<h2>Field Summary</h2>",
                 """
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#DEFAULT_NAME">DEFAULT_NAME</a></span></code></th>""",
+                    <div class="col-second alt-color"><code><span class="member-name-link"><a href="\
+                    #DEFAULT_NAME">DEFAULT_NAME</a></span></code></div>""",
                 "<!-- ============ FIELD DETAIL =========== -->",
                 """
                     <section class="detail" id="DEFAULT_NAME">

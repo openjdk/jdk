@@ -89,10 +89,7 @@ public class TestStylesheet extends JavadocTester {
                 + "    list-style-type:disc;\n"
                 + "}",
                 """
-                    .overview-summary caption, .member-summary caption, .type-summary caption,
-                    .use-summary caption, .constants-summary caption, .deprecated-summary caption,
-                    .requires-summary caption, .packages-summary caption, .provides-summary caption,
-                    .uses-summary caption, .system-properties-summary caption {
+                    .caption {
                         position:relative;
                         text-align:left;
                         background-repeat:no-repeat;
@@ -107,10 +104,7 @@ public class TestStylesheet extends JavadocTester {
                         white-space:pre;
                     }""",
                 """
-                    .overview-summary caption span, .member-summary caption span, .type-summary caption span,
-                    .use-summary caption span, .constants-summary caption span, .deprecated-summary caption span,
-                    .requires-summary caption span, .packages-summary caption span, .provides-summary caption span,
-                    .uses-summary caption span, .system-properties-summary caption span {
+                    .caption span {
                         white-space:nowrap;
                         padding-top:5px;
                         padding-left:12px;
@@ -140,23 +134,14 @@ public class TestStylesheet extends JavadocTester {
                     }""",
                 // Test the formatting styles for proper content display in use and constant values pages.
                 """
-                    .overview-summary td.col-first, .overview-summary th.col-first,
-                    .requires-summary td.col-first, .requires-summary th.col-first,
-                    .packages-summary td.col-first, .packages-summary td.col-second, .packages-summary th.col-first, .packages-summary th,
-                    .uses-summary td.col-first, .uses-summary th.col-first,
-                    .provides-summary td.col-first, .provides-summary th.col-first,
-                    .member-summary td.col-first, .member-summary th.col-first,
-                    .member-summary td.col-second, .member-summary th.col-second, .member-summary th.col-constructor-name,
-                    .type-summary td.col-first, .type-summary th.col-first {
+                    .col-first, .col-second, .col-constructor-name {
                         vertical-align:top;
+                        overflow: auto;
                     }""",
                 """
-                    .overview-summary td, .member-summary td, .type-summary td,
-                    .use-summary td, .constants-summary td, .deprecated-summary td,
-                    .requires-summary td, .packages-summary td, .provides-summary td,
-                    .uses-summary td, .system-properties-summary td {
+                    .summary-table > div {
                         text-align:left;
-                        padding:0px 0px 12px 10px;
+                        padding: 8px;
                     }""",
                 "@import url('resources/fonts/dejavu.css');",
                 """
@@ -169,15 +154,15 @@ public class TestStylesheet extends JavadocTester {
                         color:#bb7a2a;
                     }""",
                 """
-                    td.col-first a:link, td.col-first a:visited,
-                    td.col-second a:link, td.col-second a:visited,
-                    th.col-first a:link, th.col-first a:visited,
-                    th.col-second a:link, th.col-second a:visited,
-                    th.col-constructor-name a:link, th.col-constructor-name a:visited,
-                    th.col-deprecated-item-name a:link, th.col-deprecated-item-name a:visited,
-                    .constant-values-container td a:link, .constant-values-container td a:visited,
-                    .all-classes-container td a:link, .all-classes-container td a:visited,
-                    .all-packages-container td a:link, .all-packages-container td a:visited {
+                    .col-first a:link, .col-first a:visited,
+                    .col-second a:link, .col-second a:visited,
+                    .col-first a:link, .col-first a:visited,
+                    .col-second a:link, .col-second a:visited,
+                    .col-constructor-name a:link, .col-constructor-name a:visited,
+                    .col-deprecated-item-name a:link, .col-deprecated-item-name a:visited,
+                    .constant-values-container a:link, .constant-values-container a:visited,
+                    .all-classes-container a:link, .all-classes-container a:visited,
+                    .all-packages-container a:link, .all-packages-container a:visited {
                         font-weight:bold;
                     }""",
                 """
@@ -223,10 +208,10 @@ public class TestStylesheet extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <td class="col-last">
+                    <div class="col-last alt-color">
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
                      an <a id="named_anchor1">anchor_with_id</a>.</div>
-                    </td>""");
+                    </div>""");
 
         checkOutput("index.html", true,
                 """

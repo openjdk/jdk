@@ -54,10 +54,6 @@ public class ValidHtml extends JavadocTester {
                     "-sourcepath", testSrc,
                     "p1", "p2");
         checkExit(Exit.OK);
-        // Test the table elements are in the correct order:
-        checkOutput("p1/package-use.html", true,
-                "</td>\n"
-                + "</tr>");
         String HTML5 = "<!DOCTYPE HTML>";
         checkValidHTML(HTML5);
     }

@@ -101,11 +101,13 @@ public class TestMemberInheritance extends JavadocTester {
         checkOutput("pkg1/Implementer.html", true,
                 // ensure the method makes it
                 """
-                    <td class="col-first"><code>static java.time.Period</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#between(java.time.LocalDate,java.time.LocalDate)">between</a></span>&#8203;(ja\
-                    va.time.LocalDate&nbsp;startDateInclusive,
-                     java.time.LocalDate&nbsp;endDateExclusive)</code></th>""");
+                    <div class="col-first alt-color method-summary-table-tab1 method-summary-table-t\
+                    ab4 method-summary-table"><code>static java.time.Period</code></div>
+                    <div class="col-second alt-color method-summary-table-tab1 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#betwee\
+                    n(java.time.LocalDate,java.time.LocalDate)">between</a></span>&#8203;(java.time.\
+                    LocalDate&nbsp;startDateInclusive,
+                     java.time.LocalDate&nbsp;endDateExclusive)</code></div>""");
 
         checkOutput("pkg1/Implementer.html", false,
                 """
@@ -124,13 +126,14 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
-                    <td class="col-first"><code>protected abstract java.lang.String</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#parentMethod(T)">parentMethod</a></span>&#8203;(java.lang.String&nbsp;t)</code\
-                    ></th>
-                    <td class="col-last">
-                    <div class="block">Returns some value with an inherited search tag.</div>
-                    </td>
+                    <div class="col-first alt-color method-summary-table-tab2 method-summary-table m\
+                    ethod-summary-table-tab3"><code>protected abstract java.lang.String</code></div>
+                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table \
+                    method-summary-table-tab3"><code><span class="member-name-link"><a href="#parent\
+                    Method(T)">parentMethod</a></span>&#8203;(java.lang.String&nbsp;t)</code></div>
+                    <div class="col-last alt-color method-summary-table-tab2 method-summary-table me\
+                    thod-summary-table-tab3">
+                    <div class="block">Returns some value with an inherited search tag.</div>   
                     """);
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
@@ -156,10 +159,10 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
-                    <td class="col-first"><code>java.lang.String</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#parentField">parentField</a></span></code></th>
-                    <td class="col-last">
+                    <div class="col-first alt-color"><code>java.lang.String</code></div>
+                    <div class="col-second alt-color"><code><span class="member-name-link"><a href="\
+                    #parentField">parentField</a></span></code></div>
+                    <div class="col-last alt-color">
                     <div class="block">A field.</div>""",
                 """
                     <section class="detail" id="parentField">
@@ -172,9 +175,11 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg3/PrivateGenericParent.PublicChild.html", true,
                 """
-                    <td class="col-first"><code>java.lang.String</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#method(T)">method</a></span>&#8203;(java.lang.String&nbsp;t)</code></th>""",
+                    <div class="col-first alt-color method-summary-table-tab2 method-summary-table-t\
+                    ab4 method-summary-table"><code>java.lang.String</code></div>
+                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#method\
+                    (T)">method</a></span>&#8203;(java.lang.String&nbsp;t)</code></div>""",
                 """
                     <section class="detail" id="method(T)">
                     <h3 id="method(java.lang.Object)">method</h3>

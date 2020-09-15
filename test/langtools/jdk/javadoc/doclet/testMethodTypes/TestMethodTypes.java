@@ -48,70 +48,80 @@ public class TestMethodTypes extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/A.html", true,
-                "var data = {",
                 """
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
                     e="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabin\
-                    dex="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Method\
-                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
-                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t1" class="table\
-                    -tab" onclick="show(1);">Static Methods</button><button role="tab" aria-selected\
-                    ="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="\
-                    switchTab(event)" id="t2" class="table-tab" onclick="show(2);">Instance Methods<\
-                    /button><button role="tab" aria-selected="false" aria-controls="method-summary-t\
-                    able.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t4" class="table-t\
-                    ab" onclick="show(8);">Concrete Methods</button><button role="tab" aria-selected\
-                    ="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="\
-                    switchTab(event)" id="t6" class="table-tab" onclick="show(32);">Deprecated Metho\
-                    ds</button></div>""",
-                "<tr class=\"alt-color\" id=\"i0\">");
+                    dex="0" onkeydown="switchTab(event)" id="method-summary-table-tab0" onclick="sho\
+                    w('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">A\
+                    ll Methods</button><button role="tab" aria-selected="false" aria-controls="metho\
+                    d-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="method-\
+                    summary-table-tab1" onclick="show('method-summary-table', 'method-summary-table-\
+                    tab1', 3)" class="table-tab">Static Methods</button><button role="tab" aria-sele\
+                    cted="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydo\
+                    wn="switchTab(event)" id="method-summary-table-tab2" onclick="show('method-summa\
+                    ry-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</\
+                    button><button role="tab" aria-selected="false" aria-controls="method-summary-ta\
+                    ble.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="method-summary-tabl\
+                    e-tab4" onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" c\
+                    lass="table-tab">Concrete Methods</button><button role="tab" aria-selected="fals\
+                    e" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switch\
+                    Tab(event)" id="method-summary-table-tab6" onclick="show('method-summary-table',\
+                     'method-summary-table-tab6', 3)" class="table-tab">Deprecated Methods</button><\
+                    /div>""",
+                "<div class=\"col-first alt-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table\">");
 
         checkOutput("pkg1/B.html", true,
                 """
-                    var data = {"i0":6,"i1":18,"i2":18,"i3":1,"i4":1,"i5":6,"i6":6,"i7":6,"i8":6};
-                    """,
-                """
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
                     e="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabin\
-                    dex="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Method\
-                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
-                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t1" class="table\
-                    -tab" onclick="show(1);">Static Methods</button><button role="tab" aria-selected\
-                    ="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="\
-                    switchTab(event)" id="t2" class="table-tab" onclick="show(2);">Instance Methods<\
-                    /button><button role="tab" aria-selected="false" aria-controls="method-summary-t\
-                    able.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t3" class="table-t\
-                    ab" onclick="show(4);">Abstract Methods</button><button role="tab" aria-selected\
-                    ="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="\
-                    switchTab(event)" id="t5" class="table-tab" onclick="show(16);">Default Methods<\
-                    /button></div>""");
+                    dex="0" onkeydown="switchTab(event)" id="method-summary-table-tab0" onclick="sho\
+                    w('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">A\
+                    ll Methods</button><button role="tab" aria-selected="false" aria-controls="metho\
+                    d-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="method-\
+                    summary-table-tab1" onclick="show('method-summary-table', 'method-summary-table-\
+                    tab1', 3)" class="table-tab">Static Methods</button><button role="tab" aria-sele\
+                    cted="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydo\
+                    wn="switchTab(event)" id="method-summary-table-tab2" onclick="show('method-summa\
+                    ry-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</\
+                    button><button role="tab" aria-selected="false" aria-controls="method-summary-ta\
+                    ble.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="method-summary-tabl\
+                    e-tab3" onclick="show('method-summary-table', 'method-summary-table-tab3', 3)" c\
+                    lass="table-tab">Abstract Methods</button><button role="tab" aria-selected="fals\
+                    e" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switch\
+                    Tab(event)" id="method-summary-table-tab5" onclick="show('method-summary-table',\
+                     'method-summary-table-tab5', 3)" class="table-tab">Default Methods</button></di\
+                    v>""");
 
         checkOutput("pkg1/D.html", true,
-                "var data = {",
                 """
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
                     e="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabin\
-                    dex="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Method\
-                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
-                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t2" class="table\
-                    -tab" onclick="show(2);">Instance Methods</button><button role="tab" aria-select\
-                    ed="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown\
-                    ="switchTab(event)" id="t3" class="table-tab" onclick="show(4);">Abstract Method\
-                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
-                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t4" class="table\
-                    -tab" onclick="show(8);">Concrete Methods</button><button role="tab" aria-select\
-                    ed="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown\
-                    ="switchTab(event)" id="t6" class="table-tab" onclick="show(32);">Deprecated Met\
-                    hods</button></div>""",
-                "<tr class=\"alt-color\" id=\"i0\">");
+                    dex="0" onkeydown="switchTab(event)" id="method-summary-table-tab0" onclick="sho\
+                    w('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">A\
+                    ll Methods</button><button role="tab" aria-selected="false" aria-controls="metho\
+                    d-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="method-\
+                    summary-table-tab2" onclick="show('method-summary-table', 'method-summary-table-\
+                    tab2', 3)" class="table-tab">Instance Methods</button><button role="tab" aria-se\
+                    lected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkey\
+                    down="switchTab(event)" id="method-summary-table-tab3" onclick="show('method-sum\
+                    mary-table', 'method-summary-table-tab3', 3)" class="table-tab">Abstract Methods\
+                    </button><button role="tab" aria-selected="false" aria-controls="method-summary-\
+                    table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="method-summary-ta\
+                    ble-tab4" onclick="show('method-summary-table', 'method-summary-table-tab4', 3)"\
+                     class="table-tab">Concrete Methods</button><button role="tab" aria-selected="fa\
+                    lse" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="swit\
+                    chTab(event)" id="method-summary-table-tab6" onclick="show('method-summary-table\
+                    ', 'method-summary-table-tab6', 3)" class="table-tab">Deprecated Methods</button\
+                    ></div>""",
+                "<div class=\"col-first alt-color method-summary-table-tab2 method-summary-table-tab6 method-summary-table-tab4 method-summary-table\">");
 
         checkOutput("pkg1/A.html", false,
-                "<caption><span>Methods</span></caption>");
+                "<div class=\"caption\"><span>Methods</span></div>");
 
         checkOutput("pkg1/B.html", false,
-                "<caption><span>Methods</span></caption>");
+                "<div class=\"caption\"><span>Methods</span></div>");
 
         checkOutput("pkg1/D.html", false,
-                "<caption><span>Methods</span></caption>");
+                "<div class=\"caption\"><span>Methods</span></div>");
     }
 }
