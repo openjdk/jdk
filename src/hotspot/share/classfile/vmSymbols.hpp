@@ -288,7 +288,10 @@
   template(jdk_internal_vm_annotation_ForceInline_signature, "Ljdk/internal/vm/annotation/ForceInline;") \
   template(jdk_internal_vm_annotation_Hidden_signature,      "Ljdk/internal/vm/annotation/Hidden;") \
   template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;") \
-                                                                                                  \
+  /* used by CDS */                                                                               \
+  template(java_lang_invoke_GenerateJLIClassesHelper, "java/lang/invoke/GenerateJLIClassesHelper") \
+  template(cdsGenerateHolderClasses, "cdsGenerateHolderClasses")                                  \
+  template(cdsGenerateHolderClasses_signature, "([Ljava/lang/String;)[Ljava/lang/Object;")        \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \
   template(java_lang_invoke_ConstantCallSite,         "java/lang/invoke/ConstantCallSite")        \

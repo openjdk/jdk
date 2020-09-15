@@ -203,8 +203,14 @@ JVM_IsCDSDumpingEnabled(JNIEnv* env);
 JNIEXPORT jboolean JNICALL
 JVM_IsCDSSharingEnabled(JNIEnv* env);
 
+JNIEXPORT jboolean JNICALL
+JVM_IsDumpLoadedClassListSetAndOpen(JNIEnv* env);
+
 JNIEXPORT jlong JNICALL
 JVM_GetRandomSeedForCDSDump();
+
+JNIEXPORT void JNICALL
+JVM_CDSTraceResolve(JNIEnv* env, jclass ignored, jstring line);
 
 /*
  * java.lang.Throwable

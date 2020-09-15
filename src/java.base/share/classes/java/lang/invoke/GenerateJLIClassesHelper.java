@@ -25,11 +25,13 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import sun.invoke.util.Wrapper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -53,16 +55,28 @@ class GenerateJLIClassesHelper {
     private static final String SPECIES_RESOLVE = "[SPECIES_RESOLVE]";
 
     static void traceLambdaForm(String name, MethodType type, Class<?> holder, MemberName resolvedMember) {
-        if (TRACE_RESOLVE) {
-            System.out.println(LF_RESOLVE + " " + holder.getName() + " " + name + " " +
+        if (TRACE_RESOLVE || VM.isDumpLoadedClassListSetAndOpen) {
+            String traceLF = LF_RESOLVE + " " + holder.getName() + " " + name + " " +
                     shortenSignature(basicTypeSignature(type)) +
-                    (resolvedMember != null ? " (success)" : " (fail)"));
+                    (resolvedMember != null ? " (success)" : " (fail)");
+            if (TRACE_RESOLVE) {
+                System.out.println(traceLF);
+            }
+            if (VM.isDumpLoadedClassListSetAndOpen) {
+                VM.cdsTraceResolve(traceLF);
+            }
         }
     }
 
     static void traceSpeciesType(String cn, Class<?> salvage) {
-        if (TRACE_RESOLVE) {
-            System.out.println(SPECIES_RESOLVE + " " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
+        if (TRACE_RESOLVE || VM.isDumpLoadedClassListSetAndOpen) {
+            String traceSP = SPECIES_RESOLVE + " " + cn + (salvage != null ? " (salvaged)" : " (generated)");
+            if (TRACE_RESOLVE) {
+                System.out.println(traceSP);
+            }
+            if (VM.isDumpLoadedClassListSetAndOpen) {
+                VM.cdsTraceResolve(traceSP);
+            }
         }
     }
 
@@ -348,6 +362,30 @@ class GenerateJLIClassesHelper {
                 });
 
         return builder.build();
+    }
+
+    /**
+     * called from vm to generate MethodHandle holder classes
+     * @return @code { Object[] } if holder classes can be generated.
+     * @param lines the output lines from @code { VM.cdsTraceResolve }
+     */
+    static Object[] cdsGenerateHolderClasses(String[] lines) {
+        try {
+            Map<String, byte[]> result = generateHolderClasses(Arrays.stream(lines));
+            if (result == null) {
+                return null;
+            }
+            int size = result.size();
+            Object[] ret_array = new Object[size * 2];
+            int index = 0;
+            for (Map.Entry<String, byte[]> entry : result.entrySet()) {
+                ret_array[index++] = entry.getKey();
+                ret_array[index++] = entry.getValue();
+            };
+            return ret_array;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**

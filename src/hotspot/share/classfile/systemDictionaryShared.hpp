@@ -308,6 +308,7 @@ public:
   static void check_excluded_classes();
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);
+  static void set_excluded(InstanceKlass* k);
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static size_t estimate_size_for_archive();
   static void write_to_archive(bool is_static_archive = true);

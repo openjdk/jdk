@@ -146,6 +146,7 @@ JVM_IsArrayClass
 JVM_IsCDSDumpingEnabled
 JVM_IsCDSSharingEnabled
 JVM_IsConstructorIx
+JVM_IsDumpLoadedClassListSetAndOpen
 JVM_IsHiddenClass
 JVM_IsInterface
 JVM_IsPrimitiveClass
@@ -158,6 +159,7 @@ JVM_LatestUserDefinedLoader
 JVM_LoadLibrary
 JVM_LookupDefineClass
 JVM_LookupLambdaProxyClassFromArchive
+JVM_CDSTraceResolve
 JVM_MaxMemory
 JVM_MaxObjectInspectionAge
 JVM_MonitorNotify

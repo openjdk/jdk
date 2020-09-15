@@ -126,6 +126,7 @@ ifneq ($(call check-jvm-feature, cds), true)
       dynamicArchive.cpp \
       filemap.cpp \
       heapShared.cpp \
+      lambdaFormInvokers.cpp \
       metaspaceShared.cpp \
       metaspaceShared_$(HOTSPOT_TARGET_CPU).cpp \
       metaspaceShared_$(HOTSPOT_TARGET_CPU_ARCH).cpp \

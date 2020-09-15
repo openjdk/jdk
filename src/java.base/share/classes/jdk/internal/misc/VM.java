@@ -454,6 +454,7 @@ public class VM {
 
     static {
         initialize();
+        isDumpLoadedClassListSetAndOpen = isDumpLoadedClassListSetAndOpen0();
     }
     private static native void initialize();
 
@@ -481,6 +482,19 @@ public class VM {
      * Check if CDS sharing is enabled by via the UseSharedSpaces flag.
      */
     public static native boolean isCDSSharingEnabled();
+
+    /**
+     * Check if DumpLoadedClassList is set and the file is open.
+     */
+    public static boolean isDumpLoadedClassListSetAndOpen;
+    private static native boolean isDumpLoadedClassListSetAndOpen0();
+
+    /**
+     * Output to DumpLoadedClassList, format is simimar to LF_RESOLVE
+     * @see InvokerBytecodeGenerator
+     * @param line the line to output.
+     */
+    public static native void cdsTraceResolve(String line);
 
     /**
      * Provides access to information on buffer usage.

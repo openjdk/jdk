@@ -31,6 +31,7 @@
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
@@ -3832,6 +3833,19 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 #endif // INCLUDE_CDS
 JVM_END
 
+JVM_ENTRY(void, JVM_CDSTraceResolve(JNIEnv* env, jclass ignored, jstring line))
+  JVMWrapper("JVM_CDSTraceResolve");
+#if INCLUDE_CDS
+  assert(DumpLoadedClassList != NULL && classlist_file->is_open(), "Should be set and open");
+  if (line != NULL) {
+    ResourceMark rm(THREAD);
+    Handle h_line(THREAD, JNIHandles::resolve_non_null(line));
+    char* c_line = java_lang_String::as_utf8_string(h_line());
+    classlist_file->print_cr("%s %s", LambdaFormInvokers::lambda_form_invoker_tag(), c_line);
+  }
+#endif // INCLUDE_CDS
+JVM_END
+
 JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
     JVMWrapper("JVM_IsCDSDumpingEnable");
     return DynamicDumpSharedSpaces;
@@ -3840,6 +3854,11 @@ JVM_END
 JVM_ENTRY(jboolean, JVM_IsCDSSharingEnabled(JNIEnv* env))
     JVMWrapper("JVM_IsCDSSharingEnable");
     return UseSharedSpaces;
+JVM_END
+
+JVM_ENTRY(jboolean, JVM_IsDumpLoadedClassListSetAndOpen(JNIEnv* env))
+    JVMWrapper("JVM_IsDumpLoadedClassListSetAndOpen");
+    return DumpLoadedClassList != NULL && classlist_file->is_open();
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForCDSDump())

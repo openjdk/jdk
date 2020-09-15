@@ -31,11 +31,7 @@
 class ClassFileStream;
 class ClassLoaderData;
 class ClassLoadInfo;
-template <typename>
-class GrowableArray;
-class Klass;
 class Symbol;
-class TempNewSymbol;
 
 /*
  * KlassFactory is an interface to implementations of the following mapping/function:
@@ -63,18 +59,12 @@ class TempNewSymbol;
 
 class KlassFactory : AllStatic {
 
-  // approved clients
-  friend class ClassLoader;
-  friend class ClassLoaderExt;
-  friend class SystemDictionary;
-
- private:
+ public:
   static InstanceKlass* create_from_stream(ClassFileStream* stream,
                                            Symbol* name,
                                            ClassLoaderData* loader_data,
                                            const ClassLoadInfo& cl_info,
                                            TRAPS);
- public:
   static InstanceKlass* check_shared_class_file_load_hook(
                                           InstanceKlass* ik,
                                           Symbol* class_name,

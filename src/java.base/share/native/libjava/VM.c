@@ -83,3 +83,13 @@ JNIEXPORT jboolean JNICALL
 Java_jdk_internal_misc_VM_isCDSSharingEnabled(JNIEnv *env, jclass jcls) {
     return JVM_IsCDSSharingEnabled(env);
 }
+
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_misc_VM_isDumpLoadedClassListSetAndOpen0(JNIEnv *env, jclass jcls) {
+    return JVM_IsDumpLoadedClassListSetAndOpen(env);
+}
+
+JNIEXPORT void JNICALL
+Java_jdk_internal_misc_VM_cdsTraceResolve(JNIEnv *env, jclass ignore, jstring line) {
+    JVM_CDSTraceResolve(env, ignore, line);
+}
