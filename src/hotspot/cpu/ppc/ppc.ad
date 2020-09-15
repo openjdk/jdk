@@ -3605,7 +3605,6 @@ encode %{
     call->_tf                = _tf;
     call->_entry_point       = _entry_point;
     call->_cnt               = _cnt;
-    call->_argsize           = _argsize;
     call->_oop_map           = _oop_map;
     call->_jvms              = _jvms;
     call->_jvmadj            = _jvmadj;
@@ -3806,7 +3805,6 @@ encode %{
     call->_tf          = _tf;
     call->_entry_point = _entry_point;
     call->_cnt         = _cnt;
-    call->_argsize     = _argsize;
     call->_oop_map     = _oop_map;
     guarantee(!_jvms, "You must clone the jvms and adapt the offsets by fix_jvms().");
     call->_jvms        = NULL;
