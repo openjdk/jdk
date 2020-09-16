@@ -46,6 +46,7 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import jdk.incubator.jpackage.internal.Arguments.CLIOptions;
 import static jdk.incubator.jpackage.internal.LinuxAppImageBuilder.DEFAULT_ICON;
 import static jdk.incubator.jpackage.internal.LinuxAppImageBuilder.ICON_PNG;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
@@ -54,6 +55,7 @@ import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.ICON;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
 /**
  * Helper to create files for desktop integration.
@@ -131,6 +133,26 @@ final class DesktopIntegration {
 
         desktopFileData = Collections.unmodifiableMap(
                 createDataForDesktopFile(params));
+
+        // Read launchers information from predefine app image
+        if (initAppImageLaunchers && launchers.isEmpty() &&
+                PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
+            initAppImageLaunchers = false;
+            List<String> launcherPaths = AppImageFile.getLauncherNames(
+                    PREDEFINED_APP_IMAGE.fetchFrom(params), params);
+            if (!launcherPaths.isEmpty()) {
+                launcherPaths.remove(0); // Remove main launcher
+            }
+            for (var launcherPath : launcherPaths) {
+                Map<String, ? super Object> launcherParams = new HashMap<>();
+                Arguments.putUnlessNull(launcherParams, CLIOptions.NAME.getId(),
+                        launcherPath);
+                launcherParams = AddLauncherArguments.merge(params, launcherParams,
+                    ICON.getID(), ICON_PNG.getID(), ADD_LAUNCHERS.getID(),
+                    FILE_ASSOCIATIONS.getID());
+                launchers.add(launcherParams);
+            }
+        }
 
         nestedIntegrations = new ArrayList<>();
         for (var launcherParams : launchers) {
@@ -524,6 +546,7 @@ final class DesktopIntegration {
 
     private final List<LinuxFileAssociation> associations;
 
+    private static boolean initAppImageLaunchers = true;
     private final List<Map<String, ? super Object>> launchers;
 
     private final OverridableResource iconResource;

@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
+import jdk.incubator.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
 
 public final class AdditionalLauncher {
@@ -210,7 +211,7 @@ public final class AdditionalLauncher {
         verifier.applyTo(cmd);
     }
 
-    private void verify(JPackageCommand cmd) throws IOException {
+    public void verify(JPackageCommand cmd) throws IOException {
         verifyIcon(cmd);
 
         Path launcherPath = cmd.appLauncherPath(name);
@@ -230,6 +231,44 @@ public final class AdditionalLauncher {
                 .ofNullable(javaOptions)
                 .orElseGet(() -> List.of(cmd.getAllArgumentValues("--java-options"))))
         .executeAndVerifyOutput();
+    }
+
+    public void verifyPackageInstalled(JPackageCommand cmd) {
+        final String formatString;
+        if (cmd.isPackageUnpacked()) {
+            formatString = "Verify unpacked: %s";
+        } else {
+            formatString = "Verify installed: %s";
+        }
+        TKit.trace(String.format(formatString, cmd.getPrintableCommandLine()));
+
+        if (!cmd.isRuntime()) {
+            if (PackageType.WINDOWS.contains(cmd.packageType())
+                    && !cmd.isPackageUnpacked(
+                            "Not verifying desktop integration")) {
+                new WindowsHelper.DesktopIntegrationVerifier(cmd, name);
+            }
+        }
+    }
+
+    public void verifyPackageUninstalled(JPackageCommand cmd) {
+        TKit.trace(String.format("Verify uninstalled: %s",
+                cmd.getPrintableCommandLine()));
+        if (!cmd.isRuntime()) {
+            TKit.assertPathExists(cmd.appLauncherPath(), false);
+
+            if (PackageType.WINDOWS.contains(cmd.packageType())) {
+                new WindowsHelper.DesktopIntegrationVerifier(cmd, name);
+            }
+        }
+
+        Path appInstallDir = cmd.appInstallationDirectory();
+        if (TKit.isLinux() && Path.of("/").equals(appInstallDir)) {
+            ApplicationLayout appLayout = cmd.appLayout();
+            TKit.assertPathExists(appLayout.runtimeDirectory(), false);
+        } else {
+            TKit.assertPathExists(appInstallDir, false);
+        }
     }
 
     private List<String> javaOptions;

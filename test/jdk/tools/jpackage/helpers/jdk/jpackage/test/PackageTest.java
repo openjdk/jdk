@@ -556,7 +556,7 @@ public final class PackageTest extends RunnablePackageTest {
                 if (PackageType.WINDOWS.contains(cmd.packageType())
                         && !cmd.isPackageUnpacked(
                                 "Not verifying desktop integration")) {
-                    new WindowsHelper.DesktopIntegrationVerifier(cmd);
+                    new WindowsHelper.DesktopIntegrationVerifier(cmd, null);
                 }
             }
             cmd.assertAppLayout();
@@ -571,7 +571,7 @@ public final class PackageTest extends RunnablePackageTest {
                 TKit.assertPathExists(cmd.appLauncherPath(), false);
 
                 if (PackageType.WINDOWS.contains(cmd.packageType())) {
-                    new WindowsHelper.DesktopIntegrationVerifier(cmd);
+                    new WindowsHelper.DesktopIntegrationVerifier(cmd, null);
                 }
             }
 
