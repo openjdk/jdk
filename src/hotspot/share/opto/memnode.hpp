@@ -1184,7 +1184,8 @@ class MemBarNode: public MultiNode {
     TrailingStore,
     LeadingStore,
     TrailingLoadStore,
-    LeadingLoadStore
+    LeadingLoadStore,
+    AfterPartialArrayCopy
   } _kind;
 
 #ifdef ASSERT
@@ -1221,6 +1222,8 @@ public:
   bool trailing() const { return _kind == TrailingLoad || _kind == TrailingStore || _kind == TrailingLoadStore; }
   bool leading() const { return _kind == LeadingStore || _kind == LeadingLoadStore; }
   bool standalone() const { return _kind == Standalone; }
+  void set_after_partial_array_copy() { _kind = AfterPartialArrayCopy; }
+  bool after_partial_array_copy() const { return _kind == AfterPartialArrayCopy; }
 
   static void set_store_pair(MemBarNode* leading, MemBarNode* trailing);
   static void set_load_store_pair(MemBarNode* leading, MemBarNode* trailing);

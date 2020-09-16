@@ -687,16 +687,17 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     }
   }
 
+  bool is_partial_array_copy = false;
   if (!(*ctrl)->is_top()) {
     // Generate the fast path, if possible.
     Node* local_ctrl = *ctrl;
     MergeMemNode* local_mem = MergeMemNode::make(mem);
     transform_later(local_mem);
 
-    generate_unchecked_arraycopy(&local_ctrl, &local_mem,
-                                 adr_type, copy_type, disjoint_bases,
-                                 src, src_offset, dest, dest_offset,
-                                 ConvI2X(copy_length), dest_uninitialized);
+    is_partial_array_copy = generate_unchecked_arraycopy(&local_ctrl, &local_mem,
+                                                         adr_type, copy_type, disjoint_bases,
+                                                         src, src_offset, dest, dest_offset,
+                                                         ConvI2X(copy_length), dest_uninitialized);
 
     // Present the results of the fast call.
     result_region->init_req(fast_path, local_ctrl);
@@ -843,13 +844,19 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     insert_mem_bar(ctrl, &out_mem, Op_MemBarCPUOrder);
   }
 
+  if (is_partial_array_copy) {
+    assert((*ctrl)->is_Proj(), "MemBar control projection");
+    assert((*ctrl)->in(0)->isa_MemBar(), "MemBar node");
+    (*ctrl)->in(0)->isa_MemBar()->set_after_partial_array_copy();
+  }
+
   _igvn.replace_node(_memproj_fallthrough, out_mem);
   _igvn.replace_node(_ioproj_fallthrough, *io);
   _igvn.replace_node(_fallthroughcatchproj, *ctrl);
 
 #ifdef ASSERT
   const TypeOopPtr* dest_t = _igvn.type(dest)->is_oopptr();
-  if (dest_t->is_known_instance()) {
+  if (dest_t->is_known_instance() && false == is_partial_array_copy) {
     ArrayCopyNode* ac = NULL;
     assert(ArrayCopyNode::may_modify(dest_t, (*ctrl)->in(0)->as_MemBar(), &_igvn, ac), "dependency on arraycopy lost");
     assert(ac == NULL, "no arraycopy anymore");
@@ -1181,14 +1188,14 @@ Node* PhaseMacroExpand::generate_generic_arraycopy(Node** ctrl, MergeMemNode** m
 }
 
 // Helper function; generates the fast out-of-line call to an arraycopy stub.
-void PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
+bool PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
                                                     const TypePtr* adr_type,
                                                     BasicType basic_elem_type,
                                                     bool disjoint_bases,
                                                     Node* src,  Node* src_offset,
                                                     Node* dest, Node* dest_offset,
                                                     Node* copy_length, bool dest_uninitialized) {
-  if ((*ctrl)->is_top()) return;
+  if ((*ctrl)->is_top()) return false;
 
   Node* src_start  = src;
   Node* dest_start = dest;
@@ -1236,7 +1243,9 @@ void PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
     }
     transform_later(*mem);
     *ctrl = exit_block;
+    return true;
   }
+  return false;
 }
 
 void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
