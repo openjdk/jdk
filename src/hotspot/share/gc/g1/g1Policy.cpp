@@ -108,7 +108,7 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
 
-  _young_gen_sizer->adjust_max_new_size(_g1h->max_expandable_regions());
+  _young_gen_sizer->adjust_max_new_size(_g1h->max_regions());
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 

@@ -78,7 +78,7 @@ public:
   static uint num_par_rem_sets();
 
   // Initialize data that depends on the heap size being known.
-  void initialize(uint max_regions);
+  void initialize(uint max_reserved_regions);
 
   G1RemSet(G1CollectedHeap* g1h,
            G1CardTable* ct,

@@ -182,13 +182,13 @@ inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
 }
 
 inline HeapWord* G1ConcurrentMark::top_at_rebuild_start(uint region) const {
-  assert(region < _g1h->max_regions(), "Tried to access TARS for region %u out of bounds", region);
+  assert(region < _g1h->max_reserved_regions(), "Tried to access TARS for region %u out of bounds", region);
   return _top_at_rebuild_starts[region];
 }
 
 inline void G1ConcurrentMark::update_top_at_rebuild_start(HeapRegion* r) {
   uint const region = r->hrm_index();
-  assert(region < _g1h->max_regions(), "Tried to access TARS for region %u out of bounds", region);
+  assert(region < _g1h->max_reserved_regions(), "Tried to access TARS for region %u out of bounds", region);
   assert(_top_at_rebuild_starts[region] == NULL,
          "TARS for region %u has already been set to " PTR_FORMAT " should be NULL",
          region, p2i(_top_at_rebuild_starts[region]));
