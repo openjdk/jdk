@@ -1246,6 +1246,7 @@ bool PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
     return true;
   }
   return false;
+  }
 }
 
 void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
