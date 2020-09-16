@@ -22,6 +22,8 @@
  */
 
 import jdk.test.lib.process.ProcessTools;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -45,7 +47,8 @@ public class JLinkReproducible3Test {
 
     static {
         try {
-            Path jdk2_dir = Files.createTempDirectory("JLinkReproducible4Test-jdk2");
+            //Path jdk2_dir = Files.createTempDirectory("JLinkReproducible4Test-jdk2");
+            Path jdk2_dir = Path.of("./jdk2-tmpdir"); //Files.createTempDirectory("JLinkReproducible4Test-jdk2");
             Path jdk_test_dir = Path.of(
                     Optional.of(
                             System.getProperty("test.jdk"))
@@ -53,6 +56,12 @@ public class JLinkReproducible3Test {
             );
 
             Files.walkFileTree(jdk_test_dir, new CopyFileVisitor(jdk_test_dir, jdk2_dir));
+
+            File jdk2_dir_file = jdk2_dir.toFile();
+            if (!jdk2_dir_file.mkdir() && !jdk2_dir_file.exists()) {
+                throw new RuntimeException("Unable to create copy jdk directory");
+            }
+            jdk2_dir_file.deleteOnExit();
 
             COPIED_JLINK = Optional.of(
                     Paths.get(jdk2_dir.toString(), "bin", "jlink"))
