@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * @test
+ * @bug 8253050
  * @summary Test jfr split
  * @key jfr
  * @requires vm.hasJFR
@@ -55,13 +56,16 @@ public class TestDisassemble {
         Path recordingFileA = Paths.get("many-chunks-A-" + dateText + ".jfr");
         Path recordingFileB = Paths.get("many-chunks-B-" + dateText + ".jfr");
         Path recordingFileC = Paths.get("many-chunks-C-" + dateText + ".jfr");
+        Path recordingFileD = Paths.get("many-chunks-D-" + dateText + ".jfr");
         makeRecordingWithChunks(6, recordingFileA);
         Files.copy(recordingFileA, recordingFileB);
         Files.copy(recordingFileA, recordingFileC);
+        Files.copy(recordingFileA, recordingFileD);
 
         String fileAText = recordingFileA.toAbsolutePath().toString();
         String fileBText = recordingFileB.toAbsolutePath().toString();
         String fileCText = recordingFileC.toAbsolutePath().toString();
+        String fileDText = recordingFileD.toAbsolutePath().toString();
 
         OutputAnalyzer output = ExecuteHelper.jfr("disassemble");
         output.shouldContain("missing file");
@@ -97,6 +101,15 @@ public class TestDisassemble {
         // sanity check
         output = ExecuteHelper.jfr("disassemble", "--max-size", "10000", fileCText);
         verifyRecording(fileCText.substring(0, fileCText.length() - 4) + "_01.jfr");
+
+        // test JDK-8253050
+        output = ExecuteHelper.jfr("disassemble", "--max-chunks", "1", fileDText);
+        String chunks = output.firstMatch("File consists of (\\d+) chunks", 1);
+        output.shouldContain("The recording will be split into " + chunks + " files");
+        String chunkFilePrefix = fileDText.substring(0, fileDText.length() - 4) + "_";
+        for (long i = 0; i < Long.parseLong(chunks); i++) {
+            verifyRecording(chunkFilePrefix + String.format("%0" + chunks.length() + "d", i) + ".jfr");
+        }
     }
 
     private static void verifyRecording(String name) throws IOException {
