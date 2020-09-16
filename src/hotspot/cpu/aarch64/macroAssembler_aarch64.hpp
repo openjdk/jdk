@@ -188,7 +188,15 @@ class MacroAssembler: public Assembler {
     mov(rscratch2, call_site);
   }
 
+// Microsoft's MSVC team thinks that the __FUNCSIG__ is approximately (sympathy for calling conventions) equivalent to __PRETTY_FUNCTION__
+// Also, from Clang patch: "It is very similar to GCC's PRETTY_FUNCTION, except it prints the calling convention."
+// https://reviews.llvm.org/D3311
+
+#ifdef _WIN64
+#define call_Unimplemented() _call_Unimplemented((address)__FUNCSIG__)
+#else
 #define call_Unimplemented() _call_Unimplemented((address)__PRETTY_FUNCTION__)
+#endif
 
   // aliases defined in AARCH64 spec
 
