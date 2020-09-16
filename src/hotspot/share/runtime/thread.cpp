@@ -2389,7 +2389,7 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
 
   if (check_unsafe_error &&
       condition == _async_unsafe_access_error && !has_pending_exception()) {
-    // May be we are at method entry and requires to save do not unlock flag.
+    // We may be at method entry which requires we save the do-not-unlock flag.
     UnlockFlagSaver fs(this);
     condition = _no_async_condition;  // done
     switch (thread_state()) {
