@@ -90,6 +90,7 @@ public class ActivationID implements Serializable {
     private transient UID uid = new UID();
 
     /** indicate compatibility with the Java 2 SDK v1.2 version of class */
+    @java.io.Serial
     private static final long serialVersionUID = -4608673054848209235L;
 
     /** an AccessControlContext with no permissions */
@@ -228,7 +229,11 @@ public class ActivationID implements Serializable {
      * java.rmi.server.RemoteObject RemoteObject}
      * <code>writeObject</code> method <b>serialData</b>
      * specification.
+     *
+     * @param  out the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      **/
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out)
         throws IOException
     {
@@ -287,7 +292,13 @@ public class ActivationID implements Serializable {
      * class corresponding to that external ref type name, in which
      * case the <code>RemoteRef</code> will be an instance of
      * that implementation-specific class.
+     *
+     * @param  in the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     *
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
     {

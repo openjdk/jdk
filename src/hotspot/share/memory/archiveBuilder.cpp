@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
+#include "memory/cppVtables.hpp"
 #include "memory/dumpAllocStats.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
@@ -218,6 +220,11 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   log_info(cds)("Gathering classes and symbols ... ");
   GatherKlassesAndSymbols doit(this);
   iterate_roots(&doit, /*is_relocating_pointers=*/false);
+#if INCLUDE_CDS_JAVA_HEAP
+  if (DumpSharedSpaces && MetaspaceShared::use_full_module_graph()) {
+    ClassLoaderDataShared::iterate_symbols(&doit);
+  }
+#endif
   doit.finish();
 
   log_info(cds)("Number of classes %d", _num_instance_klasses + _num_obj_array_klasses + _num_type_array_klasses);
@@ -473,7 +480,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 
   memcpy(dest, src, bytes);
 
-  intptr_t* archived_vtable = MetaspaceShared::get_archived_cpp_vtable(ref->msotype(), (address)dest);
+  intptr_t* archived_vtable = CppVtables::get_archived_cpp_vtable(ref->msotype(), (address)dest);
   if (archived_vtable != NULL) {
     *(address*)dest = (address)archived_vtable;
     ArchivePtrMarker::mark_pointer((address*)dest);
