@@ -28,6 +28,19 @@
 
 #include "asm/register.hpp"
 
+#ifdef __GNUC__
+
+// __nop needs volatile so that compiler doesn't optimize it away
+#define NOP() asm volatile ("nop");
+
+#elif defined(_MSC_VER)
+
+// Use MSVC instrinsic: https://docs.microsoft.com/en-us/cpp/intrinsics/arm64-intrinsics?view=vs-2019#I
+#define NOP() __nop();
+
+#endif
+
+
 // definitions of various symbolic names for machine registers
 
 // First intercalls between C and Java which use 8 general registers
@@ -642,7 +655,7 @@ class Assembler : public AbstractAssembler {
 
   void emit_long(jint x) {
     if ((uintptr_t)pc() == asm_bp)
-      asm volatile ("nop");
+      NOP();
     AbstractAssembler::emit_int32(x);
   }
 #else
