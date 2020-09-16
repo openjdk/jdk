@@ -355,8 +355,8 @@ void Thread::record_stack_base_and_size() {
 
   // Set stack limits after thread is initialized.
   if (is_Java_thread()) {
-    ((JavaThread*) this)->set_stack_overflow_limit();
-    ((JavaThread*) this)->set_reserved_stack_activation(stack_base());
+    as_Java_thread()->set_stack_overflow_limit();
+    as_Java_thread()->set_reserved_stack_activation(stack_base());
   }
 }
 
@@ -483,9 +483,9 @@ Thread::~Thread() {
 //
 void Thread::check_for_dangling_thread_pointer(Thread *thread) {
   assert(!thread->is_Java_thread() || Thread::current() == thread ||
-         !((JavaThread *) thread)->on_thread_list() ||
+         !thread->as_Java_thread()->on_thread_list() ||
          SafepointSynchronize::is_at_safepoint() ||
-         ThreadsSMRSupport::is_a_protected_JavaThread_with_lock((JavaThread *) thread),
+         ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(thread->as_Java_thread()),
          "possibility of dangling Thread pointer");
 }
 #endif
@@ -514,7 +514,7 @@ void Thread::start(Thread* thread) {
       // Can not set it after the thread started because we do not know the
       // exact thread state at that time. It could be in MONITOR_WAIT or
       // in SLEEPING or some other state.
-      java_lang_Thread::set_thread_status(((JavaThread*)thread)->threadObj(),
+      java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
                                           java_lang_Thread::RUNNABLE);
     }
     os::start_thread(thread);
@@ -527,7 +527,7 @@ public:
   InstallAsyncExceptionClosure(Handle throwable) : HandshakeClosure("InstallAsyncException"), _throwable(throwable) {}
 
   void do_thread(Thread* thr) {
-    JavaThread* target = (JavaThread*)thr;
+    JavaThread* target = thr->as_Java_thread();
     // Note that this now allows multiple ThreadDeath exceptions to be
     // thrown at a thread.
     // The target thread has run and has not exited yet.
@@ -1005,7 +1005,7 @@ void Thread::check_for_valid_safepoint_state() {
   // are held.
   check_possible_safepoint();
 
-  if (((JavaThread*)this)->thread_state() != _thread_in_vm) {
+  if (this->as_Java_thread()->thread_state() != _thread_in_vm) {
     fatal("LEAF method calling lock?");
   }
 
@@ -1030,7 +1030,7 @@ bool Thread::set_as_starting_thread() {
          "_starting_thread=" INTPTR_FORMAT, p2i(_starting_thread));
   // NOTE: this must be called inside the main thread.
   DEBUG_ONLY(_starting_thread = this;)
-  return os::create_main_thread((JavaThread*)this);
+  return os::create_main_thread(this->as_Java_thread());
 }
 
 static void initialize_class(Symbol* class_name, TRAPS) {
@@ -2278,12 +2278,11 @@ void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
 JavaThread* JavaThread::active() {
   Thread* thread = Thread::current();
   if (thread->is_Java_thread()) {
-    return (JavaThread*) thread;
+    return thread->as_Java_thread();
   } else {
     assert(thread->is_VM_thread(), "this must be a vm thread");
     VM_Operation* op = ((VMThread*) thread)->vm_operation();
-    JavaThread *ret=op == NULL ? NULL : (JavaThread *)op->calling_thread();
-    assert(ret->is_Java_thread(), "must be a Java thread");
+    JavaThread *ret = op == NULL ? NULL : op->calling_thread()->as_Java_thread();
     return ret;
   }
 }
@@ -2554,8 +2553,7 @@ int JavaThread::java_suspend_self() {
     return ret;
   }
 
-  assert(_anchor.walkable() ||
-         (is_Java_thread() && !((JavaThread*)this)->has_last_Java_frame()),
+  assert(_anchor.walkable() || !has_last_Java_frame(),
          "must have walkable stack");
 
   MonitorLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
@@ -3202,10 +3200,9 @@ const char* JavaThread::get_thread_name() const {
 #ifdef ASSERT
   // early safepoints can hit while current thread does not yet have TLS
   if (!SafepointSynchronize::is_at_safepoint()) {
-    Thread *cur = Thread::current();
-    if (!(cur->is_Java_thread() && cur == this)) {
-      // Current JavaThreads are allowed to get their own name without
-      // the Threads_lock.
+    // Current JavaThreads are allowed to get their own name without
+    // the Threads_lock.
+    if (Thread::current() != this) {
       assert_locked_or_safepoint_or_handshake(Threads_lock, this);
     }
   }

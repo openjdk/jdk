@@ -563,9 +563,9 @@ private:
   bool           _expired;
 
 public:
-  ZMarkTimeout(uint64_t timeout_in_millis) :
+  ZMarkTimeout(uint64_t timeout_in_micros) :
       _start(Ticks::now()),
-      _timeout(_start.value() + TimeHelper::millis_to_counter(timeout_in_millis)),
+      _timeout(_start.value() + TimeHelper::micros_to_counter(timeout_in_micros)),
       _check_interval(200),
       _check_at(_check_interval),
       _check_count(0),
@@ -591,9 +591,9 @@ public:
   }
 };
 
-void ZMark::work_with_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, uint64_t timeout_in_millis) {
+void ZMark::work_with_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, uint64_t timeout_in_micros) {
   ZStatTimer timer(ZSubPhaseMarkTryComplete);
-  ZMarkTimeout timeout(timeout_in_millis);
+  ZMarkTimeout timeout(timeout_in_micros);
 
   for (;;) {
     if (!drain_and_flush(stripe, stacks, cache, &timeout)) {
@@ -611,15 +611,15 @@ void ZMark::work_with_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkThrea
   }
 }
 
-void ZMark::work(uint64_t timeout_in_millis) {
+void ZMark::work(uint64_t timeout_in_micros) {
   ZMarkCache cache(_stripes.nstripes());
   ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, ZThread::worker_id());
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::stacks(Thread::current());
 
-  if (timeout_in_millis == 0) {
+  if (timeout_in_micros == 0) {
     work_without_timeout(&cache, stripe, stacks);
   } else {
-    work_with_timeout(&cache, stripe, stacks, timeout_in_millis);
+    work_with_timeout(&cache, stripe, stacks, timeout_in_micros);
   }
 
   // Make sure stacks have been flushed
@@ -668,13 +668,13 @@ public:
 class ZMarkTask : public ZTask {
 private:
   ZMark* const   _mark;
-  const uint64_t _timeout_in_millis;
+  const uint64_t _timeout_in_micros;
 
 public:
-  ZMarkTask(ZMark* mark, uint64_t timeout_in_millis = 0) :
+  ZMarkTask(ZMark* mark, uint64_t timeout_in_micros = 0) :
       ZTask("ZMarkTask"),
       _mark(mark),
-      _timeout_in_millis(timeout_in_millis) {
+      _timeout_in_micros(timeout_in_micros) {
     _mark->prepare_work();
   }
 
@@ -683,7 +683,7 @@ public:
   }
 
   virtual void work() {
-    _mark->work(_timeout_in_millis);
+    _mark->work(_timeout_in_micros);
   }
 };
 

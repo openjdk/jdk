@@ -63,7 +63,7 @@ if [ ! -f symbols ] ; then
     exit 1
 fi;
 
-if [ "`hg status .`x" != "x" ] ; then
+if [ "`git status --porcelain=v1 .`x" != "x" ] ; then
     echo "The make/data/symbols directory contains local changes!" >&2
     exit 1
 fi;

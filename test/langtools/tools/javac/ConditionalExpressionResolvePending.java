@@ -34,7 +34,7 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
- * @compile --enable-preview -source ${jdk.version} ConditionalExpressionResolvePending.java
+ * @compile ConditionalExpressionResolvePending.java
  * @run main/othervm --enable-preview ConditionalExpressionResolvePending
  */
 

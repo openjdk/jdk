@@ -230,17 +230,6 @@ void JvmtiEnvThreadState::clear_frame_pop(int frame_number) {
 }
 
 
-void JvmtiEnvThreadState::clear_to_frame_pop(int frame_number)  {
-#ifdef ASSERT
-  Thread *current = Thread::current();
-#endif
-  assert(get_thread() == current || current == get_thread()->active_handshaker(),
-         "frame pop data only accessible from same thread or direct handshake");
-  JvmtiFramePop fpop(frame_number);
-  JvmtiEventController::clear_to_frame_pop(this, fpop);
-}
-
-
 bool JvmtiEnvThreadState::is_frame_pop(int cur_frame_number) {
 #ifdef ASSERT
   Thread *current = Thread::current();
@@ -266,7 +255,7 @@ class GetCurrentLocationClosure : public HandshakeClosure {
       _method_id(NULL),
       _bci(0) {}
   void do_thread(Thread *target) {
-    JavaThread *jt = (JavaThread *)target;
+    JavaThread *jt = target->as_Java_thread();
     ResourceMark rmark; // jt != Thread::current()
     RegisterMap rm(jt, false);
     // There can be a race condition between a VM_Operation reaching a safepoint

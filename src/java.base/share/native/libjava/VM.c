@@ -62,6 +62,13 @@ Java_jdk_internal_misc_VM_initializeFromArchive(JNIEnv *env, jclass ignore,
     JVM_InitializeFromArchive(env, c);
 }
 
+JNIEXPORT void JNICALL
+Java_jdk_internal_misc_VM_defineArchivedModules(JNIEnv *env, jclass ignore,
+                                                jobject platform_loader,
+                                                jobject system_loader) {
+    JVM_DefineArchivedModules(env, platform_loader, system_loader);
+}
+
 JNIEXPORT jlong JNICALL
 Java_jdk_internal_misc_VM_getRandomSeedForCDSDump(JNIEnv *env, jclass ignore) {
     return JVM_GetRandomSeedForCDSDump();

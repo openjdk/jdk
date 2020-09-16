@@ -495,7 +495,7 @@ class ConstantPool : public Metadata {
   // a String entry.
   // This can happen if the user patches a live
   // object into a CONSTANT_String entry of an unsafe anonymous class.
-  // Method oops internally created for method handles may also
+  // Methods internally created for method handles may also
   // use pseudo-strings to link themselves to related metaobjects.
 
   bool is_pseudo_string_at(int which);

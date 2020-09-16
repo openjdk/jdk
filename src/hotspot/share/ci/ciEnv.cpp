@@ -453,10 +453,10 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     Klass* kls;
     if (!require_local) {
       kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader,
-                                                                       KILL_COMPILE_ON_FATAL_(fail_type));
+                                                                       CHECK_AND_CLEAR_(fail_type));
     } else {
       kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain,
-                                                           KILL_COMPILE_ON_FATAL_(fail_type));
+                                                           CHECK_AND_CLEAR_(fail_type));
     }
     found_klass = kls;
   }

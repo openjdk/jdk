@@ -985,9 +985,6 @@ void ADLParser::frame_parse(void) {
             parse_err(SYNERR, "missing identifier inside frame block.\n");
             return;
       }
-      if (strcmp(token,"stack_direction")==0) {
-        stack_dir_parse(frame);
-      }
       if (strcmp(token,"sync_stack_slots")==0) {
         sync_stack_slots_parse(frame);
       }
@@ -1005,7 +1002,11 @@ void ADLParser::frame_parse(void) {
         skipws();
       }
       if (strcmp(token,"interpreter_method_oop_reg")==0) {
-        interpreter_method_oop_parse(frame, false);
+        parse_err(WARN, "Using obsolete Token, interpreter_method_oop_reg");
+        skipws();
+      }
+      if (strcmp(token,"interpreter_method_reg")==0) {
+        interpreter_method_parse(frame, false);
       }
       if (strcmp(token,"cisc_spilling_operand_name")==0) {
         cisc_spilling_operand_name_parse(frame, false);
@@ -1109,21 +1110,6 @@ void ADLParser::frame_parse(void) {
   // skipws();
 }
 
-//------------------------------stack_dir_parse--------------------------------
-void ADLParser::stack_dir_parse(FrameForm *frame) {
-  char *direction = parse_one_arg("stack direction entry");
-  if (strcmp(direction, "TOWARDS_LOW") == 0) {
-    frame->_direction = false;
-  }
-  else if (strcmp(direction, "TOWARDS_HIGH") == 0) {
-    frame->_direction = true;
-  }
-  else {
-    parse_err(SYNERR, "invalid value inside stack direction entry.\n");
-    return;
-  }
-}
-
 //------------------------------sync_stack_slots_parse-------------------------
 void ADLParser::sync_stack_slots_parse(FrameForm *frame) {
     // Assign value into frame form
@@ -1148,9 +1134,9 @@ void ADLParser::inline_cache_parse(FrameForm *frame, bool native) {
   frame->_inline_cache_reg = parse_one_arg("inline cache reg entry");
 }
 
-//------------------------------interpreter_method_oop_parse------------------
-void ADLParser::interpreter_method_oop_parse(FrameForm *frame, bool native) {
-  frame->_interpreter_method_oop_reg = parse_one_arg("method reg entry");
+//------------------------------interpreter_method_parse------------------
+void ADLParser::interpreter_method_parse(FrameForm *frame, bool native) {
+  frame->_interpreter_method_reg = parse_one_arg("method reg entry");
 }
 
 //------------------------------cisc_spilling_operand_parse---------------------

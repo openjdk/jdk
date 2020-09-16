@@ -50,7 +50,7 @@ ShenandoahStrDedupQueue::ShenandoahStrDedupQueue() :
 
 ShenandoahStrDedupQueue::~ShenandoahStrDedupQueue() {
   MonitorLocker ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
-  for (size_t index = 0; index < num_queues(); index ++) {
+  for (size_t index = 0; index < num_queues_nv(); index ++) {
     release_buffers(queue_at(index));
   }
 

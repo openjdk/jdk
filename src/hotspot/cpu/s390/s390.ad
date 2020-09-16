@@ -278,8 +278,8 @@ alloc_class chunk2(
 // information in this architecture description.
 
 // 1) reg_class inline_cache_reg           (as defined in frame section)
-// 2) reg_class compiler_method_oop_reg    (as defined in frame section)
-// 2) reg_class interpreter_method_oop_reg (as defined in frame section)
+// 2) reg_class compiler_method_reg        (as defined in frame section)
+// 2) reg_class interpreter_method_reg     (as defined in frame section)
 // 3) reg_class stack_slots(/* one chunk of stack-based "registers" */)
 
 // Integer Register Classes
@@ -1569,11 +1569,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return ret_value;  // Per default match rules are supported.
 }
 
-int Matcher::regnum_to_fpu_offset(int regnum) {
-  ShouldNotReachHere();
-  return regnum - 32; // The FP registers are in the second chunk.
-}
-
 const bool Matcher::has_predicated_vectors(void) {
   return false;
 }
@@ -2456,9 +2451,6 @@ source %{
 // Definition of frame structure and management information.
 
 frame %{
-  // What direction does stack grow in (assumed to be same for native & Java).
-  stack_direction(TOWARDS_LOW);
-
   // These two registers define part of the calling convention between
   // compiled code and the interpreter.
 
@@ -2471,10 +2463,10 @@ frame %{
   // interpreter_arg_ptr_reg(Z_R6);
 
   // Temporary in compiled entry-points
-  // compiler_method_oop_reg(Z_R1);//Z_R1_scratch
+  // compiler_method_reg(Z_R1);//Z_R1_scratch
 
-  // Method Oop Register when calling interpreter
-  interpreter_method_oop_reg(Z_R9);//Z_method
+  // Method Register when calling interpreter
+  interpreter_method_reg(Z_R9);//Z_method
 
   // Optional: name the operand used by cisc-spilling to access
   // [stack_pointer + offset].
@@ -3539,15 +3531,15 @@ operand inline_cache_regP(iRegP reg) %{
   interface(REG_INTER);
 %}
 
-operand compiler_method_oop_regP(iRegP reg) %{
-  constraint(ALLOC_IN_RC(z_r1_RegP)); // compiler_method_oop_reg
+operand compiler_method_regP(iRegP reg) %{
+  constraint(ALLOC_IN_RC(z_r1_RegP)); // compiler_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);
 %}
 
-operand interpreter_method_oop_regP(iRegP reg) %{
-  constraint(ALLOC_IN_RC(z_r9_regP)); // interpreter_method_oop_reg
+operand interpreter_method_regP(iRegP reg) %{
+  constraint(ALLOC_IN_RC(z_r9_regP)); // interpreter_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);

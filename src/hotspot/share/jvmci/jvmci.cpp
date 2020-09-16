@@ -23,9 +23,11 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
+#include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "memory/resourceArea.hpp"
@@ -123,6 +125,18 @@ void JVMCI::initialize_globals() {
   }
 }
 
+JavaThread* JVMCI::compilation_tick(JavaThread* thread) {
+  if (thread->is_Compiler_thread()) {
+    CompileTask *task = thread->as_CompilerThread()->task();
+    if (task != NULL) {
+      JVMCICompileState *state = task->blocking_jvmci_compile_state();
+      if (state != NULL) {
+        state->inc_compilation_ticks();
+      }
+    }
+  }
+  return thread;
+}
 
 void JVMCI::metadata_do(void f(Metadata*)) {
   if (_java_runtime != NULL) {
