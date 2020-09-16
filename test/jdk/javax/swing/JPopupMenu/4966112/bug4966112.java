@@ -95,6 +95,10 @@ public class bug4966112 {
             throw new RuntimeException("Popup was not shown on spinner");
         }
 
+        if (System.getProperty("os.name").startsWith("Mac")) {
+            return;
+        }
+
         // Test File Chooser
         createAndShowFileChooser();
         robot.waitForIdle();
