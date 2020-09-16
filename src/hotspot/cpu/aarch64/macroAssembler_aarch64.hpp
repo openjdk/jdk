@@ -524,10 +524,10 @@ public:
 
   // Generalized Test Bit And Branch, including a "far" variety which
   // spans more than 32KiB.
-  void tbr(Condition cond, Register Rt, int bitpos, Label &dest, bool far = false) {
+  void tbr(Condition cond, Register Rt, int bitpos, Label &dest, bool isfar = false) {
     assert(cond == EQ || cond == NE, "must be");
 
-    if (far)
+    if (isfar)
       cond = ~cond;
 
     void (Assembler::* branch)(Register Rt, int bitpos, Label &L);
@@ -536,7 +536,7 @@ public:
     else
       branch = &Assembler::tbnz;
 
-    if (far) {
+    if (isfar) {
       Label L;
       (this->*branch)(Rt, bitpos, L);
       b(dest);

@@ -1557,6 +1557,11 @@ public:
 
 #undef INSN
 
+#ifdef _WIN64
+// In MSVC, `mvn` is defined as a macro and it affects compilation
+#undef mvn
+#endif
+
   // Aliases for short forms of orn
 void mvn(Register Rd, Register Rm,
             enum shift_kind kind = LSL, unsigned shift = 0) {
