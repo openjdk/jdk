@@ -47,16 +47,15 @@ import static java.lang.invoke.MethodType.methodType;
 @Fork(value = 1, jvmArgsAppend = "--add-exports=java.base/sun.net.www=ALL-UNNAMED")
 public class ThreadLocalParseUtil {
 
-    private static final MethodHandles.Lookup LOOKUP;
     private static final MethodHandle MH_DECODE;
     private static final MethodHandle MH_TO_URI;
 
     static {
+        final MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            LOOKUP = MethodHandles.lookup();
             Class<?> c = Class.forName("sun.net.www.ParseUtil");
-            MH_DECODE = LOOKUP.findStatic(c, "decode", methodType(String.class, String.class));
-            MH_TO_URI = LOOKUP.findStatic(c, "toURI", methodType(URI.class, URL.class));
+            MH_DECODE = lookup.findStatic(c, "decode", methodType(String.class, String.class));
+            MH_TO_URI = lookup.findStatic(c, "toURI", methodType(URI.class, URL.class));
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException e) {
             throw new ExceptionInInitializerError(e);
         }
