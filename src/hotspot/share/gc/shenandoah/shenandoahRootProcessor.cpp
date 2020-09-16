@@ -209,7 +209,6 @@ void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops, CLDClosur
           "Expect class unloading when Shenandoah cycle is running");
   assert(clds != NULL, "Only possible with CLD closure");
 
-  AlwaysTrueClosure always_true;
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
 
   ResourceMark rm;
