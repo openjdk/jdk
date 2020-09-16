@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ public class DKSTest {
                 new KeyStore.PasswordProtection("test12".toCharArray()));
             put("eckeystore1",
                 new KeyStore.PasswordProtection("password".toCharArray()));
-            put("eckeystore2",
-                new KeyStore.PasswordProtection("password".toCharArray()));
             put("truststore",
                 new KeyStore.PasswordProtection("changeit".toCharArray()));
             put("empty",
@@ -68,8 +66,6 @@ public class DKSTest {
             put("pw_keystore",
                 new KeyStore.PasswordProtection("wrong".toCharArray()));
             put("eckeystore1",
-                new KeyStore.PasswordProtection("wrong".toCharArray()));
-            put("eckeystore2",
                 new KeyStore.PasswordProtection("wrong".toCharArray()));
         }};
 
@@ -154,7 +150,7 @@ public class DKSTest {
          * domain keystore: keystores
          */
         config = new URI(CONFIG + "#keystores");
-        expected = 2 + 1 + 1 + 1;
+        expected = 2 + 1 + 1;
         keystore = KeyStore.getInstance("DKS");
         // load entries
         keystore.load(new DomainLoadStoreParameter(config, PASSWORDS));
