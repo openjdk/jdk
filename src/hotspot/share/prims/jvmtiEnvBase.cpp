@@ -822,8 +822,7 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
   uint32_t debug_bits = 0;
 #endif
   Thread *current_thread = Thread::current();
-  assert(current_thread == java_thread ||
-         SafepointSynchronize::is_at_safepoint() ||
+  assert(SafepointSynchronize::is_at_safepoint() ||
          java_thread->is_handshake_safe_for(current_thread),
          "call by myself / at safepoint / at handshake");
   int count = 0;

@@ -75,6 +75,7 @@ class HandshakeState {
   JavaThread* _handshakee;
   FilterQueue<HandshakeOperation*> _queue;
   Mutex _lock;
+  Thread* _active_handshaker;
 
   bool claim_handshake();
   bool possibly_can_process_handshake();
@@ -98,28 +99,16 @@ class HandshakeState {
 
   void process_by_self();
 
-  class ProcessResult {
-   public:
-    enum Result {
+  enum ProcessResult {
       _no_operation = 0,
       _not_safe,
       _claim_failed,
-      _success,
+      _processed,
+      _succeed,
       _number_states
-    };
-   private:
-    int _processed;
-    Result _result;
-   public:
-    ProcessResult(int processed) : _processed(processed), _result(_success)
-      { if (_processed <= 0) _result = _no_operation; }
-    ProcessResult(Result r) : _processed(0), _result(r)  {}
-    int processed() { return _processed; }
-    Result result() { return _processed > 0 ? _success : _result; }
   };
-  ProcessResult try_process();
+  ProcessResult try_process(HandshakeOperation* match_op);
 
-  Thread* _active_handshaker;
   Thread* active_handshaker() const { return _active_handshaker; }
 };
 

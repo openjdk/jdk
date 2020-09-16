@@ -83,7 +83,7 @@ class HandshakeSpinYield : public StackObj {
   jlong _last_spin_start_ns;
   jlong _spin_time_ns;
 
-  int _result_count[2][HandshakeState::ProcessResult::_number_states];
+  int _result_count[2][HandshakeState::_number_states];
   int _prev_result_pos;
 
   int current_result_pos() { return (_prev_result_pos + 1) & 0x1; }
@@ -104,7 +104,7 @@ class HandshakeSpinYield : public StackObj {
   }
 
   bool state_changed() {
-    for (int i = 0; i < HandshakeState::ProcessResult::_number_states; i++) {
+    for (int i = 0; i < HandshakeState::_number_states; i++) {
       if (_result_count[0][i] != _result_count[1][i]) {
         return true;
       }
@@ -114,7 +114,7 @@ class HandshakeSpinYield : public StackObj {
 
   void reset_state() {
     _prev_result_pos++;
-    for (int i = 0; i < HandshakeState::ProcessResult::_number_states; i++) {
+    for (int i = 0; i < HandshakeState::_number_states; i++) {
       _result_count[current_result_pos()][i] = 0;
     }
   }
@@ -131,7 +131,7 @@ class HandshakeSpinYield : public StackObj {
   }
 
   void add_result(HandshakeState::ProcessResult pr) {
-    _result_count[current_result_pos()][pr.result()]++;
+    _result_count[current_result_pos()][pr]++;
   }
 
   void process() {
@@ -192,12 +192,12 @@ void VM_Handshake::handle_timeout() {
   fatal("Handshake operation timed out");
 }
 
-static void log_handshake_info(jlong start_time_ns, const char* name, int targets, int vmt_executed, const char* extra = NULL) {
+static void log_handshake_info(jlong start_time_ns, const char* name, int targets, int requester_executed, const char* extra = NULL) {
   if (log_is_enabled(Info, handshake)) {
     jlong completion_time = os::javaTimeNanos() - start_time_ns;
-    log_info(handshake)("Handshake \"%s\", Targeted threads: %d, Executed by targeted threads: %d, Total completion time: " JLONG_FORMAT " ns%s%s",
+    log_info(handshake)("Handshake \"%s\", Targeted threads: %d, Executed by requesting thread: %d, Total completion time: " JLONG_FORMAT " ns%s%s",
                         name, targets,
-                        targets - vmt_executed,
+                        requester_executed,
                         completion_time,
                         extra != NULL ? ", " : "",
                         extra != NULL ? extra : "");
@@ -241,9 +241,11 @@ class VM_HandshakeAllThreads: public VM_Handshake {
       for (JavaThread *thr = jtiwh.next(); thr != NULL; thr = jtiwh.next()) {
         // A new thread on the ThreadsList will not have an operation,
         // hence it is skipped in handshake_try_process.
-        HandshakeState::ProcessResult pr = thr->handshake_state()->try_process();
+        HandshakeState::ProcessResult pr = thr->handshake_state()->try_process(_op);
         hsy.add_result(pr);
-        executed_by_driver += pr.processed();
+        if (pr == HandshakeState::_succeed) {
+          executed_by_driver++;
+        }
       }
       hsy.process();
     } while (!_op->is_completed());
@@ -268,6 +270,7 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
 
   // Only actually execute the operation for non terminated threads.
   if (!thread->is_terminated()) {
+    NoSafepointVerifier nsv;
     _handshake_cl->do_thread(thread);
   }
 
@@ -310,9 +313,10 @@ void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
   int executed_by_driver = 0;
   HandshakeSpinYield hsy(start_time_ns);
   while (!op.is_completed()) {
-    HandshakeState::ProcessResult pr(0);
-    pr = target->handshake_state()->try_process();
-    executed_by_driver += pr.processed();
+    HandshakeState::ProcessResult pr = target->handshake_state()->try_process(&op);
+    if (pr == HandshakeState::_succeed) {
+      executed_by_driver++;
+    }
     if (op.is_completed()) {
       break;
     }
@@ -456,20 +460,30 @@ bool HandshakeState::claim_handshake() {
   return false;
 }
 
-HandshakeState::ProcessResult HandshakeState::try_process() {
+const char* executioner_name(Thread* current_thread, Thread* handshakee, bool current_is_requester) {
+  if (current_thread == handshakee) return "self(JavaThread)";
+  if (current_is_requester) {
+    if (current_thread->is_VM_thread()) return "handshaker(VM Thread)";
+    else return "handshaker(JavaThread)";
+  }
+  if (current_thread->is_VM_thread()) return "cooperative(VM Thread)";
+  else return "cooperative(JavaThread)";
+}
+
+HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* match_op) {
   if (!has_operation()) {
     // JT has already cleared its handshake
-    return ProcessResult(HandshakeState::ProcessResult::_no_operation);
+    return HandshakeState::_no_operation;
   }
 
   if (!possibly_can_process_handshake()) {
     // JT is observed in an unsafe state, it must notice the handshake itself
-    return ProcessResult(HandshakeState::ProcessResult::_not_safe);
+    return HandshakeState::_not_safe;
   }
 
   // Claim the mutex if there still an operation to be executed.
   if (!claim_handshake()) {
-    return ProcessResult(HandshakeState::ProcessResult::_claim_failed);
+    return HandshakeState::_claim_failed;
   }
 
   // If we own the mutex at this point and while owning the mutex
@@ -477,23 +491,39 @@ HandshakeState::ProcessResult HandshakeState::try_process() {
   // getting caught by the mutex.
   if (!can_process_handshake()) {
     _lock.unlock();
-    return ProcessResult(HandshakeState::ProcessResult::_not_safe);
+    return HandshakeState::_not_safe;
   }
 
+  Thread* current_thread = Thread::current();
+
+  HandshakeState::ProcessResult pr_ret = HandshakeState::_processed;
   int executed = 0;
+
   do {
     HandshakeOperation* op = pop_for_processor();
     if (op != NULL) {
       assert(SafepointMechanism::local_poll_armed(_handshakee), "Must be");
       assert(op->_target == NULL || _handshakee == op->_target, "Wrong thread");
-      log_trace(handshake)("Processing handshake " INTPTR_FORMAT " by %s", p2i(op), Thread::current()->is_VM_thread() ? "VMThread" : "Handshaker");
-      _active_handshaker = Thread::current();
+      log_trace(handshake)("Processing handshake " INTPTR_FORMAT " by %s", p2i(op),
+                           executioner_name(current_thread, _handshakee, op == match_op));
+
+      if (op == match_op) {
+        pr_ret = HandshakeState::_succeed;
+      }
+
+      _active_handshaker = current_thread;
       op->do_handshake(_handshakee);
       _active_handshaker = NULL;
+
       executed++;
     }
   } while (has_operation_for_processor());
 
   _lock.unlock();
-  return ProcessResult(executed);
+
+  log_trace(handshake)("Thread %s(" INTPTR_FORMAT ") executed %d ops for JavaThread: " INTPTR_FORMAT " %s target op: " INTPTR_FORMAT,
+                       executioner_name(current_thread, _handshakee, pr_ret == HandshakeState::_succeed),
+                       p2i(current_thread), executed, p2i(_handshakee),
+                       pr_ret == HandshakeState::_succeed ? "including" : "excluding", p2i(match_op));
+  return pr_ret;
 }

@@ -219,8 +219,7 @@ int JvmtiThreadState::count_frames() {
 #ifdef ASSERT
   Thread *current_thread = Thread::current();
 #endif
-  assert(current_thread == get_thread() ||
-         SafepointSynchronize::is_at_safepoint() ||
+  assert(SafepointSynchronize::is_at_safepoint() ||
          get_thread()->is_handshake_safe_for(current_thread),
          "call by myself / at safepoint / at handshake");
 
