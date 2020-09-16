@@ -437,9 +437,6 @@ public:
   OptoReg::Name  c_frame_pointer() const;
   static RegMask c_frame_ptr_mask;
 
-  // !!!!! Special stuff for building ScopeDescs
-  virtual int      regnum_to_fpu_offset(int regnum);
-
   // Is this branch offset small enough to be addressed by a short branch?
   bool is_short_branch_offset(int rule, int br_size, int offset);
 
