@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,50 +22,12 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1MMUTRACKER_HPP
-#define SHARE_GC_G1_G1MMUTRACKER_HPP
+#ifndef SHARE_GC_G1_G1MMUTRACKERQUEUE_HPP
+#define SHARE_GC_G1_G1MMUTRACKERQUEUE_HPP
 
 #include "gc/shared/gcId.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
-
-// Two major user controls over G1 behavior are setting a pause time goal (MaxGCPauseMillis),
-// over a time slice (GCPauseIntervalMillis). This defines the Minimum Mutator
-// Utilisation (MMU) goal.
-//
-// * Definitions *
-// Mutator Utilisation:
-// - for a given time slice duration "ts",
-// - mutator utilisation is the following fraction:
-//     non_gc_time / ts
-//
-// Minimum Mutator Utilisation (MMU):
-// - the worst mutator utilisation across all time slices.
-//
-// G1MMUTracker keeps track of the GC work and decides when it is OK to do GC work
-// and for how long so that the MMU invariants are maintained.
-//
-// ***** ALL TIMES ARE IN SECS!!!!!!! *****
-// this is the "interface"
-class G1MMUTracker: public CHeapObj<mtGC> {
-protected:
-  double          _time_slice;
-  double          _max_gc_time; // this is per time slice
-
-public:
-  G1MMUTracker(double time_slice, double max_gc_time);
-
-  virtual void add_pause(double start, double end) = 0;
-  virtual double when_sec(double current_time, double pause_time) = 0;
-
-  double max_gc_time() const {
-    return _max_gc_time;
-  }
-
-  inline double when_max_gc_sec(double current_time) {
-    return when_sec(current_time, max_gc_time());
-  }
-};
 
 class G1MMUTrackerQueueElem {
 private:
@@ -88,13 +50,31 @@ public:
   }
 };
 
-// this is an implementation of the MMUTracker using a (fixed-size) queue
-// that keeps track of all the recent pause times
-class G1MMUTrackerQueue: public G1MMUTracker {
+
+// This implementation uses a fixed-size queue to keep track of all 
+// recent pause times. Two major user controls over G1 behavior are 
+// setting a pause time goal (MaxGCPauseMillis), over a time slice 
+// (GCPauseIntervalMillis). This defines the Minimum Mutator 
+// Utilisation (MMU) goal.
+//
+// * Definitions *
+// Mutator Utilisation:
+// - for a given time slice duration "ts",
+// - mutator utilisation is the following fraction:
+//     non_gc_time / ts
+//
+// Minimum Mutator Utilisation (MMU):
+// - the worst mutator utilisation across all time slices.
+//
+// ***** ALL TIMES ARE IN SECS!!!!!!! *****
+class G1MMUTrackerQueue: public CHeapObj<mtGC> {
 private:
   enum PrivateConstants {
     QueueLength = 64
   };
+
+  double                _time_slice;
+  double                _max_gc_time; // this is per time slice
 
   // The array keeps track of all the pauses that fall within a time
   // slice (the last time slice during which pauses took place).
@@ -123,9 +103,17 @@ private:
 public:
   G1MMUTrackerQueue(double time_slice, double max_gc_time);
 
-  virtual void add_pause(double start, double end);
+  void add_pause(double start, double end);
 
-  virtual double when_sec(double current_time, double pause_time);
+  double when_sec(double current_time, double pause_time);
+
+  double max_gc_time() const {
+    return _max_gc_time;
+  }
+
+  inline double when_max_gc_sec(double current_time) {
+    return when_sec(current_time, max_gc_time());
+  }  
 };
 
-#endif // SHARE_GC_G1_G1MMUTRACKER_HPP
+#endif // SHARE_GC_G1_G1MMUTRACKERQUEUE_HPP

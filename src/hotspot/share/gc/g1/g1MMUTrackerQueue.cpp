@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1MMUTracker.hpp"
+#include "gc/g1/g1MMUTrackerQueue.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -37,12 +37,9 @@
 
 /***** ALL TIMES ARE IN SECS!!!!!!! *****/
 
-G1MMUTracker::G1MMUTracker(double time_slice, double max_gc_time) :
-  _time_slice(time_slice),
-  _max_gc_time(max_gc_time) { }
-
 G1MMUTrackerQueue::G1MMUTrackerQueue(double time_slice, double max_gc_time) :
-  G1MMUTracker(time_slice, max_gc_time),
+  _time_slice(time_slice),
+  _max_gc_time(max_gc_time),
   _head_index(0),
   _tail_index(trim_index(_head_index+1)),
   _no_entries(0) { }
