@@ -752,7 +752,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
 
   PauseKind this_pause = young_gc_pause_kind();
 
-  bool update_stats = !_g1h->evacuation_failed();
+  bool update_stats = should_update_gc_stats();
 
   record_pause(this_pause, start_time_sec, end_time_sec);
 
@@ -1304,17 +1304,22 @@ G1Policy::PauseKind G1Policy::young_gc_pause_kind() const {
   }
 }
 
-void G1Policy::update_gc_pause_time_ratios(PauseKind kind, double start_time_sec, double end_time_sec){
+bool G1Policy::should_update_gc_stats() {
+  return !_g1h->evacuation_failed();
+}
+
+void G1Policy::update_gc_pause_time_ratios(PauseKind kind, double start_time_sec, double end_time_sec) {
 
   double pause_time_sec = end_time_sec - start_time_sec;
   double pause_time_ms = pause_time_sec * 1000.0;
 
   _analytics->compute_pause_time_ratios(end_time_sec, pause_time_ms);
   _analytics->update_recent_gc_times(end_time_sec, pause_time_ms);
+
   if (kind == Cleanup || kind == Remark) {
     _analytics->append_prev_collection_pause_end_ms(pause_time_ms);
   } else {
-    _analytics->set_prev_collection_pause_end_ms(end_time_sec*1000*0);
+    _analytics->set_prev_collection_pause_end_ms(end_time_sec * 1000.0);
   }
 }
 
@@ -1323,10 +1328,11 @@ void G1Policy::record_pause(PauseKind kind, double start, double end) {
   if (kind != FullGC) {
     _mmu_tracker->add_pause(start, end);
   }
-  bool update_stats = !_g1h->evacuation_failed();
-  if (update_stats){
+
+  if (should_update_gc_stats()) {
     update_gc_pause_time_ratios(kind, start, end);
   }
+
   // Manage the mutator time tracking from concurrent start to first mixed gc.
   switch (kind) {
     case FullGC:

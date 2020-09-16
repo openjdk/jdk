@@ -285,6 +285,13 @@ private:
   PauseKind young_gc_pause_kind() const;
   // Record the given STW pause with the given start and end times (in s).
   void record_pause(PauseKind kind, double start, double end);
+
+  // Evacuation failures skew the timing too much to be considered for statistics updates.
+  // We make the assumption that these are rare.
+  bool should_update_gc_stats();
+
+  void update_gc_pause_time_ratios(PauseKind kind, double start_sec, double end_sec);
+
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
 
@@ -438,8 +445,6 @@ public:
   void print_age_table();
 
   void update_survivors_policy();
-
-  void update_gc_pause_time_ratios(PauseKind kind, double start_sec, double end_sec);
 
   virtual bool force_upgrade_to_full() {
     return false;

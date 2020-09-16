@@ -151,7 +151,7 @@ void G1Analytics::report_alloc_rate_ms(double alloc_rate) {
 
 void G1Analytics::compute_pause_time_ratios(double end_time_sec, double pause_time_ms) {
   double long_interval_ms = (end_time_sec - oldest_known_gc_end_time_sec()) * 1000.0;
-  _long_term_pause_time_ratio = (_recent_gc_times_ms->sum() + pause_time_ms) / long_interval_ms;
+  _long_term_pause_time_ratio = _recent_gc_times_ms->sum() / long_interval_ms;
   _long_term_pause_time_ratio = clamp(_long_term_pause_time_ratio, 0.0, 1.0);
 
   double short_interval_ms = (end_time_sec - most_recent_gc_end_time_sec()) * 1000.0;
