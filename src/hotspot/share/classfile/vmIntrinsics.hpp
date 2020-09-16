@@ -875,3 +875,5 @@
    do_name(     forEachRemaining_signature,                      "(Ljava/util/function/IntConsumer;)V")                 \
 
     /*end*/
+
+#endif // SHARE_CLASSFILE_VMINTRINSICS_HPP
