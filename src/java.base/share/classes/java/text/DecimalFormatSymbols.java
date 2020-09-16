@@ -1148,9 +1148,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private transient volatile boolean currencyInitialized;
 
     /**
-     * Cached hash code
+     * Cached hash code.
      */
-    private volatile int hashCode;
+    private transient volatile int hashCode;
 
     // Proclaim JDK 1.1 FCS compatibility
     @java.io.Serial
