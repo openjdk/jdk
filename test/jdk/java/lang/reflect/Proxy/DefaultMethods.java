@@ -87,12 +87,24 @@ public class DefaultMethods {
         }
     }
 
+    private static Method findDefaultMethod(Class<?> refc, Method m) {
+        try {
+            assertTrue(refc.isInterface());
+
+            Method method = refc.getMethod(m.getName(), m.getParameterTypes());
+            assertTrue(method.isDefault());
+            return method;
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Test
     public void test() {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         Object proxy = Proxy.newProxyInstance(loader, new Class<?>[] { I1.class, I2.class},
                 (o, method, params) -> {
-                    return Proxy.invokeSuper(o, I2.class, method, params);
+                    return Proxy.invokeDefaultMethod(o, findDefaultMethod(I2.class, method), params);
                 });
         I1 i1 = (I1) proxy;
         assertEquals(i1.m(), 20);
@@ -102,14 +114,14 @@ public class DefaultMethods {
     @DataProvider(name = "defaultMethods")
     private Object[][] defaultMethods() {
         return new Object[][] {
-                new Object[] { new Class<?>[] { I1.class, I2.class }, true, 10 },
-                new Object[] { new Class<?>[] { I1.class, I3.class }, true, 10 },
-                new Object[] { new Class<?>[] { I12.class }, false, -1 },
+                new Object[] { new Class<?>[] { I1.class, I2.class },  true, 10 },
+                new Object[] { new Class<?>[] { I1.class, I3.class },  true, 10 },
                 new Object[] { new Class<?>[] { I1.class, I12.class }, true, 10 },
                 new Object[] { new Class<?>[] { I2.class, I12.class }, true, 20 },
-                new Object[] { new Class<?>[] { I4.class }, true, 40 },
+                new Object[] { new Class<?>[] { I4.class },            true, 40 },
+                new Object[] { new Class<?>[] { I4.class, I3.class },  true, 40 },
+                new Object[] { new Class<?>[] { I12.class },                     false, -1 },
                 new Object[] { new Class<?>[] { I12.class, I1.class, I2.class }, false, -1 },
-                new Object[] { new Class<?>[] { I4.class, I3.class }, true, 40 },
         };
     }
 
@@ -124,7 +136,7 @@ public class DefaultMethods {
                                      .anyMatch(intf -> method.getDeclaringClass() == intf),
                                Arrays.toString(proxy.getClass().getInterfaces()));
                     if (method.isDefault()) {
-                        return Proxy.invokeSuper(proxy, method.getDeclaringClass(), method, params);
+                        return Proxy.invokeDefaultMethod(proxy, method, params);
                     } else {
                         return -1;
                     }
@@ -153,41 +165,42 @@ public class DefaultMethods {
             new Object[] { new Class<?>[] { I1.class, I3.class }, I3.class, 20 },
             new Object[] { new Class<?>[] { I3.class, I4.class }, I3.class, 20 },
             new Object[] { new Class<?>[] { I3.class, I4.class }, I4.class, 40 },
+            // "m" can be resolved in more than one proxy interface
+            new Object[] { new Class<?>[] { I4.class, I3.class }, I4.class, 40 },
             new Object[] { new Class<?>[] { I4.class, I3.class }, I3.class, 20 },
         };
     }
 
     @Test(dataProvider = "supers")
-    public void testSuper(Class<?>[] intfs, Class<?> superIntf, int expected) throws Exception {
+    public void testSuper(Class<?>[] intfs, Class<?> proxyInterface, int expected) throws Exception {
         InvocationHandler ih = (proxy, method, params) -> {
-            System.out.format("invoking %s with parameters: %s%n", method, Arrays.toString(params));
             switch (method.getName()) {
                 case "m":
                     assertTrue(method.isDefault());
-                    return Proxy.invokeSuper(proxy, superIntf, method, params);
+                    return Proxy.invokeDefaultMethod(proxy, findDefaultMethod(proxyInterface, method), params);
                 default:
                     throw new UnsupportedOperationException(method.toString());
             }
         };
-        ClassLoader loader = superIntf.getClassLoader();
+        ClassLoader loader = proxyInterface.getClassLoader();
         Object proxy = Proxy.newProxyInstance(loader, intfs, ih);
-        if (superIntf == I1.class) {
+        if (proxyInterface == I1.class) {
             I1 i1 = (I1) proxy;
             assertEquals(i1.m(), expected);
-        } else if (superIntf == I2.class) {
+        } else if (proxyInterface == I2.class) {
             I2 i2 = (I2) proxy;
             assertEquals(i2.m(), expected);
-        } else if (superIntf == I3.class) {
+        } else if (proxyInterface == I3.class) {
             I3 i3 = (I3) proxy;
             assertEquals(i3.m(), expected);
-        } else if (superIntf == I4.class) {
+        } else if (proxyInterface == I4.class) {
             I4 i4 = (I4) proxy;
             assertEquals(i4.m(), expected);
         } else {
-            throw new UnsupportedOperationException(superIntf.toString());
+            throw new UnsupportedOperationException(proxyInterface.toString());
         }
-        // invoke via Proxy.invokeSuper directly
-        assertEquals(Proxy.invokeSuper(proxy, superIntf, superIntf.getMethod("m")), expected);
+        // invoke via Proxy.invokeDefaultMethod directly
+        assertEquals(Proxy.invokeDefaultMethod(proxy, proxyInterface.getMethod("m")), expected);
     }
 
     // invoke I12 default methods with parameters and var args
@@ -199,7 +212,7 @@ public class DefaultMethods {
                 case "sum":
                 case "concat":
                     assertTrue(method.isDefault());
-                    return Proxy.invokeSuper(proxy, method.getDeclaringClass(), method, params);
+                    return Proxy.invokeDefaultMethod(proxy, method, params);
                 default:
                     throw new UnsupportedOperationException(method.toString());
             }
@@ -209,7 +222,8 @@ public class DefaultMethods {
         assertEquals(i12.sum(1, 2), 3);
         assertEquals(i12.concat(1, 2, 3, 4), new Object[]{1, 2, 3, 4});
         Method m = I12.class.getMethod("concat", Object.class, Object[].class);
-        assertEquals(Proxy.invokeSuper(i12, I12.class, m, 100, new Object[] {"foo", true, "bar"}),
+        assertTrue(m.isDefault());
+        assertEquals(Proxy.invokeDefaultMethod(i12, m, 100, new Object[] {"foo", true, "bar"}),
                      new Object[] {100, "foo", true, "bar"});
     }
 
@@ -220,10 +234,14 @@ public class DefaultMethods {
         Object proxy = Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
         Method m1 = I4.class.getMethod("m");
         assertTrue(m1.getDeclaringClass() == I4.class);
-        Proxy.invokeSuper(proxy, I4.class, m1);
-        Proxy.invokeSuper(proxy, I4.class, m1, new Object[0]);
+        assertTrue(m1.isDefault());
+        Proxy.invokeDefaultMethod(proxy, m1);
+        Proxy.invokeDefaultMethod(proxy, m1, new Object[0]);
+
         Method m2 = I4.class.getMethod("mix", int.class, String.class);
-        Proxy.invokeSuper(proxy, I4.class, m2, Integer.valueOf(100), "foo");
+        assertTrue(m1.getDeclaringClass() == I4.class);
+        assertTrue(m1.isDefault());
+        Proxy.invokeDefaultMethod(proxy, m2, Integer.valueOf(100), "foo");
     }
 
     /*
@@ -239,59 +257,55 @@ public class DefaultMethods {
         proxy.m();
     }
 
-    // invoke a method which is not defined in the specific interface
+    /*
+     * Invoke a non proxy (default) method
+     */
     @Test(expectedExceptions = {IllegalArgumentException.class})
     public void invokeNonProxyMethod() throws Exception {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I3 proxy = (I3) Proxy.newProxyInstance(loader, new Class<?>[]{I3.class}, HANDLER);
         Method m = I4.class.getMethod("mix", int.class, String.class);
-        Proxy.invokeSuper(proxy, I3.class, m);
+        assertTrue(m.isDefault());
+        Proxy.invokeDefaultMethod(proxy, m);
     }
 
     /*
-     * Invoke I2::m a method on an indirect superinterface of the proxy class
+     * Invoke I2::m that is declared in an indirect superinterface of the proxy class
      */
-    @Test(expectedExceptions = {IllegalArgumentException.class})
     public void invokeMethodOnIndirectSuperinterface() throws Exception {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I3 proxy = (I3) Proxy.newProxyInstance(loader, new Class<?>[]{I3.class}, HANDLER);
         Method method = I3.class.getMethod("m");
         assertTrue(method.getDeclaringClass() == I2.class);
-        proxy.m();
+        assertEquals(proxy.m(), 20);
     }
 
-    // invalid invokespecial
-    @DataProvider(name = "invalidInvokeSpecials")
-    private Object[][] invalidInvokeSpecials() {
+    // negative cases
+    @DataProvider(name = "negativeCases")
+    private Object[][] negativeCases() {
         return new Object[][] {
-                // indirect superinterface method reference of the proxy class
-                // - I3::m is resolved to I2::m
-                // - I2::m is a superinterface of I4
-                new Object[] { new Class<?>[]{ I12.class }, I1.class, I1.class, "m"},
-                new Object[] { new Class<?>[]{ I3.class },  I2.class, I2.class, "m"},
-                new Object[] { new Class<?>[]{ I4.class },  I2.class, I1.class, "m"},
-                // class method
-                new Object[] { new Class<?>[]{ I12.class }, DefaultMethods.class, DefaultMethods.class, "test"},
-                // interface method reference not implemented by the proxy
-                new Object[] { new Class<?>[]{ I12.class }, Runnable.class, Runnable.class, "run"},
-                // method not declared in the proxy interface
-                new Object[] { new Class<?>[]{ I1.class }, I1.class, Runnable.class, "run"},
+                // non-default method
+                new Object[] { new Class<?>[]{ I12.class }, I12.class, "m"},
+                // non-proxy method: not a proxy interface
+                new Object[] { new Class<?>[]{ I3.class },  I1.class, "m"},
+                new Object[] { new Class<?>[]{ I12.class }, DefaultMethods.class, "test"},
+                new Object[] { new Class<?>[]{ I12.class }, Runnable.class, "run"},
                 // I2::privateMethod is a private method
-                new Object[] { new Class<?>[]{ I3.class }, I3.class, I2.class, "privateMethod"},
+                new Object[] { new Class<?>[]{ I3.class }, I2.class, "privateMethod"},
         };
     }
 
-    @Test(dataProvider = "invalidInvokeSpecials", expectedExceptions = {IllegalArgumentException.class})
-    public void testInvokeSpecials(Class<?>[] interfaces, Class<?> refc, Class<?> defc, String name)
+    @Test(dataProvider = "negativeCases", expectedExceptions = {IllegalArgumentException.class})
+    public void testIllegalArgument(Class<?>[] interfaces, Class<?> defc, String name)
             throws Exception {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         Object proxy = Proxy.newProxyInstance(loader, interfaces, HANDLER);
         try {
             Method method = defc.getDeclaredMethod(name);
-            Proxy.invokeSuper(proxy, refc, method);
+            Proxy.invokeDefaultMethod(proxy, method);
         } catch (Throwable e) {
-            System.out.format("%s refc %s method %s::%s exception thrown: \"%s\"%n",
-                              Arrays.toString(interfaces), refc.getName(), defc.getName(), name, e.getMessage());
+            System.out.format("%s method %s::%s exception thrown: \"%s\"%n",
+                              Arrays.toString(interfaces), defc.getName(), name, e.getMessage());
             throw e;
         }
     }
@@ -310,7 +324,8 @@ public class DefaultMethods {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I4 proxy = (I4)Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
         Method m = I4.class.getMethod("mix", int.class, String.class);
-        Proxy.invokeSuper(proxy, I4.class, m, args);
+        assertTrue(m.isDefault());
+        Proxy.invokeDefaultMethod(proxy, m, args);
     }
 
     @Test(expectedExceptions = {IllegalArgumentException.class})
@@ -318,7 +333,8 @@ public class DefaultMethods {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I4 proxy = (I4)Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
         Method m = I4.class.getMethod("mix", int.class, String.class);
-        Proxy.invokeSuper(proxy, I4.class, m, (Object[])null);
+        assertTrue(m.isDefault());
+        Proxy.invokeDefaultMethod(proxy, m, (Object[])null);
     }
 
     @Test
@@ -326,13 +342,13 @@ public class DefaultMethods {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I3 proxy = (I3)Proxy.newProxyInstance(loader, new Class<?>[]{I3.class}, HANDLER);
         Method m = I3.class.getMethod("m3", String[].class);
-        assertTrue(m.isVarArgs());
+        assertTrue(m.isVarArgs() && m.isDefault());
         assertEquals(proxy.m3("a", "b", "cde"), 5);
-        assertEquals(Proxy.invokeSuper(proxy, I3.class, m, (Object)new String[] { "a", "bc" }), 3);
+        assertEquals(Proxy.invokeDefaultMethod(proxy, m, (Object)new String[] { "a", "bc" }), 3);
     }
 
     private static final InvocationHandler HANDLER = (proxy, method, params) -> {
         System.out.format("invoking %s with parameters: %s%n", method, Arrays.toString(params));
-        return Proxy.invokeSuper(proxy, method.getDeclaringClass(), method, params);
+        return Proxy.invokeDefaultMethod(proxy, method, params);
     };
 }
