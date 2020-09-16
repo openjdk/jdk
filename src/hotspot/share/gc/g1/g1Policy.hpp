@@ -286,8 +286,6 @@ private:
   // Record the given STW pause with the given start and end times (in s).
   void record_pause(PauseKind kind, double start, double end);
 
-  // Evacuation failures skew the timing too much to be considered for statistics updates.
-  // We make the assumption that these are rare.
   bool should_update_gc_stats();
 
   void update_gc_pause_time_ratios(PauseKind kind, double start_sec, double end_sec);

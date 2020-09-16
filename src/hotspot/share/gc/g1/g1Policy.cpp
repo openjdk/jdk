@@ -1305,6 +1305,8 @@ G1Policy::PauseKind G1Policy::young_gc_pause_kind() const {
 }
 
 bool G1Policy::should_update_gc_stats() {
+  // Evacuation failures skew the timing too much to be considered for statistics updates.
+  // We make the assumption that these are rare.
   return !_g1h->evacuation_failed();
 }
 
