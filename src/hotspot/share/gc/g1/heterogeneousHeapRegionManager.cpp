@@ -59,7 +59,7 @@ void HeterogeneousHeapRegionManager::initialize(G1RegionToSpaceMapper* heap_stor
 // Dram regions are committed later as needed during mutator region allocation or
 // when young list target length is determined after gc cycle.
 uint HeterogeneousHeapRegionManager::expand_by(uint num_regions, WorkGang* pretouch_workers) {
-  uint num_regions_possible = total_regions_committed() >= max_expandable_length() ? 0 : max_expandable_length() - total_regions_committed();
+  uint num_regions_possible = total_regions_committed() >= max_length() ? 0 : max_length() - total_regions_committed();
   uint num_expanded = expand_nvdimm(MIN2(num_regions, num_regions_possible), pretouch_workers);
   return num_expanded;
 }
@@ -71,11 +71,11 @@ uint HeterogeneousHeapRegionManager::expand_at(uint start, uint num_regions, Wor
   if (num_regions == 0) {
     return 0;
   }
-  uint target_num_regions = MIN2(num_regions, max_expandable_length() - total_regions_committed());
+  uint target_num_regions = MIN2(num_regions, max_length() - total_regions_committed());
   uint end = is_in_nvdimm(start) ? end_index_of_nvdimm() : end_index_of_dram();
 
   uint num_expanded = expand_in_range(start, end, target_num_regions, pretouch_workers);
-  assert(total_regions_committed() <= max_expandable_length(), "must be");
+  assert(total_regions_committed() <= max_length(), "must be");
   return num_expanded;
 }
 
@@ -140,13 +140,13 @@ uint HeterogeneousHeapRegionManager::num_committed_nvdimm() const {
 }
 
 // Return maximum number of regions that heap can expand to.
-uint HeterogeneousHeapRegionManager::max_expandable_length() const {
+uint HeterogeneousHeapRegionManager::max_length() const {
   return _max_regions;
 }
 
 uint HeterogeneousHeapRegionManager::find_unavailable_in_range(uint start_idx, uint end_idx, uint* res_idx) const {
   guarantee(res_idx != NULL, "checking");
-  guarantee(start_idx <= (max_length() + 1), "checking");
+  guarantee(start_idx <= (reserved_length() + 1), "checking");
 
   uint num_regions = 0;
 
@@ -232,8 +232,8 @@ uint HeterogeneousHeapRegionManager::shrink_in_range(uint start, uint end, uint 
 
 uint HeterogeneousHeapRegionManager::find_empty_in_range_reverse(uint start_idx, uint end_idx, uint* res_idx) {
   guarantee(res_idx != NULL, "checking");
-  guarantee(start_idx < max_length(), "checking");
-  guarantee(end_idx < max_length(), "checking");
+  guarantee(start_idx < reserved_length(), "checking");
+  guarantee(end_idx < reserved_length(), "checking");
   if(start_idx > end_idx) {
     return 0;
   }
@@ -385,7 +385,7 @@ uint HeterogeneousHeapRegionManager::find_contiguous(size_t start, size_t end, s
                 "Found region sequence starting at " UINT32_FORMAT ", length " SIZE_FORMAT
                 " that is not empty at " UINT32_FORMAT ". Hr is " PTR_FORMAT, found, num, i, p2i(hr));
     }
-    if (!empty_only && length_unavailable > (max_expandable_length() - total_regions_committed())) {
+    if (!empty_only && length_unavailable > (max_length() - total_regions_committed())) {
       // if 'length_unavailable' number of regions will be made available, we will exceed max regions.
       return G1_NO_HRM_INDEX;
     }

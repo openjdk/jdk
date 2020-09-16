@@ -124,7 +124,7 @@ public:
   virtual HeapRegion* allocate_humongous_allow_expand(uint num_regions);
 
   // Return maximum number of regions that heap can expand to.
-  uint max_expandable_length() const;
+  uint max_length() const;
 
   // Override. Expand in nv-dimm.
   uint expand_by(uint num_regions, WorkGang* pretouch_workers);

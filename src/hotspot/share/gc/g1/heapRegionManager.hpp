@@ -79,8 +79,8 @@ class HeapRegionRange : public StackObj {
 //   committed regions. These may not be contiguous.
 // * _allocated_heapregions_length (not exposed outside this class) is the
 //   number of regions+1 for which we have HeapRegions.
-// * max_expandable_length() returns the maximum number of regions the heap may commit.
-// * max_length() returns the maximum number of regions the heap has reserved.
+// * max_length() returns the maximum number of regions the heap may commit.
+// * max_reserved_length() returns the maximum number of regions the heap has reserved.
 //
 
 class HeapRegionManager: public CHeapObj<mtGC> {
@@ -125,7 +125,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   // Finds the next sequence of unavailable regions starting at the given index. Returns the
   // sequence found as a HeapRegionRange. If no regions can be found, both start and end of
-  // the returned range is equal to max_regions().
+  // the returned range is equal to max_reserved_length().
   HeapRegionRange find_unavailable_from_idx(uint index) const;
   // Finds the next sequence of empty regions starting from start_idx, going backwards in
   // the heap. Returns the length of the sequence found. If this value is zero, no
@@ -241,17 +241,17 @@ public:
     return num_free_regions() * HeapRegion::GrainBytes;
   }
 
-  // Return the number of available (uncommitted) regions.
-  uint available() const { return max_expandable_length() - length(); }
+  // Return the number of regions available (uncommitted) regions.
+  uint available() const { return max_length() - length(); }
 
   // Return the number of regions that have been committed in the heap.
   uint length() const { return _num_committed; }
 
-  // The max number of regions reserved for the heap.
-  uint max_length() const { return (uint)_regions.length(); }
+  // The number of regions reserved for the heap.
+  uint reserved_length() const { return (uint)_regions.length(); }
 
   // Return maximum number of regions that heap can expand to.
-  virtual uint max_expandable_length() const { return max_length(); }
+  virtual uint max_length() const { return reserved_length(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const;
 

@@ -62,7 +62,7 @@ inline HeapRegion* HeapRegionManager::next_region_in_humongous(HeapRegion* hr) c
   assert(is_available(index), "pre-condition");
   assert(hr->is_humongous(), "next_region_in_humongous should only be called for a humongous region.");
   index++;
-  if (index < max_length() && is_available(index) && at(index)->is_continues_humongous()) {
+  if (index < reserved_length() && is_available(index) && at(index)->is_continues_humongous()) {
     return at(index);
   } else {
     return NULL;

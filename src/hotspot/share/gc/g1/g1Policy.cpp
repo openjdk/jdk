@@ -110,7 +110,7 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   if (!use_adaptive_young_list_length()) {
     _young_list_fixed_length = _young_gen_sizer->min_desired_young_length();
   }
-  _young_gen_sizer->adjust_max_new_size(_g1h->max_expandable_regions());
+  _young_gen_sizer->adjust_max_new_size(_g1h->max_regions());
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
@@ -533,9 +533,9 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
   // every time we calculate / recalculate the target young length.
   update_survivors_policy();
 
-  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_expandable_regions(),
+  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_regions(),
          "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
-         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_expandable_regions());
+         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_regions());
   assert_used_and_recalculate_used_equal(_g1h);
 
   phase_times()->record_cur_collection_start_sec(start_time_sec);

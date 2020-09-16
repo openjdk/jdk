@@ -101,7 +101,7 @@ class G1EvacSummary;
 typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
 
-typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
+typedef int RegionIdx_t;   // needs to hold [ 0..max_reserved_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
 
 // The G1 STW is alive closure.
@@ -1062,11 +1062,11 @@ public:
   uint num_regions() const { return _hrm->length(); }
 
   // The max number of regions reserved for the heap. Except for static array
-  // sizing purposes you probably want max_expandable_regions().
-  uint max_regions() const { return _hrm->max_length(); }
+  // sizing purposes you probably want to use max_regions().
+  uint max_reserved_regions() const { return _hrm->reserved_length(); }
 
   // Max number of regions that can be committed.
-  uint max_expandable_regions() const { return _hrm->max_expandable_length(); }
+  uint max_regions() const { return _hrm->max_length(); }
 
   // The number of regions that are completely free.
   uint num_free_regions() const { return _hrm->num_free_regions(); }
