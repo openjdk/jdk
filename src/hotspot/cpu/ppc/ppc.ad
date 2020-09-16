@@ -535,8 +535,8 @@ alloc_class chunk4 (
 // information in this architecture description.
 
 // 1) reg_class inline_cache_reg           ( as defined in frame section )
-// 2) reg_class compiler_method_oop_reg    ( as defined in frame section )
-// 2) reg_class interpreter_method_oop_reg ( as defined in frame section )
+// 2) reg_class compiler_method_reg        ( as defined in frame section )
+// 2) reg_class interpreter_method_reg     ( as defined in frame section )
 // 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
@@ -2165,12 +2165,6 @@ const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
 
-int Matcher::regnum_to_fpu_offset(int regnum) {
-  // No user for this method?
-  Unimplemented();
-  return 999;
-}
-
 const bool Matcher::convL2FSupported(void) {
   // fcfids can do the conversion (>= Power7).
   // fcfid + frsp showed rounding problem when result should be 0x3f800001.
@@ -3605,7 +3599,6 @@ encode %{
     call->_tf                = _tf;
     call->_entry_point       = _entry_point;
     call->_cnt               = _cnt;
-    call->_argsize           = _argsize;
     call->_oop_map           = _oop_map;
     call->_jvms              = _jvms;
     call->_jvmadj            = _jvmadj;
@@ -3806,7 +3799,6 @@ encode %{
     call->_tf          = _tf;
     call->_entry_point = _entry_point;
     call->_cnt         = _cnt;
-    call->_argsize     = _argsize;
     call->_oop_map     = _oop_map;
     guarantee(!_jvms, "You must clone the jvms and adapt the offsets by fix_jvms().");
     call->_jvms        = NULL;
@@ -3863,8 +3855,8 @@ frame %{
   // Inline Cache Register or method for I2C.
   inline_cache_reg(R19); // R19_method
 
-  // Method Oop Register when calling interpreter.
-  interpreter_method_oop_reg(R19); // R19_method
+  // Method Register when calling interpreter.
+  interpreter_method_reg(R19); // R19_method
 
   // Optional: name the operand used by cisc-spilling to access
   // [stack_pointer + offset].
@@ -4773,15 +4765,15 @@ operand inline_cache_regP(iRegPdst reg) %{
   interface(REG_INTER);
 %}
 
-operand compiler_method_oop_regP(iRegPdst reg) %{
-  constraint(ALLOC_IN_RC(rscratch1_bits64_reg)); // compiler_method_oop_reg
+operand compiler_method_regP(iRegPdst reg) %{
+  constraint(ALLOC_IN_RC(rscratch1_bits64_reg)); // compiler_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);
 %}
 
-operand interpreter_method_oop_regP(iRegPdst reg) %{
-  constraint(ALLOC_IN_RC(r19_bits64_reg)); // interpreter_method_oop_reg
+operand interpreter_method_regP(iRegPdst reg) %{
+  constraint(ALLOC_IN_RC(r19_bits64_reg)); // interpreter_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);

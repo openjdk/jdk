@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 template <class T, MEMFLAGS flags, size_t alignment>
 PaddedEnd<T>* PaddedArray<T, flags, alignment>::create_unfreeable(uint length) {
   // Check that the PaddedEnd class works as intended.
-  STATIC_ASSERT(is_aligned_(sizeof(PaddedEnd<T>), alignment));
+  STATIC_ASSERT(is_aligned(sizeof(PaddedEnd<T>), alignment));
 
   // Allocate a chunk of memory large enough to allow for some alignment.
   void* chunk = AllocateHeap(length * sizeof(PaddedEnd<T, alignment>) + alignment, flags);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public final class PSSParameters extends AlgorithmParametersSpi {
                     throw new IOException("Only MGF1 mgf is supported");
                 }
                 AlgorithmId params = AlgorithmId.parse(
-                    new DerValue(val.getEncodedParams()));
+                        new DerValue(val.getEncodedParams()));
                 String mgfDigestName = params.getName();
                 switch (mgfDigestName) {
                 case "SHA-1":
@@ -126,6 +126,18 @@ public final class PSSParameters extends AlgorithmParametersSpi {
                     break;
                 case "SHA-512/256":
                     mgfSpec = MGF1ParameterSpec.SHA512_256;
+                    break;
+                case "SHA3-224":
+                    mgfSpec = MGF1ParameterSpec.SHA3_224;
+                    break;
+                case "SHA3-256":
+                    mgfSpec = MGF1ParameterSpec.SHA3_256;
+                    break;
+                case "SHA3-384":
+                    mgfSpec = MGF1ParameterSpec.SHA3_384;
+                    break;
+                case "SHA3-512":
+                    mgfSpec = MGF1ParameterSpec.SHA3_512;
                     break;
                 default:
                     throw new IOException

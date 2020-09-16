@@ -1846,6 +1846,7 @@ void FileMapInfo::map_heap_regions() {
 
   if (!HeapShared::open_archive_heap_region_mapped()) {
     assert(open_archive_heap_ranges == NULL && num_open_archive_heap_ranges == 0, "sanity");
+    MetaspaceShared::disable_full_module_graph();
   }
 }
 

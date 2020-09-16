@@ -423,7 +423,9 @@ public class JarFile extends ZipFile {
                     }
                     man = new Manifest(jv, new ByteArrayInputStream(b), getName());
                 } else {
-                    man = new Manifest(super.getInputStream(manEntry), getName());
+                    try (InputStream is = super.getInputStream(manEntry)) {
+                        man = new Manifest(is, getName());
+                    }
                 }
                 manRef = new SoftReference<>(man);
             }

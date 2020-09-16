@@ -359,27 +359,27 @@ class frame {
   oop* oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const;
 
   // Oops-do's
-  void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f);
-  void oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache = true);
+  void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f) const;
+  void oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache = true) const;
 
  private:
-  void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f);
+  void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const;
 
   // Iteration of oops
-  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache);
-  void oops_entry_do(OopClosure* f, const RegisterMap* map);
-  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map);
+  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map, bool use_interpreter_oop_map_cache) const;
+  void oops_entry_do(OopClosure* f, const RegisterMap* map) const;
+  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const;
   int adjust_offset(Method* method, int index); // helper for above fn
  public:
   // Memory management
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map) { oops_do_internal(f, cf, map, true); }
-  void nmethods_do(CodeBlobClosure* cf);
+  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const { oops_do_internal(f, cf, map, true); }
+  void nmethods_do(CodeBlobClosure* cf) const;
 
   // RedefineClasses support for finding live interpreted methods on the stack
-  void metadata_do(MetadataClosure* f);
+  void metadata_do(MetadataClosure* f) const;
 
   // Verification
-  void verify(const RegisterMap* map);
+  void verify(const RegisterMap* map) const;
   static bool verify_return_pc(address x);
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");

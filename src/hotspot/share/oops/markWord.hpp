@@ -94,6 +94,7 @@
 class BasicLock;
 class ObjectMonitor;
 class JavaThread;
+class outputStream;
 
 class markWord {
  private:

@@ -43,6 +43,10 @@ import java.security.SignatureException;
  * @run main SignatureOffsets SunEC SHA224withECDSA
  * @run main SignatureOffsets SunEC SHA384withECDSA
  * @run main SignatureOffsets SunEC SHA512withECDSA
+ * @run main SignatureOffsets SunEC SHA3-256withECDSA
+ * @run main SignatureOffsets SunEC SHA3-224withECDSA
+ * @run main SignatureOffsets SunEC SHA3-384withECDSA
+ * @run main SignatureOffsets SunEC SHA3-512withECDSA
  */
 public class SignatureOffsets {
 
