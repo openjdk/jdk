@@ -37,7 +37,7 @@ import java.util.spi.ToolProvider;
  *          jdk.unsupported
  *          jdk.charsets
  * @library /test/lib
- * @run main JLinkReproducible4Test
+ * @run main JLinkReproducible3Test
  */
 public class JLinkReproducible3Test {
     static final Path COPIED_JLINK;
