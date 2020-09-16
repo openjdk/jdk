@@ -881,11 +881,10 @@ WB_ENTRY(jint, WB_DeoptimizeFrames(JNIEnv* env, jobject o, jboolean make_not_ent
 WB_END
 
 WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
-  JavaThread* t = JavaThread::current();
   bool result = false;
-  if (t->has_last_Java_frame()) {
-    RegisterMap reg_map(t);
-    javaVFrame *jvf = t->last_java_vframe(&reg_map);
+  if (thread->has_last_Java_frame()) {
+    RegisterMap reg_map(thread);
+    javaVFrame *jvf = thread->last_java_vframe(&reg_map);
     for (jint d = 0; d < depth && jvf != NULL; d++) {
       jvf = jvf->java_sender();
     }

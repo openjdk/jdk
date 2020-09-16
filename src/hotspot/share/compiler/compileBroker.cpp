@@ -841,7 +841,7 @@ void DeoptimizeObjectsALotThread::deopt_objs_alot_thread_entry(JavaThread* threa
 // barrier targets a single thread which is selected round robin.
 void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_single() {
   HandleMark hm(this);
-  while (!this->is_terminated()) {
+  while (true) {
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *deoptee_thread = jtiwh.next(); ) {
       { // Begin new scope for escape barrier
         HandleMarkCleaner hmc(this);
@@ -859,7 +859,7 @@ void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_single() {
 // barrier targets all java threads in the vm at once.
 void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_all() {
   HandleMark hm(this);
-  while (!is_terminated()) {
+  while (true) {
     { // Begin new scope for escape barrier
       HandleMarkCleaner hmc(this);
       ResourceMark rm(this);

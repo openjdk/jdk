@@ -2813,16 +2813,10 @@ bool EscapeBarrier::_deoptimizing_objects_for_all_threads = false;
 bool EscapeBarrier::_self_deoptimization_in_progress      = false;
 
 class EscapeBarrierSuspendHandshake : public HandshakeClosure {
-  JavaThread* _excluded_thread;
  public:
   EscapeBarrierSuspendHandshake(JavaThread* excluded_thread, const char* name) :
-    HandshakeClosure(name),
-    _excluded_thread(excluded_thread) {}
-  void do_thread(Thread* th) {
-    if (th->is_Java_thread() && !th->is_hidden_from_external_view() && (th != _excluded_thread)) {
-      th->set_obj_deopt_flag();
-    }
-  }
+    HandshakeClosure(name) { }
+  void do_thread(Thread* th) { }
 };
 
 void EscapeBarrier::sync_and_suspend_one() {
@@ -2848,7 +2842,7 @@ void EscapeBarrier::sync_and_suspend_one() {
     _deoptee_thread->set_obj_deopt_flag();
   }
 
-  // suspend target thread
+  // Use a handshake to synchronize with the target thread.
   EscapeBarrierSuspendHandshake sh(NULL, "EscapeBarrierSuspendOne");
   Handshake::execute_direct(&sh, _deoptee_thread);
   assert(!_deoptee_thread->has_last_Java_frame() || _deoptee_thread->frame_anchor()->walkable(),
@@ -2882,8 +2876,19 @@ void EscapeBarrier::sync_and_suspend_all() {
 
     _self_deoptimization_in_progress = true;
     _deoptimizing_objects_for_all_threads = true;
+
+    // We set the suspend flags before executing the handshake because then the
+    // setting will be visible after leaving the _thread_blocked state in
+    // JavaThread::wait_for_object_deoptimization(). If we set the flags in the
+    // handshake then the read must happen after the safepoint/handshake poll.
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+      if (jt->is_Java_thread() && !jt->is_hidden_from_external_view() && (jt != _calling_thread)) {
+        jt->set_obj_deopt_flag();
+      }
+    }
   }
 
+  // Use a handshake to synchronize with the other threads.
   EscapeBarrierSuspendHandshake sh(_calling_thread, "EscapeBarrierSuspendAll");
   Handshake::execute(&sh);
 #ifdef ASSERT

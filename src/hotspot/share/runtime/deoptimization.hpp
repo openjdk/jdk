@@ -491,6 +491,12 @@ class EscapeBarrier : StackObj {
   static bool _deoptimizing_objects_for_all_threads;
   static bool _self_deoptimization_in_progress;
 
+  // Suspending is necessary because the target thread's stack must be walked and
+  // object reallocation is not possible in a handshake or at a safepoint.
+  // Suspending is based on handshakes. It is sufficient if the target thread(s)
+  // cannot return to executing bytecodes. Acquiring a lock is ok. Leaving a
+  // safepoint/handshake safe state is not ok.
+  // See also JavaThread::wait_for_object_deoptimization().
   void sync_and_suspend_one();
   void sync_and_suspend_all();
   void resume_one();

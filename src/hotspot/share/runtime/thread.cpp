@@ -119,6 +119,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/singleWriterSynchronizer.hpp"
+#include "utilities/spinYield.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -1924,6 +1925,7 @@ JavaThread::~JavaThread() {
       delete dlv;
     } while (deferred->length() != 0);
     delete deferred_updates();
+    set_deferred_updates(NULL);
   }
 
   // All Java related clean up happens in exit
@@ -2637,57 +2639,62 @@ void JavaThread::java_suspend_self_with_safepoint_check() {
   }
 }
 
+// Wait for another thread to perform object reallocation and relocking on behalf of
+// this thread.
+// This method is very similar to JavaThread::java_suspend_self_with_safepoint_check()
+// and has the same callers. It also performs a raw thread state transition to
+// _thread_blocked and back again to the original state before returning. The current
+// thread is required to change to _thread_blocked in order to be seen to be
+// safepoint/handshake safe whilst suspended and only after becoming handshake safe,
+// the other thread can complete the handshake used to synchronize with this thread
+// and then perform the reallocation and relocking. We cannot use the thread state
+// transition helpers because we arrive here in various states and also because the
+// helpers indirectly call this method.  After leaving _thread_blocked we have to
+// check for safepoint/handshake, except if _thread_in_native. The thread is safe
+// without blocking then. Allowed states are enumerated in
+// SafepointSynchronize::block(). See also EscapeBarrier::sync_and_suspend_*()
+
 void JavaThread::wait_for_object_deoptimization() {
   assert(!has_last_Java_frame() || frame_anchor()->walkable(), "should have walkable stack");
   assert(this == Thread::current(), "invariant");
   JavaThreadState state = thread_state();
 
-  bool should_spin_wait = true;
+  bool spin_wait = os::is_MP();
   do {
     set_thread_state(_thread_blocked);
-    set_suspend_equivalent();
-    {
+    // Check if _external_suspend was set in the previous loop iteration.
+    if (is_external_suspend()) {
+      java_suspend_self();
+    }
+    // Wait for object deoptimization if requested.
+    if (spin_wait) {
+      // A single deoptimization is typically very short. Microbenchmarks
+      // showed 5% better performance when spinning.
+      const uint spin_limit = 10 * SpinYield::default_spin_limit;
+      SpinYield spin(spin_limit);
+      for (uint i = 0; is_obj_deopt_suspend() && i < spin_limit; i++) {
+        spin.wait();
+      }
+      // Spin just once
+      spin_wait = false;
+    } else {
       MonitorLocker ml(this, EscapeBarrier_lock, Monitor::_no_safepoint_check_flag);
-      if (EscapeBarrier::deoptimizing_objects_for_all_threads() ||
-          (is_obj_deopt_suspend() && !should_spin_wait)) {
+      if (is_obj_deopt_suspend()) {
         ml.wait();
       }
-      should_spin_wait = should_spin_wait && is_obj_deopt_suspend();
     }
-    // A single deoptimization is typically very short. Microbenchmarks
-    // showed 5% better performance when spinning.
-    if (should_spin_wait) {
-      // Inspired by HandshakeSpinYield
-      const jlong max_spin_time_ns = 100 /* us */ * (NANOUNITS / MICROUNITS);
-      const int free_cpus = os::active_processor_count() - 1;
-      jlong spin_time_ns = (5 /* us */ * (NANOUNITS / MICROUNITS)) * free_cpus; // zero on UP
-      spin_time_ns = spin_time_ns > max_spin_time_ns ? max_spin_time_ns : spin_time_ns;
-      jlong spin_start = os::javaTimeNanos();
-      while (is_obj_deopt_suspend()) {
-        os::naked_yield();
-        if ((os::javaTimeNanos() - spin_start) > spin_time_ns) {
-          should_spin_wait = false;
-          break;
-        }
-      }
-    }
+    // The current thread could have been suspended again. We have to check for
+    // suspend after restoring the saved state. Without this the current thread
+    // might return to _thread_in_Java and execute bytecode.
     set_thread_state_fence(state);
+  } while (is_obj_deopt_suspend() || is_external_suspend());
 
-    if (handle_special_suspend_equivalent_condition()) {
-      java_suspend_self_with_safepoint_check();
-    }
-
-    // Since we are not using a regular thread-state transition helper here,
-    // we must manually emit the instruction barrier after leaving a safe state.
-    OrderAccess::cross_modify_fence();
-    if (state != _thread_in_native) {
-      SafepointMechanism::process_if_requested(this);
-    }
-
-    // Check for another deopt suspend _after_ checking for safepoint/handshake,
-    // or otherwise a stale value can be seen if the flag was changed with a
-    // handshake while the current thread was _thread_blocked above.
-  } while (is_obj_deopt_suspend());
+  // Since we are not using a regular thread-state transition helper here,
+  // we must manually emit the instruction barrier after leaving a safe state.
+  OrderAccess::cross_modify_fence();
+  if (state != _thread_in_native) {
+    SafepointMechanism::process_if_requested(this);
+  }
 }
 
 #ifdef ASSERT
