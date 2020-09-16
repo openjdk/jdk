@@ -24,9 +24,7 @@
 
 #include "precompiled.hpp"
 
-#include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/stringTable.hpp"
-#include "code/codeCache.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
@@ -34,7 +32,6 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
-#include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/thread.hpp"
