@@ -66,7 +66,7 @@ public class TestHumongousConcurrentStartUndo {
             "-XX:G1HeapRegionSize=" + HeapRegionSize + "m",
             "-XX:InitiatingHeapOccupancyPercent=" + InitiatingHeapOccupancyPercent,
             "-XX:-G1UseAdaptiveIHOP",
-            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",
             "-Xlog:gc*",
             EdenObjectAllocatorWithHumongousAllocation.class.getName());
