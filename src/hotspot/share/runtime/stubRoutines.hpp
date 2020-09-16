@@ -228,6 +228,8 @@ class StubRoutines: AllStatic {
   static address _sha256_implCompressMB;
   static address _sha512_implCompress;
   static address _sha512_implCompressMB;
+  static address _sha3_implCompress;
+  static address _sha3_implCompressMB;
 
   static address _updateBytesCRC32;
   static address _crc_table_adr;
@@ -407,6 +409,8 @@ class StubRoutines: AllStatic {
   static address sha256_implCompressMB() { return _sha256_implCompressMB; }
   static address sha512_implCompress()   { return _sha512_implCompress; }
   static address sha512_implCompressMB() { return _sha512_implCompressMB; }
+  static address sha3_implCompress()     { return _sha3_implCompress; }
+  static address sha3_implCompressMB()   { return _sha3_implCompressMB; }
 
   static address updateBytesCRC32()    { return _updateBytesCRC32; }
   static address crc_table_addr()      { return _crc_table_adr; }

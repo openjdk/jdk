@@ -576,6 +576,7 @@ public class CheckGraalIntrinsics extends GraalTest {
         if (!config.useSHA512Intrinsics()) {
             add(ignore, "sun/security/provider/SHA5." + shaCompressName + "([BI)V");
         }
+        add(toBeInvestigated, "sun/security/provider/SHA3." + shaCompressName + "([BI)V");
     }
 
     private static boolean isJDK9OrHigher() {

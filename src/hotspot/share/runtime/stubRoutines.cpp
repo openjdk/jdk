@@ -146,6 +146,8 @@ address StubRoutines::_sha256_implCompress   = NULL;
 address StubRoutines::_sha256_implCompressMB = NULL;
 address StubRoutines::_sha512_implCompress   = NULL;
 address StubRoutines::_sha512_implCompressMB = NULL;
+address StubRoutines::_sha3_implCompress     = NULL;
+address StubRoutines::_sha3_implCompressMB   = NULL;
 
 address StubRoutines::_updateBytesCRC32 = NULL;
 address StubRoutines::_crc_table_adr =    NULL;
