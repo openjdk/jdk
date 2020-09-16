@@ -28,7 +28,6 @@
 #include "gc/shared/gcArguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
 size_t EpsilonArguments::conservative_max_heap_alignment() {
