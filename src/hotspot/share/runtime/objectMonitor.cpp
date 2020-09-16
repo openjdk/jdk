@@ -241,9 +241,9 @@ void ObjectMonitor::operator delete[] (void *p) {
   operator delete(p);
 }
 
-#ifdef ASSERT
 // Check that object() and set_object() are called from the right context:
 static void check_object_context() {
+#ifdef ASSERT
   Thread* self = Thread::current();
   if (self->is_Java_thread()) {
     // Mostly called from JavaThreads so sanity check the thread state.
@@ -261,13 +261,11 @@ static void check_object_context() {
     // can call here via the VMThread so sanity check it.
     assert(self->is_VM_thread(), "must be");
   }
-}
 #endif // ASSERT
+}
 
 oop ObjectMonitor::object() const {
-#ifdef ASSERT
   check_object_context();
-#endif
   if (_object.is_null()) {
     return NULL;
   }
@@ -282,9 +280,7 @@ oop ObjectMonitor::object_peek() const {
 }
 
 void ObjectMonitor::set_object(oop obj) {
-#ifdef ASSERT
   check_object_context();
-#endif
   if (_object.is_null()) {
     _object = WeakHandle(_oop_storage, obj);
   } else {
