@@ -1,0 +1,596 @@
+name: Submit tests
+
+on:
+  push:
+    branches-ignore: [master]
+
+env:
+  BOOT_JDK_VERSION: '14.0.2'
+  JTREG_VERSION: 'jtreg5.1-b01'
+  GTEST_VERSION: 'release-1.8.1'
+
+jobs:
+  prerequisites:
+    name: Prerequisites
+    runs-on: 'ubuntu-latest'
+    steps:
+    - name: Determine unique bundle identifier
+      run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
+
+    - name: Check if a jtreg image is present in the cache
+      id: jtreg
+      uses: actions/cache@v2
+      with:
+        path: ~/jtreg/
+        key: jtreg-${{ env.JTREG_VERSION }}-v1
+
+    - name: Checkout the jtreg source
+      uses: actions/checkout@v2
+      with:
+        repository: 'openjdk/jtreg'
+        ref: ${{ env.JTREG_VERSION }}
+      if: steps.jtreg.outputs.cache-hit != 'true'
+
+    - name: Build jtreg
+      run: sh make/build-all.sh ${JAVA_HOME}
+      if: steps.jtreg.outputs.cache-hit != 'true'
+
+    - name: Move jtreg image to destination folder
+      run: mv build/images/jtreg ~/
+      if: steps.jtreg.outputs.cache-hit != 'true'
+
+    - name: Store jtreg for later steps
+      uses: actions/upload-artifact@v2
+      with:
+        name: jtreg_${{ env.JTREG_VERSION }}_${{ env.bundleid }}
+        path: ~/jtreg/
+
+  linux_x64_build:
+    if: true
+    name: Linux x64 (build)
+    runs-on: 'ubuntu-latest'
+    needs: prerequisites
+    env:
+      BOOT_JDK_FILENAME: 'openjdk-14.0.2_linux-x64_bin.tar.gz'
+      BOOT_JDK_URL: 'https://download.java.net/java/GA/jdk14.0.2/205943a0976c4ed48cb16f1043c5c647/12/GPL/openjdk-14.0.2_linux-x64_bin.tar.gz'
+      BOOT_JDK_SHA256: '91310200f072045dc6cef2c8c23e7e6387b37c46e9de49623ce0fa461a24623d'
+
+    steps:
+    - name: Determine unique bundle identifier
+      run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
+
+    - name: Checkout the source
+      uses: actions/checkout@v2
+      with:
+        path: jdk
+
+    - name: Restore boot JDK from cache
+      id: bootjdk
+      uses: actions/cache@v2
+      with:
+        path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+        key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-v1
+
+    - name: Download boot JDK
+      run: |
+        mkdir -p "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+        wget -O "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" "${BOOT_JDK_URL}"
+        echo "${BOOT_JDK_SHA256} ${HOME}/bootjdk/${BOOT_JDK_FILENAME}" | sha256sum -c >/dev/null -
+        tar -xf "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" -C "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+      if: steps.bootjdk.outputs.cache-hit != 'true'
+
+    - name: Restore jtreg artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: jtreg_${{ env.JTREG_VERSION }}_${{ env.bundleid }}
+        path: ~/jtreg/
+
+    - name: Checkout gtest sources
+      uses: actions/checkout@v2
+      with:
+        repository: 'google/googletest'
+        ref: ${{ env.GTEST_VERSION }}
+        path: gtest
+
+    - name: Install dependencies
+      run: sudo apt-get install libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
+
+    - name: Configure
+      run: >
+        bash configure
+        --with-conf-name=linux-x64-debug
+        --enable-debug
+        --with-target-bits=64
+        --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+        --with-version-build=0
+        --with-boot-jdk=${HOME}/bootjdk/${BOOT_JDK_VERSION}/jdk-${BOOT_JDK_VERSION}
+        --with-jtreg=${HOME}/jtreg
+        --with-gtest=${GITHUB_WORKSPACE}/gtest
+        --with-default-make-target="product-bundles test-bundles"
+        --with-zlib=system
+        --enable-jtreg-failure-handler
+        --with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK
+        --disable-manpages
+      working-directory: jdk
+
+    - name: Build
+      run: make CONF_NAME=linux-x64-debug
+      working-directory: jdk
+
+    - name: Persist test bundles
+      uses: actions/upload-artifact@v2
+      with:
+        name: jdk-linux-x64-debug_${{ env.bundleid }}
+        path: |
+          jdk/build/linux-x64-debug/bundles/jdk-16-internal+0_linux-x64_bin-debug.tar.gz
+          jdk/build/linux-x64-debug/bundles/jdk-16-internal+0_linux-x64_bin-tests-debug.tar.gz
+
+  linux_x64_test:
+    if: true
+    name: Linux x64
+    runs-on: 'ubuntu-latest'
+    needs: linux_x64_build
+
+    strategy:
+      matrix:
+        test:
+          - test/jdk/:tier1_part1
+          - test/jdk/:tier1_part2
+          - test/jdk/:tier1_part3
+          - test/langtools/:tier1
+          - test/hotspot/jtreg/:tier1_common
+          - test/hotspot/jtreg/:tier1_compiler
+          - test/hotspot/jtreg/:tier1_gc
+          - test/hotspot/jtreg/:tier1_runtime
+          - test/hotspot/jtreg/:tier1_serviceability
+
+    steps:
+    - name: Determine unique bundle identifier
+      run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
+
+    - name: Checkout the source
+      uses: actions/checkout@v2
+
+    - name: Restore boot JDK from cache
+      id: bootjdk
+      uses: actions/cache@v2
+      with:
+        path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+        key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-v1
+
+    - name: Download boot JDK
+      run: |
+        mkdir -p "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+        wget -O "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" "${BOOT_JDK_URL}"
+        echo "${BOOT_JDK_SHA256} ${HOME}/bootjdk/${BOOT_JDK_FILENAME}" | sha256sum -c >/dev/null -
+        tar -xf "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" -C "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+      if: steps.bootjdk.outputs.cache-hit != 'true'
+
+    - name: Restore jtreg artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: jtreg_${{ env.JTREG_VERSION }}_${{ env.bundleid }}
+        path: ~/jtreg/
+
+    - name: Restore build artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: jdk-linux-x64-debug_${{ env.bundleid }}
+        path: ~/jdk-linux-x64-debug
+
+    - name: Unpack jdk
+      run: |
+        mkdir -p "${HOME}/jdk-linux-x64-debug/jdk-16-internal+0_linux-x64_bin-debug"
+        tar -xf "${HOME}/jdk-linux-x64-debug/jdk-16-internal+0_linux-x64_bin-debug.tar.gz" -C "${HOME}/jdk-linux-x64-debug/jdk-16-internal+0_linux-x64_bin-debug"
+
+    - name: Unpack tests
+      run: |
+        mkdir -p "${HOME}/jdk-linux-x64-debug/jdk-16-internal+0_linux-x64_bin-tests-debug"
+        tar -xf "${HOME}/jdk-linux-x64-debug/jdk-16-internal+0_linux-x64_bin-tests-debug.tar.gz" -C "${HOME}/jdk-linux-x64-debug/jdk-16-internal+0_linux-x64_bin-tests-debug"
+
+    - name: Run tests
+      run: >
+        JDK_IMAGE_DIR=${HOME}/jdk-linux-x64-debug/jdk-16-internal+0_linux-x64_bin-debug/jdk-16/fastdebug
+        TEST_IMAGE_DIR=${HOME}/jdk-linux-x64-debug/jdk-16-internal+0_linux-x64_bin-tests-debug
+        BOOT_JDK=${HOME}/bootjdk/${BOOT_JDK_VERSION}/jdk-${BOOT_JDK_VERSION}
+        JT_HOME=${HOME}/jtreg
+        make test-prebuilt
+        CONF_NAME=run-test-prebuilt
+        LOG_CMDLINES=true
+        JTREG_VERBOSE=fail,error,time
+        TEST=${{ matrix.test }}
+        TEST_OPTS_JAVA_OPTIONS=
+        JTREG_KEYWORDS="!headful"
+
+    - name: Create suitable test log artifact name
+      run: echo "::set-env name=suite::`echo ${{ matrix.test }} | sed -e 's!test/!!' -e 's!/jtreg!!' -e 's!/:!_!' -e 's!/!_!g'`"
+      if: ${{ failure() }}
+
+    - name: Persist test logs
+      uses: actions/upload-artifact@v2
+      if: ${{ failure() }}
+      with:
+        name: linux-x64-debug_testlogs_${{ env.suite }}
+        path: |
+          build/*/test-results/
+          build/*/test-resupport/
+
+  windows_x64_build:
+    if: true
+    name: Windows x64 (build)
+    runs-on: 'windows-latest'
+    needs: prerequisites
+    env:
+      BOOT_JDK_FILENAME: 'openjdk-14.0.2_windows-x64_bin.zip'
+      BOOT_JDK_URL: 'https://download.java.net/java/GA/jdk14.0.2/205943a0976c4ed48cb16f1043c5c647/12/GPL/openjdk-14.0.2_windows-x64_bin.zip'
+      BOOT_JDK_SHA256: '20600c0bda9d1db9d20dbe1ab656a5f9175ffb990ef3df6af5d994673e4d8ff9'
+
+    steps:
+    - name: Determine unique bundle identifier
+      run: echo ("::set-env name=bundleid::$env:GITHUB_ACTOR" + "_" + (-join "$env:GITHUB_SHA"[0..7]))
+
+    - name: Restore cygwin packages from cache
+      id: cygwin
+      uses: actions/cache@v2
+      with:
+        path: ~/cygwin/packages
+        key: cygwin-packages-${{ runner.os }}-v1
+
+    - name: Install cygwin
+      run: |
+        New-Item -Force -ItemType directory -Path "$HOME\cygwin"
+        & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
+        Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
+
+    - name: Checkout the source
+      uses: actions/checkout@v2
+      with:
+        path: jdk
+
+    - name: Restore boot JDK from cache
+      id: bootjdk
+      uses: actions/cache@v2
+      with:
+        path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+        key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-v1
+
+    - name: Download boot JDK
+      run: |
+        mkdir -p "$HOME\bootjdk\$env:BOOT_JDK_VERSION"
+        & curl -L "$env:BOOT_JDK_URL" -o "$HOME/bootjdk/$env:BOOT_JDK_FILENAME"
+        $FileHash = Get-FileHash -Algorithm SHA256 "$HOME/bootjdk/$env:BOOT_JDK_FILENAME"
+        $FileHash.Hash -eq $env:BOOT_JDK_SHA256
+        & tar -xf "$HOME/bootjdk/$env:BOOT_JDK_FILENAME" -C "$HOME/bootjdk/$env:BOOT_JDK_VERSION"
+      if: steps.bootjdk.outputs.cache-hit != 'true'
+
+    - name: Checkout gtest sources
+      uses: actions/checkout@v2
+      with:
+        repository: 'google/googletest'
+        ref: ${{ env.GTEST_VERSION }}
+        path: gtest
+
+    - name: Restore jtreg artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: jtreg_${{ env.JTREG_VERSION }}_${{ env.bundleid }}
+        path: ~/jtreg/
+
+    - name: Configure
+      run: >
+        $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
+        $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
+        & bash configure 
+        --with-conf-name=windows-x64-debug
+        --enable-debug
+        --with-target-bits=64
+        --with-version-opt="$env:GITHUB_ACTOR-$env:GITHUB_SHA" 
+        --with-version-build=0 
+        --with-boot-jdk="$HOME/bootjdk/$env:BOOT_JDK_VERSION/jdk-$env:BOOT_JDK_VERSION" 
+        --with-jtreg="$HOME/jtreg" 
+        --with-gtest="$env:GITHUB_WORKSPACE/gtest"
+        --with-default-make-target="product-bundles test-bundles"
+        --enable-jtreg-failure-handler
+        --with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK
+        --disable-manpages
+      working-directory: jdk
+
+    - name: Build
+      run: |
+        $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
+        $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
+        & make CONF_NAME=windows-x64-debug
+      working-directory: jdk
+
+    - name: Persist test bundles
+      uses: actions/upload-artifact@v2
+      with:
+        name: jdk-windows-x64-debug_${{ env.bundleid }}
+        path: |
+          jdk/build/windows-x64-debug/bundles/jdk-16-internal+0_windows-x64_bin-debug.zip
+          jdk/build/windows-x64-debug/bundles/jdk-16-internal+0_windows-x64_bin-tests-debug.tar.gz
+          jdk/build/windows-x64-debug/bundles/jdk-16-internal+0_windows-x64_bin-debug-symbols.tar.gz
+
+  windows_x64_test:
+    if: true
+    name: Windows x64
+    runs-on: 'windows-latest'
+    needs: windows_x64_build
+
+    strategy:
+      matrix:
+        test:
+          - test/jdk/:tier1_part1
+          - test/jdk/:tier1_part2
+          - test/jdk/:tier1_part3
+          # - test/langtools/:tier1
+          - test/hotspot/jtreg/:tier1_common
+          - test/hotspot/jtreg/:tier1_compiler
+          - test/hotspot/jtreg/:tier1_gc
+          - test/hotspot/jtreg/:tier1_runtime
+          - test/hotspot/jtreg/:tier1_serviceability
+
+    steps:
+    - name: Determine unique bundle identifier
+      run: echo ("::set-env name=bundleid::$env:GITHUB_ACTOR" + "_" + (-join "$env:GITHUB_SHA"[0..7]))
+
+    - name: Checkout the source
+      uses: actions/checkout@v2
+
+    - name: Restore boot JDK from cache
+      id: bootjdk
+      uses: actions/cache@v2
+      with:
+        path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+        key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-v1
+
+    - name: Download boot JDK
+      run: |
+        mkdir -p "$HOME\bootjdk\$env:BOOT_JDK_VERSION"
+        & curl -L "$env:BOOT_JDK_URL" -o "$HOME/bootjdk/$env:BOOT_JDK_FILENAME"
+        $FileHash = Get-FileHash -Algorithm SHA256 "$HOME/bootjdk/$env:BOOT_JDK_FILENAME"
+        $FileHash.Hash -eq $env:BOOT_JDK_SHA256
+        & tar -xf "$HOME/bootjdk/$env:BOOT_JDK_FILENAME" -C "$HOME/bootjdk/$env:BOOT_JDK_VERSION"
+      if: steps.bootjdk.outputs.cache-hit != 'true'
+
+    - name: Restore cygwin packages from cache
+      id: cygwin
+      uses: actions/cache@v2
+      with:
+        path: ~/cygwin/packages
+        key: cygwin-packages-${{ runner.os }}-v1
+
+    - name: Install cygwin
+      run: |
+        New-Item -Force -ItemType directory -Path "$HOME\cygwin"
+        & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
+        Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
+
+    - name: Restore jtreg artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: jtreg_${{ env.JTREG_VERSION }}_${{ env.bundleid }}
+        path: ~/jtreg/
+
+    - name: Restore build artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: jdk-windows-x64-debug_${{ env.bundleid }}
+        path: ~/jdk-windows-x64-debug
+
+    - name: Unpack jdk
+      run: |
+        mkdir -p "${HOME}/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-debug"
+        tar -xf "${HOME}/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-debug.zip" -C "${HOME}/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-debug"
+
+    - name: Unpack symbols
+      run: |
+        mkdir -p "${HOME}/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-debug-symbols"
+        tar -xf "${HOME}/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-debug-symbols.tar.gz" -C "${HOME}/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-debug-symbols"
+
+    - name: Unpack tests
+      run: |
+        mkdir -p "${HOME}/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-tests-debug"
+        tar -xf "${HOME}/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-tests-debug.tar.gz" -C "${HOME}/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-tests-debug"
+
+    - name: Run tests
+      run: >
+        $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
+        $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
+        $env:JDK_IMAGE_DIR = cygpath "$HOME/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-debug/jdk-16/fastdebug" ;
+        $env:SYMBOLS_IMAGE_DIR = cygpath "$HOME/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-debug/jdk-16/fastdebug" ;
+        $env:TEST_IMAGE_DIR = cygpath "$HOME/jdk-windows-x64-debug/jdk-16-internal+0_windows-x64_bin-tests-debug" ;
+        $env:BOOT_JDK = cygpath "$HOME/bootjdk/$env:BOOT_JDK_VERSION/jdk-$env:BOOT_JDK_VERSION" ;
+        $env:JT_HOME = cygpath "$HOME/jtreg" ;
+        & make test-prebuilt
+        CONF_NAME=run-test-prebuilt
+        LOG_CMDLINES=true
+        JTREG_VERBOSE=fail,error,time
+        TEST=${{ matrix.test }}
+        TEST_OPTS_JAVA_OPTIONS=
+        JTREG_KEYWORDS="!headful"
+
+    - name: Create suitable test log artifact name
+      run: echo ("::set-env name=suite::${{ matrix.test }}" -replace "test/", "" -replace "/jtreg", "" -replace "/:", "_" -replace "/", "_")
+      if: ${{ failure() }}
+
+    - name: Persist test logs
+      uses: actions/upload-artifact@v2
+      if: ${{ failure() }}
+      with:
+        name: windows-x64-debug_testlogs_${{ env.suite }}
+        path: |
+          build/*/test-results/
+          build/*/test-resupport/
+
+  macos_x64_build:
+    if: true
+    name: macOS x64 (build)
+    runs-on: 'macos-latest'
+    needs: prerequisites
+    env:
+      BOOT_JDK_FILENAME: 'openjdk-14.0.2_osx-x64_bin.tar.gz'
+      BOOT_JDK_URL: 'https://download.java.net/java/GA/jdk14.0.2/205943a0976c4ed48cb16f1043c5c647/12/GPL/openjdk-14.0.2_osx-x64_bin.tar.gz'
+      BOOT_JDK_SHA256: '386a96eeef63bf94b450809d69ceaa1c9e32a97230e0a120c1b41786b743ae84'
+
+    steps:
+    - name: Determine unique bundle identifier
+      run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
+
+    - name: Checkout the source
+      uses: actions/checkout@v2
+      with:
+        path: jdk
+
+    - name: Restore boot JDK from cache
+      id: bootjdk
+      uses: actions/cache@v2
+      with:
+        path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+        key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-v1
+
+    - name: Download boot JDK
+      run: |
+        mkdir -p ${HOME}/bootjdk/${BOOT_JDK_VERSION} || true
+        wget -O "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" "${BOOT_JDK_URL}"
+        echo "${BOOT_JDK_SHA256}  ${HOME}/bootjdk/${BOOT_JDK_FILENAME}" | shasum -a 256 -c >/dev/null -
+        tar -xf "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" -C "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+      if: steps.bootjdk.outputs.cache-hit != 'true'
+
+    - name: Restore jtreg artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: jtreg_${{ env.JTREG_VERSION }}_${{ env.bundleid }}
+        path: ~/jtreg/
+
+    - name: Checkout gtest sources
+      uses: actions/checkout@v2
+      with:
+        repository: 'google/googletest'
+        ref: ${{ env.GTEST_VERSION }}
+        path: gtest
+
+    - name: Install dependencies
+      run: brew install make
+
+    - name: Configure
+      run: >
+        bash configure
+        --with-conf-name=macos-x64-debug
+        --enable-debug
+        --with-target-bits=64
+        --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+        --with-version-build=0
+        --with-boot-jdk=${HOME}/bootjdk/${BOOT_JDK_VERSION}/jdk-${BOOT_JDK_VERSION}.jdk/Contents/Home
+        --with-jtreg=${HOME}/jtreg
+        --with-gtest=${GITHUB_WORKSPACE}/gtest
+        --with-default-make-target="product-bundles test-bundles"
+        --with-zlib=system
+        --enable-jtreg-failure-handler
+        --with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK
+        --disable-manpages
+      working-directory: jdk
+
+    - name: Build
+      run: make CONF_NAME=macos-x64-debug
+      working-directory: jdk
+
+    - name: Persist test bundles
+      uses: actions/upload-artifact@v2
+      with:
+        name: jdk-macos-x64-debug_${{ env.bundleid }}
+        path: |
+          jdk/build/macos-x64-debug/bundles/jdk-16-internal+0_osx-x64_bin-debug.tar.gz
+          jdk/build/macos-x64-debug/bundles/jdk-16-internal+0_osx-x64_bin-tests-debug.tar.gz
+
+  macos_x64_test:
+    name: macOS x64
+    runs-on: 'macos-latest'
+    needs: macos_x64_build
+
+    strategy:
+      matrix:
+        test:
+          - test/jdk/:tier1_part1
+          - test/jdk/:tier1_part2
+          - test/jdk/:tier1_part3
+          - test/langtools/:tier1
+          - test/hotspot/jtreg/:tier1_common
+          - test/hotspot/jtreg/:tier1_compiler
+          - test/hotspot/jtreg/:tier1_gc
+          - test/hotspot/jtreg/:tier1_runtime
+          - test/hotspot/jtreg/:tier1_serviceability
+
+    steps:
+    - name: Determine unique bundle identifier
+      run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
+
+    - name: Checkout the source
+      uses: actions/checkout@v2
+
+    - name: Restore boot JDK from cache
+      id: bootjdk
+      uses: actions/cache@v2
+      with:
+        path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+        key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-v1
+
+    - name: Download boot JDK
+      run: |
+        mkdir -p ${HOME}/bootjdk/${BOOT_JDK_VERSION} || true
+        wget -O "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" "${BOOT_JDK_URL}"
+        echo "${BOOT_JDK_SHA256}  ${HOME}/bootjdk/${BOOT_JDK_FILENAME}" | shasum -a 256 -c >/dev/null -
+        tar -xf "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" -C "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+      if: steps.bootjdk.outputs.cache-hit != 'true'
+
+    - name: Restore jtreg artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: jtreg_${{ env.JTREG_VERSION }}_${{ env.bundleid }}
+        path: ~/jtreg/
+
+    - name: Restore build artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: jdk-macos-x64-debug_${{ env.bundleid }}
+        path: ~/jdk-macos-x64-debug
+
+    - name: Unpack jdk
+      run: |
+        mkdir -p "${HOME}/jdk-macos-x64-debug/jdk-16-internal+0_osx-x64_bin-debug"
+        tar -xf "${HOME}/jdk-macos-x64-debug/jdk-16-internal+0_osx-x64_bin-debug.tar.gz" -C "${HOME}/jdk-macos-x64-debug/jdk-16-internal+0_osx-x64_bin-debug"
+
+    - name: Unpack tests
+      run: |
+        mkdir -p "${HOME}/jdk-macos-x64-debug/jdk-16-internal+0_osx-x64_bin-tests-debug"
+        tar -xf "${HOME}/jdk-macos-x64-debug/jdk-16-internal+0_osx-x64_bin-tests-debug.tar.gz" -C "${HOME}/jdk-macos-x64-debug/jdk-16-internal+0_osx-x64_bin-tests-debug"
+
+    - name: Install dependencies
+      run: brew install make
+
+    - name: Run tests
+      run: >
+        JDK_IMAGE_DIR=${HOME}/jdk-macos-x64-debug/jdk-16-internal+0_osx-x64_bin-debug/jdk-16/fastdebug
+        TEST_IMAGE_DIR=${HOME}/jdk-macos-x64-debug/jdk-16-internal+0_osx-x64_bin-tests-debug
+        BOOT_JDK=${HOME}/bootjdk/${BOOT_JDK_VERSION}/jdk-${BOOT_JDK_VERSION}.jdk/Contents/Home
+        JT_HOME=${HOME}/jtreg
+        gmake test-prebuilt
+        CONF_NAME=run-test-prebuilt
+        LOG_CMDLINES=true
+        JTREG_VERBOSE=fail,error,time
+        TEST=${{ matrix.test }}
+        TEST_OPTS_JAVA_OPTIONS=
+        JTREG_KEYWORDS="!headful"
+
+    - name: Create suitable test log artifact name
+      run: echo "::set-env name=suite::`echo ${{ matrix.test }} | sed -e 's!test/!!' -e 's!/jtreg!!' -e 's!/:!_!' -e 's!/!_!g'`"
+      if: ${{ failure() }}
+
+    - name: Persist test logs
+      uses: actions/upload-artifact@v2
+      if: ${{ failure() }}
+      with:
+        name: macos-x64-debug_testlogs_${{ env.suite }}
+        path: |
+          build/*/test-results/
+          build/*/test-resupport/
