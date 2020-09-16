@@ -415,12 +415,12 @@ public:
   // The Method-klass-holder may be passed in the inline_cache_reg
   // and then expanded into the inline_cache_reg and a method_ptr register
 
-  static OptoReg::Name  interpreter_method_oop_reg();
-  static int            interpreter_method_oop_reg_encode();
+  static OptoReg::Name  interpreter_method_reg();
+  static int            interpreter_method_reg_encode();
 
-  static OptoReg::Name  compiler_method_oop_reg();
-  static const RegMask &compiler_method_oop_reg_mask();
-  static int            compiler_method_oop_reg_encode();
+  static OptoReg::Name  compiler_method_reg();
+  static const RegMask &compiler_method_reg_mask();
+  static int            compiler_method_reg_encode();
 
   // Interpreter's Frame Pointer Register
   static OptoReg::Name  interpreter_frame_pointer_reg();

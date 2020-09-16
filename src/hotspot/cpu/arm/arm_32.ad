@@ -196,7 +196,7 @@ alloc_class chunk2(APSR, FPSCR);
 // Several register classes are automatically defined based upon information in
 // this architecture description.
 // 1) reg_class inline_cache_reg           ( as defined in frame section )
-// 2) reg_class interpreter_method_oop_reg ( as defined in frame section )
+// 2) reg_class interpreter_method_reg     ( as defined in frame section )
 // 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 

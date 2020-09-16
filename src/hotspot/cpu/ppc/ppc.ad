@@ -535,8 +535,8 @@ alloc_class chunk4 (
 // information in this architecture description.
 
 // 1) reg_class inline_cache_reg           ( as defined in frame section )
-// 2) reg_class compiler_method_oop_reg    ( as defined in frame section )
-// 2) reg_class interpreter_method_oop_reg ( as defined in frame section )
+// 2) reg_class compiler_method_reg        ( as defined in frame section )
+// 2) reg_class interpreter_method_reg     ( as defined in frame section )
 // 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
@@ -3863,8 +3863,8 @@ frame %{
   // Inline Cache Register or method for I2C.
   inline_cache_reg(R19); // R19_method
 
-  // Method Oop Register when calling interpreter.
-  interpreter_method_oop_reg(R19); // R19_method
+  // Method Register when calling interpreter.
+  interpreter_method_reg(R19); // R19_method
 
   // Optional: name the operand used by cisc-spilling to access
   // [stack_pointer + offset].
@@ -4773,15 +4773,15 @@ operand inline_cache_regP(iRegPdst reg) %{
   interface(REG_INTER);
 %}
 
-operand compiler_method_oop_regP(iRegPdst reg) %{
-  constraint(ALLOC_IN_RC(rscratch1_bits64_reg)); // compiler_method_oop_reg
+operand compiler_method_regP(iRegPdst reg) %{
+  constraint(ALLOC_IN_RC(rscratch1_bits64_reg)); // compiler_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);
 %}
 
-operand interpreter_method_oop_regP(iRegPdst reg) %{
-  constraint(ALLOC_IN_RC(r19_bits64_reg)); // interpreter_method_oop_reg
+operand interpreter_method_regP(iRegPdst reg) %{
+  constraint(ALLOC_IN_RC(r19_bits64_reg)); // interpreter_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);
