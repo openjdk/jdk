@@ -1346,9 +1346,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   assert((mcall == NULL) || (mcall->jvms() == NULL) ||
          (mcall->jvms()->debug_start() + mcall->_jvmadj == mcall->tf()->domain()->cnt()), "");
 
-  // Move the OopMap
-  msfpt->_oop_map = sfpt->_oop_map;
-
   // Add additional edges.
   if (msfpt->mach_constant_base_node_input() != (uint)-1 && !msfpt->is_MachCallLeaf()) {
     // For these calls we can not add MachConstantBase in expand(), as the
