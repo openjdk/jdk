@@ -199,9 +199,12 @@ public class JavacElements implements Elements {
 
         return (S) resultCache.computeIfAbsent(Pair.of(methodName, nameStr), p -> {
             Set<S> found = new LinkedHashSet<>();
+            Set<ModuleSymbol> allModules = new HashSet<>(modules.allModules());
 
-            for (Set<ModuleSymbol> allModules : Arrays.asList(modules.getRootModules(), modules.allModules())) {
-                for (ModuleSymbol msym : allModules) {
+            allModules.removeAll(modules.getRootModules());
+
+            for (Set<ModuleSymbol> modules : Arrays.asList(modules.getRootModules(), allModules)) {
+                for (ModuleSymbol msym : modules) {
                     S sym = nameToSymbol(msym, nameStr, clazz);
 
                     if (sym == null)

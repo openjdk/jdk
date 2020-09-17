@@ -56,13 +56,23 @@ public interface Elements {
      *
      * If running with modules, packages of the given name are searched in a
      * two-stage process:
-     * -find non-empty packages with the given name returned by {@link #getPackageElement(ModuleElement, CharSequence)}, where the provided ModuleSymbol is any root module,
-     * -if the above yields an empty list, search all modules for observable packages with the given name
+     * <ul>
+     *     <li>find non-empty packages with the given name returned by
+     *         {@link #getPackageElement(ModuleElement, CharSequence)},
+     *         where the provided ModuleSymbol is any root module,
+     *     </li>
+     *     <li>if the above yields an empty list, search all modules for
+     *         observable packages with the given name
+     *     </li>
+     * </ul>
      *
-     * If this process leads to a list with a single element, the single element is returned, otherwise null is returned.
+     * If this process leads to a list with a single element,
+     * the single element is returned, otherwise null is returned.
      *
-     * @param name  fully qualified package name, or an empty string for an unnamed package
-     * @return the specified package, or {@code null} if no package can be uniquely determined.
+     * @param name fully qualified package name,
+     *             or an empty string for an unnamed package
+     * @return the specified package,
+     *         or {@code null} if no package can be uniquely determined.
      */
     PackageElement getPackageElement(CharSequence name);
 
@@ -129,15 +139,24 @@ public interface Elements {
      * Returns a type element given its canonical name if the type element is uniquely
      * determinable in the environment.
      *
-     * If running with modules, type elements of the given name are searched in a
-     * two-stage process:
-     * -find type elements with the given name returned by {@link #getTypeElement(ModuleElement, CharSequence)}, where the provided ModuleSymbol is any root module,
-     * -if the above yields an empty list, search all modules for observable type elements with the given name
+     * If running with modules, type elements of the given name are
+     * searched in a two-stage process:
+     * <ul>
+     *     <li>find type elements with the given name returned by
+     *         {@link #getTypeElement(ModuleElement, CharSequence)},
+     *         where the provided ModuleSymbol is any root module,
+     *     </li>
+     *     <li>if the above yields an empty list, search all modules
+     *         for observable type elements with the given name
+     *     </li>
+     * </ul>
      *
-     * If this process leads to a list with a single element, the single element is returned, otherwise null is returned.
+     * If this process leads to a list with a single element,
+     * the single element is returned, otherwise null is returned.
      *
-     * @param name  the canonical name
-     * @return the named type element, or {@code null} if no type element can be uniquely determined.
+     * @param name the canonical name
+     * @return the named type element,
+     *         or {@code null} if no type element can be uniquely determined.
      */
     TypeElement getTypeElement(CharSequence name);
 
