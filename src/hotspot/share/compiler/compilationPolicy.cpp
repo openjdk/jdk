@@ -36,6 +36,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"

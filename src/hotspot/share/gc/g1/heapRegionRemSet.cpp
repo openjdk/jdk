@@ -33,6 +33,7 @@
 #include "memory/padded.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
