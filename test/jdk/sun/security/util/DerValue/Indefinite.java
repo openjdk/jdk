@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 
 /*
  * @test
- * @bug 6731685
+ * @bug 6731685 8249783
  * @summary CertificateFactory.generateCertificates throws IOException on PKCS7 cert chain
  * @modules java.base/sun.security.util
  */
 
 import java.io.*;
+import java.util.Arrays;
+
 import sun.security.util.*;
 
 public class Indefinite {
@@ -36,10 +38,11 @@ public class Indefinite {
     public static void main(String[] args) throws Exception {
         byte[] input = {
             // An OCTET-STRING in 2 parts
-            4, (byte)0x80, 4, 2, 'a', 'b', 4, 2, 'c', 'd', 0, 0,
+            0x24, (byte)0x80, 4, 2, 'a', 'b', 4, 2, 'c', 'd', 0, 0,
             // Garbage follows, may be falsely recognized as EOC
             0, 0, 0, 0
         };
-        new DerValue(new ByteArrayInputStream(input));
+        DerValue v = new DerValue(new ByteArrayInputStream(input));
+        System.out.println(Arrays.toString(v.getOctetString()));
     }
 }
