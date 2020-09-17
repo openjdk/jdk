@@ -99,7 +99,10 @@ class VMThread: public NamedThread {
   static void execute(VM_Operation* op);
 
   // Returns the current vm operation if any.
-  static VM_Operation* vm_operation()             { return _cur_vm_operation; }
+  static VM_Operation* vm_operation()             {
+    assert(Thread::current()->is_VM_thread(), "Must be);");
+    return _cur_vm_operation;
+  }
   static VM_Operation::VMOp_Type vm_op_type()     { return _cur_vm_operation->type(); }
 
   // Returns the single instance of VMThread.
