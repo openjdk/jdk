@@ -297,7 +297,7 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
             }
             // delay a bit just to let the fullscreen window disposing complete
             // before switching to next display
-            delay(4000);
+            delay(10000);
         }
     }
 }
