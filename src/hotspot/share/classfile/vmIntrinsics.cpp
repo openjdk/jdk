@@ -25,6 +25,7 @@
 #include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "utilities/xmlstream.hpp"
 
 // These are flag-matching functions:
 inline bool match_F_R(jshort flags) {
