@@ -28,6 +28,8 @@
 
 // Included in orderAccess.hpp header file.
 
+#if defined(ARM)   // ----------------------------------------------------
+
 /*
  * ARM Kernel helper for memory barrier.
  * Using __asm __volatile ("":::"memory") does not work reliable on ARM
