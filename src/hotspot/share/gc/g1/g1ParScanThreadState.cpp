@@ -43,6 +43,7 @@
 // tripping over compiler limits (which may be bugs, but nevertheless
 // need to be taken into consideration).  A side benefit of limiting
 // inlining is that we get more call frames that might aid debugging.
+// And the fastdebug compile time for this file is much reduced.
 // Explicit NOINLINE to block ATTRIBUTE_FLATTENing.
 #define MAYBE_INLINE_EVACUATION NOT_DEBUG(inline) DEBUG_ONLY(NOINLINE)
 
