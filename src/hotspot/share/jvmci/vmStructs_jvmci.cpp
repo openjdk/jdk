@@ -49,7 +49,8 @@
   static_field(CompilerToVM::Data,             SharedRuntime_ic_miss_stub,             address)                                      \
   static_field(CompilerToVM::Data,             SharedRuntime_handle_wrong_method_stub, address)                                      \
   static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_unpack,        address)                                      \
-  static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_unpack_with_exception_in_tls,        address)                       \
+  static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_unpack_with_exception_in_tls,                                \
+                                                                                       address)                                      \
   static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_uncommon_trap, address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             ThreadLocalAllocBuffer_alignment_reserve, size_t)                                     \
@@ -752,7 +753,9 @@
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
   LP64_ONLY(declare_constant(frame::arg_reg_save_area_bytes))       \
   declare_constant(frame::interpreter_frame_sender_sp_offset)       \
-  declare_constant(frame::interpreter_frame_last_sp_offset)         \
+  declare_constant(frame::interpreter_frame_last_sp_offset)
+
+#define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
   declare_constant(VM_Version::CPU_CX8)                             \
   declare_constant(VM_Version::CPU_CMOV)                            \
   declare_constant(VM_Version::CPU_FXSR)                            \
@@ -783,23 +786,22 @@
   declare_constant(VM_Version::CPU_AVX512DQ)                        \
   declare_constant(VM_Version::CPU_AVX512PF)                        \
   declare_constant(VM_Version::CPU_AVX512ER)                        \
-  declare_constant(VM_Version::CPU_AVX512CD)
-
-#define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
-  declare_preprocessor_constant("VM_Version::CPU_AVX512BW", CPU_AVX512BW) \
-  declare_preprocessor_constant("VM_Version::CPU_AVX512VL", CPU_AVX512VL) \
-  declare_preprocessor_constant("VM_Version::CPU_SHA", CPU_SHA)           \
-  declare_preprocessor_constant("VM_Version::CPU_FMA", CPU_FMA)           \
-  declare_preprocessor_constant("VM_Version::CPU_VZEROUPPER", CPU_VZEROUPPER) \
-  declare_preprocessor_constant("VM_Version::CPU_AVX512_VPOPCNTDQ", CPU_AVX512_VPOPCNTDQ) \
-  declare_preprocessor_constant("VM_Version::CPU_AVX512_VPCLMULQDQ", CPU_AVX512_VPCLMULQDQ) \
-  declare_preprocessor_constant("VM_Version::CPU_AVX512_VAES", CPU_AVX512_VAES) \
-  declare_preprocessor_constant("VM_Version::CPU_AVX512_VNNI", CPU_AVX512_VNNI) \
-  declare_preprocessor_constant("VM_Version::CPU_FLUSH", CPU_FLUSH) \
-  declare_preprocessor_constant("VM_Version::CPU_FLUSHOPT", CPU_FLUSHOPT) \
-  declare_preprocessor_constant("VM_Version::CPU_CLWB", CPU_CLWB) \
-  declare_preprocessor_constant("VM_Version::CPU_AVX512_VBMI2", CPU_AVX512_VBMI2) \
-  declare_preprocessor_constant("VM_Version::CPU_AVX512_VBMI", CPU_AVX512_VBMI)
+  declare_constant(VM_Version::CPU_AVX512CD)                        \
+  declare_constant(VM_Version::CPU_AVX512BW)                        \
+  declare_constant(VM_Version::CPU_AVX512VL)                        \
+  declare_constant(VM_Version::CPU_SHA)                             \
+  declare_constant(VM_Version::CPU_FMA)                             \
+  declare_constant(VM_Version::CPU_VZEROUPPER)                      \
+  declare_constant(VM_Version::CPU_AVX512_VPOPCNTDQ)                \
+  declare_constant(VM_Version::CPU_AVX512_VPCLMULQDQ)               \
+  declare_constant(VM_Version::CPU_AVX512_VAES)                     \
+  declare_constant(VM_Version::CPU_AVX512_VNNI)                     \
+  declare_constant(VM_Version::CPU_FLUSH)                           \
+  declare_constant(VM_Version::CPU_FLUSHOPT)                        \
+  declare_constant(VM_Version::CPU_CLWB)                            \
+  declare_constant(VM_Version::CPU_AVX512_VBMI2)                    \
+  declare_constant(VM_Version::CPU_AVX512_VBMI)                     \
+  declare_constant(VM_Version::CPU_HV)
 
 #endif
 
@@ -821,7 +823,6 @@
 #ifndef VM_ADDRESSES_OS
 #define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function)
 #endif
-
 
 //
 // Instantiation of VMStructEntries, VMTypeEntries and VMIntConstantEntries
