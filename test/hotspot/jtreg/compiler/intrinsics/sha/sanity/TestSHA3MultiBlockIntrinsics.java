@@ -140,7 +140,7 @@
  *                   -XX:CompileOnly=sun/security/provider/DigestBase
  *                   -XX:CompileOnly=sun/security/provider/SHA3 -XX:-UseSHA
  *                   -Dalgorithm=SHA3-512
- *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics                  
+ *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                    compiler.testlibrary.intrinsics.Verifier positive_224.log positive_256.log
  *                    positive_384.log positive_512.log positive_224_def.log positive_256_def.log
