@@ -316,6 +316,7 @@ public class Box extends JComponent implements Accessible {
             setMinimumSize(min);
             setPreferredSize(pref);
             setMaximumSize(max);
+            setFocusable(false);
         }
 
         /**

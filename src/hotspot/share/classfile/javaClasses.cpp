@@ -3392,12 +3392,17 @@ void java_lang_Module::set_name(oop module, oop value) {
   module->obj_field_put(_name_offset, value);
 }
 
-ModuleEntry* java_lang_Module::module_entry(oop module) {
+ModuleEntry* java_lang_Module::module_entry_raw(oop module) {
   assert(_module_entry_offset != 0, "Uninitialized module_entry_offset");
   assert(module != NULL, "module can't be null");
   assert(oopDesc::is_oop(module), "module must be oop");
 
   ModuleEntry* module_entry = (ModuleEntry*)module->address_field(_module_entry_offset);
+  return module_entry;
+}
+
+ModuleEntry* java_lang_Module::module_entry(oop module) {
+  ModuleEntry* module_entry = module_entry_raw(module);
   if (module_entry == NULL) {
     // If the inject field containing the ModuleEntry* is null then return the
     // class loader's unnamed module.
@@ -4821,9 +4826,8 @@ bool JavaClasses::is_supported_for_archiving(oop obj) {
   Klass* klass = obj->klass();
 
   if (klass == SystemDictionary::ClassLoader_klass() ||  // ClassLoader::loader_data is malloc'ed.
-      klass == SystemDictionary::Module_klass() ||       // Module::module_entry is malloc'ed
       // The next 3 classes are used to implement java.lang.invoke, and are not used directly in
-      // regular Java code. The implementation of java.lang.invoke uses generated anonymoys classes
+      // regular Java code. The implementation of java.lang.invoke uses generated anonymous classes
       // (e.g., as referenced by ResolvedMethodName::vmholder) that are not yet supported by CDS.
       // So for now we cannot not support these classes for archiving.
       //

@@ -77,6 +77,7 @@ class TimeHelper {
   static double counter_to_seconds(jlong counter);
   static double counter_to_millis(jlong counter);
   static jlong millis_to_counter(jlong millis);
+  static jlong micros_to_counter(jlong micros);
 };
 
 #endif // SHARE_RUNTIME_TIMER_HPP

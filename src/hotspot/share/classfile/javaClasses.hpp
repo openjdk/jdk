@@ -797,6 +797,7 @@ class java_lang_Module {
     static void set_name(oop module, oop value);
 
     static ModuleEntry* module_entry(oop module);
+    static ModuleEntry* module_entry_raw(oop module);
     static void set_module_entry(oop module, ModuleEntry* module_entry);
 
   friend class JavaClasses;

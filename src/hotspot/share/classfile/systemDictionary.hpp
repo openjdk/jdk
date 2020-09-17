@@ -187,10 +187,13 @@ class TableStatistics;
   do_klass(ByteArrayInputStream_klass,                  java_io_ByteArrayInputStream                          ) \
   do_klass(URL_klass,                                   java_net_URL                                          ) \
   do_klass(Jar_Manifest_klass,                          java_util_jar_Manifest                                ) \
+  do_klass(jdk_internal_loader_BuiltinClassLoader_klass,jdk_internal_loader_BuiltinClassLoader                ) \
   do_klass(jdk_internal_loader_ClassLoaders_klass,      jdk_internal_loader_ClassLoaders                      ) \
   do_klass(jdk_internal_loader_ClassLoaders_AppClassLoader_klass,      jdk_internal_loader_ClassLoaders_AppClassLoader) \
   do_klass(jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass, jdk_internal_loader_ClassLoaders_PlatformClassLoader) \
   do_klass(CodeSource_klass,                            java_security_CodeSource                              ) \
+  do_klass(ConcurrentHashMap_klass,                     java_util_concurrent_ConcurrentHashMap                ) \
+  do_klass(ArrayList_klass,                             java_util_ArrayList                                   ) \
                                                                                                                 \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement                           ) \
                                                                                                                 \

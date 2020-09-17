@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "utilities/population_count.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include <limits>
 #include "unittest.hpp"
 
 #define BITS_IN_BYTE_ARRAY_SIZE 256
@@ -51,8 +52,8 @@ const uint8_t test_popcnt_bitsInByte[BITS_IN_BYTE_ARRAY_SIZE] = {
 };
 
 template <typename T>
-void sparse() {
-  const T max_val = max_value<T>();
+static void sparse() {
+  const T max_val = std::numeric_limits<T>::max();
 
   // Step through the entire input range from a random starting point,
   // verify population_count return values against the lookup table

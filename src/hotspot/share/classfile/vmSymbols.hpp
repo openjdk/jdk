@@ -130,6 +130,7 @@
   template(java_lang_Record,                          "java/lang/Record")                         \
                                                                                                   \
   template(jdk_internal_loader_NativeLibraries,       "jdk/internal/loader/NativeLibraries")      \
+  template(jdk_internal_loader_BuiltinClassLoader,    "jdk/internal/loader/BuiltinClassLoader")   \
   template(jdk_internal_loader_ClassLoaders_AppClassLoader,      "jdk/internal/loader/ClassLoaders$AppClassLoader")      \
   template(jdk_internal_loader_ClassLoaders_PlatformClassLoader, "jdk/internal/loader/ClassLoaders$PlatformClassLoader") \
                                                                                                   \
@@ -664,6 +665,8 @@
                                                                                                                   \
   /* cds */                                                                                                       \
   template(jdk_internal_loader_ClassLoaders,       "jdk/internal/loader/ClassLoaders")                            \
+  template(java_util_concurrent_ConcurrentHashMap, "java/util/concurrent/ConcurrentHashMap")                      \
+  template(java_util_ArrayList,                    "java/util/ArrayList")                                         \
   template(toFileURL_name,                         "toFileURL")                                                   \
   template(toFileURL_signature,                    "(Ljava/lang/String;)Ljava/net/URL;")                          \
   template(url_void_signature,                     "(Ljava/net/URL;)V")                                           \

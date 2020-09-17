@@ -66,27 +66,4 @@
 #define GUARDED_VM_QUICK_ENTRY(action)      \
   {if (IS_IN_VM) { action } else { VM_QUICK_ENTRY_MARK; { action }}}
 
-// Redefine this later.
-#define KILL_COMPILE_ON_FATAL_(result)           \
-  THREAD);                                       \
-  if (HAS_PENDING_EXCEPTION) {                   \
-    if (PENDING_EXCEPTION->klass() ==            \
-        SystemDictionary::ThreadDeath_klass()) { \
-      /* Kill the compilation. */                \
-      fatal("unhandled ci exception");           \
-      return (result);                           \
-    }                                            \
-    CLEAR_PENDING_EXCEPTION;                     \
-    return (result);                             \
-  }                                              \
-  (void)(0
-
-#define KILL_COMPILE_ON_ANY                      \
-  THREAD);                                       \
-  if (HAS_PENDING_EXCEPTION) {                   \
-    fatal("unhandled ci exception");             \
-    CLEAR_PENDING_EXCEPTION;                     \
-  }                                              \
-(void)(0
-
 #endif // SHARE_CI_CIUTILITIES_INLINE_HPP

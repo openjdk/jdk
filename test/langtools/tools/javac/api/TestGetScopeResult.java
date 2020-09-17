@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641
+ * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641 8240658
  * @summary Test the outcomes from Trees.getScope
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
+ * @compile TestGetScopeResult.java
  */
 
 import java.io.IOException;
@@ -62,6 +63,7 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacScope;
+import com.sun.tools.javac.api.JavacTaskImpl;
 
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.comp.Analyzer;
@@ -192,6 +194,19 @@ public class TestGetScopeResult {
                    }
                }""",
                invocationInMethodInvocation);
+
+        String[] infer = {
+            "c:java.lang.String",
+            "super:java.lang.Object",
+            "this:Test"
+        };
+
+        doTest("class Test { void test() { cand(\"\", c -> { }); } <T>void cand(T t, I<T> i) { } interface I<T> { public String test(T s); }  }",
+               infer);
+        doTest("class Test { void test() { cand(\"\", c -> { }); } <T>void cand(T t, I<T> i, int j) { } interface I<T> { public void test(T s); }  }",
+               infer);
+        doTest("class Test { void test() { cand(\"\", c -> { }); } <T>void cand(T t, I<T> i, int j) { } interface I<T> { public String test(T s); }  }",
+               infer);
     }
 
     public void doTest(String code, String... expected) throws IOException {
@@ -208,24 +223,29 @@ public class TestGetScopeResult {
             }
             JavacTask t = (JavacTask) c.getTask(null, fm, null, null, null, List.of(new MyFileObject()));
             CompilationUnitTree cut = t.parse().iterator().next();
-            t.analyze();
 
-            List<String> actual = new ArrayList<>();
+            ((JavacTaskImpl)t).enter();
 
-            new TreePathScanner<Void, Void>() {
-                @Override
-                public Void visitLambdaExpression(LambdaExpressionTree node, Void p) {
-                    Scope scope = Trees.instance(t).getScope(new TreePath(getCurrentPath(), node.getBody()));
-                    actual.addAll(dumpScope(scope));
-                    return super.visitLambdaExpression(node, p);
+            for (int r = 0; r < 2; r++) {
+                List<String> actual = new ArrayList<>();
+
+                new TreePathScanner<Void, Void>() {
+                    @Override
+                    public Void visitLambdaExpression(LambdaExpressionTree node, Void p) {
+                        Scope scope = Trees.instance(t).getScope(new TreePath(getCurrentPath(), node.getBody()));
+                        actual.addAll(dumpScope(scope));
+                        return super.visitLambdaExpression(node, p);
+                    }
+                }.scan(cut, null);
+
+                List<String> expectedList = List.of(expected);
+
+                if (!expectedList.equals(actual)) {
+                    throw new IllegalStateException("Unexpected scope content: " + actual + "\n" +
+                                                     "expected: " + expectedList);
                 }
-            }.scan(cut, null);
 
-            List<String> expectedList = List.of(expected);
-
-            if (!expectedList.equals(actual)) {
-                throw new IllegalStateException("Unexpected scope content: " + actual + "\n" +
-                                                 "expected: " + expectedList);
+                t.analyze();
             }
         }
     }
