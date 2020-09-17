@@ -371,8 +371,6 @@ class Generation: public CHeapObj<mtGC> {
   virtual void post_compact() { ShouldNotReachHere(); }
 #endif
 
-  virtual void sample_eden_chunk() {}
-
   // Some generations may require some cleanup actions before allowing
   // a verification.
   virtual void prepare_for_verify() {}
