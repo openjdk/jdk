@@ -141,7 +141,7 @@ public class TestStylesheet extends JavadocTester {
                 """
                     .summary-table > div {
                         text-align:left;
-                        padding: 8px;
+                        padding: 8px 3px 3px 7px;
                     }""",
                 "@import url('resources/fonts/dejavu.css');",
                 """

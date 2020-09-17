@@ -437,7 +437,7 @@ div.table-tabs > button.table-tab {
 }
 .summary-table > div {
     text-align:left;
-    padding: 8px;
+    padding: 8px 3px 3px 7px;
 }
 .col-first, .col-second, .col-last, .col-constructor-name, .col-deprecated-item-name {
     vertical-align:top;
