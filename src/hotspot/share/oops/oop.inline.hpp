@@ -126,13 +126,12 @@ void oopDesc::set_klass(Klass* k) {
 void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
   assert(Universe::is_bootstrapping() || (k != NULL && k->is_klass()), "incorrect Klass");
 
-  char* raw_mem = (char*)mem;
+  char* raw_mem = ((char*)mem + klass_offset_in_bytes());
   if (UseCompressedClassPointers) {
-    narrowKlass* addr = (narrowKlass*)(raw_mem + klass_offset_in_bytes());
-    Atomic::release_store(addr, CompressedKlassPointers::encode_not_null(k));
+    Atomic::release_store((narrowKlass*)raw_mem,
+                          CompressedKlassPointers::encode_not_null(k));
   } else {
-    Klass** addr = (Klass**)(raw_mem + klass_offset_in_bytes());
-    Atomic::release_store(addr, k);
+    Atomic::release_store((Klass**)raw_mem, k);
   }
 }
 
