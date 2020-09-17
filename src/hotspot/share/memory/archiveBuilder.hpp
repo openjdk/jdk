@@ -193,6 +193,37 @@ protected:
     _ro_region = ro_region;
   }
 
+protected:
+  DumpRegion* _current_dump_space;
+  address _alloc_bottom;
+
+  DumpRegion* current_dump_space() const {  return _current_dump_space;  }
+
+public:
+  void set_current_dump_space(DumpRegion* r) { _current_dump_space = r; }
+
+  bool is_in_buffer_space(address p) const {
+    return (_alloc_bottom <= p && p < (address)current_dump_space()->top());
+  }
+
+  template <typename T> bool is_in_target_space(T target_obj) const {
+    address buff_obj = address(target_obj) - _buffer_to_target_delta;
+    return is_in_buffer_space(buff_obj);
+  }
+
+  template <typename T> bool is_in_buffer_space(T obj) const {
+    return is_in_buffer_space(address(obj));
+  }
+
+  template <typename T> T to_target_no_check(T obj) const {
+    return (T)(address(obj) + _buffer_to_target_delta);
+  }
+
+  template <typename T> T to_target(T obj) const {
+    assert(is_in_buffer_space(obj), "must be");
+    return (T)(address(obj) + _buffer_to_target_delta);
+  }
+
 public:
   ArchiveBuilder(DumpRegion* rw_region, DumpRegion* ro_region);
   ~ArchiveBuilder();
@@ -208,7 +239,7 @@ public:
   void dump_ro_region();
   void relocate_pointers();
   void relocate_well_known_klasses();
-
+  void make_klasses_shareable();
   address get_dumped_addr(address src_obj) const;
 
   // All klasses and symbols that will be copied into the archive
@@ -235,6 +266,7 @@ public:
   }
 
   void print_stats(int ro_all, int rw_all, int mc_all);
+  static intx _buffer_to_target_delta;
 };
 
 #endif // SHARE_MEMORY_ARCHIVEBUILDER_HPP

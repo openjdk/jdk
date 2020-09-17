@@ -1179,8 +1179,7 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
     if (!(ik->is_shared_boot_class() || ik->is_shared_platform_class() ||
           ik->is_shared_app_class())) {
       // Archiving mirror for classes from non-builtin loaders is not
-      // supported. Clear the _java_mirror within the archived class.
-      k->clear_java_mirror_handle();
+      // supported.
       return NULL;
     }
   }

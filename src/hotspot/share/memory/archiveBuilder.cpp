@@ -41,6 +41,7 @@
 #include "utilities/hashtable.inline.hpp"
 
 ArchiveBuilder* ArchiveBuilder::_singleton = NULL;
+intx ArchiveBuilder::_buffer_to_target_delta = 0;
 
 ArchiveBuilder::OtherROAllocMark::~OtherROAllocMark() {
   char* newtop = ArchiveBuilder::singleton()->_ro_region->top();
@@ -562,6 +563,34 @@ void ArchiveBuilder::relocate_well_known_klasses() {
   ResourceMark rm;
   RefRelocator doit(this);
   SystemDictionary::well_known_klasses_do(&doit);
+}
+
+void ArchiveBuilder::make_klasses_shareable() {
+  for (int i = 0; i < klasses()->length(); i++) {
+    Klass* k = klasses()->at(i);
+    k->remove_java_mirror();
+    if (k->is_objArray_klass()) {
+      // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
+      // on their array classes.
+    } else if (k->is_typeArray_klass()) {
+      k->remove_unshareable_info();
+    } else {
+      assert(k->is_instance_klass(), " must be");
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      if (DynamicDumpSharedSpaces) {
+        // For static dump, class loader type are already set.
+        ik->assign_class_loader_type();
+      }
+
+      MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
+      ik->remove_unshareable_info();
+
+      if (log_is_enabled(Debug, cds, class)) {
+        ResourceMark rm;
+        log_debug(cds, class)("klasses[%4d] = " PTR_FORMAT " %s", i, p2i(to_target(ik)), ik->external_name());
+      }
+    }
+  }
 }
 
 void ArchiveBuilder::print_stats(int ro_all, int rw_all, int mc_all) {

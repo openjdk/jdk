@@ -44,8 +44,6 @@
 
 class DynamicArchiveBuilder : public ArchiveBuilder {
 public:
-  static intx _buffer_to_target_delta;
-  DumpRegion* _current_dump_space;
 
   static size_t reserve_alignment() {
     return os::vm_allocation_granularity();
@@ -57,32 +55,6 @@ public:
 public:
   void mark_pointer(address* ptr_loc) {
     ArchivePtrMarker::mark_pointer(ptr_loc);
-  }
-
-  DumpRegion* current_dump_space() const {
-    return _current_dump_space;
-  }
-
-  bool is_in_buffer_space(address p) const {
-    return (_alloc_bottom <= p && p < (address)current_dump_space()->top());
-  }
-
-  template <typename T> bool is_in_target_space(T target_obj) const {
-    address buff_obj = address(target_obj) - _buffer_to_target_delta;
-    return is_in_buffer_space(buff_obj);
-  }
-
-  template <typename T> bool is_in_buffer_space(T obj) const {
-    return is_in_buffer_space(address(obj));
-  }
-
-  template <typename T> T to_target_no_check(T obj) const {
-    return (T)(address(obj) + _buffer_to_target_delta);
-  }
-
-  template <typename T> T to_target(T obj) const {
-    assert(is_in_buffer_space(obj), "must be");
-    return (T)(address(obj) + _buffer_to_target_delta);
   }
 
   template <typename T> T get_dumped_addr(T obj) {
@@ -113,7 +85,6 @@ public:
 
 public:
   DynamicArchiveHeader *_header;
-  address _alloc_bottom;
   address _last_verified_top;
   size_t _other_region_used_bytes;
 
@@ -128,7 +99,7 @@ public:
   void init_header(address addr);
   void release_header();
   void make_trampolines();
-  void make_klasses_shareable();
+  void sort_methods();
   void sort_methods(InstanceKlass* ik) const;
   void remark_pointers_for_instance_klass(InstanceKlass* k, bool should_mark) const;
   void relocate_buffer_to_target();
@@ -250,6 +221,7 @@ public:
     verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
 
     make_trampolines();
+    sort_methods();
 
     log_info(cds)("Make classes shareable");
     make_klasses_shareable();
@@ -274,8 +246,6 @@ public:
     FileMapInfo::metaspace_pointers_do(it);
   }
 };
-
-intx DynamicArchiveBuilder::_buffer_to_target_delta;
 
 size_t DynamicArchiveBuilder::estimate_archive_size() {
   // size of the symbol table and two dictionaries, plus the RunTimeSharedClassInfo's
@@ -408,33 +378,12 @@ void DynamicArchiveBuilder::make_trampolines() {
   guarantee(p <= mc_space->top(), "Estimate of trampoline size is insufficient");
 }
 
-void DynamicArchiveBuilder::make_klasses_shareable() {
-  int i, count = klasses()->length();
-
+void DynamicArchiveBuilder::sort_methods() {
   InstanceKlass::disable_method_binary_search();
-  for (i = 0; i < count; i++) {
+  for (int i = 0; i < klasses()->length(); i++) {
     Klass* k = klasses()->at(i);
     if (k->is_instance_klass()) {
       sort_methods(InstanceKlass::cast(k));
-    }
-  }
-
-  for (i = 0; i < count; i++) {
-    Klass* k = klasses()->at(i);
-    if (!k->is_instance_klass()) {
-      continue;
-    }
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    ik->assign_class_loader_type();
-
-    MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
-    ik->remove_unshareable_info();
-
-    assert(ik->array_klasses() == NULL, "sanity");
-
-    if (log_is_enabled(Debug, cds, dynamic)) {
-      ResourceMark rm;
-      log_debug(cds, dynamic)("klasses[%4i] = " PTR_FORMAT " %s", i, p2i(to_target(ik)), ik->external_name());
     }
   }
 }

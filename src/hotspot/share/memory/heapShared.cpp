@@ -398,8 +398,6 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass *relocate
       new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(50, mtClass);
   }
 
-  assert(relocated_k->is_shared(), "must be a shared class");
-
   if (_k == relocated_k) {
     // Don't add the Klass containing the sub-graph to it's own klass
     // initialization list.
