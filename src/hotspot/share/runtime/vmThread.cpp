@@ -147,7 +147,7 @@ void VMThread::run() {
   }
   // Notify_lock is destroyed by Threads::create_vm()
 
-  int prio  = (VMThreadPriority == -1)
+  int prio = (VMThreadPriority == -1)
     ? os::java_to_os_priority[NearMaxPriority]
     : VMThreadPriority;
   // Note that I cannot call os::set_priority because it expects Java

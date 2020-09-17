@@ -278,7 +278,7 @@ void mutex_init() {
   def(NonJavaThreadsList_lock      , PaddedMutex,   barrier,     true,  _safepoint_check_never);
   def(NonJavaThreadsListSync_lock  , PaddedMutex,   leaf,        true,  _safepoint_check_never);
 
-  def(VMOperation_lock        , PaddedMonitor, nonleaf,     true,  _safepoint_check_always);  // VM_thread allowed to block on these
+  def(VMOperation_lock             , PaddedMonitor, nonleaf,     true,  _safepoint_check_always);  // VM_thread allowed to block on these
   def(RetData_lock                 , PaddedMutex  , nonleaf,     false, _safepoint_check_always);
   def(Terminator_lock              , PaddedMonitor, nonleaf,     true,  _safepoint_check_always);
   def(InitCompleted_lock           , PaddedMonitor, leaf,        true,  _safepoint_check_never);
