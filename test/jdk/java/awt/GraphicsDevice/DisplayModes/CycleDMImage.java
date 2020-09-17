@@ -269,6 +269,7 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
                 continue;
             }
             done = false;
+            DisplayMode currentDM = gd.getDisplayMode();
             Frame frame = new Frame(gd.getDefaultConfiguration());
             try {
                 frame.setSize(400, 400);
@@ -287,6 +288,8 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
                     }
                 }
             } finally {
+                gd.setDisplayMode(currentDM);
+                gd.setFullScreenWindow(null);
                 frame.dispose();
             }
             if (errorMessage != null) {
