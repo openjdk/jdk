@@ -250,8 +250,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
     return _classes_being_redefined;
   }
 
-  inline void set_classes_being_redefined(GrowableArray<Klass*>* cls) {
-    _classes_being_redefined = cls;
+  inline void set_classes_being_redefined(GrowableArray<Klass*>* redef_classes) {
+    _classes_being_redefined = redef_classes;
   }
 
   // RedefineClasses support

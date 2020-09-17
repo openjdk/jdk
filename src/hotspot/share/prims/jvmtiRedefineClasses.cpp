@@ -97,13 +97,13 @@ static inline InstanceKlass* get_ik(jclass def) {
 // Parallel constant pool merging leads to indeterminate constant pools.
 void VM_RedefineClasses::lock_classes() {
   JvmtiThreadState *state = JvmtiThreadState::state_for(JavaThread::current());
-  GrowableArray<Klass*>* cls = state->get_classes_being_redefined();
+  GrowableArray<Klass*>* redef_classes = state->get_classes_being_redefined();
 
   MonitorLocker ml(RedefineClasses_lock);
 
-  if (cls == NULL) {
-    cls = new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(1, mtClass);
-    state->set_classes_being_redefined(cls);
+  if (redef_classes == NULL) {
+    redef_classes = new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(1, mtClass);
+    state->set_classes_being_redefined(redef_classes);
   }
 
   bool has_redefined;
@@ -116,7 +116,7 @@ void VM_RedefineClasses::lock_classes() {
     for (int i = 0; i < _class_count; i++) {
       InstanceKlass* ik = get_ik(_class_defs[i].klass);
       // Check if we are currently redefining the class in this thread already.
-      if (cls->contains(ik)) {
+      if (redef_classes->contains(ik)) {
         assert(ik->is_being_redefined(), "sanity");
       } else {
         if (ik->is_being_redefined()) {
@@ -130,7 +130,7 @@ void VM_RedefineClasses::lock_classes() {
 
   for (int i = 0; i < _class_count; i++) {
     InstanceKlass* ik = get_ik(_class_defs[i].klass);
-    cls->push(ik); // Add to the _classes_being_redefined list
+    redef_classes->push(ik); // Add to the _classes_being_redefined list
     ik->set_is_being_redefined(true);
   }
   ml.notify_all();
@@ -138,23 +138,25 @@ void VM_RedefineClasses::lock_classes() {
 
 void VM_RedefineClasses::unlock_classes() {
   JvmtiThreadState *state = JvmtiThreadState::state_for(JavaThread::current());
-  GrowableArray<Klass*>* cls = state->get_classes_being_redefined();
-  assert(cls != NULL, "_classes_being_redefined is not allocated");
+  GrowableArray<Klass*>* redef_classes = state->get_classes_being_redefined();
+  assert(redef_classes != NULL, "_classes_being_redefined is not allocated");
 
   MonitorLocker ml(RedefineClasses_lock);
 
   for (int i = _class_count - 1; i >= 0; i--) {
     InstanceKlass* def_ik = get_ik(_class_defs[i].klass);
-    if (cls->length() > 0) {
+    if (redef_classes->length() > 0) {
       // Remove the class from _classes_being_redefined list
-      Klass* k = cls->pop();
+      Klass* k = redef_classes->pop();
       assert(def_ik == k, "unlocking wrong class");
     }
     assert(def_ik->is_being_redefined(),
            "should be being redefined to get here");
 
-    // Unlock after we finish all redefines for this class within the thread.
-    if (!cls->contains(def_ik)) {
+    // Unlock after we finish all redefines for this class within
+    // the thread. Same class can be pushed to the list multiple
+    // times (not more than once by each recursive redefinition).
+    if (!redef_classes->contains(def_ik)) {
       def_ik->set_is_being_redefined(false);
     }
   }
