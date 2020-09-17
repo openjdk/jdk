@@ -460,16 +460,6 @@ bool HandshakeState::claim_handshake() {
   return false;
 }
 
-const char* executioner_name(Thread* current_thread, Thread* handshakee, bool current_is_requester) {
-  if (current_thread == handshakee) return "self(JavaThread)";
-  if (current_is_requester) {
-    if (current_thread->is_VM_thread()) return "handshaker(VM Thread)";
-    else return "handshaker(JavaThread)";
-  }
-  if (current_thread->is_VM_thread()) return "cooperative(VM Thread)";
-  else return "cooperative(JavaThread)";
-}
-
 HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* match_op) {
   if (!has_operation()) {
     // JT has already cleared its handshake
@@ -504,8 +494,9 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
     if (op != NULL) {
       assert(SafepointMechanism::local_poll_armed(_handshakee), "Must be");
       assert(op->_target == NULL || _handshakee == op->_target, "Wrong thread");
-      log_trace(handshake)("Processing handshake " INTPTR_FORMAT " by %s", p2i(op),
-                           executioner_name(current_thread, _handshakee, op == match_op));
+      log_trace(handshake)("Processing handshake " INTPTR_FORMAT " by %s(%s)", p2i(op),
+                           op == match_op ? "handshaker" : "cooperative",
+                           current_thread->is_VM_thread() ? "VM Thread" : "JavaThread");
 
       if (op == match_op) {
         pr_ret = HandshakeState::_succeed;
@@ -521,8 +512,8 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
 
   _lock.unlock();
 
-  log_trace(handshake)("Thread %s(" INTPTR_FORMAT ") executed %d ops for JavaThread: " INTPTR_FORMAT " %s target op: " INTPTR_FORMAT,
-                       executioner_name(current_thread, _handshakee, pr_ret == HandshakeState::_succeed),
+  log_trace(handshake)("%s(" INTPTR_FORMAT ") executed %d ops for JavaThread: " INTPTR_FORMAT " %s target op: " INTPTR_FORMAT,
+                       current_thread->is_VM_thread() ? "VM Thread" : "JavaThread",
                        p2i(current_thread), executed, p2i(_handshakee),
                        pr_ret == HandshakeState::_succeed ? "including" : "excluding", p2i(match_op));
   return pr_ret;

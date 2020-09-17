@@ -651,7 +651,7 @@ jvmtiError
 JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThread *java_thread, jobject *monitor_ptr) {
   Thread *current_thread = Thread::current();
   assert(java_thread->is_handshake_safe_for(current_thread),
-         "call by myself or at direct handshake");
+         "call by myself or at handshake");
   oop obj = NULL;
   // The ObjectMonitor* can't be async deflated since we are either
   // at a safepoint or the calling thread is operating on itself so
@@ -694,7 +694,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
   jvmtiError err = JVMTI_ERROR_NONE;
   Thread *current_thread = Thread::current();
   assert(java_thread->is_handshake_safe_for(current_thread),
-         "call by myself or at direct handshake");
+         "call by myself or at handshake");
 
   if (java_thread->has_last_Java_frame()) {
     ResourceMark rm(current_thread);
@@ -905,9 +905,8 @@ JvmtiEnvBase::get_frame_location(JavaThread *java_thread, jint depth,
   uint32_t debug_bits = 0;
 #endif
   Thread* current_thread = Thread::current();
-  assert(current_thread == java_thread ||
-         java_thread->is_handshake_safe_for(current_thread),
-         "call by myself or at direct handshake");
+  assert(java_thread->is_handshake_safe_for(current_thread),
+         "call by myself or at handshake");
   ResourceMark rm(current_thread);
 
   vframe *vf = vframeFor(java_thread, depth);
@@ -1161,8 +1160,7 @@ void
 MultipleStackTracesCollector::fill_frames(jthread jt, JavaThread *thr, oop thread_oop) {
 #ifdef ASSERT
   Thread *current_thread = Thread::current();
-  assert(current_thread == thr ||
-         SafepointSynchronize::is_at_safepoint() ||
+  assert(SafepointSynchronize::is_at_safepoint() ||
          thr->is_handshake_safe_for(current_thread),
          "call by myself / at safepoint / at handshake");
 #endif
