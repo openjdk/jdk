@@ -512,7 +512,7 @@ void VMThread::execute(VM_Operation* op) {
   }
 
   // Avoid re-entrant attempts to gc-a-lot
-  SkipGCALot sgcalot(t);    
+  SkipGCALot sgcalot(t);
 
   // JavaThread or WatcherThread
   t->check_for_valid_safepoint_state();

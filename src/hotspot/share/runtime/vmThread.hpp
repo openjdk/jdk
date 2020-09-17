@@ -111,7 +111,7 @@ class VMThread: public NamedThread {
   void verify();
 
   // Performance measurement
-  static PerfCounter* perf_accumulated_vm_operation_time()  
+  static PerfCounter* perf_accumulated_vm_operation_time()
     { return _perf_accumulated_vm_operation_time; }
 
   // Entry for starting vm thread
@@ -126,7 +126,7 @@ class VMThread: public NamedThread {
  private:
   // VM_Operation support
   static VM_Operation*     _cur_vm_operation;   // Current VM operation
-  static VM_Operation*     _next_vm_operation;  
+  static VM_Operation*     _next_vm_operation;
 
   bool set_next_operation(VM_Operation *op);
 
