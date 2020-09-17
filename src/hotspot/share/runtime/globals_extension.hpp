@@ -35,14 +35,15 @@
 #define FLAG_MEMBER_ENUM(name) Flag_##name##_enum
 #define FLAG_MEMBER_ENUM_(name) FLAG_MEMBER_ENUM(name),
 
-#define FLAG_MEMBER_ENUM_DECLARE(type, name, ...)  FLAG_MEMBER_ENUM_(name)
+#define DEFINE_FLAG_MEMBER_ENUM(type, name, ...)  FLAG_MEMBER_ENUM_(name)
 
 enum JVMFlagsEnum : int {
-  ALL_FLAGS(FLAG_MEMBER_ENUM_DECLARE,
-            FLAG_MEMBER_ENUM_DECLARE,
-            FLAG_MEMBER_ENUM_DECLARE,
-            FLAG_MEMBER_ENUM_DECLARE,
-            FLAG_MEMBER_ENUM_DECLARE,
+  INVALID_JVMFlagsEnum = -1,
+  ALL_FLAGS(DEFINE_FLAG_MEMBER_ENUM,
+            DEFINE_FLAG_MEMBER_ENUM,
+            DEFINE_FLAG_MEMBER_ENUM,
+            DEFINE_FLAG_MEMBER_ENUM,
+            DEFINE_FLAG_MEMBER_ENUM,
             IGNORE_RANGE,
             IGNORE_CONSTRAINT)
   NUM_JVMFlagsEnum
@@ -50,19 +51,19 @@ enum JVMFlagsEnum : int {
 
 // Construct set functions for all flags
 
-#define FLAG_MEMBER_SET(name) Flag_##name##_set
-#define FLAG_MEMBER_SET_(type, name) \
-  inline JVMFlag::Error FLAG_MEMBER_SET(name)(type value, JVMFlag::Flags origin) { \
+#define FLAG_MEMBER_SETTER(name) Flag_##name##_set
+#define FLAG_MEMBER_SETTER_(type, name) \
+  inline JVMFlag::Error FLAG_MEMBER_SETTER(name)(type value, JVMFlag::Flags origin) { \
     return JVMFlagAccess::set<JVM_FLAG_TYPE(type)>(FLAG_MEMBER_ENUM(name), value, origin); \
   }
 
-#define FLAG_MEMBER_SET_DECLARE(type, name, ...) FLAG_MEMBER_SET_(type, name)
+#define DEFINE_FLAG_MEMBER_SETTER(type, name, ...) FLAG_MEMBER_SETTER_(type, name)
 
-ALL_FLAGS(FLAG_MEMBER_SET_DECLARE,
-          FLAG_MEMBER_SET_DECLARE,
-          FLAG_MEMBER_SET_DECLARE,
-          FLAG_MEMBER_SET_DECLARE,
-          FLAG_MEMBER_SET_DECLARE,
+ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
+          DEFINE_FLAG_MEMBER_SETTER,
+          DEFINE_FLAG_MEMBER_SETTER,
+          DEFINE_FLAG_MEMBER_SETTER,
+          DEFINE_FLAG_MEMBER_SETTER,
           IGNORE_RANGE,
           IGNORE_CONSTRAINT)
 
@@ -74,9 +75,9 @@ ALL_FLAGS(FLAG_MEMBER_SET_DECLARE,
 #define FLAG_SET_DEFAULT(name, value) ((name) = (value))
 
 #define FLAG_SET_CMDLINE(name, value) (JVMFlag::setOnCmdLine(FLAG_MEMBER_ENUM(name)), \
-                                       FLAG_MEMBER_SET(name)((value), JVMFlag::COMMAND_LINE))
-#define FLAG_SET_ERGO(name, value)    (FLAG_MEMBER_SET(name)((value), JVMFlag::ERGONOMIC))
-#define FLAG_SET_MGMT(name, value)    (FLAG_MEMBER_SET(name)((value), JVMFlag::MANAGEMENT))
+                                       FLAG_MEMBER_SETTER(name)((value), JVMFlag::COMMAND_LINE))
+#define FLAG_SET_ERGO(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlag::ERGONOMIC))
+#define FLAG_SET_MGMT(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlag::MANAGEMENT))
 
 #define FLAG_SET_ERGO_IF_DEFAULT(name, value) \
   do {                                        \

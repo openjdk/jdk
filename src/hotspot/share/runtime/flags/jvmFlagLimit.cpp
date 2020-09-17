@@ -144,10 +144,18 @@ static constexpr const JVMFlagLimit* const flagLimitTable[1 + NUM_JVMFlagsEnum] 
   )
 };
 
-JVMFlagsEnum JVMFlagLimit::_last_checked = static_cast<JVMFlagsEnum>(-1);
-JVMFlagConstraintPhase JVMFlagLimit::_validating_phase = JVMFlagConstraintPhase::AtParse;;
+JVMFlagsEnum JVMFlagLimit::_last_checked = INVALID_JVMFlagsEnum;
+JVMFlagConstraintPhase JVMFlagLimit::_validating_phase = JVMFlagConstraintPhase::AtParse;
 
 const JVMFlagLimit* const* JVMFlagLimit::flagLimits = &flagLimitTable[1]; // excludes dummy
+
+const JVMFlag* JVMFlagLimit::last_checked_flag() {
+  if (_last_checked != INVALID_JVMFlagsEnum) {
+    return JVMFlag::flag_from_enum(_last_checked);
+  } else {
+    return NULL;
+  }
+}
 
 bool JVMFlagLimit::check_all_ranges() {
   bool status = true;

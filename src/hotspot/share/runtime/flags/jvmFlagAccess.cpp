@@ -88,7 +88,7 @@ public:
 class FlagAccessImpl_bool : public TypedFlagAccessImpl<JVM_FLAG_TYPE(bool), EventBooleanFlagChanged> {
 public:
   JVMFlag::Error set_impl(JVMFlag* flag, void* value_addr, JVMFlag::Flags origin) const {
-    bool verbose = !JVMFlagLimit::validated_after_ergo();
+    bool verbose = JVMFlagLimit::verbose_checks_needed();
     return TypedFlagAccessImpl<JVM_FLAG_TYPE(bool), EventBooleanFlagChanged>
                ::check_constraint_and_set(flag, value_addr, origin, verbose);
   }
@@ -103,7 +103,7 @@ class RangedFlagAccessImpl : public TypedFlagAccessImpl<T, type_enum, EVENT> {
 public:
   virtual JVMFlag::Error set_impl(JVMFlag* flag, void* value_addr, JVMFlag::Flags origin) const {
     T value = *((T*)value_addr);
-    bool verbose = !JVMFlagLimit::validated_after_ergo();
+    bool verbose = JVMFlagLimit::verbose_checks_needed();
 
     const JVMTypedFlagLimit<T>* range = (const JVMTypedFlagLimit<T>*)JVMFlagLimit::get_range(flag);
     if (range != NULL) {
@@ -325,7 +325,7 @@ JVMFlag::Error JVMFlagAccess::ccstrAtPut(JVMFlag* flag, ccstr* value, JVMFlag::F
   return JVMFlag::SUCCESS;
 }
 
-// This is called by the SET_FLAG_XXX macros.
+// This is called by the FLAG_SET_XXX macros.
 JVMFlag::Error JVMFlagAccess::set_impl(JVMFlagsEnum flag_enum, int type_enum, void* value, JVMFlag::Flags origin) {
   if (type_enum == JVMFlag::TYPE_ccstr || type_enum == JVMFlag::TYPE_ccstrlist) {
     return ccstrAtPut((JVMFlagsEnum)flag_enum, *((ccstr*)value), origin);

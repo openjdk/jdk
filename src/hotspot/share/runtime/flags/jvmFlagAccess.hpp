@@ -82,7 +82,7 @@ public:
   }
 
   // This is a *flag specific* setter. It should be used only via by the
-  // SET_FLAG_{DEFAULT, CMDLINE, ERGO, MGMT} macros.
+  // FLAG_SET_{DEFAULT, CMDLINE, ERGO, MGMT} macros.
   // It's used to set a specific flag whose type is statically known. A mismatched
   // type_enum will result in an assert.
   template <typename T, int type_enum>

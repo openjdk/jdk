@@ -516,11 +516,11 @@ const int DEVELOP_KIND_PD  = JVMFlag::KIND_DEVELOP | JVMFlag::KIND_PLATFORM_DEPE
 const int NOTPROD_KIND     = JVMFlag::KIND_NOT_PRODUCT;
 
 #define FLAG_TYPE(type) (JVMFlag::TYPE_ ## type)
-#define DEVELOP_FLAG_INIT(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, DEVELOP_KIND,    __VA_ARGS__),
-#define DEVELOP_FLAG_INIT_PD(type, name,        ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, DEVELOP_KIND_PD, __VA_ARGS__),
-#define PRODUCT_FLAG_INIT(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, PRODUCT_KIND,    __VA_ARGS__),
-#define PRODUCT_FLAG_INIT_PD(type, name,        ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, PRODUCT_KIND_PD, __VA_ARGS__),
-#define NOTPROD_FLAG_INIT(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, NOTPROD_KIND,    __VA_ARGS__),
+#define INITIALIZE_DEVELOP_FLAG(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, DEVELOP_KIND,    __VA_ARGS__),
+#define INITIALIZE_DEVELOP_FLAG_PD(type, name,        ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, DEVELOP_KIND_PD, __VA_ARGS__),
+#define INITIALIZE_PRODUCT_FLAG(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, PRODUCT_KIND,    __VA_ARGS__),
+#define INITIALIZE_PRODUCT_FLAG_PD(type, name,        ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, PRODUCT_KIND_PD, __VA_ARGS__),
+#define INITIALIZE_NOTPROD_FLAG(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, NOTPROD_KIND,    __VA_ARGS__),
 
 // Handy aliases to match the symbols used in the flag specification macros.
 const int DIAGNOSTIC   = JVMFlag::KIND_DIAGNOSTIC;
@@ -528,11 +528,11 @@ const int MANAGEABLE   = JVMFlag::KIND_MANAGEABLE;
 const int EXPERIMENTAL = JVMFlag::KIND_EXPERIMENTAL;
 
 #define MATERIALIZE_ALL_FLAGS      \
-  ALL_FLAGS(DEVELOP_FLAG_INIT,     \
-            DEVELOP_FLAG_INIT_PD,  \
-            PRODUCT_FLAG_INIT,     \
-            PRODUCT_FLAG_INIT_PD,  \
-            NOTPROD_FLAG_INIT,     \
+  ALL_FLAGS(INITIALIZE_DEVELOP_FLAG,     \
+            INITIALIZE_DEVELOP_FLAG_PD,  \
+            INITIALIZE_PRODUCT_FLAG,     \
+            INITIALIZE_PRODUCT_FLAG_PD,  \
+            INITIALIZE_NOTPROD_FLAG,     \
             IGNORE_RANGE,          \
             IGNORE_CONSTRAINT)
 

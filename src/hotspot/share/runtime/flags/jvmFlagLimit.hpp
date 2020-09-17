@@ -112,13 +112,7 @@ public:
     return get_kind_at(flag_enum, HAS_CONSTRAINT);
   }
 
-  static const JVMFlag* last_checked_flag() {
-    if (static_cast<int>(_last_checked) >= 0) {
-      return JVMFlag::flag_from_enum(_last_checked);
-    } else {
-      return NULL;
-    }
-  }
+  static const JVMFlag* last_checked_flag();
 
   // Is the current value of each JVM flag within the allowed range (if specified)
   static bool check_all_ranges();
@@ -126,7 +120,14 @@ public:
 
   // Does the current value of each JVM flag satisfy the specified constraint
   static bool check_all_constraints(JVMFlagConstraintPhase phase);
-  static bool validated_after_ergo() { return _validating_phase >= JVMFlagConstraintPhase::AfterErgo; };
+
+  // If range/constraint checks fail, print verbose error messages only if we are parsing
+  // arguments from the command-line. Silently ignore any invalid values that are
+  // set programmatically via FLAG_SET_ERGO, etc.
+  static bool verbose_checks_needed() {
+    return _validating_phase == JVMFlagConstraintPhase::AtParse;
+  }
+
   static JVMFlagConstraintPhase validating_phase() { return _validating_phase; }
 };
 
