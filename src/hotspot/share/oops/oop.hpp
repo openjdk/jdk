@@ -78,13 +78,9 @@ class oopDesc {
   inline Klass* klass() const;
   inline Klass* klass_or_null() const;
   inline Klass* klass_or_null_acquire() const;
-  static inline Klass** klass_addr(HeapWord* mem);
-  static inline narrowKlass* compressed_klass_addr(HeapWord* mem);
-  inline Klass** klass_addr();
-  inline narrowKlass* compressed_klass_addr();
 
   inline void set_klass(Klass* k);
-  static inline void release_set_klass(HeapWord* mem, Klass* klass);
+  static inline void release_set_klass(HeapWord* mem, Klass* k);
 
   // For klass field compression
   inline int klass_gap() const;
