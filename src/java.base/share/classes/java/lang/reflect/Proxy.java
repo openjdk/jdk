@@ -154,7 +154,7 @@ import static java.lang.invoke.MethodType.methodType;
  * documentation for that method.
  *
  * <li>A proxy interface may define a default method or inherit
- * a default method from its super interface directly or indirectly.
+ * a default method from its superinterface directly or indirectly.
  * An invocation handler can invoke a default method of a proxy
  * interface by calling {@link Proxy#invokeDefaultMethod(Object, Method, Object...)
  * Proxy::invokeDefaultMethod}.
@@ -1206,6 +1206,25 @@ public class Proxy implements java.io.Serializable {
      *         });
      * }</pre></blockquote>
      *
+     * If an interface {@code D} extends {@code A} and overrides {@code m},
+     * the proxy class implementing {@code D} can invoke {@code D::m} default method
+     * as if calling {@code D.super::m}.  As {@code D} has the implementation of
+     * {@code m}, invoking {@code A::m} via {@code Proxy::invokeDefaultMethod}
+     * will result in an {@code IllegalArgumentException} because {@code A::m}
+     * is not inherited from any proxy interface.
+     *
+     * <blockquote><pre>{@code
+     * interface D extends A {
+     *     default T m(A a) { return t3; }
+     * }
+     *
+     * Object proxy = Proxy.newProxyInstance(loader, new Class<?>[] { D.class },
+     *         (o, m, params) -> {
+     *             // IllegalArgumentException thrown as {@code A::m} is not a method
+     *             // inherited from its proxy interface
+     *             return Proxy.invokeDefaultMethod(o, A.class.getMethod("m"), params);
+     *         });
+     * }</pre></blockquote>
      * @param proxy   the {@code Proxy} instance on which the default method to be invoked
      * @param method  the {@code Method} instance corresponding to a default method
      *                declared in a proxy interface of the proxy class or inherited
@@ -1220,6 +1239,9 @@ public class Proxy implements java.io.Serializable {
      *         <li>the given {@code method} is not a default method declared
      *             in a proxy interface of the proxy class and not inherited from
      *             any of its superinterfaces; or</li>
+     *         <li>the given {@code method} is overridden directly or indirectly by
+     *             the proxy interfaces and the method reference to the named
+     *             method never resolves to the given {@code method}; or</li>
      *         <li>any of the given {@code args} does not match the parameter type of
      *             the default method to be invoked</li>
      *         </ul>
@@ -1236,13 +1258,13 @@ public class Proxy implements java.io.Serializable {
         Objects.requireNonNull(proxy);
         Objects.requireNonNull(method);
 
-        // verify that the object is actually a proxy instance.
+        // verify that the object is actually a proxy instance
         Class<?> proxyClass = proxy.getClass();
         if (!isProxyClass(proxyClass)) {
             throw new IllegalArgumentException("'proxy' is not a proxy instance");
         }
         if (!method.isDefault()) {
-            throw new IllegalArgumentException(method + " not a default method");
+            throw new IllegalArgumentException("\"" + method + "\" is not a default method");
         }
 
         // lookup the cached method handle
@@ -1258,16 +1280,14 @@ public class Proxy implements java.io.Serializable {
                 throw new IllegalArgumentException(e.getMessage(), e);
             }
         } else {
-            Class<?> proxyInterface = findProxyInterface(proxyClass, method);
-            if (proxyInterface == null) {
-                throw new IllegalArgumentException(method + " not a method declared in the proxy class");
-            }
+            Class<?> proxyInterface = findProxyInterfaceOrElseThrow(proxyClass, method);
             try {
                 superMH = ((Proxy) proxy).proxyClassLookup()
                                          .findSpecial(proxyInterface, method.getName(), type, proxyClass)
                                          .withVarargs(false);
             } catch (IllegalAccessException|NoSuchMethodException e) {
-                throw new IllegalArgumentException(e.getMessage(), e);
+                // should not reach here
+                throw new InternalError(e);
             }
             // push MH into cache
             MethodHandle cached = methods.putIfAbsent(method, superMH);
@@ -1308,11 +1328,15 @@ public class Proxy implements java.io.Serializable {
     /*
      * Finds the first proxy interface that declares the given method
      * directly or indirectly.
+     *
+     * @throws IllegalArgumentException if not found
      */
-    private static Class<?> findProxyInterface(Class<?> proxyClass, Method method) {
+    private static Class<?> findProxyInterfaceOrElseThrow(Class<?> proxyClass, Method method) {
         Class<?> declaringClass = method.getDeclaringClass();
-        if (!declaringClass.isInterface())
-            return null;
+        if (!declaringClass.isInterface()) {
+            throw new IllegalArgumentException("\"" + method +
+                    "\" is not a method declared in the proxy class");
+        }
 
         List<Class<?>> proxyInterfaces = Arrays.asList(proxyClass.getInterfaces());
         // the method's declaring class is a proxy interface
@@ -1321,7 +1345,7 @@ public class Proxy implements java.io.Serializable {
         
         Deque<Class<?>> deque = new ArrayDeque<>();
         Set<Class<?>> visited = new HashSet<>();
-
+        boolean indirectMethodRef = false;
         for (Class<?> intf : proxyInterfaces) {
             assert intf != declaringClass;
             visited.add(intf);
@@ -1338,6 +1362,7 @@ public class Proxy implements java.io.Serializable {
                         if (m.getDeclaringClass() == declaringClass) {
                             return intf;
                         }
+                        indirectMethodRef = true;
                     } catch (NoSuchMethodException e) {}
 
                     // skip traversing its superinterfaces
@@ -1359,7 +1384,10 @@ public class Proxy implements java.io.Serializable {
                 }
             }
         }
-        return null;
+
+        throw new IllegalArgumentException("\"" + method + (indirectMethodRef
+                ? "\" is overridden directly or indirectly by the proxy interfaces"
+                : "\" is not a method declared in the proxy class"));
     }
 
     /**
