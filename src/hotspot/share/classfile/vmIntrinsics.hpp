@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,6 @@
 
 #ifndef SHARE_CLASSFILE_VMINTRINSICS_HPP
 #define SHARE_CLASSFILE_VMINTRINSICS_HPP
-
-#include "jfr/support/jfrIntrinsics.hpp"
-#include "jvmci/vmSymbols_jvmci.hpp"
-#include "memory/iterator.hpp"
-#include "oops/symbol.hpp"
-#include "utilities/macros.hpp"
 
 // Here are all the intrinsics known to the runtime and the CI.
 // Each intrinsic consists of a public enum name (like _hashCode),
