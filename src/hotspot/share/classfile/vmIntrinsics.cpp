@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jvm.h"
-#include "classfile/symbolTable.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "memory/allocation.inline.hpp"
-#include "memory/oopFactory.hpp"
-#include "memory/metaspaceClosure.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/handles.inline.hpp"
-#include "utilities/tribool.hpp"
-#include "utilities/xmlstream.hpp"
-
 
 // These are flag-matching functions:
 inline bool match_F_R(jshort flags) {
