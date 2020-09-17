@@ -64,8 +64,6 @@ public class JLinkReproducible3Test {
             throw new RuntimeException("Unable to create copy jdk directory");
         }
 
-        jdk2_dir_file.deleteOnExit();
-
         Path copied_jlink1 = Optional.of(
                 Paths.get(copy_jdk1_dir.toString(), "bin", "jlink"))
                 .orElseThrow(() -> new RuntimeException("Unable to load copied jlink")
