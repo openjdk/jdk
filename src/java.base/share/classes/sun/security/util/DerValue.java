@@ -505,7 +505,7 @@ public class DerValue {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             DerInputStream dis = new DerInputStream(this);
             while (dis.available() > 0) {
-                bout.write(dis.getOctetString());
+                bout.write(dis.getDerValue().getOctetString());
             }
             return bout.toByteArray();
         }
