@@ -23,7 +23,6 @@
 # questions.
 #
 
-include JarArchive.gmk
 include JavaCompilation.gmk
 include Modules.gmk
 
@@ -35,11 +34,10 @@ $(eval $(call IncludeCustomExtension, modules/jdk.javadoc/Gendata.gmk))
 # This is needed to properly setup DOCS_MODULES.
 $(eval $(call ReadImportMetaData))
 
-# Modules that should be visible for 9 - the documented modules:
-CT_MODULES := $(DOCS_MODULES)
+JAVADOC_MODULES := $(DOCS_MODULES)
 
 # Get the complete module source path:
-CT_MODULESOURCEPATH := $(call GetModuleSrcPath)
+JAVADOC_MODULESOURCEPATH := $(call GetModuleSrcPath)
 
 CT_DATA_DESCRIPTION += $(TOPDIR)/make/data/symbols/symbols
 
@@ -77,7 +75,15 @@ $(SUPPORT_OUTPUTDIR)/javadoc-symbols/symbols: \
 	    build.tools.symbolgenerator.CreateSymbols \
 	    build-javadoc-data \
 	    $(CT_DATA_DESCRIPTION) \
-	    $(JDK_OUTPUTDIR)/modules/jdk.javadoc/jdk/javadoc/internal/doclets/toolkit/resources/releases
+	    $(JDK_OUTPUTDIR)/modules/jdk.javadoc/jdk/javadoc/internal/doclets/toolkit/resources/releases \
+	    11
+	$(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \
+	    $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
+	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols \
+	    build.tools.symbolgenerator.JavadocElementList \
+	    $(JDK_OUTPUTDIR)/modules/jdk.javadoc/jdk/javadoc/internal/doclets/toolkit/resources/releases/element-list-$(JDK_SOURCE_TARGET_VERSION).txt \
+	    $(JAVADOC_MODULESOURCEPATH) \
+	    $(JAVADOC_MODULES)
 	$(TOUCH) $@
 
 # Copy ct.sym to the modules libs dir

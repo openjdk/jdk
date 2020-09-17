@@ -3825,7 +3825,8 @@ public class CreateSymbols {
      * {@code ctDescriptionFile}, using the file as a recipe to create the sigfiles.
      */
     @SuppressWarnings("unchecked")
-    public void createJavadocData(String ctDescriptionFileExtra, String ctDescriptionFile, String targetDir) throws IOException {
+    public void createJavadocData(String ctDescriptionFileExtra, String ctDescriptionFile,
+                                  String targetDir, int startVersion) throws IOException {
         LoadDescriptions data = load(ctDescriptionFileExtra != null ? Paths.get(ctDescriptionFileExtra)
                                                                     : null,
                                      Paths.get(ctDescriptionFile));
@@ -3834,39 +3835,27 @@ public class CreateSymbols {
 
         for (PlatformInput version : data.versions) {
             int versionNumber = Integer.parseInt(version.version, Character.MAX_RADIX);
-            if (versionNumber <= 8) {
-                Path outputFile = target.resolve("package-list-" + versionNumber + ".txt");
-                Files.createDirectories(outputFile.getParent());
-                try (Writer w = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
-                    Set<String> packages = data.classes.classes.stream().filter(cd -> cd.header.stream().anyMatch(h -> h.versions.contains(version.version))).map(cd -> {
-                        int lastSlash = cd.name.lastIndexOf("/");
-                        return cd.name.substring(0, lastSlash).replace('/', '.');
-                    }).collect(Collectors.toCollection(() -> new TreeSet<>()));
-                    for (String pack : packages) {
-                        w.write(pack);
-                        w.write("\n");
+            if (versionNumber < startVersion) {
+                continue;
+            }
+            Path outputFile = target.resolve("element-list-" + versionNumber + ".txt");
+            Files.createDirectories(outputFile.getParent());
+            try (Writer w = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
+                Set<ModuleDescription> modules = new TreeSet<>((m1, m2) -> m1.name.compareTo(m2.name));
+                modules.addAll(data.modules.values());
+                for (ModuleDescription module : modules) {
+                    if ("jdk.unsupported".equals(module.name)) {
+                        continue;
                     }
-                }
-            } else {
-                Path outputFile = target.resolve("element-list-" + versionNumber + ".txt");
-                Files.createDirectories(outputFile.getParent());
-                try (Writer w = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
-                    Set<ModuleDescription> modules = new TreeSet<>((m1, m2) -> m1.name.compareTo(m2.name));
-                    modules.addAll(data.modules.values());
-                    for (ModuleDescription module : modules) {
-                        if ("jdk.unsupported".equals(module.name)) {
-                            continue;
-                        }
-                        Optional<ModuleHeaderDescription> header = module.header.stream().filter(h -> h.versions.contains(version.version)).findAny();
-                        if (header.isEmpty()) {
-                            continue;
-                        }
-                        w.write("module:" + module.name);
+                    Optional<ModuleHeaderDescription> header = module.header.stream().filter(h -> h.versions.contains(version.version)).findAny();
+                    if (header.isEmpty()) {
+                        continue;
+                    }
+                    w.write("module:" + module.name);
+                    w.write("\n");
+                    for (String pack : header.get().exports) {
+                        w.write(pack.replace('/', '.'));
                         w.write("\n");
-                        for (String pack : header.get().exports) {
-                            w.write(pack.replace('/', '.'));
-                            w.write("\n");
-                        }
                     }
                 }
             }
@@ -3997,23 +3986,32 @@ public class CreateSymbols {
                 String ctDescriptionFileExtra;
                 String ctDescriptionFile;
                 String targetDir;
+                int startVersion;
 
-                if (args.length == 3) {
+                if (args.length == 4) {
                     ctDescriptionFileExtra = null;
                     ctDescriptionFile = args[1];
                     targetDir = args[2];
-                } else if (args.length == 4) {
+                    startVersion = Integer.parseInt(args[3]);
+                } else if (args.length == 5) {
                     ctDescriptionFileExtra = args[1];
                     ctDescriptionFile = args[2];
                     targetDir = args[3];
+                    startVersion = Integer.parseInt(args[4]);
                 } else {
                     help();
                     return ;
                 }
 
+                if (startVersion < 9) {
+                    System.err.println("The start version must be at least 9!");
+                    return ;
+                }
+
                 new CreateSymbols().createJavadocData(ctDescriptionFileExtra,
                                                       ctDescriptionFile,
-                                                      targetDir);
+                                                      targetDir,
+                                                      startVersion);
                 break;
             }
         }
