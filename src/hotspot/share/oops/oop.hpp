@@ -271,9 +271,6 @@ class oopDesc {
   inline uint age() const;
   inline void incr_age();
 
-  // mark-sweep support
-  void follow_body(int begin, int end);
-
   template <typename OopClosureType>
   inline void oop_iterate(OopClosureType* cl);
 
