@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Optional;
-import java.util.spi.ToolProvider;
 
 /*
  * @test
@@ -42,52 +41,47 @@ import java.util.spi.ToolProvider;
  * @run main JLinkReproducible3Test
  */
 public class JLinkReproducible3Test {
-    static final Path COPIED_JLINK;
-    static final ToolProvider JLINK_TOOL;
-
-    static {
-        try {
-            //Path jdk2_dir = Files.createTempDirectory("JLinkReproducible4Test-jdk2");
-            Path jdk2_dir = Path.of("./jdk2-tmpdir"); //Files.createTempDirectory("JLinkReproducible4Test-jdk2");
-            Path jdk_test_dir = Path.of(
-                    Optional.of(
-                            System.getProperty("test.jdk"))
-                            .orElseThrow(() -> new RuntimeException("Couldn't load JDK Test Dir"))
-            );
-
-            Files.walkFileTree(jdk_test_dir, new CopyFileVisitor(jdk_test_dir, jdk2_dir));
-
-            File jdk2_dir_file = jdk2_dir.toFile();
-            if (!jdk2_dir_file.mkdir() && !jdk2_dir_file.exists()) {
-                throw new RuntimeException("Unable to create copy jdk directory");
-            }
-            jdk2_dir_file.deleteOnExit();
-
-            COPIED_JLINK = Optional.of(
-                    Paths.get(jdk2_dir.toString(), "bin", "jlink"))
-                    .orElseThrow(() -> new RuntimeException("Unable to load copied jlink")
-                    );
-
-            JLINK_TOOL = ToolProvider.findFirst("jlink")
-                    .orElseThrow(() ->
-                            new RuntimeException("jlink tool not found")
-                    );
-
-        } catch (IOException e) {
-            throw new RuntimeException("Couldn't intialize JDKs");
-        }
-
-    }
 
     public static void main(String[] args) throws Exception {
         Path image1 = Paths.get("./image1");
         Path image2 = Paths.get("./image2");
 
-        JLINK_TOOL.run(System.out, System.err, "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image1.toString());
-        runCopiedJlink(COPIED_JLINK.toString(), "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image2.toString());
+        Path copy_jdk1_dir = Path.of("./copy-jdk1-tmpdir");
+        Path copy_jdk2_dir = Path.of("./copy-jdk2-tmpdir");
+        Path jdk_test_dir = Path.of(
+                Optional.of(
+                        System.getProperty("test.jdk"))
+                        .orElseThrow(() -> new RuntimeException("Couldn't load JDK Test Dir"))
+        );
 
-        if (Files.mismatch(image1.resolve("lib").resolve("modules"), image2.resolve("lib").resolve("modules")) != -1L) {
-            throw new RuntimeException("jlink producing inconsistent result in modules");
+        Files.walkFileTree(jdk_test_dir, new CopyFileVisitor(jdk_test_dir, copy_jdk1_dir));
+        Files.walkFileTree(jdk_test_dir, new CopyFileVisitor(jdk_test_dir, copy_jdk2_dir));
+
+        File jdk1_dir_file = copy_jdk1_dir.toFile();
+        File jdk2_dir_file = copy_jdk2_dir.toFile();
+
+        if (!jdk2_dir_file.mkdir() && !jdk2_dir_file.exists() || !jdk1_dir_file.mkdir() && !jdk1_dir_file.exists()) {
+            throw new RuntimeException("Unable to create copy jdk directory");
+        }
+
+        jdk2_dir_file.deleteOnExit();
+
+        Path copied_jlink1 = Optional.of(
+                Paths.get(copy_jdk1_dir.toString(), "bin", "jlink"))
+                .orElseThrow(() -> new RuntimeException("Unable to load copied jlink")
+                );
+
+        Path copied_jlink2 = Optional.of(
+                Paths.get(copy_jdk2_dir.toString(), "bin", "jlink"))
+                .orElseThrow(() -> new RuntimeException("Unable to load copied jlink")
+                );
+
+        runCopiedJlink(copied_jlink1.toString(), "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image1.toString());
+        runCopiedJlink(copied_jlink2.toString(), "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image2.toString());
+
+        long mismatch = Files.mismatch(image1.resolve("lib").resolve("modules"), image2.resolve("lib").resolve("modules"));
+        if (mismatch != -1L) {
+            throw new RuntimeException("jlink producing inconsistent result in modules. Mismatch in modules file occurred at byte position " + mismatch);
         }
     }
 
@@ -95,6 +89,14 @@ public class JLinkReproducible3Test {
         var pb = new ProcessBuilder(args);
         var res = ProcessTools.executeProcess(pb);
         res.shouldHaveExitValue(0);
+    }
+
+    private static String runJavaVersion(Path jdk_test_base_dir) throws Exception {
+        var java_exec = Paths.get(jdk_test_base_dir.toString(), "bin", "java");
+        var pb = new ProcessBuilder(java_exec.toString(), "--version");
+        var res = ProcessTools.executeProcess(pb);
+        res.shouldHaveExitValue(0);
+        return res.getStdout();
     }
 
     private static class CopyFileVisitor extends SimpleFileVisitor<Path> {
