@@ -80,7 +80,7 @@ class HeapRegionRange : public StackObj {
 // * _allocated_heapregions_length (not exposed outside this class) is the
 //   number of regions+1 for which we have HeapRegions.
 // * max_length() returns the maximum number of regions the heap may commit.
-// * max_reserved_length() returns the maximum number of regions the heap has reserved.
+// * reserved_length() returns the maximum number of regions the heap has reserved.
 //
 
 class HeapRegionManager: public CHeapObj<mtGC> {
@@ -125,7 +125,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   // Finds the next sequence of unavailable regions starting at the given index. Returns the
   // sequence found as a HeapRegionRange. If no regions can be found, both start and end of
-  // the returned range is equal to max_reserved_length().
+  // the returned range is equal to reserved_length().
   HeapRegionRange find_unavailable_from_idx(uint index) const;
   // Finds the next sequence of empty regions starting from start_idx, going backwards in
   // the heap. Returns the length of the sequence found. If this value is zero, no
