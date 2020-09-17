@@ -268,7 +268,7 @@ PerRegionTable* OtherRegionsTable::delete_region_table(size_t& added_by_deleted)
     _coarse_map.at_put(max_hrm_index, true);
   } else {
     // This will lazily initialize an uninitialized bitmap
-    _coarse_map.reinitialize(G1CollectedHeap::heap()->max_regions());
+    _coarse_map.reinitialize(G1CollectedHeap::heap()->max_reserved_regions());
     assert(!_coarse_map.at(max_hrm_index), "No coarse entries");
     _coarse_map.at_put(max_hrm_index, true);
     // Release store guarantees that the bitmap has initialized before any
