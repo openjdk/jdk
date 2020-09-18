@@ -25,6 +25,7 @@ import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Optional;
@@ -54,15 +55,7 @@ public class JLinkReproducible3Test {
                         .orElseThrow(() -> new RuntimeException("Couldn't load JDK Test Dir"))
         );
 
-        Files.walkFileTree(jdk_test_dir, new CopyFileVisitor(jdk_test_dir, copy_jdk1_dir));
-        Files.walkFileTree(jdk_test_dir, new CopyFileVisitor(jdk_test_dir, copy_jdk2_dir));
-
-        File jdk1_dir_file = copy_jdk1_dir.toFile();
-        File jdk2_dir_file = copy_jdk2_dir.toFile();
-
-        if (!jdk2_dir_file.mkdir() && !jdk2_dir_file.exists() || !jdk1_dir_file.mkdir() && !jdk1_dir_file.exists()) {
-            throw new RuntimeException("Unable to create copy jdk directory");
-        }
+        copyJDKs(jdk_test_dir, copy_jdk1_dir, copy_jdk2_dir);
 
         Path copied_jlink1 = Optional.of(
                 Paths.get(copy_jdk1_dir.toString(), "bin", "jlink"))
@@ -83,7 +76,7 @@ public class JLinkReproducible3Test {
         }
     }
 
-    private static void runCopiedJlink(String...args) throws Exception {
+    private static void runCopiedJlink(String... args) throws Exception {
         var pb = new ProcessBuilder(args);
         var res = ProcessTools.executeProcess(pb);
         res.shouldHaveExitValue(0);
@@ -95,36 +88,25 @@ public class JLinkReproducible3Test {
         var res = ProcessTools.executeProcess(pb);
         res.shouldHaveExitValue(0);
         return res.getStdout();
+
+
     }
 
-    private static class CopyFileVisitor extends SimpleFileVisitor<Path> {
-        private final Path src;
-        private final Path dst;
-
-        public CopyFileVisitor(Path src, Path dst) {
-            this.src = src;
-            this.dst = dst;
-        }
-
-        @Override
-        public FileVisitResult preVisitDirectory(Path file,
-                                                 BasicFileAttributes attrs) throws IOException {
-            Path dstDir = dst.resolve(src.relativize(file));
-            if (!dstDir.toFile().exists()) {
-                Files.createDirectories(dstDir);
+    private static void copyJDKs(Path src, Path dst1, Path dst2) throws Exception {
+        Files.walk(src).skip(1).forEach(file -> {
+            try {
+                System.out.println(file);
+                if(Files.isDirectory(file)) {
+                    Files.createDirectories(dst1.resolve(src.relativize(file)));
+                    Files.createDirectories(dst2.resolve(src.relativize(file)));
+                } else {
+                    Files.copy(file, dst1.resolve(src.relativize(file)));
+                    Files.copy(file, dst2.resolve(src.relativize(file)));
+                }
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe);
             }
-            return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFile(Path file,
-                                         BasicFileAttributes attrs) throws IOException {
-            if (!file.toFile().isFile()) {
-                return FileVisitResult.CONTINUE;
-            }
-            Path dstFile = dst.resolve(src.relativize(file));
-            Files.copy(file, dstFile, StandardCopyOption.COPY_ATTRIBUTES);
-            return FileVisitResult.CONTINUE;
-        }
+        });
     }
 }
+
