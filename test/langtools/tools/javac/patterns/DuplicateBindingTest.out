@@ -1,4 +1,4 @@
-DuplicateBindingTest.java:16:43: compiler.err.already.defined: kindname.variable, s, kindname.method, main(java.lang.String[])
+DuplicateBindingTest.java:18:38: compiler.err.already.defined: kindname.variable, s, kindname.method, main(java.lang.String[])
 DuplicateBindingTest.java:25:60: compiler.err.match.binding.exists
 DuplicateBindingTest.java:26:62: compiler.err.match.binding.exists
 DuplicateBindingTest.java:27:39: compiler.err.match.binding.exists

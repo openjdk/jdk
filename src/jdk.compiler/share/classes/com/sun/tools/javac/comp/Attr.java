@@ -3910,6 +3910,10 @@ public class Attr extends JCTree.Visitor {
         if (tree.pattern.getTag() == BINDINGPATTERN) {
             attribTree(tree.pattern, env, unknownExprInfo);
             clazztype = tree.pattern.type;
+            if (types.isSubtype(exprtype, clazztype) &&
+                !exprtype.isErroneous() && !clazztype.isErroneous()) {
+                log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(clazztype, exprtype));
+            }
             JCBindingPattern pattern = (JCBindingPattern) tree.pattern;
             typeTree = pattern.vartype;
             if (!clazztype.hasTag(TYPEVAR)) {
