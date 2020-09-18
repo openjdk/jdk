@@ -133,7 +133,7 @@ public class TestMemberInheritance extends JavadocTester {
                     Method(T)">parentMethod</a></span>&#8203;(java.lang.String&nbsp;t)</code></div>
                     <div class="col-last alt-color method-summary-table-tab2 method-summary-table me\
                     thod-summary-table-tab3">
-                    <div class="block">Returns some value with an inherited search tag.</div>   
+                    <div class="block">Returns some value with an inherited search tag.</div>
                     """);
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
