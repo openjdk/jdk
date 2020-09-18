@@ -42,7 +42,7 @@ uintptr_t ZVirtualMemoryManager::os_reserve(uintptr_t addr, size_t size) {
 
   if (res != addr) {
     // Failed to reserve memory at the requested address
-    os_unreserve(res, size);
+    munmap((void*)res, size);
   }
 
   return res;
