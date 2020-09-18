@@ -22,43 +22,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.module;
 
-import jdk.internal.misc.CDS;
+package jdk.internal.misc;
 
-/**
- * Used by ModuleBootstrap for archiving the boot layer and the builder needed to
- * set the IllegalAccessLogger.
- */
-class ArchivedBootLayer {
-    private static ArchivedBootLayer archivedBootLayer;
+public class CDS {
+    /**
+     * Initialize archived static fields in the given Class using archived
+     * values from CDS dump time. Also initialize the classes of objects in
+     * the archived graph referenced by those fields.
+     *
+     * Those static fields remain as uninitialized if there is no mapped CDS
+     * java heap data or there is any error during initialization of the
+     * object class in the archived graph.
+     */
+    public static native void initializeFromArchive(Class<?> c);
 
-    private final ModuleLayer bootLayer;
-    private final IllegalAccessLogger.Builder builder;
+    public static native void defineArchivedModules(ClassLoader platformLoader, ClassLoader systemLoader);
 
-    private ArchivedBootLayer(ModuleLayer bootLayer,
-                              IllegalAccessLogger.Builder builder) {
-        this.bootLayer = bootLayer;
-        this.builder = builder;
-    }
+    public static native long getRandomSeedForCDSDump();
 
-    ModuleLayer bootLayer() {
-        return bootLayer;
-    }
+    /**
+     * Check if CDS dynamic dumping is enabled via the DynamicDumpSharedSpaces flag.
+     */
+    public static native boolean isCDSDumpingEnabled();
 
-    IllegalAccessLogger.Builder illegalAccessLoggerBuilder() {
-        return builder;
-    }
-
-    static ArchivedBootLayer get() {
-        return archivedBootLayer;
-    }
-
-    static void archive(ModuleLayer layer, IllegalAccessLogger.Builder builder) {
-        archivedBootLayer = new ArchivedBootLayer(layer, builder);
-    }
-
-    static {
-        CDS.initializeFromArchive(ArchivedBootLayer.class);
-    }
+    /**
+     * Check if CDS sharing is enabled by via the UseSharedSpaces flag.
+     */
+    public static native boolean isCDSSharingEnabled();
 }
