@@ -25,7 +25,7 @@
  * @test
  * @bug 8231827
  * @summary Pattern variables are non-final.
- * @compile/fail/ref=PatternVariablesAreNonFinal.out -XDrawDiagnostics --enable-preview -source ${jdk.version} PatternVariablesAreNonFinal.java
+ * @compile/fail/ref=PatternVariablesAreNonFinal.out -XDrawDiagnostics PatternVariablesAreNonFinal.java
  */
 public class PatternVariablesAreNonFinal {
     public static void main(String[] args) {

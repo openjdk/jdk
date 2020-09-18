@@ -26,7 +26,7 @@
  * @bug 8231827
  * @summary Check proper positions.
  * @build PatternMatchPosTest
- * @compile/ref=PatternMatchPosTest.out -processor PatternMatchPosTest -Xlint:unchecked -XDrawDiagnostics --enable-preview -source ${jdk.version} PatternMatchPosTestData.java
+ * @compile/ref=PatternMatchPosTest.out -processor PatternMatchPosTest -Xlint:unchecked -XDrawDiagnostics PatternMatchPosTestData.java
  */
 
 import java.io.IOException;

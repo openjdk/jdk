@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8250625
  * @summary Verify pattern matching test which is always true produces an error
- * @compile/fail/ref=NoSubtypeCheck.out -XDrawDiagnostics --enable-preview -source ${jdk.version} NoSubtypeCheck.java
+ * @compile/fail/ref=NoSubtypeCheck.out -XDrawDiagnostics NoSubtypeCheck.java
  */
 public class NoSubtypeCheck {
 

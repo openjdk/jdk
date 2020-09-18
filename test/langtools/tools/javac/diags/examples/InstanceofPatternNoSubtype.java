@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.instanceof.pattern.no.subtype
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
 
 class InstanceofPatternNoSubtype {
     boolean test(Object o) {
