@@ -76,10 +76,10 @@ static void deopt_caller() {
 }
 
 // Manages a scope for a JVMCI runtime call that attempts a heap allocation.
-// If there is a pending exception upon closing the scope and the runtime
+// If there is a pending nonasync exception upon closing the scope and the runtime
 // call is of the variety where allocation failure returns NULL without an
 // exception, the following action is taken:
-//   1. The pending exception is cleared
+//   1. The pending nonasync exception is cleared
 //   2. NULL is written to JavaThread::_vm_result
 //   3. Checks that an OutOfMemoryError is Universe::out_of_memory_error_retry().
 class RetryableAllocationMark: public StackObj {
@@ -101,7 +101,8 @@ class RetryableAllocationMark: public StackObj {
       JavaThread* THREAD = _thread;
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;
-        CLEAR_PENDING_EXCEPTION;
+        // Do not clear probable async exceptions.
+        CLEAR_PENDING_NONASYNC_EXCEPTION;
         oop retry_oome = Universe::out_of_memory_error_retry();
         if (ex->is_a(retry_oome->klass()) && retry_oome != ex) {
           ResourceMark rm;

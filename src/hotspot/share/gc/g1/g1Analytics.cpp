@@ -324,7 +324,6 @@ void G1Analytics::update_recent_gc_times(double end_time_sec,
                                          double pause_time_ms) {
   _recent_gc_times_ms->add(pause_time_ms);
   _recent_prev_end_times_for_all_gcs_sec->add(end_time_sec);
-  _prev_collection_pause_end_ms = end_time_sec * 1000.0;
 }
 
 void G1Analytics::report_concurrent_mark_cleanup_times_ms(double ms) {

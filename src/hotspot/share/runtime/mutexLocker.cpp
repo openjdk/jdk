@@ -150,6 +150,7 @@ Mutex*   CDSClassFileStream_lock      = NULL;
 #endif
 Mutex*   DumpTimeTable_lock           = NULL;
 Mutex*   CDSLambda_lock               = NULL;
+Mutex*   DumpRegion_lock              = NULL;
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMCI
@@ -344,6 +345,7 @@ void mutex_init() {
 #endif
   def(DumpTimeTable_lock           , PaddedMutex  , leaf - 1,    true,  _safepoint_check_never);
   def(CDSLambda_lock               , PaddedMutex  , leaf,        true,  _safepoint_check_never);
+  def(DumpRegion_lock              , PaddedMutex  , leaf,        true,  _safepoint_check_never);
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMCI
