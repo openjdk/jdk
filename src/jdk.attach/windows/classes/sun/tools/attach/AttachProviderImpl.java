@@ -43,7 +43,7 @@ public class AttachProviderImpl extends HotSpotAttachProvider {
                 "This provider is not supported on this version of Windows");
         }
         String arch = System.getProperty("os.arch");
-        if (!arch.equals("x86") && !arch.equals("amd64")) {
+        if (!arch.equals("x86") && !arch.equals("amd64") && !arch.equals("aarch64")) {
             throw new RuntimeException(
                 "This provider is not supported on this processor architecture");
         }

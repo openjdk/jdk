@@ -394,7 +394,7 @@ void StubRoutines::initialize2() {
 
   // test safefetch routines
   // Not on Windows 32bit until 8074860 is fixed
-#if ! (defined(_WIN32) && defined(_M_IX86))
+#if ! (defined(_WIN32) && defined(_M_IX86)) && !defined(_M_ARM64)
   test_safefetch32();
   test_safefetchN();
 #endif

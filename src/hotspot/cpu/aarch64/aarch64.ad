@@ -6294,7 +6294,7 @@ pipeline %{
 attributes %{
   // ARM instructions are of fixed length
   fixed_size_instructions;        // Fixed size instructions TODO does
-  max_instructions_per_bundle = 2;   // A53 = 2, A57 = 4
+  max_instructions_per_bundle = 4;   // A53 = 2, A57 = 4
   // ARM instructions come in 32-bit word units
   instruction_unit_size = 4;         // An instruction is 4 bytes long
   instruction_fetch_unit_size = 64;  // The processor fetches one line

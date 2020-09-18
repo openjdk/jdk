@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,23 @@
  *
  */
 
-//--------------------------------------------------------
-//               FpuStackSim
-//--------------------------------------------------------
+package sun.jvm.hotspot.debugger.windbg.aarch64;
 
-// No FPU stack on AARCH64
-#include "precompiled.hpp"
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.debugger.windbg.*;
+
+public class WindbgAARCH64ThreadFactory implements WindbgThreadFactory {
+  private WindbgDebugger debugger;
+
+  public WindbgAARCH64ThreadFactory(WindbgDebugger debugger) {
+    this.debugger = debugger;
+  }
+
+  public ThreadProxy createThreadWrapper(Address threadIdentifierAddr) {
+    return new WindbgAARCH64Thread(debugger, threadIdentifierAddr);
+  }
+
+  public ThreadProxy createThreadWrapper(long id) {
+    return new WindbgAARCH64Thread(debugger, id);
+  }
+}

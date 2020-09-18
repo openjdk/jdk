@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,15 @@
  *
  */
 
-//--------------------------------------------------------
-//               FpuStackSim
-//--------------------------------------------------------
+#ifndef OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_HPP
+#define OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_HPP
 
-// No FPU stack on AARCH64
-#include "precompiled.hpp"
+  static void setup_fpu();
+  static bool supports_sse();
+
+  static bool      register_code_area(char *low, char *high) {
+    // Using Vectored Exception Handling
+    return true;
+  }
+
+#endif // OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_HPP

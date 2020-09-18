@@ -1979,3 +1979,7 @@ static float unpack(unsigned value) {
   ival = fp_immediate_for_encoding(value, 0);
   return val;
 }
+
+address Assembler::locate_next_instruction(address inst) {
+  return inst + Assembler::instruction_size;
+}

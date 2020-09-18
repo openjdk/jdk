@@ -682,6 +682,8 @@ public:
     return Address(Post(base, idx));
   }
 
+  static address locate_next_instruction(address inst);
+
   Instruction_aarch64* current;
 
   void set_current(Instruction_aarch64* i) { current = i; }
