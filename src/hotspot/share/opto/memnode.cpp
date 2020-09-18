@@ -4572,8 +4572,8 @@ Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node*    phi_reg = NULL;
   uint     phi_len = (uint)-1;
-  if (phi_base != NULL && !phi_base->is_copy()) {
-    // do not examine phi if degraded to a copy
+  if (phi_base != NULL) {
+    assert(!phi_base->is_copy(), "phi_base cannot be a copy");
     phi_reg = phi_base->region();
     phi_len = phi_base->req();
     // see if the phi is unfinished
@@ -4888,10 +4888,8 @@ bool MergeMemStream::match_memory(Node* mem, const MergeMemNode* mm, int idx) {
   if (mem == n)  return true;  // might be empty_memory()
   n = (idx == Compile::AliasIdxBot)? mm->base_memory(): mm->memory_at(idx);
   if (mem == n)  return true;
-  while (n->is_Phi() && (n = n->as_Phi()->is_copy()) != NULL) {
-    if (mem == n)  return true;
-    if (n == NULL)  break;
-  }
+  if (n->is_Phi())
+    assert(!n->as_Phi()->is_copy(), "n cannot be a copy");
   return false;
 }
 #endif // !PRODUCT

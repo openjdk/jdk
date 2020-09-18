@@ -173,12 +173,14 @@ public:
   // Accessors
   RegionNode* region() const { Node* r = in(Region); assert(!r || r->is_Region(), ""); return (RegionNode*)r; }
 
-  Node* is_copy() const {
+#ifdef ASSERT
+  // Whether the PhiNode is degraded to a copy. Only used in assertions.
+  bool is_copy() const {
     // The node is a real phi if _in[0] is a Region node.
-    DEBUG_ONLY(const Node* r = _in[Region];)
-    assert(r != NULL && r->is_Region(), "Not valid control");
-    return NULL;  // not a copy!
+    const Node* r = _in[Region];
+    return r == NULL || !r->is_Region();
   }
+#endif //ASSERT
 
   bool is_tripcount() const;
 

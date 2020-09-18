@@ -1862,8 +1862,7 @@ bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
 // the CFG, but we can still strip out dead paths.
 Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // The next should never happen after 6297035 fix.
-  if( is_copy() )               // Already degraded to a Copy ?
-    return NULL;                // No change
+  assert(!is_copy(), "this phi cannot be a copy");
 
   Node *r = in(0);              // RegionNode
   assert(r->in(0) == NULL || !r->in(0)->is_Root(), "not a specially hidden merge");
