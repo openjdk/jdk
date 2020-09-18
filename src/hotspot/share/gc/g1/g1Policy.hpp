@@ -285,6 +285,11 @@ private:
   PauseKind young_gc_pause_kind() const;
   // Record the given STW pause with the given start and end times (in s).
   void record_pause(PauseKind kind, double start, double end);
+
+  bool should_update_gc_stats();
+
+  void update_gc_pause_time_ratios(PauseKind kind, double start_sec, double end_sec);
+
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
 
