@@ -47,6 +47,8 @@
 #define JAVA_BASE_NAME "java.base"
 #define JAVA_BASE_NAME_LEN 9
 
+template <class T> class Array;
+class MetaspaceClosure;
 class ModuleClosure;
 
 // A ModuleEntry describes a module that has been defined by a call to JVM_DefineModule.
@@ -63,7 +65,7 @@ class ModuleClosure;
 class ModuleEntry : public HashtableEntry<Symbol*, mtModule> {
 private:
   OopHandle _module;                   // java.lang.Module
-  OopHandle _pd;                       // java.security.ProtectionDomain, cached
+  OopHandle _shared_pd;                // java.security.ProtectionDomain, cached
                                        // for shared classes from this module
   ClassLoaderData* _loader_data;
   GrowableArray<ModuleEntry*>* _reads; // list of modules that are readable by this module
@@ -75,13 +77,15 @@ private:
   bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
   bool _is_open;                       // whether the packages in the module are all unqualifiedly exported
   bool _is_patched;                    // whether the module is patched via --patch-module
+  CDS_JAVA_HEAP_ONLY(narrowOop _archived_module_narrow_oop;)
+
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
   enum {MODULE_READS_SIZE = 101};      // Initial size of list of modules that the module can read.
 
 public:
   void init() {
     _module = OopHandle();
-    _pd = OopHandle();
+    _shared_pd = OopHandle();
     _loader_data = NULL;
     _reads = NULL;
     _version = NULL;
@@ -188,6 +192,18 @@ public:
   CDS_ONLY(int shared_path_index() { return _shared_path_index;})
 
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
+
+#if INCLUDE_CDS_JAVA_HEAP
+  void iterate_symbols(MetaspaceClosure* closure);
+  ModuleEntry* allocate_archived_entry() const;
+  void init_as_archived_entry();
+  void init_archived_oops();
+  static ModuleEntry* get_archived_entry(ModuleEntry* orig_entry);
+  static Array<ModuleEntry*>* write_growable_array(GrowableArray<ModuleEntry*>* array);
+  static GrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
+  void load_from_archive(ClassLoaderData* loader_data);
+  void restore_archive_oops(ClassLoaderData* loader_data);
+#endif
 };
 
 // Iterator interface
@@ -270,6 +286,17 @@ public:
 
   void print(outputStream* st = tty);
   void verify();
+
+#if INCLUDE_CDS_JAVA_HEAP
+  void iterate_symbols(MetaspaceClosure* closure);
+  Array<ModuleEntry*>* allocate_archived_entries();
+  void init_archived_entries(Array<ModuleEntry*>* archived_modules);
+  void init_archived_oops(Array<ModuleEntry*>* archived_modules);
+  void load_archived_entries(ClassLoaderData* loader_data,
+                             Array<ModuleEntry*>* archived_modules);
+  void restore_archived_oops(ClassLoaderData* loader_data,
+                             Array<ModuleEntry*>* archived_modules);
+#endif
 };
 
 #endif // SHARE_CLASSFILE_MODULEENTRY_HPP

@@ -4192,12 +4192,12 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   fprintf(fp_cpp,"int Matcher::inline_cache_reg_encode() {");
   fprintf(fp_cpp," return _regEncode[inline_cache_reg()]; }\n\n");
 
-  // Interpreter's Method Oop Register, mask definition, and encoding
-  fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_method_oop_reg() {");
+  // Interpreter's Method Register, mask definition, and encoding
+  fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_method_reg() {");
   fprintf(fp_cpp," return OptoReg::Name(%s_num); }\n\n",
-          _frame->_interpreter_method_oop_reg);
-  fprintf(fp_cpp,"int Matcher::interpreter_method_oop_reg_encode() {");
-  fprintf(fp_cpp," return _regEncode[interpreter_method_oop_reg()]; }\n\n");
+          _frame->_interpreter_method_reg);
+  fprintf(fp_cpp,"int Matcher::interpreter_method_reg_encode() {");
+  fprintf(fp_cpp," return _regEncode[interpreter_method_reg()]; }\n\n");
 
   // Interpreter's Frame Pointer Register, mask definition, and encoding
   fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_frame_pointer_reg() {");

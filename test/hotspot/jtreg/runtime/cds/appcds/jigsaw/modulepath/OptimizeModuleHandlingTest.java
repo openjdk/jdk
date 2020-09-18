@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @requires vm.cds & !vm.jvmci
+ * @requires vm.cds & !vm.graal.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver OptimizeModuleHandlingTest
  * @summary test module path changes for optimization of
@@ -63,8 +63,8 @@ public class OptimizeModuleHandlingTest {
 
     private static String CLASS_FOUND_MESSAGE = "com.foos.Test found";
     private static String CLASS_NOT_FOUND_MESSAGE = "java.lang.ClassNotFoundException: com.foos.Test";
-    private static String OPTIMIZE_ENABLED = "Using optimized module handling enabled";
-    private static String OPTIMIZE_DISABLED = "Using optimized module handling disabled";
+    private static String OPTIMIZE_ENABLED = "optimized module handling: enabled";
+    private static String OPTIMIZE_DISABLED = "optimized module handling: disabled";
     private static String MAIN_FROM_JAR = "class,load.*com.bars.Main.*[.]jar";
     private static String MAIN_FROM_CDS = "class,load.*com.bars.Main.*shared objects file";
     private static String TEST_FROM_JAR = "class,load.*com.foos.Test.*[.]jar";

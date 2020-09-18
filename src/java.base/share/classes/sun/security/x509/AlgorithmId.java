@@ -196,6 +196,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 algid.equals((Object)SHA512_oid) ||
                 algid.equals((Object)SHA512_224_oid) ||
                 algid.equals((Object)SHA512_256_oid) ||
+                algid.equals((Object)SHA3_224_oid) ||
+                algid.equals((Object)SHA3_256_oid) ||
+                algid.equals((Object)SHA3_384_oid) ||
+                algid.equals((Object)SHA3_512_oid) ||
                 algid.equals((Object)DSA_oid) ||
                 algid.equals((Object)sha1WithDSA_oid)) {
                 ; // no parameter part encoded
@@ -607,6 +611,18 @@ public class AlgorithmId implements Serializable, DerEncoder {
 
     public static final ObjectIdentifier SHA512_256_oid =
             ObjectIdentifier.of(KnownOIDs.SHA_512$256);
+
+    public static final ObjectIdentifier SHA3_224_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA3_224);
+
+    public static final ObjectIdentifier SHA3_256_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA3_256);
+
+    public static final ObjectIdentifier SHA3_384_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA3_384);
+
+    public static final ObjectIdentifier SHA3_512_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA3_512);
 
     public static final ObjectIdentifier DSA_oid =
             ObjectIdentifier.of(KnownOIDs.DSA);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary test  StringJoiner::merge
  * @modules java.base/jdk.internal.util
  * @requires os.maxMemory > 4G
- * @run testng/othervm -Xmx4g MergeTest
+ * @run testng/othervm -Xmx4g -XX:+CompactStrings MergeTest
  */
 
 import java.util.StringJoiner;

@@ -37,7 +37,7 @@
 // parts of the memory system may require additional alignment
 // and are responsible for those alignments.
 #ifdef _LP64
-#define ScaleForWordSize(x) align_down_((x) * 13 / 10, HeapWordSize)
+#define ScaleForWordSize(x) align_down((x) * 13 / 10, HeapWordSize)
 #else
 #define ScaleForWordSize(x) (x)
 #endif
