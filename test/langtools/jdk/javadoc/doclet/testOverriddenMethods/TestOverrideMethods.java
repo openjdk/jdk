@@ -314,9 +314,9 @@ public class TestOverrideMethods  extends JavadocTester {
         checkOutput("pkg6/Sub.html", true,
                 """
                     <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Method</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color method-summary-table-tab2 method-summary-table-t\
                     ab4 method-summary-table"><code>java.lang.String</code></div>
                     <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\

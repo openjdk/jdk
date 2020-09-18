@@ -27,7 +27,7 @@
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
  *      8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
- *      8184205 8219060 8223378 8234746 8239804 8239816
+ *      8184205 8219060 8223378 8234746 8239804 8239816 8253117
  * @summary Test modules support in javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -667,16 +667,16 @@ public class TestModules extends JavadocTester {
                     <div id="all-modules-table">
                     <div class="caption"><span>Modules</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Module</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Module</div>
+                    <div class="table-header col-last">Description</div>
                     """);
         checkOutput("overview-summary.html", false,
                 """
                     <div id="all-modules-table">
                     <div class="caption"><span>Packages</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>
                     """);
     }
 
@@ -686,12 +686,12 @@ public class TestModules extends JavadocTester {
                     <div class="overview-summary" id="all-modules-table">
                     <table class="summary-table">
                     <caption><span>Modules</span></caption>
-                    <thead>
+                    <table-header>
                     <tr>
                     <th class="col-first" scope="col">Module</th>
                     <th class="col-last" scope="col">Description</th>
                     </tr>
-                    </thead>""",
+                    </table-header>""",
                 """
                     </table>
                     </div>
@@ -710,8 +710,8 @@ public class TestModules extends JavadocTester {
                     <div id="all-packages-table">
                     <div class="caption"><span>Packages</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
                     </nav>
                     </header>
@@ -778,18 +778,18 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="caption"><span>Opens</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
                     <div class="caption"><span>Uses</span></div>
                     <div class="details-table two-column-summary">
-                    <div class="thead col-first">Type</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Type</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
                     <div class="caption"><span>Provides</span></div>
                     <div class="details-table two-column-summary">
-                    <div class="thead col-first">Type</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Type</div>
+                    <div class="table-header col-last">Description</div>""");
     }
 
     void checkAggregatorModuleSummary() {
@@ -930,20 +930,20 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="caption"><span>Requires</span></div>
                     <div class="details-table three-column-summary">
-                    <div class="thead col-first">Modifier</div>
-                    <div class="thead col-second">Module</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Modifier</div>
+                    <div class="table-header col-second">Module</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
                     <div class="caption"><span>Indirect Requires</span></div>
                     <div class="details-table three-column-summary">
-                    <div class="thead col-first">Modifier</div>
-                    <div class="thead col-second">Module</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Modifier</div>
+                    <div class="table-header col-second">Module</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
                     <div class="caption"><span>Indirect Opens</span></div>
                     <div class="details-table two-column-summary">
-                    <div class="thead col-first">From</div>
-                    <div class="thead col-last">Packages</div>""",
+                    <div class="table-header col-first">From</div>
+                    <div class="table-header col-last">Packages</div>""",
                 """
                     <div class="col-first alt-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
                     <div class="col-last alt-color"><a href="../moduleB/testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
@@ -968,8 +968,8 @@ public class TestModules extends JavadocTester {
                     <div id="package-summary-table">
                     <div class="caption"><span>Opens</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color package-summary-table package-summary-table-tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
                     <div class="col-last alt-color package-summary-table package-summary-table-tab2">&nbsp;</div>
                     </div>
@@ -1076,9 +1076,9 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="caption"><span>Exports</span></div>
                     <div class="summary-table three-column-summary">
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-second">Exported To Modules</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-second">Exported To Modules</div>
+                    <div class="table-header col-last">Description</div>""");
         checkOutput("moduletags/module-summary.html", found,
                 """
                     <div class="col-first row-color">transitive static</div>
@@ -1310,8 +1310,8 @@ public class TestModules extends JavadocTester {
                     div id="package-summary-table">
                     <div class="caption"><span>Exports</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
                     <div class="col-last alt-color package-summary-table-tab1 package-summary-table">&nbsp;</div>
                     </div>
@@ -1363,15 +1363,15 @@ public class TestModules extends JavadocTester {
                     ', 2)" class="table-tab">Annotation Types Summary</button></div>
                     """,
                 """
-                    <div class="thead col-first">Class</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>
                     """);
         checkOutput("allpackages-index.html", true,
                 """
                     <div class="caption"><span>Package Summary</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>
                     """);
         checkOutput("allclasses-index.html", found,
                 """

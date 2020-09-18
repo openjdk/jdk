@@ -143,7 +143,7 @@ public class TableHeader extends Content {
                     : (i == 0) ? HtmlStyle.colFirst
                     : (i == (cellContents.size() - 1)) ? HtmlStyle.colLast
                     : (i == 1) ? HtmlStyle.colSecond : null;
-            HtmlTree cell = HtmlTree.DIV(cellContent).setStyle(HtmlStyle.thead);
+            HtmlTree cell = HtmlTree.DIV(HtmlStyle.tableHeader, cellContent);
             if (style != null) {
                 cell.addStyle(style);
             }

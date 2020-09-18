@@ -392,129 +392,129 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="thead col-first">Class</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <div class="thead col-first">Interface</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Interface</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="thead col-first">Enum</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Enum</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <div class="thead col-first">Annotation Type</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Annotation Type</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Field</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Field</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Method</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/C2.html", true,
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Class</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Class</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <div class="thead col-first">Constructor</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Constructor</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
                 """
-                    <div class="thead col-first">Enum Constant</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Enum Constant</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/C3.html", true,
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Required Element</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Required Element</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/C4.html", true,
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Optional Element</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Optional Element</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
                 """
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg1/class-use/C1.html", true,
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Field</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Field</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Method</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/class-use/C2.html", true,
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Field</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Field</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Method</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
                 """
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Method</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
                 """
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <div class="thead col-first">Class</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/package-use.html", true,
                 """
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <div class="thead col-first">Class</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
                 """
-                    <div class="thead col-first">Field</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Field</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <div class="thead col-first">Method</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Method</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Constant values
         checkOutput("constant-values.html", true,
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Constant Field</div>
-                    <div class="thead col-last">Value</div>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Constant Field</div>
+                    <div class="table-header col-last">Value</div>""");
 
         // Overview Summary
         checkOutput("index.html", true,
                 """
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""");
     }
 }

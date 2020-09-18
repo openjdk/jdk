@@ -526,20 +526,20 @@ public class TestModulePackages extends JavadocTester {
         Set<ColKind> kindSet = Set.of(kinds);
         StringBuilder sb = new StringBuilder();
         sb.append("""
-            <div class="thead col-first">Package</div>
+            <div class="table-header col-first">Package</div>
             """);
         if (kindSet.contains(ColKind.EXPORTED_TO)) {
             sb.append("""
-                <div class="thead col-second">Exported To Modules</div>
+                <div class="table-header col-second">Exported To Modules</div>
                 """);
         }
         if (kindSet.contains(ColKind.OPENED_TO)) {
             sb.append("""
-                <div class="thead col-second">Opened To Modules</div>
+                <div class="table-header col-second">Opened To Modules</div>
                 """);
         }
         sb.append("""
-            <div class="thead col-last">Description</div>""");
+            <div class="table-header col-last">Description</div>""");
 
         checkOutput(moduleName + "/module-summary.html", true, sb.toString());
     }

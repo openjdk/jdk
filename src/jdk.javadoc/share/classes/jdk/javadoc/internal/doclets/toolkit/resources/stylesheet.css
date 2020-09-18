@@ -445,7 +445,7 @@ div.table-tabs > button.table-tab {
     padding-top:8px;
     padding-bottom:3px;
 }
-.thead {
+.table-header {
     background:#dee3e9;
     font-weight: bold;
 }
@@ -481,10 +481,10 @@ div.table-tabs > button.table-tab {
 .table-sub-heading-color {
     background-color:#EEEEFF;
 }
-.alt-color, .alt-color .thead {
+.alt-color, .alt-color .table-header {
     background-color:#FFFFFF;
 }
-.row-color, .row-color .thead {
+.row-color, .row-color .table-header {
     background-color:#EEEEEF;
 }
 /*

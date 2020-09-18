@@ -203,8 +203,8 @@ public class TestModuleServices extends JavadocTester {
                 """
                     <div class="caption"><span>Uses</span></div>
                     <div class="details-table two-column-summary">
-                    <div class="thead col-first">Type</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Type</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color"><a href="p1/A.html" title="class in p1">A</a></div>
                     <div class="col-last alt-color">&nbsp;</div>
                     <div class="col-first row-color"><a href="p1/B.html" title="class in p1">B</a></div>
@@ -238,8 +238,8 @@ public class TestModuleServices extends JavadocTester {
                 """
                     <div class="caption"><span>Uses</span></div>
                     <div class="details-table two-column-summary">
-                    <div class="thead col-first">Type</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Type</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color"><a href="p1/A.html" title="class in p1">A</a></div>
                     <div class="col-last alt-color">&nbsp;</div>
                     </div>
@@ -301,8 +301,8 @@ public class TestModuleServices extends JavadocTester {
                 """
                     <div class="caption"><span>Provides</span></div>
                     <div class="details-table two-column-summary">
-                    <div class="thead col-first">Type</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Type</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color"><a href="p1/A.html" title="interface in p1">A</a></div>
                     <div class="col-last alt-color">&nbsp;<br>(<span class="implementation-label">Implementation(s):</span>&nbsp;<a href="p1/B.html" title="class in p1">B</a>)</div>
                     <div class="col-first row-color"><a href="p2/A.html" title="interface in p2">A</a></div>
@@ -340,8 +340,8 @@ public class TestModuleServices extends JavadocTester {
                 """
                     <div class="caption"><span>Provides</span></div>
                     <div class="details-table two-column-summary">
-                    <div class="thead col-first">Type</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Type</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color"><a href="p1/A.html" title="interface in p1">A</a></div>
                     <div class="col-last alt-color">
                     <div class="block">abc</div>
@@ -383,8 +383,8 @@ public class TestModuleServices extends JavadocTester {
                 """
                     <div class="caption"><span>Provides</span></div>
                     <div class="details-table two-column-summary">
-                    <div class="thead col-first">Type</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Type</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color"><a href="p1/A.html" title="interface in p1">A</a></div>
                     <div class="col-last alt-color">
                     <div class="block">abc</div>
@@ -394,8 +394,8 @@ public class TestModuleServices extends JavadocTester {
                 """
                     <div class="caption"><span>Uses</span></div>
                     <div class="details-table two-column-summary">
-                    <div class="thead col-first">Type</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Type</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color"><a href="p2/B.html" title="class in p2">B</a></div>
                     <div class="col-last alt-color">
                     <div class="block">def</div>

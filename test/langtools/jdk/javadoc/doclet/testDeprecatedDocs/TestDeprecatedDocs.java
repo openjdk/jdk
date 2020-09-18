@@ -280,14 +280,14 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div id="forRemoval">
                     <div class="caption"><span>For Removal</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Element</div>
-                    <div class="thead col-last">Description</div>""",
+                    <div class="table-header col-first">Element</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
                     <div id="enum">
                     <div class="caption"><span>Enums</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Enum</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Enum</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-deprecated-item-name alt-color"><a href="pkg/TestEnum.html" title="enum in pkg">pkg.TestEnum</a></div>
                     <div class="col-last alt-color">
                     <div class="deprecation-comment">enum_test1 passes.</div>
@@ -296,8 +296,8 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div id="exception">
                     <div class="caption"><span>Exceptions</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Exceptions</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Exceptions</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-deprecated-item-name alt-color"><a href="pkg/TestException.html" title="class in pkg">pkg.TestException</a></div>
                     <div class="col-last alt-color">
                     <div class="deprecation-comment">exception_test1 passes.</div>
@@ -306,8 +306,8 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div id="field">
                     <div class="caption"><span>Fields</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Field</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Field</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-deprecated-item-name alt-color"><a href="pkg/DeprecatedClassByAnnotation.html#field">pkg.DeprecatedClassByAnnotation.field</a></div>
                     <div class="col-last alt-color"></div>
                     <div class="col-deprecated-item-name row-color"><a href="pkg/TestAnnotationType.html#field">pkg.TestAnnotationType.field</a></div>
@@ -336,8 +336,8 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div id="method">
                     <div class="caption"><span>Methods</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Method</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Method</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-deprecated-item-name alt-color"><a href="pkg/DeprecatedClassByAnnotation.html#method()">pkg.DeprecatedClassByAnnotation.method()</a></div>
                     <div class="col-last alt-color"></div>
                     <div class="col-deprecated-item-name row-color"><a href="pkg/TestAnnotationType.html#optional()">pkg.TestAnnotationType.optional()</a></div>
@@ -364,8 +364,8 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div id="constructor">
                     <div class="caption"><span>Constructors</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Constructor</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Constructor</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-deprecated-item-name alt-color"><a href="pkg/DeprecatedClassByAnnotation.html#%3Cinit%3E()">pkg.DeprecatedClassByAnnotation()</a></div>
                     <div class="col-last alt-color"></div>
                     <div class="col-deprecated-item-name row-color"><a href="pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>

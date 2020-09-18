@@ -840,14 +840,14 @@ public class TestSearch extends JavadocTester {
                     le-tab6', 2)" class="table-tab">Annotation Types Summary</button></div>
                     <div id="all-classes-table.tabpanel" role="tabpanel">
                     <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">
-                    <div class="thead col-first">Class</div>
-                    <div class="thead col-last">Description</div>""");
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>""");
         checkOutput("allpackages-index.html", true,
                 """
                     <div class="caption"><span>Package Summary</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>
                     """);
         checkOutput("type-search-index.js", true,
                 """

@@ -42,7 +42,12 @@ import javax.lang.model.element.Element;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * An HTML table, such as the summary tables for various kinds of element.
+ * An HTML container used to display summary tables for various kinds of elements.
+ * This class historically used to generate an HTML {@code <table>} element but has been
+ * updated to render elements as a stream of {@code <div>} elements that rely on
+ * <a href="https://www.w3.org/TR/css-grid-1/">CSS Grid Layout</a> for styling.
+ * This provides for more flexible layout options, such as splitting up table rows on
+ * small displays.
  *
  * <p>The table should be used in three phases:
  * <ol>
@@ -55,11 +60,8 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  *
  * A table may support filtered views, which can be selected by clicking on
  * one of a list of tabs above the table. If the table does not support filtered
- * views, the {@code <caption>} element is typically displayed as a single (inactive)
+ * views, the caption element is typically displayed as a single (inactive)
  * tab.
- *
- * Tables are always enclosed in a {@code <div>} element, which will also contain
- * a {@code <div>} element for the list of tabs, when the table supports filtered views.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -83,9 +85,9 @@ public class Table extends Content {
     private String id;
 
     /**
-     * Creates a builder for an HTML table.
+     * Creates a builder for an HTML element representing a table.
      *
-     * @param tableStyle     the style class for the {@code <table>} element
+     * @param tableStyle the style class for the top-level {@code <div>} element
      */
     public Table(HtmlStyle tableStyle) {
         this.tableStyle = tableStyle;
@@ -96,8 +98,6 @@ public class Table extends Content {
      * Sets the caption for the table.
      * This is ignored if the table is configured to provide tabs to select
      * different subsets of rows within the table.
-     * The caption should be suitable for use as the content of a {@code <caption>}
-     * element.
      *
      * @param captionContent the caption
      * @return this object
@@ -376,10 +376,10 @@ public class Table extends Content {
         } else {
             main = new ContentBuilder();
         }
-        String columnStyle = switch (columnStyles.size()) {
-            case 2 -> "two-column-summary";
-            case 3 -> "three-column-summary";
-            case 4 -> "four-column-summary";
+        HtmlStyle columnStyle = switch (columnStyles.size()) {
+            case 2 -> HtmlStyle.twoColumnSummary;
+            case 3 -> HtmlStyle.threeColumnSummary;
+            case 4 -> HtmlStyle.fourColumnSummary;
             default -> throw new IllegalStateException();
         };
 

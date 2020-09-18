@@ -428,9 +428,9 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     l">pkg2</a> with type arguments of type <a href="../Foo4.html" title="class in\
                      pkg2">Foo4</a></span></div>
                     <div class="summary-table three-column-summary">
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Method</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color"><code>void</code></div>
                     <div class="col-second alt-color"><span class="type-name-label">ClassUseTest3.<\
                     /span><code><span class="member-name-link"><a href="../ClassUseTest3.html#metho\

@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8189841
+ * @bug 8189841 8253117
  * @summary Error in alternate row coloring in package-summary files
  * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool

@@ -53,7 +53,6 @@ import java.util.regex.Pattern;
 public enum HtmlStyle {
     block,
     blockList,
-    caption,
     circle,
     classUses,
     deprecatedLabel,
@@ -87,7 +86,6 @@ public enum HtmlStyle {
     typeNameLabel,
     typeNameLink,
     verticalSeparator,
-    thead,
 
     //<editor-fold desc="navigation bar">
     //
@@ -410,12 +408,30 @@ public enum HtmlStyle {
     // A module page has details tables containing the details of the directives.
 
     /**
-     * The class of a {@code table} element used to present details of a program element.
+     * The class of a {@code div} element whose content should be rendered as a table
+     * with two columns.
+     */
+    twoColumnSummary,
+
+    /**
+     * The class of a {@code div} element whose content should be rendered as a table
+     * with three columns.
+     */
+    threeColumnSummary,
+
+    /**
+     * The class of a {@code div} element whose content should be rendered as a table
+     * with four columns.
+     */
+    fourColumnSummary,
+
+    /**
+     * The class of a {@code div} element used to present details of a program element.
      */
     detailsTable,
 
     /**
-     * The class of a {@code table} element used to present a summary of the enclosed
+     * The class of a {@code div} element used to present a summary of the enclosed
      * elements of a program element.  A {@code summaryTable} typically references
      * items in a corresponding {@link #detailsList}.
      */
@@ -426,6 +442,17 @@ public enum HtmlStyle {
      * This is used when the table provides filtered views.
      */
     activeTableTab,
+
+    /**
+     * The class for the caption of a table. The caption is displayed as a single
+     * inactive tab above the table.
+     */
+    caption,
+
+    /**
+     * The class of an element that is part of a table header.
+     */
+    tableHeader,
 
     /**
      * The class of a "tab" that indicates an alternate view of the contents of a table.

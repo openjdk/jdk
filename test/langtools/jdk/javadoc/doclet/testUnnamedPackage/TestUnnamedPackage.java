@@ -73,8 +73,8 @@ public class TestUnnamedPackage extends JavadocTester {
                     <div id="all-classes-table">
                     <div class="caption"><span>Class Summary</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Class</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color all-classes-table-tab2 all-classes-table"><a hre\
                     f="C.html" title="class in &lt;Unnamed&gt;">C</a></div>
                     <div class="col-last alt-color all-classes-table-tab2 all-classes-table">
@@ -86,8 +86,8 @@ public class TestUnnamedPackage extends JavadocTester {
                 """
                     <div class="caption"><span>Package Summary</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="thead col-first">Package</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color"><a href="package-summary.html">&lt;Unnamed&gt;</a></div>
                     <div class="col-last alt-color">
                     <div class="block">This is a package comment for the unnamed package.</div>

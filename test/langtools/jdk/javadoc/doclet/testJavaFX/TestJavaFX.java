@@ -298,9 +298,9 @@ public class TestJavaFX extends JavadocTester {
         checkOutput("pkg2/Test.html", false, "<h2>Property Summary</h2>");
         checkOutput("pkg2/Test.html", true,
                 """
-                    <div class="thead col-first">Modifier and Type</div>
-                    <div class="thead col-second">Method</div>
-                    <div class="thead col-last">Description</div>
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>
                     <div class="col-first alt-color method-summary-table-tab2 method-summary-table-t\
                     ab4 method-summary-table"><code>&lt;T&gt;&nbsp;java.lang.Object</code></div>
                     <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\
