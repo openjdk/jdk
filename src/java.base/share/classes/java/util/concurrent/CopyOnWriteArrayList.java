@@ -55,9 +55,14 @@ import java.util.function.UnaryOperator;
 import jdk.internal.access.SharedSecrets;
 
 /**
- * A thread-safe variant of {@link java.util.ArrayList} in which all mutative
- * operations ({@code add}, {@code set}, and so on) are implemented by
- * making a fresh copy of the underlying array.
+ * A thread-safe variant of {@link java.util.ArrayList} in which
+ * all mutative(可变的) operations ({@code add}, {@code set}, and so on)
+ * are implemented by making a fresh copy of the underlying array.
+ * fixme
+ *      1. 线程安全的ArrayList，对其所有更新操作都是通过拷贝其底层数组、
+ *      然后更新数组内容、然后将对象的数组属性指针指向更新后的拷贝数组。
+ *      2. 元素对象使用transient进行描述，因为重写了writeObject和
+ *      readObject方法，序列化的时候会使用这两个方法的策略；
  *
  * <p>This is ordinarily too costly, but may be <em>more</em> efficient
  * than alternatives when traversal operations vastly outnumber
@@ -98,10 +103,16 @@ public class CopyOnWriteArrayList<E>
     /**
      * The lock protecting all mutators.  (We have a mild preference
      * for builtin monitors over ReentrantLock when either will do.)
+     * fixme 工具对象没必要进行序列化
      */
     final transient Object lock = new Object();
 
-    /** The array, accessed only via getArray/setArray. */
+    /** The array, accessed only via getArray/setArray.
+     *  只能通过 getArray/setArray 调用
+     *  todo
+     *      为啥是transient的：https://stackoverflow.com/questions/13898647/copyonwritearraylist-internal-state-is-transient
+     *      该类型重写了 writeObject 方法，序列化的时候将会使用该方法将对象写入到流中；同理、使用readObject读取流中的元素到反序列化的对象。
+     **/
     private transient volatile Object[] array;
 
     /**
@@ -406,14 +417,22 @@ public class CopyOnWriteArrayList<E>
      */
     public E set(int index, E element) {
         synchronized (lock) {
+            // 获取底层数组对象
             Object[] es = getArray();
+
+            // 获取指定下标对象
             E oldValue = elementAt(es, index);
 
+            // 如果新旧值不相等
             if (oldValue != element) {
+                // 数组[]的clone()方法，会拷贝原数组的 基本元素/对象引用，放到新数组
+                // es引用指向了克隆数组
                 es = es.clone();
+                // 更新克隆数组
                 es[index] = element;
             }
-            // Ensure volatile write semantics even when oldvalue == element
+            // Ensure volatile write semantics
+            // even when oldvalue == element
             setArray(es);
             return oldValue;
         }
