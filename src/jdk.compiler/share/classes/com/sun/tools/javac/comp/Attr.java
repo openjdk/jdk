@@ -3941,7 +3941,9 @@ public class Attr extends JCTree.Visitor {
                     valid = true;
                 }
             } else {
-                log.error(typeTree.pos(), Errors.IllegalGenericTypeForInstof);
+                log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(),
+                          Feature.REIFIABLE_TYPES_INSTANCEOF.error(this.sourceName));
+                allowReifiableTypesInInstanceof = true;
             }
             if (!valid) {
                 clazztype = types.createErrorType(clazztype);

@@ -21,12 +21,13 @@
  * questions.
  */
 
-// key: compiler.err.illegal.generic.type.for.instof
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.misc.feature.reifiable.types.instanceof
 // options: -source 15 -Xlint:-options
 
 import java.util.*;
 
-class IllegalInstanceof {
+class FeatureReifiableTypesInstanceof {
     List o;
     boolean b = (o instanceof List<String>);
 }
