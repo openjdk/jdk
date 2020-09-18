@@ -23,12 +23,13 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "services/memTracker.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 
 ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
     _manager(),
@@ -62,9 +63,7 @@ size_t ZVirtualMemoryManager::reserve_discontiguous(uintptr_t start, size_t size
 
   assert(is_aligned(size, ZGranuleSize), "Misaligned");
 
-  if (reserve_contiguous_platform(start, size)) {
-    // Make the address range free
-    _manager.free(start, size);
+  if (reserve_contiguous(start, size)) {
     return size;
   }
 
@@ -99,16 +98,56 @@ size_t ZVirtualMemoryManager::reserve_discontiguous(size_t size) {
   return reserved;
 }
 
+bool ZVirtualMemoryManager::reserve_contiguous_inner(uintptr_t start, size_t size) {
+  assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
+
+  // Reserve address views
+  const uintptr_t marked0 = ZAddress::marked0(start);
+  const uintptr_t marked1 = ZAddress::marked1(start);
+  const uintptr_t remapped = ZAddress::remapped(start);
+
+  // Reserve address space
+  if (os_reserve(marked0, size) != marked0) {
+    return false;
+  }
+
+  if (os_reserve(marked1, size) != marked1) {
+    os_unreserve(marked0, size);
+    return false;
+  }
+
+  if (os_reserve(remapped, size) != remapped) {
+    os_unreserve(marked0, size);
+    os_unreserve(marked1, size);
+    return false;
+  }
+
+  // Register address views with native memory tracker
+  nmt_reserve(ZAddress::marked0(start), size);
+  nmt_reserve(ZAddress::marked1(start), size);
+  nmt_reserve(ZAddress::remapped(start), size);
+
+  return true;
+}
+
+bool ZVirtualMemoryManager::reserve_contiguous(uintptr_t start, size_t size) {
+  if (reserve_contiguous_inner(start, size)) {
+    // Make the address range free
+    _manager.free(start, size);
+
+    return true;
+  }
+
+  return false;
+}
+
 bool ZVirtualMemoryManager::reserve_contiguous(size_t size) {
   // Allow at most 8192 attempts spread evenly across [0, ZAddressOffsetMax)
   const size_t unused = ZAddressOffsetMax - size;
   const size_t increment = MAX2(align_up(unused / 8192, ZGranuleSize), ZGranuleSize);
 
   for (size_t start = 0; start + size <= ZAddressOffsetMax; start += increment) {
-    if (reserve_contiguous_platform(start, size)) {
-      // Make the address range free
-      _manager.free(start, size);
-
+    if (reserve_contiguous(start, size)) {
       // Success
       return true;
     }

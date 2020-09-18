@@ -33,53 +33,22 @@ void ZVirtualMemoryManager::initialize_os() {
   // Does nothing
 }
 
-static void unmap(uintptr_t start, size_t size) {
-  const int res = munmap((void*)start, size);
-  assert(res == 0, "Failed to unmap memory");
-}
-
-static bool map(uintptr_t start, size_t size) {
-  const void* const res = mmap((void*)start, size, PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE|MAP_NORESERVE, -1, 0);
-  if (res == MAP_FAILED) {
+uintptr_t ZVirtualMemoryManager::os_reserve(uintptr_t addr, size_t size) {
+  const uintptr_t res = (uintptr_t)mmap((void*)addr, size, PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE|MAP_NORESERVE, -1, 0);
+  if (res == (uintptr_t)MAP_FAILED) {
     // Failed to reserve memory
-    return false;
+    return 0;
   }
 
-  if ((uintptr_t)res != start) {
+  if (res != addr) {
     // Failed to reserve memory at the requested address
-    unmap((uintptr_t)res, size);
-    return false;
+    os_unreserve(res, size);
   }
 
-  // Success
-  return true;
+  return res;
 }
 
-bool ZVirtualMemoryManager::reserve_contiguous_platform(uintptr_t start, size_t size) {
-  // Reserve address views
-  const uintptr_t marked0 = ZAddress::marked0(start);
-  const uintptr_t marked1 = ZAddress::marked1(start);
-  const uintptr_t remapped = ZAddress::remapped(start);
-
-  if (!map(marked0, size)) {
-    return false;
-  }
-
-  if (!map(marked1, size)) {
-    unmap(marked0, size);
-    return false;
-  }
-
-  if (!map(remapped, size)) {
-    unmap(marked0, size);
-    unmap(marked1, size);
-    return false;
-  }
-
-  // Register address views with native memory tracker
-  nmt_reserve(marked0, size);
-  nmt_reserve(marked1, size);
-  nmt_reserve(remapped, size);
-
-  return true;
+void ZVirtualMemoryManager::os_unreserve(uintptr_t addr, size_t size) {
+  const int res = munmap((void*)addr, size);
+  assert(res == 0, "Failed to unmap memory");
 }
