@@ -2187,7 +2187,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * Return an array of the display names of the variant.
-     * @param bundle the ResourceBundle to use to get the display names
+     * @param inLocale The locale for which to retrieve the display variant.
      * @return an array of display names, possible of zero length.
      */
     private String[] getDisplayVariantArray(Locale inLocale) {
@@ -3335,8 +3335,7 @@ public final class Locale implements Cloneable, Serializable {
                 return false;
             }
             LanguageRange other = (LanguageRange)obj;
-            return hash == other.hash
-                   && range.equals(other.range)
+            return range.equals(other.range)
                    && weight == other.weight;
         }
 
