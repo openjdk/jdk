@@ -26,9 +26,11 @@
 package java.lang;
 
 /**
- * Thrown to indicate that the Java Virtual Machine is broken or has
- * run out of resources necessary for it to continue operating.
- *
+ * Thrown to indicate that the Java Virtual Machine is broken
+ * or has run out of resources necessary for it to continue operating.
+ * fixme
+ *     表示jvm无法正常运行：InternalError(虚拟机内部错误)、UnknownError
+ *     或者耗尽了继续运行所需要的资源：OutOfMemoryError(内存溢出)、StackOverflowError(栈溢出)、
  *
  * @author  Frank Yellin
  * @since   1.0

@@ -25,9 +25,8 @@
 
 package java.lang;
 
-/**
- * Thrown to indicate some unexpected internal error has occurred in
- * the Java Virtual Machine.
+/** 虚拟机内部错误。
+ * Thrown to indicate some unexpected internal error has occurred in the Java Virtual Machine.
  *
  * @author  unascribed
  * @since   1.0

@@ -27,6 +27,7 @@ package java.util.zip;
 
 /**
  * Signals that an unrecoverable error has occurred.
+ * fixme 无法恢复的错误。
  *
  * @author  Dave Bristor
  * @since   1.6

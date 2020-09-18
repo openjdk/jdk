@@ -26,8 +26,9 @@
 package java.lang;
 
 /**
- * Thrown when an unknown but serious exception has occurred in the
- * Java Virtual Machine.
+ * 虚拟机内部严重到影响虚拟机运行的未知原因。
+ *
+ * Thrown when an unknown but serious exception has occurred in the Java Virtual Machine.
  *
  * @author unascribed
  * @since   1.0

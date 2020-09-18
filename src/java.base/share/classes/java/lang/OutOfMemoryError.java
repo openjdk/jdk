@@ -30,6 +30,8 @@ package java.lang;
  * because it is out of memory, and no more memory could be made
  * available by the garbage collector.
  *
+ * fixme 当虚拟机无法为新对象分配需要的内存、而且垃圾回收器无法回收更多的内存空间的时候，抛内存溢出异常。
+ *
  * {@code OutOfMemoryError} objects may be constructed by the virtual
  * machine as if {@linkplain Throwable#Throwable(String, Throwable,
  * boolean, boolean) suppression were disabled and/or the stack trace was not

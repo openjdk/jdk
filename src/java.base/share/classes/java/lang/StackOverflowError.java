@@ -26,8 +26,8 @@
 package java.lang;
 
 /**
- * Thrown when a stack overflow occurs because an application
- * recurses too deeply.
+ * Thrown when a stack overflow occurs because an application recurses too deeply.
+ * 当一个应用递归太深的时候，抛出的错误。
  *
  * @author unascribed
  * @since   1.0
