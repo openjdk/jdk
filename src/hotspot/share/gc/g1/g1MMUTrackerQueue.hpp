@@ -51,10 +51,10 @@ public:
 };
 
 
-// This implementation uses a fixed-size queue to keep track of all 
-// recent pause times. Two major user controls over G1 behavior are 
-// setting a pause time goal (MaxGCPauseMillis), over a time slice 
-// (GCPauseIntervalMillis). This defines the Minimum Mutator 
+// This implementation uses a fixed-size queue to keep track of all
+// recent pause times. Two major user controls over G1 behavior are
+// setting a pause time goal (MaxGCPauseMillis), over a time slice
+// (GCPauseIntervalMillis). This defines the Minimum Mutator
 // Utilisation (MMU) goal.
 //
 // * Definitions *
@@ -113,7 +113,7 @@ public:
 
   inline double when_max_gc_sec(double current_time) {
     return when_sec(current_time, max_gc_time());
-  }  
+  }
 };
 
 #endif // SHARE_GC_G1_G1MMUTRACKERQUEUE_HPP
