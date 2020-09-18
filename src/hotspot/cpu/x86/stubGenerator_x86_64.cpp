@@ -2279,7 +2279,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_int_oop_copy(bool aligned, bool is_oop, address* entry,
                                          const char *name, bool dest_uninitialized = false) {
-    if (VM_Version::supports_avx512vlbw() && false == is_oop && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && !is_oop && MaxVectorSize  >= 32) {
        return generate_disjoint_copy_avx3_masked(entry, "jint_disjoint_arraycopy_avx3", 2);
     }
 
@@ -2387,7 +2387,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_int_oop_copy(bool aligned, bool is_oop, address nooverlap_target,
                                          address *entry, const char *name,
                                          bool dest_uninitialized = false) {
-    if (VM_Version::supports_avx512vlbw() && false == is_oop && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && !is_oop && MaxVectorSize  >= 32) {
        return generate_conjoint_copy_avx3_masked(entry, "jint_conjoint_arraycopy_avx3", 2,
                                                  nooverlap_target);
     }
@@ -2498,7 +2498,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_long_oop_copy(bool aligned, bool is_oop, address *entry,
                                           const char *name, bool dest_uninitialized = false) {
-    if (VM_Version::supports_avx512vlbw() && false == is_oop && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && !is_oop && MaxVectorSize  >= 32) {
        return generate_disjoint_copy_avx3_masked(entry, "jlong_disjoint_arraycopy_avx3", 3);
     }
     __ align(CodeEntryAlignment);
@@ -2605,7 +2605,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_long_oop_copy(bool aligned, bool is_oop,
                                           address nooverlap_target, address *entry,
                                           const char *name, bool dest_uninitialized = false) {
-    if (VM_Version::supports_avx512vlbw() && false == is_oop && MaxVectorSize  >= 32) {
+    if (VM_Version::supports_avx512vlbw() && !is_oop && MaxVectorSize  >= 32) {
        return generate_conjoint_copy_avx3_masked(entry, "jlong_conjoint_arraycopy_avx3", 3,
                                                  nooverlap_target);
     }
