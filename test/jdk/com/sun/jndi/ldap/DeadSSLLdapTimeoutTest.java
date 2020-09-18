@@ -21,34 +21,32 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @run main/othervm DeadSSLLdapTimeoutTest
  * @bug 8141370
  * @key intermittent
+ * @library /test/lib
+ * @run main/othervm DeadSSLLdapTimeoutTest
  */
 
-import java.net.Socket;
+import java.io.EOFException;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
-import java.io.*;
-import javax.naming.*;
-import javax.naming.directory.*;
-import java.util.List;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import java.util.Hashtable;
-import java.util.ArrayList;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
+import javax.naming.directory.InitialDirContext;
 import javax.net.ssl.SSLHandshakeException;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import jdk.test.lib.net.URIBuilder;
+
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 
@@ -57,26 +55,26 @@ class DeadServerTimeoutSSLTest implements Callable<Boolean> {
     Hashtable<Object, Object> env;
     DeadSSLServer server;
     boolean passed = false;
-    private int HANGING_TEST_TIMEOUT = 20_000;
 
     public DeadServerTimeoutSSLTest(Hashtable<Object, Object> env) throws IOException {
-        this.server = new DeadSSLServer();
+        SocketAddress sockAddr = new InetSocketAddress(
+                InetAddress.getLoopbackAddress(), 0);
+        this.server = new DeadSSLServer(sockAddr);
         this.env = env;
     }
 
-    public void performOp(InitialContext ctx) throws NamingException {}
-
-    public void handleNamingException(NamingException e, long start, long end) {
+    public void handleNamingException(NamingException e) {
         if (e.getCause() instanceof SocketTimeoutException
                 || e.getCause().getCause() instanceof SocketTimeoutException) {
             // SSL connect will timeout via readReply using
             // SocketTimeoutException
-            e.printStackTrace();
+            System.err.println("PASS: Observed expected SocketTimeoutException");
             pass();
         } else if (e.getCause() instanceof SSLHandshakeException
                 && e.getCause().getCause() instanceof EOFException) {
             // test seems to be failing intermittently on some
             // platforms.
+            System.err.println("PASS: Observed expected SSLHandshakeException/EOFException");
             pass();
         } else {
             fail(e);
@@ -92,6 +90,7 @@ class DeadServerTimeoutSSLTest implements Callable<Boolean> {
     }
 
     public void fail(Exception e) {
+        System.err.println("FAIL: Unexpected exception was observed:" + e.getMessage());
         throw new RuntimeException("Test failed", e);
     }
 
@@ -106,29 +105,31 @@ class DeadServerTimeoutSSLTest implements Callable<Boolean> {
 
     public Boolean call() {
         InitialContext ctx = null;
-        ScheduledFuture<?> killer = null;
-        long start = System.nanoTime();
 
         try {
-            while(!server.accepting())
-                Thread.sleep(200); // allow the server to start up
+            server.serverStarted.await(); // Wait for the server to start-up
             Thread.sleep(200); // to be sure
 
-            env.put(Context.PROVIDER_URL, "ldap://localhost:" +
-                    server.getLocalPort());
+            env.put(Context.PROVIDER_URL,
+                    URIBuilder.newBuilder()
+                            .scheme("ldap")
+                            .loopback()
+                            .port(server.getLocalPort())
+                            .buildUnchecked().toString()
+            );
 
+            long start = System.nanoTime();
             try {
                 ctx = new InitialDirContext(env);
-                performOp(ctx);
                 fail();
             } catch (NamingException e) {
                 long end = System.nanoTime();
                 System.out.println(this.getClass().toString() + " - elapsed: "
                         + NANOSECONDS.toMillis(end - start));
-                handleNamingException(e, start, end);
+                handleNamingException(e);
             } finally {
-                if (killer != null && !killer.isDone())
-                    killer.cancel(true);
+                // Stop the server side thread
+                server.testDone.countDown();
                 shutItDown(ctx);
                 server.close();
             }
@@ -141,30 +142,37 @@ class DeadServerTimeoutSSLTest implements Callable<Boolean> {
 
 class DeadSSLServer extends Thread {
     ServerSocket serverSock;
-    boolean accepting = false;
+    // Latch to be used by client to wait for server to start
+    CountDownLatch serverStarted = new CountDownLatch(1);
 
-    public DeadSSLServer() throws IOException {
-        this.serverSock = new ServerSocket(0);
+    // Latch to be used by server thread to wait for client to finish testing
+    CountDownLatch testDone = new CountDownLatch(1);
+
+    public DeadSSLServer(SocketAddress socketAddress) throws IOException {
+        // create unbound server socket
+        var srvSock = new ServerSocket();
+        // bind it to the address provided
+        srvSock.bind(socketAddress);
+        this.serverSock = srvSock;
         start();
     }
 
     public void run() {
-        while(true) {
-            try {
-                accepting = true;
-                Socket socket = serverSock.accept();
-            } catch (Exception e) {
-                break;
-            }
+        // Signal client to proceed with the test
+        serverStarted.countDown();
+        try (var socket = serverSock.accept()) {
+            System.err.println("Accepted connection:" + socket);
+            // Give LDAP client time to fully establish the connection.
+            // When client is done - close the accepted socket
+            testDone.await();
+        } catch (Exception e) {
+            System.err.println("Server socket. Failure to accept connection:");
+            e.printStackTrace();
         }
     }
 
     public int getLocalPort() {
         return serverSock.getLocalPort();
-    }
-
-    public boolean accepting() {
-        return accepting;
     }
 
     public void close() throws IOException {
@@ -173,18 +181,20 @@ class DeadSSLServer extends Thread {
 }
 
 public class DeadSSLLdapTimeoutTest {
+    // com.sun.jndi.ldap.connect.timeout value to set
+    static final String CONNECT_TIMEOUT_MS = "10";
+
+    // com.sun.jndi.ldap.read.timeout value to set
+    static final String READ_TIMEOUT_MS = "3000";
 
     static Hashtable<Object, Object> createEnv() {
         Hashtable<Object, Object> env = new Hashtable<>(11);
         env.put(Context.INITIAL_CONTEXT_FACTORY,
-            "com.sun.jndi.ldap.LdapCtxFactory");
+                "com.sun.jndi.ldap.LdapCtxFactory");
         return env;
     }
 
     public static void main(String[] args) throws Exception {
-
-        InitialContext ctx = null;
-
         //
         // Running this test serially as it seems to tickle a problem
         // on older kernels
@@ -193,19 +203,19 @@ public class DeadSSLLdapTimeoutTest {
         // and ssl enabled
         // this should exit with a SocketTimeoutException as the root cause
         // it should also use the connect timeout instead of the read timeout
-        System.out.println("Running connect timeout test with 10ms connect timeout, 3000ms read timeout & SSL");
+        System.out.printf("Running connect timeout test with %sms connect timeout," +
+                          " %sms read timeout & SSL%n",
+                          CONNECT_TIMEOUT_MS, READ_TIMEOUT_MS);
+
         Hashtable<Object, Object> sslenv = createEnv();
-        sslenv.put("com.sun.jndi.ldap.connect.timeout", "10");
-        sslenv.put("com.sun.jndi.ldap.read.timeout", "3000");
+        sslenv.put("com.sun.jndi.ldap.connect.timeout", CONNECT_TIMEOUT_MS);
+        sslenv.put("com.sun.jndi.ldap.read.timeout", READ_TIMEOUT_MS);
         sslenv.put(Context.SECURITY_PROTOCOL, "ssl");
-        boolean testFailed =
-            (new DeadServerTimeoutSSLTest(sslenv).call()) ? false : true;
+        boolean testFailed = !new DeadServerTimeoutSSLTest(sslenv).call();
 
         if (testFailed) {
             throw new AssertionError("some tests failed");
         }
-
     }
-
 }
 
