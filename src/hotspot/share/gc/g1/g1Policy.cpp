@@ -754,8 +754,6 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
 
   bool update_stats = should_update_gc_stats();
 
-  record_pause(this_pause, start_time_sec, end_time_sec);
-
   if (is_concurrent_start_pause(this_pause)) {
     record_concurrent_mark_init_end(0.0);
   } else {
@@ -783,6 +781,8 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
     double alloc_rate_ms = (double) regions_allocated / app_time_ms;
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
   }
+
+  record_pause(this_pause, start_time_sec, end_time_sec);
 
   if (is_last_young_pause(this_pause)) {
     assert(!is_concurrent_start_pause(this_pause),
