@@ -319,11 +319,13 @@ public:
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
+  bool concurrent_operation_is_full_mark(const char* msg = NULL);
+
   bool about_to_start_mixed_phase() const;
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
-  virtual void record_collection_pause_end(double pause_time_ms, bool start_concurrent_mark_cycle);
+  virtual void record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();

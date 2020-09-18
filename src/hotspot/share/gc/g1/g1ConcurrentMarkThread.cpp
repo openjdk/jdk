@@ -56,31 +56,6 @@ G1ConcurrentMarkThread::G1ConcurrentMarkThread(G1ConcurrentMark* cm) :
   create_and_start();
 }
 
-void G1ConcurrentMarkThread::set_idle() {
-  assert(_state != StartMark && _state != StartUndo, "must not be starting a new cycle");
-  _state = Idle;
-}
-
-void G1ConcurrentMarkThread::set_started(bool mark_cycle) {
-  assert(_state == Idle, "cycle in progress");
-  _state = mark_cycle ? StartMark : StartUndo;
-}
-
-void G1ConcurrentMarkThread::set_in_progress() {
-  assert(_state == StartMark || _state == StartUndo, "must be starting a cycle");
-  _state = InProgress;
-}
-
-bool G1ConcurrentMarkThread::idle() const { return _state == Idle; }
-
-bool G1ConcurrentMarkThread::started() const {
-  return _state == StartMark || _state == StartUndo;
-}
-
-bool G1ConcurrentMarkThread::in_progress() const {
-  return _state == InProgress;
-}
-
 class CMRemark : public VoidClosure {
   G1ConcurrentMark* _cm;
 public:
@@ -160,23 +135,23 @@ class G1ConcPhaseTimer : public GCTraceConcTimeImpl<LogLevel::Info, LOG_TAGS(gc,
 void G1ConcurrentMarkThread::run_service() {
   _vtime_start = os::elapsedVTime();
 
-  Command cmd;
-  while ((cmd = wait_for_next_cycle()) != Terminate) {
+  while (wait_for_next_cycle()) {
+    assert(in_progress(), "must be");
 
     GCIdMark gc_id_mark;
     GCTraceConcTime(Info, gc) tt(FormatBuffer<128>("Concurrent %s Cycle",
-                                                   cmd == MarkCycle ? "Mark" : "Undo"));
+                                                   _state == FullMark ? "Mark" : "Undo"));
 
     concurrent_cycle_start();
 
-    if (cmd == MarkCycle) {
+    if (_state == FullMark) {
       concurrent_mark_cycle_do();
     } else {
-      assert(cmd == UndoCycle, "Must be command to undo concurrent start but is %d", cmd);
+      assert(_state == UndoMark, "Must do undo mark but is %d", _state);
       concurrent_undo_cycle_do();
     }
 
-    concurrent_cycle_end(cmd == MarkCycle && !_cm->has_aborted());
+    concurrent_cycle_end(_state == FullMark && !_cm->has_aborted());
 
     _vtime_accum = (os::elapsedVTime() - _vtime_start);
   }
@@ -188,29 +163,15 @@ void G1ConcurrentMarkThread::stop_service() {
   CGC_lock->notify_all();
 }
 
-G1ConcurrentMarkThread::Command G1ConcurrentMarkThread::wait_for_next_cycle() {
+bool G1ConcurrentMarkThread::wait_for_next_cycle() {
   assert(!in_progress(), "should have been cleared");
 
   MonitorLocker ml(CGC_lock, Mutex::_no_safepoint_check_flag);
-  while (!started() && !should_terminate()) {
+  while (!in_progress() && !should_terminate()) {
     ml.wait();
   }
 
-  Command result;
-  if (should_terminate()) {
-    result = Terminate;
-  } else if (_state == StartMark) {
-    result = MarkCycle;
-  } else {
-    assert(_state == StartUndo, "must be");
-    result = UndoCycle;
-  }
-
-  if (started()) {
-    set_in_progress();
-  }
-
-  return result;
+  return !should_terminate();
 }
 
 void G1ConcurrentMarkThread::phase_clear_cld_claimed_marks() {

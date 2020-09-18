@@ -746,10 +746,8 @@ private:
   void reset_taskqueue_stats();
   #endif // TASKQUEUE_STATS
 
-  // Start a concurrent cycle. If is_mark_cycle is true, do a
-  // full mark cycle, otherwise only do concurrent mark undo
-  // processing. That is, clear the bitmap only.
-  void start_concurrent_cycle(bool is_mark_cycle);
+  // Start a concurrent cycle.
+  void start_concurrent_cycle(bool concurrent_operation_is_full_mark);
 
   // Schedule the VM operation that will do an evacuation pause to
   // satisfy an allocation request of word_size. *succeeded will

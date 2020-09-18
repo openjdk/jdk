@@ -42,20 +42,14 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
 
   enum ServiceState : uint {
     Idle,
-    StartMark,
-    StartUndo,
-    InProgress
+    FullMark,
+    UndoMark
   };
 
   volatile ServiceState _state;
 
-  enum Command : uint {
-    Terminate,  // Terminate the thread.
-    MarkCycle,  // Start a (full) marking cycle
-    UndoCycle   // Start an undo cycle, i.e. undo a concurrent mark start pause.
-  };
   // Wait for next cycle. Returns the command passed over.
-  Command wait_for_next_cycle();
+  bool wait_for_next_cycle();
 
   bool mark_loop_needs_restart() const;
 
@@ -104,22 +98,17 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   G1ConcurrentMark* cm() { return _cm; }
 
   void set_idle();
-  void set_started(bool mark_cycle);
+  void start_full_mark();
+  void start_undo_mark();
   void set_in_progress();
 
   bool idle() const;
-  bool started() const;
-  bool in_progress() const;
-
   // Returns true from the moment a concurrent cycle is
   // initiated (during the concurrent start pause when started() is set)
   // to the moment when the cycle completes (just after the next
   // marking bitmap has been cleared and in_progress() is
-  // cleared). While during_cycle() is true we will not start another cycle
-  // so that cycles do not overlap. We cannot use just in_progress()
-  // as the CM thread might take some time to wake up before noticing
-  // that started() is set and set in_progress().
-  bool during_cycle() const { return !idle(); }
+  // cleared).
+  bool in_progress() const;
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP
