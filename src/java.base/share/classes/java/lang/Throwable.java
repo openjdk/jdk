@@ -399,9 +399,11 @@ public class Throwable implements Serializable {
     }
 
     /**
-     * Returns the cause of this throwable or {@code null} if the
-     * cause is nonexistent or unknown.  (The cause is the throwable that
-     * caused this throwable to get thrown.)
+     * Returns the cause of this throwable
+     * or {@code null} if the cause is non-existent or unknown.
+     * (The cause is the throwable that caused this throwable to get thrown.)
+     * fixme
+     *      getCause加了对象锁，所以异常对象不能频繁的调用 getCause() 方法。
      *
      * <p>This implementation returns the cause that was supplied via one of
      * the constructors requiring a {@code Throwable}, or that was set after
