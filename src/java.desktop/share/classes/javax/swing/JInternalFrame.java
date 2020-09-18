@@ -2012,6 +2012,11 @@ public class JInternalFrame extends JComponent implements
         implements AccessibleValue {
 
         /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJInternalFrame() {}
+
+        /**
          * Get the accessible name of this object.
          *
          * @return the localized name of the object -- can be <code>null</code> if this
@@ -2301,6 +2306,11 @@ public class JInternalFrame extends JComponent implements
         @SuppressWarnings("serial") // Same-version serialization only
         protected class AccessibleJDesktopIcon extends AccessibleJComponent
             implements AccessibleValue {
+
+            /**
+             * Constructor for subclasses to call.
+             */
+            protected AccessibleJDesktopIcon() {}
 
             /**
              * Gets the role of this object.

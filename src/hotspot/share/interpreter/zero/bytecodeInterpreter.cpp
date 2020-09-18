@@ -106,7 +106,7 @@
     {                                                                             \
        /* zap freed handles rather than GC'ing them */                            \
        HandleMarkCleaner __hmc(THREAD);                                           \
-       CALL_VM(SafepointMechanism::block_if_requested(THREAD), handle_exception); \
+       CALL_VM(SafepointMechanism::process_if_requested(THREAD), handle_exception); \
     }
 
 /*

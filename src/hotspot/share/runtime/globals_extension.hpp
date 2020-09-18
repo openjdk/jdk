@@ -34,34 +34,18 @@
 #define FLAG_MEMBER_ENUM(name) Flag_##name##_enum
 #define FLAG_MEMBER_ENUM_(name) FLAG_MEMBER_ENUM(name),
 
-#define FLAG_MEMBER_ENUM_PRODUCT(type, name, value, doc)      FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_PD_PRODUCT(type, name, doc)          FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_DIAGNOSTIC(type, name, value, doc)   FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_PD_DIAGNOSTIC(type, name, doc)       FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_EXPERIMENTAL(type, name, value, doc) FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_MANAGEABLE(type, name, value, doc)   FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_PRODUCT_RW(type, name, value, doc)   FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_DEVELOP(type, name, value, doc)      FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_PD_DEVELOP(type, name, doc)          FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_NOTPRODUCT(type, name, value, doc)   FLAG_MEMBER_ENUM_(name)
-#ifdef _LP64
-#define FLAG_MEMBER_ENUM_LP64_PRODUCT(type, name, value, doc) FLAG_MEMBER_ENUM_(name)
-#else
-#define FLAG_MEMBER_ENUM_LP64_PRODUCT(type, name, value, doc) /* flag is constant */
-#endif // _LP64
+#define FLAG_MEMBER_ENUM_PRODUCT(type, name, value, ...)      FLAG_MEMBER_ENUM_(name)
+#define FLAG_MEMBER_ENUM_PD_PRODUCT(type, name, ...)          FLAG_MEMBER_ENUM_(name)
+#define FLAG_MEMBER_ENUM_DEVELOP(type, name, value, ...)      FLAG_MEMBER_ENUM_(name)
+#define FLAG_MEMBER_ENUM_PD_DEVELOP(type, name, ...)          FLAG_MEMBER_ENUM_(name)
+#define FLAG_MEMBER_ENUM_NOTPRODUCT(type, name, value, ...)   FLAG_MEMBER_ENUM_(name)
 
-typedef enum {
+typedef enum : int {
   ALL_FLAGS(FLAG_MEMBER_ENUM_DEVELOP,
             FLAG_MEMBER_ENUM_PD_DEVELOP,
             FLAG_MEMBER_ENUM_PRODUCT,
             FLAG_MEMBER_ENUM_PD_PRODUCT,
-            FLAG_MEMBER_ENUM_DIAGNOSTIC,
-            FLAG_MEMBER_ENUM_PD_DIAGNOSTIC,
-            FLAG_MEMBER_ENUM_EXPERIMENTAL,
             FLAG_MEMBER_ENUM_NOTPRODUCT,
-            FLAG_MEMBER_ENUM_MANAGEABLE,
-            FLAG_MEMBER_ENUM_PRODUCT_RW,
-            FLAG_MEMBER_ENUM_LP64_PRODUCT,
             IGNORE_RANGE,
             IGNORE_CONSTRAINT)
   NUM_JVMFlagsEnum
@@ -100,33 +84,17 @@ class JVMFlagEx : JVMFlag {
 #define FLAG_MEMBER_SET(name) Flag_##name##_set
 #define FLAG_MEMBER_SET_(type, name) inline JVMFlag::Error FLAG_MEMBER_SET(name)(type value, JVMFlag::Flags origin) { return JVMFlagEx::type##AtPut(FLAG_MEMBER_ENUM(name), value, origin); }
 
-#define FLAG_MEMBER_SET_PRODUCT(type, name, value, doc)      FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_PD_PRODUCT(type, name, doc)          FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_DIAGNOSTIC(type, name, value, doc)   FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_PD_DIAGNOSTIC(type, name, doc)       FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_EXPERIMENTAL(type, name, value, doc) FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_MANAGEABLE(type, name, value, doc)   FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_PRODUCT_RW(type, name, value, doc)   FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_DEVELOP(type, name, value, doc)      FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_PD_DEVELOP(type, name, doc)          FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_NOTPRODUCT(type, name, value, doc)   FLAG_MEMBER_SET_(type, name)
-#ifdef _LP64
-#define FLAG_MEMBER_SET_LP64_PRODUCT(type, name, value, doc) FLAG_MEMBER_SET_(type, name)
-#else
-#define FLAG_MEMBER_SET_LP64_PRODUCT(type, name, value, doc) /* flag is constant */
-#endif // _LP64
+#define FLAG_MEMBER_SET_PRODUCT(type, name, value, ...)      FLAG_MEMBER_SET_(type, name)
+#define FLAG_MEMBER_SET_PD_PRODUCT(type, name, ...)          FLAG_MEMBER_SET_(type, name)
+#define FLAG_MEMBER_SET_DEVELOP(type, name, value, ...)      FLAG_MEMBER_SET_(type, name)
+#define FLAG_MEMBER_SET_PD_DEVELOP(type, name, ...)          FLAG_MEMBER_SET_(type, name)
+#define FLAG_MEMBER_SET_NOTPRODUCT(type, name, value, ...)   FLAG_MEMBER_SET_(type, name)
 
 ALL_FLAGS(FLAG_MEMBER_SET_DEVELOP,
           FLAG_MEMBER_SET_PD_DEVELOP,
           FLAG_MEMBER_SET_PRODUCT,
           FLAG_MEMBER_SET_PD_PRODUCT,
-          FLAG_MEMBER_SET_DIAGNOSTIC,
-          FLAG_MEMBER_SET_PD_DIAGNOSTIC,
-          FLAG_MEMBER_SET_EXPERIMENTAL,
           FLAG_MEMBER_SET_NOTPRODUCT,
-          FLAG_MEMBER_SET_MANAGEABLE,
-          FLAG_MEMBER_SET_PRODUCT_RW,
-          FLAG_MEMBER_SET_LP64_PRODUCT,
           IGNORE_RANGE,
           IGNORE_CONSTRAINT)
 

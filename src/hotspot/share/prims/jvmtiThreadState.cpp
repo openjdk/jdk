@@ -241,7 +241,7 @@ int JvmtiThreadState::count_frames() {
 
 void JvmtiThreadState::invalidate_cur_stack_depth() {
   assert(SafepointSynchronize::is_at_safepoint() ||
-         (JavaThread *)Thread::current() == get_thread() ||
+         JavaThread::current() == get_thread() ||
          Thread::current() == get_thread()->active_handshaker(),
          "bad synchronization with owner thread");
 
@@ -272,7 +272,7 @@ void JvmtiThreadState::decr_cur_stack_depth() {
 }
 
 int JvmtiThreadState::cur_stack_depth() {
-  Thread *current = Thread::current();
+  JavaThread *current = JavaThread::current();
   guarantee(current == get_thread() || current == get_thread()->active_handshaker(),
             "must be current thread or direct handshake");
 

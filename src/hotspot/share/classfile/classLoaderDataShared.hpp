@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ /*
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,26 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTRACER_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHTRACER_HPP
+#ifndef SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
+#define SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP
 
-#include "gc/shared/gcTrace.hpp"
+#include "memory/allStatic.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-class ShenandoahTracer : public GCTracer {
+class ClassLoaderData;
+class MetaspaceClosure;
+class SerializeClosure;
+
+class ClassLoaderDataShared : AllStatic {
 public:
-  ShenandoahTracer() : GCTracer(Shenandoah) {}
+  static void allocate_archived_tables();
+  static void iterate_symbols(MetaspaceClosure* closure);
+  static void init_archived_tables();
+  static void init_archived_oops();
+  static void serialize(SerializeClosure* f);
+  static oop  restore_archived_oops_for_null_class_loader_data();
+  static void restore_java_platform_loader_from_archive(ClassLoaderData* loader_data);
+  static void restore_java_system_loader_from_archive(ClassLoaderData* loader_data);
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHTRACER_HPP
+#endif // SHARE_CLASSFILE_CLASSLOADERDATASHARED_HPP

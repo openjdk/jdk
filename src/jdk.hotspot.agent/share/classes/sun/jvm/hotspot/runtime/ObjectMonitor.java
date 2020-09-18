@@ -100,8 +100,8 @@ public class ObjectMonitor extends VMObject {
   }
 
   // FIXME
-  //  void*     object_addr();
-  //  void      set_object(void* obj);
+  //  oop*      object_addr();
+  //  void      set_object(oop obj);
 
   // The following four either aren't expressed as typed fields in
   // vmStructs.cpp because they aren't strongly typed in the VM, or

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
-import com.sun.tools.doclint.Entity;
 import com.sun.tools.doclint.HtmlTag;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -128,6 +127,7 @@ public class JavadocFormatter {
     private class FormatJavadocScanner extends DocTreeScanner<Object, Object> {
         private final StringBuilder result;
         private final JavacTask task;
+        private final DocTrees trees;
         private int reflownTo;
         private int indent;
         private int limit = Math.min(lineLimit, MAX_LINE_LENGTH);
@@ -137,6 +137,7 @@ public class JavadocFormatter {
         public FormatJavadocScanner(StringBuilder result, JavacTask task) {
             this.result = result;
             this.task = task;
+            this.trees = DocTrees.instance(task);
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -511,31 +512,10 @@ public class JavadocFormatter {
 
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Object visitEntity(EntityTree node, Object p) {
-            String name = node.getName().toString();
-            int code = -1;
-            String value = null;
-            if (name.startsWith("#")) {
-                try {
-                    int v = StringUtils.toLowerCase(name).startsWith("#x")
-                            ? Integer.parseInt(name.substring(2), 16)
-                            : Integer.parseInt(name.substring(1), 10);
-                    if (Entity.isValid(v)) {
-                        code = v;
-                    }
-                } catch (NumberFormatException ex) {
-                    //ignore
-                }
-            } else {
-                value = Entity.getValue(name);
-            }
-            if (code != (-1)) {
-                result.appendCodePoint(code);
-            } else if (value != null) {
-                result.append(value);
-            } else {
-                result.append(node.toString());
-            }
+            String value = trees.getCharacters(node);
+            result.append(value == null ? node.toString() : value);
             return super.visitEntity(node, p);
+
         }
 
         private DocTree lastNode;

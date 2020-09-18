@@ -1073,7 +1073,7 @@ void DebugOnCmdStartDCmd::execute(DCmdSource source, TRAPS) {
   char const* transport = NULL;
   char const* addr = NULL;
   jboolean is_first_start = JNI_FALSE;
-  JavaThread* thread = (JavaThread*) THREAD;
+  JavaThread* thread = THREAD->as_Java_thread();
   jthread jt = JNIHandles::make_local(thread->threadObj());
   ThreadToNativeFromVM ttn(thread);
   const char *error = "Could not find jdwp agent.";

@@ -72,8 +72,9 @@ public class PosixPermissionsTest {
     private static int count;
     private static Set<PosixFilePermission> permsSet;
     private static String expectedJarPerms;
-    private static final String POSIXWARNING = "POSIX file permission attributes detected. " +
-        "These attributes are ignored when signing and are not protected by the signature.";
+    private static final String WARNING_MSG = "POSIX file permission and/or symlink " +
+        "attributes detected. These attributes are ignored when signing and are not " +
+        "protected by the signature.";
 
     public static void main(String[] args) throws Exception {
         if (!FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
@@ -104,7 +105,7 @@ public class PosixPermissionsTest {
                 "-keypass", "password",
                 "examplekey")
                 .shouldHaveExitValue(0)
-                .shouldContain(POSIXWARNING);
+                .shouldContain(WARNING_MSG);
 
         // zip file now signed. Recheck file permissions
         verifyFilePermissions(ZIPURI, true);
@@ -116,7 +117,7 @@ public class PosixPermissionsTest {
                 "-keypass", "password",
                 "examplekey")
                 .shouldHaveExitValue(0)
-                .shouldNotContain(POSIXWARNING);
+                .shouldNotContain(WARNING_MSG);
 
         // default attributes expected
         verifyFilePermissions(JARURI, false);
@@ -127,7 +128,7 @@ public class PosixPermissionsTest {
                 "-verbose",
                 "-verify", ZIPFILENAME)
                 .shouldHaveExitValue(0)
-                .shouldContain(POSIXWARNING);
+                .shouldContain(WARNING_MSG);
 
         // no warning expected for regular jar file
         SecurityTools.jarsigner("-keystore", "examplekeystore",
@@ -136,7 +137,7 @@ public class PosixPermissionsTest {
                 "-verbose",
                 "-verify", JARFILENAME)
                 .shouldHaveExitValue(0)
-                .shouldNotContain(POSIXWARNING);
+                .shouldNotContain(WARNING_MSG);
     }
 
     private static void createFiles() throws Exception {

@@ -172,125 +172,43 @@ public:
   }
 };
 
-// No constraint emitting
-void emit_constraint_no(...)                            { /* NOP */ }
-
-// No constraint emitting if function argument is NOT provided
-void emit_constraint_bool(const JVMFlag* /*flag*/)      { /* NOP */ }
-void emit_constraint_ccstr(const JVMFlag* /*flag*/)     { /* NOP */ }
-void emit_constraint_ccstrlist(const JVMFlag* /*flag*/) { /* NOP */ }
-void emit_constraint_int(const JVMFlag* /*flag*/)       { /* NOP */ }
-void emit_constraint_intx(const JVMFlag* /*flag*/)      { /* NOP */ }
-void emit_constraint_uint(const JVMFlag* /*flag*/)      { /* NOP */ }
-void emit_constraint_uintx(const JVMFlag* /*flag*/)     { /* NOP */ }
-void emit_constraint_uint64_t(const JVMFlag* /*flag*/)  { /* NOP */ }
-void emit_constraint_size_t(const JVMFlag* /*flag*/)    { /* NOP */ }
-void emit_constraint_double(const JVMFlag* /*flag*/)    { /* NOP */ }
-
-// JVMFlagConstraint emitting code functions if function argument is provided
-void emit_constraint_bool(const JVMFlag* flag, JVMFlagConstraintFunc_bool func, JVMFlagConstraint::ConstraintType type) {
-  JVMFlagConstraintList::add(new JVMFlagConstraint_bool(flag, func, type));
-}
-void emit_constraint_int(const JVMFlag* flag, JVMFlagConstraintFunc_int func, JVMFlagConstraint::ConstraintType type) {
-  JVMFlagConstraintList::add(new JVMFlagConstraint_int(flag, func, type));
-}
-void emit_constraint_intx(const JVMFlag* flag, JVMFlagConstraintFunc_intx func, JVMFlagConstraint::ConstraintType type) {
-  JVMFlagConstraintList::add(new JVMFlagConstraint_intx(flag, func, type));
-}
-void emit_constraint_uint(const JVMFlag* flag, JVMFlagConstraintFunc_uint func, JVMFlagConstraint::ConstraintType type) {
-  JVMFlagConstraintList::add(new JVMFlagConstraint_uint(flag, func, type));
-}
-void emit_constraint_uintx(const JVMFlag* flag, JVMFlagConstraintFunc_uintx func, JVMFlagConstraint::ConstraintType type) {
-  JVMFlagConstraintList::add(new JVMFlagConstraint_uintx(flag, func, type));
-}
-void emit_constraint_uint64_t(const JVMFlag* flag, JVMFlagConstraintFunc_uint64_t func, JVMFlagConstraint::ConstraintType type) {
-  JVMFlagConstraintList::add(new JVMFlagConstraint_uint64_t(flag, func, type));
-}
-void emit_constraint_size_t(const JVMFlag* flag, JVMFlagConstraintFunc_size_t func, JVMFlagConstraint::ConstraintType type) {
-  JVMFlagConstraintList::add(new JVMFlagConstraint_size_t(flag, func, type));
-}
-void emit_constraint_double(const JVMFlag* flag, JVMFlagConstraintFunc_double func, JVMFlagConstraint::ConstraintType type) {
-  JVMFlagConstraintList::add(new JVMFlagConstraint_double(flag, func, type));
+#define DEFINE_CONSTRAINT_APPLY(T) \
+JVMFlag::Error JVMFlagConstraintChecker::apply_ ## T(T value, bool verbose) const {           \
+  assert(exists(), "must be");                                                                \
+  JVMFlagConstraint_ ## T constraint(_flag,                                                   \
+                                     (JVMFlagConstraintFunc_ ## T)_limit->constraint_func(),  \
+                                     (JVMFlagConstraint::ConstraintType)_limit->phase());     \
+  return constraint.apply_ ## T(value, verbose);                                              \
 }
 
-// Generate code to call emit_constraint_xxx function
-#define EMIT_CONSTRAINT_START       (void)(0
-#define EMIT_CONSTRAINT(type, name) ); emit_constraint_##type(JVMFlagEx::flag_from_enum(FLAG_MEMBER_ENUM(name))
-#define EMIT_CONSTRAINT_NO          ); emit_constraint_no(0
-#define EMIT_CONSTRAINT_PRODUCT_FLAG(type, name, value, doc)      EMIT_CONSTRAINT(type, name)
-#define EMIT_CONSTRAINT_DIAGNOSTIC_FLAG(type, name, value, doc)   EMIT_CONSTRAINT(type, name)
-#define EMIT_CONSTRAINT_EXPERIMENTAL_FLAG(type, name, value, doc) EMIT_CONSTRAINT(type, name)
-#define EMIT_CONSTRAINT_MANAGEABLE_FLAG(type, name, value, doc)   EMIT_CONSTRAINT(type, name)
-#define EMIT_CONSTRAINT_PRODUCT_RW_FLAG(type, name, value, doc)   EMIT_CONSTRAINT(type, name)
-#define EMIT_CONSTRAINT_PD_PRODUCT_FLAG(type, name, doc)          EMIT_CONSTRAINT(type, name)
-#define EMIT_CONSTRAINT_PD_DIAGNOSTIC_FLAG(type, name, doc)       EMIT_CONSTRAINT(type, name)
-#ifndef PRODUCT
-#define EMIT_CONSTRAINT_DEVELOPER_FLAG(type, name, value, doc)    EMIT_CONSTRAINT(type, name)
-#define EMIT_CONSTRAINT_PD_DEVELOPER_FLAG(type, name, doc)        EMIT_CONSTRAINT(type, name)
-#define EMIT_CONSTRAINT_NOTPRODUCT_FLAG(type, name, value, doc)   EMIT_CONSTRAINT(type, name)
-#else
-#define EMIT_CONSTRAINT_DEVELOPER_FLAG(type, name, value, doc)    EMIT_CONSTRAINT_NO
-#define EMIT_CONSTRAINT_PD_DEVELOPER_FLAG(type, name, doc)        EMIT_CONSTRAINT_NO
-#define EMIT_CONSTRAINT_NOTPRODUCT_FLAG(type, name, value, doc)   EMIT_CONSTRAINT_NO
-#endif
-#ifdef _LP64
-#define EMIT_CONSTRAINT_LP64_PRODUCT_FLAG(type, name, value, doc) EMIT_CONSTRAINT(type, name)
-#else
-#define EMIT_CONSTRAINT_LP64_PRODUCT_FLAG(type, name, value, doc) EMIT_CONSTRAINT_NO
-#endif
-#define EMIT_CONSTRAINT_END         );
+ALL_CONSTRAINT_TYPES(DEFINE_CONSTRAINT_APPLY)
 
-// Generate func argument to pass into emit_constraint_xxx functions
-#define EMIT_CONSTRAINT_CHECK(func, type)                         , func, JVMFlagConstraint::type
 
-// the "name" argument must be a string literal
-#define INITIAL_CONSTRAINTS_SIZE 72
-GrowableArray<JVMFlagConstraint*>* JVMFlagConstraintList::_constraints = NULL;
+JVMFlag::Error JVMFlagConstraintChecker::apply(bool verbose) const {
+#define APPLY_CONSTRAINT(T)                                                                     \
+  if (_flag->is_ ## T()) {                                                                      \
+    JVMFlagConstraint_ ## T constraint(_flag,                                                   \
+                                       (JVMFlagConstraintFunc_ ## T)_limit->constraint_func(),  \
+                                       (JVMFlagConstraint::ConstraintType)_limit->phase());     \
+    return constraint.apply(verbose);                                                           \
+  }
+
+  ALL_CONSTRAINT_TYPES(APPLY_CONSTRAINT);
+
+  ShouldNotReachHere();
+  return JVMFlag::INVALID_FLAG;
+}
+
+
 JVMFlagConstraint::ConstraintType JVMFlagConstraintList::_validating_type = JVMFlagConstraint::AtParse;
 
-// Check the ranges of all flags that have them or print them out and exit if requested
-void JVMFlagConstraintList::init(void) {
-  _constraints = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JVMFlagConstraint*>(INITIAL_CONSTRAINTS_SIZE, mtArguments);
-
-  EMIT_CONSTRAINT_START
-
-  ALL_FLAGS(EMIT_CONSTRAINT_DEVELOPER_FLAG,
-            EMIT_CONSTRAINT_PD_DEVELOPER_FLAG,
-            EMIT_CONSTRAINT_PRODUCT_FLAG,
-            EMIT_CONSTRAINT_PD_PRODUCT_FLAG,
-            EMIT_CONSTRAINT_DIAGNOSTIC_FLAG,
-            EMIT_CONSTRAINT_PD_DIAGNOSTIC_FLAG,
-            EMIT_CONSTRAINT_EXPERIMENTAL_FLAG,
-            EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
-            EMIT_CONSTRAINT_MANAGEABLE_FLAG,
-            EMIT_CONSTRAINT_PRODUCT_RW_FLAG,
-            EMIT_CONSTRAINT_LP64_PRODUCT_FLAG,
-            IGNORE_RANGE,
-            EMIT_CONSTRAINT_CHECK)
-
-  EMIT_CONSTRAINT_END
-}
-
-JVMFlagConstraint* JVMFlagConstraintList::find(const JVMFlag* flag) {
-  JVMFlagConstraint* found = NULL;
-  for (int i=0; i<length(); i++) {
-    JVMFlagConstraint* constraint = at(i);
-    if (constraint->flag() == flag) {
-      found = constraint;
-      break;
-    }
-  }
-  return found;
-}
-
 // Find constraints and return only if found constraint's type is equal or lower than current validating type.
-JVMFlagConstraint* JVMFlagConstraintList::find_if_needs_check(const JVMFlag* flag) {
-  JVMFlagConstraint* found = NULL;
-  JVMFlagConstraint* constraint = find(flag);
-  if (constraint != NULL && (constraint->type() <= _validating_type)) {
-    found = constraint;
+JVMFlagConstraintChecker JVMFlagConstraintList::find_if_needs_check(const JVMFlag* flag) {
+  JVMFlagConstraintChecker constraint = JVMFlagConstraintList::find(flag);
+  if (constraint.exists() && (constraint.type() <= _validating_type)) {
+    return constraint;
   }
-  return found;
+  return JVMFlagConstraintChecker(flag, NULL);
 }
 
 // Check constraints for specific constraint type.
@@ -299,10 +217,11 @@ bool JVMFlagConstraintList::check_constraints(JVMFlagConstraint::ConstraintType 
   _validating_type = type;
 
   bool status = true;
-  for (int i=0; i<length(); i++) {
-    JVMFlagConstraint* constraint = at(i);
-    if (type != constraint->type()) continue;
-    if (constraint->apply(true) != JVMFlag::SUCCESS) status = false;
+  for (int i = 0; i < NUM_JVMFlagsEnum; i++) {
+    JVMFlagConstraintChecker constraint(&JVMFlag::flags[i], JVMFlagLimit::get_constraint_at(i));
+    if (!constraint.exists()) continue;
+    if (type != constraint.type()) continue;
+    if (constraint.apply(true) != JVMFlag::SUCCESS) status = false;
   }
   return status;
 }

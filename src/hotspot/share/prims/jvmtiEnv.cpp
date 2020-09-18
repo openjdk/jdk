@@ -3308,7 +3308,7 @@ JvmtiEnv::RawMonitorEnter(JvmtiRawMonitor * rmonitor) {
   } else {
     Thread* thread = Thread::current();
     if (thread->is_Java_thread()) {
-      JavaThread* current_thread = (JavaThread*)thread;
+      JavaThread* current_thread = thread->as_Java_thread();
 
       /* Transition to thread_blocked without entering vm state          */
       /* This is really evil. Normally you can't undo _thread_blocked    */

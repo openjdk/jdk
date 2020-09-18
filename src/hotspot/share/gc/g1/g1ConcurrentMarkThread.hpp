@@ -37,22 +37,49 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
 
   double _vtime_start;  // Initial virtual time.
   double _vtime_accum;  // Accumulated virtual time.
-  double _vtime_mark_accum;
 
   G1ConcurrentMark* _cm;
 
-  enum State {
+  enum ServiceState {
     Idle,
     Started,
     InProgress
   };
 
-  volatile State _state;
+  volatile ServiceState _state;
 
-  void sleep_before_next_cycle();
-  // Delay marking to meet MMU.
-  void delay_to_keep_mmu(G1Policy* g1_policy, bool remark);
-  double mmu_delay_end(G1Policy* g1_policy, bool remark);
+  // Wait for next cycle. Returns false if the service should be stopped.
+  bool wait_for_next_cycle();
+
+  bool mark_loop_needs_restart() const;
+
+  // Phases and subphases for the full concurrent marking cycle in order.
+  //
+  // All these methods return true if the marking should be aborted. Except
+  // phase_clear_cld_claimed_marks() because we must not abort before
+  // scanning the root regions because of a potential deadlock otherwise.
+  void phase_clear_cld_claimed_marks();
+  bool phase_scan_root_regions();
+
+  bool phase_mark_loop();
+  bool subphase_mark_from_roots();
+  bool subphase_preclean();
+  bool subphase_delay_to_keep_mmu_before_remark();
+  bool subphase_remark();
+
+  bool phase_rebuild_remembered_sets();
+  bool phase_delay_to_keep_mmu_before_cleanup();
+  bool phase_cleanup();
+  bool phase_clear_bitmap_for_next_mark();
+
+  void concurrent_cycle_start();
+
+  void full_concurrent_cycle_do();
+  void concurrent_cycle_end();
+
+  // Delay pauses to meet MMU.
+  void delay_to_keep_mmu(bool remark);
+  double mmu_delay_end(G1Policy* policy, bool remark);
 
   void run_service();
   void stop_service();

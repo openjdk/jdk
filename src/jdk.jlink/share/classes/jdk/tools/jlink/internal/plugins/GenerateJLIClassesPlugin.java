@@ -141,6 +141,9 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         initialize(in);
         // Copy all but DMH_ENTRY to out
         in.transformAndCopy(entry -> {
+                // No trace file given.  Copy all entries.
+                if (traceFileStream == null) return entry;
+
                 // filter out placeholder entries
                 String path = entry.path();
                 if (path.equals(DIRECT_METHOD_HOLDER_ENTRY) ||

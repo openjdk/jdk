@@ -34,6 +34,7 @@
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @requires vm.bits == 64
  * @requires vm.jvmti
+ * @requires os.maxMemory > 6G
  * @build GetObjectSizeOverflowAgent
  * @run driver ClassFileInstaller GetObjectSizeOverflowAgent
  * @run main GetObjectSizeOverflow
@@ -60,12 +61,6 @@ public class GetObjectSizeOverflow {
 
         ProcessBuilder pt = ProcessTools.createTestJvm("-Xmx4000m", "-javaagent:agent.jar",  "GetObjectSizeOverflowAgent");
         OutputAnalyzer output = new OutputAnalyzer(pt.start());
-
-        if (output.getStdout().contains("Could not reserve enough space") || output.getStderr().contains("java.lang.OutOfMemoryError")) {
-            System.out.println("stdout: " + output.getStdout());
-            System.out.println("stderr: " + output.getStderr());
-            throw new SkippedException("Test could not reserve or allocate enough space");
-        }
 
         output.stdoutShouldContain("GetObjectSizeOverflow passed");
     }

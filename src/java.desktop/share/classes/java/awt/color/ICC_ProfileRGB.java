@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,10 +78,12 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * RGB components through the inverse of the above 3x3 matrix, and then
  * converting linear RGB to device RGB through inverses of the TRCs.
  */
-public class ICC_ProfileRGB
-extends ICC_Profile {
+public class ICC_ProfileRGB extends ICC_Profile {
 
-    static final long serialVersionUID = 8505067385152579334L;
+    /**
+     * Use serialVersionUID from JDK 1.2 for interoperability.
+     */
+    private static final long serialVersionUID = 8505067385152579334L;
 
     /**
      * Used to get a gamma value or TRC for the red component.

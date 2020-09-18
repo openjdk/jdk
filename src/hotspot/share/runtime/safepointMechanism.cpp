@@ -71,7 +71,7 @@ void SafepointMechanism::default_initialize() {
   _poll_disarmed_value = reinterpret_cast<void*>(poll_disarmed_value);
 }
 
-void SafepointMechanism::block_or_handshake(JavaThread *thread) {
+void SafepointMechanism::process(JavaThread *thread) {
   if (global_poll()) {
     // Any load in ::block must not pass the global poll load.
     // Otherwise we might load an old safepoint counter (for example).
@@ -83,12 +83,12 @@ void SafepointMechanism::block_or_handshake(JavaThread *thread) {
   }
 }
 
-void SafepointMechanism::block_if_requested_slow(JavaThread *thread) {
+void SafepointMechanism::process_if_requested_slow(JavaThread *thread) {
   // Read global poll and has_handshake after local poll
   OrderAccess::loadload();
 
   // local poll already checked, if used.
-  block_or_handshake(thread);
+  process(thread);
 
   OrderAccess::loadload();
 

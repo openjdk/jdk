@@ -198,5 +198,6 @@ JVM_AddModuleExports
 JVM_AddModuleExportsToAll
 JVM_AddModuleExportsToAllUnnamed
 JVM_AddReadsModule
+JVM_DefineArchivedModules
 JVM_DefineModule
 JVM_SetBootLoaderUnnamedModule

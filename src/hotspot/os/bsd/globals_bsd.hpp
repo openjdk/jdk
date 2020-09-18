@@ -26,17 +26,17 @@
 #define OS_BSD_GLOBALS_BSD_HPP
 
 //
-// Defines Bsd specific flags. They are not available on other platforms.
+// Declare Bsd specific flags. They are not available on other platforms.
 //
-#define RUNTIME_OS_FLAGS(develop, \
-                         develop_pd, \
-                         product, \
-                         product_pd, \
-                         diagnostic, \
-                         diagnostic_pd, \
-                         notproduct, \
-                         range, \
+#define RUNTIME_OS_FLAGS(develop,     \
+                         develop_pd,  \
+                         product,     \
+                         product_pd,  \
+                         notproduct,  \
+                         range,       \
                          constraint)
+
+// end of RUNTIME_OS_FLAGS
 
 //
 // Defines Bsd-specific default values. The flags are available on all

@@ -449,8 +449,7 @@ static ObjectMonitor* take_from_start_of_om_free_list(Thread* self) {
 
 bool ObjectSynchronizer::quick_notify(oopDesc* obj, Thread* self, bool all) {
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(self->is_Java_thread(), "invariant");
-  assert(((JavaThread *) self)->thread_state() == _thread_in_Java, "invariant");
+  assert(self->as_Java_thread()->thread_state() == _thread_in_Java, "invariant");
   NoSafepointVerifier nsv;
   if (obj == NULL) return false;  // slow-path for invalid obj
   const markWord mark = obj->mark();
@@ -463,7 +462,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, Thread* self, bool all) {
 
   if (mark.has_monitor()) {
     ObjectMonitor* const mon = mark.monitor();
-    assert(mon->object() == obj, "invariant");
+    assert(mon->object() == oop(obj), "invariant");
     if (mon->owner() != self) return false;  // slow-path for IMS exception
 
     if (mon->first_waiter() != NULL) {
@@ -499,8 +498,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, Thread* self, bool all) {
 bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
                                      BasicLock * lock) {
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(self->is_Java_thread(), "invariant");
-  assert(((JavaThread *) self)->thread_state() == _thread_in_Java, "invariant");
+  assert(self->as_Java_thread()->thread_state() == _thread_in_Java, "invariant");
   NoSafepointVerifier nsv;
   if (obj == NULL) return false;       // Need to throw NPE
 
@@ -560,8 +558,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
 
 // Handle notifications when synchronizing on primitive wrappers
 void ObjectSynchronizer::handle_sync_on_primitive_wrapper(Handle obj, Thread* current) {
-  assert(current->is_Java_thread(), "must be for java object synchronization");
-  JavaThread* self = (JavaThread*) current;
+  JavaThread* self = current->as_Java_thread();
 
   frame last_frame = self->last_frame();
   if (last_frame.is_interpreted_frame()) {
@@ -686,7 +683,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, TRAPS) {
         // Java Monitor can be asynchronously inflated by a thread that
         // does not own the Java Monitor.
         ObjectMonitor* m = mark.monitor();
-        assert(((oop)(m->object()))->mark() == mark, "invariant");
+        assert(m->object()->mark() == mark, "invariant");
         assert(m->is_entered(THREAD), "invariant");
       }
     }
@@ -1428,7 +1425,7 @@ void ObjectSynchronizer::list_oops_do(ObjectMonitor* list, OopClosure* f) {
   // so no need to lock ObjectMonitors for the list traversal.
   for (ObjectMonitor* mid = list; mid != NULL; mid = unmarked_next(mid)) {
     if (mid->object() != NULL) {
-      f->do_oop((oop*)mid->object_addr());
+      f->do_oop(mid->object_addr());
     }
   }
 }
@@ -1892,17 +1889,17 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* self, oop object,
     // CASE: stack-locked
     // Could be stack-locked either by this thread or by some other thread.
     //
-    // Note that we allocate the objectmonitor speculatively, _before_ attempting
+    // Note that we allocate the ObjectMonitor speculatively, _before_ attempting
     // to install INFLATING into the mark word.  We originally installed INFLATING,
-    // allocated the objectmonitor, and then finally STed the address of the
-    // objectmonitor into the mark.  This was correct, but artificially lengthened
-    // the interval in which INFLATED appeared in the mark, thus increasing
+    // allocated the ObjectMonitor, and then finally STed the address of the
+    // ObjectMonitor into the mark.  This was correct, but artificially lengthened
+    // the interval in which INFLATING appeared in the mark, thus increasing
     // the odds of inflation contention.
     //
-    // We now use per-thread private objectmonitor free lists.
+    // We now use per-thread private ObjectMonitor free lists.
     // These list are reprovisioned from the global free list outside the
     // critical INFLATING...ST interval.  A thread can transfer
-    // multiple objectmonitors en-mass from the global free list to its local free list.
+    // multiple ObjectMonitors en-mass from the global free list to its local free list.
     // This reduces coherency traffic and lock contention on the global free list.
     // Using such local free lists, it doesn't matter if the om_alloc() call appears
     // before or after the CAS(INFLATING) operation.
@@ -1912,7 +1909,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* self, oop object,
 
     if (mark.has_locker()) {
       ObjectMonitor* m = om_alloc(self);
-      // Optimistically prepare the objectmonitor - anticipate successful CAS
+      // Optimistically prepare the ObjectMonitor - anticipate successful CAS
       // We do this before the CAS in order to minimize the length of time
       // in which INFLATING appears in the mark.
       m->Recycle();
@@ -2149,7 +2146,7 @@ bool ObjectSynchronizer::deflate_monitor_using_JT(ObjectMonitor* mid,
             "must be no entering threads: EntryList=" INTPTR_FORMAT,
             p2i(mid->_EntryList));
 
-  const oop obj = (oop) mid->object();
+  const oop obj = mid->object();
   if (log_is_enabled(Trace, monitorinflation)) {
     ResourceMark rm;
     log_trace(monitorinflation)("deflate_monitor_using_JT: "
@@ -2313,7 +2310,7 @@ int ObjectSynchronizer::deflate_monitor_list_using_JT(ObjectMonitor** list_p,
       mid = next;  // mid keeps non-NULL next's locked state
       next = next_next;
 
-      if (SafepointMechanism::should_block(self) &&
+      if (SafepointMechanism::should_process(self) &&
           // Acquire semantics are not needed on this list load since
           // it is not dependent on the following load which does have
           // acquire semantics.
@@ -2426,7 +2423,6 @@ void ObjectSynchronizer::deflate_idle_monitors_using_JT() {
 // Deflate global idle ObjectMonitors using a JavaThread.
 //
 void ObjectSynchronizer::deflate_global_idle_monitors_using_JT() {
-  assert(Thread::current()->is_Java_thread(), "precondition");
   JavaThread* self = JavaThread::current();
 
   deflate_common_idle_monitors_using_JT(true /* is_global */, self);
@@ -2507,7 +2503,7 @@ void ObjectSynchronizer::deflate_common_idle_monitors_using_JT(bool is_global, J
         } else {
           log_debug(monitorinflation)("jt=" INTPTR_FORMAT ": pausing deflation of per-thread idle monitors for a safepoint.", p2i(target));
         }
-        assert(SafepointMechanism::should_block(self), "sanity check");
+        assert(SafepointMechanism::should_process(self), "sanity check");
         ThreadBlockInVM blocker(self);
       }
       // Prepare for another loop after the safepoint.
@@ -2871,7 +2867,7 @@ void ObjectSynchronizer::chk_in_use_entry(JavaThread* jt, ObjectMonitor* n,
     }
     *error_cnt_p = *error_cnt_p + 1;
   }
-  const oop obj = (oop)n->object();
+  const oop obj = n->object();
   const markWord mark = obj->mark();
   if (!mark.has_monitor()) {
     if (jt != NULL) {
@@ -2981,7 +2977,7 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream * out) {
     if ((cur = get_list_head_locked(&om_list_globals._in_use_list)) != NULL) {
       // Marked the global in-use list head so process the list.
       while (true) {
-        const oop obj = (oop) cur->object();
+        const oop obj = cur->object();
         const markWord mark = cur->header();
         ResourceMark rm;
         out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(cur),
@@ -3011,7 +3007,7 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream * out) {
     if ((cur = get_list_head_locked(&jt->om_in_use_list)) != NULL) {
       // Marked the global in-use list head so process the list.
       while (true) {
-        const oop obj = (oop) cur->object();
+        const oop obj = cur->object();
         const markWord mark = cur->header();
         ResourceMark rm;
         out->print(INTPTR_FORMAT "  " INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT

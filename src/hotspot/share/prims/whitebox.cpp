@@ -1053,7 +1053,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
   DirectivesStack::release(directive);
 
   // Compile method and check result
-  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, THREAD);
+  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
   MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != NULL) {
@@ -1997,8 +1997,7 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
     jint _num_threads_completed;
 
     void do_thread(Thread* th) {
-      assert(th->is_Java_thread(), "sanity");
-      JavaThread* jt = (JavaThread*)th;
+      JavaThread* jt = th->as_Java_thread();
       ResourceMark rm;
 
       jt->print_on(tty);

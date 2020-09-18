@@ -62,22 +62,8 @@ public:
     return _max_gc_time;
   }
 
-  inline bool now_max_gc(double current_time) {
-    return when_sec(current_time, max_gc_time()) < 0.00001;
-  }
-
   inline double when_max_gc_sec(double current_time) {
     return when_sec(current_time, max_gc_time());
-  }
-
-  inline jlong when_max_gc_ms(double current_time) {
-    double when = when_max_gc_sec(current_time);
-    return (jlong) (when * 1000.0);
-  }
-
-  inline jlong when_ms(double current_time, double pause_time) {
-    double when = when_sec(current_time, pause_time);
-    return (jlong) (when * 1000.0);
   }
 };
 

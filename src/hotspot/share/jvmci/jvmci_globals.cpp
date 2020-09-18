@@ -38,9 +38,9 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 
 #ifndef PRODUCT
 #define APPLY_JVMCI_FLAGS(params3, params4) \
-  JVMCI_FLAGS(params4, params3, params4, params3, params4, params3, params4, params4, IGNORE_RANGE, IGNORE_CONSTRAINT)
-#define JVMCI_DECLARE_CHECK4(type, name, value, doc) bool name##checked = false;
-#define JVMCI_DECLARE_CHECK3(type, name, doc)        bool name##checked = false;
+  JVMCI_FLAGS(params4, params3, params4, params3, params4, IGNORE_RANGE, IGNORE_CONSTRAINT)
+#define JVMCI_DECLARE_CHECK4(type, name, value, ...) bool name##checked = false;
+#define JVMCI_DECLARE_CHECK3(type, name, ...)        bool name##checked = false;
 #define JVMCI_FLAG_CHECKED(name)                          name##checked = true;
   APPLY_JVMCI_FLAGS(JVMCI_DECLARE_CHECK3, JVMCI_DECLARE_CHECK4)
 #else
@@ -131,8 +131,8 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 #endif // !COMPILER2
 
 #ifndef PRODUCT
-#define JVMCI_CHECK4(type, name, value, doc) assert(name##checked, #name " flag not checked");
-#define JVMCI_CHECK3(type, name, doc)        assert(name##checked, #name " flag not checked");
+#define JVMCI_CHECK4(type, name, value, ...) assert(name##checked, #name " flag not checked");
+#define JVMCI_CHECK3(type, name, ...)        assert(name##checked, #name " flag not checked");
   // Ensures that all JVMCI flags are checked by this method.
   APPLY_JVMCI_FLAGS(JVMCI_CHECK3, JVMCI_CHECK4)
 #undef APPLY_JVMCI_FLAGS

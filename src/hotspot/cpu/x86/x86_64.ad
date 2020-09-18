@@ -161,8 +161,8 @@ alloc_class chunk0(R10,         R10_H,
 // Several register classes are automatically defined based upon information in
 // this architecture description.
 // 1) reg_class inline_cache_reg           ( /* as def'd in frame section */ )
-// 2) reg_class compiler_method_oop_reg    ( /* as def'd in frame section */ )
-// 2) reg_class interpreter_method_oop_reg ( /* as def'd in frame section */ )
+// 2) reg_class compiler_method_reg        ( /* as def'd in frame section */ )
+// 2) reg_class interpreter_method_reg     ( /* as def'd in frame section */ )
 // 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
@@ -1578,11 +1578,6 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 
 //=============================================================================
 
-int Matcher::regnum_to_fpu_offset(int regnum)
-{
-  return regnum - 32; // The FP registers are in the second chunk
-}
-
 // This is UltraSparc specific, true just means we have fast l2f conversion
 const bool Matcher::convL2FSupported(void) {
   return true;
@@ -2740,13 +2735,10 @@ encode %{
 
 frame
 %{
-  // What direction does stack grow in (assumed to be same for C & Java)
-  stack_direction(TOWARDS_LOW);
-
   // These three registers define part of the calling convention
   // between compiled code and the interpreter.
   inline_cache_reg(RAX);                // Inline Cache Register
-  interpreter_method_oop_reg(RBX);      // Method Oop Register when
+  interpreter_method_reg(RBX);          // Method Register when
                                         // calling interpreter
 
   // Optional: name the operand used by cisc-spilling to access

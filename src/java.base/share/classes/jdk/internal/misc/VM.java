@@ -468,6 +468,8 @@ public class VM {
      */
     public static native void initializeFromArchive(Class<?> c);
 
+    public static native void defineArchivedModules(ClassLoader platformLoader, ClassLoader systemLoader);
+
     public static native long getRandomSeedForCDSDump();
 
     /**

@@ -40,22 +40,22 @@ bool SafepointMechanism::global_poll() {
 
 bool SafepointMechanism::local_poll(Thread* thread) {
   if (thread->is_Java_thread()) {
-    return local_poll_armed((JavaThread*)thread);
+    return local_poll_armed(thread->as_Java_thread());
   } else {
     // If the poll is on a non-java thread we can only check the global state.
     return global_poll();
   }
 }
 
-bool SafepointMechanism::should_block(Thread* thread) {
+bool SafepointMechanism::should_process(Thread* thread) {
   return local_poll(thread);
 }
 
-void SafepointMechanism::block_if_requested(JavaThread *thread) {
+void SafepointMechanism::process_if_requested(JavaThread *thread) {
   if (!local_poll_armed(thread)) {
     return;
   }
-  block_if_requested_slow(thread);
+  process_if_requested_slow(thread);
 }
 
 void SafepointMechanism::arm_local_poll(JavaThread* thread) {

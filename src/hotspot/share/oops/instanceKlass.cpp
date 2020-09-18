@@ -47,6 +47,7 @@
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/archiveUtils.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -898,8 +899,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
   // Timing
   // timer handles recursion
-  assert(THREAD->is_Java_thread(), "non-JavaThread in link_class_impl");
-  JavaThread* jt = (JavaThread*)THREAD;
+  JavaThread* jt = THREAD->as_Java_thread();
 
   // link super class before linking this class
   Klass* super_klass = super();
@@ -1001,9 +1001,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 #endif
       set_init_state(linked);
       if (JvmtiExport::should_post_class_prepare()) {
-        Thread *thread = THREAD;
-        assert(thread->is_Java_thread(), "thread->is_Java_thread()");
-        JvmtiExport::post_class_prepare((JavaThread *) thread, this);
+        JvmtiExport::post_class_prepare(THREAD->as_Java_thread(), this);
       }
     }
   }
@@ -1067,8 +1065,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   bool wait = false;
 
-  assert(THREAD->is_Java_thread(), "non-JavaThread in initialize_impl");
-  JavaThread* jt = (JavaThread*)THREAD;
+  JavaThread* jt = THREAD->as_Java_thread();
 
   // refer to the JVM book page 47 for description of steps
   // Step 1
@@ -1444,7 +1441,7 @@ Klass* InstanceKlass::array_klass_impl(bool or_null, int n, TRAPS) {
     if (or_null) return NULL;
 
     ResourceMark rm(THREAD);
-    JavaThread *jt = (JavaThread *)THREAD;
+    JavaThread *jt = THREAD->as_Java_thread();
     {
       // Atomic creation of array_klasses
       MutexLocker ma(THREAD, MultiArray_lock);
@@ -3635,7 +3632,7 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
       Thread* THREAD = Thread::current();
       Klass* caller =
             THREAD->is_Java_thread()
-                ? ((JavaThread*)THREAD)->security_get_caller_class(1)
+                ? THREAD->as_Java_thread()->security_get_caller_class(1)
                 : NULL;
       // caller can be NULL, for example, during a JVMTI VM_Init hook
       if (caller != NULL) {

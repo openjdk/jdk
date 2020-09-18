@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_FLAGS_JVMFLAGCONSTRAINTLIST_HPP
 
 #include "runtime/flags/jvmFlag.hpp"
-#include "utilities/growableArray.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 
 /*
  * Here we have a mechanism for extracting constraints (as custom functions) for flags,
@@ -83,18 +83,28 @@ public:
   virtual JVMFlag::Error apply_double(double value, bool verbose = true) { ShouldNotReachHere(); return JVMFlag::ERR_OTHER; };
 };
 
+class JVMFlagConstraintChecker {
+  const JVMFlag* _flag;
+  const JVMFlagLimit* _limit;
+
+public:
+  JVMFlagConstraintChecker(const JVMFlag* flag, const JVMFlagLimit* limit) : _flag(flag), _limit(limit) {}
+  bool exists() const { return _limit != NULL; }
+  JVMFlag::Error apply(bool verbose = true) const;
+
+  JVMFlagConstraint::ConstraintType type() const { return (JVMFlagConstraint::ConstraintType)_limit->phase(); }
+#define DECLARE_CONSTRAINT_APPLY(T) JVMFlag::Error apply_ ## T(T new_value, bool verbose = true) const;
+  ALL_CONSTRAINT_TYPES(DECLARE_CONSTRAINT_APPLY)
+};
+
 class JVMFlagConstraintList : public AllStatic {
 private:
-  static GrowableArray<JVMFlagConstraint*>* _constraints;
   // Latest constraint validation type.
   static JVMFlagConstraint::ConstraintType _validating_type;
 public:
   static void init();
-  static int length() { return (_constraints != NULL) ? _constraints->length() : 0; }
-  static JVMFlagConstraint* at(int i) { return (_constraints != NULL) ? _constraints->at(i) : NULL; }
-  static JVMFlagConstraint* find(const JVMFlag* flag);
-  static JVMFlagConstraint* find_if_needs_check(const JVMFlag* flag);
-  static void add(JVMFlagConstraint* constraint) { _constraints->append(constraint); }
+  static JVMFlagConstraintChecker find(const JVMFlag* flag) { return JVMFlagConstraintChecker(flag, JVMFlagLimit::get_constraint(flag)); }
+  static JVMFlagConstraintChecker find_if_needs_check(const JVMFlag* flag);
   // True if 'AfterErgo' or later constraint functions are validated.
   static bool validated_after_ergo() { return _validating_type >= JVMFlagConstraint::AfterErgo; };
   static bool check_constraints(JVMFlagConstraint::ConstraintType type);

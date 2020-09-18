@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_FLAGS_JVMFLAGRANGELIST_HPP
 
 #include "runtime/flags/jvmFlag.hpp"
-#include "utilities/growableArray.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 
 /*
  * Here we have a mechanism for extracting ranges specified in flag macro tables.
@@ -58,14 +58,23 @@ public:
   virtual void print(outputStream* st) { ; }
 };
 
-class JVMFlagRangeList : public AllStatic {
-  static GrowableArray<JVMFlagRange*>* _ranges;
+class JVMFlagRangeChecker {
+  const JVMFlag* _flag;
+  const JVMFlagLimit* _limit;
+
 public:
-  static void init();
-  static int length() { return (_ranges != NULL) ? _ranges->length() : 0; }
-  static JVMFlagRange* at(int i) { return (_ranges != NULL) ? _ranges->at(i) : NULL; }
-  static JVMFlagRange* find(const JVMFlag* flag);
-  static void add(JVMFlagRange* range) { _ranges->append(range); }
+  JVMFlagRangeChecker(const JVMFlag* flag, const JVMFlagLimit* limit) : _flag(flag), _limit(limit) {}
+  bool exists() const { return _limit != NULL; }
+  JVMFlag::Error check(bool verbose = true) const;
+  void print(outputStream* st) const;
+
+#define DECLARE_RANGE_CHECK(T) JVMFlag::Error check_ ## T(T new_value, bool verbose = true) const;
+  ALL_RANGE_TYPES(DECLARE_RANGE_CHECK)
+};
+
+class JVMFlagRangeList : public AllStatic {
+public:
+  static JVMFlagRangeChecker find(const JVMFlag* flag) { return JVMFlagRangeChecker(flag, JVMFlagLimit::get_range(flag)); }
   static void print(outputStream* st, const JVMFlag* flag, RangeStrFunc default_range_str_func);
   // Check the final values of all flags for ranges.
   static bool check_ranges();

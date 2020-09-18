@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8158123 8161906 8162713 8202832
+ * @bug 8158123 8161906 8162713 8202832 8235229
  * @summary tests for module declarations
  * @library /tools/lib
  * @modules
@@ -38,7 +38,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.jar.Attributes;
 
+import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.Task;
 
@@ -798,4 +800,53 @@ public class ModuleInfoTest extends ModuleTestBase {
         if (!expected.equals(log))
             throw new Exception("expected output not found");
     }
+
+    @Test
+    public void testMultiReleaseJarAndReleaseOption(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, "package api; public class A { }");
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+        new JavacTask(tb)
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run()
+                .writeAll();
+
+        Path src9 = base.resolve("src9");
+        tb.writeJavaFiles(src9, "module m { exports api; }");
+        Path classes9 = classes.resolve("META-INF").resolve("versions").resolve("9");
+        Files.createDirectories(classes9);
+        new JavacTask(tb)
+                .sourcepath(src, src9)
+                .outdir(classes9)
+                .files(findJavaFiles(src9))
+                .run()
+                .writeAll();
+        Path jar = base.resolve("lib.jar");
+        new JarTask(tb, jar)
+                .baseDir(classes)
+                .files(Arrays.stream(tb.findFiles("class", classes)).map(f -> classes.relativize(f).toString()).toArray(i -> new String[i]))
+                .manifest(Attributes.Name.MULTI_RELEASE + ": true\n\n")
+                .run();
+        Path testSrc = base.resolve("test-src");
+        tb.writeJavaFiles(testSrc, "module test { requires transitive m; }", "package impl; public class I { api.A a; }");
+        Path testClasses = base.resolve("test-classes");
+        Files.createDirectories(testClasses);
+        new JavacTask(tb)
+                .options("-Werror", "--module-path", jar.toString())
+                .sourcepath(testSrc)
+                .outdir(testClasses)
+                .files(findJavaFiles(testSrc))
+                .run()
+                .writeAll();
+        new JavacTask(tb)
+                .options("-Werror", "--module-path", jar.toString(), "--release", "9", "-doe")
+                .sourcepath(testSrc)
+                .outdir(testClasses)
+                .files(findJavaFiles(testSrc))
+                .run()
+                .writeAll();
+    }
+
 }

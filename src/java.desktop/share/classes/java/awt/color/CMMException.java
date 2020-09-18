@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ package java.awt.color;
 /**
  * This exception is thrown if the native CMM returns an error.
  */
-public class CMMException extends java.lang.RuntimeException {
+public class CMMException extends RuntimeException {
 
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.

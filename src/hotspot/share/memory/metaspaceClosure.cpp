@@ -94,12 +94,11 @@ MetaspaceClosure::~MetaspaceClosure() {
 }
 
 bool UniqueMetaspaceClosure::do_ref(MetaspaceClosure::Ref* ref, bool read_only) {
-  bool* found = _has_been_visited.lookup(ref->obj());
-  if (found != NULL) {
-    assert(*found == read_only, "must be");
+  bool created;
+  _has_been_visited.add_if_absent(ref->obj(), read_only, &created);
+  if (!created) {
     return false; // Already visited: no need to iterate embedded pointers.
   } else {
-    _has_been_visited.add(ref->obj(), read_only);
     if (_has_been_visited.maybe_grow(MAX_TABLE_SIZE)) {
       log_info(cds, hashtables)("Expanded _has_been_visited table to %d", _has_been_visited.table_size());
     }

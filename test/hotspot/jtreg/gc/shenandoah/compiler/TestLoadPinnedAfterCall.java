@@ -26,7 +26,7 @@
  * @bug 8251527
  * @summary CTW: C2 (Shenandoah) compilation fails with SEGV due to unhandled catchproj == NUL
  * @requires vm.flavor == "server"
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UseShenandoahGC -XX:CompileOnly=TestLoadPinnedAfterCall.test -XX:CompileCommand=dontinline,TestLoadPinnedAfterCall.not_inlined -XX:-TieredCompilation -XX:-BackgroundCompilation TestLoadPinnedAfterCall
  *

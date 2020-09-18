@@ -28,6 +28,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagConstraintList.hpp"
+#include "runtime/flags/jvmFlagLookup.hpp"
 #include "runtime/flags/jvmFlagRangeList.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/defaultStream.hpp"
@@ -131,7 +132,7 @@ bool JVMFlag::ccstr_accumulates() const {
   return strcmp(_type, "ccstrlist") == 0;
 }
 
-JVMFlag::Flags JVMFlag::get_origin() {
+JVMFlag::Flags JVMFlag::get_origin() const {
   return Flags(_flags & VALUE_ORIGIN_MASK);
 }
 
@@ -141,19 +142,19 @@ void JVMFlag::set_origin(Flags origin) {
   _flags = Flags((_flags & ~VALUE_ORIGIN_MASK) | new_origin);
 }
 
-bool JVMFlag::is_default() {
+bool JVMFlag::is_default() const {
   return (get_origin() == DEFAULT);
 }
 
-bool JVMFlag::is_ergonomic() {
+bool JVMFlag::is_ergonomic() const {
   return (get_origin() == ERGONOMIC);
 }
 
-bool JVMFlag::is_command_line() {
+bool JVMFlag::is_command_line() const {
   return (_flags & ORIG_COMMAND_LINE) != 0;
 }
 
-bool JVMFlag::is_jimage_resource() {
+bool JVMFlag::is_jimage_resource() const {
   return (get_origin() == JIMAGE_RESOURCE);
 }
 
@@ -183,10 +184,6 @@ bool JVMFlag::is_notproduct() const {
 
 bool JVMFlag::is_develop() const {
   return (_flags & KIND_DEVELOP) != 0;
-}
-
-bool JVMFlag::is_read_write() const {
-  return (_flags & KIND_READ_WRITE) != 0;
 }
 
 /**
@@ -224,13 +221,13 @@ void JVMFlag::clear_diagnostic() {
 
 void JVMFlag::clear_experimental() {
   assert(is_experimental(), "sanity");
- _flags = Flags(_flags & ~KIND_EXPERIMENTAL);
+  _flags = Flags(_flags & ~KIND_EXPERIMENTAL);
   assert(!is_experimental(), "sanity");
 }
 
 void JVMFlag::set_product() {
   assert(!is_product(), "sanity");
- _flags = Flags(_flags | KIND_PRODUCT);
+  _flags = Flags(_flags | KIND_PRODUCT);
   assert(is_product(), "sanity");
 }
 
@@ -266,7 +263,7 @@ JVMFlag::MsgType JVMFlag::get_locked_message(char* buf, int buflen) const {
 }
 
 bool JVMFlag::is_writeable() const {
-  return is_manageable() || (is_product() && is_read_write());
+  return is_manageable();
 }
 
 // All flags except "manageable" are assumed to be internal flags.
@@ -288,7 +285,7 @@ void fill_to_pos(outputStream* st, unsigned int req_pos) {
   }
 }
 
-void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) {
+void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) const {
   // Don't print notproduct and develop flags in a product build.
   if (is_constant_in_binary()) {
     return;
@@ -496,7 +493,7 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) {
   }
 }
 
-void JVMFlag::print_kind(outputStream* st, unsigned int width) {
+void JVMFlag::print_kind(outputStream* st, unsigned int width) const {
   struct Data {
     int flag;
     const char* name;
@@ -515,7 +512,6 @@ void JVMFlag::print_kind(outputStream* st, unsigned int width) {
     { KIND_NOT_PRODUCT, "notproduct" },
     { KIND_DEVELOP, "develop" },
     { KIND_LP64_PRODUCT, "lp64_product" },
-    { KIND_READ_WRITE, "rw" },
     { -1, "" }
   };
 
@@ -549,7 +545,7 @@ void JVMFlag::print_kind(outputStream* st, unsigned int width) {
   }
 }
 
-void JVMFlag::print_origin(outputStream* st, unsigned int width) {
+void JVMFlag::print_origin(outputStream* st, unsigned int width) const {
   int origin = _flags & VALUE_ORIGIN_MASK;
   st->print("{");
   switch(origin) {
@@ -578,7 +574,7 @@ void JVMFlag::print_origin(outputStream* st, unsigned int width) {
   st->print("}");
 }
 
-void JVMFlag::print_as_flag(outputStream* st) {
+void JVMFlag::print_as_flag(outputStream* st) const {
   if (is_bool()) {
     st->print("-XX:%s%s", get_bool() ? "+" : "-", _name);
   } else if (is_int()) {
@@ -633,165 +629,123 @@ const char* JVMFlag::flag_error_str(JVMFlag::Error error) {
   }
 }
 
-// 4991491 do not "optimize out" the was_set false values: omitting them
-// tickles a Microsoft compiler bug causing flagTable to be malformed
+//----------------------------------------------------------------------
+// Build flagTable[]
 
-#define RUNTIME_PRODUCT_FLAG_STRUCT(     type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_PRODUCT) },
-#define RUNTIME_PD_PRODUCT_FLAG_STRUCT(  type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_PRODUCT | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define RUNTIME_DIAGNOSTIC_FLAG_STRUCT(  type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_DIAGNOSTIC) },
-#define RUNTIME_PD_DIAGNOSTIC_FLAG_STRUCT(type, name,       doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define RUNTIME_EXPERIMENTAL_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_EXPERIMENTAL) },
-#define RUNTIME_MANAGEABLE_FLAG_STRUCT(  type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_MANAGEABLE) },
-#define RUNTIME_PRODUCT_RW_FLAG_STRUCT(  type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_PRODUCT | JVMFlag::KIND_READ_WRITE) },
-#define RUNTIME_DEVELOP_FLAG_STRUCT(     type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_DEVELOP) },
-#define RUNTIME_PD_DEVELOP_FLAG_STRUCT(  type, name,        doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_DEVELOP | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define RUNTIME_NOTPRODUCT_FLAG_STRUCT(  type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_NOT_PRODUCT) },
+// Find out the number of LP64/JVMCI/COMPILER1/COMPILER1/ARCH flags,
+// for JVMFlag::flag_group()
 
-#define JVMCI_PRODUCT_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_JVMCI | JVMFlag::KIND_PRODUCT) },
-#define JVMCI_PD_PRODUCT_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_JVMCI | JVMFlag::KIND_PRODUCT | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define JVMCI_DIAGNOSTIC_FLAG_STRUCT(    type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_JVMCI | JVMFlag::KIND_DIAGNOSTIC) },
-#define JVMCI_PD_DIAGNOSTIC_FLAG_STRUCT( type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_JVMCI | JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define JVMCI_EXPERIMENTAL_FLAG_STRUCT(  type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_JVMCI | JVMFlag::KIND_EXPERIMENTAL) },
-#define JVMCI_DEVELOP_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_JVMCI | JVMFlag::KIND_DEVELOP) },
-#define JVMCI_PD_DEVELOP_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_JVMCI | JVMFlag::KIND_DEVELOP | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define JVMCI_NOTPRODUCT_FLAG_STRUCT(    type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_JVMCI | JVMFlag::KIND_NOT_PRODUCT) },
+#define ENUM_F(type, name, ...)  enum_##name,
+#define IGNORE_F(...)
 
-#ifdef _LP64
-#define RUNTIME_LP64_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_LP64_PRODUCT) },
-#else
-#define RUNTIME_LP64_PRODUCT_FLAG_STRUCT(type, name, value, doc) /* flag is constant */
-#endif // _LP64
+//                                                  dev     dev-pd  pro     pro-pd  notpro  range     constraint
+enum FlagCounter_LP64  { LP64_RUNTIME_FLAGS(        ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)  num_flags_LP64   };
+enum FlagCounter_JVMCI { JVMCI_ONLY(JVMCI_FLAGS(    ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_JVMCI  };
+enum FlagCounter_C1    { COMPILER1_PRESENT(C1_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C1     };
+enum FlagCounter_C2    { COMPILER2_PRESENT(C2_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C2     };
+enum FlagCounter_ARCH  { ARCH_FLAGS(                ENUM_F,         ENUM_F,         ENUM_F, IGNORE_F, IGNORE_F)  num_flags_ARCH   };
 
-#define C1_PRODUCT_FLAG_STRUCT(          type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C1 | JVMFlag::KIND_PRODUCT) },
-#define C1_PD_PRODUCT_FLAG_STRUCT(       type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C1 | JVMFlag::KIND_PRODUCT | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define C1_DIAGNOSTIC_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C1 | JVMFlag::KIND_DIAGNOSTIC) },
-#define C1_PD_DIAGNOSTIC_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C1 | JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define C1_DEVELOP_FLAG_STRUCT(          type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C1 | JVMFlag::KIND_DEVELOP) },
-#define C1_PD_DEVELOP_FLAG_STRUCT(       type, name,        doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C1 | JVMFlag::KIND_DEVELOP | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define C1_NOTPRODUCT_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C1 | JVMFlag::KIND_NOT_PRODUCT) },
+const int first_flag_enum_LP64   = 0;
+const int first_flag_enum_JVMCI  = first_flag_enum_LP64  + num_flags_LP64;
+const int first_flag_enum_C1     = first_flag_enum_JVMCI + num_flags_JVMCI;
+const int first_flag_enum_C2     = first_flag_enum_C1    + num_flags_C1;
+const int first_flag_enum_ARCH   = first_flag_enum_C2    + num_flags_C2;
+const int first_flag_enum_other  = first_flag_enum_ARCH  + num_flags_ARCH;
 
-#define C2_PRODUCT_FLAG_STRUCT(          type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C2 | JVMFlag::KIND_PRODUCT) },
-#define C2_PD_PRODUCT_FLAG_STRUCT(       type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C2 | JVMFlag::KIND_PRODUCT | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define C2_DIAGNOSTIC_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C2 | JVMFlag::KIND_DIAGNOSTIC) },
-#define C2_PD_DIAGNOSTIC_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C2 | JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define C2_EXPERIMENTAL_FLAG_STRUCT(     type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C2 | JVMFlag::KIND_EXPERIMENTAL) },
-#define C2_DEVELOP_FLAG_STRUCT(          type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C2 | JVMFlag::KIND_DEVELOP) },
-#define C2_PD_DEVELOP_FLAG_STRUCT(       type, name,        doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C2 | JVMFlag::KIND_DEVELOP | JVMFlag::KIND_PLATFORM_DEPENDENT) },
-#define C2_NOTPRODUCT_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_C2 | JVMFlag::KIND_NOT_PRODUCT) },
+static constexpr int flag_group(int flag_enum) {
+  if (flag_enum < first_flag_enum_JVMCI) return JVMFlag::KIND_LP64_PRODUCT;
+  if (flag_enum < first_flag_enum_C1)    return JVMFlag::KIND_JVMCI;
+  if (flag_enum < first_flag_enum_C2)    return JVMFlag::KIND_C1;
+  if (flag_enum < first_flag_enum_ARCH)  return JVMFlag::KIND_C2;
+  if (flag_enum < first_flag_enum_other) return JVMFlag::KIND_ARCH;
 
-#define ARCH_PRODUCT_FLAG_STRUCT(        type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_ARCH | JVMFlag::KIND_PRODUCT) },
-#define ARCH_DIAGNOSTIC_FLAG_STRUCT(     type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_ARCH | JVMFlag::KIND_DIAGNOSTIC) },
-#define ARCH_EXPERIMENTAL_FLAG_STRUCT(   type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_ARCH | JVMFlag::KIND_EXPERIMENTAL) },
-#define ARCH_DEVELOP_FLAG_STRUCT(        type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_ARCH | JVMFlag::KIND_DEVELOP) },
-#define ARCH_NOTPRODUCT_FLAG_STRUCT(     type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) JVMFlag::Flags(JVMFlag::DEFAULT | JVMFlag::KIND_ARCH | JVMFlag::KIND_NOT_PRODUCT) },
+  return 0;
+}
 
-static JVMFlag flagTable[] = {
-  VM_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, \
-           RUNTIME_PD_DEVELOP_FLAG_STRUCT, \
-           RUNTIME_PRODUCT_FLAG_STRUCT, \
-           RUNTIME_PD_PRODUCT_FLAG_STRUCT, \
-           RUNTIME_DIAGNOSTIC_FLAG_STRUCT, \
-           RUNTIME_PD_DIAGNOSTIC_FLAG_STRUCT, \
-           RUNTIME_EXPERIMENTAL_FLAG_STRUCT, \
-           RUNTIME_NOTPRODUCT_FLAG_STRUCT, \
-           RUNTIME_MANAGEABLE_FLAG_STRUCT, \
-           RUNTIME_PRODUCT_RW_FLAG_STRUCT, \
-           RUNTIME_LP64_PRODUCT_FLAG_STRUCT, \
-           IGNORE_RANGE, \
-           IGNORE_CONSTRAINT)
+constexpr JVMFlag::JVMFlag(int flag_enum, const char* type, const char* name,
+                           void* addr, int flags, int extra_flags, const char* doc) :
+  _type(type), _name(name), _addr(addr), _flags() NOT_PRODUCT(COMMA _doc(doc)) {
+  flags = flags | extra_flags | JVMFlag::DEFAULT | flag_group(flag_enum);
+  if ((flags & JVMFlag::KIND_PRODUCT) != 0) {
+    if (flags & (JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_MANAGEABLE | JVMFlag::KIND_EXPERIMENTAL)) {
+      // Backwards compatibility. This will be relaxed in JDK-7123237.
+      flags &= ~(JVMFlag::KIND_PRODUCT);
+    }
+  }
+  _flags = static_cast<Flags>(flags);
+}
 
-  RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, \
-                   RUNTIME_PD_DEVELOP_FLAG_STRUCT, \
-                   RUNTIME_PRODUCT_FLAG_STRUCT, \
-                   RUNTIME_PD_PRODUCT_FLAG_STRUCT, \
-                   RUNTIME_DIAGNOSTIC_FLAG_STRUCT, \
-                   RUNTIME_PD_DIAGNOSTIC_FLAG_STRUCT, \
-                   RUNTIME_NOTPRODUCT_FLAG_STRUCT, \
-                   IGNORE_RANGE, \
-                   IGNORE_CONSTRAINT)
-#if INCLUDE_JVMCI
-  JVMCI_FLAGS(JVMCI_DEVELOP_FLAG_STRUCT, \
-              JVMCI_PD_DEVELOP_FLAG_STRUCT, \
-              JVMCI_PRODUCT_FLAG_STRUCT, \
-              JVMCI_PD_PRODUCT_FLAG_STRUCT, \
-              JVMCI_DIAGNOSTIC_FLAG_STRUCT, \
-              JVMCI_PD_DIAGNOSTIC_FLAG_STRUCT, \
-              JVMCI_EXPERIMENTAL_FLAG_STRUCT, \
-              JVMCI_NOTPRODUCT_FLAG_STRUCT, \
-              IGNORE_RANGE, \
-              IGNORE_CONSTRAINT)
-#endif // INCLUDE_JVMCI
-#ifdef COMPILER1
-  C1_FLAGS(C1_DEVELOP_FLAG_STRUCT, \
-           C1_PD_DEVELOP_FLAG_STRUCT, \
-           C1_PRODUCT_FLAG_STRUCT, \
-           C1_PD_PRODUCT_FLAG_STRUCT, \
-           C1_DIAGNOSTIC_FLAG_STRUCT, \
-           C1_PD_DIAGNOSTIC_FLAG_STRUCT, \
-           C1_NOTPRODUCT_FLAG_STRUCT, \
-           IGNORE_RANGE, \
-           IGNORE_CONSTRAINT)
-#endif // COMPILER1
-#ifdef COMPILER2
-  C2_FLAGS(C2_DEVELOP_FLAG_STRUCT, \
-           C2_PD_DEVELOP_FLAG_STRUCT, \
-           C2_PRODUCT_FLAG_STRUCT, \
-           C2_PD_PRODUCT_FLAG_STRUCT, \
-           C2_DIAGNOSTIC_FLAG_STRUCT, \
-           C2_PD_DIAGNOSTIC_FLAG_STRUCT, \
-           C2_EXPERIMENTAL_FLAG_STRUCT, \
-           C2_NOTPRODUCT_FLAG_STRUCT, \
-           IGNORE_RANGE, \
-           IGNORE_CONSTRAINT)
-#endif // COMPILER2
-  ARCH_FLAGS(ARCH_DEVELOP_FLAG_STRUCT, \
-             ARCH_PRODUCT_FLAG_STRUCT, \
-             ARCH_DIAGNOSTIC_FLAG_STRUCT, \
-             ARCH_EXPERIMENTAL_FLAG_STRUCT, \
-             ARCH_NOTPRODUCT_FLAG_STRUCT, \
-             IGNORE_RANGE, \
-             IGNORE_CONSTRAINT)
-  {0, NULL, NULL}
+constexpr JVMFlag::JVMFlag(int flag_enum,  const char* type, const char* name,
+                           void* addr, int flags, const char* doc) :
+  JVMFlag(flag_enum, type, name, addr, flags, /*extra_flags*/0, doc) {}
+
+const int PRODUCT_KIND     = JVMFlag::KIND_PRODUCT;
+const int PRODUCT_KIND_PD  = JVMFlag::KIND_PRODUCT | JVMFlag::KIND_PLATFORM_DEPENDENT;
+const int DEVELOP_KIND     = JVMFlag::KIND_DEVELOP;
+const int DEVELOP_KIND_PD  = JVMFlag::KIND_DEVELOP | JVMFlag::KIND_PLATFORM_DEPENDENT;
+const int NOTPROD_KIND     = JVMFlag::KIND_NOT_PRODUCT;
+
+#define DEVELOP_FLAG_INIT(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), #type, XSTR(name), (void*)&name, DEVELOP_KIND,    __VA_ARGS__),
+#define DEVELOP_FLAG_INIT_PD(type, name,        ...) JVMFlag(FLAG_MEMBER_ENUM(name), #type, XSTR(name), (void*)&name, DEVELOP_KIND_PD, __VA_ARGS__),
+#define PRODUCT_FLAG_INIT(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), #type, XSTR(name), (void*)&name, PRODUCT_KIND,    __VA_ARGS__),
+#define PRODUCT_FLAG_INIT_PD(type, name,        ...) JVMFlag(FLAG_MEMBER_ENUM(name), #type, XSTR(name), (void*)&name, PRODUCT_KIND_PD, __VA_ARGS__),
+#define NOTPROD_FLAG_INIT(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), #type, XSTR(name), (void*)&name, NOTPROD_KIND,    __VA_ARGS__),
+
+// Handy aliases to match the symbols used in the flag specification macros.
+const int DIAGNOSTIC   = JVMFlag::KIND_DIAGNOSTIC;
+const int MANAGEABLE   = JVMFlag::KIND_MANAGEABLE;
+const int EXPERIMENTAL = JVMFlag::KIND_EXPERIMENTAL;
+
+#define MATERIALIZE_ALL_FLAGS      \
+  ALL_FLAGS(DEVELOP_FLAG_INIT,     \
+            DEVELOP_FLAG_INIT_PD,  \
+            PRODUCT_FLAG_INIT,     \
+            PRODUCT_FLAG_INIT_PD,  \
+            NOTPROD_FLAG_INIT,     \
+            IGNORE_RANGE,          \
+            IGNORE_CONSTRAINT)
+
+static JVMFlag flagTable[NUM_JVMFlagsEnum + 1] = {
+  MATERIALIZE_ALL_FLAGS
+  JVMFlag() // The iteration code wants a flag with a NULL name at the end of the table.
 };
+
+// We want flagTable[] to be completely initialized at C++ compilation time, which requires
+// that all arguments passed to JVMFlag() constructors be constexpr. The following line
+// checks for this -- if any non-constexpr arguments are passed, the C++ compiler will
+// generate an error.
+//
+// constexpr implies internal linkage. This means the flagTable_verify_constexpr[] variable
+// will not be included in jvmFlag.o, so there's no footprint cost for having this variable.
+//
+// Note that we cannot declare flagTable[] as constexpr because JVMFlag::_flags is modified
+// at runtime.
+constexpr JVMFlag flagTable_verify_constexpr[] = { MATERIALIZE_ALL_FLAGS };
 
 JVMFlag* JVMFlag::flags = flagTable;
 size_t JVMFlag::numFlags = (sizeof(flagTable) / sizeof(JVMFlag));
 
-inline bool str_equal(const char* s, size_t s_len, const char* q, size_t q_len) {
-  if (s_len != q_len) return false;
-  return memcmp(s, q, q_len) == 0;
-}
-
 // Search the flag table for a named flag
 JVMFlag* JVMFlag::find_flag(const char* name, size_t length, bool allow_locked, bool return_flag) {
-  for (JVMFlag* current = &flagTable[0]; current->_name != NULL; current++) {
-    if (str_equal(current->_name, current->get_name_length(), name, length)) {
-      // Found a matching entry.
-      // Don't report notproduct and develop flags in product builds.
-      if (current->is_constant_in_binary()) {
-        return (return_flag ? current : NULL);
-      }
-      // Report locked flags only if allowed.
-      if (!(current->is_unlocked() || current->is_unlocker())) {
-        if (!allow_locked) {
-          // disable use of locked flags, e.g. diagnostic, experimental,
-          // etc. until they are explicitly unlocked
-          return NULL;
-        }
-      }
-      return current;
+  JVMFlag* flag = JVMFlagLookup::find(name, length);
+  if (flag != NULL) {
+    // Found a matching entry.
+    // Don't report notproduct and develop flags in product builds.
+    if (flag->is_constant_in_binary()) {
+      return (return_flag ? flag : NULL);
     }
+    // Report locked flags only if allowed.
+    if (!(flag->is_unlocked() || flag->is_unlocker())) {
+      if (!allow_locked) {
+        // disable use of locked flags, e.g. diagnostic, experimental,
+        // etc. until they are explicitly unlocked
+        return NULL;
+      }
+    }
+    return flag;
   }
   // JVMFlag name is not in the flag table
   return NULL;
-}
-
-// Get or compute the flag name length
-size_t JVMFlag::get_name_length() {
-  if (_name_len == 0) {
-    _name_len = strlen(_name);
-  }
-  return _name_len;
 }
 
 JVMFlag* JVMFlag::fuzzy_match(const char* name, size_t length, bool allow_locked) {
@@ -856,7 +810,7 @@ void JVMFlagEx::setOnCmdLine(JVMFlagsEnum flag) {
 }
 
 template<class E, class T>
-static void trace_flag_changed(const JVMFlag* flag, const T old_value, const T new_value, const JVMFlag::Flags origin) {
+static void trace_flag_changed(JVMFlag* flag, const T old_value, const T new_value, const JVMFlag::Flags origin) {
   E e;
   e.set_name(flag->_name);
   e.set_oldValue(old_value);
@@ -865,11 +819,11 @@ static void trace_flag_changed(const JVMFlag* flag, const T old_value, const T n
   e.commit();
 }
 
-static JVMFlag::Error apply_constraint_and_check_range_bool(const JVMFlag* flag, bool new_value, bool verbose) {
+static JVMFlag::Error apply_constraint_and_check_range_bool(JVMFlag* flag, bool new_value, bool verbose) {
   JVMFlag::Error status = JVMFlag::SUCCESS;
-  JVMFlagConstraint* constraint = JVMFlagConstraintList::find_if_needs_check(flag);
-  if (constraint != NULL) {
-    status = constraint->apply_bool(new_value, verbose);
+  JVMFlagConstraintChecker constraint = JVMFlagConstraintList::find_if_needs_check(flag);
+  if (constraint.exists()) {
+    status = constraint.apply_bool(new_value, verbose);
   }
   return status;
 }
@@ -900,16 +854,16 @@ JVMFlag::Error JVMFlagEx::boolAtPut(JVMFlagsEnum flag, bool value, JVMFlag::Flag
   return JVMFlag::boolAtPut(faddr, &value, origin);
 }
 
-static JVMFlag::Error apply_constraint_and_check_range_int(const JVMFlag* flag, int new_value, bool verbose) {
+static JVMFlag::Error apply_constraint_and_check_range_int(JVMFlag* flag, int new_value, bool verbose) {
   JVMFlag::Error status = JVMFlag::SUCCESS;
-  JVMFlagRange* range = JVMFlagRangeList::find(flag);
-  if (range != NULL) {
-    status = range->check_int(new_value, verbose);
+  JVMFlagRangeChecker range = JVMFlagRangeList::find(flag);
+  if (range.exists()) {
+    status = range.check_int(new_value, verbose);
   }
   if (status == JVMFlag::SUCCESS) {
-    JVMFlagConstraint* constraint = JVMFlagConstraintList::find_if_needs_check(flag);
-    if (constraint != NULL) {
-      status = constraint->apply_int(new_value, verbose);
+    JVMFlagConstraintChecker constraint = JVMFlagConstraintList::find_if_needs_check(flag);
+    if (constraint.exists()) {
+      status = constraint.apply_int(new_value, verbose);
     }
   }
   return status;
@@ -941,16 +895,16 @@ JVMFlag::Error JVMFlagEx::intAtPut(JVMFlagsEnum flag, int value, JVMFlag::Flags 
   return JVMFlag::intAtPut(faddr, &value, origin);
 }
 
-static JVMFlag::Error apply_constraint_and_check_range_uint(const JVMFlag* flag, uint new_value, bool verbose) {
+static JVMFlag::Error apply_constraint_and_check_range_uint(JVMFlag* flag, uint new_value, bool verbose) {
   JVMFlag::Error status = JVMFlag::SUCCESS;
-  JVMFlagRange* range = JVMFlagRangeList::find(flag);
-  if (range != NULL) {
-    status = range->check_uint(new_value, verbose);
+  JVMFlagRangeChecker range = JVMFlagRangeList::find(flag);
+  if (range.exists()) {
+    status = range.check_uint(new_value, verbose);
   }
   if (status == JVMFlag::SUCCESS) {
-    JVMFlagConstraint* constraint = JVMFlagConstraintList::find_if_needs_check(flag);
-    if (constraint != NULL) {
-      status = constraint->apply_uint(new_value, verbose);
+    JVMFlagConstraintChecker constraint = JVMFlagConstraintList::find_if_needs_check(flag);
+    if (constraint.exists()) {
+      status = constraint.apply_uint(new_value, verbose);
     }
   }
   return status;
@@ -989,16 +943,16 @@ JVMFlag::Error JVMFlag::intxAt(const JVMFlag* flag, intx* value) {
   return JVMFlag::SUCCESS;
 }
 
-static JVMFlag::Error apply_constraint_and_check_range_intx(const JVMFlag* flag, intx new_value, bool verbose) {
+static JVMFlag::Error apply_constraint_and_check_range_intx(JVMFlag* flag, intx new_value, bool verbose) {
   JVMFlag::Error status = JVMFlag::SUCCESS;
-  JVMFlagRange* range = JVMFlagRangeList::find(flag);
-  if (range != NULL) {
-    status = range->check_intx(new_value, verbose);
+  JVMFlagRangeChecker range = JVMFlagRangeList::find(flag);
+  if (range.exists()) {
+    status = range.check_intx(new_value, verbose);
   }
   if (status == JVMFlag::SUCCESS) {
-    JVMFlagConstraint* constraint = JVMFlagConstraintList::find_if_needs_check(flag);
-    if (constraint != NULL) {
-      status = constraint->apply_intx(new_value, verbose);
+    JVMFlagConstraintChecker constraint = JVMFlagConstraintList::find_if_needs_check(flag);
+    if (constraint.exists()) {
+      status = constraint.apply_intx(new_value, verbose);
     }
   }
   return status;
@@ -1030,16 +984,16 @@ JVMFlag::Error JVMFlag::uintxAt(const JVMFlag* flag, uintx* value) {
   return JVMFlag::SUCCESS;
 }
 
-static JVMFlag::Error apply_constraint_and_check_range_uintx(const JVMFlag* flag, uintx new_value, bool verbose) {
+static JVMFlag::Error apply_constraint_and_check_range_uintx(JVMFlag* flag, uintx new_value, bool verbose) {
   JVMFlag::Error status = JVMFlag::SUCCESS;
-  JVMFlagRange* range = JVMFlagRangeList::find(flag);
-  if (range != NULL) {
-    status = range->check_uintx(new_value, verbose);
+  JVMFlagRangeChecker range = JVMFlagRangeList::find(flag);
+  if (range.exists()) {
+    status = range.check_uintx(new_value, verbose);
   }
   if (status == JVMFlag::SUCCESS) {
-    JVMFlagConstraint* constraint = JVMFlagConstraintList::find_if_needs_check(flag);
-    if (constraint != NULL) {
-      status = constraint->apply_uintx(new_value, verbose);
+    JVMFlagConstraintChecker constraint = JVMFlagConstraintList::find_if_needs_check(flag);
+    if (constraint.exists()) {
+      status = constraint.apply_uintx(new_value, verbose);
     }
   }
   return status;
@@ -1071,16 +1025,16 @@ JVMFlag::Error JVMFlag::uint64_tAt(const JVMFlag* flag, uint64_t* value) {
   return JVMFlag::SUCCESS;
 }
 
-static JVMFlag::Error apply_constraint_and_check_range_uint64_t(const JVMFlag* flag, uint64_t new_value, bool verbose) {
+static JVMFlag::Error apply_constraint_and_check_range_uint64_t(JVMFlag* flag, uint64_t new_value, bool verbose) {
   JVMFlag::Error status = JVMFlag::SUCCESS;
-  JVMFlagRange* range = JVMFlagRangeList::find(flag);
-  if (range != NULL) {
-    status = range->check_uint64_t(new_value, verbose);
+  JVMFlagRangeChecker range = JVMFlagRangeList::find(flag);
+  if (range.exists()) {
+    status = range.check_uint64_t(new_value, verbose);
   }
   if (status == JVMFlag::SUCCESS) {
-    JVMFlagConstraint* constraint = JVMFlagConstraintList::find_if_needs_check(flag);
-    if (constraint != NULL) {
-      status = constraint->apply_uint64_t(new_value, verbose);
+    JVMFlagConstraintChecker constraint = JVMFlagConstraintList::find_if_needs_check(flag);
+    if (constraint.exists()) {
+      status = constraint.apply_uint64_t(new_value, verbose);
     }
   }
   return status;
@@ -1112,16 +1066,16 @@ JVMFlag::Error JVMFlag::size_tAt(const JVMFlag* flag, size_t* value) {
   return JVMFlag::SUCCESS;
 }
 
-static JVMFlag::Error apply_constraint_and_check_range_size_t(const JVMFlag* flag, size_t new_value, bool verbose) {
+static JVMFlag::Error apply_constraint_and_check_range_size_t(JVMFlag* flag, size_t new_value, bool verbose) {
   JVMFlag::Error status = JVMFlag::SUCCESS;
-  JVMFlagRange* range = JVMFlagRangeList::find(flag);
-  if (range != NULL) {
-    status = range->check_size_t(new_value, verbose);
+  JVMFlagRangeChecker range = JVMFlagRangeList::find(flag);
+  if (range.exists()) {
+    status = range.check_size_t(new_value, verbose);
   }
   if (status == JVMFlag::SUCCESS) {
-    JVMFlagConstraint* constraint = JVMFlagConstraintList::find_if_needs_check(flag);
-    if (constraint != NULL) {
-      status = constraint->apply_size_t(new_value, verbose);
+    JVMFlagConstraintChecker constraint = JVMFlagConstraintList::find_if_needs_check(flag);
+    if (constraint.exists()) {
+      status = constraint.apply_size_t(new_value, verbose);
     }
   }
   return status;
@@ -1154,16 +1108,16 @@ JVMFlag::Error JVMFlag::doubleAt(const JVMFlag* flag, double* value) {
   return JVMFlag::SUCCESS;
 }
 
-static JVMFlag::Error apply_constraint_and_check_range_double(const JVMFlag* flag, double new_value, bool verbose) {
+static JVMFlag::Error apply_constraint_and_check_range_double(JVMFlag* flag, double new_value, bool verbose) {
   JVMFlag::Error status = JVMFlag::SUCCESS;
-  JVMFlagRange* range = JVMFlagRangeList::find(flag);
-  if (range != NULL) {
-    status = range->check_double(new_value, verbose);
+  JVMFlagRangeChecker range = JVMFlagRangeList::find(flag);
+  if (range.exists()) {
+    status = range.check_double(new_value, verbose);
   }
   if (status == JVMFlag::SUCCESS) {
-    JVMFlagConstraint* constraint = JVMFlagConstraintList::find_if_needs_check(flag);
-    if (constraint != NULL) {
-      status = constraint->apply_double(new_value, verbose);
+    JVMFlagConstraintChecker constraint = JVMFlagConstraintList::find_if_needs_check(flag);
+    if (constraint.exists()) {
+      status = constraint.apply_double(new_value, verbose);
     }
   }
   return status;
@@ -1268,6 +1222,33 @@ void JVMFlag::verify() {
 }
 
 #endif // PRODUCT
+
+#ifdef ASSERT
+
+void JVMFlag::assert_valid_flag_enum(int i) {
+  assert(0 <= i && i < NUM_JVMFlagsEnum, "must be");
+}
+
+void JVMFlag::check_all_flag_declarations() {
+  for (JVMFlag* current = &flagTable[0]; current->_name != NULL; current++) {
+    int flags = static_cast<int>(current->_flags);
+    // Backwards compatibility. This will be relaxed/removed in JDK-7123237.
+    int mask = JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_MANAGEABLE | JVMFlag::KIND_EXPERIMENTAL;
+    if ((flags & mask) != 0) {
+      assert((flags & mask) == JVMFlag::KIND_DIAGNOSTIC ||
+             (flags & mask) == JVMFlag::KIND_MANAGEABLE ||
+             (flags & mask) == JVMFlag::KIND_EXPERIMENTAL,
+             "%s can be declared with at most one of "
+             "DIAGNOSTIC, MANAGEABLE or EXPERIMENTAL", current->_name);
+      assert((flags & KIND_NOT_PRODUCT) == 0 &&
+             (flags & KIND_DEVELOP) == 0,
+             "%s has an optional DIAGNOSTIC, MANAGEABLE or EXPERIMENTAL "
+             "attribute; it must be declared as a product flag", current->_name);
+    }
+  }
+}
+
+#endif // ASSERT
 
 void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges, bool skipDefaults) {
   // Print the flags sorted by name

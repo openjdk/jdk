@@ -34,8 +34,8 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
- * @compile --enable-preview -source ${jdk.version} BreakAndLoops.java
- * @run main/othervm --enable-preview BreakAndLoops
+ * @compile BreakAndLoops.java
+ * @run main BreakAndLoops
  */
 
 import combo.ComboInstance;

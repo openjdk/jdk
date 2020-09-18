@@ -950,7 +950,7 @@ JRT_END
 jlong SharedRuntime::get_java_tid(Thread* thread) {
   if (thread != NULL) {
     if (thread->is_Java_thread()) {
-      oop obj = ((JavaThread*)thread)->threadObj();
+      oop obj = thread->as_Java_thread()->threadObj();
       return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
     }
   }
@@ -3147,9 +3147,8 @@ void AdapterHandlerLibrary::print_statistics() {
 #endif /* PRODUCT */
 
 JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* thread))
-  assert(thread->is_Java_thread(), "Only Java threads have a stack reserved zone");
   if (thread->stack_reserved_zone_disabled()) {
-  thread->enable_stack_reserved_zone();
+    thread->enable_stack_reserved_zone();
   }
   thread->set_reserved_stack_activation(thread->stack_base());
 JRT_END

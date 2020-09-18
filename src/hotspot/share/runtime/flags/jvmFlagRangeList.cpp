@@ -31,6 +31,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagConstraintList.hpp"
+#include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
 #include "runtime/flags/jvmFlagRangeList.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
@@ -241,122 +242,69 @@ public:
   }
 };
 
-// No constraint emitting
-void emit_range_no(...)                         { /* NOP */ }
-
-// No constraint emitting if function argument is NOT provided
-void emit_range_bool(const JVMFlag* /*flag*/)      { /* NOP */ }
-void emit_range_ccstr(const JVMFlag* /*flag*/)     { /* NOP */ }
-void emit_range_ccstrlist(const JVMFlag* /*flag*/) { /* NOP */ }
-void emit_range_int(const JVMFlag* /*flag*/)       { /* NOP */ }
-void emit_range_intx(const JVMFlag* /*flag*/)      { /* NOP */ }
-void emit_range_uint(const JVMFlag* /*flag*/)      { /* NOP */ }
-void emit_range_uintx(const JVMFlag* /*flag*/)     { /* NOP */ }
-void emit_range_uint64_t(const JVMFlag* /*flag*/)  { /* NOP */ }
-void emit_range_size_t(const JVMFlag* /*flag*/)    { /* NOP */ }
-void emit_range_double(const JVMFlag* /*flag*/)    { /* NOP */ }
-
-// JVMFlagRange emitting code functions if range arguments are provided
-void emit_range_int(const JVMFlag* flag, int min, int max)       {
-  JVMFlagRangeList::add(new JVMFlagRange_int(flag, min, max));
-}
-void emit_range_intx(const JVMFlag* flag, intx min, intx max) {
-  JVMFlagRangeList::add(new JVMFlagRange_intx(flag, min, max));
-}
-void emit_range_uint(const JVMFlag* flag, uint min, uint max) {
-  JVMFlagRangeList::add(new JVMFlagRange_uint(flag, min, max));
-}
-void emit_range_uintx(const JVMFlag* flag, uintx min, uintx max) {
-  JVMFlagRangeList::add(new JVMFlagRange_uintx(flag, min, max));
-}
-void emit_range_uint64_t(const JVMFlag* flag, uint64_t min, uint64_t max) {
-  JVMFlagRangeList::add(new JVMFlagRange_uint64_t(flag, min, max));
-}
-void emit_range_size_t(const JVMFlag* flag, size_t min, size_t max) {
-  JVMFlagRangeList::add(new JVMFlagRange_size_t(flag, min, max));
-}
-void emit_range_double(const JVMFlag* flag, double min, double max) {
-  JVMFlagRangeList::add(new JVMFlagRange_double(flag, min, max));
+#define DEFINE_RANGE_CHECK(T)                                                            \
+JVMFlag::Error JVMFlagRangeChecker::check_ ## T(T value, bool verbose) const {           \
+  assert(exists(), "must be");                                                           \
+  JVMFlagRange_ ## T range(_flag, _limit->as_ ## T()->min(), _limit->as_ ## T()->max()); \
+  return range.check_ ## T(value, verbose);                                              \
 }
 
-// Generate code to call emit_range_xxx function
-#define EMIT_RANGE_START       (void)(0
-#define EMIT_RANGE(type, name) ); emit_range_##type(JVMFlagEx::flag_from_enum(FLAG_MEMBER_ENUM(name))
-#define EMIT_RANGE_NO          ); emit_range_no(0
-#define EMIT_RANGE_PRODUCT_FLAG(type, name, value, doc)      EMIT_RANGE(type, name)
-#define EMIT_RANGE_DIAGNOSTIC_FLAG(type, name, value, doc)   EMIT_RANGE(type, name)
-#define EMIT_RANGE_EXPERIMENTAL_FLAG(type, name, value, doc) EMIT_RANGE(type, name)
-#define EMIT_RANGE_MANAGEABLE_FLAG(type, name, value, doc)   EMIT_RANGE(type, name)
-#define EMIT_RANGE_PRODUCT_RW_FLAG(type, name, value, doc)   EMIT_RANGE(type, name)
-#define EMIT_RANGE_PD_PRODUCT_FLAG(type, name, doc)          EMIT_RANGE(type, name)
-#define EMIT_RANGE_PD_DIAGNOSTIC_FLAG(type, name, doc)       EMIT_RANGE(type, name)
-#ifndef PRODUCT
-#define EMIT_RANGE_DEVELOPER_FLAG(type, name, value, doc)    EMIT_RANGE(type, name)
-#define EMIT_RANGE_PD_DEVELOPER_FLAG(type, name, doc)        EMIT_RANGE(type, name)
-#define EMIT_RANGE_NOTPRODUCT_FLAG(type, name, value, doc)   EMIT_RANGE(type, name)
-#else
-#define EMIT_RANGE_DEVELOPER_FLAG(type, name, value, doc)    EMIT_RANGE_NO
-#define EMIT_RANGE_PD_DEVELOPER_FLAG(type, name, doc)        EMIT_RANGE_NO
-#define EMIT_RANGE_NOTPRODUCT_FLAG(type, name, value, doc)   EMIT_RANGE_NO
-#endif
-#ifdef _LP64
-#define EMIT_RANGE_LP64_PRODUCT_FLAG(type, name, value, doc) EMIT_RANGE(type, name)
-#else
-#define EMIT_RANGE_LP64_PRODUCT_FLAG(type, name, value, doc) EMIT_RANGE_NO
-#endif
-#define EMIT_RANGE_END         );
+ALL_RANGE_TYPES(DEFINE_RANGE_CHECK)
 
-// Generate func argument to pass into emit_range_xxx functions
-#define EMIT_RANGE_CHECK(a, b)                               , a, b
 
-#define INITIAL_RANGES_SIZE 379
-GrowableArray<JVMFlagRange*>* JVMFlagRangeList::_ranges = NULL;
-
-// Check the ranges of all flags that have them
-void JVMFlagRangeList::init(void) {
-
-  _ranges = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JVMFlagRange*>(INITIAL_RANGES_SIZE, mtArguments);
-
-  EMIT_RANGE_START
-
-  ALL_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-            EMIT_RANGE_PD_DEVELOPER_FLAG,
-            EMIT_RANGE_PRODUCT_FLAG,
-            EMIT_RANGE_PD_PRODUCT_FLAG,
-            EMIT_RANGE_DIAGNOSTIC_FLAG,
-            EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
-            EMIT_RANGE_EXPERIMENTAL_FLAG,
-            EMIT_RANGE_NOTPRODUCT_FLAG,
-            EMIT_RANGE_MANAGEABLE_FLAG,
-            EMIT_RANGE_PRODUCT_RW_FLAG,
-            EMIT_RANGE_LP64_PRODUCT_FLAG,
-            EMIT_RANGE_CHECK,
-            IGNORE_CONSTRAINT)
-
-  EMIT_RANGE_END
-}
-
-JVMFlagRange* JVMFlagRangeList::find(const JVMFlag* flag) {
-  JVMFlagRange* found = NULL;
-  for (int i=0; i<length(); i++) {
-    JVMFlagRange* range = at(i);
-    if (range->flag() == flag) {
-      found = range;
-      break;
-    }
+JVMFlag::Error JVMFlagRangeChecker::check(bool verbose) const {
+#define CHECK_RANGE(T)                                                                     \
+  if (_flag->is_ ## T()) {                                                                 \
+    JVMFlagRange_ ## T range(_flag, _limit->as_ ## T()->min(), _limit->as_ ## T()->max()); \
+    return range.check(verbose);                                                           \
   }
-  return found;
+
+  ALL_RANGE_TYPES(CHECK_RANGE);
+
+  ShouldNotReachHere();
+  return JVMFlag::INVALID_FLAG;
+}
+
+void JVMFlagRangeChecker::print(outputStream* out) const {
+#define PRINT_RANGE(T)                                                                     \
+  if (_flag->is_ ## T()) {                                                                 \
+    JVMFlagRange_ ## T range(_flag, _limit->as_ ## T()->min(), _limit->as_ ## T()->max()); \
+    range.print(out);                                                                      \
+    return;                                                                                \
+  }
+
+  ALL_RANGE_TYPES(PRINT_RANGE);
+
+  ShouldNotReachHere();
 }
 
 void JVMFlagRangeList::print(outputStream* st, const JVMFlag* flag, RangeStrFunc default_range_str_func) {
-  JVMFlagRange* range = JVMFlagRangeList::find(flag);
-  if (range != NULL) {
-    range->print(st);
+  JVMFlagRangeChecker range = JVMFlagRangeList::find(flag);
+  if (range.exists()) {
+    range.print(st);
   } else {
-    JVMFlagConstraint* constraint = JVMFlagConstraintList::find(flag);
-    if (constraint != NULL) {
-      assert(default_range_str_func!=NULL, "default_range_str_func must be provided");
-      st->print("%s", default_range_str_func());
+    const JVMFlagLimit* limit = JVMFlagLimit::get_constraint(flag);
+    if (limit != NULL) {
+      void* func = limit->constraint_func();
+
+      // Two special cases where the lower limit of the range is defined by an os:: function call
+      // and cannot be initialized at compile time with constexpr.
+      if (func == (void*)VMPageSizeConstraintFunc) {
+        uintx min = (uintx)os::vm_page_size();
+        uintx max = max_uintx;
+
+        JVMFlagRange_uintx tmp(flag, min, max);
+        tmp.print(st);
+      } else if (func == (void*)NUMAInterleaveGranularityConstraintFunc) {
+        size_t min = os::vm_allocation_granularity();
+        size_t max = NOT_LP64(2*G) LP64_ONLY(8192*G);
+
+        JVMFlagRange_size_t tmp(flag, min, max);
+        tmp.print(st);
+      } else {
+        assert(default_range_str_func!=NULL, "default_range_str_func must be provided");
+        st->print("%s", default_range_str_func());
+      }
     } else {
       st->print("[                           ...                           ]");
     }
@@ -365,9 +313,9 @@ void JVMFlagRangeList::print(outputStream* st, const JVMFlag* flag, RangeStrFunc
 
 bool JVMFlagRangeList::check_ranges() {
   bool status = true;
-  for (int i=0; i<length(); i++) {
-    JVMFlagRange* range = at(i);
-    if (range->check(true) != JVMFlag::SUCCESS) status = false;
+  for (int i = 0; i < NUM_JVMFlagsEnum; i++) {
+    JVMFlagRangeChecker range(&JVMFlag::flags[i], JVMFlagLimit::get_range_at(i));
+    if (range.exists() && range.check(true) != JVMFlag::SUCCESS) status = false;
   }
   return status;
 }
