@@ -553,6 +553,11 @@ public class BasicSplitPaneDivider extends Container
             implements MouseMotionListener
     {
         /**
+         * Constructor for subclasses to call.
+         */
+        protected MouseHandler() {}
+
+        /**
          * Starts the dragging session by creating the appropriate instance
          * of DragController.
          */
@@ -955,6 +960,11 @@ public class BasicSplitPaneDivider extends Container
      */
     protected class DividerLayout implements LayoutManager
     {
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected DividerLayout() {}
+
         public void layoutContainer(Container c) {
             if (leftButton != null && rightButton != null &&
                 c == BasicSplitPaneDivider.this) {
