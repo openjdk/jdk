@@ -291,7 +291,12 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                 {Long.MAX_VALUE, lengths(10, Long.MAX_VALUE - 42L, 20, 0, 12)},
                 {-1, lengths(10, Long.MAX_VALUE - 40L, 20, 0, 12)},
                 {-1, lengths(10, Long.MAX_VALUE - 12L, 20, 0, 12)},
-                {-1, lengths(10, Long.MAX_VALUE/2L, Long.MAX_VALUE/2L + 1L, 0, 12)}
+                {-1, lengths(10, Long.MAX_VALUE/2L, Long.MAX_VALUE/2L + 1L, 0, 12)},
+                {-1, lengths(10, Long.MAX_VALUE/2L, -1, Long.MAX_VALUE/2L + 1L, 12)},
+                {-1, lengths(10, Long.MAX_VALUE, 12, Long.MAX_VALUE, 20)},
+                {-1, lengths(10, Long.MAX_VALUE, Long.MAX_VALUE, 12, 20)},
+                {-1, lengths(0, Long.MAX_VALUE, Long.MAX_VALUE, 12, 20)},
+                {-1, lengths(Long.MAX_VALUE, Long.MAX_VALUE, 12, 0, 20)}
         };
     }
 
@@ -533,7 +538,8 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     public void testContentLength(long expected, List<Long> lengths) {
         BodyPublisher[] publishers = ContentLengthPublisher.of(lengths);
         BodyPublisher aggregate = BodyPublishers.concat(publishers);
-        assertEquals(aggregate.contentLength(), expected);
+        assertEquals(aggregate.contentLength(), expected,
+                "Unexpected result for %s".formatted(lengths));
     }
 
     // Verifies that cancelling the subscription ensure that downstream
