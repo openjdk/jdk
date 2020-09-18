@@ -36,6 +36,16 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+
+// In fastdebug builds the code size can get out of hand, potentially
+// tripping over compiler limits (which may be bugs, but nevertheless
+// need to be taken into consideration).  A side benefit of limiting
+// inlining is that we get more call frames that might aid debugging.
+// And the fastdebug compile time for this file is much reduced.
+// Explicit NOINLINE to block ATTRIBUTE_FLATTENing.
+#define MAYBE_INLINE_EVACUATION NOT_DEBUG(inline) DEBUG_ONLY(NOINLINE)
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            G1RedirtyCardsQueueSet* rdcqs,
@@ -155,7 +165,9 @@ void G1ParScanThreadState::verify_task(ScannerTask task) const {
 }
 #endif // ASSERT
 
-template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
+template <class T>
+MAYBE_INLINE_EVACUATION
+void G1ParScanThreadState::do_oop_evac(T* p) {
   // Reference should not be NULL here as such are never pushed to the task queue.
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
 
@@ -194,6 +206,7 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
   }
 }
 
+MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
   oop from_obj = task.to_source_array();
 
@@ -243,6 +256,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
   to_obj_array->oop_iterate_range(&_scanner, start, end);
 }
 
+MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::dispatch_task(ScannerTask task) {
   verify_task(task);
   if (task.is_narrow_oop_ptr()) {
@@ -388,6 +402,7 @@ void G1ParScanThreadState::undo_allocation(G1HeapRegionAttr dest_attr,
 
 // Private inline function, for direct internal use and providing the
 // implementation of the public not-inline function.
+MAYBE_INLINE_EVACUATION
 oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const region_attr,
                                                     oop const old,
                                                     markWord const old_mark) {
