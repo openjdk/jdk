@@ -727,6 +727,20 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
+  // If any phase is randomized for stress testing, seed random
+  // number generation and log the seed for repeatability.
+  if (StressLCM || StressGCM || StressIGVN) {
+    unsigned int seed = GenerateStressSeed ?
+      (unsigned int)(Ticks::now().nanoseconds()) : StressSeed;
+    os::init_random(seed);
+    if (_log != NULL) {
+      _log->elem("stress_test seed='%u'", seed);
+    } else if (GenerateStressSeed) {
+      tty->print_cr("Warning:  +LogCompilation must be set to record "
+                    "the generated seed.");
+    }
+  }
+
   // Now optimize
   Optimize();
   if (failing())  return;

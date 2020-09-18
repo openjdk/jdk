@@ -49,6 +49,16 @@
   product(bool, StressGCM, false, DIAGNOSTIC,                               \
           "Randomize instruction scheduling in GCM")                        \
                                                                             \
+  product(bool, StressIGVN, false, DIAGNOSTIC,                              \
+          "Randomize worklist traversal in IGVN")                           \
+                                                                            \
+  product(bool, GenerateStressSeed, false, DIAGNOSTIC,                      \
+          "Generate random seed for LCM, GCM, and IGVN stress testing")     \
+                                                                            \
+  product(uintx, StressSeed, 0, DIAGNOSTIC,                                 \
+          "Random seed for LCM, GCM, and IGVN stress testing")              \
+          range(0, max_uintx)                                               \
+                                                                            \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
                                                                             \

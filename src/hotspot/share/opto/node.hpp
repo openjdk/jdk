@@ -1514,6 +1514,7 @@ public:
   Node *rpop() { Node *b = _nodes[0]; _nodes[0]=_nodes[--_cnt]; return b;}
   void clear() { _cnt = 0; Node_Array::clear(); } // retain storage
   uint size() const { return _cnt; }
+  void shuffle();
   void dump() const;
   void dump_simple() const;
 };

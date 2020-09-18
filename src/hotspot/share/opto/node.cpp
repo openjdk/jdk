@@ -2425,6 +2425,14 @@ void Node_List::yank( Node *n ) {
     _nodes[i] = _nodes[--_cnt];
 }
 
+void Node_List::shuffle() {
+  if (_cnt < 2) return;
+  for (uint i = _cnt - 1; i >= 1; i--) {
+    uint j = os::random() % (i + 1);
+    swap(_nodes[i], _nodes[j]);
+  }
+}
+
 //------------------------------dump-------------------------------------------
 void Node_List::dump() const {
 #ifndef PRODUCT
