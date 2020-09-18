@@ -503,8 +503,6 @@ class Arguments : AllStatic {
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
 
-  // Check for consistency in the selection of the garbage collector.
-  static bool check_gc_consistency();        // Check user-selected gc
   // Check consistency or otherwise of VM argument settings
   static bool check_vm_args_consistency();
   // Used by os_solaris
