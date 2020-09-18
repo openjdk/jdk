@@ -358,7 +358,9 @@ protected:
 
     CPU_AVX512_VBMI2      = (1ULL << 44), // VBMI2 shift left double instructions
     CPU_AVX512_VBMI       = (1ULL << 45), // Vector BMI instructions
-    CPU_HV                = (1ULL << 46)  // Hypervisor instructions
+    CPU_HV                = (1ULL << 46), // Hypervisor instructions
+
+    CPU_MAX_FEATURE       = CPU_HV
   };
 
 #define FEATURES_NAMES \
