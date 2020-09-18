@@ -66,6 +66,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 
@@ -263,6 +264,56 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                 {"null fourth element", strings( "one", "two", "three", null)},
                 {"null random element", strings( "one", "two", "three", null, "five")},
         };
+    }
+
+    static List<Long> lengths(long... lengths) {
+        return LongStream.of(lengths)
+                .mapToObj(Long::valueOf)
+                .collect(Collectors.toList());
+    }
+
+    @DataProvider(name = "contentLengths")
+    Object[][] contentLengths() {
+        return new Object[][] {
+                {-1, lengths(-1)},
+                {-42, lengths(-42)},
+                {42, lengths(42)},
+                {42, lengths(10, 0, 20, 0, 12)},
+                {-1, lengths(10, 0, 20, -1, 12)},
+                {-1, lengths(-1, 0, 20, 10, 12)},
+                {-1, lengths(10, 0, 20, 12, -1)},
+                {-1, lengths(10, 0, 20, -10, 12)},
+                {-1, lengths(-10, 0, 20, 10, 12)},
+                {-1, lengths(10, 0, 20, 12, -10)},
+                {-1, lengths(10, 0, Long.MIN_VALUE, -1, 12)},
+                {-1, lengths(-1, 0, Long.MIN_VALUE, 10, 12)},
+                {-1, lengths(10, Long.MIN_VALUE, 20, 12, -1)},
+                {Long.MAX_VALUE, lengths(10, Long.MAX_VALUE - 42L, 20, 0, 12)},
+                {-1, lengths(10, Long.MAX_VALUE - 40L, 20, 0, 12)},
+                {-1, lengths(10, Long.MAX_VALUE - 12L, 20, 0, 12)},
+                {-1, lengths(10, Long.MAX_VALUE/2L, Long.MAX_VALUE/2L + 1L, 0, 12)}
+        };
+    }
+
+    static class ContentLengthPublisher implements BodyPublisher {
+        final long length;
+        ContentLengthPublisher(long length) {
+            this.length = length;
+        }
+        @Override
+        public long contentLength() {
+            return length;
+        }
+
+        @Override
+        public void subscribe(Subscriber<? super ByteBuffer> subscriber) {
+        }
+
+        static ContentLengthPublisher[] of(List<Long> lengths) {
+            return lengths.stream()
+                    .map(ContentLengthPublisher::new)
+                    .toArray(ContentLengthPublisher[]::new);
+        }
     }
 
     /**
@@ -478,6 +529,12 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                 description.replace("null", "length(-1)"));
     }
 
+    @Test(dataProvider = "contentLengths")
+    public void testContentLength(long expected, List<Long> lengths) {
+        BodyPublisher[] publishers = ContentLengthPublisher.of(lengths);
+        BodyPublisher aggregate = BodyPublishers.concat(publishers);
+        assertEquals(aggregate.contentLength(), expected);
+    }
 
     // Verifies that cancelling the subscription ensure that downstream
     // publishers are no longer subscribed etc...

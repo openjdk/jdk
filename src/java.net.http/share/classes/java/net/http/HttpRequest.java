@@ -658,7 +658,7 @@ public abstract class HttpRequest {
         }
 
         /**
-         * Creates a {@code BodyPublisher} that publishes a request
+         * Returns a {@code BodyPublisher} that publishes a request
          * body consisting of the aggregation of the bytes published
          * by a sequence of publishers.
          *
@@ -666,6 +666,8 @@ public abstract class HttpRequest {
          * is returned. Otherwise each publisher is lazily subscribed to in turn,
          * until all the body bytes are published, an error occurs, or the
          * returned publisher's subscription is cancelled.
+         * A publisher may be subscribed several times in sequence if the
+         * request needs to be resent.
          *
          * <p> The request body published by the aggregate body publisher
          * is logically equivalent to the request body that would have
@@ -673,12 +675,24 @@ public abstract class HttpRequest {
          * in sequence. However, an implementation is free to split
          * the sequence of bytes in any way it chooses.
          *
+         * <p> If the {@code publishers} sequence contains more than one publisher,
+         * the {@link BodyPublisher#contentLength() contentLength} reported by
+         * the returned aggregate publisher is computed as follows:
+         * <ul>
+         *     <li> If any of the publishers reports a negative content length,
+         *         the resulting content length is {@code -1}.</li>
+         *     <li> Otherwise, if the sum of the aggregated positive content
+         *         length would exceed {@link Long#MAX_VALUE}, the resulting
+         *         content length is also {@code -1}.</li>
+         *     <li> Otherwise, the resulting content length is the sum of the
+         *         aggregated positive content length, a number between
+         *         0 and {@link Long#MAX_VALUE}, inclusive.</li>
+         * </ul>
+         *
          * @implNote If the aggregate
          * publisher's subscription is {@linkplain Flow.Subscription#cancel()
          * cancelled}, or an error occurs while publishing the bytes, not all
          * publishers in the sequence may be subscribed to.
-         * A publisher may be subscribed several times in sequence if the
-         * request needs to be resent.
          *
          * @param publishers a sequence of publishers.
          * @return An aggregate publisher that publishes a request body
