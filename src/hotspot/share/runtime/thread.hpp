@@ -759,13 +759,18 @@ protected:
 
  public:
   // Stack overflow support
-  address stack_base() const           { assert(_stack_base != NULL,"Sanity check"); return _stack_base; }
+  address stack_base() const {
+    assert(_stack_base  != NULL || Thread::current() != this, "Sanity check");
+    return _stack_base;
+  }
+
   void    set_stack_base(address base) { _stack_base = base; }
   size_t  stack_size() const           { return _stack_size; }
   void    set_stack_size(size_t size)  { _stack_size = size; }
   address stack_end()  const           { return stack_base() - stack_size(); }
   void    record_stack_base_and_size();
   void    register_thread_stack_with_NMT() NOT_NMT_RETURN;
+  void    unregister_thread_stack_with_NMT() NOT_NMT_RETURN;
 
   int     lgrp_id() const        { return _lgrp_id; }
   void    set_lgrp_id(int value) { _lgrp_id = value; }
