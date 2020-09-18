@@ -33,19 +33,21 @@ void ZVirtualMemoryManager::initialize_os() {
   // Does nothing
 }
 
-uintptr_t ZVirtualMemoryManager::os_reserve(uintptr_t addr, size_t size) {
+bool ZVirtualMemoryManager::os_reserve(uintptr_t addr, size_t size) {
   const uintptr_t res = (uintptr_t)mmap((void*)addr, size, PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE|MAP_NORESERVE, -1, 0);
   if (res == (uintptr_t)MAP_FAILED) {
     // Failed to reserve memory
-    return 0;
+    return false;
   }
 
   if (res != addr) {
     // Failed to reserve memory at the requested address
     munmap((void*)res, size);
+    return false;
   }
 
-  return res;
+  // Success
+  return true;
 }
 
 void ZVirtualMemoryManager::os_unreserve(uintptr_t addr, size_t size) {

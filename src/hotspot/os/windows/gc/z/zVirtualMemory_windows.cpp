@@ -116,8 +116,11 @@ void ZVirtualMemoryManager::initialize_os() {
   _manager.register_callbacks(callbacks);
 }
 
-uintptr_t ZVirtualMemoryManager::os_reserve(uintptr_t addr, size_t size) {
-  return ZMapper::reserve(addr, size);
+bool ZVirtualMemoryManager::os_reserve(uintptr_t addr, size_t size) {
+  uintptr_t res = ZMapper::reserve(addr, size);
+
+  assert(res == addr || res == NULL, "Should not reserve other memory than requested");
+  return res == addr;
 }
 
 void ZVirtualMemoryManager::os_unreserve(uintptr_t addr, size_t size) {

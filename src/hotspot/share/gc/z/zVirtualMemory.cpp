@@ -107,16 +107,16 @@ bool ZVirtualMemoryManager::reserve_contiguous_inner(uintptr_t start, size_t siz
   const uintptr_t remapped = ZAddress::remapped(start);
 
   // Reserve address space
-  if (os_reserve(marked0, size) != marked0) {
+  if (!os_reserve(marked0, size)) {
     return false;
   }
 
-  if (os_reserve(marked1, size) != marked1) {
+  if (!os_reserve(marked1, size)) {
     os_unreserve(marked0, size);
     return false;
   }
 
-  if (os_reserve(remapped, size) != remapped) {
+  if (!os_reserve(remapped, size)) {
     os_unreserve(marked0, size);
     os_unreserve(marked1, size);
     return false;
