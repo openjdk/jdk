@@ -82,12 +82,15 @@ void VMOperationTimeoutTask::disarm() {
 //------------------------------------------------------------------------------------------------------------------
 // Implementation of VMThread stuff
 
+static VM_None    safepointALot_op("SafepointALot");
+static VM_Cleanup cleanup_op;
+
 bool              VMThread::_should_terminate   = false;
 bool              VMThread::_terminated         = false;
 Monitor*          VMThread::_terminate_lock     = NULL;
 VMThread*         VMThread::_vm_thread          = NULL;
 VM_Operation*     VMThread::_cur_vm_operation   = NULL;
-VM_Operation*     VMThread::_next_vm_operation  = NULL;
+VM_Operation*     VMThread::_next_vm_operation  = &cleanup_op; // Prevent any thread from setting an operation until VM thread is ready.
 PerfCounter*      VMThread::_perf_accumulated_vm_operation_time = NULL;
 VMOperationTimeoutTask* VMThread::_timeout_task = NULL;
 
@@ -218,12 +221,11 @@ void VMThread::run() {
 // Notify the VMThread that the last non-daemon JavaThread has terminated,
 // and wait until operation is performed.
 void VMThread::wait_for_vm_thread_exit() {
-  assert(Thread::current()->is_Java_thread(), "Should be a JavaThread");
-  assert(((JavaThread*)Thread::current())->is_terminated(), "Should be terminated");
+  assert(JavaThread::current()->is_terminated(), "Should be terminated");
   {
     MonitorLocker mu(VMOperation_lock);
     _should_terminate = true;
-    mu.notify();
+    mu.notify_all();
   }
 
   // Note: VM thread leaves at Safepoint. We are not stopped by Safepoint
@@ -278,9 +280,6 @@ void VMThread::evaluate_operation(VM_Operation* op) {
 
 }
 
-static VM_None    safepointALot_op("SafepointALot");
-static VM_Cleanup cleanup_op;
-
 class HandshakeALotClosure : public HandshakeClosure {
  public:
   HandshakeALotClosure() : HandshakeClosure("HandshakeALot") {}
@@ -301,16 +300,16 @@ bool VMThread::handshake_alot() {
   jlong now_ms = nanos_to_millis(os::javaTimeNanos());
   // If only HandshakeALot is set, but GuaranteedSafepointInterval is 0,
   // we emit a handshake if it's been more than a second since last.
-  jlong deadline_ms = GuaranteedSafepointInterval != 0 ? GuaranteedSafepointInterval : 1000;
-  deadline_ms += last_halot_ms;
-  if (now_ms < deadline_ms) {
-    return false;
+  jlong interval = GuaranteedSafepointInterval != 0 ? GuaranteedSafepointInterval : 1000;
+  jlong deadline_ms = interval + last_halot_ms;
+  if (now_ms > deadline_ms) {
+    last_halot_ms = now_ms;
+    return true;
   }
-  last_halot_ms = now_ms;
-  return true;
+  return false;
 }
 
-void VMThread::cleanup_safepoint_alot() {
+void VMThread::setup_periodic_safepoint_if_needed() {
   assert(_cur_vm_operation  == NULL, "Already have an op");
   assert(_next_vm_operation == NULL, "Already have an op");
   // Check for a cleanup before SafepointALot to keep stats correct.
@@ -341,7 +340,7 @@ bool VMThread::set_next_operation(VM_Operation *op) {
   return true;
 }
 
-void VMThread::until_executed(VM_Operation* op) {
+void VMThread::wait_until_executed(VM_Operation* op) {
   MonitorLocker ml(VMOperation_lock,
                    Thread::current()->is_Java_thread() ?
                      Mutex::_safepoint_check_flag :
@@ -351,12 +350,11 @@ void VMThread::until_executed(VM_Operation* op) {
       ml.notify_all();
       break;
     }
-    ml.notify_all();
     ml.wait();
   }
-  while (_next_vm_operation == op ||
-         _cur_vm_operation  == op) {
-    ml.notify_all();
+  // _next_vm_operation is cleared holding VMOperation_lock
+  // after it have been executed.
+  while (_next_vm_operation == op) {
     ml.wait();
   }
 }
@@ -389,12 +387,12 @@ void VMThread::inner_execute(VM_Operation* op) {
   _cur_vm_operation = op;
 
   HandleMark hm(VMThread::vm_thread());
-  EventMark em("Executing %s VM operation: %s", prev_vm_operation ? "nested" : "", op->name());
+  EventMark em("Executing %s VM operation: %s", prev_vm_operation != NULL ? "nested" : "", op->name());
 
   // If we are at a safepoint we will evaluate all the operations that
   // follow that also require a safepoint
   log_debug(vmthread)("Evaluating %s %s VM operation: %s",
-                       prev_vm_operation ? "nested" : "",
+                       prev_vm_operation != NULL ? "nested" : "",
                       _cur_vm_operation->evaluate_at_safepoint() ? "safepoint" : "non-safepoint",
                       _cur_vm_operation->name());
 
@@ -421,10 +419,13 @@ void VMThread::inner_execute(VM_Operation* op) {
 }
 
 void VMThread::wait_for_operation() {
-  MonitorLocker mu_queue(VMOperation_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml_op_lock(VMOperation_lock, Mutex::_no_safepoint_check_flag);
 
-  // Notify previous op done
-  mu_queue.notify();
+  // Clear previous operation.
+  // On first call this clears a dummy place-holder.
+  _next_vm_operation = NULL;
+  // Notify operation done and notify a next operation can be installed.
+  ml_op_lock.notify_all();
 
   while (!should_terminate()) {
     self_destruct_if_needed();
@@ -445,13 +446,14 @@ void VMThread::wait_for_operation() {
     assert(_next_vm_operation == NULL, "Must be");
     assert(_cur_vm_operation  == NULL, "Must be");
 
-    cleanup_safepoint_alot();
+    setup_periodic_safepoint_if_needed();
     if (_next_vm_operation != NULL) {
       return;
     }
 
-    mu_queue.notify();
-    mu_queue.wait(GuaranteedSafepointInterval);
+    // We did find anything to execute, notify any waiter so they can install a new one.
+    ml_op_lock.notify_all();
+    ml_op_lock.wait(GuaranteedSafepointInterval);
   }
 }
 
@@ -465,16 +467,15 @@ void VMThread::loop() {
   cleanup_op.set_calling_thread(_vm_thread);
   safepointALot_op.set_calling_thread(_vm_thread);
 
-  while (true) {
+  do {
     wait_for_operation();
     if (!should_terminate()) {
       assert(_next_vm_operation != NULL, "Must have one");
       inner_execute(_next_vm_operation);
-      _next_vm_operation = NULL;
     } else {
       break;
     }
-  }
+  } while(!should_terminate());
 }
 
 // A SkipGCALot object is used to elide the usual effect of gc-a-lot
@@ -524,7 +525,7 @@ void VMThread::execute(VM_Operation* op) {
 
   op->set_calling_thread(t);
 
-  until_executed(op);
+  wait_until_executed(op);
 
   op->doit_epilogue();
 }

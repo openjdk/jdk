@@ -68,7 +68,7 @@ class VMThread: public NamedThread {
   static VMOperationTimeoutTask* _timeout_task;
 
   static bool handshake_alot();
-  static void cleanup_safepoint_alot();
+  static void setup_periodic_safepoint_if_needed();
 
   void evaluate_operation(VM_Operation* op);
   void inner_execute(VM_Operation* op);
@@ -100,10 +100,13 @@ class VMThread: public NamedThread {
 
   // Returns the current vm operation if any.
   static VM_Operation* vm_operation()             {
-    assert(Thread::current()->is_VM_thread(), "Must be);");
+    assert(Thread::current()->is_VM_thread(), "Must be");
     return _cur_vm_operation;
   }
-  static VM_Operation::VMOp_Type vm_op_type()     { return _cur_vm_operation->type(); }
+  static VM_Operation::VMOp_Type vm_op_type()     {
+    assert(Thread::current()->is_VM_thread(), "Must be");
+    return _cur_vm_operation->type();
+  }
 
   // Returns the single instance of VMThread.
   static VMThread* vm_thread()                    { return _vm_thread; }
@@ -121,14 +124,14 @@ class VMThread: public NamedThread {
   static void create();
   static void destroy();
 
-  static void until_executed(VM_Operation* op);
+  static void wait_until_executed(VM_Operation* op);
 
  private:
   // VM_Operation support
   static VM_Operation*     _cur_vm_operation;   // Current VM operation
-  static VM_Operation*     _next_vm_operation;
+  static VM_Operation*     _next_vm_operation;  // Next VM operation
 
-  bool set_next_operation(VM_Operation *op);
+  bool set_next_operation(VM_Operation *op);    // Set the _next_vm_operation if possible.
 
   // Pointer to single-instance of VM thread
   static VMThread*     _vm_thread;
