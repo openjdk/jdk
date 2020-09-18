@@ -308,8 +308,6 @@ public class Attr extends JCTree.Visitor {
                isAssignableAsBlankFinal(v, env)))) {
             if (v.isResourceVariable()) { //TWR resource
                 log.error(pos, Errors.TryResourceMayNotBeAssigned(v));
-            } else if ((v.flags() & MATCH_BINDING) != 0) {
-                log.error(pos, Errors.PatternBindingMayNotBeAssigned(v));
             } else {
                 log.error(pos, Errors.CantAssignValToFinalVar(v));
             }
@@ -3958,6 +3956,7 @@ public class Attr extends JCTree.Visitor {
         ResultInfo varInfo = new ResultInfo(KindSelector.TYP, resultInfo.pt, resultInfo.checkContext);
         tree.type = attribTree(tree.vartype, env, varInfo);
         VarSymbol v = tree.symbol = new BindingSymbol(tree.name, tree.vartype.type, env.info.scope.owner);
+        v.pos = tree.pos;
         if (chk.checkUnique(tree.pos(), v, env.info.scope)) {
             chk.checkTransparentVar(tree.pos(), v, env.info.scope);
         }

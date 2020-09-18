@@ -39,6 +39,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
@@ -965,6 +966,18 @@ public class TreeInfo {
         default:
             return null;
         }
+    }
+
+    /** If this tree introduces a variable (i.e. is JCVariableDecl
+     *  or JCBindingPattern), return the variable's symbol.
+     *  Fail otherwise.
+     */
+    public static VarSymbol variableSymbol(JCTree tree) {
+        return switch (tree.getTag()) {
+            case VARDEF -> ((JCVariableDecl) tree).sym;
+            case BINDINGPATTERN -> ((JCBindingPattern) tree).symbol;
+            default -> throw new AssertionError("Unexpected tree: " + tree);
+        };
     }
 
     /** If this tree has a modifiers field, return it otherwise return null

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,21 @@
 /*
  * @test
  * @bug 8231827
- * @summary Pattern variables are final so should be allowed to be referenced in an inner class
- * @compile --enable-preview -source ${jdk.version} PatternVariablesAreFinal2.java
- * @run main/othervm --enable-preview PatternVariablesAreFinal2
+ * @summary Pattern variables are non-final.
+ * @compile/fail/ref=PatternVariablesAreNonFinal.out -XDrawDiagnostics --enable-preview -source ${jdk.version} PatternVariablesAreNonFinal.java
  */
-public class PatternVariablesAreFinal2 {
+public class PatternVariablesAreNonFinal {
     public static void main(String[] args) {
-        Object o = "42";
+        Object o = 32;
         if (o instanceof String s) {
-            new Object() {
-                void run() { System.err.println(s); }
-            }.run();
+            s = "hello again";
+            new Runnable() {
+                @Override
+                public void run() {
+                    System.err.println(s);
+                }
+            };
         }
+        System.out.println("test complete");
     }
 }
