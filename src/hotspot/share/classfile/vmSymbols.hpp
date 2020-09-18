@@ -461,6 +461,7 @@
   template(big_endian_name,                           "BIG_ENDIAN")                               \
   template(use_unaligned_access_name,                 "UNALIGNED_ACCESS")                         \
   template(data_cache_line_flush_size_name,           "DATA_CACHE_LINE_FLUSH_SIZE")               \
+  template(during_unsafe_access_name,                 "during_unsafe_access")                     \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \

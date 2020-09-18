@@ -451,7 +451,6 @@ class Deoptimization : AllStatic {
                                                bool& ret_maybe_prior_recompile);
   // class loading support for uncommon trap
   static void load_class_by_index(const constantPoolHandle& constant_pool, int index, TRAPS);
-  static void load_class_by_index(const constantPoolHandle& constant_pool, int index);
 
   static UnrollBlock* fetch_unroll_info_helper(JavaThread* thread, int exec_mode);
 
