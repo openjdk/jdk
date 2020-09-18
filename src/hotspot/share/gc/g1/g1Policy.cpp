@@ -558,10 +558,6 @@ void G1Policy::record_full_collection_end() {
   // Consider this like a collection pause for the purposes of allocation
   // since last pause.
   double end_sec = os::elapsedTime();
-  double full_gc_time_sec = end_sec - _full_collection_start_sec;
-  double full_gc_time_ms = full_gc_time_sec * 1000.0;
-
-  _analytics->update_recent_gc_times(end_sec, full_gc_time_ms);
 
   collector_state()->set_in_full_gc(false);
 
@@ -677,7 +673,6 @@ void G1Policy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
-  _analytics->append_prev_collection_pause_end_ms(elapsed_time_ms);
 
   record_pause(Remark, _mark_remark_start_sec, end_time_sec);
 }
@@ -753,12 +748,11 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
   G1GCPhaseTimes* p = phase_times();
 
   double end_time_sec = os::elapsedTime();
+  double start_time_sec = phase_times()->cur_collection_start_sec();
 
   PauseKind this_pause = young_gc_pause_kind();
 
-  bool update_stats = !_g1h->evacuation_failed();
-
-  record_pause(this_pause, end_time_sec - pause_time_ms / 1000.0, end_time_sec);
+  bool update_stats = should_update_gc_stats();
 
   if (is_concurrent_start_pause(this_pause)) {
     record_concurrent_mark_init_end(0.0);
@@ -766,7 +760,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
     maybe_start_marking();
   }
 
-  double app_time_ms = (phase_times()->cur_collection_start_sec() * 1000.0 - _analytics->prev_collection_pause_end_ms());
+  double app_time_ms = (start_time_sec * 1000.0 - _analytics->prev_collection_pause_end_ms());
   if (app_time_ms < MIN_TIMER_GRANULARITY) {
     // This usually happens due to the timer not having the required
     // granularity. Some Linuxes are the usual culprits.
@@ -786,10 +780,9 @@ void G1Policy::record_collection_pause_end(double pause_time_ms) {
     uint regions_allocated = _collection_set->eden_region_length();
     double alloc_rate_ms = (double) regions_allocated / app_time_ms;
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
-
-    _analytics->compute_pause_time_ratios(end_time_sec, pause_time_ms);
-    _analytics->update_recent_gc_times(end_time_sec, pause_time_ms);
   }
+
+  record_pause(this_pause, start_time_sec, end_time_sec);
 
   if (is_last_young_pause(this_pause)) {
     assert(!is_concurrent_start_pause(this_pause),
@@ -1238,7 +1231,6 @@ void G1Policy::record_concurrent_mark_cleanup_end() {
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
   _analytics->report_concurrent_mark_cleanup_times_ms(elapsed_time_ms);
-  _analytics->append_prev_collection_pause_end_ms(elapsed_time_ms);
 
   record_pause(Cleanup, _mark_cleanup_start_sec, end_sec);
 }
@@ -1312,11 +1304,37 @@ G1Policy::PauseKind G1Policy::young_gc_pause_kind() const {
   }
 }
 
+bool G1Policy::should_update_gc_stats() {
+  // Evacuation failures skew the timing too much to be considered for statistics updates.
+  // We make the assumption that these are rare.
+  return !_g1h->evacuation_failed();
+}
+
+void G1Policy::update_gc_pause_time_ratios(PauseKind kind, double start_time_sec, double end_time_sec) {
+
+  double pause_time_sec = end_time_sec - start_time_sec;
+  double pause_time_ms = pause_time_sec * 1000.0;
+
+  _analytics->compute_pause_time_ratios(end_time_sec, pause_time_ms);
+  _analytics->update_recent_gc_times(end_time_sec, pause_time_ms);
+
+  if (kind == Cleanup || kind == Remark) {
+    _analytics->append_prev_collection_pause_end_ms(pause_time_ms);
+  } else {
+    _analytics->set_prev_collection_pause_end_ms(end_time_sec * 1000.0);
+  }
+}
+
 void G1Policy::record_pause(PauseKind kind, double start, double end) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
   if (kind != FullGC) {
     _mmu_tracker->add_pause(start, end);
   }
+
+  if (should_update_gc_stats()) {
+    update_gc_pause_time_ratios(kind, start, end);
+  }
+
   // Manage the mutator time tracking from concurrent start to first mixed gc.
   switch (kind) {
     case FullGC:

@@ -27,6 +27,7 @@
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/debug.hpp"
 
 // Processor dependent initialization of C2 compiler for ppc.

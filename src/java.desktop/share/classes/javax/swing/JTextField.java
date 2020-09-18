@@ -951,6 +951,11 @@ public class JTextField extends JTextComponent implements SwingConstants {
     protected class AccessibleJTextField extends AccessibleJTextComponent {
 
         /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJTextField() {}
+
+        /**
          * Gets the state set of this object.
          *
          * @return an instance of AccessibleStateSet describing the states
