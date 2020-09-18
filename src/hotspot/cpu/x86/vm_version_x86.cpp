@@ -29,6 +29,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
