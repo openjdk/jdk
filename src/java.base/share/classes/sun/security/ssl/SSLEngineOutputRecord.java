@@ -37,11 +37,11 @@ import sun.security.ssl.SSLCipher.SSLWriteCipher;
  */
 final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
-    private HandshakeFragment fragmenter = null;
-    private boolean isTalkingToV2 = false;      // SSLv2Hello
-    private ByteBuffer v2ClientHello = null;    // SSLv2Hello
+    private HandshakeFragment fragmenter;
+    private boolean isTalkingToV2;      // SSLv2Hello
+    private ByteBuffer v2ClientHello;    // SSLv2Hello
 
-    private volatile boolean isCloseWaiting = false;
+    private volatile boolean isCloseWaiting;
 
     SSLEngineOutputRecord(HandshakeHash handshakeHash) {
         super(handshakeHash, SSLWriteCipher.nullTlsWriteCipher());
