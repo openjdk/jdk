@@ -24,7 +24,7 @@
  * @test
  * @bug 8253321
  * @summary test LanguageRange class
- * @run testng/othervm LanguageRangeTest
+ * @run testng LanguageRangeTest
  */
 
 import static java.util.Locale.LanguageRange;
