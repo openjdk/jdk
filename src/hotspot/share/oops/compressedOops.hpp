@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include <type_traits>
 
 class outputStream;
 class ReservedHeapSpace;
@@ -76,6 +77,8 @@ public:
     AnyNarrowOopMode = 4
   };
 
+  using NarrowType = std::underlying_type_t<narrowOop>;
+
   static void initialize(const ReservedHeapSpace& heap_space);
 
   static void set_base(address base);
@@ -112,7 +115,7 @@ public:
   static void     print_mode(outputStream* st);
 
   static bool is_null(oop v)       { return v == NULL; }
-  static bool is_null(narrowOop v) { return v == 0; }
+  static bool is_null(narrowOop v) { return v == narrowOop::null; }
 
   static inline oop decode_raw(narrowOop v);
   static inline oop decode_not_null(narrowOop v);
@@ -125,6 +128,19 @@ public:
   static oop decode(oop v)                      { return v; }
   static narrowOop encode_not_null(narrowOop v) { return v; }
   static narrowOop encode(narrowOop v)          { return v; }
+
+  static NarrowType narrow_oop_value(narrowOop o) {
+    return static_cast<NarrowType>(o);
+  }
+
+  template<typename T>
+  static narrowOop narrow_oop_cast(T i) {
+    static_assert(std::is_integral<T>::value, "precondition");
+    static_assert(sizeof(T) >= sizeof(narrowOop), "precondition");
+    // Shift by 32 is UB if size in bits of i is 32, e.g. on 32bit platform.
+    assert(((i >> 16) >> 16) == 0, "narrowOop overflow");
+    return static_cast<narrowOop>(static_cast<NarrowType>(i));
+  }
 };
 
 // For UseCompressedClassPointers.
