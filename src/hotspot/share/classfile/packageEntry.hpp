@@ -119,6 +119,20 @@ private:
 
   // a bit map indicating which CDS classpath entries have defined classes in this package.
   volatile int _defined_by_cds_in_class_path;
+
+  // Use this instead of memcpy to avoid copying garbage in structure padding
+  // (such as the 1 byte after _must_walk_exports).
+  void copy_from(const PackageEntry* other) {
+    HashtableEntry<Symbol*, mtModule>::copy_from(other);
+    _module = other->_module;
+    _export_flags = other->_export_flags;
+    _classpath_index= other->_classpath_index;
+    _must_walk_exports = other->_must_walk_exports;
+    _qualified_exports = other->_qualified_exports;
+    _defined_by_cds_in_class_path= other->_defined_by_cds_in_class_path;
+    JFR_ONLY(set_trace_id(other->trace_id()));
+  }
+
 public:
   void init() {
     _module = NULL;

@@ -65,6 +65,13 @@ protected:
   // the free list instead with BasicHashtable.free_entry().
   ~BasicHashtableEntry() { ShouldNotReachHere(); }
 
+  // Use this instead of memcpy to avoid copying garbage in structure padding
+  // (such as the 4 bytes after _hash in 64-bit builds).
+  void copy_from(const BasicHashtableEntry<F>* other) {
+    _hash = other->_hash;
+    // don't copy _next as that doesn't make sense.
+  }
+
 public:
 
   unsigned int hash() const             { return _hash; }
@@ -102,6 +109,12 @@ template <class T, MEMFLAGS F> class HashtableEntry : public BasicHashtableEntry
   friend class VMStructs;
 private:
   T               _literal;          // ref to item in table.
+
+protected:
+  void copy_from(const HashtableEntry<T, F>* other) {
+    BasicHashtableEntry<F>::copy_from(other);
+    _literal = other->_literal;
+  }
 
 public:
   // Literal

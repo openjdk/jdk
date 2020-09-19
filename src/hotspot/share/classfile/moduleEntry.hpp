@@ -82,6 +82,27 @@ private:
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
   enum {MODULE_READS_SIZE = 101};      // Initial size of list of modules that the module can read.
 
+  // Use this instead of memcpy to avoid copying garbage in structure padding
+  // (such as the bytes after _is_patched).
+  void copy_from(const ModuleEntry* other) {
+    HashtableEntry<Symbol*, mtModule>::copy_from(other);
+    _module                     = other->_module;
+    _shared_pd                  = other->_shared_pd;
+    _loader_data                = other->_loader_data;
+    _reads                      = other->_reads;
+    _version                    = other->_version;
+    _location                   = other->_location;
+    CDS_ONLY(_shared_path_index = other->_shared_path_index);
+    _can_read_all_unnamed       = other->_can_read_all_unnamed;
+    _has_default_read_edges     = other->_has_default_read_edges;
+    _has_default_read_edges     = other->_has_default_read_edges;
+    _must_walk_reads            = other-> _must_walk_reads;
+    _is_open                    = other->_is_open;
+    _is_patched                 = other->_is_patched;
+    CDS_JAVA_HEAP_ONLY(_archived_module_narrow_oop= other->_archived_module_narrow_oop);
+    JFR_ONLY(set_trace_id(other->trace_id()));
+  }
+
 public:
   void init() {
     _module = OopHandle();
