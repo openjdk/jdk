@@ -46,8 +46,8 @@ public class LargePages {
 
         SharedStringsUtils.dump(TestCommon.list("HelloString"),
             "SharedStringsBasic.txt", CDS_LOGGING,
-            "-XX:+UseLargePages", "-XX:+UseLargePagesInMetaspace");
+            "-XX:+UseLargePages");
         SharedStringsUtils.runWithArchive("HelloString",
-            "-XX:+UseLargePages", "-XX:+UseLargePagesInMetaspace");
+            "-XX:+UseLargePages");
     }
 }

@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_METADATAFACTORY_HPP
 
 #include "classfile/classLoaderData.hpp"
+#include "memory/metaspace.hpp"
 #include "oops/array.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
