@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *        static SQL <code>SELECT</code> statement
      * @return a <code>ResultSet</code> object that contains the data produced
      *         by the given query; never <code>null</code>
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>, the given
      *            SQL statement produces anything other than a single
      *            <code>ResultSet</code> object, the method is called on a
@@ -82,7 +82,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return either (1) the row count for SQL Data Manipulation Language (DML) statements
      *         or (2) 0 for SQL statements that return nothing
      *
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>, the given
      * SQL statement produces a <code>ResultSet</code> object, the method is called on a
      * <code>PreparedStatement</code> or <code>CallableStatement</code>
@@ -108,7 +108,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * closed, its current <code>ResultSet</code> object, if one exists, is
      * also closed.
      *
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     void close() throws SQLException;
 
@@ -126,7 +126,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @return the current column size limit for columns storing character and
      *         binary values; zero means there is no limit
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @see #setMaxFieldSize
      */
@@ -146,7 +146,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * greater than 256.
      *
      * @param max the new column size limit in bytes; zero means there is no limit
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>
      *            or the condition {@code max >= 0} is not satisfied
      * @see #getMaxFieldSize
@@ -162,7 +162,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return the current maximum number of rows for a <code>ResultSet</code>
      *         object produced by this <code>Statement</code> object;
      *         zero means there is no limit
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @see #setMaxRows
      */
@@ -176,7 +176,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * rows are silently dropped.
      *
      * @param max the new max rows limit; zero means there is no limit
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>
      *            or the condition {@code max >= 0} is not satisfied
      * @see #getMaxRows
@@ -202,7 +202,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @param enable <code>true</code> to enable escape processing;
      *       <code>false</code> to disable it
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      */
     void setEscapeProcessing(boolean enable) throws SQLException;
@@ -215,7 +215,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @return the current query timeout limit in seconds; zero means there is
      *         no limit
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @see #setQueryTimeout
      */
@@ -242,7 +242,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @param seconds the new query timeout limit in seconds; zero means
      *        there is no limit
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>
      *            or the condition {@code seconds >= 0} is not satisfied
      * @see #getQueryTimeout
@@ -255,9 +255,9 @@ public interface Statement extends Wrapper, AutoCloseable {
      * This method can be used by one thread to cancel a statement that
      * is being executed by another thread.
      *
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      */
     void cancel() throws SQLException;
@@ -279,7 +279,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @return the first <code>SQLWarning</code> object or <code>null</code>
      *         if there are no warnings
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      */
     SQLWarning getWarnings() throws SQLException;
@@ -291,7 +291,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <code>null</code> until a new warning is reported for this
      * <code>Statement</code> object.
      *
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      */
     void clearWarnings() throws SQLException;
@@ -315,7 +315,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @param name the new cursor name, which must be unique within
      *             a connection
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
      */
@@ -343,7 +343,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there are
      *         no results
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>,
      * the method is called on a
      * <code>PreparedStatement</code> or <code>CallableStatement</code>
@@ -363,7 +363,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @return the current result as a <code>ResultSet</code> object or
      * <code>null</code> if the result is an update count or there are no more results
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @see #execute
      */
@@ -376,7 +376,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @return the current result as an update count; -1 if the current result is a
      * <code>ResultSet</code> object or there are no more results
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @see #execute
      */
@@ -397,7 +397,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return <code>true</code> if the next result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there are
      *         no more results
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @see #execute
      */
@@ -419,7 +419,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * its own fetch direction.
      *
      * @param direction the initial direction for processing rows
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>
      * or the given direction
      * is not one of <code>ResultSet.FETCH_FORWARD</code>,
@@ -439,7 +439,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @return the default fetch direction for result sets generated
      *          from this <code>Statement</code> object
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @since 1.2
      * @see #setFetchDirection
@@ -454,7 +454,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * The default value is zero.
      *
      * @param rows the number of rows to fetch
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code> or the
      *        condition {@code rows >= 0} is not satisfied.
      * @since 1.2
@@ -472,7 +472,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @return the default fetch size for result sets generated
      *          from this <code>Statement</code> object
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @since 1.2
      * @see #setFetchSize
@@ -485,7 +485,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @return either <code>ResultSet.CONCUR_READ_ONLY</code> or
      * <code>ResultSet.CONCUR_UPDATABLE</code>
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @since 1.2
      */
@@ -498,7 +498,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return one of <code>ResultSet.TYPE_FORWARD_ONLY</code>,
      * <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
      * <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @since 1.2
      */
@@ -513,7 +513,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <code>PreparedStatement</code> or <code>CallableStatement</code>.
      * @param sql typically this is a SQL <code>INSERT</code> or
      * <code>UPDATE</code> statement
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>, the
      * driver does not support batch updates, the method is called on a
      * <code>PreparedStatement</code> or <code>CallableStatement</code>
@@ -527,7 +527,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * Empties this <code>Statement</code> object's current list of
      * SQL commands.
      *
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      *  this method is called on a closed <code>Statement</code> or the
      * driver does not support batch updates
      * @see #addBatch
@@ -577,7 +577,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return an array of update counts containing one element for each
      * command in the batch.  The elements of the array are ordered according
      * to the order in which commands were added to the batch.
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code> or the
      * driver does not support batch statements. Throws {@link BatchUpdateException}
      * (a subclass of <code>SQLException</code>) if one of the commands sent to the
@@ -597,7 +597,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * Retrieves the <code>Connection</code> object
      * that produced this <code>Statement</code> object.
      * @return the connection that produced this statement
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @since 1.2
      */
@@ -684,13 +684,13 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return <code>true</code> if the next result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there are no
      *         more results
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code> or the argument
      *         supplied is not one of the following:
      *        <code>Statement.CLOSE_CURRENT_RESULT</code>,
      *        <code>Statement.KEEP_CURRENT_RESULT</code> or
      *        <code>Statement.CLOSE_ALL_RESULTS</code>
-     *@exception SQLFeatureNotSupportedException if
+     *@throws SQLFeatureNotSupportedException if
      * <code>DatabaseMetaData.supportsMultipleOpenResults</code> returns
      * <code>false</code> and either
      *        <code>Statement.KEEP_CURRENT_RESULT</code> or
@@ -712,7 +712,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @return a <code>ResultSet</code> object containing the auto-generated key(s)
      *         generated by the execution of this <code>Statement</code> object
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
      * @since 1.4
@@ -742,12 +742,12 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return either (1) the row count for SQL Data Manipulation Language (DML) statements
      *         or (2) 0 for SQL statements that return nothing
      *
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      *  this method is called on a closed <code>Statement</code>, the given
      *            SQL statement returns a <code>ResultSet</code> object,
      *            the given constant is not one of those allowed, the method is called on a
      * <code>PreparedStatement</code> or <code>CallableStatement</code>
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method with a constant of Statement.RETURN_GENERATED_KEYS
      * @throws SQLTimeoutException when the driver has determined that the
      * timeout value that was specified by the {@code setQueryTimeout}
@@ -777,7 +777,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return either (1) the row count for SQL Data Manipulation Language (DML) statements
      *         or (2) 0 for SQL statements that return nothing
      *
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>, the SQL
      * statement returns a <code>ResultSet</code> object,the second argument
      * supplied to this method is not an
@@ -811,7 +811,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return either the row count for <code>INSERT</code>, <code>UPDATE</code>,
      *         or <code>DELETE</code> statements, or 0 for SQL statements
      *         that return nothing
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      *  this method is called on a closed <code>Statement</code>, the SQL
      *            statement returns a <code>ResultSet</code> object, the
      *            second argument supplied to this method is not a <code>String</code> array
@@ -857,14 +857,14 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there are
      *         no results
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>, the second
      *         parameter supplied to this method is not
      *         <code>Statement.RETURN_GENERATED_KEYS</code> or
      *         <code>Statement.NO_GENERATED_KEYS</code>,
      * the method is called on a
      * <code>PreparedStatement</code> or <code>CallableStatement</code>
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method with a constant of Statement.RETURN_GENERATED_KEYS
      * @throws SQLTimeoutException when the driver has determined that the
      * timeout value that was specified by the {@code setQueryTimeout}
@@ -910,7 +910,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there
      *         are no results
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>, the
      *            elements in the <code>int</code> array passed to this method
      *            are not valid column indexes, the method is called on a
@@ -959,7 +959,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return <code>true</code> if the next result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there
      *         are no more results
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>,the
      *          elements of the <code>String</code> array passed to this
      *          method are not valid column names, the method is called on a
@@ -984,7 +984,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @return either <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
      *         <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      *
      * @since 1.4
@@ -1087,7 +1087,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @return the current result as an update count; -1 if the current result
      * is a <code>ResultSet</code> object or there are no more results
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @see #execute
      * @since 1.8
@@ -1109,7 +1109,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * The default implementation will throw {@code UnsupportedOperationException}
      *
      * @param max the new max rows limit; zero means there is no limit
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>
      *            or the condition {@code max >= 0} is not satisfied
      * @see #getMaxRows
@@ -1133,7 +1133,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return the current maximum number of rows for a <code>ResultSet</code>
      *         object produced by this <code>Statement</code> object;
      *         zero means there is no limit
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      * @see #setMaxRows
      * @since 1.8
@@ -1183,7 +1183,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return an array of update counts containing one element for each
      * command in the batch.  The elements of the array are ordered according
      * to the order in which commands were added to the batch.
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code> or the
      * driver does not support batch statements. Throws {@link BatchUpdateException}
      * (a subclass of <code>SQLException</code>) if one of the commands sent to the
@@ -1222,7 +1222,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return either (1) the row count for SQL Data Manipulation Language
      * (DML) statements or (2) 0 for SQL statements that return nothing
      *
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>, the given
      * SQL statement produces a <code>ResultSet</code> object, the method is called on a
      * <code>PreparedStatement</code> or <code>CallableStatement</code>
@@ -1266,12 +1266,12 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return either (1) the row count for SQL Data Manipulation Language (DML) statements
      *         or (2) 0 for SQL statements that return nothing
      *
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      *  this method is called on a closed <code>Statement</code>, the given
      *            SQL statement returns a <code>ResultSet</code> object,
      *            the given constant is not one of those allowed, the method is called on a
      * <code>PreparedStatement</code> or <code>CallableStatement</code>
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method with a constant of Statement.RETURN_GENERATED_KEYS
      * @throws SQLTimeoutException when the driver has determined that the
      * timeout value that was specified by the {@code setQueryTimeout}
@@ -1311,7 +1311,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return either (1) the row count for SQL Data Manipulation Language (DML) statements
      *         or (2) 0 for SQL statements that return nothing
      *
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>, the SQL
      * statement returns a <code>ResultSet</code> object,the second argument
      * supplied to this method is not an
@@ -1354,7 +1354,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return either the row count for <code>INSERT</code>, <code>UPDATE</code>,
      *         or <code>DELETE</code> statements, or 0 for SQL statements
      *         that return nothing
-     * @exception SQLException if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      *  this method is called on a closed <code>Statement</code>, the SQL
      *            statement returns a <code>ResultSet</code> object, the
      *            second argument supplied to this method is not a <code>String</code> array

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public interface PreparedStatement extends Statement {
      *
      * @return a <code>ResultSet</code> object that contains the data produced by the
      *         query; never <code>null</code>
-     * @exception SQLException if a database access error occurs;
+     * @throws SQLException if a database access error occurs;
      * this method is called on a closed  <code>PreparedStatement</code> or the SQL
      *            statement does not return a <code>ResultSet</code> object
      * @throws SQLTimeoutException when the driver has determined that the
@@ -86,7 +86,7 @@ public interface PreparedStatement extends Statement {
      *
      * @return either (1) the row count for SQL Data Manipulation Language (DML) statements
      *         or (2) 0 for SQL statements that return nothing
-     * @exception SQLException if a database access error occurs;
+     * @throws SQLException if a database access error occurs;
      * this method is called on a closed  <code>PreparedStatement</code>
      * or the SQL statement returns a <code>ResultSet</code> object
      * @throws SQLTimeoutException when the driver has determined that the
@@ -103,10 +103,10 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param sqlType the SQL type code defined in <code>java.sql.Types</code>
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
-     * @exception SQLFeatureNotSupportedException if <code>sqlType</code> is
+     * @throws SQLFeatureNotSupportedException if <code>sqlType</code> is
      * a <code>ARRAY</code>, <code>BLOB</code>, <code>CLOB</code>,
      * <code>DATALINK</code>, <code>JAVA_OBJECT</code>, <code>NCHAR</code>,
      * <code>NCLOB</code>, <code>NVARCHAR</code>, <code>LONGNVARCHAR</code>,
@@ -123,7 +123,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement;
      * if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
@@ -137,7 +137,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -150,7 +150,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -163,7 +163,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -176,7 +176,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -189,7 +189,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -202,7 +202,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -215,7 +215,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -231,7 +231,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -245,7 +245,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -260,7 +260,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -274,7 +274,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -289,7 +289,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>     */
     void setTimestamp(int parameterIndex, java.sql.Timestamp x)
@@ -311,7 +311,7 @@ public interface PreparedStatement extends Statement {
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the Java input stream that contains the ASCII parameter value
      * @param length the number of bytes in the stream
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -339,10 +339,10 @@ public interface PreparedStatement extends Statement {
      * @param x a <code>java.io.InputStream</code> object that contains the
      *        Unicode parameter value
      * @param length the number of bytes in the stream
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @deprecated Use {@code setCharacterStream}
      */
@@ -365,7 +365,7 @@ public interface PreparedStatement extends Statement {
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the java input stream which contains the binary parameter value
      * @param length the number of bytes in the stream
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
@@ -380,7 +380,7 @@ public interface PreparedStatement extends Statement {
      * release the resources used by the current parameter values; this can
      * be done by calling the method <code>clearParameters</code>.
      *
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      */
     void clearParameters() throws SQLException;
@@ -399,10 +399,10 @@ public interface PreparedStatement extends Statement {
     * @param x the object containing the input parameter value
     * @param targetSqlType the SQL type (as defined in java.sql.Types) to be
     *                      sent to the database
-    * @exception SQLException if parameterIndex does not correspond to a parameter
+    * @throws SQLException if parameterIndex does not correspond to a parameter
     * marker in the SQL statement; if a database access error occurs or this
     * method is called on a closed PreparedStatement
-    * @exception SQLFeatureNotSupportedException if
+    * @throws SQLFeatureNotSupportedException if
     * the JDBC driver does not support the specified targetSqlType
     * @see Types
     */
@@ -441,7 +441,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the object containing the input parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs;
      *  this method is called on a closed <code>PreparedStatement</code>
      * or the type of the given object is ambiguous
@@ -465,7 +465,7 @@ public interface PreparedStatement extends Statement {
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
      *         object; <code>false</code> if the first result is an update
      *         count or there is no result
-     * @exception SQLException if a database access error occurs;
+     * @throws SQLException if a database access error occurs;
      * this method is called on a closed <code>PreparedStatement</code>
      * or an argument is supplied to this method
      * @throws SQLTimeoutException when the driver has determined that the
@@ -486,7 +486,7 @@ public interface PreparedStatement extends Statement {
      * Adds a set of parameters to this <code>PreparedStatement</code>
      * object's batch of commands.
      *
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @see Statement#addBatch
      * @since 1.2
@@ -510,7 +510,7 @@ public interface PreparedStatement extends Statement {
      * @param reader the <code>java.io.Reader</code> object that contains the
      *        Unicode data
      * @param length the number of characters in the stream
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @since 1.2
@@ -527,7 +527,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x an SQL <code>REF</code> value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
@@ -542,7 +542,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x a <code>Blob</code> object that maps an SQL <code>BLOB</code> value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
@@ -557,7 +557,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x a <code>Clob</code> object that maps an SQL <code>CLOB</code> value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
@@ -572,7 +572,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x an <code>Array</code> object that maps an SQL <code>ARRAY</code> value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
@@ -600,9 +600,9 @@ public interface PreparedStatement extends Statement {
      * @return the description of a <code>ResultSet</code> object's columns or
      *         <code>null</code> if the driver cannot return a
      *         <code>ResultSetMetaData</code> object
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -622,7 +622,7 @@ public interface PreparedStatement extends Statement {
      * @param x the parameter value
      * @param cal the <code>Calendar</code> object the driver will use
      *            to construct the date
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @since 1.2
@@ -644,7 +644,7 @@ public interface PreparedStatement extends Statement {
      * @param x the parameter value
      * @param cal the <code>Calendar</code> object the driver will use
      *            to construct the time
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @since 1.2
@@ -666,7 +666,7 @@ public interface PreparedStatement extends Statement {
      * @param x the parameter value
      * @param cal the <code>Calendar</code> object the driver will use
      *            to construct the timestamp
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @since 1.2
@@ -699,10 +699,10 @@ public interface PreparedStatement extends Statement {
      * @param sqlType a value from <code>java.sql.Types</code>
      * @param typeName the fully-qualified name of an SQL user-defined type;
      *  ignored if the parameter is not a user-defined type or REF
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
-     * @exception SQLFeatureNotSupportedException if <code>sqlType</code> is
+     * @throws SQLFeatureNotSupportedException if <code>sqlType</code> is
      * a <code>ARRAY</code>, <code>BLOB</code>, <code>CLOB</code>,
      * <code>DATALINK</code>, <code>JAVA_OBJECT</code>, <code>NCHAR</code>,
      * <code>NCLOB</code>, <code>NVARCHAR</code>, <code>LONGNVARCHAR</code>,
@@ -723,7 +723,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the <code>java.net.URL</code> object to be set
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
@@ -738,7 +738,7 @@ public interface PreparedStatement extends Statement {
      * @return a <code>ParameterMetaData</code> object that contains information
      *         about the number, types and properties for each
      *  parameter marker of this <code>PreparedStatement</code> object
-     * @exception SQLException if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @see ParameterMetaData
      * @since 1.4
@@ -946,13 +946,13 @@ public interface PreparedStatement extends Statement {
      *          this is the length
      *          of the data in the stream or reader.  For all other types,
      *          this value will be ignored.
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs;
      * this method is called on a closed <code>PreparedStatement</code> or
      *            if the Java Object specified by x is an InputStream
      *            or Reader object and the value of the scale parameter is less
      *            than zero
-     * @exception SQLFeatureNotSupportedException if
+     * @throws SQLFeatureNotSupportedException if
      * the JDBC driver does not support the specified targetSqlType
      * @see Types
      *
@@ -975,7 +975,7 @@ public interface PreparedStatement extends Statement {
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the Java input stream that contains the ASCII parameter value
      * @param length the number of bytes in the stream
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @since 1.6
@@ -997,7 +997,7 @@ public interface PreparedStatement extends Statement {
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the java input stream which contains the binary parameter value
      * @param length the number of bytes in the stream
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @since 1.6
@@ -1021,7 +1021,7 @@ public interface PreparedStatement extends Statement {
      * @param reader the <code>java.io.Reader</code> object that contains the
      *        Unicode data
      * @param length the number of characters in the stream
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @since 1.6
@@ -1047,7 +1047,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the Java input stream that contains the ASCII parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
@@ -1071,7 +1071,7 @@ public interface PreparedStatement extends Statement {
      *
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the java input stream which contains the binary parameter value
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
@@ -1098,7 +1098,7 @@ public interface PreparedStatement extends Statement {
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param reader the <code>java.io.Reader</code> object that contains the
      *        Unicode data
-     * @exception SQLException if parameterIndex does not correspond to a parameter
+     * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs or
      * this method is called on a closed <code>PreparedStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
@@ -1250,13 +1250,13 @@ public interface PreparedStatement extends Statement {
      *          this is the length
      *          of the data in the stream or reader.  For all other types,
      *          this value will be ignored.
-     * @exception SQLException if parameterIndex does not correspond to a
+     * @throws SQLException if parameterIndex does not correspond to a
      * parameter marker in the SQL statement; if a database access error occurs
      * or this method is called on a closed {@code PreparedStatement}  or
      *            if the Java Object specified by x is an InputStream
      *            or Reader object and the value of the scale parameter is less
      *            than zero
-     * @exception SQLFeatureNotSupportedException if
+     * @throws SQLFeatureNotSupportedException if
      * the JDBC driver does not support the specified targetSqlType
      * @see JDBCType
      * @see SQLType
@@ -1279,10 +1279,10 @@ public interface PreparedStatement extends Statement {
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the object containing the input parameter value
      * @param targetSqlType the SQL type to be sent to the database
-     * @exception SQLException if parameterIndex does not correspond to a
+     * @throws SQLException if parameterIndex does not correspond to a
      * parameter marker in the SQL statement; if a database access error occurs
      * or this method is called on a closed {@code PreparedStatement}
-     * @exception SQLFeatureNotSupportedException if
+     * @throws SQLFeatureNotSupportedException if
      * the JDBC driver does not support the specified targetSqlType
      * @see JDBCType
      * @see SQLType
@@ -1307,7 +1307,7 @@ public interface PreparedStatement extends Statement {
      *
      * @return either (1) the row count for SQL Data Manipulation Language
      * (DML) statements or (2) 0 for SQL statements that return nothing
-     * @exception SQLException if a database access error occurs;
+     * @throws SQLException if a database access error occurs;
      * this method is called on a closed  <code>PreparedStatement</code>
      * or the SQL statement returns a <code>ResultSet</code> object
      * @throws SQLTimeoutException when the driver has determined that the
