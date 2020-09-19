@@ -27,7 +27,7 @@
 
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspace.hpp"
-#include "memory/metaspace/msVirtualSpaceList.hpp"
+#include "memory/metaspace/virtualSpaceList.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"

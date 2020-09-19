@@ -25,9 +25,11 @@
 
 #include "precompiled.hpp"
 
-#include "memory/metaspace/msArena.hpp"
-#include "memory/metaspace/msTestHelpers.hpp"
-#include "memory/metaspace/msSettings.hpp"
+#include "memory/metaspace/metaspaceArena.hpp"
+#include "memory/metaspace/metaspaceSettings.hpp"
+#include "memory/metaspace/testHelpers.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
@@ -39,7 +41,6 @@ using metaspace::MetaspaceArena;
 using metaspace::MetaspaceTestArena;
 using metaspace::Settings;
 
-
 // Test that overwriting memory triggers an assert if allocation guards are enabled.
 //  Note: We use TEST_VM_ASSERT_MSG. However, an assert is only triggered if allocation
 //  guards are enabled; if guards are disabled for the gtests, this test would fail.
@@ -49,10 +50,17 @@ TEST_VM_ASSERT_MSG(metaspace, test_overwriter, "Corrupt block") {
   if (Settings::use_allocation_guard()) {
     MetaspaceGtestContext context;
     MetaspaceTestArena* arena = context.create_arena(Metaspace::StandardMetaspaceType);
-    MetaWord* p = arena->allocate(10);
-    MetaWord* p2 = arena->allocate(10);
-    p[10] = (MetaWord)0x9345; // Overwriter
-    // Checks should run in destructor:
+    // We allocate two blocks. We then write over the end of the first block, which
+    //  should corrupt the eyecatcher at the start of the second block.
+    // Note: there is of course no guarantee that blocks allocated sequentially are neighbors;
+    //  but in this case (clean standard-sized test arena and very small allocations) it can
+    //  be safely assumed).
+    MetaWord* p1 = arena->allocate(8);
+    MetaWord* p2 = arena->allocate(2);
+    p1[8] = (MetaWord)0x9345; // Overwriter
+    // Now we delete the arena (as happens during class unloading); this will check all
+    // block canaries and should trigger an assert (see MetaspaceArena::verify_allocation_guards()).
+    tty->print_cr("Death test, please ignore the following \"Corrupt block\" printout.");
     delete arena;
   } else {
     assert(false, "Corrupt block fake message to satisfy tests");

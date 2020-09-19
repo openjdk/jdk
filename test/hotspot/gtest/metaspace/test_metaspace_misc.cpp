@@ -27,8 +27,8 @@
 
 
 #include "classfile/classLoaderData.hpp"
-#include "memory/metaspace/msChunklevel.hpp"
-#include "memory/metaspace/msSettings.hpp"
+#include "memory/metaspace/chunklevel.hpp"
+#include "memory/metaspace/metaspaceSettings.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // #define LOG_PLEASE

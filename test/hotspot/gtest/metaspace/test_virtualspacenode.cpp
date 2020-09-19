@@ -25,14 +25,14 @@
 
 #include "precompiled.hpp"
 
-#include "memory/metaspace/msChunklevel.hpp"
-#include "memory/metaspace/msCommitLimiter.hpp"
-#include "memory/metaspace/msCounter.hpp"
-#include "memory/metaspace/msFreeChunkList.hpp"
-#include "memory/metaspace/msMetachunk.hpp"
-#include "memory/metaspace/msMetachunkList.hpp"
-#include "memory/metaspace/msSettings.hpp"
-#include "memory/metaspace/msVirtualSpaceNode.hpp"
+#include "memory/metaspace/chunklevel.hpp"
+#include "memory/metaspace/commitLimiter.hpp"
+#include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/freeChunkList.hpp"
+#include "memory/metaspace/metachunk.hpp"
+#include "memory/metaspace/metachunkList.hpp"
+#include "memory/metaspace/metaspaceSettings.hpp"
+#include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 

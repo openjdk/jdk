@@ -25,8 +25,8 @@
 
 #include "precompiled.hpp"
 
-#include "memory/metaspace/msBlockTree.hpp"
-#include "memory/metaspace/msCounter.hpp"
+#include "memory/metaspace/blockTree.hpp"
+#include "memory/metaspace/counters.hpp"
 #include "memory/resourceArea.hpp"
 
 // #define LOG_PLEASE

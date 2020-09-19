@@ -33,7 +33,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/heapInspection.hpp"
-#include "memory/metaspace/msReport.hpp"
+#include "memory/metaspace/metaspaceReporter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/symbol.hpp"

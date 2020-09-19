@@ -25,8 +25,8 @@
 
 #include "precompiled.hpp"
 
-#include "memory/metaspace/msCommitMask.hpp"
-#include "memory/metaspace/msSettings.hpp"
+#include "memory/metaspace/commitMask.hpp"
+#include "memory/metaspace/metaspaceSettings.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"

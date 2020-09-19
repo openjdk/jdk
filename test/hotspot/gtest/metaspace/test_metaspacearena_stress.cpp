@@ -25,11 +25,11 @@
 
 #include "precompiled.hpp"
 
-#include "memory/metaspace/msArena.hpp"
-#include "memory/metaspace/msArenaGrowthPolicy.hpp"
-#include "memory/metaspace/msChunkManager.hpp"
-#include "memory/metaspace/msCounter.hpp"
-#include "memory/metaspace/msStatistics.hpp"
+#include "memory/metaspace/chunkManager.hpp"
+#include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/metaspaceArena.hpp"
+#include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
+#include "memory/metaspace/metaspaceStatistics.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

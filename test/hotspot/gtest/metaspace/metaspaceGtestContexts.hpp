@@ -27,9 +27,9 @@
 #define GTEST_METASPACE_METASPACE_GTESTCONTEXTS_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/metaspace/msChunklevel.hpp"
-#include "memory/metaspace/msMetachunk.hpp"
-#include "memory/metaspace/msTestHelpers.hpp"
+#include "memory/metaspace/chunklevel.hpp"
+#include "memory/metaspace/metachunk.hpp"
+#include "memory/metaspace/testHelpers.hpp"
 
 #include "metaspaceGtestCommon.hpp"
 

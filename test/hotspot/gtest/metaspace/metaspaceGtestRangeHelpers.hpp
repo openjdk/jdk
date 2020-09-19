@@ -30,7 +30,7 @@
 // keeping the code small.
 
 #include "memory/allocation.hpp"
-#include "memory/metaspace/msChunklevel.hpp"
+#include "memory/metaspace/chunklevel.hpp"
 #include "runtime/os.hpp" // For os::random
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"

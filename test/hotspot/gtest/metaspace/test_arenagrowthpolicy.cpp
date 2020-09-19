@@ -26,8 +26,8 @@
 #include "precompiled.hpp"
 
 #include "memory/metaspace.hpp"
-#include "memory/metaspace/msArenaGrowthPolicy.hpp"
-#include "memory/metaspace/msChunklevel.hpp"
+#include "memory/metaspace/chunklevel.hpp"
+#include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"

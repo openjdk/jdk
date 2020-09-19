@@ -25,9 +25,9 @@
 
 #include "precompiled.hpp"
 
-#include "memory/metaspace/msCounter.hpp"
-#include "memory/metaspace/msFreeChunkList.hpp"
-#include "memory/metaspace/msMetachunkList.hpp"
+#include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/freeChunkList.hpp"
+#include "memory/metaspace/metachunkList.hpp"
 
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"

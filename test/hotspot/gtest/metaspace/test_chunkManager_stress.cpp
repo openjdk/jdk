@@ -25,9 +25,9 @@
 
 #include "precompiled.hpp"
 
-#include "memory/metaspace/msChunkManager.hpp"
-#include "memory/metaspace/msSettings.hpp"
-#include "memory/metaspace/msVirtualSpaceList.hpp"
+#include "memory/metaspace/chunkManager.hpp"
+#include "memory/metaspace/metaspaceSettings.hpp"
+#include "memory/metaspace/virtualSpaceList.hpp"
 
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"

@@ -25,8 +25,8 @@
 
 #include "precompiled.hpp"
 
-#include "memory/metaspace/msBinList.hpp"
-#include "memory/metaspace/msCounter.hpp"
+#include "memory/metaspace/binList.hpp"
+#include "memory/metaspace/counters.hpp"
 
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
