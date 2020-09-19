@@ -138,10 +138,11 @@ module java.base {
         jdk.incubator.foreign;
     exports com.sun.security.ntlm to
         java.security.sasl;
-    exports jdk.internal to
+    exports jdk.internal to // for @HotSpotIntrinsicCandidate
         java.compiler,
         jdk.jfr,
         jdk.compiler,
+        jdk.incubator.vector,
         jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
@@ -196,6 +197,7 @@ module java.base {
         jdk.attach,
         jdk.charsets,
         jdk.compiler,
+        jdk.incubator.vector,
         jdk.jfr,
         jdk.jshell,
         jdk.nio.mapmode,
@@ -229,8 +231,11 @@ module java.base {
         jdk.management.agent;
     exports jdk.internal.vm.annotation to
         jdk.internal.vm.ci,
+        jdk.incubator.vector,
         jdk.incubator.foreign,
         jdk.unsupported;
+    exports jdk.internal.vm.vector to
+        jdk.incubator.vector;
     exports jdk.internal.util to
             jdk.incubator.foreign;
     exports jdk.internal.util.jar to

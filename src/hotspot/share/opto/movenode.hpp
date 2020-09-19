@@ -105,6 +105,7 @@ class MoveI2FNode : public Node {
   virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 class MoveL2DNode : public Node {
@@ -114,6 +115,7 @@ class MoveL2DNode : public Node {
   virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 class MoveF2INode : public Node {
@@ -123,6 +125,7 @@ class MoveF2INode : public Node {
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 class MoveD2LNode : public Node {
@@ -132,6 +135,7 @@ class MoveD2LNode : public Node {
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------BinaryNode-------------------------------------
