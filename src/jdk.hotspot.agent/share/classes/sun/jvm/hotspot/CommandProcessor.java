@@ -1220,7 +1220,7 @@ public class CommandProcessor {
                     }
                 } else if (t.countTokens() == 2) {
                     String name = t.nextToken();
-                    Integer value = Integer.valueOf(t.nextToken());
+                    int value = Integer.parseInt(t.nextToken());
                     db.addIntConstant(name, value);
                 }
             }
@@ -1243,7 +1243,7 @@ public class CommandProcessor {
                     }
                 } else if (t.countTokens() == 2) {
                     String name = t.nextToken();
-                    Long value = Long.valueOf(t.nextToken());
+                    long value = Long.parseLong(t.nextToken());
                     db.addLongConstant(name, value);
                 }
             }

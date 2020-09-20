@@ -690,16 +690,16 @@ public class JavacParser implements Parser {
             String proper = token.radix() == 16 ?
                     ("0x"+ token.stringVal()) :
                     token.stringVal();
-            Double n;
+            double n;
             try {
-                n = Double.valueOf(proper);
+                n = Double.parseDouble(proper);
             } catch (NumberFormatException ex) {
                 // error already reported in scanner
                 n = Double.NaN;
             }
-            if (n.doubleValue() == 0.0d && !isZero(proper))
+            if (n == 0.0d && !isZero(proper))
                 log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.FpNumberTooSmall);
-            else if (n.doubleValue() == Double.POSITIVE_INFINITY)
+            else if (n == Double.POSITIVE_INFINITY)
                 log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.FpNumberTooLarge);
             else
                 t = F.at(pos).Literal(TypeTag.DOUBLE, n);
