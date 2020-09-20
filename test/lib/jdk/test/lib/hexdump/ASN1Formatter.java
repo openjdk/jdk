@@ -36,16 +36,18 @@ import java.nio.file.Path;
 import java.util.Base64;
 
 /**
- * ASN.1 stream formatter; a debugging utility for visualizing the contents of ASN.1 streams.
+ * ASN.1 stream formatter; a debugging utility for visualizing the contents of an ASN.1 stream.
  * The ANS1Formatter can be used standalone by calling the {@link #annotate(DataInputStream)}
  * or {@link #annotate(DataInputStream, Appendable)} methods.
  * The ASN1Formatter implements the Formatter interface so it can be used
  * with the {@code HexPrinter} as a formatter to display the ASN.1 tagged values
  * with the corresponding bytes.
  * <p>
- * The formatter reads the sequence of tagged items in the stream and prints
- * a description of each tag and contents.  Generally, each tagged value is printed on
- * a separate line. For constructed and application tags the nested tagged values are indented.
+ * The formatter reads a single tag from the stream and prints a description
+ * of the tag and its contents. If the tag is a constructed tag, set or sequence,
+ * each of the contained tags is read and printed.
+ * Generally, each tagged value is printed on a separate line. For constructed and application
+ * tags the nested tagged values are indented.
  * There are few consistency checks and an improperly encoded stream may produce
  * unpredictable output.
  * <p>
@@ -78,7 +80,6 @@ import java.util.Base64;
  *             InputStream wis = Base64.getMimeDecoder().wrap(certStream);
  *
  *             HexPrinter p = HexPrinter.simple()
- *                                  .withOffsetFormat("%04x: ")
  *                                  .formatter(ASN1Formatter.formatter(), "; ", 100);
  *             String result = p.toString(wis);
  *             System.out.println(result);
@@ -96,6 +97,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
     public static ASN1Formatter formatter() {
         return new ASN1Formatter();
     }
+
     /**
      * Create a ANS1Formatter.
      */
@@ -104,6 +106,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
 
     /**
      * Read bytes from the stream and annotate the stream as an ASN.1 stream.
+     * A single well formed tagged-value is read and annotated.
      *
      * @param in  a DataInputStream
      * @throws IOException if an I/O error occurs
@@ -119,6 +122,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
 
     /**
      * Read bytes from the stream and annotate the stream as a ASN.1.
+     * A single well formed tagged-value is read and annotated.
      *
      * @param in  a DataInputStream
      * @param out an Appendable for the output
@@ -138,7 +142,9 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @throws IOException if an I/O error occurs
      */
     private int annotate(DataInputStream in, Appendable out, int available, String prefix) throws IOException {
+        int origAvailable = available;
         while (available != 0) {
+//            System.out.println(prefix + "avail: " + available);
             // Read the tag
             int tag = in.readByte() & 0xff;
             available--;
@@ -160,29 +166,30 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 int nbytes = len & 0x7f;
                 if (nbytes > 4) {
                     out.append("***** Tag: " + tagName(tag) +
-                            ", Range of length error: " + len + "bytes. Attempting to continue");
-                    continue;
+                            ", Range of length error: " + len + "bytes");
+                    return available;       // return the unread length
                 }
-                if (nbytes == 0) {
-                    len = -1;       // indefinite length
-                } else {
-                    len = 0;
-                    for (; nbytes > 0; nbytes--) {
-                        int inc = in.readByte() & 0xff;
-                        len = (len << 8) | (0xff & inc);
-                        available -= nbytes;
-                    }
+                len = 0;
+                for (; nbytes > 0; nbytes--) {
+                    int inc = in.readByte() & 0xff;
+                    len = (len << 8) | (0xff & inc);
+                    available -= nbytes;
                 }
             } else if (len == 0x80) {
                 // Tag with Indefinite-length; note the tag and continue parsing tags.
                 out.append(prefix).append(tagName(tag)).append(": INDEFINITE-LENGTH CONTENT\n");
                 continue;
             }
+            if (available < 0 && origAvailable < 0) {
+                // started out unknown; set available to the length of this tagged value
+                available = len;
+            }
             out.append(prefix);     // start with indent
             switch (tag) {
-                case TAG_EndOfContent:     // End-of-contents octets; len == 0
+                case TAG_EndOfContent:    // End-of-contents octets; len == 0
                     out.append("END-OF-CONTENT ");
-                    break;
+                    // end of indefinite-length constructed, return any remaining
+                    return available;
                 case TAG_Integer:
                 case TAG_Enumerated:
                     switch (len) {

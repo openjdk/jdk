@@ -264,7 +264,7 @@ public final class HexPrinter {
      * to a multi-line string.
      * The parameters are set to:
      * <UL>
-     * <LI>byte offset format: hexadecimal width 7 and a space, {@code "%04x: "},
+     * <LI>byte offset format: hexadecimal width 4, colon, and a space, {@code "%04x: "},
      * <LI>each byte value is formatted as 2 hex digits and a space: {@code "%02x "},
      * <LI>maximum number of byte values per line: {@value initBytesCount},
      * <LI>delimiter for the annotation: {@code " // "},
