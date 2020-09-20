@@ -3710,6 +3710,10 @@ public abstract class JComponent extends Container implements Serializable,
          */
         protected class AccessibleContainerHandler
             implements ContainerListener {
+            /**
+             * Constructor for subclasses to call.
+             */
+            protected AccessibleContainerHandler() {}
             public void componentAdded(ContainerEvent e) {
                 Component c = e.getChild();
                 if (c != null && c instanceof Accessible) {
@@ -3738,6 +3742,10 @@ public abstract class JComponent extends Container implements Serializable,
          */
         @Deprecated
         protected class AccessibleFocusHandler implements FocusListener {
+           /**
+            * Constructor for subclasses to call.
+            */
+           protected AccessibleFocusHandler() {}
            public void focusGained(FocusEvent event) {
                if (accessibleContext != null) {
                     accessibleContext.firePropertyChange(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class bug7154841 {
 
     private static void initAndShowUI() {
         popupMenu = new JPopupMenu();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 400; i++) {
             JRadioButtonMenuItem item = new JRadioButtonMenuItem(" Test " + i);
             item.addMouseMotionListener(new MouseMotionAdapter() {
                 @Override

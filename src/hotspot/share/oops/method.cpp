@@ -40,6 +40,7 @@
 #include "logging/logTag.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/cppVtables.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -2303,7 +2304,7 @@ bool Method::is_valid_method(const Method* m) {
     // Quick sanity check on pointer.
     return false;
   } else if (m->is_shared()) {
-    return MetaspaceShared::is_valid_shared_method(m);
+    return CppVtables::is_valid_shared_method(m);
   } else if (Metaspace::contains_non_shared(m)) {
     return has_method_vptr((const void*)m);
   } else {

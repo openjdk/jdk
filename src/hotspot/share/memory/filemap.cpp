@@ -50,6 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
@@ -218,6 +219,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _max_heap_size = MaxHeapSize;
   _narrow_klass_shift = CompressedKlassPointers::shift();
   _use_optimized_module_handling = MetaspaceShared::use_optimized_module_handling();
+  _use_full_module_graph = MetaspaceShared::use_full_module_graph();
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -1845,6 +1847,7 @@ void FileMapInfo::map_heap_regions() {
 
   if (!HeapShared::open_archive_heap_region_mapped()) {
     assert(open_archive_heap_ranges == NULL && num_open_archive_heap_ranges == 0, "sanity");
+    MetaspaceShared::disable_full_module_graph();
   }
 }
 
@@ -2179,7 +2182,12 @@ bool FileMapHeader::validate() {
 
   if (!_use_optimized_module_handling) {
     MetaspaceShared::disable_optimized_module_handling();
-    log_info(cds)("use_optimized_module_handling disabled: archive was created without optimized module handling");
+    log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
+  }
+
+  if (!_use_full_module_graph) {
+    MetaspaceShared::disable_full_module_graph();
+    log_info(cds)("full module graph: disabled because archive was created without full module graph");
   }
 
   return true;

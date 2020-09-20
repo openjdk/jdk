@@ -302,6 +302,11 @@ public class JButton extends AbstractButton implements Accessible {
     protected class AccessibleJButton extends AccessibleAbstractButton {
 
         /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJButton() {}
+
+        /**
          * Get the role of this object.
          *
          * @return an instance of AccessibleRole describing the role of the

@@ -1012,6 +1012,11 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
         implements AccessibleValue {
 
         /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJProgressBar() {}
+
+        /**
          * Gets the state set of this object.
          *
          * @return an instance of AccessibleState containing the current state

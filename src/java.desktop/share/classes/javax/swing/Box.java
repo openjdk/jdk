@@ -316,6 +316,7 @@ public class Box extends JComponent implements Accessible {
             setMinimumSize(min);
             setPreferredSize(pref);
             setMaximumSize(max);
+            setFocusable(false);
         }
 
         /**
@@ -383,6 +384,11 @@ public class Box extends JComponent implements Accessible {
          */
         @SuppressWarnings("serial")
         protected class AccessibleBoxFiller extends AccessibleAWTComponent {
+            /**
+             * Constructor for subclasses to call.
+             */
+            protected AccessibleBoxFiller() {}
+
             // AccessibleContext methods
             //
             /**
@@ -425,6 +431,11 @@ public class Box extends JComponent implements Accessible {
      */
     @SuppressWarnings("serial")
     protected class AccessibleBox extends AccessibleAWTContainer {
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleBox() {}
+
         // AccessibleContext methods
         //
         /**
