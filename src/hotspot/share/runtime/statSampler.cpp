@@ -173,8 +173,8 @@ void StatSampler::collect_sample() {
 }
 
 /*
- * method to upcall into Java to check the value of the specified
- * property as a utf8 string, or NULL if does not exist.
+ * Call into java.lang.System.getProperty to check that the value of the
+ * specified property matches
  */
 void StatSampler::assert_system_property(const char* name, const char* value, TRAPS) {
 #ifdef ASSERT
@@ -226,14 +226,12 @@ static const char* stable_java_property_counters[] = {
 };
 
 /*
- * Adds the constant instrument for a property. Asserts if the
- * value for the system property differs from what's in System.props
+ * Adds a constant counter of the given property. Asserts if the value for the
+ * system property differs from the value retrievable from System.getProperty
  */
 void StatSampler::add_property_constant(CounterNS name_space, const char* name, const char* value, TRAPS) {
   // the property must exist
   assert(value != NULL, "property name should be have a value: %s", name);
-  // the property value must not have changed compared to what's published
-  // in System.props
   assert_system_property(name, value, CHECK);
   if (value != NULL) {
     // create the property counter
