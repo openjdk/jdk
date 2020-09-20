@@ -233,9 +233,7 @@ public class LinuxHelper {
                         "Installed-Size"));
 
             case LINUX_RPM:
-                String size = getRpmBundleProperty(packageFile, "Size");
-                return (Long.parseLong(size) + 1023L) >> 10; // in KB rounded up
-
+                return Long.parseLong(getRpmBundleProperty(packageFile, "Size")) >> 10;
         }
 
         return 0;
@@ -256,10 +254,10 @@ public class LinuxHelper {
 
     static void verifyPackageBundleEssential(JPackageCommand cmd) {
         String packageName = LinuxHelper.getPackageName(cmd);
-        Long packageSize = LinuxHelper.getInstalledPackageSizeKB(cmd);
-        TKit.trace("InstalledPackageSize: " + packageSize);
-        TKit.assertNotEquals(0L, packageSize, String.format(
-                "Check installed size of [%s] package in not zero", packageName));
+        TKit.assertNotEquals(0L, LinuxHelper.getInstalledPackageSizeKB(
+                cmd), String.format(
+                        "Check installed size of [%s] package in KB is not zero",
+                        packageName));
 
         final boolean checkPrerequisites;
         if (cmd.isRuntime()) {
@@ -272,9 +270,7 @@ public class LinuxHelper {
             checkPrerequisites = expectedCriticalRuntimePaths.equals(
                     actualCriticalRuntimePaths);
         } else {
-            // AppImagePackageTest.testEmpty() will no dependencied,
-            // but have more then 0 and less than 1K content size.
-            checkPrerequisites = packageSize > 1;
+            checkPrerequisites = true;
         }
 
         List<String> prerequisites = LinuxHelper.getPrerequisitePackages(cmd);

@@ -23,7 +23,6 @@
 
 import java.nio.file.Path;
 import java.nio.file.Files;
-import java.io.BufferedWriter;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
@@ -74,18 +73,19 @@ public class AppImagePackageTest {
 
         try {
             Path dir = Files.createDirectory(appImageDir);
-            Files.createDirectory(dir.resolve("bin"));
-            Path libdir = Files.createDirectory(dir.resolve("lib"));
-            Path readme = Files.createFile(libdir.resolve("README"));
-            try (BufferedWriter bw = Files.newBufferedWriter(readme)) {
-                bw.write("This is some arbitrary ext for the README file\n");
-            }
-            TKit.trace("Created README file: " + readme);
+            Path file = Files.createFile(appImageDir.resolve("README"));
+            TKit.trace("Created empty file: " + file);
         } catch (Exception e) {
             TKit.trace("Exception creating README file: " + e);
         }
 
+        PackageTest packageTest = new PackageTest();
+
+        // not supported yet
+        packageTest.excludeTypes(PackageType.LINUX_RPM);
+
         new PackageTest()
+        .excludeTypes(PackageType.LINUX_RPM)
         .addInitializer(cmd -> {
             cmd.addArguments("--app-image", appImageDir);
             cmd.removeArgumentWithValue("--input");
