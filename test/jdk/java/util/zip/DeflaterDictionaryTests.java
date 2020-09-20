@@ -49,6 +49,9 @@ public class DeflaterDictionaryTests {
             +"Welcome to US Open;";
     // Dictionary to be used
     private static final String DICTIONARY = "US Open";
+    private static final int DICTIONARY_OFFSET = 1;
+    private static final int DICTIONARY_LENGTH = 3;
+
 
     /**
      * Validate that an offset can be used with Deflater::setDictionary
@@ -60,7 +63,7 @@ public class DeflaterDictionaryTests {
         byte[] output = new byte[RESULT_SIZE];
         // Compress the bytes
         Deflater deflater = new Deflater();
-        deflater.setDictionary(DICTIONARY.getBytes(UTF_8), 1, 3);
+        deflater.setDictionary(DICTIONARY.getBytes(UTF_8), DICTIONARY_OFFSET, DICTIONARY_LENGTH);
         deflater.setInput(input);
         deflater.finish();
         int compressedDataLength = deflater.deflate(output,0 , output.length, Deflater.NO_FLUSH);
@@ -76,7 +79,7 @@ public class DeflaterDictionaryTests {
         int resultLength = inflater.inflate(result);
         if(inflater.needsDictionary()) {
             System.out.println("Specifying Dictionary");
-            inflater.setDictionary(DICTIONARY.getBytes(UTF_8), 1, 3);
+            inflater.setDictionary(DICTIONARY.getBytes(UTF_8), DICTIONARY_OFFSET, DICTIONARY_LENGTH);
             resultLength = inflater.inflate(result);
         } else {
             System.out.println("Did not need to use a Dictionary");
@@ -102,8 +105,8 @@ public class DeflaterDictionaryTests {
         byte[] input = SRC_DATA.getBytes(UTF_8);
         byte[] output = new byte[RESULT_SIZE];
         // Compress the bytes
-        ByteBuffer dictDef = ByteBuffer.wrap(DICTIONARY.getBytes(UTF_8), 1, 3);
-        ByteBuffer dictInf = ByteBuffer.wrap(DICTIONARY.getBytes(UTF_8), 1, 3);
+        ByteBuffer dictDef = ByteBuffer.wrap(DICTIONARY.getBytes(UTF_8), DICTIONARY_OFFSET, DICTIONARY_LENGTH);
+        ByteBuffer dictInf = ByteBuffer.wrap(DICTIONARY.getBytes(UTF_8), DICTIONARY_OFFSET, DICTIONARY_LENGTH);
         Deflater deflater = new Deflater();
         deflater.setDictionary(dictDef);
         deflater.setInput(input);
@@ -149,10 +152,14 @@ public class DeflaterDictionaryTests {
         // Compress the bytes
         ByteBuffer dictDef = ByteBuffer.allocateDirect(DICTIONARY.length());
         ByteBuffer dictInf = ByteBuffer.allocateDirect(DICTIONARY.length());
-        dictDef.put(DICTIONARY.getBytes(UTF_8), 1, 3);
-        dictInf.put(DICTIONARY.getBytes(UTF_8), 1, 3);
+        dictDef.put(DICTIONARY.getBytes(UTF_8));
+        dictInf.put(DICTIONARY.getBytes(UTF_8));
+        dictDef.position(DICTIONARY_OFFSET);
+        dictDef.limit(DICTIONARY_LENGTH);
+        dictInf.position(DICTIONARY_OFFSET);
+        dictInf.limit(DICTIONARY_LENGTH);
         Deflater deflater = new Deflater();
-        deflater.setDictionary(dictDef);
+        deflater.setDictionary(dictDef.slice());
         deflater.setInput(input);
         deflater.finish();
         int compressedDataLength = deflater.deflate(output,0 , output.length, Deflater.NO_FLUSH);
@@ -168,7 +175,7 @@ public class DeflaterDictionaryTests {
         int resultLength = inflater.inflate(result);
         if(inflater.needsDictionary()){
             System.out.println("Specifying Dictionary");
-            inflater.setDictionary(dictInf);
+            inflater.setDictionary(dictInf.slice());
             resultLength = inflater.inflate(result);
         } else {
             System.out.println("Did not need to use a Dictionary");
