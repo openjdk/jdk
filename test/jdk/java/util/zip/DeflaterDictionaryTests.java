@@ -102,8 +102,8 @@ public class DeflaterDictionaryTests {
         byte[] input = SRC_DATA.getBytes(UTF_8);
         byte[] output = new byte[RESULT_SIZE];
         // Compress the bytes
-        ByteBuffer dictDef = ByteBuffer.wrap(DICTIONARY.getBytes(UTF_8));
-        ByteBuffer dictInf = ByteBuffer.wrap(DICTIONARY.getBytes(UTF_8));
+        ByteBuffer dictDef = ByteBuffer.wrap(DICTIONARY.getBytes(UTF_8), 1, 3);
+        ByteBuffer dictInf = ByteBuffer.wrap(DICTIONARY.getBytes(UTF_8), 1, 3);
         Deflater deflater = new Deflater();
         deflater.setDictionary(dictDef);
         deflater.setInput(input);
@@ -149,6 +149,8 @@ public class DeflaterDictionaryTests {
         // Compress the bytes
         ByteBuffer dictDef = ByteBuffer.allocateDirect(DICTIONARY.length());
         ByteBuffer dictInf = ByteBuffer.allocateDirect(DICTIONARY.length());
+        dictDef.put(DICTIONARY.getBytes(UTF_8), 1, 3);
+        dictInf.put(DICTIONARY.getBytes(UTF_8), 1, 3);
         Deflater deflater = new Deflater();
         deflater.setDictionary(dictDef);
         deflater.setInput(input);
