@@ -22,9 +22,13 @@
  */
 
 import java.nio.file.Path;
+import java.nio.file.Files;
+import java.io.BufferedWriter;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.Annotations.Test;
 
 /**
@@ -60,5 +64,38 @@ public class AppImagePackageTest {
             cmd.addArguments("--app-image", appImageCmd.outputBundle());
             cmd.removeArgumentWithValue("--input");
         }).addBundleDesktopIntegrationVerifier(false).run();
+    }
+
+    @Test
+    public static void testEmpty() {
+        final String name = "EmptyAppImagePackageTest";
+        final String imageName = name + (TKit.isOSX() ? ".app" : "");
+        Path appImageDir = TKit.workDir().resolve(imageName);
+
+        try {
+            Path dir = Files.createDirectory(appImageDir);
+            Files.createDirectory(dir.resolve("bin"));
+            Path libdir = Files.createDirectory(dir.resolve("lib"));
+            Path readme = Files.createFile(libdir.resolve("README"));
+            try (BufferedWriter bw = Files.newBufferedWriter(readme)) {
+                bw.write("This is some arbitrary ext for the README file\n");
+            }
+            TKit.trace("Created README file: " + readme);
+        } catch (Exception e) {
+            TKit.trace("Exception creating README file: " + e);
+        }
+
+        new PackageTest()
+        .addInitializer(cmd -> {
+            cmd.addArguments("--app-image", appImageDir);
+            cmd.removeArgumentWithValue("--input");
+
+            // on mac, with --app-image and without --mac-package-identifier,
+            // we will try to infer it from the image, so forign image needs it.
+            if (TKit.isOSX()) {
+                cmd.addArguments("--mac-package-identifier", name);
+            }
+        }).run(new Action[] { Action.CREATE, Action.UNPACK });
+        // default: {CREATE, UNPACK, VERIFY}, but we can't verify forign payload
     }
 }
