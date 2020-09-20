@@ -351,7 +351,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
     // os::reserve_memory() -> pd_reserve_memory() -> os::reserve_memory()
     // See JDK-8198226.
     if (reserved_rgn->same_region(base_addr, size) &&
-        reserved_rgn->flag() == flag) {
+        (reserved_rgn->flag() == flag || reserved_rgn->flag() == mtNone)) {
       reserved_rgn->set_call_stack(stack);
       reserved_rgn->set_flag(flag);
       return true;
