@@ -85,11 +85,11 @@ HeapRegionManager* HeapRegionManager::create_manager(G1CollectedHeap* heap) {
 }
 
 void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
-                               G1RegionToSpaceMapper* prev_bitmap,
-                               G1RegionToSpaceMapper* next_bitmap,
-                               G1RegionToSpaceMapper* bot,
-                               G1RegionToSpaceMapper* cardtable,
-                               G1RegionToSpaceMapper* card_counts) {
+                                   G1RegionToSpaceMapper* prev_bitmap,
+                                   G1RegionToSpaceMapper* next_bitmap,
+                                   G1RegionToSpaceMapper* bot,
+                                   G1RegionToSpaceMapper* cardtable,
+                                   G1RegionToSpaceMapper* card_counts) {
   _allocated_heapregions_length = 0;
 
   _heap_mapper = heap_storage;
@@ -184,7 +184,8 @@ HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
 
 void HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkGang* pretouch_gang) {
   guarantee(num_regions > 0, "Must commit more than zero regions");
-  guarantee(_num_committed + num_regions <= max_length(), "Cannot commit more than the maximum amount of regions");
+  guarantee(num_regions <= available(),
+            "Cannot commit more than the maximum amount of regions");
 
   _num_committed += (uint)num_regions;
 
@@ -321,16 +322,19 @@ void HeapRegionManager::expand_exact(uint start, uint num_regions, WorkGang* pre
 
 uint HeapRegionManager::expand_on_preferred_node(uint preferred_index) {
   uint expand_candidate = UINT_MAX;
-  for (uint i = 0; i < max_length(); i++) {
-    if (is_available(i)) {
-      // Already in use continue
-      continue;
-    }
-    // Always save the candidate so we can expand later on.
-    expand_candidate = i;
-    if (is_on_preferred_index(expand_candidate, preferred_index)) {
-      // We have found a candidate on the preffered node, break.
-      break;
+
+  if (available() >= 1) {
+    for (uint i = 0; i < reserved_length(); i++) {
+      if (is_available(i)) {
+        // Already in use continue
+        continue;
+      }
+      // Always save the candidate so we can expand later on.
+      expand_candidate = i;
+      if (is_on_preferred_index(expand_candidate, preferred_index)) {
+        // We have found a candidate on the preferred node, break.
+        break;
+      }
     }
   }
 
@@ -397,14 +401,18 @@ uint HeapRegionManager::find_contiguous_in_free_list(uint num_regions) {
     range_start = _available_map.get_next_one_offset(range_end);
     range_end = _available_map.get_next_zero_offset(range_start);
     candidate = find_contiguous_in_range((uint) range_start, (uint) range_end, num_regions);
-  } while (candidate == G1_NO_HRM_INDEX && range_end < max_length());
+  } while (candidate == G1_NO_HRM_INDEX && range_end < reserved_length());
 
   return candidate;
 }
 
 uint HeapRegionManager::find_contiguous_allow_expand(uint num_regions) {
+  // Check if we can actually satisfy the allocation.
+  if (num_regions > available()) {
+    return G1_NO_HRM_INDEX;
+  }
   // Find any candidate.
-  return find_contiguous_in_range(0, max_length(), num_regions);
+  return find_contiguous_in_range(0, reserved_length(), num_regions);
 }
 
 HeapRegion* HeapRegionManager::next_region_in_heap(const HeapRegion* r) const {
@@ -420,7 +428,7 @@ HeapRegion* HeapRegionManager::next_region_in_heap(const HeapRegion* r) const {
 }
 
 void HeapRegionManager::iterate(HeapRegionClosure* blk) const {
-  uint len = max_length();
+  uint len = reserved_length();
 
   for (uint i = 0; i < len; i++) {
     if (!is_available(i)) {
@@ -436,13 +444,13 @@ void HeapRegionManager::iterate(HeapRegionClosure* blk) const {
 }
 
 HeapRegionRange HeapRegionManager::find_unavailable_from_idx(uint index) const {
-  guarantee(index <= max_length(), "checking");
+  guarantee(index <= reserved_length(), "checking");
 
   // Find first unavailable region from offset.
   BitMap::idx_t start = _available_map.get_next_zero_offset(index);
   if (start == _available_map.size()) {
     // No unavailable regions found.
-    return HeapRegionRange(max_length(), max_length());
+    return HeapRegionRange(reserved_length(), reserved_length());
   }
 
   // The end of the range is the next available region.
@@ -452,22 +460,25 @@ HeapRegionRange HeapRegionManager::find_unavailable_from_idx(uint index) const {
   assert(!_available_map.at(end - 1), "Last region (" SIZE_FORMAT ") in range is not unavailable", end - 1);
   assert(end == _available_map.size() || _available_map.at(end), "Region (" SIZE_FORMAT ") is not available", end);
 
+  // Shrink returned range to number of regions left to commit if necessary.
+  end = MIN2(start + available(), end);
   return HeapRegionRange((uint) start, (uint) end);
 }
 
 uint HeapRegionManager::find_highest_free(bool* expanded) {
   // Loop downwards from the highest region index, looking for an
   // entry which is either free or not yet committed.  If not yet
-  // committed, expand_at that index.
-  uint curr = max_length() - 1;
+  // committed, expand at that index.
+  uint curr = reserved_length() - 1;
   while (true) {
     HeapRegion *hr = _regions.get_by_index(curr);
     if (hr == NULL || !is_available(curr)) {
-      uint res = expand_at(curr, 1, NULL);
-      if (res == 1) {
-        *expanded = true;
-        return curr;
-      }
+      // Found uncommitted and free region, expand to make it available for use.
+      expand_exact(curr, 1, NULL);
+      assert(at(curr)->is_free(), "Region (%u) must be available and free after expand", curr);
+
+      *expanded = true;
+      return curr;
     } else {
       if (hr->is_free()) {
         *expanded = false;
@@ -491,7 +502,7 @@ bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* com
   for (uint curr_index = start_index; curr_index <= last_index; curr_index++) {
     if (!is_available(curr_index)) {
       commits++;
-      expand_at(curr_index, 1, pretouch_workers);
+      expand_exact(curr_index, 1, pretouch_workers);
     }
     HeapRegion* curr_region  = _regions.get_by_index(curr_index);
     if (!curr_region->is_free()) {
@@ -611,9 +622,12 @@ void HeapRegionManager::verify() {
   guarantee(length() <= _allocated_heapregions_length,
             "invariant: _length: %u _allocated_length: %u",
             length(), _allocated_heapregions_length);
-  guarantee(_allocated_heapregions_length <= max_length(),
+  guarantee(_allocated_heapregions_length <= reserved_length(),
             "invariant: _allocated_length: %u _max_length: %u",
-            _allocated_heapregions_length, max_length());
+            _allocated_heapregions_length, reserved_length());
+  guarantee(_num_committed <= max_length(),
+            "invariant: _num_committed: %u max_regions: %u",
+            _num_committed, max_length());
 
   bool prev_committed = true;
   uint num_committed = 0;
@@ -640,7 +654,7 @@ void HeapRegionManager::verify() {
     prev_committed = true;
     prev_end = hr->end();
   }
-  for (uint i = _allocated_heapregions_length; i < max_length(); i++) {
+  for (uint i = _allocated_heapregions_length; i < reserved_length(); i++) {
     guarantee(_regions.get_by_index(i) == NULL, "invariant i: %u", i);
   }
 
@@ -693,7 +707,7 @@ public:
       AbstractGangTask("G1 Rebuild Free List Task"),
       _hrm(hrm),
       _worker_freelists(NEW_C_HEAP_ARRAY(FreeRegionList, num_workers, mtGC)),
-      _worker_chunk_size((_hrm->max_length() + num_workers - 1) / num_workers),
+      _worker_chunk_size((_hrm->reserved_length() + num_workers - 1) / num_workers),
       _num_workers(num_workers) {
     for (uint worker = 0; worker < _num_workers; worker++) {
       ::new (&_worker_freelists[worker]) FreeRegionList("Appendable Worker Free List");
@@ -718,7 +732,7 @@ public:
     EventGCPhaseParallel event;
 
     uint start = worker_id * _worker_chunk_size;
-    uint end = MIN2(start + _worker_chunk_size, _hrm->max_length());
+    uint end = MIN2(start + _worker_chunk_size, _hrm->reserved_length());
 
     // If start is outside the heap, this worker has nothing to do.
     if (start > end) {

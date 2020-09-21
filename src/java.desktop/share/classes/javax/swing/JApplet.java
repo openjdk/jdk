@@ -566,6 +566,11 @@ public class JApplet extends Applet implements Accessible,
      * <code>JApplet</code> class.
      */
     protected class AccessibleJApplet extends AccessibleApplet {
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJApplet() {}
+
         // everything moved to new parent, AccessibleApplet
     }
 }

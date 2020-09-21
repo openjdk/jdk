@@ -38,6 +38,7 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1SharedDirtyCardQueue.hpp"
+#include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
@@ -86,7 +87,7 @@
 class G1RemSetScanState : public CHeapObj<mtGC> {
   class G1DirtyRegions;
 
-  size_t _max_regions;
+  size_t _max_reserved_regions;
 
   // Has this region that is part of the regions in the collection set been processed yet.
   typedef bool G1RemsetIterState;
@@ -141,16 +142,16 @@ private:
   class G1DirtyRegions : public CHeapObj<mtGC> {
     uint* _buffer;
     uint _cur_idx;
-    size_t _max_regions;
+    size_t _max_reserved_regions;
 
     bool* _contains;
 
   public:
-    G1DirtyRegions(size_t max_regions) :
-      _buffer(NEW_C_HEAP_ARRAY(uint, max_regions, mtGC)),
+    G1DirtyRegions(size_t max_reserved_regions) :
+      _buffer(NEW_C_HEAP_ARRAY(uint, max_reserved_regions, mtGC)),
       _cur_idx(0),
-      _max_regions(max_regions),
-      _contains(NEW_C_HEAP_ARRAY(bool, max_regions, mtGC)) {
+      _max_reserved_regions(max_reserved_regions),
+      _contains(NEW_C_HEAP_ARRAY(bool, max_reserved_regions, mtGC)) {
 
       reset();
     }
@@ -164,7 +165,7 @@ private:
 
     void reset() {
       _cur_idx = 0;
-      ::memset(_contains, false, _max_regions * sizeof(bool));
+      ::memset(_contains, false, _max_reserved_regions * sizeof(bool));
     }
 
     uint size() const { return _cur_idx; }
@@ -273,7 +274,7 @@ private:
 
 public:
   G1RemSetScanState() :
-    _max_regions(0),
+    _max_reserved_regions(0),
     _collection_set_iter_state(NULL),
     _card_table_scan_state(NULL),
     _scan_chunks_per_region(get_chunks_per_region(HeapRegion::LogOfHRGrainBytes)),
@@ -293,16 +294,16 @@ public:
     FREE_C_HEAP_ARRAY(HeapWord*, _scan_top);
   }
 
-  void initialize(size_t max_regions) {
+  void initialize(size_t max_reserved_regions) {
     assert(_collection_set_iter_state == NULL, "Must not be initialized twice");
-    _max_regions = max_regions;
-    _collection_set_iter_state = NEW_C_HEAP_ARRAY(G1RemsetIterState, max_regions, mtGC);
-    _card_table_scan_state = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
-    _num_total_scan_chunks = max_regions * _scan_chunks_per_region;
+    _max_reserved_regions = max_reserved_regions;
+    _collection_set_iter_state = NEW_C_HEAP_ARRAY(G1RemsetIterState, max_reserved_regions, mtGC);
+    _card_table_scan_state = NEW_C_HEAP_ARRAY(uint, max_reserved_regions, mtGC);
+    _num_total_scan_chunks = max_reserved_regions * _scan_chunks_per_region;
     _region_scan_chunks = NEW_C_HEAP_ARRAY(bool, _num_total_scan_chunks, mtGC);
 
     _scan_chunks_shift = (uint8_t)log2_intptr(HeapRegion::CardsPerRegion / _scan_chunks_per_region);
-    _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_regions, mtGC);
+    _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_reserved_regions, mtGC);
   }
 
   void prepare() {
@@ -310,20 +311,20 @@ public:
     // regions currently not available or free. Since regions might
     // become used during the collection these values must be valid
     // for those regions as well.
-    for (size_t i = 0; i < _max_regions; i++) {
+    for (size_t i = 0; i < _max_reserved_regions; i++) {
       reset_region_claim((uint)i);
       clear_scan_top((uint)i);
     }
 
-    _all_dirty_regions = new G1DirtyRegions(_max_regions);
-    _next_dirty_regions = new G1DirtyRegions(_max_regions);
+    _all_dirty_regions = new G1DirtyRegions(_max_reserved_regions);
+    _next_dirty_regions = new G1DirtyRegions(_max_reserved_regions);
   }
 
   void prepare_for_merge_heap_roots() {
     _all_dirty_regions->merge(_next_dirty_regions);
 
     _next_dirty_regions->reset();
-    for (size_t i = 0; i < _max_regions; i++) {
+    for (size_t i = 0; i < _max_reserved_regions; i++) {
       _card_table_scan_state[i] = 0;
     }
 
@@ -416,7 +417,7 @@ public:
   // Attempt to claim the given region in the collection set for iteration. Returns true
   // if this call caused the transition from Unclaimed to Claimed.
   inline bool claim_collection_set_region(uint region) {
-    assert(region < _max_regions, "Tried to access invalid region %u", region);
+    assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
     if (_collection_set_iter_state[region]) {
       return false;
     }
@@ -424,12 +425,12 @@ public:
   }
 
   bool has_cards_to_scan(uint region) {
-    assert(region < _max_regions, "Tried to access invalid region %u", region);
+    assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
     return _card_table_scan_state[region] < HeapRegion::CardsPerRegion;
   }
 
   uint claim_cards_to_scan(uint region, uint increment) {
-    assert(region < _max_regions, "Tried to access invalid region %u", region);
+    assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
     return Atomic::fetch_and_add(&_card_table_scan_state[region], increment);
   }
 
@@ -481,13 +482,8 @@ G1RemSet::~G1RemSet() {
   delete _scan_state;
 }
 
-uint G1RemSet::num_par_rem_sets() {
-  return G1DirtyCardQueueSet::num_par_ids() + G1ConcurrentRefine::max_num_threads() + MAX2(ConcGCThreads, ParallelGCThreads);
-}
-
-void G1RemSet::initialize(uint max_regions) {
-  G1FromCardCache::initialize(num_par_rem_sets(), max_regions);
-  _scan_state->initialize(max_regions);
+void G1RemSet::initialize(uint max_reserved_regions) {
+  _scan_state->initialize(max_reserved_regions);
 }
 
 // Helper class to scan and detect ranges of cards that need to be scanned on the

@@ -478,7 +478,6 @@ class Arguments : AllStatic {
   // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
   // Return NULL if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
-  static bool lookup_logging_aliases(const char* arg, char* buffer);
   static AliasedLoggingFlag catch_logging_aliases(const char* name, bool on);
 
   static char*  SharedArchivePath;
@@ -503,8 +502,6 @@ class Arguments : AllStatic {
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
 
-  // Check for consistency in the selection of the garbage collector.
-  static bool check_gc_consistency();        // Check user-selected gc
   // Check consistency or otherwise of VM argument settings
   static bool check_vm_args_consistency();
   // Used by os_solaris

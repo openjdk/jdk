@@ -356,10 +356,6 @@ class SharedRuntime: AllStatic {
 
   static Method* extract_attached_method(vframeStream& vfst);
 
-  static address clean_virtual_call_entry();
-  static address clean_opt_virtual_call_entry();
-  static address clean_static_call_entry();
-
 #if defined(X86) && defined(COMPILER1)
   // For Object.hashCode, System.identityHashCode try to pull hashCode from object header if available.
   static void inline_check_hashcode_from_object_header(MacroAssembler* masm, const methodHandle& method, Register obj_reg, Register result);

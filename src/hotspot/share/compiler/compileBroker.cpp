@@ -50,6 +50,7 @@
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -601,19 +602,16 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
   ResourceMark rm;
   static bool first_registration = true;
   if (compiler_type == compiler_jvmci) {
-    // register serializer, phases will be added later lazily.
-    GrowableArray<const char*>* jvmci_phase_names = new GrowableArray<const char*>(1);
-    jvmci_phase_names->append("NOT_A_PHASE_NAME");
-    CompilerEvent::PhaseEvent::register_phases(jvmci_phase_names);
+    CompilerEvent::PhaseEvent::get_phase_id("NOT_A_PHASE_NAME", false, false, false);
     first_registration = false;
 #ifdef COMPILER2
   } else if (compiler_type == compiler_c2) {
     assert(first_registration, "invariant"); // c2 must be registered first.
     GrowableArray<const char*>* c2_phase_names = new GrowableArray<const char*>(PHASE_NUM_TYPES);
     for (int i = 0; i < PHASE_NUM_TYPES; i++) {
-      c2_phase_names->append(CompilerPhaseTypeHelper::to_string((CompilerPhaseType)i));
+      const char* phase_name = CompilerPhaseTypeHelper::to_string((CompilerPhaseType) i);
+      CompilerEvent::PhaseEvent::get_phase_id(phase_name, false, false, false);
     }
-    CompilerEvent::PhaseEvent::register_phases(c2_phase_names);
     first_registration = false;
 #endif // COMPILER2
   }
@@ -1258,7 +1256,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        int comp_level,
                                        const methodHandle& hot_method, int hot_count,
                                        CompileTask::CompileReason compile_reason,
-                                       Thread* THREAD) {
+                                       TRAPS) {
   // Do nothing if compilebroker is not initalized or compiles are submitted on level none
   if (!_initialized || comp_level == CompLevel_none) {
     return NULL;
@@ -1268,6 +1266,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(comp != NULL, "Ensure we have a compiler");
 
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
+  // CompileBroker::compile_method can trap and can have pending aysnc exception.
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
   DirectivesStack::release(directive);
   return nm;
@@ -1278,7 +1277,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                          const methodHandle& hot_method, int hot_count,
                                          CompileTask::CompileReason compile_reason,
                                          DirectiveSet* directive,
-                                         Thread* THREAD) {
+                                         TRAPS) {
 
   // make sure arguments make sense
   assert(method->method_holder()->is_instance_klass(), "not an instance method");
@@ -1331,10 +1330,10 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
   if (comp->is_c2()) {
-    method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NULL);
+    method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NONASYNC_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
-    Method::load_signature_classes(method, CHECK_AND_CLEAR_NULL);
+    Method::load_signature_classes(method, CHECK_AND_CLEAR_NONASYNC_NULL);
   }
 
   // If the method is native, do the lookup in the thread requesting
