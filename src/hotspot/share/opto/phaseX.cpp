@@ -1150,7 +1150,7 @@ void PhaseIterGVN::trace_PhaseIterGVN_verbose(Node* n, int num_processed) {
 void PhaseIterGVN::optimize() {
   DEBUG_ONLY(uint num_processed  = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
-  if (StressIGVN) _worklist.shuffle();
+  if (StressIGVN) C->shuffle(&_worklist);
 
   uint loop_count = 0;
   // Pull from worklist and transform the node. If the node has changed,

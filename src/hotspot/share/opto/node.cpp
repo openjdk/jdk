@@ -2330,6 +2330,13 @@ void Node_Array::sort( C_sort_func_t func) {
 }
 
 //-----------------------------------------------------------------------------
+void Node_Array::swap(uint i, uint j) {
+  Node* tmp = _nodes[i];
+  _nodes[i] = _nodes[j];
+  _nodes[j] = tmp;
+}
+
+//-----------------------------------------------------------------------------
 void Node_Array::dump() const {
 #ifndef PRODUCT
   for( uint i = 0; i < _max; i++ ) {
@@ -2423,14 +2430,6 @@ void Node_List::yank( Node *n ) {
 
   if( i < _cnt )
     _nodes[i] = _nodes[--_cnt];
-}
-
-void Node_List::shuffle() {
-  if (_cnt < 2) return;
-  for (uint i = _cnt - 1; i >= 1; i--) {
-    uint j = os::random() % (i + 1);
-    swap(_nodes[i], _nodes[j]);
-  }
 }
 
 //------------------------------dump-------------------------------------------

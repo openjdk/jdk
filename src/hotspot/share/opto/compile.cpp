@@ -523,6 +523,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 #endif
                   _has_method_handle_invokes(false),
                   _clinit_barrier_on_entry(false),
+                  _stress_seed(0),
                   _comp_arena(mtCompiler),
                   _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
                   _env(ci_env),
@@ -730,11 +731,10 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   // If any phase is randomized for stress testing, seed random
   // number generation and log the seed for repeatability.
   if (StressLCM || StressGCM || StressIGVN) {
-    unsigned int seed = GenerateStressSeed ?
+    _stress_seed = GenerateStressSeed ?
       (unsigned int)(Ticks::now().nanoseconds()) : StressSeed;
-    os::init_random(seed);
     if (_log != NULL) {
-      _log->elem("stress_test seed='%u'", seed);
+      _log->elem("stress_test seed='%u'", _stress_seed);
     } else if (GenerateStressSeed) {
       tty->print_cr("Warning:  +LogCompilation must be set to record "
                     "the generated seed.");
@@ -823,6 +823,7 @@ Compile::Compile( ciEnv* ci_env,
 #endif
     _has_method_handle_invokes(false),
     _clinit_barrier_on_entry(false),
+    _stress_seed(0),
     _comp_arena(mtCompiler),
     _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
     _env(ci_env),
@@ -4450,8 +4451,15 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
   }
 }
 
-// Auxiliary method to support randomized stressing/fuzzing.
-//
+// Auxiliary methods to support randomized stressing/fuzzing.
+
+// Return 32bit pseudorandom number and update local seed.
+int Compile::random() {
+  uint rand = os::next_random(_stress_seed);
+  _stress_seed = rand;
+  return static_cast<int>(rand);
+}
+
 // This method can be called the arbitrary number of times, with current count
 // as the argument. The logic allows selecting a single candidate from the
 // running list of candidates as follows:
@@ -4482,7 +4490,15 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
 #define RANDOMIZED_DOMAIN_MASK ((1 << (RANDOMIZED_DOMAIN_POW + 1)) - 1)
 bool Compile::randomized_select(int count) {
   assert(count > 0, "only positive");
-  return (os::random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
+  return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
+}
+
+void Compile::shuffle(Unique_Node_List* l) {
+  if (l->size() < 2) return;
+  for (uint i = l->size() - 1; i >= 1; i--) {
+    uint j = random() % (i + 1);
+    l->swap(i, j);
+  }
 }
 
 CloneMap&     Compile::clone_map()                 { return _clone_map; }

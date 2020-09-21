@@ -301,6 +301,7 @@ class Compile : public Phase {
   RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
   int                   _loop_opts_cnt;         // loop opts round
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
+  uint                  _stress_seed;           // Seed for stress testing
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
@@ -1137,8 +1138,10 @@ class Compile : public Phase {
   // Convert integer value to a narrowed long type dependent on ctrl (for example, a range check)
   static Node* constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl);
 
-  // Auxiliary method for randomized fuzzing/stressing
-  static bool randomized_select(int count);
+  // Auxiliary methods for randomized fuzzing/stressing
+  int random();
+  bool randomized_select(int count);
+  void shuffle(Unique_Node_List* l);
 
   // supporting clone_map
   CloneMap&     clone_map();
