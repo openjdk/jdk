@@ -239,7 +239,7 @@ void VMThread::wait_for_vm_thread_exit() {
   // thread at Safepoint. It's safer to not share lock with other threads.
   {
     MonitorLocker ml(_terminate_lock, Mutex::_no_safepoint_check_flag);
-    while(!VMThread::is_terminated()) {
+    while (!VMThread::is_terminated()) {
       ml.wait();
     }
   }

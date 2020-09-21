@@ -114,8 +114,9 @@ class VMThread: public NamedThread {
   void verify();
 
   // Performance measurement
-  static PerfCounter* perf_accumulated_vm_operation_time()
-    { return _perf_accumulated_vm_operation_time; }
+  static PerfCounter* perf_accumulated_vm_operation_time() {
+    return _perf_accumulated_vm_operation_time;
+  }
 
   // Entry for starting vm thread
   virtual void run();
