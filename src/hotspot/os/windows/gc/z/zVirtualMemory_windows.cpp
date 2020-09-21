@@ -87,7 +87,7 @@ static void grow_from_back_callback(const ZMemory* area, size_t size) {
   coalesce_into_one_placeholder(area->start(), area->size() + size);
 }
 
-void ZVirtualMemoryManager::initialize_os() {
+void ZVirtualMemoryManager::pd_initialize() {
   // Each reserved virtual memory address area registered in _manager is
   // exactly covered by a single placeholder. Callbacks are installed so
   // that whenever a memory area changes, the corresponding placeholder
@@ -116,13 +116,13 @@ void ZVirtualMemoryManager::initialize_os() {
   _manager.register_callbacks(callbacks);
 }
 
-bool ZVirtualMemoryManager::os_reserve(uintptr_t addr, size_t size) {
+bool ZVirtualMemoryManager::pd_reserve(uintptr_t addr, size_t size) {
   uintptr_t res = ZMapper::reserve(addr, size);
 
   assert(res == addr || res == NULL, "Should not reserve other memory than requested");
   return res == addr;
 }
 
-void ZVirtualMemoryManager::os_unreserve(uintptr_t addr, size_t size) {
+void ZVirtualMemoryManager::pd_unreserve(uintptr_t addr, size_t size) {
   ZMapper::unreserve(addr, size);
 }
