@@ -624,9 +624,9 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
          */
         private static final long serialVersionUID = 5228160894980069094L;
 
-        /** 
+        /**
          * Constructs an {@code AccessibleAWTMenu}
-         */  
+         */
         protected AccessibleAWTMenu() {}
 
         /**

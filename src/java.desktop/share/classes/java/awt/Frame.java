@@ -1297,9 +1297,9 @@ public class Frame extends Window implements MenuContainer {
          */
         private static final long serialVersionUID = -6172960752956030250L;
 
-        /** 
+        /**
          * Constructs an {@code AccessibleAWTFrame}
-         */  
+         */
         protected AccessibleAWTFrame() {}
 
         /**

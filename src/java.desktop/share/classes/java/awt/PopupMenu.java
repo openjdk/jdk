@@ -232,7 +232,7 @@ public class PopupMenu extends Menu {
          * Constructs an {@code AccessibleAWTPopupMenu}
          */
         protected AccessibleAWTPopupMenu() {}
-        
+
         /**
          * Get the role of this object.
          *
