@@ -66,6 +66,7 @@ class ConstMethod;
 class InlineTableSizes;
 class CompiledMethod;
 class InterpreterOopMap;
+enum class vmSymbolID : int;
 
 class Method : public Metadata {
  friend class VMStructs;
@@ -869,7 +870,7 @@ public:
 
   // Helper routines for intrinsic_id() and vmIntrinsics::method().
   void init_intrinsic_id();     // updates from _none if a match
-  static vmSymbols::SID klass_id_for_intrinsics(const Klass* holder);
+  static vmSymbolID klass_id_for_intrinsics(const Klass* holder);
 
   bool caller_sensitive() {
     return (_flags & _caller_sensitive) != 0;

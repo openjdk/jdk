@@ -94,6 +94,7 @@
 // Since sometimes this is allocated from Metadata, pick a base allocation
 // type without virtual functions.
 class ClassLoaderData;
+enum class vmSymbolID : int;
 
 // Set _refcount to PERM_REFCOUNT to prevent the Symbol from being freed.
 #ifndef PERM_REFCOUNT
@@ -103,6 +104,8 @@ class ClassLoaderData;
 class Symbol : public MetaspaceObj {
   friend class VMStructs;
   friend class SymbolTable;
+  friend class vmSymbols;
+  friend class JVMCIVMStructs;
 
  private:
 
@@ -111,6 +114,8 @@ class Symbol : public MetaspaceObj {
   volatile uint32_t _hash_and_refcount;
   u2 _length;
   u1 _body[2];
+
+  static Symbol* _vm_symbols[];
 
   enum {
     max_symbol_length = 0xffff
@@ -274,6 +279,13 @@ class Symbol : public MetaspaceObj {
   void print_value() const;
 
   static bool is_valid(Symbol* s);
+
+  static bool is_valid_id(vmSymbolID vm_symbol_id) PRODUCT_RETURN_(return true;);
+
+  static Symbol* vm_symbol_at(vmSymbolID vm_symbol_id) {
+    assert(is_valid_id(vm_symbol_id), "must be");
+    return _vm_symbols[static_cast<int>(vm_symbol_id)];
+  }
 
 #ifndef PRODUCT
   // Empty constructor to create a dummy symbol object on stack

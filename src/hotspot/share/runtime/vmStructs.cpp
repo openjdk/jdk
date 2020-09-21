@@ -466,7 +466,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* vmSymbols */                                                                                                                    \
   /*************/                                                                                                                    \
                                                                                                                                      \
-     static_field(vmSymbols,                   _symbols[0],                                   Symbol*)                               \
+     static_field(Symbol,                      _vm_symbols[0],                                Symbol*)                               \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* HashtableBucket */                                                                                                              \
