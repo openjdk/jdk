@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,18 @@
 
 import java.awt.Color;
 import java.awt.Frame;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.image.BufferedImage;
 import java.util.List;
 
 /**
  * @test
  * @key headful
- * @bug 8215105
+ * @bug 8215105 8211999
  * @summary tests that Robot can capture the common colors without artifacts
  */
 public final class CheckCommonColors {
@@ -40,16 +44,20 @@ public final class CheckCommonColors {
 
     public static void main(final String[] args) throws Exception {
         robot = new Robot();
-        try {
-            test();
-        } finally {
-            frame.dispose();
+        var ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        for (GraphicsDevice gd : ge.getScreenDevices()) {
+            try {
+                test(gd.getDefaultConfiguration().getBounds());
+            } finally {
+                frame.dispose();
+            }
         }
     }
 
-    private static void test() {
+    private static void test(Rectangle screen) {
         frame.setSize(400, 400);
-        frame.setLocationRelativeTo(null);
+        frame.setLocation((int)screen.getCenterX() - 200,
+                          (int)screen.getCenterY() - 200);
         frame.setUndecorated(true);
         for (final Color color : List.of(Color.WHITE, Color.LIGHT_GRAY,
                                          Color.GRAY, Color.DARK_GRAY,
@@ -60,16 +68,25 @@ public final class CheckCommonColors {
             frame.dispose();
             frame.setBackground(color);
             frame.setVisible(true);
-            checkPixels(color);
+            checkPixels(color, true);
+            checkPixels(color, false);
         }
     }
 
-    private static void checkPixels(final Color color) {
+    private static void checkPixels(final Color color, boolean useRect) {
+        System.out.println("color = " + color + ", useRect = " + useRect);
         int attempt = 0;
         while (true) {
             Point p = frame.getLocationOnScreen();
-            Color pixel = robot.getPixelColor(p.x + frame.getWidth() / 2,
-                                              p.y + frame.getHeight() / 2);
+            Color pixel;
+            Rectangle rect = new Rectangle(p.x + frame.getWidth() / 2,
+                                           p.y + frame.getHeight() / 2, 1, 1);
+            if (useRect) {
+                BufferedImage bi = robot.createScreenCapture(rect);
+                pixel = new Color(bi.getRGB(0, 0));
+            } else {
+                pixel = robot.getPixelColor(rect.x, rect.y);
+            }
             if (color.equals(pixel)) {
                 return;
             }
