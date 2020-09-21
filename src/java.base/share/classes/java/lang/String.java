@@ -3180,12 +3180,12 @@ public final class String
      * string. The function should expect a single String argument
      * and produce an {@code R} result.
      * <p>
-     * Any exception thrown by {@code f()} will be propagated to the
+     * Any exception thrown by {@code f.apply()} will be propagated to the
      * caller.
      *
-     * @param f    functional interface to a apply
+     * @param f    a function to apply
      *
-     * @param <R>  class of the result
+     * @param <R>  the type of the result
      *
      * @return     the result of applying the function to this string
      *

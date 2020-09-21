@@ -835,46 +835,33 @@ MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* in1, Node* in2, Node
 
 Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_left,
                                            int vlen, BasicType bt, PhaseGVN* phase) {
-  int shiftLOpc;
-  int shiftROpc;
-  Node* shiftLCnt = NULL;
-  Node* shiftRCnt = NULL;
+  assert(bt == T_INT || bt == T_LONG, "sanity");
   const TypeVect* vt = TypeVect::make(bt, vlen);
+
+  int shift_mask = (bt == T_INT) ? 0x1F : 0x3F;
+  int shiftLOpc = (bt == T_INT) ? Op_LShiftI : Op_LShiftL;
+  int shiftROpc = (bt == T_INT) ? Op_URShiftI: Op_URShiftL;
 
   // Compute shift values for right rotation and
   // later swap them in case of left rotation.
-  if (cnt->is_Con()) {
+  Node* shiftRCnt = NULL;
+  Node* shiftLCnt = NULL;
+  if (cnt->is_Con() && cnt->bottom_type()->isa_int()) {
     // Constant shift case.
-    if (bt == T_INT) {
-      int shift = cnt->get_int() & 31;
-      shiftRCnt = phase->intcon(shift);
-      shiftLCnt = phase->intcon(32 - shift);
-      shiftLOpc = Op_LShiftI;
-      shiftROpc = Op_URShiftI;
-    } else {
-      int shift = cnt->get_int() & 63;
-      shiftRCnt = phase->intcon(shift);
-      shiftLCnt = phase->intcon(64 - shift);
-      shiftLOpc = Op_LShiftL;
-      shiftROpc = Op_URShiftL;
-    }
+    int shift = cnt->get_int() & shift_mask;
+    shiftRCnt = phase->intcon(shift);
+    shiftLCnt = phase->intcon(shift_mask + 1 - shift);
   } else {
     // Variable shift case.
     assert(VectorNode::is_invariant_vector(cnt), "Broadcast expected");
     cnt = cnt->in(1);
-    if (bt == T_INT) {
-      shiftRCnt = phase->transform(new AndINode(cnt, phase->intcon(31)));
-      shiftLCnt = phase->transform(new SubINode(phase->intcon(32), shiftRCnt));
-      shiftLOpc = Op_LShiftI;
-      shiftROpc = Op_URShiftI;
-    } else {
+    if (bt == T_LONG) {
+      // Shift count vector for Rotate vector has long elements too.
       assert(cnt->Opcode() == Op_ConvI2L, "ConvI2L expected");
       cnt = cnt->in(1);
-      shiftRCnt = phase->transform(new AndINode(cnt, phase->intcon(63)));
-      shiftLCnt = phase->transform(new SubINode(phase->intcon(64), shiftRCnt));
-      shiftLOpc = Op_LShiftL;
-      shiftROpc = Op_URShiftL;
     }
+    shiftRCnt = phase->transform(new AndINode(cnt, phase->intcon(shift_mask)));
+    shiftLCnt = phase->transform(new SubINode(phase->intcon(shift_mask + 1), shiftRCnt));
   }
 
   // Swap the computed left and right shift counts.
@@ -904,89 +891,6 @@ Node* RotateRightVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   BasicType bt = vect_type()->element_basic_type();
   if (!Matcher::match_rule_supported_vector(Op_RotateRightV, vlen, bt)) {
     return VectorNode::degenerate_vector_rotate(in(1), in(2), false, vlen, bt, phase);
-  }
-  return NULL;
-}
-
-Node* OrVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  int lopcode = in(1)->Opcode();
-  int ropcode = in(2)->Opcode();
-  const TypeVect* vt = bottom_type()->is_vect();
-  int vec_len = vt->length();
-  BasicType bt = vt->element_basic_type();
-
-  // Vector Rotate operations inferencing, this will be useful when vector
-  // operations are created via non-SLP route i.e. (VectorAPI).
-  if (Matcher::match_rule_supported_vector(Op_RotateLeftV, vec_len, bt) &&
-      ((ropcode == Op_LShiftVI && lopcode == Op_URShiftVI) ||
-       (ropcode == Op_LShiftVL && lopcode == Op_URShiftVL)) &&
-      in(1)->in(1) == in(2)->in(1)) {
-    assert(Op_RShiftCntV == in(1)->in(2)->Opcode(), "LShiftCntV operand expected");
-    assert(Op_LShiftCntV == in(2)->in(2)->Opcode(), "RShiftCntV operand expected");
-    Node* lshift = in(1)->in(2)->in(1);
-    Node* rshift = in(2)->in(2)->in(1);
-    int mod_val = bt == T_LONG ? 64 : 32;
-    int shift_mask = bt == T_LONG ? 0x3F : 0x1F;
-    // val >> norm_con_shift | val << (32 - norm_con_shift) => rotate_right val ,
-    // norm_con_shift
-    if (lshift->is_Con() && rshift->is_Con() &&
-        ((lshift->get_int() & shift_mask) ==
-         (mod_val - (rshift->get_int() & shift_mask)))) {
-      return new RotateRightVNode(
-          in(1)->in(1), phase->intcon(lshift->get_int() & shift_mask), vt);
-    }
-    if (lshift->Opcode() == Op_AndI && rshift->Opcode() == Op_AndI &&
-        lshift->in(2)->is_Con() && rshift->in(2)->is_Con() &&
-        lshift->in(2)->get_int() == (mod_val - 1) &&
-        rshift->in(2)->get_int() == (mod_val - 1)) {
-      lshift = lshift->in(1);
-      rshift = rshift->in(1);
-      // val << var_shift | val >> (0/32 - var_shift) => rotate_left val ,
-      // var_shift
-      if (lshift->Opcode() == Op_SubI && lshift->in(2) == rshift &&
-          lshift->in(1)->is_Con() &&
-          (lshift->in(1)->get_int() == 0 ||
-           lshift->in(1)->get_int() == mod_val)) {
-        Node* rotate_cnt = phase->transform(new ReplicateINode(rshift, vt));
-        return new RotateLeftVNode(in(1)->in(1), rotate_cnt, vt);
-      }
-    }
-  }
-
-  if (Matcher::match_rule_supported_vector(Op_RotateRightV, vec_len, bt) &&
-      ((ropcode == Op_URShiftVI && lopcode == Op_LShiftVI) ||
-       (ropcode == Op_URShiftVL && lopcode == Op_LShiftVL)) &&
-      in(1)->in(1) == in(2)->in(1)) {
-    assert(Op_LShiftCntV == in(1)->in(2)->Opcode(), "RShiftCntV operand expected");
-    assert(Op_RShiftCntV == in(2)->in(2)->Opcode(), "LShiftCntV operand expected");
-    Node* rshift = in(1)->in(2)->in(1);
-    Node* lshift = in(2)->in(2)->in(1);
-    int mod_val = bt == T_LONG ? 64 : 32;
-    int shift_mask = bt == T_LONG ? 0x3F : 0x1F;
-    // val << norm_con_shift | val >> (32 - norm_con_shift) => rotate_left val
-    // , norm_con_shift
-    if (rshift->is_Con() && lshift->is_Con() &&
-        ((rshift->get_int() & shift_mask) ==
-         (mod_val - (lshift->get_int() & shift_mask)))) {
-      return new RotateLeftVNode(
-          in(1)->in(1), phase->intcon(rshift->get_int() & shift_mask), vt);
-    }
-    if (lshift->Opcode() == Op_AndI && rshift->Opcode() == Op_AndI &&
-        lshift->in(2)->is_Con() && rshift->in(2)->is_Con() &&
-        rshift->in(2)->get_int() == (mod_val - 1) &&
-        lshift->in(2)->get_int() == (mod_val - 1)) {
-      rshift = rshift->in(1);
-      lshift = lshift->in(1);
-      // val >> var_shift | val << (0/32 - var_shift) => rotate_right val ,
-      // var_shift
-      if (rshift->Opcode() == Op_SubI && rshift->in(2) == lshift &&
-          rshift->in(1)->is_Con() &&
-          (rshift->in(1)->get_int() == 0 ||
-           rshift->in(1)->get_int() == mod_val)) {
-        Node* rotate_cnt = phase->transform(new ReplicateINode(lshift, vt));
-        return new RotateRightVNode(in(1)->in(1), rotate_cnt, vt);
-      }
-    }
   }
   return NULL;
 }

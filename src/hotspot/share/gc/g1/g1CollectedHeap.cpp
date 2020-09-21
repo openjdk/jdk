@@ -1677,21 +1677,22 @@ jint G1CollectedHeap::initialize() {
   // 6843694 - ensure that the maximum region index can fit
   // in the remembered set structures.
   const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
-  guarantee((max_regions() - 1) <= max_region_idx, "too many regions");
+  guarantee((max_reserved_regions() - 1) <= max_region_idx, "too many regions");
 
   // The G1FromCardCache reserves card with value 0 as "invalid", so the heap must not
   // start within the first card.
   guarantee(heap_rs.base() >= (char*)G1CardTable::card_size, "Java heap must not start within the first card.");
+  G1FromCardCache::initialize(max_reserved_regions());
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this, _card_table, _hot_card_cache);
-  _rem_set->initialize(max_regions());
+  _rem_set->initialize(max_reserved_regions());
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
   guarantee(HeapRegion::CardsPerRegion > 0, "make sure it's initialized");
   guarantee(HeapRegion::CardsPerRegion < max_cards_per_region,
             "too many cards per region");
 
-  FreeRegionList::set_unrealistically_long_length(max_expandable_regions() + 1);
+  FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
   _bot = new G1BlockOffsetTable(reserved(), bot_storage);
 
@@ -1713,7 +1714,7 @@ jint G1CollectedHeap::initialize() {
   _numa->set_region_info(HeapRegion::GrainBytes, page_size);
 
   // Create the G1ConcurrentMark data structure and thread.
-  // (Must do this late, so that "max_regions" is defined.)
+  // (Must do this late, so that "max_[reserved_]regions" is defined.)
   _cm = new G1ConcurrentMark(this, prev_bitmap_storage, next_bitmap_storage);
   _cm_thread = _cm->cm_thread();
 
@@ -1765,7 +1766,7 @@ jint G1CollectedHeap::initialize() {
 
   _preserved_marks_set.init(ParallelGCThreads);
 
-  _collection_set.initialize(max_regions());
+  _collection_set.initialize(max_reserved_regions());
 
   G1InitLogger::print();
 
@@ -2391,7 +2392,7 @@ size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
 }
 
 size_t G1CollectedHeap::max_capacity() const {
-  return _hrm->max_expandable_length() * HeapRegion::GrainBytes;
+  return max_regions() * HeapRegion::GrainBytes;
 }
 
 void G1CollectedHeap::deduplicate_string(oop str) {
