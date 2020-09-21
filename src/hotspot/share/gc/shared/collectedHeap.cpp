@@ -36,6 +36,7 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -123,14 +124,28 @@ MetaspaceSummary CollectedHeap::create_metaspace_summary() {
 }
 
 void CollectedHeap::print_heap_before_gc() {
-  Universe::print_heap_before_gc();
+  LogTarget(Debug, gc, heap) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("Heap before GC invocations=%u (full %u):", total_collections(), total_full_collections());
+    ResourceMark rm;
+    print_on(&ls);
+  }
+
   if (_gc_heap_log != NULL) {
     _gc_heap_log->log_heap_before(this);
   }
 }
 
 void CollectedHeap::print_heap_after_gc() {
-  Universe::print_heap_after_gc();
+  LogTarget(Debug, gc, heap) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("Heap after GC invocations=%u (full %u):", total_collections(), total_full_collections());
+    ResourceMark rm;
+    print_on(&ls);
+  }
+
   if (_gc_heap_log != NULL) {
     _gc_heap_log->log_heap_after(this);
   }
