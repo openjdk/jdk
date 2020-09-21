@@ -27,43 +27,19 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.NetPermission;
-import java.net.ProtocolFamily;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.net.SocketOption;
-import java.net.SocketTimeoutException;
-import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
 import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.AlreadyBoundException;
-import java.nio.channels.AlreadyConnectedException;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ConnectionPendingException;
-import java.nio.channels.IllegalBlockingModeException;
-import java.nio.channels.NoConnectionPendingException;
-import java.nio.channels.NotYetConnectedException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
-
-import sun.net.ConnectionResetException;
-import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
-import sun.net.util.SocketExceptions;
 
 /**
  * An implementation of SocketChannels
@@ -87,24 +63,24 @@ public class UnixDomainSocketChannelImpl extends SocketChannelImpl
 
     @Override
     SocketAddress implLocalAddress(FileDescriptor fd) throws IOException {
-        return UnixDomainNet.localAddress(fd);
+        return UnixDomainSockets.localAddress(fd);
     }
 
     @Override
     SocketAddress getRevealedLocalAddress(SocketAddress address) {
         UnixDomainSocketAddress uaddr = (UnixDomainSocketAddress)address;
-        return UnixDomainNet.getRevealedLocalAddress(uaddr);
+        return UnixDomainSockets.getRevealedLocalAddress(uaddr);
+    }
+
+    @Override
+    <T> void implSetOption(SocketOption<T> name, T value) throws IOException {
+        Net.setSocketOption(getFD(), name, value);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     <T> T implGetOption(SocketOption<T> name) throws IOException {
         return (T) Net.getSocketOption(getFD(), name);
-    }
-
-    @Override
-    <T> void implSetOption(SocketOption<T> name, T value) throws IOException {
-        Net.setSocketOption(getFD(), name, value);
     }
 
     private static class DefaultOptionsHolder {
@@ -126,43 +102,8 @@ public class UnixDomainSocketChannelImpl extends SocketChannelImpl
     }
 
     @Override
-    SocketAddress implBind(SocketAddress local) throws IOException {
-        UnixDomainNet.checkCapability();
-        UnixDomainSocketAddress usa = UnixDomainNet.checkAddress(local);
-        Path path = usa == null ? null : usa.getPath();
-        UnixDomainNet.bind(getFD(), path);
-        if (usa == null || path.toString().equals("")) {
-            return UnixDomainNet.UNNAMED;
-        } else {
-            return UnixDomainNet.localAddress(getFD());
-        }
-    }
-
-    @Override
     public Socket socket() {
         throw new UnsupportedOperationException("socket not supported");
-    }
-
-    /**
-     * Checks the permissions required for connect
-     */
-    @Override
-    SocketAddress checkRemote(SocketAddress sa) throws IOException {
-        Objects.requireNonNull(sa);
-        UnixDomainNet.checkCapability();
-        UnixDomainSocketAddress usa = UnixDomainNet.checkAddress(sa);
-        return usa;
-    }
-
-    @Override
-    int implConnect(FileDescriptor fd, SocketAddress sa) throws IOException {
-        UnixDomainSocketAddress usa = (UnixDomainSocketAddress)sa;
-        return UnixDomainNet.connect(fd, usa.getPath());
-    }
-
-    String getRevealedLocalAddressAsString(SocketAddress sa) {
-        UnixDomainSocketAddress usa = (UnixDomainSocketAddress)sa;
-        return UnixDomainNet.getRevealedLocalAddressAsString(usa);
     }
 
     /**
@@ -171,6 +112,13 @@ public class UnixDomainSocketChannelImpl extends SocketChannelImpl
     @Override
     public int read(ByteBuffer buf) throws IOException {
         return super.read(buf);
+    }
+
+    @Override
+    public long read(ByteBuffer[] dsts, int offset, int length)
+        throws IOException
+    {
+        return super.read(dsts, offset, length);
     }
 
     @Override
@@ -186,9 +134,37 @@ public class UnixDomainSocketChannelImpl extends SocketChannelImpl
     }
 
     @Override
-    public long read(ByteBuffer[] dsts, int offset, int length)
-        throws IOException
-    {
-        return super.read(dsts, offset, length);
+    SocketAddress implBind(SocketAddress local) throws IOException {
+        UnixDomainSockets.checkCapability();
+        UnixDomainSocketAddress usa = UnixDomainSockets.checkAddress(local);
+        Path path = usa == null ? null : usa.getPath();
+        UnixDomainSockets.bind(getFD(), path);
+        if (usa == null || path.toString().equals("")) {
+            return UnixDomainSockets.UNNAMED;
+        } else {
+            return UnixDomainSockets.localAddress(getFD());
+        }
+    }
+
+    /**
+     * Checks the permissions required for connect
+     */
+    @Override
+    SocketAddress checkRemote(SocketAddress sa) throws IOException {
+        Objects.requireNonNull(sa);
+        UnixDomainSockets.checkCapability();
+        UnixDomainSocketAddress usa = UnixDomainSockets.checkAddress(sa);
+        return usa;
+    }
+
+    @Override
+    int implConnect(FileDescriptor fd, SocketAddress sa) throws IOException {
+        UnixDomainSocketAddress usa = (UnixDomainSocketAddress)sa;
+        return UnixDomainSockets.connect(fd, usa.getPath());
+    }
+
+    String getRevealedLocalAddressAsString(SocketAddress sa) {
+        UnixDomainSocketAddress usa = (UnixDomainSocketAddress)sa;
+        return UnixDomainSockets.getRevealedLocalAddressAsString(usa);
     }
 }

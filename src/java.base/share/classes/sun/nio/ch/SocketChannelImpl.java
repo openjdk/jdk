@@ -27,18 +27,13 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Inet4Address;
 import java.net.InetSocketAddress;
-import java.net.ProtocolFamily;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.SocketTimeoutException;
-import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
-import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AlreadyConnectedException;
@@ -51,15 +46,11 @@ import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
-import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.SocketExceptions;
 
 /**
@@ -193,10 +184,6 @@ abstract class SocketChannelImpl
         }
     }
 
-    abstract SocketAddress implLocalAddress(FileDescriptor fd) throws IOException;
-
-    abstract SocketAddress getRevealedLocalAddress(SocketAddress address);
-
     @Override
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
@@ -205,30 +192,15 @@ abstract class SocketChannelImpl
         }
     }
 
+    abstract SocketAddress implLocalAddress(FileDescriptor fd) throws IOException;
+
+    abstract SocketAddress getRevealedLocalAddress(SocketAddress address);
+
     @Override
     public SocketAddress getRemoteAddress() throws IOException {
         synchronized (stateLock) {
             ensureOpen();
             return remoteAddress;
-        }
-    }
-
-    abstract <T> void implSetOption(SocketOption<T> name, T value) throws IOException;
-
-    abstract <T> T implGetOption(SocketOption<T> name) throws IOException;
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> T getOption(SocketOption<T> name)
-        throws IOException
-    {
-        Objects.requireNonNull(name);
-        if (!supportedOptions().contains(name))
-            throw new UnsupportedOperationException("'" + name + "' not supported");
-
-        synchronized (stateLock) {
-            ensureOpen();
-            return implGetOption(name);
         }
     }
 
@@ -248,6 +220,25 @@ abstract class SocketChannelImpl
             return this;
         }
     }
+
+    abstract <T> void implSetOption(SocketOption<T> name, T value) throws IOException;
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T getOption(SocketOption<T> name)
+        throws IOException
+    {
+        Objects.requireNonNull(name);
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
+
+        synchronized (stateLock) {
+            ensureOpen();
+            return implGetOption(name);
+        }
+    }
+
+    abstract <T> T implGetOption(SocketOption<T> name) throws IOException;
 
     /**
      * Marks the beginning of a read operation that might block.
@@ -568,8 +559,6 @@ abstract class SocketChannelImpl
         }
     }
 
-    abstract SocketAddress implBind(SocketAddress local) throws IOException;
-
     @Override
     public SocketChannel bind(SocketAddress local) throws IOException {
         readLock.lock();
@@ -592,6 +581,8 @@ abstract class SocketChannelImpl
         }
         return this;
     }
+
+    abstract SocketAddress implBind(SocketAddress local) throws IOException;
 
     @Override
     public boolean isConnected() {
@@ -669,8 +660,6 @@ abstract class SocketChannelImpl
      */
     abstract SocketAddress checkRemote(SocketAddress sa) throws IOException;
 
-    abstract int implConnect(FileDescriptor fd,SocketAddress sa) throws IOException;
-
     @Override
     public boolean connect(SocketAddress remote) throws IOException {
         SocketAddress sa = checkRemote(remote);
@@ -711,6 +700,8 @@ abstract class SocketChannelImpl
             throw SocketExceptions.of(ioe, sa);
         }
     }
+
+    abstract int implConnect(FileDescriptor fd,SocketAddress sa) throws IOException;
 
     /**
      * Marks the beginning of a finishConnect operation that might block.

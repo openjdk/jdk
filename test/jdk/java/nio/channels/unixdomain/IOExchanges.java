@@ -45,7 +45,7 @@ public class IOExchanges {
 
     @BeforeTest()
     public void setup() {
-        try {SocketChannel.open(); } catch (IOException e) {}
+        try {SocketChannel.open(UNIX); } catch (IOException e) {}
         int namelen = Integer.parseInt(System.getProperty("jdk.nio.channels.unixdomain.maxnamelength"));
         if (namelen == -1) {
             supported = false;

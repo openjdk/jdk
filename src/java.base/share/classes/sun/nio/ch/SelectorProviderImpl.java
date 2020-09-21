@@ -82,8 +82,8 @@ public abstract class SelectorProviderImpl
             throw new UnsupportedOperationException("IPv6 not available");
         } else if (family == StandardProtocolFamily.INET || family == StandardProtocolFamily.INET6)  {
             return new InetSocketChannelImpl(this, family);
-        } else if (family == StandardProtocolFamily.UNIX && UnixDomainNet.isSupported()) {
-            return new UnixDomainSocketChannelImpl(this, UnixDomainNet.socket(), false);
+        } else if (family == StandardProtocolFamily.UNIX && UnixDomainSockets.isSupported()) {
+            return new UnixDomainSocketChannelImpl(this, UnixDomainSockets.socket(), false);
         } else
             return super.openSocketChannel(family);
     }
@@ -95,7 +95,7 @@ public abstract class SelectorProviderImpl
             throw new UnsupportedOperationException("IPv6 not available");
         } else if (family == StandardProtocolFamily.INET || family == StandardProtocolFamily.INET6)  {
             return new InetServerSocketChannelImpl(this, family);
-        } else if (family == StandardProtocolFamily.UNIX && UnixDomainNet.isSupported()) {
+        } else if (family == StandardProtocolFamily.UNIX && UnixDomainSockets.isSupported()) {
             return new UnixDomainServerSocketChannelImpl(this);
         } else
             return super.openServerSocketChannel(family);

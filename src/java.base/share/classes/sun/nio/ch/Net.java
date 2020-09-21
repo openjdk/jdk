@@ -57,11 +57,6 @@ public class Net {
 
     private Net() { }
 
-    static {
-        // Load all required native libs
-        UnixDomainNet.init();
-    }
-
     // unspecified protocol family
     static final ProtocolFamily UNSPEC = new ProtocolFamily() {
         public String name() {

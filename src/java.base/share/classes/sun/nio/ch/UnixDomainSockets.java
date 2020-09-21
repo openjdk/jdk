@@ -32,14 +32,13 @@ import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.nio.file.FileSystems;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import sun.nio.fs.AbstractFileSystemProvider;
 
-class UnixDomainNet {
+class UnixDomainSockets {
 
     static {
         // Load all required native libs

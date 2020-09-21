@@ -27,12 +27,10 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.SocketTimeoutException;
-import java.net.StandardSocketOptions;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
@@ -42,14 +40,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
-
-import sun.net.NetHooks;
-import sun.net.ext.ExtendedSocketOptions;
 
 /**
  * An implementation of ServerSocketChannels
@@ -137,9 +129,14 @@ abstract class ServerSocketChannelImpl
 
     abstract String getRevealedLocalAddressAsString(SocketAddress addr);
 
-    abstract <T> void implSetOption(SocketOption<T> name, T value) throws IOException;
-
-    abstract <T> T implGetOption(SocketOption<T> name) throws IOException;
+    /**
+     * Returns the local address, or null if not bound
+     */
+    SocketAddress localAddress() {
+        synchronized (stateLock) {
+            return localAddress;
+        }
+    }
 
     @Override
     public <T> ServerSocketChannel setOption(SocketOption<T> name, T value)
@@ -158,6 +155,8 @@ abstract class ServerSocketChannelImpl
         }
     }
 
+    abstract <T> void implSetOption(SocketOption<T> name, T value) throws IOException;
+
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getOption(SocketOption<T> name)
@@ -172,6 +171,8 @@ abstract class ServerSocketChannelImpl
             return implGetOption(name);
         }
     }
+
+    abstract <T> T implGetOption(SocketOption<T> name) throws IOException;
 
     @Override
     public ServerSocketChannel bind(SocketAddress local, int backlog) throws IOException {
@@ -224,9 +225,6 @@ abstract class ServerSocketChannelImpl
         }
     }
 
-    protected abstract int implAccept(FileDescriptor fd, FileDescriptor newfd, SocketAddress[] sa)
-        throws IOException;
-
     @Override
     public SocketChannel accept() throws IOException {
         int n = 0;
@@ -259,6 +257,10 @@ abstract class ServerSocketChannelImpl
             return null;
         }
     }
+
+    protected abstract int implAccept(FileDescriptor fd, FileDescriptor newfd, SocketAddress[] sa)
+        throws IOException;
+
 
     /**
      * Accepts a new connection with a given timeout. This method requires the
@@ -311,10 +313,7 @@ abstract class ServerSocketChannelImpl
         return finishAccept(newfd, isaa[0]);
     }
 
-    abstract SocketChannel implFinishAccept(FileDescriptor newfd, SocketAddress isa)
-        throws IOException;
-
-    protected SocketChannel finishAccept(FileDescriptor newfd, SocketAddress sa)
+    private SocketChannel finishAccept(FileDescriptor newfd, SocketAddress sa)
         throws IOException
     {
         try {
@@ -326,6 +325,9 @@ abstract class ServerSocketChannelImpl
             throw e;
         }
     }
+
+    abstract SocketChannel implFinishAccept(FileDescriptor newfd, SocketAddress isa)
+        throws IOException;
 
     @Override
     protected void implConfigureBlocking(boolean block) throws IOException {
@@ -463,15 +465,6 @@ abstract class ServerSocketChannelImpl
     boolean isBound() {
         synchronized (stateLock) {
             return localAddress != null;
-        }
-    }
-
-    /**
-     * Returns the local address, or null if not bound
-     */
-    SocketAddress localAddress() {
-        synchronized (stateLock) {
-            return localAddress;
         }
     }
 

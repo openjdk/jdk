@@ -31,35 +31,17 @@ import java.net.InetAddress;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
-import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.net.SocketOption;
-import java.net.SocketTimeoutException;
 import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
-import java.nio.channels.AlreadyBoundException;
-import java.nio.channels.AlreadyConnectedException;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ConnectionPendingException;
-import java.nio.channels.IllegalBlockingModeException;
-import java.nio.channels.NoConnectionPendingException;
-import java.nio.channels.NotYetConnectedException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
-
-import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
-import sun.net.util.SocketExceptions;
 
 /**
  * An implementation of SocketChannels
@@ -112,25 +94,27 @@ class InetSocketChannelImpl extends SocketChannelImpl
         this.family = family;
     }
 
-    /**
-     * Returns the local address, or null if not bound
-     */
-    InetSocketAddress localAddress() {
-        return (InetSocketAddress)super.localAddress();
-    }
-
-    /**
-     * Returns the remote address, or null if not connected
-     */
-    InetSocketAddress remoteAddress() {
-        return (InetSocketAddress)super.remoteAddress();
-    }
 
     @Override
     SocketAddress getRevealedLocalAddress(SocketAddress address) {
         return Net.getRevealedLocalAddress((InetSocketAddress)address);
     }
 
+    @Override
+    <T> void implSetOption(SocketOption<T> name, T value) throws IOException {
+        FileDescriptor fd = getFD();
+
+        if (name == StandardSocketOptions.IP_TOS) {
+            ProtocolFamily family = Net.isIPv6Available() ?
+                StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
+            Net.setSocketOption(fd, family, name, value);
+        } else if (name == StandardSocketOptions.SO_REUSEADDR && Net.useExclusiveBind()) {
+            // SO_REUSEADDR emulated when using exclusive bind
+            isReuseAddress = (Boolean)value;
+        } else {
+            Net.setSocketOption(fd, name, value);
+        }
+    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -149,22 +133,6 @@ class InetSocketChannelImpl extends SocketChannelImpl
             return (T) Net.getSocketOption(fd, family, name);
         }
         return (T) Net.getSocketOption(fd, name);
-    }
-
-    @Override
-    <T> void implSetOption(SocketOption<T> name, T value) throws IOException {
-        FileDescriptor fd = getFD();
-
-        if (name == StandardSocketOptions.IP_TOS) {
-            ProtocolFamily family = Net.isIPv6Available() ?
-                StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
-            Net.setSocketOption(fd, family, name, value);
-        } else if (name == StandardSocketOptions.SO_REUSEADDR && Net.useExclusiveBind()) {
-            // SO_REUSEADDR emulated when using exclusive bind
-            isReuseAddress = (Boolean)value;
-        } else {
-            Net.setSocketOption(fd, name, value);
-        }
     }
 
     private static class DefaultOptionsHolder {
@@ -194,6 +162,49 @@ class InetSocketChannelImpl extends SocketChannelImpl
         return DefaultOptionsHolder.defaultOptions;
     }
 
+    /**
+     * Read/write need to be overridden for JFR
+     */
+    @Override
+    public int read(ByteBuffer buf) throws IOException {
+        return super.read(buf);
+    }
+
+    @Override
+    public long read(ByteBuffer[] dsts, int offset, int length)
+        throws IOException
+    {
+        return super.read(dsts, offset, length);
+    }
+
+    @Override
+    public int write(ByteBuffer buf) throws IOException {
+        return super.write(buf);
+    }
+
+    @Override
+    public long write(ByteBuffer[] srcs, int offset, int length)
+        throws IOException
+    {
+        return super.write(srcs, offset, length);
+    }
+
+    /**
+     * Returns the local address, or null if not bound
+     */
+    @Override
+    InetSocketAddress localAddress() {
+        return (InetSocketAddress)super.localAddress();
+    }
+
+    /**
+     * Returns the remote address, or null if not connected
+     */
+    @Override
+    InetSocketAddress remoteAddress() {
+        return (InetSocketAddress)super.remoteAddress();
+    }
+
     @Override
     SocketAddress implBind(SocketAddress local) throws IOException {
         InetSocketAddress isa;
@@ -211,7 +222,6 @@ class InetSocketChannelImpl extends SocketChannelImpl
         Net.bind(family, fd, isa.getAddress(), isa.getPort());
         return Net.localAddress(fd);
     }
-
 
     /**
      * Checks the remote address to which this channel is to be connected.
@@ -241,33 +251,6 @@ class InetSocketChannelImpl extends SocketChannelImpl
     protected int implConnect(FileDescriptor fd, SocketAddress sa) throws IOException {
         InetSocketAddress isa = (InetSocketAddress)sa;
         return Net.connect(family, fd, isa.getAddress(), isa.getPort());
-    }
-
-    /**
-     * Read/write need to be overridden for JFR
-     */
-    @Override
-    public int read(ByteBuffer buf) throws IOException {
-        return super.read(buf);
-    }
-
-    @Override
-    public int write(ByteBuffer buf) throws IOException {
-        return super.write(buf);
-    }
-
-    @Override
-    public long write(ByteBuffer[] srcs, int offset, int length)
-        throws IOException
-    {
-        return super.write(srcs, offset, length);
-    }
-
-    @Override
-    public long read(ByteBuffer[] dsts, int offset, int length)
-        throws IOException
-    {
-        return super.read(dsts, offset, length);
     }
 
     @Override

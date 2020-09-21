@@ -25,44 +25,22 @@
 
 package sun.nio.ch;
 
-import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.BindException;
-import java.net.NetPermission;
-import java.net.ProtocolFamily;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.net.SocketOption;
-import java.net.SocketTimeoutException;
-import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
 import java.net.UnixDomainSocketAddress;
-import java.nio.channels.AlreadyBoundException;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.IllegalBlockingModeException;
-import java.nio.channels.NotYetBoundException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
-
-import sun.net.NetHooks;
-import sun.net.ext.ExtendedSocketOptions;
 
 /**
  * An implementation of ServerSocketChannels
@@ -72,7 +50,7 @@ public class UnixDomainServerSocketChannelImpl
     extends ServerSocketChannelImpl
 {
     public UnixDomainServerSocketChannelImpl(SelectorProvider sp) throws IOException {
-        super(sp, UnixDomainNet.socket(), false);
+        super(sp, UnixDomainSockets.socket(), false);
     }
 
     public UnixDomainServerSocketChannelImpl(SelectorProvider sp, FileDescriptor fd, boolean bound)
@@ -81,8 +59,19 @@ public class UnixDomainServerSocketChannelImpl
         super(sp, fd, bound);
     }
 
+    @Override
     SocketAddress implLocalAddress(FileDescriptor fd) throws IOException {
-        return UnixDomainNet.localAddress(fd);
+        return UnixDomainSockets.localAddress(fd);
+    }
+
+    @Override
+    SocketAddress getRevealedLocalAddress(SocketAddress addr) {
+        return UnixDomainSockets.getRevealedLocalAddress((UnixDomainSocketAddress)addr);
+    }
+
+    @Override
+    String getRevealedLocalAddressAsString(SocketAddress addr) {
+        return UnixDomainSockets.getRevealedLocalAddressAsString((UnixDomainSocketAddress)addr);
     }
 
     @Override
@@ -120,7 +109,7 @@ public class UnixDomainServerSocketChannelImpl
     public SocketAddress implBind(SocketAddress local, int backlog) throws IOException {
         boolean found = false;
 
-        UnixDomainNet.checkCapability();
+        UnixDomainSockets.checkCapability();
 
         // Attempt up to 10 times to find an unused name in temp directory
         // Unlikely to fail
@@ -129,10 +118,10 @@ public class UnixDomainServerSocketChannelImpl
             if (local == null) {
                 usa = getTempName();
             } else {
-                usa = UnixDomainNet.checkAddress(local);
+                usa = UnixDomainSockets.checkAddress(local);
             }
             try {
-                UnixDomainNet.bind(getFD(), usa.getPath());
+                UnixDomainSockets.bind(getFD(), usa.getPath());
                 found = true;
                 break;
             } catch (BindException e) {
@@ -144,7 +133,7 @@ public class UnixDomainServerSocketChannelImpl
         if (!found)
             throw new IOException("could not bind to temporary name");
         Net.listen(getFD(), backlog < 1 ? 50 : backlog);
-        return UnixDomainNet.localAddress(getFD());
+        return UnixDomainSockets.localAddress(getFD());
     }
 
     private static Random getRandom() {
@@ -164,7 +153,7 @@ public class UnixDomainServerSocketChannelImpl
     private static UnixDomainSocketAddress getTempName() throws IOException {
         int rnd = random.nextInt(Integer.MAX_VALUE);
         StringBuilder sb = new StringBuilder();
-        sb.append(UnixDomainNet.tempDir).append("/niosocket_").append(rnd);
+        sb.append(UnixDomainSockets.tempDir).append("/niosocket_").append(rnd);
         return UnixDomainSocketAddress.of(sb.toString());
     }
 
@@ -172,9 +161,9 @@ public class UnixDomainServerSocketChannelImpl
     protected int implAccept(FileDescriptor fd, FileDescriptor newfd, SocketAddress[] addrs)
         throws IOException
     {
-        UnixDomainNet.checkCapability();
+        UnixDomainSockets.checkCapability();
         String[] addrArray = new String[1];
-        int n = UnixDomainNet.accept(fd, newfd, addrArray);
+        int n = UnixDomainSockets.accept(fd, newfd, addrArray);
         if (n > 0) {
             addrs[0] = UnixDomainSocketAddress.of(addrArray[0]);
         }
@@ -182,15 +171,6 @@ public class UnixDomainServerSocketChannelImpl
     }
 
     @Override
-    String getRevealedLocalAddressAsString(SocketAddress addr) {
-        return UnixDomainNet.getRevealedLocalAddressAsString((UnixDomainSocketAddress)addr);
-    }
-
-    @Override
-    SocketAddress getRevealedLocalAddress(SocketAddress addr) {
-        return UnixDomainNet.getRevealedLocalAddress((UnixDomainSocketAddress)addr);
-    }
-
     SocketChannel implFinishAccept(FileDescriptor newfd, SocketAddress sa)
         throws IOException
     {
@@ -198,6 +178,7 @@ public class UnixDomainServerSocketChannelImpl
         return new UnixDomainSocketChannelImpl(provider(), newfd, usa);
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.getClass().getName());

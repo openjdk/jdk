@@ -33,6 +33,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static java.lang.System.out;
+import static java.net.StandardProtocolFamily.UNIX;
 import static jdk.test.lib.Asserts.assertTrue;
 
 import java.net.UnixDomainSocketAddress;
@@ -45,7 +46,7 @@ public class LengthTest {
 
     @BeforeTest
     public void setup() {
-        try {SocketChannel.open(); } catch (java.io.IOException e) {}
+        try {SocketChannel.open(UNIX); } catch (java.io.IOException e) {}
         namelen = Integer.parseInt(System.getProperty("jdk.nio.channels.unixdomain.maxnamelength"));
         if (namelen == -1) {
             supported = false;

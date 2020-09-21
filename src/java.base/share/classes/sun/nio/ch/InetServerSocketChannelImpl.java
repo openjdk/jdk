@@ -27,29 +27,17 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
 import java.net.StandardProtocolFamily;
-import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.net.SocketOption;
-import java.net.SocketTimeoutException;
 import java.net.StandardSocketOptions;
-import java.nio.channels.AlreadyBoundException;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.IllegalBlockingModeException;
-import java.nio.channels.NotYetBoundException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
@@ -92,8 +80,27 @@ class InetServerSocketChannelImpl
     }
 
 
+    @Override
     InetSocketAddress implLocalAddress(FileDescriptor fd) throws IOException {
         return Net.localAddress(fd);
+    }
+
+    @Override
+    protected SocketAddress getRevealedLocalAddress(SocketAddress addr) {
+        return Net.getRevealedLocalAddress((InetSocketAddress)addr);
+    }
+
+    @Override
+    protected String getRevealedLocalAddressAsString(SocketAddress addr) {
+        return Net.getRevealedLocalAddressAsString((InetSocketAddress)addr);
+    }
+
+    /**
+     * Returns the local address, or null if not bound
+     */
+    @Override
+    InetSocketAddress localAddress() {
+        return (InetSocketAddress)super.localAddress();
     }
 
     @Override
@@ -153,6 +160,7 @@ class InetServerSocketChannelImpl
         return Net.localAddress(getFD());
     }
 
+    @Override
     protected int implAccept(FileDescriptor fd, FileDescriptor newfd, SocketAddress[] addrs)
         throws IOException
     {
@@ -162,21 +170,7 @@ class InetServerSocketChannelImpl
         return n;
     }
 
-    protected SocketAddress getRevealedLocalAddress(SocketAddress addr) {
-        return Net.getRevealedLocalAddress((InetSocketAddress)addr);
-    }
-
-    protected String getRevealedLocalAddressAsString(SocketAddress addr) {
-        return Net.getRevealedLocalAddressAsString((InetSocketAddress)addr);
-    }
-
-    /**
-     * Returns the local address, or null if not bound
-     */
-    InetSocketAddress localAddress() {
-        return (InetSocketAddress)super.localAddress();
-    }
-
+    @Override
     protected SocketChannel implFinishAccept(FileDescriptor newfd, SocketAddress sa)
         throws IOException
     {

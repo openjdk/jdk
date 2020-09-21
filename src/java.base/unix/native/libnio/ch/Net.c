@@ -27,17 +27,14 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
-#include <stddef.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <limits.h>
 
 #include "jni.h"
-#include "java_props.h"
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
-#include "java_net_InetAddress.h"
 #include "sun_nio_ch_Net.h"
 #include "net_util.h"
 #include "net_util_md.h"
@@ -431,7 +428,7 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
          * that getsockname() will never fail. According to the Single UNIX Specification,
          * it shouldn't fail. As such, we just fill in generic Linux-compatible values.
          */
-        if (errno == ECONNRESET && sa.sa.sa_family != AF_UNIX) {
+        if (errno == ECONNRESET) {
             bzero(&sa.sa4, sizeof(sa));
             sa.sa4.sin_len  = sizeof(struct sockaddr_in);
             sa.sa4.sin_family = AF_INET;
