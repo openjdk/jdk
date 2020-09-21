@@ -817,9 +817,6 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   bool is_par = scope->n_threads() > 1;
   Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_code_p);
 
-  if (_process_strong_tasks->try_claim_task(GCH_PS_ObjectSynchronizer_oops_do)) {
-    ObjectSynchronizer::oops_do(strong_roots);
-  }
 #if INCLUDE_AOT
   if (UseAOT && _process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {
     AOTLoader::oops_do(strong_roots);
