@@ -4888,8 +4888,7 @@ bool MergeMemStream::match_memory(Node* mem, const MergeMemNode* mm, int idx) {
   if (mem == n)  return true;  // might be empty_memory()
   n = (idx == Compile::AliasIdxBot)? mm->base_memory(): mm->memory_at(idx);
   if (mem == n)  return true;
-  if (n->is_Phi())
-    assert(!n->as_Phi()->is_copy(), "n cannot be a copy");
+  assert(!n->is_Phi() || !n->as_Phi()->is_copy(), "n cannot be a copy");
   return false;
 }
 #endif // !PRODUCT
