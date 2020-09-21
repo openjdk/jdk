@@ -2,8 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug 8231827
  * @summary Verify behavior w.r.t. non-reifiable types in instanceof
- * @compile/fail/ref=ReifiableOld-old.out -source 13 -Xlint:-options -XDrawDiagnostics ReifiableOld.java
- * @compile/fail/ref=ReifiableOld-old.out -source 14 -Xlint:-options -XDrawDiagnostics ReifiableOld.java
  * @compile/fail/ref=ReifiableOld-old.out -source 15 -Xlint:-options -XDrawDiagnostics ReifiableOld.java
  * @compile/fail/ref=ReifiableOld.out -XDrawDiagnostics ReifiableOld.java
  */
