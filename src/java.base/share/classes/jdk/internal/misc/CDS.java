@@ -51,9 +51,9 @@ public class CDS {
     public static native long getRandomSeedForDumping();
 
     /**
-     * Check if dynamic dumping is enabled via the DynamicDumpSharedSpaces flag.
+     * Check if CDS dumping is enabled via the DynamicDumpSharedSpaces or the DumpSharedSpaces flag.
      */
-    public static native boolean isDynamicDumpingEnabled(); // will return false for static dumping.
+    public static native boolean isCDSDumpingEnabled();
 
     /**
      * Check if sharing is enabled via the UseSharedSpaces flag.

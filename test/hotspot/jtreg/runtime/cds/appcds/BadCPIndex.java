@@ -21,17 +21,31 @@
  * questions.
  *
  */
-public class LambHello {
-    public static void main(String[] args) {
-        doTest();
-    }
 
-    static void doTest() {
-        doit(() -> {
-            System.out.println("Hello from doTest");
-        });
-    }
-    static void doit(Runnable t) {
-        t.run();
-    }
+/*
+ * @test
+ * @summary CDS dump should abort upon detection of a bad CP index in the classlist.
+ * @requires vm.cds
+ * @library /test/lib
+ * @compile dynamicArchive/test-classes/StrConcatApp.java
+ * @run driver BadCPIndex
+ */
+
+import jdk.test.lib.process.OutputAnalyzer;
+
+public class BadCPIndex {
+
+  public static void main(String[] args) throws Exception {
+    JarBuilder.build("strconcatapp", "StrConcatApp");
+
+    String appJar = TestCommon.getTestJar("strconcatapp.jar");
+
+    // test with an invalid indy index, it should be a negative integer
+    OutputAnalyzer out = TestCommon.dump(appJar,
+        TestCommon.list("StrConcatApp",
+                        "@lambda-proxy: StrConcatApp 7"));
+    out.shouldHaveExitValue(1);
+    out.shouldContain("Invalid cp_index 7 for class StrConcatApp");
+
+  }
 }

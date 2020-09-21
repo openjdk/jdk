@@ -45,8 +45,8 @@ Java_jdk_internal_misc_CDS_getRandomSeedForDumping(JNIEnv *env, jclass ignore) {
 }
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_CDS_isDynamicDumpingEnabled(JNIEnv *env, jclass jcls) {
-    return JVM_IsDynamicDumpingEnabled(env);
+Java_jdk_internal_misc_CDS_isCDSDumpingEnabled(JNIEnv *env, jclass jcls) {
+    return JVM_IsCDSDumpingEnabled(env);
 }
 
 JNIEXPORT jboolean JNICALL

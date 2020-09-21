@@ -3741,7 +3741,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
                                               jclass lambdaProxyClass))
   JVMWrapper("JVM_RegisterLambdaProxyClassForArchiving");
 #if INCLUDE_CDS
-  if (!DynamicDumpSharedSpaces) {
+  if (!Arguments::is_dumping_archive()) {
     return;
   }
 
@@ -3776,7 +3776,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
   Symbol* instantiated_method_type = java_lang_invoke_MethodType::as_signature(instantiated_method_type_oop(), true);
 
   SystemDictionaryShared::add_lambda_proxy_class(caller_ik, lambda_ik, invoked_name, invoked_type,
-                                                 method_type, m, instantiated_method_type);
+                                                 method_type, m, instantiated_method_type, THREAD);
 #endif // INCLUDE_CDS
 JVM_END
 
@@ -3790,9 +3790,6 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
                                                         jboolean initialize))
   JVMWrapper("JVM_LookupLambdaProxyClassFromArchive");
 #if INCLUDE_CDS
-  if (!DynamicArchive::is_mapped()) {
-    return NULL;
-  }
 
   if (invokedName == NULL || invokedType == NULL || methodType == NULL ||
       implMethodMember == NULL || instantiatedMethodType == NULL) {
@@ -3833,9 +3830,9 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 #endif // INCLUDE_CDS
 JVM_END
 
-JVM_ENTRY(jboolean, JVM_IsDynamicDumpingEnabled(JNIEnv* env))
-    JVMWrapper("JVM_IsDynamicDumpingEnable");
-    return DynamicDumpSharedSpaces;
+JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
+    JVMWrapper("JVM_IsCDSDumpingEnable");
+    return Arguments::is_dumping_archive();
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsSharingEnabled(JNIEnv* env))

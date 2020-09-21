@@ -1353,8 +1353,10 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
 
   InstanceKlass* loaded_ik = load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, CHECK_NULL);
 
-  assert(shared_nest_host->is_same_class_package(ik),
-         "lambda proxy class and its nest host must be in the same package");
+  if (loaded_ik != NULL) {
+    assert(shared_nest_host->is_same_class_package(ik),
+           "lambda proxy class and its nest host must be in the same package");
+  }
 
   return loaded_ik;
 }

@@ -31,10 +31,14 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "interpreter/bytecode.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -94,6 +98,7 @@ bool ClassListParser::parse_one_line() {
   _interfaces->clear();
   _source = NULL;
   _interfaces_specified = false;
+  _cp_index = _unspecified;
 
   {
     int len = (int)strlen(_line);
@@ -115,12 +120,35 @@ bool ClassListParser::parse_one_line() {
       }
     }
     _line_len = len;
-    _class_name = _line;
   }
 
-  if ((_token = strchr(_line, ' ')) == NULL) {
-    // No optional arguments are specified.
-    return true;
+  int min_len = (int)strlen(LAMBDA_PROXY_TAG);
+  if (_line[0] == '@' && _line_len < min_len) {
+    error("line #%d \"%s\" with length %d too short", _line_no, _line, _line_len);
+    return false;
+  }
+
+  bool lambda_proxy_line = false;
+  int class_name_offset = 0;
+  if (strncmp(_line, LAMBDA_PROXY_TAG, min_len) == 0) {
+    lambda_proxy_line = true;
+    if (_line[min_len] != ' ') {
+      error("line #%d \"%s\" expecting a blank space after \":\"", _line_no, _line);
+      return false;
+    }
+    class_name_offset = min_len + 1;
+  }
+
+  _class_name = _line + class_name_offset;
+  _token = strchr(_line + class_name_offset, ' ');
+  if (_token == NULL) {
+    if (!lambda_proxy_line) {
+      // No optional arguments are specified.
+      return true;
+    } else {
+      error("Expecting an index number following the class name");
+      return false;
+    }
   }
 
   // Mark the end of the name, and go to the next input char
@@ -129,14 +157,14 @@ bool ClassListParser::parse_one_line() {
   while (*_token) {
     skip_whitespaces();
 
-    if (parse_int_option("id:", &_id)) {
+    if (parse_uint_option("id:", &_id)) {
       continue;
-    } else if (parse_int_option("super:", &_super)) {
+    } else if (parse_uint_option("super:", &_super)) {
       check_already_loaded("Super class", _super);
       continue;
     } else if (skip_token("interfaces:")) {
       int i;
-      while (try_parse_int(&i)) {
+      while (try_parse_uint(&i)) {
         check_already_loaded("Interface", i);
         _interfaces->append(i);
       }
@@ -150,12 +178,16 @@ bool ClassListParser::parse_one_line() {
         *s = '\0'; // mark the end of _source
         _token = s+1;
       }
+    } else if (lambda_proxy_line) {
+      parse_int(&_cp_index);
     } else {
       error("Unknown input");
     }
   }
 
-  // if src is specified
+  // if it is a lambda_proxy_line
+  //     only indy_index should be specified
+  // else if src is specified
   //     id super interfaces must all be specified
   //     loader may be specified
   // else
@@ -181,15 +213,19 @@ void ClassListParser::parse_int(int* value) {
   skip_whitespaces();
   if (sscanf(_token, "%i", value) == 1) {
     skip_non_whitespaces();
-    if (*value < 0) {
-      error("Error: negative integers not allowed (%d)", *value);
-    }
   } else {
     error("Error: expected integer");
   }
 }
 
-bool ClassListParser::try_parse_int(int* value) {
+void ClassListParser::parse_uint(int* value) {
+  parse_int(value);
+  if (*value < 0) {
+    error("Error: negative integers not allowed (%d)", *value);
+  }
+}
+
+bool ClassListParser::try_parse_uint(int* value) {
   skip_whitespaces();
   if (sscanf(_token, "%i", value) == 1) {
     skip_non_whitespaces();
@@ -214,6 +250,18 @@ bool ClassListParser::parse_int_option(const char* option_name, int* value) {
       error("%s specified twice", option_name);
     } else {
       parse_int(value);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ClassListParser::parse_uint_option(const char* option_name, int* value) {
+  if (skip_token(option_name)) {
+    if (*value != _unspecified) {
+      error("%s specified twice", option_name);
+    } else {
+      parse_uint(value);
       return true;
     }
   }
@@ -326,8 +374,58 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   return k;
 }
 
+void ClassListParser::resolve_indy(Symbol* class_name_symbol, TRAPS) {
+
+  Handle class_loader(THREAD, SystemDictionary::java_system_loader());
+  Handle protection_domain;
+  Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, protection_domain, true, THREAD); // FIXME should really be just a lookup
+  if (klass != NULL && klass->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(klass);
+    MetaspaceShared::try_link_class(ik, THREAD);
+    assert(!HAS_PENDING_EXCEPTION, "unexpected exception");
+
+    ConstantPool* cp = ik->constants();
+    ConstantPoolCache* cpcache = cp->cache();
+    for (int cpcindex = 0; cpcindex < cpcache->length(); cpcindex ++) {
+      int indy_index = ConstantPool::encode_invokedynamic_index(cpcindex);
+      ConstantPoolCacheEntry* cpce = cpcache->entry_at(cpcindex);
+      int pool_index = cpce->constant_pool_index();
+      if (pool_index == _cp_index) {
+        constantPoolHandle pool(THREAD, cp);
+        if (!pool->tag_at(pool_index).has_bootstrap()) {
+          ResourceMark rm(THREAD);
+          tty->print_cr("Invalid cp_index %d for class %s", pool_index, ik->name()->as_C_string());
+          exit(1);
+        }
+        BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
+        Handle bsm = bootstrap_specifier.resolve_bsm(THREAD);
+        if (!SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
+           tty->print_cr("is_supported_invokedynamic check failed for cp_index %d", pool_index);
+           exit(1);
+        }
+        CallInfo info;
+        bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(info, THREAD);
+        if (!is_done) {
+          // resolve it
+          Handle recv;
+          LinkResolver::resolve_invoke(info, recv, pool, indy_index, Bytecodes::_invokedynamic, THREAD);
+        }
+        cpce->set_dynamic_call(pool, info);
+        if (HAS_PENDING_EXCEPTION) {
+          exit(1);
+        }
+      }
+    }
+  }
+}
+
 Klass* ClassListParser::load_current_class(TRAPS) {
   TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
+
+  if (_cp_index != _unspecified) {
+    resolve_indy(class_name_symbol, CHECK_NULL);
+    return NULL;
+  }
 
   Klass* klass = NULL;
   if (!is_loading_from_source()) {

@@ -24,11 +24,14 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "classfile/classListParser.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
@@ -1765,6 +1768,13 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   // of this method, via CPCE::set_dynamic_call, which uses
   // an ObjectLocker to do the final serialization of updates
   // to CPCE state, including f1.
+
+  if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
+    if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
+      ResourceMark rm(THREAD);
+      classlist_file->print_cr("%s %s %d", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string(), pool_index);
+    }
+  }
 }
 
 void LinkResolver::resolve_dynamic_call(CallInfo& result,

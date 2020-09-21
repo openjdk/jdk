@@ -288,7 +288,7 @@ public:
                                      Symbol* invoked_type,
                                      Symbol* method_type,
                                      Method* member_method,
-                                     Symbol* instantiated_method_type) NOT_CDS_RETURN;
+                                     Symbol* instantiated_method_type, TRAPS) NOT_CDS_RETURN;
   static InstanceKlass* get_shared_lambda_proxy_class(InstanceKlass* caller_ik,
                                                       Symbol* invoked_name,
                                                       Symbol* invoked_type,
@@ -321,6 +321,7 @@ public:
   static bool empty_dumptime_table() NOT_CDS_RETURN_(true);
   static void start_dumping() NOT_CDS_RETURN;
   static Handle create_jar_manifest(const char* man, size_t size, TRAPS) NOT_CDS_RETURN_(Handle());
+  static bool is_supported_invokedynamic(BootstrapInfo bsi) NOT_CDS_RETURN_(false);
 
   DEBUG_ONLY(static bool no_class_loading_should_happen() {return _no_class_loading_should_happen;})
 
@@ -347,6 +348,7 @@ public:
 #if INCLUDE_CDS_JAVA_HEAP
 private:
   static void update_archived_mirror_native_pointers_for(RunTimeSharedDictionary* dict);
+  static void update_archived_mirror_native_pointers_for(LambdaProxyClassDictionary* dict);
 public:
   static void update_archived_mirror_native_pointers() NOT_CDS_RETURN;
 #endif

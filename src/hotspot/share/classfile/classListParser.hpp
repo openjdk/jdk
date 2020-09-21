@@ -30,6 +30,8 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
 
+#define LAMBDA_PROXY_TAG "@lambda-proxy:"
+
 class ID2KlassTable : public KVHashtable<int, InstanceKlass*, mtInternal> {
 public:
   ID2KlassTable() : KVHashtable<int, InstanceKlass*, mtInternal>(1987) {}
@@ -61,6 +63,7 @@ class ClassListParser : public StackObj {
   int                 _line_len;              // Original length of the input line.
   int                 _line_no;               // Line number for current line being parsed
   const char*         _class_name;
+  int                 _cp_index;
   int                 _id;
   int                 _super;
   GrowableArray<int>* _interfaces;
@@ -68,6 +71,7 @@ class ClassListParser : public StackObj {
   const char*         _source;
 
   bool parse_int_option(const char* option_name, int* value);
+  bool parse_uint_option(const char* option_name, int* value);
   InstanceKlass* load_class_from_source(Symbol* class_name, TRAPS);
   ID2KlassTable *table() {
     return &_id2klass_table;
@@ -75,6 +79,7 @@ class ClassListParser : public StackObj {
   InstanceKlass* lookup_class_by_id(int id);
   void print_specified_interfaces();
   void print_actual_interfaces(InstanceKlass *ik);
+  void resolve_indy(Symbol* class_name_symbol, TRAPS);
 public:
   ClassListParser(const char* file);
   ~ClassListParser();
@@ -86,7 +91,8 @@ public:
   char* _token;
   void error(const char* msg, ...);
   void parse_int(int* value);
-  bool try_parse_int(int* value);
+  void parse_uint(int* value);
+  bool try_parse_uint(int* value);
   bool skip_token(const char* option_name);
   void skip_whitespaces();
   void skip_non_whitespaces();
