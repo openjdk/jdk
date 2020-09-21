@@ -468,16 +468,17 @@ HeapRegionRange HeapRegionManager::find_unavailable_from_idx(uint index) const {
 uint HeapRegionManager::find_highest_free(bool* expanded) {
   // Loop downwards from the highest region index, looking for an
   // entry which is either free or not yet committed.  If not yet
-  // committed, expand_at that index.
+  // committed, expand at that index.
   uint curr = reserved_length() - 1;
   while (true) {
     HeapRegion *hr = _regions.get_by_index(curr);
     if (hr == NULL || !is_available(curr)) {
-      uint res = expand_at(curr, 1, NULL);
-      if (res == 1) {
-        *expanded = true;
-        return curr;
-      }
+      // Found uncommitted and free region, expand to make it available for use.
+      expand_exact(curr, 1, NULL);
+      assert(at(curr)->is_free(), "Region (%u) must be available and free after expand", curr);
+
+      *expanded = true;
+      return curr;
     } else {
       if (hr->is_free()) {
         *expanded = false;
@@ -501,7 +502,7 @@ bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* com
   for (uint curr_index = start_index; curr_index <= last_index; curr_index++) {
     if (!is_available(curr_index)) {
       commits++;
-      expand_at(curr_index, 1, pretouch_workers);
+      expand_exact(curr_index, 1, pretouch_workers);
     }
     HeapRegion* curr_region  = _regions.get_by_index(curr_index);
     if (!curr_region->is_free()) {
