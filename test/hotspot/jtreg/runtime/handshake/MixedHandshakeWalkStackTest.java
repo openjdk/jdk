@@ -27,7 +27,6 @@
  * @library /testlibrary /test/lib
  * @build MixedHandshakeWalkStackTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI MixedHandshakeWalkStackTest
  */
 
@@ -35,21 +34,21 @@ import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 
 public class MixedHandshakeWalkStackTest {
-    public static Thread tthreads[];
+    public static Thread testThreads[];
 
     public static void main(String... args) throws Exception {
-        tthreads = new Thread[Runtime.getRuntime().availableProcessors()];
-        for (int i = 0; i < tthreads.length; i++) {
-            tthreads[i] = new Thread(() -> handshake());
+        testThreads = new Thread[Runtime.getRuntime().availableProcessors()];
+        for (int i = 0; i < testThreads.length; i++) {
+            testThreads[i] = new Thread(() -> handshake());
         }
 
-        for (Thread t : tthreads) {
+        for (Thread t : testThreads) {
             t.start();
         }
 
         handshake();
 
-        for (Thread t : tthreads) {
+        for (Thread t : testThreads) {
             t.join();
         }
     }
@@ -59,9 +58,9 @@ public class MixedHandshakeWalkStackTest {
         java.util.concurrent.ThreadLocalRandom rand = java.util.concurrent.ThreadLocalRandom.current();
         long end = System.currentTimeMillis() + 20000;
         while (end > System.currentTimeMillis()) {
-            wb.asyncHandshakeWalkStack(tthreads[rand.nextInt(tthreads.length)]);
-            wb.handshakeWalkStack(tthreads[rand.nextInt(tthreads.length)], false);
-            wb.handshakeWalkStack(tthreads[rand.nextInt(tthreads.length)], true);
+            wb.asyncHandshakeWalkStack(testThreads[rand.nextInt(testThreads.length)]);
+            wb.handshakeWalkStack(testThreads[rand.nextInt(testThreads.length)], false);
+            wb.handshakeWalkStack(testThreads[rand.nextInt(testThreads.length)], true);
         }
     }
 }

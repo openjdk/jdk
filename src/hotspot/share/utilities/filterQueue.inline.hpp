@@ -32,7 +32,7 @@ template <class E>
 void FilterQueue<E>::add(E data) {
   FilterQueueNode* head;
   FilterQueueNode* insnode = new FilterQueueNode(data);
-  SpinYield yield(SpinYield::default_spin_limit * 10); // Very unlikely with mutiple failed CAS.
+  SpinYield yield(SpinYield::default_spin_limit * 10); // Very unlikely with multiple failed CAS.
   while (true){
     head = load_first();
     insnode->_next = head;
@@ -73,7 +73,7 @@ E FilterQueue<E>::pop(MATCH_FUNC& match_func) {
   if (cur == NULL) {
     return (E)NULL;
   }
-  SpinYield yield(SpinYield::default_spin_limit * 10); // Very unlikely with mutiple failed CAS.
+  SpinYield yield(SpinYield::default_spin_limit * 10); // Very unlikely with multiple failed CAS.
   do {
     do {
       if (match_func(cur->_data)) {

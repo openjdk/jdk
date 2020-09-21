@@ -688,9 +688,9 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
                                  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list) {
   // Note:
   // calling_thread is the thread that requested the list of monitors for java_thread.
-  // java_thread is thread owning the monitors.
-  // current_thread is thread executint this code, can be a non-JavaThread (e.g. VM Thread).
-  // And they all maybe different threads.
+  // java_thread is the thread owning the monitors.
+  // current_thread is the thread executing this code, can be a non-JavaThread (e.g. VM Thread).
+  // And they all may be different threads.
   jvmtiError err = JVMTI_ERROR_NONE;
   Thread *current_thread = Thread::current();
   assert(java_thread->is_handshake_safe_for(current_thread),

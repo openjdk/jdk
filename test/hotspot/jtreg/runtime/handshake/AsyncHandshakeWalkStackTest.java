@@ -27,7 +27,6 @@
  * @library /testlibrary /test/lib
  * @build AsyncHandshakeWalkStackTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AsyncHandshakeWalkStackTest
  */
 

@@ -54,8 +54,6 @@ class FilterQueue {
   }
 
   // MT-safe
-  // Since pops and adds are allowed while we add, we do not know if _first is same even if it's the same address.
-  // But that ABA race is benign.
   void add(E data);
 
   // MT-Unsafe, external serialization needed.

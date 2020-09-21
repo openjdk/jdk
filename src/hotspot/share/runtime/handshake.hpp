@@ -100,12 +100,12 @@ class HandshakeState {
   void process_by_self();
 
   enum ProcessResult {
-      _no_operation = 0,
-      _not_safe,
-      _claim_failed,
-      _processed,
-      _succeed,
-      _number_states
+    _no_operation = 0,
+    _not_safe,
+    _claim_failed,
+    _processed,
+    _succeeded,
+    _number_states
   };
   ProcessResult try_process(HandshakeOperation* match_op);
 

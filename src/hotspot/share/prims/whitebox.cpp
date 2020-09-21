@@ -2027,9 +2027,13 @@ WB_END
 
 WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle))
   class TraceSelfClosure : public AsynchHandshakeClosure {
+    JavaThread* _self;
     void do_thread(Thread* th) {
       assert(th->is_Java_thread(), "sanity");
-      JavaThread* jt = (JavaThread*)th;
+      // AsynchHandshake handshakes are only executed by target.
+      assert(_self == th, "Must be");
+      assert(Thread::current() == th, "Must be");
+      JavaThread* jt = th->as_Java_thread();
       ResourceMark rm;
       jt->print_on(tty);
       jt->print_stack_on(tty);
@@ -2037,13 +2041,12 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
     }
 
   public:
-    TraceSelfClosure() : AsynchHandshakeClosure("WB_TraceSelf") {}
+    TraceSelfClosure(JavaThread* self_target) : AsynchHandshakeClosure("WB_TraceSelf"), _self(self_target) {}
   };
-  TraceSelfClosure* tsc = new TraceSelfClosure();
-
   oop thread_oop = JNIHandles::resolve(thread_handle);
   if (thread_oop != NULL) {
     JavaThread* target = java_lang_Thread::thread(thread_oop);
+    TraceSelfClosure* tsc = new TraceSelfClosure(target);
     Handshake::execute(tsc, target);
   }
 WB_END

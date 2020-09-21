@@ -248,12 +248,13 @@ class GetCurrentLocationClosure : public HandshakeClosure {
  private:
    jmethodID _method_id;
    int _bci;
-
+   bool _completed;
  public:
   GetCurrentLocationClosure()
     : HandshakeClosure("GetCurrentLocation"),
       _method_id(NULL),
-      _bci(0) {}
+      _bci(0),
+      _completed(false) {}
   void do_thread(Thread *target) {
     JavaThread *jt = target->as_Java_thread();
     ResourceMark rmark; // jt != Thread::current()
@@ -272,10 +273,14 @@ class GetCurrentLocationClosure : public HandshakeClosure {
       _method_id = (jmethodID)NULL;
       _bci = 0;
     }
+    _completed = true;
   }
   void get_current_location(jmethodID *method_id, int *bci) {
     *method_id = _method_id;
     *bci = _bci;
+  }
+  bool completed() {
+    return _completed;
   }
 };
 
@@ -318,6 +323,7 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
         op.do_thread(_thread);
       } else {
         Handshake::execute(&op, _thread);
+        guarantee(op.completed(), "Handshake failed. Target thread is not alive?");
       }
       op.get_current_location(&method_id, &bci);
       set_current_location(method_id, bci);
