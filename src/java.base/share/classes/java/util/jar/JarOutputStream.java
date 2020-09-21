@@ -81,6 +81,12 @@ public class JarOutputStream extends ZipOutputStream {
      * The current time will be used if the entry has no set modification
      * time.
      *
+     * @apiNote
+     * {@inheritDoc}
+     *
+     * @implNote
+     * {@inheritDoc}
+     *
      * @param ze the ZIP/JAR entry to be written
      * @throws    ZipException if a ZIP error has occurred
      * @throws    IOException if an I/O error has occurred

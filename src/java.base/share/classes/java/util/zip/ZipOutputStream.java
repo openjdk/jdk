@@ -57,6 +57,34 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         Boolean.parseBoolean(
             GetPropertyAction.privilegedGetProperty("jdk.util.zip.inhibitZip64"));
 
+    /**
+     * How to handle the compressed size information from 'ZipEntry.csize' in
+     * 'putNextEntry()' if it was implicitely read from the zip file:
+     *
+     * DEFAULT : if 'ZipEntry.csize' is valid (i.e. != '-1') store it in
+     *           the Local File Header.
+     * IGNORE  : ignore 'ZipEntry.csize' (even if valid) and create a
+     *           Streaming Data Header with the computed compressed size.
+     * WARN    : like "IGNORE" but additonaly prints a warning on stdout.
+     * STACK   : like "WARN" but additonaly prints the current stack trace on stdout.
+     */
+    private enum CompressedSizeHandling {
+        DEFAULT,
+        IGNORE,
+        WARN,
+        STACK;
+        public static CompressedSizeHandling getValue(String csh) {
+            try {
+                return valueOf(csh.toUpperCase());
+            }
+            catch (IllegalArgumentException|NullPointerException e) {};
+            return DEFAULT;
+        }
+    }
+    private static final CompressedSizeHandling compressedSizeHandling =
+        CompressedSizeHandling.getValue(
+            GetPropertyAction.privilegedGetProperty("jdk.util.zip.ZipEntry.compressedSizeHandling"));
+
     private static class XEntry {
         final ZipEntry entry;
         final long offset;
@@ -182,6 +210,60 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * The default compression method will be used if no compression method
      * was specified for the entry, and the current time will be used if
      * the entry has no set modification time.
+     *
+     * @apiNote
+     * In general it is not safe to directly write a {@code ZipEntry} obtained
+     * from {@link ZipInputStream#getNextEntry()},  {@link ZipFile#entries()},
+     * {@link ZipFile#getEntry(String)} or {@link ZipFile#stream()} with this
+     * method to a {@code ZipOutputStream} as follows:
+     *
+     * <blockquote><pre>
+     * ZipEntry entry;
+     * ZipInputStream zis = new ZipInputStream(...);
+     * ZipOutputStream zos = new ZipOutputStream(...);
+     * while((entry = zis.getNextEntry()) != null) {
+     *     zos.putNextEntry(entry);
+     *     zis.transferTo(zos);
+     * }
+     * </pre></blockquote>
+     *
+     * The problem with this code is that the zip file format does not record
+     * the compression level used for deflation in its entries. In general, it
+     * doesn't even mandate a predefined compression ratio per compression
+     * level. Therefore the compressed size recorded in a {@code ZipEntry}
+     * read from a zip file might differ from the new compressed size produced
+     * by the receiving {@code ZipOutputStream}. Such a difference will result
+     * in a {@link ZipException} with the following message:
+     *
+     * <blockquote><pre>
+     * java.util.zip.ZipException: invalid entry compressed size (expected 12 but got 7 bytes)
+     * </pre></blockquote>
+     *
+     * The correct way of copying all entries from one zip file into another
+     * requires the creation of a new {@code ZipEntry} or at least resetting of the
+     * compressed size field. E.g.:
+     *
+     * <blockquote><pre>
+     * while((entry = zis.getNextEntry()) != null) {
+     *     entry.setCompressedSize(-1);
+     *     zos.putNextEntry(entry);
+     *     zis.transferTo(zos);
+     * }
+     * </pre></blockquote>
+     *
+     * @implNote
+     * This implementation supports the system property
+     * {@code jdk.util.zip.ZipEntry.compressedSizeHandling} which can be used
+     * to fix legacy applications which use the bad coding pattern described before.
+     * The property can take on of the four values {@code default}, {@code ignore},
+     * {@code warn} or {@code stack}. If not set, {@code default} is the default
+     * value which maintains the previous behaviour. If set to {@code ignore},
+     * the compressed size setting in {@code ZipEntry} objects will be ignored by
+     * this method unless it was explicitely set by calling
+     * {@link ZipEntry#setCompressedSize(long)}. {@code warn} is like {@code ignore}
+     * but will additonaly print a warning to stdout. Finally, {@code stack} is like
+     * {@code warn} but will additionally print the current stack trace to stdout.
+     *
      * @param     e the ZIP entry to be written
      * @throws    ZipException if a ZIP format error has occurred
      * @throws    IOException if an I/O error has occurred
@@ -205,8 +287,19 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         case DEFLATED:
             // store size, compressed size, and crc-32 in data descriptor
             // immediately following the compressed entry data
-            if (e.size  == -1 || e.csize == -1 || e.crc   == -1)
+            if (e.size  == -1 || e.csize == -1 || e.crc   == -1) {
                 e.flag = 8;
+            }
+            else if (compressedSizeHandling != CompressedSizeHandling.DEFAULT && !e.manual_csize) {
+                e.flag = 8;
+                if (compressedSizeHandling == CompressedSizeHandling.WARN ||
+                    compressedSizeHandling == CompressedSizeHandling.STACK) {
+                    System.out.printf("WARNING: ignoring compressed size %d of ZipEntry(\"%s\")\n", e.csize, e);
+                }
+                if (compressedSizeHandling == CompressedSizeHandling.STACK) {
+                    StackWalker.getInstance().forEach(f -> { System.out.println("         " + f); } );
+                }
+           }
 
             break;
         case STORED:
