@@ -29,7 +29,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 
-void ZVirtualMemoryManager::initialize_os() {
+void ZVirtualMemoryManager::os_initialize() {
   // Does nothing
 }
 

@@ -30,7 +30,7 @@ class ZNUMA : public AllStatic {
 private:
   static bool _enabled;
 
-  static void initialize_platform();
+  static void pd_initialize();
 
 public:
   static void initialize();

@@ -51,7 +51,7 @@ private:
   bool           _initialized;
 
   // OS specific implementation
-  void initialize_os();
+  void os_initialize();
   bool os_reserve(uintptr_t addr, size_t size);
   void os_unreserve(uintptr_t addr, size_t size);
 

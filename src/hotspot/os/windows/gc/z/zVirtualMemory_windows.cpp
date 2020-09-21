@@ -87,7 +87,7 @@ static void grow_from_back_callback(const ZMemory* area, size_t size) {
   coalesce_into_one_placeholder(area->start(), area->size() + size);
 }
 
-void ZVirtualMemoryManager::initialize_os() {
+void ZVirtualMemoryManager::os_initialize() {
   // Each reserved virtual memory address area registered in _manager is
   // exactly covered by a single placeholder. Callbacks are installed so
   // that whenever a memory area changes, the corresponding placeholder

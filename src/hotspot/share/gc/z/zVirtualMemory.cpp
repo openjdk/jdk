@@ -49,7 +49,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
   }
 
   // Initialize OS specific parts
-  initialize_os();
+  os_initialize();
 
   // Successfully initialized
   _initialized = true;
