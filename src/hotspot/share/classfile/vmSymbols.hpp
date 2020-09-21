@@ -28,7 +28,6 @@
 #include "classfile/vmIntrinsics.hpp"
 #include "jvmci/vmSymbols_jvmci.hpp"
 #include "memory/iterator.hpp"
-#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/symbol.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/enumIterator.hpp"
