@@ -379,10 +379,4 @@ public class CompletenessTest extends KullaTesting {
         assertStatus("int[] m = {1, 2}, n = new int[0];  int i;", COMPLETE,
                      "int[] m = {1, 2}, n = new int[0];");
     }
-
-    @BeforeMethod
-    public void setUp() {
-        setUp(b -> b.compilerOptions("--enable-preview", "-source", String.valueOf(SourceVersion.latest().ordinal())));
-    }
-
 }

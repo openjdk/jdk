@@ -47,8 +47,7 @@ import javax.tools.JavaFileObject;
 public class ElementFilterRecordComponentTest {
     public static void main(String... args) throws IOException {
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        JavacTask t = (JavacTask) c.getTask(null, null, null,
-                List.of("--enable-preview", "-source", Integer.toString(Runtime.version().feature())), null,
+        JavacTask t = (JavacTask) c.getTask(null, null, null, null, null,
                 List.of(new SimpleJavaFileObject(URI.create("TestClass.java"), JavaFileObject.Kind.SOURCE) {
             @Override
             public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {

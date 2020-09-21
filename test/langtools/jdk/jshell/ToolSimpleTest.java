@@ -917,7 +917,7 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testRecords() {
-        test(new String[] {"--enable-preview"},
+        test(new String[] {},
                 (a) -> assertCommandOutputContains(a, "record R(int i) { public int g() { return j; } }",
                         "|  created record R, however, it cannot be instantiated or its methods invoked until variable j is declared"),
                 (a) -> assertCommandOutputContains(a, "new R(0)",

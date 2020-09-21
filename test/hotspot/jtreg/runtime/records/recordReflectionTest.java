@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @compile --enable-preview --source ${jdk.version} recordReflectionTest.java
- * @run main/othervm --enable-preview recordReflectionTest
+ * @run main/othervm recordReflectionTest
  */
 
 

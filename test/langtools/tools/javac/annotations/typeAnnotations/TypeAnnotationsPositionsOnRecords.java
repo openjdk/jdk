@@ -32,8 +32,8 @@
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
- * @compile --enable-preview -source ${jdk.version} TypeAnnotationsPositionsOnRecords.java
- * @run main/othervm --enable-preview TypeAnnotationsPositionsOnRecords
+ * @compile TypeAnnotationsPositionsOnRecords.java
+ * @run main TypeAnnotationsPositionsOnRecords
  */
 
 import java.util.List;
@@ -105,7 +105,6 @@ public class TypeAnnotationsPositionsOnRecords {
     void compileTestClass() throws Exception {
         new JavacTask(tb)
                 .sources(src)
-                .options("--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
                 .run();
     }
 

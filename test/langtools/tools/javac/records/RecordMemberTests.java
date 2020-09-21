@@ -27,8 +27,8 @@
  * RecordMemberTests
  *
  * @test
- * @compile --enable-preview -source ${jdk.version} RecordMemberTests.java
- * @run testng/othervm --enable-preview RecordMemberTests
+ * @compile RecordMemberTests.java
+ * @run testng RecordMemberTests
  */
 
 import java.lang.reflect.Constructor;

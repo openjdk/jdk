@@ -23,9 +23,6 @@
 
 // key: compiler.err.invalid.accessor.method.in.record
 // key: compiler.misc.accessor.method.cant.throw.exception
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
 
 record R(int i) {
     public int i() throws ArithmeticException {

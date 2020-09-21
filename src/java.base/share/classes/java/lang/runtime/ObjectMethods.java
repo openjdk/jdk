@@ -38,13 +38,6 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * {@preview Associated with records, a preview feature of the Java language.
- *
- *           This class is associated with <i>records</i>, a preview
- *           feature of the Java language. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java language.}
- *
  * Bootstrap methods for state-driven implementations of core methods,
  * including {@link Object#equals(Object)}, {@link Object#hashCode()}, and
  * {@link Object#toString()}.  These methods may be used, for example, by
@@ -53,8 +46,6 @@ import java.util.Objects;
  *
  * @since 14
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=false)
 public class ObjectMethods {
 
     private ObjectMethods() { }

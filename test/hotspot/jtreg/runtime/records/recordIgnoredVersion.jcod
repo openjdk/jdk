@@ -21,11 +21,11 @@
  * questions.
  */
 
-// Record attribute is ignored because class file minor version is 0.
+// Record attribute is ignored because class file major version is < 60.
 class recordIgnoredVersion {
   0xCAFEBABE;
   0; // minor version
-  60; // version
+  59; // version
   [52] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1     at 0x0A

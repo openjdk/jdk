@@ -30,8 +30,8 @@
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
- * @compile --enable-preview -source ${jdk.version} LocalStaticDeclarations.java
- * @run main/othervm --enable-preview LocalStaticDeclarations
+ * @compile LocalStaticDeclarations.java
+ * @run main LocalStaticDeclarations
  */
 
 import javax.lang.model.element.Element;
@@ -175,7 +175,6 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     @Override
     public void doWork() throws Throwable {
         newCompilationTask()
-                .withOptions(new String[]{"--enable-preview", "-source", Integer.toString(Runtime.version().feature())})
                 .withSourceFromTemplate("Test", sourceTemplate)
                 .generate(this::check);
     }

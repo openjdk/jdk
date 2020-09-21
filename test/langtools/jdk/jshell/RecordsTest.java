@@ -76,10 +76,4 @@ public class RecordsTest extends KullaTesting {
         assertEval("record(\"r\")", "\"rr\"");
         assertEval("record(\"r\").length()", "2");
     }
-
-    @BeforeMethod
-    public void setUp() {
-        setUp(b -> b.compilerOptions("--enable-preview", "-source", String.valueOf(SourceVersion.latest().ordinal()))
-                    .remoteVMOptions("--enable-preview"));
-    }
 }

@@ -74,7 +74,6 @@ public class TestRecordLinks  extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "example");
         checkExit(Exit.OK);
 

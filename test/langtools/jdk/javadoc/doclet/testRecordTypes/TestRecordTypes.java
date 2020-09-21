@@ -28,8 +28,8 @@
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    toolbox.ToolBox javadoc.tester.*
- * @compile --enable-preview --source ${jdk.version} TestRecordTypes.java
- * @run main/othervm --enable-preview TestRecordTypes
+ * @compile TestRecordTypes.java
+ * @run main TestRecordTypes
  */
 
 
@@ -69,7 +69,6 @@ public class TestRecordTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "-quiet", "-noindex",
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 src.resolve("R.java").toString());
         checkExit(Exit.OK);
 
@@ -91,7 +90,6 @@ public class TestRecordTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "-quiet", "-noindex",
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
@@ -113,7 +111,6 @@ public class TestRecordTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "-quiet", "-noindex",
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
@@ -139,7 +136,6 @@ public class TestRecordTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "-quiet", "-noindex",
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
@@ -171,7 +167,6 @@ public class TestRecordTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "-quiet", "-noindex",
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
@@ -204,7 +199,6 @@ public class TestRecordTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "-quiet", "-noindex",
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
@@ -268,7 +262,6 @@ public class TestRecordTypes extends JavadocTester {
                 "-quiet", "-noindex",
                 "-sourcepath", src.toString(),
                 "-linkoffline", externalDocs, localDocs,
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
@@ -348,7 +341,6 @@ public class TestRecordTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "-quiet", "-noindex",
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
@@ -374,7 +366,6 @@ public class TestRecordTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "-quiet", "-noindex",
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
@@ -405,7 +396,6 @@ public class TestRecordTypes extends JavadocTester {
                 "-quiet", "-noindex",
                 "-sourcepath", testSrc.toString(),
                 "-linksource",
-                "--enable-preview", "--source", thisRelease,
                 "examples");
 
         checkExit(Exit.OK);
@@ -414,13 +404,11 @@ public class TestRecordTypes extends JavadocTester {
                 "-sourcepath", testSrc.toString(),
                 "-linksource",
                 "-linkoffline", externalDocs, localDocs,
-                "--enable-preview", "--source", thisRelease,
                 "examples");
         checkExit(Exit.OK);
     }
 
     @Test
-    @SuppressWarnings("preview")
     public void testAnnotations(Path base) throws IOException {
         ElementType[] types = {
                 ElementType.FIELD,
@@ -466,7 +454,6 @@ public class TestRecordTypes extends JavadocTester {
                 "-quiet", "-noindex",
                 "-sourcepath", src.toString(),
                 "-private",
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
