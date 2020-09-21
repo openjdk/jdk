@@ -33,8 +33,8 @@ final class LambdaProxyClassArchive {
     private static final boolean sharingEnabled;
 
     static {
-        dumpArchive = CDS.isCDSDumpingEnabled();
-        sharingEnabled = CDS.isCDSSharingEnabled();
+        dumpArchive = CDS.isDynamicDumpingEnabled();
+        sharingEnabled = CDS.isSharingEnabled();
     }
 
     /**

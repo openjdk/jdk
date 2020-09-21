@@ -40,16 +40,16 @@ Java_jdk_internal_misc_CDS_defineArchivedModules(JNIEnv *env, jclass ignore,
 }
 
 JNIEXPORT jlong JNICALL
-Java_jdk_internal_misc_CDS_getRandomSeedForCDSDump(JNIEnv *env, jclass ignore) {
-    return JVM_GetRandomSeedForCDSDump();
+Java_jdk_internal_misc_CDS_getRandomSeedForDumping(JNIEnv *env, jclass ignore) {
+    return JVM_GetRandomSeedForDumping();
 }
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_CDS_isCDSDumpingEnabled(JNIEnv *env, jclass jcls) {
-    return JVM_IsCDSDumpingEnabled(env);
+Java_jdk_internal_misc_CDS_isDynamicDumpingEnabled(JNIEnv *env, jclass jcls) {
+    return JVM_IsDynamicDumpingEnabled(env);
 }
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_CDS_isCDSSharingEnabled(JNIEnv *env, jclass jcls) {
-    return JVM_IsCDSSharingEnabled(env);
+Java_jdk_internal_misc_CDS_isSharingEnabled(JNIEnv *env, jclass jcls) {
+    return JVM_IsSharingEnabled(env);
 }

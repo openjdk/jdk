@@ -76,7 +76,7 @@ class ImmutableCollections {
         // derived from the JVM build/version, so can we generate the exact same
         // CDS archive for the same JDK build. This makes it possible to verify the
         // consistency of the JDK build.
-        long seed = CDS.getRandomSeedForCDSDump();
+        long seed = CDS.getRandomSeedForDumping();
         if (seed == 0) {
           seed = System.nanoTime();
         }

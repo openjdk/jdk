@@ -39,15 +39,15 @@ public class CDS {
 
     public static native void defineArchivedModules(ClassLoader platformLoader, ClassLoader systemLoader);
 
-    public static native long getRandomSeedForCDSDump();
+    public static native long getRandomSeedForDumping();
 
     /**
-     * Check if CDS dynamic dumping is enabled via the DynamicDumpSharedSpaces flag.
+     * Check if dynamic dumping is enabled via the DynamicDumpSharedSpaces flag.
      */
-    public static native boolean isCDSDumpingEnabled();
+    public static native boolean isDynamicDumpingEnabled(); // will return false for static dumping.
 
     /**
-     * Check if CDS sharing is enabled by via the UseSharedSpaces flag.
+     * Check if sharing is enabled by via the UseSharedSpaces flag.
      */
-    public static native boolean isCDSSharingEnabled();
+    public static native boolean isSharingEnabled();
 }
