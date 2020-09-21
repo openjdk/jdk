@@ -37,8 +37,17 @@ public class CDS {
      */
     public static native void initializeFromArchive(Class<?> c);
 
+    /**
+     * Ensure that the native representation of all archived java.lang.Module objects
+     * are properly restored.
+     */
     public static native void defineArchivedModules(ClassLoader platformLoader, ClassLoader systemLoader);
 
+    /**
+     * @return a predictable "random" seed derived from the VM's build ID and version,
+     * to be used by java.util.ImmutableCollections to ensure that archived
+     * ImmutableCollections are always sorted the same order for the same VM build.
+     */
     public static native long getRandomSeedForDumping();
 
     /**
@@ -47,7 +56,7 @@ public class CDS {
     public static native boolean isDynamicDumpingEnabled(); // will return false for static dumping.
 
     /**
-     * Check if sharing is enabled by via the UseSharedSpaces flag.
+     * Check if sharing is enabled via the UseSharedSpaces flag.
      */
     public static native boolean isSharingEnabled();
 }
