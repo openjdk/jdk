@@ -79,7 +79,7 @@ SHENANDOAHGC_ONLY_ARG(IncludedGC(UseShenandoahGC,    CollectedHeap::Shenandoah, 
   for (const IncludedGC* var = &IncludedGCs[0]; var < &IncludedGCs[ARRAY_SIZE(IncludedGCs)]; var++)
 
 #define FAIL_IF_SELECTED(option, enabled)                                   \
-  if (option == enabled && FLAG_IS_CMDLINE(option)) {                       \
+  if (option == enabled && !FLAG_IS_DEFAULT(option)) {                      \
     vm_exit_during_initialization(enabled ?                                 \
                                   "Option -XX:+" #option " not supported" : \
                                   "Option -XX:-" #option " not supported"); \
