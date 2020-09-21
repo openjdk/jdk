@@ -189,36 +189,13 @@ ShenandoahRootScanner::~ShenandoahRootScanner() {
 }
 
 void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops) {
-  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
+  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_none);
   MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
   roots_do(worker_id, oops, &clds_cl, &blobs_cl);
 }
 
-void ShenandoahRootScanner::strong_roots_do(uint worker_id, OopClosure* oops) {
-  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
-  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
-  strong_roots_do(worker_id, oops, &clds_cl, &blobs_cl);
-}
-
 void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure *tc) {
-  assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint() ||
-         !ShenandoahHeap::heap()->unload_classes(),
-          "Expect class unloading when Shenandoah cycle is running");
-  assert(clds != NULL, "Only possible with CLD closure");
-
-  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
-
-  ResourceMark rm;
-
-  // Process serial-claiming roots first
-  _serial_roots.oops_do(oops, worker_id);
-
-  // Process heavy-weight/fully parallel roots the last
-  _thread_roots.threads_do(&tc_cl, worker_id);
-}
-
-void ShenandoahRootScanner::strong_roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure* tc) {
-  assert(ShenandoahHeap::heap()->unload_classes(), "Should be used during class unloading");
+  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
 
   ResourceMark rm;

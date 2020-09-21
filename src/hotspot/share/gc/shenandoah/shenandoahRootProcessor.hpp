@@ -206,14 +206,9 @@ public:
   ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase);
   ~ShenandoahRootScanner();
 
-  // Apply oops, clds and blobs to all strongly reachable roots in the system,
-  // during class unloading cycle
-  void strong_roots_do(uint worker_id, OopClosure* cl);
-  void strong_roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure* tc = NULL);
-
-  // Apply oops, clds and blobs to all strongly reachable roots and weakly reachable
-  // roots when class unloading is disabled during this cycle
   void roots_do(uint worker_id, OopClosure* cl);
+
+private:
   void roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure* tc = NULL);
 };
 
