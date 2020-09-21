@@ -43,7 +43,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#if defined(TARGET_OS_MAC)
+#if TARGET_OS_MAC && (defined(__ppc__) || defined(__ppc64__) || defined(__i386__) || defined(__x86_64__))
 #    pragma pack(push,2)
 #endif
 
@@ -695,7 +695,7 @@ GSS_DLLIMP OM_uint32 gss_canonicalize_name(
         gss_name_t *            /* output_name */
 );
 
-#if defined(TARGET_OS_MAC)
+#if TARGET_OS_MAC && (defined(__ppc__) || defined(__ppc64__) || defined(__i386__) || defined(__x86_64__))
 #    pragma pack(pop)
 #endif
 
