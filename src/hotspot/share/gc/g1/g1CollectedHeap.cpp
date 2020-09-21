@@ -1687,7 +1687,6 @@ jint G1CollectedHeap::initialize() {
   _rem_set = new G1RemSet(this, _card_table, _hot_card_cache);
   _rem_set->initialize(max_reserved_regions());
 
-
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
   guarantee(HeapRegion::CardsPerRegion > 0, "make sure it's initialized");
   guarantee(HeapRegion::CardsPerRegion < max_cards_per_region,
