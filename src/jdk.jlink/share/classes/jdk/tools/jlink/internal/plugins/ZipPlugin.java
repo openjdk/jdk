@@ -75,6 +75,9 @@ public final class ZipPlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public boolean hasArguments() {
         return false;
     }

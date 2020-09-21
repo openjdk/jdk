@@ -84,6 +84,9 @@ abstract class VersionPropsPlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(name); }
+
+    @Override
     public Category getType() {
         return Category.TRANSFORMER;
     }

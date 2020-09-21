@@ -47,6 +47,9 @@ public final class ExcludePlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy((resource) -> {
             if (resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {

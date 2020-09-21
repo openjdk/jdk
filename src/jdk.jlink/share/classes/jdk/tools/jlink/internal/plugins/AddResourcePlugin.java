@@ -59,6 +59,9 @@ abstract class AddResourcePlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(name); }
+
+    @Override
     public Category getType() {
         return Category.ADDER;
     }

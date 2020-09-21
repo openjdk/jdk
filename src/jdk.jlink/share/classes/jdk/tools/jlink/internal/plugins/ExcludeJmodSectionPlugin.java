@@ -51,6 +51,9 @@ public final class ExcludeJmodSectionPlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public void configure(Map<String, String> config) {
         String arg = config.get(NAME);
         if (arg.isEmpty()) {

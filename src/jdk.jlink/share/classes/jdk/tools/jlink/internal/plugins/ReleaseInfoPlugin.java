@@ -71,6 +71,9 @@ public final class ReleaseInfoPlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public Set<State> getState() {
         return EnumSet.of(State.AUTO_ENABLED, State.FUNCTIONAL);
     }

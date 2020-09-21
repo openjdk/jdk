@@ -60,4 +60,7 @@ public final class StripNativeCommandsPlugin implements Plugin {
     public String getDescription() {
         return PluginsResourceBundle.getDescription(NAME);
     }
+
+    @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 }

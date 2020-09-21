@@ -46,6 +46,9 @@ public final class ExcludeFilesPlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy((file) -> {
             if (!file.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {

@@ -381,6 +381,9 @@ public class StringSharingPlugin implements Plugin, ResourcePrevisitor {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public boolean hasArguments() {
         return true;
     }

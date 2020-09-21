@@ -56,6 +56,9 @@ public final class DefaultCompressPlugin implements Plugin, ResourcePrevisitor {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         if (ss != null && zip != null) {
             ResourcePoolManager resMgr = new ImagePluginStack.OrderedResourcePoolManager(

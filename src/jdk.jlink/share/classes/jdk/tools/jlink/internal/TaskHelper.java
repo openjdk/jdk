@@ -606,42 +606,47 @@ public final class TaskHelper {
             List<Plugin> pluginList = PluginRepository.
                     getPlugins(pluginOptions.pluginsLayer);
 
-            for (Plugin plugin : Utils.getSortedPlugins(pluginList)) {
-                showPlugin(plugin, log);
-            }
+            pluginList.stream()
+                    .sorted((plugin1, plugin2) -> Boolean.compare(plugin2.getUsage().isEmpty(), plugin1.getUsage().isEmpty()))
+                    .forEach((plugin) -> showPlugin(plugin, log));
 
             log.println("\n" + bundleHelper.getMessage("main.extended.help.footer"));
         }
 
         private void showPlugin(Plugin plugin, PrintWriter log) {
             if (showsPlugin(plugin)) {
-                log.println("\n" + bundleHelper.getMessage("main.plugin.name")
-                        + ": " + plugin.getName());
+                if(!plugin.getUsage().isEmpty()) {
+                    log.println(plugin.getUsage());
+                } else {
+                    log.println("\n" + bundleHelper.getMessage("main.plugin.name")
+                            + ": " + plugin.getName());
 
-                // print verbose details for non-builtin plugins
-                if (!Utils.isBuiltin(plugin)) {
-                    log.println(bundleHelper.getMessage("main.plugin.class")
-                         + ": " + plugin.getClass().getName());
-                    log.println(bundleHelper.getMessage("main.plugin.module")
-                         + ": " + plugin.getClass().getModule().getName());
-                    Category category = plugin.getType();
-                    log.println(bundleHelper.getMessage("main.plugin.category")
-                         + ": " + category.getName());
-                    log.println(bundleHelper.getMessage("main.plugin.state")
-                        + ": " + plugin.getStateDescription());
+                    // print verbose details for non-builtin plugins
+                    if (!Utils.isBuiltin(plugin)) {
+                        log.println(bundleHelper.getMessage("main.plugin.class")
+                                + ": " + plugin.getClass().getName());
+                        log.println(bundleHelper.getMessage("main.plugin.module")
+                                + ": " + plugin.getClass().getModule().getName());
+                        Category category = plugin.getType();
+                        log.println(bundleHelper.getMessage("main.plugin.category")
+                                + ": " + category.getName());
+                        log.println(bundleHelper.getMessage("main.plugin.state")
+                                + ": " + plugin.getStateDescription());
+                    }
+
+                    String option = plugin.getOption();
+                    if (option != null) {
+                        log.println(bundleHelper.getMessage("main.plugin.option")
+                                + ": --" + plugin.getOption()
+                                + (plugin.hasArguments()? ("=" + plugin.getArgumentsDescription()) : ""));
+                    }
+
+                    // description can be long spanning more than one line and so
+                    // print a newline after description label.
+                    log.println(bundleHelper.getMessage("main.plugin.description")
+                            + ": " + plugin.getDescription());
                 }
 
-                String option = plugin.getOption();
-                if (option != null) {
-                    log.println(bundleHelper.getMessage("main.plugin.option")
-                        + ": --" + plugin.getOption()
-                        + (plugin.hasArguments()? ("=" + plugin.getArgumentsDescription()) : ""));
-                }
-
-                // description can be long spanning more than one line and so
-                // print a newline after description label.
-                log.println(bundleHelper.getMessage("main.plugin.description")
-                        + ": " + plugin.getDescription());
             }
         }
 
@@ -725,6 +730,6 @@ public final class TaskHelper {
 
     // Display all plugins
     private static boolean showsPlugin(Plugin plugin) {
-        return (!Utils.isDisabled(plugin) && plugin.getOption() != null);
+        return (!Utils.isDisabled(plugin) && (plugin.getOption() != null) || !(plugin.getUsage().isEmpty()));
     }
 }

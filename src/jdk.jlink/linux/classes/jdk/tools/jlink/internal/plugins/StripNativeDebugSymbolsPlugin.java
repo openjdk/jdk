@@ -101,6 +101,9 @@ public final class StripNativeDebugSymbolsPlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return resourceBundle.getString(NAME + ".usage"); }
+
+    @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         StrippedDebugInfoBinaryBuilder builder = new StrippedDebugInfoBinaryBuilder(
                                                         includeDebugSymbols,

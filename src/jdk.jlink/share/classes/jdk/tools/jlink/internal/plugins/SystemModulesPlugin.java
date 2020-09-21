@@ -127,6 +127,9 @@ public final class SystemModulesPlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public Set<State> getState() {
         return enabled ? EnumSet.of(State.AUTO_ENABLED, State.FUNCTIONAL)
                        : EnumSet.of(State.DISABLED);

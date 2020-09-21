@@ -153,6 +153,9 @@ public final class IncludeLocalesPlugin implements Plugin, ResourcePrevisitor {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy((resource) -> {
             if (resource.moduleName().equals(MODULENAME)) {

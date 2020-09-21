@@ -60,6 +60,9 @@ public final class StripJavaDebugAttributesPlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         //remove *.diz files as well as debug attributes.
         in.transformAndCopy((resource) -> {

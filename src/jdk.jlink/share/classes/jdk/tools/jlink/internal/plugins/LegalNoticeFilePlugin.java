@@ -146,6 +146,9 @@ public final class LegalNoticeFilePlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public boolean hasArguments() {
         return true;
     }

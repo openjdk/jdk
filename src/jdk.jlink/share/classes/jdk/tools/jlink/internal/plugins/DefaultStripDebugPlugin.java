@@ -70,6 +70,9 @@ public final class DefaultStripDebugPlugin implements Plugin {
     }
 
     @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
+    @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         Plugin stripNativePlugin = stripNativePluginFactory.create();
         if (stripNativePlugin != null) {

@@ -244,7 +244,7 @@ public class JLinkTest {
             JLINK_TOOL.run(pw, pw, "--list-plugins");
             String output = writer.toString();
             long number = Stream.of(output.split("\\R"))
-                    .filter((s) -> s.matches("Plugin Name:.*"))
+                    .filter((s) -> s.matches("  --.*"))
                     .count();
             if (number != totalPlugins) {
                 System.err.println(output);

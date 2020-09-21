@@ -95,6 +95,9 @@ public final class ExcludeVMPlugin implements Plugin {
         return NAME;
     }
 
+    @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
     /**
      * VM paths:
      * /java.base/lib/{architecture}/{server|client|minimal}/{shared lib}

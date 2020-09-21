@@ -85,6 +85,9 @@ public final class OrderResourcesPlugin implements Plugin {
         }
     }
 
+    @Override
+    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
+
     private String stripModule(String path) {
         if (path.startsWith("/")) {
             int index = path.indexOf('/', 1);
