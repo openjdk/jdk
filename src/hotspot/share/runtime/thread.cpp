@@ -2593,10 +2593,10 @@ int JavaThread::java_suspend_self() {
 // Helper routine to set up the correct thread state before calling java_suspend_self.
 // This is called when regular thread-state transition helpers can't be used because
 // we can be in various states, in particular _thread_in_native_trans.
-// The correct thread state of a suspended thread is _thread_blocked. With that state
-// safepoint/handshake code will count it as safepoint/handshake safe. Also it allows
-// another thread to continue if it is waiting in is_ext_suspend_completed() for this
-// thread to change state from _thread_in_native_trans to the target state.
+// We have to set the thread state directly to _thread_blocked so that it will
+// be seen to be safepoint/handshake safe whilst suspended. This is also
+// necessary to allow a thread in is_ext_suspend_completed, that observed the
+// _thread_in_native_trans state, to proceed.
 // The problem with setting thread state directly is that a
 // safepoint could happen just after java_suspend_self() returns after being resumed,
 // and the VM thread will see the _thread_blocked state. So we must check for a safepoint
