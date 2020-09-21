@@ -70,15 +70,9 @@ private:
 public:
 
   typedef CardTable::CardValue CardValue;
-  // Gives an approximation on how many threads can be expected to add records to
-  // a remembered set in parallel. This can be used for sizing data structures to
-  // decrease performance losses due to data structure sharing.
-  // Examples for quantities that influence this value are the maximum number of
-  // mutator threads, maximum number of concurrent refinement or GC threads.
-  static uint num_par_rem_sets();
 
   // Initialize data that depends on the heap size being known.
-  void initialize(uint max_regions);
+  void initialize(uint max_reserved_regions);
 
   G1RemSet(G1CollectedHeap* g1h,
            G1CardTable* ct,
