@@ -381,7 +381,7 @@ static ArchivedModuleEntries* _archive_modules_entries = NULL;
 ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   assert(is_named(), "unnamed packages/modules are not archived");
   ModuleEntry* archived_entry = (ModuleEntry*)MetaspaceShared::read_write_space_alloc(sizeof(ModuleEntry));
-  archived_entry->copy_from(this);
+  memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
 
   if (_archive_modules_entries == NULL) {
     _archive_modules_entries = new (ResourceObj::C_HEAP, mtClass)ArchivedModuleEntries();
@@ -454,7 +454,6 @@ void ModuleEntry::init_as_archived_entry() {
   if (_location != NULL) {
     _location = ArchiveBuilder::get_relocated_symbol(_location);
   }
-  JFR_ONLY(memset(trace_id_addr(), 0, sizeof(traceid)));
 
   ArchivePtrMarker::mark_pointer((address*)&_reads);
   ArchivePtrMarker::mark_pointer((address*)&_version);
@@ -473,7 +472,6 @@ void ModuleEntry::init_archived_oops() {
   // Clear handles and restore at run time. Handles cannot be archived.
   OopHandle null_handle;
   _module = null_handle;
-  _shared_pd = null_handle;
 }
 
 void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {

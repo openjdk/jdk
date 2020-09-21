@@ -208,7 +208,7 @@ static ArchivedPackageEntries* _archived_packages_entries = NULL;
 PackageEntry* PackageEntry::allocate_archived_entry() const {
   assert(!in_unnamed_module(), "unnamed packages/modules are not archived");
   PackageEntry* archived_entry = (PackageEntry*)MetaspaceShared::read_write_space_alloc(sizeof(PackageEntry));
-  archived_entry->copy_from(this);
+  memcpy((void*)archived_entry, (void*)this, sizeof(PackageEntry));
 
   if (_archived_packages_entries == NULL) {
     _archived_packages_entries = new (ResourceObj::C_HEAP, mtClass)ArchivedPackageEntries();
@@ -238,7 +238,6 @@ void PackageEntry::init_as_archived_entry() {
   _module = ModuleEntry::get_archived_entry(_module);
   _qualified_exports = (GrowableArray<ModuleEntry*>*)archived_qualified_exports;
   _defined_by_cds_in_class_path = 0;
-  JFR_ONLY(memset(trace_id_addr(), 0, sizeof(traceid)));
 
   ArchivePtrMarker::mark_pointer((address*)literal_addr());
   ArchivePtrMarker::mark_pointer((address*)&_module);
