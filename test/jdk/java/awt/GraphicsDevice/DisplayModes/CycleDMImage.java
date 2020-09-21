@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
     boolean earlyExit = false;
     Image rImage = null, wImage = null, bImage = null;
     int imgSize = 10;
-    Robot robot = null;
+    static Robot robot = null;
     volatile static boolean done = false;
     static String errorMessage = null;
 
@@ -106,15 +106,6 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
     }
 
     public boolean checkResult(DisplayMode dm) {
-        if (robot == null) {
-            try {
-                robot = new Robot();
-            }
-            catch (Exception e) {
-                errorMessage = "Problems creating Robot";
-                return false;
-            }
-        }
         Rectangle bounds = getGraphicsConfiguration().getBounds();
         int pixels[] = new int[imgSize * 4];
         BufferedImage clientPixels =
@@ -175,6 +166,7 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
         gd.setFullScreenWindow((Window) getParent());
         // First, delay a bit just to let the fullscreen window
         // settle down before switching display modes
+        robot.waitForIdle();
         delay(1000);
 
         if (!gd.isDisplayChangeSupported()) {
@@ -197,10 +189,12 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
             boolean skip = false;
             for (final DisplayMode dmUnique : dmSubset) {
                 int bitDepth = dm.getBitDepth();
-                if (bitDepth == 24 ||
-                        (dmUnique.getWidth() == dm.getWidth() &&
-                         dmUnique.getHeight() == dm.getHeight() &&
-                         dmUnique.getBitDepth() == dm.getBitDepth())) {
+                int width = dm.getWidth();
+                int height = dm.getHeight();
+                if (bitDepth == 24 || width <= 800 || height <= 600 ||
+                        (dmUnique.getWidth() == width &&
+                         dmUnique.getHeight() == height &&
+                         dmUnique.getBitDepth() == bitDepth)) {
                     skip = true;
                     break;
                 }
@@ -265,7 +259,8 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
     public void keyReleased(KeyEvent e) {
     }
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
+        robot = new Robot();
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         for (final GraphicsDevice gd: ge.getScreenDevices()) {
             if (!gd.isFullScreenSupported()) {
@@ -274,6 +269,7 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
                 continue;
             }
             done = false;
+            DisplayMode currentDM = gd.getDisplayMode();
             Frame frame = new Frame(gd.getDefaultConfiguration());
             try {
                 frame.setSize(400, 400);
@@ -292,6 +288,8 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
                     }
                 }
             } finally {
+                gd.setDisplayMode(currentDM);
+                gd.setFullScreenWindow(null);
                 frame.dispose();
             }
             if (errorMessage != null) {
@@ -299,7 +297,7 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
             }
             // delay a bit just to let the fullscreen window disposing complete
             // before switching to next display
-            delay(4000);
+            delay(10000);
         }
     }
 }

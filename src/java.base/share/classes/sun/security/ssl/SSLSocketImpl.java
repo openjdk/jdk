@@ -83,8 +83,8 @@ public final class SSLSocketImpl
 
     private String                  peerHost;
     private boolean                 autoClose;
-    private boolean                 isConnected = false;
-    private volatile boolean        tlsIsClosed = false;
+    private boolean                 isConnected;
+    private volatile boolean        tlsIsClosed;
 
     private final ReentrantLock     socketLock = new ReentrantLock();
     private final ReentrantLock     handshakeLock = new ReentrantLock();

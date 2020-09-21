@@ -262,6 +262,11 @@ public class JToolTip extends JComponent implements Accessible {
     protected class AccessibleJToolTip extends AccessibleJComponent {
 
         /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJToolTip() {}
+
+        /**
          * Get the accessible description of this object.
          *
          * @return a localized String describing this object.

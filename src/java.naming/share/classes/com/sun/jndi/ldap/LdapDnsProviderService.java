@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ final class LdapDnsProviderService {
      * subclasses of {@code LdapDnsProvider} then this method will fall back
      * to the {@code DefaultLdapDnsProvider}.
      *
-     * @throws NamingException if the {@code url} in not valid or an error
+     * @throws NamingException if the {@code url} is not valid or an error
      *                         occurred while performing the lookup.
      */
     LdapDnsProviderResult lookupEndpoints(String url, Hashtable<?,?> env)
@@ -110,5 +110,4 @@ final class LdapDnsProviderService {
         }
         return result;
     }
-
 }

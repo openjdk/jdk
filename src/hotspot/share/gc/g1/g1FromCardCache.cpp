@@ -29,26 +29,26 @@
 #include "utilities/debug.hpp"
 
 uintptr_t** G1FromCardCache::_cache = NULL;
-uint        G1FromCardCache::_max_regions = 0;
+uint        G1FromCardCache::_max_reserved_regions = 0;
 size_t      G1FromCardCache::_static_mem_size = 0;
 #ifdef ASSERT
 uint   G1FromCardCache::_max_workers = 0;
 #endif
 
-void G1FromCardCache::initialize(uint num_par_rem_sets, uint max_num_regions) {
-  guarantee(max_num_regions > 0, "Heap size must be valid");
+void G1FromCardCache::initialize(uint num_par_rem_sets, uint max_reserved_regions) {
+  guarantee(max_reserved_regions > 0, "Heap size must be valid");
   guarantee(_cache == NULL, "Should not call this multiple times");
 
-  _max_regions = max_num_regions;
+  _max_reserved_regions = max_reserved_regions;
 #ifdef ASSERT
   _max_workers = num_par_rem_sets;
 #endif
-  _cache = Padded2DArray<uintptr_t, mtGC>::create_unfreeable(_max_regions,
+  _cache = Padded2DArray<uintptr_t, mtGC>::create_unfreeable(_max_reserved_regions,
                                                              num_par_rem_sets,
                                                              &_static_mem_size);
 
   if (AlwaysPreTouch) {
-    invalidate(0, _max_regions);
+    invalidate(0, _max_reserved_regions);
   }
 }
 
@@ -57,7 +57,7 @@ void G1FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
             "Trying to invalidate beyond maximum region, from %u size " SIZE_FORMAT,
             start_idx, new_num_regions);
   uint end_idx = (start_idx + (uint)new_num_regions);
-  assert(end_idx <= _max_regions, "Must be within max.");
+  assert(end_idx <= _max_reserved_regions, "Must be within max.");
 
   for (uint i = 0; i < G1RemSet::num_par_rem_sets(); i++) {
     for (uint j = start_idx; j < end_idx; j++) {
@@ -69,7 +69,7 @@ void G1FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
 #ifndef PRODUCT
 void G1FromCardCache::print(outputStream* out) {
   for (uint i = 0; i < G1RemSet::num_par_rem_sets(); i++) {
-    for (uint j = 0; j < _max_regions; j++) {
+    for (uint j = 0; j < _max_reserved_regions; j++) {
       out->print_cr("_from_card_cache[%u][%u] = " SIZE_FORMAT ".",
                     i, j, at(i, j));
     }
