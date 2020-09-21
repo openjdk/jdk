@@ -28,7 +28,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
-#include "gc/g1/g1MMUTrackerQueue.hpp"
+#include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1Trace.hpp"
@@ -78,7 +78,7 @@ public:
 double G1ConcurrentMarkThread::mmu_delay_end(G1Policy* policy, bool remark) {
   // There are 3 reasons to use SuspendibleThreadSetJoiner.
   // 1. To avoid concurrency problem.
-  //    - G1MMUTrackerQueue::add_pause(), when_sec() and when_max_gc_sec() can be called
+  //    - G1MMUTracker::add_pause(), when_sec() and when_max_gc_sec() can be called
   //      concurrently from ConcurrentMarkThread and VMThread.
   // 2. If currently a gc is running, but it has not yet updated the MMU,
   //    we will not forget to consider that pause in the MMU calculation.
@@ -90,7 +90,7 @@ double G1ConcurrentMarkThread::mmu_delay_end(G1Policy* policy, bool remark) {
   double prediction_ms = remark ? analytics->predict_remark_time_ms()
                                 : analytics->predict_cleanup_time_ms();
   double prediction = prediction_ms / MILLIUNITS;
-  G1MMUTrackerQueue *mmu_tracker = policy->mmu_tracker();
+  G1MMUTracker *mmu_tracker = policy->mmu_tracker();
   double now = os::elapsedTime();
   return now + mmu_tracker->when_sec(now, prediction);
 }

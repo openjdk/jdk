@@ -29,7 +29,7 @@
 #include "gc/g1/g1ConcurrentStartToMixedTimeTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
-#include "gc/g1/g1MMUTrackerQueue.hpp"
+#include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1OldGenAllocationTracker.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1Predictions.hpp"
@@ -67,7 +67,7 @@ class G1Policy: public CHeapObj<mtGC> {
   G1Predictions _predictor;
   G1Analytics* _analytics;
   G1RemSetTrackingPolicy _remset_tracker;
-  G1MMUTrackerQueue* _mmu_tracker;
+  G1MMUTracker* _mmu_tracker;
 
   // Tracking the allocation in the old generation between
   // two GCs.
@@ -154,11 +154,11 @@ public:
     _survivor_surv_rate_group->all_surviving_words_recorded(predictor(), update);
   }
 
-  G1MMUTrackerQueue* mmu_tracker() {
+  G1MMUTracker* mmu_tracker() {
     return _mmu_tracker;
   }
 
-  const G1MMUTrackerQueue* mmu_tracker() const {
+  const G1MMUTracker* mmu_tracker() const {
     return _mmu_tracker;
   }
 

@@ -22,14 +22,14 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1MMUTRACKERQUEUE_HPP
-#define SHARE_GC_G1_G1MMUTRACKERQUEUE_HPP
+#ifndef SHARE_GC_G1_G1MMUTRACKER_HPP
+#define SHARE_GC_G1_G1MMUTRACKER_HPP
 
 #include "gc/shared/gcId.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
-class G1MMUTrackerQueueElem {
+class G1MMUTrackerElem {
 private:
   double _start_time;
   double _end_time;
@@ -39,12 +39,12 @@ public:
   inline double end_time()   { return _end_time; }
   inline double duration()   { return _end_time - _start_time; }
 
-  G1MMUTrackerQueueElem() {
+  G1MMUTrackerElem() {
     _start_time = 0.0;
     _end_time   = 0.0;
   }
 
-  G1MMUTrackerQueueElem(double start_time, double end_time) {
+  G1MMUTrackerElem(double start_time, double end_time) {
     _start_time = start_time;
     _end_time   = end_time;
   }
@@ -67,7 +67,7 @@ public:
 // - the worst mutator utilisation across all time slices.
 //
 // ***** ALL TIMES ARE IN SECS!!!!!!! *****
-class G1MMUTrackerQueue: public CHeapObj<mtGC> {
+class G1MMUTracker: public CHeapObj<mtGC> {
 private:
   enum PrivateConstants {
     QueueLength = 64
@@ -88,7 +88,7 @@ private:
   // the oldest entry in the event that +G1UseFixedWindowMMUTracker, thus
   // potentially violating MMU specs for some time thereafter.
 
-  G1MMUTrackerQueueElem _array[QueueLength];
+  G1MMUTrackerElem _array[QueueLength];
   int                   _head_index;
   int                   _tail_index;
   int                   _no_entries;
@@ -101,7 +101,7 @@ private:
   double calculate_gc_time(double current_time);
 
 public:
-  G1MMUTrackerQueue(double time_slice, double max_gc_time);
+  G1MMUTracker(double time_slice, double max_gc_time);
 
   void add_pause(double start, double end);
 
@@ -116,4 +116,4 @@ public:
   }
 };
 
-#endif // SHARE_GC_G1_G1MMUTRACKERQUEUE_HPP
+#endif // SHARE_GC_G1_G1MMUTRACKER_HPP
