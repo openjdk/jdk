@@ -84,7 +84,7 @@ class WindowsFileStore
             } catch (WindowsException e) {
                 // GetVolumePathName might return the following error codes
                 // when the drives were created using `subst`.
-                // Try expanding the paths again in such cases.
+                // Try expanding the path again in such cases.
                 if (e.lastError() != ERROR_DIR_NOT_ROOT &&
                     e.lastError() != ERROR_INVALID_PARAMETER &&
                     e.lastError() != ERROR_DIRECTORY)
