@@ -694,8 +694,6 @@ enum class vmSymbolID : int {
 
 typedef EnumIterator<vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::SID_LIMIT> vmSymbolsIterator;
 
-// Class vmSymbols
-
 class vmSymbols: AllStatic {
   friend class vmIntrinsics;
   friend class VMStructs;
@@ -757,7 +755,7 @@ class vmSymbols: AllStatic {
     assert(_type_signatures[t] != NULL, "domain check");
     return _type_signatures[t];
   }
-  
+
   static Symbol* symbol_at(vmSymbolID id) {
     return Symbol::vm_symbol_at(id);
   }
