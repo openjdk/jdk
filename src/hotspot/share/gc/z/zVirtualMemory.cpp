@@ -98,7 +98,7 @@ size_t ZVirtualMemoryManager::reserve_discontiguous(size_t size) {
   return reserved;
 }
 
-bool ZVirtualMemoryManager::reserve_contiguous_inner(uintptr_t start, size_t size) {
+bool ZVirtualMemoryManager::reserve_contiguous(uintptr_t start, size_t size) {
   assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
 
   // Reserve address views
@@ -127,18 +127,10 @@ bool ZVirtualMemoryManager::reserve_contiguous_inner(uintptr_t start, size_t siz
   nmt_reserve(marked1, size);
   nmt_reserve(remapped, size);
 
+  // Make the address range free
+  _manager.free(start, size);
+
   return true;
-}
-
-bool ZVirtualMemoryManager::reserve_contiguous(uintptr_t start, size_t size) {
-  if (reserve_contiguous_inner(start, size)) {
-    // Make the address range free
-    _manager.free(start, size);
-
-    return true;
-  }
-
-  return false;
 }
 
 bool ZVirtualMemoryManager::reserve_contiguous(size_t size) {

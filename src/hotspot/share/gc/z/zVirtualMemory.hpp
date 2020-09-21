@@ -55,7 +55,6 @@ private:
   bool os_reserve(uintptr_t addr, size_t size);
   void os_unreserve(uintptr_t addr, size_t size);
 
-  bool reserve_contiguous_inner(uintptr_t start, size_t size);
   bool reserve_contiguous(uintptr_t start, size_t size);
   bool reserve_contiguous(size_t size);
   size_t reserve_discontiguous(uintptr_t start, size_t size, size_t min_range);
