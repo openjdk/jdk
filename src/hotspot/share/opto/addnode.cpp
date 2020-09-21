@@ -95,13 +95,13 @@ static bool commute(Node *add, bool con_left, bool con_right) {
   if (in1->is_Phi())
     assert(!in1->as_Phi()->is_copy(), "in1 cannot be a copy");
 #endif
-  if( in1->is_Phi() && (phi = in1->as_Phi()) && phi->region()->is_Loop() && phi->in(2)==add)
+  if (in1->is_Phi() && (phi = in1->as_Phi()) && phi->region()->is_Loop() && phi->in(2) == add)
     return false;
 #ifdef ASSERT
   if (in2->is_Phi())
     assert(!in2->as_Phi()->is_copy(), "in2 cannot be a copy");
 #endif
-  if( in2->is_Phi() && (phi = in2->as_Phi()) && phi->region()->is_Loop() && phi->in(2)==add){
+  if (in2->is_Phi() && (phi = in2->as_Phi()) && phi->region()->is_Loop() && phi->in(2) == add) {
     add->swap_edges(1, 2);
     return true;
   }
