@@ -24,6 +24,8 @@
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.List;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
@@ -67,23 +69,15 @@ public class AppImagePackageTest {
     }
 
     @Test
-    public static void testEmpty() {
+    public static void testEmpty() throws IOException {
         final String name = "EmptyAppImagePackageTest";
         final String imageName = name + (TKit.isOSX() ? ".app" : "");
-        Path appImageDir = TKit.workDir().resolve(imageName);
+        Path appImageDir = TKit.createTempDirectory(null).resolve(imageName);
 
-        try {
-            Path dir = Files.createDirectory(appImageDir);
-            Files.createDirectory(dir.resolve("bin"));
-            Path libdir = Files.createDirectory(dir.resolve("lib"));
-            Path readme = Files.createFile(libdir.resolve("README"));
-            try (BufferedWriter bw = Files.newBufferedWriter(readme)) {
-                bw.write("This is some arbitrary ext for the README file\n");
-            }
-            TKit.trace("Created README file: " + readme);
-        } catch (Exception e) {
-            TKit.trace("Exception creating README file: " + e);
-        }
+        Files.createDirectories(appImageDir.resolve("bin"));
+        Path libDir = Files.createDirectories(appImageDir.resolve("lib"));
+        TKit.createTextFile(libDir.resolve("README"),
+                List.of("This is some arbitrary text for the README file\n"));
 
         new PackageTest()
         .addInitializer(cmd -> {

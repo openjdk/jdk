@@ -219,7 +219,7 @@ public class AppImageFile {
         } catch (NoSuchFileException nsfe) {
             // non jpackage generated app-image (no app/.jpackage.xml)
             Log.info(MessageFormat.format(I18N.getString(
-                    "warning.forign-app-image"), appImageDir));
+                    "warning.foreign-app-image"), appImageDir));
         } catch (IOException ioe) {
             Log.verbose(ioe);
             Log.info(MessageFormat.format(I18N.getString(
