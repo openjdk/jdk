@@ -74,6 +74,7 @@ typedef Elf32_Sym       Elf_Sym;
 class ElfStringTable;
 class ElfSymbolTable;
 class ElfFuncDescTable;
+class DwarfFile;
 
 // ELF section, may or may not have cached data
 class ElfSection {
@@ -133,9 +134,6 @@ private:
   char*             _filepath;
   FILE*             _file;
 
-  // Elf header
-  Elf_Ehdr          _elfHdr;
-
   // symbol tables
   ElfSymbolTable*   _symbol_tables;
 
@@ -149,6 +147,11 @@ private:
   ElfFuncDescTable* _funcDesc_table;
 
   NullDecoder::decoder_status  _status;
+
+  DwarfFile* _debuginfo_file;
+protected:
+  // Elf header
+  Elf_Ehdr          _elfHdr;
 
 public:
   ElfFile(const char* filepath);
@@ -175,6 +178,12 @@ public:
   // is not set at all, or if the file can not be read.
   // On systems other than linux it always returns false.
   static bool specifies_noexecstack(const char* filepath) NOT_LINUX({ return false; });
+
+
+  bool open_valid_debuginfo_file(const char* path_name, uint crc);
+
+  bool get_source_info(int offset, char* buf, size_t buflen, int* line);
+
 private:
   // sanity check, if the file is a real elf file
   static bool is_elf_file(Elf_Ehdr&);
@@ -188,10 +197,6 @@ private:
   ElfFile*  next() const { return _next; }
   void set_next(ElfFile* file) { _next = file; }
 
-  // find a section by name, return section index
-  // if there is no such section, return -1
-  int section_by_name(const char* name, Elf_Shdr& hdr);
-
   // string tables are stored in a linked list
   void add_string_table(ElfStringTable* table);
 
@@ -202,14 +207,72 @@ private:
   ElfStringTable* get_string_table(int index);
 
 
-  FILE* const fd() const { return _file; }
 
   // Cleanup string, symbol and function descriptor tables
   void cleanup_tables();
 
+  static uint gnu_debuglink_crc32(uint crc, unsigned char* buf, size_t len);
+
+  bool load_debuginfo_file();
+
+protected:
+  FILE* const fd() const { return _file; }
+
+  // find a section by name, return section index
+  // if there is no such section, return -1
+  int section_by_name(const char* name, Elf_Shdr& hdr);
 public:
   // For whitebox test
   static bool _do_not_cache_elf_section;
+};
+
+class DwarfFile : public ElfFile {
+  // See DWARF4 specification section 6.1.2.
+  struct DebugArangesSetHeader32 {
+    // The total length of all of the entries for that set, not including the length field itself
+    uint32_t unit_length;
+
+    // This number is specific to the address lookup table and is independent of the DWARF version number.
+    uint16_t version;
+
+    // The offset from the beginning of the .debug_info or .debug_types section of the compilation unit header referenced
+    // by the set. In this implementation we only use it as offset into .debug_info.
+    uint32_t debug_info_offset;
+
+    // The size of an address in bytes on the target architecture. For segmented addressing, this is the size of the offset
+    // portion of the address.
+    uint8_t address_size;
+
+    // The size of a segment selector in bytes on the target architecture. If the target system uses a flat address space,
+    // this value is 0.
+    uint8_t segment_size;
+
+    static const uint SIZE = 12; // 4 + 2 + 4 + 1 + 1
+
+    void print_fields() {
+      tty->print_cr("%x", unit_length);
+      tty->print_cr("%x", version);
+      tty->print_cr("%x", debug_info_offset);
+      tty->print_cr("%x", address_size);
+      tty->print_cr("%x", segment_size);
+    }
+  };
+
+  struct DebugArangesSet64 {
+    address beginning_address;
+    uint64_t length;
+  };
+
+  static bool is_terminating_set(DebugArangesSet64 set) {
+    return set.beginning_address == 0 && set.length == 0;
+  }
+
+  public:
+    bool find_compilation_unit(int offset, uint64_t* compilation_unit_offset);
+
+  DwarfFile(const char* filepath) : ElfFile(filepath) {}
+  bool get_line_number(int offset, char* buf, size_t buflen, int* line);
+
 };
 
 #endif // !_WINDOWS && !__APPLE__
