@@ -51,6 +51,7 @@ public:
   // section index
   int index() const { return _index; };
 
+  int get_section_size() const { return _section.section_header()->sh_size; }
   // get string at specified offset
   bool string_at(size_t offset, char* buf, int buflen);
 

@@ -63,6 +63,8 @@ public:
   // demangle a C++ symbol
   virtual bool demangle(const char* symbol, char* buf, int buflen) = 0;
 
+  virtual bool get_source_info(address pc, char* buf, size_t buflen, int* line) { return false; } // Override
+
   virtual decoder_status status() const {
     return _decoder_status;
   }

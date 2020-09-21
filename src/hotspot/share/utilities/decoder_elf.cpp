@@ -53,6 +53,29 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
   return true;
 }
 
+bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line) {
+
+
+  char filepath[JVM_MAXPATHLEN];
+  int offset;
+  if (!os::dll_address_to_library_name(pc, filepath, sizeof(filepath), &offset)) {
+    return false;
+  }
+
+  ElfFile* file = get_elf_file(filepath);
+  if (file == NULL) {
+    return false;
+  }
+
+  Elf_Shdr shdr;
+  if (file->get_source_info(offset, buf, buflen, line)) {
+    return false;
+  }
+
+  return true;
+}
+
+
 ElfFile* ElfDecoder::get_elf_file(const char* filepath) {
   ElfFile* file;
 
