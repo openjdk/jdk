@@ -1337,9 +1337,6 @@ void NonJavaThread::post_run() {
   JFR_ONLY(Jfr::on_thread_exit(this);)
   remove_from_the_list();
   unregister_thread_stack_with_NMT();
-  set_stack_base(NULL);
-  set_stack_size(0);
-
   // Ensure thread-local-storage is cleared before termination.
   Thread::clear_thread_current();
 }
