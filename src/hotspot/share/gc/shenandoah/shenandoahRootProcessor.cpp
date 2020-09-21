@@ -189,9 +189,8 @@ ShenandoahRootScanner::~ShenandoahRootScanner() {
 }
 
 void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops) {
-  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_none);
   MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
-  roots_do(worker_id, oops, &clds_cl, &blobs_cl);
+  roots_do(worker_id, oops, NULL, &blobs_cl);
 }
 
 void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure *tc) {
