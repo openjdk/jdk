@@ -488,6 +488,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_ghash_processBlocks:
     if (!UseGHASHIntrinsics) return true;
     break;
+  case vmIntrinsics::_base64_decodeBlock:
   case vmIntrinsics::_base64_encodeBlock:
     if (!UseBASE64Intrinsics) return true;
     break;
