@@ -24,6 +24,6 @@
 #include "precompiled.hpp"
 #include "gc/z/zInitialize.hpp"
 
-void ZInitialize::os_initialize() {
+void ZInitialize::pd_initialize() {
   // Does nothing
 }

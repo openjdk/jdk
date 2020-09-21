@@ -48,8 +48,8 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
     return;
   }
 
-  // Initialize OS specific parts
-  os_initialize();
+  // Initialize platform specific parts
+  pd_initialize();
 
   // Successfully initialized
   _initialized = true;
@@ -107,18 +107,18 @@ bool ZVirtualMemoryManager::reserve_contiguous(uintptr_t start, size_t size) {
   const uintptr_t remapped = ZAddress::remapped(start);
 
   // Reserve address space
-  if (!os_reserve(marked0, size)) {
+  if (!pd_reserve(marked0, size)) {
     return false;
   }
 
-  if (!os_reserve(marked1, size)) {
-    os_unreserve(marked0, size);
+  if (!pd_reserve(marked1, size)) {
+    pd_unreserve(marked0, size);
     return false;
   }
 
-  if (!os_reserve(remapped, size)) {
-    os_unreserve(marked0, size);
-    os_unreserve(marked1, size);
+  if (!pd_reserve(remapped, size)) {
+    pd_unreserve(marked0, size);
+    pd_unreserve(marked1, size);
     return false;
   }
 

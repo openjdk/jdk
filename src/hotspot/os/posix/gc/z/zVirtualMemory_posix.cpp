@@ -29,11 +29,11 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 
-void ZVirtualMemoryManager::os_initialize() {
+void ZVirtualMemoryManager::pd_initialize() {
   // Does nothing
 }
 
-bool ZVirtualMemoryManager::os_reserve(uintptr_t addr, size_t size) {
+bool ZVirtualMemoryManager::pd_reserve(uintptr_t addr, size_t size) {
   const uintptr_t res = (uintptr_t)mmap((void*)addr, size, PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE|MAP_NORESERVE, -1, 0);
   if (res == (uintptr_t)MAP_FAILED) {
     // Failed to reserve memory
@@ -50,7 +50,7 @@ bool ZVirtualMemoryManager::os_reserve(uintptr_t addr, size_t size) {
   return true;
 }
 
-void ZVirtualMemoryManager::os_unreserve(uintptr_t addr, size_t size) {
+void ZVirtualMemoryManager::pd_unreserve(uintptr_t addr, size_t size) {
   const int res = munmap((void*)addr, size);
   assert(res == 0, "Failed to unmap memory");
 }
