@@ -188,15 +188,16 @@ final class JLinkBundlerHelper {
         StringWriter writer = new StringWriter();
         PrintWriter pw = new PrintWriter(writer);
 
-        Log.verbose("jlink arguments: " + args);
         int retVal = LazyLoad.JLINK_TOOL.run(pw, pw, args.toArray(new String[0]));
         String jlinkOut = writer.toString();
+
+        args.add(0, "jlink");
+        Log.verbose(args, List.of(jlinkOut), retVal);
+
 
         if (retVal != 0) {
             throw new PackagerException("error.jlink.failed" , jlinkOut);
         }
-
-        Log.verbose("jlink output: " + jlinkOut);
     }
 
     private static String getPathList(List<Path> pathList) {

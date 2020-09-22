@@ -59,10 +59,10 @@ JVMFlag* JVMFlagLookup::find_impl(const char* name, size_t length) const {
   for (int flag_enum = _buckets[bucket_index]; flag_enum >= 0; ) {
     if (_hashes[flag_enum] == hash) {
       JVMFlag* flag = JVMFlag::flags + flag_enum;
-      if (strncmp(name, flag->_name, length) == 0) {
-        // We know flag->_name has at least <length> bytes.
+      if (strncmp(name, flag->name(), length) == 0) {
+        // We know flag->name() has at least <length> bytes.
         // Make sure it has exactly <length> bytes
-        if (flag->_name[length] == 0) {
+        if (flag->name()[length] == 0) {
           return flag;
         }
       }
