@@ -184,7 +184,7 @@ import static java.lang.invoke.MethodType.methodType;
  *     packages:
  * <ol type="a">
  * <li>if all the proxy interfaces are <em>public</em>, then the proxy class is
- *     <em>public</em> in an unconditionally exported package.
+ *     <em>public</em> in an unconditionally exported but non-open package.
  *     The name of the package and the module are unspecified.</li>
  *
  * <li>if at least one of all the proxy interfaces is <em>non-public</em>, then

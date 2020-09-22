@@ -648,6 +648,10 @@ final class ProxyGenerator extends ClassWriter {
                 "()Ljava/lang/Class;", false);
         mv.visitLdcInsn(Type.getType(Proxy.class));
         mv.visitJumpInsn(IF_ACMPNE, L_illegalAccess);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKEVIRTUAL, JLI_LOOKUP, "hasFullPrivilegeAccess",
+                "()Z", false);
+        mv.visitJumpInsn(IFEQ, L_illegalAccess);
         mv.visitMethodInsn(INVOKESTATIC, JLI_METHODHANDLES, "lookup",
                 "()Ljava/lang/invoke/MethodHandles$Lookup;", false);
         mv.visitInsn(ARETURN);
