@@ -1408,7 +1408,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
     }
     // Exclude the locked (experimental, diagnostic) flags
     if (flag->is_unlocked() || flag->is_unlocker()) {
-      Handle s = java_lang_String::create_from_str(flag->_name, CHECK_NULL);
+      Handle s = java_lang_String::create_from_str(flag->name(), CHECK_NULL);
       flags_ah->obj_at_put(num_entries, s());
       num_entries++;
     }
@@ -1432,7 +1432,7 @@ JVM_END
 bool add_global_entry(Handle name, jmmVMGlobal *global, JVMFlag *flag, TRAPS) {
   Handle flag_name;
   if (name() == NULL) {
-    flag_name = java_lang_String::create_from_str(flag->_name, CHECK_false);
+    flag_name = java_lang_String::create_from_str(flag->name(), CHECK_false);
   } else {
     flag_name = name;
   }
@@ -2071,12 +2071,8 @@ JVM_ENTRY(jlong, jmm_GetOneThreadAllocatedMemory(JNIEnv *env, jlong thread_id))
                "Invalid thread ID", -1);
   }
 
-  if (thread_id == 0) {
-    // current thread
-    if (THREAD->is_Java_thread()) {
-      return ((JavaThread*)THREAD)->cooked_allocated_bytes();
-    }
-    return -1;
+  if (thread_id == 0) { // current thread
+    return thread->cooked_allocated_bytes();
   }
 
   ThreadsListHandle tlh;

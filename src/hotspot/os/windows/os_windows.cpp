@@ -48,6 +48,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -2136,19 +2137,19 @@ int os::signal_wait() {
 
 LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
                       address handler) {
-  JavaThread* thread = (JavaThread*) Thread::current_or_null();
+  Thread* thread = Thread::current_or_null();
   // Save pc in thread
 #ifdef _M_AMD64
   // Do not blow up if no thread info available.
-  if (thread) {
-    thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
+  if (thread != NULL) {
+    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Rip = (DWORD64)handler;
 #else
   // Do not blow up if no thread info available.
-  if (thread) {
-    thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
+  if (thread != NULL) {
+    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Eip = (DWORD)(DWORD_PTR)handler;
@@ -2477,7 +2478,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   }
 
   if (t != NULL && t->is_Java_thread()) {
-    JavaThread* thread = (JavaThread*) t;
+    JavaThread* thread = t->as_Java_thread();
     bool in_java = thread->thread_state() == _thread_in_Java;
     bool in_native = thread->thread_state() == _thread_in_native;
     bool in_vm = thread->thread_state() == _thread_in_vm;
@@ -2570,7 +2571,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
     if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
       CompiledMethod* nm = NULL;
-      JavaThread* thread = (JavaThread*)t;
       if (in_java) {
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;

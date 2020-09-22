@@ -999,9 +999,9 @@ final class CompilerToVM {
     /**
      * Adds phases in HotSpot JFR.
      *
-     * @see JFR.CompilerPhaseEvent#registerPhases and JFR.CompilerPhaseEvent#write
+     * @see JFR.CompilerPhaseEvent#write
      */
-    native int registerCompilerPhases(String[] phases);
+    native int registerCompilerPhase(String phaseName);
 
     /**
      * @see JFR.CompilerPhaseEvent#write

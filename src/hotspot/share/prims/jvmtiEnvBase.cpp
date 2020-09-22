@@ -663,13 +663,13 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThre
     mon = java_thread->current_pending_monitor();
     if (mon != NULL) {
       // The thread is trying to enter() an ObjectMonitor.
-      obj = (oop)mon->object();
+      obj = mon->object();
       assert(obj != NULL, "ObjectMonitor should have a valid object!");
     }
     // implied else: no contended ObjectMonitor
   } else {
     // thread is doing an Object.wait() call
-    obj = (oop)mon->object();
+    obj = mon->object();
     assert(obj != NULL, "Object.wait() should have an object");
   }
 
@@ -741,7 +741,7 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
     // Save object of current wait() call (if any) for later comparison.
     ObjectMonitor *mon = java_thread->current_waiting_monitor();
     if (mon != NULL) {
-      wait_obj = (oop)mon->object();
+      wait_obj = mon->object();
     }
   }
   oop pending_obj = NULL;
@@ -752,7 +752,7 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
     // Save object of current enter() call (if any) for later comparison.
     ObjectMonitor *mon = java_thread->current_pending_monitor();
     if (mon != NULL) {
-      pending_obj = (oop)mon->object();
+      pending_obj = mon->object();
     }
   }
 
@@ -1077,7 +1077,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
           }
           Thread *t = mon->thread_of_waiter(waiter);
           if (t != NULL && t->is_Java_thread()) {
-            JavaThread *wjava_thread = (JavaThread *)t;
+            JavaThread *wjava_thread = t->as_Java_thread();
             // If the thread was found on the ObjectWaiter list, then
             // it has not been notified. This thread can't change the
             // state of the monitor so it doesn't need to be suspended.
@@ -1268,8 +1268,7 @@ VM_GetThreadListStackTraces::doit() {
 
 void
 GetSingleStackTraceClosure::do_thread(Thread *target) {
-  assert(target->is_Java_thread(), "just checking");
-  JavaThread *jt = (JavaThread *)target;
+  JavaThread *jt = target->as_Java_thread();
   oop thread_oop = jt->threadObj();
 
   if (!jt->is_exiting() && thread_oop != NULL) {
@@ -1435,7 +1434,7 @@ JvmtiMonitorClosure::do_monitor(ObjectMonitor* mon) {
   }
   if (mon->owner() == _java_thread ) {
     // Filter out on stack monitors collected during stack walk.
-    oop obj = (oop)mon->object();
+    oop obj = mon->object();
     bool found = false;
     for (int j = 0; j < _owned_monitors_list->length(); j++) {
       jobject jobj = ((jvmtiMonitorStackDepthInfo*)_owned_monitors_list->at(j))->monitor;
@@ -1526,8 +1525,7 @@ SetFramePopClosure::do_thread(Thread *target) {
 
 void
 GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
-  assert(target->is_Java_thread(), "just checking");
-  JavaThread *jt = (JavaThread *)target;
+  JavaThread *jt = target->as_Java_thread();
   if (!jt->is_exiting() && (jt->threadObj() != NULL)) {
     _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread,
                                                          jt,
@@ -1537,8 +1535,7 @@ GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
 
 void
 GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
-  assert(target->is_Java_thread(), "just checking");
-  JavaThread *jt = (JavaThread *)target;
+  JavaThread *jt = target->as_Java_thread();
   if (!jt->is_exiting() && (jt->threadObj() != NULL)) {
     _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor(_calling_thread,
                                                                     jt,
@@ -1548,8 +1545,7 @@ GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
 
 void
 GetStackTraceClosure::do_thread(Thread *target) {
-  assert(target->is_Java_thread(), "just checking");
-  JavaThread *jt = (JavaThread *)target;
+  JavaThread *jt = target->as_Java_thread();
   if (!jt->is_exiting() && jt->threadObj() != NULL) {
     _result = ((JvmtiEnvBase *)_env)->get_stack_trace(jt,
                                                       _start_depth, _max_count,
@@ -1568,8 +1564,7 @@ GetFrameCountClosure::do_thread(Thread *target) {
 
 void
 GetFrameLocationClosure::do_thread(Thread *target) {
-  assert(target->is_Java_thread(), "just checking");
-  JavaThread *jt = (JavaThread *)target;
+  JavaThread *jt = target->as_Java_thread();
   if (!jt->is_exiting() && jt->threadObj() != NULL) {
     _result = ((JvmtiEnvBase*)_env)->get_frame_location(jt, _depth,
                                                         _method_ptr, _location_ptr);

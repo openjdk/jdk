@@ -161,14 +161,14 @@ public class DocTreeMaker implements DocTreeFactory {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public DCAttribute newAttributeTree(javax.lang.model.element.Name name, ValueKind vkind, java.util.List<? extends DocTree> value) {
+    public DCAttribute newAttributeTree(Name name, ValueKind vkind, List<? extends DocTree> value) {
         DCAttribute tree = new DCAttribute(name, vkind, cast(value));
         tree.pos = pos;
         return tree;
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public DCAuthor newAuthorTree(java.util.List<? extends DocTree> name) {
+    public DCAuthor newAuthorTree(List<? extends DocTree> name) {
         DCAuthor tree = new DCAuthor(cast(name));
         tree.pos = pos;
         return tree;
@@ -197,11 +197,7 @@ public class DocTreeMaker implements DocTreeFactory {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCDocComment newDocCommentTree(List<? extends DocTree> fullBody, List<? extends DocTree> tags) {
-        Pair<List<DCTree>, List<DCTree>> pair = splitBody(fullBody);
-        List<DCTree> preamble = Collections.emptyList();
-        List<DCTree> postamble = Collections.emptyList();
-
-        return newDocCommentTree(fullBody, tags, preamble, postamble);
+        return newDocCommentTree(fullBody, tags, Collections.emptyList(), Collections.emptyList());
     }
 
     public DCDocComment newDocCommentTree(Comment comment,
@@ -503,7 +499,7 @@ public class DocTreeMaker implements DocTreeFactory {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public java.util.List<DocTree> getFirstSentence(java.util.List<? extends DocTree> list) {
+    public List<DocTree> getFirstSentence(List<? extends DocTree> list) {
         Pair<List<DCTree>, List<DCTree>> pair = splitBody(list);
         return new ArrayList<>(pair.fst);
     }
@@ -693,7 +689,7 @@ public class DocTreeMaker implements DocTreeFactory {
         return -1; // indeterminate at this time
     }
 
-    private boolean isSentenceBreak(javax.lang.model.element.Name tagName) {
+    private boolean isSentenceBreak(Name tagName) {
         return sentenceBreakTags.contains(get(tagName));
     }
 

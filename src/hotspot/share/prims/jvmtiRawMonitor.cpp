@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,7 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
 
   int ret = M_OK;
   if (self->is_Java_thread()) {
-    JavaThread* jt = (JavaThread*) self;
+    JavaThread* jt = self->as_Java_thread();
     // Transition to VM so we can check interrupt state
     ThreadInVMfromNative tivm(jt);
     if (jt->is_interrupted(true)) {
@@ -314,7 +314,7 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
   // don't enter raw monitor if thread is being externally suspended, it will
   // surprise the suspender if a "suspended" thread can still enter monitor
   if (self->is_Java_thread()) {
-    jt = (JavaThread*)self;
+    jt = self->as_Java_thread();
     jt->SR_lock()->lock_without_safepoint_check();
     while (jt->is_external_suspend()) {
       jt->SR_lock()->unlock();
@@ -410,7 +410,7 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
   guarantee(self == _owner, "invariant");
 
   if (self->is_Java_thread()) {
-    JavaThread* jt = (JavaThread*)self;
+    JavaThread* jt = self->as_Java_thread();
     for (;;) {
       jt->set_suspend_equivalent();
       if (!jt->handle_special_suspend_equivalent_condition()) {

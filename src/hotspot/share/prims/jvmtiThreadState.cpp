@@ -57,6 +57,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread)
   _pending_step_for_popframe = false;
   _class_being_redefined = NULL;
   _class_load_kind = jvmti_class_load_kind_load;
+  _classes_being_redefined = NULL;
   _head_env_thread_state = NULL;
   _dynamic_code_event_collector = NULL;
   _vm_object_alloc_event_collector = NULL;
@@ -105,6 +106,10 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread)
 
 JvmtiThreadState::~JvmtiThreadState()   {
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
+
+  if (_classes_being_redefined != NULL) {
+    delete _classes_being_redefined; // free the GrowableArray on C heap
+  }
 
   // clear this as the state for the thread
   get_thread()->set_jvmti_thread_state(NULL);
@@ -241,7 +246,7 @@ int JvmtiThreadState::count_frames() {
 
 void JvmtiThreadState::invalidate_cur_stack_depth() {
   assert(SafepointSynchronize::is_at_safepoint() ||
-         (JavaThread *)Thread::current() == get_thread() ||
+         JavaThread::current() == get_thread() ||
          Thread::current() == get_thread()->active_handshaker(),
          "bad synchronization with owner thread");
 
@@ -272,7 +277,7 @@ void JvmtiThreadState::decr_cur_stack_depth() {
 }
 
 int JvmtiThreadState::cur_stack_depth() {
-  Thread *current = Thread::current();
+  JavaThread *current = JavaThread::current();
   guarantee(current == get_thread() || current == get_thread()->active_handshaker(),
             "must be current thread or direct handshake");
 

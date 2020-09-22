@@ -56,7 +56,7 @@ void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   if (last_metadata_id == metadata_id && chunkwriter.has_metadata()) {
     return;
   }
-  JavaThread* const jt = (JavaThread*)Thread::current();
+  JavaThread* const jt = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   // can safepoint here
   ThreadInVMfromNative transition(jt);
@@ -76,8 +76,7 @@ void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
 }
 
 void JfrMetadataEvent::update(jbyteArray metadata) {
-  JavaThread* thread = (JavaThread*)Thread::current();
-  assert(thread->is_Java_thread(), "invariant");
+  JavaThread* thread = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   if (metadata_blob != NULL) {
     JfrJavaSupport::destroy_global_jni_handle(metadata_blob);

@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/markWord.hpp"
+#include "oops/weakHandle.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
 #include "runtime/perfData.hpp"
@@ -132,14 +133,17 @@ class ObjectMonitor {
   friend class VMStructs;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
 
+  static OopStorage* _oop_storage;
+
   // The sync code expects the header field to be at offset zero (0).
   // Enforced by the assert() in header_addr().
   volatile markWord _header;        // displaced object header word - mark
-  void* volatile _object;           // backward object pointer - strong root
+  WeakHandle _object;               // backward object pointer
   typedef enum {
     Free = 0,  // Free must be 0 for monitor to be free after memset(..,0,..).
     New,
-    Old
+    Old,
+    ChainMarker
   } AllocationState;
   AllocationState _allocation_state;
   // Separate _header and _owner on different cache lines since both can
@@ -148,7 +152,7 @@ class ObjectMonitor {
   // change until deflation so _object and _allocation_state are good
   // choices to share the cache line with _header.
   DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(volatile markWord) +
-                        sizeof(void* volatile) + sizeof(AllocationState));
+                        sizeof(WeakHandle) + sizeof(AllocationState));
   // Used by async deflation as a marker in the _owner field:
   #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
   void* volatile _owner;            // pointer to owning thread OR BasicLock
@@ -328,9 +332,10 @@ class ObjectMonitor {
 
  public:
 
-  void*     object() const;
-  void*     object_addr();
-  void      set_object(void* obj);
+  oop       object() const;
+  oop       object_peek() const;
+  oop*      object_addr();
+  void      set_object(oop obj);
   void      release_set_allocation_state(AllocationState s);
   void      set_allocation_state(AllocationState s);
   AllocationState allocation_state() const;
@@ -338,6 +343,7 @@ class ObjectMonitor {
   bool      is_free() const;
   bool      is_old() const;
   bool      is_new() const;
+  bool      is_chainmarker() const;
 
   // Returns true if the specified thread owns the ObjectMonitor. Otherwise
   // returns false and throws IllegalMonitorStateException (IMSE).

@@ -309,8 +309,7 @@ void VMThread::run() {
 // Notify the VMThread that the last non-daemon JavaThread has terminated,
 // and wait until operation is performed.
 void VMThread::wait_for_vm_thread_exit() {
-  assert(Thread::current()->is_Java_thread(), "Should be a JavaThread");
-  assert(((JavaThread*)Thread::current())->is_terminated(), "Should be terminated");
+  assert(JavaThread::current()->is_terminated(), "Should be terminated");
   { MonitorLocker mu(VMOperationQueue_lock, Mutex::_no_safepoint_check_flag);
     _should_terminate = true;
     mu.notify();
@@ -377,9 +376,7 @@ class HandshakeALotClosure : public HandshakeClosure {
   HandshakeALotClosure() : HandshakeClosure("HandshakeALot") {}
   void do_thread(Thread* thread) {
 #ifdef ASSERT
-    assert(thread->is_Java_thread(), "must be");
-    JavaThread* jt = (JavaThread*)thread;
-    jt->verify_states_for_handshake();
+    thread->as_Java_thread()->verify_states_for_handshake();
 #endif
   }
 };
@@ -446,9 +443,6 @@ void VMThread::loop() {
             // something. This will run all the clean-up processing that needs
             // to be done at a safepoint.
             SafepointSynchronize::begin();
-            #ifdef ASSERT
-            if (GCALotAtAllSafepoints) InterfaceSupport::check_gc_alot();
-            #endif
             SafepointSynchronize::end();
             _cur_vm_operation = NULL;
           }
@@ -490,22 +484,7 @@ void VMThread::loop() {
 
       } else {  // not a safepoint operation
         log_debug(vmthread)("Evaluating non-safepoint VM operation: %s", _cur_vm_operation->name());
-        if (TraceLongCompiles) {
-          elapsedTimer t;
-          t.start();
-          evaluate_operation(_cur_vm_operation);
-          t.stop();
-          double secs = t.seconds();
-          if (secs * 1e3 > LongCompileThreshold) {
-            // XXX - _cur_vm_operation should not be accessed after
-            // the completed count has been incremented; the waiting
-            // thread may have already freed this memory.
-            tty->print_cr("vm %s: %3.7f secs]", _cur_vm_operation->name(), secs);
-          }
-        } else {
-          evaluate_operation(_cur_vm_operation);
-        }
-
+        evaluate_operation(_cur_vm_operation);
         _cur_vm_operation = NULL;
       }
     }

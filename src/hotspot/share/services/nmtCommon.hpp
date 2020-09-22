@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#define CALC_OBJ_SIZE_IN_TYPE(obj, type) (align_up_(sizeof(obj), sizeof(type))/sizeof(type))
+#define CALC_OBJ_SIZE_IN_TYPE(obj, type) (align_up(sizeof(obj), sizeof(type))/sizeof(type))
 
 // Native memory tracking level
 enum NMT_TrackingLevel {

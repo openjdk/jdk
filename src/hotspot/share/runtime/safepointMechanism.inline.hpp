@@ -40,7 +40,7 @@ bool SafepointMechanism::global_poll() {
 
 bool SafepointMechanism::local_poll(Thread* thread) {
   if (thread->is_Java_thread()) {
-    return local_poll_armed((JavaThread*)thread);
+    return local_poll_armed(thread->as_Java_thread());
   } else {
     // If the poll is on a non-java thread we can only check the global state.
     return global_poll();
