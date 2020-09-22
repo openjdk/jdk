@@ -113,54 +113,25 @@ Klass* oopDesc::klass_or_null_acquire() const {
   }
 }
 
-Klass** oopDesc::klass_addr(HeapWord* mem) {
-  // Only used internally and with CMS and will not work with
-  // UseCompressedOops
-  assert(!UseCompressedClassPointers, "only supported with uncompressed klass pointers");
-  ByteSize offset = byte_offset_of(oopDesc, _metadata._klass);
-  return (Klass**) (((char*)mem) + in_bytes(offset));
-}
-
-narrowKlass* oopDesc::compressed_klass_addr(HeapWord* mem) {
-  assert(UseCompressedClassPointers, "only called by compressed klass pointers");
-  ByteSize offset = byte_offset_of(oopDesc, _metadata._compressed_klass);
-  return (narrowKlass*) (((char*)mem) + in_bytes(offset));
-}
-
-Klass** oopDesc::klass_addr() {
-  return klass_addr((HeapWord*)this);
-}
-
-narrowKlass* oopDesc::compressed_klass_addr() {
-  return compressed_klass_addr((HeapWord*)this);
-}
-
-#define CHECK_SET_KLASS(k)                                                \
-  do {                                                                    \
-    assert(Universe::is_bootstrapping() || k != NULL, "NULL Klass");      \
-    assert(Universe::is_bootstrapping() || k->is_klass(), "not a Klass"); \
-  } while (0)
-
 void oopDesc::set_klass(Klass* k) {
-  CHECK_SET_KLASS(k);
+  assert(Universe::is_bootstrapping() || (k != NULL && k->is_klass()), "incorrect Klass");
   if (UseCompressedClassPointers) {
-    *compressed_klass_addr() = CompressedKlassPointers::encode_not_null(k);
+    _metadata._compressed_klass = CompressedKlassPointers::encode_not_null(k);
   } else {
-    *klass_addr() = k;
+    _metadata._klass = k;
   }
 }
 
-void oopDesc::release_set_klass(HeapWord* mem, Klass* klass) {
-  CHECK_SET_KLASS(klass);
+void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
+  assert(Universe::is_bootstrapping() || (k != NULL && k->is_klass()), "incorrect Klass");
+  char* raw_mem = ((char*)mem + klass_offset_in_bytes());
   if (UseCompressedClassPointers) {
-    Atomic::release_store(compressed_klass_addr(mem),
-                          CompressedKlassPointers::encode_not_null(klass));
+    Atomic::release_store((narrowKlass*)raw_mem,
+                          CompressedKlassPointers::encode_not_null(k));
   } else {
-    Atomic::release_store(klass_addr(mem), klass);
+    Atomic::release_store((Klass**)raw_mem, k);
   }
 }
-
-#undef CHECK_SET_KLASS
 
 int oopDesc::klass_gap() const {
   return *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes());

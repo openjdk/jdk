@@ -654,6 +654,10 @@ public class JWindow extends Window implements Accessible,
     @SuppressWarnings("serial")
     protected class AccessibleJWindow extends AccessibleAWTWindow {
         // everything is in the new parent, AccessibleAWTWindow
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJWindow() {}
     }
 
 }

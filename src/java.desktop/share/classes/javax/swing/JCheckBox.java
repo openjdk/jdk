@@ -333,6 +333,11 @@ public class JCheckBox extends JToggleButton implements Accessible {
     protected class AccessibleJCheckBox extends AccessibleJToggleButton {
 
         /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJCheckBox() {}
+
+        /**
          * Get the role of this object.
          *
          * @return an instance of AccessibleRole describing the role of the object

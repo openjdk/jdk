@@ -156,7 +156,7 @@ public:
   size_t flush(size_t* surviving_young_words);
 
 private:
-  inline void do_partial_array(PartialArrayScanTask task);
+  void do_partial_array(PartialArrayScanTask task);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                oop old,
@@ -169,14 +169,14 @@ private:
                        size_t word_sz,
                        uint node_index);
 
-  inline oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
-                                       oop obj,
-                                       markWord old_mark);
+  oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
+                                oop obj,
+                                markWord old_mark);
 
   // This method is applied to the fields of the objects that have just been copied.
-  template <class T> inline void do_oop_evac(T* p);
+  template <class T> void do_oop_evac(T* p);
 
-  inline void dispatch_task(ScannerTask task);
+  void dispatch_task(ScannerTask task);
 
   // Tries to allocate word_sz in the PLAB of the next "generation" after trying to
   // allocate into dest. Previous_plab_refill_failed indicates whether previous

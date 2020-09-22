@@ -154,7 +154,7 @@ void test_GetLocalObject(jvmtiEnv* jvmti, JNIEnv* env, int depth) {
   jobject obj;
   char* errMsg;
 
-  printf("AGENT: calling GetLocalObject()\n");
+  printf("AGENT: calling GetLocalObject() with depth %d\n", depth);
   err = jvmti->GetLocalObject(target_thread, depth, 0, &obj);
   errMsg = GetErrorMessage(jvmti, err);
   printf("AGENT: GetLocalObject() result code %s (%d)\n", errMsg != NULL ? errMsg : "N/A", err);
@@ -166,9 +166,13 @@ void test_GetLocalObject(jvmtiEnv* jvmti, JNIEnv* env, int depth) {
   // If the target thread wins the race we can get errors because we
   // don't find a frame at the given depth or we find a non-java frame
   // there (e.g. native frame). This is expected.
+  // JVMTI_ERROR_INVALID_SLOT can occur also because the target thread is
+  // running and the GetLocalObject() call might coincidentally refer to the
+  // frame of a static method without parameters.
   if (err != JVMTI_ERROR_NONE &&
       err != JVMTI_ERROR_NO_MORE_FRAMES &&
-      err != JVMTI_ERROR_OPAQUE_FRAME) {
+      err != JVMTI_ERROR_OPAQUE_FRAME &&
+      err != JVMTI_ERROR_INVALID_SLOT) {
     ShowErrorMessage(jvmti, err, "AgentThreadLoop: error in JVMTI GetLocalObject");
     env->FatalError("AgentThreadLoop: error in JVMTI GetLocalObject\n");
   }
@@ -260,7 +264,7 @@ AgentThreadLoop(jvmtiEnv * jvmti, JNIEnv* env, void * arg) {
 // It notifies the agent to do the GetLocalObject() call and then races
 // it to make its stack not walkable by returning from the native call.
 JNIEXPORT void JNICALL
-Java_GetLocalWithoutSuspendTest_notifyAgentToGetLocal(JNIEnv *env, jclass cls, jint depth, jlong waitCycles) {
+Java_GetLocalWithoutSuspendTest_notifyAgentToGetLocal(JNIEnv *env, jclass cls, jint depth, jint waitCycles) {
   monitor_enter(jvmti, env, AT_LINE);
 
   // Set depth_for_get_local and notify agent that the target thread is ready for the GetLocalObject() call
