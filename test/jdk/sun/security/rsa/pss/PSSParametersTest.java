@@ -31,7 +31,7 @@ import static javax.crypto.Cipher.PUBLIC_KEY;
 
 /**
  * @test
- * @bug 8146293 8242556
+ * @bug 8146293 8242556 8172366
  * @summary Test RSASSA-PSS AlgorithmParameters impl of SunRsaSign provider.
  * @run main PSSParametersTest
  */
@@ -50,6 +50,8 @@ public class PSSParametersTest {
         System.out.println("Testing against custom parameters");
         test(new PSSParameterSpec("SHA-512/224", "MGF1",
                 MGF1ParameterSpec.SHA384, 100, 1));
+        test(new PSSParameterSpec("SHA3-256", "MGF1",
+            new MGF1ParameterSpec("SHA3-256"), 256>>3, 1));
         System.out.println("Test Passed");
     }
 
@@ -57,6 +59,7 @@ public class PSSParametersTest {
     // bytes, then initialize w/ the DER bytes, retrieve the spec.
     // compare both spec for equality and throw exception if the check failed.
     private static void test(PSSParameterSpec spec) throws Exception {
+        System.out.println("Testing PSS spec: " + spec);
         String ALGORITHMS[] = { PSS_ALGO, PSS_OID };
         for (String alg : ALGORITHMS) {
             AlgorithmParameters params = AlgorithmParameters.getInstance
@@ -67,9 +70,9 @@ public class PSSParametersTest {
                     (alg, PROVIDER);
             params2.init(encoded);
             PSSParameterSpec spec2 = params2.getParameterSpec
-                (PSSParameterSpec.class);
+                    (PSSParameterSpec.class);
             if (!isEqual(spec, spec2)) {
-                throw new RuntimeException("Spec check Failed for " +  alg);
+                throw new RuntimeException("Spec check Failed for " + alg);
             }
         }
     }

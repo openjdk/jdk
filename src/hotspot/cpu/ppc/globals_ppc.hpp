@@ -134,12 +134,6 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
   product(bool, UseStaticBranchPredictionForUncommonPathsPPC64, false,      \
           "Use static branch prediction hints for uncommon paths.")         \
                                                                             \
-  product(bool, UsePower6SchedulerPPC64, false,                             \
-          "Use Power6 Scheduler.")                                          \
-                                                                            \
-  product(bool, InsertEndGroupPPC64, false,                                 \
-          "Insert EndGroup instructions to optimize for Power6.")           \
-                                                                            \
   /* Trap based checks. */                                                  \
   /* Trap based checks use the ppc trap instructions to check certain */    \
   /* conditions. This instruction raises a SIGTRAP caught by the      */    \

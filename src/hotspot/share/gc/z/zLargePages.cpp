@@ -29,7 +29,7 @@
 ZLargePages::State ZLargePages::_state;
 
 void ZLargePages::initialize() {
-  initialize_platform();
+  pd_initialize();
 
   log_info_p(gc, init)("Memory: " JULONG_FORMAT "M", os::physical_memory() / M);
   log_info_p(gc, init)("Large Page Support: %s", to_string());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -333,7 +333,7 @@ class MemoryCache {
         }
 
         long index = pos/BUFFER_LENGTH;
-        int offset = (int)pos % BUFFER_LENGTH;
+        int offset = (int)(pos % BUFFER_LENGTH);
         while (len > 0) {
             int nbytes = Math.min(len, BUFFER_LENGTH - offset);
             byte[] buf = getCacheBlock(index++);

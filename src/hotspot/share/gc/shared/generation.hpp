@@ -371,17 +371,6 @@ class Generation: public CHeapObj<mtGC> {
   virtual void post_compact() { ShouldNotReachHere(); }
 #endif
 
-  // Support for CMS's rescan. In this general form we return a pointer
-  // to an abstract object that can be used, based on specific previously
-  // decided protocols, to exchange information between generations,
-  // information that may be useful for speeding up certain types of
-  // garbage collectors. A NULL value indicates to the client that
-  // no data recording is expected by the provider. The data-recorder is
-  // expected to be GC worker thread-local, with the worker index
-  // indicated by "thr_num".
-  virtual void* get_data_recorder(int thr_num) { return NULL; }
-  virtual void sample_eden_chunk() {}
-
   // Some generations may require some cleanup actions before allowing
   // a verification.
   virtual void prepare_for_verify() {}
