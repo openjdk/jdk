@@ -1031,26 +1031,6 @@ void Universe::print_heap_at_SIGBREAK() {
   }
 }
 
-void Universe::print_heap_before_gc() {
-  LogTarget(Debug, gc, heap) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("Heap before GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
-    ResourceMark rm;
-    heap()->print_on(&ls);
-  }
-}
-
-void Universe::print_heap_after_gc() {
-  LogTarget(Debug, gc, heap) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("Heap after GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
-    ResourceMark rm;
-    heap()->print_on(&ls);
-  }
-}
-
 void Universe::initialize_verify_flags() {
   verify_flags = 0;
   const char delimiter[] = " ,";

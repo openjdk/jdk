@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/oopStorage.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "logging/log.hpp"
@@ -113,6 +115,8 @@ static int Knob_FixedSpin           = 0;
 static int Knob_PreSpin             = 10;      // 20-100 likely better
 
 DEBUG_ONLY(static volatile bool InitDone = false;)
+
+OopStorage* ObjectMonitor::_oop_storage = NULL;
 
 // -----------------------------------------------------------------------------
 // Theory of operations -- Monitors lists, thread residency, etc:
@@ -235,6 +239,53 @@ void ObjectMonitor::operator delete(void* p) {
 }
 void ObjectMonitor::operator delete[] (void *p) {
   operator delete(p);
+}
+
+// Check that object() and set_object() are called from the right context:
+static void check_object_context() {
+#ifdef ASSERT
+  Thread* self = Thread::current();
+  if (self->is_Java_thread()) {
+    // Mostly called from JavaThreads so sanity check the thread state.
+    JavaThread* jt = self->as_Java_thread();
+    switch (jt->thread_state()) {
+    case _thread_in_vm:    // the usual case
+    case _thread_in_Java:  // during deopt
+      break;
+    default:
+      fatal("called from an unsafe thread state");
+    }
+    assert(jt->is_active_Java_thread(), "must be active JavaThread");
+  } else {
+    // However, ThreadService::get_current_contended_monitor()
+    // can call here via the VMThread so sanity check it.
+    assert(self->is_VM_thread(), "must be");
+  }
+#endif // ASSERT
+}
+
+oop ObjectMonitor::object() const {
+  check_object_context();
+  if (_object.is_null()) {
+    return NULL;
+  }
+  return _object.resolve();
+}
+
+oop ObjectMonitor::object_peek() const {
+  if (_object.is_null()) {
+    return NULL;
+  }
+  return _object.peek();
+}
+
+void ObjectMonitor::set_object(oop obj) {
+  check_object_context();
+  if (_object.is_null()) {
+    _object = WeakHandle(_oop_storage, obj);
+  } else {
+    _object.replace(obj);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -446,10 +497,10 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
     OrderAccess::loadload();
   }
 
-  const oop l_object = object();
+  const oop l_object = object_peek();
   if (l_object == NULL) {
     // ObjectMonitor's object ref has already been cleared by async
-    // deflation so we're done here.
+    // deflation or GC so we're done here.
     return;
   }
   assert(l_object == obj, "object=" INTPTR_FORMAT " must equal obj="
@@ -703,7 +754,6 @@ void ObjectMonitor::EnterI(TRAPS) {
   // In addition, Self.TState is stable.
 
   assert(_owner == Self, "invariant");
-  assert(object() != NULL, "invariant");
 
   UnlinkAfterAcquire(Self, &node);
   if (_succ == Self) _succ = NULL;
@@ -2055,6 +2105,8 @@ void ObjectMonitor::Initialize() {
 #undef NEWPERFVARIABLE
   }
 
+  _oop_storage = OopStorageSet::create_weak("ObjectSynchronizer Weak");
+
   DEBUG_ONLY(InitDone = true;)
 }
 
@@ -2103,7 +2155,7 @@ void ObjectMonitor::print() const { print_on(tty); }
 void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
   st->print_cr("  _header = " INTPTR_FORMAT, header().value());
-  st->print_cr("  _object = " INTPTR_FORMAT, p2i(object()));
+  st->print_cr("  _object = " INTPTR_FORMAT, p2i(object_peek()));
   st->print("  _allocation_state = ");
   if (is_free()) {
     st->print("Free");

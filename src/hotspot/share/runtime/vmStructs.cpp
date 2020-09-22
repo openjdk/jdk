@@ -338,9 +338,9 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   volatile_nonstatic_field(ConstantPoolCacheEntry,      _f2,                                  intx)                                  \
   volatile_nonstatic_field(ConstantPoolCacheEntry,      _flags,                               intx)                                  \
                                                                                                                                      \
-  /********************************/                                                                                                 \
-  /* MethodOop-related structures */                                                                                                 \
-  /********************************/                                                                                                 \
+  /*****************************/                                                                                                    \
+  /* Method related structures */                                                                                                    \
+  /*****************************/                                                                                                    \
                                                                                                                                      \
   nonstatic_field(CheckedExceptionElement,     class_cp_index,                                u2)                                    \
   nonstatic_field(LocalVariableTableElement,   start_bci,                                     u2)                                    \
@@ -1284,9 +1284,9 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
                                                                           \
   declare_toplevel_type(OopHandle)                                        \
                                                                           \
-  /*************************************/                                 \
-  /* MethodOop-related data structures */                                 \
-  /*************************************/                                 \
+  /**********************************/                                    \
+  /* Method related data structures */                                    \
+  /**********************************/                                    \
                                                                           \
   declare_toplevel_type(CheckedExceptionElement)                          \
   declare_toplevel_type(LocalVariableTableElement)                        \

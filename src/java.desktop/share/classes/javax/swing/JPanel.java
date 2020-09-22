@@ -232,6 +232,10 @@ public class JPanel extends JComponent implements Accessible
      */
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJPanel extends AccessibleJComponent {
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJPanel() {}
 
         /**
          * Get the role of this object.

@@ -301,11 +301,12 @@ public final class TypeAnnotationParser {
                         l.add(t);
                     }
                 }
+                TypeAnnotation[] typeAnnotations = l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY);
                 res[i] = AnnotatedTypeFactory.buildAnnotatedType(bounds[i],
                         AnnotatedTypeFactory.nestingForType(bounds[i], loc),
-                        l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
-                        candidates.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
-                        (AnnotatedElement)decl);
+                        typeAnnotations,
+                        typeAnnotations,
+                        decl);
             }
             return res;
         }

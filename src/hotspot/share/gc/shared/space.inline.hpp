@@ -163,10 +163,6 @@ inline void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* c
   HeapWord* scan_limit = space->scan_limit();
 
   while (cur_obj < scan_limit) {
-    assert(!space->scanned_block_is_obj(cur_obj) ||
-           oop(cur_obj)->mark_raw().is_marked() || oop(cur_obj)->mark_raw().is_unlocked() ||
-           oop(cur_obj)->mark_raw().has_bias_pattern(),
-           "these are the only valid states during a mark sweep");
     if (space->scanned_block_is_obj(cur_obj) && oop(cur_obj)->is_gc_marked()) {
       // prefetch beyond cur_obj
       Prefetch::write(cur_obj, interval);
