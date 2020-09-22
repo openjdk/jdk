@@ -734,7 +734,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     protected class InvocationMouseHandler extends MouseAdapter {
         /**
-         * Constructor for subclasses to call.
+         * Constructs an {@code InvocationMouseHandler}.
          */
         protected InvocationMouseHandler() {}
 
@@ -764,7 +764,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     protected class InvocationMouseMotionHandler extends MouseMotionAdapter {
         /**
-         * Constructor for subclasses to call.
+         * Constructs an {@code InvocationMouseMotionHandler}.
          */
         protected InvocationMouseMotionHandler() {}
 
@@ -782,7 +782,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     public class InvocationKeyHandler extends KeyAdapter {
         /**
-         * Constructs a {@code InvocationKeyHandler}.
+         * Constructs an {@code InvocationKeyHandler}.
          */
         public InvocationKeyHandler() {}
         public void keyReleased( KeyEvent e ) {}
@@ -795,7 +795,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     protected class ListSelectionHandler implements ListSelectionListener {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code ListSelectionHandler}.
          */
         protected ListSelectionHandler() {}
         public void valueChanged( ListSelectionEvent e ) {}
@@ -829,7 +829,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     protected class ListMouseHandler extends MouseAdapter {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code ListMouseHandler}.
          */
         protected ListMouseHandler() {}
         public void mousePressed( MouseEvent e ) {
@@ -845,9 +845,10 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     protected class ListMouseMotionHandler extends MouseMotionAdapter {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code ListMouseMotionHandler}.
          */
         protected ListMouseMotionHandler() {}
+
         public void mouseMoved( MouseEvent anEvent ) {
             getHandler().mouseMoved(anEvent);
         }
@@ -859,7 +860,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     protected class ItemHandler implements ItemListener {
         /**
-         * Constructor for subclasses to call.
+         * Constructs an {@code ItemHandler}.
          */
         protected ItemHandler() {}
         public void itemStateChanged( ItemEvent e ) {
@@ -879,7 +880,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     protected class PropertyChangeHandler implements PropertyChangeListener {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code PropertyChangeHandler}.
          */
         protected PropertyChangeHandler() {}
         public void propertyChange( PropertyChangeEvent e ) {

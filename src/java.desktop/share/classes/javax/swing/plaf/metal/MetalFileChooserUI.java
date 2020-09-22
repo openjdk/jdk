@@ -587,7 +587,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FileRenderer extends DefaultListCellRenderer  {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code FileRenderer}.
          */
         protected FileRenderer() {}
     }

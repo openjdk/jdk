@@ -181,7 +181,7 @@ public class MetalSliderUI extends BasicSliderUI {
      */
     protected class MetalPropertyListener extends BasicSliderUI.PropertyChangeHandler {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code MetalPropertyListener}.
          */
         protected MetalPropertyListener() {}
 

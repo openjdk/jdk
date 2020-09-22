@@ -929,7 +929,7 @@ public class BasicMenuItemUI extends MenuItemUI
         // class calls into the Handler.
 
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code MouseInputHandler}.
          */
         protected MouseInputHandler() {}
 

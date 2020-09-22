@@ -1177,7 +1177,7 @@ public class BasicScrollBarUI
      */
     protected class ModelListener implements ChangeListener {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code ModelListener}.
          */
         protected ModelListener() {}
 
@@ -1206,7 +1206,7 @@ public class BasicScrollBarUI
         private transient int direction = +1;
 
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code TrackListener}.
          */
         protected TrackListener() {}
 
@@ -1509,7 +1509,7 @@ public class BasicScrollBarUI
         boolean handledEvent;
 
         /**
-         * Constructor for subclasses to call.
+         * Constructs an {@code ArrowButtonListener}.
          */
         protected ArrowButtonListener() {}
 

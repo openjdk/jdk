@@ -553,7 +553,7 @@ public class BasicSplitPaneDivider extends Container
             implements MouseMotionListener
     {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code MouseHandler}.
          */
         protected MouseHandler() {}
 
@@ -961,7 +961,7 @@ public class BasicSplitPaneDivider extends Container
     protected class DividerLayout implements LayoutManager
     {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code DividerLayout}.
          */
         protected DividerLayout() {}
 

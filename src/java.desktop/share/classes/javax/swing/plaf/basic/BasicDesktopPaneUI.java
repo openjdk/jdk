@@ -679,7 +679,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class OpenAction extends AbstractAction {
         /**
-         * Constructor for subclasses to call.
+         * Constructs an {@code OpenAction}.
          */
         protected OpenAction() {}
         public void actionPerformed(ActionEvent evt) {
@@ -698,7 +698,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class CloseAction extends AbstractAction {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code CloseAction}.
          */
         protected CloseAction() {}
         public void actionPerformed(ActionEvent evt) {
@@ -721,7 +721,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MinimizeAction extends AbstractAction {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code MinimizeAction}.
          */
         protected MinimizeAction() {}
         public void actionPerformed(ActionEvent evt) {
@@ -744,7 +744,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MaximizeAction extends AbstractAction {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code MaximizeAction}.
          */
         protected MaximizeAction() {}
         public void actionPerformed(ActionEvent evt) {
@@ -767,7 +767,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class NavigateAction extends AbstractAction {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code NavigateAction}.
          */
         protected NavigateAction() {}
         public void actionPerformed(ActionEvent evt) {

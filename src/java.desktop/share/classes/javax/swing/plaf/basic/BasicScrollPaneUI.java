@@ -624,7 +624,7 @@ public class BasicScrollPaneUI
         // class calls into the Handler.
 
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code MouseWheelHandler}.
          */
         protected MouseWheelHandler() {}
 

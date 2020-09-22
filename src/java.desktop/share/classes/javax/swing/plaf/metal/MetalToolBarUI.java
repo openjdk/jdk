@@ -368,7 +368,7 @@ public class MetalToolBarUI extends BasicToolBarUI
     protected class MetalContainerListener
         extends BasicToolBarUI.ToolBarContListener {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code MetalContainerListener}.
          */
         protected MetalContainerListener() {}
     }
@@ -379,7 +379,7 @@ public class MetalToolBarUI extends BasicToolBarUI
     protected class MetalRolloverListener
         extends BasicToolBarUI.PropertyListener {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code MetalRolloverListener}.
          */
         protected MetalRolloverListener() {}
     }

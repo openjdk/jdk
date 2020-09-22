@@ -617,6 +617,11 @@ public class BasicComboBoxUI extends ComboBoxUI {
      * <code>BasicComboBoxUI</code>.
      */
     public class FocusHandler implements FocusListener {
+        /**
+         * Constructs a {@code FocusHandler}.
+         */
+        public FocusHandler() {}
+
         public void focusGained( FocusEvent e ) {
             getHandler().focusGained(e);
         }

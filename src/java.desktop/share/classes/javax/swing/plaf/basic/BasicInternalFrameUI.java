@@ -852,7 +852,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
         int resizeCornerSize = 16;
 
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code BorderListener}.
          */
         protected BorderListener() {}
 
@@ -1320,7 +1320,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
       // new functionality add it to the Handler, but make sure this
       // class calls into the Handler.
       /**
-       * Constructor for subclasses to call.
+       * Constructs a {@code ComponentHandler}.
        */
       protected ComponentHandler() {}
 
@@ -1367,7 +1367,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code GlassPaneDispatcher}.
          */
         protected GlassPaneDispatcher() {}
 
@@ -1439,7 +1439,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
       // new functionality add it to the Handler, but make sure this
       // class calls into the Handler.
       /**
-       * Constructor for subclasses to call.
+       * Constructs a {@code BasicInternalFrameListener}.
        */
       protected BasicInternalFrameListener() {}
 

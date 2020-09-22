@@ -3335,6 +3335,11 @@ public class BasicTreeUI extends TreeUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
 
+        /**
+         * Constructs a {@code SelectionModelPropertyChangeHandler}.
+         */
+        public SelectionModelPropertyChangeHandler() {}
+
         public void propertyChange(PropertyChangeEvent event) {
             getHandler().propertyChange(event);
         }

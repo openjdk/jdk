@@ -1414,7 +1414,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      */
     protected class FrameListener extends WindowAdapter {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code FrameListener}.
          */
         protected FrameListener() {}
 
@@ -1461,7 +1461,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code ToolBarContListener}.
          */
         protected ToolBarContListener() {}
 
@@ -1484,7 +1484,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code ToolBarFocusListener}.
          */
         protected ToolBarFocusListener() {}
 
@@ -1506,7 +1506,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code PropertyListener}.
          */
         protected PropertyListener() {}
 

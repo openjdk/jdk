@@ -759,7 +759,7 @@ public class BasicFileChooserUI extends FileChooserUI {
         // class calls into the Handler.
 
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code SelectionListener}.
          */
         protected SelectionListener() {}
 
@@ -1332,7 +1332,7 @@ public class BasicFileChooserUI extends FileChooserUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class CancelSelectionAction extends AbstractAction {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code CancelSelectionAction}.
          */
         protected CancelSelectionAction() {}
 
@@ -1348,7 +1348,7 @@ public class BasicFileChooserUI extends FileChooserUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class UpdateAction extends AbstractAction {
         /**
-         * Constructor for subclasses to call.
+         * Constructs an {@code UpdateAction}.
          */
         protected UpdateAction() {}
 
