@@ -134,6 +134,7 @@ final class DesktopIntegration {
         desktopFileData = Collections.unmodifiableMap(
                 createDataForDesktopFile(params));
 
+        nestedIntegrations = new ArrayList<>();
         // Read launchers information from predefine app image
         if (launchers.isEmpty() &&
                 PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
@@ -149,17 +150,17 @@ final class DesktopIntegration {
                 launcherParams = AddLauncherArguments.merge(params, launcherParams,
                     ICON.getID(), ICON_PNG.getID(), ADD_LAUNCHERS.getID(),
                     FILE_ASSOCIATIONS.getID(), PREDEFINED_APP_IMAGE.getID());
-                launchers.add(launcherParams);
+                nestedIntegrations.add(new DesktopIntegration(thePackage,
+                        launcherParams, params));
             }
-        }
-
-        nestedIntegrations = new ArrayList<>();
-        for (var launcherParams : launchers) {
-            launcherParams = AddLauncherArguments.merge(params, launcherParams,
-                    ICON.getID(), ICON_PNG.getID(), ADD_LAUNCHERS.getID(),
-                    FILE_ASSOCIATIONS.getID());
-            nestedIntegrations.add(new DesktopIntegration(thePackage,
-                    launcherParams, params));
+        } else {
+            for (var launcherParams : launchers) {
+                launcherParams = AddLauncherArguments.merge(params, launcherParams,
+                        ICON.getID(), ICON_PNG.getID(), ADD_LAUNCHERS.getID(),
+                        FILE_ASSOCIATIONS.getID());
+                nestedIntegrations.add(new DesktopIntegration(thePackage,
+                        launcherParams, params));
+            }
         }
     }
 
