@@ -26,15 +26,15 @@
 package java.lang.invoke;
 
 import jdk.internal.loader.BuiltinClassLoader;
-import jdk.internal.misc.CDS;
+import jdk.internal.misc.VM;
 
 final class LambdaProxyClassArchive {
     private static final boolean dumpArchive;
     private static final boolean sharingEnabled;
 
     static {
-        dumpArchive = CDS.isDynamicDumpingEnabled();
-        sharingEnabled = CDS.isSharingEnabled();
+        dumpArchive = VM.isCDSDumpingEnabled();
+        sharingEnabled = VM.isCDSSharingEnabled();
     }
 
     /**
