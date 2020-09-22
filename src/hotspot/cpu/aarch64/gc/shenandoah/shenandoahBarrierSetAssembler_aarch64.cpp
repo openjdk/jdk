@@ -459,22 +459,10 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
 // from-space, or it refers to the to-space version of an object that
 // is being evacuated out of from-space.
 //
-// By default, this operation has relaxed memory ordering and the value
-// held in the result register following execution of the generated code
-// sequence is 0 to indicate failure of CAS, non-zero to indicate
-// success.  Arguments support variations on this theme:
-//
-//  acquire: Load from addr has acquire semantics.
-//
-//  release: Store to addr has release semantics.
-//
-//  is_cae:  This turns CAS (compare and swap) into CAE (compare and
-//           exchange).  This HotSpot convention is that CAE makes
-//           available to the caller the "failure witness", which is
-//           the value that was stored in memory which did not match
-//           the expected value.  If is_cae, the result is the value
-//           most recently fetched from addr rather than a boolean
-//           success indicator.
+// By default the value held in the result register following execution
+// of the generated code sequence is 0 to indicate failure of CAS,
+// non-zero to indicate success. If is_cae, the result is the value most
+// recently fetched from addr rather than a boolean success indicator.
 //
 // Clobbers rscratch1, rscratch2
 void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
