@@ -55,9 +55,9 @@
   product(bool, GenerateStressSeed, false, DIAGNOSTIC,                      \
           "Generate random seed for IGVN stress testing")                   \
                                                                             \
-  product(uintx, StressSeed, 0, DIAGNOSTIC,                                 \
+  product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
           "Random seed for IGVN stress testing")                            \
-          range(0, max_uintx)                                               \
+          range(0, max_juint)                                               \
                                                                             \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
