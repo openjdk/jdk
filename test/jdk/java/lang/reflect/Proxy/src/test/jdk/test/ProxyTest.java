@@ -96,7 +96,8 @@ public class ProxyTest {
         try {
             Constructor<?> cons = proxyClass.getConstructor(InvocationHandler.class);
             cons.newInstance(handler);
-            if (!proxyClass.getPackageName().equals(m.getName())) { // non-exported
+            // the exported package has the same name as the dynamic module
+            if (!proxyClass.getPackageName().equals(m.getName())) {
                 throw new RuntimeException("Expected IllegalAccessException: " + proxyClass);
             }
         } catch (IllegalAccessException e) {

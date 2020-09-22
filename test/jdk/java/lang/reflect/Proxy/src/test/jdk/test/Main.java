@@ -66,9 +66,7 @@ public class Main {
      */
     static Data[] proxiesForExportedTypes() {
         ClassLoader ld = Main.class.getClassLoader();
-        Module unnamed = ld.getUnnamedModule();
         ClassLoader ld2 = new URLClassLoader(new URL[0], ld);
-        Module unnamed2 = ld2.getUnnamedModule();
 
         return new Data[] {
             new Data(ld, Runnable.class),

@@ -79,10 +79,12 @@ public class ProxyModuleMapping {
         try {
             Constructor<?> cons = c.getConstructor(InvocationHandler.class);
             cons.newInstance(ih);
+            // the exported package name is same as the module name
             if (!c.getPackageName().equals(module.getName())) {
                 throw new RuntimeException("expected IAE not thrown");
             }
         } catch (IllegalAccessException e) {
+            // non-exported package from the dynamic module
             if (c.getPackageName().equals(module.getName())) {
                 throw e;
             }

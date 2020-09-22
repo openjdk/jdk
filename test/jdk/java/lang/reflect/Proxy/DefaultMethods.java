@@ -33,18 +33,18 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @bug 8159746
- * @run testng DefaultMethods 
+ * @run testng DefaultMethods
  * @summary Basic tests for Proxy::invokeSuper default method
  */
 
 public class DefaultMethods {
-    interface I1 {
+    public interface I1 {
         default int m() {
             return 10;
         }
     }
 
-    interface I2 {
+    public interface I2 {
         default int m() {
             return 20;
         }
@@ -55,13 +55,13 @@ public class DefaultMethods {
     }
 
     // I3::m inherits from I2:m
-    interface I3 extends I2 {
+    public interface I3 extends I2 {
         default int m3(String... s) {
             return Arrays.stream(s).mapToInt(String::length).sum();
         }
     }
 
-    interface I4 extends I1, I2 {
+    public interface I4 extends I1, I2 {
         default int m() {
             return 40;
         }
@@ -71,7 +71,7 @@ public class DefaultMethods {
         }
     }
 
-    interface I12 extends I1, I2 {
+    public interface I12 extends I1, I2 {
         @Override
         int m();
 
@@ -165,8 +165,6 @@ public class DefaultMethods {
                 new Object[]{new Class<?>[]{ I3.class }, I3.class, 20},
                 // "m" is implemented in I1, I2 and overridden in I4
                 new Object[]{new Class<?>[]{ I4.class }, I4.class, 40},
-                new Object[]{new Class<?>[]{ I4.class }, I1.class, 10},
-                new Object[]{new Class<?>[]{ I4.class }, I2.class, 20},
                 // invoke "m" implemented in the second proxy interface
                 // different from the method passed to InvocationHandler::invoke
                 new Object[]{new Class<?>[]{ I1.class, I2.class }, I2.class, 20},
@@ -294,8 +292,9 @@ public class DefaultMethods {
     @DataProvider(name = "negativeCases")
     private Object[][] negativeCases() {
         return new Object[][] {
-                // I1::m is not the resolved method from I4 as it overrides "m"
+                // I4::m overrides I1::m and I2::m
                 new Object[] { new Class<?>[]{ I4.class },  I1.class, "m"},
+                new Object[] { new Class<?>[]{ I4.class },  I2.class, "m"},
                 // I12::m is not a default method
                 new Object[] { new Class<?>[]{ I12.class }, I12.class, "m"},
                 // non-proxy default method

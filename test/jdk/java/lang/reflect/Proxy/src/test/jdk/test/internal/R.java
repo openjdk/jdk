@@ -31,4 +31,6 @@ public interface R {
     public void throwException() throws FooException;
 
     public void setBarArray(Bar[][] array);
+
+    default int m() { return 10; }
 }
