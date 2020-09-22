@@ -34,21 +34,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
 
-class ShenandoahSerialRoot {
-public:
-  typedef void (*OopsDo)(OopClosure*);
-private:
-  ShenandoahSharedFlag                   _claimed;
-  const OopsDo                           _oops_do;
-  const ShenandoahPhaseTimings::Phase    _phase;
-  const ShenandoahPhaseTimings::ParPhase _par_phase;
-
-public:
-  ShenandoahSerialRoot(OopsDo oops_do,
-          ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase);
-  void oops_do(OopClosure* cl, uint worker_id);
-};
-
 class ShenandoahWeakSerialRoot {
   typedef void (*WeakOopsDo)(BoolObjectClosure*, OopClosure*);
 private:
