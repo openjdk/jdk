@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,8 @@
 /*
  * @test
  * @summary Basic tests for SUID in the serial stream
- * @compile --enable-preview -source ${jdk.version} SerialVersionUIDTest.java
- * @run testng/othervm --enable-preview SerialVersionUIDTest
- * @run testng/othervm/java.security.policy=empty_security.policy --enable-preview SerialVersionUIDTest
+ * @run testng/othervm SerialVersionUIDTest
+ * @run testng/othervm/java.security.policy=empty_security.policy SerialVersionUIDTest
  */
 
 import java.io.ByteArrayInputStream;

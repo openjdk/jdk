@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @summary superclass fields in the stream should be discarded
  * @library /test/lib
  * @modules jdk.compiler
- * @compile --enable-preview -source ${jdk.version} AssignableFrom.java Point.java
+ * @compile AssignableFrom.java Point.java
  *          DefaultValues.java SuperStreamFields.java SuperStreamFieldsTest.java
- * @run testng/othervm --enable-preview SuperStreamFieldsTest
+ * @run testng/othervm SuperStreamFieldsTest
  */
 
 import org.testng.annotations.DataProvider;

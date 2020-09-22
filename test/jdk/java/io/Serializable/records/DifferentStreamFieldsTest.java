@@ -24,9 +24,8 @@
 /*
  * @test
  * @summary Checks that the appropriate value is given to the canonical ctr
- * @compile --enable-preview -source ${jdk.version} DifferentStreamFieldsTest.java
- * @run testng/othervm --enable-preview DifferentStreamFieldsTest
- * @run testng/othervm/java.security.policy=empty_security.policy --enable-preview DifferentStreamFieldsTest
+ * @run testng/othervm DifferentStreamFieldsTest
+ * @run testng/othervm/java.security.policy=empty_security.policy DifferentStreamFieldsTest
  */
 
 import org.testng.annotations.DataProvider;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,8 @@
 /*
  * @test
  * @summary Basic test that serializes and deserializes a number of records
- * @compile --enable-preview -source ${jdk.version} BasicRecordSer.java
- * @run testng/othervm --enable-preview BasicRecordSer
- * @run testng/othervm/java.security.policy=empty_security.policy --enable-preview BasicRecordSer
+ * @run testng/othervm BasicRecordSer
+ * @run testng/othervm/java.security.policy=empty_security.policy BasicRecordSer
  */
 
 import java.io.ByteArrayInputStream;
