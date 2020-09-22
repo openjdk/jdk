@@ -58,12 +58,14 @@ public class TlsChannelBinding {
     public enum TlsChannelBindingType {
 
         /**
-         * Channel binding on the basis of TLS Finished message
+         * Channel binding on the basis of TLS Finished message.
+         * TLS_UNIQUE is defined by RFC 5929 but is not supported
+         * by the current LDAP stack.
          */
         TLS_UNIQUE("tls-unique"),
 
         /**
-         * Channel binding on the basis of TLS server certificate
+         * Channel binding on the basis of TLS server certificate.
          */
         TLS_SERVER_END_POINT("tls-server-end-point");
 
@@ -79,7 +81,9 @@ public class TlsChannelBinding {
 
     /**
      * Parse value of "com.sun.jndi.ldap.tls.cbtype" property
-     * @param cbType
+     * @param  cbType
+     * @return TLS Channel Binding type or null if
+     *         "com.sun.jndi.ldap.tls.cbtype" property has not been set.
      * @throws NamingException
      */
     public static TlsChannelBindingType parseType(String cbType) throws NamingException {
@@ -135,6 +139,7 @@ public class TlsChannelBinding {
     public TlsChannelBindingType getType() {
         return cbType;
     }
+
     public byte[] getData() {
         return cbData;
     }

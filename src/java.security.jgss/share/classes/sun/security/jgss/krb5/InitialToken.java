@@ -382,11 +382,11 @@ abstract class InitialToken extends Krb5Token {
         // CHANNEL_BINDING_AF_NULL_ADDR value should be used for unspecified address
         // in all other cases.
         int initiatorAddressType = getAddrType(initiatorAddress,
-                (channelBinding instanceof TlsChannelBindingImpl)?
-                        CHANNEL_BINDING_AF_UNSPEC:CHANNEL_BINDING_AF_NULL_ADDR);
+                (channelBinding instanceof TlsChannelBindingImpl) ?
+                        CHANNEL_BINDING_AF_UNSPEC : CHANNEL_BINDING_AF_NULL_ADDR);
         int acceptorAddressType = getAddrType(acceptorAddress,
-                (channelBinding instanceof TlsChannelBindingImpl)?
-                        CHANNEL_BINDING_AF_UNSPEC:CHANNEL_BINDING_AF_NULL_ADDR);
+                (channelBinding instanceof TlsChannelBindingImpl) ?
+                        CHANNEL_BINDING_AF_UNSPEC : CHANNEL_BINDING_AF_NULL_ADDR);
 
         byte[] initiatorAddressBytes = null;
         if (initiatorAddress != null) {

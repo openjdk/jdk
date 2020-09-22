@@ -991,7 +991,7 @@ public final class Connection implements Runnable, HandshakeCompletedListener {
         return buf;
     }
 
-    private CompletableFuture<X509Certificate> tlsHandshakeCompleted =
+    private final CompletableFuture<X509Certificate> tlsHandshakeCompleted =
             new CompletableFuture<>();
 
     @Override
