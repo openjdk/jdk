@@ -190,10 +190,10 @@ ShenandoahRootScanner::~ShenandoahRootScanner() {
 
 void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops) {
   MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
-  roots_do(worker_id, oops, NULL, &blobs_cl);
+  roots_do(worker_id, oops, &blobs_cl);
 }
 
-void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure *tc) {
+void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops, CodeBlobClosure* code, ThreadClosure *tc) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
 

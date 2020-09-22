@@ -209,7 +209,7 @@ public:
   void roots_do(uint worker_id, OopClosure* cl);
 
 private:
-  void roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure* tc = NULL);
+  void roots_do(uint worker_id, OopClosure* oops, CodeBlobClosure* code, ThreadClosure* tc = NULL);
 };
 
 template <bool CONCURRENT>
