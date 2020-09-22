@@ -39,6 +39,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public abstract class BasicAuthenticator extends Authenticator {
 
+    /** The HTTP Basic authentication realm. */
     protected final String realm;
     private final Charset charset;
     private final boolean isUTF8;

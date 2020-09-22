@@ -36,26 +36,6 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/thread.hpp"
 
-ShenandoahSerialRoot::ShenandoahSerialRoot(ShenandoahSerialRoot::OopsDo oops_do,
-  ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase) :
-  _oops_do(oops_do), _phase(phase), _par_phase(par_phase) {
-}
-
-void ShenandoahSerialRoot::oops_do(OopClosure* cl, uint worker_id) {
-  if (_claimed.try_set()) {
-    ShenandoahWorkerTimingsTracker timer(_phase, _par_phase, worker_id);
-    _oops_do(cl);
-  }
-}
-
-ShenandoahSerialRoots::ShenandoahSerialRoots(ShenandoahPhaseTimings::Phase phase) :
-  _object_synchronizer_root(&ObjectSynchronizer::oops_do, phase, ShenandoahPhaseTimings::ObjectSynchronizerRoots) {
-}
-
-void ShenandoahSerialRoots::oops_do(OopClosure* cl, uint worker_id) {
-  _object_synchronizer_root.oops_do(cl, worker_id);
-}
-
 ShenandoahWeakSerialRoot::ShenandoahWeakSerialRoot(ShenandoahWeakSerialRoot::WeakOopsDo weak_oops_do,
   ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase) :
   _weak_oops_do(weak_oops_do), _phase(phase), _par_phase(par_phase) {
@@ -179,7 +159,6 @@ ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase p
 
 ShenandoahRootScanner::ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
-  _serial_roots(phase),
   _thread_roots(phase, n_workers > 1) {
   nmethod::oops_do_marking_prologue();
 }
@@ -195,14 +174,9 @@ void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops) {
 
 void ShenandoahRootScanner::roots_do(uint worker_id, OopClosure* oops, CodeBlobClosure* code, ThreadClosure *tc) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
+
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
-
   ResourceMark rm;
-
-  // Process serial-claiming roots first
-  _serial_roots.oops_do(oops, worker_id);
-
-  // Process heavy-weight/fully parallel roots the last
   _thread_roots.threads_do(&tc_cl, worker_id);
 }
 
@@ -211,7 +185,6 @@ ShenandoahRootEvacuator::ShenandoahRootEvacuator(uint n_workers,
                                                  bool stw_roots_processing,
                                                  bool stw_class_unloading) :
   ShenandoahRootProcessor(phase),
-  _serial_roots(phase),
   _vm_roots(phase),
   _cld_roots(phase, n_workers),
   _thread_roots(phase, n_workers > 1),
@@ -232,7 +205,6 @@ void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
   AlwaysTrueClosure always_true;
 
   // Process serial-claiming roots first
-  _serial_roots.oops_do(oops, worker_id);
   _serial_weak_roots.weak_oops_do(oops, worker_id);
 
   // Process light-weight/limited parallel roots then
@@ -257,7 +229,6 @@ void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
 
 ShenandoahRootUpdater::ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
-  _serial_roots(phase),
   _vm_roots(phase),
   _cld_roots(phase, n_workers),
   _thread_roots(phase, n_workers > 1),
@@ -269,7 +240,6 @@ ShenandoahRootUpdater::ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimi
 
 ShenandoahRootAdjuster::ShenandoahRootAdjuster(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
-  _serial_roots(phase),
   _vm_roots(phase),
   _cld_roots(phase, n_workers),
   _thread_roots(phase, n_workers > 1),
@@ -290,7 +260,6 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   AlwaysTrueClosure always_true;
 
   // Process serial-claiming roots first
-  _serial_roots.oops_do(oops, worker_id);
   _serial_weak_roots.weak_oops_do(oops, worker_id);
 
   // Process light-weight/limited parallel roots then
@@ -306,7 +275,6 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
 
 ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
    ShenandoahRootProcessor(ShenandoahPhaseTimings::heap_iteration_roots),
-   _serial_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _thread_roots(ShenandoahPhaseTimings::heap_iteration_roots, false /*is par*/),
    _vm_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _cld_roots(ShenandoahPhaseTimings::heap_iteration_roots, 1),
@@ -327,7 +295,6 @@ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
    ResourceMark rm;
 
    // Process serial-claiming roots first
-   _serial_roots.oops_do(oops, 0);
    _serial_weak_roots.weak_oops_do(oops, 0);
 
    // Process light-weight/limited parallel roots then
