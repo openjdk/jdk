@@ -641,7 +641,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, bool concurrent
   double end_time_sec = os::elapsedTime();
   double start_time_sec = phase_times()->cur_collection_start_sec();
 
-  PauseKind this_pause = young_gc_pause_kind();
+  PauseKind this_pause = young_gc_pause_kind(concurrent_operation_is_full_mark);
 
   bool update_stats = should_update_gc_stats();
 
@@ -785,9 +785,6 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, bool concurrent
   assert(!(is_concurrent_start_pause(this_pause) && collector_state()->mark_or_rebuild_in_progress()),
          "If the last pause has been concurrent start, we should not have been in the marking window");
   if (is_concurrent_start_pause(this_pause)) {
-    if (!concurrent_operation_is_full_mark) {
-      abort_time_to_mixed_tracking();
-    }
     collector_state()->set_mark_or_rebuild_in_progress(concurrent_operation_is_full_mark);
   }
 
@@ -1163,7 +1160,10 @@ bool G1Policy::is_young_only_pause(PauseKind kind) {
   assert(kind != FullGC, "must be");
   assert(kind != Remark, "must be");
   assert(kind != Cleanup, "must be");
-  return kind == ConcurrentStartGC || kind == LastYoungGC || kind == YoungOnlyGC;
+  return kind == ConcurrentStartUndoGC ||
+         kind == ConcurrentStartMarkGC ||
+         kind == LastYoungGC ||
+         kind == YoungOnlyGC;
 }
 
 bool G1Policy::is_mixed_pause(PauseKind kind) {
@@ -1178,14 +1178,14 @@ bool G1Policy::is_last_young_pause(PauseKind kind) {
 }
 
 bool G1Policy::is_concurrent_start_pause(PauseKind kind) {
-  return kind == ConcurrentStartGC;
+  return kind == ConcurrentStartMarkGC || kind == ConcurrentStartUndoGC;
 }
 
-G1Policy::PauseKind G1Policy::young_gc_pause_kind() const {
+G1Policy::PauseKind G1Policy::young_gc_pause_kind(bool concurrent_operation_is_full_mark) const {
   assert(!collector_state()->in_full_gc(), "must be");
   if (collector_state()->in_concurrent_start_gc()) {
     assert(!collector_state()->in_young_gc_before_mixed(), "must be");
-    return ConcurrentStartGC;
+    return concurrent_operation_is_full_mark ? ConcurrentStartMarkGC : ConcurrentStartUndoGC;
   } else if (collector_state()->in_young_gc_before_mixed()) {
     assert(!collector_state()->in_concurrent_start_gc(), "must be");
     return LastYoungGC;
@@ -1221,7 +1221,9 @@ void G1Policy::update_gc_pause_time_ratios(PauseKind kind, double start_time_sec
   }
 }
 
-void G1Policy::record_pause(PauseKind kind, double start, double end) {
+void G1Policy::record_pause(PauseKind kind,
+                            double start,
+                            double end) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
   if (kind != FullGC) {
     _mmu_tracker->add_pause(start, end);
@@ -1231,6 +1233,12 @@ void G1Policy::record_pause(PauseKind kind, double start, double end) {
     update_gc_pause_time_ratios(kind, start, end);
   }
 
+  update_time_to_mixed_tracking(kind, start, end);
+}
+
+void G1Policy::update_time_to_mixed_tracking(PauseKind kind,
+                                             double start,
+                                             double end) {
   // Manage the mutator time tracking from concurrent start to first mixed gc.
   switch (kind) {
     case FullGC:
@@ -1242,8 +1250,13 @@ void G1Policy::record_pause(PauseKind kind, double start, double end) {
     case LastYoungGC:
       _concurrent_start_to_mixed.add_pause(end - start);
       break;
-    case ConcurrentStartGC:
-      if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
+    case ConcurrentStartMarkGC:
+    case ConcurrentStartUndoGC:
+      // Do not track time-to-mixed time for periodic collections as they are likely
+      // to be not representative to regular operation as the mutators are idle at
+      // that time. Also only track full concurrent mark cycles.
+      if ((_g1h->gc_cause() != GCCause::_g1_periodic_collection) &&
+        (kind != ConcurrentStartUndoGC)) {
         _concurrent_start_to_mixed.record_concurrent_start_end(end);
       }
       break;

@@ -264,12 +264,13 @@ private:
   void maybe_start_marking();
 
   // The kind of STW pause.
-  enum PauseKind {
+  enum PauseKind : uint {
     FullGC,
     YoungOnlyGC,
     MixedGC,
     LastYoungGC,
-    ConcurrentStartGC,
+    ConcurrentStartMarkGC,
+    ConcurrentStartUndoGC,
     Cleanup,
     Remark
   };
@@ -279,7 +280,9 @@ private:
   static bool is_last_young_pause(PauseKind kind);
   static bool is_concurrent_start_pause(PauseKind kind);
   // Calculate PauseKind from internal state.
-  PauseKind young_gc_pause_kind() const;
+  PauseKind young_gc_pause_kind(bool concurrent_operation_is_full_mark) const;
+  // Manage time-to-mixed tracking.
+  void update_time_to_mixed_tracking(PauseKind pause, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
   void record_pause(PauseKind kind, double start, double end);
 

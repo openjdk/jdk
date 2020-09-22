@@ -700,11 +700,7 @@ void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
 }
 
 
-void G1ConcurrentMark::post_concurrent_start(bool concurrent_operation_is_full_mark) {
-  if (!concurrent_operation_is_full_mark) {
-    root_regions()->cancel_scan();
-    return;
-  }
+void G1ConcurrentMark::post_concurrent_mark_start() {
   // Start Concurrent Marking weak-reference discovery.
   ReferenceProcessor* rp = _g1h->ref_processor_cm();
   // enable ("weak") refs discovery
@@ -723,6 +719,10 @@ void G1ConcurrentMark::post_concurrent_start(bool concurrent_operation_is_full_m
   // when marking is on. So, it's also called at the end of the
   // concurrent start pause to update the heap end, if the heap expands
   // during it. No need to call it here.
+}
+
+void G1ConcurrentMark::post_concurrent_undo_start() {
+  root_regions()->cancel_scan();
 }
 
 /*

@@ -545,7 +545,8 @@ public:
   // These two methods do the work that needs to be done at the start and end of the
   // concurrent start pause.
   void pre_concurrent_start(GCCause::Cause cause);
-  void post_concurrent_start(bool concurrent_operation_is_full_mark);
+  void post_concurrent_mark_start();
+  void post_concurrent_undo_start();
 
   // Scan all the root regions and mark everything reachable from
   // them.
