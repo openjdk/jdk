@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.java2d.pipe;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
@@ -40,6 +41,7 @@ import java.awt.image.ImageObserver;
 import java.awt.image.IndexColorModel;
 import java.awt.image.Raster;
 import java.awt.image.VolatileImage;
+
 import sun.awt.SunHints;
 import sun.awt.image.ImageRepresentation;
 import sun.awt.image.SurfaceManager;
@@ -49,11 +51,11 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.loops.Blit;
 import sun.java2d.loops.BlitBg;
-import sun.java2d.loops.TransformHelper;
-import sun.java2d.loops.MaskBlit;
 import sun.java2d.loops.CompositeType;
+import sun.java2d.loops.MaskBlit;
 import sun.java2d.loops.ScaledBlit;
 import sun.java2d.loops.SurfaceType;
+import sun.java2d.loops.TransformHelper;
 
 public class DrawImage implements DrawImagePipe
 {
@@ -578,10 +580,7 @@ public class DrawImage implements DrawImagePipe
             }
 
             try {
-                SurfaceType srcType = srcData.getSurfaceType();
-                SurfaceType dstType = dstData.getSurfaceType();
-                blitSurfaceData(sg, clip,
-                                srcData, dstData, srcType, dstType,
+                blitSurfaceData(sg, clip, srcData, dstData,
                                 sx, sy, dx, dy, w, h, bgColor);
                 return true;
             } catch (NullPointerException e) {
@@ -924,35 +923,12 @@ public class DrawImage implements DrawImagePipe
         return dstCM;
     }
 
-    protected void blitSurfaceData(SunGraphics2D sg,
-                                   Region clipRegion,
-                                   SurfaceData srcData,
-                                   SurfaceData dstData,
-                                   SurfaceType srcType,
-                                   SurfaceType dstType,
-                                   int sx, int sy, int dx, int dy,
-                                   int w, int h,
-                                   Color bgColor)
+    private static void blitSurfaceData(SunGraphics2D sg, Region clip,
+                                        SurfaceData srcData,
+                                        SurfaceData dstData,
+                                        int sx, int sy, int dx, int dy,
+                                        int w, int h, Color bgColor)
     {
-        if (w <= 0 || h <= 0) {
-            /*
-             * Fix for bugid 4783274 - BlitBg throws an exception for
-             * a particular set of anomalous parameters.
-             * REMIND: The native loops do proper clipping and would
-             * detect this situation themselves, but the Java loops
-             * all seem to trust their parameters a little too well
-             * to the point where they will try to process a negative
-             * area of pixels and throw exceptions.  The real fix is
-             * to modify the Java loops to do proper clipping so that
-             * they can deal with negative dimensions as well as
-             * improperly large dimensions, but that fix is too risky
-             * to integrate for Mantis at this point.  In the meantime
-             * eliminating the negative or zero dimensions here is
-             * "correct" and saves them from some nasty exceptional
-             * conditions, one of which is the test case of 4783274.
-             */
-            return;
-        }
         CompositeType comp = sg.imageComp;
         if (CompositeType.SrcOverNoEa.equals(comp) &&
             (srcData.getTransparency() == Transparency.OPAQUE ||
@@ -967,14 +943,52 @@ public class DrawImage implements DrawImagePipe
             // it will be noop.
             return;
         }
+        // The next optimization should be used by all our pipelines but for now
+        // some of the native pipelines "ogl", "d3d", "gdi", "xrender" relies to
+        // much on the native driver, which does not apply it automatically.
+        // At some point, we should remove it from here, since it affects the
+        // performance of the software loops, and move to the appropriate place.
+        Rectangle dst =
+                new Rectangle(dx, dy, w, h).intersection(dstData.getBounds());
+        if (dst.isEmpty()) {
+            // The check above also includes:
+            // if (w <= 0 || h <= 0) {
+                /*
+                 * Fix for bugid 4783274 - BlitBg throws an exception for
+                 * a particular set of anomalous parameters.
+                 * REMIND: The native loops do proper clipping and would
+                 * detect this situation themselves, but the Java loops
+                 * all seem to trust their parameters a little too well
+                 * to the point where they will try to process a negative
+                 * area of pixels and throw exceptions.  The real fix is
+                 * to modify the Java loops to do proper clipping so that
+                 * they can deal with negative dimensions as well as
+                 * improperly large dimensions, but that fix is too risky
+                 * to integrate for Mantis at this point.  In the meantime
+                 * eliminating the negative or zero dimensions here is
+                 * "correct" and saves them from some nasty exceptional
+                 * conditions, one of which is the test case of 4783274.
+                 */
+                // return;
+            // }
+            return;
+        }
+        // Adjust final src(x,y) based on the dst. The logic is that, when dst
+        // limits drawing on the destination, corresponding pixels from the src
+        // should be skipped.
+        sx += dst.x - dx;
+        sy += dst.y - dy;
+
+        SurfaceType srcType = srcData.getSurfaceType();
+        SurfaceType dstType = dstData.getSurfaceType();
         if (!isBgOperation(srcData, bgColor)) {
             Blit blit = Blit.getFromCache(srcType, comp, dstType);
-            blit.Blit(srcData, dstData, sg.composite, clipRegion,
-                      sx, sy, dx, dy, w, h);
+            blit.Blit(srcData, dstData, sg.composite, clip,
+                      sx, sy, dst.x, dst.y, dst.width, dst.height);
         } else {
             BlitBg blit = BlitBg.getFromCache(srcType, comp, dstType);
-            blit.BlitBg(srcData, dstData, sg.composite, clipRegion,
-                        bgColor.getRGB(), sx, sy, dx, dy, w, h);
+            blit.BlitBg(srcData, dstData, sg.composite, clip, bgColor.getRGB(),
+                        sx, sy, dst.x, dst.y, dst.width, dst.height);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,12 @@
 
 package com.sun.net.httpserver;
 
-import java.net.*;
-import java.io.*;
-import java.nio.*;
-import java.security.*;
-import java.nio.channels.*;
-import java.util.*;
-import java.util.concurrent.*;
-import javax.net.ssl.*;
 import com.sun.net.httpserver.spi.HttpServerProvider;
+
+import java.io.IOException;
+import java.net.BindException;
+import java.net.InetSocketAddress;
+import java.util.concurrent.Executor;
 
 /**
  * This class implements a simple HTTP server. A HttpServer is bound to an IP address
@@ -98,6 +95,7 @@ import com.sun.net.httpserver.spi.HttpServerProvider;
 public abstract class HttpServer {
 
     /**
+     * Constructor for subclasses to call.
      */
     protected HttpServer () {
     }
@@ -106,7 +104,9 @@ public abstract class HttpServer {
      * creates a HttpServer instance which is initially not bound to any local address/port.
      * The HttpServer is acquired from the currently installed {@link HttpServerProvider}
      * The server must be bound using {@link #bind(InetSocketAddress,int)} before it can be used.
-     * @throws IOException
+     *
+     * @throws IOException if an I/O error occurs
+     * @return An instance of HttpServer
      */
     public static HttpServer create () throws IOException {
         return create (null, 0);
@@ -127,7 +127,8 @@ public abstract class HttpServer {
      *          then a system default value is used.
      * @throws BindException if the server cannot bind to the requested address,
      *          or if the server is already bound.
-     * @throws IOException
+     * @throws IOException if an I/O error occurs
+     * @return An instance of HttpServer
      */
 
     public static HttpServer create (
@@ -215,6 +216,7 @@ public abstract class HttpServer {
      * @throws IllegalArgumentException if path is invalid, or if a context
      *          already exists for this path
      * @throws NullPointerException if either path, or handler are <code>null</code>
+     * @return An instance of HttpContext
      */
     public abstract HttpContext createContext (String path, HttpHandler handler) ;
 
@@ -239,6 +241,7 @@ public abstract class HttpServer {
      * @throws IllegalArgumentException if path is invalid, or if a context
      *          already exists for this path
      * @throws NullPointerException if path is <code>null</code>
+     * @return An instance of HttpContext
      */
     public abstract HttpContext createContext (String path) ;
 

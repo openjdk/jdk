@@ -36,7 +36,7 @@ private:
 
   static State _state;
 
-  static void initialize_platform();
+  static void pd_initialize();
 
 public:
   static void initialize();
