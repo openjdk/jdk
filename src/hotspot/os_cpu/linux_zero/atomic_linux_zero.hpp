@@ -75,7 +75,8 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
   // All atomic operations are expected to be full memory barriers
   // (see atomic.hpp). However, __sync_lock_test_and_set is not
   // a full memory barrier, but an acquire barrier. Hence, this added
-  // barrier.
+  // barrier. Some platforms (notably ARM) have peculiarities with
+  // their barrier implementations, delegate it to OrderAccess.
   OrderAccess::fence();
   return result;
 }
