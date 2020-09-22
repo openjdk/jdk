@@ -889,10 +889,6 @@ void Thread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
-
-  // We scan thread local monitor lists here, and the remaining global
-  // monitors in ObjectSynchronizer::oops_do().
-  ObjectSynchronizer::thread_local_used_oops_do(this, f);
 }
 
 void Thread::metadata_handles_do(void f(Metadata*)) {
@@ -2217,11 +2213,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     thread_name = os::strdup(get_thread_name());
   }
 
-  // We must flush any deferred card marks and other various GC barrier
-  // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
-  // before removing a thread from the list of active threads.
-  BarrierSet::barrier_set()->on_thread_detach(this);
-
   log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
     exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
     os::current_thread_id());
@@ -2268,8 +2259,6 @@ void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
   if (UseTLAB) {
     tlab().retire();
   }
-
-  BarrierSet::barrier_set()->on_thread_detach(this);
 
   Threads::remove(this, is_daemon);
   this->smr_delete();
@@ -2327,8 +2316,6 @@ void JavaThread::remove_monitor_chunk(MonitorChunk* chunk) {
 // _thread_in_native_trans state (such as from
 // check_special_condition_for_native_trans()).
 void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
-  // May be we are at method entry and requires to save do not unlock flag.
-  UnlockFlagSaver fs(this);
   if (has_last_Java_frame() && has_async_condition()) {
     // If we are at a polling page safepoint (not a poll return)
     // then we must defer async exception because live registers
@@ -2391,21 +2378,26 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
 
   if (check_unsafe_error &&
       condition == _async_unsafe_access_error && !has_pending_exception()) {
+    // We may be at method entry which requires we save the do-not-unlock flag.
+    UnlockFlagSaver fs(this);
     condition = _no_async_condition;  // done
     switch (thread_state()) {
     case _thread_in_vm: {
       JavaThread* THREAD = this;
-      THROW_MSG(vmSymbols::java_lang_InternalError(), "a fault occurred in an unsafe memory access operation");
+      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
+      return;
     }
     case _thread_in_native: {
       ThreadInVMfromNative tiv(this);
       JavaThread* THREAD = this;
-      THROW_MSG(vmSymbols::java_lang_InternalError(), "a fault occurred in an unsafe memory access operation");
+      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
+      return;
     }
     case _thread_in_Java: {
       ThreadInVMfromJava tiv(this);
       JavaThread* THREAD = this;
-      THROW_MSG(vmSymbols::java_lang_InternalError(), "a fault occurred in a recent unsafe memory access operation in compiled Java code");
+      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in a recent unsafe memory access operation in compiled Java code");
+      return;
     }
     default:
       ShouldNotReachHere();
@@ -4594,6 +4586,13 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
 
   // Reclaim the ObjectMonitors from the om_in_use_list and om_free_list of the moribund thread.
   ObjectSynchronizer::om_flush(p);
+
+  // We must flush any deferred card marks and other various GC barrier
+  // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
+  // before removing a thread from the list of active threads.
+  // This must be done after ObjectSynchronizer::om_flush(), as GC barriers
+  // are used in om_flush().
+  BarrierSet::barrier_set()->on_thread_detach(p);
 
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice

@@ -3321,6 +3321,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
               DefaultTreeSelectionModel
     {
         /**
+         * Constructor for subclasses to call.
+         */
+        protected EmptySelectionModel() {}
+
+        /**
          * The single instance of {@code EmptySelectionModel}.
          */
         protected static final EmptySelectionModel sharedInstance =
@@ -3442,6 +3447,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
     protected class TreeSelectionRedirector implements Serializable,
                     TreeSelectionListener
     {
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected TreeSelectionRedirector() {}
+
         /**
          * Invoked by the <code>TreeSelectionModel</code> when the
          * selection changes.
@@ -3863,6 +3873,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
       * accordingly when nodes are removed, or changed.
       */
     protected class TreeModelHandler implements TreeModelListener {
+         /**
+          * Constructor for subclasses to call.
+          */
+         protected TreeModelHandler() {}
+
         public void treeNodesChanged(TreeModelEvent e) { }
 
         public void treeNodesInserted(TreeModelEvent e) { }
