@@ -169,7 +169,7 @@ ShenandoahConcurrentRootScanner<CONCURRENT>::~ShenandoahConcurrentRootScanner() 
 template <bool CONCURRENT>
 void ShenandoahConcurrentRootScanner<CONCURRENT>::oops_do(OopClosure* oops, uint worker_id) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  CLDToOopClosure clds_cl(oops, CONCURRENT ? ClassLoaderData::_claim_strong : ClassLoaderData::_claim_none);
+  CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
   _vm_roots.oops_do(oops, worker_id);
 
   if (!heap->unload_classes()) {
