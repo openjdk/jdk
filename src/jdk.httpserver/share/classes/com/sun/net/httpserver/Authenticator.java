@@ -51,8 +51,6 @@ public abstract class Authenticator {
         protected Result () {}
     }
 
-
-
     /**
      * Indicates an authentication failure. The authentication
      * attempt has completed.
@@ -64,7 +62,7 @@ public abstract class Authenticator {
         /**
          * Creates a {@code Failure} instance with given response code.
          *
-         * @param responseCode The response code to associate with this
+         * @param responseCode the response code to associate with this
          *                     {@code Failure} instance
          */
         public Failure (int responseCode) {
@@ -74,7 +72,7 @@ public abstract class Authenticator {
         /**
          * returns the response code to send to the client
          *
-         * @return The response code associated with this {@code Failure} instance
+         * @return the response code associated with this {@code Failure} instance
          */
         public int getResponseCode() {
             return responseCode;
@@ -92,7 +90,7 @@ public abstract class Authenticator {
         /**
          * Creates a {@code Success} instance with given {@code Principal}.
          *
-         * @param p The authenticated user you wish to set as Principal
+         * @param p the authenticated user you wish to set as {@code Principal}
          */
         public Success (HttpPrincipal p) {
             principal = p;
@@ -100,7 +98,7 @@ public abstract class Authenticator {
         /**
          * returns the authenticated user Principal
          *
-         * @return The {@code Principal} instance associated with the authenticated user
+         * @return the {@code Principal} instance associated with the authenticated user
          *
          */
         public HttpPrincipal getPrincipal() {
@@ -122,7 +120,7 @@ public abstract class Authenticator {
         /**
          * Creates a {@code Retry} instance with given response code.
          *
-         * @param responseCode The response code to associate with this
+         * @param responseCode the response code to associate with this
          *                     {@code Retry} instance
          */
         public Retry (int responseCode) {
@@ -132,7 +130,7 @@ public abstract class Authenticator {
         /**
          * returns the response code to send to the client
          *
-         * @return The response code associated with this {@code Retry} instance
+         * @return the response code associated with this {@code Retry} instance
          */
         public int getResponseCode() {
             return responseCode;

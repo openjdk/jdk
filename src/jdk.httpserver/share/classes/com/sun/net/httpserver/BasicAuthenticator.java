@@ -45,7 +45,7 @@ public abstract class BasicAuthenticator extends Authenticator {
     private final boolean isUTF8;
 
     /**
-     * Creates a BasicAuthenticator for the given HTTP realm.
+     * Creates a {@code BasicAuthenticator} for the given HTTP realm.
      * The Basic authentication credentials (username and password) are decoded
      * using the platform's {@link Charset#defaultCharset() default character set}.
      *
@@ -66,8 +66,8 @@ public abstract class BasicAuthenticator extends Authenticator {
      * communicated to the client, and therefore more likely to be used also
      * by the client.
      *
-     * @param realm The HTTP Basic authentication realm
-     * @param charset The Charset to decode incoming credentials from the client
+     * @param realm the HTTP Basic authentication realm
+     * @param charset the {@code Charset} to decode incoming credentials from the client
      * @throws NullPointerException if realm or charset are {@code null}
      * @throws IllegalArgumentException if realm is an empty string
      */
