@@ -528,7 +528,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   }
 #endif
 
-  if ((thread->has_pending_exception() || thread->frames_to_pop_failed_realloc() > 0) && exec_mode != Unpack_uncommon_trap) {
+  if (thread->frames_to_pop_failed_realloc() > 0 && exec_mode != Unpack_uncommon_trap) {
     assert(thread->has_pending_exception(), "should have thrown OOME/Async");
     thread->set_exception_oop(thread->pending_exception());
     thread->clear_pending_exception();
