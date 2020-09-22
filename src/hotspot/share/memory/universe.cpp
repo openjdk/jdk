@@ -59,7 +59,7 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -748,7 +748,7 @@ jint universe_init() {
   AOTLoader::universe_init();
 
   // Checks 'AfterMemoryInit' constraints.
-  if (!JVMFlagConstraintList::check_constraints(JVMFlagConstraint::AfterMemoryInit)) {
+  if (!JVMFlagLimit::check_all_constraints(JVMFlagConstraintPhase::AfterMemoryInit)) {
     return JNI_EINVAL;
   }
 

@@ -68,8 +68,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -364,6 +363,10 @@ void Thread::record_stack_base_and_size() {
 void Thread::register_thread_stack_with_NMT() {
   MemTracker::record_thread_stack(stack_end(), stack_size());
 }
+
+void Thread::unregister_thread_stack_with_NMT() {
+  MemTracker::release_thread_stack(stack_end(), stack_size());
+}
 #endif // INCLUDE_NMT
 
 void Thread::call_run() {
@@ -428,19 +431,6 @@ Thread::~Thread() {
   if (barrier_set != NULL) {
     barrier_set->on_thread_destroy(this);
   }
-
-  // stack_base can be NULL if the thread is never started or exited before
-  // record_stack_base_and_size called. Although, we would like to ensure
-  // that all started threads do call record_stack_base_and_size(), there is
-  // not proper way to enforce that.
-#if INCLUDE_NMT
-  if (_stack_base != NULL) {
-    MemTracker::release_thread_stack(stack_end(), stack_size());
-#ifdef ASSERT
-    set_stack_base(NULL);
-#endif
-  }
-#endif // INCLUDE_NMT
 
   // deallocate data structures
   delete resource_area();
@@ -1341,6 +1331,7 @@ void NonJavaThread::pre_run() {
 void NonJavaThread::post_run() {
   JFR_ONLY(Jfr::on_thread_exit(this);)
   remove_from_the_list();
+  unregister_thread_stack_with_NMT();
   // Ensure thread-local-storage is cleared before termination.
   Thread::clear_thread_current();
 }
@@ -2014,6 +2005,7 @@ void JavaThread::thread_main_inner() {
 // Shared teardown for all JavaThreads
 void JavaThread::post_run() {
   this->exit(false);
+  this->unregister_thread_stack_with_NMT();
   // Defer deletion to here to ensure 'this' is still referenceable in call_run
   // for any shared tear-down.
   this->smr_delete();
@@ -3828,12 +3820,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (ergo_result != JNI_OK) return ergo_result;
 
   // Final check of all ranges after ergonomics which may change values.
-  if (!JVMFlagRangeList::check_ranges()) {
+  if (!JVMFlagLimit::check_all_ranges()) {
     return JNI_EINVAL;
   }
 
   // Final check of all 'AfterErgo' constraints after ergonomics which may change values.
-  bool constraint_result = JVMFlagConstraintList::check_constraints(JVMFlagConstraint::AfterErgo);
+  bool constraint_result = JVMFlagLimit::check_all_constraints(JVMFlagConstraintPhase::AfterErgo);
   if (!constraint_result) {
     return JNI_EINVAL;
   }
