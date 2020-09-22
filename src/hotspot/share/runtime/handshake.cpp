@@ -64,7 +64,7 @@ class AsyncHandshakeOperation : public HandshakeOperation {
  private:
   jlong _start_time_ns;
  public:
-  AsyncHandshakeOperation(AsynchHandshakeClosure* cl, JavaThread* target, jlong start_ns)
+  AsyncHandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target, jlong start_ns)
     : HandshakeOperation(cl, target), _start_time_ns(start_ns) {}
   virtual ~AsyncHandshakeOperation() { delete _handshake_cl; };
   jlong start_time() const           { return _start_time_ns; }
@@ -340,7 +340,7 @@ void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
   log_handshake_info(start_time_ns, op.name(), 1, executed_by_driver);
 }
 
-void Handshake::execute(AsynchHandshakeClosure* hs_cl, JavaThread* target) {
+void Handshake::execute(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
   jlong start_time_ns = os::javaTimeNanos();
   AsyncHandshakeOperation* op = new AsyncHandshakeOperation(hs_cl, target, start_time_ns);
 
@@ -356,7 +356,8 @@ void Handshake::execute(AsynchHandshakeClosure* hs_cl, JavaThread* target) {
 HandshakeState::HandshakeState(JavaThread* thread) :
   _handshakee(thread),
   _queue(),
-  _lock(Monitor::leaf, "HandshakeState", Mutex::_allow_vm_block_flag, Monitor::_safepoint_check_never)
+  _lock(Monitor::leaf, "HandshakeState", Mutex::_allow_vm_block_flag, Monitor::_safepoint_check_never),
+  _active_handshaker()
 {
 }
 

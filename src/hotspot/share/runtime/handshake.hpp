@@ -52,10 +52,10 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   virtual void do_thread(Thread* thread) = 0;
 };
 
-class AsynchHandshakeClosure : public HandshakeClosure {
+class AsyncHandshakeClosure : public HandshakeClosure {
  public:
-   AsynchHandshakeClosure(const char* name) : HandshakeClosure(name) {}
-   virtual ~AsynchHandshakeClosure() {}
+   AsyncHandshakeClosure(const char* name) : HandshakeClosure(name) {}
+   virtual ~AsyncHandshakeClosure() {}
    virtual bool is_asynch()          { return true; }
 };
 
@@ -64,7 +64,7 @@ class Handshake : public AllStatic {
   // Execution of handshake operation
   static void execute(HandshakeClosure*       hs_cl);
   static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
-  static void execute(AsynchHandshakeClosure* hs_cl, JavaThread* target);
+  static void execute(AsyncHandshakeClosure* hs_cl, JavaThread* target);
 };
 
 // The HandshakeState keeps track of an ongoing handshake for this JavaThread.
@@ -74,7 +74,7 @@ class Handshake : public AllStatic {
 class HandshakeState {
   JavaThread* _handshakee;
   FilterQueue<HandshakeOperation*> _queue;
-  Mutex _lock;
+  Mutex   _lock;
   Thread* _active_handshaker;
 
   bool claim_handshake();
