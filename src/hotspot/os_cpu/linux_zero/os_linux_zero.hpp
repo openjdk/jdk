@@ -81,7 +81,7 @@
                   "strexd %[flag_w], %[tmp_r], [%[dst]]\n"
                   "cmp    %[flag_w], 0\n"
                   "bne    1b\n"
-                  : [tmp_r] "=&r" (tmp_r), [tmp_w] "=&r" (tmp_r),
+                  : [tmp_r] "=&r" (tmp_r), [tmp_w] "=&r" (tmp_w),
                     [flag_w] "=&r" (flag_w)
                   : [src] "r" (src), [dst] "r" (dst)
                   : "cc", "memory");
