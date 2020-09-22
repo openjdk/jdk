@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.*;
+
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Optional;
 
@@ -47,28 +48,33 @@ public class JLinkReproducible3Test {
         Path image1 = Paths.get("./image1");
         Path image2 = Paths.get("./image2");
 
-        Path copy_jdk1_dir = Path.of("./copy-jdk1-tmpdir");
-        Path copy_jdk2_dir = Path.of("./copy-jdk2-tmpdir");
-        Path jdk_test_dir = Path.of(
+        Path copyJdk1Dir = Path.of("./copy-jdk1-tmpdir");
+        Files.createDirectory(copyJdk1Dir);
+
+        Path copyJdk2Dir = Path.of("./copy-jdk2-tmpdir");
+        Files.createDirectory(copyJdk2Dir);
+
+        Path jdkTestDir = Path.of(
                 Optional.of(
                         System.getProperty("test.jdk"))
                         .orElseThrow(() -> new RuntimeException("Couldn't load JDK Test Dir"))
         );
 
-        copyJDKs(jdk_test_dir, copy_jdk1_dir, copy_jdk2_dir);
+        copyJDK(jdkTestDir, copyJdk1Dir);
+        copyJDK(jdkTestDir, copyJdk2Dir);
 
-        Path copied_jlink1 = Optional.of(
-                Paths.get(copy_jdk1_dir.toString(), "bin", "jlink"))
+        Path copiedJlink1 = Optional.of(
+                Paths.get(copyJdk1Dir.toString(), "bin", "jlink"))
                 .orElseThrow(() -> new RuntimeException("Unable to load copied jlink")
                 );
 
-        Path copied_jlink2 = Optional.of(
-                Paths.get(copy_jdk2_dir.toString(), "bin", "jlink"))
+        Path copiedJlink2 = Optional.of(
+                Paths.get(copyJdk2Dir.toString(), "bin", "jlink"))
                 .orElseThrow(() -> new RuntimeException("Unable to load copied jlink")
                 );
 
-        runCopiedJlink(copied_jlink1.toString(), "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image1.toString());
-        runCopiedJlink(copied_jlink2.toString(), "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image2.toString());
+        runCopiedJlink(copiedJlink1.toString(), "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image1.toString());
+        runCopiedJlink(copiedJlink2.toString(), "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image2.toString());
 
         long mismatch = Files.mismatch(image1.resolve("lib").resolve("modules"), image2.resolve("lib").resolve("modules"));
         if (mismatch != -1L) {
@@ -77,32 +83,15 @@ public class JLinkReproducible3Test {
     }
 
     private static void runCopiedJlink(String... args) throws Exception {
-        var pb = new ProcessBuilder(args);
-        var res = ProcessTools.executeProcess(pb);
+        var process = new ProcessBuilder(args);
+        var res = ProcessTools.executeProcess(process);
         res.shouldHaveExitValue(0);
     }
 
-    private static String runJavaVersion(Path jdk_test_base_dir) throws Exception {
-        var java_exec = Paths.get(jdk_test_base_dir.toString(), "bin", "java");
-        var pb = new ProcessBuilder(java_exec.toString(), "--version");
-        var res = ProcessTools.executeProcess(pb);
-        res.shouldHaveExitValue(0);
-        return res.getStdout();
-
-
-    }
-
-    private static void copyJDKs(Path src, Path dst1, Path dst2) throws Exception {
+    private static void copyJDK(Path src, Path dst) throws Exception {
         Files.walk(src).skip(1).forEach(file -> {
             try {
-                System.out.println(file);
-                if(Files.isDirectory(file)) {
-                    Files.createDirectories(dst1.resolve(src.relativize(file)));
-                    Files.createDirectories(dst2.resolve(src.relativize(file)));
-                } else {
-                    Files.copy(file, dst1.resolve(src.relativize(file)));
-                    Files.copy(file, dst2.resolve(src.relativize(file)));
-                }
+                Files.copy(file, dst.resolve(src.relativize(file)), StandardCopyOption.COPY_ATTRIBUTES);
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             }
