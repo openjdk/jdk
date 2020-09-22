@@ -68,7 +68,7 @@
                   : "=&f"(tmp), "=Q"(*(volatile double*)dst)
                   : "Q"(*(volatile double*)src));
 #elif defined(__ARM_ARCH_7A__)
-    // The only way to perform the atomic 64-bit load store 
+    // The only way to perform the atomic 64-bit load/store
     // is to use ldrexd/strexd for both reads and writes.
     // For store, we need to have the matching (fake) load first.
     // Put clrex between exclusive ops on src and dst for clarity.
@@ -76,7 +76,7 @@
     uint32_t flag_w;
     asm volatile ("ldrexd %[tmp_r], [%[src]]\n"
                   "clrex\n"
-                  "1: \n"
+                  "1:\n"
                   "ldrexd %[tmp_w], [%[dst]]\n"
                   "strexd %[flag_w], %[tmp_r], [%[dst]]\n"
                   "cmp    %[flag_w], 0\n"
