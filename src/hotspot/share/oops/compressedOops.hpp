@@ -77,7 +77,9 @@ public:
     AnyNarrowOopMode = 4
   };
 
-  using NarrowType = std::underlying_type_t<narrowOop>;
+  // The representation type for narrowOop is assumed to be uint32_t.
+  static_assert(std::is_same<uint32_t, std::underlying_type_t<narrowOop>>::value,
+                "narrowOop has unexpected representation type");
 
   static void initialize(const ReservedHeapSpace& heap_space);
 
@@ -129,8 +131,8 @@ public:
   static narrowOop encode_not_null(narrowOop v) { return v; }
   static narrowOop encode(narrowOop v)          { return v; }
 
-  static NarrowType narrow_oop_value(narrowOop o) {
-    return static_cast<NarrowType>(o);
+  static uint32_t narrow_oop_value(narrowOop o) {
+    return static_cast<uint32_t>(o);
   }
 
   template<typename T>
@@ -139,7 +141,7 @@ public:
     static_assert(sizeof(T) >= sizeof(narrowOop), "precondition");
     // Shift by 32 is UB if size in bits of i is 32, e.g. on 32bit platform.
     assert(((i >> 16) >> 16) == 0, "narrowOop overflow");
-    return static_cast<narrowOop>(static_cast<NarrowType>(i));
+    return static_cast<narrowOop>(static_cast<uint32_t>(i));
   }
 };
 

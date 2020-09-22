@@ -220,7 +220,7 @@ address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop
   }
   assert(inst1_found, "inst is not lis");
 
-  CompressedOops::NarrowType data_value = CompressedOops::narrow_oop_value(data);
+  uint32_t data_value = CompressedOops::narrow_oop_value(data);
   int xc = (data_value >> 16) & 0xffff;
   int xd = (data_value >>  0) & 0xffff;
 
