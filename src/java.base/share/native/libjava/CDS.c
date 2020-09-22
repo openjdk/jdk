@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,33 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jni_util.h"
 #include "jvm.h"
-#include "jdk_util.h"
+#include "jdk_internal_misc_CDS.h"
 
-#include "jdk_internal_misc_VM.h"
-
-/* Only register the performance-critical methods */
-static JNINativeMethod methods[] = {
-    {"getNanoTimeAdjustment", "(J)J", (void *)&JVM_GetNanoTimeAdjustment}
-};
-
-JNIEXPORT jobject JNICALL
-Java_jdk_internal_misc_VM_latestUserDefinedLoader0(JNIEnv *env, jclass cls) {
-    return JVM_LatestUserDefinedLoader(env);
+JNIEXPORT void JNICALL
+Java_jdk_internal_misc_CDS_initializeFromArchive(JNIEnv *env, jclass ignore,
+                                                jclass c) {
+    JVM_InitializeFromArchive(env, c);
 }
 
 JNIEXPORT void JNICALL
-Java_jdk_internal_misc_VM_initialize(JNIEnv *env, jclass cls) {
-    // Registers implementations of native methods described in methods[]
-    // above.
-    // In particular, registers JVM_GetNanoTimeAdjustment as the implementation
-    // of the native VM.getNanoTimeAdjustment - avoiding the cost of
-    // introducing a Java_jdk_internal_misc_VM_getNanoTimeAdjustment wrapper
-    (*env)->RegisterNatives(env, cls,
-                            methods, sizeof(methods)/sizeof(methods[0]));
+Java_jdk_internal_misc_CDS_defineArchivedModules(JNIEnv *env, jclass ignore,
+                                                jobject platform_loader,
+                                                jobject system_loader) {
+    JVM_DefineArchivedModules(env, platform_loader, system_loader);
 }
 
-JNIEXPORT jobjectArray JNICALL
-Java_jdk_internal_misc_VM_getRuntimeArguments(JNIEnv *env, jclass cls) {
-    return JVM_GetVmArguments(env);
+JNIEXPORT jlong JNICALL
+Java_jdk_internal_misc_CDS_getRandomSeedForDumping(JNIEnv *env, jclass ignore) {
+    return JVM_GetRandomSeedForDumping();
+}
+
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_misc_CDS_isDynamicDumpingEnabled(JNIEnv *env, jclass jcls) {
+    return JVM_IsDynamicDumpingEnabled(env);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_misc_CDS_isSharingEnabled(JNIEnv *env, jclass jcls) {
+    return JVM_IsSharingEnabled(env);
 }
