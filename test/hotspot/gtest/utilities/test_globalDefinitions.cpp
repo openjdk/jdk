@@ -23,9 +23,10 @@
 
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
-#include "unittest.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include <type_traits>
+#include "unittest.hpp"
 
 static ::testing::AssertionResult testPageAddress(
   const char* expected_addr_expr,
@@ -192,7 +193,7 @@ TEST(globalDefinitions, byte_size_in_exact_unit) {
 #define EXPECT_EQ_LOG2(fn, type)                                \
 {                                                               \
   int limit = sizeof (type) * BitsPerByte;                      \
-  if (IsSigned<type>::value) {                                  \
+  if (std::is_signed<type>::value) {                            \
     EXPECT_EQ(limit - 1, fn(std::numeric_limits<type>::min())); \
     EXPECT_EQ(limit - 1, fn((type)-1));                         \
     limit--;                                                    \

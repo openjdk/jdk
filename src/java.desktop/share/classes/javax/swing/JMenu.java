@@ -1396,6 +1396,11 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
         implements AccessibleSelection {
 
         /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJMenu() {}
+
+        /**
          * Returns the number of accessible children in the object.  If all
          * of the children of this object implement Accessible, than this
          * method should return the number of children of this object.
