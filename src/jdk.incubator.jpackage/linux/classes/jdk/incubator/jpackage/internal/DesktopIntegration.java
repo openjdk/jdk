@@ -135,9 +135,8 @@ final class DesktopIntegration {
                 createDataForDesktopFile(params));
 
         // Read launchers information from predefine app image
-        if (initAppImageLaunchers && launchers.isEmpty() &&
+        if (launchers.isEmpty() &&
                 PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
-            initAppImageLaunchers = false;
             List<String> launcherPaths = AppImageFile.getLauncherNames(
                     PREDEFINED_APP_IMAGE.fetchFrom(params), params);
             if (!launcherPaths.isEmpty()) {
@@ -149,7 +148,7 @@ final class DesktopIntegration {
                         launcherPath);
                 launcherParams = AddLauncherArguments.merge(params, launcherParams,
                     ICON.getID(), ICON_PNG.getID(), ADD_LAUNCHERS.getID(),
-                    FILE_ASSOCIATIONS.getID());
+                    FILE_ASSOCIATIONS.getID(), PREDEFINED_APP_IMAGE.getID());
                 launchers.add(launcherParams);
             }
         }
@@ -546,7 +545,6 @@ final class DesktopIntegration {
 
     private final List<LinuxFileAssociation> associations;
 
-    private static boolean initAppImageLaunchers = true;
     private final List<Map<String, ? super Object>> launchers;
 
     private final OverridableResource iconResource;

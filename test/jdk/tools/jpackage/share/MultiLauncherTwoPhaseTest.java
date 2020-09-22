@@ -22,10 +22,12 @@
  */
 
 import java.nio.file.Path;
+import java.io.IOException;
 import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 
 /**
@@ -46,54 +48,45 @@ import jdk.jpackage.test.JPackageCommand;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
- * @run main/othervm/timeout=360 -Xmx512m MultiLauncherTwoPhaseTest
+ * @compile MultiLauncherTwoPhaseTest.java
+ * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=MultiLauncherTwoPhaseTest
  */
 
 public class MultiLauncherTwoPhaseTest {
 
-    public static void main(String[] args) throws Exception {
-        TKit.run(args, () -> {
-            Path appimageOutput = TKit.workDir().resolve("appimage");
+    @Test
+    public static void test() throws IOException {
+        Path appimageOutput = TKit.createTempDirectory("appimage");
 
-            JPackageCommand appImageCmd = JPackageCommand.helloAppImage()
-                    .setArgumentValue("--dest", appimageOutput);
+        JPackageCommand appImageCmd = JPackageCommand.helloAppImage()
+                .setArgumentValue("--dest", appimageOutput);
 
-            AdditionalLauncher launcher1 = new AdditionalLauncher("bar");
-            launcher1.setDefaultArguments().applyTo(appImageCmd);
+        AdditionalLauncher launcher1 = new AdditionalLauncher("bar");
+        launcher1.setDefaultArguments().applyTo(appImageCmd);
 
-            AdditionalLauncher launcher2 = new AdditionalLauncher("foo");
-            launcher2.applyTo(appImageCmd);
+        AdditionalLauncher launcher2 = new AdditionalLauncher("foo");
+        launcher2.applyTo(appImageCmd);
 
-            PackageTest packageTest = new PackageTest()
-                    .addRunOnceInitializer(() -> appImageCmd.execute())
-                    .addBundleDesktopIntegrationVerifier(true)
-                    .addInitializer(cmd -> {
-                        cmd.addArguments("--app-image", appImageCmd.outputBundle());
-                        cmd.removeArgumentWithValue("--input");
-                    })
-                    .forTypes(PackageType.WINDOWS)
-                    .addInitializer(cmd -> {
-                        cmd.addArguments("--win-shortcut", "--win-menu",
-                                "--win-menu-group", "MultiLauncherTwoPhaseTest");
-                    })
-                    .addInstallVerifier(cmd -> {
-                        launcher1.verify(cmd);
-                        launcher1.verifyPackageInstalled(cmd);
-                        launcher2.verify(cmd);
-                        launcher2.verifyPackageInstalled(cmd);
-                    })
-                    .forTypes(PackageType.LINUX)
-                    .addInitializer(cmd -> {
-                        cmd.addArguments("--linux-shortcut");
-                    })
-                    .addInstallVerifier(cmd -> {
-                        launcher1.verify(cmd);
-                        launcher1.verifyPackageInstalled(cmd);
-                        launcher2.verify(cmd);
-                        launcher2.verifyPackageInstalled(cmd);
-                    });
+        PackageTest packageTest = new PackageTest()
+                .addLauncherName("bar") // Add launchers name for verification
+                .addLauncherName("foo")
+                .addRunOnceInitializer(() -> appImageCmd.execute())
+                .addBundleDesktopIntegrationVerifier(true)
+                .addInitializer(cmd -> {
+                    cmd.addArguments("--app-image", appImageCmd.outputBundle());
+                    cmd.removeArgumentWithValue("--input");
+                })
+                .forTypes(PackageType.WINDOWS)
+                .addInitializer(cmd -> {
+                    cmd.addArguments("--win-shortcut", "--win-menu",
+                            "--win-menu-group", "MultiLauncherTwoPhaseTest");
+                })
+                .forTypes(PackageType.LINUX)
+                .addInitializer(cmd -> {
+                    cmd.addArguments("--linux-shortcut");
+                });
 
-            packageTest.run();
-        });
+        packageTest.run();
     }
 }

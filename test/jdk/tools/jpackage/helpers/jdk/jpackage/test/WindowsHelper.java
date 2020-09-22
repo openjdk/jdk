@@ -137,7 +137,7 @@ public class WindowsHelper {
         DesktopIntegrationVerifier(JPackageCommand cmd, String name) {
             cmd.verifyIsOfType(PackageType.WINDOWS);
             this.cmd = cmd;
-            this.name = name;
+            this.name = (name == null ? cmd.name() : name);
             verifyStartMenuShortcut();
             verifyDesktopShortcut();
             verifyFileAssociationsRegistry();
@@ -160,7 +160,7 @@ public class WindowsHelper {
         }
 
         private Path desktopShortcutPath() {
-            return Path.of((name == null ? cmd.name() : name) + ".lnk");
+            return Path.of(name + ".lnk");
         }
 
         private void verifyShortcut(Path path, boolean exists) {
@@ -201,8 +201,7 @@ public class WindowsHelper {
 
         private Path startMenuShortcutPath() {
             return Path.of(cmd.getArgumentValue("--win-menu-group",
-                    () -> "Unknown"), (name == null ? cmd.name() : name)
-                            + ".lnk");
+                    () -> "Unknown"), name + ".lnk");
         }
 
         private void verifyStartMenuShortcut(Path shortcutsRoot, boolean exists) {

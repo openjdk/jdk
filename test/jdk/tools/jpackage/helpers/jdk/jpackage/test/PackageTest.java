@@ -317,6 +317,11 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
+    public PackageTest addLauncherName(String name) {
+        launchersName.add(name);
+        return this;
+    }
+
     public final static class Group extends RunnablePackageTest {
         public Group(PackageTest... tests) {
             handlers = Stream.of(tests)
@@ -556,7 +561,12 @@ public final class PackageTest extends RunnablePackageTest {
                 if (PackageType.WINDOWS.contains(cmd.packageType())
                         && !cmd.isPackageUnpacked(
                                 "Not verifying desktop integration")) {
+                    // Check main launcher
                     new WindowsHelper.DesktopIntegrationVerifier(cmd, null);
+                    // Check additional launchers
+                    launchersName.forEach(name -> {
+                        new WindowsHelper.DesktopIntegrationVerifier(cmd, name);
+                    });
                 }
             }
             cmd.assertAppLayout();
@@ -571,7 +581,12 @@ public final class PackageTest extends RunnablePackageTest {
                 TKit.assertPathExists(cmd.appLauncherPath(), false);
 
                 if (PackageType.WINDOWS.contains(cmd.packageType())) {
+                    // Check main launcher
                     new WindowsHelper.DesktopIntegrationVerifier(cmd, null);
+                    // Check additional launchers
+                    launchersName.forEach(name -> {
+                        new WindowsHelper.DesktopIntegrationVerifier(cmd, name);
+                    });
                 }
             }
 
@@ -618,6 +633,7 @@ public final class PackageTest extends RunnablePackageTest {
     private Map<PackageType, Handler> handlers;
     private Set<String> namedInitializers;
     private Map<PackageType, PackageHandlers> packageHandlers;
+    private final List<String> launchersName = new ArrayList();
 
     private final static File BUNDLE_OUTPUT_DIR;
 
