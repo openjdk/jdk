@@ -7965,72 +7965,69 @@ void MacroAssembler::cache_wbsync(bool is_pre)
 }
 
 void MacroAssembler::copy64_masked_avx(Register dst, Register src, XMMRegister xmm,
-                                       KRegister mask, Register length, Register temp,
-                                       BasicType type, int offset, bool use64byteVector) {
+                                       KRegister mask, Register length, Register index,
+                                       Register temp, int shift, int offset,
+                                       bool use64byteVector) {
+  BasicType type[] = { T_BYTE,  T_SHORT,  T_INT,   T_LONG};
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
   use64byteVector |= MaxVectorSize > 32 && AVX3Threshold == 0;
   if (!use64byteVector) {
-    int shift = exact_log2_long(type2aelembytes(type));
-    copy32_avx(dst,src, xmm, offset);
+    copy32_avx(dst, src, index, xmm, shift, offset);
     subptr(length, 32 >> shift);
-    copy32_masked_avx(dst, src, xmm, mask, length, temp, type, offset+32);
+    copy32_masked_avx(dst, src, xmm, mask, length, index, temp, shift, offset+32);
   } else {
+    Address::ScaleFactor scale = (Address::ScaleFactor)(shift);
     assert(MaxVectorSize == 64, "vector length != 64");
     negptr(length);
     addq(length, 64);
     mov64(temp, -1);
     shrxq(temp, temp, length);
     kmovql(mask, temp);
-    evmovdqu(xmm, mask, Address(src, offset), Assembler::AVX_512bit, type);
-    evmovdqu(Address(dst, offset), mask, xmm, Assembler::AVX_512bit, type);
+    evmovdqu(xmm, mask, Address(src, index, scale, offset), Assembler::AVX_512bit, type[shift]);
+    evmovdqu(Address(dst, index, scale, offset), mask, xmm, Assembler::AVX_512bit, type[shift]);
   }
 }
 
 void MacroAssembler::copy32_masked_avx(Register dst, Register src, XMMRegister xmm,
-                                       KRegister mask, Register length, Register temp,
-                                       BasicType type, int offset) {
+                                       KRegister mask, Register length, Register index,
+                                       Register temp, int shift, int offset) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
+  BasicType type[] = { T_BYTE,  T_SHORT,  T_INT,   T_LONG};
+  Address::ScaleFactor scale = (Address::ScaleFactor)(shift);
   mov64(temp, 1);
   shlxq(temp, temp, length);
   decq(temp);
   kmovql(mask, temp);
-  evmovdqu(xmm, mask, Address(src, offset), Assembler::AVX_256bit, type);
-  evmovdqu(Address(dst, offset), mask, xmm, Assembler::AVX_256bit, type);
+  evmovdqu(xmm, mask, Address(src, index, scale, offset), Assembler::AVX_256bit, type[shift]);
+  evmovdqu(Address(dst, index, scale, offset), mask, xmm, Assembler::AVX_256bit, type[shift]);
 }
 
 
-void MacroAssembler::copy32_avx(Register dst, Register src, XMMRegister xmm, int offset) {
+void MacroAssembler::copy32_avx(Register dst, Register src, Register index, XMMRegister xmm,
+                                int shift, int offset) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  vmovdqu(xmm, Address(src, offset));
-  vmovdqu(Address(dst, offset), xmm);
+  Address::ScaleFactor scale = (Address::ScaleFactor)(shift);
+  vmovdqu(xmm, Address(src, index, scale, offset));
+  vmovdqu(Address(dst, index, scale, offset), xmm);
 }
 
 
-void MacroAssembler::copy64_avx(Register dst, Register src, XMMRegister xmm, int offset, bool use64byteVector) {
+void MacroAssembler::copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
+                                bool conjoint, int shift, int offset, bool use64byteVector) {
   assert(MaxVectorSize == 64 || MaxVectorSize == 32, "vector length mismatch");
   use64byteVector |= MaxVectorSize > 32 && AVX3Threshold == 0;
   if (!use64byteVector) {
-     vmovdqu(xmm, Address(src, offset));
-     vmovdqu(Address(dst, offset), xmm);
-     vmovdqu(xmm, Address(src, offset+32));
-     vmovdqu(Address(dst, offset+32), xmm);
+    if (conjoint) {
+      copy32_avx(dst, src, index, xmm, shift, offset+32);
+      copy32_avx(dst, src, index, xmm, shift, offset);
+    } else {
+      copy32_avx(dst, src, index, xmm, shift, offset);
+      copy32_avx(dst, src, index, xmm, shift, offset+32);
+    }
   } else {
-     evmovdquq(xmm, Address(src, offset), Assembler::AVX_512bit);
-     evmovdquq(Address(dst, offset), xmm, Assembler::AVX_512bit);
-  }
-}
-
-void MacroAssembler::copy64_conjoint_avx(Register dst, Register src, XMMRegister xmm, int offset, bool use64byteVector) {
-  assert(MaxVectorSize == 64 || MaxVectorSize == 32, "vector length mismatch");
-  use64byteVector |= MaxVectorSize > 32 && AVX3Threshold == 0;
-  if (!use64byteVector) {
-     vmovdqu(xmm, Address(src, offset+32));
-     vmovdqu(Address(dst, offset+32), xmm);
-     vmovdqu(xmm, Address(src, offset));
-     vmovdqu(Address(dst, offset), xmm);
-  } else {
-     evmovdquq(xmm, Address(src, offset), Assembler::AVX_512bit);
-     evmovdquq(Address(dst, offset), xmm, Assembler::AVX_512bit);
+    Address::ScaleFactor scale = (Address::ScaleFactor)(shift);
+    evmovdquq(xmm, Address(src, index, scale, offset), Assembler::AVX_512bit);
+    evmovdquq(Address(dst, index, scale, offset), xmm, Assembler::AVX_512bit);
   }
 }
 
