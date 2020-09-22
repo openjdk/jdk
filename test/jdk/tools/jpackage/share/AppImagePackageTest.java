@@ -23,7 +23,6 @@
 
 import java.nio.file.Path;
 import java.nio.file.Files;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.List;
 import jdk.jpackage.test.TKit;
