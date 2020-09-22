@@ -139,8 +139,7 @@ public:
   static narrowOop narrow_oop_cast(T i) {
     static_assert(std::is_integral<T>::value, "precondition");
     static_assert(sizeof(T) >= sizeof(narrowOop), "precondition");
-    // Shift by 32 is UB if size in bits of i is 32, e.g. on 32bit platform.
-    assert(((i >> 16) >> 16) == 0, "narrowOop overflow");
+    assert(i == static_cast<T>(static_cast<uint32_t>(i)), "narrowOop overflow");
     return static_cast<narrowOop>(static_cast<uint32_t>(i));
   }
 };
