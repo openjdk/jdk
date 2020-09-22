@@ -371,6 +371,63 @@ bool RegionNode::is_unreachable_region(PhaseGVN *phase) const {
   return true; // The Region node is unreachable - it is dead.
 }
 
+bool RegionNode::is_self_loop(Node* n) {
+  Node_List nstack;
+  VectorSet visited;
+  nstack.push(n);
+  visited.set(n->_idx);
+
+  while(nstack.size()) {
+    n = nstack.pop();
+    for(unsigned i = 1; i < n->req() ; i++) {
+      Node* in = n->in(i);
+      if (in == NULL) {
+        continue;
+      }
+      if (visited.test_set(in->_idx)) {
+        return true;
+      } else {
+        nstack.push(in);
+        visited.set(in->_idx);
+      }
+    }
+  }
+
+  return false;
+}
+
+// If a two input non-loop region has dead input
+// edge[s] degenerate any phi node contained within it.
+bool RegionNode::try_phi_disintegration(PhaseGVN *phase) {
+  if (req() != 3 || isa_Loop() || !in(1) || !in(2) ||
+       (!in(1)->is_top() && !in(2)->is_top())) {
+     return false;
+  }
+
+  PhiNode* phi = has_unique_phi();
+  if (!phi) {
+    return false;
+  }
+
+  Node* rep_node = NULL;
+  PhaseIterGVN *igvn = phase->is_IterGVN();
+  if (in(1)->is_top() && !in(2)->is_top()) {
+    rep_node = phi->in(2);
+  } else if(in(2)->is_top() && !in(1)->is_top()) {
+    rep_node = phi->in(1);
+  } else {
+    rep_node = phase->C->top();
+  }
+
+  // Safety check to avoid dead/self loop creation.
+  if (is_self_loop(rep_node)) {
+    return false;
+  }
+
+  igvn->replace_node(phi, rep_node);
+  return true;
+}
+
 bool RegionNode::try_clean_mem_phi(PhaseGVN *phase) {
   // Incremental inlining + PhaseStringOpts sometimes produce:
   //
@@ -427,6 +484,10 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (can_reshape) {            // Need DU info to check for Phi users
     has_phis = (has_phi() != NULL);       // Cache result
     if (has_phis && try_clean_mem_phi(phase)) {
+      has_phis = false;
+    }
+    has_phis = (has_phi() != NULL);       // Cache result
+    if (has_phis && try_phi_disintegration(phase)) {
       has_phis = false;
     }
 

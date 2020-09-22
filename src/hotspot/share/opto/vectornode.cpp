@@ -677,6 +677,56 @@ StoreVectorNode* StoreVectorNode::make(int opc, Node* ctl, Node* mem,
   return new StoreVectorNode(ctl, mem, adr, atyp, val);
 }
 
+VectorMaskedLoadNode* make(int opc, Node* ctl, Node* mem, Node* src,
+                       const TypePtr* atype, const TypeVect* vt,
+                       Node* mask) {
+  return new VectorMaskedLoadNode(ctl, mem, src, atype, vt, mask);
+}
+
+VectorMaskedStoreNode* make(int opc, Node* ctl, Node* mem, Node* dst,
+                            Node* src, const TypePtr* atype, Node* mask) {
+  return new VectorMaskedStoreNode(ctl, mem, dst, src, atype, mask);
+}
+
+VectorMaskGenNode* make(int opc, Node* src, const Type* ty, const Type* ety) {
+  return new VectorMaskGenNode(src, ty, ety);
+}
+
+Node* VectorMaskedLoadNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* mask_len = in(3)->in(1);
+  const TypeLong* ty = phase->type(mask_len)->isa_long();
+  if (ty && ty->is_con()) {
+    BasicType mask_bt = ((VectorMaskGenNode*)in(3))->get_elem_type()->array_element_basic_type();
+    uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
+    if ( load_sz == 32 || load_sz == 64) {
+      assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected load size");
+      Node* ctr = in(MemNode::Control);
+      Node* mem = in(MemNode::Memory);
+      Node* adr = in(MemNode::Address);
+      return phase->transform(new LoadVectorNode(ctr, mem, adr, adr_type(), vect_type()));
+    }
+  }
+  return NULL;
+}
+
+Node* VectorMaskedStoreNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* mask_len = in(4)->in(1);
+  const TypeLong* ty = phase->type(mask_len)->isa_long();
+  if (ty && ty->is_con()) {
+    BasicType mask_bt = ((VectorMaskGenNode*)in(4))->get_elem_type()->array_element_basic_type();
+    uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
+    if ( load_sz == 32 || load_sz == 64) {
+      assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected store size");
+      Node* ctr = in(MemNode::Control);
+      Node* mem = in(MemNode::Memory);
+      Node* adr = in(MemNode::Address);
+      Node* val = in(MemNode::ValueIn);
+      return phase->transform(new StoreVectorNode(ctr, mem, adr, adr_type(), val));
+    }
+  }
+  return NULL;
+}
+
 // Extract a scalar element of vector.
 Node* ExtractNode::make(Node* v, uint position, BasicType bt) {
   assert((int)position < Matcher::max_vector_size(bt), "pos in range");

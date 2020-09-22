@@ -152,7 +152,9 @@ class TypeNode;
 class UnlockNode;
 class VectorNode;
 class LoadVectorNode;
+class VectorMaskedLoad;
 class StoreVectorNode;
+class VectorMaskedStore;
 class VectorSet;
 typedef void (*NFunc)(Node&,void*);
 extern "C" {
@@ -689,8 +691,10 @@ public:
     DEFINE_CLASS_ID(Mem,   Node, 4)
       DEFINE_CLASS_ID(Load,  Mem, 0)
         DEFINE_CLASS_ID(LoadVector,  Load, 0)
+         DEFINE_CLASS_ID(VectorMaskedLoad, LoadVector, 0)
       DEFINE_CLASS_ID(Store, Mem, 1)
         DEFINE_CLASS_ID(StoreVector, Store, 0)
+         DEFINE_CLASS_ID(VectorMaskedStore, StoreVector, 0)
       DEFINE_CLASS_ID(LoadStore, Mem, 2)
         DEFINE_CLASS_ID(LoadStoreConditional, LoadStore, 0)
           DEFINE_CLASS_ID(CompareAndSwap, LoadStoreConditional, 0)

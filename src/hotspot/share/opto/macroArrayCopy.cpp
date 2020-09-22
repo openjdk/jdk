@@ -27,6 +27,7 @@
 #include "opto/arraycopynode.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/vectornode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/macro.hpp"
 #include "opto/runtime.hpp"
@@ -167,6 +168,133 @@ void PhaseMacroExpand::generate_limit_guard(Node** ctrl, Node* offset, Node* sub
   Node* bol_lt = new BoolNode(cmp_lt, BoolTest::lt);
   transform_later(bol_lt);
   generate_guard(ctrl, bol_lt, region, PROB_MIN);
+}
+
+//
+// Partial in-lining handling for smaller conjoint/disjoint array copies having
+// length(in bytes) less than ArrayCopyPartialInlineSize.
+//  if (length <= ArrayCopyPartialInlineSize) {
+//    partial_inlining_block:
+//      mask = Mask_Gen
+//      vload = VectorMaskedLoad src , mask
+//      VectorMaskedStore dst, mask, vload
+//  } else {
+//    stub_block:
+//      callstub array_copy
+//  }
+//  exit_block:
+//    Phi = label partial_inlining_block:mem , label stub_block:mem (filled by caller)
+//    mem = MergeMem (Phi)
+//    control = stub_block
+//
+//  Exit_block and associated phi(memory) are partially initialized for partial_in-lining_block
+//  edges. Remaining edges for exit_block coming from stub_block are connected by the caller
+//  post stub nodes creation.
+//
+//  Constant copy length operation having size less than ArrayCopyPartialInlineSize prevents
+//  creation of additional control flow for stub_block and exit_block.
+//
+//  Return true to emit subsequent stub calling code.
+//
+
+bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode** mem, const TypePtr* adr_type,
+                                                       RegionNode** exit_block, Node** result_memory, Node* length,
+                                                       Node* src_start, Node* dst_start, BasicType type) {
+  const TypePtr *src_adr_type = _igvn.type(src_start)->isa_ptr();
+
+  Node* orig_mem = *mem;
+  Node* is_lt64bytes_tp = NULL;
+  Node* is_lt64bytes_fp = NULL;
+
+  int con_len = -1;
+  const TypeInt* lty = NULL;
+  uint shift  = exact_log2(type2aelembytes(type));
+  if (length->Opcode() == Op_ConvI2L && (lty = _igvn.type(length->in(1))->isa_int()) && lty->is_con()) {
+    con_len = lty->get_con() << shift;
+  } else if ((lty = _igvn.type(length)->isa_int()) && lty->is_con()) {
+    con_len = lty->get_con() << shift;
+  }
+
+  // Return if copy length is greater than partial inline size limit or
+  // target does not supports masked load/stores.
+  int lane_count = ArrayCopyNode::get_partial_inline_vector_lane_count(type, con_len);
+  if ( con_len > ArrayCopyPartialInlineSize ||
+      !Matcher::match_rule_supported_vector(Op_VectorMaskedLoad, lane_count, type)  ||
+      !Matcher::match_rule_supported_vector(Op_VectorMaskedStore, lane_count, type) ||
+      !Matcher::match_rule_supported_vector(Op_VectorMaskGen, lane_count, type)) {
+    return true;
+  }
+
+  Node* inline_block = NULL;
+  // Emit length comparison check for non-constant length.
+  if (con_len < 0) {
+    Node* copy_bytes = new LShiftXNode(length, intcon(shift));
+    transform_later(copy_bytes);
+
+    Node* cmp_le = new CmpULNode(copy_bytes, longcon(ArrayCopyPartialInlineSize));
+    transform_later(cmp_le);
+    Node* bol_le = new BoolNode(cmp_le, BoolTest::le);
+    transform_later(bol_le);
+    is_lt64bytes_tp  = generate_guard(ctrl, bol_le, NULL, PROB_FAIR);
+    is_lt64bytes_fp = *ctrl;
+
+    inline_block = new RegionNode(2);
+    transform_later(inline_block);
+    inline_block->init_req(1, is_lt64bytes_tp);
+  } else {
+    inline_block = *ctrl;
+  }
+
+  Node* mask_gen =  new VectorMaskGenNode(length, TypeLong::LONG, Type::get_const_basic_type(type));
+  transform_later(mask_gen);
+
+  unsigned vec_size = lane_count *  type2aelembytes(type);
+  if (C->max_vector_size() < vec_size) {
+    C->set_max_vector_size(vec_size);
+  }
+
+  int alias_idx = C->get_alias_index(src_adr_type);
+  Node* mm = (*mem)->memory_at(alias_idx);
+  const TypeVect * vt = TypeVect::make(type, lane_count);
+  Node* masked_load = new VectorMaskedLoadNode(inline_block, mm, src_start,
+                                               src_adr_type, vt, mask_gen);
+  transform_later(masked_load);
+
+  mm = (*mem)->memory_at(C->get_alias_index(adr_type));
+  Node* masked_store = new VectorMaskedStoreNode(inline_block, mm, dst_start,
+                                                 masked_load, adr_type, mask_gen);
+  transform_later(masked_store);
+
+  // Stub region is created for non-constant copy length.
+  if (con_len < 0) {
+    // Region containing stub calling node.
+    RegionNode* stub_block = new RegionNode(2);
+    transform_later(stub_block);
+    stub_block->init_req(1, is_lt64bytes_fp);
+
+    // Convergence region for inline_block and stub_block.
+    *exit_block = new RegionNode(3);
+    transform_later(*exit_block);
+    (*exit_block)->init_req(1, masked_store);
+    *result_memory = new PhiNode(*exit_block, Type::MEMORY, adr_type);
+    transform_later(*result_memory);
+    (*result_memory)->init_req(1, masked_store);
+
+    *ctrl = stub_block;
+    return true;
+  } else {
+    // Prevent stub call generation for constant length less
+    // than partial inline size.
+    uint alias_idx = C->get_alias_index(adr_type);
+    if (alias_idx != Compile::AliasIdxBot) {
+      *mem = MergeMemNode::make(*mem);
+      (*mem)->set_memory_at(alias_idx, masked_store);
+    } else {
+      *mem = MergeMemNode::make(masked_store);
+    }
+    transform_later(*mem);
+    return false;
+  }
 }
 
 Node* PhaseMacroExpand::generate_nonpositive_guard(Node** ctrl, Node* index, bool never_negative) {
@@ -559,16 +687,17 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     }
   }
 
+  bool is_partial_array_copy = false;
   if (!(*ctrl)->is_top()) {
     // Generate the fast path, if possible.
     Node* local_ctrl = *ctrl;
     MergeMemNode* local_mem = MergeMemNode::make(mem);
     transform_later(local_mem);
 
-    generate_unchecked_arraycopy(&local_ctrl, &local_mem,
-                                 adr_type, copy_type, disjoint_bases,
-                                 src, src_offset, dest, dest_offset,
-                                 ConvI2X(copy_length), dest_uninitialized);
+    is_partial_array_copy = generate_unchecked_arraycopy(&local_ctrl, &local_mem,
+                                                         adr_type, copy_type, disjoint_bases,
+                                                         src, src_offset, dest, dest_offset,
+                                                         ConvI2X(copy_length), dest_uninitialized);
 
     // Present the results of the fast call.
     result_region->init_req(fast_path, local_ctrl);
@@ -715,13 +844,19 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     insert_mem_bar(ctrl, &out_mem, Op_MemBarCPUOrder);
   }
 
+  if (is_partial_array_copy) {
+    assert((*ctrl)->is_Proj(), "MemBar control projection");
+    assert((*ctrl)->in(0)->isa_MemBar(), "MemBar node");
+    (*ctrl)->in(0)->isa_MemBar()->set_after_partial_array_copy();
+  }
+
   _igvn.replace_node(_memproj_fallthrough, out_mem);
   _igvn.replace_node(_ioproj_fallthrough, *io);
   _igvn.replace_node(_fallthroughcatchproj, *ctrl);
 
 #ifdef ASSERT
   const TypeOopPtr* dest_t = _igvn.type(dest)->is_oopptr();
-  if (dest_t->is_known_instance()) {
+  if (dest_t->is_known_instance() && false == is_partial_array_copy) {
     ArrayCopyNode* ac = NULL;
     assert(ArrayCopyNode::may_modify(dest_t, (*ctrl)->in(0)->as_MemBar(), &_igvn, ac), "dependency on arraycopy lost");
     assert(ac == NULL, "no arraycopy anymore");
@@ -1053,14 +1188,14 @@ Node* PhaseMacroExpand::generate_generic_arraycopy(Node** ctrl, MergeMemNode** m
 }
 
 // Helper function; generates the fast out-of-line call to an arraycopy stub.
-void PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
+bool PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
                                                     const TypePtr* adr_type,
                                                     BasicType basic_elem_type,
                                                     bool disjoint_bases,
                                                     Node* src,  Node* src_offset,
                                                     Node* dest, Node* dest_offset,
                                                     Node* copy_length, bool dest_uninitialized) {
-  if ((*ctrl)->is_top()) return;
+  if ((*ctrl)->is_top()) return false;
 
   Node* src_start  = src;
   Node* dest_start = dest;
@@ -1075,11 +1210,42 @@ void PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
       basictype2arraycopy(basic_elem_type, src_offset, dest_offset,
                           disjoint_bases, copyfunc_name, dest_uninitialized);
 
-  const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
-  Node* call = make_leaf_call(*ctrl, *mem, call_type, copyfunc_addr, copyfunc_name, adr_type,
-                              src_start, dest_start, copy_length XTOP);
+  Node* result_memory = NULL;
+  RegionNode* exit_block = NULL;
+  bool gen_stub_call = true;
+  if (ArrayCopyPartialInlineSize > 0 && is_subword_type(basic_elem_type) &&
+    Matcher::vector_width_in_bytes(basic_elem_type) >= 32) {
+    gen_stub_call = generate_partial_inlining_block(ctrl, mem, adr_type, &exit_block, &result_memory,
+                                                    copy_length, src_start, dest_start, basic_elem_type);
+  }
 
-  finish_arraycopy_call(call, ctrl, mem, adr_type);
+  if (gen_stub_call) {
+    const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
+    Node* call = make_leaf_call(*ctrl, *mem, call_type, copyfunc_addr, copyfunc_name, adr_type,
+                                src_start, dest_start, copy_length XTOP);
+
+    finish_arraycopy_call(call, ctrl, mem, adr_type);
+  }
+
+  // Connecting remaining edges for exit_block coming from stub_block.
+  if (exit_block) {
+    exit_block->init_req(2, *ctrl);
+
+    // Memory edge corresponding to stub_region.
+    result_memory->init_req(2, *mem);
+
+    uint alias_idx = C->get_alias_index(adr_type);
+    if (alias_idx != Compile::AliasIdxBot) {
+      *mem = MergeMemNode::make(*mem);
+      (*mem)->set_memory_at(alias_idx, result_memory);
+    } else {
+      *mem = MergeMemNode::make(result_memory);
+    }
+    transform_later(*mem);
+    *ctrl = exit_block;
+    return true;
+  }
+  return false;
 }
 
 void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
