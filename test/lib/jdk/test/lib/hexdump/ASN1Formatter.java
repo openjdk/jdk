@@ -225,7 +225,6 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     out.append(' ');
                     break;
 
-                case TAG_OctetString:
                 case TAG_UtcTime:
                 case TAG_GeneralizedTime:
                     out.append(tagName(tag) + " [" + len + "] ");
@@ -281,6 +280,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     out.append(' ');
                     available -= len;
                     break;
+                case TAG_OctetString:
                 case TAG_BitString:
                     out.append(String.format("%s [%d]", tagName(tag), len));
                     in.skip(len);
@@ -350,27 +350,25 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @return a String representation of the tag.
      */
     private String tagName(int tag) {
-        String cons = isConstructed(tag) ? "cons " : "";
-        if (tag > 0 && tag < tagNames.length)
-            return tagNames[tag] + " " + cons;
-        if (tag == TAG_Set)
-            return "SET";
-        if (tag == TAG_Sequence)
-            return "SEQUENCE";
+        String tagString = (isConstructed(tag) ? "CONSTRUCTED "  : "") + tagNames[tag & 0x1f];
         switch (tag & 0xc0) {
             case TAG_APPLICATION:
-                return "APPLICATION " + cons + (tag & 0x1f);
+                return "APPLICATION " + tagString;
             case TAG_PRIVATE:
-                return "PRIVATE " + cons + (tag & 0x1f);
+                return "PRIVATE " + tagString;
             case TAG_CONTEXT:
-                return "CONTEXT " + cons + (tag & 0x1f);
+                return tagString;
             case TAG_UNIVERSAL:
-                return "UNIVERSAL " + cons + (tag & 0x1f);
+                if (tag > 0 && tag < tagNames.length)
+                    return tagNames[tag];
+                if (tag == TAG_Set)
+                    return "SET";
+                if (tag == TAG_Sequence)
+                    return "SEQUENCE";
+                return "UNIVERSAL " + tagString;
             default:
                 return "TAG__" + (tag & 0xc0);
         }
-
-//        return "TAG_" + tag;
     }
 
     /**
@@ -559,7 +557,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
             "u15", "SEQUENCE", "SET", "NUMERIC STRING", "STRING",
             "T61", "VIDEOTEXT", "IA5", "UTCTIME", "GENERAL TIME",
             "GRAPHIC STRING", "ISO64STRING", "GENERAL STRING", "UNIVERSAL STRING", "u29",
-            "BMP STRING",
+            "BMP STRING", "MULTIBYTE TAG",
     };
 
     /**

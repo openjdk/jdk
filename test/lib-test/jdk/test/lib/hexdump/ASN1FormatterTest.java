@@ -67,7 +67,7 @@ public class ASN1FormatterTest {
             Assert.assertEquals(result.lines().filter(s -> s.contains("SEQUENCE")).count(),24, "Sequences");
             Assert.assertEquals(result.lines().filter(s -> s.contains("OBJECT ID")).count(), 17, "ObjectIDs");
             Assert.assertEquals(result.lines().filter(s -> s.contains("UTCTIME")).count(), 2, "UTCTIME");
-            Assert.assertEquals(result.lines().filter(s -> s.contains("BIT STRING")).count(), 2, "BitStrings");
+            Assert.assertEquals(result.lines().filter(s -> s.contains("BIT STRING")).count(), 3, "BitStrings");
         } catch (EOFException eof) {
             // done
         }
@@ -95,7 +95,7 @@ public class ASN1FormatterTest {
             Assert.assertEquals(result.lines().filter(s -> s.contains("SEQUENCE")).count(), 24, "Sequences");
             Assert.assertEquals(result.lines().filter(s -> s.contains("OBJECT ID")).count(), 17, "ObjectIDs");
             Assert.assertEquals(result.lines().filter(s -> s.contains("UTCTIME")).count(), 2, "UTCTIME");
-            Assert.assertEquals(result.lines().filter(s -> s.contains("BIT STRING")).count(), 2, "BitStrings");
+            Assert.assertEquals(result.lines().filter(s -> s.contains("BIT STRING")).count(), 3, "BitStrings");
         } catch (EOFException eof) {
             // done
         }
