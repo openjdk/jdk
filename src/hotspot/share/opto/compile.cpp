@@ -732,12 +732,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   // generation and log the seed for repeatability.
   if (StressIGVN) {
     _stress_seed = GenerateStressSeed ?
-      (unsigned int)(Ticks::now().nanoseconds()) : StressSeed;
+      static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
     if (_log != NULL) {
       _log->elem("stress_test seed='%u'", _stress_seed);
     } else if (GenerateStressSeed) {
-      tty->print_cr("Warning:  +LogCompilation must be set to record "
-                    "the generated seed.");
+      tty->print_cr("Warning:  set +LogCompilation to log the seed.");
     }
   }
 
@@ -4453,11 +4452,17 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
 
 // Auxiliary methods to support randomized stressing/fuzzing.
 
-// Return 32bit pseudorandom number and update local seed.
 int Compile::random() {
-  uint rand = os::next_random(_stress_seed);
-  _stress_seed = rand;
-  return static_cast<int>(rand);
+  _stress_seed = os::next_random(_stress_seed);
+  return static_cast<int>(_stress_seed);
+}
+
+void Compile::shuffle(Unique_Node_List* l) {
+  if (l->size() < 2) return;
+  for (uint i = l->size() - 1; i >= 1; i--) {
+    uint j = random() % (i + 1);
+    l->swap(i, j);
+  }
 }
 
 // This method can be called the arbitrary number of times, with current count
@@ -4491,14 +4496,6 @@ int Compile::random() {
 bool Compile::randomized_select(int count) {
   assert(count > 0, "only positive");
   return (os::random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
-}
-
-void Compile::shuffle(Unique_Node_List* l) {
-  if (l->size() < 2) return;
-  for (uint i = l->size() - 1; i >= 1; i--) {
-    uint j = random() % (i + 1);
-    l->swap(i, j);
-  }
 }
 
 CloneMap&     Compile::clone_map()                 { return _clone_map; }

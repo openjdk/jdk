@@ -755,11 +755,8 @@ class os: AllStatic {
   static int   sigexitnum_pd();
 
   // random number generation
-
-  // return 32bit pseudorandom number and update global seed
-  static int random();
-  // return 32bit pseudorandom number
-  static int next_random(unsigned int rand_seed);
+  static int random();                     // return 32bit pseudorandom number
+  static int next_random(unsigned int rand_seed); // pure version of random()
   static void init_random(unsigned int initval);    // initialize random sequence
 
   // Structured OS Exception support
