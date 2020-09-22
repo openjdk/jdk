@@ -49,7 +49,7 @@ public abstract class BasicAuthenticator extends Authenticator {
      * The Basic authentication credentials (username and password) are decoded
      * using the platform's {@link Charset#defaultCharset() default character set}.
      *
-     * @param realm The HTTP Basic authentication realm
+     * @param realm the HTTP Basic authentication realm
      * @throws NullPointerException if realm is {@code null}
      * @throws IllegalArgumentException if realm is an empty string
      */
@@ -58,7 +58,7 @@ public abstract class BasicAuthenticator extends Authenticator {
     }
 
     /**
-     * Creates a BasicAuthenticator for the given HTTP realm and using the
+     * Creates a {@code BasicAuthenticator} for the given HTTP realm and using the
      * given {@link Charset} to decode the Basic authentication credentials
      * (username and password).
      *
@@ -81,8 +81,9 @@ public abstract class BasicAuthenticator extends Authenticator {
     }
 
     /**
-     * returns the realm this BasicAuthenticator was created with
-     * @return the authenticator's realm string.
+     * Returns the realm this {@code BasicAuthenticator} was created with.
+     *
+     * @return the authenticator's realm string
      */
     public String getRealm () {
         return realm;
@@ -130,14 +131,14 @@ public abstract class BasicAuthenticator extends Authenticator {
     }
 
     /**
-     * called for each incoming request to verify the
+     * Called for each incoming request to verify the
      * given name and password in the context of this
      * Authenticator's realm. Any caching of credentials
-     * must be done by the implementation of this method
+     * must be done by the implementation of this method.
+     *
      * @param username the username from the request
      * @param password the password from the request
-     * @return <code>true</code> if the credentials are valid,
-     *    <code>false</code> otherwise.
+     * @return {@code true} if the credentials are valid, {@code false} otherwise
      */
     public abstract boolean checkCredentials (String username, String password);
 }
