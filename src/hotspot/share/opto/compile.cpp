@@ -728,9 +728,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
-  // If any phase is randomized for stress testing, seed random
-  // number generation and log the seed for repeatability.
-  if (StressLCM || StressGCM || StressIGVN) {
+  // If IGVN is randomized for stress testing, seed random number
+  // generation and log the seed for repeatability.
+  if (StressIGVN) {
     _stress_seed = GenerateStressSeed ?
       (unsigned int)(Ticks::now().nanoseconds()) : StressSeed;
     if (_log != NULL) {
@@ -4490,7 +4490,7 @@ int Compile::random() {
 #define RANDOMIZED_DOMAIN_MASK ((1 << (RANDOMIZED_DOMAIN_POW + 1)) - 1)
 bool Compile::randomized_select(int count) {
   assert(count > 0, "only positive");
-  return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
+  return (os::random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
 }
 
 void Compile::shuffle(Unique_Node_List* l) {

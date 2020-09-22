@@ -1140,7 +1140,7 @@ class Compile : public Phase {
 
   // Auxiliary methods for randomized fuzzing/stressing
   int random();
-  bool randomized_select(int count);
+  static bool randomized_select(int count);
   void shuffle(Unique_Node_List* l);
 
   // supporting clone_map
