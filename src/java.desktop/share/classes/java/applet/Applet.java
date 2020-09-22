@@ -579,6 +579,11 @@ public class Applet extends Panel {
         private static final long serialVersionUID = 8127374778187708896L;
 
         /**
+         * Constructs an {@code AccessibleApplet}
+         */
+        protected AccessibleApplet() {}
+
+        /**
          * Get the role of this object.
          *
          * @return an instance of {@code AccessibleRole} describing the role of

@@ -120,6 +120,11 @@ public class Panel extends Container implements Accessible {
         private static final long serialVersionUID = -6409552226660031050L;
 
         /**
+         * Constructs an {@code AccessibleAWTPanel}
+         */
+        protected AccessibleAWTPanel() {}
+
+        /**
          * Get the role of this object.
          *
          * @return an instance of AccessibleRole describing the role of the
