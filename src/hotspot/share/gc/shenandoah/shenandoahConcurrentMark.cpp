@@ -61,7 +61,7 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    ShenandoahConcurrentMark::mark_through_ref<T, UPDATE_REFS, NO_DEDUP>(p, _heap, _queue, _mark_context);
+    ShenandoahConcurrentMark::mark_through_ref<T, UPDATE_REFS, NO_DEDUP>(p, _heap, _queue, _mark_context, true);
   }
 
 public:
@@ -78,7 +78,8 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
   MetadataVisitingOopIterateClosure(rp),
   _queue(q),
   _heap(ShenandoahHeap::heap()),
-  _mark_context(_heap->marking_context())
+  _mark_context(_heap->marking_context()),
+  _strong(true)
 { }
 
 template<UpdateRefsMode UPDATE_REFS>
@@ -595,7 +596,7 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    ShenandoahConcurrentMark::mark_through_ref<T, NONE, NO_DEDUP>(p, _heap, _queue, _mark_context);
+    ShenandoahConcurrentMark::mark_through_ref<T, NONE, NO_DEDUP>(p, _heap, _queue, _mark_context, true);
   }
 
 public:
@@ -616,7 +617,7 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    ShenandoahConcurrentMark::mark_through_ref<T, SIMPLE, NO_DEDUP>(p, _heap, _queue, _mark_context);
+    ShenandoahConcurrentMark::mark_through_ref<T, SIMPLE, NO_DEDUP>(p, _heap, _queue, _mark_context, true);
   }
 
 public:

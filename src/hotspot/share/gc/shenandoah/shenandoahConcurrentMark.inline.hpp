@@ -45,6 +45,7 @@ void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, Shena
   shenandoah_assert_marked(NULL, obj);
   shenandoah_assert_not_in_cset_except(NULL, obj, _heap->cancelled_gc());
 
+  cl->set_strong(_heap->marking_context()->is_marked_strong(obj));
   if (task->is_not_chunked()) {
     if (obj->is_instance()) {
       // Case 1: Normal oop, process as usual.
@@ -215,13 +216,13 @@ public:
   void do_buffer_impl(void **buffer, size_t size) {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahConcurrentMark::mark_through_ref<oop, NONE, STRING_DEDUP>(p, _heap, _queue, _mark_context);
+      ShenandoahConcurrentMark::mark_through_ref<oop, NONE, STRING_DEDUP>(p, _heap, _queue, _mark_context, true);
     }
   }
 };
 
 template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context) {
+inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool strong) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
@@ -252,7 +253,13 @@ inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* hea
       shenandoah_assert_not_forwarded(p, obj);
       shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
 
-      if (mark_context->mark_strong(obj)) {
+      bool marked;
+      if (strong) {
+        marked = mark_context->mark_strong(obj);
+      } else {
+        marked = mark_context->mark_final(obj);
+      }
+      if (marked) {
         bool pushed = q->push(ShenandoahMarkTask(obj));
         assert(pushed, "overflow queue should always succeed pushing");
 
