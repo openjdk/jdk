@@ -170,14 +170,9 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         byte[] result;
         Optional<byte[]> resultOpt = deriveKeyImpl(privateKey, publicKey);
         if (resultOpt.isEmpty()) {
-            NamedCurve privNC = CurveDB.lookup(privateKey.getParams());
-            NamedCurve pubNC = CurveDB.lookup(publicKey.getParams());
             throw new IllegalStateException(
-                new InvalidAlgorithmParameterException(
-                    "Curve not supported:  Private: " +
-                        ((privNC != null) ? privNC.toString() : " unknown") +
-                        ", PublicKey:" +
-                        ((pubNC != null) ? pubNC.toString() : " unknown")));
+                new InvalidAlgorithmParameterException("Curve not supported: " +
+                    publicKey.getParams().toString()));
         }
         result = resultOpt.get();
         publicKey = null;
