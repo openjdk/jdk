@@ -84,11 +84,11 @@ public class AppImagePackageTest {
             cmd.removeArgumentWithValue("--input");
 
             // on mac, with --app-image and without --mac-package-identifier,
-            // we will try to infer it from the image, so forign image needs it.
+            // will try to infer it from the image, so foreign image needs it.
             if (TKit.isOSX()) {
                 cmd.addArguments("--mac-package-identifier", name);
             }
         }).run(new Action[] { Action.CREATE, Action.UNPACK });
-        // default: {CREATE, UNPACK, VERIFY}, but we can't verify forign payload
+        // default: {CREATE, UNPACK, VERIFY}, but we can't verify foreign image
     }
 }

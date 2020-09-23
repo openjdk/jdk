@@ -191,7 +191,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         } else {
             neededLibPackages = Collections.emptyList();
             if (!Files.exists(thePackage.sourceRoot())) {
-                Log.info(I18N.getString("warning.foerign-app-image"));
+                Log.info(I18N.getString("warning.foreign-app-image"));
 
             }
         }
