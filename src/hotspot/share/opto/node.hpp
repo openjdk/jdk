@@ -1488,7 +1488,6 @@ public:
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
   void sort( C_sort_func_t func);
-  void swap(uint i, uint j);
   void reset( Arena *new_a );   // Zap mapping to empty; reclaim storage
   void clear();                 // Set all entries to NULL, keep storage
   uint Size() const { return _max; }

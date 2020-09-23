@@ -1002,7 +1002,7 @@ void PhaseIterGVN::shuffle_worklist() {
   if (_worklist.size() < 2) return;
   for (uint i = _worklist.size() - 1; i >= 1; i--) {
     uint j = C->random() % (i + 1);
-    _worklist.swap(i, j);
+    swap(_worklist.adr()[i], _worklist.adr()[j]);
   }
 }
 

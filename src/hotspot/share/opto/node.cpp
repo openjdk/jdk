@@ -2330,13 +2330,6 @@ void Node_Array::sort( C_sort_func_t func) {
 }
 
 //-----------------------------------------------------------------------------
-void Node_Array::swap(uint i, uint j) {
-  Node* tmp = _nodes[i];
-  _nodes[i] = _nodes[j];
-  _nodes[j] = tmp;
-}
-
-//-----------------------------------------------------------------------------
 void Node_Array::dump() const {
 #ifndef PRODUCT
   for( uint i = 0; i < _max; i++ ) {
