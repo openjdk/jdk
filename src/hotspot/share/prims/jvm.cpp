@@ -3437,6 +3437,28 @@ JVM_ENTRY(void, JVM_WaitForReferencePendingList(JNIEnv* env))
   }
 JVM_END
 
+template<DecoratorSet on_ref>
+static bool referenceRefersTo(jobject ref, jobject o) {
+  const int offset = java_lang_ref_Reference::referent_offset();
+  oop ref_oop = JNIHandles::resolve_non_null(ref);
+  oop referent = HeapAccess<on_ref | AS_NO_KEEPALIVE>::oop_load_at(ref_oop, offset);
+  return referent == JNIHandles::resolve(o);
+}
+
+JVM_ENTRY(jboolean, JVM_ReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
+  JVMWrapper("JVM_ReferenceRefersTo");
+  return referenceRefersTo<ON_WEAK_OOP_REF>(ref, o);
+JVM_END
+
+
+// java.lang.ref.PhantomReference //////////////////////////////////////////////////
+
+
+JVM_ENTRY(jboolean, JVM_PhantomReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
+  JVMWrapper("JVM_PhantomReferenceRefersTo");
+  return referenceRefersTo<ON_PHANTOM_OOP_REF>(ref, o);
+JVM_END
+
 
 // ObjectInputStream ///////////////////////////////////////////////////////////////
 
