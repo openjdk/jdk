@@ -258,14 +258,6 @@ public interface TreeVisitor<R,P> {
     R visitLiteral(LiteralTree node, P p);
 
     /**
-     * {@preview Associated with pattern matching for instanceof, a preview feature of
-     *           the Java language.
-     *
-     *           This method is associated with <i>pattern matching for instanceof</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Visits an BindingPattern node.
      * @param node the node being visited
      * @param p a parameter value
