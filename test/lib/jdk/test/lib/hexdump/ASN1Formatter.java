@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -144,11 +145,10 @@ public class ASN1Formatter implements HexPrinter.Formatter {
     private int annotate(DataInputStream in, Appendable out, int available, String prefix) throws IOException {
         int origAvailable = available;
         while (available != 0) {
-//            System.out.println(prefix + "avail: " + available);
             // Read the tag
             int tag = in.readByte() & 0xff;
             available--;
-            if ((tag & 0x1f) == 0x1f) {
+            if (tagType(tag) == 0x1f) {
                 // Multi-byte tag
                 tag = 0;
                 int tagbits;
@@ -166,51 +166,54 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 int nbytes = len & 0x7f;
                 if (nbytes > 4) {
                     out.append("***** Tag: " + tagName(tag) +
-                            ", Range of length error: " + len + "bytes");
+                            ", Range of length error: " + len + " bytes" + System.lineSeparator());
                     return available;       // return the unread length
                 }
                 len = 0;
                 for (; nbytes > 0; nbytes--) {
                     int inc = in.readByte() & 0xff;
-                    len = (len << 8) | (0xff & inc);
+                    len = (len << 8) | inc;
                     available -= nbytes;
                 }
             } else if (len == 0x80) {
-                // Tag with Indefinite-length; note the tag and continue parsing tags.
-                out.append(prefix).append(tagName(tag)).append(": INDEFINITE-LENGTH CONTENT\n");
-                continue;
-            }
-            if (available < 0 && origAvailable < 0) {
+                // Tag with Indefinite-length; flag the length as unknown
+                len = -1;
+            } else if (available < 0 && origAvailable < 0) {
                 // started out unknown; set available to the length of this tagged value
                 available = len;
             }
             out.append(prefix);     // start with indent
             switch (tag) {
                 case TAG_EndOfContent:    // End-of-contents octets; len == 0
-                    out.append("END-OF-CONTENT ");
+                    out.append("END-OF-CONTENT " + System.lineSeparator());
                     // end of indefinite-length constructed, return any remaining
-                    return available;
+                    return 0;          // unknown, but nothing left
                 case TAG_Integer:
                 case TAG_Enumerated:
                     switch (len) {
                         case 1:
-                            out.append(String.format("BYTE %d, ", in.readByte()));
+                            out.append(String.format("BYTE %d. ", in.readByte()));
                             available -= 1;
                             break;
                         case 2:
-                            out.append(String.format("SHORT %d, ", in.readShort()));
+                            out.append(String.format("SHORT %d. ", in.readShort()));
                             available -= 2;
                             break;
                         case 4:
-                            out.append(String.format("INTEGER %d, ", in.readInt()));
+                            out.append(String.format("INTEGER %d. ", in.readInt()));
                             available -= 4;
                             break;
                         case 8:
-                            out.append(String.format("LONG %d, ", in.readLong()));
+                            out.append(String.format("LONG %d. ", in.readLong()));
                             available -= 8;
                             break;
                         default:
-                            formatBytes(in, out, len);
+                            byte[] bytes = new byte[len];
+                            int l = in.read(bytes);
+                            BigInteger big = new BigInteger(bytes);
+                            out.append("BIG INTEGER [" + len + "] ");
+                            out.append(big.toString());
+                            out.append(".");
                             available -= len;
                             break;
                     }
@@ -225,6 +228,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     out.append(' ');
                     break;
 
+                case TAG_OctetString:
                 case TAG_UtcTime:
                 case TAG_GeneralizedTime:
                     out.append(tagName(tag) + " [" + len + "] ");
@@ -233,12 +237,12 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 case TAG_IA5String:
                 case TAG_GeneralString: {
                     // Check if the contents are too long or not printable
-                    byte[] buf = new byte[Math.min(64, len)];
-                    final int l = in.read(buf, 0, buf.length);
+                    byte[] buf = new byte[Math.min(32, len)];
+                    int l = in.read(buf, 0, buf.length);
                     if (countPrintable(buf, l) > l / 2) {
                         // If more than 1/2 are printable, show the string
                         out.append("'");
-                        for (int i = 0; i < len; i++) {
+                        for (int i = 0; i < l; i++) {
                             char c = toASNPrintable((char) buf[i]);
                             out.append((c > 0) ? c : '.');
                         }
@@ -250,8 +254,9 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     } else {
                         out.append("<Unprintable> ");
                     }
-                    if (l < len) {
-                        in.skip(len - l);   // skip the rest
+                    // Skip the rest
+                    while (l < len) {
+                        l += (int)in.skip(len - l);
                     }
                     available -= len;
                     break;
@@ -280,22 +285,25 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     out.append(' ');
                     available -= len;
                     break;
-                case TAG_OctetString:
                 case TAG_BitString:
                     out.append(String.format("%s [%d]", tagName(tag), len));
-                    in.skip(len);
-                    available -= len;
+                    do {
+                        var skipped = in.skip(len);
+                        len -= skipped;
+                        available -= skipped;
+                    } while (len > 0);
                     break;
                 default: {
                     if (tag == TAG_Sequence ||
                             tag == TAG_Set ||
                             isApplication(tag) ||
                             isConstructed(tag)) {
+                        String lenStr = (len < 0) ? "INDEFINITE" : Integer.toString(len);
                         // Handle nesting
                         if (isApplication(tag)) {
-                            out.append(String.format("APPLICATION %d. [%d] {\n", tag & 0x1f, len));
+                            out.append(String.format("APPLICATION %d. [%s] {%n", tagType(tag), lenStr));
                         } else {
-                            out.append(String.format("%s [%d]\n", tagName(tag), len));
+                            out.append(String.format("%s [%s]%n", tagName(tag), lenStr));
                         }
                         int remaining = annotate(in, out, len, prefix + "  ");
                         available -= len - remaining;
@@ -309,7 +317,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     }
                 }
             }
-            out.append("\n");   // End with EOL
+            out.append(System.lineSeparator());   // End with EOL
         }
         return available;
     }
@@ -350,7 +358,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @return a String representation of the tag.
      */
     private String tagName(int tag) {
-        String tagString = (isConstructed(tag) ? "CONSTRUCTED "  : "") + tagNames[tag & 0x1f];
+        String tagString = (isConstructed(tag) ? "CONSTRUCTED "  : "") + tagNames[tagType(tag)];
         switch (tag & 0xc0) {
             case TAG_APPLICATION:
                 return "APPLICATION " + tagString;
@@ -466,6 +474,11 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * in all contexts.  (Mask with 0x1f -- five bits.)
      */
 
+    private int tagType(int tag) {
+        return tag & TAG_MASK;
+    }
+
+    private static final byte TAG_MASK = 0x1f;
 
     /** Tag value indicating an ASN.1 "EndOfContent" value. */
     private static final byte    TAG_EndOfContent = 0x0;
@@ -579,7 +592,10 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                  InputStream in = wrapIfBase64Mime(is)) {
 
                 DataInputStream dis = new DataInputStream(in);
-                fmt.annotate(dis, System.out);
+                HexPrinter p = HexPrinter.simple()
+                        .dest(System.out)
+                        .formatter(ASN1Formatter.formatter(), "; ", 100);
+                p.format(dis);
             } catch (EOFException eof) {
                 System.out.println();
             } catch (IOException ioe) {
@@ -598,7 +614,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
         bis.mark(256);
         DataInputStream dis = new DataInputStream(bis);
         String line1 = dis.readLine(); // Good enough for our purposes
-        if (line1.contains("CERTIFICATE")) {
+        if (line1.startsWith("-----") && line1.endsWith("-----")) {
             // Probable Base64 Mime encoding
             return Base64.getMimeDecoder().wrap(bis);
         }
