@@ -1807,13 +1807,6 @@ bool JavaThread::reguard_stack(address cur_sp) {
     return true; // Stack already guarded or guard pages not needed.
   }
 
-  if (register_stack_overflow()) {
-    // For those architectures which have separate register and
-    // memory stacks, we must check the register stack to see if
-    // it has overflowed.
-    return false;
-  }
-
   // Java code never executes within the yellow zone: the latter is only
   // there to provoke an exception during stack banging.  If java code
   // is executing there, either StackShadowPages should be larger, or
@@ -1941,13 +1934,6 @@ void JavaThread::pre_run() {
 void JavaThread::run() {
   // initialize thread-local alloc buffer related fields
   this->initialize_tlab();
-
-  // Used to test validity of stack trace backs.
-  // This can't be moved into pre_run() else we invalidate
-  // the requirement that thread_main_inner is lower on
-  // the stack. Consequently all the initialization logic
-  // stays here in run() rather than pre_run().
-  this->record_base_of_stack_pointer();
 
   this->create_stack_guard_pages();
 
@@ -2796,7 +2782,6 @@ void JavaThread::enable_stack_reserved_zone() {
   } else {
     warning("Attempt to guard stack reserved zone failed.");
   }
-  enable_register_stack_guard();
 }
 
 void JavaThread::disable_stack_reserved_zone() {
@@ -2814,7 +2799,6 @@ void JavaThread::disable_stack_reserved_zone() {
   } else {
     warning("Attempt to unguard stack reserved zone failed.");
   }
-  disable_register_stack_guard();
 }
 
 void JavaThread::enable_stack_yellow_reserved_zone() {
@@ -2833,7 +2817,6 @@ void JavaThread::enable_stack_yellow_reserved_zone() {
   } else {
     warning("Attempt to guard stack yellow zone failed.");
   }
-  enable_register_stack_guard();
 }
 
 void JavaThread::disable_stack_yellow_reserved_zone() {
@@ -2852,7 +2835,6 @@ void JavaThread::disable_stack_yellow_reserved_zone() {
   } else {
     warning("Attempt to unguard stack yellow zone failed.");
   }
-  disable_register_stack_guard();
 }
 
 void JavaThread::enable_stack_red_zone() {

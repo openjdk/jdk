@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,18 +48,6 @@
     return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_fp_offset();
   }
 
-  void set_base_of_stack_pointer(intptr_t* base_sp) {
-    // Nothing to do
-  }
-
-  intptr_t* base_of_stack_pointer() {
-    return NULL;
-  }
-
-  void record_base_of_stack_pointer() {
-    // Nothing to do
-  }
-
   static ByteSize heap_top_addr_offset()         { return byte_offset_of(JavaThread, _heap_top_addr); }
   static ByteSize card_table_base_offset()       { return byte_offset_of(JavaThread, _card_table_base); }
 
@@ -77,11 +65,5 @@ public:
 private:
   bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava);
 public:
-
-  // These routines are only used on cpu architectures that
-  // have separate register stacks (Itanium).
-  static bool register_stack_overflow() { return false; }
-  static void enable_register_stack_guard() {}
-  static void disable_register_stack_guard() {}
 
 #endif // OS_CPU_LINUX_ARM_THREAD_LINUX_ARM_HPP
