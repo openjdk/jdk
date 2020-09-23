@@ -571,22 +571,21 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   __ bind(pc_empty);
 #endif
 
-  // Runtime will return true if the nmethod has been deoptimized (this is the
-  // expected scenario). We then proceed with a deopt re-execute.
+  // Runtime will return true if the nmethod has been deoptimized, this is the
+  // expected scenario and anything else is  an error. Note that we maintain a
+  // check on the result purely as a defensive measure.
   Label no_deopt;
   __ cbz(r0, no_deopt);                                // have we deoptimized?
 
-  // Will re-execute.  Proper return address is already  on the stack  we just
-  // restore registers, pop  all of our frame but the  return address and jump
-  // to the deopt blob
+  // Perform a re-execute. The proper return  address is already on the stack,
+  // we just need  to restore registers, pop  all of our frame  but the return
+  // address and jump to the deopt blob.
   restore_live_registers(sasm);
   __ leave();
   __ far_jump(RuntimeAddress(deopt_blob->unpack_with_reexecution()));
 
   __ bind(no_deopt);
-  restore_live_registers(sasm);
-  __ leave();
-  __ ret(lr);
+  __ stop("deopt not performed");
 
   return oop_maps;
 }
