@@ -346,6 +346,7 @@ void PhaseIdealLoop::clone_predicates_to_unswitched_loop(IdealLoopTree *loop, co
   }
 }
 
+#ifndef PRODUCT
 void PhaseIdealLoop::check_created_predicate_for_unswitching(const Node *new_entry) const {
   assert(new_entry != NULL, "IfTrue or IfFalse after clone predicate");
   if (TraceLoopPredicate) {
@@ -353,6 +354,7 @@ void PhaseIdealLoop::check_created_predicate_for_unswitching(const Node *new_ent
     debug_only(new_entry->in(0)->dump(););
   }
 }
+#endif
 
 
 //--------------------------skip_loop_predicates------------------------------

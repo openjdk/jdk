@@ -1435,7 +1435,7 @@ private:
   ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason);
   void clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree *loop, const Node_List &old_new, Deoptimization::DeoptReason reason,
                                       ProjNode* old_predicate_proj, ProjNode* iffast, ProjNode* ifslow);
-  void check_created_predicate_for_unswitching(const Node *new_entry) const;
+  void check_created_predicate_for_unswitching(const Node *new_entry) const PRODUCT_RETURN;
   
   bool _created_loop_node;
 #ifdef ASSERT

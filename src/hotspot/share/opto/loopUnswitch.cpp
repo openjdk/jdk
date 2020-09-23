@@ -275,7 +275,6 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   register_node(iffast, outer_loop, iff, dom_depth(iff));
   ProjNode* ifslow = new IfFalseNode(iff);
   register_node(ifslow, outer_loop, iff, dom_depth(iff));
-  uint idx_before_clone = Compile::current()->unique();
 
   // Clone the loop body.  The clone becomes the slow loop.  The
   // original pre-header will (illegally) have 3 control users
