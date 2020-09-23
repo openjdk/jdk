@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "logging/log.hpp"
@@ -32,7 +31,6 @@
 #include "logging/logConfiguration.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/atomic.hpp"
@@ -43,13 +41,12 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
-#include "services/runtimeService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
-#include "utilities/xmlstream.hpp"
 
 
 //------------------------------------------------------------------------------------------------------------------
@@ -345,17 +342,27 @@ void VMThread::wait_until_executed(VM_Operation* op) {
                    Thread::current()->is_Java_thread() ?
                      Mutex::_safepoint_check_flag :
                      Mutex::_no_safepoint_check_flag);
-  while (true) {
-    if (VMThread::vm_thread()->set_next_operation(op)) {
-      ml.notify_all();
-      break;
+  {
+    TraceTime timer("Installing VM operation", TRACETIME_LOG(Trace, vmthread));
+    while (true) {
+      if (VMThread::vm_thread()->set_next_operation(op)) {
+        ml.notify_all();
+        break;
+      }
+      // Wait to install this operation as the next operation in the VM Thread
+      log_trace(vmthread)("A VM operation already set, waiting");
+      ml.wait();
     }
-    ml.wait();
   }
-  // _next_vm_operation is cleared holding VMOperation_lock
-  // after it have been executed.
-  while (_next_vm_operation == op) {
-    ml.wait();
+  {
+    // Wait until the operation has been processed
+    TraceTime timer("Waiting for VM operation to be completed", TRACETIME_LOG(Trace, vmthread));
+    // _next_vm_operation is cleared holding VMOperation_lock after it have been
+    // executed. We wait until _next_vm_operation not our op.
+    while (_next_vm_operation == op) {
+      // VM Thread can process it once we unlocks the mutex on wait.
+      ml.wait();
+    }
   }
 }
 
@@ -389,8 +396,6 @@ void VMThread::inner_execute(VM_Operation* op) {
   HandleMark hm(VMThread::vm_thread());
   EventMark em("Executing %s VM operation: %s", prev_vm_operation != NULL ? "nested" : "", op->name());
 
-  // If we are at a safepoint we will evaluate all the operations that
-  // follow that also require a safepoint
   log_debug(vmthread)("Evaluating %s %s VM operation: %s",
                        prev_vm_operation != NULL ? "nested" : "",
                       _cur_vm_operation->evaluate_at_safepoint() ? "safepoint" : "non-safepoint",
