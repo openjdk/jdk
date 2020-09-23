@@ -230,7 +230,7 @@ ProjNode* PhaseIdealLoop::clone_predicate_to_unswitched_loop(ProjNode* predicate
 // Clones skeleton predicates starting at 'old_predicate_proj' to
 // 'new_predicate_proj' and rewires the control edges of data nodes in
 // the loop from the old predicates to the new cloned predicates.
-void PhaseIdealLoop::clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree *loop, const Node_List &old_new, Deoptimization::DeoptReason reason,
+void PhaseIdealLoop::clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, Deoptimization::DeoptReason reason,
                                                                   ProjNode* old_predicate_proj, ProjNode* iffast, ProjNode* ifslow) {
   IfNode* iff = old_predicate_proj->in(0)->as_If();
   ProjNode* uncommon_proj = iff->proj_out(1 - old_predicate_proj->as_Proj()->_con);
@@ -294,7 +294,7 @@ void PhaseIdealLoop::clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree 
 
 //--------------------------clone_loop_predicates-----------------------
 // Clone loop predicates to cloned loops when unswitching a loop.
-void PhaseIdealLoop::clone_predicates_to_unswitched_loop(IdealLoopTree *loop, const Node_List &old_new, ProjNode*& iffast, ProjNode*& ifslow) {
+void PhaseIdealLoop::clone_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, ProjNode*& iffast, ProjNode*& ifslow) {
   LoopNode* head  = loop->_head->as_Loop();
   bool clone_limit_check = !head->is_CountedLoop();
   Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
@@ -347,7 +347,7 @@ void PhaseIdealLoop::clone_predicates_to_unswitched_loop(IdealLoopTree *loop, co
 }
 
 #ifndef PRODUCT
-void PhaseIdealLoop::check_created_predicate_for_unswitching(const Node *new_entry) const {
+void PhaseIdealLoop::check_created_predicate_for_unswitching(const Node* new_entry) const {
   assert(new_entry != NULL, "IfTrue or IfFalse after clone predicate");
   if (TraceLoopPredicate) {
     tty->print("Loop Predicate cloned: ");
