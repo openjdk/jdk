@@ -31,10 +31,9 @@ import jdk.test.lib.Asserts;
  * @test
  * @bug 8252219
  * @requires vm.compiler2.enabled
- * @summary Tests that:
- *          1) the options -XX:+StressIGVN and -XX:StressSeed=N are accepted,
- *          2) compilations with the same seed yield the same IGVN trace, and
- *          3) compilations with different seeds yield different IGVN traces.
+ * @summary Tests that compilations with the same seed yield the same IGVN
+ *          trace, and compilations with different seeds yield different IGVN
+ *          traces.
  * @library /test/lib /
  * @run driver compiler.debug.TestStressIGVN
  */

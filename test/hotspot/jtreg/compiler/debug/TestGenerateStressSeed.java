@@ -32,8 +32,8 @@ import jdk.test.lib.Asserts;
  * @test
  * @bug 8252219
  * @requires vm.compiler2.enabled
- * @summary Tests that -XX:+GenerateStressSeed is accepted, and that, in
- *          combination with -XX:+StressIGVN, C2 generates and logs a seed.
+ * @summary Tests that -XX:+GenerateStressSeed, in combination with
+ *          -XX:+StressIGVN, generates and logs a seed.
  * @library /test/lib /
  * @run driver compiler.debug.TestGenerateStressSeed
  */
