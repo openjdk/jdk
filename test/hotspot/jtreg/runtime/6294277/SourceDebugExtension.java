@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6294277
+ * @requires vm.jvmti
  * @summary java -Xdebug crashes on SourceDebugExtension attribute larger than 64K
  * @run main/othervm -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n SourceDebugExtension
  */
