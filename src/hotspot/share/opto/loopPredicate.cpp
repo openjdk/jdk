@@ -321,7 +321,7 @@ void PhaseIdealLoop::clone_predicates_to_unswitched_loop(IdealLoopTree *loop, co
     iffast = clone_predicate_to_unswitched_loop(predicate_proj, iffast, Deoptimization::Reason_predicate);
     ifslow = clone_predicate_to_unswitched_loop(predicate_proj, ifslow, Deoptimization::Reason_predicate);
     clone_skeleton_predicates_to_unswitched_loop(loop, old_new, Deoptimization::Reason_predicate, predicate_proj, iffast, ifslow);
-    
+
     check_created_predicate_for_unswitching(iffast);
     check_created_predicate_for_unswitching(ifslow);
   }
@@ -330,7 +330,7 @@ void PhaseIdealLoop::clone_predicates_to_unswitched_loop(IdealLoopTree *loop, co
     iffast = clone_predicate_to_unswitched_loop(profile_predicate_proj, iffast, Deoptimization::Reason_profile_predicate);
     ifslow = clone_predicate_to_unswitched_loop(profile_predicate_proj, ifslow, Deoptimization::Reason_profile_predicate);
     clone_skeleton_predicates_to_unswitched_loop(loop, old_new, Deoptimization::Reason_profile_predicate, profile_predicate_proj, iffast, ifslow);
-    
+
     check_created_predicate_for_unswitching(iffast);
     check_created_predicate_for_unswitching(ifslow);
   }
