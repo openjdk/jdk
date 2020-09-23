@@ -73,6 +73,8 @@ import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
+
+import jdk.javadoc.internal.doclint.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
@@ -1262,7 +1264,7 @@ public class HtmlDocletWriter {
         }
 
         if (name != null) {
-            jdk.javadoc.internal.doclint.HtmlTag htmlTag = jdk.javadoc.internal.doclint.HtmlTag.get(name);
+            HtmlTag htmlTag = HtmlTag.get(name);
             if (htmlTag != null &&
                     htmlTag.blockType != jdk.javadoc.internal.doclint.HtmlTag.BlockType.INLINE) {
                 return true;
