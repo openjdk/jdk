@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 
@@ -34,11 +35,14 @@ import javax.lang.model.element.ModuleElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewAPIType;
 
 /**
  * Generate the module index page "index.html".
@@ -111,6 +115,7 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
                     if (!(options.noDeprecated() && utils.isDeprecated(mdle))) {
                         Content moduleLinkContent = getModuleLink(mdle, new StringContent(mdle.getQualifiedName().toString()));
                         Content summaryContent = new ContentBuilder();
+                        addPreviewSummary(mdle, summaryContent);
                         addSummaryComment(mdle, summaryContent);
                         table.addRow(mdle, moduleLinkContent, summaryContent);
                     }

@@ -302,44 +302,14 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         }
     }
 
-    public void addPreviewInfo(Element member, Content contentTree) {
-        PreviewAPIType previewAPIType = utils.getPreviewAPIType(member);
-        if (previewAPIType == PreviewAPIType.PREVIEW || previewAPIType == PreviewAPIType.REFLECTIVE) {
-            //in Java platform:
-            HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewNote);
-            DocTree previewTree = utils.getPreviewTree(member);
-            if (previewTree != null) {
-                //TODO: tags/html inside 
-                previewDiv.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview").add(new RawHtml(utils.getPreviewTreeSummaryAndDetails(previewTree).second)));
-            } else {
-                String simpleName = member.getSimpleName().toString();
-                String fullName = typeElement.getSimpleName() + "." + member.getSimpleName();
-                previewDiv.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview").add(HtmlTree.P(replaceParams(resources.getText(previewAPIType == PreviewAPIType.PREVIEW ? "doclet.PreviewPlatformLeadingNote" : "doclet.ReflectivePreviewPlatformLeadingNote"), (param, result) -> result.add(HtmlTree.CODE(new StringContent(simpleName)))))));
-                if (previewAPIType == PreviewAPIType.PREVIEW) {
-                    previewDiv.add(HtmlTree.P(replaceParams(resources.getText("doclet.PreviewTrailingNote1"), (param, result) -> result.add(HtmlTree.CODE(new StringContent(fullName))))));
-                }
-                previewDiv.add(HtmlTree.P(replaceParams(resources.getText("doclet.PreviewTrailingNote2"), (param, result) -> result.add(HtmlTree.CODE(new StringContent(fullName))))));
-            }
-            contentTree.add(previewDiv);
-        }
-    }
-    private static final Pattern PARAMETER = Pattern.compile("\\{([0-9])\\}");
-
-    private Content replaceParams(String template, BiConsumer<String, ContentBuilder> fillParams) {
-        ContentBuilder result = new ContentBuilder();
-        int lastEnd = 0;
-        Matcher m = PARAMETER.matcher(template);
-
-        while (m.find()) {
-            result.add(template.substring(lastEnd, m.start()));
-            lastEnd = m.start();
-            fillParams.accept(m.group(1), result);
-            lastEnd = m.end();
-        }
-
-        result.add(template.substring(lastEnd));
-
-        return result;
+    /**
+     * Add the preview information for the given member.
+     *
+     * @param member the member being documented.
+     * @param contentTree the content tree to which the preview information will be added.
+     */
+    protected void addPreviewInfo(Element member, Content contentTree) {
+        writer.addPreviewInfo(member, contentTree);
     }
 
     protected String name(Element member) {
@@ -441,17 +411,17 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         addSummaryLink(tElement, member, summaryLink);
         rowContents.add(summaryLink);
         Content desc = new ContentBuilder();
-        PreviewAPIType parentPreviewAPIType = utils.getPreviewAPIType(tElement);
-        PreviewAPIType previewAPIType = utils.getPreviewAPIType(member);
-        if (parentPreviewAPIType == PreviewAPIType.STANDARD &&
-            (previewAPIType == PreviewAPIType.PREVIEW || previewAPIType == PreviewAPIType.REFLECTIVE)) {
-            DocTree previewTree = utils.getPreviewTree(member);
-            if (previewTree != null) {
-                desc.add(HtmlTree.SPAN(HtmlStyle.previewLabel, new RawHtml(utils.getPreviewTreeSummaryAndDetails(previewTree).first)));
-            } else {
-                desc.add(HtmlTree.SPAN(HtmlStyle.previewLabel, contents.previewPhrase));
-            }
-        }
+//        PreviewAPIType parentPreviewAPIType = utils.getPreviewAPIType(tElement);
+//        PreviewAPIType previewAPIType = utils.getPreviewAPIType(member);
+//        if (parentPreviewAPIType == PreviewAPIType.STANDARD &&
+//            (previewAPIType == PreviewAPIType.PREVIEW || previewAPIType == PreviewAPIType.REFLECTIVE)) {
+//            DocTree previewTree = utils.getPreviewTree(member);
+//            if (previewTree != null) {
+//                desc.add(HtmlTree.SPAN(HtmlStyle.previewLabel, new RawHtml(utils.getPreviewTreeSummaryAndDetails(previewTree).first)));
+//            } else {
+//                desc.add(HtmlTree.SPAN(HtmlStyle.previewLabel, contents.previewPhrase));
+//            }
+//        }
         writer.addSummaryLinkComment(this, member, firstSentenceTags, desc);
         rowContents.add(desc);
         table.addRow(member, rowContents);

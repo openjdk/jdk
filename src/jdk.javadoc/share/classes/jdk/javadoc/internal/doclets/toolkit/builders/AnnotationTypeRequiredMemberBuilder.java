@@ -153,8 +153,8 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     protected void buildAnnotationTypeMemberChildren(Content annotationDocTree) {
         buildSignature(annotationDocTree);
         buildDeprecationInfo(annotationDocTree);
+        buildPreviewInfo(annotationDocTree);
         buildMemberComments(annotationDocTree);
-        ((AbstractMemberWriter) writer).addPreviewInfo(currentMember, annotationDocTree);
         buildTagInfo(annotationDocTree);
     }
 
@@ -174,6 +174,15 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      */
     protected void buildDeprecationInfo(Content annotationDocTree) {
         writer.addDeprecated(currentMember, annotationDocTree);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param annotationDocTree the content tree to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content annotationDocTree) {
+        writer.addPreview(currentMember, annotationDocTree);
     }
 
     /**

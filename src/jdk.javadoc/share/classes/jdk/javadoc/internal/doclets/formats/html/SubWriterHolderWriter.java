@@ -36,8 +36,10 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewAPIType;
 
 /**
  * This abstract class exists to provide functionality needed in the
@@ -108,6 +110,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     protected void addIndexComment(Element member, List<? extends DocTree> firstSentenceTags,
             Content tdSummary) {
+        addPreviewSummary(member, tdSummary);
         List<? extends DocTree> deprs = utils.getBlockTags(member, DocTree.Kind.DEPRECATED);
         Content div;
         if (utils.isDeprecated(member)) {

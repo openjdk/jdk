@@ -109,6 +109,11 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     }
 
     @Override
+    public void addPreview(VariableElement enumConstant, Content enumConstantsTree) {
+        addPreviewInfo(enumConstant, enumConstantsTree);
+    }
+
+    @Override
     public void addComments(VariableElement enumConstant, Content enumConstantsTree) {
         addComment(enumConstant, enumConstantsTree);
     }

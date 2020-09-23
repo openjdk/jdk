@@ -78,8 +78,9 @@ public enum HtmlStyle {
     packageHierarchyLabel,
     packageUses,
     permitsNote,
+    previewBlock,
+    previewComment,
     previewLabel,
-    previewNote,
     searchTagLink,
     searchTagResult,
     serializedPackageContainer,
@@ -686,6 +687,11 @@ public enum HtmlStyle {
      * The class of the {@code body} element for a package-use page.
      */
     packageUsePage,
+
+    /**
+     * The class of the {@code body} element for the page listing any deprecated items.
+     */
+    previewListPage,
 
     /**
      * The class of the {@code body} element for the serialized-forms page.

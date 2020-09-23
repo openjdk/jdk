@@ -134,8 +134,8 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
 
                 buildSignature(constructorDocTree);
                 buildDeprecationInfo(constructorDocTree);
+                buildPreviewInfo(constructorDocTree);
                 buildConstructorComments(constructorDocTree);
-                ((AbstractMemberWriter) writer).addPreviewInfo(currentConstructor, constructorDocTree);
                 buildTagInfo(constructorDocTree);
 
                 memberList.add(writer.getMemberListItem(constructorDocTree));
@@ -160,6 +160,15 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      * @param constructorDocTree the content tree to which the documentation will be added
      */
     protected void buildDeprecationInfo(Content constructorDocTree) {
+        writer.addDeprecated(currentConstructor, constructorDocTree);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param constructorDocTree the content tree to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content constructorDocTree) {
         writer.addDeprecated(currentConstructor, constructorDocTree);
     }
 

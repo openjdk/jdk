@@ -71,6 +71,14 @@ public interface ConstructorWriter extends MemberWriter {
     void addDeprecated(ExecutableElement constructor, Content constructorDocTree);
 
     /**
+     * Add the preview output for the given member.
+     *
+     * @param member the member being documented
+     * @param annotationDocTree content tree to which the preview information will be added
+     */
+    void addPreview(ExecutableElement member, Content contentTree);
+
+    /**
      * Add the comments for the given constructor.
      *
      * @param constructor the constructor being documented

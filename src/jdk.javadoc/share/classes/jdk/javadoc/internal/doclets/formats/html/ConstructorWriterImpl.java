@@ -142,6 +142,11 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     }
 
     @Override
+    public void addPreview(ExecutableElement constructor, Content constructorDocTree) {
+        addPreviewInfo(constructor, constructorDocTree);
+    }
+
+    @Override
     public void addComments(ExecutableElement constructor, Content constructorDocTree) {
         addComment(constructor, constructorDocTree);
     }

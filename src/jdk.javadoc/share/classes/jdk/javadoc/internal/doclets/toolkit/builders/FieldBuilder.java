@@ -126,8 +126,8 @@ public class FieldBuilder extends AbstractMemberBuilder {
 
                 buildSignature(fieldDocTree);
                 buildDeprecationInfo(fieldDocTree);
+                buildPreviewInfo(fieldDocTree);
                 buildFieldComments(fieldDocTree);
-                ((AbstractMemberWriter) writer).addPreviewInfo(element, fieldDocTree);
                 buildTagInfo(fieldDocTree);
 
                 memberList.add(writer.getMemberListItem(fieldDocTree));
@@ -153,6 +153,15 @@ public class FieldBuilder extends AbstractMemberBuilder {
      */
     protected void buildDeprecationInfo(Content fieldDocTree) {
         writer.addDeprecated(currentElement, fieldDocTree);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param fieldDocTree the content tree to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content fieldDocTree) {
+        writer.addPreview(currentElement, fieldDocTree);
     }
 
     /**

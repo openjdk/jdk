@@ -96,9 +96,10 @@ public class LinkFactoryImpl extends LinkFactory {
         }
         Content label = classLinkInfo.getClassLinkLabel(configuration);
         Set<ElementFlag> flags;
-        if (!hasWhere && !classLinkInfo.skipPreview) {
+        boolean noPreview = classLinkInfo.skipPreview;
+        if (!hasWhere && !noPreview) {
             flags = utils.elementFlags(typeElement);
-        } else if (classLinkInfo.context == LinkInfoImpl.Kind.SEE_TAG && classLinkInfo.whereMember != null && !classLinkInfo.skipPreview) {
+        } else if (classLinkInfo.context == LinkInfoImpl.Kind.SEE_TAG && classLinkInfo.whereMember != null && !noPreview) {
             flags = utils.elementFlags(classLinkInfo.whereMember);
         } else {
             flags = EnumSet.noneOf(ElementFlag.class);
@@ -205,7 +206,7 @@ public class LinkFactoryImpl extends LinkFactory {
      */
     protected Content getTypeParameterLink(LinkInfo linkInfo, TypeMirror typeParam) {
         LinkInfoImpl typeLinkInfo = new LinkInfoImpl(m_writer.configuration,
-                ((LinkInfoImpl) linkInfo).getContext(), typeParam);
+                ((LinkInfoImpl) linkInfo).getContext(), typeParam).skipPreview(true);
         typeLinkInfo.excludeTypeBounds = linkInfo.excludeTypeBounds;
         typeLinkInfo.excludeTypeParameterLinks = linkInfo.excludeTypeParameterLinks;
         typeLinkInfo.linkToSelf = linkInfo.linkToSelf;

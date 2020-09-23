@@ -124,8 +124,8 @@ public class MethodBuilder extends AbstractMemberBuilder {
 
                 buildSignature(methodDocTree);
                 buildDeprecationInfo(methodDocTree);
+                buildPreviewInfo(methodDocTree);
                 buildMethodComments(methodDocTree);
-                ((AbstractMemberWriter) writer).addPreviewInfo(method, methodDocTree);
                 buildTagInfo(methodDocTree);
 
                 memberList.add(writer.getMemberListItem(methodDocTree));
@@ -151,6 +151,15 @@ public class MethodBuilder extends AbstractMemberBuilder {
      */
     protected void buildDeprecationInfo(Content methodDocTree) {
         writer.addDeprecated(currentMethod, methodDocTree);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param methodDocTree the content tree to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content methodDocTree) {
+        writer.addPreview(currentMethod, methodDocTree);
     }
 
     /**

@@ -153,6 +153,15 @@ public class PropertyBuilder extends AbstractMemberBuilder {
     }
 
     /**
+     * Build the preview information.
+     *
+     * @param propertyDocTree the content tree to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content propertyDocTree) {
+        writer.addPreview(currentProperty, propertyDocTree);
+    }
+
+    /**
      * Build the comments for the property.  Do nothing if
      * {@link BaseOptions#noComment()} is set to true.
      *

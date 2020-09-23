@@ -72,6 +72,14 @@ public interface FieldWriter extends MemberWriter {
     void addDeprecated(VariableElement field, Content fieldDocTree);
 
     /**
+     * Add the preview output for the given member.
+     *
+     * @param member the member being documented
+     * @param annotationDocTree content tree to which the preview information will be added
+     */
+    void addPreview(VariableElement member, Content contentTree);
+
+    /**
      * Add the comments for the given field.
      *
      * @param field the field being documented

@@ -93,6 +93,14 @@ public interface AnnotationTypeRequiredMemberWriter extends MemberWriter {
     void addDeprecated(Element member, Content annotationDocTree);
 
     /**
+     * Add the preview output for the given member.
+     *
+     * @param member the member being documented
+     * @param annotationDocTree content tree to which the preview information will be added
+     */
+    void addPreview(Element member, Content contentTree);
+
+    /**
      * Add the comments for the given member.
      *
      * @param member the member being documented

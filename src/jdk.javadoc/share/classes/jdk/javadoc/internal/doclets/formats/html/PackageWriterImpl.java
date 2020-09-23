@@ -229,15 +229,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 Content classLink = getLink(new LinkInfoImpl(
                         configuration, LinkInfoImpl.Kind.PACKAGE, klass));
                 ContentBuilder description = new ContentBuilder();
-                PreviewAPIType previewAPIType = utils.getPreviewAPIType(klass);
-                if (previewAPIType == PreviewAPIType.PREVIEW || previewAPIType == PreviewAPIType.REFLECTIVE) {
-                    DocTree previewTree = utils.getPreviewTree(klass);
-                    if (previewTree != null) {
-                        description.add(HtmlTree.SPAN(HtmlStyle.previewLabel, new RawHtml(utils.getPreviewTreeSummaryAndDetails(previewTree).first)));
-                    } else {
-                        description.add(HtmlTree.SPAN(HtmlStyle.previewLabel, contents.previewPhrase));
-                    }
-                }
+                addPreviewSummary(klass, description);
                 if (utils.isDeprecated(klass)) {
                     description.add(getDeprecatedPhrase(klass));
                     List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
@@ -255,6 +247,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public void addPackageDescription(Content packageContentTree) {
+        addPreviewInfo(packageElement, packageContentTree);
         if (!utils.getBody(packageElement).isEmpty()) {
             HtmlTree tree = sectionTree;
             tree.setId(SectionName.PACKAGE_DESCRIPTION.getName());

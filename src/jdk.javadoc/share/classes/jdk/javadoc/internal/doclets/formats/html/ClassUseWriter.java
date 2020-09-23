@@ -431,7 +431,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         navBar.setNavLinkModule(mdleLinkContent);
         Content classLinkContent = getLink(new LinkInfoImpl(
                 configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)
-                .label(resources.getText("doclet.Class")));
+                .label(resources.getText("doclet.Class"))
+                .skipPreview(true));
         navBar.setNavLinkClass(classLinkContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
         headerContent.add(navBar.getContent(Navigation.Position.TOP));

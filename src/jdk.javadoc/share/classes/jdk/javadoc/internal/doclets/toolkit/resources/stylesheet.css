@@ -556,18 +556,10 @@ h1.hidden {
 }
 .deprecated-label, .descfrm-type-label, .implementation-label, .member-name-label, .member-name-link,
 .module-label-in-package, .module-label-in-type, .override-specify-label, .package-label-in-type,
-.package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link {
+.package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label {
     font-weight:bold;
 }
-.preview-label {
-    font-weight:bold;
-    font-size:14px;
-    font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
-}
-.preview-note {
-    border: 1px solid red; border-radius: 5px; padding: 5px; display:inline-block; font-size: larger
-}
-.deprecation-comment, .help-footnote, .interface-name {
+.deprecation-comment, .help-footnote, .interface-name, .preview-comment {
     font-style:italic;
 }
 .deprecation-block {
@@ -584,6 +576,7 @@ h1.hidden {
 .preview-block {
     font-size:14px;
     font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
+    border-color:red;
     border-style:solid;
     border-width:thin;
     border-radius:10px;

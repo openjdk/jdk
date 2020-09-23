@@ -3072,6 +3072,9 @@ public class Utils {
                 VariableElement ve = (VariableElement) el;
                 usedInDeclaration.addAll(types2Classes(List.of(ve.asType())));
             }
+            case MODULE, PACKAGE -> {
+                //TODO: annotations?
+            }
             default -> throw new IllegalStateException("Unexpected: " + el.getKind());
         }
         PreviewSummary previewAPITypes = getPreviewAPITypes(usedInDeclaration);
@@ -3087,6 +3090,11 @@ public class Utils {
             this.previewAPI = previewAPI;
             this.reflectivePreviewAPI = reflectivePreviewAPI;
             this.declaredUsingPreviewFeature = declaredUsingPreviewFeature;
+        }
+
+        @Override
+        public String toString() {
+            return "PreviewSummary{" + "previewAPI=" + previewAPI + ", reflectivePreviewAPI=" + reflectivePreviewAPI + ", declaredUsingPreviewFeature=" + declaredUsingPreviewFeature + '}';
         }
         
     }
@@ -3119,5 +3127,16 @@ public class Utils {
 
     public enum ElementFlag {
         PREVIEW;
+    }
+
+    public boolean isPreview(Element el) {
+        PreviewAPIType parentPreviewAPIType = PreviewAPIType.STANDARD;
+        Element enclosing = el.getEnclosingElement();
+        if (enclosing != null && (enclosing.getKind().isClass() || enclosing.getKind().isInterface())) {
+            parentPreviewAPIType = getPreviewAPIType(el.getEnclosingElement());
+        }
+        PreviewAPIType previewAPIType = getPreviewAPIType(el);
+        return parentPreviewAPIType == PreviewAPIType.STANDARD &&
+            (previewAPIType == PreviewAPIType.PREVIEW || previewAPIType == PreviewAPIType.REFLECTIVE);
     }
 }

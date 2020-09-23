@@ -138,6 +138,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     }
 
     @Override
+    public void addPreview(ExecutableElement method, Content methodDocTree) {
+        addPreviewInfo(method, methodDocTree);
+    }
+
+    @Override
     public void addComments(TypeMirror holderType, ExecutableElement method, Content methodDocTree) {
         TypeElement holder = utils.asTypeElement(holderType);
         if (!utils.getFullBody(method).isEmpty()) {

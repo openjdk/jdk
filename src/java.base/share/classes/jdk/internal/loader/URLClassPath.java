@@ -1062,7 +1062,6 @@ public class URLClassPath {
          */
         @Override
         URL[] getClassPath() throws IOException {
-            Thread.dumpStack();
             if (index != null) {
                 return null;
             }

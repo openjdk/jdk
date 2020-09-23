@@ -126,8 +126,8 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
 
                 buildSignature(enumConstantsTree);
                 buildDeprecationInfo(enumConstantsTree);
+                buildPreviewInfo(enumConstantsTree);
                 buildEnumConstantComments(enumConstantsTree);
-                ((AbstractMemberWriter) writer).addPreviewInfo(enumConstant, enumConstantsTree);
                 buildTagInfo(enumConstantsTree);
 
                 memberList.add(writer.getMemberListItem(enumConstantsTree));
@@ -154,6 +154,15 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
      */
     protected void buildDeprecationInfo(Content enumConstantsTree) {
         writer.addDeprecated(currentElement, enumConstantsTree);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param enumConstantsTree the content tree to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content enumConstantsTree) {
+        writer.addPreview(currentElement, enumConstantsTree);
     }
 
     /**

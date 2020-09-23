@@ -102,6 +102,10 @@ public class DocLink {
         return new DocLink(newPath, fragment);
     }
 
+    public DocLink withFragment(String fragment) {
+        return new DocLink(path, fragment);
+    }
+
     // return true if the path begins <letters>://
     private boolean isAbsoluteURL(DocPath path) {
         String s = path.getPath();

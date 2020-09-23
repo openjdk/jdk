@@ -160,6 +160,11 @@ public class HtmlDoclet extends AbstractDoclet {
             DeprecatedListWriter.generate(configuration);
         }
 
+        if (configuration.getIncludedModuleElements().stream().anyMatch(m -> m.getQualifiedName().contentEquals("java.base"))) {
+            //XXX: options?
+            PreviewListWriter.generate(configuration);
+        }
+
         if (options.createOverview()) {
             if (configuration.showModules) {
                 ModuleIndexWriter.generate(configuration);

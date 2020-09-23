@@ -76,6 +76,14 @@ public interface EnumConstantWriter extends MemberWriter {
     void addDeprecated(VariableElement enumConstant, Content enumConstantsTree);
 
     /**
+     * Add the preview output for the given member.
+     *
+     * @param member the member being documented
+     * @param annotationDocTree content tree to which the preview information will be added
+     */
+    void addPreview(VariableElement member, Content contentTree);
+
+    /**
      * Add the comments for the given enum constant.
      *
      * @param enumConstant the enum constant being documented

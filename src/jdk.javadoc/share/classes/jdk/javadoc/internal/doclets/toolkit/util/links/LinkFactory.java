@@ -36,6 +36,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.SimpleTypeVisitor9;
+import jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -204,6 +205,7 @@ public abstract class LinkFactory {
         linkInfo.typeElement = null;
         linkInfo.label = null;
         linkInfo.type = bound;
+        ((LinkInfoImpl) linkInfo).skipPreview = false;
     }
 
     /**

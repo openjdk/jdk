@@ -125,6 +125,11 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     }
 
     @Override
+    public void addPreview(Element member, Content contentTree) {
+        addPreviewInfo(member, contentTree);
+    }
+
+    @Override
     public void addComments(Element member, Content annotationDocTree) {
         addComment(member, annotationDocTree);
     }

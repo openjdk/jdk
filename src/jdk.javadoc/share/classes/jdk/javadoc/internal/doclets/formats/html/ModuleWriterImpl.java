@@ -57,6 +57,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewAPIType;
 
 /**
  * Class to generate file for each module contents in the right-hand frame. This will list all the
@@ -638,6 +639,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 row.add(getPackageExportOpensTo(entry.openedTo));
             }
             Content summary = new ContentBuilder();
+            addPreviewSummary(pkg, summary);
             addSummaryComment(pkg, summary);
             row.add(summary);
 
@@ -834,6 +836,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
 
     @Override
     public void addModuleDescription(Content moduleContentTree) {
+        addPreviewInfo(mdle, moduleContentTree);
         if (!utils.getFullBody(mdle).isEmpty()) {
             HtmlTree tree = HtmlTree.SECTION(HtmlStyle.moduleDescription);
             tree.setId(SectionName.MODULE_DESCRIPTION.getName());

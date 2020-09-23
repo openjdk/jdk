@@ -98,6 +98,7 @@ public class Navigation {
         MODULE,
         OVERVIEW,
         PACKAGE,
+        PREVIEW,
         SERIALIZED_FORM,
         SYSTEM_PROPERTIES,
         TREE,
@@ -212,6 +213,7 @@ public class Navigation {
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -223,6 +225,7 @@ public class Navigation {
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -240,6 +243,7 @@ public class Navigation {
                             contents.treeLabel, "", ""));
                 }
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -257,6 +261,7 @@ public class Navigation {
                             contents.treeLabel, "", ""));
                 }
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -279,6 +284,7 @@ public class Navigation {
                             : links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE), contents.treeLabel));
                 }
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -295,12 +301,14 @@ public class Navigation {
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addActivePageLink(tree, contents.treeLabel, options.createTree());
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
             case DEPRECATED:
             case INDEX:
             case HELP:
+            case PREVIEW:
                 addOverviewLink(tree);
                 addModuleLink(tree);
                 addPackageLink(tree);
@@ -312,6 +320,11 @@ public class Navigation {
                             || options.noDeprecatedList()));
                 } else {
                     addDeprecatedLink(tree);
+                }
+                if (documentedPage == PageMode.PREVIEW) {
+                    addActivePageLink(tree, contents.previewLabel, true); //TODO: option
+                } else {
+                    addPreviewLink(tree);
                 }
                 if (documentedPage == PageMode.INDEX) {
                     addActivePageLink(tree, contents.indexLabel, options.createIndex());
@@ -336,6 +349,7 @@ public class Navigation {
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -347,6 +361,7 @@ public class Navigation {
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
+                addPreviewLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
@@ -866,6 +881,13 @@ public class Navigation {
         if (!(options.noDeprecated() || options.noDeprecatedList())) {
             tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.DEPRECATED_LIST),
                     contents.deprecatedLabel, "", "")));
+        }
+    }
+
+    private void addPreviewLink(Content tree) {
+        if (configuration.getIncludedModuleElements().stream().anyMatch(m -> m.getQualifiedName().contentEquals("java.base"))) {
+            tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.PREVIEW_LIST),
+                    contents.previewLabel, "", "")));
         }
     }
 
