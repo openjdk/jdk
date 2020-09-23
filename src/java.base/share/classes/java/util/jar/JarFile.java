@@ -791,8 +791,10 @@ public class JarFile extends ZipFile {
             int len = (int)ze.getSize();
             int bytesRead;
             byte[] b;
-            // trust specified entry sizes when reasonably small
-            if (len != -1 && len <= 65535) {
+            if (len == 0) {
+                b = new byte[0];
+                bytesRead = 0;
+            } else if (len > 0 && len <= 65535) { // trust specified entry sizes when reasonably small
                 b = new byte[len];
                 bytesRead = is.readNBytes(b, 0, len);
             } else {
