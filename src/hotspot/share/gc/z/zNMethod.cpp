@@ -240,8 +240,8 @@ private:
 
 public:
   ZNMethodToOopsDoClosure(OopClosure* cl, bool should_disarm_nmethods) :
-    _cl(cl),
-    _should_disarm_nmethods(should_disarm_nmethods) {}
+      _cl(cl),
+      _should_disarm_nmethods(should_disarm_nmethods) {}
 
   virtual void do_nmethod(nmethod* nm) {
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
