@@ -364,6 +364,10 @@ void Thread::record_stack_base_and_size() {
 void Thread::register_thread_stack_with_NMT() {
   MemTracker::record_thread_stack(stack_end(), stack_size());
 }
+
+void Thread::unregister_thread_stack_with_NMT() {
+  MemTracker::release_thread_stack(stack_end(), stack_size());
+}
 #endif // INCLUDE_NMT
 
 void Thread::call_run() {
@@ -428,19 +432,6 @@ Thread::~Thread() {
   if (barrier_set != NULL) {
     barrier_set->on_thread_destroy(this);
   }
-
-  // stack_base can be NULL if the thread is never started or exited before
-  // record_stack_base_and_size called. Although, we would like to ensure
-  // that all started threads do call record_stack_base_and_size(), there is
-  // not proper way to enforce that.
-#if INCLUDE_NMT
-  if (_stack_base != NULL) {
-    MemTracker::release_thread_stack(stack_end(), stack_size());
-#ifdef ASSERT
-    set_stack_base(NULL);
-#endif
-  }
-#endif // INCLUDE_NMT
 
   // deallocate data structures
   delete resource_area();
@@ -1370,6 +1361,7 @@ void NonJavaThread::pre_run() {
 void NonJavaThread::post_run() {
   JFR_ONLY(Jfr::on_thread_exit(this);)
   remove_from_the_list();
+  unregister_thread_stack_with_NMT();
   // Ensure thread-local-storage is cleared before termination.
   Thread::clear_thread_current();
 }
@@ -1845,13 +1837,6 @@ bool JavaThread::reguard_stack(address cur_sp) {
     return true; // Stack already guarded or guard pages not needed.
   }
 
-  if (register_stack_overflow()) {
-    // For those architectures which have separate register and
-    // memory stacks, we must check the register stack to see if
-    // it has overflowed.
-    return false;
-  }
-
   // Java code never executes within the yellow zone: the latter is only
   // there to provoke an exception during stack banging.  If java code
   // is executing there, either StackShadowPages should be larger, or
@@ -1980,13 +1965,6 @@ void JavaThread::run() {
   // initialize thread-local alloc buffer related fields
   this->initialize_tlab();
 
-  // Used to test validity of stack trace backs.
-  // This can't be moved into pre_run() else we invalidate
-  // the requirement that thread_main_inner is lower on
-  // the stack. Consequently all the initialization logic
-  // stays here in run() rather than pre_run().
-  this->record_base_of_stack_pointer();
-
   this->create_stack_guard_pages();
 
   this->cache_global_variables();
@@ -2043,6 +2021,7 @@ void JavaThread::thread_main_inner() {
 // Shared teardown for all JavaThreads
 void JavaThread::post_run() {
   this->exit(false);
+  this->unregister_thread_stack_with_NMT();
   // Defer deletion to here to ensure 'this' is still referenceable in call_run
   // for any shared tear-down.
   this->smr_delete();
@@ -2614,20 +2593,22 @@ int JavaThread::java_suspend_self() {
 // Helper routine to set up the correct thread state before calling java_suspend_self.
 // This is called when regular thread-state transition helpers can't be used because
 // we can be in various states, in particular _thread_in_native_trans.
-// Because this thread is external suspended the safepoint code will count it as at
-// a safepoint, regardless of what its actual current thread-state is. But
-// is_ext_suspend_completed() may be waiting to see a thread transition from
-// _thread_in_native_trans to _thread_blocked. So we set the thread state directly
-// to _thread_blocked. The problem with setting thread state directly is that a
+// We have to set the thread state directly to _thread_blocked so that it will
+// be seen to be safepoint/handshake safe whilst suspended. This is also
+// necessary to allow a thread in is_ext_suspend_completed, that observed the
+// _thread_in_native_trans state, to proceed.
+// The problem with setting thread state directly is that a
 // safepoint could happen just after java_suspend_self() returns after being resumed,
 // and the VM thread will see the _thread_blocked state. So we must check for a safepoint
 // after restoring the state to make sure we won't leave while a safepoint is in progress.
 // However, not all initial-states are allowed when performing a safepoint check, as we
-// should never be blocking at a safepoint whilst in those states. Of these 'bad' states
+// should never be blocking at a safepoint whilst in those states(*). Of these 'bad' states
 // only _thread_in_native is possible when executing this code (based on our two callers).
 // A thread that is _thread_in_native is already safepoint-safe and so it doesn't matter
 // whether the VMThread sees the _thread_blocked state, or the _thread_in_native state,
 // and so we don't need the explicit safepoint check.
+// (*) See switch statement in SafepointSynchronize::block() for thread states that are
+// allowed when performing a safepoint check.
 
 void JavaThread::java_suspend_self_with_safepoint_check() {
   assert(this == Thread::current(), "invariant");
@@ -2836,7 +2817,6 @@ void JavaThread::enable_stack_reserved_zone() {
   } else {
     warning("Attempt to guard stack reserved zone failed.");
   }
-  enable_register_stack_guard();
 }
 
 void JavaThread::disable_stack_reserved_zone() {
@@ -2854,7 +2834,6 @@ void JavaThread::disable_stack_reserved_zone() {
   } else {
     warning("Attempt to unguard stack reserved zone failed.");
   }
-  disable_register_stack_guard();
 }
 
 void JavaThread::enable_stack_yellow_reserved_zone() {
@@ -2873,7 +2852,6 @@ void JavaThread::enable_stack_yellow_reserved_zone() {
   } else {
     warning("Attempt to guard stack yellow zone failed.");
   }
-  enable_register_stack_guard();
 }
 
 void JavaThread::disable_stack_yellow_reserved_zone() {
@@ -2892,7 +2870,6 @@ void JavaThread::disable_stack_yellow_reserved_zone() {
   } else {
     warning("Attempt to unguard stack yellow zone failed.");
   }
-  disable_register_stack_guard();
 }
 
 void JavaThread::enable_stack_red_zone() {

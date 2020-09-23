@@ -225,24 +225,8 @@ size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   return _heap.unsafe_max_tlab_alloc();
 }
 
-bool ZCollectedHeap::can_elide_tlab_store_barriers() const {
-  return false;
-}
-
 bool ZCollectedHeap::uses_stack_watermark_barrier() const {
   return true;
-}
-
-bool ZCollectedHeap::can_elide_initializing_store_barrier(oop new_obj) {
-  // Not supported
-  ShouldNotReachHere();
-  return true;
-}
-
-bool ZCollectedHeap::card_mark_must_follow_store() const {
-  // Not supported
-  ShouldNotReachHere();
-  return false;
 }
 
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {

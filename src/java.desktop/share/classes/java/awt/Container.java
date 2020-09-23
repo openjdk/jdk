@@ -3807,6 +3807,11 @@ public class Container extends Component {
         private static final long serialVersionUID = 5081320404842566097L;
 
         /**
+         * Constructs an {@code AccessibleAWTContainer}
+         */
+        protected AccessibleAWTContainer() {}
+
+        /**
          * Returns the number of accessible children in the object.  If all
          * of the children of this object implement {@code Accessible},
          * then this method should return the number of children of this object.
@@ -3862,6 +3867,11 @@ public class Container extends Component {
         protected class AccessibleContainerHandler
             implements ContainerListener, Serializable {
             private static final long serialVersionUID = -480855353991814677L;
+
+            /**
+             * Constructs an {@code AccessibleContainerHandler}
+             */
+            protected AccessibleContainerHandler() {}
 
             public void componentAdded(ContainerEvent e) {
                 Component c = e.getChild();
