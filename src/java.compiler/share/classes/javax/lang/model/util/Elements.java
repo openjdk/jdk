@@ -59,10 +59,12 @@ public interface Elements {
      * <ul>
      *     <li>find non-empty packages with the given name returned by
      *         {@link #getPackageElement(ModuleElement, CharSequence)},
-     *         where the provided ModuleSymbol is any root module,
+     *         where the provided ModuleSymbol is any
+     *         <a href="../../../../../java.base/java/lang/module/package-summary.html#root-modules">root module</a>,
      *     </li>
-     *     <li>if the above yields an empty list, search all modules for
-     *         observable packages with the given name
+     *     <li>if the above yields an empty list, search
+     *         {@link #getAllModuleElements() all modules} for observable
+     *         packages with the given name
      *     </li>
      * </ul>
      *
@@ -144,10 +146,12 @@ public interface Elements {
      * <ul>
      *     <li>find type elements with the given name returned by
      *         {@link #getTypeElement(ModuleElement, CharSequence)},
-     *         where the provided ModuleSymbol is any root module,
+     *         where the provided ModuleSymbol is any
+     *         <a href="../../../../../java.base/java/lang/module/package-summary.html#root-modules">root module</a>,
      *     </li>
-     *     <li>if the above yields an empty list, search all modules
-     *         for observable type elements with the given name
+     *     <li>if the above yields an empty list, search
+     *         {@link #getAllModuleElements() all modules} for observable
+     *         type elements with the given name
      *     </li>
      * </ul>
      *
