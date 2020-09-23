@@ -1431,11 +1431,11 @@ private:
   }
 
   // Clone loop predicates to slow and fast loop when unswitching a loop
-  Node* clone_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check, bool is_slow_loop,
+  Node* clone_predicates_to_unswitched_loop(Node* old_entry, Node* new_entry, bool clone_limit_check, bool is_slow_loop,
                               uint idx_before_clone, Node_List &old_new);
-  ProjNode* clone_loop_predicate(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason,
+  ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason,
                                  bool is_slow_loop, uint idx_before_clone, Node_List &old_new);
-  void clone_concrete_loop_predicates(Deoptimization::DeoptReason reason, ProjNode* old_predicate_proj,
+  void clone_skeleton_predicates_to_unswitched_loop(Deoptimization::DeoptReason reason, ProjNode* old_predicate_proj,
                                       ProjNode* new_predicate_proj, bool is_slow_loop,
                                       uint idx_before_clone, Node_List &old_new);
 

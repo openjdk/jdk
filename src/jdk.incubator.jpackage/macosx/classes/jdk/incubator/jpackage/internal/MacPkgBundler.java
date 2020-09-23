@@ -142,9 +142,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
                 Path configScript = getConfig_Script(params);
                 if (IOUtils.exists(configScript)) {
-                    Log.verbose(MessageFormat.format(I18N.getString(
-                            "message.running-script"),
-                            configScript.toAbsolutePath().toString()));
                     IOUtils.run("bash", configScript);
                 }
 

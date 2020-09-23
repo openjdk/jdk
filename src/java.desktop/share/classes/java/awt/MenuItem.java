@@ -824,6 +824,11 @@ public class MenuItem extends MenuComponent implements Accessible {
         private static final long serialVersionUID = -217847831945965825L;
 
         /**
+         * Constructs an {@code AccessibleAWTMenuItem}
+         */
+        protected AccessibleAWTMenuItem() {}
+
+        /**
          * Get the accessible name of this object.
          *
          * @return the localized name of the object -- can be null if this

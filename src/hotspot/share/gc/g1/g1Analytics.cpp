@@ -225,11 +225,7 @@ void G1Analytics::report_rs_length(double rs_length) {
 }
 
 double G1Analytics::predict_alloc_rate_ms() const {
-  if (enough_samples_available(_alloc_rate_ms_seq)) {
-    return predict_zero_bounded(_alloc_rate_ms_seq);
-  } else {
-    return 0.0;
-  }
+  return predict_zero_bounded(_alloc_rate_ms_seq);
 }
 
 double G1Analytics::predict_concurrent_refine_rate_ms() const {
@@ -324,7 +320,6 @@ void G1Analytics::update_recent_gc_times(double end_time_sec,
                                          double pause_time_ms) {
   _recent_gc_times_ms->add(pause_time_ms);
   _recent_prev_end_times_for_all_gcs_sec->add(end_time_sec);
-  _prev_collection_pause_end_ms = end_time_sec * 1000.0;
 }
 
 void G1Analytics::report_concurrent_mark_cleanup_times_ms(double ms) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,8 @@
  */
 
 package com.sun.net.httpserver;
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * HttpContext represents a mapping between the root URI path of an application
@@ -42,6 +41,9 @@ import java.util.*;
  */
 public abstract class HttpContext {
 
+    /**
+     * Constructor for subclasses to call.
+     */
     protected HttpContext () {
     }
 
@@ -78,6 +80,8 @@ public abstract class HttpContext {
      * <p>
      * Every attribute stored in this Map will be visible to
      * every HttpExchange processed by this context
+     *
+     * @return a map containing the attributes of this context
      */
     public abstract Map<String,Object> getAttributes() ;
 
