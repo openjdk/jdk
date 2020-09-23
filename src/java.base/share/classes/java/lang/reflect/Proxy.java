@@ -1341,7 +1341,7 @@ public class Proxy implements java.io.Serializable {
         // the method's declaring class is a proxy interface
         if (proxyInterfaces.contains(declaringClass))
             return declaringClass;
-        
+
         Deque<Class<?>> deque = new ArrayDeque<>();
         Set<Class<?>> visited = new HashSet<>();
         boolean indirectMethodRef = false;

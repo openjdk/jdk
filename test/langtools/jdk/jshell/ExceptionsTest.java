@@ -227,7 +227,7 @@ public class ExceptionsTest extends KullaTesting {
         assertExceptionMatch(se,
                 new ExceptionInfo(IllegalStateException.class, message,
                         newStackTraceElement("", "lambda$do_it$$0", se.snippet(), 1),
-                        new StackTraceElement("com.sun.proxy.$Proxy0", "hashCode", null, -1),
+                        new StackTraceElement("jdk.proxy1.$Proxy0", "hashCode", null, -1),
                         newStackTraceElement("", "", se.snippet(), 1)));
     }
 
