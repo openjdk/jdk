@@ -395,8 +395,7 @@ T* ZStatIterableValue<T>::insert() const {
   while (*current != NULL) {
     // First sort by group, then by name
     const int group_cmp = strcmp((*current)->group(), group());
-    const int name_cmp = strcmp((*current)->name(), name());
-    if ((group_cmp > 0) || (group_cmp == 0 && name_cmp > 0)) {
+    if ((group_cmp > 0) || (group_cmp == 0 && strcmp((*current)->name(), name()) > 0)) {
       break;
     }
 
