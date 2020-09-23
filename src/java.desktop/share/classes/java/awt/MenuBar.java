@@ -512,6 +512,11 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
         private static final long serialVersionUID = -8577604491830083815L;
 
         /**
+         * Constructs an {@code AccessibleAWTMenuBar}
+         */
+        protected AccessibleAWTMenuBar() {}
+
+        /**
          * Get the role of this object.
          *
          * @return an instance of AccessibleRole describing the role of the

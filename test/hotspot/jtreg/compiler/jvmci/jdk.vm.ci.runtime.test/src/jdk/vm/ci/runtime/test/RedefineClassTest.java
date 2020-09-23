@@ -24,6 +24,7 @@
 /**
  * @test
  * @requires vm.jvmci
+ * @requires vm.jvmti
  * @library ../../../../../
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
