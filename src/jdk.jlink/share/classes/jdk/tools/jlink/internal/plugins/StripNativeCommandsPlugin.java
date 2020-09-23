@@ -33,13 +33,12 @@ import jdk.tools.jlink.plugin.Plugin;
  *
  * Strip Native Commands plugin
  */
-public final class StripNativeCommandsPlugin implements Plugin {
+public final class StripNativeCommandsPlugin extends DocumentedPlugin {
 
     public static final String NAME = "strip-native-commands";
 
-    @Override
-    public String getName() {
-        return NAME;
+    public StripNativeCommandsPlugin() {
+        super(NAME);
     }
 
     @Override
@@ -55,12 +54,4 @@ public final class StripNativeCommandsPlugin implements Plugin {
 
         return out.build();
     }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
-    }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 }

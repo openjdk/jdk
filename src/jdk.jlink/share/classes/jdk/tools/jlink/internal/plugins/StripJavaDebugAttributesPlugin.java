@@ -37,7 +37,7 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  *
  * Strip java debug attributes plugin
  */
-public final class StripJavaDebugAttributesPlugin implements Plugin {
+public final class StripJavaDebugAttributesPlugin extends DocumentedPlugin {
     public static final String NAME = "strip-java-debug-attributes";
     private final Predicate<String> predicate;
 
@@ -46,21 +46,9 @@ public final class StripJavaDebugAttributesPlugin implements Plugin {
     }
 
     StripJavaDebugAttributesPlugin(Predicate<String> predicate) {
+        super(NAME);
         this.predicate = predicate;
     }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
-    }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {

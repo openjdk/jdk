@@ -39,7 +39,7 @@ import jdk.tools.jlink.plugin.ResourcePoolBuilder;
  * symbols.
  *
  */
-public final class DefaultStripDebugPlugin implements Plugin {
+public final class DefaultStripDebugPlugin extends DocumentedPlugin {
 
     public static final String NAME = "strip-debug";
     private static final String STRIP_NATIVE_DEBUG_PLUGIN = "strip-native-debug-symbols";
@@ -55,22 +55,10 @@ public final class DefaultStripDebugPlugin implements Plugin {
 
     public DefaultStripDebugPlugin(Plugin javaStripPlugin,
                                    NativePluginFactory nativeStripPluginFact) {
+        super(NAME);
         this.javaStripPlugin = javaStripPlugin;
         this.stripNativePluginFactory = nativeStripPluginFact;
     }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
-    }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {

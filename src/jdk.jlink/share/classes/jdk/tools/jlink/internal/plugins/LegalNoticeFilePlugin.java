@@ -52,7 +52,7 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
  * On platform that does not support symbolic links, a file
  * will be created to contain the path to the linked target.
  */
-public final class LegalNoticeFilePlugin implements Plugin {
+public final class LegalNoticeFilePlugin extends DocumentedPlugin {
 
     private static final String NAME = "dedup-legal-notices";
     private static final String ERROR_IF_NOT_SAME_CONTENT = "error-if-not-same-content";
@@ -61,9 +61,8 @@ public final class LegalNoticeFilePlugin implements Plugin {
 
     private boolean errorIfNotSameContent = false;
 
-    @Override
-    public String getName() {
-        return NAME;
+    public LegalNoticeFilePlugin() {
+        super(NAME);
     }
 
     @Override
@@ -139,14 +138,6 @@ public final class LegalNoticeFilePlugin implements Plugin {
     public Category getType() {
         return Category.TRANSFORMER;
     }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
-    }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public boolean hasArguments() {

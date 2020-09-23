@@ -49,29 +49,20 @@ import jdk.tools.jlink.plugin.Plugin;
 /**
  * This plugin adds/deletes information for 'release' file.
  */
-public final class ReleaseInfoPlugin implements Plugin {
+public final class ReleaseInfoPlugin extends DocumentedPlugin {
     // option name
     public static final String NAME = "release-info";
     public static final String KEYS = "keys";
     private final Map<String, String> release = new HashMap<>();
 
+    public ReleaseInfoPlugin() {
+        super(NAME);
+    }
+
     @Override
     public Category getType() {
         return Category.METAINFO_ADDER;
     }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
-    }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public Set<State> getState() {

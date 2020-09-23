@@ -45,12 +45,11 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  * We assume that the initialization code only has ldcs, method calls and
  * field instructions.
  */
-abstract class VersionPropsPlugin implements Plugin {
+abstract class VersionPropsPlugin extends DocumentedPlugin {
 
     private static final String VERSION_PROPS_CLASS
         = "/java.base/java/lang/VersionProps.class";
 
-    private final String name;
     private final String field;
     private String value;
 
@@ -59,8 +58,8 @@ abstract class VersionPropsPlugin implements Plugin {
      * @param option The option name
      */
     protected VersionPropsPlugin(String field, String option) {
+        super(option);
         this.field = field;
-        this.name = option;
     }
 
     /**
@@ -72,19 +71,6 @@ abstract class VersionPropsPlugin implements Plugin {
     protected VersionPropsPlugin(String field) {
         this(field, field.toLowerCase().replace('_', '-'));
     }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(name);
-    }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(name); }
 
     @Override
     public Category getType() {
@@ -103,12 +89,12 @@ abstract class VersionPropsPlugin implements Plugin {
 
     @Override
     public String getArgumentsDescription() {
-       return PluginsResourceBundle.getArgument(name);
+       return PluginsResourceBundle.getArgument(getName());
     }
 
     @Override
     public void configure(Map<String, String> config) {
-        var v = config.get(name);
+        var v = config.get(getName());
         if (v == null)
             throw new AssertionError();
         value = v;

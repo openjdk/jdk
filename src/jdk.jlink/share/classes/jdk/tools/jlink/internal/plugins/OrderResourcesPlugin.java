@@ -46,7 +46,7 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  *
  * Order Resources plugin
  */
-public final class OrderResourcesPlugin implements Plugin {
+public final class OrderResourcesPlugin extends DocumentedPlugin {
     public static final String NAME = "order-resources";
     private static final FileSystem JRT_FILE_SYSTEM = Utils.jrtFileSystem();
 
@@ -54,13 +54,9 @@ public final class OrderResourcesPlugin implements Plugin {
     private final Map<String, Integer> orderedPaths;
 
     public OrderResourcesPlugin() {
+        super(NAME);
         this.filters = new ArrayList<>();
         this.orderedPaths = new HashMap<>();
-    }
-
-    @Override
-    public String getName() {
-        return NAME;
     }
 
     static class SortWrapper {
@@ -84,9 +80,6 @@ public final class OrderResourcesPlugin implements Plugin {
             return ordinal;
         }
     }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     private String stripModule(String path) {
         if (path.startsWith("/")) {
@@ -149,11 +142,6 @@ public final class OrderResourcesPlugin implements Plugin {
     @Override
     public Category getType() {
         return Category.SORTER;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
     }
 
     @Override

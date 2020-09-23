@@ -70,7 +70,7 @@ import jdk.tools.jlink.internal.StringTable;
  * A Plugin that stores the image classes constant pool UTF_8 entries into the
  * Image StringsTable.
  */
-public class StringSharingPlugin implements Plugin, ResourcePrevisitor {
+public class StringSharingPlugin extends DocumentedPlugin implements ResourcePrevisitor {
 
     public static final String NAME = "compact-cp";
 
@@ -340,6 +340,7 @@ public class StringSharingPlugin implements Plugin, ResourcePrevisitor {
     }
 
     StringSharingPlugin(Predicate<String> predicate) {
+        super(NAME);
         this.predicate = predicate;
     }
 
@@ -369,19 +370,6 @@ public class StringSharingPlugin implements Plugin, ResourcePrevisitor {
 
         return result.build();
     }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
-    }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public boolean hasArguments() {

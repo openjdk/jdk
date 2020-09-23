@@ -97,7 +97,7 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  * @see jdk.internal.module.SystemModules
  */
 
-public final class SystemModulesPlugin implements Plugin {
+public final class SystemModulesPlugin extends DocumentedPlugin {
     private static final String NAME = "system-modules";
     private static final String DESCRIPTION =
             PluginsResourceBundle.getDescription(NAME);
@@ -113,21 +113,9 @@ public final class SystemModulesPlugin implements Plugin {
     private boolean enabled;
 
     public SystemModulesPlugin() {
+        super(NAME);
         this.enabled = true;
     }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return DESCRIPTION;
-    }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public Set<State> getState() {

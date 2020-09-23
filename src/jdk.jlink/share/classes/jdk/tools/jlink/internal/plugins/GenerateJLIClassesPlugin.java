@@ -61,7 +61,7 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  * feeding that into jlink using {@code --generate-jli-classes=@trace_file} can
  * help improve startup time.
  */
-public final class GenerateJLIClassesPlugin implements Plugin {
+public final class GenerateJLIClassesPlugin extends DocumentedPlugin {
 
     private static final String NAME = "generate-jli-classes";
 
@@ -76,20 +76,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     private Stream<String> traceFileStream;
 
     public GenerateJLIClassesPlugin() {
+        super(NAME);
     }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return DESCRIPTION;
-    }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public Set<State> getState() {

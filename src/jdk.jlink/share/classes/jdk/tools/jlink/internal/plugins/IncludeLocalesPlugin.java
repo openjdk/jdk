@@ -76,7 +76,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     start with at least one white space character, e.g., " ar ar-EG ..."
  *                                                           ^
  */
-public final class IncludeLocalesPlugin implements Plugin, ResourcePrevisitor {
+public final class IncludeLocalesPlugin extends DocumentedPlugin implements ResourcePrevisitor {
 
     public static final String NAME = "include-locales";
     private static final String MODULENAME = "jdk.localedata";
@@ -147,13 +147,9 @@ public final class IncludeLocalesPlugin implements Plugin, ResourcePrevisitor {
     private static final Locale noNONY = new Locale("no", "NO", "NY");
     private static final Locale thTHTH = new Locale("th", "TH", "TH");
 
-    @Override
-    public String getName() {
-        return NAME;
+    public IncludeLocalesPlugin() {
+        super(NAME);
     }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
@@ -181,11 +177,6 @@ public final class IncludeLocalesPlugin implements Plugin, ResourcePrevisitor {
     @Override
     public Category getType() {
         return Category.FILTER;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
     }
 
     @Override

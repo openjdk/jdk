@@ -40,7 +40,7 @@ import jdk.tools.jlink.internal.StringTable;
  *
  * ZIP and String Sharing compression plugin
  */
-public final class DefaultCompressPlugin implements Plugin, ResourcePrevisitor {
+public final class DefaultCompressPlugin extends DocumentedPlugin implements ResourcePrevisitor {
     public static final String NAME = "compress";
     public static final String FILTER = "filter";
     public static final String LEVEL_0 = "0";
@@ -50,13 +50,9 @@ public final class DefaultCompressPlugin implements Plugin, ResourcePrevisitor {
     private StringSharingPlugin ss;
     private ZipPlugin zip;
 
-    @Override
-    public String getName() {
-        return NAME;
+    public DefaultCompressPlugin() {
+        super(NAME);
     }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
@@ -84,11 +80,6 @@ public final class DefaultCompressPlugin implements Plugin, ResourcePrevisitor {
     @Override
     public Category getType() {
         return Category.COMPRESSOR;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
     }
 
     @Override

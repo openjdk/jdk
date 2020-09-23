@@ -48,7 +48,7 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
  *
  * Exclude VM plugin
  */
-public final class ExcludeVMPlugin implements Plugin {
+public final class ExcludeVMPlugin extends DocumentedPlugin {
 
     private static final class JvmComparator implements Comparator<Jvm> {
 
@@ -90,13 +90,9 @@ public final class ExcludeVMPlugin implements Plugin {
     private Jvm target;
     private boolean keepAll;
 
-    @Override
-    public String getName() {
-        return NAME;
+    public ExcludeVMPlugin() {
+        super(NAME);
     }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     /**
      * VM paths:
@@ -173,11 +169,6 @@ public final class ExcludeVMPlugin implements Plugin {
     @Override
     public Category getType() {
         return Category.FILTER;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
     }
 
     @Override

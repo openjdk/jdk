@@ -35,18 +35,14 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  *
  * Exclude files plugin
  */
-public final class ExcludeFilesPlugin implements Plugin {
+public final class ExcludeFilesPlugin extends DocumentedPlugin {
 
     public static final String NAME = "exclude-files";
     private Predicate<String> predicate;
 
-    @Override
-    public String getName() {
-        return NAME;
+    public ExcludeFilesPlugin () {
+        super(NAME);
     }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
@@ -62,11 +58,6 @@ public final class ExcludeFilesPlugin implements Plugin {
     @Override
     public Category getType() {
         return Category.FILTER;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
     }
 
     @Override

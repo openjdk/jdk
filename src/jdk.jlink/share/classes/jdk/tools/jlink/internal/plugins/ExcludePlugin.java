@@ -36,18 +36,14 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  *
  * Exclude resources plugin
  */
-public final class ExcludePlugin implements Plugin {
+public final class ExcludePlugin extends DocumentedPlugin {
 
     public static final String NAME = "exclude-resources";
     private Predicate<String> predicate;
 
-    @Override
-    public String getName() {
-        return NAME;
+    public ExcludePlugin() {
+        super(NAME);
     }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
@@ -64,11 +60,6 @@ public final class ExcludePlugin implements Plugin {
             return resource;
         }, out);
         return out.build();
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
     }
 
     @Override

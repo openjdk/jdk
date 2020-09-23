@@ -37,7 +37,7 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
  *
  * A plugin to exclude a JMOD section such as man pages or header files
  */
-public final class ExcludeJmodSectionPlugin implements Plugin {
+public final class ExcludeJmodSectionPlugin extends DocumentedPlugin {
 
     public static final String NAME = "exclude-jmod-section";
     public static final String MAN_PAGES = "man";
@@ -45,13 +45,9 @@ public final class ExcludeJmodSectionPlugin implements Plugin {
 
     private final Set<Type> filters = new HashSet<>();
 
-    @Override
-    public String getName() {
-        return NAME;
+    public ExcludeJmodSectionPlugin() {
+        super(NAME);
     }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public void configure(Map<String, String> config) {
@@ -87,11 +83,6 @@ public final class ExcludeJmodSectionPlugin implements Plugin {
     @Override
     public Category getType() {
         return Category.FILTER;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
     }
 
     @Override

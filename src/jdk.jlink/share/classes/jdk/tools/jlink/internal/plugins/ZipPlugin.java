@@ -42,12 +42,13 @@ import jdk.tools.jlink.plugin.Plugin;
  *
  * ZIP Compression plugin
  */
-public final class ZipPlugin implements Plugin {
+public final class ZipPlugin extends DocumentedPlugin {
 
     public static final String NAME = "zip";
     private Predicate<String> predicate;
 
     public ZipPlugin() {
+        super(NAME);
 
     }
 
@@ -56,26 +57,14 @@ public final class ZipPlugin implements Plugin {
     }
 
     ZipPlugin(Predicate<String> predicate) {
+        super(NAME);
         this.predicate = predicate;
-    }
-
-    @Override
-    public String getName() {
-        return NAME;
     }
 
     @Override
     public Category getType() {
         return Category.COMPRESSOR;
     }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
-    }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(NAME); }
 
     @Override
     public boolean hasArguments() {

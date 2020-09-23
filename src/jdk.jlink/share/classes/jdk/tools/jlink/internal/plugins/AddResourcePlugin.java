@@ -37,29 +37,16 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
 /**
  * Base plugin to add a resource
  */
-abstract class AddResourcePlugin implements Plugin {
+abstract class AddResourcePlugin extends DocumentedPlugin {
 
-    private final String name;
+    //private final String name;
     private final String path;
     private String value;
 
     protected AddResourcePlugin(String n, String p) {
-        name = n;
+        super(n);
         path = p;
     }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(name);
-    }
-
-    @Override
-    public String getUsage() { return PluginsResourceBundle.getUsage(name); }
 
     @Override
     public Category getType() {
@@ -78,12 +65,12 @@ abstract class AddResourcePlugin implements Plugin {
 
     @Override
     public String getArgumentsDescription() {
-       return PluginsResourceBundle.getArgument(name);
+       return PluginsResourceBundle.getArgument(getName());
     }
 
     @Override
     public void configure(Map<String, String> config) {
-        var v = config.get(name);
+        var v = config.get(getName());
         if (v == null)
             throw new AssertionError();
         value = v;
