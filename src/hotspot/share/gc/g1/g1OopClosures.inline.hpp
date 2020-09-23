@@ -231,7 +231,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
   const G1HeapRegionAttr state = _g1h->region_attr(obj);
   if (state.is_in_cset()) {
     oop forwardee;
-    markWord m = obj->mark_raw();
+    markWord m = obj->mark();
     if (m.is_marked()) {
       forwardee = (oop) m.decode_pointer();
     } else {

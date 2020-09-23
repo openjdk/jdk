@@ -141,7 +141,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   // NOTE! We must be very careful with any methods that access the mark
   // in o. There may be multiple threads racing on it, and it may be forwarded
   // at any time. Do not use oop methods for accessing the mark!
-  markWord test_mark = o->mark_raw();
+  markWord test_mark = o->mark();
 
   // The same test as "o->is_forwarded()"
   if (!test_mark.is_marked()) {

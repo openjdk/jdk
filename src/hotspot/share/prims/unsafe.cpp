@@ -115,8 +115,8 @@ static inline void assert_field_offset_sane(oop p, jlong field_offset) {
     assert(byte_offset >= 0 && byte_offset <= (jlong)MAX_OBJECT_SIZE, "sane offset");
     if (byte_offset == (jint)byte_offset) {
       void* ptr_plus_disp = cast_from_oop<address>(p) + byte_offset;
-      assert(p->field_addr_raw((jint)byte_offset) == ptr_plus_disp,
-             "raw [ptr+disp] must be consistent with oop::field_addr_raw");
+      assert(p->field_addr((jint)byte_offset) == ptr_plus_disp,
+             "raw [ptr+disp] must be consistent with oop::field_addr");
     }
     jlong p_size = HeapWordSize * (jlong)(p->size());
     assert(byte_offset < p_size, "Unsafe access: offset " INT64_FORMAT " > object's size " INT64_FORMAT, (int64_t)byte_offset, (int64_t)p_size);
