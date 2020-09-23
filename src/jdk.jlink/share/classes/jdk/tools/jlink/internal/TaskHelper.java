@@ -30,18 +30,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -607,7 +597,10 @@ public final class TaskHelper {
                     getPlugins(pluginOptions.pluginsLayer);
 
             pluginList.stream()
-                    .sorted((plugin1, plugin2) -> Boolean.compare(plugin2.getUsage().isEmpty(), plugin1.getUsage().isEmpty()))
+                    .sorted(Comparator.comparing((Plugin plugin) -> plugin.getUsage().isEmpty(),
+                                                 (Boolean res1, Boolean res2) -> Boolean.compare(res2,res1))
+                                      .thenComparing(Plugin::getName)
+                    )
                     .forEach((plugin) -> showPlugin(plugin, log));
 
             log.println("\n" + bundleHelper.getMessage("main.extended.help.footer"));
