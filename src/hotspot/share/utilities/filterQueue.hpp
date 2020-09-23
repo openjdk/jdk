@@ -28,18 +28,22 @@
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 
+// The FilterQueue is FIFO with the ability to skip over queued items.
+// The skipping is controlled by using a filter when poping.
+// It also supports lock free pushes, while poping (including contain())
+// needs to be externally serialized.
 template <class E>
 class FilterQueue {
  private:
-  class FilterQueueNode : public CHeapObj<mtInternal> {
+  class Node : public CHeapObj<mtInternal> {
    public:
-    FilterQueueNode(const E& e): _next(NULL), _data(e) { }
-    FilterQueueNode*    _next;
+    Node(const E& e): _next(NULL), _data(e) { }
+    Node*    _next;
     E                   _data;
   };
 
-  FilterQueueNode* _first;
-  FilterQueueNode* load_first() {
+  Node* _first;
+  Node* load_first() {
     return Atomic::load_acquire(&_first);
   }
 
@@ -48,24 +52,32 @@ class FilterQueue {
  public:
   FilterQueue() : _first(NULL) { }
 
-  // MT-safe
   bool is_empty() {
     return load_first() == NULL;
   }
 
-  // MT-safe
-  void add(E data);
+  // Adds an item to the queue in a MT safe way, re-entrant.
+  void push(E data);
 
-  // MT-Unsafe, external serialization needed.
+  // Applies the match_func to the items in the queue until match_func returns
+  // true and then return false, or there is no more items and then returns
+  // false. Any pushed item while executing may or may not have match_func
+  // applied. The method is not re-entrant and must be executed mutually
+  // exclusive other contains and pops calls.
   template <typename MATCH_FUNC>
   bool contains(MATCH_FUNC& match_func);
 
-  // MT-Unsafe, external serialization needed.
+  // Same as pop(MATCH_FUNC& match_func) but matches everything, thus returning
+  // the first inserted item.
   E pop() {
     return pop(match_all);
   }
 
-  // MT-Unsafe, external serialization needed.
+  // Applies the match_func to all items in the queue returns the item which
+  // match_func return true for and was inserted first. Any pushed item while
+  // executing may or may not have be popped, if popped it was the first
+  // inserted match. The method is not re-entrant and must be executed mutual
+  // exclusive with other contains and pops calls.
   template <typename MATCH_FUNC>
   E pop(MATCH_FUNC& match_func);
 };

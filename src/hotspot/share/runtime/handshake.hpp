@@ -34,21 +34,18 @@
 class HandshakeOperation;
 class JavaThread;
 
-// A handshake closure is a callback that is executed for each JavaThread
-// while that thread is in a safepoint safe state. The callback is executed
-// either by the target JavaThread itself or by the VMThread while keeping
-// the target thread in a blocked state. A handshake can be performed with a
-// single JavaThread as well. In that case, the callback is executed either
-// by the target JavaThread itself or, depending on whether the operation is
-// a single target/direct handshake or not, by the JavaThread that requested the
-// handshake or the VMThread respectively.
+// A handshake closure is a callback that is executed for a JavaThread
+// while it is in a safepoint/handshake-safe state. Depending on the
+// nature of the closure, the callback may be executed by the initiating
+// thread, the target thread, or the VMThread. If the callback is not executed
+// by the target thread it will remain in a blocked state until the callback completes.
 class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   const char* const _name;
  public:
   HandshakeClosure(const char* name) : _name(name) {}
   virtual ~HandshakeClosure() {}
   const char* name() const    { return _name; }
-  virtual bool is_asynch()    { return false; };
+  virtual bool is_async()     { return false; }
   virtual void do_thread(Thread* thread) = 0;
 };
 
@@ -56,7 +53,7 @@ class AsyncHandshakeClosure : public HandshakeClosure {
  public:
    AsyncHandshakeClosure(const char* name) : HandshakeClosure(name) {}
    virtual ~AsyncHandshakeClosure() {}
-   virtual bool is_asynch()          { return true; }
+   virtual bool is_async()          { return true; }
 };
 
 class Handshake : public AllStatic {
@@ -72,9 +69,14 @@ class Handshake : public AllStatic {
 // operation is only done by either VMThread/Handshaker on behalf of the
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
+  // This a back reference to the JavaThread, 
+  // the target for all operation in the queue.
   JavaThread* _handshakee;
+  // The queue containing handshake operations to be performed on _handshakee.
   FilterQueue<HandshakeOperation*> _queue;
+  // Provides mutual exclusion to this state and queue.
   Mutex   _lock;
+  // Set to the thread executing the handshake operation during the execution.
   Thread* _active_handshaker;
 
   bool claim_handshake();
@@ -87,13 +89,13 @@ class HandshakeState {
 
   void add_operation(HandshakeOperation* op);
   HandshakeOperation* pop_for_self();
-  HandshakeOperation* pop_for_processor();
+  HandshakeOperation* pop();
 
-  bool has_operation_for_processor();
-  bool has_operation() {
+  bool has_operation();
+  bool has_operation_for_self() {
     return !_queue.is_empty();
   }
-  bool block_for_operation() {
+  bool should_process() {
     return !_queue.is_empty() || _lock.is_locked();
   }
 

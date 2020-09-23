@@ -78,7 +78,7 @@ void SafepointMechanism::process(JavaThread *thread) {
     OrderAccess::loadload();
     SafepointSynchronize::block(thread);
   }
-  if (thread->handshake_state()->block_for_operation()) {
+  if (thread->handshake_state()->should_process()) {
     thread->handshake_state()->process_by_self(); // Recursive
   }
 }
@@ -96,7 +96,7 @@ void SafepointMechanism::process_if_requested_slow(JavaThread *thread) {
     disarm_local_poll_release(thread);
     // We might have disarmed next safepoint/handshake
     OrderAccess::storeload();
-    if (global_poll() || thread->handshake_state()->has_operation()) {
+    if (global_poll() || thread->handshake_state()->has_operation_for_self()) {
       arm_local_poll(thread);
     }
   }

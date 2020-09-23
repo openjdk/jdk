@@ -63,7 +63,7 @@ static void is_empty(FilterQueue<uintptr_t>& queue) {
 TEST_VM(FilterQueue, one) {
   FilterQueue<uintptr_t> queue;
   is_empty(queue);
-  queue.add(1);
+  queue.push(1);
   EXPECT_EQ(queue.is_empty(), false) << "Must be not empty.";
   EXPECT_EQ(queue.contains(match_1), true) << "Must contain a value.";
   EXPECT_EQ(queue.contains(match_all), true) << "Must contain a value.";
@@ -75,8 +75,8 @@ TEST_VM(FilterQueue, one) {
 TEST_VM(FilterQueue, two) {
   FilterQueue<uintptr_t> queue;
 
-  queue.add(1);
-  queue.add(2);
+  queue.push(1);
+  queue.push(2);
 
   EXPECT_EQ(queue.is_empty(), false) << "Must be not empty.";
   EXPECT_EQ(queue.contains(match_1), true) << "Must contain a value.";
@@ -92,11 +92,11 @@ TEST_VM(FilterQueue, two) {
   EXPECT_EQ(queue.contains(match_all), true) << "Must contain a value.";
   EXPECT_EQ(queue.contains(match_even), true) << "Must contain a value.";
 
-  queue.add(3);
+  queue.push(3);
 
   EXPECT_EQ(queue.pop(match_even), (uintptr_t)2) << "Must not be empty.";
 
-  queue.add(2);
+  queue.push(2);
 
   EXPECT_EQ(queue.pop(match_even), (uintptr_t)2) << "Must not be empty.";
 
@@ -115,9 +115,9 @@ TEST_VM(FilterQueue, two) {
 TEST_VM(FilterQueue, three) {
   FilterQueue<uintptr_t> queue;
 
-  queue.add(1);
-  queue.add(2);
-  queue.add(3);
+  queue.push(1);
+  queue.push(2);
+  queue.push(3);
 
   EXPECT_EQ(queue.is_empty(), false) << "Must be not empty.";
   EXPECT_EQ(queue.contains(match_1), true) << "Must contain a value.";
@@ -148,7 +148,7 @@ public:
   virtual void main_run() {
     for (int i = 0; i < 1000; i++) {
       for (int j = 0; j < 10; j++) {
-        _fq->add(_val);
+        _fq->push(_val);
       }
       {
         do {

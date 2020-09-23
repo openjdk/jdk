@@ -29,9 +29,9 @@
 #include "utilities/spinYield.hpp"
 
 template <class E>
-void FilterQueue<E>::add(E data) {
-  FilterQueueNode* head;
-  FilterQueueNode* insnode = new FilterQueueNode(data);
+void FilterQueue<E>::push(E data) {
+  Node* head;
+  Node* insnode = new Node(data);
   SpinYield yield(SpinYield::default_spin_limit * 10); // Very unlikely with multiple failed CAS.
   while (true){
     head = load_first();
@@ -47,7 +47,7 @@ void FilterQueue<E>::add(E data) {
 template <class E>
 template <typename MATCH_FUNC>
 bool FilterQueue<E>::contains(MATCH_FUNC& match_func) {
-  FilterQueueNode* cur = load_first();
+  Node* cur = load_first();
   if (cur == NULL) {
     return false;
   }
@@ -64,11 +64,11 @@ bool FilterQueue<E>::contains(MATCH_FUNC& match_func) {
 template <class E>
 template <typename MATCH_FUNC>
 E FilterQueue<E>::pop(MATCH_FUNC& match_func) {
-  FilterQueueNode*  first       = load_first();
-  FilterQueueNode*  cur         = first;
-  FilterQueueNode*  prev        = NULL;
-  FilterQueueNode*  match       = NULL;
-  FilterQueueNode*  match_prev  = NULL;
+  Node*  first       = load_first();
+  Node*  cur         = first;
+  Node*  prev        = NULL;
+  Node*  match       = NULL;
+  Node*  match_prev  = NULL;
 
   if (cur == NULL) {
     return (E)NULL;

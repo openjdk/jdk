@@ -1356,7 +1356,7 @@ class JavaThread: public Thread {
   HandshakeState* handshake_state() { return &_handshake; }
 
   // A JavaThread can always safely operate on it self and other threads
-  // can do it safely it if they are the active handshaker.
+  // can do it safely if they are the active handshaker.
   bool is_handshake_safe_for(Thread* th) const {
     return _handshake.active_handshaker() == th || this == th;
   }
