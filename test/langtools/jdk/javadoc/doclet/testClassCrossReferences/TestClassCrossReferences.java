@@ -50,7 +50,7 @@ public class TestClassCrossReferences extends JavadocTester {
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-linkoffline", uri, testSrc,
-                "--no-platform-link",
+                "--no-platform-links",
                 testSrc("C.java"));
         checkExit(Exit.OK);
 
@@ -83,7 +83,7 @@ public class TestClassCrossReferences extends JavadocTester {
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-linkoffline", uri, testSrc,
-                "--no-platform-link",
+                "--no-platform-links",
                 testSrc("C.java"));
         checkExit(Exit.OK);
 

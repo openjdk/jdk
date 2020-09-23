@@ -191,11 +191,11 @@ public abstract class BaseOptions {
     private boolean noDeprecated = false;
 
     /**
-     * Argument for command-line option {@code --no-platform-link}.
-     * True if command-line option "--no-platform-link" is used. Default value is
+     * Argument for command-line option {@code --no-platform-links}.
+     * True if command-line option "--no-platform-links" is used. Default value is
      * false.
      */
-    private boolean noPlatformLink = false;
+    private boolean noPlatformLinks = false;
 
     /**
      * Argument for command-line option {@code -nosince}.
@@ -432,10 +432,10 @@ public abstract class BaseOptions {
                     }
                 },
 
-                new Option(resources, "--no-platform-link") {
+                new Option(resources, "--no-platform-links") {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        noPlatformLink = true;
+                        noPlatformLinks = true;
                         return true;
                     }
                 },
@@ -785,7 +785,7 @@ public abstract class BaseOptions {
     }
 
     /**
-     * Argument for command-line option {@ --link-platform-properties}.
+     * Argument for command-line option {@code --link-platform-properties}.
      */
     String linkPlatformProperties() {
         return linkPlatformProperties;
@@ -819,12 +819,12 @@ public abstract class BaseOptions {
     }
 
     /**
-     * Argument for command-line option {@code --no-platform-link}.
-     * True if command-line option {@code --no-platform-link"} is used.
+     * Argument for command-line option {@code --no-platform-links}.
+     * True if command-line option {@code --no-platform-links"} is used.
      * Default value is false.
      */
-    public boolean noPlatformLink() {
-        return noPlatformLink;
+    public boolean noPlatformLinks() {
+        return noPlatformLinks;
     }
 
     /**

@@ -233,7 +233,7 @@ public class Extern {
      *
      * @param linkPlatformProperties path or URL to properties file containing
      *                               platform documentation URLs, or null
-     * @param reporter The {@code DocErrorReporter} used to report errors.
+     * @param reporter the {@code DocErrorReporter} used to report errors
      */
     public void checkPlatformLinks(String linkPlatformProperties, Reporter reporter) {
         PackageElement javaLang = utils.elementUtils.getPackageElement("java.lang");

@@ -44,7 +44,7 @@ public class TestGrandParentTypes extends JavadocTester {
     @Test
     public void test1() {
         javadoc("-d", "out-1",
-                "--no-platform-link",
+                "--no-platform-links",
                 "-package",
                 "-sourcepath", testSrc,
                 "pkg1");

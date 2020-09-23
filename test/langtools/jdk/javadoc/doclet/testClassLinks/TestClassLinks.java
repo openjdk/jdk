@@ -46,7 +46,7 @@ public class TestClassLinks extends JavadocTester {
 
         javadoc("-d", "out",
                 "-Xdoclint:none",
-                "--no-platform-link",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "-package",
                 "p");

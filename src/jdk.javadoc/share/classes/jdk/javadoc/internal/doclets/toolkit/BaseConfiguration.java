@@ -358,7 +358,7 @@ public abstract class BaseConfiguration {
         for (Pair<String, String> linkOfflinePair : options.linkOfflineList()) {
             extern.link(linkOfflinePair.first, linkOfflinePair.second, reporter);
         }
-        if (!options.noPlatformLink()) {
+        if (!options.noPlatformLinks()) {
             extern.checkPlatformLinks(options.linkPlatformProperties(), reporter);
         }
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);

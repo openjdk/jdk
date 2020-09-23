@@ -43,7 +43,7 @@ public class TestTypeVariableLinks extends JavadocTester {
     @Test
     public void test1() {
         javadoc("-d", "out",
-                "--no-platform-link",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "-package",
                 "pkg1");

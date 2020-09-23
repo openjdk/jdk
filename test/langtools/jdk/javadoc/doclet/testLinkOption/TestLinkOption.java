@@ -150,7 +150,7 @@ public class TestLinkOption extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-link", "../" + "out1",
                 "-link", "../" + "out2",
-                "--no-platform-link",
+                "--no-platform-links",
                 "pkg3");
         checkExit(Exit.OK);
         checkOutput("pkg3/A.html", true,
@@ -174,7 +174,7 @@ public class TestLinkOption extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-linkoffline", "../copy/out1", "out1",
                 "-linkoffline", "../copy/out2", "out2",
-                "--no-platform-link",
+                "--no-platform-links",
                 "pkg3");
         checkExit(Exit.OK);
         checkOutput("pkg3/A.html", true,

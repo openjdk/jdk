@@ -54,7 +54,7 @@ public class TestPrivateClasses extends JavadocTester {
     public void testDefault() {
         javadoc("-d", "out-default",
                 "-sourcepath", testSrc,
-                "--no-platform-link",
+                "--no-platform-links",
                 "pkg", "pkg2");
         checkExit(Exit.OK);
 
@@ -150,7 +150,7 @@ public class TestPrivateClasses extends JavadocTester {
     public void testPrivate() {
         javadoc("-d", "out-private",
                 "-sourcepath", testSrc,
-                "--no-platform-link",
+                "--no-platform-links",
                 "-private",
                 "pkg", "pkg2");
         checkExit(Exit.OK);

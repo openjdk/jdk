@@ -43,7 +43,7 @@ public class TestIndentation extends JavadocTester {
     @Test
     public void test() {
         javadoc("-d", "out",
-                "--no-platform-link",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "p");
         checkExit(Exit.OK);

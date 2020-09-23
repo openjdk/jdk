@@ -61,7 +61,7 @@ public class TestInterface extends JavadocTester {
     @Test
     public void test() {
         javadoc("-d", "out",
-                "--no-platform-link",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);

@@ -45,7 +45,7 @@ public class TestHeadings extends JavadocTester {
     public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
-                "--no-platform-link",
+                "--no-platform-links",
                 "-use",
                 "-header", "Test Files",
                 "pkg1", "pkg2");

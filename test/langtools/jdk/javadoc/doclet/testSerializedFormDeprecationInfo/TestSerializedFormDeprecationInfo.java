@@ -44,7 +44,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     public void testDefault() {
         javadoc("-d", "out-default",
                 "-sourcepath", testSrc,
-                "--no-platform-link",
+                "--no-platform-links",
                 "pkg1");
         checkExit(Exit.OK);
 
@@ -69,7 +69,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
         javadoc("-d", "out-nodepr",
                 "-nodeprecated",
                 "-sourcepath", testSrc,
-                "--no-platform-link",
+                "--no-platform-links",
                 "pkg1");
         checkExit(Exit.OK);
 
