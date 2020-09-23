@@ -4457,14 +4457,6 @@ int Compile::random() {
   return static_cast<int>(_stress_seed);
 }
 
-void Compile::shuffle(Unique_Node_List* l) {
-  if (l->size() < 2) return;
-  for (uint i = l->size() - 1; i >= 1; i--) {
-    uint j = random() % (i + 1);
-    l->swap(i, j);
-  }
-}
-
 // This method can be called the arbitrary number of times, with current count
 // as the argument. The logic allows selecting a single candidate from the
 // running list of candidates as follows:

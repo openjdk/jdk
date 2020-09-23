@@ -461,6 +461,9 @@ protected:
   // Warm up hash table, type table and initial worklist
   void init_worklist( Node *a_root );
 
+  // Shuffle worklist, for stress testing
+  void shuffle_worklist();
+
   virtual const Type* saturate(const Type* new_type, const Type* old_type,
                                const Type* limit_type) const;
   // Usually returns new_type.  Returns old_type if new_type is only a slight
