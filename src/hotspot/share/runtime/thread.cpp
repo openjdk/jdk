@@ -2577,20 +2577,22 @@ int JavaThread::java_suspend_self() {
 // Helper routine to set up the correct thread state before calling java_suspend_self.
 // This is called when regular thread-state transition helpers can't be used because
 // we can be in various states, in particular _thread_in_native_trans.
-// Because this thread is external suspended the safepoint code will count it as at
-// a safepoint, regardless of what its actual current thread-state is. But
-// is_ext_suspend_completed() may be waiting to see a thread transition from
-// _thread_in_native_trans to _thread_blocked. So we set the thread state directly
-// to _thread_blocked. The problem with setting thread state directly is that a
+// We have to set the thread state directly to _thread_blocked so that it will
+// be seen to be safepoint/handshake safe whilst suspended. This is also
+// necessary to allow a thread in is_ext_suspend_completed, that observed the
+// _thread_in_native_trans state, to proceed.
+// The problem with setting thread state directly is that a
 // safepoint could happen just after java_suspend_self() returns after being resumed,
 // and the VM thread will see the _thread_blocked state. So we must check for a safepoint
 // after restoring the state to make sure we won't leave while a safepoint is in progress.
 // However, not all initial-states are allowed when performing a safepoint check, as we
-// should never be blocking at a safepoint whilst in those states. Of these 'bad' states
+// should never be blocking at a safepoint whilst in those states(*). Of these 'bad' states
 // only _thread_in_native is possible when executing this code (based on our two callers).
 // A thread that is _thread_in_native is already safepoint-safe and so it doesn't matter
 // whether the VMThread sees the _thread_blocked state, or the _thread_in_native state,
 // and so we don't need the explicit safepoint check.
+// (*) See switch statement in SafepointSynchronize::block() for thread states that are
+// allowed when performing a safepoint check.
 
 void JavaThread::java_suspend_self_with_safepoint_check() {
   assert(this == Thread::current(), "invariant");
