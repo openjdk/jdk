@@ -32,8 +32,8 @@ import jdk.test.lib.Asserts;
  * @test
  * @bug 8252219
  * @requires vm.compiler2.enabled
- * @summary Tests that -XX:+GenerateStressSeed, in combination with
- *          -XX:+StressIGVN, generates and logs a seed.
+ * @summary Tests that using -XX:+StressIGVN without -XX:StressSeed=N generates
+ *          and logs a random seed.
  * @library /test/lib /
  * @run driver compiler.debug.TestGenerateStressSeed
  */
@@ -53,8 +53,7 @@ public class TestGenerateStressSeed {
             String[] procArgs = {
                 "-Xcomp", "-XX:-TieredCompilation",
                 "-XX:CompileOnly=" + className + "::sum", "-XX:+StressIGVN",
-                "-XX:+GenerateStressSeed", "-XX:+LogCompilation",
-                "-XX:LogFile=" + log, className, "10"};
+                "-XX:+LogCompilation", "-XX:LogFile=" + log, className, "10"};
             ProcessTools.createJavaProcessBuilder(procArgs).start().waitFor();
             new OutputAnalyzer(Paths.get(log))
                 .shouldContain("stress_test seed");

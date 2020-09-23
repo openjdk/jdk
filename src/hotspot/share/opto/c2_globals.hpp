@@ -52,11 +52,9 @@
   product(bool, StressIGVN, false, DIAGNOSTIC,                              \
           "Randomize worklist traversal in IGVN")                           \
                                                                             \
-  product(bool, GenerateStressSeed, false, DIAGNOSTIC,                      \
-          "Generate random seed for IGVN stress testing")                   \
-                                                                            \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
-          "Random seed for IGVN stress testing")                            \
+          "Seed for IGVN stress testing (if unset, a random one is "        \
+          "generated")                                                      \
           range(0, max_juint)                                               \
                                                                             \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \

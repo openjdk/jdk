@@ -24,13 +24,11 @@
 /*
  * @test
  * @bug 8252219
- * @summary Tests that different combinations of the options -XX:+StressIGVN,
- *          -XX:StressSeed=N, and -XX:+GenerateStressSeed are accepted.
+ * @summary Tests that different combinations of the options -XX:+StressIGVN and
+ *          -XX:StressSeed=N are accepted.
  * @run main/othervm -XX:+StressIGVN
  *      compiler.arguments.TestStressIGVNOptions
  * @run main/othervm -XX:+StressIGVN -XX:StressSeed=42
- *      compiler.arguments.TestStressIGVNOptions
- * @run main/othervm -XX:+StressIGVN -XX:+GenerateStressSeed
  *      compiler.arguments.TestStressIGVNOptions
  */
 

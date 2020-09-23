@@ -70,6 +70,7 @@
 #include "opto/type.hpp"
 #include "opto/vectornode.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -731,11 +732,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   // If IGVN is randomized for stress testing, seed random number
   // generation and log the seed for repeatability.
   if (StressIGVN) {
-    _stress_seed = GenerateStressSeed ?
+    _stress_seed = FLAG_IS_DEFAULT(StressSeed) ?
       static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
     if (_log != NULL) {
       _log->elem("stress_test seed='%u'", _stress_seed);
-    } else if (GenerateStressSeed) {
+    } else if (FLAG_IS_DEFAULT(StressSeed)) {
       tty->print_cr("Warning:  set +LogCompilation to log the seed.");
     }
   }
