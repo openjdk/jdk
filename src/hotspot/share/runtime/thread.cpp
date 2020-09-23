@@ -938,11 +938,13 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
     st->print(" \"%s\"", name());
   }
 
-  st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
-            p2i(stack_end()), p2i(stack_base()));
-
-  if (osthread()) {
+  OSThread* os_thr = osthread();
+  if (os_thr != NULL && os_thr->get_state() != ZOMBIE) {
+    st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
+              p2i(stack_end()), p2i(stack_base()));
     st->print(" [id=%d]", osthread()->thread_id());
+  } else {
+    st->print(" exited");
   }
 
   ThreadsSMRSupport::print_info_on(this, st);
@@ -1334,6 +1336,7 @@ void NonJavaThread::post_run() {
   unregister_thread_stack_with_NMT();
   // Ensure thread-local-storage is cleared before termination.
   Thread::clear_thread_current();
+  osthread()->set_state(ZOMBIE);
 }
 
 // NamedThread --  non-JavaThread subclasses with multiple
