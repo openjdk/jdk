@@ -63,11 +63,11 @@ void StackWatermarkSet::add_watermark(JavaThread* jt, StackWatermark* watermark)
   set_head(jt, watermark);
 }
 
-static void verify_poll_context() {
+static void verify_processing_context() {
 #ifdef ASSERT
   Thread* thread = Thread::current();
   if (thread->is_Java_thread()) {
-    JavaThread* jt = static_cast<JavaThread*>(thread);
+    JavaThread* jt = thread->as_Java_thread();
     JavaThreadState state = jt->thread_state();
     assert(state != _thread_in_native, "unsafe thread state");
     assert(state != _thread_blocked, "unsafe thread state");
@@ -79,7 +79,7 @@ static void verify_poll_context() {
 }
 
 void StackWatermarkSet::before_unwind(JavaThread* jt) {
-  verify_poll_context();
+  verify_processing_context();
   if (!jt->has_last_Java_frame()) {
     // Sometimes we throw exceptions and use native transitions on threads that
     // do not have any Java threads. Skip those callsites.
@@ -92,7 +92,7 @@ void StackWatermarkSet::before_unwind(JavaThread* jt) {
 }
 
 void StackWatermarkSet::after_unwind(JavaThread* jt) {
-  verify_poll_context();
+  verify_processing_context();
   if (!jt->has_last_Java_frame()) {
     // Sometimes we throw exceptions and use native transitions on threads that
     // do not have any Java threads. Skip those callsites.
@@ -109,19 +109,24 @@ void StackWatermarkSet::on_iteration(JavaThread* jt, const frame& fr) {
     // Don't perform barrier when error reporting walks the stack.
     return;
   }
-  verify_poll_context();
+  verify_processing_context();
   for (StackWatermark* current = head(jt); current != NULL; current = current->next()) {
     current->on_iteration(fr);
   }
+  // We don't call SafepointMechanism::update_poll_values here, because the thread
+  // calling this might not be Thread::current().
 }
 
 void StackWatermarkSet::start_processing(JavaThread* jt, StackWatermarkKind kind) {
-  verify_poll_context();
+  verify_processing_context();
   assert(!jt->is_terminated(), "Poll after termination is a bug");
   StackWatermark* watermark = get(jt, kind);
   if (watermark != NULL) {
     watermark->start_processing();
   }
+  // We don't call SafepointMechanism::update_poll_values here, because the thread
+  // calling this might not be Thread::current(). The thread the stack belongs to
+  // will always update the poll values when waking up from a safepoint.
 }
 
 void StackWatermarkSet::finish_processing(JavaThread* jt, void* context, StackWatermarkKind kind) {
@@ -129,6 +134,8 @@ void StackWatermarkSet::finish_processing(JavaThread* jt, void* context, StackWa
   if (watermark != NULL) {
     watermark->finish_processing(context);
   }
+  // We don't call SafepointMechanism::update_poll_values here, because the thread
+  // calling this might not be Thread::current().
 }
 
 uintptr_t StackWatermarkSet::lowest_watermark(JavaThread* jt) {

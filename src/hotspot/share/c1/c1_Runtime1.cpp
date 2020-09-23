@@ -512,12 +512,12 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   // stack frames are made safe before returning into them.
   if (thread->last_frame().is_runtime_frame()) {
     // The Runtime1::handle_exception_from_callee_id handler is invoked after the
-    // frame has been unwinded. It instead builds its own stub frame, to call the
-    // runtime. But the throwing frame has already been unwinded here.
+    // frame has been unwound. It instead builds its own stub frame, to call the
+    // runtime. But the throwing frame has already been unwound here.
     StackWatermarkSet::after_unwind(thread);
   } else {
     // The other C1 exception handler call in here before the throwing frame has
-    // been unwinded.
+    // been unwound.
     StackWatermarkSet::before_unwind(thread);
   }
 

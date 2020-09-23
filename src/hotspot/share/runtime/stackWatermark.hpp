@@ -75,7 +75,7 @@ protected:
 
   // Set process_on_iteration to false if you don't want to move the
   // watermark when new frames are discovered from stack walkers, as
-  // opposed to due to frames being unwinded by the owning thread.
+  // opposed to due to frames being unwound by the owning thread.
   virtual bool process_on_iteration() { return true; }
 
   bool processing_started(uint32_t state) const;

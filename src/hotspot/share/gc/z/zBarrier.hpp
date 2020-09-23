@@ -58,6 +58,7 @@ private:
   static uintptr_t remap(uintptr_t addr);
   static uintptr_t relocate(uintptr_t addr);
   static uintptr_t relocate_or_mark(uintptr_t addr);
+  static uintptr_t relocate_or_mark_no_follow(uintptr_t addr);
   static uintptr_t relocate_or_remap(uintptr_t addr);
 
   static uintptr_t load_barrier_on_oop_slow_path(uintptr_t addr);

@@ -47,8 +47,7 @@ public:
   static void after_mark();
   static void after_weak_processing();
 
-  static void verify_thread_no_frames_bad(JavaThread* thread) NOT_DEBUG_RETURN;
-  static void verify_thread_frames_bad(JavaThread* thread) NOT_DEBUG_RETURN;
+  static void verify_thread_bad(JavaThread* thread) NOT_DEBUG_RETURN;;
   static void verify_frame_bad(const frame& fr, RegisterMap& register_map) NOT_DEBUG_RETURN;
 };
 

@@ -69,13 +69,11 @@ OopClosure* ZStackWatermark::closure_from_context(void* context) {
 }
 
 void ZStackWatermark::start_processing_impl(void* context) {
-  ZVerify::verify_thread_no_frames_bad(_jt);
+  ZVerify::verify_thread_bad(_jt);
 
   // Process the non-frame part of the thread
   _jt->oops_do_no_frames(closure_from_context(context), &_cb_cl);
   ZThreadLocalData::do_invisible_root(_jt, ZBarrier::load_barrier_on_invisible_root_oop_field);
-
-  ZVerify::verify_thread_frames_bad(_jt);
 
   // Update thread local address bad mask
   ZThreadLocalData::set_address_bad_mask(_jt, ZAddressBadMask);
@@ -93,5 +91,5 @@ void ZStackWatermark::start_processing_impl(void* context) {
 
 void ZStackWatermark::process(const frame& fr, RegisterMap& register_map, void* context) {
   ZVerify::verify_frame_bad(fr, register_map);
-  frame(fr).oops_do(closure_from_context(context), &_cb_cl, &register_map);
+  fr.oops_do(closure_from_context(context), &_cb_cl, &register_map, DerivedPointerIterationMode::_directly);
 }

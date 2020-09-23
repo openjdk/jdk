@@ -3029,7 +3029,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
   // During OSR migration, we unwind the interpreted frame and replace it with a compiled
   // frame. The stack watermark code below ensures that the interpreted frame is processed
-  // before it gets unwinded. This is helpful as the size of the compiled frame could be
+  // before it gets unwound. This is helpful as the size of the compiled frame could be
   // larger than the interpreted frame, which could result in the new frame not being
   // processed correctly.
   StackWatermarkSet::before_unwind(thread);

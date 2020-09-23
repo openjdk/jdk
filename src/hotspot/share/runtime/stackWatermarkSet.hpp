@@ -60,7 +60,7 @@ public:
   // Called when a thread is about to unwind a frame
   static void before_unwind(JavaThread* jt);
 
-  // Called when a thread just unwinded a frame
+  // Called when a thread just unwound a frame
   static void after_unwind(JavaThread* jt);
 
   // Called by stack walkers when walking into a frame

@@ -114,6 +114,10 @@ uintptr_t ZBarrier::relocate_or_mark(uintptr_t addr) {
   return during_relocate() ? relocate(addr) : mark<Follow, Strong, Publish>(addr);
 }
 
+uintptr_t ZBarrier::relocate_or_mark_no_follow(uintptr_t addr) {
+  return during_relocate() ? relocate(addr) : mark<DontFollow, Strong, Publish>(addr);
+}
+
 uintptr_t ZBarrier::relocate_or_remap(uintptr_t addr) {
   return during_relocate() ? relocate(addr) : remap(addr);
 }
@@ -126,7 +130,7 @@ uintptr_t ZBarrier::load_barrier_on_oop_slow_path(uintptr_t addr) {
 }
 
 uintptr_t ZBarrier::load_barrier_on_invisible_root_oop_slow_path(uintptr_t addr) {
-  return during_relocate() ? relocate(addr) : mark<DontFollow, Strong, Publish>(addr);
+  return relocate_or_mark_no_follow(addr);
 }
 
 void ZBarrier::load_barrier_on_oop_fields(oop o) {

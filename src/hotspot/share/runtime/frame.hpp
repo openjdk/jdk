@@ -41,6 +41,11 @@ class FrameValues;
 class vframeArray;
 class JavaCallWrapper;
 
+enum class DerivedPointerIterationMode {
+  _with_table,
+  _directly,
+  _ignore
+};
 
 // A frame represents a physical stack frame (an activation).  Frames
 // can be C or Java frames, and the Java frames can be interpreted or
@@ -366,13 +371,17 @@ class frame {
   void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const;
 
   // Iteration of oops
-  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map, bool use_interpreter_oop_map_cache) const;
+  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+                        bool use_interpreter_oop_map_cache, DerivedPointerIterationMode derived_mode) const;
   void oops_entry_do(OopClosure* f, const RegisterMap* map) const;
-  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const;
+  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+                         DerivedPointerIterationMode derived_mode) const;
   int adjust_offset(Method* method, int index); // helper for above fn
  public:
   // Memory management
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const { oops_do_internal(f, cf, map, true); }
+  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+               DerivedPointerIterationMode derived_mode) const;
+  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const;
   void nmethods_do(CodeBlobClosure* cf) const;
 
   // RedefineClasses support for finding live interpreted methods on the stack

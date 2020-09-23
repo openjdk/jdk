@@ -40,10 +40,10 @@ class ZOnStackCodeBlobClosure : public CodeBlobClosure {
 private:
   BarrierSetNMethod* _bs_nm;
 
+  virtual void do_code_blob(CodeBlob* cb);
+
 public:
   ZOnStackCodeBlobClosure();
-
-  virtual void do_code_blob(CodeBlob* cb);
 };
 
 class ZStackWatermark : public StackWatermark {
@@ -54,7 +54,6 @@ private:
 
   OopClosure* closure_from_context(void* context);
 
-protected:
   virtual uint32_t epoch_id() const;
   virtual void start_processing_impl(void* context);
   virtual void process(const frame& fr, RegisterMap& register_map, void* context);

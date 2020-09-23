@@ -162,7 +162,7 @@ public:
          !frames.is_done();
          frames.next()) {
       frame& frame = *frames.current();
-      frame.oops_do(this, &cb_cl, frames.register_map());
+      frame.oops_do(this, &cb_cl, frames.register_map(), DerivedPointerIterationMode::_ignore);
       prepare_next_frame(frame);
     }
   }
@@ -171,7 +171,7 @@ public:
 void ZVerifyRootClosure::do_thread(Thread* thread) {
   thread->oops_do_no_frames(this, NULL);
 
-  JavaThread* const jt = static_cast<JavaThread*>(thread);
+  JavaThread* const jt = thread->as_Java_thread();
   if (!jt->has_last_Java_frame()) {
     return;
   }
@@ -336,11 +336,6 @@ public:
   }
 };
 
-void ZVerify::verify_thread_no_frames_bad(JavaThread* jt) {
-  ZVerifyBadOopClosure verify_cl;
-  jt->oops_do_no_frames(&verify_cl, NULL);
-}
-
 // This class encapsulates various marks we need to deal with calling the
 // frame iteration code from arbitrary points in the runtime. It is mostly
 // due to problems that we might want to eventually clean up inside of the
@@ -360,21 +355,22 @@ public:
     _rm(thread) { }
 };
 
-void ZVerify::verify_thread_frames_bad(JavaThread* jt) {
-  StackWatermarkProcessingMark swpm(Thread::current());
+void ZVerify::verify_frame_bad(const frame& fr, RegisterMap& register_map) {
   ZVerifyBadOopClosure verify_cl;
+  fr.oops_do(&verify_cl, NULL, &register_map);
+}
+
+void ZVerify::verify_thread_bad(JavaThread* jt) {
+  ZVerifyBadOopClosure verify_cl;
+  jt->oops_do_no_frames(&verify_cl, NULL);
 
   if (jt->has_last_Java_frame()) {
+    StackWatermarkProcessingMark swpm(Thread::current());
     // Traverse the execution stack
     for (StackFrameStream fst(jt, true /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
       fst.current()->oops_do(&verify_cl, NULL /* code_cl */, fst.register_map());
     }
   }
-}
-
-void ZVerify::verify_frame_bad(const frame& fr, RegisterMap& register_map) {
-  ZVerifyBadOopClosure verify_cl;
-  frame(fr).oops_do(&verify_cl, NULL, &register_map);
 }
 
 #endif // ASSERT

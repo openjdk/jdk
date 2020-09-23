@@ -36,7 +36,6 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
-#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 

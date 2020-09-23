@@ -751,7 +751,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      if (_verbose && _thread && (_thread->is_Named_thread())) {
        Thread* thread = ((NamedThread *)_thread)->processed_thread();
        if (thread != NULL && thread->is_Java_thread()) {
-         JavaThread* jt = static_cast<JavaThread*>(thread);
+         JavaThread* jt = thread->as_Java_thread();
          st->print_cr("JavaThread " PTR_FORMAT " (nid = %d) was being processed", p2i(jt), jt->osthread()->thread_id());
          print_stack_trace(st, jt, buf, sizeof(buf), true);
        }
