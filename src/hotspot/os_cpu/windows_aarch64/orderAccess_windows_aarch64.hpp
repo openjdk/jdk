@@ -41,7 +41,7 @@ inline void OrderAccess::storeload()  { fence(); }
 
 #define READ_MEM_BARRIER atomic_thread_fence(std::memory_order_acquire);
 #define WRITE_MEM_BARRIER atomic_thread_fence(std::memory_order_release);
-#define FULL_MEM_BARRIER atomic_thread_fence(std::memory_order_acq_rel);
+#define FULL_MEM_BARRIER atomic_thread_fence(std::memory_order_seq_cst);
 
 inline void OrderAccess::acquire() {
   READ_MEM_BARRIER;
