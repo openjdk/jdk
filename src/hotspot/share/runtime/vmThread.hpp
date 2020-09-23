@@ -106,7 +106,7 @@ class VMThread: public NamedThread {
 
   static VM_Operation::VMOp_Type vm_op_type()     {
     VM_Operation* op = vm_operation();
-    assert (op != NULL, "sanity");
+    assert(op != NULL, "sanity");
     return op->type();
   }
 

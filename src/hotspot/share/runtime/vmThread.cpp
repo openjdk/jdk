@@ -379,7 +379,7 @@ void VMThread::inner_execute(VM_Operation* op) {
   assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
 
   VM_Operation* prev_vm_operation = NULL;
-  if (_cur_vm_operation!= NULL) {
+  if (_cur_vm_operation != NULL) {
     // Check the VM operation allows nested VM operation.
     // This normally not the case, e.g., the compiler
     // does not allow nested scavenges or compiles.
