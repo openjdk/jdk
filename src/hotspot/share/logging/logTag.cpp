@@ -27,7 +27,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
-const char* LogTag::_name[] = {
+const char* const LogTag::_name[] = {
   "", // __NO_TAG
 #define LOG_TAG(name) #name,
   LOG_TAG_LIST

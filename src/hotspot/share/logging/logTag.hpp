@@ -228,7 +228,7 @@ class LogTag : public AllStatic {
   static void list_tags(outputStream* out);
 
  private:
-  static const char* _name[];
+  static const char* const _name[];
 };
 
 typedef LogTag::type LogTagType;
