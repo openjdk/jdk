@@ -69,7 +69,7 @@ class Handshake : public AllStatic {
 // operation is only done by either VMThread/Handshaker on behalf of the
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
-  // This a back reference to the JavaThread, 
+  // This a back reference to the JavaThread,
   // the target for all operation in the queue.
   JavaThread* _handshakee;
   // The queue containing handshake operations to be performed on _handshakee.
