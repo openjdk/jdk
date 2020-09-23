@@ -206,10 +206,10 @@ jint ShenandoahHeap::initialize() {
   // Reserve and commit memory for bitmap(s)
   //
 
-  _bitmap_size = MarkBitMap::compute_size(heap_rs.size());
+  _bitmap_size = ShenandoahMarkBitMap::compute_size(heap_rs.size());
   _bitmap_size = align_up(_bitmap_size, bitmap_page_size);
 
-  size_t bitmap_bytes_per_region = reg_size_bytes / MarkBitMap::heap_map_factor();
+  size_t bitmap_bytes_per_region = reg_size_bytes / ShenandoahMarkBitMap::heap_map_factor();
 
   guarantee(bitmap_bytes_per_region != 0,
             "Bitmap bytes per region should not be zero");

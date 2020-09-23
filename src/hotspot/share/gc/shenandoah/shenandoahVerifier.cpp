@@ -526,7 +526,7 @@ public:
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
     size_t processed = 0;
-    MarkBitMap* mark_bit_map = _heap->complete_marking_context()->mark_bit_map();
+    const ShenandoahMarkBitMap* mark_bit_map = _heap->complete_marking_context()->mark_bit_map();
     HeapWord* tams = _heap->complete_marking_context()->top_at_mark_start(r);
 
     // Bitmaps, before TAMS

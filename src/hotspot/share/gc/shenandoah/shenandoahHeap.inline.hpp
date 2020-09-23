@@ -401,7 +401,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
   ShenandoahMarkingContext* const ctx = complete_marking_context();
   assert(ctx->is_complete(), "sanity");
 
-  MarkBitMap* mark_bit_map = ctx->mark_bit_map();
+  const ShenandoahMarkBitMap* mark_bit_map = ctx->mark_bit_map();
   HeapWord* tams = ctx->top_at_mark_start(region);
 
   size_t skip_bitmap_delta = 1;
