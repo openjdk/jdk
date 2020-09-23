@@ -1211,8 +1211,9 @@ void AwtWindow::Reshape(int x, int y, int w, int h) {
     // Try set the correct size and jump to the correct location, even if it is
     // on the different monitor. Note that for the "size" we use the current
     // monitor, so the WM_DPICHANGED will adjust it for the "target" monitor.
-    ReshapeNoScale(device->ScaleUpAbsX(x), device->ScaleUpAbsY(y),
-                   ScaleUpX(w), ScaleUpY(h));
+    int scaleUpAbsX = device == NULL ? x : device->ScaleUpAbsX(x);
+    int scaleUpAbsY = device == NULL ? y : device->ScaleUpAbsY(y);
+    ReshapeNoScale(scaleUpAbsX, scaleUpAbsY, ScaleUpX(w), ScaleUpY(h));
     // The window manager may tweak the size for different reasons, so try
     // to make sure our window has the correct size in the user's space.
     // NOOP if the size was changed already or changing is in progress.
