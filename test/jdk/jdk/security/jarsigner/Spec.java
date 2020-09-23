@@ -125,7 +125,9 @@ public class Spec {
         iae(()->b1.setProperty("internalsf", "Hello"));
         npe(()->b1.setProperty("sectionsonly", null));
         iae(()->b1.setProperty("sectionsonly", "OK"));
-        npe(()->b1.setProperty("altsigner", null));
+        npe(()->b1.setProperty("sectionsonly", null));
+        iae(()->b1.setProperty("directsign", "OK"));
+        npe(()->b1.setProperty("directsign", null));
         npe(()->b1.eventHandler(null));
 
         // default values
@@ -143,6 +145,7 @@ public class Spec {
         assertTrue(js2.getProperty("tsapolicyid") == null);
         assertTrue(js2.getProperty("internalsf").equals("false"));
         assertTrue(js2.getProperty("sectionsonly").equals("false"));
+        assertTrue(js2.getProperty("directsign").equals("false"));
         assertTrue(js2.getProperty("altsigner") == null);
         uoe(()->js2.getProperty("invalid"));
 
@@ -159,6 +162,7 @@ public class Spec {
                 .setProperty("tsapolicyid", "1.2.3.4")
                 .setProperty("internalsf", "true")
                 .setProperty("sectionsonly", "true")
+                .setProperty("directsign", "true")
                 .setProperty("altsigner", "MyContentSigner")
                 .eventHandler(myeh);
         JarSigner js3 = b3.build();
@@ -171,6 +175,7 @@ public class Spec {
         assertTrue(js3.getProperty("tsapolicyid").equals("1.2.3.4"));
         assertTrue(js3.getProperty("internalsf").equals("true"));
         assertTrue(js3.getProperty("sectionsonly").equals("true"));
+        assertTrue(js3.getProperty("directsign").equals("true"));
         assertTrue(js3.getProperty("altsigner").equals("MyContentSigner"));
         assertTrue(js3.getProperty("altsignerpath") == null);
 

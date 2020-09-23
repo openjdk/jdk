@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,15 @@ package sun.security.util;
 
 import java.io.IOException;
 import java.security.*;
+import java.security.interfaces.EdECKey;
+import java.security.interfaces.EdECPrivateKey;
+import java.security.interfaces.RSAKey;
 import java.security.spec.*;
 import java.util.Locale;
+
 import sun.security.rsa.RSAUtil;
 import jdk.internal.access.SharedSecrets;
+import sun.security.x509.AlgorithmId;
 
 /**
  * Utility class for Signature related operations. Currently used by various
@@ -41,15 +46,24 @@ import jdk.internal.access.SharedSecrets;
  */
 public class SignatureUtil {
 
-    private static String checkName(String algName) throws ProviderException {
+    /**
+     * Convent OID.1.2.3.4 or 1.2.3.4 to the matched stdName.
+     *
+     * @param algName input, could be in any form
+     * @return the original name is it does not look like an OID,
+     *         the matched name for an OID, or the OID itself
+     *         if no match is found.
+     */
+    private static String checkName(String algName) {
         if (algName.indexOf(".") == -1) {
             return algName;
-        }
-        // convert oid to String
-        try {
-            return Signature.getInstance(algName).getAlgorithm();
-        } catch (Exception e) {
-            throw new ProviderException("Error mapping algorithm name", e);
+        } else {
+            // convert oid to String
+            if (algName.startsWith("OID.")) {
+                algName = algName.substring(4);
+            }
+            KnownOIDs ko = KnownOIDs.findMatch(algName);
+            return ko != null ? ko.stdName() : algName;
         }
     }
 
@@ -69,8 +83,15 @@ public class SignatureUtil {
         }
     }
 
-    // Utility method for converting the specified AlgorithmParameters object
-    // into an AlgorithmParameterSpec object.
+    /**
+     * Utility method for converting the specified AlgorithmParameters object
+     * into an AlgorithmParameterSpec object.
+     *
+     * @param sigName signature algorithm
+     * @param params (optional) parameters
+     * @return an AlgorithmParameterSpec object
+     * @throws ProviderException
+     */
     public static AlgorithmParameterSpec getParamSpec(String sigName,
             AlgorithmParameters params)
             throws ProviderException {
@@ -103,6 +124,8 @@ public class SignatureUtil {
                     ("Unrecognized algorithm for signature parameters " +
                      sigName);
             }
+        } else {
+            paramSpec = getDefaultAlgorithmParameterSpec(sigName, null);
         }
         return paramSpec;
     }
@@ -137,6 +160,8 @@ public class SignatureUtil {
                      ("Unrecognized algorithm for signature parameters " +
                       sigName);
             }
+        } else {
+            paramSpec = getDefaultAlgorithmParameterSpec(sigName, null);
         }
         return paramSpec;
     }
@@ -167,5 +192,243 @@ public class SignatureUtil {
             throws ProviderException, InvalidAlgorithmParameterException,
             InvalidKeyException {
         SharedSecrets.getJavaSecuritySignatureAccess().initSign(s, key, params, sr);
+    }
+
+    /**
+     * Returns default AlgorithmParameterSpec for a key used in a signature.
+     * This is only useful for RSASSA-PSS now, which is the only algorithm
+     * that must be initialized with a AlgorithmParameterSpec now.
+     */
+    public static AlgorithmParameterSpec getDefaultAlgorithmParameterSpec(
+            String sigAlg, Key k) {
+        sigAlg = checkName(sigAlg);
+        if (sigAlg.equalsIgnoreCase("RSASSA-PSS")) {
+            if (k instanceof RSAKey) {
+                AlgorithmParameterSpec spec = ((RSAKey) k).getParams();
+                if (spec instanceof PSSParameterSpec) {
+                    return spec;
+                }
+            }
+            switch (ifcFfcStrength(KeyUtil.getKeySize(k))) {
+                case "SHA256":
+                    return PSSParamsHolder.PSS_256_SPEC;
+                case "SHA384":
+                    return PSSParamsHolder.PSS_384_SPEC;
+                case "SHA512":
+                    return PSSParamsHolder.PSS_512_SPEC;
+                default:
+                    throw new AssertionError("Should not happen");
+            }
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Create a Signature that has been initialized with proper key and params.
+     *
+     * @param sigAlg signature algorithms
+     * @param key public or private key
+     * @param provider (optional) provider
+     */
+    public static Signature fromKey(String sigAlg, Key key, String provider)
+            throws NoSuchAlgorithmException, NoSuchProviderException,
+                   InvalidKeyException{
+        Signature sigEngine = (provider == null || provider.isEmpty())
+                ? Signature.getInstance(sigAlg)
+                : Signature.getInstance(sigAlg, provider);
+        return autoInitInternal(sigAlg, key, sigEngine);
+    }
+
+    /**
+     * Create a Signature that has been initialized with proper key and params.
+     *
+     * @param sigAlg signature algorithms
+     * @param key public or private key
+     * @param provider (optional) provider
+     */
+    public static Signature fromKey(String sigAlg, Key key, Provider provider)
+            throws NoSuchAlgorithmException, InvalidKeyException{
+        Signature sigEngine = (provider == null)
+                ? Signature.getInstance(sigAlg)
+                : Signature.getInstance(sigAlg, provider);
+        return autoInitInternal(sigAlg, key, sigEngine);
+    }
+
+    private static Signature autoInitInternal(String alg, Key key, Signature s)
+            throws InvalidKeyException {
+        AlgorithmParameterSpec params = SignatureUtil
+                .getDefaultAlgorithmParameterSpec(alg, key);
+        try {
+            if (key instanceof PrivateKey) {
+                SignatureUtil.initSignWithParam(s, (PrivateKey) key, params,
+                        null);
+            } else {
+                SignatureUtil.initVerifyWithParam(s, (PublicKey) key, params);
+            }
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new AssertionError("Should not happen", e);
+        }
+        return s;
+    }
+
+    /**
+     * Derives AlgorithmId from a signature object and a key.
+     * @param sigEngine the signature object
+     * @param key the private key
+     * @return the AlgorithmIA, not null
+     * @throws SignatureException if cannot find one
+     */
+    public static AlgorithmId fromSignature(Signature sigEngine, PrivateKey key)
+            throws SignatureException {
+        try {
+            if (key instanceof EdECKey) {
+                return AlgorithmId.get(((EdECKey) key).getParams().getName());
+            }
+
+            AlgorithmParameters params = null;
+            try {
+                params = sigEngine.getParameters();
+            } catch (UnsupportedOperationException e) {
+                // some provider does not support it
+            }
+            if (params != null) {
+                return AlgorithmId.get(sigEngine.getParameters());
+            } else {
+                String sigAlg = sigEngine.getAlgorithm();
+                if (sigAlg.equalsIgnoreCase("EdDSA")) {
+                    // Hopefully key knows if it's Ed25519 or Ed448
+                    sigAlg = key.getAlgorithm();
+                }
+                return AlgorithmId.get(sigAlg);
+            }
+        } catch (NoSuchAlgorithmException e) {
+            // This could happen if both sig alg and key alg is EdDSA,
+            // we don't know which provider does this.
+            throw new SignatureException("Cannot derive AlgorithmIdentifier", e);
+        }
+    }
+
+    /**
+     * Checks if a signature algorithm matches a key, i.e. if this
+     * signature can be initialized with this key. Currently used
+     * in {@link jdk.security.jarsigner.JarSigner} to fail early.
+     *
+     * Note: Unknown signature algorithms are allowed.
+     *
+     * @param key must not be null
+     * @param sAlg must not be null
+     * @throws IllegalArgumentException if they are known to not match
+     */
+    public static void checkKeyAndSigAlgMatch(PrivateKey key, String sAlg) {
+        String kAlg = key.getAlgorithm().toUpperCase(Locale.ENGLISH);
+        sAlg = checkName(sAlg).toUpperCase(Locale.ENGLISH);
+        switch (sAlg) {
+            case "RSASSA-PSS" -> {
+                if (!kAlg.equals("RSASSA-PSS")
+                        && !kAlg.equals("RSA")) {
+                    throw new IllegalArgumentException(
+                            "key algorithm not compatible with signature algorithm");
+                }
+            }
+            case "EDDSA" -> {
+                // General EdDSA, any EDDSA name variance is OK
+                if (!kAlg.equals("EDDSA") && !kAlg.equals("ED448")
+                        && !kAlg.equals("ED25519")) {
+                    throw new IllegalArgumentException(
+                            "key algorithm not compatible with signature algorithm");
+                }
+            }
+            case "ED25519", "ED448" -> {
+                // fix-size EdDSA
+                if (key instanceof EdECKey) {
+                    // SunEC's key alg is fix-size. Must match.
+                    String groupName = ((EdECKey) key).getParams()
+                            .getName().toUpperCase(Locale.US);
+                    if (!sAlg.equals(groupName)) {
+                        throw new IllegalArgumentException(
+                                "key algorithm not compatible with signature algorithm");
+                    }
+                } else {
+                    // Other vendor might be generalized or fix-size
+                    if (!kAlg.equals("EDDSA") && !kAlg.equals(sAlg)) {
+                        throw new IllegalArgumentException(
+                                "key algorithm not compatible with signature algorithm");
+                    }
+                }
+            }
+            default -> {
+                if (sAlg.contains("WITH")) {
+                    if ((sAlg.endsWith("WITHRSA") && !kAlg.equals("RSA")) ||
+                            (sAlg.endsWith("WITHECDSA") && !kAlg.equals("EC")) ||
+                            (sAlg.endsWith("WITHDSA") && !kAlg.equals("DSA"))) {
+                        throw new IllegalArgumentException(
+                                "key algorithm not compatible with signature algorithm");
+                    }
+                }
+                // Do not fail now. Maybe new algorithm we don't know.
+            }
+        }
+    }
+
+    /**
+     * Returns the default signature algorithm for a private key.
+     *
+     * @param k cannot be null
+     * @return the default alg, might be null if unsupported
+     */
+    public static String getDefaultSigAlgForKey(PrivateKey k) {
+        String kAlg = k.getAlgorithm();
+        return switch (kAlg.toUpperCase(Locale.ENGLISH)) {
+            case "DSA", "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k))
+                    + "with" + kAlg;
+            case "EC" -> ecStrength(KeyUtil.getKeySize(k))
+                    + "withECDSA";
+            case "EDDSA" -> k instanceof EdECPrivateKey
+                    ? ((EdECPrivateKey) k).getParams().getName()
+                    : kAlg;
+            case "RSASSA-PSS", "ED25519", "ED448" -> kAlg;
+            default -> null;
+        };
+    }
+
+    // Useful PSSParameterSpec objects
+    private static class PSSParamsHolder {
+        final static PSSParameterSpec PSS_256_SPEC = new PSSParameterSpec(
+                "SHA-256", "MGF1",
+                new MGF1ParameterSpec("SHA-256"),
+                32, PSSParameterSpec.TRAILER_FIELD_BC);
+        final static PSSParameterSpec PSS_384_SPEC = new PSSParameterSpec(
+                "SHA-384", "MGF1",
+                new MGF1ParameterSpec("SHA-384"),
+                48, PSSParameterSpec.TRAILER_FIELD_BC);
+        final static PSSParameterSpec PSS_512_SPEC = new PSSParameterSpec(
+                "SHA-512", "MGF1",
+                new MGF1ParameterSpec("SHA-512"),
+                64, PSSParameterSpec.TRAILER_FIELD_BC);
+    }
+
+    // Values from SP800-57 part 1 rev 4 tables 2 and 3
+    // Attention: sync with JarSigner.Builder#getDefaultSignatureAlgorithm
+    private static String ecStrength (int bitLength) {
+        if (bitLength >= 512) { // 256 bits of strength
+            return "SHA512";
+        } else if (bitLength >= 384) {  // 192 bits of strength
+            return "SHA384";
+        } else { // 128 bits of strength and less
+            return "SHA256";
+        }
+    }
+
+    // Same values for RSA and DSA
+    // Attention: sync with JarSigner.Builder#getDefaultSignatureAlgorithm
+    private static String ifcFfcStrength (int bitLength) {
+        if (bitLength > 7680) { // 256 bits
+            return "SHA512";
+        } else if (bitLength > 3072) {  // 192 bits
+            return "SHA384";
+        } else  { // 128 bits and less
+            return "SHA256";
+        }
     }
 }

@@ -30,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -86,7 +87,11 @@ public final class JarUtils {
             for (Path entry : entries) {
                 String name = toJarEntryName(entry);
                 jos.putNextEntry(new JarEntry(name));
-                Files.copy(dir.resolve(entry), jos);
+                if (Files.exists(dir.resolve(entry))) {
+                    Files.copy(dir.resolve(entry), jos);
+                } else {
+                    jos.write(name.getBytes(StandardCharsets.UTF_8));
+                }
                 jos.closeEntry();
             }
         }
