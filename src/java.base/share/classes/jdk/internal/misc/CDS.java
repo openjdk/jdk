@@ -44,7 +44,7 @@ public class CDS {
     public static native void defineArchivedModules(ClassLoader platformLoader, ClassLoader systemLoader);
 
     /**
-     * @return a predictable "random" seed derived from the VM's build ID and version,
+     * Returns a predictable "random" seed derived from the VM's build ID and version,
      * to be used by java.util.ImmutableCollections to ensure that archived
      * ImmutableCollections are always sorted the same order for the same VM build.
      */

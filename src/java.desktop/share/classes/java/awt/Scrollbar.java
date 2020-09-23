@@ -1263,6 +1263,11 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
         private static final long serialVersionUID = -344337268523697807L;
 
         /**
+         * Constructs an {@code AccessibleAWTScrollBar}
+         */
+        protected AccessibleAWTScrollBar() {}
+
+        /**
          * Get the state set of this object.
          *
          * @return an instance of {@code AccessibleState}

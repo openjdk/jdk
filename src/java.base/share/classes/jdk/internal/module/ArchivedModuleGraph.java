@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import jdk.internal.misc.CDS;
+import jdk.internal.misc.VM;
 
 /**
  * Used by ModuleBootstrap for archiving the configuration for the boot layer,
@@ -123,6 +123,6 @@ class ArchivedModuleGraph {
     }
 
     static {
-        CDS.initializeFromArchive(ArchivedModuleGraph.class);
+        VM.initializeFromArchive(ArchivedModuleGraph.class);
     }
 }

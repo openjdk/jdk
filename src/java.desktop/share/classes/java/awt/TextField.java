@@ -789,6 +789,11 @@ public class TextField extends TextComponent {
         private static final long serialVersionUID = 6219164359235943158L;
 
         /**
+         * Constructs an {@code AccessibleAWTTextField}
+         */
+        protected AccessibleAWTTextField() {}
+
+        /**
          * Gets the state set of this object.
          *
          * @return an instance of AccessibleStateSet describing the states

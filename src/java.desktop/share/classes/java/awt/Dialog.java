@@ -1659,6 +1659,11 @@ public class Dialog extends Window {
         private static final long serialVersionUID = 4837230331833941201L;
 
         /**
+         * Constructs an {@code AccessibleAWTDialog}
+         */
+        protected AccessibleAWTDialog() {}
+
+        /**
          * Get the role of this object.
          *
          * @return an instance of AccessibleRole describing the role of the

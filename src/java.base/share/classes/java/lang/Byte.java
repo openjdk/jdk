@@ -26,7 +26,7 @@
 package java.lang;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
-import jdk.internal.misc.CDS;
+import jdk.internal.misc.VM;
 
 import java.lang.constant.Constable;
 import java.lang.constant.DynamicConstantDesc;
@@ -108,7 +108,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
             final int size = -(-128) + 127 + 1;
 
             // Load and use the archived cache if it exists
-            CDS.initializeFromArchive(ByteCache.class);
+            VM.initializeFromArchive(ByteCache.class);
             if (archivedCache == null || archivedCache.length != size) {
                 Byte[] c = new Byte[size];
                 byte value = (byte)-128;

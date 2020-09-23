@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,27 @@
  * questions.
  */
 
-#include "jvm.h"
-#include "jdk_internal_misc_CDS.h"
+package jdk.javadoc.internal.doclint;
 
-JNIEXPORT void JNICALL
-Java_jdk_internal_misc_CDS_initializeFromArchive(JNIEnv *env, jclass ignore,
-                                                jclass c) {
-    JVM_InitializeFromArchive(env, c);
-}
+/**
+ * Enum representing HTML version of the documentation comment.
+ *
+ * @author Bhavesh Patel
+ */
+public enum HtmlVersion {
 
-JNIEXPORT void JNICALL
-Java_jdk_internal_misc_CDS_defineArchivedModules(JNIEnv *env, jclass ignore,
-                                                jobject platform_loader,
-                                                jobject system_loader) {
-    JVM_DefineArchivedModules(env, platform_loader, system_loader);
-}
+    HTML4,
+    HTML5,
+    ALL;
 
-JNIEXPORT jlong JNICALL
-Java_jdk_internal_misc_CDS_getRandomSeedForDumping(JNIEnv *env, jclass ignore) {
-    return JVM_GetRandomSeedForDumping();
-}
-
-JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_CDS_isDynamicDumpingEnabled(JNIEnv *env, jclass jcls) {
-    return JVM_IsDynamicDumpingEnabled(env);
-}
-
-JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_CDS_isSharingEnabled(JNIEnv *env, jclass jcls) {
-    return JVM_IsSharingEnabled(env);
+    public static HtmlVersion getHtmlVersion(String argsVersion) {
+        switch (argsVersion) {
+            case "html4":
+                return HtmlVersion.HTML4;
+            case "html5":
+                return HtmlVersion.HTML5;
+            default:
+                return null;
+        }
+    }
 }

@@ -538,6 +538,11 @@ public class Button extends Component implements Accessible {
         private static final long serialVersionUID = -5932203980244017102L;
 
         /**
+         * Constructs an {@code AccessibleAWTButton}
+         */
+        protected AccessibleAWTButton() {}
+
+        /**
          * Get the accessible name of this object.
          *
          * @return the localized name of the object -- can be null if this
