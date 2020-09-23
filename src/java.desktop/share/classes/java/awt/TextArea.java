@@ -720,6 +720,11 @@ public class TextArea extends TextComponent {
         private static final long serialVersionUID = 3472827823632144419L;
 
         /**
+         * Constructs an {@code AccessibleAWTTextArea}
+         */
+        protected AccessibleAWTTextArea() {}
+
+        /**
          * Gets the state set of this object.
          *
          * @return an instance of AccessibleStateSet describing the states

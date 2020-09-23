@@ -32,6 +32,7 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/ageTable.hpp"
+#include "gc/shared/partialArrayTaskStepper.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -79,6 +80,9 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Indicates whether in the last generation (old) there is no more space
   // available for allocation.
   bool _old_gen_is_full;
+  // Size (in elements) of a partial objArray task chunk.
+  int _partial_objarray_chunk_size;
+  PartialArrayTaskStepper _partial_array_stepper;
 
   G1RedirtyCardsQueue& redirty_cards_queue()     { return _rdcq; }
   G1CardTable* ct()                              { return _ct; }
@@ -105,6 +109,7 @@ public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
                        G1RedirtyCardsQueueSet* rdcqs,
                        uint worker_id,
+                       uint n_workers,
                        size_t young_cset_length,
                        size_t optional_cset_length);
   virtual ~G1ParScanThreadState();
@@ -156,7 +161,8 @@ public:
   size_t flush(size_t* surviving_young_words);
 
 private:
-  inline void do_partial_array(PartialArrayScanTask task);
+  void do_partial_array(PartialArrayScanTask task);
+  void start_partial_objarray(G1HeapRegionAttr dest_dir, oop from, oop to);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                oop old,
@@ -169,14 +175,14 @@ private:
                        size_t word_sz,
                        uint node_index);
 
-  inline oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
-                                       oop obj,
-                                       markWord old_mark);
+  oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
+                                oop obj,
+                                markWord old_mark);
 
   // This method is applied to the fields of the objects that have just been copied.
-  template <class T> inline void do_oop_evac(T* p);
+  template <class T> void do_oop_evac(T* p);
 
-  inline void dispatch_task(ScannerTask task);
+  void dispatch_task(ScannerTask task);
 
   // Tries to allocate word_sz in the PLAB of the next "generation" after trying to
   // allocate into dest. Previous_plab_refill_failed indicates whether previous
@@ -249,9 +255,6 @@ class G1ParScanThreadStateSet : public StackObj {
   G1ParScanThreadState* state_for_worker(uint worker_id);
 
   const size_t* surviving_young_words() const;
-
- private:
-  G1ParScanThreadState* new_par_scan_state(uint worker_id, size_t young_cset_length);
 };
 
 #endif // SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP

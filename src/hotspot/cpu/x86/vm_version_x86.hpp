@@ -27,7 +27,6 @@
 
 #include "memory/universe.hpp"
 #include "runtime/abstract_vm_version.hpp"
-#include "runtime/globals_extension.hpp"
 
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;

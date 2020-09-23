@@ -99,9 +99,6 @@ class JNIHandles : AllStatic {
   static void destroy_weak_global(jobject handle);
   static bool is_global_weak_cleared(jweak handle); // Test jweak without resolution
 
-  // Initialization
-  static void initialize();
-
   // Debugging
   static void print_on(outputStream* st);
   static void print();
