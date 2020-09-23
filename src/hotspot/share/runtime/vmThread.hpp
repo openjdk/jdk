@@ -103,9 +103,11 @@ class VMThread: public NamedThread {
     assert(Thread::current()->is_VM_thread(), "Must be");
     return _cur_vm_operation;
   }
+
   static VM_Operation::VMOp_Type vm_op_type()     {
-    assert(Thread::current()->is_VM_thread(), "Must be");
-    return _cur_vm_operation->type();
+    VM_Operation* op = vm_operation();
+    assert (op != NULL, "sanity");
+    return op->type();
   }
 
   // Returns the single instance of VMThread.

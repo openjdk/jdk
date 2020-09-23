@@ -376,19 +376,19 @@ static void self_destruct_if_needed() {
 }
 
 void VMThread::inner_execute(VM_Operation* op) {
-  Thread* current = Thread::current();
-  assert(current->is_VM_thread(), "must be a VM thread");
+  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
 
-  VM_Operation* prev_vm_operation = vm_operation();
-  if (prev_vm_operation != NULL) {
+  VM_Operation* prev_vm_operation = NULL;
+  if (_cur_vm_operation!= NULL) {
     // Check the VM operation allows nested VM operation.
     // This normally not the case, e.g., the compiler
     // does not allow nested scavenges or compiles.
-    if (!prev_vm_operation->allow_nested_vm_operations()) {
+    if (!_cur_vm_operation->allow_nested_vm_operations()) {
       fatal("Nested VM operation %s requested by operation %s",
-            op->name(), vm_operation()->name());
+            op->name(), _cur_vm_operation->name());
     }
-    op->set_calling_thread(prev_vm_operation->calling_thread());
+    op->set_calling_thread(_cur_vm_operation->calling_thread());
+    prev_vm_operation = _cur_vm_operation;
   }
 
   _cur_vm_operation = op;
@@ -424,6 +424,7 @@ void VMThread::inner_execute(VM_Operation* op) {
 }
 
 void VMThread::wait_for_operation() {
+  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
   MonitorLocker ml_op_lock(VMOperation_lock, Mutex::_no_safepoint_check_flag);
 
   // Clear previous operation.
@@ -456,7 +457,7 @@ void VMThread::wait_for_operation() {
       return;
     }
 
-    // We did find anything to execute, notify any waiter so they can install a new one.
+    // We didn't find anything to execute, notify any waiter so they can install an op.
     ml_op_lock.notify_all();
     ml_op_lock.wait(GuaranteedSafepointInterval);
   }
@@ -467,20 +468,20 @@ void VMThread::loop() {
 
   SafepointSynchronize::init(_vm_thread);
 
+  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
+
   // Need to set a calling thread for ops not passed
   // via the normal way.
   cleanup_op.set_calling_thread(_vm_thread);
   safepointALot_op.set_calling_thread(_vm_thread);
 
-  do {
+  while (true) {
+    if (should_terminate()) break;
     wait_for_operation();
-    if (!should_terminate()) {
-      assert(_next_vm_operation != NULL, "Must have one");
-      inner_execute(_next_vm_operation);
-    } else {
-      break;
-    }
-  } while(!should_terminate());
+    if (should_terminate()) break;
+    assert(_next_vm_operation != NULL, "Must have one");
+    inner_execute(_next_vm_operation);
+  }
 }
 
 // A SkipGCALot object is used to elide the usual effect of gc-a-lot
