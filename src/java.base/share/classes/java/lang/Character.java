@@ -26,7 +26,7 @@
 package java.lang;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 
 import java.lang.constant.Constable;
 import java.lang.constant.DynamicConstantDesc;
@@ -8516,7 +8516,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             int size = 127 + 1;
 
             // Load and use the archived cache if it exists
-            VM.initializeFromArchive(CharacterCache.class);
+            CDS.initializeFromArchive(CharacterCache.class);
             if (archivedCache == null || archivedCache.length != size) {
                 Character[] c = new Character[size];
                 for (int i = 0; i < size; i++) {
