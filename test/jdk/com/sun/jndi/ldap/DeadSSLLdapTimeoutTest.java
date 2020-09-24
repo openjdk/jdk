@@ -26,6 +26,7 @@
  * @bug 8141370
  * @key intermittent
  * @library /test/lib
+ * @build DeadSSLSocketFactory
  * @run main/othervm DeadSSLLdapTimeoutTest
  */
 
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import javax.naming.Context;
@@ -42,6 +44,7 @@ import javax.naming.NamingException;
 import java.util.Hashtable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.naming.directory.InitialDirContext;
 import javax.net.ssl.SSLHandshakeException;
 
@@ -68,13 +71,13 @@ class DeadServerTimeoutSSLTest implements Callable<Boolean> {
                 || e.getCause().getCause() instanceof SocketTimeoutException) {
             // SSL connect will timeout via readReply using
             // SocketTimeoutException
-            System.err.println("PASS: Observed expected SocketTimeoutException");
+            System.out.println("PASS: Observed expected SocketTimeoutException");
             pass();
         } else if (e.getCause() instanceof SSLHandshakeException
                 && e.getCause().getCause() instanceof EOFException) {
             // test seems to be failing intermittently on some
             // platforms.
-            System.err.println("PASS: Observed expected SSLHandshakeException/EOFException");
+            System.out.println("PASS: Observed expected SSLHandshakeException/EOFException");
             pass();
         } else {
             fail(e);
@@ -134,7 +137,7 @@ class DeadServerTimeoutSSLTest implements Callable<Boolean> {
                 server.close();
             }
             return passed;
-        } catch (IOException|InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -160,14 +163,52 @@ class DeadSSLServer extends Thread {
     public void run() {
         // Signal client to proceed with the test
         serverStarted.countDown();
-        try (var socket = serverSock.accept()) {
-            System.err.println("Accepted connection:" + socket);
-            // Give LDAP client time to fully establish the connection.
-            // When client is done - close the accepted socket
-            testDone.await();
-        } catch (Exception e) {
-            System.err.println("Server socket. Failure to accept connection:");
-            e.printStackTrace();
+        while (true) {
+            try (var acceptedSocket = serverSock.accept()) {
+                System.err.println("Accepted connection:" + acceptedSocket);
+                int iteration = 0;
+                // Wait for socket to get opened by DeadSSLSocketFactory and connected to the test server
+                while (iteration++ < 20) {
+                    if (DeadSSLSocketFactory.firstCreatedSocket.get() != null &&
+                        DeadSSLSocketFactory.firstCreatedSocket.get().isConnected()) {
+                        break;
+                    }
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(50);
+                    } catch (InterruptedException ie) {
+                    }
+                }
+                Socket clientSideSocket = DeadSSLSocketFactory.firstCreatedSocket.get();
+                System.err.printf("Got SSLSocketFactory connection after %d iterations: %s%n",
+                        iteration, clientSideSocket);
+
+                if (clientSideSocket == null || !clientSideSocket.isConnected()) {
+                    // If after 1000 ms client side connection is not opened - probably other local process
+                    // tried to connect to the test server socket. Close current connection and retry accept.
+                    continue;
+                } else {
+                    // Check if accepted socket is connected to the LDAP client
+                    if (acceptedSocket.getLocalPort() == clientSideSocket.getPort() &&
+                            acceptedSocket.getPort() == clientSideSocket.getLocalPort() &&
+                            acceptedSocket.getInetAddress().equals(clientSideSocket.getLocalAddress())) {
+                        System.err.println("Accepted connection is originated from LDAP client:" + acceptedSocket);
+                        try {
+                            // Give LDAP client time to fully establish the connection.
+                            // When client is done - the accepted socket will be closed
+                            testDone.await();
+                        } catch (InterruptedException e) {
+                        }
+                        break;
+                    } else {
+                        // If accepted socket is not from the LDAP client - the accepted connection will be closed and new
+                        // one will be accepted
+                        System.err.println("SSLSocketFactory connection has been established, but originated not from" +
+                                " the test's LDAP client:" + acceptedSocket);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Server socket. Failure to accept connection:" + e.getMessage());
+            }
         }
     }
 
@@ -208,11 +249,16 @@ public class DeadSSLLdapTimeoutTest {
                           CONNECT_TIMEOUT_MS, READ_TIMEOUT_MS);
 
         Hashtable<Object, Object> sslenv = createEnv();
+        // Setup connect timeout environment property
         sslenv.put("com.sun.jndi.ldap.connect.timeout", CONNECT_TIMEOUT_MS);
+        // Setup read timeout environment property
         sslenv.put("com.sun.jndi.ldap.read.timeout", READ_TIMEOUT_MS);
+        // Setup DeadSSLSocketFactory to track the client's first LDAP connection
+        sslenv.put("java.naming.ldap.factory.socket", "DeadSSLSocketFactory");
+        // Use SSL protocol
         sslenv.put(Context.SECURITY_PROTOCOL, "ssl");
-        boolean testFailed = !new DeadServerTimeoutSSLTest(sslenv).call();
 
+        boolean testFailed = !new DeadServerTimeoutSSLTest(sslenv).call();
         if (testFailed) {
             throw new AssertionError("some tests failed");
         }
