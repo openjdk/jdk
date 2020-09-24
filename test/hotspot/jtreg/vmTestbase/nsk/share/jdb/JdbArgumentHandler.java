@@ -181,7 +181,11 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
      * Returns command line options <code>jdb</code> was launched with.
      */
     public String getJdbOptions() {
-        return options.getProperty("jdb.option", "");
+        String value = options.getProperty("jdb.option", "").trim();
+        if (value.length() > 1 && value.startsWith("\"") && value.endsWith("\"")) {
+            value = value.substring(1, value.length() - 1).trim();
+        }
+        return value;
     }
 
     /**

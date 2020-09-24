@@ -42,9 +42,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.use.use001.use001
- *        nsk.jdb.use.use001.use001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.use.use001.use001
+ * @build nsk.jdb.use.use001.use001a
+ * @run main/othervm
+ *      nsk.jdb.use.use001.use001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
