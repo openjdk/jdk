@@ -256,7 +256,7 @@ class Address {
              "inconsistent address");
   }
 
-  // The following two overloads are used in connection with the
+  // The following overloads are used in connection with the
   // ByteSize type (see sizes.hpp).  They simplify the use of
   // ByteSize'd arguments in assembly code.
 
