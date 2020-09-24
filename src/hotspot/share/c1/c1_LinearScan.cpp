@@ -5436,7 +5436,7 @@ bool LinearScanWalker::alloc_free_reg(Interval* cur) {
     hint_reg = register_hint->assigned_reg();
     hint_regHi = register_hint->assigned_regHi();
 
-    if (allocator()->is_precolored_cpu_interval(register_hint)) {
+    if (_num_phys_regs == 2 && allocator()->is_precolored_cpu_interval(register_hint)) {
       assert(hint_reg != any_reg && hint_regHi == any_reg, "must be for fixed intervals");
       hint_regHi = hint_reg + 1;  // connect e.g. eax-edx
     }
