@@ -36,8 +36,7 @@ private:
 
 public:
   void clear(void) {
-    // clearing _last_Java_sp must be first
-    reset_last_Java_sp();
+    set_last_Java_sp(NULL);
     _last_Java_fp = NULL;
     _last_Java_pc = NULL;
   }
@@ -51,7 +50,7 @@ public:
     // unless the value is changing
     //
     if (last_Java_fp() != src->_last_Java_sp) {
-      reset_last_Java_sp();
+      set_last_Java_sp(NULL);
     }
     _last_Java_fp = src->_last_Java_fp;
     _last_Java_pc = src->_last_Java_pc;
@@ -79,18 +78,11 @@ public:
   }
 
   void set_last_Java_sp(intptr_t* sp) {
-    if (sp != NULL) {
-      OrderAccess::release();
-      _last_Java_sp = sp;
-    } else {
-      reset_last_Java_sp();
-    }
-  }
-
-  void reset_last_Java_sp() {
     OrderAccess::release();
-    _last_Java_sp = NULL;
-    OrderAccess::fence();
+    _last_Java_sp = sp;
+    if (sp == NULL) {
+      OrderAccess::fence();
+    }
   }
 
   intptr_t* last_Java_fp(void) { return _last_Java_fp; }
