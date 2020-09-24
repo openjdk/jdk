@@ -296,6 +296,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
+  AOT_ONLY(nonstatic_field(MethodCounters,     _method,                                       Method*))                              \
   nonstatic_field(Method,                      _constMethod,                                  ConstMethod*)                          \
   nonstatic_field(Method,                      _method_data,                                  MethodData*)                           \
   nonstatic_field(Method,                      _method_counters,                              MethodCounters*)                       \
