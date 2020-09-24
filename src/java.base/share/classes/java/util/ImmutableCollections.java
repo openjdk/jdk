@@ -120,7 +120,10 @@ class ImmutableCollections {
         static {
             SharedSecrets.setJavaUtilCollectionAccess(new JavaUtilCollectionAccess() {
                 public <E> List<E> listFromTrustedArray(Object[] array) {
-                    return ImmutableCollections.ListN.fromTrustedArray(array);
+                    return ImmutableCollections.listFromTrustedArray(array);
+                }
+                public <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array) {
+                    return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
                 }
             });
         }
@@ -148,9 +151,16 @@ class ImmutableCollections {
         @Override public boolean retainAll(Collection<?> c) { throw uoe(); }
     }
 
-    // ---------- List Implementations ----------
+    // ---------- List Static Factory Methods ----------
 
-    // make a copy, short-circuiting based on implementation class
+    /**
+     * Copies a collection into a new List, unless the arg is already a safe,
+     * unmodifiable list, in which case the arg itself is returned.
+     *
+     * @param <E> the List's element type
+     * @param input the input array
+     * @return the new list
+     */
     @SuppressWarnings("unchecked")
     static <E> List<E> listCopy(Collection<? extends E> coll) {
         if (coll instanceof AbstractImmutableList && coll.getClass() != SubList.class) {
@@ -159,6 +169,81 @@ class ImmutableCollections {
             return (List<E>)List.of(coll.toArray());
         }
     }
+
+    /**
+     * Creates a new List from an untrusted array, creating a new array for internal
+     * storage, and checking for and rejecting null elements.
+     *
+     * @param <E> the List's element type
+     * @param input the input array
+     * @return the new list
+     */
+    @SafeVarargs
+    static <E> List<E> listFromArray(E... input) {
+        // copy and check manually to avoid TOCTOU
+        @SuppressWarnings("unchecked")
+        E[] tmp = (E[])new Object[input.length]; // implicit nullcheck of input
+        for (int i = 0; i < input.length; i++) {
+            tmp[i] = Objects.requireNonNull(input[i]);
+        }
+        return new ListN<>(tmp);
+    }
+
+    /**
+     * Creates a new List from a trusted array, checking for and rejecting null
+     * elements.
+     *
+     * <p>A trusted array has no references retained by the caller. It can therefore be
+     * safely reused as the List's internal storage, avoiding a defensive copy. Declared
+     * with Object... instead of E... as the parameter type so that varargs calls don't
+     * accidentally create an array of type other than Object[].
+     *
+     * @param <E> the List's element type
+     * @param input the input array
+     * @return the new list
+     */
+    @SuppressWarnings("unchecked")
+    static <E> List<E> listFromTrustedArray(Object... input) {
+        for (Object o : input) {
+            Objects.requireNonNull(o);
+        }
+
+        switch (input.length) { // implicit null check of elements
+            case 0:
+                return (List<E>) ImmutableCollections.EMPTY_LIST;
+            case 1:
+                return (List<E>) new List12<>(input[0]);
+            case 2:
+                return (List<E>) new List12<>(input[0], input[1]);
+            default:
+                return (List<E>) new ListN<>(input);
+        }
+    }
+
+    /**
+     * Creates a new List from a trusted array, allowing null elements.
+     *
+     * <p>A trusted array has no references retained by the caller. It can therefore be
+     * safely reused as the List's internal storage, avoiding a defensive copy. Declared
+     * with Object... instead of E... as the parameter type so that varargs calls don't
+     * accidentally create an array of type other than Object[].
+     *
+     * <p>Avoids creating a List12 instance, as it cannot accommodate null elements.
+     *
+     * @param <E> the List's element type
+     * @param input the input array
+     * @return the new list
+     */
+    @SuppressWarnings("unchecked")
+    static <E> List<E> listFromTrustedArrayNullsAllowed(Object... input) {
+        if (input.length == 0) {
+            return (List<E>) EMPTY_LIST;
+        } else {
+            return new ListNNullsAllowed<>((E[])input);
+        }
+    }
+
+    // ---------- List Implementations ----------
 
     static abstract class AbstractImmutableList<E> extends AbstractImmutableCollection<E>
             implements List<E>, RandomAccess {
@@ -456,7 +541,7 @@ class ImmutableCollections {
         List12(E e0) {
             this.e0 = Objects.requireNonNull(e0);
             // Use EMPTY as a sentinel for an unused element: not using null
-            // enable constant folding optimizations over single-element lists
+            // enables constant folding optimizations over single-element lists
             this.e1 = EMPTY;
         }
 
@@ -526,7 +611,7 @@ class ImmutableCollections {
         }
     }
 
-    static final class ListN<E> extends AbstractImmutableList<E>
+    static class ListN<E> extends AbstractImmutableList<E>
             implements Serializable {
 
         @Stable
@@ -534,29 +619,6 @@ class ImmutableCollections {
 
         private ListN(E[] array) {
             elements = array;
-        }
-
-        // creates a new internal array, and checks and rejects null elements
-        @SafeVarargs
-        static <E> List<E> fromArray(E... input) {
-            // copy and check manually to avoid TOCTOU
-            @SuppressWarnings("unchecked")
-            E[] tmp = (E[])new Object[input.length]; // implicit nullcheck of input
-            for (int i = 0; i < input.length; i++) {
-                tmp[i] = Objects.requireNonNull(input[i]);
-            }
-            return new ListN<>(tmp);
-        }
-
-        // Avoids creating a new array, but checks and rejects null elements.
-        // Declared with Object... arg so that varargs calls don't accidentally
-        // create an array of a subtype.
-        @SuppressWarnings("unchecked")
-        static <E> List<E> fromTrustedArray(Object... input) {
-            for (Object o : input) {
-                Objects.requireNonNull(o);
-            }
-            return new ListN<>((E[])input);
         }
 
         @Override
@@ -576,6 +638,11 @@ class ImmutableCollections {
 
         @java.io.Serial
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+            throw new InvalidObjectException("not serial proxy");
+        }
+
+        @java.io.Serial
+        private void readObjectNoData() throws ObjectStreamException {
             throw new InvalidObjectException("not serial proxy");
         }
 
@@ -602,6 +669,60 @@ class ImmutableCollections {
                 a[size] = null; // null-terminate
             }
             return a;
+        }
+    }
+
+    static final class ListNNullsAllowed<E> extends ListN<E> {
+        private ListNNullsAllowed(E[] array) {
+            super(array);
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            Object[] es = ((ListN)this).elements;
+            if (o == null) {
+                for (int i = 0; i < es.length; i++) {
+                    if (es[i] == null) {
+                        return i;
+                    }
+                }
+            } else {
+                for (int i = 0; i < es.length; i++) {
+                    if (o.equals(es[i])) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            Object[] es = ((ListN)this).elements;
+            if (o == null) {
+                for (int i = es.length - 1; i >= 0; i--) {
+                    if (es[i] == null) {
+                        return i;
+                    }
+                }
+            } else {
+                for (int i = es.length - 1; i >= 0; i--) {
+                    if (o.equals(es[i])) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+
+        @java.io.Serial
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+            throw new InvalidObjectException("not serial proxy");
+        }
+
+        @java.io.Serial
+        private Object writeReplace() {
+            return new CollSer(CollSer.IMM_LIST_NULLS, ((ListN) this).elements);
         }
     }
 
@@ -1225,15 +1346,19 @@ final class CollSer implements Serializable {
     @java.io.Serial
     private static final long serialVersionUID = 6309168927139932177L;
 
-    static final int IMM_LIST = 1;
-    static final int IMM_SET = 2;
-    static final int IMM_MAP = 3;
+    static final int IMM_LIST       = 1;
+    static final int IMM_SET        = 2;
+    static final int IMM_MAP        = 3;
+    static final int IMM_LIST_NULLS = 4;
 
     /**
      * Indicates the type of collection that is serialized.
      * The low order 8 bits have the value 1 for an immutable
-     * {@code List}, 2 for an immutable {@code Set}, and 3 for
-     * an immutable {@code Map}. Any other value causes an
+     * {@code List}, 2 for an immutable {@code Set}, 3 for
+     * an immutable {@code Map}, and 4 for an immutable
+     * {@code List} that allows null elements.
+     *
+     * Any other value causes an
      * {@link InvalidObjectException} to be thrown. The high
      * order 24 bits are zero when an instance is serialized,
      * and they are ignored when an instance is deserialized.
@@ -1352,6 +1477,9 @@ final class CollSer implements Serializable {
             switch (tag & 0xff) {
                 case IMM_LIST:
                     return List.of(array);
+                case IMM_LIST_NULLS:
+                    return ImmutableCollections.listFromTrustedArrayNullsAllowed(
+                            Arrays.copyOf(array, array.length, Object[].class));
                 case IMM_SET:
                     return Set.of(array);
                 case IMM_MAP:
