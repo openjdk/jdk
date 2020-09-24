@@ -40,10 +40,6 @@
   frame pd_last_frame();
 
  public:
-  intptr_t* last_Java_fp()                       { return _anchor.last_Java_fp(); }
-  void  set_last_Java_fp(intptr_t* fp)           { _anchor.set_last_Java_fp(fp);  }
-  void  set_last_Java_pc(address pc)             { _anchor.set_last_Java_pc(pc);  }
-
   static ByteSize last_Java_fp_offset()          {
     return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_fp_offset();
   }
