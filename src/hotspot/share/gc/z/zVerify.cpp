@@ -359,7 +359,7 @@ public:
 
 void ZVerify::verify_frame_bad(const frame& fr, RegisterMap& register_map) {
   ZVerifyBadOopClosure verify_cl;
-  fr.oops_do(&verify_cl, NULL, &register_map);
+  fr.oops_do(&verify_cl, NULL, &register_map, DerivedPointerIterationMode::_ignore);
 }
 
 void ZVerify::verify_thread_head_bad(JavaThread* jt) {
@@ -373,7 +373,7 @@ void ZVerify::verify_thread_frames_bad(JavaThread* jt) {
     StackWatermarkProcessingMark swpm(Thread::current());
     // Traverse the execution stack
     for (StackFrameStream fst(jt, true /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
-      fst.current()->oops_do(&verify_cl, NULL /* code_cl */, fst.register_map());
+      fst.current()->oops_do(&verify_cl, NULL /* code_cl */, fst.register_map(), DerivedPointerIterationMode::_ignore);
     }
   }
 }

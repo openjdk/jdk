@@ -86,9 +86,6 @@ public:
   }
 
   virtual void do_thread(Thread* thread) {
-    if (thread->is_Java_thread()) {
-      StackWatermarkSet::finish_processing(thread->as_Java_thread(), NULL /* context */, StackWatermarkKind::gc);
-    }
     CodeBlobToOopClosure code_cl(this, false /* fix_oop_relocations */);
     thread->oops_do(this, &code_cl);
   }

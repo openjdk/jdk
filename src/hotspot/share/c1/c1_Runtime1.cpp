@@ -510,7 +510,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   // This function is called when we are about to throw an exception. Therefore,
   // we have to poll the stack watermark barrier to make sure that not yet safe
   // stack frames are made safe before returning into them.
-  if (thread->last_frame().is_runtime_frame()) {
+  if (thread->last_frame().cb() == Runtime1::blob_for(Runtime1::handle_exception_from_callee_id)) {
     // The Runtime1::handle_exception_from_callee_id handler is invoked after the
     // frame has been unwound. It instead builds its own stub frame, to call the
     // runtime. But the throwing frame has already been unwound here.

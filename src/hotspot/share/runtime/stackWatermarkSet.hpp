@@ -32,6 +32,13 @@ class frame;
 class JavaThread;
 class StackWatermark;
 
+// A thread may have multiple StackWatermarks installed, for different unrelated client
+// applications of lazy stack processing. The StackWatermarks class is the thread-local
+// data structure used to store said watermarks. The StackWatermarkSet is the corresponding
+// AllStatic class you use to interact with watermarks from shared runtime code. It allows
+// hooks for all watermarks, or requesting specific action for specific client StackWatermark
+// instances (if they have been installed).
+
 class StackWatermarks {
   friend class StackWatermarkSet;
 private:

@@ -3024,6 +3024,8 @@ void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
   if (!has_last_Java_frame()) {
     return;
   }
+  // Finish any pending lazy GC activity for the frames
+  StackWatermarkSet::finish_processing(this, NULL /* context */, StackWatermarkKind::gc);
   // Traverse the execution stack
   for (StackFrameStream fst(this, true /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
     fst.current()->oops_do(f, cf, fst.register_map());
