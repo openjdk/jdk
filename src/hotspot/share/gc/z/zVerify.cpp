@@ -85,7 +85,9 @@ public:
 
   virtual void do_thread(Thread* thread);
 
-  bool verify_fixed() const { return _verify_fixed; }
+  bool verify_fixed() const {
+    return _verify_fixed;
+  }
 };
 
 class ZVerifyCodeBlobClosure : public CodeBlobToOopClosure {
@@ -111,7 +113,7 @@ public:
       _jt(jt),
       _last_good(0),
       _verifying_bad_frames(false) {
-    ZStackWatermark* stack_watermark = StackWatermarkSet::get<ZStackWatermark>(jt, StackWatermarkKind::gc);
+    ZStackWatermark* const stack_watermark = StackWatermarkSet::get<ZStackWatermark>(jt, StackWatermarkKind::gc);
 
     if (_cl->verify_fixed()) {
       assert(stack_watermark->processing_started(), "Should already have been fixed");
@@ -148,7 +150,7 @@ public:
     // The verification has two modes, depending on whether we have reached the
     // last processed frame or not. Before it is reached, we expect everything to
     // be good. After reaching it, we expect everything to be bad.
-    uintptr_t sp = reinterpret_cast<uintptr_t>(frame.sp());
+    const uintptr_t sp = reinterpret_cast<uintptr_t>(frame.sp());
 
     if (!_verifying_bad_frames && sp == _last_good) {
       // Found the last good frame, now verify the bad ones
