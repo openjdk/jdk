@@ -362,11 +362,14 @@ void ZVerify::verify_frame_bad(const frame& fr, RegisterMap& register_map) {
   fr.oops_do(&verify_cl, NULL, &register_map);
 }
 
-void ZVerify::verify_thread_bad(JavaThread* jt) {
+void ZVerify::verify_thread_head_bad(JavaThread* jt) {
   ZVerifyBadOopClosure verify_cl;
   jt->oops_do_no_frames(&verify_cl, NULL);
+}
 
+void ZVerify::verify_thread_frames_bad(JavaThread* jt) {
   if (jt->has_last_Java_frame()) {
+    ZVerifyBadOopClosure verify_cl;
     StackWatermarkProcessingMark swpm(Thread::current());
     // Traverse the execution stack
     for (StackFrameStream fst(jt, true /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
