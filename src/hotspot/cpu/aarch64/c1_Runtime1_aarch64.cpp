@@ -555,7 +555,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 #endif
 
   __ reset_last_Java_frame(true);
-  __ maybe_isb();
+
 #ifdef ASSERT
   // check that fields in JavaThread for exception oop and issuing pc are empty
   Label oop_empty;
@@ -575,7 +575,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   // expected scenario and anything else is  an error. Note that we maintain a
   // check on the result purely as a defensive measure.
   Label no_deopt;
-  __ cbz(r0, no_deopt);                                // have we deoptimized?
+  __ cbz(r0, no_deopt);                                // Have we deoptimized?
 
   // Perform a re-execute. The proper return  address is already on the stack,
   // we just need  to restore registers, pop  all of our frame  but the return
