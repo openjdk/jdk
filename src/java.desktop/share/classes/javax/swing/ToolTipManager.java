@@ -678,6 +678,11 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
      */
     protected class insideTimerAction implements ActionListener {
         /**
+         * Constructor for subclasses to call.
+         */
+        protected insideTimerAction() {}
+
+        /**
          * {@inheritDoc}
          */
         public void actionPerformed(ActionEvent e) {
@@ -708,6 +713,11 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
      */
     protected class outsideTimerAction implements ActionListener {
         /**
+         * Constructor for subclasses to call.
+         */
+        protected outsideTimerAction() {}
+
+        /**
          * {@inheritDoc}
          */
         public void actionPerformed(ActionEvent e) {
@@ -719,6 +729,11 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
      * Still inside timer action.
      */
     protected class stillInsideTimerAction implements ActionListener {
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected stillInsideTimerAction() {}
+
         /**
          * {@inheritDoc}
          */

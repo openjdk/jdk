@@ -1305,10 +1305,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       if (OptoReg::is_valid(reg2))
         rm->Insert( reg2 );
     } // End of for all arguments
-
-    // Compute number of stack slots needed to restore stack in case of
-    // Pascal-style argument popping.
-    mcall->_argsize = out_arg_limit_per_call - begin_out_arg_area;
   }
 
   // Compute the max stack slot killed by any call.  These will not be

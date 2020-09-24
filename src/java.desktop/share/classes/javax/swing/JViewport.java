@@ -1405,6 +1405,11 @@ public class JViewport extends JComponent implements Accessible
     @SuppressWarnings("serial") // Same-version serialization only
     protected class ViewListener extends ComponentAdapter implements Serializable
     {
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected ViewListener() {}
+
         public void componentResized(ComponentEvent e) {
             fireStateChanged();
             revalidate();
@@ -1875,6 +1880,12 @@ public class JViewport extends JComponent implements Accessible
      */
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJViewport extends AccessibleJComponent {
+
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJViewport() {}
+
         /**
          * Get the role of this object.
          *

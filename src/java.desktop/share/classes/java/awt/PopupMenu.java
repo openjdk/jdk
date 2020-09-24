@@ -229,6 +229,11 @@ public class PopupMenu extends Menu {
         private static final long serialVersionUID = -4282044795947239955L;
 
         /**
+         * Constructs an {@code AccessibleAWTPopupMenu}
+         */
+        protected AccessibleAWTPopupMenu() {}
+
+        /**
          * Get the role of this object.
          *
          * @return an instance of AccessibleRole describing the role of the

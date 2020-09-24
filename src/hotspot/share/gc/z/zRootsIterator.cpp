@@ -54,7 +54,6 @@
 static const ZStatSubPhase ZSubPhasePauseRootsSetup("Pause Roots Setup");
 static const ZStatSubPhase ZSubPhasePauseRoots("Pause Roots");
 static const ZStatSubPhase ZSubPhasePauseRootsTeardown("Pause Roots Teardown");
-static const ZStatSubPhase ZSubPhasePauseRootsObjectSynchronizer("Pause Roots ObjectSynchronizer");
 static const ZStatSubPhase ZSubPhasePauseRootsJVMTIWeakExport("Pause Roots JVMTIWeakExport");
 static const ZStatSubPhase ZSubPhasePauseRootsVMThread("Pause Roots VM Thread");
 static const ZStatSubPhase ZSubPhasePauseRootsJavaThreads("Pause Roots Java Threads");
@@ -184,7 +183,6 @@ void ZJavaThreadsIterator::threads_do(ThreadClosure* cl) {
 ZRootsIterator::ZRootsIterator(bool visit_jvmti_weak_export) :
     _visit_jvmti_weak_export(visit_jvmti_weak_export),
     _java_threads_iter(),
-    _object_synchronizer(this),
     _jvmti_weak_export(this),
     _vm_thread(this),
     _java_threads(this),
@@ -209,11 +207,6 @@ ZRootsIterator::~ZRootsIterator() {
   }
 
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
-}
-
-void ZRootsIterator::do_object_synchronizer(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseRootsObjectSynchronizer);
-  ObjectSynchronizer::oops_do(cl);
 }
 
 void ZRootsIterator::do_jvmti_weak_export(ZRootsIteratorClosure* cl) {
@@ -241,7 +234,6 @@ void ZRootsIterator::do_code_cache(ZRootsIteratorClosure* cl) {
 
 void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRoots);
-  _object_synchronizer.oops_do(cl);
   _vm_thread.oops_do(cl);
   _java_threads.oops_do(cl);
   if (!ClassUnloading) {

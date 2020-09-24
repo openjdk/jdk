@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.doclint;
+package jdk.javadoc.internal.doclint;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -85,14 +85,13 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTreePathScanner;
 import com.sun.source.util.TreePath;
-import com.sun.tools.doclint.HtmlTag.AttrKind;
 import com.sun.tools.javac.tree.DocPretty;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.StringUtils;
 
-import static com.sun.tools.doclint.Messages.Group.*;
+import jdk.javadoc.internal.doclint.HtmlTag.AttrKind;
+import static jdk.javadoc.internal.doclint.Messages.Group.*;
 
 
 /**

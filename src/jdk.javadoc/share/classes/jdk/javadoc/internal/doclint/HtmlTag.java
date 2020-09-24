@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.doclint;
+package jdk.javadoc.internal.doclint;
 
 import java.util.Collections;
 import java.util.EnumMap;
@@ -35,7 +35,7 @@ import javax.lang.model.element.Name;
 
 import com.sun.tools.javac.util.StringUtils;
 
-import static com.sun.tools.doclint.HtmlTag.Attr.*;
+import static jdk.javadoc.internal.doclint.HtmlTag.Attr.*;
 
 /**
  * Enum representing HTML tags.

@@ -198,16 +198,16 @@ JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
                                       jboolean initialize);
 
 JNIEXPORT jboolean JNICALL
-JVM_IsCDSDumpingEnabled(JNIEnv* env);
+JVM_IsDynamicDumpingEnabled(JNIEnv* env);
 
 JNIEXPORT jboolean JNICALL
-JVM_IsCDSSharingEnabled(JNIEnv* env);
+JVM_IsSharingEnabled(JNIEnv* env);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsDumpLoadedClassListSetAndOpen(JNIEnv* env);
 
 JNIEXPORT jlong JNICALL
-JVM_GetRandomSeedForCDSDump();
+JVM_GetRandomSeedForDumping();
 
 JNIEXPORT void JNICALL
 JVM_CDSTraceResolve(JNIEnv* env, jclass ignored, jstring line);

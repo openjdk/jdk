@@ -537,6 +537,11 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
         private static final long serialVersionUID = -1122642964303476L;
 
         /**
+         * Constructs an {@code AccessibleAWTCheckboxMenuItem}
+         */
+        protected AccessibleAWTCheckboxMenuItem() {}
+
+        /**
          * Get the AccessibleAction associated with this object.  In the
          * implementation of the Java Accessibility API for this class,
          * return this object, which is responsible for implementing the
