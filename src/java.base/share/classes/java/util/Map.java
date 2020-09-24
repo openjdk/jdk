@@ -393,14 +393,21 @@ public interface Map<K, V> {
     Set<Map.Entry<K, V>> entrySet();
 
     /**
-     * A map entry (key-value pair).  The {@code Map.entrySet} method returns
-     * a collection-view of the map, whose elements are of this class.  The
-     * <i>only</i> way to obtain a reference to a map entry is from the
-     * iterator of this collection-view.  These {@code Map.Entry} objects are
-     * valid <i>only</i> for the duration of the iteration; more formally,
-     * the behavior of a map entry is undefined if the backing map has been
+     * A map entry (key-value pair). The entry may be unmodifiable, or
+     * the value may be modified, if the optional {@code setValue} method
+     * is implemented. The entry may be independent of any map or it
+     * may represent one entry of a view of a map, as described below.
+     * <p>
+     * The {@code Map.entrySet} method returns a collection-view of the map,
+     * whose elements are of this class. These {@code Map.Entry} objects
+     * themselves views of the entries of the map, and they are valid
+     * <i>only</i> for the duration of the iteration over the entry set view.
+     * The behavior of such a map entry is undefined if the backing map has been
      * modified after the entry was returned by the iterator, except through
      * the {@code setValue} operation on the map entry.
+     * <p>
+     * A map entry from a map's entry set can be "disconnected" from the map
+     * through use of the {@link #copyOf copyOf} method.
      *
      * @see Map#entrySet()
      * @since 1.2
@@ -558,6 +565,35 @@ public interface Map<K, V> {
             Objects.requireNonNull(cmp);
             return (Comparator<Map.Entry<K, V>> & Serializable)
                 (c1, c2) -> cmp.compare(c1.getValue(), c2.getValue());
+        }
+
+        /**
+         * Returns a copy of the given map entry. The returned entry is not associated with
+         * any map. The returned entry has the same characteristics as the entry returned
+         * by the {@link Map.entry} method.
+         *
+         * @apiNote
+         * An entry obtained from a map's entry set is a view of an entry of that map. The
+         * {@code copyOf} method may be used to create an entry object, containing the same
+         * key and value, that is independent of any map.
+         *
+         * @implNote
+         * If the given entry was obtained from a call to {@code copyOf},
+         * calling copyOf will generally not create another copy.
+         *
+         * @param e the entry to be copied
+         * @return a map entry equal to the given entry
+         * @throws NullPointerException if e is null or if the key or value is null
+         * @since 14
+         */
+        public static <K, V> Map.Entry<K, V> copyOf(Map.Entry<? extends K, ? extends V> e) {
+            if (e instanceof KeyValueHolder) {
+                @SuppressWarnings("unchecked")
+                Map.Entry<K, V> r = (Map.Entry<K, V>)e;
+                return r;
+            } else {
+                return Map.entry(e.getKey(), e.getValue());
+            }
         }
     }
 

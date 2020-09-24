@@ -592,8 +592,11 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
 
     /**
      * An Entry maintaining a key and a value.  The value may be
-     * changed using the {@code setValue} method.  This class
-     * facilitates the process of building custom map
+     * changed using the {@code setValue} method. Instances of
+     * this class are not associated with any map's entry set view.
+     *
+     * @apiNote
+     * This class facilitates the process of building custom map
      * implementations. For example, it may be convenient to return
      * arrays of {@code SimpleEntry} instances in method
      * {@code Map.entrySet().toArray}.
@@ -726,8 +729,16 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
 
     /**
      * An Entry maintaining an immutable key and value.  This class
-     * does not support method {@code setValue}.  This class may be
-     * convenient in methods that return thread-safe snapshots of
+     * does not support the {@code setValue} method. Instances of
+     * this class are not associated with any map's entry set view.
+     *
+     * @apiNote
+     * An instance of this <i>class</i> is immutable (strictly speaking,
+     * unmodifiable). However, holding a reference of this <i>type</i>
+     * does not guarantee unmodifiability, as a subclass may allow
+     * modification.
+     * <p>
+     * This class may be convenient in methods that return thread-safe snapshots of
      * key-value mappings.
      *
      * @since 1.6
