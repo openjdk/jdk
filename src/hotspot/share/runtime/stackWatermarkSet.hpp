@@ -72,7 +72,8 @@ public:
   // Called to finish the processing of a thread
   static void finish_processing(JavaThread* jt, void* context, StackWatermarkKind kind);
 
-  // The lowest watermark among the watermarks in the set
+  // The lowest watermark among the watermarks in the set (the first encountered
+  // watermark in the set as you unwind frames)
   static uintptr_t lowest_watermark(JavaThread* jt);
 };
 

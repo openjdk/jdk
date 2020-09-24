@@ -31,6 +31,16 @@
 class JavaThread;
 class StackWatermarkFramesIterator;
 
+// The StackWatermark state is a tuple comprising the last epoch in which
+// the watermark has been processed, and a boolean denoting whether the whole
+// processing of the lazy snapshot has been processed or not. It is written
+// in a way that can be used outside of locks, so that fast path checks can
+// be performed without the need for any locking. The boolean can only be
+// trusted if the epoch of the state is the same as the epoch_id() of the
+// watermark. Incrementing the epoch_id() will implicitly initiate a new lazy
+// stack snapshot, and trigger processing on it as needed, due to the cached
+// epoch of the state being outdated. When the snapshot is_done for the current
+// epoch_id(), there is no need to do anything further.
 class StackWatermarkState : public AllStatic {
 public:
   inline static bool is_done(uint32_t state) {
@@ -46,6 +56,30 @@ public:
   }
 };
 
+// The StackWatermark allows lazy incremental concurrent processing of a
+// snapshot of a stack. The lazy and incremental nature is implemented by
+// marking a frame (the watermark) from which returns (or other forms of
+// unwinding) will take a slow path to perform additional processing
+// required when exposing more frames that were part of the snapshot to
+// the system. The watermark pointer always denotes the SP of the watermark.
+// However, active frames can grow and shrink arbitrarily compared to the
+// snapshot view that is being processed, due to things like c2i adapters,
+// and various register saving techniques to get into the runtime. Therefore,
+// in order to cope with the frames growing and shrinking, comparisons
+// against the watermark are performed with the frame pointer of a given
+// frame against the watermark (denoting the SP).
+//
+//  ----------
+// |          |
+// |  caller  |
+// |          |
+//  ----------
+// |          | <-- frame fp  (always above the watermark of the same frame,
+// |  callee  |                regardless of frame resizing)
+// |          |
+//  ----------  <-- watermark (callee SP from the snapshot, SP at the
+//                             point of unwinding, might be above or below
+//                             due to frame resizing)
 class StackWatermark : public CHeapObj<mtInternal> {
   friend class StackWatermarkFramesIterator;
 protected:
