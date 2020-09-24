@@ -54,7 +54,7 @@ class VirtualSpaceNode;
 //
 // A Metachunk is "free" if its payload is currently unused. In that
 //  case it is managed by a chunk freelist (the ChunkManager).
-// 
+//
 // A Metachunk is "dead" if it does not have a corresponding payload.
 //  In that case it lives as part of a freelist-of-dead-chunk-headers
 //  in the ChunkHeaderPool.
@@ -73,10 +73,10 @@ class VirtualSpaceNode;
 // uncommitted. Technically, a payload may be committed "checkered" -
 // i.e. committed and uncommitted parts may interleave - but the
 // important part is how much contiguous space is committed starting
-// at the base of the payload (since that's where we allocate). 
-// 
+// at the base of the payload (since that's where we allocate).
+//
 // The Metachunk keeps track of how much space is committed starting
-//  at the base of the payload - which is a performace optimization - 
+//  at the base of the payload - which is a performace optimization -
 //  while underlying layers (VirtualSpaceNode->commitmask) keep track
 //  of the "real" commit state, aka which granules are committed,
 //  independent on what chunks reside above those granules.
@@ -90,7 +90,7 @@ class VirtualSpaceNode;
 //            | -----------  | <- committed_top  -- +           |
 //            |              |                      |           |
 //            |              |                      | "free"    |
-//            |              |                      |           | size 
+//            |              |                      |           | size
 //            |              |     "free_below_     |           |
 //            |              |        committed"    |           |
 //            |              |                      |           |
