@@ -203,20 +203,19 @@ public class AddLauncherTest {
 
         cmd.executeAndAssertHelloAppImageCreated();
 
-        // verify using each additional launchers cfg file that it has the
-        // main-jar/class or module/class
-
+        // check value of app.mainmodule in ModularAppLauncher's cfg file
         CfgFile cfg = cmd.readLauncherCfgFile("ModularAppLauncher");
         String moduleValue = cfg.getValue("Application", "app.mainmodule");
         String mainClass = null;
         String classpath = null;
-        TKit.assertEquals(moduleValue, JavaAppDesc.parse(
+        TKit.assertEquals(JavaAppDesc.parse(
                 modularAppDesc.toString()).setBundleFileName(null).toString(),
-                "app.mainmodule value in cfg file not as expected");
+                moduleValue,"app.mainmodule value in cfg file not as expected");
 
         TKit.trace("moduleValue: " + moduleValue + " mainClass: " + mainClass
                     + " classpath: " + classpath);
 
+        // check values of app.mainclass and app.classpath in cfg file
         cfg = cmd.readLauncherCfgFile("NonModularAppLauncher");
         moduleValue = null;
         mainClass = cfg.getValue("Application", "app.mainclass");
