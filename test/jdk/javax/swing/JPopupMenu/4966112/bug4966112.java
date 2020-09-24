@@ -48,6 +48,7 @@ public class bug4966112 {
     private static volatile JFileChooser filec;
     private static int buttonMask;
     private static Robot robot;
+    private static boolean isAquaFileChooser;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -95,14 +96,15 @@ public class bug4966112 {
             throw new RuntimeException("Popup was not shown on spinner");
         }
 
-        if (System.getProperty("os.name").startsWith("Mac")) {
-            return;
-        }
-
         // Test File Chooser
         createAndShowFileChooser();
         robot.waitForIdle();
 
+        if (System.getProperty("os.name").startsWith("Mac")) {
+            isAquaFileChooser = true;
+        } else {
+            isAquaFileChooser = false;
+        }
         clickMouse(filec);
         robot.waitForIdle();
 
@@ -113,6 +115,7 @@ public class bug4966112 {
         robot.waitForIdle();
         closeFrame();
 
+        isAquaFileChooser = false;
         if (!shown) {
             throw new RuntimeException("Popup was not shown on filechooser");
         }
@@ -150,7 +153,11 @@ public class bug4966112 {
             public void run() {
                 Point p = c.getLocationOnScreen();
                 Dimension size = c.getSize();
-                result[0] = new Point(p.x + size.width / 2, p.y + size.height / 2);
+                if (isAquaFileChooser){
+                    result[0] = new Point(p.x + size.width / 2, p.y + 5);
+                } else {
+                    result[0] = new Point(p.x + size.width / 2, p.y + size.height / 2);
+                }
             }
         });
 
