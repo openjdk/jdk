@@ -915,8 +915,11 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
 
     st->print("tid=" INTPTR_FORMAT " ", p2i(this));
     osthread()->print_on(st);
+
+    if (osthread()->get_state() != ZOMBIE) {
+      ThreadsSMRSupport::print_info_on(this, st);
+    }
   }
-  ThreadsSMRSupport::print_info_on(this, st);
   st->print(" ");
   debug_only(if (WizardMode) print_owned_locks_on(st);)
 }
@@ -939,15 +942,18 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   }
 
   OSThread* os_thr = osthread();
-  if (os_thr != NULL && os_thr->get_state() != ZOMBIE) {
-    st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
-              p2i(stack_end()), p2i(stack_base()));
-    st->print(" [id=%d]", osthread()->thread_id());
+  if (os_thr != NULL) {
+    if (os_thr->get_state() != ZOMBIE) {
+      st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
+                p2i(stack_end()), p2i(stack_base()));
+      st->print(" [id=%d]", osthread()->thread_id());
+      ThreadsSMRSupport::print_info_on(this, st);
+    } else {
+      st->print(" Terminated");
+    }
   } else {
-    st->print(" exited");
+    st->print(" Aborted");
   }
-
-  ThreadsSMRSupport::print_info_on(this, st);
 }
 
 void Thread::print_value_on(outputStream* st) const {
