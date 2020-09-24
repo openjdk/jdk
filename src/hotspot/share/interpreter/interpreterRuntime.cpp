@@ -738,8 +738,15 @@ JRT_LEAF(void, InterpreterRuntime::monitorexit(JavaThread* thread, BasicObjectLo
   thread->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
   oop obj = elem->obj();
-  assert(!obj->is_unlocked(), "caller checked these conditions");
-  assert(Universe::heap()->is_in_or_null(obj), "must be NULL or an object");
+  assert(Universe::heap()->is_in(obj), "must an object");
+  // The object could become unlocked through a JNI call, which we have no other checks for.
+  // Give a message if CheckJNICalls but ignore.
+  if (obj->is_unlocked()) {
+    if (CheckJNICalls) {
+      fatal("Object has been unlocked by JNI");
+    }
+    return;
+  }
   ObjectSynchronizer::exit(obj, elem->lock(), thread);
   // Free entry. If it is not cleared, the exception handling code will try to unlock the monitor
   // again at method exit or in the case of an exception.

@@ -2102,6 +2102,14 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
 
 // Handles the uncommon cases of monitor unlocking in compiled code
 JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread))
+  // The object could become unlocked through a JNI call, which we have no other checks for.
+  // Give a message if CheckJNICalls but ignore.
+  if (obj->is_unlocked()) {
+    if (CheckJNICalls) {
+      fatal("Object has been unlocked by JNI");
+    }
+    return;
+  }
   SharedRuntime::monitor_exit_helper(obj, lock, thread);
 JRT_END
 
