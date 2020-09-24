@@ -185,15 +185,6 @@ void Universe::replace_mirror(BasicType t, oop new_mirror) {
   Universe::_mirrors[t].replace(new_mirror);
 }
 
-// Not sure why CDS has to do this
-void Universe::clear_basic_type_mirrors() {
-  for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-    if (!is_reference_type((BasicType)i)) {
-      Universe::_mirrors[i].replace(NULL);
-    }
-  }
-}
-
 void Universe::basic_type_classes_do(void f(Klass*)) {
   for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
     f(_typeArrayKlassObjs[i]);
@@ -245,7 +236,11 @@ void Universe::serialize(SerializeClosure* f) {
           _mirrors[i] = OopHandle(vm_global(), mirror_oop);
         }
       } else {
-        mirror_oop = _mirrors[i].resolve();
+        if (HeapShared::is_heap_object_archiving_allowed()) {
+          mirror_oop = _mirrors[i].resolve();
+        } else {
+          mirror_oop = NULL;
+        }
         f->do_oop(&mirror_oop); // write to archive
       }
       if (mirror_oop != NULL) { // may be null if archived heap is disabled

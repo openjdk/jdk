@@ -28,7 +28,7 @@
  *  with CDS with SubClass and SuperClass, each lives in own separate package
  * @library /test/lib /runtime/cds /testlibrary/jvmti
  * @requires vm.cds
- * @requires vm.flavor != "minimal"
+ * @requires vm.jvmti
  * @requires !vm.graal.enabled
  * @build TransformUtil TransformerAgent SubClass SuperClazz
  * @compile myPkg2/SubClass.java myPkg1/SuperClazz.java

@@ -108,10 +108,6 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   if(clear_pending_exception) {
     _thread->clear_pending_exception();
   }
-
-  if (_anchor.last_Java_sp() == NULL) {
-    _thread->record_base_of_stack_pointer();
-  }
 }
 
 
@@ -125,11 +121,6 @@ JavaCallWrapper::~JavaCallWrapper() {
   _thread->frame_anchor()->zap();
 
   debug_only(_thread->dec_java_call_counter());
-
-  if (_anchor.last_Java_sp() == NULL) {
-    _thread->set_base_of_stack_pointer(NULL);
-  }
-
 
   // Old thread-local info. has been restored. We are not back in the VM.
   ThreadStateTransition::transition_from_java(_thread, _thread_in_vm);
