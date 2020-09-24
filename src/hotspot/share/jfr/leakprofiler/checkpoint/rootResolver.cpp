@@ -33,6 +33,7 @@
 #include "jfr/leakprofiler/checkpoint/rootResolver.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "memory/iterator.hpp"
+#include "prims/jvmtiDeferredUpdates.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.hpp"
 #include "prims/jvmtiThreadState.hpp"

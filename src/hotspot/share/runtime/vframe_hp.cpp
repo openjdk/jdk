@@ -33,6 +33,7 @@
 #include "interpreter/oopMapCache.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiDeferredUpdates.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -339,18 +340,6 @@ vframe* compiledVFrame::sender() const {
       ? vframe::sender()
       : new compiledVFrame(&f, register_map(), thread(), scope()->sender(), vframe_id() + 1);
   }
-}
-
-void JvmtiDeferredUpdates::create_for(JavaThread* thread) {
-  assert(thread->deferred_updates() == NULL, "already allocated");
-  thread->set_deferred_updates(new JvmtiDeferredUpdates());
-}
-
-void JvmtiDeferredUpdates::inc_relock_count_after_wait(JavaThread* thread) {
-  if (thread->deferred_updates() == NULL) {
-    create_for(thread);
-  }
-  thread->deferred_updates()->inc_relock_count_after_wait();
 }
 
 jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int bci, intptr_t* id, int vframe_id) {
