@@ -84,17 +84,27 @@ class HandshakeState {
   bool can_process_handshake();
   void process_self_inner();
 
+  bool have_non_self_executable_operation();
+  HandshakeOperation* pop_for_self();
+  HandshakeOperation* pop();
+
  public:
   HandshakeState(JavaThread* thread);
 
   void add_operation(HandshakeOperation* op);
-  HandshakeOperation* pop_for_self();
-  HandshakeOperation* pop();
 
-  bool has_operation();
-  bool has_operation_for_self() {
+  bool has_operation() {
     return !_queue.is_empty();
   }
+
+  // Both _queue and _lock must be check. If a thread have seen this _handshakee
+  // as safe it will execute all possible handshake operations in a loop while
+  // holding _lock. We use lock free addition to the queue, which means it is
+  // possible to the queue to be seen as empty by _handshakee but as non-empty
+  // by the thread executing in the loop. To avoid the _handshakee eliding
+  // stopping while handshake operations are being executed, the _handshakee
+  // must take slow if _lock is held and make sure the queue is empty otherwise
+  // try process it.
   bool should_process() {
     return !_queue.is_empty() || _lock.is_locked();
   }

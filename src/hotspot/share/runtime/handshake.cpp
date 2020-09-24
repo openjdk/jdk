@@ -45,7 +45,12 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   // Once it reaches zero all handshake operations have been performed.
   int32_t             _pending_threads;
   JavaThread*         _target;
-public:
+
+ private:
+  // Must use AsyncHandshakeOperation when using AsyncHandshakeClosure.
+  HandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target, jlong start_ns) {};
+
+ public:
   HandshakeOperation(HandshakeClosure* cl, JavaThread* target) :
     _handshake_cl(cl),
     _pending_threads(1),
@@ -185,7 +190,7 @@ bool VM_Handshake::handshake_has_timed_out(jlong start_time) {
 void VM_Handshake::handle_timeout() {
   LogStreamHandle(Warning, handshake) log_stream;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread* thr = jtiwh.next(); ) {
-    if (thr->handshake_state()->has_operation_for_self()) {
+    if (thr->handshake_state()->has_operation()) {
       log_stream.print("Thread " PTR_FORMAT " has not cleared its handshake op", p2i(thr));
       thr->print_thread_state_on(&log_stream);
     }
@@ -385,7 +390,7 @@ static bool non_self_queue_filter(HandshakeOperation* op) {
   return !op->is_async();
 }
 
-bool HandshakeState::has_operation() {
+bool HandshakeState::have_non_self_executable_operation() {
   assert(_handshakee != Thread::current(), "Must not be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
   return _queue.contains(non_self_queue_filter);
@@ -462,7 +467,7 @@ bool HandshakeState::claim_handshake() {
   // If all handshake operations for the handshakee are finished and someone
   // just adds an operation we may see it here. But if the handshakee is not
   // armed yet it is not safe to proceed.
-  if (has_operation()) {
+  if (have_non_self_executable_operation()) {
     if (SafepointMechanism::local_poll_armed(_handshakee)) {
       return true;
     }
@@ -472,7 +477,7 @@ bool HandshakeState::claim_handshake() {
 }
 
 HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* match_op) {
-  if (!has_operation_for_self()) {
+  if (!has_operation()) {
     // JT has already cleared its handshake
     return HandshakeState::_no_operation;
   }
@@ -519,7 +524,7 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
 
       executed++;
     }
-  } while (has_operation());
+  } while (have_non_self_executable_operation());
 
   _lock.unlock();
 
