@@ -3886,7 +3886,7 @@ void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* p
   p->record_initial_evac_time(task_time.seconds() * 1000.0);
   p->record_or_add_code_root_fixup_time((total_processing - task_time).seconds() * 1000.0);
 
-  rem_set()->evacuation_phase_done(may_do_optional_evacuation);
+  rem_set()->complete_evac_phase(may_do_optional_evacuation);
 }
 
 class G1EvacuateOptionalRegionsTask : public G1EvacuateRegionsBaseTask {
@@ -3953,7 +3953,7 @@ void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* 
       phase_times()->record_or_add_optional_evac_time((Ticks::now() - start).seconds() * 1000.0);
     }
 
-    rem_set()->evacuation_phase_done(true /* has_more_than_one_evacuation_phase */);
+    rem_set()->complete_evac_phase(true /* has_more_than_one_evacuation_phase */);
   }
 
   _collection_set.abandon_optional_collection_set(per_thread_states);

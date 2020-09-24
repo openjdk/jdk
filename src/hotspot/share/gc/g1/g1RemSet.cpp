@@ -339,7 +339,7 @@ public:
     ::memset(_region_scan_chunks, false, _num_total_scan_chunks * sizeof(*_region_scan_chunks));
   }
 
-  void evacuation_phase_done(bool merge_dirty_regions) {
+  void complete_evac_phase(bool merge_dirty_regions) {
     if (merge_dirty_regions) {
       _all_dirty_regions->merge(_next_dirty_regions);
     }
@@ -1278,8 +1278,8 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   }
 }
 
-void G1RemSet::evacuation_phase_done(bool has_more_than_one_evacuation_phase) {
-  _scan_state->evacuation_phase_done(has_more_than_one_evacuation_phase);
+void G1RemSet::complete_evac_phase(bool has_more_than_one_evacuation_phase) {
+  _scan_state->complete_evac_phase(has_more_than_one_evacuation_phase);
 }
 
 void G1RemSet::exclude_region_from_scan(uint region_idx) {

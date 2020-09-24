@@ -92,7 +92,7 @@ public:
   // If initial_evacuation is set, this is called during the initial evacuation.
   void merge_heap_roots(bool initial_evacuation);
 
-  void evacuation_phase_done(bool has_more_than_one_evacuation_phase);
+  void complete_evac_phase(bool has_more_than_one_evacuation_phase);
   // Prepare for and cleanup after scanning the heap roots. Must be called
   // once before and after in sequential code.
   void prepare_for_scan_heap_roots();
