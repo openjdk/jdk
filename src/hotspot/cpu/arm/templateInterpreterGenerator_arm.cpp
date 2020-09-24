@@ -588,7 +588,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ mov(Rbcp, 0);                                  // bcp = 0 for native calls
   } else {
     __ ldr(Rtemp, Address(Rmethod, Method::const_offset())); // get ConstMethod*
-    __ add(Rbcp, Rtemp, ConstMethod::codes_offset()); // get codebase
+    __ add(Rbcp, Rtemp, in_bytes(ConstMethod::codes_offset())); // get codebase
   }
 
   __ push(Rmethod);                                    // save Method*
