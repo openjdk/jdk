@@ -598,7 +598,7 @@ void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Nod
     register_new_node(frame, C->start());
     Node *ret = new ParmNode(C->start(), TypeFunc::ReturnAdr);
     register_new_node(ret, C->start());
-    
+
     unc->init_req(TypeFunc::Control, iffalse);
     unc->init_req(TypeFunc::I_O, i_o);
     unc->init_req(TypeFunc::Memory, mem); // may gc ptrs
@@ -612,7 +612,7 @@ void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Nod
       set_subtree_ctrl(unc->in(i));
     }
     register_control(unc, _ltree_root, iffalse);
-    
+
     Node* ctrl = new ProjNode(unc, TypeFunc::Control);
     register_control(ctrl, _ltree_root, unc);
     Node* halt = new HaltNode(ctrl, frame, "uncommon trap returned which should never happen" PRODUCT_ONLY(COMMA /*reachable*/false));
@@ -680,7 +680,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
                     mm->set_memory_at(mms.alias_idx(), mem->as_MergeMem()->base_memory());
                   }
 #endif
-                } 
+                }
               }
             }
           } else if (mem->is_MergeMem()) {
@@ -787,7 +787,7 @@ bool PhaseIdealLoop::is_long_counted_loop(Node* x, IdealLoopTree* loop, Node_Lis
   if (cmp == NULL || cmp->Opcode() != Op_CmpL) {
     return false; // Avoid pointer & float & 32-bit compares
   }
-  
+
   Node* phi_incr = NULL;
   incr = loop_iv_incr(incr, x, loop, phi_incr);
   if (incr == NULL || incr->Opcode() != Op_AddL) {
@@ -800,7 +800,7 @@ bool PhaseIdealLoop::is_long_counted_loop(Node* x, IdealLoopTree* loop, Node_Lis
   if (stride == NULL) {
     return false;
   }
-  
+
 #ifndef PRODUCT
   Atomic::inc(&_long_loop_candidates);
 #endif
@@ -866,7 +866,7 @@ bool PhaseIdealLoop::is_long_counted_loop(Node* x, IdealLoopTree* loop, Node_Lis
     // check must have failed.
     return false;
   }
-  
+
   Node* exit_branch = exit_test->proj_out(back_control->Opcode() == Op_IfFalse);
   Node* entry_control = x->in(LoopNode::EntryControl);
 
@@ -916,7 +916,7 @@ bool PhaseIdealLoop::is_long_counted_loop(Node* x, IdealLoopTree* loop, Node_Lis
 
   _igvn.replace_input_of(x, LoopNode::EntryControl, outer_head);
   set_idom(x, outer_head, dom_depth(x));
-  
+
   // add an iv phi to the outer loop and use it to compute the inner
   // loop iteration limit
   Node* outer_phi = phi->clone();
@@ -938,7 +938,7 @@ bool PhaseIdealLoop::is_long_counted_loop(Node* x, IdealLoopTree* loop, Node_Lis
   } else {
     inner_iters_max = MaxNode::max_diff_with_zero(outer_phi, adjusted_limit, TypeLong::LONG, _igvn);
   }
-  
+
   Node* inner_iters_limit = _igvn.longcon(iters_limit);
   // inner_iters_max may not fit in a signed integer (iterating from
   // Long.MIN_VALUE to Long.MAX_VALUE for instance). Use an unsigned
@@ -1010,7 +1010,7 @@ bool PhaseIdealLoop::is_long_counted_loop(Node* x, IdealLoopTree* loop, Node_Lis
   }
 
   LoopNode* inner_head = x->as_Loop();
-  
+
   // Clone inner loop phis to outer loop
   for (uint i = 0; i < inner_head->outcnt(); i++) {
     Node* u = inner_head->raw_out(i);
@@ -1073,7 +1073,7 @@ bool PhaseIdealLoop::is_long_counted_loop(Node* x, IdealLoopTree* loop, Node_Lis
   //     // inner_phi := Phi(x, intcon(0), inner_phi + stride)
   //     int inner_incr = inner_phi + stride;
   //     bool inner_bol = (inner_incr < inner_iters_actual_int);
-  //     exit_test: //exit_test->in(1) := inner_bol; 
+  //     exit_test: //exit_test->in(1) := inner_bol;
   //     if (inner_bol) // WAS (phi < limit)
   //       back_control: fallthrough;
   //     else
@@ -1096,7 +1096,7 @@ bool PhaseIdealLoop::is_long_counted_loop(Node* x, IdealLoopTree* loop, Node_Lis
     old_new.clear();
     do_peeling(loop, old_new);
   }
-  
+
   if (safepoint != NULL) {
     SafePointNode* cloned_sfpt = old_new[safepoint->_idx]->as_SafePoint();
 
@@ -1108,13 +1108,13 @@ bool PhaseIdealLoop::is_long_counted_loop(Node* x, IdealLoopTree* loop, Node_Lis
     }
     add_empty_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
   }
-  
+
 #ifndef PRODUCT
   Atomic::inc(&_long_loop_nests);
 #endif
 
   inner_head->mark_transformed_long_loop();
-  
+
   return true;
 }
 
@@ -1126,7 +1126,7 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
   Node_List old_new;
   iv_nodes.push(cmp);
   bool failed = false;
-    
+
   for (uint i = 0; i < iv_nodes.size() && !failed; i++) {
     Node* n = iv_nodes.at(i);
     switch(n->Opcode()) {
@@ -1153,7 +1153,7 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
         DEBUG_ONLY(n->dump());
         fatal("unexpected");
     }
-    
+
     for (uint i = 1; i < n->req(); i++) {
       Node* in = n->in(i);
       if (in == NULL) {
@@ -1175,7 +1175,7 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
     }
     return false;
   }
-  
+
   for (uint i = 0; i < iv_nodes.size(); i++) {
     Node* n = iv_nodes.at(i);
     Node* clone = old_new[n->_idx];
@@ -1724,7 +1724,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
     Atomic::inc(&_long_loop_counted_loops);
   }
 #endif
-  
+
   return true;
 }
 
