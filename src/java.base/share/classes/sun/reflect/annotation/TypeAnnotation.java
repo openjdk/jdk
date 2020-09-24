@@ -92,7 +92,7 @@ public final class TypeAnnotation {
         METHOD_FORMAL_PARAMETER,
         THROWS,
         /**
-         * @since 14
+         * @since 16
          */
         RECORD_COMPONENT;
     }

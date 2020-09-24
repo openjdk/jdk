@@ -44,7 +44,7 @@ import java.util.Objects;
  * Java compiler implementations to implement the bodies of {@link Object}
  * methods for record classes.
  *
- * @since 14
+ * @since 16
  */
 public class ObjectMethods {
 

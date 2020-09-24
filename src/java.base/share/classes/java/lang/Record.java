@@ -78,7 +78,7 @@ package java.lang;
  * <a href="{@docRoot}/java.base/java/io/ObjectInputStream.html#record-serialization">record serialization</a>.
  *
  * @jls 8.10 Record Types
- * @since 14
+ * @since 16
  */
 public abstract class Record {
     /**

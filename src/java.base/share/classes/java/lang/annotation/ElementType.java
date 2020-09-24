@@ -123,7 +123,7 @@ public enum ElementType {
      * @jls 8.10.3 Record Members
      * @jls 9.7.4 Where Annotations May Appear
      *
-     * @since 14
+     * @since 16
      */
     RECORD_COMPONENT;
 }
