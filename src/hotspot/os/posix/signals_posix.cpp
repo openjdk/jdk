@@ -1505,27 +1505,20 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
       pthread_sigmask(SIG_BLOCK, NULL, &suspend_set);
       sigdelset(&suspend_set, SR_signum);
 
-#if !defined(AIX)
       sr_semaphore.signal();
-#endif
 
       // wait here until we are resumed
       while (1) {
         sigsuspend(&suspend_set);
 
         os::SuspendResume::State result = osthread->sr.running();
-#if !defined(AIX)
         if (result == os::SuspendResume::SR_RUNNING) {
+          // double check AIX doesn't need this!
           sr_semaphore.signal();
           break;
         } else if (result != os::SuspendResume::SR_SUSPENDED) {
           ShouldNotReachHere();
         }
-#else
-        if (result == os::SuspendResume::SR_RUNNING) {
-          break;
-        }
-#endif
       }
 
     } else if (state == os::SuspendResume::SR_RUNNING) {
@@ -1541,9 +1534,6 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
     // ignore
   } else {
     // ignore
-#if defined(AIX)
-    ShouldNotReachHere();
-#endif
   }
 
   errno = old_errno;
@@ -1596,14 +1586,6 @@ static int sr_notify(OSThread* osthread) {
   return status;
 }
 
-#if defined(AIX)
-// "Randomly" selected value for how long we want to spin
-// before bailing out on suspending a thread, also how often
-// we send a signal to a thread we want to resume
-static const int RANDOMLY_LARGE_INTEGER = 1000000;
-static const int RANDOMLY_LARGE_INTEGER2 = 100;
-#endif
-
 // returns true on success and false on error - really an error is fatal
 // but this seems the normal response to library errors
 bool PosixSignals::do_suspend(OSThread* osthread) {
@@ -1617,7 +1599,6 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
     return false;
   }
 
-#if !defined(AIX)
   if (sr_notify(osthread) != 0) {
     ShouldNotReachHere();
   }
@@ -1641,54 +1622,14 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
       }
     }
   }
-#else
-  if (sr_notify(osthread) != 0) {
-    // try to cancel, switch to running
-
-    os::SuspendResume::State result = osthread->sr.cancel_suspend();
-    if (result == os::SuspendResume::SR_RUNNING) {
-      // cancelled
-      return false;
-    } else if (result == os::SuspendResume::SR_SUSPENDED) {
-      // somehow managed to suspend
-      return true;
-    } else {
-      ShouldNotReachHere();
-      return false;
-    }
-  }
-
-  // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
-
-  for (int n = 0; !osthread->sr.is_suspended(); n++) {
-    for (int i = 0; i < RANDOMLY_LARGE_INTEGER2 && !osthread->sr.is_suspended(); i++) {
-      os::naked_yield();
-    }
-
-    // timeout, try to cancel the request
-    if (n >= RANDOMLY_LARGE_INTEGER) {
-      os::SuspendResume::State cancelled = osthread->sr.cancel_suspend();
-      if (cancelled == os::SuspendResume::SR_RUNNING) {
-        return false;
-      } else if (cancelled == os::SuspendResume::SR_SUSPENDED) {
-        return true;
-      } else {
-        ShouldNotReachHere();
-        return false;
-      }
-    }
-  }
-#endif
 
   guarantee(osthread->sr.is_suspended(), "Must be suspended");
   return true;
 }
 
 void PosixSignals::do_resume(OSThread* osthread) {
-#if !defined(AIX)
   assert(osthread->sr.is_suspended(), "thread should be suspended");
   assert(!sr_semaphore.trywait(), "invalid semaphore state");
-#endif
 
   if (osthread->sr.request_wakeup() != os::SuspendResume::SR_WAKEUP_REQUEST) {
     // failed to switch to WAKEUP_REQUEST
@@ -1698,20 +1639,11 @@ void PosixSignals::do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-#if !defined(AIX)
       if (sr_semaphore.timedwait(2)) {
         if (osthread->sr.is_running()) {
           return;
         }
       }
-#else
-      for (int n = 0; n < RANDOMLY_LARGE_INTEGER && !osthread->sr.is_running(); n++) {
-        for (int i = 0; i < 100 && !osthread->sr.is_running(); i++) {
-          os::naked_yield();
-        }
-      }
-
-#endif
     } else {
       ShouldNotReachHere();
     }
