@@ -468,8 +468,6 @@ void VMThread::loop() {
 
   SafepointSynchronize::init(_vm_thread);
 
-  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
-
   // Need to set a calling thread for ops not passed
   // via the normal way.
   cleanup_op.set_calling_thread(_vm_thread);
