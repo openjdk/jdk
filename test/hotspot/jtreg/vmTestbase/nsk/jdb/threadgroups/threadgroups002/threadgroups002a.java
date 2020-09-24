@@ -23,43 +23,44 @@
 
 package nsk.jdb.threadgroups.threadgroups002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Failure;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class threadgroups002a {
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         threadgroups002a _threadgroups002a = new threadgroups002a();
         System.exit(threadgroups002.JCK_STATUS_BASE + _threadgroups002a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
     static int numThreadGroups = 3;
-    static int numThreads      = 15;
-    static Object waitnotify   = new Object();
+    static int numThreads = 15;
+    static Object waitnotify = new Object();
     final static String THREADGROUP_NAME = "MyThreadGroup#";
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
         ThreadGroup tgHolder[] = new ThreadGroup[numThreadGroups];
-        Thread holder [] = new Thread[numThreads];
+        Thread holder[] = new Thread[numThreads];
         Lock lock = new Lock();
 
-        for (int i = 0; i < numThreadGroups ; i++ )
+        for (int i = 0; i < numThreadGroups; i++)
             tgHolder[i] = new ThreadGroup(THREADGROUP_NAME + i);
 
         try {
             lock.setLock();
             int factor = numThreads / numThreadGroups;
             int k;
-            for (int i = 0; i < numThreadGroups ; i++) {
-                for (int j = 0; j < factor ; j++) {
+            for (int i = 0; i < numThreadGroups; i++) {
+                for (int j = 0; j < factor; j++) {
                     k = i * factor + j;
                     holder[k] = new MyThread(lock, tgHolder[i], "MyThread#");
                     synchronized (waitnotify) {
@@ -70,14 +71,14 @@ public class threadgroups002a {
             }
         } catch (Exception e) {
             System.err.println("TEST ERROR: Caught unexpected Exception while waiting in main thread: " +
-                e.getMessage());
+                    e.getMessage());
             System.exit(threadgroups002.FAILED);
         }
 
         lastBreak();   // When jdb stops here, there should be 5 running MyThreads.
         lock.releaseLock();
 
-        for (int i = 0; i < numThreads ; i++) {
+        for (int i = 0; i < numThreads; i++) {
             if (holder[i].isAlive()) {
                 try {
                     holder[i].join(argumentHandler.getWaitTime() * 60000);
@@ -113,7 +114,8 @@ class Lock {
 class MyThread extends Thread {
 
     Lock lock;
-    MyThread (Lock l, ThreadGroup group, String name) {
+
+    MyThread(Lock l, ThreadGroup group, String name) {
         super(group, name);
         this.lock = l;
     }
@@ -124,9 +126,9 @@ class MyThread extends Thread {
         }
         try {
             lock.setLock();
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.err.println("TEST ERROR: Caught unexpected Exception while waiting in MyThread: " +
-                e.getMessage());
+                    e.getMessage());
             System.exit(threadgroups002.FAILED);
         }
         lock.releaseLock();

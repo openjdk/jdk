@@ -51,27 +51,26 @@
 
 package nsk.jdb.stop_at.stop_at002;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
 /*
  * Regression test for:
  * Bug ID: 4299394
  * Synopsis: TTY: Deferred breakpoints can't be set on inner classes
- *
  */
 
 public class stop_at002 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new stop_at002().runTest(argv, out);
@@ -80,19 +79,13 @@ public class stop_at002 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.stop_at.stop_at002";
     static final String TEST_CLASS = PACKAGE_NAME + ".stop_at002";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
-    static final String DEBUGGEE_LOCATION1 = DEBUGGEE_CLASS + "$Nested$DeeperNested$DeepestNested:43";
-    static final String DEBUGGEE_LOCATION2 = DEBUGGEE_CLASS + "$Inner$MoreInner:57";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String DEBUGGEE_LOCATION1 = DEBUGGEE_CLASS + "$Nested$DeeperNested$DeepestNested:66";
+    static final String DEBUGGEE_LOCATION2 = DEBUGGEE_CLASS + "$Inner$MoreInner:81";
     static final String FAILURE_PATTERN = "Unable to set";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
-
         if (!checkStop(DEBUGGEE_LOCATION1)) {
             success = false;
         }
@@ -104,7 +97,7 @@ public class stop_at002 extends JdbTest {
         jdb.contToExit(3);
     }
 
-    private boolean checkStop (String location) {
+    private boolean checkStop(String location) {
         Paragrep grep;
         String[] reply;
         String found;

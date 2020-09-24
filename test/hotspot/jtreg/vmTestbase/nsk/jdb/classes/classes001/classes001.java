@@ -51,70 +51,65 @@
 
 package nsk.jdb.classes.classes001;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
 public class classes001 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new classes001().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME       = "nsk.jdb.classes.classes001";
-    static final String TEST_CLASS         = PACKAGE_NAME + ".classes001";
-    static final String DEBUGGEE_CLASS     = TEST_CLASS + "a";
-    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
-    static final String NOT_VALID_SAMPLE   = "is not a valid";
+    static final String PACKAGE_NAME = "nsk.jdb.classes.classes001";
+    static final String TEST_CLASS = PACKAGE_NAME + ".classes001";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     static String[] checkedClasses = {
-        DEBUGGEE_CLASS,
-        DEBUGGEE_CLASS + "$Inner1",
-        DEBUGGEE_CLASS + "$Inner2",
-        DEBUGGEE_CLASS + "$Inner3",
-        DEBUGGEE_CLASS + "$Inner4",
-        DEBUGGEE_CLASS + "$Inner5",
-        DEBUGGEE_CLASS + "$Inner6",
-        DEBUGGEE_CLASS + "$Inner7",
-        DEBUGGEE_CLASS + "$Inner8",
-        DEBUGGEE_CLASS + "$InnerInt1",
-        DEBUGGEE_CLASS + "$InnerInt2",
-        DEBUGGEE_CLASS + "$InnerInt3",
-        DEBUGGEE_CLASS + "$InnerInt4",
-        DEBUGGEE_CLASS + "$InnerInt5",
-        PACKAGE_NAME + ".Outer1",
-        PACKAGE_NAME + ".Outer2",
-        PACKAGE_NAME + ".Outer3",
-        PACKAGE_NAME + ".OuterInt1",
-        PACKAGE_NAME + ".OuterInt2"
-                                      };
+            DEBUGGEE_CLASS,
+            DEBUGGEE_CLASS + "$Inner1",
+            DEBUGGEE_CLASS + "$Inner2",
+            DEBUGGEE_CLASS + "$Inner3",
+            DEBUGGEE_CLASS + "$Inner4",
+            DEBUGGEE_CLASS + "$Inner5",
+            DEBUGGEE_CLASS + "$Inner6",
+            DEBUGGEE_CLASS + "$Inner7",
+            DEBUGGEE_CLASS + "$Inner8",
+            DEBUGGEE_CLASS + "$InnerInt1",
+            DEBUGGEE_CLASS + "$InnerInt2",
+            DEBUGGEE_CLASS + "$InnerInt3",
+            DEBUGGEE_CLASS + "$InnerInt4",
+            DEBUGGEE_CLASS + "$InnerInt5",
+            PACKAGE_NAME + ".Outer1",
+            PACKAGE_NAME + ".Outer2",
+            PACKAGE_NAME + ".Outer3",
+            PACKAGE_NAME + ".OuterInt1",
+            PACKAGE_NAME + ".OuterInt2"
+    };
 
     /* ------------------------------------- */
 
     protected void runCases() {
         String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        jdb.receiveReplyFor(JdbCommand.cont);
 
         reply = jdb.receiveReplyFor(JdbCommand.classes);
 
-        for (int i = 0; i < checkedClasses.length; i++) {
-            if (!checkClass(checkedClasses[i], reply)) {
+        for (String checkedClass : checkedClasses) {
+            if (!checkClass(checkedClass, reply)) {
                 success = false;
             }
         }
@@ -122,7 +117,7 @@ public class classes001 extends JdbTest {
         jdb.contToExit(1);
     }
 
-    private boolean checkClass (String className, String[] reply) {
+    private boolean checkClass(String className, String[] reply) {
         Paragrep grep;
         String found;
         boolean result = true;

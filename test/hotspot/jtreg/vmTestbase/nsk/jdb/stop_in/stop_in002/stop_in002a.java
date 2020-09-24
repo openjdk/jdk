@@ -23,25 +23,25 @@
 
 package nsk.jdb.stop_in.stop_in002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class stop_in002a {
 
 
-    public static void main(String args[]) {
-       stop_in002a _stop_in002a = new stop_in002a();
+    public static void main(String[] args) {
+        stop_in002a _stop_in002a = new stop_in002a();
 //       lastBreak();
-       System.exit(stop_in002.JCK_STATUS_BASE + _stop_in002a.runIt(args, System.out));
+        System.exit(stop_in002.JCK_STATUS_BASE + _stop_in002a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -59,20 +59,26 @@ class stop_in002b {
     static int intField = 0;
     Inner inn = null;
 
-    static { intField = 1; }
+    static {
+        intField = 1;
+    }
 
-    stop_in002b () {
+    stop_in002b() {
         intField++;
         inn = new Inner();
     }
 
     static class StaticNested {
-        public static void m1() {}
+        public static void m1() {
+        }
     }
 
     class Inner {
-        public void m2() {}
+        public void m2() {
+        }
     }
 
-    final int foo (int i) {return i++;}
+    final int foo(int i) {
+        return i++;
+    }
 }

@@ -64,11 +64,11 @@
 
 package nsk.jdb.stop_in.stop_in002;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
 /*
  * Regression test for:
@@ -79,12 +79,12 @@ import java.util.*;
 
 public class stop_in002 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new stop_in002().runTest(argv, out);
@@ -93,41 +93,37 @@ public class stop_in002 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.stop_in.stop_in002";
     static final String TEST_CLASS = PACKAGE_NAME + ".stop_in002";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
-    static final String[] LOCATIONS = new String[] {
-        PACKAGE_NAME + ".stop_in002b.<clinit>",
-        PACKAGE_NAME + ".stop_in002b.<init>",
-        PACKAGE_NAME + ".stop_in002b$StaticNested.m1",
-        PACKAGE_NAME + ".stop_in002b$Inner.m2",
-        PACKAGE_NAME + ".stop_in002b.foo"
-                                                   };
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String[] LOCATIONS = new String[]{
+            PACKAGE_NAME + ".stop_in002b.<clinit>",
+            PACKAGE_NAME + ".stop_in002b.<init>",
+            PACKAGE_NAME + ".stop_in002b$StaticNested.m1",
+            PACKAGE_NAME + ".stop_in002b$Inner.m2",
+            PACKAGE_NAME + ".stop_in002b.foo"
+    };
     static final String FAILURE_PATTERN = "Unable to set";
 
     protected void runCases() {
         String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
 
-        for (int i = 0; i < LOCATIONS.length; i++) {
-            if (!checkStop(LOCATIONS[i])) {
-                failure("jdb failed to set line breakpoint at : " + LOCATIONS[i]);
+        for (String location : LOCATIONS) {
+            if (!checkStop(location)) {
+                failure("jdb failed to set line breakpoint at : " + location);
             }
         }
 
-        for (int i = 0; i < LOCATIONS.length; i++) {
+        for (String location : LOCATIONS) {
             reply = jdb.receiveReplyFor(JdbCommand.cont);
-            if (!jdb.isAtBreakpoint(reply, LOCATIONS[i])) {
-                failure("Missed breakpoint at : " + LOCATIONS[i]);
+            if (!jdb.isAtBreakpoint(reply, location)) {
+                failure("Missed breakpoint at : " + location);
             }
         }
 
         jdb.contToExit(1);
     }
 
-    private boolean checkStop (String location) {
+    private boolean checkStop(String location) {
         Paragrep grep;
         String[] reply;
         String found;

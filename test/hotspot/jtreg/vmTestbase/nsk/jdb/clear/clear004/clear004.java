@@ -54,49 +54,48 @@
 
 package nsk.jdb.clear.clear004;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.Jdb;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.Vector;
 
 public class clear004 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new clear004().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME     = "nsk.jdb.clear.clear004";
-    static final String TEST_CLASS       = PACKAGE_NAME + ".clear004";
-    static final String DEBUGGEE_CLASS   = TEST_CLASS + "a";
-    static final String FIRST_BREAK      = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK       = DEBUGGEE_CLASS + ".lastBreak";
-    static final String[] BREAKPOINTS = new String[]
-        { DEBUGGEE_CLASS + ":63",
-          DEBUGGEE_CLASS + ":67",
-          DEBUGGEE_CLASS + ":71" };
-    static final String REMOVED_SAMPLE   = "Removed:";
+    static final String PACKAGE_NAME = "nsk.jdb.clear.clear004";
+    static final String TEST_CLASS = PACKAGE_NAME + ".clear004";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String[] BREAKPOINTS = new String[]{
+            DEBUGGEE_CLASS + ":63",
+            DEBUGGEE_CLASS + ":67",
+            DEBUGGEE_CLASS + ":71"};
+    static final String REMOVED_SAMPLE = "Removed:";
 
     protected void runCases() {
-        String[] reply;
         Paragrep grep;
         int count;
-        Vector v;
-        String found;
 
-        for (int i = 0; i < BREAKPOINTS.length; i++) {
-           log.display("Setting breakpoint at " + BREAKPOINTS[i]);
-           reply = jdb.receiveReplyFor(JdbCommand.stop_at + BREAKPOINTS[i]);
+        for (String breakpoint : BREAKPOINTS) {
+            log.display("Setting breakpoint at " + breakpoint);
+            jdb.receiveReplyFor(JdbCommand.stop_at + breakpoint);
         }
 
-        if (!checkClear (BREAKPOINTS[1])) {
+        if (!checkClear(BREAKPOINTS[1])) {
             success = false;
         }
 
@@ -110,19 +109,18 @@ public class clear004 extends JdbTest {
             success = false;
         }
 
-        if (!checkBreakpoint (BREAKPOINTS[1], grep)) {
+        if (!checkBreakpoint(BREAKPOINTS[1], grep)) {
             success = false;
         }
 
     }
 
-    private boolean checkBreakpoint (String breakpoint, Paragrep grep) {
+    private boolean checkBreakpoint(String breakpoint, Paragrep grep) {
         String found;
         boolean result = true;
-        int count;
-        Vector v;
+        Vector<String> v;
 
-        v = new Vector();
+        v = new Vector<>();
         v.add(Jdb.BREAKPOINT_HIT);
         v.add(breakpoint);
 
@@ -134,15 +132,14 @@ public class clear004 extends JdbTest {
         return result;
     }
 
-    private boolean checkClear (String breakpoint) {
+    private boolean checkClear(String breakpoint) {
         Paragrep grep;
         String found;
         String[] reply;
         boolean result = true;
-        int count;
-        Vector v;
+        Vector<String> v;
 
-        v = new Vector();
+        v = new Vector<>();
         v.add(REMOVED_SAMPLE);
         v.add(breakpoint);
 

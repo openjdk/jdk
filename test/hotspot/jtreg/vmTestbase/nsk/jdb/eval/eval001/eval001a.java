@@ -23,24 +23,24 @@
 
 package nsk.jdb.eval.eval001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class eval001a {
 
     static eval001a _eval001a = new eval001a();
 
-    public static void main(String args[]) {
-       System.exit(eval001.JCK_STATUS_BASE + _eval001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        System.exit(eval001.JCK_STATUS_BASE + _eval001a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -62,9 +62,9 @@ public class eval001a {
     protected long myInstanceField;
     public MyClass[][] myArrayField;
 
-    private eval001a () {
-         myArrayField = new MyClass[][] {new MyClass[] {new MyClass("ABCDE")}};
-         myInstanceField = Long.MAX_VALUE;
+    private eval001a() {
+        myArrayField = new MyClass[][]{new MyClass[]{new MyClass("ABCDE")}};
+        myInstanceField = Long.MAX_VALUE;
     }
 
     synchronized private int myMethod() {
@@ -74,16 +74,16 @@ public class eval001a {
     static class MyClass {
         String line;
 
-        public MyClass (String s) {
+        public MyClass(String s) {
             line = s;
         }
 
         public String toString() {
-             return line;
+            return line;
         }
     }
 
-    public double testPrimitiveArray(double[][][] d){
+    public double testPrimitiveArray(double[][][] d) {
         return 1.0;
     }
 }

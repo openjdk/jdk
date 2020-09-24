@@ -68,45 +68,42 @@
 
 package nsk.jdb.untrace.untrace001;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.Vector;
 
 public class untrace001 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new untrace001().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME    = "nsk.jdb.untrace.untrace001";
-    static final String TEST_CLASS      = PACKAGE_NAME + ".untrace001";
-    static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
-    static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK      = DEBUGGEE_CLASS + ".breakHere";
-    static final String MYTHREAD        = "MyThread";
+    static final String PACKAGE_NAME = "nsk.jdb.untrace.untrace001";
+    static final String TEST_CLASS = PACKAGE_NAME + ".untrace001";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".breakHere";
+    static final String MYTHREAD = "MyThread";
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + "." + MYTHREAD;
 
     static final String[] CHECKED_METHODS = {"func1", "func2", "func3"};
 
     protected void runCases() {
         String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
         String[] threads;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        jdb.receiveReplyFor(JdbCommand.cont);
 
         threads = jdb.getThreadIds(DEBUGGEE_THREAD);
 
@@ -116,20 +113,20 @@ public class untrace001 extends JdbTest {
             success = false;
         }
 
-        for (int i = 0; i < threads.length; i++) {
-            reply = jdb.receiveReplyFor(JdbCommand.trace + "methods " + threads[i]);
+        for (String thread : threads) {
+            jdb.receiveReplyFor(JdbCommand.trace + "methods " + thread);
         }
 
         // resumes debuggee suspended on method enter and exit until hit of the breakpoint
-        for (int i = 0; i < (CHECKED_METHODS.length*threads.length*2 + 1); i++) {
-            reply = jdb.receiveReplyFor(JdbCommand.cont);
+        for (int i = 0; i < (CHECKED_METHODS.length * threads.length * 2 + 1); i++) {
+            jdb.receiveReplyFor(JdbCommand.cont);
         }
 
-        for (int i = 0; i < threads.length; i++) {
-            reply = jdb.receiveReplyFor(JdbCommand.untrace + "methods " + threads[i]);
+        for (String thread : threads) {
+            jdb.receiveReplyFor(JdbCommand.untrace + "methods " + thread);
         }
 
-        jdb.contToExit(CHECKED_METHODS.length*threads.length*2 + 2);
+        jdb.contToExit(CHECKED_METHODS.length * threads.length * 2 + 2);
 
         reply = jdb.getTotalReply();
         if (!checkTrace(CHECKED_METHODS, reply)) {
@@ -137,33 +134,32 @@ public class untrace001 extends JdbTest {
         }
     }
 
-    private boolean checkTrace (String[] checkedMethods, String[] reply) {
+    private boolean checkTrace(String[] checkedMethods, String[] reply) {
         Paragrep grep;
-        String found;
         int count;
-        Vector v = new Vector();
+        Vector<String> v = new Vector<>();
         boolean result = true;
 
         grep = new Paragrep(reply);
-        for (int i = 0; i < checkedMethods.length; i++) {
+        for (String checkedMethod : checkedMethods) {
             v.removeAllElements();
-            v.add(DEBUGGEE_THREAD + "." + checkedMethods[i]);
+            v.add(DEBUGGEE_THREAD + "." + checkedMethod);
             v.add("Method entered");
             count = grep.find(v);
             if (count != 1) {
-                log.complain("Count of method enter is incorrect for the method : " + DEBUGGEE_THREAD + "." + checkedMethods[i]);
+                log.complain("Count of method enter is incorrect for the method : " + DEBUGGEE_THREAD + "." + checkedMethod);
                 log.complain("Should be 1 trace messages, found : " + count);
-                result= false;
+                result = false;
             }
 
             v.removeAllElements();
-            v.add(DEBUGGEE_THREAD + "." + checkedMethods[i]);
+            v.add(DEBUGGEE_THREAD + "." + checkedMethod);
             v.add("Method exited");
             count = grep.find(v);
             if (count != 1) {
-                log.complain("Count of method exit is incorrect for the method : " + DEBUGGEE_THREAD + "." + checkedMethods[i]);
+                log.complain("Count of method exit is incorrect for the method : " + DEBUGGEE_THREAD + "." + checkedMethod);
                 log.complain("Should be 1 trace messages, found : " + count);
-                result= false;
+                result = false;
             }
         }
         return result;

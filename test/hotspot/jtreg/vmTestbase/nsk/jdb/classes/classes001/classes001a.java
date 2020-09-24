@@ -23,27 +23,24 @@
 
 package nsk.jdb.classes.classes001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class classes001a {
 
-    /* TEST DEPENDANT VARIABLES AND CONSTANTS */
-    static final String PACKAGE_NAME = "nsk.jdb.classes.classes001";
-
-    public static void main(String args[]) {
-       classes001a _classes001a = new classes001a();
-       System.exit(classes001.JCK_STATUS_BASE + _classes001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        classes001a _classes001a = new classes001a();
+        System.exit(classes001.JCK_STATUS_BASE + _classes001a.runIt(args, System.out));
     }
 
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -53,27 +50,46 @@ public class classes001a {
         return classes001.PASSED;
     }
 
-    class Inner1 {}
-    interface InnerInt1 {}
+    class Inner1 {
+    }
 
-    public class Inner2 {}
-    public interface InnerInt2 {}
+    interface InnerInt1 {
+    }
 
-    private class Inner3 {}
-    private interface InnerInt3 {}
+    public class Inner2 {
+    }
 
-    protected class Inner4 {}
-    protected interface InnerInt4 {}
+    public interface InnerInt2 {
+    }
 
-    abstract class Inner5 {}
-    abstract interface InnerInt5 {}
+    private class Inner3 {
+    }
 
-    final class Inner6 extends Inner5{}
+    private interface InnerInt3 {
+    }
 
-    class Inner7 extends Outer2{}
-    class Inner8 implements OuterInt1, OuterInt2, InnerInt1, InnerInt2, InnerInt3,  InnerInt4, InnerInt5 {}
+    protected class Inner4 {
+    }
 
-    private void init () {
+    protected interface InnerInt4 {
+    }
+
+    abstract class Inner5 {
+    }
+
+    abstract interface InnerInt5 {
+    }
+
+    final class Inner6 extends Inner5 {
+    }
+
+    class Inner7 extends Outer2 {
+    }
+
+    class Inner8 implements OuterInt1, OuterInt2, InnerInt1, InnerInt2, InnerInt3, InnerInt4, InnerInt5 {
+    }
+
+    private void init() {
         Outer1 o1 = new Outer1();
         Outer3 o3 = new Outer3();
         Inner1 i1 = new Inner1();
@@ -88,10 +104,17 @@ public class classes001a {
     }
 }
 
-class Outer1 {}
-interface OuterInt1 {}
+class Outer1 {
+}
 
-abstract class Outer2 {}
-abstract interface OuterInt2 {}
+interface OuterInt1 {
+}
 
-final class Outer3 {}
+abstract class Outer2 {
+}
+
+abstract interface OuterInt2 {
+}
+
+final class Outer3 {
+}

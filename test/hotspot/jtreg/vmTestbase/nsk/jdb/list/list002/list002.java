@@ -59,64 +59,60 @@
 
 package nsk.jdb.list.list002;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
 public class list002 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new list002().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME    = "nsk.jdb.list.list002";
-    static final String TEST_CLASS      = PACKAGE_NAME + ".list002";
-    static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
-    static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK      = DEBUGGEE_CLASS + ".runIt";
-    static final int    LINE_NUMBER     = 38;
+    static final String PACKAGE_NAME = "nsk.jdb.list.list002";
+    static final String TEST_CLASS = PACKAGE_NAME + ".list002";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".runIt";
+    static final int LINE_NUMBER = 37;
 
-    final static String METHOD_SOURCE[] = new String[] {
-        "public int runIt(String args[], PrintStream out) {",
-        "JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);",
-        "Log log = new Log(out, argumentHandler);",
-        "log.display(\"Debuggee PASSED\");",
-        "return list002.PASSED;"
-                                                    };
+    final static String[] METHOD_SOURCE = new String[]{
+            "public int runIt(String[] args, PrintStream out) {",
+            "JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);",
+            "Log log = new Log(out, argumentHandler);",
+            "log.display(\"Debuggee PASSED\");",
+            "return list002.PASSED;"
+    };
 
     final static String LINE_SOURCE =
-        "System.exit(list002.JCK_STATUS_BASE + _list002a.runIt(args, System.out));";
+            "System.exit(list002.JCK_STATUS_BASE + _list002a.runIt(args, System.out));";
 
     final static String SOURCE_NOT_FOUND = "Source file not found";
 
     protected void runCases() {
         String[] reply;
         Paragrep grep;
-        int count;
-        Vector v;
-        String found;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        jdb.receiveReplyFor(JdbCommand.cont);
 
         reply = jdb.receiveReplyFor(JdbCommand.list + "runIt");
         grep = new Paragrep(reply);
         if (grep.find(SOURCE_NOT_FOUND) > 0) {
             failure(reply[0]);
         } else {
-            for (int i = 0; i < METHOD_SOURCE.length; i++) {
-                if (grep.find(METHOD_SOURCE[i]) == 0) {
-                    failure("Line is not found in method sources:\n\t"+
-                        METHOD_SOURCE[i]);
+            for (String s : METHOD_SOURCE) {
+                if (grep.find(s) == 0) {
+                    failure("Line is not found in method sources:\n\t" + s);
                 }
             }
         }
@@ -127,8 +123,7 @@ public class list002 extends JdbTest {
             failure(reply[0]);
         } else {
             if (grep.find(LINE_SOURCE) == 0) {
-                failure("Line " + LINE_NUMBER + " is not found:\n\t"+
-                    LINE_SOURCE);
+                failure("Line " + LINE_NUMBER + " is not found:\n\t" + LINE_SOURCE);
             }
         }
 

@@ -57,21 +57,22 @@
 
 package nsk.jdb.use.use001;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
 import jdk.test.lib.Utils;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.PrintStream;
 
 public class use001 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new use001().runTest(argv, out);
@@ -80,15 +81,12 @@ public class use001 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.use.use001";
     static final String TEST_CLASS = PACKAGE_NAME + ".use001";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     protected void runCases() {
         String[] reply;
         Paragrep grep;
-        int count;
-        Vector v;
-        String found;
 
         String path = "";
         String srcdir = Utils.TEST_SRC;

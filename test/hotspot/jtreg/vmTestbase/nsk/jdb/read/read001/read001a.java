@@ -23,24 +23,25 @@
 
 package nsk.jdb.read.read001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Failure;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class read001a {
 
     static boolean testedStaticFieldBoolean = true;
-    double testedInstanceFieldDouble = (double)3.1414926;
+    double testedInstanceFieldDouble = (double) 3.1414926;
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         read001a _read001a = new read001a();
         System.exit(read001.JCK_STATUS_BASE + _read001a.runIt(args, System.out));
     }
 
-    void lastBreak () {}
+    void lastBreak() {
+    }
 
     void testedInstanceMethod() {
         int testedLocalVarInt = 0;
@@ -51,7 +52,7 @@ public class read001a {
         testedLocalVarString = "bar";
     }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
         int localInt = 0;

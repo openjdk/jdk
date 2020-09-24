@@ -23,13 +23,12 @@
 
 package nsk.jdb.set.set002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class set002a {
 
     private static final String DEBUGGEE_PASSED = "Debuggee PASSED";
@@ -37,13 +36,14 @@ public class set002a {
 
     static set002a _set002a = new set002a();
 
-    public static void main(String args[]) {
-       System.exit(set002.JCK_STATUS_BASE + _set002a.runIt(args, System.out));
+    public static void main(String[] args) {
+        System.exit(set002.JCK_STATUS_BASE + _set002a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
         String debuggeeResult = DEBUGGEE_PASSED;
@@ -75,19 +75,19 @@ public class set002a {
     static String errorMessage = "";
     public MyClass[][] myArrayField;
 
-    private set002a () {
-         myArrayField = new MyClass[][] {new MyClass[] {new MyClass("")}};
+    private set002a() {
+        myArrayField = new MyClass[][]{new MyClass[]{new MyClass("")}};
     }
 
     static class MyClass {
         private String line;
 
-        public MyClass (String s) {
+        public MyClass(String s) {
             line = s;
         }
 
         public String toString() {
-             return line;
+            return line;
         }
     }
 }

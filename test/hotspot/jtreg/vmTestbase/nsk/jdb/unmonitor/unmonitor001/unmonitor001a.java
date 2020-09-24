@@ -25,23 +25,23 @@
 
 package nsk.jdb.unmonitor.unmonitor001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class unmonitor001a {
     static unmonitor001a _unmonitor001a = new unmonitor001a();
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         System.exit(unmonitor001.JCK_STATUS_BASE + _unmonitor001a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
         int localInt = 0; // unmonitor001.BREAKPOINT_LINE

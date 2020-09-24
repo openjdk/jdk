@@ -23,12 +23,8 @@
 
 package nsk.share.jdb;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdi.ArgumentHandler;
-
-import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Parser for <code>jdb</code> test's specific command-line arguments.
@@ -70,15 +66,13 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
      * Keep a copy of raw command-line arguments and parse them;
      * but throw an exception on parsing error.
      *
-     * @param  args  Array of the raw command-line arguments.
-     *
-     * @throws  NullPointerException  If <code>args==null</code>.
-     * @throws  IllegalArgumentException  If Binder or Log options
-     *                                    are set incorrectly.
-     *
+     * @param args Array of the raw command-line arguments.
+     * @throws NullPointerException     If <code>args==null</code>.
+     * @throws IllegalArgumentException If Binder or Log options
+     *                                  are set incorrectly.
      * @see #setRawArguments(String[])
      */
-    public JdbArgumentHandler(String args[]) {
+    public JdbArgumentHandler(String[] args) {
         super(args);
     }
 
@@ -88,13 +82,11 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
      * This method is invoked by <code>parseArguments()</code>
      *
      * @param option option name
-     * @param value string representation of value (could be an empty string)
-     *              null if this option has no value
+     * @param value  string representation of value (could be an empty string)
+     *               null if this option has no value
      * @return <i>true</i> if option is admissible and has proper value
-     *         <i>false</i> if option is not admissible
-     *
+     * <i>false</i> if option is not admissible
      * @throws <i>BadOption</i> if option has illegal value
-     *
      * @see #parseArguments()
      */
     protected boolean checkOption(String option, String value) {
@@ -123,7 +115,7 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
                     throw new BadOption("jdb option -attach is not admissible: " + value);
                 }
                 if (value.indexOf("-listen") > 0) {
-                    throw new BadOption("jdb option -listen is not admissible: "  + value);
+                    throw new BadOption("jdb option -listen is not admissible: " + value);
                 }
                 if (value.indexOf("-connect") > 0) {
                     throw new BadOption("jdb option -connect is not admissible: " + value);
@@ -171,7 +163,6 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
 
     /**
      * Return sfull path to jdb executable.
-     *
      */
     public String getJdbExecPath() {
         return options.getProperty("jdb");
@@ -182,10 +173,7 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
      */
     public String getJdbOptions() {
         String value = options.getProperty("jdb.option", "").trim();
-        if (value.length() > 1 && value.startsWith("\"") && value.endsWith("\"")) {
-            value = value.substring(1, value.length() - 1).trim();
-        }
-        return value;
+        return removeSurroundingQuotes(value);
     }
 
     /**
@@ -206,9 +194,7 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
     public String getDebuggeeOptions() {
         StringBuilder sb = new StringBuilder();
         String value = options.getProperty("debugee.vmkeys", "").trim();
-        if (value.length() > 1 && value.startsWith("\"") && value.endsWith("\"")) {
-            value = value.substring(1, value.length() - 1).trim();
-        }
+        value = removeSurroundingQuotes(value);
         for (String option : value.split("\\s+")) {
             if (option.length() > 0) {
                 sb.append(checkAndQuote(option, ","));
@@ -223,54 +209,14 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
      */
     public String getJavaOptions() {
         String value = options.getProperty("java.options", "").trim();
-        if (value.length() > 1 && value.startsWith("\"") && value.endsWith("\"")) {
-            value = value.substring(1, value.length() - 1).trim();
-        }
-        return value;
-    }
-
-    /**
-     * Remove "<code>-server</code>" or "<code>-client</code>" from options string,
-     * if anything of them are presented.
-     */
-    public static String removeVMFlavorOption(String javaOptions) {
-        StringBuffer result = new StringBuffer();
-        StringTokenizer tokenizer = new StringTokenizer(javaOptions);
-        while (tokenizer.hasMoreTokens()) {
-            String option = tokenizer.nextToken();
-            if (!option.equals("-server") && !option.equals("-client")) {
-                result.append( (result.length() > 0 ? " " : "") + option);
-            }
-        };
-        return result.toString();
-    }
-
-    /**
-     * @return "<code>-tserver</code>" if "<code>-server</code>" is presented in options string.
-     * @return "<code>-tclient</code>" if "<code>-client</code>" is presented in options string.
-     * @return empty string otherwise.
-     */
-    public static String stripVMFlavorOption(String javaOptions) {
-        String result = "";
-        StringTokenizer tokenizer = new StringTokenizer(javaOptions);
-        while (tokenizer.hasMoreTokens()) {
-            String option = tokenizer.nextToken();
-            if (option.equals("-server")) {
-                result = "-tserver";
-                break;
-            } else if (option.equals("-client")) {
-                result = "-tclient";
-                break;
-            }
-        };
-        return result;
+        return removeSurroundingQuotes(value);
     }
 
     // check if target substring exists and quote value if needed
     // ex for subString == "," and value == disk=true,dumponexit=true
     // return 'disk=true,dumponexit=true'
     private static String checkAndQuote(String value, String subString) {
-        if (NO_SUBSTR_MATCH == value.indexOf(subString)) {
+        if (!value.contains(subString)) {
             // return as-is
             return value;
         }
@@ -297,10 +243,15 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
                 return true;
             }
             //only a single quote? subString outside quotes? Wrongly quoted, needs fix
-            throw new BadOption(value +  " not correctly quoted");
+            throw new BadOption(value + " not correctly quoted");
         }
         return false;
     }
 
-    private static final int NO_SUBSTR_MATCH = -1;
+    private static String removeSurroundingQuotes(String value) {
+        if (value.length() > 1 && value.startsWith("\"") && value.endsWith("\"")) {
+            value = value.substring(1, value.length() - 1).trim();
+        }
+        return value;
+    }
 }

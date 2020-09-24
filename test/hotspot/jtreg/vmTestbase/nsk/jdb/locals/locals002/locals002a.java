@@ -25,42 +25,42 @@
 
 package nsk.jdb.locals.locals002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class locals002a {
     static locals002a _locals002a = new locals002a();
 
-    public static void main(String args[]) {
-       System.exit(locals002.JCK_STATUS_BASE + _locals002a.runIt(args, System.out));
+    public static void main(String[] args) {
+        System.exit(locals002.JCK_STATUS_BASE + _locals002a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
         int arr[] = new int[3];
 
-        for (int i = 0 ; i < 3 ; i++) arr[i] = i*i;
+        for (int i = 0; i < 3; i++) arr[i] = i * i;
 
-        allKindsOfVars (
-            false,
-            (byte)12,
-            'A',
-            (short)327,
-            3647,
-            (long)65789,
-            (float)4.852,
-            (double)3.8976,
-            "objArgString",
-            arr
-                       );
+        allKindsOfVars(
+                false,
+                (byte) 12,
+                'A',
+                (short) 327,
+                3647,
+                (long) 65789,
+                (float) 4.852,
+                (double) 3.8976,
+                "objArgString",
+                arr
+        );
 
         allKindsOfLocals();
 
@@ -68,35 +68,34 @@ public class locals002a {
         return locals002.PASSED;
     }
 
-   public void allKindsOfVars (
-       boolean boolVar,
-       byte    byteVar,
-       char    charVar,
-       short   shortVar,
-       int     intVar,
-       long    longVar,
-       float   floatVar,
-       double  doubleVar,
-       Object  objVar,
-       int[]   arrVar
-                              )
-   {
-       int x = 3; // locals002.BREAKPOINT_LINE1
-   }
+    public void allKindsOfVars(
+            boolean boolVar,
+            byte byteVar,
+            char charVar,
+            short shortVar,
+            int intVar,
+            long longVar,
+            float floatVar,
+            double doubleVar,
+            Object objVar,
+            int[] arrVar
+    ) {
+        int x = 3; // locals002.BREAKPOINT_LINE1
+    }
 
-   static void allKindsOfLocals()  {
-       boolean boolVar   = true;
-       byte    byteVar   = 27;
-       char    charVar   = 'V';
-       short   shortVar  = (short)767;
-       int     intVar    = 1474;
-       long    longVar   = (long)21345;
-       float   floatVar  = (float)3.141;
-       double  doubleVar = (double)2.578;
-       Object  objVar    = "objVarString";
-       int[]   arrVar    = new int[5];
+    static void allKindsOfLocals() {
+        boolean boolVar = true;
+        byte byteVar = 27;
+        char charVar = 'V';
+        short shortVar = (short) 767;
+        int intVar = 1474;
+        long longVar = (long) 21345;
+        float floatVar = (float) 3.141;
+        double doubleVar = (double) 2.578;
+        Object objVar = "objVarString";
+        int[] arrVar = new int[5];
 
-       for (int j = 0; j < 5 ; j++) arrVar[j] = j;
-       int x = 4; // locals002.BREAKPOINT_LINE2
-   }
+        for (int j = 0; j < 5; j++) arrVar[j] = j;
+        int x = 4; // locals002.BREAKPOINT_LINE2
+    }
 }

@@ -25,23 +25,22 @@
 
 package nsk.jdb.step.step002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class step002a {
-    public static void main(String args[]) {
-       step002a _step002a = new step002a();
-       System.exit(step002.JCK_STATUS_BASE + _step002a.runIt(args, System.out));
+    public static void main(String[] args) {
+        step002a _step002a = new step002a();
+        System.exit(step002.JCK_STATUS_BASE + _step002a.runIt(args, System.out));
     }
 
     static JdbArgumentHandler argumentHandler;
     static Log log;
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
 
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
@@ -54,7 +53,7 @@ public class step002a {
         return step002.PASSED;
     }
 
-    int foo (int i) {
-        return i*i;
+    int foo(int i) {
+        return i * i;
     }
 }

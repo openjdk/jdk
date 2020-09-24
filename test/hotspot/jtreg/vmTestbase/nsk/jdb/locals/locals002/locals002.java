@@ -66,20 +66,21 @@
 
 package nsk.jdb.locals.locals002;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.Vector;
 
 public class locals002 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         compoundPromptIdent = COMPOUND_PROMPT_IDENT;
@@ -89,32 +90,29 @@ public class locals002 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.locals.locals002";
     static final String TEST_CLASS = PACKAGE_NAME + ".locals002";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
     static final String COMPOUND_PROMPT_IDENT = "main";
-    static final int    BREAKPOINT_LINE1 = 84;
-    static final int    BREAKPOINT_LINE2 = 100;
+    static final int BREAKPOINT_LINE1 = 83;
+    static final int BREAKPOINT_LINE2 = 99;
 
-    static final String LOCALS[][] = new String[][] {
-       { "boolVar"  , "true"         , "false"         },
-       { "byteVar"  , "27"           , "12"            },
-       { "charVar"  , "V"            , "A"             },
-       { "shortVar" , "767"          , "327"           },
-       { "intVar"   , "1474"         , "3647"          },
-       { "longVar"  , "21345"        , "65789"         },
-       { "floatVar" , "3.141"        , "4.852"         },
-       { "doubleVar", "2.578"        , "3.8976"        },
-       { "objVar"   , "objVarString" , "objArgString"  },
-       { "arrVar"   , "int[5]"       , "int[3]"        }
-
-                                                    };
+    static final String[][] LOCALS = new String[][]{
+            {"boolVar",     "true",         "false"},
+            {"byteVar",     "27",           "12"},
+            {"charVar",     "V",            "A"},
+            {"shortVar",    "767",          "327"},
+            {"intVar",      "1474",         "3647"},
+            {"longVar",     "21345",        "65789"},
+            {"floatVar",    "3.141",        "4.852"},
+            {"doubleVar",   "2.578",        "3.8976"},
+            {"objVar",      "objVarString", "objArgString"},
+            {"arrVar",      "int[5]",       "int[3]"}
+    };
 
     protected void runCases() {
         String[] reply;
         Paragrep grep;
-        int count;
-        Vector v;
-        String found;
+        Vector<String> v;
 
         jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + BREAKPOINT_LINE1);
         jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + BREAKPOINT_LINE2);
@@ -122,39 +120,27 @@ public class locals002 extends JdbTest {
         jdb.receiveReplyFor(JdbCommand.cont);
         reply = jdb.receiveReplyFor(JdbCommand.locals);
         grep = new Paragrep(reply);
-        for (int i = 0; i < LOCALS.length; i++) {
-            v = new Vector();
-            v.add(LOCALS[i][0]);
-            v.add(LOCALS[i][2]);
+        for (String[] local : LOCALS) {
+            v = new Vector<>();
+            v.add(local[0]);
+            v.add(local[2]);
             if (grep.find(v) == 0) {
-                failure("Cannot find " + LOCALS[0][0] +
-                    " with expected value: " + LOCALS[i][2]);
+                failure("Cannot find " + LOCALS[0][0] + " with expected value: " + local[2]);
             }
         }
 
         jdb.receiveReplyFor(JdbCommand.cont);
         reply = jdb.receiveReplyFor(JdbCommand.locals);
         grep = new Paragrep(reply);
-        for (int i = 0; i < LOCALS.length; i++) {
-            v = new Vector();
-            v.add(LOCALS[i][0]);
-            v.add(LOCALS[i][1]);
+        for (String[] local : LOCALS) {
+            v = new Vector<>();
+            v.add(local[0]);
+            v.add(local[1]);
             if (grep.find(v) == 0) {
-                failure("Cannot find " + LOCALS[0][0] +
-                    " with expected value: " + LOCALS[i][1]);
+                failure("Cannot find " + LOCALS[0][0] + " with expected value: " + local[1]);
             }
         }
 
         jdb.contToExit(1);
-    }
-
-    private boolean checkStop () {
-        Paragrep grep;
-        String[] reply;
-        String found;
-        Vector v;
-        boolean result = true;
-
-        return result;
     }
 }

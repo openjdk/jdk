@@ -59,54 +59,47 @@
 
 package nsk.jdb.step_up.step_up001;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
 public class step_up001 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new step_up001().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME    = "nsk.jdb.step_up.step_up001";
-    static final String TEST_CLASS      = PACKAGE_NAME + ".step_up001";
-    static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
-    static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK      = DEBUGGEE_CLASS + ".lastBreak";
-    static final String MYTHREAD        = "MyThread";
+    static final String PACKAGE_NAME = "nsk.jdb.step_up.step_up001";
+    static final String TEST_CLASS = PACKAGE_NAME + ".step_up001";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String MYTHREAD = "MyThread";
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + "." + MYTHREAD;
 
     static final String[] checkedMethods = {"func1", "func2", "func3"};
 
     protected void runCases() {
         String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
-        String[] threads;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
 
-        int breakCount = 0;
         int stepupCount = 0;
         for (int i = 0; i < step_up001a.numThreads; i++) {
             reply = jdb.receiveReplyFor(JdbCommand.cont);
             if (jdb.isAtBreakpoint(reply, LAST_BREAK)) {
-                breakCount++;
-                reply = jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak;
+                jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak;
 
-                reply = jdb.receiveReplyFor(JdbCommand.step_up);
+                jdb.receiveReplyFor(JdbCommand.step_up);
                 if (!checkSteppedUp()) {
                     success = false;
                 } else {
@@ -125,9 +118,8 @@ public class step_up001 extends JdbTest {
     }
 
 
-    private boolean checkSteppedUp () {
+    private boolean checkSteppedUp() {
         Paragrep grep;
-        String found;
         int count;
         boolean result = true;
         String[] reply;
@@ -139,14 +131,14 @@ public class step_up001 extends JdbTest {
             count = grep.find(DEBUGGEE_THREAD + "." + checkedMethods[i]);
             if (count > 0) {
                 log.complain("Wrong method in thread stack trace: " + DEBUGGEE_THREAD + "." + checkedMethods[i]);
-                result= false;
+                result = false;
             }
         }
 
         count = grep.find(DEBUGGEE_THREAD + "." + checkedMethods[0]);
         if (count != 1) {
             log.complain("Checked method does not exist in thread stack trace: " + DEBUGGEE_THREAD + "." + checkedMethods[0]);
-            result= false;
+            result = false;
         }
 
         return result;

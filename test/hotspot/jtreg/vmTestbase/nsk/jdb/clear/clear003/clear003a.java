@@ -23,23 +23,23 @@
 
 package nsk.jdb.clear.clear003;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class clear003a {
-    public static void main(String args[]) {
-       clear003a _clear003a = new clear003a();
-       lastBreak();
-       System.exit(clear003.JCK_STATUS_BASE + _clear003a.runIt(args, System.out));
+    public static void main(String[] args) {
+        clear003a _clear003a = new clear003a();
+        lastBreak();
+        System.exit(clear003.JCK_STATUS_BASE + _clear003a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -64,18 +64,18 @@ public class clear003a {
     }
 
     public int func4(int i) {
-       int value;
-       value = func5(i) + 1;
-       return value;
+        int value;
+        value = func5(i) + 1;
+        return value;
     }
 
     public int func5(int i) {
-       int value;
-       value = func6(i) + 1;
-       return value;
+        int value;
+        value = func6(i) + 1;
+        return value;
     }
 
     public int func6(int i) {
-        return i-5;
+        return i - 5;
     }
 }

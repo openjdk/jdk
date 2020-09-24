@@ -60,54 +60,47 @@
 
 package nsk.jdb.next.next001;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
 public class next001 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new next001().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME    = "nsk.jdb.next.next001";
-    static final String TEST_CLASS      = PACKAGE_NAME + ".next001";
-    static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
-    static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK      = DEBUGGEE_CLASS + ".lastBreak";
-    static final String MYTHREAD        = "MyThread";
+    static final String PACKAGE_NAME = "nsk.jdb.next.next001";
+    static final String TEST_CLASS = PACKAGE_NAME + ".next001";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String MYTHREAD = "MyThread";
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + "." + MYTHREAD;
 
     static final String[] checkedMethods = {"func1", "func2", "func3"};
 
     protected void runCases() {
         String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
-        String[] threads;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
 
-        int breakCount = 0;
         int nextCount = 0;
         for (int i = 0; i < next001a.numThreads; i++) {
             reply = jdb.receiveReplyFor(JdbCommand.cont);
             if (jdb.isAtBreakpoint(reply, LAST_BREAK)) {
-                breakCount++;
-                reply = jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak;
+                jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak;
 
-                reply = jdb.receiveReplyFor(JdbCommand.next);
+                jdb.receiveReplyFor(JdbCommand.next);
                 if (!checkNext()) {
                     success = false;
                 } else {
@@ -126,9 +119,8 @@ public class next001 extends JdbTest {
     }
 
 
-    private boolean checkNext () {
+    private boolean checkNext() {
         Paragrep grep;
-        String found;
         int count;
         boolean result = true;
         String[] reply;
@@ -139,13 +131,13 @@ public class next001 extends JdbTest {
         count = grep.find(DEBUGGEE_THREAD + "." + checkedMethods[2]);
         if (count > 0) {
             log.complain("Debuggee is suspended in wrong method after 'next' command: " + DEBUGGEE_THREAD + "." + checkedMethods[2]);
-            result= false;
+            result = false;
         }
 
         count = grep.find(DEBUGGEE_THREAD + "." + checkedMethods[1]);
         if (count != 1) {
             log.complain("Checked method does not exist in thread stack trace: " + DEBUGGEE_THREAD + "." + checkedMethods[1]);
-            result= false;
+            result = false;
         }
 
         return result;

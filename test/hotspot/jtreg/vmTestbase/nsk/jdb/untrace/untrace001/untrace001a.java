@@ -23,24 +23,24 @@
 
 package nsk.jdb.untrace.untrace001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class untrace001a {
 
-    public static void main(String args[]) {
-       untrace001a _untrace001a = new untrace001a();
-       System.exit(untrace001.JCK_STATUS_BASE + _untrace001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        untrace001a _untrace001a = new untrace001a();
+        System.exit(untrace001.JCK_STATUS_BASE + _untrace001a.runIt(args, System.out));
     }
 
-    static void breakHere() {}
+    static void breakHere() {
+    }
 
-    static final String MYTHREAD  = "MyThread";
-    static final int numThreads   = 1;   // number of threads.
+    static final String MYTHREAD = "MyThread";
+    static final int numThreads = 1;   // number of threads.
 
     static JdbArgumentHandler argumentHandler;
     static Log log;
@@ -50,29 +50,29 @@ public class untrace001a {
     static volatile boolean mainThreadRunning;
     static volatile boolean[] flags = new boolean[numThreads];
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
 
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
 
         int i;
-        Thread holder [] = new Thread[numThreads];
+        Thread holder[] = new Thread[numThreads];
         Object[] locks = new Object[numThreads];
 
-        for (i = 0; i < numThreads ; i++) {
-            locks[i]  = new Object();
+        for (i = 0; i < numThreads; i++) {
+            locks[i] = new Object();
             holder[i] = new MyThread(locks[i], i, MYTHREAD + "-" + i);
         }
 
         synchronized (mainThreadLock0) {
             synchronized (mainThreadLock1) {
-                for (i = 0; i < numThreads ; i++) {
+                for (i = 0; i < numThreads; i++) {
                     holder[i].start();
                     try {
-                         mainThreadRunning = false;
-                         while (!mainThreadRunning) {
-                             mainThreadLock1.wait();
-                         }
+                        mainThreadRunning = false;
+                        while (!mainThreadRunning) {
+                            mainThreadLock1.wait();
+                        }
                     } catch (InterruptedException e) {
                         log.complain("Main thread was interrupted while waiting for start of " + MYTHREAD + "-" + i);
                         return untrace001.FAILED;
@@ -86,17 +86,17 @@ public class untrace001a {
             breakHere();  // a break to get thread ids and then to turn on tracing.
 
             // waits on all MyThreads completion
-            for (i = 0; i < numThreads ; i++) {
+            for (i = 0; i < numThreads; i++) {
                 synchronized (locks[i]) {
                     flags[i] = true;
                     locks[i].notifyAll();
                 }
 
                 try {
-                     mainThreadRunning = false;
-                     while (!mainThreadRunning) {
-                         mainThreadLock0.wait();
-                     }
+                    mainThreadRunning = false;
+                    while (!mainThreadRunning) {
+                        mainThreadLock0.wait();
+                    }
                 } catch (InterruptedException e) {
                     log.complain("Main thread was interrupted while waiting for " + MYTHREAD + "-" + i);
                     return untrace001.FAILED;
@@ -131,7 +131,7 @@ class MyThread extends Thread {
     int ind;
     String name;
 
-    public MyThread (Object l, int i, String n) {
+    public MyThread(Object l, int i, String n) {
         lock = l;
         ind = i;
         name = n;
@@ -185,6 +185,6 @@ class MyThread extends Thread {
     }
 
     public int func3(int i) {
-        return i*i;
+        return i * i;
     }
 }

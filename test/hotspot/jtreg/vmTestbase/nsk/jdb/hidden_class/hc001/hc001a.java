@@ -23,14 +23,14 @@
 
 package nsk.jdb.hidden_class.hc001;
 
+import nsk.share.jdb.JdbArgumentHandler;
+
 import java.io.File;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
-import nsk.share.jdb.*;
 
 /* Interface for tested hidden class to implement. */
 interface HCInterf {
@@ -54,10 +54,14 @@ class HiddenClass implements HCInterf {
     }
 }
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class hc001a {
     static PrintStream log = null;
-    static void logMsg(String msg) { log.println(msg); log.flush(); }
+
+    static void logMsg(String msg) {
+        log.println(msg);
+        log.flush();
+    }
 
     static final String JAVA_CP = System.getProperty("java.class.path");
     static final String HC_NAME = HiddenClass.class.getName().replace(".", File.separator) + ".class";
@@ -66,7 +70,7 @@ public class hc001a {
 
     static String getClassPath(Class<?> klass) {
         String classPath = klass.getTypeName().replace(".", File.separator) + ".class";
-        for (String path: JAVA_CP.split(File.pathSeparator)) {
+        for (String path : JAVA_CP.split(File.pathSeparator)) {
             String fullClassPath = path + File.separator + classPath;
             if (new File(fullClassPath).exists()) {
                 return fullClassPath;
@@ -75,7 +79,7 @@ public class hc001a {
         throw new RuntimeException("class path for " + klass.getName() + " not found");
     }
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         // The Jdb framework uses stdout for commands reply,
         // so it is not usable for normal logging.
         // Use a separate log file for debuggee located in JTwork/scratch.
@@ -87,9 +91,10 @@ public class hc001a {
     }
 
     // This method is to hit a breakpoint at expected execution point.
-    void emptyMethod() {}
+    void emptyMethod() {
+    }
 
-    public int runIt(String args[]) throws Exception {
+    public int runIt(String[] args) throws Exception {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
 
         logMsg("Debuggee: runIt: started");
@@ -108,7 +113,7 @@ public class hc001a {
 
         // It is impossible to use a hidden class name to define a variable,
         // so we use the interface which the tested hidden class implements.
-        HCInterf hcObj = (HCInterf)hc.newInstance();
+        HCInterf hcObj = (HCInterf) hc.newInstance();
         logMsg("Debuggee: created an instance of a hidden class: " + hcName);
 
         // It is for debuuger to set a breakpoint at a well known execution point.

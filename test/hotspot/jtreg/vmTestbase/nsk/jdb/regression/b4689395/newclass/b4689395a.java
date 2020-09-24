@@ -23,37 +23,37 @@
 
 package nsk.jdb.regression.b4689395;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Consts;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
 //    THIS TEST IS LINE NUMBER SENSITIVE
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class b4689395a {
-        static b4689395a _b4689395a = new b4689395a();
-        final static String ERROR_MESSAGE  = "ERROR_M";
+    static b4689395a _b4689395a = new b4689395a();
+    final static String ERROR_MESSAGE = "ERROR_M";
 
-        public static void main(String args[]) {
-                System.exit(Consts.JCK_STATUS_BASE + _b4689395a.runIt(args, System.out));
-        }
+    public static void main(String[] args) {
+        System.exit(Consts.JCK_STATUS_BASE + _b4689395a.runIt(args, System.out));
+    }
 
-        public int runIt(String args[], PrintStream out) {
-                JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
-                Log log = new Log(out, argumentHandler);
+    public int runIt(String[] args, PrintStream out) {
+        JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
+        Log log = new Log(out, argumentHandler);
 
-                minor();
+        minor();
 
-                log.display("Debuggee PASSED");
-                return Consts.TEST_PASSED;
-        }
+        log.display("Debuggee PASSED");
+        return Consts.TEST_PASSED;
+    }
 
-        public static void minor() {
-                System.out.println("In the top of the method minor()"); // b4689395.LINE_NUMBER
-                System.out.println("A breakpoint is here.");
-                System.out.println("In the bottom of the method minor().");
-                System.out.println(ERROR_MESSAGE);
-        }
+    public static void minor() {
+        System.out.println("In the top of the method minor()"); // b4689395.LINE_NUMBER
+        System.out.println("A breakpoint is here.");
+        System.out.println("In the bottom of the method minor().");
+        System.out.println(ERROR_MESSAGE);
+    }
 }

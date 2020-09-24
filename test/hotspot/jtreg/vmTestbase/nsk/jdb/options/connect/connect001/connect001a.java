@@ -23,23 +23,23 @@
 
 package nsk.jdb.options.connect.connect001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class connect001a {
     static connect001a _connect001a = new connect001a();
 
-    public static void main(String args[]) {
-       System.exit(connect001.JCK_STATUS_BASE + _connect001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        System.exit(connect001.JCK_STATUS_BASE + _connect001a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 

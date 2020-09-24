@@ -23,21 +23,20 @@
 
 package nsk.jdb.interrupt.interrupt001;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
-import java.util.concurrent.Semaphore;
+import java.io.PrintStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class interrupt001a {
     private class MyThread extends Thread {
         final Object lock;
         int ind;
         String name;
 
-        public MyThread (Object l, int i, String n) {
+        public MyThread(Object l, int i, String n) {
             lock = l;
             ind = i;
             name = n;
@@ -65,27 +64,28 @@ public class interrupt001a {
         }
     }
 
-    public static void main(String args[]) {
-       interrupt001a _interrupt001a = new interrupt001a();
-       System.exit(interrupt001.JCK_STATUS_BASE + _interrupt001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        interrupt001a _interrupt001a = new interrupt001a();
+        System.exit(interrupt001.JCK_STATUS_BASE + _interrupt001a.runIt(args, System.out));
     }
 
-    static void breakHere () {}
+    static void breakHere() {
+    }
 
-    static final String MYTHREAD        = "MyThread";
-    static final int numThreads         = 5;   // number of threads
+    static final String MYTHREAD = "MyThread";
+    static final int numThreads = 5;   // number of threads
     static volatile boolean allWorkersAreWaiting = false;
 
-    private final Object waitnotify            = new Object();
+    private final Object waitnotify = new Object();
     private volatile boolean threadRunning;
-    private volatile boolean[] flags     = new boolean[numThreads];
+    private volatile boolean[] flags = new boolean[numThreads];
 
     private JdbArgumentHandler argumentHandler;
     private Log log;
 
     public static final AtomicInteger notInterrupted = new AtomicInteger(numThreads);
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
 
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
@@ -94,19 +94,19 @@ public class interrupt001a {
         Thread[] holder = new Thread[numThreads];
         Object[] locks = new Object[numThreads];
 
-        for (i = 0; i < numThreads ; i++) {
+        for (i = 0; i < numThreads; i++) {
             locks[i] = new Object();
             holder[i] = new MyThread(locks[i], i, MYTHREAD + "-" + i);
         }
 
         synchronized (waitnotify) {
-            for (i = 0; i < numThreads ; i++) {
+            for (i = 0; i < numThreads; i++) {
                 holder[i].start();
                 try {
-                     threadRunning = false;
-                     while (!threadRunning) {
-                         waitnotify.wait();
-                     }
+                    threadRunning = false;
+                    while (!threadRunning) {
+                        waitnotify.wait();
+                    }
                 } catch (InterruptedException e) {
                     log.complain("Main thread was interrupted while waiting for start of " + MYTHREAD + "-" + i);
                     return interrupt001.FAILED;
@@ -131,7 +131,7 @@ public class interrupt001a {
                 }
             }
         }
-        for (i = 0; i < numThreads ; i++) {
+        for (i = 0; i < numThreads; i++) {
             if (holder[i].isAlive()) {
                 synchronized (locks[i]) {
                     flags[i] = true;

@@ -21,25 +21,27 @@
  * questions.
  */
 
+//    THIS TEST IS LINE NUMBER SENSITIVE
+
 package nsk.jdb.stop_at.stop_at002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class stop_at002a {
-    public static void main(String args[]) {
-       stop_at002a _stop_at002a = new stop_at002a();
-       lastBreak();
-       System.exit(stop_at002.JCK_STATUS_BASE + _stop_at002a.runIt(args, System.out));
+    public static void main(String[] args) {
+        stop_at002a _stop_at002a = new stop_at002a();
+        lastBreak();
+        System.exit(stop_at002.JCK_STATUS_BASE + _stop_at002a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -53,13 +55,15 @@ public class stop_at002a {
 
     class Nested {
         boolean flag;
-        Nested (boolean b) {
+
+        Nested(boolean b) {
             flag = b;
         }
+
         class DeeperNested {
-            class  DeepestNested {
+            class DeepestNested {
                 public void foo(boolean input) {
-                    flag = input; /* <--------  This is line number 43 */
+                    flag = input; // stop_at002.DEBUGGEE_LOCATION1
                 }
             }
         }
@@ -72,8 +76,9 @@ public class stop_at002a {
             public MoreInner() {
                 content = "";
             }
+
             public void foo(String input) {
-                content += input; /* <--------  This is line number 57 */
+                content += input; // stop_at002.DEBUGGEE_LOCATION2
             }
         }
     }

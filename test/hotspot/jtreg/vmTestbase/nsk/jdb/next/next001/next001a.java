@@ -23,37 +23,37 @@
 
 package nsk.jdb.next.next001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class next001a {
-    public static void main(String args[]) {
-       next001a _next001a = new next001a();
-       System.exit(next001.JCK_STATUS_BASE + _next001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        next001a _next001a = new next001a();
+        System.exit(next001.JCK_STATUS_BASE + _next001a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    static final String MYTHREAD  = "MyThread";
-    static final int numThreads   = 2;   // number of threads.
+    static final String MYTHREAD = "MyThread";
+    static final int numThreads = 2;   // number of threads.
 
     static JdbArgumentHandler argumentHandler;
     static Log log;
 
     static Object waitnotify = new Object();
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
 
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
 
-        Thread holder [] = new Thread[numThreads];
+        Thread holder[] = new Thread[numThreads];
 
-        for (int i = 0; i < numThreads ; i++) {
+        for (int i = 0; i < numThreads; i++) {
             holder[i] = new MyThread();
             holder[i].start();
             try {
@@ -86,6 +86,6 @@ class MyThread extends Thread {
     }
 
     public int func3(int i) {
-        return i*i;
+        return i * i;
     }
 }

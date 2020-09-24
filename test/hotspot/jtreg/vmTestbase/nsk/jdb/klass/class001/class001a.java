@@ -23,27 +23,24 @@
 
 package nsk.jdb.klass.class001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class class001a {
 
-    /* TEST DEPENDANT VARIABLES AND CONSTANTS */
-    static final String PACKAGE_NAME = "nsk.jdb.klass.class001";
-
-    public static void main(String args[]) {
-       class001a _class001a = new class001a();
-       System.exit(class001.JCK_STATUS_BASE + _class001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        class001a _class001a = new class001a();
+        System.exit(class001.JCK_STATUS_BASE + _class001a.runIt(args, System.out));
     }
 
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -53,14 +50,25 @@ public class class001a {
         return class001.PASSED;
     }
 
-    interface InnerInt1 {}
-    public class Inner2 implements InnerInt1 {}
-    private class Inner3 {}
-    protected class Inner4 {}
-    abstract class Inner5 {}
-    final class Inner6 extends Inner5{}
+    interface InnerInt1 {
+    }
 
-    private void init () {
+    public class Inner2 implements InnerInt1 {
+    }
+
+    private class Inner3 {
+    }
+
+    protected class Inner4 {
+    }
+
+    abstract class Inner5 {
+    }
+
+    final class Inner6 extends Inner5 {
+    }
+
+    private void init() {
         Outer1 o1 = new Outer1();
         Inner2 i2 = new Inner2();
         Inner3 i3 = new Inner3();
@@ -71,4 +79,5 @@ public class class001a {
     }
 }
 
-class Outer1 {}
+class Outer1 {
+}

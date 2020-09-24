@@ -23,25 +23,25 @@
 
 package nsk.jdb.monitor.monitor001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
 //    THIS TEST IS LINE NUMBER SENSITIVE
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class monitor001a {
     static monitor001a _monitor001a = new monitor001a();
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         System.exit(monitor001.JCK_STATUS_BASE + _monitor001a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
         int localInt = 0; // monitor001.LINE_NUMBER

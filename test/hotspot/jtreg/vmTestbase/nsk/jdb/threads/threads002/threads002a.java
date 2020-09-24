@@ -23,34 +23,35 @@
 
 package nsk.jdb.threads.threads002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Failure;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class threads002a {
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         threads002a _threads002a = new threads002a();
         System.exit(threads002.JCK_STATUS_BASE + _threads002a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
     static int numThreads = 5;   // number of threads
     static Object waitnotify = new Object();
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
-        Thread holder [] = new Thread[numThreads];
+        Thread holder[] = new Thread[numThreads];
         Lock lock = new Lock();
 
         try {
             lock.setLock();
-            for (int i = 0; i < numThreads ; i++) {
+            for (int i = 0; i < numThreads; i++) {
                 holder[i] = new MyThread(lock);
                 synchronized (waitnotify) {
                     holder[i].start();
@@ -59,14 +60,14 @@ public class threads002a {
             }
         } catch (Exception e) {
             System.err.println("TEST ERROR: Caught unexpected Exception while waiting in main thread: " +
-                e.getMessage());
+                    e.getMessage());
             System.exit(threads002.FAILED);
         }
 
         lastBreak();   // When jdb stops here, there should be 5 running MyThreads.
         lock.releaseLock();
 
-        for (int i = 0; i < numThreads ; i++) {
+        for (int i = 0; i < numThreads; i++) {
             if (holder[i].isAlive()) {
                 try {
                     holder[i].join(argumentHandler.getWaitTime() * 60000);
@@ -102,7 +103,8 @@ class Lock {
 class MyThread extends Thread {
 
     Lock lock;
-    MyThread (Lock l) {
+
+    MyThread(Lock l) {
         this.lock = l;
     }
 
@@ -112,9 +114,9 @@ class MyThread extends Thread {
         }
         try {
             lock.setLock();
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.err.println("TEST ERROR: Caught unexpected Exception while waiting in MyThread: " +
-                e.getMessage());
+                    e.getMessage());
             System.exit(threads002.FAILED);
         }
         lock.releaseLock();

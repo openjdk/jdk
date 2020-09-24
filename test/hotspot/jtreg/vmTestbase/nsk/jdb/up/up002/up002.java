@@ -57,47 +57,47 @@
 
 package nsk.jdb.up.up002;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.Vector;
 
 public class up002 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new up002().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME     = "nsk.jdb.up.up002";
-    static final String TEST_CLASS       = PACKAGE_NAME + ".up002";
-    static final String DEBUGGEE_CLASS   = TEST_CLASS + "a";
-    static final String FIRST_BREAK      = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK       = DEBUGGEE_CLASS + ".lastBreak";
+    static final String PACKAGE_NAME = "nsk.jdb.up.up002";
+    static final String TEST_CLASS = PACKAGE_NAME + ".up002";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
-    static final String[][] FRAMES = new String[][] {
-        {"[1]", DEBUGGEE_CLASS + ".func5"},
-        {"[2]", DEBUGGEE_CLASS + ".func4"},
-        {"[3]", DEBUGGEE_CLASS + ".func3"},
-        {"[4]", DEBUGGEE_CLASS + ".func2"},
-        {"[5]", DEBUGGEE_CLASS + ".func1"},
-        {"[6]", DEBUGGEE_CLASS + ".runIt"},
-        {"[7]", DEBUGGEE_CLASS + ".main"}
-                                                };
+    static final String[][] FRAMES = new String[][]{
+            {"[1]", DEBUGGEE_CLASS + ".func5"},
+            {"[2]", DEBUGGEE_CLASS + ".func4"},
+            {"[3]", DEBUGGEE_CLASS + ".func3"},
+            {"[4]", DEBUGGEE_CLASS + ".func2"},
+            {"[5]", DEBUGGEE_CLASS + ".func1"},
+            {"[6]", DEBUGGEE_CLASS + ".runIt"},
+            {"[7]", DEBUGGEE_CLASS + ".main"}
+    };
 
     protected void runCases() {
         String[] reply;
         Paragrep grep;
         int count;
-        Vector v;
-        String found;
+        Vector<String> v;
 
         jdb.receiveReplyFor(JdbCommand.stop_in + DEBUGGEE_CLASS + ".func5");
         jdb.receiveReplyFor(JdbCommand.cont);
@@ -112,14 +112,14 @@ public class up002 extends JdbTest {
         reply = jdb.getTotalReply();
         grep = new Paragrep(reply);
 
-        for (int i = 1; i < (FRAMES.length-1); i++) {
-            v = new Vector();
+        for (int i = 1; i < (FRAMES.length - 1); i++) {
+            v = new Vector<>();
             v.add(FRAMES[i][0]);
             v.add(FRAMES[i][1]);
             count = grep.find(v);
-            if (count != (i+1)) {
+            if (count != (i + 1)) {
                 failure("Unexpected number of the stack frame: " + FRAMES[i][1] +
-                    "\n\texpected value : " + (i+1) + ", got : " + count);
+                        "\n\texpected value : " + (i + 1) + ", got : " + count);
             }
         }
 

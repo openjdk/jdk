@@ -23,29 +23,29 @@
 
 package nsk.jdb.reenter.reenter001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class reenter001a {
 
-    static final String MYTHREAD  = "MyThread";
+    static final String MYTHREAD = "MyThread";
 
     static JdbArgumentHandler argumentHandler;
     static Log log;
 
     static reenter001a _reenter001a = new reenter001a();
 
-    public static void main(String args[]) {
-       System.exit(reenter001.JCK_STATUS_BASE + _reenter001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        System.exit(reenter001.JCK_STATUS_BASE + _reenter001a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
 
@@ -68,7 +68,7 @@ public class reenter001a {
 
 class MyThread extends Thread {
 
-    public MyThread (String name) {
+    public MyThread(String name) {
         super(name);
     }
 

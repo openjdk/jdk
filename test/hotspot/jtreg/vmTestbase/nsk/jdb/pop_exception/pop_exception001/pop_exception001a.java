@@ -23,11 +23,11 @@
 
 package nsk.jdb.pop_exception.pop_exception001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Consts;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
 //    THIS TEST IS LINE NUMBER SENSITIVE
 
@@ -35,15 +35,12 @@ import java.io.*;
  * debugee application
  */
 public class pop_exception001a {
-    public static void main(String args[]) {
-       pop_exception001a _pop_exception001a = new pop_exception001a();
-       System.exit(Consts.JCK_STATUS_BASE + _pop_exception001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        pop_exception001a _pop_exception001a = new pop_exception001a();
+        System.exit(Consts.JCK_STATUS_BASE + _pop_exception001a.runIt(args, System.out));
     }
 
-    static JdbArgumentHandler argumentHandler;
-    static Log log;
-
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         int i = 0;
         Object item = null;
         try {
@@ -51,7 +48,7 @@ public class pop_exception001a {
             i = 5; // expectedFinish
             item = getItem(i);
         } finally {
-            System.out.println("item = "+item);
+            System.out.println("item = " + item);
         }
         return Consts.TEST_PASSED;
     }
@@ -64,5 +61,5 @@ public class pop_exception001a {
         }
     }
 
-    public final static String expectedFinish = "51";
+    public final static String expectedFinish = "48";
 }

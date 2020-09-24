@@ -23,21 +23,20 @@
 
 package nsk.jdb.uncaught_exception.uncaught_exception002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class uncaught_exception002a {
     static uncaught_exception002a _uncaught_exception002a = new uncaught_exception002a();
 
-    public static void main(String args[]) throws TenMultipleException {
-       System.exit(uncaught_exception002.JCK_STATUS_BASE + _uncaught_exception002a.runIt(args, System.out));
+    public static void main(String[] args) throws TenMultipleException {
+        System.exit(uncaught_exception002.JCK_STATUS_BASE + _uncaught_exception002a.runIt(args, System.out));
     }
 
-    public int runIt(String args[], PrintStream out) throws TenMultipleException {
+    public int runIt(String[] args, PrintStream out) throws TenMultipleException {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -50,7 +49,7 @@ public class uncaught_exception002a {
     public static int func(int i) throws TenMultipleException {
         int localVar = 12345;
 
-        if ( i % 10 == 0 ) {
+        if (i % 10 == 0) {
             throw new TenMultipleException(i);
         }
         return i;
@@ -58,5 +57,7 @@ public class uncaught_exception002a {
 }
 
 class TenMultipleException extends Exception {
-     TenMultipleException (int i) { super ("received " + i ); }
+    TenMultipleException(int i) {
+        super("received " + i);
+    }
 }

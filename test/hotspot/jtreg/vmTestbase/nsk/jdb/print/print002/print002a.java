@@ -23,24 +23,24 @@
 
 package nsk.jdb.print.print002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class print002a {
 
     static print002a _print002a = new print002a();
 
-    public static void main(String args[]) {
-       System.exit(print002.JCK_STATUS_BASE + _print002a.runIt(args, System.out));
+    public static void main(String[] args) {
+        System.exit(print002.JCK_STATUS_BASE + _print002a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -61,131 +61,209 @@ public class print002a {
 }
 
 class A {
-B b;
-A() { b = new B(); }
+    B b;
+
+    A() {
+        b = new B();
+    }
 }
 
 class B {
-C c;
-B() { c = new C(); }
+    C c;
+
+    B() {
+        c = new C();
+    }
 }
 
 class C {
-D d;
-C() { d = new D(); }
+    D d;
+
+    C() {
+        d = new D();
+    }
 }
 
 class D {
-E e;
-D() { e = new E(); }
+    E e;
+
+    D() {
+        e = new E();
+    }
 }
 
 class E {
-F f;
-E() { f = new F(); }
+    F f;
+
+    E() {
+        f = new F();
+    }
 }
 
 class F {
-G g;
-F() { g = new G(); }
+    G g;
+
+    F() {
+        g = new G();
+    }
 }
 
 class G {
-H h;
-G() { h = new H(); }
+    H h;
+
+    G() {
+        h = new H();
+    }
 }
 
 class H {
-I i;
-H() { i = new I(); }
+    I i;
+
+    H() {
+        i = new I();
+    }
 }
 
 class I {
-J j;
-I() { j = new J(); }
+    J j;
+
+    I() {
+        j = new J();
+    }
 }
 
 class J {
-K k;
-J() { k = new K(); }
+    K k;
+
+    J() {
+        k = new K();
+    }
 }
 
 class K {
-L l;
-K() { l = new L(); }
+    L l;
+
+    K() {
+        l = new L();
+    }
 }
 
 class L {
-M m;
-L() { m = new M(); }
+    M m;
+
+    L() {
+        m = new M();
+    }
 }
 
 class M {
-N n;
-M() { n = new N(); }
+    N n;
+
+    M() {
+        n = new N();
+    }
 }
 
 class N {
-O o;
-N() { o = new O(); }
+    O o;
+
+    N() {
+        o = new O();
+    }
 }
 
 class O {
-P p;
-O() { p = new P(); }
+    P p;
+
+    O() {
+        p = new P();
+    }
 }
 
 class P {
-Q q;
-P() { q = new Q(); }
+    Q q;
+
+    P() {
+        q = new Q();
+    }
 }
 
 class Q {
-R r;
-Q() { r = new R(); }
+    R r;
+
+    Q() {
+        r = new R();
+    }
 }
 
 class R {
-S s;
-R() { s = new S(); }
+    S s;
+
+    R() {
+        s = new S();
+    }
 }
 
 class S {
-T t;
-S() { t = new T(); }
+    T t;
+
+    S() {
+        t = new T();
+    }
 }
 
 class T {
-U u;
-T() { u = new U(); }
+    U u;
+
+    T() {
+        u = new U();
+    }
 }
 
 class U {
-V v;
-U() { v = new V(); }
+    V v;
+
+    U() {
+        v = new V();
+    }
 }
 
 class V {
-W w;
-V() { w = new W(); }
+    W w;
+
+    V() {
+        w = new W();
+    }
 }
 
 class W {
-X x;
-W() { x = new X(); }
+    X x;
+
+    W() {
+        x = new X();
+    }
 }
 
 class X {
-Y y;
-X() { y = new Y(); }
+    Y y;
+
+    X() {
+        y = new Y();
+    }
 }
 
 class Y {
-Z z;
-Y() { z = new Z(); }
+    Z z;
+
+    Y() {
+        z = new Z();
+    }
 }
 
 class Z {
-  String s;
-  Z() { s  = "foo";}
+    String s;
+
+    Z() {
+        s = "foo";
+    }
 }

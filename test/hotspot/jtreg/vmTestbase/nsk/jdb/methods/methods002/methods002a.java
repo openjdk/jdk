@@ -23,23 +23,23 @@
 
 package nsk.jdb.methods.methods002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class methods002a {
     static methods002a _methods002a = new methods002a();
 
-    public static void main(String args[]) {
-       System.exit(methods002.JCK_STATUS_BASE + _methods002a.runIt(args, System.out));
+    public static void main(String[] args) {
+        System.exit(methods002.JCK_STATUS_BASE + _methods002a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -57,125 +57,332 @@ public class methods002a {
     static long lo;
 
     // various method modifiers
-                 void  m01 (long l) { lo = l; };
-    private      void  m02 (long l) { lo = l; };
-    protected    void  m03 (long l) { lo = l; };
-    public       void  m04 (long l) { lo = l; };
-    static       void  m05 (long l) { lo = l; };
-    synchronized void  m06 (long l) { lo = l; };
-    strictfp     void  m07 (long l) { lo = l; };
-    native       void  m08 (long l);
-    public static synchronized strictfp void m09 (long l) { lo = l; };
+    void m01(long l) {
+        lo = l;
+    }
 
-                 long  m10 (long l) { return lo + l; };
-    private      long  m11 (long l) { return lo + l; };
-    protected    long  m12 (long l) { return lo + l; };
-    public       long  m13 (long l) { return lo + l; };
-    static       long  m14 (long l) { return lo + l; };
-    synchronized long  m15 (long l) { return lo + l; };
-    strictfp     long  m16 (long l) { return lo + l; };
-    native       long  m17 (long l);
-    public static synchronized strictfp long m18 (long l) { return lo + l; };
+    private void m02(long l) {
+        lo = l;
+    }
 
-                 Object  m19 () { return new Object(); };
-    private      Object  m20 () { return new Object(); };
-    protected    Object  m21 () { return new Object(); };
-    public       Object  m22 () { return new Object(); };
-    static       Object  m23 () { return new Object(); };
-    synchronized Object  m24 () { return new Object(); };
-    strictfp     Object  m25 () { return new Object(); };
-    native       Object  m26 ();
-    public static synchronized strictfp Object m27 () { return new Object(); };
+    protected void m03(long l) {
+        lo = l;
+    }
 
+    public void m04(long l) {
+        lo = l;
+    }
+
+    static void m05(long l) {
+        lo = l;
+    }
+
+    synchronized void m06(long l) {
+        lo = l;
+    }
+
+    strictfp void m07(long l) {
+        lo = l;
+    }
+
+    native void m08(long l);
+
+    public static synchronized strictfp void m09(long l) {
+        lo = l;
+    }
+
+    long m10(long l) {
+        return lo + l;
+    }
+
+    private long m11(long l) {
+        return lo + l;
+    }
+
+    protected long m12(long l) {
+        return lo + l;
+    }
+
+    public long m13(long l) {
+        return lo + l;
+    }
+
+    static long m14(long l) {
+        return lo + l;
+    }
+
+    synchronized long m15(long l) {
+        return lo + l;
+    }
+
+    strictfp long m16(long l) {
+        return lo + l;
+    }
+
+    native long m17(long l);
+
+    public static synchronized strictfp long m18(long l) {
+        return lo + l;
+    }
+
+    Object m19() {
+        return new Object();
+    }
+
+    private Object m20() {
+        return new Object();
+    }
+
+    protected Object m21() {
+        return new Object();
+    }
+
+    public Object m22() {
+        return new Object();
+    }
+
+    static Object m23() {
+        return new Object();
+    }
+
+    synchronized Object m24() {
+        return new Object();
+    }
+
+    strictfp Object m25() {
+        return new Object();
+    }
+
+    native Object m26();
+
+    public static synchronized strictfp Object m27() {
+        return new Object();
+    }
 
     // array methods
-    double[]   m28 () { return new double[1]; };
-    double     m29 (double[] arr) {return arr[0];};
-    double[][] m30 (double[][] arr) {return arr;};
+    double[] m28() {
+        return new double[1];
+    }
 
-    String[]   m31 () { return new String[1];};
-    String     m32 (String[] arr) { return arr[0];};
-    String[][] m33 (String[][] arr) {return arr;};
+    double m29(double[] arr) {
+        return arr[0];
+    }
+
+    double[][] m30(double[][] arr) {
+        return arr;
+    }
+
+    String[] m31() {
+        return new String[1];
+    }
+
+    String m32(String[] arr) {
+        return arr[0];
+    }
+
+    String[][] m33(String[][] arr) {
+        return arr;
+    }
 
     // final methods
-    final        void    f01 (long l) { lo = l; };
-    final        long    f02 (long l) { return lo + l; };
-    final        Object  f03 () { return new Object(); };
+    final void f01(long l) {
+        lo = l;
+    }
+
+    final long f02(long l) {
+        return lo + l;
+    }
+
+    final Object f03() {
+        return new Object();
+    }
 }
 
 // Class with many constructors
 class methods002b {
     int ind;
-    methods002b (int i) { ind = i; };
 
-    private   methods002b (int i, int j) { ind = i+j; };
-    protected methods002b (int i, int j, int k) { ind = i+j+k; };
-    public    methods002b (int i, int j, int k, int l) { ind = i+j+k+l; };
+    methods002b(int i) {
+        ind = i;
+    }
+
+    private methods002b(int i, int j) {
+        ind = i + j;
+    }
+
+    protected methods002b(int i, int j, int k) {
+        ind = i + j + k;
+    }
+
+    public methods002b(int i, int j, int k, int l) {
+        ind = i + j + k + l;
+    }
 }
 
 // Class with overloaded methods
 class methods002c {
-    int m01 (int i) { return i; };
-    int m01 (int i, int j) { return i+j; };
-    int m01 (int i, short j) { return i+j; };
+    int m01(int i) {
+        return i;
+    }
+
+    int m01(int i, int j) {
+        return i + j;
+    }
+
+    int m01(int i, short j) {
+        return i + j;
+    }
 }
 
 // Class with abstract methods
 abstract class methods002d {
-    abstract void m01 ();
+    abstract void m01();
 }
 
 interface methods002i {
-    void i01 ();
+    void i01();
 }
 
 class methods002e extends methods002d implements methods002i {
-    void m01 () {};
-    public void i01 () {};
+    void m01() {
+    }
+
+    public void i01() {
+    }
 }
 
 // Class with inherited methods
-class methods002f extends methods002a {}
+class methods002f extends methods002a {
+}
 
 // Class with inherited and overrided method
 class methods002g extends methods002f {
     static long lo;
 
-                 void  m01 (long l) { lo = l; };
-    private      void  m02 (long l) { lo = l; };
-    protected    void  m03 (long l) { lo = l; };
-    public       void  m04 (long l) { lo = l; };
-    static       void  m05 (long l) { lo = l; };
-    synchronized void  m06 (long l) { lo = l; };
-    strictfp     void  m07 (long l) { lo = l; };
-    native       void  m08 (long l);
-    public static synchronized strictfp void m09 (long l) { lo = l; };
+    void m01(long l) {
+        lo = l;
+    }
 
-                 long  m10 (long l) { return lo + l; };
-    private      long  m11 (long l) { return lo + l; };
-    protected    long  m12 (long l) { return lo + l; };
-    public       long  m13 (long l) { return lo + l; };
-    static       long  m14 (long l) { return lo + l; };
-    synchronized long  m15 (long l) { return lo + l; };
-    strictfp     long  m16 (long l) { return lo + l; };
-    native       long  m17 (long l);
-    public static synchronized strictfp long m18 (long l) { return lo + l; };
+    private void m02(long l) {
+        lo = l;
+    }
 
-                 Object  m19 () { return new Object(); };
-    private      Object  m20 () { return new Object(); };
-    protected    Object  m21 () { return new Object(); };
-    public       Object  m22 () { return new Object(); };
-    static       Object  m23 () { return new Object(); };
-    synchronized Object  m24 () { return new Object(); };
-    strictfp     Object  m25 () { return new Object(); };
-    native       Object  m26 ();
-    public static synchronized strictfp Object m27 () { return new Object(); };
+    protected void m03(long l) {
+        lo = l;
+    }
 
-    double[]   m28 () { return new double[1]; };
-    double     m29 (double[] arr) {return arr[0];};
-    double[][] m30 (double[][] arr) {return arr;};
+    public void m04(long l) {
+        lo = l;
+    }
 
-    String[]   m31 () { return new String[1];};
-    String     m32 (String[] arr) { return arr[0];};
-    String[][] m33 (String[][] arr) {return arr;};
+    static void m05(long l) {
+        lo = l;
+    }
+
+    synchronized void m06(long l) {
+        lo = l;
+    }
+
+    strictfp void m07(long l) {
+        lo = l;
+    }
+
+    native void m08(long l);
+
+    public static synchronized strictfp void m09(long l) {
+        lo = l;
+    }
+
+    long m10(long l) {
+        return lo + l;
+    }
+
+    private long m11(long l) {
+        return lo + l;
+    }
+
+    protected long m12(long l) {
+        return lo + l;
+    }
+
+    public long m13(long l) {
+        return lo + l;
+    }
+
+    static long m14(long l) {
+        return lo + l;
+    }
+
+    synchronized long m15(long l) {
+        return lo + l;
+    }
+
+    strictfp long m16(long l) {
+        return lo + l;
+    }
+
+    native long m17(long l);
+
+    public static synchronized strictfp long m18(long l) {
+        return lo + l;
+    }
+
+    Object m19() {
+        return new Object();
+    }
+
+    private Object m20() {
+        return new Object();
+    }
+
+    protected Object m21() {
+        return new Object();
+    }
+
+    public Object m22() {
+        return new Object();
+    }
+
+    static Object m23() {
+        return new Object();
+    }
+
+    synchronized Object m24() {
+        return new Object();
+    }
+
+    strictfp Object m25() {
+        return new Object();
+    }
+
+    native Object m26();
+
+    public static synchronized strictfp Object m27() {
+        return new Object();
+    }
+
+    double[] m28() {
+        return new double[1];
+    }
+
+    double m29(double[] arr) {
+        return arr[0];
+    }
+
+    double[][] m30(double[][] arr) {
+        return arr;
+    }
+
+    String[] m31() {
+        return new String[1];
+    }
+
+    String m32(String[] arr) {
+        return arr[0];
+    }
+
+    String[][] m33(String[][] arr) {
+        return arr;
+    }
+
 }

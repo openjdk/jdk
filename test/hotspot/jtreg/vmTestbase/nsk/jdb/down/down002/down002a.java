@@ -23,23 +23,23 @@
 
 package nsk.jdb.down.down002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class down002a {
-    public static void main(String args[]) {
-       down002a _down002a = new down002a();
-       lastBreak();
-       System.exit(down002.JCK_STATUS_BASE + _down002a.runIt(args, System.out));
+    public static void main(String[] args) {
+        down002a _down002a = new down002a();
+        lastBreak();
+        System.exit(down002.JCK_STATUS_BASE + _down002a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -62,14 +62,14 @@ public class down002a {
     }
 
     public int func4(int i) {
-       return func5(i) + 1;
+        return func5(i) + 1;
     }
 
     public int func5(int i) {
-       return func6(i) + 1;
+        return func6(i) + 1;
     }
 
     public int func6(int i) {
-        return i-5;
+        return i - 5;
     }
 }

@@ -25,23 +25,23 @@
 
 package nsk.jdb.where.where005;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class where005a {
-    public static void main(String args[]) {
-       where005a _where005a = new where005a();
-       lastBreak();
-       System.exit(where005.JCK_STATUS_BASE + _where005a.runIt(args, System.out)); // where005.FRAMES[7]
+    public static void main(String[] args) {
+        where005a _where005a = new where005a();
+        lastBreak();
+        System.exit(where005.JCK_STATUS_BASE + _where005a.runIt(args, System.out)); // where005.FRAMES[7]
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -64,16 +64,16 @@ public class where005a {
     }
 
     public int func4(int i) {
-       return func5(i) + 1; // where005.FRAMES[2]
+        return func5(i) + 1; // where005.FRAMES[2]
     }
 
     public int func5(int i) {
-       return func6(i) + 1; // where005.FRAMES[1]
+        return func6(i) + 1; // where005.FRAMES[1]
     }
 
     public int func6(int i) {
         String s = null;
         s.concat("null");  // throws NullPointerException // where005.FRAMES[0]
-        return i-5;
+        return i - 5;
     }
 }

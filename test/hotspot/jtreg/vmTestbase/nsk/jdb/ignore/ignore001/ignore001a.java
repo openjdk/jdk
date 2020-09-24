@@ -23,13 +23,12 @@
 
 package nsk.jdb.ignore.ignore001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class ignore001a {
 
     /* TEST DEPENDANT VARIABLES AND CONSTANTS */
@@ -41,14 +40,14 @@ public class ignore001a {
     static JdbArgumentHandler argumentHandler;
     static Log log;
 
-    public static void main(String args[]) {
-       ignore001a _ignore001a = new ignore001a();
-       System.exit(ignore001.JCK_STATUS_BASE + _ignore001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        ignore001a _ignore001a = new ignore001a();
+        System.exit(ignore001.JCK_STATUS_BASE + _ignore001a.runIt(args, System.out));
     }
 
 //    static void lastBreak () {}
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
 
@@ -60,18 +59,21 @@ public class ignore001a {
         return ignore001.PASSED;
     }
 
-    private void a (int i) {
+    private void a(int i) {
         try {
             switch (i) {
-            case 0: case 3:
-                log.display("Throwing NumberFormatException, i = " + i);
-                throw new java.lang.NumberFormatException();
-            case 1: case 4:
-                log.display("Throwing Exception1, i = " + i);
-                throw new Exception1();
-            case 2: case 5:
-                log.display("Throwing Exception2, i = " + i);
-                throw new Exception2();
+                case 0:
+                case 3:
+                    log.display("Throwing NumberFormatException, i = " + i);
+                    throw new java.lang.NumberFormatException();
+                case 1:
+                case 4:
+                    log.display("Throwing Exception1, i = " + i);
+                    throw new Exception1();
+                case 2:
+                case 5:
+                    log.display("Throwing Exception2, i = " + i);
+                    throw new Exception2();
             }
         } catch (java.lang.NumberFormatException e0) {
         } catch (Exception1 e1) {
@@ -80,7 +82,9 @@ public class ignore001a {
 //        lastBreak();
     }
 
-    class Exception1 extends Exception {}
+    class Exception1 extends Exception {
+    }
 }
 
-class Exception2 extends Exception {}
+class Exception2 extends Exception {
+}

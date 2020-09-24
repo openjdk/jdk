@@ -23,40 +23,39 @@
 
 package nsk.jdb.exclude.exclude001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
-
-import java.util.*;
+import java.io.PrintStream;
+import java.util.GregorianCalendar;
 
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class exclude001a {
-    public static void main(String args[]) {
-       exclude001a _exclude001a = new exclude001a();
-       System.exit(exclude001.JCK_STATUS_BASE + _exclude001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        exclude001a _exclude001a = new exclude001a();
+        System.exit(exclude001.JCK_STATUS_BASE + _exclude001a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    static final String MYTHREAD  = "MyThread";
-    static final int numThreads   = 3;   // number of threads.
+    static final String MYTHREAD = "MyThread";
+    static final int numThreads = 3;   // number of threads.
 
     static JdbArgumentHandler argumentHandler;
     static Log log;
 
     static Object waitnotify = new Object();
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
 
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
 
-        Thread holder [] = new Thread[numThreads];
+        Thread holder[] = new Thread[numThreads];
 
-        for (int i = 0; i < numThreads ; i++) {
+        for (int i = 0; i < numThreads; i++) {
             holder[i] = new MyThread(MYTHREAD + "-" + i);
             holder[i].start();
             try {
@@ -78,7 +77,7 @@ public class exclude001a {
 class MyThread extends Thread {
     String name;
 
-    public MyThread (String s) {
+    public MyThread(String s) {
         super(s);
         name = s;
     }

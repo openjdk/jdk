@@ -23,20 +23,20 @@
 
 package nsk.jdb.wherei.wherei001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class wherei001a {
-    public static void main(String args[]) {
-       wherei001a _wherei001a = new wherei001a();
-       System.exit(wherei001.JCK_STATUS_BASE + _wherei001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        wherei001a _wherei001a = new wherei001a();
+        System.exit(wherei001.JCK_STATUS_BASE + _wherei001a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
     static int numThreads = 5;   // number of threads. one lock per thread.
     static Object lock = new Object();
@@ -45,28 +45,28 @@ public class wherei001a {
     static JdbArgumentHandler argumentHandler;
     static Log log;
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
 
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
 
         int i;
-        Thread holder [] = new Thread[numThreads];
+        Thread holder[] = new Thread[numThreads];
         Lock locks[] = new Lock[numThreads];
 
-        for (i = 0; i < numThreads ; i++) {
+        for (i = 0; i < numThreads; i++) {
             locks[i] = new Lock();
-            holder[i] = new MyThread(locks[i],"MyThread-" + i);
+            holder[i] = new MyThread(locks[i], "MyThread-" + i);
         }
 
         // lock monitor to prevent threads from finishing after they started
         synchronized (lock) {
             synchronized (waitnotify) {
-                for (i = 0; i < numThreads ; i++) {
+                for (i = 0; i < numThreads; i++) {
                     holder[i].start();
                     try {
                         waitnotify.wait();
-                    } catch ( Exception e ) {
+                    } catch (Exception e) {
                         log.complain("TEST ERROR: caught Exception while waiting: " + e);
                         e.printStackTrace();
                     }
@@ -87,7 +87,7 @@ class MyThread extends Thread {
     // Concatenate strings in advance to avoid lambda calculations later
     final String ThreadFinished = "Thread finished: " + this.name;
 
-    public MyThread (Lock l, String n) {
+    public MyThread(Lock l, String n) {
         this.lock = l;
         name = n;
     }
@@ -132,7 +132,7 @@ class MyThread extends Thread {
         synchronized (wherei001a.lock) {
             wherei001a.log.display(ThreadFinished);
         }
-        return i*i;
+        return i * i;
     }
 }
 
@@ -140,7 +140,7 @@ class Lock {
     boolean lockSet;
 
     synchronized void setLock() throws InterruptedException {
-        while (lockSet == true ) {
+        while (lockSet == true) {
             wait();
         }
         lockSet = true;

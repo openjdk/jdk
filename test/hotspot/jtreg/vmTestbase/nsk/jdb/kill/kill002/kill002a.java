@@ -22,39 +22,39 @@
  */
 package nsk.jdb.kill.kill002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class kill002a {
-    public static void main(String args[]) {
-       kill002a _kill002a = new kill002a();
-       System.exit(kill002.JCK_STATUS_BASE + _kill002a.runIt(args, System.out));
+    public static void main(String[] args) {
+        kill002a _kill002a = new kill002a();
+        System.exit(kill002.JCK_STATUS_BASE + _kill002a.runIt(args, System.out));
     }
 
-    static void breakHere () {}
+    static void breakHere() {
+    }
 
-    static final String MYTHREAD         = "MyThread";
-    static final int numThreads          = 5;   // number of threads
-    static Object waitnotify             = new Object();
+    static final String MYTHREAD = "MyThread";
+    static final int numThreads = 5;   // number of threads
+    static Object waitnotify = new Object();
     public static volatile int notKilled = 0;
-    static final String message          = "kill002a's Exception";
+    static final String message = "kill002a's Exception";
 
     static JdbArgumentHandler argumentHandler;
     static Log log;
 
     static final Exception[] exceptions = {
-                    new InterruptedException(message),
-                    new NullPointerException(message),
-                    new SecurityException(message),
-                    new com.sun.jdi.IncompatibleThreadStateException(message),
-                    new MyException(message)
-                                          };
+            new InterruptedException(message),
+            new NullPointerException(message),
+            new SecurityException(message),
+            new com.sun.jdi.IncompatibleThreadStateException(message),
+            new MyException(message)
+    };
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
 
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
@@ -63,13 +63,13 @@ public class kill002a {
         Thread[] holder = new Thread[numThreads];
         Object[] locks = new Object[numThreads];
 
-        for (i = 0; i < numThreads ; i++) {
+        for (i = 0; i < numThreads; i++) {
             locks[i] = new Object();
             holder[i] = new MyThread(locks[i], MYTHREAD + "-" + i);
         }
 
         synchronized (waitnotify) {
-            for (i = 0; i < numThreads ; i++) {
+            for (i = 0; i < numThreads; i++) {
                 holder[i].start();
                 try {
                     waitnotify.wait();
@@ -86,7 +86,7 @@ public class kill002a {
         breakHere();  // a break to get thread ids and then to kill MyThreads.
 
         // waits on all MyThreads completion in case they were not killed
-        for (i = 0; i < numThreads ; i++) {
+        for (i = 0; i < numThreads; i++) {
             synchronized (locks[i]) {
                 locks[i].notifyAll();
             }
@@ -106,7 +106,7 @@ public class kill002a {
     }
 
     static class MyException extends Exception {
-        MyException (String message) {
+        MyException(String message) {
             super(message);
         }
     }
@@ -117,7 +117,7 @@ class MyThread extends Thread {
     Object lock;
     String name;
 
-    public MyThread (Object l, String n) {
+    public MyThread(Object l, String n) {
         lock = l;
         name = n;
     }

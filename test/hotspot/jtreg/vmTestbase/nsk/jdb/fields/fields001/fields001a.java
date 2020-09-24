@@ -23,27 +23,24 @@
 
 package nsk.jdb.fields.fields001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class fields001a {
 
-    /* TEST DEPENDANT VARIABLES AND CONSTANTS */
-    static final String PACKAGE_NAME = "nsk.jdb.fields.fields001";
-
-    public static void main(String args[]) {
-       fields001a _fields001a = new fields001a();
-       System.exit(fields001.JCK_STATUS_BASE + _fields001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        fields001a _fields001a = new fields001a();
+        System.exit(fields001.JCK_STATUS_BASE + _fields001a.runIt(args, System.out));
     }
 
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -53,51 +50,54 @@ public class fields001a {
         return fields001.PASSED;
     }
 
-    static     int i_st;
-    private    int i_pv;
-    protected  int i_pt;
-    public     int i_pb;
-    final      int i_fn = 0;;
-    transient  int i_tr;
-    volatile   int i_vl;
-    int []      i_a;
-    int [][]    i_aa;
-    int [][][]  i_aaa;
+    static int i_st;
+    private int i_pv;
+    protected int i_pt;
+    public int i_pb;
+    final int i_fn = 0;
 
-    static     Object o_st;
-    private    Object o_pv;
-    protected  Object o_pt;
-    public     Object o_pb;
-    final      Object o_fn = new Object();
-    transient  Object o_tr;
-    volatile   Object o_vl;
-    Object []     o_a;
-    Object [][]   o_aa;
-    Object [][][] o_aaa;
+    transient int i_tr;
+    volatile int i_vl;
+    int[] i_a;
+    int[][] i_aa;
+    int[][][] i_aaa;
+
+    static Object o_st;
+    private Object o_pv;
+    protected Object o_pt;
+    public Object o_pb;
+    final Object o_fn = new Object();
+    transient Object o_tr;
+    volatile Object o_vl;
+    Object[] o_a;
+    Object[][] o_aa;
+    Object[][][] o_aaa;
 
     class Inner {
-        private    int ii_pv;
-        protected  int ii_pt;
-        public     int ii_pb;
-        final      int ii_fn = 0;;
-        transient  int ii_tr;
-        volatile   int ii_vl;
-        int []      ii_a;
-        int [][]    ii_aa;
-        int [][][]  ii_aaa;
+        private int ii_pv;
+        protected int ii_pt;
+        public int ii_pb;
+        final int ii_fn = 0;
 
-        private    Object oi_pv;
-        protected  Object oi_pt;
-        public     Object oi_pb;
-        final      Object oi_fn = new Object();
-        transient  Object oi_tr;
-        volatile   Object oi_vl;
-        Object []     oi_a;
-        Object [][]   oi_aa;
-        Object [][][] oi_aaa;
+        transient int ii_tr;
+        volatile int ii_vl;
+        int[] ii_a;
+        int[][] ii_aa;
+        int[][][] ii_aaa;
+
+        private Object oi_pv;
+        protected Object oi_pt;
+        public Object oi_pb;
+        final Object oi_fn = new Object();
+        transient Object oi_tr;
+        volatile Object oi_vl;
+        Object[] oi_a;
+        Object[][] oi_aa;
+        Object[][][] oi_aaa;
     }
 
-    class Extender extends Inner {};
+    class Extender extends Inner {
+    }
 
     Inner inner;
     Extender extender;

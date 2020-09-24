@@ -62,20 +62,21 @@
 
 package nsk.jdb.options.connect.connect005;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.Vector;
 
 public class connect005 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new connect005().runTest(argv, out);
@@ -84,8 +85,8 @@ public class connect005 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.options.connect.connect005";
     static final String TEST_CLASS = PACKAGE_NAME + ".connect005";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     protected boolean shouldPass() {
         String feature = "com.sun.jdi.SharedMemoryListen";
@@ -99,16 +100,14 @@ public class connect005 extends JdbTest {
     protected void runCases() {
         String[] reply;
         Paragrep grep;
-        int count;
-        Vector v;
-        String found;
+        Vector<String> v;
 
         jdb.contToExit(1);
 
         if (argumentHandler.isLaunchingConnector()) {
             reply = jdb.getTotalReply();
             grep = new Paragrep(reply);
-            v = new Vector();
+            v = new Vector<>();
             v.add(JdbCommand.run);
             v.add(DEBUGGEE_CLASS);
             if (grep.find(v) != 1) {

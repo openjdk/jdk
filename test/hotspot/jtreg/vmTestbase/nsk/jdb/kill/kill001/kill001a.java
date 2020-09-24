@@ -23,59 +23,58 @@
 
 package nsk.jdb.kill.kill001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class kill001a {
-    public static void main(String args[]) {
-       kill001a _kill001a = new kill001a();
-       System.exit(kill001.JCK_STATUS_BASE + _kill001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        kill001a _kill001a = new kill001a();
+        System.exit(kill001.JCK_STATUS_BASE + _kill001a.runIt(args, System.out));
     }
 
-    static void breakHere () {}
+    static void breakHere() {
+    }
 
-    static final String MYTHREAD         = "MyThread";
-    static final int numThreads          = 5;   // number of threads. one lock per thread.
-    static Object lock                   = new Object();
-    static Object waitnotify             = new Object();
+    static final String MYTHREAD = "MyThread";
+    static final int numThreads = 5;   // number of threads. one lock per thread.
+    static Object lock = new Object();
+    static Object waitnotify = new Object();
     public static volatile int notKilled = 0;
-    static final String message          = "kill001a's Exception";
+    static final String message = "kill001a's Exception";
     static int waitTime;
 
     static JdbArgumentHandler argumentHandler;
     static Log log;
 
     static final Throwable[] exceptions = {
-                    new ThreadDeath(),
-                    new NullPointerException(message),
-                    new SecurityException(message),
-                    new com.sun.jdi.IncompatibleThreadStateException(message),
-                    new MyException(message)
-                                          };
+            new ThreadDeath(),
+            new NullPointerException(message),
+            new SecurityException(message),
+            new com.sun.jdi.IncompatibleThreadStateException(message),
+            new MyException(message)
+    };
 
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
 
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
         waitTime = argumentHandler.getWaitTime() * 60 * 1000;
 
         int i;
-        Thread holder [] = new Thread[numThreads];
+        Thread holder[] = new Thread[numThreads];
 
-        for (i = 0; i < numThreads ; i++) {
+        for (i = 0; i < numThreads; i++) {
             holder[i] = new MyThread(MYTHREAD + "-" + i);
         }
 
         // lock monitor to prevent threads from finishing after they started
         synchronized (lock) {
             synchronized (waitnotify) {
-                for (i = 0; i < numThreads ; i++) {
+                for (i = 0; i < numThreads; i++) {
                     holder[i].start();
                     try {
                         waitnotify.wait();
@@ -92,11 +91,11 @@ public class kill001a {
         long oldTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - oldTime) <= kill001a.waitTime) {
             boolean waited = false;
-            for (i = 0; i < numThreads ; i++) {
+            for (i = 0; i < numThreads; i++) {
                 if (holder[i].isAlive()) {
                     waited = true;
                     try {
-                        synchronized(waitnotify) {
+                        synchronized (waitnotify) {
                             waitnotify.wait(1000);
                         }
                     } catch (InterruptedException e) {
@@ -111,7 +110,7 @@ public class kill001a {
         breakHere(); // a break to check if MyThreads were killed
         log.display("notKilled == " + notKilled);
 
-        for (i = 0; i < numThreads ; i++) {
+        for (i = 0; i < numThreads; i++) {
             if (holder[i].isAlive()) {
                 log.display("Debuggee FAILED");
                 return kill001.FAILED;
@@ -123,7 +122,7 @@ public class kill001a {
     }
 
     static class MyException extends Exception {
-        MyException (String message) {
+        MyException(String message) {
             super(message);
         }
     }
@@ -133,7 +132,7 @@ public class kill001a {
 class MyThread extends Thread {
     String name;
 
-    public MyThread (String n) {
+    public MyThread(String n) {
         name = n;
     }
 
@@ -147,7 +146,8 @@ class MyThread extends Thread {
             kill001a.waitnotify.notify();
         }
         // prevent thread from early finish
-        synchronized (kill001a.lock) {}
+        synchronized (kill001a.lock) {
+        }
 
         // sleep during waitTime to give debugger a chance to kill debugee's thread
         try {

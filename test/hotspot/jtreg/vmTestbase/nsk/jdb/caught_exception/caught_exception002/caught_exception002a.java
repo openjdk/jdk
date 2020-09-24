@@ -23,32 +23,29 @@
 
 package nsk.jdb.caught_exception.caught_exception002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class caught_exception002a {
 
-    /* TEST DEPENDANT VARIABLES AND CONSTANTS */
-    static final String PACKAGE_NAME = "nsk.jdb.caught_exception.caught_exception002";
-
-    public static void main(String args[]) {
-       caught_exception002a _caught_exception002a = new caught_exception002a();
-       System.exit(caught_exception002.JCK_STATUS_BASE + _caught_exception002a.runIt(args, System.out));
+    public static void main(String[] args) {
+        caught_exception002a _caught_exception002a = new caught_exception002a();
+        System.exit(caught_exception002.JCK_STATUS_BASE + _caught_exception002a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
         lastBreak();
 
-        int  result = -1;
+        int result = -1;
         for (int i = 0; i <= 10; i++) {
             result = a(i);
         }
@@ -86,63 +83,92 @@ public class caught_exception002a {
     }
 
     public static int b(int i) throws MyException0, MyException1,
-        MyException2, MyException3, MyException4, MyException5, MyException6,
-        MyException7, MyException8, MyException9 {
+            MyException2, MyException3, MyException4, MyException5, MyException6,
+            MyException7, MyException8, MyException9 {
 
-        switch(i) {
-           case 0:
-              throw new MyException0("MyException0");
-           case 1:
-              throw new MyException1("MyException1");
-           case 2:
-              throw new MyException2("MyException2");
-           case 3:
-              throw new MyException3("MyException3");
-           case 4:
-              throw new MyException4("MyException4");
-           case 5:
-              throw new MyException5("MyException5");
-           case 6:
-              throw new MyException6("MyException6");
-           case 7:
-              throw new MyException7("MyException7");
-           case 8:
-              throw new MyException8("MyException8");
-           case 9:
-              throw new MyException9("MyException9");
-           default:
-              return i*i;
+        switch (i) {
+            case 0:
+                throw new MyException0("MyException0");
+            case 1:
+                throw new MyException1("MyException1");
+            case 2:
+                throw new MyException2("MyException2");
+            case 3:
+                throw new MyException3("MyException3");
+            case 4:
+                throw new MyException4("MyException4");
+            case 5:
+                throw new MyException5("MyException5");
+            case 6:
+                throw new MyException6("MyException6");
+            case 7:
+                throw new MyException7("MyException7");
+            case 8:
+                throw new MyException8("MyException8");
+            case 9:
+                throw new MyException9("MyException9");
+            default:
+                return i * i;
         }
     }
 }
 
 class MyException0 extends Exception {
-   public MyException0 (String s) {super(s);}
+    public MyException0(String s) {
+        super(s);
+    }
 }
+
 class MyException1 extends Exception {
-   public MyException1 (String s) {super(s);}
+    public MyException1(String s) {
+        super(s);
+    }
 }
+
 class MyException2 extends Exception {
-   public MyException2 (String s) {super(s);}
+    public MyException2(String s) {
+        super(s);
+    }
 }
+
 class MyException3 extends Exception {
-   public MyException3 (String s) {super(s);}
+    public MyException3(String s) {
+        super(s);
+    }
 }
+
 class MyException4 extends Exception {
-   public MyException4 (String s) {super(s);}
+    public MyException4(String s) {
+        super(s);
+    }
 }
+
 class MyException5 extends Exception {
-   public MyException5 (String s) {super(s);}
+    public MyException5(String s) {
+        super(s);
+    }
 }
+
 class MyException6 extends Exception {
-   public MyException6 (String s) {super(s);}
+    public MyException6(String s) {
+        super(s);
+    }
 }
+
 class MyException7 extends Exception {
-   public MyException7 (String s) {super(s);}
+    public MyException7(String s) {
+        super(s);
+    }
 }
+
 class MyException8 extends Exception {
-   public MyException8 (String s) {super(s);}
+    public MyException8(String s) {
+        super(s);
+    }
 }
+
 class MyException9 extends Exception {
-   public MyException9 (String s) {super(s);}
+    public MyException9(String s) {
+        super(s);
+    }
 }

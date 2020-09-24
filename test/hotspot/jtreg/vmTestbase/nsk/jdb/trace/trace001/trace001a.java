@@ -23,42 +23,42 @@
 
 package nsk.jdb.trace.trace001;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class trace001a {
-    public static void main(String args[]) {
-       trace001a _trace001a = new trace001a();
-       System.exit(trace001.JCK_STATUS_BASE + _trace001a.runIt(args, System.out));
+    public static void main(String[] args) {
+        trace001a _trace001a = new trace001a();
+        System.exit(trace001.JCK_STATUS_BASE + _trace001a.runIt(args, System.out));
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    static final String MYTHREAD  = "MyThread";
-    static final int numThreads   = 2;   // number of threads.
+    static final String MYTHREAD = "MyThread";
+    static final int numThreads = 2;   // number of threads.
 
     static Object waitnotify = new Object();
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
 
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
         int i;
-        Thread holder [] = new Thread[numThreads];
+        Thread holder[] = new Thread[numThreads];
         Object[] locks = new Object[numThreads];
 
-        for (i = 0; i < numThreads ; i++) {
-            locks[i]  = new Object();
-            holder[i] = new MyThread(locks[i],MYTHREAD + "-" + i);
+        for (i = 0; i < numThreads; i++) {
+            locks[i] = new Object();
+            holder[i] = new MyThread(locks[i], MYTHREAD + "-" + i);
         }
 
         synchronized (waitnotify) {
-            for (i = 0; i < numThreads ; i++) {
+            for (i = 0; i < numThreads; i++) {
                 holder[i].start();
                 try {
                     waitnotify.wait();
@@ -75,7 +75,7 @@ public class trace001a {
         lastBreak();  // a break to get thread ids and then to turn on tracing.
 
         // waits on all MyThreads completion
-        for (i = 0; i < numThreads ; i++) {
+        for (i = 0; i < numThreads; i++) {
             synchronized (locks[i]) {
                 locks[i].notifyAll();
             }
@@ -99,7 +99,7 @@ class MyThread extends Thread {
     Object lock;
     String name;
 
-    public MyThread (Object l, String n) {
+    public MyThread(Object l, String n) {
         lock = l;
         name = n;
     }
@@ -137,6 +137,6 @@ class MyThread extends Thread {
     }
 
     public int func3(int i) {
-        return i*i;
+        return i * i;
     }
 }

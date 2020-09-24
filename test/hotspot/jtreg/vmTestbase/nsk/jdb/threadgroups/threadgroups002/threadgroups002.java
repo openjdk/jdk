@@ -55,37 +55,35 @@
 
 package nsk.jdb.threadgroups.threadgroups002;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
 public class threadgroups002 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new threadgroups002().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME     = "nsk.jdb.threadgroups.threadgroups002";
-    static final String TEST_CLASS       = PACKAGE_NAME + ".threadgroups002";
-    static final String DEBUGGEE_CLASS   = TEST_CLASS + "a";
-    static final String FIRST_BREAK      = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK       = DEBUGGEE_CLASS + ".lastBreak";
+    static final String PACKAGE_NAME = "nsk.jdb.threadgroups.threadgroups002";
+    static final String TEST_CLASS = PACKAGE_NAME + ".threadgroups002";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     protected void runCases() {
         String[] reply;
         Paragrep grep;
         int count;
-        Vector v;
-        String found;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
@@ -93,9 +91,9 @@ public class threadgroups002 extends JdbTest {
         reply = jdb.receiveReplyFor(JdbCommand.threadgroups);
         grep = new Paragrep(reply);
         count = grep.find(threadgroups002a.THREADGROUP_NAME);
-        if (count != threadgroups002a.numThreadGroups ) {
+        if (count != threadgroups002a.numThreadGroups) {
             failure("Unexpected number of " + threadgroups002a.THREADGROUP_NAME + " was listed: " + count +
-                "\n\texpected value: " + threadgroups002a.numThreadGroups);
+                    "\n\texpected value: " + threadgroups002a.numThreadGroups);
         }
 
         jdb.contToExit(1);

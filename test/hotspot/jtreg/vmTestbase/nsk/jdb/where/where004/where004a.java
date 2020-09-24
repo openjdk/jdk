@@ -25,23 +25,23 @@
 
 package nsk.jdb.where.where004;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class where004a {
-    public static void main(String args[]) {
-       where004a _where004a = new where004a();
-       lastBreak();
-       System.exit(where004.JCK_STATUS_BASE + _where004a.runIt(args, System.out)); // where004.FRAMES[6]
+    public static void main(String[] args) {
+        where004a _where004a = new where004a();
+        lastBreak();
+        System.exit(where004.JCK_STATUS_BASE + _where004a.runIt(args, System.out)); // where004.FRAMES[6]
     }
 
-    static void lastBreak () {}
+    static void lastBreak() {
+    }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
@@ -64,14 +64,14 @@ public class where004a {
     }
 
     public int func4(int i) {
-       return func5(i) + 1; // where004.FRAMES[1]
+        return func5(i) + 1; // where004.FRAMES[1]
     }
 
     public int func5(int i) {
-       return func6(i) + 1; // this is line for breakpoint // where004.FRAMES[0]
+        return func6(i) + 1; // this is line for breakpoint // where004.FRAMES[0]
     }
 
     public int func6(int i) {
-        return i-5;
+        return i - 5;
     }
 }

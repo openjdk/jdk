@@ -23,23 +23,22 @@
 
 package nsk.jdb.list.list002;
 
-import nsk.share.*;
-import nsk.share.jpda.*;
-import nsk.share.jdb.*;
+import nsk.share.Log;
+import nsk.share.jdb.JdbArgumentHandler;
 
-import java.io.*;
+import java.io.PrintStream;
 
 //    THIS TEST IS LINE NUMBER SENSITIVE
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class list002a {
     static list002a _list002a = new list002a();
 
-    public static void main(String args[]) { // list002.LINE_NUMBER
-       System.exit(list002.JCK_STATUS_BASE + _list002a.runIt(args, System.out));
+    public static void main(String[] args) { // list002.LINE_NUMBER
+        System.exit(list002.JCK_STATUS_BASE + _list002a.runIt(args, System.out));
     }
 
-    public int runIt(String args[], PrintStream out) {
+    public int runIt(String[] args, PrintStream out) {
         JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
         Log log = new Log(out, argumentHandler);
 
