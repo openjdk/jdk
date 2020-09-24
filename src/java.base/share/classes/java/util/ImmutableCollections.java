@@ -37,7 +37,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -76,7 +76,7 @@ class ImmutableCollections {
         // derived from the JVM build/version, so can we generate the exact same
         // CDS archive for the same JDK build. This makes it possible to verify the
         // consistency of the JDK build.
-        long seed = VM.getRandomSeedForCDSDump();
+        long seed = CDS.getRandomSeedForDumping();
         if (seed == 0) {
           seed = System.nanoTime();
         }
@@ -100,7 +100,7 @@ class ImmutableCollections {
     static final MapN<?,?> EMPTY_MAP;
 
     static {
-        VM.initializeFromArchive(ImmutableCollections.class);
+        CDS.initializeFromArchive(ImmutableCollections.class);
         if (archivedObjects == null) {
             EMPTY = new Object();
             EMPTY_LIST = new ListN<>();
