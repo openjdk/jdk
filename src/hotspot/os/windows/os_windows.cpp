@@ -2542,27 +2542,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return EXCEPTION_CONTINUE_SEARCH;
       }
 
-#ifdef _M_ARM64
-      // Unsafe memory access
-      CompiledMethod* nm = NULL;
-      JavaThread* thread = (JavaThread*)t;
-      if (in_java) {
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
-        nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
-      }
-
-      bool is_unsafe_arraycopy = (in_native || in_java) && UnsafeCopyMemory::contains_pc(pc);
-      if (is_unsafe_arraycopy ||
-          ((in_vm || in_native) && thread->doing_unsafe_access()) ||
-          (nm != NULL && nm->has_unsafe_access())) {
-        address next_pc =  Assembler::locate_next_instruction(pc);
-        if (is_unsafe_arraycopy) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
-        }
-        return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
-      }
-#endif
-
 #ifdef _WIN64
       // Special care for fast JNI field accessors.
       // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks
