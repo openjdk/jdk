@@ -1251,14 +1251,17 @@ void G1Policy::update_time_to_mixed_tracking(PauseKind kind,
       _concurrent_start_to_mixed.add_pause(end - start);
       break;
     case ConcurrentStartMarkGC:
-    case ConcurrentStartUndoGC:
       // Do not track time-to-mixed time for periodic collections as they are likely
       // to be not representative to regular operation as the mutators are idle at
       // that time. Also only track full concurrent mark cycles.
-      if ((_g1h->gc_cause() != GCCause::_g1_periodic_collection) &&
-        (kind != ConcurrentStartUndoGC)) {
+      if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
         _concurrent_start_to_mixed.record_concurrent_start_end(end);
       }
+      break;
+    case ConcurrentStartUndoGC:
+      assert(_g1h->gc_cause() == GCCause::_g1_humongous_allocation,
+             "GC cause must be humongous allocation but is %d",
+             _g1h->gc_cause());
       break;
     case MixedGC:
       _concurrent_start_to_mixed.record_mixed_gc_start(start);
