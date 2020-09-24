@@ -72,7 +72,10 @@ public class Security {
 
 
     public static void main(String[] args) throws Exception {
-        try {SocketChannel.open(UNIX); } catch (java.io.IOException e) {}
+        try {
+           SocketChannel.open(UNIX);
+       }
+       catch (UnsupportedOperationException e) {}
 
         int namelen = Integer.parseInt(System.getProperty("jdk.nio.channels.unixdomain.maxnamelength"));
         if (namelen == -1) {

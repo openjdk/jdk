@@ -37,6 +37,7 @@ import static java.net.StandardProtocolFamily.UNIX;
 import static jdk.test.lib.Asserts.assertTrue;
 
 import java.net.UnixDomainSocketAddress;
+import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Path;
 
@@ -46,7 +47,10 @@ public class LengthTest {
 
     @BeforeTest
     public void setup() {
-        try {SocketChannel.open(UNIX); } catch (java.io.IOException e) {}
+        try {
+            SocketChannel.open(UNIX);
+        }
+        catch (IOException | UnsupportedOperationException e) {}
         namelen = Integer.parseInt(System.getProperty("jdk.nio.channels.unixdomain.maxnamelength"));
         if (namelen == -1) {
             supported = false;
