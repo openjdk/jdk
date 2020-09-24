@@ -60,20 +60,21 @@
 
 package nsk.jdb.suspend.suspend001;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.Vector;
 
 public class suspend001 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new suspend001().runTest(argv, out);
@@ -82,23 +83,21 @@ public class suspend001 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.suspend.suspend001";
     static final String TEST_CLASS = PACKAGE_NAME + ".suspend001";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK    = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK     = DEBUGGEE_CLASS + ".breakHere";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".breakHere";
 
-    static final String SUSPENDED       = "Suspended";
+    static final String SUSPENDED = "Suspended";
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + "." + SUSPENDED;
     static final String DEBUGGEE_RESULT = DEBUGGEE_CLASS + ".notSuspended";
 
     protected void runCases() {
         String[] reply;
         Paragrep grep;
-        int count;
-        Vector v;
         String found;
         String[] threads;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        jdb.receiveReplyFor(JdbCommand.cont);
         while (true) {
             threads = jdb.getThreadIds(DEBUGGEE_THREAD);
             if (threads.length != 1) {
@@ -108,7 +107,7 @@ public class suspend001 extends JdbTest {
                 break;
             }
 
-            reply = jdb.receiveReplyFor(JdbCommand.suspend + threads[0]);
+            jdb.receiveReplyFor(JdbCommand.suspend + threads[0]);
 
             reply = jdb.receiveReplyFor(JdbCommand.cont);
             if (!jdb.isAtBreakpoint(reply)) {
@@ -119,12 +118,12 @@ public class suspend001 extends JdbTest {
 
             reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_RESULT);
             grep = new Paragrep(reply);
-            found = grep.findFirst(DEBUGGEE_RESULT + " =" );
-            if (found.length() > 0 && found.indexOf(DEBUGGEE_RESULT + " = null") < 0) {
-                if (found.indexOf(DEBUGGEE_RESULT + " = 1") < 0) {
-                   log.complain("Wrong value of " + DEBUGGEE_RESULT);
-                   log.complain(found);
-                   success = false;
+            found = grep.findFirst(DEBUGGEE_RESULT + " =");
+            if (found.length() > 0 && !found.contains(DEBUGGEE_RESULT + " = null")) {
+                if (!found.contains(DEBUGGEE_RESULT + " = 1")) {
+                    log.complain("Wrong value of " + DEBUGGEE_RESULT);
+                    log.complain(found);
+                    success = false;
                 }
             } else {
                 log.complain("TEST BUG: not found value for " + DEBUGGEE_RESULT);

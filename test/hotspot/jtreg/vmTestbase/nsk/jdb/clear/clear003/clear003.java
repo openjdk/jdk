@@ -53,20 +53,21 @@
 
 package nsk.jdb.clear.clear003;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.Jdb;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
 public class clear003 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new clear003().runTest(argv, out);
@@ -75,8 +76,8 @@ public class clear003 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.clear.clear003";
     static final String TEST_CLASS = PACKAGE_NAME + ".clear003";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK      = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK       = DEBUGGEE_CLASS + ".lastBreak";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
     static final String METHOD4 = "func4";
     static final String METHOD5 = "func5";
     static final String METHOD_TO_CLEAR = DEBUGGEE_CLASS + "." + METHOD4;
@@ -85,8 +86,6 @@ public class clear003 extends JdbTest {
         String[] reply;
         Paragrep grep;
         int count;
-        Vector v;
-        String found;
 
         log.display("Setting breakpoint in method: " + METHOD5);
         jdb.setBreakpointInMethod(DEBUGGEE_CLASS + "." + METHOD5);

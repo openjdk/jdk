@@ -52,41 +52,40 @@
 
 package nsk.jdb.clear.clear002;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.Jdb;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.Vector;
 
 public class clear002 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new clear002().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME     = "nsk.jdb.clear.clear002";
-    static final String TEST_CLASS       = PACKAGE_NAME + ".clear002";
-    static final String DEBUGGEE_CLASS   = TEST_CLASS + "a";
-    static final String FIRST_BREAK      = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK       = DEBUGGEE_CLASS + ".lastBreak";
-    static final String METHOD_TO_STOP   = DEBUGGEE_CLASS + ".func5";
+    static final String PACKAGE_NAME = "nsk.jdb.clear.clear002";
+    static final String TEST_CLASS = PACKAGE_NAME + ".clear002";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String METHOD_TO_STOP = DEBUGGEE_CLASS + ".func5";
     static final String METHOD1_TO_CLEAR = DEBUGGEE_CLASS + ".func4";
     static final String METHOD2_TO_CLEAR = DEBUGGEE_CLASS + "$A.func7";
-    static final String REMOVED_SAMPLE   = "Removed:";
+    static final String REMOVED_SAMPLE = "Removed:";
 
     protected void runCases() {
-        String[] reply;
         Paragrep grep;
         int count;
-        Vector v;
-        String found;
 
         log.display("Setting breakpoint in method: " + METHOD1_TO_CLEAR);
         jdb.setBreakpointInMethod(METHOD1_TO_CLEAR);
@@ -97,11 +96,11 @@ public class clear002 extends JdbTest {
         log.display("Setting breakpoint in method: " + METHOD_TO_STOP);
         jdb.setBreakpointInMethod(METHOD_TO_STOP);
 
-        if (!checkClear (METHOD1_TO_CLEAR)) {
+        if (!checkClear(METHOD1_TO_CLEAR)) {
             success = false;
         }
 
-        if (!checkClear (METHOD2_TO_CLEAR)) {
+        if (!checkClear(METHOD2_TO_CLEAR)) {
             success = false;
         }
 
@@ -115,22 +114,21 @@ public class clear002 extends JdbTest {
             success = false;
         }
 
-        if (!checkBreakpoint (METHOD1_TO_CLEAR, grep)) {
+        if (!checkBreakpoint(METHOD1_TO_CLEAR, grep)) {
             success = false;
         }
 
-        if (!checkBreakpoint (METHOD2_TO_CLEAR, grep)) {
+        if (!checkBreakpoint(METHOD2_TO_CLEAR, grep)) {
             success = false;
         }
     }
 
-    private boolean checkBreakpoint (String methodName, Paragrep grep) {
+    private boolean checkBreakpoint(String methodName, Paragrep grep) {
         String found;
         boolean result = true;
-        int count;
-        Vector v;
+        Vector<String> v;
 
-        v = new Vector();
+        v = new Vector<>();
         v.add(Jdb.BREAKPOINT_HIT);
         v.add(methodName);
 
@@ -142,15 +140,14 @@ public class clear002 extends JdbTest {
         return result;
     }
 
-    private boolean checkClear (String methodName) {
+    private boolean checkClear(String methodName) {
         Paragrep grep;
         String found;
         String[] reply;
         boolean result = true;
-        int count;
-        Vector v;
+        Vector<String> v;
 
-        v = new Vector();
+        v = new Vector<>();
         v.add(REMOVED_SAMPLE);
         v.add(methodName);
 

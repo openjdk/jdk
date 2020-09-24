@@ -61,30 +61,31 @@
 
 package nsk.jdb.kill.kill001;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.Vector;
 
 public class kill001 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         return new kill001().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME    = "nsk.jdb.kill.kill001";
-    static final String TEST_CLASS      = PACKAGE_NAME + ".kill001";
-    static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
-    static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK      = DEBUGGEE_CLASS + ".breakHere";
-    static final String MYTHREAD        = "MyThread";
+    static final String PACKAGE_NAME = "nsk.jdb.kill.kill001";
+    static final String TEST_CLASS = PACKAGE_NAME + ".kill001";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".breakHere";
+    static final String MYTHREAD = "MyThread";
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + "." + MYTHREAD;
     static final String DEBUGGEE_RESULT = DEBUGGEE_CLASS + ".notKilled";
     static final String DEBUGGEE_EXCEPTIONS = DEBUGGEE_CLASS + ".exceptions";
@@ -94,8 +95,6 @@ public class kill001 extends JdbTest {
     protected void runCases() {
         String[] reply;
         Paragrep grep;
-        int count;
-        Vector v;
         String found;
         String[] threads;
 
@@ -112,8 +111,8 @@ public class kill001 extends JdbTest {
 
         for (int i = 0; i < threads.length; i++) {
             reply = jdb.receiveReplyForWithMessageWait(JdbCommand.kill + threads[i] + " " +
-                                                       DEBUGGEE_EXCEPTIONS + "[" + i + "]",
-                                                       "killed");
+                            DEBUGGEE_EXCEPTIONS + "[" + i + "]",
+                    "killed");
         }
 
         for (int i = 0; i <= numThreads; i++) {
@@ -128,20 +127,20 @@ public class kill001 extends JdbTest {
         log.display("Breakpoint has been hit");
 
         reply = jdb.receiveReplyForWithMessageWait(JdbCommand.eval + DEBUGGEE_RESULT,
-                                                   DEBUGGEE_RESULT + " =");
+                DEBUGGEE_RESULT + " =");
         grep = new Paragrep(reply);
-        found = grep.findFirst(DEBUGGEE_RESULT + " =" );
+        found = grep.findFirst(DEBUGGEE_RESULT + " =");
         if (found.length() > 0) {
-            if (found.indexOf(DEBUGGEE_RESULT + " = 0") < 0) {
-               log.complain("Not all " + MYTHREAD + "s were killed. " + found + " remaining");
-               success = false;
+            if (!found.contains(DEBUGGEE_RESULT + " = 0")) {
+                log.complain("Not all " + MYTHREAD + "s were killed. " + found + " remaining");
+                success = false;
             }
         } else {
             log.complain("Value for " + DEBUGGEE_RESULT + " is not found.");
             success = false;
         }
 
-        reply = jdb.receiveReplyFor(JdbCommand.threads);
+        jdb.receiveReplyFor(JdbCommand.threads);
         jdb.contToExit(1);
     }
 }

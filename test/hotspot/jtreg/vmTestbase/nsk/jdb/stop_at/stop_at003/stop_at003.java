@@ -63,27 +63,26 @@
 
 package nsk.jdb.stop_at.stop_at003;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
 /*
  * Regression test for:
  * Bug ID: 4299394
  * Synopsis: TTY: Deferred breakpoints can't be set on inner classes
- *
  */
 
 public class stop_at003 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new stop_at003().runTest(argv, out);
@@ -92,40 +91,36 @@ public class stop_at003 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.stop_at.stop_at003";
     static final String TEST_CLASS = PACKAGE_NAME + ".stop_at003";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
-    static final String[][] LOCATIONS = new String[][] {
-        { PACKAGE_NAME + ".stop_at003b:61", PACKAGE_NAME + ".stop_at003b.<clinit>()" },
-        { PACKAGE_NAME + ".stop_at003b:63", PACKAGE_NAME + ".stop_at003b.<init>()" },
-        { PACKAGE_NAME + ".stop_at003b:66", PACKAGE_NAME + ".stop_at003b.<init>()" },
-        { PACKAGE_NAME + ".stop_at003b:72", PACKAGE_NAME + ".stop_at003b.foo()" }
-                                                   };
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String[][] LOCATIONS = new String[][]{
+            {PACKAGE_NAME + ".stop_at003b:61", PACKAGE_NAME + ".stop_at003b.<clinit>()"},
+            {PACKAGE_NAME + ".stop_at003b:63", PACKAGE_NAME + ".stop_at003b.<init>()"},
+            {PACKAGE_NAME + ".stop_at003b:66", PACKAGE_NAME + ".stop_at003b.<init>()"},
+            {PACKAGE_NAME + ".stop_at003b:72", PACKAGE_NAME + ".stop_at003b.foo()"}
+    };
     static final String FAILURE_PATTERN = "Unable to set";
 
     protected void runCases() {
         String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
 
-        for (int i = 0; i < LOCATIONS.length; i++) {
-            if (!checkStop(LOCATIONS[i][0])) {
-                failure("jdb failed to set line breakpoint at : " + LOCATIONS[i][0]);
+        for (String[] location : LOCATIONS) {
+            if (!checkStop(location[0])) {
+                failure("jdb failed to set line breakpoint at : " + location[0]);
             }
         }
 
-        for (int i = 0; i < LOCATIONS.length; i++) {
+        for (String[] location : LOCATIONS) {
             reply = jdb.receiveReplyFor(JdbCommand.cont);
-            if (!jdb.isAtBreakpoint(reply, LOCATIONS[i][1])) {
-                failure("Missed breakpoint at : " + LOCATIONS[i][0]);
+            if (!jdb.isAtBreakpoint(reply, location[1])) {
+                failure("Missed breakpoint at : " + location[0]);
             }
         }
 
         jdb.contToExit(1);
     }
 
-    private boolean checkStop (String location) {
+    private boolean checkStop(String location) {
         Paragrep grep;
         String[] reply;
         String found;

@@ -67,20 +67,19 @@
 
 package nsk.jdb.set.set001;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
 public class set001 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new set001().runTest(argv, out);
@@ -89,43 +88,39 @@ public class set001 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.set.set001";
     static final String TEST_CLASS = PACKAGE_NAME + ".set001";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     static final String ERROR_MESSAGE = DEBUGGEE_CLASS + ".errorMessage";
 
     static final String[][] checkedExpr = {
-        { DEBUGGEE_CLASS + ".myStaticField", "-2147483648" },
-        { DEBUGGEE_CLASS + "._set001a.myInstanceField", "9223372036854775807" },
-                                          };
+            {DEBUGGEE_CLASS + ".myStaticField", "-2147483648"},
+            {DEBUGGEE_CLASS + "._set001a.myInstanceField", "9223372036854775807"},
+    };
 
     protected void runCases() {
         String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        jdb.receiveReplyFor(JdbCommand.cont);
 
         // to get out of lastBreak()
-        reply = jdb.receiveReplyFor(JdbCommand.step);
+        jdb.receiveReplyFor(JdbCommand.step);
 
         // set values
-        for (int i = 0; i < checkedExpr.length; i++) {
-            reply = jdb.receiveReplyFor(JdbCommand.set + checkedExpr[i][0] + " = " + checkedExpr[i][1]);
+        for (String[] strings : checkedExpr) {
+            jdb.receiveReplyFor(JdbCommand.set + strings[0] + " = " + strings[1]);
         }
 
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        jdb.receiveReplyFor(JdbCommand.cont);
         // check value of debuggeeResult
         reply = jdb.receiveReplyFor(JdbCommand.eval + ERROR_MESSAGE);
-        //if everything is OK reply will look like this
-        //  nsk.jdb.set.set001.set001a.errorMessage = ""
+        // if everything is OK reply will look like this
+        //   nsk.jdb.set.set001.set001a.errorMessage = ""
         if (!reply[0].contains("\"\"")) {
             log.complain("jdb failed to set value for expression(s): ");
-            for (int i = 0; i < reply.length; i++) {
-                log.complain(reply[i]);
+            for (String s : reply) {
+                log.complain(s);
             }
             success = false;
         }

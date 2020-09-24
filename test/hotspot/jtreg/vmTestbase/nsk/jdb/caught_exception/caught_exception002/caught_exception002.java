@@ -60,30 +60,31 @@
 
 package nsk.jdb.caught_exception.caught_exception002;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.Vector;
 
 public class caught_exception002 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new caught_exception002().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME       = "nsk.jdb.caught_exception.caught_exception002";
-    static final String TEST_CLASS         = PACKAGE_NAME + ".caught_exception002";
-    static final String DEBUGGEE_CLASS     = TEST_CLASS + "a";
-    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
+    static final String PACKAGE_NAME = "nsk.jdb.caught_exception.caught_exception002";
+    static final String TEST_CLASS = PACKAGE_NAME + ".caught_exception002";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     static final int MAX = 10;
 
@@ -91,16 +92,12 @@ public class caught_exception002 extends JdbTest {
 
     protected void runCases() {
         String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        jdb.receiveReplyFor(JdbCommand.cont);
 
         for (int i = 0; i < MAX; i++) {
-            reply = jdb.receiveReplyFor(JdbCommand._catch + " caught " + PACKAGE_NAME + ".MyException" + i);
+            jdb.receiveReplyFor(JdbCommand._catch + " caught " + PACKAGE_NAME + ".MyException" + i);
         }
 
         for (int i = 0; i < MAX; i++) {
@@ -111,11 +108,10 @@ public class caught_exception002 extends JdbTest {
         jdb.contToExit(1);
     }
 
-    private void checkCatch (String[] reply, int i) {
+    private void checkCatch(String[] reply, int i) {
         Paragrep grep;
         int count;
-        String found;
-        Vector v = new Vector();
+        Vector<String> v = new Vector<>();
 
         grep = new Paragrep(reply);
         v.add("Exception occurred");

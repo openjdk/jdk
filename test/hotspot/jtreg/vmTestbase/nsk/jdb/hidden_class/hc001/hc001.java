@@ -45,34 +45,33 @@
 
 package nsk.jdb.hidden_class.hc001;
 
-import java.io.*;
-import java.util.*;
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Failure;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
+
+import java.io.PrintStream;
 
 public class hc001 extends JdbTest {
-    static final String DEBUGGEE_CLASS    = hc001a.class.getTypeName();
-    static final String HC_NAME_FIELD     = DEBUGGEE_CLASS + ".hcName";
-    static final String MAIN_METHOD_NAME  = DEBUGGEE_CLASS + ".main";
+    static final String DEBUGGEE_CLASS = hc001a.class.getTypeName();
+    static final String HC_NAME_FIELD = DEBUGGEE_CLASS + ".hcName";
+    static final String MAIN_METHOD_NAME = DEBUGGEE_CLASS + ".main";
     static final String EMPTY_METHOD_NAME = DEBUGGEE_CLASS + ".emptyMethod";
-    static final String HC_METHOD_NAME    = "hcMethod";
-    static final String HC_FIELD_NAME     = "hcField";
-    static final int    MAX_SLEEP_CNT     = 3;
+    static final String HC_METHOD_NAME = "hcMethod";
+    static final String HC_FIELD_NAME = "hcField";
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
+    public static int run(String[] argv, PrintStream out) {
         debuggeeClass = DEBUGGEE_CLASS; // needed for JdbTest.runTest
         firstBreak = MAIN_METHOD_NAME;  // needed for JdbTest.runTest
         return new hc001().runTest(argv, out);
     }
 
     static boolean checkPattern(String[] arr, String pattern) {
-        for (int idx = 0; idx < arr.length; idx++) {
-            String str = arr[idx];
-            if (str.indexOf(pattern) != -1) {
+        for (String str : arr) {
+            if (str.contains(pattern)) {
                 return true;
             }
         }
@@ -90,7 +89,7 @@ public class hc001 extends JdbTest {
      *  Return the hidden class name.
      */
     private String runPrologue() {
-        String[] reply = null;
+        String[] reply;
 
         log.println("\n### Debugger: runPrologue");
 
@@ -318,18 +317,16 @@ public class hc001 extends JdbTest {
 
     /* Test the jdb commands "watch" and "eval" with various invalid class names. */
     private void testInvalidCommands() {
-        String className = null;
         String[] invClassNames = {
-            "xx.yyy/0x111/0x222",
-            "xx./0x111.0x222",
-            "xx.yyy.zzz/"
+                "xx.yyy/0x111/0x222",
+                "xx./0x111.0x222",
+                "xx.yyy.zzz/"
         };
 
         log.println("\n### Debugger: testInvalidCommands");
 
         // run jdb commands "watch" and "eval" with invalid class names
-        for (int idx = 0; idx < invClassNames.length; idx++) {
-            className = invClassNames[idx];
+        for (String className : invClassNames) {
             testInvWatchCommand(className + "." + HC_FIELD_NAME);
             testInvEvalCommand(className + "." + HC_FIELD_NAME);
         }

@@ -51,42 +51,37 @@
 
 package nsk.jdb.wherei.wherei001;
 
-import nsk.share.*;
-import nsk.share.jdb.*;
+import nsk.share.Paragrep;
+import nsk.share.jdb.JdbCommand;
+import nsk.share.jdb.JdbTest;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
 
 public class wherei001 extends JdbTest {
 
-    public static void main (String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
-        debuggeeClass =  DEBUGGEE_CLASS;
+    public static int run(String[] argv, PrintStream out) {
+        debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new wherei001().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME    = "nsk.jdb.wherei.wherei001";
-    static final String TEST_CLASS      = PACKAGE_NAME + ".wherei001";
-    static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
-    static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK      = DEBUGGEE_CLASS + ".lastBreak";
+    static final String PACKAGE_NAME = "nsk.jdb.wherei.wherei001";
+    static final String TEST_CLASS = PACKAGE_NAME + ".wherei001";
+    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
+    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + ".MyThread";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
         String[] threads;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        jdb.receiveReplyFor(JdbCommand.cont);
 
         threads = jdb.getThreadIds(DEBUGGEE_THREAD);
 
@@ -96,8 +91,8 @@ public class wherei001 extends JdbTest {
             success = false;
         }
 
-        for (int i = 0; i < threads.length; i++) {
-            if (!checkStack(threads[i])) {
+        for (String thread : threads) {
+            if (!checkStack(thread)) {
                 success = false;
             }
         }
@@ -105,25 +100,23 @@ public class wherei001 extends JdbTest {
         jdb.contToExit(1);
     }
 
-    private boolean checkStack (String threadId) {
+    private boolean checkStack(String threadId) {
         Paragrep grep;
         String[] reply;
-        String found;
         int count;
-        Vector v;
         boolean result = true;
-        String[] func = { "func5", "func4", "func3", "func2", "func1", "run" };
+        String[] func = {"func5", "func4", "func3", "func2", "func1", "run"};
 
         reply = jdb.receiveReplyFor(JdbCommand.wherei + threadId);
 
         grep = new Paragrep(reply);
-        for (int i = 0; i < func.length; i++) {
-            count = grep.find(DEBUGGEE_THREAD + "." + func[i]);
+        for (String s : func) {
+            count = grep.find(DEBUGGEE_THREAD + "." + s);
             if (count != 1) {
                 log.complain("Contents of stack trace is incorrect for thread " + threadId);
-                log.complain("Searched for: " + DEBUGGEE_THREAD + "." + func[i]);
+                log.complain("Searched for: " + DEBUGGEE_THREAD + "." + s);
                 log.complain("Count : " + count);
-                result= false;
+                result = false;
             }
         }
         return result;
