@@ -295,6 +295,9 @@ void G1ConcurrentMarkThread::concurrent_mark_cycle_do() {
   //
   // For the same reason ConcurrentGCBreakpoints (in the phase methods) before
   // here risk deadlock, because a young GC must wait for root region scanning.
+  //
+  // We can not easily abort before root region scan either because of the
+  // reasons mentioned in G1CollectedHeap::abort_concurrent_cycle().
 
   // Phase 2: Scan root regions.
   if (phase_scan_root_regions()) return;
