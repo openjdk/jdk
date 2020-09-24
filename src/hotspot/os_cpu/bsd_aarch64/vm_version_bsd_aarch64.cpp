@@ -24,22 +24,66 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
+#include <sys/sysctl.h>
+
 int VM_Version::get_current_sve_vector_length() {
-  ShouldNotReachHere();
+  ShouldNotCallThis();
   return -1;
 }
 
 int VM_Version::set_and_get_current_sve_vector_length(int length) {
-  ShouldNotReachHere();
+  ShouldNotCallThis();
   return -1;
 }
 
-void VM_Version::get_os_cpu_info() {
-  _icache_line_size = _dcache_line_size = 64;
+static bool cpu_has(const char* optional) {
+  uint32_t val;
+  size_t len = sizeof(val);
+  if (sysctlbyname(optional, &val, &len, NULL, 0)) {
+    return false;
+  }
+  return val;
+}
 
-  // Disable DC ZVA
-  _zva_length = -1;
+void VM_Version::get_os_cpu_info() {
+  size_t sysctllen;
+
+  // hw.optional.floatingpoint always returns 1.
+  // ID_AA64PFR0_EL1 describes AdvSIMD always equals to FP field.
+  _features = CPU_FP | CPU_ASIMD;
+
+  // Only few features are available via sysctl, see line 614
+  // https://opensource.apple.com/source/xnu/xnu-6153.141.1/bsd/kern/kern_mib.c.auto.html
+  if (cpu_has("hw.optional.armv8_crc32"))     _features |= CPU_CRC32;
+  if (cpu_has("hw.optional.armv8_1_atomics")) _features |= CPU_LSE;
+
+  int cache_line_size;
+  int hw_conf_cache_line[] = { CTL_HW, HW_CACHELINE };
+  sysctllen = sizeof(cache_line_size);
+  if (sysctl(hw_conf_cache_line, 2, &cache_line_size, &sysctllen, NULL, 0)) {
+    cache_line_size = 16;
+  }
+  _icache_line_size = 16; // minimal line lenght CCSIDR_EL1 can hold
+  _dcache_line_size = cache_line_size;
+
+  uint64_t dczid_el0;
+  __asm__ (
+    "mrs %0, DCZID_EL0\n"
+    : "=r"(dczid_el0)
+  );
+  if (!(dczid_el0 & 0x10)) {
+    _zva_length = 4 << (dczid_el0 & 0xf);
+  }
+
+  int family;
+  sysctllen = sizeof(family);
+  if (sysctlbyname("hw.cpufamily", &family, &sysctllen, NULL, 0)) {
+    family = 0;
+  }
+  _model = family;
+  _cpu = CPU_APPLE;
 }
