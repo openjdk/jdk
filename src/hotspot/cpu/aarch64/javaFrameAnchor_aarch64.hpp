@@ -27,21 +27,17 @@
 #define CPU_AARCH64_JAVAFRAMEANCHOR_AARCH64_HPP
 
 private:
-
   // FP value associated with _last_Java_sp:
   intptr_t* volatile        _last_Java_fp;           // pointer is volatile not what it points to
 
-public:
-  // Each arch must define reset, save, restore
-  // These are used by objects that only care about:
-  //  1 - initializing a new state (thread creation, javaCalls)
-  //  2 - saving a current state (javaCalls)
-  //  3 - restoring an old state (javaCalls)
+  static ByteSize last_Java_fp_offset() {
+    return byte_offset_of(JavaFrameAnchor, _last_Java_fp);
+  }
 
+public:
   void clear(void) {
     // clearing _last_Java_sp must be first
-    _last_Java_sp = NULL;
-    OrderAccess::release();
+    reset_last_Java_sp();
     _last_Java_fp = NULL;
     _last_Java_pc = NULL;
   }
@@ -54,32 +50,50 @@ public:
     // To act like previous version (pd_cache_state) don't NULL _last_Java_sp
     // unless the value is changing
     //
-    if (_last_Java_sp != src->_last_Java_sp) {
-      _last_Java_sp = NULL;
-      OrderAccess::release();
+    if (last_Java_fp() != src->_last_Java_sp) {
+      reset_last_Java_sp();
     }
     _last_Java_fp = src->_last_Java_fp;
     _last_Java_pc = src->_last_Java_pc;
-    // Must be last so profiler will always see valid frame if has_last_frame() is true
-    _last_Java_sp = src->_last_Java_sp;
+    set_last_Java_sp(src->_last_Java_sp);
   }
 
-  bool walkable(void)                            { return _last_Java_sp != NULL && _last_Java_pc != NULL; }
+  bool walkable(void) {
+    return last_Java_sp() != NULL && _last_Java_pc != NULL;
+  }
+
   void make_walkable(JavaThread* thread);
   void capture_last_Java_pc(void);
 
-  intptr_t* last_Java_sp(void) const             { return _last_Java_sp; }
+  // last_Java_sp is acting, among other things, as the acquire/release target:
+  // when last_Java_sp is not NULL, has_last_frame() is true, and the rest of
+  // the frame has to be valid. This means the reads of last_Java_sp should be
+  // first and acquiring, and last_Java_sp stores should be last and releasing.
+  // Additionally, resets of the frame should be as prompt as possible, therefore
+  // we got to "flush" it with trailing fences.
 
-  address last_Java_pc(void)                     { return _last_Java_pc; }
+  intptr_t* last_Java_sp(void) const {
+    intptr_t* sp = _last_Java_sp;
+    OrderAccess::acquire();
+    return sp;
+  }
 
-private:
+  void set_last_Java_sp(intptr_t* sp) {
+    if (sp != NULL) {
+      OrderAccess::release();
+      _last_Java_sp = sp;
+    } else {
+      reset_last_Java_sp();
+    }
+  }
 
-  static ByteSize last_Java_fp_offset()          { return byte_offset_of(JavaFrameAnchor, _last_Java_fp); }
+  void reset_last_Java_sp() {
+    OrderAccess::release();
+    _last_Java_sp = NULL;
+    OrderAccess::fence();
+  }
 
-public:
-
-  void set_last_Java_sp(intptr_t* sp)            { _last_Java_sp = sp; OrderAccess::release(); }
-
-  intptr_t*   last_Java_fp(void)                 { return _last_Java_fp; }
+  intptr_t* last_Java_fp(void) { return _last_Java_fp; }
+  address last_Java_pc(void)   { return _last_Java_pc; }
 
 #endif // CPU_AARCH64_JAVAFRAMEANCHOR_AARCH64_HPP

@@ -73,11 +73,11 @@ friend class JavaCallWrapper;
   // It is important that when last_Java_sp != NULL that the rest of the frame
   // anchor (including platform specific) all be valid.
 
-  bool has_last_Java_frame() const                   { return _last_Java_sp != NULL; }
+  bool has_last_Java_frame() const                   { return last_Java_sp() != NULL; }
   // This is very dangerous unless sp == NULL
   // Invalidate the anchor so that has_last_frame is false
   // and no one should look at the other fields.
-  void zap(void)                                     { _last_Java_sp = NULL; }
+  void zap(void)                                     { set_last_Java_sp(NULL); }
 
 #include CPU_HEADER(javaFrameAnchor)
 
