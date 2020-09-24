@@ -42,17 +42,17 @@
 
 enum class WordSize : int {};
 
-inline WordSize in_WordSize(int size) { return WordSize(size); }
-inline int      in_words(WordSize x)  { return static_cast<int>(x); }
+constexpr WordSize in_WordSize(int size) { return static_cast<WordSize>(size); }
+constexpr int      in_words(WordSize x)  { return static_cast<int>(x); }
 
 enum class ByteSize : int {};
 
-inline ByteSize in_ByteSize(int size) { return ByteSize(size); }
-inline int      in_bytes(ByteSize x)  { return static_cast<int>(x); }
+constexpr ByteSize in_ByteSize(int size) { return static_cast<ByteSize>(size); }
+constexpr int      in_bytes(ByteSize x)  { return static_cast<int>(x); }
 
-inline ByteSize operator + (ByteSize x, ByteSize y) { return ByteSize(in_bytes(x) + in_bytes(y)); }
-inline ByteSize operator - (ByteSize x, ByteSize y) { return ByteSize(in_bytes(x) - in_bytes(y)); }
-inline ByteSize operator * (ByteSize x, int      y) { return ByteSize(in_bytes(x) * y          ); }
+constexpr ByteSize operator + (ByteSize x, ByteSize y) { return in_ByteSize(in_bytes(x) + in_bytes(y)); }
+constexpr ByteSize operator - (ByteSize x, ByteSize y) { return in_ByteSize(in_bytes(x) - in_bytes(y)); }
+constexpr ByteSize operator * (ByteSize x, int      y) { return in_ByteSize(in_bytes(x) * y          ); }
 
 // Use the following #define to get C++ field member offsets
 
