@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.doclint;
+package jdk.javadoc.internal.doclint;
 
 import java.io.PrintWriter;
 import java.text.MessageFormat;
@@ -41,8 +41,8 @@ import javax.tools.Diagnostic;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.tree.Tree;
-import com.sun.tools.doclint.Env.AccessKind;
 import com.sun.tools.javac.util.StringUtils;
+import jdk.javadoc.internal.doclint.Env.AccessKind;
 
 /**
  * Message reporting for DocLint.
