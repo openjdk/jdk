@@ -98,6 +98,8 @@ DEBUG_ONLY(class ResourceMark;)
 
 class WorkerThread;
 
+class JavaThread;
+
 // Class hierarchy
 // - Thread
 //   - JavaThread
@@ -502,6 +504,8 @@ class Thread: public ThreadShadow {
 
   // Casts
   virtual WorkerThread* as_Worker_thread() const     { return NULL; }
+  inline JavaThread* as_Java_thread();
+  inline const JavaThread* as_Java_thread() const;
 
   virtual char* name() const { return (char*)"Unknown thread"; }
 
@@ -768,6 +772,7 @@ protected:
   address stack_end()  const           { return stack_base() - stack_size(); }
   void    record_stack_base_and_size();
   void    register_thread_stack_with_NMT() NOT_NMT_RETURN;
+  void    unregister_thread_stack_with_NMT() NOT_NMT_RETURN;
 
   int     lgrp_id() const        { return _lgrp_id; }
   void    set_lgrp_id(int value) { _lgrp_id = value; }
@@ -2119,9 +2124,7 @@ public:
 
 // Inline implementation of JavaThread::current
 inline JavaThread* JavaThread::current() {
-  Thread* thread = Thread::current();
-  assert(thread->is_Java_thread(), "just checking");
-  return (JavaThread*)thread;
+  return Thread::current()->as_Java_thread();
 }
 
 inline CompilerThread* JavaThread::as_CompilerThread() {
@@ -2217,6 +2220,16 @@ class CompilerThread : public JavaThread {
   CompileTask* task()                      { return _task; }
   void         set_task(CompileTask* task) { _task = task; }
 };
+
+inline JavaThread* Thread::as_Java_thread() {
+  assert(is_Java_thread(), "incorrect cast to JavaThread");
+  return static_cast<JavaThread*>(this);
+}
+
+inline const JavaThread* Thread::as_Java_thread() const {
+  assert(is_Java_thread(), "incorrect cast to const JavaThread");
+  return static_cast<const JavaThread*>(this);
+}
 
 inline CompilerThread* CompilerThread::current() {
   return JavaThread::current()->as_CompilerThread();

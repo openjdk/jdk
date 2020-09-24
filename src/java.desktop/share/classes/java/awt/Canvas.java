@@ -241,6 +241,11 @@ public class Canvas extends Component implements Accessible {
         private static final long serialVersionUID = -6325592262103146699L;
 
         /**
+         * Constructs an {@code AccessibleAWTCanvas}
+         */
+        protected AccessibleAWTCanvas() {}
+
+        /**
          * Get the role of this object.
          *
          * @return an instance of AccessibleRole describing the role of the

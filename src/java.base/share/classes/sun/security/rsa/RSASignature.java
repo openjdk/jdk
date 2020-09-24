@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,9 @@ import sun.security.x509.AlgorithmId;
  * PKCS#1 v1.5 RSA signatures with the various message digest algorithms.
  * This file contains an abstract base class with all the logic plus
  * a nested static class for each of the message digest algorithms
- * (see end of the file). We support MD2, MD5, SHA-1, SHA-224, SHA-256,
- * SHA-384, SHA-512, SHA-512/224, and SHA-512/256.
+ * (see end of the file). We support MD2, MD5, SHA-1, SHA2 family (
+ * SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, and SHA-512/256),
+ * and SHA3 family (SHA3-224, SHA3-256, SHA3-384, SHA3-512) of digests.
  *
  * @since   1.5
  * @author  Andreas Sterbenz
@@ -358,6 +359,34 @@ public abstract class RSASignature extends SignatureSpi {
     public static final class SHA512_256withRSA extends RSASignature {
         public SHA512_256withRSA() {
             super("SHA-512/256", AlgorithmId.SHA512_256_oid, 11);
+        }
+    }
+
+    // Nested class for SHA3-224withRSA signatures
+    public static final class SHA3_224withRSA extends RSASignature {
+        public SHA3_224withRSA() {
+            super("SHA3-224", AlgorithmId.SHA3_224_oid, 11);
+        }
+    }
+
+    // Nested class for SHA3-256withRSA signatures
+    public static final class SHA3_256withRSA extends RSASignature {
+        public SHA3_256withRSA() {
+            super("SHA3-256", AlgorithmId.SHA3_256_oid, 11);
+        }
+    }
+
+    // Nested class for SHA3-384withRSA signatures
+    public static final class SHA3_384withRSA extends RSASignature {
+        public SHA3_384withRSA() {
+            super("SHA3-384", AlgorithmId.SHA3_384_oid, 11);
+        }
+    }
+
+    // Nested class for SHA3-512withRSA signatures
+    public static final class SHA3_512withRSA extends RSASignature {
+        public SHA3_512withRSA() {
+            super("SHA3-512", AlgorithmId.SHA3_512_oid, 11);
         }
     }
 }

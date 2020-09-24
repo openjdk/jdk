@@ -75,13 +75,11 @@ define_pd_global(bool, CompactStrings, true);
 // 8146801 (Short Array Allocation): No performance work done here yet.
 define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
 
-#define ARCH_FLAGS(develop,      \
-                   product,      \
-                   diagnostic,   \
-                   experimental, \
-                   notproduct,   \
-                   range,        \
-                   constraint)   \
+#define ARCH_FLAGS(develop,                                                   \
+                   product,                                                   \
+                   notproduct,                                                \
+                   range,                                                     \
+                   constraint)                                                \
                                                                               \
   /* Reoptimize code-sequences of calls at runtime, e.g. replace an */        \
   /* indirect call by a direct call.                                */        \
@@ -116,5 +114,7 @@ define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
                                                                               \
   product(bool, TraceTraps, false, "Trace all traps the signal handler"       \
           "handles.")
+
+// end of ARCH_FLAGS
 
 #endif // CPU_S390_GLOBALS_S390_HPP

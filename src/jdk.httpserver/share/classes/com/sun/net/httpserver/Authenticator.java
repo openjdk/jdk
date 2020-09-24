@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
  */
 
 package com.sun.net.httpserver;
-import java.net.*;
-import java.io.*;
-import java.util.*;
 
 /**
  * Authenticator represents an implementation of an HTTP authentication
@@ -39,9 +36,22 @@ import java.util.*;
 public abstract class Authenticator {
 
     /**
+     * Constructor for subclasses to call.
+     */
+    protected Authenticator () { }
+
+    /**
      * Base class for return type from authenticate() method
      */
-    public abstract static class Result {}
+    public abstract static class Result {
+
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected Result () {}
+    }
+
+
 
     /**
      * Indicates an authentication failure. The authentication
@@ -51,12 +61,20 @@ public abstract class Authenticator {
 
         private int responseCode;
 
+        /**
+         * Creates a {@code Failure} instance with given response code.
+         *
+         * @param responseCode The response code to associate with this
+         *                     {@code Failure} instance
+         */
         public Failure (int responseCode) {
             this.responseCode = responseCode;
         }
 
         /**
          * returns the response code to send to the client
+         *
+         * @return The response code associated with this {@code Failure} instance
          */
         public int getResponseCode() {
             return responseCode;
@@ -71,11 +89,19 @@ public abstract class Authenticator {
     public static class Success extends Result {
         private HttpPrincipal principal;
 
+        /**
+         * Creates a {@code Success} instance with given {@code Principal}.
+         *
+         * @param p The authenticated user you wish to set as Principal
+         */
         public Success (HttpPrincipal p) {
             principal = p;
         }
         /**
          * returns the authenticated user Principal
+         *
+         * @return The {@code Principal} instance associated with the authenticated user
+         *
          */
         public HttpPrincipal getPrincipal() {
             return principal;
@@ -93,12 +119,20 @@ public abstract class Authenticator {
 
         private int responseCode;
 
+        /**
+         * Creates a {@code Retry} instance with given response code.
+         *
+         * @param responseCode The response code to associate with this
+         *                     {@code Retry} instance
+         */
         public Retry (int responseCode) {
             this.responseCode = responseCode;
         }
 
         /**
          * returns the response code to send to the client
+         *
+         * @return The response code associated with this {@code Retry} instance
          */
         public int getResponseCode() {
             return responseCode;
@@ -120,6 +154,9 @@ public abstract class Authenticator {
      * headers needing to be sent back to the client are set in the
      * given HttpExchange. The response code to be returned must be provided
      * in the Retry object. Retry may occur multiple times.
+     *
+     * @param exch The HttpExchange upon which authenticate is called
+     * @return The result
      */
     public abstract Result authenticate (HttpExchange exch);
 }

@@ -26,9 +26,9 @@
  * @bug 8006263
  * @summary Supplementary test cases needed for doclint
  * @library /tools/lib
- * @modules jdk.compiler/com.sun.tools.doclint
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.javadoc/jdk.javadoc.internal.doclint
  * @build toolbox.ToolBox toolbox.JarTask
  * @run main PathsTest
  */
@@ -43,8 +43,8 @@ import javax.tools.StandardLocation;
 import javax.tools.JavaFileManager;
 import javax.tools.ToolProvider;
 
-import com.sun.tools.doclint.DocLint;
-import com.sun.tools.doclint.DocLint.BadArgs;
+import jdk.javadoc.internal.doclint.DocLint;
+import jdk.javadoc.internal.doclint.DocLint.BadArgs;
 
 import toolbox.JarTask;
 import toolbox.ToolBox;

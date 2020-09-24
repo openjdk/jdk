@@ -504,7 +504,7 @@ class JavaThreadInVMAndNative : public StackObj {
   JavaThreadState _original_state;
  public:
 
-  JavaThreadInVMAndNative(Thread* t) : _jt(t->is_Java_thread() ? (JavaThread*)t : NULL),
+  JavaThreadInVMAndNative(Thread* t) : _jt(t->is_Java_thread() ? t->as_Java_thread() : NULL),
                                        _original_state(_thread_max_state) {
     if (_jt != NULL) {
       _original_state = _jt->thread_state();

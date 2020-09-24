@@ -26,6 +26,7 @@
 #include "code/debugInfoRec.hpp"
 #include "code/scopeDesc.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/globals_extension.hpp"
 
 // Private definition.
 // There is one DIR_Chunk for each scope and values array.

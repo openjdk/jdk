@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.doclint;
+package jdk.javadoc.internal.doclint;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -85,14 +85,13 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTreePathScanner;
 import com.sun.source.util.TreePath;
-import com.sun.tools.doclint.HtmlTag.AttrKind;
 import com.sun.tools.javac.tree.DocPretty;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.StringUtils;
 
-import static com.sun.tools.doclint.Messages.Group.*;
+import jdk.javadoc.internal.doclint.HtmlTag.AttrKind;
+import static jdk.javadoc.internal.doclint.Messages.Group.*;
 
 
 /**
@@ -295,18 +294,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     public Void visitEntity(EntityTree tree, Void ignore) {
         checkAllowsText(tree);
         markEnclosingTag(Flag.HAS_TEXT);
-        String name = tree.getName().toString();
-        if (name.startsWith("#")) {
-            int v = StringUtils.toLowerCase(name).startsWith("#x")
-                    ? Integer.parseInt(name.substring(2), 16)
-                    : Integer.parseInt(name.substring(1), 10);
-            if (!Entity.isValid(v)) {
-                env.messages.error(HTML, tree, "dc.entity.invalid", name);
-            }
-        } else if (!Entity.isValid(name)) {
-            env.messages.error(HTML, tree, "dc.entity.invalid", name);
+        String s = env.trees.getCharacters(tree);
+        if (s == null) {
+            env.messages.error(HTML, tree, "dc.entity.invalid", tree.getName());
         }
         return null;
+
     }
 
     void checkAllowsText(DocTree tree) {

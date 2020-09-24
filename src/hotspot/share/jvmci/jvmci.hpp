@@ -110,6 +110,11 @@ class JVMCI : public AllStatic {
 
   static void initialize_compiler(TRAPS);
 
+  // Increments a value indicating some JVMCI compilation activity
+  // happened on `thread` if it is a CompilerThread.
+  // Returns `thread`.
+  static JavaThread* compilation_tick(JavaThread* thread);
+
   static JVMCIRuntime* compiler_runtime() { return _compiler_runtime; }
   // Gets the single runtime for JVMCI on the Java heap. This is the only
   // JVMCI runtime available when !UseJVMCINativeLibrary.

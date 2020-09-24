@@ -50,13 +50,7 @@
                  develop_pd,                                                \
                  product,                                                   \
                  product_pd,                                                \
-                 diagnostic,                                                \
-                 diagnostic_pd,                                             \
-                 experimental,                                              \
                  notproduct,                                                \
-                 manageable,                                                \
-                 product_rw,                                                \
-                 lp64_product,                                              \
                  range,                                                     \
                  constraint)                                                \
                                                                             \
@@ -65,13 +59,7 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    diagnostic,                                                             \
-    diagnostic_pd,                                                          \
-    experimental,                                                           \
     notproduct,                                                             \
-    manageable,                                                             \
-    product_rw,                                                             \
-    lp64_product,                                                           \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -80,13 +68,7 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    diagnostic,                                                             \
-    diagnostic_pd,                                                          \
-    experimental,                                                           \
     notproduct,                                                             \
-    manageable,                                                             \
-    product_rw,                                                             \
-    lp64_product,                                                           \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -95,13 +77,7 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    diagnostic,                                                             \
-    diagnostic_pd,                                                          \
-    experimental,                                                           \
     notproduct,                                                             \
-    manageable,                                                             \
-    product_rw,                                                             \
-    lp64_product,                                                           \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -110,13 +86,7 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    diagnostic,                                                             \
-    diagnostic_pd,                                                          \
-    experimental,                                                           \
     notproduct,                                                             \
-    manageable,                                                             \
-    product_rw,                                                             \
-    lp64_product,                                                           \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -125,13 +95,7 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    diagnostic,                                                             \
-    diagnostic_pd,                                                          \
-    experimental,                                                           \
     notproduct,                                                             \
-    manageable,                                                             \
-    product_rw,                                                             \
-    lp64_product,                                                           \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -140,13 +104,7 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    diagnostic,                                                             \
-    diagnostic_pd,                                                          \
-    experimental,                                                           \
     notproduct,                                                             \
-    manageable,                                                             \
-    product_rw,                                                             \
-    lp64_product,                                                           \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -161,7 +119,7 @@
   product(bool, UseParallelGC, false,                                       \
           "Use the Parallel garbage collector.")                            \
                                                                             \
-  experimental(bool, UseEpsilonGC, false,                                   \
+  product(bool, UseEpsilonGC, false, EXPERIMENTAL,                          \
           "Use the Epsilon (no-op) garbage collector")                      \
                                                                             \
   product(bool, UseZGC, false,                                              \
@@ -179,14 +137,14 @@
           "ParallelGCThreads parallel collectors will use for garbage "     \
           "collection work")                                                \
                                                                             \
-  diagnostic(bool, InjectGCWorkerCreationFailure, false,                    \
+  product(bool, InjectGCWorkerCreationFailure, false, DIAGNOSTIC,           \
              "Inject thread creation failures for "                         \
              "UseDynamicNumberOfGCThreads")                                 \
                                                                             \
   product(size_t, HeapSizePerGCThread, ScaleForWordSize(32*M),              \
           "Size of heap (bytes) per GC thread used in calculating the "     \
           "number of GC threads")                                           \
-          range((size_t)os::vm_page_size(), (size_t)max_uintx)              \
+          constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
   product(uint, ConcGCThreads, 0,                                           \
           "Number of threads concurrent gc will use")                       \
@@ -211,7 +169,7 @@
           "is active (as a percentage)")                                    \
           range(0, 100)                                                     \
                                                                             \
-  diagnostic(uintx, GCLockerRetryAllocationCount, 2,                        \
+  product(uintx, GCLockerRetryAllocationCount, 2, DIAGNOSTIC,               \
           "Number of times to retry allocations when "                      \
           "blocked by the GC locker")                                       \
           range(0, max_uintx)                                               \
@@ -268,7 +226,7 @@
   product(bool, ParallelRefProcBalancingEnabled, true,                      \
           "Enable balancing of reference processing queues")                \
                                                                             \
-  experimental(size_t, ReferencesPerThread, 1000,                           \
+  product(size_t, ReferencesPerThread, 1000, EXPERIMENTAL,                  \
                "Ergonomically start one thread for this amount of "         \
                "references for reference processing if "                    \
                "ParallelRefProcEnabled is true. Specify 0 to disable and "  \
@@ -308,17 +266,17 @@
   develop(uintx, PromotionFailureALotInterval, 5,                           \
           "Total collections between promotion failures a lot")             \
                                                                             \
-  experimental(uintx, WorkStealingSleepMillis, 1,                           \
+  product(uintx, WorkStealingSleepMillis, 1, EXPERIMENTAL,                  \
           "Sleep time when sleep is used for yields")                       \
                                                                             \
-  experimental(uintx, WorkStealingYieldsBeforeSleep, 5000,                  \
+  product(uintx, WorkStealingYieldsBeforeSleep, 5000, EXPERIMENTAL,         \
           "Number of yields before a sleep is done during work stealing")   \
                                                                             \
-  experimental(uintx, WorkStealingHardSpins, 4096,                          \
+  product(uintx, WorkStealingHardSpins, 4096, EXPERIMENTAL,                 \
           "Number of iterations in a spin loop between checks on "          \
           "time out of hard spin")                                          \
                                                                             \
-  experimental(uintx, WorkStealingSpinToYieldRatio, 10,                     \
+  product(uintx, WorkStealingSpinToYieldRatio, 10, EXPERIMENTAL,            \
           "Ratio of hard spins to calls to yield")                          \
                                                                             \
   develop(uintx, ObjArrayMarkingStride, 2048,                               \
@@ -563,27 +521,27 @@
           "How many fields ahead to prefetch in oop scan (<= 0 means off)") \
           range(-1, max_jint)                                               \
                                                                             \
-  diagnostic(bool, VerifyDuringStartup, false,                              \
+  product(bool, VerifyDuringStartup, false, DIAGNOSTIC,                     \
           "Verify memory system before executing any Java code "            \
           "during VM initialization")                                       \
                                                                             \
-  diagnostic(bool, VerifyBeforeExit, trueInDebug,                           \
+  product(bool, VerifyBeforeExit, trueInDebug, DIAGNOSTIC,                  \
           "Verify system before exiting")                                   \
                                                                             \
-  diagnostic(bool, VerifyBeforeGC, false,                                   \
+  product(bool, VerifyBeforeGC, false, DIAGNOSTIC,                          \
           "Verify memory system before GC")                                 \
                                                                             \
-  diagnostic(bool, VerifyAfterGC, false,                                    \
+  product(bool, VerifyAfterGC, false, DIAGNOSTIC,                           \
           "Verify memory system after GC")                                  \
                                                                             \
-  diagnostic(bool, VerifyDuringGC, false,                                   \
+  product(bool, VerifyDuringGC, false, DIAGNOSTIC,                          \
           "Verify memory system during GC (between phases)")                \
                                                                             \
-  diagnostic(ccstrlist, VerifyGCType, "",                                   \
+  product(ccstrlist, VerifyGCType, "", DIAGNOSTIC,                          \
              "GC type(s) to verify when Verify*GC is enabled."              \
              "Available types are collector specific.")                     \
                                                                             \
-  diagnostic(ccstrlist, VerifySubSet, "",                                   \
+  product(ccstrlist, VerifySubSet, "", DIAGNOSTIC,                          \
           "Memory sub-systems to verify when Verify*GC flag(s) "            \
           "are enabled. One or more sub-systems can be specified "          \
           "in a comma separated string. Sub-systems are: "                  \
@@ -591,20 +549,20 @@
           "dictionary, classloader_data_graph, metaspace, jni_handles, "    \
           "codecache_oops")                                                 \
                                                                             \
-  diagnostic(bool, GCParallelVerificationEnabled, true,                     \
+  product(bool, GCParallelVerificationEnabled, true, DIAGNOSTIC,            \
           "Enable parallel memory system verification")                     \
                                                                             \
-  diagnostic(bool, DeferInitialCardMark, false,                             \
+  product(bool, DeferInitialCardMark, false, DIAGNOSTIC,                    \
           "When +ReduceInitialCardMarks, explicitly defer any that "        \
           "may arise from new_pre_store_barrier")                           \
                                                                             \
   product(bool, UseCondCardMark, false,                                     \
           "Check for already marked card before updating card table")       \
                                                                             \
-  diagnostic(bool, VerifyRememberedSets, false,                             \
+  product(bool, VerifyRememberedSets, false, DIAGNOSTIC,                    \
           "Verify GC remembered sets")                                      \
                                                                             \
-  diagnostic(bool, VerifyObjectStartArray, true,                            \
+  product(bool, VerifyObjectStartArray, true, DIAGNOSTIC,                   \
           "Verify GC object start array if verify before/after")            \
                                                                             \
   product(bool, DisableExplicitGC, false,                                   \
@@ -649,7 +607,7 @@
           "Maximum heap size (in bytes)")                                   \
           constraint(MaxHeapSizeConstraintFunc,AfterErgo)                   \
                                                                             \
-  manageable(size_t, SoftMaxHeapSize, 0,                                    \
+  product(size_t, SoftMaxHeapSize, 0, MANAGEABLE,                           \
           "Soft limit for maximum heap size (in bytes)")                    \
           constraint(SoftMaxHeapSizeConstraintFunc,AfterMemoryInit)         \
                                                                             \
@@ -730,11 +688,11 @@
           "will retry before printing a warning")                           \
           range(0, max_uintx)                                               \
                                                                             \
-  diagnostic(uintx, VerifyGCStartAt,   0,                                   \
+  product(uintx, VerifyGCStartAt,   0, DIAGNOSTIC,                          \
           "GC invoke count where +VerifyBefore/AfterGC kicks in")           \
           range(0, max_uintx)                                               \
                                                                             \
-  diagnostic(intx, VerifyGCLevel,     0,                                    \
+  product(intx, VerifyGCLevel,     0, DIAGNOSTIC,                           \
           "Generation level at which to start +VerifyBefore/AfterGC")       \
           range(0, 1)                                                       \
                                                                             \
@@ -774,5 +732,7 @@
           "Number of entries we will try to leave on the stack "            \
           "during parallel gc")                                             \
           range(0, max_juint)
+
+// end of GC_FLAGS
 
 #endif // SHARE_GC_SHARED_GC_GLOBALS_HPP

@@ -972,12 +972,12 @@ inline intptr_t bitfield(intptr_t x, int start_bit_no, int field_length) {
 // and 64-bit overloaded functions, which does not work, and having
 // explicitly-typed versions of these routines (i.e., MAX2I, MAX2L)
 // will be even more error-prone than macros.
-template<class T> inline T MAX2(T a, T b)           { return (a > b) ? a : b; }
-template<class T> inline T MIN2(T a, T b)           { return (a < b) ? a : b; }
-template<class T> inline T MAX3(T a, T b, T c)      { return MAX2(MAX2(a, b), c); }
-template<class T> inline T MIN3(T a, T b, T c)      { return MIN2(MIN2(a, b), c); }
-template<class T> inline T MAX4(T a, T b, T c, T d) { return MAX2(MAX3(a, b, c), d); }
-template<class T> inline T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, c), d); }
+template<class T> constexpr T MAX2(T a, T b)           { return (a > b) ? a : b; }
+template<class T> constexpr T MIN2(T a, T b)           { return (a < b) ? a : b; }
+template<class T> constexpr T MAX3(T a, T b, T c)      { return MAX2(MAX2(a, b), c); }
+template<class T> constexpr T MIN3(T a, T b, T c)      { return MIN2(MIN2(a, b), c); }
+template<class T> constexpr T MAX4(T a, T b, T c, T d) { return MAX2(MAX3(a, b, c), d); }
+template<class T> constexpr T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, c), d); }
 
 template<class T> inline T ABS(T x)                 { return (x > 0) ? x : -x; }
 
