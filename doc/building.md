@@ -304,7 +304,7 @@ issues.
  ------------------ -------------------------------------------------------
  Linux              gcc 9.2.0
  macOS              Apple Xcode 10.1 (using clang 10.0.0)
- Windows            Microsoft Visual Studio 2019 update 16.5.3
+ Windows            Microsoft Visual Studio 2019 update 16.7.2
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio
