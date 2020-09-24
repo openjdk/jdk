@@ -67,7 +67,6 @@ void initJvmLauncher() {
 
 
 int main(int argc, char *argv[]) {
-    setlocale(LC_ALL, "en_US.utf8");
     if (jvmLauncher) {
         // This is the call from the thread spawned by JVM.
         // Skip initialization phase as we have done this already in the first

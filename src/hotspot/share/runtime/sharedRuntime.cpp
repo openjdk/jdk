@@ -2173,8 +2173,8 @@ class MethodArityHistogram {
   static int _max_size;                       // max. arg size seen
 
   static void add_method_to_histogram(nmethod* nm) {
-    if (CompiledMethod::nmethod_access_is_safe(nm)) {
-      Method* method = nm->method();
+    Method* method = (nm == NULL) ? NULL : nm->method();
+    if ((method != NULL) && nm->is_alive()) {
       ArgumentCount args(method->signature());
       int arity   = args.size() + (method->is_static() ? 0 : 1);
       int argsize = method->size_of_parameters();
@@ -2215,7 +2215,10 @@ class MethodArityHistogram {
 
  public:
   MethodArityHistogram() {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    // Take the Compile_lock to protect against changes in the CodeBlob structures
+    MutexLocker mu1(Compile_lock, Mutex::_safepoint_check_flag);
+    // Take the CodeCache_lock to protect against changes in the CodeHeap structure
+    MutexLocker mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     _max_arity = _max_size = 0;
     for (int i = 0; i < MAX_ARITY; i++) _arity_histogram[i] = _size_histogram[i] = 0;
     CodeCache::nmethods_do(add_method_to_histogram);

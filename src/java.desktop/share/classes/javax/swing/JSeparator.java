@@ -278,6 +278,11 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
     protected class AccessibleJSeparator extends AccessibleJComponent {
 
         /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleJSeparator() {}
+
+        /**
          * Get the role of this object.
          *
          * @return an instance of AccessibleRole describing the role of the

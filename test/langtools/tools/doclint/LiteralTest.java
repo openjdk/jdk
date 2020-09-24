@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8006228
  * @summary Doclint doesn't detect <code> {@code nested inline} </code>
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -ref LiteralTest.out LiteralTest.java
  */

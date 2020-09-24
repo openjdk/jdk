@@ -766,6 +766,7 @@ protected:
   address stack_end()  const           { return stack_base() - stack_size(); }
   void    record_stack_base_and_size();
   void    register_thread_stack_with_NMT() NOT_NMT_RETURN;
+  void    unregister_thread_stack_with_NMT() NOT_NMT_RETURN;
 
   int     lgrp_id() const        { return _lgrp_id; }
   void    set_lgrp_id(int value) { _lgrp_id = value; }
