@@ -55,7 +55,6 @@ import java.util.stream.Stream;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
-import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
 import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.module.ModuleLoaderMap;
@@ -278,7 +277,7 @@ public final class Module implements AnnotatedElement {
         }
 
         static {
-            CDS.initializeFromArchive(ArchivedData.class);
+            VM.initializeFromArchive(ArchivedData.class);
         }
     }
 
