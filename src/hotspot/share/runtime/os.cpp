@@ -1652,32 +1652,33 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint, int file_desc) {
-  char* result = NULL;
-
-  if (file_desc != -1) {
-    // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
-    // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
-    result = os::map_memory_to_file(addr, bytes, file_desc);
-    if (result != NULL) {
-      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
-    }
-  } else {
-    result = pd_reserve_memory(bytes, addr, alignment_hint);
-    if (result != NULL) {
-      MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+char* os::reserve_memory(size_t bytes, size_t alignment_hint, MEMFLAGS flags) {
+  char* result = pd_reserve_memory(bytes, alignment_hint);
+  if (result != NULL) {
+    MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
+    if (flags != mtOther) {
+      MemTracker::record_virtual_memory_type(result, flags);
     }
   }
 
   return result;
 }
 
-char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint,
-   MEMFLAGS flags) {
-  char* result = pd_reserve_memory(bytes, addr, alignment_hint);
-  if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
-    MemTracker::record_virtual_memory_type((address)result, flags);
+char* os::reserve_memory_with_fd(size_t bytes, size_t alignment_hint, int file_desc) {
+  char* result;
+
+  if (file_desc != -1) {
+    // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
+    // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
+    result = os::map_memory_to_file(NULL /* addr */, bytes, file_desc);
+    if (result != NULL) {
+      MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC);
+    }
+  } else {
+    result = pd_reserve_memory(bytes, alignment_hint);
+    if (result != NULL) {
+      MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
+    }
   }
 
   return result;
