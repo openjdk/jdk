@@ -72,16 +72,14 @@ public:
   // we got to "flush" it with trailing fences.
 
   intptr_t* last_Java_sp(void) const {
-    intptr_t* sp = _last_Java_sp;
-    OrderAccess::acquire();
-    return sp;
+    return Atomic::load_acquire(&_last_Java_sp);
   }
 
   void set_last_Java_sp(intptr_t* sp) {
-    OrderAccess::release();
-    _last_Java_sp = sp;
-    if (sp == NULL) {
-      OrderAccess::fence();
+    if (sp != NULL) {
+      Atomic::release_store(&_last_Java_sp, sp);
+    } else {
+      Atomic::release_store_fence(&_last_Java_sp, sp);
     }
   }
 
