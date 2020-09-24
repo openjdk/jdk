@@ -647,7 +647,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
         /**
-         * Constructs a {@code InternalFramePropertyChangeListener}.
+         * Constructs an {@code InternalFramePropertyChangeListener}.
          */
         public InternalFramePropertyChangeListener() {}
         /**
@@ -668,7 +668,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
     // new functionality add it to the Handler, but make sure this
     // class calls into the Handler.
     /**
-     * Constructs a {@code InternalFrameLayout}.
+     * Constructs an {@code InternalFrameLayout}.
      */
     public InternalFrameLayout() {}
 
