@@ -22,6 +22,7 @@
  */
 
 import java.nio.file.Path;
+import java.io.File;
 import java.util.Map;
 import java.lang.invoke.MethodHandles;
 import jdk.jpackage.test.PackageTest;
@@ -32,6 +33,7 @@ import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.CfgFile;
 
 /**
  * Test --add-launcher parameter. Output of the test should be
@@ -200,6 +202,33 @@ public class AddLauncherTest {
         .applyTo(cmd);
 
         cmd.executeAndAssertHelloAppImageCreated();
+
+        // verify using each additional launchers cfg file that it has the
+        // main-jar/class or module/class
+
+        CfgFile cfg = cmd.readLauncherCfgFile("ModularAppLauncher");
+        String moduleValue = cfg.getValue("Application", "app.mainmodule");
+        String mainClass = null;
+        String classpath = null;
+        TKit.assertEquals(moduleValue, JavaAppDesc.parse(
+                modularAppDesc.toString()).setBundleFileName(null).toString(),
+                "app.mainmodule value in cfg file not as expected");
+
+        TKit.trace("moduleValue: " + moduleValue + " mainClass: " + mainClass
+                    + " classpath: " + classpath);
+
+        cfg = cmd.readLauncherCfgFile("NonModularAppLauncher");
+        moduleValue = null;
+        mainClass = cfg.getValue("Application", "app.mainclass");
+        classpath = cfg.getValue("Application", "app.classpath");
+        TKit.assertEquals(mainClass, nonModularAppDesc.className(),
+                "app.mainclass value in NonModularAppLauncher cfg file");
+        TKit.assertTrue(classpath.startsWith("$APPDIR" + File.separator
+                + nonModularAppDesc.jarFileName()),
+                "app.classpath value in ModularAppLauncher cfg file");
+
+        TKit.trace("moduleValue: " + moduleValue + " mainClass: " + mainClass
+                    + " classpath: " + classpath);
     }
 
     private final static Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
