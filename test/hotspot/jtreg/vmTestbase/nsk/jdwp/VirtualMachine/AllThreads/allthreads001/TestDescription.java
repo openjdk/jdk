@@ -48,7 +48,7 @@
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.AllThreads.allthreads001
  *        nsk.jdwp.VirtualMachine.AllThreads.allthreads001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.AllThreads.allthreads001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

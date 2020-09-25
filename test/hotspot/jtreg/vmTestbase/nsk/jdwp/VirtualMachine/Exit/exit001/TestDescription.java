@@ -54,7 +54,7 @@
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.Exit.exit001
  *        nsk.jdwp.VirtualMachine.Exit.exit001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.Exit.exit001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

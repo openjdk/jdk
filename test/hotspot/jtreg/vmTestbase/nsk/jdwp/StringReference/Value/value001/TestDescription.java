@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdwp.StringReference.Value.value001
  *        nsk.jdwp.StringReference.Value.value001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.StringReference.Value.value001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -41,7 +41,7 @@
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.IDSizes.idsizes001
  *        nsk.jdwp.VirtualMachine.IDSizes.idsizes001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.IDSizes.idsizes001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -58,7 +58,7 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build nsk.jdwp.ReferenceType.Instances.instances002.instances002
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.Instances.instances002.instances002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

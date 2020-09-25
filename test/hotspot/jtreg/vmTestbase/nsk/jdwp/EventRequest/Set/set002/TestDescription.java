@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdwp.EventRequest.Set.set002
  *        nsk.jdwp.EventRequest.Set.set002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.EventRequest.Set.set002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

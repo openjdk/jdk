@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdwp.ReferenceType.SourceFile.srcfile001
  *        nsk.jdwp.ReferenceType.SourceFile.srcfile001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.SourceFile.srcfile001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

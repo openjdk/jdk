@@ -61,7 +61,7 @@
  *          /test/lib
  * @build nsk.jdwp.Event.BREAKPOINT.breakpoint001
  *        nsk.jdwp.Event.BREAKPOINT.breakpoint001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.Event.BREAKPOINT.breakpoint001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -63,7 +63,7 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build nsk.jdwp.ThreadReference.OwnedMonitorsStackDepthInfo.ownedMonitorsStackDepthInfo001.ownedMonitorsStackDepthInfo001
- * @run main/othervm/native/timeout=420 PropertyResolvingWrapper
+ * @run main/othervm/native/timeout=420
  *      nsk.jdwp.ThreadReference.OwnedMonitorsStackDepthInfo.ownedMonitorsStackDepthInfo001.ownedMonitorsStackDepthInfo001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

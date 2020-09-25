@@ -57,7 +57,7 @@
  *          /test/lib
  * @build nsk.jdwp.ClassType.Superclass.superclass001
  *        nsk.jdwp.ClassType.Superclass.superclass001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ClassType.Superclass.superclass001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

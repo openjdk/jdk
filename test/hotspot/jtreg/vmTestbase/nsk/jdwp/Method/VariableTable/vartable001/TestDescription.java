@@ -61,7 +61,7 @@
  * @comment debuggee should be compiled w/ debug info
  * @clean nsk.jdwp.Method.VariableTable.vartable001a
  * @compile -g:lines,source,vars ../vartable001a.java
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.Method.VariableTable.vartable001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

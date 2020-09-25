@@ -41,7 +41,7 @@
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.Version.version002
  *        nsk.jdwp.VirtualMachine.Version.version002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.Version.version002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

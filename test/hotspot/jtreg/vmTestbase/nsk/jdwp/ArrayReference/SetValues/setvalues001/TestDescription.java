@@ -61,7 +61,7 @@
  *          /test/lib
  * @build nsk.jdwp.ArrayReference.SetValues.setvalues001
  *        nsk.jdwp.ArrayReference.SetValues.setvalues001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ArrayReference.SetValues.setvalues001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

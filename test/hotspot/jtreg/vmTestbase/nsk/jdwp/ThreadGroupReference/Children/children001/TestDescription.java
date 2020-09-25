@@ -50,7 +50,7 @@
  *          /test/lib
  * @build nsk.jdwp.ThreadGroupReference.Children.children001
  *        nsk.jdwp.ThreadGroupReference.Children.children001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ThreadGroupReference.Children.children001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

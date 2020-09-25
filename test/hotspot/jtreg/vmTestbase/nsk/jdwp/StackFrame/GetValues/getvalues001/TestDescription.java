@@ -65,7 +65,7 @@
  * @comment debuggee should be compiled w/ debug info
  * @clean nsk.jdwp.StackFrame.GetValues.getvalues001a
  * @compile -g:lines,source,vars ../getvalues001a.java
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.StackFrame.GetValues.getvalues001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

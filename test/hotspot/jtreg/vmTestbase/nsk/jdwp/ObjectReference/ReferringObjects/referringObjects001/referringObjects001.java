@@ -70,7 +70,7 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build nsk.jdwp.ObjectReference.ReferringObjects.referringObjects001.referringObjects001
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdwp.ObjectReference.ReferringObjects.referringObjects001.referringObjects001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

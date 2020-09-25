@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdwp.ThreadReference.CurrentContendedMonitor.curcontmonitor001
  *        nsk.jdwp.ThreadReference.CurrentContendedMonitor.curcontmonitor001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ThreadReference.CurrentContendedMonitor.curcontmonitor001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdwp.Event.CLASS_UNLOAD.clsunload001
  *        nsk.jdwp.Event.CLASS_UNLOAD.clsunload001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.Event.CLASS_UNLOAD.clsunload001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

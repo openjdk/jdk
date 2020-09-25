@@ -55,7 +55,7 @@
  *          /test/lib
  * @build nsk.jdwp.ReferenceType.Status.status001
  *        nsk.jdwp.ReferenceType.Status.status001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.Status.status001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

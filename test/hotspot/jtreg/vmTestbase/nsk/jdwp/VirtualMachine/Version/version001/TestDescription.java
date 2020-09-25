@@ -40,7 +40,7 @@
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.Version.version001
  *        nsk.jdwp.VirtualMachine.Version.version001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.Version.version001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

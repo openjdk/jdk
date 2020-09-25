@@ -57,7 +57,7 @@
  *          /test/lib
  * @build nsk.jdwp.ThreadReference.Name.name001
  *        nsk.jdwp.ThreadReference.Name.name001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ThreadReference.Name.name001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

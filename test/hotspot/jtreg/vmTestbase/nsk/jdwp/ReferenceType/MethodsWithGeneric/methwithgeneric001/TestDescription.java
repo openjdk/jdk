@@ -46,7 +46,7 @@
  *          /test/lib
  * @build nsk.jdwp.ReferenceType.MethodsWithGeneric.methwithgeneric001
  *        nsk.jdwp.ReferenceType.MethodsWithGeneric.methwithgeneric001t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.MethodsWithGeneric.methwithgeneric001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

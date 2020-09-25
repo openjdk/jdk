@@ -67,7 +67,7 @@
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001
  *        nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001a
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

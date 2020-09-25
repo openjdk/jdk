@@ -55,7 +55,7 @@
  *          /test/lib
  * @build nsk.jdwp.ReferenceType.ClassLoader.classloader001
  *        nsk.jdwp.ReferenceType.ClassLoader.classloader001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.ClassLoader.classloader001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

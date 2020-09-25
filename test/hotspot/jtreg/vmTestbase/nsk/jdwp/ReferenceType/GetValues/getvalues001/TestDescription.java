@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdwp.ReferenceType.GetValues.getvalues001
  *        nsk.jdwp.ReferenceType.GetValues.getvalues001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.GetValues.getvalues001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdwp.ReferenceType.Interfaces.interfaces001
  *        nsk.jdwp.ReferenceType.Interfaces.interfaces001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.Interfaces.interfaces001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

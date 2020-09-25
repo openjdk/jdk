@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdwp.ThreadReference.FrameCount.framecnt001
  *        nsk.jdwp.ThreadReference.FrameCount.framecnt001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ThreadReference.FrameCount.framecnt001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

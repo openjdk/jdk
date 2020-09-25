@@ -54,7 +54,7 @@
  *          /test/lib
  * @build nsk.jdwp.Event.VM_DEATH.vmdeath001
  *        nsk.jdwp.Event.VM_DEATH.vmdeath001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.Event.VM_DEATH.vmdeath001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

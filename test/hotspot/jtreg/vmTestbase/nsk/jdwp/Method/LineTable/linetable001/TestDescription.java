@@ -69,7 +69,7 @@
  *          /test/lib
  * @build nsk.jdwp.Method.LineTable.linetable001
  *        nsk.jdwp.Method.LineTable.linetable001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.Method.LineTable.linetable001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

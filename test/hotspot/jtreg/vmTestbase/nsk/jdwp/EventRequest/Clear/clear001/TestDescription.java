@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdwp.EventRequest.Clear.clear001
  *        nsk.jdwp.EventRequest.Clear.clear001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.EventRequest.Clear.clear001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

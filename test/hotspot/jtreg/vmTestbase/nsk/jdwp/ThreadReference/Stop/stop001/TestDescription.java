@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdwp.ThreadReference.Stop.stop001
  *        nsk.jdwp.ThreadReference.Stop.stop001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ThreadReference.Stop.stop001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

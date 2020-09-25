@@ -50,7 +50,7 @@
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.AllClasses.allclasses001
  *        nsk.jdwp.VirtualMachine.AllClasses.allclasses001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.AllClasses.allclasses001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

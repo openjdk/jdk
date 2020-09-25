@@ -65,7 +65,7 @@
  *          /test/lib
  * @build nsk.jdwp.Event.EXCEPTION.exception001
  *        nsk.jdwp.Event.EXCEPTION.exception001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.Event.EXCEPTION.exception001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdwp.ObjectReference.IsCollected.iscollected001
  *        nsk.jdwp.ObjectReference.IsCollected.iscollected001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ObjectReference.IsCollected.iscollected001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

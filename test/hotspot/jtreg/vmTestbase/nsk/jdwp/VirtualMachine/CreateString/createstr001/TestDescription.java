@@ -44,7 +44,7 @@
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.CreateString.createstr001
  *        nsk.jdwp.VirtualMachine.CreateString.createstr001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.CreateString.createstr001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

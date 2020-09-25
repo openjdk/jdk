@@ -64,7 +64,7 @@
  *          /test/lib
  * @build nsk.jdwp.Event.SINGLE_STEP.singlestep003
  *        nsk.jdwp.Event.SINGLE_STEP.singlestep003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.Event.SINGLE_STEP.singlestep003
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

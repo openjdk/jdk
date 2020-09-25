@@ -61,7 +61,7 @@
  *          /test/lib
  * @build nsk.jdwp.StackFrame.PopFrames.popframes001
  *        nsk.jdwp.StackFrame.PopFrames.popframes001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.StackFrame.PopFrames.popframes001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

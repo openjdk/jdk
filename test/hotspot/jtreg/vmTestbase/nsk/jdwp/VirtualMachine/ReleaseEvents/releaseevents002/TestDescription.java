@@ -57,7 +57,7 @@
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.ReleaseEvents.releaseevents002
  *        nsk.jdwp.VirtualMachine.ReleaseEvents.releaseevents002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.ReleaseEvents.releaseevents002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

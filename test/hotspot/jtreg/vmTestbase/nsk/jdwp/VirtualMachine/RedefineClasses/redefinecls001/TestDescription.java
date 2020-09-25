@@ -75,7 +75,7 @@
  *        nsk.jdwp.VirtualMachine.RedefineClasses.redefinecls001b
  * @run driver nsk.share.ExtraClassesBuilder
  *      newclass
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.RedefineClasses.redefinecls001
  *      .
  *      -arch=${os.family}-${os.simpleArch}

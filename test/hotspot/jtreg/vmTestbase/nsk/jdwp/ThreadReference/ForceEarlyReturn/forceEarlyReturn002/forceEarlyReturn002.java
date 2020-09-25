@@ -67,7 +67,7 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build nsk.jdwp.ThreadReference.ForceEarlyReturn.forceEarlyReturn002.forceEarlyReturn002
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdwp.ThreadReference.ForceEarlyReturn.forceEarlyReturn002.forceEarlyReturn002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

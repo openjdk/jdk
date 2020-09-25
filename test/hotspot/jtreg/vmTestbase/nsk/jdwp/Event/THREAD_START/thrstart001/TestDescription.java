@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdwp.Event.THREAD_START.thrstart001
  *        nsk.jdwp.Event.THREAD_START.thrstart001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.Event.THREAD_START.thrstart001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

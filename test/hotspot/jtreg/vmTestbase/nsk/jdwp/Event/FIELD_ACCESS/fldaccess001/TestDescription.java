@@ -64,7 +64,7 @@
  *          /test/lib
  * @build nsk.jdwp.Event.FIELD_ACCESS.fldaccess001
  *        nsk.jdwp.Event.FIELD_ACCESS.fldaccess001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.Event.FIELD_ACCESS.fldaccess001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

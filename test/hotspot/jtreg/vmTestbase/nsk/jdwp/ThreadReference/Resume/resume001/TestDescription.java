@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdwp.ThreadReference.Resume.resume001
  *        nsk.jdwp.ThreadReference.Resume.resume001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ThreadReference.Resume.resume001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

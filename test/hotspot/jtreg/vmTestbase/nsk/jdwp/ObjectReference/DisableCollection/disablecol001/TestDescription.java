@@ -55,7 +55,7 @@
  *          /test/lib
  * @build nsk.jdwp.ObjectReference.DisableCollection.disablecol001
  *        nsk.jdwp.ObjectReference.DisableCollection.disablecol001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ObjectReference.DisableCollection.disablecol001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdwp.ObjectReference.InvokeMethod.invokemeth001
  *        nsk.jdwp.ObjectReference.InvokeMethod.invokemeth001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ObjectReference.InvokeMethod.invokemeth001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

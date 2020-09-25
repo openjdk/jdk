@@ -56,7 +56,7 @@
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.DisposeObjects.disposeobj001
  *        nsk.jdwp.VirtualMachine.DisposeObjects.disposeobj001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.DisposeObjects.disposeobj001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

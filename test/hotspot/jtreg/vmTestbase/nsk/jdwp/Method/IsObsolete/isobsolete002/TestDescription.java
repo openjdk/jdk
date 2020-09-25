@@ -73,7 +73,7 @@
  *        nsk.jdwp.Method.IsObsolete.isobsolete002b
  * @run driver nsk.share.ExtraClassesBuilder
  *      newclass
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.Method.IsObsolete.isobsolete002
  *      .
  *      -arch=${os.family}-${os.simpleArch}

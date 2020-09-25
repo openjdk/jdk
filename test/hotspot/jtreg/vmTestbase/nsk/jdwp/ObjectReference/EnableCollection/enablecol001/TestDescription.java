@@ -56,7 +56,7 @@
  *          /test/lib
  * @build nsk.jdwp.ObjectReference.EnableCollection.enablecol001
  *        nsk.jdwp.ObjectReference.EnableCollection.enablecol001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ObjectReference.EnableCollection.enablecol001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

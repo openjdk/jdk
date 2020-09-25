@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdwp.ThreadReference.SuspendCount.suspendcnt001
  *        nsk.jdwp.ThreadReference.SuspendCount.suspendcnt001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ThreadReference.SuspendCount.suspendcnt001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -40,7 +40,7 @@
  *          /test/lib
  * @build nsk.jdwp.ReferenceType.SourceDebugExtension.srcdebugext001
  *        nsk.jdwp.ReferenceType.SourceDebugExtension.srcdebugext001t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.SourceDebugExtension.srcdebugext001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

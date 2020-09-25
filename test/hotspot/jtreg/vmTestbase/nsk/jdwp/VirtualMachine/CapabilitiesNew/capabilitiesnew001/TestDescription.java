@@ -50,7 +50,7 @@
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.CapabilitiesNew.capabilitiesnew001
  *        nsk.jdwp.VirtualMachine.CapabilitiesNew.capabilitiesnew001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.CapabilitiesNew.capabilitiesnew001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
