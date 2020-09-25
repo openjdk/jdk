@@ -1860,8 +1860,7 @@ Symbol* SystemDictionary::find_placeholder(Symbol* class_name,
 }
 
 
-// Used for assertions and verification, also used from LambdaFormInvokers::reload_class
-// to get original class which has already been loaded.
+// Used for assertions and verification only
 // Precalculating the hash and index is an optimization because there are many lookups
 // before adding the class.
 InstanceKlass* SystemDictionary::find_class(Symbol* class_name, ClassLoaderData* loader_data) {
