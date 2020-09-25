@@ -39,8 +39,8 @@ void G1HeterogeneousHeapPolicy::init(G1CollectedHeap* g1h, G1CollectionSet* coll
 }
 
 // After a collection pause, young list target length is updated. So we need to make sure we have enough regions in dram for young gen.
-void G1HeterogeneousHeapPolicy::record_collection_pause_end(double pause_time_ms) {
-  G1Policy::record_collection_pause_end(pause_time_ms);
+void G1HeterogeneousHeapPolicy::record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark) {
+  G1Policy::record_collection_pause_end(pause_time_ms, concurrent_operation_is_full_mark);
   _manager->adjust_dram_regions((uint)young_list_target_length(), G1CollectedHeap::heap()->workers());
 }
 

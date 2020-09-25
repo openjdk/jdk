@@ -69,7 +69,6 @@ class PhaseGVN;
 class PhaseIterGVN;
 class PhaseRegAlloc;
 class PhaseCCP;
-class PhaseCCP_DCE;
 class PhaseOutput;
 class RootNode;
 class relocInfo;

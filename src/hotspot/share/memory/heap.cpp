@@ -205,6 +205,7 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   assert(rs.size() >= committed_size, "reserved < committed");
   assert(segment_size >= sizeof(FreeBlock), "segment size is too small");
   assert(is_power_of_2(segment_size), "segment_size must be a power of 2");
+  assert_locked_or_safepoint(CodeCache_lock);
 
   _segment_size      = segment_size;
   _log2_segment_size = exact_log2(segment_size);
@@ -253,6 +254,8 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
 
 
 bool CodeHeap::expand_by(size_t size) {
+  assert_locked_or_safepoint(CodeCache_lock);
+
   // expand _memory space
   size_t dm = align_to_page_size(_memory.committed_size() + size) - _memory.committed_size();
   if (dm > 0) {
@@ -283,6 +286,7 @@ bool CodeHeap::expand_by(size_t size) {
 void* CodeHeap::allocate(size_t instance_size) {
   size_t number_of_segments = size_to_segments(instance_size + header_size());
   assert(segments_to_size(number_of_segments) >= sizeof(FreeBlock), "not enough room for FreeList");
+  assert_locked_or_safepoint(CodeCache_lock);
 
   // First check if we can satisfy request from freelist
   NOT_PRODUCT(verify());
@@ -347,6 +351,8 @@ HeapBlock* CodeHeap::split_block(HeapBlock *b, size_t split_at) {
 
 void CodeHeap::deallocate_tail(void* p, size_t used_size) {
   assert(p == find_start(p), "illegal deallocation");
+  assert_locked_or_safepoint(CodeCache_lock);
+
   // Find start of HeapBlock
   HeapBlock* b = (((HeapBlock *)p) - 1);
   assert(b->allocated_space() == p, "sanity check");
@@ -363,6 +369,8 @@ void CodeHeap::deallocate_tail(void* p, size_t used_size) {
 
 void CodeHeap::deallocate(void* p) {
   assert(p == find_start(p), "illegal deallocation");
+  assert_locked_or_safepoint(CodeCache_lock);
+
   // Find start of HeapBlock
   HeapBlock* b = (((HeapBlock *)p) - 1);
   assert(b->allocated_space() == p, "sanity check");
@@ -790,6 +798,7 @@ void CodeHeap::print() {
 
 void CodeHeap::verify() {
   if (VerifyCodeCache) {
+    assert_locked_or_safepoint(CodeCache_lock);
     size_t len = 0;
     int count = 0;
     for(FreeBlock* b = _freelist; b != NULL; b = b->link()) {

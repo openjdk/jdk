@@ -54,8 +54,6 @@ const char* OldObjectRoot::system_description(System system) {
       return "Universe";
     case _threads:
       return "Threads";
-    case _object_synchronizer:
-      return "Object Monitor";
     case _class_loader_data:
       return "Class Loader Data";
     case _code_cache:
