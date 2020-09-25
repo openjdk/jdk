@@ -261,7 +261,7 @@ void MemDetailReporter::report_malloc_sites() {
     stack->print_on(out);
     out->print("%29s", " ");
     MEMFLAGS flag = malloc_site->flag();
-    assert((flag >= 0 && flag < (int)mt_number_of_types) && flag != mtNone,
+    assert(NMTUtil::flag_is_valid(flag) && flag != mtNone,
       "Must have a valid memory type");
     print_malloc(malloc_site->size(), malloc_site->count(),flag);
     out->print_cr("\n");
