@@ -40,6 +40,7 @@
 #include "utilities/align.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/vmEnums.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
@@ -66,7 +67,6 @@ class ConstMethod;
 class InlineTableSizes;
 class CompiledMethod;
 class InterpreterOopMap;
-enum class vmSymbolID : int;
 
 class Method : public Metadata {
  friend class VMStructs;

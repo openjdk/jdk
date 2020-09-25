@@ -31,9 +31,9 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/os.hpp"
+#include "utilities/vmEnums.hpp"
 
 class RecordComponent;
-enum class vmSymbolID : int;
 
 // Interface for manipulating the basic Java classes.
 

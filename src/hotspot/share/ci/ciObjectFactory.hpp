@@ -28,8 +28,7 @@
 #include "ci/ciClassList.hpp"
 #include "ci/ciObject.hpp"
 #include "utilities/growableArray.hpp"
-
-enum class vmSymbolID : int;
+#include "utilities/vmEnums.hpp"
 
 // ciObjectFactory
 //

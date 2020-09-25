@@ -28,8 +28,8 @@
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/vmEnums.hpp"
 
-enum class vmSymbolID : int;
 class methodHandle;
 
 // Here are all the intrinsics known to the runtime and the CI.

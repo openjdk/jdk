@@ -28,8 +28,7 @@
 #include "oops/constantPool.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
-
-enum class vmSymbolID : int;
+#include "utilities/vmEnums.hpp"
 
 // This class represents the field information contained in the fields
 // array of an InstanceKlass.  Currently it's laid on top an array of

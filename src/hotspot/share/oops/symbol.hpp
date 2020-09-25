@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/vmEnums.hpp"
 
 // A Symbol is a canonicalized string.
 // All Symbols reside in global SymbolTable and are reference counted.
@@ -94,7 +95,6 @@
 // Since sometimes this is allocated from Metadata, pick a base allocation
 // type without virtual functions.
 class ClassLoaderData;
-enum class vmSymbolID : int;
 
 // Set _refcount to PERM_REFCOUNT to prevent the Symbol from being freed.
 #ifndef PERM_REFCOUNT

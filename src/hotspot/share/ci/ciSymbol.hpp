@@ -30,8 +30,7 @@
 #include "ci/ciObjectFactory.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "oops/symbol.hpp"
-
-enum class vmSymbolID : int;
+#include "utilities/vmEnums.hpp"
 
 // ciSymbol
 //
