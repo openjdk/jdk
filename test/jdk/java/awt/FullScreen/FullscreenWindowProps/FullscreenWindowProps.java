@@ -21,8 +21,10 @@
  * questions.
  */
 
+import java.awt.Color;
 import java.awt.DisplayMode;
 import java.awt.Frame;
+import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
@@ -44,16 +46,28 @@ public final class FullscreenWindowProps {
             return;
         }
 
-        Frame frame = new Frame();
+        Frame frame = new Frame() {
+            @Override
+            public void paint(Graphics g) {
+                super.paint(g);
+                g.setColor(Color.GREEN);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
         try {
+            frame.setBackground(Color.MAGENTA);
             frame.setVisible(true);
             gd.setFullScreenWindow(frame);
             Thread.sleep(4000);
 
-            if (gd.isDisplayChangeSupported()) {
-                gd.setDisplayMode(new DisplayMode(1024, 768, 32, 0));
-                Thread.sleep(4000);
+            for (DisplayMode dm : gd.getDisplayModes()) {
+                if (dm.getWidth() == 1024 && dm.getHeight() == 768) {
+                    gd.setDisplayMode(dm);
+                    Thread.sleep(4000);
+                    break;
+                }
             }
+
             GraphicsConfiguration frameGC = frame.getGraphicsConfiguration();
             Rectangle frameBounds = frame.getBounds();
 
