@@ -909,17 +909,11 @@ void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
 void G1RemSet::prepare_region_for_scan(HeapRegion* region) {
   uint hrm_index = region->hrm_index();
 
-  if (region->in_collection_set()) {
-    // Young regions had their card table marked as young at their allocation;
-    // we need to make sure that these marks are cleared at the end of GC, *but*
-    // they should not be scanned for cards.
-    // So directly add them to the "all_dirty_regions".
-    // Same for regions in the (initial) collection set: they may contain cards from
-    // the log buffers, make sure they are cleaned.
-  } else if (region->is_old_or_humongous_or_archive()) {
+  if (region->is_old_or_humongous_or_archive()) {
     _scan_state->set_scan_top(hrm_index, region->top());
   } else {
-    assert(region->is_free(), "Should only be free region at this point %s", region->get_type_str());
+    assert(region->in_collection_set() || region->is_free(),
+           "Should only be free or in the collection set at this point %s", region->get_type_str());
   }
 }
 
@@ -1028,7 +1022,6 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
       assert(r->in_collection_set(), "must be");
 
       _scan_state->add_all_dirty_region(r->hrm_index());
-
       dump_rem_set_for_region(r);
 
       return false;
