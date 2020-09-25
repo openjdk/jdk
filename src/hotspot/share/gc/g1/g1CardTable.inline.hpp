@@ -77,7 +77,7 @@ inline size_t G1CardTable::mark_region_dirty(size_t start_card_index, size_t num
   return result;
 }
 
-inline void G1CardTable::mark_dirty_as(size_t start_card_index, size_t num_cards, CardValue which) {
+inline void G1CardTable::change_dirty_cards_to(size_t start_card_index, size_t num_cards, CardValue which) {
   CardValue* start = &_byte_map[start_card_index];
   CardValue* const end = start + num_cards;
   while (start < end) {

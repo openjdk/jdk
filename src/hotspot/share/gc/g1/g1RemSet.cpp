@@ -691,7 +691,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
   }
 
   ALWAYSINLINE void do_card_block(uint const region_idx, size_t const first_card, size_t const num_cards) {
-    _ct->mark_dirty_as(first_card, num_cards, _scanned_card_value);
+    _ct->change_dirty_cards_to(first_card, num_cards, _scanned_card_value);
     do_claimed_block(region_idx, first_card, num_cards);
     _blocks_scanned++;
   }

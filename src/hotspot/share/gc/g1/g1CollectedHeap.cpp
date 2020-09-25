@@ -3821,11 +3821,11 @@ public:
 
 class G1EvacuateRegionsTask : public G1EvacuateRegionsBaseTask {
   G1RootProcessor* _root_processor;
-  bool _may_do_optional_evacuation;
+  bool _has_optional_evacuation_work;
 
   void scan_roots(G1ParScanThreadState* pss, uint worker_id) {
     _root_processor->evacuate_roots(pss, worker_id);
-    _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ObjCopy, _may_do_optional_evacuation);
+    _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ObjCopy, _has_optional_evacuation_work);
     _g1h->rem_set()->scan_collection_set_regions(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::CodeRoots, G1GCPhaseTimes::ObjCopy);
   }
 
@@ -3847,15 +3847,15 @@ public:
                         G1ScannerTasksQueueSet* task_queues,
                         G1RootProcessor* root_processor,
                         uint num_workers,
-                        bool may_do_optional_evacuation) :
+                        bool has_optional_evacuation_work) :
     G1EvacuateRegionsBaseTask("G1 Evacuate Regions", per_thread_states, task_queues, num_workers),
     _root_processor(root_processor),
-    _may_do_optional_evacuation(may_do_optional_evacuation)
+    _has_optional_evacuation_work(has_optional_evacuation_work)
   { }
 };
 
 void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states,
-                                                      bool may_do_optional_evacuation) {
+                                                      bool has_optional_evacuation_work) {
   G1GCPhaseTimes* p = phase_times();
 
   {
@@ -3875,7 +3875,7 @@ void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* p
                                       _task_queues,
                                       &root_processor,
                                       num_workers,
-                                      may_do_optional_evacuation);
+                                      has_optional_evacuation_work);
     task_time = run_task_timed(&g1_par_task);
     // Closing the inner scope will execute the destructor for the G1RootProcessor object.
     // To extract its code root fixup time we measure total time of this scope and
@@ -3886,7 +3886,7 @@ void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* p
   p->record_initial_evac_time(task_time.seconds() * 1000.0);
   p->record_or_add_code_root_fixup_time((total_processing - task_time).seconds() * 1000.0);
 
-  rem_set()->complete_evac_phase(may_do_optional_evacuation);
+  rem_set()->complete_evac_phase(has_optional_evacuation_work);
 }
 
 class G1EvacuateOptionalRegionsTask : public G1EvacuateRegionsBaseTask {

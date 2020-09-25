@@ -104,8 +104,8 @@ public:
   // be inaccurate as it does not perform the dirtying atomically.
   inline size_t mark_region_dirty(size_t start_card_index, size_t num_cards);
 
-  // Mark the given range of cards to "which". All of these cards must be Dirty.
-  inline void mark_dirty_as(size_t start_card_index, size_t num_cards, CardValue which);
+  // Change the given range of dirty cards to "which". All of these cards must be Dirty.
+  inline void change_dirty_cards_to(size_t start_card_index, size_t num_cards, CardValue which);
 
   inline uint region_idx_for(CardValue* p);
 
