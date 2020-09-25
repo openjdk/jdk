@@ -48,7 +48,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     GCWorkerStart,
     ExtRootScan,
     ThreadRoots,
-    ObjectSynchronizerRoots,
     CLDGRoots,
     AOT_ONLY(AOTCodeRoots COMMA)
     CMRefRoots,

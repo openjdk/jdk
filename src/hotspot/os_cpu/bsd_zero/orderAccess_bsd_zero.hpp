@@ -28,7 +28,7 @@
 
 // Included in orderAccess.hpp header file.
 
-#ifdef ARM
+#if defined(ARM)   // ----------------------------------------------------
 
 /*
  * ARM Kernel helper for memory barrier.
@@ -39,14 +39,10 @@
 typedef void (__kernel_dmb_t) (void);
 #define __kernel_dmb (*(__kernel_dmb_t *) 0xffff0fa0)
 
-#define FULL_MEM_BARRIER __kernel_dmb()
 #define LIGHT_MEM_BARRIER __kernel_dmb()
+#define FULL_MEM_BARRIER  __kernel_dmb()
 
-#else // ARM
-
-#define FULL_MEM_BARRIER __sync_synchronize()
-
-#ifdef PPC
+#elif defined(PPC) // ----------------------------------------------------
 
 #ifdef __NO_LWSYNC__
 #define LIGHT_MEM_BARRIER __asm __volatile ("sync":::"memory")
@@ -54,13 +50,21 @@ typedef void (__kernel_dmb_t) (void);
 #define LIGHT_MEM_BARRIER __asm __volatile ("lwsync":::"memory")
 #endif
 
-#else // PPC
+#define FULL_MEM_BARRIER  __sync_synchronize()
+
+#elif defined(X86) // ----------------------------------------------------
 
 #define LIGHT_MEM_BARRIER __asm __volatile ("":::"memory")
+#define FULL_MEM_BARRIER  __sync_synchronize()
 
-#endif // PPC
+#else              // ----------------------------------------------------
 
-#endif // ARM
+// Default to strongest barriers for correctness.
+
+#define LIGHT_MEM_BARRIER __sync_synchronize()
+#define FULL_MEM_BARRIER  __sync_synchronize()
+
+#endif             // ----------------------------------------------------
 
 // Note: What is meant by LIGHT_MEM_BARRIER is a barrier which is sufficient
 // to provide TSO semantics, i.e. StoreStore | LoadLoad | LoadStore.

@@ -91,9 +91,9 @@ static bool commute(Node *add, bool con_left, bool con_right) {
 
   PhiNode *phi;
   // Check for tight loop increments: Loop-phi of Add of loop-phi
-  if( in1->is_Phi() && (phi = in1->as_Phi()) && !phi->is_copy() && phi->region()->is_Loop() && phi->in(2)==add)
+  if (in1->is_Phi() && (phi = in1->as_Phi()) && phi->region()->is_Loop() && phi->in(2) == add)
     return false;
-  if( in2->is_Phi() && (phi = in2->as_Phi()) && !phi->is_copy() && phi->region()->is_Loop() && phi->in(2)==add){
+  if (in2->is_Phi() && (phi = in2->as_Phi()) && phi->region()->is_Loop() && phi->in(2) == add) {
     add->swap_edges(1, 2);
     return true;
   }
