@@ -73,6 +73,8 @@ import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
+
+import jdk.javadoc.internal.doclint.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
@@ -1262,9 +1264,9 @@ public class HtmlDocletWriter {
         }
 
         if (name != null) {
-            com.sun.tools.doclint.HtmlTag htmlTag = com.sun.tools.doclint.HtmlTag.get(name);
+            HtmlTag htmlTag = HtmlTag.get(name);
             if (htmlTag != null &&
-                    htmlTag.blockType != com.sun.tools.doclint.HtmlTag.BlockType.INLINE) {
+                    htmlTag.blockType != jdk.javadoc.internal.doclint.HtmlTag.BlockType.INLINE) {
                 return true;
             }
         }
@@ -1364,9 +1366,9 @@ public class HtmlDocletWriter {
                         StartElementTree st = (StartElementTree)tag;
                         Name name = st.getName();
                         if (name != null) {
-                            com.sun.tools.doclint.HtmlTag htag =
-                                    com.sun.tools.doclint.HtmlTag.get(name);
-                            return htag != null && htag.equals(com.sun.tools.doclint.HtmlTag.A);
+                            jdk.javadoc.internal.doclint.HtmlTag htag =
+                                    jdk.javadoc.internal.doclint.HtmlTag.get(name);
+                            return htag != null && htag.equals(jdk.javadoc.internal.doclint.HtmlTag.A);
                         }
                     }
                     return false;

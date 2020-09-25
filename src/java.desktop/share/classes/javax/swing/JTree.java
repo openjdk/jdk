@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3321,7 +3321,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
               DefaultTreeSelectionModel
     {
         /**
-         * Constructor for subclasses to call.
+         * Constructs an {@code EmptySelectionModel}.
          */
         protected EmptySelectionModel() {}
 
@@ -3448,7 +3448,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
                     TreeSelectionListener
     {
         /**
-         * Constructor for subclasses to call.
+         * Constructs a {@code TreeSelectionRedirector}.
          */
         protected TreeSelectionRedirector() {}
 
@@ -3873,10 +3873,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
       * accordingly when nodes are removed, or changed.
       */
     protected class TreeModelHandler implements TreeModelListener {
-         /**
-          * Constructor for subclasses to call.
-          */
-         protected TreeModelHandler() {}
+
+        /**
+         * Constructs a {@code TreeModelHandler}.
+         */
+        protected TreeModelHandler() {}
 
         public void treeNodesChanged(TreeModelEvent e) { }
 

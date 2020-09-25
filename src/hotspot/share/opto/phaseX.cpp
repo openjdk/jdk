@@ -975,29 +975,6 @@ PhaseIterGVN::PhaseIterGVN( PhaseGVN *gvn ) : PhaseGVN(gvn),
   }
 }
 
-/**
- * Initialize worklist for each node.
- */
-void PhaseIterGVN::init_worklist(Node* first) {
-  Unique_Node_List to_process;
-  to_process.push(first);
-
-  while (to_process.size() > 0) {
-    Node* n = to_process.pop();
-    if (!_worklist.member(n)) {
-      _worklist.push(n);
-
-      uint cnt = n->req();
-      for(uint i = 0; i < cnt; i++) {
-        Node* m = n->in(i);
-        if (m != NULL) {
-          to_process.push(m);
-        }
-      }
-    }
-  }
-}
-
 void PhaseIterGVN::shuffle_worklist() {
   if (_worklist.size() < 2) return;
   for (uint i = _worklist.size() - 1; i >= 1; i--) {

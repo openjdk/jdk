@@ -458,9 +458,6 @@ private:
 
 protected:
 
-  // Warm up hash table, type table and initial worklist
-  void init_worklist( Node *a_root );
-
   // Shuffle worklist, for stress testing
   void shuffle_worklist();
 
