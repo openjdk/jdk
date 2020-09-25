@@ -733,27 +733,21 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* thread, Ba
 JRT_END
 
 
-JRT_LEAF(void, InterpreterRuntime::monitorexit(JavaThread* thread, BasicObjectLock* elem))
-#ifdef ASSERT
-  thread->last_frame().interpreter_frame_verify_monitor(elem);
-#endif
+JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   oop obj = elem->obj();
-  assert(Universe::heap()->is_in(obj), "must an object");
+  assert(Universe::heap()->is_in(obj), "must be an object");
   // The object could become unlocked through a JNI call, which we have no other checks for.
-  // Give a message if CheckJNICalls but ignore.
+  // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
   if (obj->is_unlocked()) {
     if (CheckJNICalls) {
       fatal("Object has been unlocked by JNI");
     }
     return;
   }
-  ObjectSynchronizer::exit(obj, elem->lock(), thread);
+  ObjectSynchronizer::exit(obj, elem->lock(), Thread::current());
   // Free entry. If it is not cleared, the exception handling code will try to unlock the monitor
   // again at method exit or in the case of an exception.
   elem->set_obj(NULL);
-#ifdef ASSERT
-  thread->last_frame().interpreter_frame_verify_monitor(elem);
-#endif
 JRT_END
 
 
