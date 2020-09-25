@@ -1252,7 +1252,6 @@ public:
   // Section on thread-local allocation buffers (TLABs)
   // See CollectedHeap for semantics.
 
-  bool supports_tlab_allocation() const;
   size_t tlab_capacity(Thread* ignored) const;
   size_t tlab_used(Thread* ignored) const;
   size_t max_tlab_size() const;

@@ -2369,10 +2369,6 @@ bool G1CollectedHeap::block_is_obj(const HeapWord* addr) const {
   return hr->block_is_obj(addr);
 }
 
-bool G1CollectedHeap::supports_tlab_allocation() const {
-  return true;
-}
-
 size_t G1CollectedHeap::tlab_capacity(Thread* ignored) const {
   return (_policy->young_list_target_length() - _survivor.length()) * HeapRegion::GrainBytes;
 }
