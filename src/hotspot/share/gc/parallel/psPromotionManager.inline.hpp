@@ -53,7 +53,7 @@ inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   assert(should_scavenge(p, true), "revisiting object?");
   assert(ParallelScavengeHeap::heap()->is_in(p), "pointer outside heap");
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-  Prefetch::write(obj->mark_addr_raw(), 0);
+  Prefetch::write(obj->mark_addr(), 0);
   push_depth(ScannerTask(p));
 }
 

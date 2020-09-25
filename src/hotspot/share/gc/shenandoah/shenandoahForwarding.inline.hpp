@@ -81,7 +81,7 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   }
 
   markWord new_mark = markWord::encode_pointer_as_mark(update);
-  markWord prev_mark = obj->cas_set_mark_raw(new_mark, old_mark);
+  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
   if (prev_mark == old_mark) {
     return update;
   } else {
