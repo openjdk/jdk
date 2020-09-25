@@ -26,7 +26,7 @@
  * @test
  * @summary Archive lambda proxy class is in the base archive. The lambda proxy
  *          class should be loaded from the base archive during runtime.
- *          
+ *
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build LambHello

@@ -1998,7 +1998,7 @@ public:
     //
     // The following check has been moved to SystemDictionaryShared::check_excluded_classes(), which
     // happens before the classes are copied.
-    // 
+    //
     // if (SystemDictionaryShared::is_excluded_class(info._proxy_klasses->at(0))) {
     //  return true;
     //}
