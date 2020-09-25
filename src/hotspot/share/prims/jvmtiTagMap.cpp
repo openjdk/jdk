@@ -1488,8 +1488,9 @@ void JvmtiTagMap::iterate_over_heap(jvmtiHeapObjectFilter object_filter,
                                     const void* user_data)
 {
   // EA based optimizations on tagged objects are already reverted.
-  EscapeBarrier eb(JavaThread::current(),
-      object_filter == JVMTI_HEAP_OBJECT_UNTAGGED || object_filter == JVMTI_HEAP_OBJECT_EITHER);
+  EscapeBarrier eb(object_filter == JVMTI_HEAP_OBJECT_UNTAGGED ||
+                   object_filter == JVMTI_HEAP_OBJECT_EITHER,
+                   JavaThread::current());
   eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   IterateOverHeapObjectClosure blk(this,
@@ -1509,7 +1510,7 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
                                        const void* user_data)
 {
   // EA based optimizations on tagged objects are already reverted.
-  EscapeBarrier eb(JavaThread::current(), !(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED));
+  EscapeBarrier eb(!(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED), JavaThread::current());
   eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   IterateThroughHeapObjectClosure blk(this,
@@ -3259,7 +3260,7 @@ void JvmtiTagMap::iterate_over_reachable_objects(jvmtiHeapRootCallback heap_root
                                                  jvmtiObjectReferenceCallback object_ref_callback,
                                                  const void* user_data) {
   JavaThread* jt = JavaThread::current();
-  EscapeBarrier eb(jt, true);
+  EscapeBarrier eb(true, jt);
   eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   BasicHeapWalkContext context(heap_root_callback, stack_ref_callback, object_ref_callback);
@@ -3291,8 +3292,9 @@ void JvmtiTagMap::follow_references(jint heap_filter,
   JavaThread* jt = JavaThread::current();
   Handle initial_object(jt, obj);
   // EA based optimizations that are tagged or reachable from initial_object are already reverted.
-  EscapeBarrier eb(jt,
-      initial_object.is_null() && !(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED));
+  EscapeBarrier eb(initial_object.is_null() &&
+                   !(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED),
+                   jt);
   eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   AdvancedHeapWalkContext context(heap_filter, klass, callbacks);

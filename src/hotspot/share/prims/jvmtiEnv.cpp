@@ -1206,7 +1206,7 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
       new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
-  EscapeBarrier eb(calling_thread, java_thread, true);
+  EscapeBarrier eb(true, calling_thread, java_thread);
   if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
@@ -1256,7 +1256,7 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
          new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
-  EscapeBarrier eb(calling_thread, java_thread, true);
+  EscapeBarrier eb(true, calling_thread, java_thread);
   if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
@@ -1714,7 +1714,7 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
     }
 
     // If any of the top 2 frames is a compiled one, need to deoptimize it
-    EscapeBarrier eb(current_thread, java_thread, !is_interpreted[0] || !is_interpreted[1]);
+    EscapeBarrier eb(!is_interpreted[0] || !is_interpreted[1], current_thread, java_thread);
     for (int i = 0; i < 2; i++) {
       if (!is_interpreted[i]) {
         Deoptimization::deoptimize_frame(java_thread, frame_sp[i]);

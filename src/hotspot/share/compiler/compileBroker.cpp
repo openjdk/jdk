@@ -840,7 +840,7 @@ void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_single() {
       { // Begin new scope for escape barrier
         HandleMarkCleaner hmc(this);
         ResourceMark rm(this);
-        EscapeBarrier eb(this, deoptee_thread, true);
+        EscapeBarrier eb(true, this, deoptee_thread);
         eb.deoptimize_objects(100);
       }
       // Now sleep after the escape barriers destructor resumed deoptee_thread.
@@ -857,7 +857,7 @@ void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_all() {
     { // Begin new scope for escape barrier
       HandleMarkCleaner hmc(this);
       ResourceMark rm(this);
-      EscapeBarrier eb(this, true);
+      EscapeBarrier eb(true, this);
       eb.deoptimize_objects_all_threads();
     }
     // Now sleep after the escape barriers destructor resumed the java threads.

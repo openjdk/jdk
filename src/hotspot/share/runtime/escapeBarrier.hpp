@@ -61,7 +61,7 @@ class EscapeBarrier : StackObj {
 
 public:
   // Revert ea based optimizations for given deoptee thread
-  EscapeBarrier(JavaThread* calling_thread, JavaThread* deoptee_thread, bool barrier_active)
+  EscapeBarrier(bool barrier_active, JavaThread* calling_thread, JavaThread* deoptee_thread)
     : _calling_thread(calling_thread), _deoptee_thread(deoptee_thread),
       _barrier_active(barrier_active && (JVMCI_ONLY(UseJVMCICompiler) NOT_JVMCI(false)
                       COMPILER2_PRESENT(|| DoEscapeAnalysis)))
@@ -70,7 +70,7 @@ public:
   }
 
   // Revert ea based optimizations for all java threads
-  EscapeBarrier(JavaThread* calling_thread, bool barrier_active)
+  EscapeBarrier(bool barrier_active, JavaThread* calling_thread)
     : _calling_thread(calling_thread), _deoptee_thread(NULL),
       _barrier_active(barrier_active && (JVMCI_ONLY(UseJVMCICompiler) NOT_JVMCI(false)
                       COMPILER2_PRESENT(|| DoEscapeAnalysis)))
@@ -79,8 +79,8 @@ public:
   }
 #else
 public:
-  EscapeBarrier(JavaThread* calling_thread, JavaThread* deoptee_thread, bool barrier_active) { }
-  EscapeBarrier(JavaThread* calling_thread, bool barrier_active) { }
+  EscapeBarrier(bool barrier_active, JavaThread* calling_thread, JavaThread* deoptee_thread) { }
+  EscapeBarrier(bool barrier_active, JavaThread* calling_thread) { }
   static bool deoptimizing_objects_for_all_threads() { return false; }
   bool barrier_active() const                        { return false; }
 #endif // COMPILER2_OR_JVMCI
