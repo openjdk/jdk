@@ -247,7 +247,7 @@ public:
     st->print("[ " SIZE_FORMAT_W(-25) " ... " SIZE_FORMAT_W(25) " ]", min, max);
   }
   void print_default_range(outputStream* st) const {
-    st->print("[ " SIZE_FORMAT_W(-25) " ... " SIZE_FORMAT_W(25) " ]", size_t(0), SIZE_MAX);
+    st->print("[ " SIZE_FORMAT_W(-25) " ... " SIZE_FORMAT_W(25) " ]", size_t(0), size_t(SIZE_MAX));
   }
 };
 
