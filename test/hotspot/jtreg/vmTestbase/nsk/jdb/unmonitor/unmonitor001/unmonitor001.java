@@ -106,8 +106,6 @@ public class unmonitor001 extends JdbTest {
     };
 
     protected void runCases() {
-        String[] reply;
-
         jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + BREAKPOINT_LINE);
 
         // set first three monitors
@@ -125,7 +123,7 @@ public class unmonitor001 extends JdbTest {
         int repliesCount = 4 + 1;
         jdb.receiveReplyFor(JdbCommand.cont, true, repliesCount);
 
-        reply = jdb.receiveReplyFor(JdbCommand.monitor);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.monitor);
         if (!checkMonitors(reply)) {
             success = false;
         }
@@ -142,11 +140,10 @@ public class unmonitor001 extends JdbTest {
     }
 
     private boolean checkMonitors(String[] reply) {
-        Paragrep grep;
         boolean result = true;
         int count;
 
-        grep = new Paragrep(reply);
+        var grep = new Paragrep(reply);
         for (int i = 1; i < CHECKED_COMMANDS.length; i++) {
             if ((count = grep.find(CHECKED_COMMANDS[i])) != 1) {
                 log.complain("Wrong number of monitor command: " + CHECKED_COMMANDS[i]);
@@ -165,12 +162,9 @@ public class unmonitor001 extends JdbTest {
     }
 
     private boolean checkCommands(String[] reply) {
-        Paragrep grep;
-        Vector<String> v = new Vector<>();
         boolean result = true;
+        var grep = new Paragrep(reply);
         int count;
-
-        grep = new Paragrep(reply);
 
         // check deleted 'locals'
         if ((count = grep.find("Local variables")) > 0) {
@@ -179,6 +173,7 @@ public class unmonitor001 extends JdbTest {
         }
 
         // check 'threads'
+        var v = new Vector<String>();
         v.add("java.lang.Thread");
         v.add("main");
         if ((count = grep.find(v)) != 1) {

@@ -78,12 +78,10 @@ public class wherei001 extends JdbTest {
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + ".MyThread";
 
     protected void runCases() {
-        String[] threads;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+        String[] threads = jdb.getThreadIds(DEBUGGEE_THREAD);
 
         if (threads.length != 5) {
             log.complain("jdb should report 5 instance of " + DEBUGGEE_THREAD);
@@ -101,17 +99,13 @@ public class wherei001 extends JdbTest {
     }
 
     private boolean checkStack(String threadId) {
-        Paragrep grep;
-        String[] reply;
-        int count;
         boolean result = true;
         String[] func = {"func5", "func4", "func3", "func2", "func1", "run"};
+        String[] reply = jdb.receiveReplyFor(JdbCommand.wherei + threadId);
 
-        reply = jdb.receiveReplyFor(JdbCommand.wherei + threadId);
-
-        grep = new Paragrep(reply);
+        var grep = new Paragrep(reply);
         for (String s : func) {
-            count = grep.find(DEBUGGEE_THREAD + "." + s);
+            int count = grep.find(DEBUGGEE_THREAD + "." + s);
             if (count != 1) {
                 log.complain("Contents of stack trace is incorrect for thread " + threadId);
                 log.complain("Searched for: " + DEBUGGEE_THREAD + "." + s);

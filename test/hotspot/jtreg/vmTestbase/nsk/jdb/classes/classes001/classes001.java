@@ -101,12 +101,10 @@ public class classes001 extends JdbTest {
     /* ------------------------------------- */
 
     protected void runCases() {
-        String[] reply;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        reply = jdb.receiveReplyFor(JdbCommand.classes);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.classes);
 
         for (String checkedClass : checkedClasses) {
             if (!checkClass(checkedClass, reply)) {
@@ -118,12 +116,10 @@ public class classes001 extends JdbTest {
     }
 
     private boolean checkClass(String className, String[] reply) {
-        Paragrep grep;
-        String found;
         boolean result = true;
 
-        grep = new Paragrep(reply);
-        found = grep.findFirst(className);
+        var grep = new Paragrep(reply);
+        String found = grep.findFirst(className);
         if (found.length() == 0) {
             log.complain("Failed to report class " + className);
             result = false;

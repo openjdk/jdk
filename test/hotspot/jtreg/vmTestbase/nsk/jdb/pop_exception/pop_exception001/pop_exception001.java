@@ -75,7 +75,6 @@ public class pop_exception001 extends JdbTest {
 
 
     protected void runCases() {
-
         jdb.receiveReplyFor(JdbCommand._catch + "java.lang.NullPointerException");
         jdb.receiveReplyFor(JdbCommand.cont);
         // exception

@@ -92,22 +92,17 @@ public class where004 extends JdbTest {
     };
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-        Vector<String> v;
-
         jdb.receiveReplyFor(JdbCommand.stop_in + DEBUGGEE_CLASS + ".func5");
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        reply = jdb.receiveReplyFor(JdbCommand.where);
-        grep = new Paragrep(reply);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.where);
+        var grep = new Paragrep(reply);
 
         for (String[] frame : FRAMES) {
-            v = new Vector<>();
+            var v = new Vector<String>();
             v.add(frame[0]);
             v.add(frame[1]);
-            count = grep.find(v);
+            int count = grep.find(v);
             if (count != 1) {
                 failure("Unexpected number or location of the stack frame: " + frame[0] +
                         "\n\texpected value : 1, got one: " + count);

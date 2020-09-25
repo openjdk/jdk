@@ -97,18 +97,14 @@ public class uncaught_exception002 extends JdbTest {
     }
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        Vector<String> v;
-
         jdb.receiveReplyFor(JdbCommand.cont);
         jdb.receiveReplyFor(JdbCommand.locals);
         jdb.contToExit(1);
 
-        reply = jdb.getTotalReply();
-        grep = new Paragrep(reply);
+        String[] reply = jdb.getTotalReply();
+        var grep = new Paragrep(reply);
 
-        v = new Vector<>();
+        var v = new Vector<String>();
         v.add("Exception occurred");
         v.add(PACKAGE_NAME + ".TenMultipleException");
         if (grep.find(v) == 0) {

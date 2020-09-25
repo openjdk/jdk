@@ -99,14 +99,11 @@ public class list002 extends JdbTest {
     final static String SOURCE_NOT_FOUND = "Source file not found";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        reply = jdb.receiveReplyFor(JdbCommand.list + "runIt");
-        grep = new Paragrep(reply);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.list + "runIt");
+        var grep = new Paragrep(reply);
         if (grep.find(SOURCE_NOT_FOUND) > 0) {
             failure(reply[0]);
         } else {

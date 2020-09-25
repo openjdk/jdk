@@ -87,8 +87,6 @@ public class monitor002 extends JdbTest {
     };
 
     protected void runCases() {
-        String[] reply;
-
         jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + LINE_NUMBER);
 
         for (String checkedCommand : CHECKED_COMMANDS) {
@@ -98,7 +96,7 @@ public class monitor002 extends JdbTest {
         int repliesCount = CHECKED_COMMANDS.length + 1;
         jdb.receiveReplyFor(JdbCommand.cont, true, repliesCount);
 
-        reply = jdb.receiveReplyFor(JdbCommand.monitor);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.monitor);
         if (reply.length != 1) {
             log.complain("Expected no active monitors after exectuting monitored command: " + CHECKED_COMMANDS[0]);
             success = false;

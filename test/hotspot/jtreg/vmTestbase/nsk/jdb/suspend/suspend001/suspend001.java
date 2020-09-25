@@ -91,15 +91,10 @@ public class suspend001 extends JdbTest {
     static final String DEBUGGEE_RESULT = DEBUGGEE_CLASS + ".notSuspended";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        String found;
-        String[] threads;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
         while (true) {
-            threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+            String[] threads = jdb.getThreadIds(DEBUGGEE_THREAD);
             if (threads.length != 1) {
                 log.complain("jdb should report 1 instance of " + DEBUGGEE_THREAD);
                 log.complain("Found: " + threads.length);
@@ -109,7 +104,7 @@ public class suspend001 extends JdbTest {
 
             jdb.receiveReplyFor(JdbCommand.suspend + threads[0]);
 
-            reply = jdb.receiveReplyFor(JdbCommand.cont);
+            String[] reply = jdb.receiveReplyFor(JdbCommand.cont);
             if (!jdb.isAtBreakpoint(reply)) {
                 log.complain("Debugge does not reached second breakHere breakpoint");
                 success = false;
@@ -117,8 +112,8 @@ public class suspend001 extends JdbTest {
             }
 
             reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_RESULT);
-            grep = new Paragrep(reply);
-            found = grep.findFirst(DEBUGGEE_RESULT + " =");
+            var grep = new Paragrep(reply);
+            String found = grep.findFirst(DEBUGGEE_RESULT + " =");
             if (found.length() > 0 && !found.contains(DEBUGGEE_RESULT + " = null")) {
                 if (!found.contains(DEBUGGEE_RESULT + " = 1")) {
                     log.complain("Wrong value of " + DEBUGGEE_RESULT);

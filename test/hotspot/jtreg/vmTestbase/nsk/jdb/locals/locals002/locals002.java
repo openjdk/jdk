@@ -111,18 +111,14 @@ public class locals002 extends JdbTest {
     };
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        Vector<String> v;
-
         jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + BREAKPOINT_LINE1);
         jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + BREAKPOINT_LINE2);
 
         jdb.receiveReplyFor(JdbCommand.cont);
-        reply = jdb.receiveReplyFor(JdbCommand.locals);
-        grep = new Paragrep(reply);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.locals);
+        var grep = new Paragrep(reply);
         for (String[] local : LOCALS) {
-            v = new Vector<>();
+            var v = new Vector<String>();
             v.add(local[0]);
             v.add(local[2]);
             if (grep.find(v) == 0) {
@@ -134,7 +130,7 @@ public class locals002 extends JdbTest {
         reply = jdb.receiveReplyFor(JdbCommand.locals);
         grep = new Paragrep(reply);
         for (String[] local : LOCALS) {
-            v = new Vector<>();
+            var v = new Vector<String>();
             v.add(local[0]);
             v.add(local[1]);
             if (grep.find(v) == 0) {

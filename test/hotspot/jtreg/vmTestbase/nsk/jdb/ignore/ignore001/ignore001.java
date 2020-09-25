@@ -83,10 +83,6 @@ public class ignore001 extends JdbTest {
     static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-
 //        jdb.setBreakpointInMethod(LAST_BREAK);
 
         log.display("Setting catch for: " + nsk.jdb.ignore.ignore001.ignore001a.JAVA_EXCEPTION);
@@ -121,9 +117,9 @@ public class ignore001 extends JdbTest {
 
             jdb.contToExit(6);
 
-            reply = jdb.getTotalReply();
-            grep = new Paragrep(reply);
-            count = grep.find(EXCEPTION_SAMPLE);
+            String[] reply = jdb.getTotalReply();
+            var grep = new Paragrep(reply);
+            int count = grep.find(EXCEPTION_SAMPLE);
             if (count != 3) {
                 success = false;
                 log.complain("Should report 3 catched exceptions.");
@@ -134,21 +130,17 @@ public class ignore001 extends JdbTest {
     }
 
     private boolean checkCatch(String exceptionName) {
-        String[] reply;
-        Paragrep grep;
-        Vector<String> v;
-        String found;
         boolean result = true;
 
 //        log.display("Resuming debuggee.");
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.cont);
 
-        v = new Vector<>();
+        var v = new Vector<String>();
         v.add(EXCEPTION_SAMPLE);
         v.add(exceptionName);
 
-        grep = new Paragrep(reply);
-        found = grep.findFirst(v);
+        var grep = new Paragrep(reply);
+        String found = grep.findFirst(v);
         if (found.length() == 0) {
             log.complain("Failed to catch " + exceptionName);
             result = false;
@@ -157,21 +149,17 @@ public class ignore001 extends JdbTest {
     }
 
     private boolean checkIgnore(String exceptionName) {
-        String[] reply;
-        Paragrep grep;
-        Vector<String> v;
-        String found;
         boolean result = true;
 
         log.display("Unsetting catch for: " + exceptionName);
-        reply = jdb.receiveReplyFor(JdbCommand.ignore + " caught " + exceptionName);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.ignore + " caught " + exceptionName);
 
-        v = new Vector<>();
+        var v = new Vector<String>();
         v.add(REMOVED_SAMPLE);
         v.add(exceptionName);
 
-        grep = new Paragrep(reply);
-        found = grep.findFirst(v);
+        var grep = new Paragrep(reply);
+        String found = grep.findFirst(v);
         if (found.length() == 0) {
             log.complain("Failed to remove catch for " + exceptionName);
             result = false;

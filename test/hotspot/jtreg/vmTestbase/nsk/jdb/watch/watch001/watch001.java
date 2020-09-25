@@ -95,8 +95,6 @@ public class watch001 extends JdbTest {
     static String[] checkedFields2 = {"FP0", "FU1", "FR0", "FT1", "FV0"};
 
     protected void runCases() {
-        String[] reply;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
 
         jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS);
@@ -108,7 +106,7 @@ public class watch001 extends JdbTest {
 
         jdb.contToExit(checkedFields.length + checkedFields2.length + 2);
 
-        reply = jdb.getTotalReply();
+        String[] reply = jdb.getTotalReply();
         if (!checkFields(DEBUGGEE_CLASS, reply, checkedFields)) {
             success = false;
         }
@@ -125,19 +123,16 @@ public class watch001 extends JdbTest {
     }
 
     private boolean checkFields(String className, String[] reply, String[] checkedFields) {
-        Paragrep grep;
-        String found;
         boolean result = true;
-        Vector<String> v = new Vector<>();
+        var v = new Vector<String>();
+        var grep = new Paragrep(reply);
 
-        grep = new Paragrep(reply);
-        v.add("access encountered");
         for (String checkedField : checkedFields) {
             v.removeAllElements();
             v.add("access encountered");
             v.add(className + "." + checkedField);
 
-            found = grep.findFirst(v);
+            String found = grep.findFirst(v);
             if (found.length() == 0) {
                 log.complain("Failed to report access to field " + className + "." + checkedField);
                 result = false;

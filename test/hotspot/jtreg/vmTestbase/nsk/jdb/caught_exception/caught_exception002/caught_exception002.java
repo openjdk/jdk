@@ -91,8 +91,6 @@ public class caught_exception002 extends JdbTest {
     /* ------------------------------------- */
 
     protected void runCases() {
-        String[] reply;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
@@ -101,7 +99,7 @@ public class caught_exception002 extends JdbTest {
         }
 
         for (int i = 0; i < MAX; i++) {
-            reply = jdb.receiveReplyFor(JdbCommand.cont);
+            String[] reply = jdb.receiveReplyFor(JdbCommand.cont);
             checkCatch(reply, i);
         }
 
@@ -109,14 +107,11 @@ public class caught_exception002 extends JdbTest {
     }
 
     private void checkCatch(String[] reply, int i) {
-        Paragrep grep;
-        int count;
-        Vector<String> v = new Vector<>();
-
-        grep = new Paragrep(reply);
+        var grep = new Paragrep(reply);
+        var v = new Vector<String>();
         v.add("Exception occurred");
         v.add(PACKAGE_NAME + ".MyException" + i);
-        count = grep.find(v);
+        int count = grep.find(v);
         if (count != 1) {
             log.complain("Failed to report catch of MyException" + i + " : " + count);
             success = false;

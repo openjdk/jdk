@@ -83,17 +83,13 @@ public class clear003 extends JdbTest {
     static final String METHOD_TO_CLEAR = DEBUGGEE_CLASS + "." + METHOD4;
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-
         log.display("Setting breakpoint in method: " + METHOD5);
         jdb.setBreakpointInMethod(DEBUGGEE_CLASS + "." + METHOD5);
 
         log.display("Clearing breakpoint.");
-        reply = jdb.receiveReplyFor(JdbCommand.clear + METHOD_TO_CLEAR);
-        grep = new Paragrep(reply);
-        count = grep.find("Removed:");
+        String[] reply = jdb.receiveReplyFor(JdbCommand.clear + METHOD_TO_CLEAR);
+        var grep = new Paragrep(reply);
+        int count = grep.find("Removed:");
         if (count > 0) {
             log.complain("Cleared non-existent breakpoint in method: " + METHOD_TO_CLEAR);
             success = false;

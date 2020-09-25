@@ -94,11 +94,6 @@ public class up002 extends JdbTest {
     };
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-        Vector<String> v;
-
         jdb.receiveReplyFor(JdbCommand.stop_in + DEBUGGEE_CLASS + ".func5");
         jdb.receiveReplyFor(JdbCommand.cont);
 
@@ -109,14 +104,14 @@ public class up002 extends JdbTest {
 
         jdb.contToExit(1);
 
-        reply = jdb.getTotalReply();
-        grep = new Paragrep(reply);
+        String[] reply = jdb.getTotalReply();
+        var grep = new Paragrep(reply);
 
         for (int i = 1; i < (FRAMES.length - 1); i++) {
-            v = new Vector<>();
+            var v = new Vector<String>();
             v.add(FRAMES[i][0]);
             v.add(FRAMES[i][1]);
-            count = grep.find(v);
+            int count = grep.find(v);
             if (count != (i + 1)) {
                 failure("Unexpected number of the stack frame: " + FRAMES[i][1] +
                         "\n\texpected value : " + (i + 1) + ", got : " + count);

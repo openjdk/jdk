@@ -109,12 +109,10 @@ public class fields001 extends JdbTest {
     };
 
     protected void runCases() {
-        String[] reply;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        reply = jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS);
         if (!checkFields(DEBUGGEE_CLASS, reply, checkedFields1)) {
             success = false;
         }
@@ -133,13 +131,10 @@ public class fields001 extends JdbTest {
     }
 
     private boolean checkFields(String className, String[] reply, String[] checkedFields) {
-        Paragrep grep;
         boolean result = true;
-        int count;
-
-        grep = new Paragrep(reply);
+        var grep = new Paragrep(reply);
         for (String checkedField : checkedFields) {
-            count = grep.find(checkedField);
+            int count = grep.find(checkedField);
             if (count == 0) {
                 log.complain("Failed to report field " + checkedField + " for class " + className);
                 result = false;

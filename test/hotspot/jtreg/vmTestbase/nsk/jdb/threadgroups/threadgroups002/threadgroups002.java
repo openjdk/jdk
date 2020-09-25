@@ -81,16 +81,12 @@ public class threadgroups002 extends JdbTest {
     static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        reply = jdb.receiveReplyFor(JdbCommand.threadgroups);
-        grep = new Paragrep(reply);
-        count = grep.find(threadgroups002a.THREADGROUP_NAME);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.threadgroups);
+        var grep = new Paragrep(reply);
+        int count = grep.find(threadgroups002a.THREADGROUP_NAME);
         if (count != threadgroups002a.numThreadGroups) {
             failure("Unexpected number of " + threadgroups002a.THREADGROUP_NAME + " was listed: " + count +
                     "\n\texpected value: " + threadgroups002a.numThreadGroups);

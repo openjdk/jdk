@@ -102,8 +102,6 @@ public class stop_at003 extends JdbTest {
     static final String FAILURE_PATTERN = "Unable to set";
 
     protected void runCases() {
-        String[] reply;
-
         for (String[] location : LOCATIONS) {
             if (!checkStop(location[0])) {
                 failure("jdb failed to set line breakpoint at : " + location[0]);
@@ -111,7 +109,7 @@ public class stop_at003 extends JdbTest {
         }
 
         for (String[] location : LOCATIONS) {
-            reply = jdb.receiveReplyFor(JdbCommand.cont);
+            String[] reply = jdb.receiveReplyFor(JdbCommand.cont);
             if (!jdb.isAtBreakpoint(reply, location[1])) {
                 failure("Missed breakpoint at : " + location[0]);
             }
@@ -121,16 +119,13 @@ public class stop_at003 extends JdbTest {
     }
 
     private boolean checkStop(String location) {
-        Paragrep grep;
-        String[] reply;
-        String found;
         boolean result = true;
 
         log.display("Trying to set breakpoint at line: " + location);
-        reply = jdb.receiveReplyFor(JdbCommand.stop_at + location);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.stop_at + location);
 
-        grep = new Paragrep(reply);
-        found = grep.findFirst(FAILURE_PATTERN);
+        var grep = new Paragrep(reply);
+        String found = grep.findFirst(FAILURE_PATTERN);
         if (found.length() > 0) {
             result = false;
         }

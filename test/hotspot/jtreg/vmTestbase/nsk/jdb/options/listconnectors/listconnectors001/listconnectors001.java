@@ -126,9 +126,9 @@ public class listconnectors001 extends JdbTest {
         for (int i = 0; i < TESTED_CONNECTORS_COUNT; i++) {
             String connector = TESTED_CONNECTORS_LIST[i * 2];
             String transport = TESTED_CONNECTORS_LIST[i * 2 + 1];
-            Paragrep grep = new Paragrep(reply);
+            var grep = new Paragrep(reply);
 
-            Vector<String> v = new Vector<>();
+            var v = new Vector<String>();
             v.add(Jdb.SUPPORTED_CONNECTOR_NAME);
             v.add(connector);
             v.add(Jdb.SUPPORTED_TRANSPORT_NAME);

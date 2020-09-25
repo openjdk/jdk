@@ -85,10 +85,6 @@ public class thread002 extends JdbTest {
     static final String THREAD_NAME = "MyThread";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
@@ -101,10 +97,10 @@ public class thread002 extends JdbTest {
 
         jdb.contToExit(1);
 
-        reply = jdb.getTotalReply();
-        grep = new Paragrep(reply);
+        String[] reply = jdb.getTotalReply();
+        var grep = new Paragrep(reply);
         for (int i = 0; i < threadIds.length; i++) {
-            count = grep.find(THREAD_NAME + "#" + i);
+            int count = grep.find(THREAD_NAME + "#" + i);
             if (count != 1) {
                 failure("jdb failed to switch to thread: " + threadIds[i]);
             }

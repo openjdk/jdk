@@ -102,8 +102,6 @@ public class set002 extends JdbTest {
     };
 
     protected void runCases() {
-        String[] reply;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
@@ -117,7 +115,7 @@ public class set002 extends JdbTest {
 
         jdb.receiveReplyFor(JdbCommand.cont);
         // check value of debuggeeResult
-        reply = jdb.receiveReplyFor(JdbCommand.eval + ERROR_MESSAGE);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.eval + ERROR_MESSAGE);
 
         // if everything is OK reply will look like this
         //   nsk.jdb.set.set002.set002a.errorMessage = ""

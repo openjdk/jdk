@@ -82,16 +82,12 @@ public class threads002 extends JdbTest {
     static final String THREAD_NAME = PACKAGE_NAME + ".MyThread";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        reply = jdb.receiveReplyFor(JdbCommand.threads);
-        grep = new Paragrep(reply);
-        count = grep.find(THREAD_NAME);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.threads);
+        var grep = new Paragrep(reply);
+        int count = grep.find(THREAD_NAME);
         if (count != threads002a.numThreads) {
             failure("Unexpected number of " + THREAD_NAME + " was listed: " + count +
                     "\n\texpected value: " + threads002a.numThreads);

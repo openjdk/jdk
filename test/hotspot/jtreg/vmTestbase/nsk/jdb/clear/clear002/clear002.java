@@ -84,9 +84,6 @@ public class clear002 extends JdbTest {
     static final String REMOVED_SAMPLE = "Removed:";
 
     protected void runCases() {
-        Paragrep grep;
-        int count;
-
         log.display("Setting breakpoint in method: " + METHOD1_TO_CLEAR);
         jdb.setBreakpointInMethod(METHOD1_TO_CLEAR);
 
@@ -106,8 +103,8 @@ public class clear002 extends JdbTest {
 
         jdb.contToExit(2);
 
-        grep = new Paragrep(jdb.getTotalReply());
-        count = grep.find(Jdb.BREAKPOINT_HIT);
+        var grep = new Paragrep(jdb.getTotalReply());
+        int count = grep.find(Jdb.BREAKPOINT_HIT);
         if (count != 2) {
             log.complain("Should hit 2 breakpoints.");
             log.complain("Breakpoint hit count reported: " + count);
@@ -124,15 +121,13 @@ public class clear002 extends JdbTest {
     }
 
     private boolean checkBreakpoint(String methodName, Paragrep grep) {
-        String found;
         boolean result = true;
-        Vector<String> v;
 
-        v = new Vector<>();
+        var v = new Vector<String>();
         v.add(Jdb.BREAKPOINT_HIT);
         v.add(methodName);
 
-        found = grep.findFirst(v);
+        String found = grep.findFirst(v);
         if (found.length() > 0) {
             log.complain("Wrong hit at removed breakpoint in method:" + methodName);
             result = false;
@@ -141,21 +136,17 @@ public class clear002 extends JdbTest {
     }
 
     private boolean checkClear(String methodName) {
-        Paragrep grep;
-        String found;
-        String[] reply;
         boolean result = true;
-        Vector<String> v;
 
-        v = new Vector<>();
+        var v = new Vector<String>();
         v.add(REMOVED_SAMPLE);
         v.add(methodName);
 
         log.display("Clearing breakpoint in method:" + methodName);
-        reply = jdb.receiveReplyFor(JdbCommand.clear + methodName);
-        grep = new Paragrep(reply);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.clear + methodName);
+        var grep = new Paragrep(reply);
 
-        found = grep.findFirst(v);
+        String found = grep.findFirst(v);
         if (found.length() == 0) {
             log.complain("Failed to clear breakpoint in method: " + methodName);
             result = false;

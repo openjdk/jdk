@@ -97,16 +97,13 @@ public class step002 extends JdbTest {
     static final int BREAKPOINT_LINE = 50;
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-
         jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + BREAKPOINT_LINE);
         jdb.receiveReplyFor(JdbCommand.cont);
 
         // case #1 : step inside frame;
         jdb.receiveReplyFor(JdbCommand.step);
-        reply = jdb.receiveReplyFor(JdbCommand.eval + "intVar");
-        grep = new Paragrep(reply);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.eval + "intVar");
+        var grep = new Paragrep(reply);
         if (grep.find("1234") == 0) {
             failure("CASE #1 FAILED: Wrong location after step inside current method");
         }

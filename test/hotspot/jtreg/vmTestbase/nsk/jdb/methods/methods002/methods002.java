@@ -92,14 +92,12 @@ public class methods002 extends JdbTest {
     static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     protected void runCases() {
-        String[] reply;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
         // Case for class with method modifiers
         String testedClass1 = TEST_CLASS + "a";
-        reply = jdb.receiveReplyFor(JdbCommand.methods + testedClass1);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.methods + testedClass1);
         for (int i = 1; i <= 33; i++) {
             checkMethod(reply, "m" + intToString(i), 1, testedClass1, testedClass1);
         }
@@ -169,9 +167,8 @@ public class methods002 extends JdbTest {
             String ownerClass,    /* name of class defining method */
             String testedClass    /* name of tested class */
     ) {
-
-        Paragrep grep = new Paragrep(reply);
-        Vector<String> v = new Vector<>();
+        var grep = new Paragrep(reply);
+        var v = new Vector<String>();
 
         v.add(ownerClass);
         v.add(methodName);
@@ -185,7 +182,7 @@ public class methods002 extends JdbTest {
     }
 
     private String[] toStringArray(String[] arr) {
-        Vector<String> v = new Vector<>();
+        var v = new Vector<String>();
         for (String s : arr) {
             StringTokenizer st = new StringTokenizer(s, "\r\n");
             while (st.hasMoreTokens()) {

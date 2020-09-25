@@ -81,18 +81,14 @@ public class threadgroup002 extends JdbTest {
     static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
         jdb.receiveReplyFor(JdbCommand.threadgroups);
 
         for (int i = 0; i < threadgroup002a.numThreadGroups; i++) {
-            reply = jdb.receiveReplyFor(JdbCommand.threadgroup + threadgroup002a.THREADGROUP_NAME + i);
-            grep = new Paragrep(reply);
-            count = grep.find("not a valid threadgroup name");
+            String[] reply = jdb.receiveReplyFor(JdbCommand.threadgroup + threadgroup002a.THREADGROUP_NAME + i);
+            var grep = new Paragrep(reply);
+            int count = grep.find("not a valid threadgroup name");
             if (count > 0) {
                 failure("jdb cannot switch to valid threadgroup: " + threadgroup002a.THREADGROUP_NAME + i);
             }

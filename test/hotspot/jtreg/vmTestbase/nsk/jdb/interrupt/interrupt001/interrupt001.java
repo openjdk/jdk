@@ -106,16 +106,10 @@ public class interrupt001 extends JdbTest {
     private static Pattern tidPattern = Pattern.compile("\\(.+" + MYTHREAD + "\\)(\\S+)");
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        String found;
-        String[] threads;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        threads = jdb.getThreadIds(DEBUGGEE_THREAD);
-
+        String[] threads = jdb.getThreadIds(DEBUGGEE_THREAD);
         if (threads.length != numThreads) {
             log.complain("jdb should report " + numThreads + " instance of " + DEBUGGEE_THREAD);
             log.complain("Found: " + threads.length);
@@ -131,9 +125,9 @@ public class interrupt001 extends JdbTest {
         jdb.receiveReplyFor(JdbCommand.threads);
         jdb.receiveReplyFor(JdbCommand.cont, true);
 
-        reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_RESULT);
-        grep = new Paragrep(reply);
-        found = grep.findFirst(DEBUGGEE_RESULT + " =");
+        String[] reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_RESULT);
+        var grep = new Paragrep(reply);
+        String found = grep.findFirst(DEBUGGEE_RESULT + " =");
         if (found.length() > 0) {
             if (!found.contains(DEBUGGEE_RESULT + " = 0")) {
                 log.complain("Not all " + MYTHREAD + "s were interrupted.");

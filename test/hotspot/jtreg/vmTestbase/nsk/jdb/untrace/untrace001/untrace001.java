@@ -99,13 +99,10 @@ public class untrace001 extends JdbTest {
     static final String[] CHECKED_METHODS = {"func1", "func2", "func3"};
 
     protected void runCases() {
-        String[] reply;
-        String[] threads;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+        String[] threads = jdb.getThreadIds(DEBUGGEE_THREAD);
 
         if (threads.length != 1) {
             log.complain("jdb should report 1 instance of " + DEBUGGEE_THREAD);
@@ -128,24 +125,22 @@ public class untrace001 extends JdbTest {
 
         jdb.contToExit(CHECKED_METHODS.length * threads.length * 2 + 2);
 
-        reply = jdb.getTotalReply();
+        String[] reply = jdb.getTotalReply();
         if (!checkTrace(CHECKED_METHODS, reply)) {
             success = false;
         }
     }
 
     private boolean checkTrace(String[] checkedMethods, String[] reply) {
-        Paragrep grep;
-        int count;
-        Vector<String> v = new Vector<>();
+        var v = new Vector<String>();
         boolean result = true;
+        var grep = new Paragrep(reply);
 
-        grep = new Paragrep(reply);
         for (String checkedMethod : checkedMethods) {
             v.removeAllElements();
             v.add(DEBUGGEE_THREAD + "." + checkedMethod);
             v.add("Method entered");
-            count = grep.find(v);
+            int count = grep.find(v);
             if (count != 1) {
                 log.complain("Count of method enter is incorrect for the method : " + DEBUGGEE_THREAD + "." + checkedMethod);
                 log.complain("Should be 1 trace messages, found : " + count);

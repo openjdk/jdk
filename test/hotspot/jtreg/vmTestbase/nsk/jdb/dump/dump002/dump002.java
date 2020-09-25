@@ -118,15 +118,12 @@ public class dump002 extends JdbTest {
     };
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        Vector<String> v = new Vector<>();
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        reply = jdb.receiveReplyFor(JdbCommand.dump + DEBUGGEE_CLASS + "._dump002a");
-        grep = new Paragrep(reply);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.dump + DEBUGGEE_CLASS + "._dump002a");
+        var grep = new Paragrep(reply);
+        var v = new Vector<String>();
         for (String field : CHECKED_FIELDS) {
             v.setSize(0);
             v.add(field);
@@ -149,7 +146,7 @@ public class dump002 extends JdbTest {
 
     void checkField(String[] reply, String fieldName) {
         Paragrep grep;
-        Vector<String> v = new Vector<>();
+        var v = new Vector<String>();
 
         grep = new Paragrep(reply);
         v.setSize(0);

@@ -89,13 +89,11 @@ public class step_up001 extends JdbTest {
     static final String[] checkedMethods = {"func1", "func2", "func3"};
 
     protected void runCases() {
-        String[] reply;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
 
         int stepupCount = 0;
         for (int i = 0; i < step_up001a.numThreads; i++) {
-            reply = jdb.receiveReplyFor(JdbCommand.cont);
+            String[] reply = jdb.receiveReplyFor(JdbCommand.cont);
             if (jdb.isAtBreakpoint(reply, LAST_BREAK)) {
                 jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak;
 

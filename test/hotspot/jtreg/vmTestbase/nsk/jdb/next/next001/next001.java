@@ -90,13 +90,11 @@ public class next001 extends JdbTest {
     static final String[] checkedMethods = {"func1", "func2", "func3"};
 
     protected void runCases() {
-        String[] reply;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
 
         int nextCount = 0;
         for (int i = 0; i < next001a.numThreads; i++) {
-            reply = jdb.receiveReplyFor(JdbCommand.cont);
+            String[] reply = jdb.receiveReplyFor(JdbCommand.cont);
             if (jdb.isAtBreakpoint(reply, LAST_BREAK)) {
                 jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak;
 
@@ -120,15 +118,11 @@ public class next001 extends JdbTest {
 
 
     private boolean checkNext() {
-        Paragrep grep;
-        int count;
         boolean result = true;
-        String[] reply;
 
-        reply = jdb.receiveReplyFor(JdbCommand.where);
-
-        grep = new Paragrep(reply);
-        count = grep.find(DEBUGGEE_THREAD + "." + checkedMethods[2]);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.where);
+        var grep = new Paragrep(reply);
+        int count = grep.find(DEBUGGEE_THREAD + "." + checkedMethods[2]);
         if (count > 0) {
             log.complain("Debuggee is suspended in wrong method after 'next' command: " + DEBUGGEE_THREAD + "." + checkedMethods[2]);
             result = false;

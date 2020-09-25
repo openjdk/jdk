@@ -98,16 +98,12 @@ public class connect003 extends JdbTest {
     }
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        Vector<String> v;
-
         jdb.contToExit(1);
 
         if (argumentHandler.isLaunchingConnector()) {
-            reply = jdb.getTotalReply();
-            grep = new Paragrep(reply);
-            v = new Vector<>();
+            String[] reply = jdb.getTotalReply();
+            var grep = new Paragrep(reply);
+            var v = new Vector<String>();
             v.add(JdbCommand.run);
             v.add(DEBUGGEE_CLASS);
             if (grep.find(v) != 1) {

@@ -125,14 +125,11 @@ public class print002 extends JdbTest {
     }
 
     private boolean checkValue(String expr, String value) {
-        Paragrep grep;
-        String[] reply;
-        String found;
         boolean result = true;
 
-        reply = jdb.receiveReplyFor(JdbCommand.print + expr);
-        grep = new Paragrep(reply);
-        found = grep.findFirst(value);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.print + expr);
+        var grep = new Paragrep(reply);
+        String found = grep.findFirst(value);
         if (found.length() <= 0) {
             log.complain("jdb failed to report value of expression: " + expr);
             log.complain("\t expected : " + value + " ;\n\t reported: " + (reply.length > 0 ? reply[0] : ""));

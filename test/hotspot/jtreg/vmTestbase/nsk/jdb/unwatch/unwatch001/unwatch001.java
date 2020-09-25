@@ -95,8 +95,6 @@ public class unwatch001 extends JdbTest {
     static String[] checkedFields2 = {"fP1", "fU1", "fR1"};
 
     protected void runCases() {
-        String[] reply;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
 
         jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS);
@@ -116,7 +114,7 @@ public class unwatch001 extends JdbTest {
         // excessive number of cont commands in case if unwatch command does not work.
         jdb.contToExit(checkedFields.length + checkedFields2.length + 1);
 
-        reply = jdb.getTotalReply();
+        String[] reply = jdb.getTotalReply();
         if (!checkFields(DEBUGGEE_CLASS, reply, checkedFields)) {
             success = false;
         }
@@ -138,19 +136,16 @@ public class unwatch001 extends JdbTest {
     }
 
     private boolean checkFields(String className, String[] reply, String[] checkedFields) {
-        Paragrep grep;
         boolean result = true;
-        int count;
-        Vector<String> v = new Vector<>();
+        var v = new Vector<String>();
+        var grep = new Paragrep(reply);
 
-        grep = new Paragrep(reply);
-        v.add("access encountered");
         for (String checkedField : checkedFields) {
             v.removeAllElements();
             v.add("access encountered");
             v.add(className + "." + checkedField);
 
-            count = grep.find(v);
+            int count = grep.find(v);
             if (count != 1) {
                 log.complain("jdb reported wrong number of access to the field " + className + "." + checkedField);
                 log.complain("Should be 1, reported: " + count);

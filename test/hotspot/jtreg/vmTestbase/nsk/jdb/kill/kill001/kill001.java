@@ -93,15 +93,10 @@ public class kill001 extends JdbTest {
     static int numThreads = nsk.jdb.kill.kill001.kill001a.numThreads;
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        String found;
-        String[] threads;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.cont);
 
-        threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+        String[] threads = jdb.getThreadIds(DEBUGGEE_THREAD);
 
         if (threads.length != numThreads) {
             log.complain("jdb should report " + numThreads + " instance of " + DEBUGGEE_THREAD);
@@ -128,8 +123,8 @@ public class kill001 extends JdbTest {
 
         reply = jdb.receiveReplyForWithMessageWait(JdbCommand.eval + DEBUGGEE_RESULT,
                 DEBUGGEE_RESULT + " =");
-        grep = new Paragrep(reply);
-        found = grep.findFirst(DEBUGGEE_RESULT + " =");
+        var grep = new Paragrep(reply);
+        String found = grep.findFirst(DEBUGGEE_RESULT + " =");
         if (found.length() > 0) {
             if (!found.contains(DEBUGGEE_RESULT + " = 0")) {
                 log.complain("Not all " + MYTHREAD + "s were killed. " + found + " remaining");

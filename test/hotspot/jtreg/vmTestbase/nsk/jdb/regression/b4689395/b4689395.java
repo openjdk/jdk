@@ -144,20 +144,20 @@ public class b4689395 extends JdbTest {
 
     public b4689395() {
         classFile = ClassLoadUtils.getRedefineClassFileName(DEBUGGEE_CLASS);
-        if (classFile == null)
+        if (classFile == null) {
             throw new TestFailure("Unable to find redefine class file in classpath for: " + DEBUGGEE_CLASS);
+        }
     }
 
     protected void runCases() {
-        String[] reply;
         jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + LINE_NUMBER);
         jdb.receiveReplyFor(JdbCommand.cont);
 
         if (new File(classFile).exists()) {
             jdb.receiveReplyFor(JdbCommand.redefine + DEBUGGEE_CLASS + " " + classFile);
-            reply = jdb.receiveReplyFor(JdbCommand.next);
+            String[] reply = jdb.receiveReplyFor(JdbCommand.next);
 
-            Paragrep grep = new Paragrep(reply);
+            var grep = new Paragrep(reply);
             if (grep.find(ERROR_MESSAGE) != 0) {
                 log.complain("'" + ERROR_MESSAGE + "' is not expected to be "
                         + "printed after 'next' command.");

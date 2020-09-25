@@ -104,11 +104,6 @@ public class exclude001 extends JdbTest {
     static final String SUN_METHOD = "sun.util.calendar.Gregorian";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-        String[] threads;
-
         String oldExclude = "";
         boolean javaTraced = false;
         boolean comTraced = false;
@@ -117,12 +112,11 @@ public class exclude001 extends JdbTest {
         jdb.setBreakpointInMethod(LAST_BREAK);
 
         // getting predefined 'exclude' value
-        reply = jdb.receiveReplyFor(JdbCommand.exclude);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.exclude);
         if (reply.length == 0) {
             log.complain("Predefined excluded lists of classes is empty");
             success = false;
         } else {
-
             oldExclude = reply[0];
 
             for (int testCase = 0; testCase < exclude001a.numThreads; testCase++) {
@@ -130,8 +124,7 @@ public class exclude001 extends JdbTest {
                 reply = jdb.receiveReplyFor(JdbCommand.cont);
 
                 if (jdb.isAtBreakpoint(reply, LAST_BREAK)) {
-
-                    threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+                    String[] threads = jdb.getThreadIds(DEBUGGEE_THREAD);
 
                     if (threads.length != 1) {
                         log.complain("jdb should report 1 instance of " + DEBUGGEE_THREAD);
@@ -158,8 +151,8 @@ public class exclude001 extends JdbTest {
                         while (true) {
                             reply = jdb.receiveReplyForWithMessageWait(JdbCommand.cont, expectedPrompt);
 
-                            grep = new Paragrep(reply);
-                            count = grep.find(JAVA_CORE_METHOD);
+                            var grep = new Paragrep(reply);
+                            int count = grep.find(JAVA_CORE_METHOD);
                             if (count > 0) {
                                 if (testCase != 0) {
                                     javaTraced = true;

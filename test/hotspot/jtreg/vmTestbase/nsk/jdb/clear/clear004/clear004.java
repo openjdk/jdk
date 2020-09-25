@@ -87,9 +87,6 @@ public class clear004 extends JdbTest {
     static final String REMOVED_SAMPLE = "Removed:";
 
     protected void runCases() {
-        Paragrep grep;
-        int count;
-
         for (String breakpoint : BREAKPOINTS) {
             log.display("Setting breakpoint at " + breakpoint);
             jdb.receiveReplyFor(JdbCommand.stop_at + breakpoint);
@@ -101,8 +98,8 @@ public class clear004 extends JdbTest {
 
         jdb.contToExit(3);
 
-        grep = new Paragrep(jdb.getTotalReply());
-        count = grep.find(Jdb.BREAKPOINT_HIT);
+        var grep = new Paragrep(jdb.getTotalReply());
+        int count = grep.find(Jdb.BREAKPOINT_HIT);
         if (count != 3) {
             log.complain("Should hit 3 breakpoints.");
             log.complain("Breakpoint hit count reported: " + count);
@@ -116,15 +113,12 @@ public class clear004 extends JdbTest {
     }
 
     private boolean checkBreakpoint(String breakpoint, Paragrep grep) {
-        String found;
         boolean result = true;
-        Vector<String> v;
-
-        v = new Vector<>();
+        var v = new Vector<String>();
         v.add(Jdb.BREAKPOINT_HIT);
         v.add(breakpoint);
 
-        found = grep.findFirst(v);
+        String found = grep.findFirst(v);
         if (found.length() > 0) {
             log.complain("Wrong hit at removed breakpoint at:" + breakpoint);
             result = false;
@@ -133,21 +127,17 @@ public class clear004 extends JdbTest {
     }
 
     private boolean checkClear(String breakpoint) {
-        Paragrep grep;
-        String found;
-        String[] reply;
         boolean result = true;
-        Vector<String> v;
 
-        v = new Vector<>();
+        var v = new Vector<String>();
         v.add(REMOVED_SAMPLE);
         v.add(breakpoint);
 
         log.display("Clearing breakpoint at: " + breakpoint);
-        reply = jdb.receiveReplyFor(JdbCommand.clear + breakpoint);
-        grep = new Paragrep(reply);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.clear + breakpoint);
+        var grep = new Paragrep(reply);
 
-        found = grep.findFirst(v);
+        String found = grep.findFirst(v);
         if (found.length() == 0) {
             log.complain("Failed to clear breakpoint at: " + breakpoint);
             result = false;

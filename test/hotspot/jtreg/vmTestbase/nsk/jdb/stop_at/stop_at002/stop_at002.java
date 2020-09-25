@@ -98,16 +98,13 @@ public class stop_at002 extends JdbTest {
     }
 
     private boolean checkStop(String location) {
-        Paragrep grep;
-        String[] reply;
-        String found;
         boolean result = true;
 
         log.display("Trying to set breakpoint at line: " + location);
-        reply = jdb.receiveReplyFor(JdbCommand.stop_at + location);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.stop_at + location);
 
-        grep = new Paragrep(reply);
-        found = grep.findFirst(FAILURE_PATTERN);
+        var grep = new Paragrep(reply);
+        String found = grep.findFirst(FAILURE_PATTERN);
         if (found.length() > 0) {
             log.complain("jdb failed to set line breakpoint at line: " + found);
             result = false;

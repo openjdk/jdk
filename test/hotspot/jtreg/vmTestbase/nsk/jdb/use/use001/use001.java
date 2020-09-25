@@ -85,9 +85,6 @@ public class use001 extends JdbTest {
     static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-
         String path = "";
         String srcdir = Utils.TEST_SRC;
 
@@ -95,7 +92,7 @@ public class use001 extends JdbTest {
 //        reply = jdb.receiveReplyFor(JdbCommand.cont);
 
         while (true) {
-            reply = jdb.receiveReplyFor(JdbCommand.use);
+            String[] reply = jdb.receiveReplyFor(JdbCommand.use);
 /*
             if (reply.length == 0) {
                 log.complain("Empty reply on first 'use' command");
@@ -123,7 +120,7 @@ public class use001 extends JdbTest {
             }
 
             reply = jdb.receiveReplyFor(JdbCommand.use);
-            grep = new Paragrep(reply);
+            var grep = new Paragrep(reply);
             if (grep.find(srcdir) == 0) {
                 log.complain("Current source directory should be in source file path");
                 success = false;

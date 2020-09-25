@@ -91,13 +91,11 @@ public class where006 extends JdbTest {
     };
 
     protected void runCases() {
-        String[] reply;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
         String[] threadIds = jdb.getThreadIds(PACKAGE_NAME + ".MyThread");
-        reply = jdb.receiveReplyFor(JdbCommand.where + "all");
+        String[] reply = jdb.receiveReplyFor(JdbCommand.where + "all");
         for (int i = 0; i < where006a.numThreads; i++) {
             checkFrames(threadIds[i], reply, 5);
         }
@@ -111,19 +109,15 @@ public class where006 extends JdbTest {
     }
 
     void checkFrames(String threadId, String[] reply, int expectedVal) {
-        Paragrep grep;
-        int count;
-        String found;
-
-        grep = new Paragrep(reply);
+        var grep = new Paragrep(reply);
         for (String[] frame : FRAMES) {
-            count = grep.find(frame[0]);
+            int count = grep.find(frame[0]);
             if (count != expectedVal) {
                 failure("Unexpected number of occurencies of the stack frame: " + frame[0] +
                         " for thread " + threadId +
                         "\n\t Expected number of occurence: " + expectedVal + ", got : " + count);
                 if (count > 0) {
-                    found = grep.findFirst(frame[0]);
+                    String found = grep.findFirst(frame[0]);
                     if (!found.contains(frame[1])) {
                         failure("Unexpected location in the stack frame: " + frame[0] +
                                 " for thread " + threadId +

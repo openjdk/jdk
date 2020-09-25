@@ -97,7 +97,6 @@ public class read001 extends JdbTest {
     static final int SCENARIO_COMMANDS_COUNT = 5;
 
     protected void runCases() {
-        String[] reply;
         String srcdir = Utils.TEST_SRC;
 
         // stop in lastBreak() method
@@ -109,7 +108,7 @@ public class read001 extends JdbTest {
 
         String command = JdbCommand.read + srcdir + File.separator + SCENARIO_FILE;
         int count = SCENARIO_COMMANDS_COUNT + 1;
-        reply = jdb.receiveReplyFor(command, true, count);
+        String[] reply = jdb.receiveReplyFor(command, true, count);
 
         if (!checkCommands(reply)) {
             success = false;
@@ -119,11 +118,10 @@ public class read001 extends JdbTest {
     }
 
     private boolean checkCommands(String[] reply) {
-        Paragrep grep;
         boolean result = true;
         int count;
 
-        grep = new Paragrep(reply);
+        var grep = new Paragrep(reply);
 
         // check 'threads'
         log.display("Check reply for command: classes");

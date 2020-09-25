@@ -98,13 +98,8 @@ public class where005 extends JdbTest {
     };
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-        Vector<String> v;
-
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
-        grep = new Paragrep(reply);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.cont);
+        var grep = new Paragrep(reply);
 
         if (grep.find("NullPointerException") == 0) {
             failure("Expected NullPointerException is not thrown");
@@ -113,10 +108,10 @@ public class where005 extends JdbTest {
             grep = new Paragrep(reply);
 
             for (String[] frame : FRAMES) {
-                v = new Vector<>();
+                var v = new Vector<String>();
                 v.add(frame[0]);
                 v.add(frame[1]);
-                count = grep.find(v);
+                int count = grep.find(v);
                 if (count != 1) {
                     failure("Unexpected number or location of the stack frame: " + frame[0] +
                             "\n\texpected value : 1, got one: " + count);

@@ -92,19 +92,17 @@ public class resume002 extends JdbTest {
     static final String THREAD_NAME = "MyThread";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
         String[] threadIds = jdb.getThreadIds(PACKAGE_NAME + "." + THREAD_NAME);
 
-        reply = jdb.receiveReplyFor(JdbCommand.suspend);
-        grep = new Paragrep(reply);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.suspend);
+        var grep = new Paragrep(reply);
         if (grep.find("All threads suspended") == 0) {
             failure("jdb cannot suspend all threads");
         }
+
         reply = jdb.receiveReplyFor(JdbCommand.resume, false);
         grep = new Paragrep(reply);
         if (grep.find("All threads resumed") == 0) {

@@ -90,9 +90,6 @@ public class reenter001 extends JdbTest {
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + "." + MYTHREAD;
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
@@ -109,7 +106,7 @@ public class reenter001 extends JdbTest {
 
             jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak()
 
-            reply = jdb.receiveReplyFor(JdbCommand.where);
+            String[] reply = jdb.receiveReplyFor(JdbCommand.where);
             if (!checkStack(reply, "func5", "[1]", "lastBreak", false)) {
                 success = false;
             }
@@ -129,7 +126,7 @@ public class reenter001 extends JdbTest {
             }
 
             reply = jdb.receiveReplyFor(JdbCommand.locals);
-            grep = new Paragrep(reply);
+            var grep = new Paragrep(reply);
             if (grep.find("Internal exception") > 0) {
                 log.complain("Internal exception was thrown while 'locals' command");
                 for (String s : reply) {
@@ -145,12 +142,11 @@ public class reenter001 extends JdbTest {
     }
 
     private boolean checkStack(String[] reply, String shouldBe, String frameNum, String shouldNotBe, boolean reenter) {
-        Paragrep grep;
-        Vector<String> v = new Vector<>();
         boolean result = true;
         int count;
 
-        grep = new Paragrep(reply);
+        var grep = new Paragrep(reply);
+        var v = new Vector<String>();
         v.add(frameNum);
         v.add(DEBUGGEE_THREAD + "." + shouldBe);
         if ((count = grep.find(v)) != 1) {

@@ -107,15 +107,11 @@ public class class001 extends JdbTest {
     }
 
     private boolean checkClass(String className) {
-        String[] reply;
-        Paragrep grep;
-        String found;
         boolean result = true;
 
-        reply = jdb.receiveReplyFor(JdbCommand._class + className);
-
-        grep = new Paragrep(reply);
-        found = grep.findFirst(NOT_VALID_SAMPLE);
+        String[] reply = jdb.receiveReplyFor(JdbCommand._class + className);
+        var grep = new Paragrep(reply);
+        String found = grep.findFirst(NOT_VALID_SAMPLE);
         if (found.length() > 0) {
             log.complain("Failed to report class " + className);
             result = false;

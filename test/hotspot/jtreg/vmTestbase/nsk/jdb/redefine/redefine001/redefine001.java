@@ -103,16 +103,13 @@ public class redefine001 extends JdbTest {
     static final String SECOND_REDEFINITION = BEFORE_REDEFINITION;
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
         jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak()
 
-        reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_CLASS + ".flag");
-        grep = new Paragrep(reply);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_CLASS + ".flag");
+        var grep = new Paragrep(reply);
         if (grep.find(BEFORE_REDEFINITION) == 0) {
             log.complain("Wrong value of redefine001a.flag before redefinition: " + (reply.length > 0 ? reply[0] : ""));
             success = false;

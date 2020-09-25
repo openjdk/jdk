@@ -95,8 +95,6 @@ public class monitor001 extends JdbTest {
     };
 
     protected void runCases() {
-        String[] reply;
-
         jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + LINE_NUMBER);
 
         for (String checkedCommand : CHECKED_COMMANDS) {
@@ -106,7 +104,7 @@ public class monitor001 extends JdbTest {
         int repliesCount = CHECKED_COMMANDS.length + 1;
         jdb.receiveReplyFor(JdbCommand.cont, true, repliesCount);
 
-        reply = jdb.receiveReplyFor(JdbCommand.monitor);
+        String[] reply = jdb.receiveReplyFor(JdbCommand.monitor);
         if (!checkMonitors(reply)) {
             success = false;
         }
@@ -120,13 +118,12 @@ public class monitor001 extends JdbTest {
     }
 
     private boolean checkMonitors(String[] reply) {
-        Paragrep grep;
         boolean result = true;
-        int count;
 
-        grep = new Paragrep(reply);
+        var grep = new Paragrep(reply);
         for (String checkedCommand : CHECKED_COMMANDS) {
-            if ((count = grep.find(checkedCommand)) != 1) {
+            int count =  grep.find(checkedCommand);
+            if (count != 1) {
                 log.complain("Wrong number of monitor command: " + checkedCommand);
                 log.complain("    Expected: 1; found: " + count);
                 result = false;
@@ -137,14 +134,13 @@ public class monitor001 extends JdbTest {
     }
 
     private boolean checkCommands(String[] reply) {
-        Paragrep grep;
-        Vector<String> v = new Vector<>();
         boolean result = true;
+
+        var grep = new Paragrep(reply);
         int count;
 
-        grep = new Paragrep(reply);
-
         // check 'threads'
+        var v = new Vector<String>();
         v.add("java.lang.Thread");
         v.add("main");
         if ((count = grep.find(v)) != 1) {

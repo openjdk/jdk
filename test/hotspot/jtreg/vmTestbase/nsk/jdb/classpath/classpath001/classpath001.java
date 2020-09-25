@@ -76,14 +76,10 @@ public class classpath001 extends JdbTest {
     static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        String found;
+        String[] reply = jdb.receiveReplyFor(JdbCommand.classpath);
 
-        reply = jdb.receiveReplyFor(JdbCommand.classpath);
-
-        grep = new Paragrep(reply);
-        found = grep.findFirst("lasspath");
+        var grep = new Paragrep(reply);
+        String found = grep.findFirst("lasspath");
         if (found.length() == 0) {
             log.complain("Failed to report classpath");
             success = false;

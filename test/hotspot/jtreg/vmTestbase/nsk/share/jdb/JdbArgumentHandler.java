@@ -149,7 +149,6 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
      * @see #parseArguments()
      */
     protected void checkOptions() {
-
         super.checkOptions();
     }
 
@@ -182,9 +181,11 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
      */
     public static List<String> enwrapJavaOptions(String javaOptions) {
         List<String> result = new ArrayList<String>();
-        for (String option : javaOptions.split("\\s+"))
-            if (option.length() > 0)
+        for (String option : javaOptions.split("\\s+")) {
+            if (option.length() > 0) {
                 result.add("-J" + option);
+            }
+        }
         return result;
     }
 
