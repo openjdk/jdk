@@ -212,6 +212,11 @@ public class AlgorithmId implements Serializable, DerEncoder {
                     || algid.equals(SHA512withECDSA_oid)) {
                 // RFC 4055 3.3: when an RSASSA-PSS key does not require
                 // parameter validation, field is absent.
+                // RFC 8410 3: for id-X25519, id-X448, id-Ed25519, and
+                // id-Ed448, the parameters must be absent.
+                // RFC 5758 3.2: the encoding must omit the parameters field
+                // for ecdsa-with-SHA224, ecdsa-with-SHA256, ecdsa-with-SHA384
+                // and ecdsa-with-SHA512.
             } else {
                 bytes.putNull();
             }
