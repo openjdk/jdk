@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,9 @@ import java.util.*;
  */
 public abstract class Filter {
 
+    /**
+     * Constructor for subclasses to call.
+     */
     protected Filter () {}
 
     /**
@@ -55,6 +58,13 @@ public abstract class Filter {
         private ListIterator<Filter> iter;
         private HttpHandler handler;
 
+        /**
+         * Creates a {@code Chain} instance with given filters and handler.
+         *
+         * @param filters The filters that make up the Chain
+         * @param handler The HttpHandler that will be invoked after the final
+         *                Filter has finished
+         */
         public Chain (List<Filter> filters, HttpHandler handler) {
             iter = filters.listIterator();
             this.handler = handler;

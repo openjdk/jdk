@@ -544,30 +544,6 @@ GrowableArray<Klass*>* MetaspaceShared::collected_klasses() {
   return _global_klass_objects;
 }
 
-static void remove_unshareable_in_classes() {
-  for (int i = 0; i < _global_klass_objects->length(); i++) {
-    Klass* k = _global_klass_objects->at(i);
-    if (!k->is_objArray_klass()) {
-      // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
-      // on their array classes.
-      assert(k->is_instance_klass() || k->is_typeArray_klass(), "must be");
-      k->remove_unshareable_info();
-    }
-  }
-}
-
-static void remove_java_mirror_in_classes() {
-  for (int i = 0; i < _global_klass_objects->length(); i++) {
-    Klass* k = _global_klass_objects->at(i);
-    if (!k->is_objArray_klass()) {
-      // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
-      // on their array classes.
-      assert(k->is_instance_klass() || k->is_typeArray_klass(), "must be");
-      k->remove_java_mirror();
-    }
-  }
-}
-
 static void rewrite_nofast_bytecode(const methodHandle& method) {
   BytecodeStream bcs(method);
   while (!bcs.is_last_bytecode()) {
@@ -587,21 +563,9 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
   }
 }
 
-// Walk all methods in the class list to ensure that they won't be modified at
-// run time. This includes:
 // [1] Rewrite all bytecodes as needed, so that the ConstMethod* will not be modified
 //     at run time by RewriteBytecodes/RewriteFrequentPairs
 // [2] Assign a fingerprint, so one doesn't need to be assigned at run-time.
-static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread) {
-  for (int i = 0; i < _global_klass_objects->length(); i++) {
-    Klass* k = _global_klass_objects->at(i);
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(thread, ik);
-    }
-  }
-}
-
 void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
   for (int i = 0; i < ik->methods()->length(); i++) {
     methodHandle m(thread, ik->methods()->at(i));
@@ -645,7 +609,10 @@ public:
 class StaticArchiveBuilder : public ArchiveBuilder {
 public:
   StaticArchiveBuilder(DumpRegion* rw_region, DumpRegion* ro_region)
-    : ArchiveBuilder(rw_region, ro_region) {}
+    : ArchiveBuilder(rw_region, ro_region) {
+    _alloc_bottom = address(SharedBaseAddress);
+    _buffer_to_target_delta = 0;
+  }
 
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) {
     FileMapInfo::metaspace_pointers_do(it, false);
@@ -668,13 +635,6 @@ public:
 
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
-
-  log_info(cds)("Removing java_mirror ... ");
-  if (!HeapShared::is_heap_object_archiving_allowed()) {
-    Universe::clear_basic_type_mirrors();
-  }
-  remove_java_mirror_in_classes();
-  log_info(cds)("done. ");
 
   SystemDictionaryShared::write_to_archive();
 
@@ -765,18 +725,9 @@ void VM_PopulateDumpSharedSpace::doit() {
   SystemDictionaryShared::check_excluded_classes();
 
   StaticArchiveBuilder builder(&_rw_region, &_ro_region);
+  builder.set_current_dump_space(&_mc_region);
   builder.gather_klasses_and_symbols();
   _global_klass_objects = builder.klasses();
-
-  // Ensure the ConstMethods won't be modified at run-time
-  log_info(cds)("Updating ConstMethods ... ");
-  rewrite_nofast_bytecodes_and_calculate_fingerprints(THREAD);
-  log_info(cds)("done. ");
-
-  // Remove all references outside the metadata
-  log_info(cds)("Removing unshareable information ... ");
-  remove_unshareable_in_classes();
-  log_info(cds)("done. ");
 
   builder.gather_source_objs();
 
@@ -786,6 +737,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   {
     _mc_region.pack(&_rw_region);
+    builder.set_current_dump_space(&_rw_region);
     builder.dump_rw_region();
 #if INCLUDE_CDS_JAVA_HEAP
     if (MetaspaceShared::use_full_module_graph()) {
@@ -798,6 +750,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   }
   {
     _rw_region.pack(&_ro_region);
+    builder.set_current_dump_space(&_ro_region);
     builder.dump_ro_region();
 #if INCLUDE_CDS_JAVA_HEAP
     if (MetaspaceShared::use_full_module_graph()) {
@@ -817,6 +770,9 @@ void VM_PopulateDumpSharedSpace::doit() {
   dump_java_heap_objects();
 
   builder.relocate_well_known_klasses();
+
+  log_info(cds)("Make classes shareable");
+  builder.make_klasses_shareable();
 
   char* serialized_data = dump_read_only_tables();
   _ro_region.pack();
@@ -871,9 +827,9 @@ void VM_PopulateDumpSharedSpace::doit() {
             "for testing purposes only and should not be used in a production environment");
   }
 
-  // There may be other pending VM operations that operate on the InstanceKlasses,
-  // which will fail because InstanceKlasses::remove_unshareable_info()
-  // has been called. Forget these operations and exit the VM directly.
+  // There may be pending VM operations. We have changed some global states
+  // (such as SystemDictionary::_well_known_klasses) that may cause these VM operations
+  // to fail. For safety, forget these operations and exit the VM directly.
   vm_direct_exit(0);
 }
 
