@@ -81,10 +81,10 @@ jobs:
         working-directory: jtreg
         if: steps.check_submit.outputs.should_run != 'false' && steps.jtreg.outputs.cache-hit != 'true'
 
-      - name: Store jtreg for later steps
+      - name: Store jtreg for use by later steps
         uses: actions/upload-artifact@v2
         with:
-          name: jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
         if: steps.check_submit.outputs.should_run != 'false'
 
@@ -144,7 +144,7 @@ jobs:
       - name: Restore jtreg artifact
         uses: actions/download-artifact@v2
         with:
-          name: jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
 
       - name: Checkout gtest sources
@@ -179,7 +179,7 @@ jobs:
       - name: Persist test bundles
         uses: actions/upload-artifact@v2
         with:
-          name: jdk-linux-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ env.bundleid }}
           path: |
             jdk/build/linux-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin${{ matrix.artifact }}.tar.gz
             jdk/build/linux-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin-tests${{ matrix.artifact }}.tar.gz
@@ -263,13 +263,13 @@ jobs:
       - name: Restore jtreg artifact
         uses: actions/download-artifact@v2
         with:
-          name: jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
 
       - name: Restore build artifacts
         uses: actions/download-artifact@v2
         with:
-          name: jdk-linux-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ env.bundleid }}
           path: ~/jdk-linux-x64${{ matrix.artifact }}
 
       - name: Unpack jdk
@@ -303,14 +303,13 @@ jobs:
 
       - name: Create suitable test log artifact name
         run: echo "::set-env name=logsuffix::`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`"
-        if: ${{ failure() }}
 
-      - name: Persist test logs if any test fails
+      - name: Persist test logs
         uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
         with:
           name: linux-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
           path: build/*/test-results
+        continue-on-error: true
 
   windows_x64_build:
     name: Windows x64
@@ -385,20 +384,20 @@ jobs:
       - name: Restore jtreg artifact
         uses: actions/download-artifact@v2
         with:
-          name: jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
 
       - name: Configure
         run: >
           $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
           $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
-          & bash configure 
+          & bash configure
           --with-conf-name=windows-x64
           ${{ matrix.flags }}
-          --with-version-opt="$env:GITHUB_ACTOR-$env:GITHUB_SHA" 
-          --with-version-build=0 
-          --with-boot-jdk="$HOME/bootjdk/$env:BOOT_JDK_VERSION" 
-          --with-jtreg="$HOME/jtreg" 
+          --with-version-opt="$env:GITHUB_ACTOR-$env:GITHUB_SHA"
+          --with-version-build=0
+          --with-boot-jdk="$HOME/bootjdk/$env:BOOT_JDK_VERSION"
+          --with-jtreg="$HOME/jtreg"
           --with-gtest="$env:GITHUB_WORKSPACE/gtest"
           --with-default-make-target="product-bundles test-bundles"
           --enable-jtreg-failure-handler
@@ -414,7 +413,7 @@ jobs:
       - name: Persist test bundles
         uses: actions/upload-artifact@v2
         with:
-          name: jdk-windows-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ env.bundleid }}
           path: |
             jdk/build/windows-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_windows-x64_bin${{ matrix.artifact }}.zip
             jdk/build/windows-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_windows-x64_bin-tests${{ matrix.artifact }}.tar.gz
@@ -513,13 +512,13 @@ jobs:
       - name: Restore jtreg artifact
         uses: actions/download-artifact@v2
         with:
-          name: jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
 
       - name: Restore build artifacts
         uses: actions/download-artifact@v2
         with:
-          name: jdk-windows-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ env.bundleid }}
           path: ~/jdk-windows-x64${{ matrix.artifact }}
 
       - name: Unpack jdk
@@ -559,14 +558,13 @@ jobs:
 
       - name: Create suitable test log artifact name
         run: echo ("::set-env name=logsuffix::" + ("${{ matrix.test }}" -replace "/", "_" -replace " ", "_"))
-        if: ${{ failure() }}
 
-      - name: Persist test logs if any test fails
+      - name: Persist test logs
         uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
         with:
           name: windows-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
           path: build/*/test-results
+        continue-on-error: true
 
   macos_x64_build:
     name: macOS x64
@@ -621,7 +619,7 @@ jobs:
       - name: Restore jtreg artifact
         uses: actions/download-artifact@v2
         with:
-          name: jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
 
       - name: Checkout gtest sources
@@ -656,7 +654,7 @@ jobs:
       - name: Persist test bundles
         uses: actions/upload-artifact@v2
         with:
-          name: jdk-macos-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ env.bundleid }}
           path: |
             jdk/build/macos-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }}.tar.gz
             jdk/build/macos-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}.tar.gz
@@ -740,13 +738,13 @@ jobs:
       - name: Restore jtreg artifact
         uses: actions/download-artifact@v2
         with:
-          name: jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
 
       - name: Restore build artifacts
         uses: actions/download-artifact@v2
         with:
-          name: jdk-macos-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ env.bundleid }}
           path: ~/jdk-macos-x64${{ matrix.artifact }}
 
       - name: Unpack jdk
@@ -783,11 +781,71 @@ jobs:
 
       - name: Create suitable test log artifact name
         run: echo "::set-env name=logsuffix::`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`"
-        if: ${{ failure() }}
 
-      - name: Persist test logs if any test fails
+      - name: Persist test logs
         uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
         with:
           name: macos-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
           path: build/*/test-results
+        continue-on-error: true
+
+  artifacts:
+    name: Post-process artifacts
+    runs-on: "ubuntu-latest"
+    if: always()
+    continue-on-error: true
+    needs:
+      - linux_x64_test
+      - windows_x64_test
+      - macos_x64_test
+
+    steps:
+      - name: Determine current artifacts endpoint
+        id: actions_runtime
+        uses: actions/github-script@v3
+        with:
+          script: "return { url: process.env['ACTIONS_RUNTIME_URL'], token: process.env['ACTIONS_RUNTIME_TOKEN'] }"
+
+      - name: Display current artifacts
+        run: >
+          curl -s -H 'Accept: application/json;api-version=6.0-preview'
+          -H 'Authorization: Bearer ${{ fromJson(steps.actions_runtime.outputs.result).token }}'
+          '${{ fromJson(steps.actions_runtime.outputs.result).url }}_apis/pipelines/workflows/${{ github.run_id }}/artifacts?api-version=6.0-preview'
+
+      - name: Delete transient artifacts
+        run: >
+          for url in `
+          curl -s -H 'Accept: application/json;api-version=6.0-preview'
+          -H 'Authorization: Bearer ${{ fromJson(steps.actions_runtime.outputs.result).token }}'
+          '${{ fromJson(steps.actions_runtime.outputs.result).url }}_apis/pipelines/workflows/${{ github.run_id }}/artifacts?api-version=6.0-preview' |
+          jq -r -c '.value | map(select(.name|startswith("transient_"))) | .[].url'`; do
+          curl -s -H 'Accept: application/json;api-version=6.0-preview'
+          -H 'Authorization: Bearer ${{ fromJson(steps.actions_runtime.outputs.result).token }}'
+          -X DELETE "${url}";
+          done
+
+      - name: Fetch remaining artifacts (test results)
+        uses: actions/download-artifact@v2
+        with:
+          path: test-results
+
+      - name: Delete remaining artifacts
+        run: >
+          for url in `
+          curl -s -H 'Accept: application/json;api-version=6.0-preview'
+          -H 'Authorization: Bearer ${{ fromJson(steps.actions_runtime.outputs.result).token }}'
+          '${{ fromJson(steps.actions_runtime.outputs.result).url }}_apis/pipelines/workflows/${{ github.run_id }}/artifacts?api-version=6.0-preview' |
+          jq -r -c '.value | .[].url'`; do
+          curl -s -H 'Accept: application/json;api-version=6.0-preview'
+          -H 'Authorization: Bearer ${{ fromJson(steps.actions_runtime.outputs.result).token }}'
+          -X DELETE "${url}";
+          done
+
+      - name: Determine unique bundle identifier
+        run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
+
+      - name: Upload a combined test results artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results_${{ env.bundleid }}
+          path: test-results
