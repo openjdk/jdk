@@ -50,7 +50,7 @@
  *          /test/lib
  * @build ExecDriver
  *        nsk.jvmti.IterateOverHeap.iterheap004
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      "-agentlib:iterheap004=-waittime=5 -verbose"
  *      nsk.jvmti.IterateOverHeap.iterheap004
  */

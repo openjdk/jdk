@@ -43,7 +43,7 @@
  *      newclass00
  *
  * @build ExecDriver
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      "-agentlib:hs301t004=pathToNewByteCode=./bin -waittime=5 package=nsk samples=100 mode=compiled"
  *      nsk.jvmti.scenarios.hotswap.HS301.hs301t004.hs301t004
  */

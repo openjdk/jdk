@@ -55,7 +55,7 @@
  *      newclass
  *
  * @build ExecDriver
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      "-agentlib:gf04t001=-waittime=5 segment=./bin/newclass"
  *      nsk.jvmti.scenarios.general_functions.GF04.gf04t001
  */

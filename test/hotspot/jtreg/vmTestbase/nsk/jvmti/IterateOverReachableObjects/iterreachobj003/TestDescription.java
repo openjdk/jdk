@@ -55,7 +55,7 @@
  *          /test/lib
  * @build ExecDriver
  *        nsk.jvmti.IterateOverReachableObjects.iterreachobj003
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      "-agentlib:iterreachobj003=-waittime=5 -verbose"
  *      nsk.jvmti.IterateOverReachableObjects.iterreachobj003
  */

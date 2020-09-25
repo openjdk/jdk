@@ -57,7 +57,7 @@
  *          /test/lib
  * @build ExecDriver
  *        nsk.jvmti.scenarios.allocation.AP04.ap04t003
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      "-agentlib:ap04t003=-waittime=5 -verbose"
  *      nsk.jvmti.scenarios.allocation.AP04.ap04t003
  */

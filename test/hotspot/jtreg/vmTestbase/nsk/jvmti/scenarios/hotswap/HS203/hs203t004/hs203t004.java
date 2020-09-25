@@ -46,7 +46,7 @@
  *      newclass00
  *
  * @build ExecDriver
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      -XX:-Inline
  *      -XX:CompileThreshold=900
  *      -Xbatch

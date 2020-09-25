@@ -45,12 +45,12 @@
  * @build nsk.jvmti.AttachOnDemand.sharedAgents.SimpleAgent00
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.sharedAgents.SimpleAgent00
  * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm SimpleAgent00.jar ${test.src}/../sharedAgents/SimpleAgent00.mf
  *      nsk/jvmti/AttachOnDemand/sharedAgents/SimpleAgent00.class
  *
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"

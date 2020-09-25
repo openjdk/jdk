@@ -61,7 +61,7 @@
  *      loadclass
  *
  * @build ExecDriver
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      "-agentlib:em07t002=attempts=2 -waittime=5"
  *      -XX:-UseGCOverheadLimit
  *      nsk.jvmti.scenarios.events.EM07.em07t002

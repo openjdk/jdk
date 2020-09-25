@@ -53,7 +53,7 @@
  * @build nsk.share.aod.AODTestRunner
  *        nsk.jvmti.AttachOnDemand.attach045.attach045Target
  *        nsk.jvmti.AttachOnDemand.attach045.ClassToLoad
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target "nsk.jvmti.AttachOnDemand.attach045.attach045Target -classPath ${test.class.path}"

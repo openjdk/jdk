@@ -66,13 +66,13 @@
  *
  * @comment create bootclssearch001.jar in current directory
  * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cf bootclssearch001.jar
  *      -C ./bin/newclass/
  *      nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001.class
  *
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      "-agentlib:bootclssearch_agent=-waittime=5 phasetocheck=live segment1=./bootclssearch001.jar"
  *      nsk.jvmti.AddToBootstrapClassLoaderSearch.bootclssearch001
  */

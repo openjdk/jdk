@@ -70,7 +70,7 @@
  *      newclass02 newclass01
  *
  * @build ExecDriver
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      "-agentlib:systemclssearch_agent=-waittime=5 phasetocheck=onload segment1=./bin/newclass01 segment2=./bin/newclass02"
  *      nsk.jvmti.AddToSystemClassLoaderSearch.systemclssearch003
  */

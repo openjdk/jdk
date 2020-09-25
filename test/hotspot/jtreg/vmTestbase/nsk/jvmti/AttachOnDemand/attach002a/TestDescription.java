@@ -53,14 +53,14 @@
  *
  * @comment compile newclassXX to bin/newclassXX
  * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
  *      --patch-module java.base=${test.src}/newclass00/java.base
  *      -d bin/newclass00
  *      ${test.src}/newclass00/java.base/java/lang/InterruptedException.java
  *
  * @build nsk.jvmti.AttachOnDemand.attach002a.attach002aTarget
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach002a.attach002aTarget

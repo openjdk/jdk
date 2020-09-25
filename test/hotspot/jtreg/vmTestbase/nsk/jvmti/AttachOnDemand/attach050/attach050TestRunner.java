@@ -31,7 +31,7 @@
  *          /test/lib
  * @build nsk.jvmti.AttachOnDemand.attach050.attach050TestRunner
  *        nsk.share.aod.TargetApplicationWaitingAgents
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jvmti.AttachOnDemand.attach050.attach050TestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.share.aod.TargetApplicationWaitingAgents

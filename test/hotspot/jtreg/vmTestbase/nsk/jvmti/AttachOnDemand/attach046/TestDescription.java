@@ -45,7 +45,7 @@
  *      newclass02 newclass01 newclass00
  *
  * @build nsk.jvmti.AttachOnDemand.attach046.attach046Target
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach046.attach046Target

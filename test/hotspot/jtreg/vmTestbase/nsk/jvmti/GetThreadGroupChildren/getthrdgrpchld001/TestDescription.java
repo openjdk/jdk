@@ -45,7 +45,7 @@
  *          /test/lib
  * @build ExecDriver
  *        nsk.jvmti.GetThreadGroupChildren.getthrdgrpchld001
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      "-agentlib:getthrdgrpchld001=-waittime=5 threads=10"
  *      nsk.jvmti.GetThreadGroupChildren.getthrdgrpchld001
  */

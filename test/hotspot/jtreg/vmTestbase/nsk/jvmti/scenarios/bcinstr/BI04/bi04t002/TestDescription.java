@@ -56,7 +56,7 @@
  *
  * @comment compile newclassXX to bin/newclassXX
  * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
  *      --patch-module java.base=${test.src}/newclass02/java.base
  *      -d bin/newclass02
@@ -64,7 +64,7 @@
  *      --add-reads=java.base=ALL-UNNAMED
  *      ${test.src}/newclass02/java.base/java/lang/Object.java
  *
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      --add-reads=java.base=ALL-UNNAMED
  *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:-CheckIntrinsics

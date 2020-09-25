@@ -48,7 +48,7 @@
  *          /test/lib
  * @build nsk.share.aod.AODTestRunner
  *        nsk.jvmti.AttachOnDemand.attach020.attach020Target
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach020.attach020Target

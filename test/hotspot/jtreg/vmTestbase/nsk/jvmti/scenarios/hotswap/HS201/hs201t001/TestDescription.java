@@ -71,7 +71,7 @@
  *      newclass02 newclass03 newclass newclass01
  *
  * @build ExecDriver
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      "-agentlib:hs201t001=pathToNewByteCode=./bin -waittime=5"
  *      nsk.jvmti.scenarios.hotswap.HS201.hs201t001
  */

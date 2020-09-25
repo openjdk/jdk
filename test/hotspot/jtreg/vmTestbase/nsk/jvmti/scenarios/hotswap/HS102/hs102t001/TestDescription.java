@@ -41,7 +41,7 @@
  * @build ExecDriver
  *        nsk.jvmti.scenarios.hotswap.HS102.hs102t001
  *        nsk.share.jvmti.ProfileCollector
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native ExecDriver --java
  *      "-agentlib:HotSwap=-waittime=5 package=java/lang samples=10 mode=compiled"
  *      nsk.jvmti.scenarios.hotswap.HS102.hs102t001
  */

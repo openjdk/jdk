@@ -41,7 +41,7 @@
  *          /test/lib
  * @build nsk.share.aod.AODTestRunner
  *        nsk.share.aod.TargetApplicationWaitingAgents
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
