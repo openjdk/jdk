@@ -159,12 +159,12 @@ public class TestMemoryAwareness {
 
         // in case of warnings like : "Your kernel does not support swap limit capabilities
         // or the cgroup is not mounted. Memory limited without swap."
-        // the getTotalSwapSpaceSize does not return the expected result and
-        // getFreeSwapSpaceSize returns 0
+        // the getTotalSwapSpaceSize and getFreeSwapSpaceSize return the system
+        // values as the container setup isn't supported in that case.
         try {
             out.shouldContain("OperatingSystemMXBean.getTotalSwapSpaceSize: " + expectedSwap);
         } catch(RuntimeException ex) {
-            out.shouldMatch("OperatingSystemMXBean.getTotalSwapSpaceSize: -?([0-9]+)");
+            out.shouldMatch("OperatingSystemMXBean.getTotalSwapSpaceSize: [0-9]+");
         }
 
         try {
