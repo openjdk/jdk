@@ -133,7 +133,7 @@ public abstract class BasicAuthenticator extends Authenticator {
     /**
      * Called for each incoming request to verify the
      * given name and password in the context of this
-     * Authenticator's realm. Any caching of credentials
+     * authenticator's realm. Any caching of credentials
      * must be done by the implementation of this method.
      *
      * @param username the username from the request
