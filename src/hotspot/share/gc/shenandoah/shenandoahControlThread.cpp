@@ -141,7 +141,6 @@ void ShenandoahControlThread::run_service() {
         policy->record_explicit_to_concurrent();
         mode = default_mode;
         // Unload and clean up everything
-        heap->set_process_references(heuristics->can_process_references());
         heap->set_unload_classes(heuristics->can_unload_classes());
       } else {
         policy->record_explicit_to_full();
@@ -158,7 +157,6 @@ void ShenandoahControlThread::run_service() {
         mode = default_mode;
 
         // Unload and clean up everything
-        heap->set_process_references(heuristics->can_process_references());
         heap->set_unload_classes(heuristics->can_unload_classes());
       } else {
         policy->record_implicit_to_full();
@@ -172,7 +170,6 @@ void ShenandoahControlThread::run_service() {
       }
 
       // Ask policy if this cycle wants to process references or unload classes
-      heap->set_process_references(heuristics->should_process_references());
       heap->set_unload_classes(heuristics->should_unload_classes());
     }
 
@@ -403,9 +400,6 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // Continue concurrent mark
   heap->entry_mark();
   if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_mark)) return;
-
-  // If not cancelled, can try to concurrently pre-clean
-  heap->entry_preclean();
 
   // Complete marking under STW, and start evacuation
   heap->vmop_entry_final_mark();

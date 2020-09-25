@@ -45,6 +45,9 @@ void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, Shena
   shenandoah_assert_marked(NULL, obj);
   shenandoah_assert_not_in_cset_except(NULL, obj, _heap->cancelled_gc());
 
+  if (!_heap->marking_context()->is_marked_strong(obj)) {
+    assert(_heap->marking_context()->is_marked_final(obj), "must be marked final if not marked strong");
+  }
   cl->set_strong(_heap->marking_context()->is_marked_strong(obj));
   if (task->is_not_chunked()) {
     if (obj->is_instance()) {

@@ -344,24 +344,6 @@ void ShenandoahAsserts::print_rp_failure(const char *label, BoolObjectClosure* a
   report_vm_error(file, line, msg.buffer());
 }
 
-void ShenandoahAsserts::assert_rp_isalive_not_installed(const char *file, int line) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ReferenceProcessor* rp = heap->ref_processor();
-  if (rp->is_alive_non_header() != NULL) {
-    print_rp_failure("Shenandoah assert_rp_isalive_not_installed failed", rp->is_alive_non_header(),
-                     file, line);
-  }
-}
-
-void ShenandoahAsserts::assert_rp_isalive_installed(const char *file, int line) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ReferenceProcessor* rp = heap->ref_processor();
-  if (rp->is_alive_non_header() == NULL) {
-    print_rp_failure("Shenandoah assert_rp_isalive_installed failed", rp->is_alive_non_header(),
-                     file, line);
-  }
-}
-
 void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(Mutex* lock, const char* file, int line) {
   if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
     return;

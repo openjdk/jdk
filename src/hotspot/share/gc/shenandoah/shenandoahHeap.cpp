@@ -55,6 +55,7 @@
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
@@ -393,9 +394,6 @@ jint ShenandoahHeap::initialize() {
 
   _control_thread = new ShenandoahControlThread();
 
-  _ref_proc_mt_processing = ParallelRefProcEnabled && (ParallelGCThreads > 1);
-  _ref_proc_mt_discovery = _max_workers > 1;
-
   ShenandoahInitLogger::print();
 
   return JNI_OK;
@@ -475,7 +473,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _gc_timer(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
   _soft_ref_policy(),
   _log_min_obj_alignment_in_bytes(LogMinObjAlignmentInBytes),
-  _ref_processor(NULL),
+  _ref_processor(new ShenandoahReferenceProcessor()),
   _marking_context(NULL),
   _bitmap_size(0),
   _bitmap_regions_per_slice(0),
@@ -614,8 +612,6 @@ void ShenandoahHeap::post_initialize() {
 
   _scm->initialize(_max_workers);
   _full_gc->initialize(_gc_timer);
-
-  ref_processing_init();
 
   _heuristics->initialize();
 
@@ -1637,13 +1633,11 @@ void ShenandoahHeap::op_final_mark() {
     concurrent_mark()->cancel();
     set_concurrent_mark_in_progress(false);
 
-    if (process_references()) {
-      // Abandon reference processing right away: pre-cleaning must have failed.
-      ReferenceProcessor *rp = ref_processor();
-      rp->disable_discovery();
-      rp->abandon_partial_discovery();
-      rp->verify_no_references_recorded();
-    }
+    // Abandon reference processing right away: pre-cleaning must have failed.
+    ShenandoahReferenceProcessor* rp = ref_processor();
+    rp->disable_discovery();
+    rp->abandon_partial_discovery();
+    rp->verify_no_references_recorded();
   }
 }
 
@@ -1898,13 +1892,6 @@ void ShenandoahHeap::op_reset() {
   parallel_heap_region_iterate(&cl);
 }
 
-void ShenandoahHeap::op_preclean() {
-  if (ShenandoahPacing) {
-    pacer()->setup_for_preclean();
-  }
-  concurrent_mark()->preclean_weak_refs();
-}
-
 void ShenandoahHeap::op_full(GCCause::Cause cause) {
   ShenandoahMetricsSnapshot metrics;
   metrics.snap_before();
@@ -1946,7 +1933,6 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
       //
       // Note that we can only do this for "outside-cycle" degens, otherwise we would risk
       // changing the cycle parameters mid-cycle during concurrent -> degenerated handover.
-      set_process_references(heuristics()->can_process_references());
       set_unload_classes(heuristics()->can_unload_classes());
 
       op_reset();
@@ -2131,22 +2117,6 @@ void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool in_progress) {
   }
 }
 
-void ShenandoahHeap::ref_processing_init() {
-  assert(_max_workers > 0, "Sanity");
-
-  _ref_processor =
-    new ReferenceProcessor(&_subject_to_discovery,  // is_subject_to_discovery
-                           _ref_proc_mt_processing, // MT processing
-                           _max_workers,            // Degree of MT processing
-                           _ref_proc_mt_discovery,  // MT discovery
-                           _max_workers,            // Degree of MT discovery
-                           false,                   // Reference discovery is not atomic
-                           NULL,                    // No closure, should be installed before use
-                           true);                   // Scale worker threads
-
-  shenandoah_assert_rp_isalive_not_installed();
-}
-
 GCTracer* ShenandoahHeap::tracer() {
   return shenandoah_policy()->tracer();
 }
@@ -2282,16 +2252,8 @@ void ShenandoahHeap::set_has_forwarded_objects(bool cond) {
   set_gc_state_mask(HAS_FORWARDED, cond);
 }
 
-void ShenandoahHeap::set_process_references(bool pr) {
-  _process_references.set_cond(pr);
-}
-
 void ShenandoahHeap::set_unload_classes(bool uc) {
   _unload_classes.set_cond(uc);
-}
-
-bool ShenandoahHeap::process_references() const {
-  return _process_references.is_set();
 }
 
 bool ShenandoahHeap::unload_classes() const {
@@ -2963,22 +2925,6 @@ void ShenandoahHeap::entry_reset() {
   op_reset();
 }
 
-void ShenandoahHeap::entry_preclean() {
-  if (ShenandoahPreclean && process_references()) {
-    static const char* msg = "Concurrent precleaning";
-    ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_preclean);
-    EventMark em("%s", msg);
-
-    ShenandoahWorkerScope scope(workers(),
-                                ShenandoahWorkerPolicy::calc_workers_for_conc_preclean(),
-                                "concurrent preclean",
-                                /* check_workers = */ false);
-
-    try_inject_alloc_failure();
-    op_preclean();
-  }
-}
-
 void ShenandoahHeap::entry_uncommit(double shrink_before, size_t shrink_until) {
   static const char *msg = "Concurrent uncommit";
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_uncommit, true /* log_heap_usage */);
@@ -3055,14 +3001,9 @@ void ShenandoahHeap::deduplicate_string(oop str) {
 const char* ShenandoahHeap::init_mark_event_message() const {
   assert(!has_forwarded_objects(), "Should not have forwarded objects here");
 
-  bool proc_refs = process_references();
   bool unload_cls = unload_classes();
 
-  if (proc_refs && unload_cls) {
-    return "Pause Init Mark (process weakrefs) (unload classes)";
-  } else if (proc_refs) {
-    return "Pause Init Mark (process weakrefs)";
-  } else if (unload_cls) {
+  if (unload_cls) {
     return "Pause Init Mark (unload classes)";
   } else {
     return "Pause Init Mark";
@@ -3072,14 +3013,9 @@ const char* ShenandoahHeap::init_mark_event_message() const {
 const char* ShenandoahHeap::final_mark_event_message() const {
   assert(!has_forwarded_objects(), "Should not have forwarded objects here");
 
-  bool proc_refs = process_references();
   bool unload_cls = unload_classes();
 
-  if (proc_refs && unload_cls) {
-    return "Pause Final Mark (process weakrefs) (unload classes)";
-  } else if (proc_refs) {
-    return "Pause Final Mark (process weakrefs)";
-  } else if (unload_cls) {
+  if (unload_cls) {
     return "Pause Final Mark (unload classes)";
   } else {
     return "Pause Final Mark";
@@ -3089,14 +3025,9 @@ const char* ShenandoahHeap::final_mark_event_message() const {
 const char* ShenandoahHeap::conc_mark_event_message() const {
   assert(!has_forwarded_objects(), "Should not have forwarded objects here");
 
-  bool proc_refs = process_references();
   bool unload_cls = unload_classes();
 
-  if (proc_refs && unload_cls) {
-    return "Concurrent marking (process weakrefs) (unload classes)";
-  } else if (proc_refs) {
-    return "Concurrent marking (process weakrefs)";
-  } else if (unload_cls) {
+  if (unload_cls) {
     return "Concurrent marking (unload classes)";
   } else {
     return "Concurrent marking";

@@ -76,13 +76,6 @@
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
                                                                             \
-  product(uintx, ShenandoahRefProcFrequency, 5, EXPERIMENTAL,               \
-          "Process process weak (soft, phantom, finalizers) references "    \
-          "every Nth cycle. Normally affects concurrent GC cycles only, "   \
-          "as degenerated and full GCs would try to process references "    \
-          "regardless. Set to zero to disable reference processing "        \
-          "completely.")                                                    \
-                                                                            \
   product(uintx, ShenandoahUnloadClassesFrequency, 1, EXPERIMENTAL,         \
           "Unload the classes every Nth cycle. Normally affects concurrent "\
           "GC cycles, as degenerated and full GCs would try to unload "     \
