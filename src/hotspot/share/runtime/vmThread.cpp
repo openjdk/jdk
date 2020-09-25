@@ -288,15 +288,15 @@ class HandshakeALotClosure : public HandshakeClosure {
 };
 
 bool VMThread::handshake_alot() {
-  assert(_cur_vm_operation == NULL, "Already have an op");
-  assert(_next_vm_operation == NULL, "Already have an op");
+  assert(_cur_vm_operation == NULL, "should not have an op yet");
+  assert(_next_vm_operation == NULL, "should not have an op yet");
   if (!HandshakeALot) {
     return false;
   }
   static jlong last_halot_ms = 0;
   jlong now_ms = nanos_to_millis(os::javaTimeNanos());
   // If only HandshakeALot is set, but GuaranteedSafepointInterval is 0,
-  // we emit a handshake if it's been more than a second since last.
+  // we emit a handshake if it's been more than a second since the last one.
   jlong interval = GuaranteedSafepointInterval != 0 ? GuaranteedSafepointInterval : 1000;
   jlong deadline_ms = interval + last_halot_ms;
   if (now_ms > deadline_ms) {
@@ -357,10 +357,10 @@ void VMThread::wait_until_executed(VM_Operation* op) {
   {
     // Wait until the operation has been processed
     TraceTime timer("Waiting for VM operation to be completed", TRACETIME_LOG(Trace, vmthread));
-    // _next_vm_operation is cleared holding VMOperation_lock after it have been
-    // executed. We wait until _next_vm_operation not our op.
+    // _next_vm_operation is cleared holding VMOperation_lock after it has been
+    // executed. We wait until _next_vm_operation is not our op.
     while (_next_vm_operation == op) {
-      // VM Thread can process it once we unlocks the mutex on wait.
+      // VM Thread can process it once we unlock the mutex on wait.
       ml.wait();
     }
   }
@@ -380,11 +380,11 @@ void VMThread::inner_execute(VM_Operation* op) {
 
   VM_Operation* prev_vm_operation = NULL;
   if (_cur_vm_operation != NULL) {
-    // Check the VM operation allows nested VM operation.
-    // This normally not the case, e.g., the compiler
+    // Check that the VM operation allows nested VM operation.
+    // This is normally not the case, e.g., the compiler
     // does not allow nested scavenges or compiles.
     if (!_cur_vm_operation->allow_nested_vm_operations()) {
-      fatal("Nested VM operation %s requested by operation %s",
+      fatal("Unexpected nested VM operation %s requested by operation %s",
             op->name(), _cur_vm_operation->name());
     }
     op->set_calling_thread(_cur_vm_operation->calling_thread());
@@ -430,7 +430,7 @@ void VMThread::wait_for_operation() {
   // Clear previous operation.
   // On first call this clears a dummy place-holder.
   _next_vm_operation = NULL;
-  // Notify operation done and notify a next operation can be installed.
+  // Notify operation is done and notify a next operation can be installed.
   ml_op_lock.notify_all();
 
   while (!should_terminate()) {
