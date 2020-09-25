@@ -66,8 +66,8 @@ public:
 
   // last_Java_sp is acting, among other things, as the acquire/release target:
   // when last_Java_sp is not NULL, has_last_frame() is true, and the rest of
-  // the frame has to be valid. This means the reads of last_Java_sp should be
-  // first and acquiring, and last_Java_sp stores should be last and releasing.
+  // the frame has to be valid. This means last_Java_sp loads should be first
+  // and acquiring, and last_Java_sp stores should be last and releasing.
   // Additionally, resets of the frame should be as prompt as possible, therefore
   // we got to "flush" it with trailing fences.
 
