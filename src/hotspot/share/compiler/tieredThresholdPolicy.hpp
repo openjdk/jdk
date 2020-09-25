@@ -166,8 +166,6 @@ class TieredThresholdPolicy : public CompilationPolicy {
   jlong _start_time;
   int _c1_count, _c2_count;
 
-  // Check if the counter is big enough and set carry (effectively infinity).
-  inline void set_carry_if_necessary(InvocationCounter *counter);
   // Set carry flags in the counters (in Method* and MDO).
   inline void handle_counter_overflow(Method* method);
   // Verify that a level is consistent with the compilation mode
