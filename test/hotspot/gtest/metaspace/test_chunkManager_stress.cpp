@@ -24,17 +24,14 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
-
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestContexts.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
 #include "metaspaceGtestSparseArray.hpp"
-
 
 using metaspace::ChunkManager;
 using metaspace::Settings;

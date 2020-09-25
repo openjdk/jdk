@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
@@ -33,7 +32,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestContexts.hpp"

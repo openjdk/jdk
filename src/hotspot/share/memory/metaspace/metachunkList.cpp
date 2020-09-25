@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/metachunkList.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

@@ -24,11 +24,9 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/blockTree.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/resourceArea.hpp"
-
 // #define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
 

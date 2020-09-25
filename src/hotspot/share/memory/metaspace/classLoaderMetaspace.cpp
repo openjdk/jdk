@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "logging/log.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/internalStats.hpp"

@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"

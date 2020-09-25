@@ -24,14 +24,12 @@
  */
 
 #include "precompiled.hpp"
-
 #include "logging/log.hpp"
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
-
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"

@@ -24,9 +24,7 @@
  */
 
 #include "precompiled.hpp"
-
 #include "runtime/os.hpp"
-
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
 

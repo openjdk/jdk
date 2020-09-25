@@ -24,17 +24,14 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/freeChunkList.hpp"
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
-
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestContexts.hpp"
-
 
 using metaspace::ChunkManager;
 using metaspace::FreeChunkListVector;

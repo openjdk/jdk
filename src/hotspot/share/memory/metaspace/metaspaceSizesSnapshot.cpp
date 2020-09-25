@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspace.hpp"
 

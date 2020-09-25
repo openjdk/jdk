@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/blockTree.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/debug.hpp"

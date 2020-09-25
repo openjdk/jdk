@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/os.hpp"
-
 #include "unittest.hpp"
 
 /////////////////////////////////////////////////////////////////////

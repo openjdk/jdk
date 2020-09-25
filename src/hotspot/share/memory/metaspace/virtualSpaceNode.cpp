@@ -24,9 +24,7 @@
  */
 
 #include "precompiled.hpp"
-
 #include "logging/log.hpp"
-
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
@@ -40,11 +38,9 @@
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "memory/metaspace.hpp"
-
 #include "runtime/globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

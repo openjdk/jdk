@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
 

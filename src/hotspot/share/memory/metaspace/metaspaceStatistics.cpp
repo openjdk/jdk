@@ -24,10 +24,8 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
-
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"

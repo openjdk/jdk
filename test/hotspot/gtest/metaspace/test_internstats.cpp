@@ -24,9 +24,7 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/internalStats.hpp"
-
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
 

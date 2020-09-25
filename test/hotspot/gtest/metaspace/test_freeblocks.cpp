@@ -24,10 +24,8 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/freeBlocks.hpp"
-
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
 

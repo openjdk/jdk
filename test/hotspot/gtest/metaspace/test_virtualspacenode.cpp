@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
@@ -35,7 +34,6 @@
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
-
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"

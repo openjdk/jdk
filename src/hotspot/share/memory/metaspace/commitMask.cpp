@@ -24,12 +24,10 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/commitMask.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "runtime/stubRoutines.hpp"
-
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 

@@ -27,11 +27,9 @@
 #define SHARE_MEMORY_METASPACE_FREEBLOCKS_HPP
 
 #include "memory/allocation.hpp"
-
 #include "memory/metaspace/binList.hpp"
 #include "memory/metaspace/blockTree.hpp"
 #include "memory/metaspace/counters.hpp"
-
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

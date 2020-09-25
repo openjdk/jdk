@@ -30,7 +30,6 @@
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/testHelpers.hpp"
-
 #include "metaspaceGtestCommon.hpp"
 
 using metaspace::Metachunk;

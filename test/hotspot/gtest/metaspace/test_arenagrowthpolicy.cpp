@@ -24,11 +24,9 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
-
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
 
