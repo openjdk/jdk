@@ -97,17 +97,16 @@ public class locals002 extends JdbTest {
     static final int BREAKPOINT_LINE2 = 100;
 
     static final String[][] LOCALS = new String[][]{
-            {"boolVar", "true", "false"},
-            {"byteVar", "27", "12"},
-            {"charVar", "V", "A"},
-            {"shortVar", "767", "327"},
-            {"intVar", "1474", "3647"},
-            {"longVar", "21345", "65789"},
-            {"floatVar", "3.141", "4.852"},
-            {"doubleVar", "2.578", "3.8976"},
-            {"objVar", "objVarString", "objArgString"},
-            {"arrVar", "int[5]", "int[3]"}
-
+            {"boolVar",     "true",         "false"},
+            {"byteVar",     "27",           "12"},
+            {"charVar",     "V",            "A"},
+            {"shortVar",    "767",          "327"},
+            {"intVar",      "1474",         "3647"},
+            {"longVar",     "21345",        "65789"},
+            {"floatVar",    "3.141",        "4.852"},
+            {"doubleVar",   "2.578",        "3.8976"},
+            {"objVar",      "objVarString", "objArgString"},
+            {"arrVar",      "int[5]",       "int[3]"}
     };
 
     protected void runCases() {
