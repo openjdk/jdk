@@ -47,6 +47,11 @@ import sun.swing.SwingUtilities2;
 public class BasicHTML {
 
     /**
+     * Constructs a {@code BasicHTML}.
+     */
+    public BasicHTML() {}
+
+    /**
      * Create an html renderer for the given component and
      * string of html.
      *

@@ -266,7 +266,6 @@ class SharedRuntime: AllStatic {
 
   // To be used as the entry point for unresolved native methods.
   static address native_method_throw_unsatisfied_link_error_entry();
-  static address native_method_throw_unsupported_operation_exception_entry();
 
   static oop retrieve_receiver(Symbol* sig, frame caller);
 

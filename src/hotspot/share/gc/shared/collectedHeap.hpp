@@ -353,13 +353,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // allocation from them and necessitating allocation of new TLABs.
   virtual void ensure_parsability(bool retire_tlabs);
 
-  // Section on thread-local allocation buffers (TLABs)
-  // If the heap supports thread-local allocation buffers, it should override
-  // the following methods:
-  // Returns "true" iff the heap supports thread-local allocation buffers.
-  // The default is "no".
-  virtual bool supports_tlab_allocation() const = 0;
-
   // The amount of space available for thread-local allocation buffers.
   virtual size_t tlab_capacity(Thread *thr) const = 0;
 

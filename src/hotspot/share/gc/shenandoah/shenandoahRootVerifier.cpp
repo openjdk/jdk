@@ -74,7 +74,6 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 
   if (verify(SerialRoots)) {
     shenandoah_assert_safepoint();
-    ObjectSynchronizer::oops_do(oops);
   }
 
   if (verify(JNIHandleRoots)) {
@@ -118,7 +117,6 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
   ClassLoaderDataGraph::cld_do(&clds);
 
   JNIHandles::oops_do(oops);
-  ObjectSynchronizer::oops_do(oops);
   Universe::vm_global()->oops_do(oops);
 
   AlwaysTrueClosure always_true;
@@ -143,7 +141,6 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   ClassLoaderDataGraph::roots_cld_do(&clds, NULL);
 
   JNIHandles::oops_do(oops);
-  ObjectSynchronizer::oops_do(oops);
   Universe::vm_global()->oops_do(oops);
 
   // Do thread roots the last. This allows verification code to find
