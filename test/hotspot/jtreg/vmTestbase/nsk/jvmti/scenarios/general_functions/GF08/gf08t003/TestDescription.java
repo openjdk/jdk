@@ -58,7 +58,7 @@
  *      nsk.jvmti.scenarios.general_functions.GF08.gf08t
  *      gf08t003
  *      nsk.jvmti.scenarios.general_functions.GF08.gf08t003
- *      "Registering JNI native method"
  *      jni
+ *      Registering JNI native method
  */
 

@@ -58,7 +58,7 @@
  *      nsk.jvmti.scenarios.general_functions.GF08.gf08t
  *      gf08t002
  *      nsk.jvmti.scenarios.general_functions.GF08.gf08t002
- *      "class,load"
  *      class
+ *      class,load
  */
 

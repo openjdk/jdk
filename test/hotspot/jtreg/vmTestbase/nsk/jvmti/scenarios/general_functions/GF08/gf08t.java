@@ -26,12 +26,17 @@ package nsk.jvmti.scenarios.general_functions.GF08;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 public class gf08t {
     public static void main(String[] args) throws Exception {
         String libName = args[0];
         String className = args[1];
-        String phrase = args[2];
-        String verboseType = args[3];
+        String verboseType = args[2];
+        String phrase = Arrays.stream(args)
+                             .skip(3)
+                             .collect(Collectors.joining(" "));
 
         OutputAnalyzer oa = ProcessTools.executeTestJvm(
                 "-agentlib:" + libName + "=-waittime=5 setVerboseMode=yes",
