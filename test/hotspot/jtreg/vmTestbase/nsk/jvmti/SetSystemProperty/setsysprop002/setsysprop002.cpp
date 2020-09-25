@@ -45,7 +45,7 @@ static PropertyDesc propDescList[PROPERTIES_COUNT] = {
     {
         "nsk.jvmti.test.property",
         {
-            "initial value of nsk.jvmti.test.property",
+            "initial_value_of_nsk.jvmti.test.property",
             "OnLoad phase value of nsk.jvmti.test.property",
             "live phase value of nsk.jvmti.test.property"
         }
@@ -61,7 +61,7 @@ static PropertyDesc propDescList[PROPERTIES_COUNT] = {
     {
         "nsk.jvmti.test.property.empty.new",
         {
-            "initial value of nsk.jvmti.test.property.empty.new",
+            "initial_value_of_nsk.jvmti.test.property.empty.new",
             "",
             "live phase value of nsk.jvmti.test.property.empty.new"
         }
