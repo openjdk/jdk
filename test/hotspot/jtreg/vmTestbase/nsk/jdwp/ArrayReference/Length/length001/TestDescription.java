@@ -56,8 +56,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ArrayReference.Length.length001
- *        nsk.jdwp.ArrayReference.Length.length001a
+ * @build nsk.jdwp.ArrayReference.Length.length001a
  * @run main/othervm
  *      nsk.jdwp.ArrayReference.Length.length001
  *      -arch=${os.family}-${os.simpleArch}

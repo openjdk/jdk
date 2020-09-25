@@ -57,8 +57,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ReferenceType.Interfaces.interfaces001
- *        nsk.jdwp.ReferenceType.Interfaces.interfaces001a
+ * @build nsk.jdwp.ReferenceType.Interfaces.interfaces001a
  * @run main/othervm
  *      nsk.jdwp.ReferenceType.Interfaces.interfaces001
  *      -arch=${os.family}-${os.simpleArch}

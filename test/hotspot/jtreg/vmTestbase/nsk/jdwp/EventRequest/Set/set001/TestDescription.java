@@ -58,8 +58,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.EventRequest.Set.set001
- *        nsk.jdwp.EventRequest.Set.set001a
+ * @build nsk.jdwp.EventRequest.Set.set001a
  * @run main/othervm
  *      nsk.jdwp.EventRequest.Set.set001
  *      -arch=${os.family}-${os.simpleArch}

@@ -48,8 +48,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ThreadGroupReference.Name.name001
- *        nsk.jdwp.ThreadGroupReference.Name.name001a
+ * @build nsk.jdwp.ThreadGroupReference.Name.name001a
  * @run main/othervm
  *      nsk.jdwp.ThreadGroupReference.Name.name001
  *      -arch=${os.family}-${os.simpleArch}

@@ -43,8 +43,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ReferenceType.SignatureWithGeneric.sigwithgeneric001
- *        nsk.jdwp.ReferenceType.SignatureWithGeneric.sigwithgeneric001t
+ * @build nsk.jdwp.ReferenceType.SignatureWithGeneric.sigwithgeneric001t
  * @run main/othervm
  *      nsk.jdwp.ReferenceType.SignatureWithGeneric.sigwithgeneric001
  *      -arch=${os.family}-${os.simpleArch}

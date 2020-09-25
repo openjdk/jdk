@@ -39,8 +39,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.IDSizes.idsizes001
- *        nsk.jdwp.VirtualMachine.IDSizes.idsizes001a
+ * @build nsk.jdwp.VirtualMachine.IDSizes.idsizes001a
  * @run main/othervm
  *      nsk.jdwp.VirtualMachine.IDSizes.idsizes001
  *      -arch=${os.family}-${os.simpleArch}

@@ -65,8 +65,7 @@
  * @requires !vm.graal.enabled
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001
- *        nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001a
+ * @build nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001a
  * @run main/othervm/native
  *      nsk.jdwp.VirtualMachine.InstanceCounts.instanceCounts001.instanceCounts001
  *      -arch=${os.family}-${os.simpleArch}

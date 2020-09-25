@@ -60,8 +60,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ReferenceType.NestedTypes.nestedtypes001
- *        nsk.jdwp.ReferenceType.NestedTypes.nestedtypes001a
+ * @build nsk.jdwp.ReferenceType.NestedTypes.nestedtypes001a
  * @run main/othervm
  *      nsk.jdwp.ReferenceType.NestedTypes.nestedtypes001
  *      -arch=${os.family}-${os.simpleArch}

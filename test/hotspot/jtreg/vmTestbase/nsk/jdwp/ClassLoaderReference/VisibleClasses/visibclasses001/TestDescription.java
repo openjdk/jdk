@@ -56,8 +56,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ClassLoaderReference.VisibleClasses.visibclasses001
- *        nsk.jdwp.ClassLoaderReference.VisibleClasses.visibclasses001a
+ * @build nsk.jdwp.ClassLoaderReference.VisibleClasses.visibclasses001a
  * @run main/othervm
  *      nsk.jdwp.ClassLoaderReference.VisibleClasses.visibclasses001
  *      -arch=${os.family}-${os.simpleArch}

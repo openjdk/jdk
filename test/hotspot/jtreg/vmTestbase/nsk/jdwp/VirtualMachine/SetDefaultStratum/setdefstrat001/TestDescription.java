@@ -53,8 +53,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.SetDefaultStratum.setdefstrat001
- *        nsk.jdwp.VirtualMachine.SetDefaultStratum.setdefstrat001a
+ * @build nsk.jdwp.VirtualMachine.SetDefaultStratum.setdefstrat001a
  * @run main/othervm
  *      nsk.jdwp.VirtualMachine.SetDefaultStratum.setdefstrat001
  *      -arch=${os.family}-${os.simpleArch}

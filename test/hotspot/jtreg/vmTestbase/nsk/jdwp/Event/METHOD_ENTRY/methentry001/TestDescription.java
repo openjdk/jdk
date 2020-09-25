@@ -60,8 +60,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Event.METHOD_ENTRY.methentry001
- *        nsk.jdwp.Event.METHOD_ENTRY.methentry001a
+ * @build nsk.jdwp.Event.METHOD_ENTRY.methentry001a
  * @run main/othervm
  *      nsk.jdwp.Event.METHOD_ENTRY.methentry001
  *      -arch=${os.family}-${os.simpleArch}

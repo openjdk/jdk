@@ -53,8 +53,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ObjectReference.DisableCollection.disablecol001
- *        nsk.jdwp.ObjectReference.DisableCollection.disablecol001a
+ * @build nsk.jdwp.ObjectReference.DisableCollection.disablecol001a
  * @run main/othervm
  *      nsk.jdwp.ObjectReference.DisableCollection.disablecol001
  *      -arch=${os.family}-${os.simpleArch}

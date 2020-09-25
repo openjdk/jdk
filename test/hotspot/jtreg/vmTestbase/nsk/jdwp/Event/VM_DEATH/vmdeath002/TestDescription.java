@@ -59,8 +59,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Event.VM_DEATH.vmdeath002
- *        nsk.jdwp.Event.VM_DEATH.vmdeath002a
+ * @build nsk.jdwp.Event.VM_DEATH.vmdeath002a
  * @run main/othervm
  *      nsk.jdwp.Event.VM_DEATH.vmdeath002
  *      -arch=${os.family}-${os.simpleArch}

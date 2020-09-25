@@ -51,8 +51,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.StringReference.Value.value001
- *        nsk.jdwp.StringReference.Value.value001a
+ * @build nsk.jdwp.StringReference.Value.value001a
  * @run main/othervm
  *      nsk.jdwp.StringReference.Value.value001
  *      -arch=${os.family}-${os.simpleArch}

@@ -57,8 +57,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ThreadReference.SuspendCount.suspendcnt001
- *        nsk.jdwp.ThreadReference.SuspendCount.suspendcnt001a
+ * @build nsk.jdwp.ThreadReference.SuspendCount.suspendcnt001a
  * @run main/othervm
  *      nsk.jdwp.ThreadReference.SuspendCount.suspendcnt001
  *      -arch=${os.family}-${os.simpleArch}

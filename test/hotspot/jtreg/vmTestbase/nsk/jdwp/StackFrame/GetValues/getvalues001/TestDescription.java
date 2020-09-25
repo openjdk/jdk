@@ -60,8 +60,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.StackFrame.GetValues.getvalues001
- *        nsk.jdwp.StackFrame.GetValues.getvalues001a
+ * @build nsk.jdwp.StackFrame.GetValues.getvalues001a
  * @comment debuggee should be compiled w/ debug info
  * @clean nsk.jdwp.StackFrame.GetValues.getvalues001a
  * @compile -g:lines,source,vars ../getvalues001a.java

@@ -38,8 +38,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.Version.version001
- *        nsk.jdwp.VirtualMachine.Version.version001a
+ * @build nsk.jdwp.VirtualMachine.Version.version001a
  * @run main/othervm
  *      nsk.jdwp.VirtualMachine.Version.version001
  *      -arch=${os.family}-${os.simpleArch}

@@ -59,8 +59,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ClassType.InvokeMethod.invokemeth001
- *        nsk.jdwp.ClassType.InvokeMethod.invokemeth001a
+ * @build nsk.jdwp.ClassType.InvokeMethod.invokemeth001a
  * @run main/othervm
  *      nsk.jdwp.ClassType.InvokeMethod.invokemeth001
  *      -arch=${os.family}-${os.simpleArch}

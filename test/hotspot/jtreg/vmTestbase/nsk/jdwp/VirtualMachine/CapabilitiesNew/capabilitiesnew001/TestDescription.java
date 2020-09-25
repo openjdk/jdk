@@ -48,8 +48,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.CapabilitiesNew.capabilitiesnew001
- *        nsk.jdwp.VirtualMachine.CapabilitiesNew.capabilitiesnew001a
+ * @build nsk.jdwp.VirtualMachine.CapabilitiesNew.capabilitiesnew001a
  * @run main/othervm
  *      nsk.jdwp.VirtualMachine.CapabilitiesNew.capabilitiesnew001
  *      -arch=${os.family}-${os.simpleArch}

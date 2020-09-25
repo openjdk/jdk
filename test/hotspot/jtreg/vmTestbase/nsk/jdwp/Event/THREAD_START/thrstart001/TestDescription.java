@@ -60,8 +60,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Event.THREAD_START.thrstart001
- *        nsk.jdwp.Event.THREAD_START.thrstart001a
+ * @build nsk.jdwp.Event.THREAD_START.thrstart001a
  * @run main/othervm
  *      nsk.jdwp.Event.THREAD_START.thrstart001
  *      -arch=${os.family}-${os.simpleArch}

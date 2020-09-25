@@ -68,8 +68,7 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build ExecDriver
- * @build nsk.jdwp.Method.IsObsolete.isobsolete002
- *        nsk.jdwp.Method.IsObsolete.isobsolete002a
+ * @build nsk.jdwp.Method.IsObsolete.isobsolete002a
  *        nsk.jdwp.Method.IsObsolete.isobsolete002b
  * @run driver nsk.share.ExtraClassesBuilder
  *      newclass

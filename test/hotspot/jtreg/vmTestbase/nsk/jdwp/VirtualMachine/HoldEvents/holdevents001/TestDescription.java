@@ -51,8 +51,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.HoldEvents.holdevents001
- *        nsk.jdwp.VirtualMachine.HoldEvents.holdevents001a
+ * @build nsk.jdwp.VirtualMachine.HoldEvents.holdevents001a
  * @run main/othervm
  *      nsk.jdwp.VirtualMachine.HoldEvents.holdevents001
  *      -arch=${os.family}-${os.simpleArch}

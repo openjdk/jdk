@@ -63,8 +63,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Event.FIELD_MODIFICATION.fldmodification001
- *        nsk.jdwp.Event.FIELD_MODIFICATION.fldmodification001a
+ * @build nsk.jdwp.Event.FIELD_MODIFICATION.fldmodification001a
  * @run main/othervm
  *      nsk.jdwp.Event.FIELD_MODIFICATION.fldmodification001
  *      -arch=${os.family}-${os.simpleArch}

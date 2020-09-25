@@ -48,8 +48,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Event.Composite.composite001
- *        nsk.jdwp.Event.Composite.composite001a
+ * @build nsk.jdwp.Event.Composite.composite001a
  * @run main/othervm
  *      nsk.jdwp.Event.Composite.composite001
  *      -arch=${os.family}-${os.simpleArch}

@@ -50,8 +50,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.Dispose.dispose001
- *        nsk.jdwp.VirtualMachine.Dispose.dispose001a
+ * @build nsk.jdwp.VirtualMachine.Dispose.dispose001a
  * @run main/othervm
  *      nsk.jdwp.VirtualMachine.Dispose.dispose001
  *      -arch=${os.family}-${os.simpleArch}

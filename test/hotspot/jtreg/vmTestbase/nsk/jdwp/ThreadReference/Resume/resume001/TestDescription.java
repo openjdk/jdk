@@ -58,8 +58,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ThreadReference.Resume.resume001
- *        nsk.jdwp.ThreadReference.Resume.resume001a
+ * @build nsk.jdwp.ThreadReference.Resume.resume001a
  * @run main/othervm
  *      nsk.jdwp.ThreadReference.Resume.resume001
  *      -arch=${os.family}-${os.simpleArch}

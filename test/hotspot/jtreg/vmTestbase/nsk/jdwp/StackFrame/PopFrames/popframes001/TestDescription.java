@@ -59,8 +59,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.StackFrame.PopFrames.popframes001
- *        nsk.jdwp.StackFrame.PopFrames.popframes001a
+ * @build nsk.jdwp.StackFrame.PopFrames.popframes001a
  * @run main/othervm
  *      nsk.jdwp.StackFrame.PopFrames.popframes001
  *      -arch=${os.family}-${os.simpleArch}

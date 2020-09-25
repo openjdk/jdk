@@ -56,8 +56,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ThreadReference.FrameCount.framecnt001
- *        nsk.jdwp.ThreadReference.FrameCount.framecnt001a
+ * @build nsk.jdwp.ThreadReference.FrameCount.framecnt001a
  * @run main/othervm
  *      nsk.jdwp.ThreadReference.FrameCount.framecnt001
  *      -arch=${os.family}-${os.simpleArch}

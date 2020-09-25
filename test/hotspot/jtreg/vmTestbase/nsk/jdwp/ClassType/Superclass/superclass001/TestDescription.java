@@ -55,8 +55,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ClassType.Superclass.superclass001
- *        nsk.jdwp.ClassType.Superclass.superclass001a
+ * @build nsk.jdwp.ClassType.Superclass.superclass001a
  * @run main/othervm
  *      nsk.jdwp.ClassType.Superclass.superclass001
  *      -arch=${os.family}-${os.simpleArch}

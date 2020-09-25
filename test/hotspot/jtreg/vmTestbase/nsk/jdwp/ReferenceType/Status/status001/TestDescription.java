@@ -53,8 +53,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ReferenceType.Status.status001
- *        nsk.jdwp.ReferenceType.Status.status001a
+ * @build nsk.jdwp.ReferenceType.Status.status001a
  * @run main/othervm
  *      nsk.jdwp.ReferenceType.Status.status001
  *      -arch=${os.family}-${os.simpleArch}

@@ -58,8 +58,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ThreadReference.Stop.stop001
- *        nsk.jdwp.ThreadReference.Stop.stop001a
+ * @build nsk.jdwp.ThreadReference.Stop.stop001a
  * @run main/othervm
  *      nsk.jdwp.ThreadReference.Stop.stop001
  *      -arch=${os.family}-${os.simpleArch}

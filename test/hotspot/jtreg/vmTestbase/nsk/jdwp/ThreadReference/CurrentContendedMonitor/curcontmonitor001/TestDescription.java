@@ -61,8 +61,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ThreadReference.CurrentContendedMonitor.curcontmonitor001
- *        nsk.jdwp.ThreadReference.CurrentContendedMonitor.curcontmonitor001a
+ * @build nsk.jdwp.ThreadReference.CurrentContendedMonitor.curcontmonitor001a
  * @run main/othervm
  *      nsk.jdwp.ThreadReference.CurrentContendedMonitor.curcontmonitor001
  *      -arch=${os.family}-${os.simpleArch}

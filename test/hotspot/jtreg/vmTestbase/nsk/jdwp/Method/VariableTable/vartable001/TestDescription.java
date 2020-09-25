@@ -56,8 +56,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Method.VariableTable.vartable001
- *        nsk.jdwp.Method.VariableTable.vartable001a
+ * @build nsk.jdwp.Method.VariableTable.vartable001a
  * @comment debuggee should be compiled w/ debug info
  * @clean nsk.jdwp.Method.VariableTable.vartable001a
  * @compile -g:lines,source,vars ../vartable001a.java

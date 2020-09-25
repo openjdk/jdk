@@ -62,8 +62,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Event.SINGLE_STEP.singlestep002
- *        nsk.jdwp.Event.SINGLE_STEP.singlestep002a
+ * @build nsk.jdwp.Event.SINGLE_STEP.singlestep002a
  * @run main/othervm
  *      nsk.jdwp.Event.SINGLE_STEP.singlestep002
  *      -arch=${os.family}-${os.simpleArch}

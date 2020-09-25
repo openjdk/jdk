@@ -64,7 +64,6 @@
  * @requires !vm.graal.enabled
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ReferenceType.Instances.instances001.instances001
  * @run main/othervm/native
  *      nsk.jdwp.ReferenceType.Instances.instances001.instances001
  *      -arch=${os.family}-${os.simpleArch}

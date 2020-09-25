@@ -52,8 +52,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.HoldEvents.holdevents002
- *        nsk.jdwp.VirtualMachine.HoldEvents.holdevents002a
+ * @build nsk.jdwp.VirtualMachine.HoldEvents.holdevents002a
  * @run main/othervm/timeout=420
  *      nsk.jdwp.VirtualMachine.HoldEvents.holdevents002
  *      -arch=${os.family}-${os.simpleArch}

@@ -50,7 +50,6 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ThreadReference.OwnedMonitorsStackDepthInfo.ownedMonitorsStackDepthInfo002.ownedMonitorsStackDepthInfo002
  * @run main/othervm
  *      nsk.jdwp.ThreadReference.OwnedMonitorsStackDepthInfo.ownedMonitorsStackDepthInfo002.ownedMonitorsStackDepthInfo002
  *      -arch=${os.family}-${os.simpleArch}
