@@ -318,6 +318,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     static JNF_MEMBER_CACHE(jm_setPrintToFile, sjc_CPrinterJob, "setPrintToFile", "(Z)V");
     static JNF_MEMBER_CACHE(jm_setDestinationFile, sjc_CPrinterJob, "setDestinationFile", "(Ljava/lang/String;)V");
 
+    // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSString *name = [[src printer] name];
     jstring printerName = JNFNSToJavaString(env, name);
     JNFCallVoidMethod(env, dstPrinterJob, jm_setService, printerName);
@@ -334,7 +335,6 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
         JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, false);
     }
 
-    // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSNumber* nsCopies = [printingDictionary objectForKey:NSPrintCopies];
     if ([nsCopies respondsToSelector:@selector(integerValue)])
     {
