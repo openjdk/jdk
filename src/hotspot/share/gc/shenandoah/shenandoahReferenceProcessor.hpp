@@ -25,16 +25,50 @@
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
 
 #include "gc/shared/referenceDiscoverer.hpp"
+#include "memory/allocation.hpp"
+
+class ShenandoahRefProcThreadLocal : public CHeapObj<mtGC> {
+private:
+  oop _discovered_list;
+
+public:
+  ShenandoahRefProcThreadLocal();
+  void clear();
+
+  oop discovered_list_head() const;
+  void set_discovered_list_head(oop head);
+};
 
 class ShenandoahReferenceProcessor : public ReferenceDiscoverer {
+private:
+  ReferencePolicy* _soft_reference_policy;
+
+  ShenandoahRefProcThreadLocal** _ref_proc_thread_locals;
+
+  template <typename T>
+  bool is_inactive(oop reference, oop referent, ReferenceType type) const;
+  bool is_strongly_live(oop referent) const;
+  bool is_softly_live(oop reference, ReferenceType type) const;
+
+  template <typename T>
+  bool should_discover(oop reference, ReferenceType type) const;
+
+  template <typename T>
+  bool discover(oop reference, ReferenceType type);
+
 public:
-  bool discover_reference(oop obj, ReferenceType type);
+  ShenandoahReferenceProcessor(uint max_workers);
+
+  void init_thread_locals(uint worker_id);
+
+  void set_soft_reference_policy(bool clear);
+
+  bool discover_reference(oop obj, ReferenceType type) override;
 
   // TODO: Temporary methods to allow transition.
   void set_active_mt_degree(uint num_workers) {};
   void enable_discovery(bool verify_no_refs) {};
   void disable_discovery() {}
-  void setup_policy(bool clear_softrefs) {}
   void abandon_partial_discovery() {}
   void verify_no_references_recorded() {}
 };

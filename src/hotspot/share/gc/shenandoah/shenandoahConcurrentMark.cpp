@@ -435,6 +435,7 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
 }
 
 void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
+  _rp->init_thread_locals(worker_id);
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
   ShenandoahMarkResolveRefsClosure cl(q, _rp);
@@ -450,7 +451,7 @@ void ShenandoahConcurrentMark::mark_from_roots() {
 
   // enable ("weak") refs discovery
   rp->enable_discovery(true /*verify_no_refs*/);
-  rp->setup_policy(_heap->soft_ref_policy()->should_clear_all_soft_refs());
+  rp->set_soft_reference_policy(_heap->soft_ref_policy()->should_clear_all_soft_refs());
 
   ShenandoahIsAliveSelector is_alive;
 
