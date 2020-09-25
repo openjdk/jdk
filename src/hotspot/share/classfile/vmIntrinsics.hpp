@@ -30,6 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmEnums.hpp"
 
+class Method;
 class methodHandle;
 
 // Here are all the intrinsics known to the runtime and the CI.
