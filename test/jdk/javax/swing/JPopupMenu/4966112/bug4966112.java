@@ -31,11 +31,27 @@
  * @author Alexander Zuev
  * @run main bug4966112
  */
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JSpinner;
+import javax.swing.JSplitPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.event.PopupMenuEvent;
-import java.awt.*;
-import java.awt.event.*;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Robot;
+import java.awt.Point;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class bug4966112 {
 
@@ -100,7 +116,7 @@ public class bug4966112 {
         createAndShowFileChooser();
         robot.waitForIdle();
 
-        if (System.getProperty("os.name").startsWith("Mac")) {
+        if ((UIManager.getLookAndFeel().getID()).equals("Aqua")) {
             isAquaFileChooser = true;
         } else {
             isAquaFileChooser = false;
@@ -153,7 +169,7 @@ public class bug4966112 {
             public void run() {
                 Point p = c.getLocationOnScreen();
                 Dimension size = c.getSize();
-                if (isAquaFileChooser){
+                if (isAquaFileChooser) {
                     result[0] = new Point(p.x + size.width / 2, p.y + 5);
                 } else {
                     result[0] = new Point(p.x + size.width / 2, p.y + size.height / 2);
