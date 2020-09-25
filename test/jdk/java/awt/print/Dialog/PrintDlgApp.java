@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key printer
   @bug 4865976 7158366 7179006
   @summary Pass if program exits.
   @run main/manual PrintDlgApp

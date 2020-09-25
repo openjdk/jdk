@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key printer
  * @bug 7179006
  * @summary Confirm printing to file works.
 */

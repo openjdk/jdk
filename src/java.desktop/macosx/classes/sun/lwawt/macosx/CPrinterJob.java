@@ -254,7 +254,6 @@ public final class CPrinterJob extends RasterPrinterJob {
     }
 
     private void setDestinationFile(String dest) {
-        System.out.println("dest="+dest+" attrs="+attributes);
         if (attributes != null && dest != null) {
             try {
                URI destURI = new URI(dest);
