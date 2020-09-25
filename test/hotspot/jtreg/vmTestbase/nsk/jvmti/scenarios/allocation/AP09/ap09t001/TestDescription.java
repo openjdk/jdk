@@ -52,7 +52,7 @@
  * @build ExecDriver
  *        nsk.jvmti.scenarios.allocation.AP09.ap09t001
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:ap09t001=-waittime=5 -verbose"
+ *      -agentlib:ap09t001=-waittime=5,-verbose
  *      nsk.jvmti.scenarios.allocation.AP09.ap09t001
  */
 

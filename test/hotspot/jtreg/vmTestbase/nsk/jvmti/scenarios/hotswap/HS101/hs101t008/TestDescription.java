@@ -41,7 +41,7 @@
  *        nsk.jvmti.scenarios.hotswap.HS101.hs101t008
  *        nsk.share.jvmti.ProfileCollector
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:HotSwap=-waittime=5 package=nsk sync=100 mode=interpreted bci=alloc"
+ *      -agentlib:HotSwap=-waittime=5,package=nsk,sync=100,mode=interpreted,bci=alloc
  *      nsk.jvmti.scenarios.hotswap.HS101.hs101t008
  */
 

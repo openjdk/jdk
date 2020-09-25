@@ -39,7 +39,7 @@
  * @build ExecDriver
  *        nsk.jvmti.ResumeThreadList.resumethrdlst002
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:resumethrdlst002=-waittime=5 threads=10"
+ *      -agentlib:resumethrdlst002=-waittime=5,threads=10
  *      nsk.jvmti.ResumeThreadList.resumethrdlst002
  */
 

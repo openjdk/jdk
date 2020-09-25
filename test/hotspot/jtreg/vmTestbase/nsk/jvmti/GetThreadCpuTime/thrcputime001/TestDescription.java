@@ -76,7 +76,7 @@
  * @build ExecDriver
  *        nsk.jvmti.GetThreadCpuTime.thrcputime001
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:thrcputime001=-waittime=5 iterations=1000"
+ *      -agentlib:thrcputime001=-waittime=5,iterations=1000
  *      nsk.jvmti.GetThreadCpuTime.thrcputime001
  */
 

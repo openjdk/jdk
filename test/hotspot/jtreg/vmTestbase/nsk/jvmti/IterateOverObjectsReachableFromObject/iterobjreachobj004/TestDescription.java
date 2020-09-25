@@ -49,7 +49,7 @@
  * @build ExecDriver
  *        nsk.jvmti.IterateOverObjectsReachableFromObject.iterobjreachobj004
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:iterobjreachobj004=-waittime=5 -verbose"
+ *      -agentlib:iterobjreachobj004=-waittime=5,-verbose
  *      nsk.jvmti.IterateOverObjectsReachableFromObject.iterobjreachobj004
  */
 

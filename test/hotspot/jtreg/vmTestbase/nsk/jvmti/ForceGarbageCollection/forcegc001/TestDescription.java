@@ -46,7 +46,7 @@
  * @build ExecDriver
  *        nsk.jvmti.ForceGarbageCollection.forcegc001
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:forcegc001=-waittime=5 objects=100"
+ *      -agentlib:forcegc001=-waittime=5,objects=100
  *      nsk.jvmti.ForceGarbageCollection.forcegc001
  */
 

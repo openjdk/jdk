@@ -46,7 +46,7 @@
  *
  * @build ExecDriver
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:hs301t002=pathToNewByteCode=./bin -waittime=5 package=nsk samples=100 mode=compiled"
+ *      -agentlib:hs301t002=pathToNewByteCode=./bin,-waittime=5,package=nsk,samples=100,mode=compiled
  *      nsk.jvmti.scenarios.hotswap.HS301.hs301t002.hs301t002
  */
 

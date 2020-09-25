@@ -52,7 +52,7 @@
  *
  * @build ExecDriver
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:em06t001=classLoaderCount=500 -waittime=5"
+ *      -agentlib:em06t001=classLoaderCount=500,-waittime=5
  *      nsk.jvmti.scenarios.events.EM06.em06t001
  *      ./bin/loadclass
  */

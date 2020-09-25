@@ -65,7 +65,7 @@
  * @build ExecDriver
  * @run main/othervm/native ExecDriver --java
  *      -cp ${test.class.path}${path.separator}./bin/newclass
- *      "-agentlib:systemclssearch_agent=-waittime=5 phasetocheck=onload segment1=./bin/newclass"
+ *      -agentlib:systemclssearch_agent=-waittime=5,phasetocheck=onload,segment1=./bin/newclass
  *      nsk.jvmti.AddToSystemClassLoaderSearch.systemclssearch001
  */
 

@@ -53,7 +53,7 @@
  * @build ExecDriver
  *        nsk.jvmti.DataDumpRequest.datadumpreq001
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:datadumpreq001=-waittime=5 -verbose="
+ *      -agentlib:datadumpreq001=-waittime=5,-verbose=
  *      nsk.jvmti.DataDumpRequest.datadumpreq001
  */
 

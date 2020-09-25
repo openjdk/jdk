@@ -49,7 +49,7 @@
  * @build ExecDriver
  *        nsk.jvmti.IterateOverHeap.iterheap006
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:iterheap006=-waittime=5 -verbose"
+ *      -agentlib:iterheap006=-waittime=5,-verbose
  *      nsk.jvmti.IterateOverHeap.iterheap006
  */
 

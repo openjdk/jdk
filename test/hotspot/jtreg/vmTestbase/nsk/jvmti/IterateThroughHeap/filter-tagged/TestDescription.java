@@ -65,7 +65,7 @@
  * @build ExecDriver
  *        nsk.jvmti.IterateThroughHeap.filter_tagged.HeapFilter
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:HeapFilter=-waittime=5 filter=JVMTI_HEAP_FILTER_TAGGED"
+ *      -agentlib:HeapFilter=-waittime=5,filter=JVMTI_HEAP_FILTER_TAGGED
  *      nsk.jvmti.IterateThroughHeap.filter_tagged.HeapFilter
  */
 

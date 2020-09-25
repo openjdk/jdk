@@ -49,7 +49,7 @@
  * @build ExecDriver
  *        nsk.jvmti.IterateOverInstancesOfClass.iterinstcls006
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:iterinstcls006=-waittime=5 -verbose"
+ *      -agentlib:iterinstcls006=-waittime=5,-verbose
  *      nsk.jvmti.IterateOverInstancesOfClass.iterinstcls006
  */
 

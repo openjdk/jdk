@@ -44,7 +44,7 @@
  *        nsk.jvmti.scenarios.hotswap.HS102.hs102t002
  *        nsk.share.jvmti.ProfileCollector
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:HotSwap=-waittime=5 package=java/lang samples=10 mode=mixed"
+ *      -agentlib:HotSwap=-waittime=5,package=java/lang,samples=10,mode=mixed
  *      nsk.jvmti.scenarios.hotswap.HS102.hs102t002
  */
 

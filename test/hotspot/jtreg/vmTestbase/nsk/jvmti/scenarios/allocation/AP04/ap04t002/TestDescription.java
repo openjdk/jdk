@@ -60,7 +60,7 @@
  * @build ExecDriver
  *        nsk.jvmti.scenarios.allocation.AP04.ap04t002
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:ap04t002=-waittime=5 -verbose"
+ *      -agentlib:ap04t002=-waittime=5,-verbose
  *      nsk.jvmti.scenarios.allocation.AP04.ap04t002
  */
 

@@ -76,7 +76,7 @@
  * @build ExecDriver
  * @run main/othervm/native ExecDriver --java
  *      -Xbootclasspath/a:./bin/loadclass
- *      "-agentlib:bootclssearch_agent=-waittime=5 phasetocheck=onload segment1=./bin/newclass"
+ *      -agentlib:bootclssearch_agent=-waittime=5,phasetocheck=onload,segment1=./bin/newclass
  *      nsk.jvmti.AddToBootstrapClassLoaderSearch.bootclssearch003
  */
 

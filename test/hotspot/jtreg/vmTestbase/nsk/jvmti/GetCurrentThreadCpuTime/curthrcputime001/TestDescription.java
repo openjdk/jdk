@@ -76,7 +76,7 @@
  * @build ExecDriver
  *        nsk.jvmti.GetCurrentThreadCpuTime.curthrcputime001
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:curthrcputime001=-waittime=5 iterations=1000"
+ *      -agentlib:curthrcputime001=-waittime=5,iterations=1000
  *      nsk.jvmti.GetCurrentThreadCpuTime.curthrcputime001
  */
 

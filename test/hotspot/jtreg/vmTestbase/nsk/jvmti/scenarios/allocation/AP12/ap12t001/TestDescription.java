@@ -41,7 +41,7 @@
  * @build ExecDriver
  *        nsk.jvmti.scenarios.allocation.AP12.ap12t001
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:ap12t001=-waittime=5 -verbose"
+ *      -agentlib:ap12t001=-waittime=5,-verbose
  *      -XX:-UseGCOverheadLimit
  *      nsk.jvmti.scenarios.allocation.AP12.ap12t001
  */

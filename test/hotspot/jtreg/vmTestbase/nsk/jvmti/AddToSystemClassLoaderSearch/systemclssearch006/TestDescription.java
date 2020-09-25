@@ -74,7 +74,7 @@
  *      nsk/jvmti/AddToSystemClassLoaderSearch/systemclssearch002.class
  *
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:systemclssearch_agent=-waittime=5 phasetocheck=live segment1=systemclssearch002.jar"
+ *      -agentlib:systemclssearch_agent=-waittime=5,phasetocheck=live,segment1=systemclssearch002.jar
  *      nsk.jvmti.AddToSystemClassLoaderSearch.systemclssearch002
  */
 

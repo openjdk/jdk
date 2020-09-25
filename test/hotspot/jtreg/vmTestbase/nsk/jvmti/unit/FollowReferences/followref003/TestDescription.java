@@ -59,7 +59,7 @@
  * @build ExecDriver
  *        nsk.jvmti.unit.FollowReferences.followref003
  * @run main/othervm/native ExecDriver --java
- *      "-agentlib:followref003=-waittime=5 -verbose objects=3"
+ *      -agentlib:followref003=-waittime=5,-verbose,objects=3
  *      nsk.jvmti.unit.FollowReferences.followref003
  */
 
