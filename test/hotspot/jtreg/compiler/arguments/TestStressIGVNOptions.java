@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8252219
+ * @requires vm.compiler2.enabled
  * @summary Tests that different combinations of the options -XX:+StressIGVN and
  *          -XX:StressSeed=N are accepted.
  * @run main/othervm -XX:+StressIGVN
