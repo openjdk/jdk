@@ -1871,8 +1871,7 @@ InstanceKlass* SystemDictionary::find_class(Symbol* class_name, ClassLoaderData*
             VerifyDuringGC      ||
             VerifyBeforeExit    ||
             VerifyDuringStartup ||
-            VerifyAfterGC       ||
-            DumpSharedSpaces, "too expensive");
+            VerifyAfterGC, "too expensive");
   #endif
 
   Dictionary* dictionary = loader_data->dictionary();

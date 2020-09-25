@@ -624,8 +624,6 @@ public:
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
-  // Find class based on name and class loader data.
-  static InstanceKlass* find_class(Symbol* class_name, ClassLoaderData* loader_data);
   // Setup link to hierarchy
   static void add_to_hierarchy(InstanceKlass* k, TRAPS);
 protected:
@@ -633,6 +631,7 @@ protected:
   // Basic find on loaded classes
   static InstanceKlass* find_class(unsigned int hash,
                                    Symbol* name, Dictionary* dictionary);
+  static InstanceKlass* find_class(Symbol* class_name, ClassLoaderData* loader_data);
 
   // Basic find on classes in the midst of being loaded
   static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);

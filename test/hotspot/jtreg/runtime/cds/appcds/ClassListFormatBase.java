@@ -25,7 +25,7 @@
 import jdk.test.lib.process.OutputAnalyzer;
 
 /**
- * Base class for ClassList, customerLoader/ClassListFormat[A,B,C...].java
+ * Base class for DumpClassListWithLF, customerLoader/ClassListFormat[A,B,C...].java
  */
 public class ClassListFormatBase {
     protected static String RUN_ONLY_TEST = null;

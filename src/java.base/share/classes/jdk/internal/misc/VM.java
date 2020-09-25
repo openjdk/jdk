@@ -454,7 +454,6 @@ public class VM {
 
     static {
         initialize();
-        isDumpLoadedClassListSetAndOpen = isDumpLoadedClassListSetAndOpen0();
     }
     private static native void initialize();
 

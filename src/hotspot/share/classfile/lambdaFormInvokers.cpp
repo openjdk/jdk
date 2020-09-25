@@ -46,8 +46,6 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/os.hpp"
-#include "runtime/signature.hpp"
 
 GrowableArray<char*>* LambdaFormInvokers::_lambdaform_lines = NULL;
 
@@ -111,10 +109,10 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 // class_handle - the class name, bytes_handle - the class bytes
 void LambdaFormInvokers::reload_class(Handle name_handle, typeArrayHandle bytes_handle, TRAPS) {
   char* name = java_lang_String::as_utf8_string(name_handle());
-  Symbol* class_name = SymbolTable::probe((const char*)name, (int)strlen(name));
-  assert(class_name != NULL, "The class should be loaded already");
+  Symbol* class_name = SymbolTable::new_symbol((const char*)name);
   // the class must exist
   Klass* klass = SystemDictionary::resolve_or_null(class_name, THREAD);
+  assert(klass->is_instance_klass(), "Should be");
   if (klass == NULL) {
     log_info(cds)("Class %s not present, skip", name);
     return;
@@ -153,10 +151,6 @@ void LambdaFormInvokers::reload_class(Handle name_handle, typeArrayHandle bytes_
   assert(!HAS_PENDING_EXCEPTION, "Invariant");
 
   // exclude the existing class from dump
-  // find_class assert on SystemDictionary_lock or safepoint
-  MutexLocker lock(SystemDictionary_lock);
-  InstanceKlass* old = SystemDictionary::find_class(class_name, cld);
-  assert(old != NULL, "Should exist");
-  SystemDictionaryShared::set_excluded(old);
-  log_info(cds)("Replace class %s, old: %p  new: %p", name, old, result);
+  SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass));
+  log_info(cds)("Replaced class %s, old: %p  new: %p", name, klass, result);
 }

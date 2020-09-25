@@ -24,9 +24,9 @@
 
 #ifndef SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
 #define SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/exceptions.hpp"
+
 template <class T>
 class GrowableArray;
 

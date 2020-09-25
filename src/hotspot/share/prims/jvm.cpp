@@ -3867,6 +3867,24 @@ JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
   }
 JVM_END
 
+JVM_ENTRY(jboolean, JVM_IsDumpLoadedClassListSetAndOpen(JNIEnv *env))
+  JVMWrapper("JVM_IsDumpLoadedClassListSetAndOpen");
+  return DumpLoadedClassList != NULL && classlist_file->is_open();
+JVM_END
+
+JVM_ENTRY(void, JVM_LogTraceResolve(JNIEnv *env, jstring line))
+  JVMWrapper("JVM_LogTraceResolve");
+#if INCLUDE_CDS
+  assert(DumpLoadedClassList != NULL && classlist_file->is_open(), "Should be set and open");
+  if (line != NULL) {
+    ResourceMark rm(THREAD);
+    Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
+    char* c_line = java_lang_String::as_utf8_string(h_line());
+    classlist_file->print_cr("%s %s", LambdaFormInvokers::lambda_form_invoker_tag(), c_line);
+  }
+#endif // INCLUDE_CDS
+JVM_END
+
 // Returns an array of all live Thread objects (VM internal JavaThreads,
 // jvmti agent threads, and JNI attaching threads  are skipped)
 // See CR 6404306 regarding JNI attaching threads

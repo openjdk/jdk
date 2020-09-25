@@ -26,6 +26,15 @@
 package jdk.internal.misc;
 
 public class CDS {
+    // cache the result
+    static private boolean isDumpLoadedClassList;
+    static {
+        isDumpLoadedClassList = isDumpLoadedClassListSetAndOpen();
+    }
+
+    private static native boolean isDumpLoadedClassListSetAndOpen();
+    private static native void logTraceResolve0(String line);
+
     /**
      * Initialize archived static fields in the given Class using archived
      * values from CDS dump time. Also initialize the classes of objects in
@@ -59,4 +68,20 @@ public class CDS {
      * Check if sharing is enabled via the UseSharedSpaces flag.
      */
     public static native boolean isSharingEnabled();
+
+    /**
+     * check if -XX:+DumpLoadedClassList and given file is open
+     */
+    public static boolean isDumpLoadedClassList() {
+        return isDumpLoadedClassList;
+    }
+
+    /**
+     * log output to DumpLoadedClassList
+     */
+    public static void logTraceResolve(String line) {
+        if (isDumpLoadedClassList) {
+            logTraceResolve0(line);
+        }
+    }
 }

@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -55,28 +56,24 @@ class GenerateJLIClassesHelper {
     private static final String SPECIES_RESOLVE = "[SPECIES_RESOLVE]";
 
     static void traceLambdaForm(String name, MethodType type, Class<?> holder, MemberName resolvedMember) {
-        if (TRACE_RESOLVE || VM.isDumpLoadedClassListSetAndOpen) {
+        if (TRACE_RESOLVE || CDS.isDumpLoadedClassList()) {
             String traceLF = LF_RESOLVE + " " + holder.getName() + " " + name + " " +
                     shortenSignature(basicTypeSignature(type)) +
                     (resolvedMember != null ? " (success)" : " (fail)");
             if (TRACE_RESOLVE) {
                 System.out.println(traceLF);
             }
-            if (VM.isDumpLoadedClassListSetAndOpen) {
-                VM.cdsTraceResolve(traceLF);
-            }
+            CDS.logTraceResolve(traceLF);
         }
     }
 
     static void traceSpeciesType(String cn, Class<?> salvage) {
-        if (TRACE_RESOLVE || VM.isDumpLoadedClassListSetAndOpen) {
+        if (TRACE_RESOLVE || CDS.isDumpLoadedClassList()) {
             String traceSP = SPECIES_RESOLVE + " " + cn + (salvage != null ? " (salvaged)" : " (generated)");
             if (TRACE_RESOLVE) {
                 System.out.println(traceSP);
             }
-            if (VM.isDumpLoadedClassListSetAndOpen) {
-                VM.cdsTraceResolve(traceSP);
-            }
+            CDS.logTraceResolve(traceSP);
         }
     }
 

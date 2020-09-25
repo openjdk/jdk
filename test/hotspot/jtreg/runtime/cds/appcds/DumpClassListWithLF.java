@@ -53,14 +53,14 @@ public class DumpClassListWithLF extends ClassListFormatBase {
                 "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic LL_I (success)"),
                 MESSAGE_OK);
 
-        // 2. The two lines with incorrect format of function signitures lead regeneration of holder class failed. 
+        // 2. The two lines with incorrect format of function signitures lead regeneration of holder class failed.
         dumpShouldPass(
             "TESTCASE 2: With incorrect signature",
             appJar, classlist(
                 "Hello",
                 "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic L7_L-XXX (success)",
                 "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic LL_I-YYY (success)"),
-                MESSAGE_NOT_OK); 
+                MESSAGE_NOT_OK);
         // 3. The two lines with arbitrary invoke names is OK.
         dumpShouldPass(
             "TESTCASE 3: With incorrect invoke names is OK",

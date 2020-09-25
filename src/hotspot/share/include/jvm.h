@@ -210,7 +210,7 @@ JNIEXPORT jlong JNICALL
 JVM_GetRandomSeedForDumping();
 
 JNIEXPORT void JNICALL
-JVM_CDSTraceResolve(JNIEnv* env, jclass ignored, jstring line);
+JVM_LogTraceResolve(JNIEnv* env, jstring line);
 
 /*
  * java.lang.Throwable
