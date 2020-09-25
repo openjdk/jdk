@@ -406,7 +406,9 @@ public class WinMsiBundler  extends AbstractBundler {
         data.put("JpAppDescription", DESCRIPTION.fetchFrom(params));
         data.put("JpAppVendor", VENDOR.fetchFrom(params));
         data.put("JpAppVersion", PRODUCT_VERSION.fetchFrom(params));
-        data.put("JpIcon", installerIcon.toString());
+        if (Files.exists(installerIcon)) {
+            data.put("JpIcon", installerIcon.toString());
+        }
 
         final Path configDir = CONFIG_ROOT.fetchFrom(params);
 
