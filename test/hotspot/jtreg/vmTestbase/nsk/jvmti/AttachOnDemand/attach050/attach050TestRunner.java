@@ -35,7 +35,7 @@
  *      nsk.jvmti.AttachOnDemand.attach050.attach050TestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
- *      "-javaOpts=-XX:+UsePerfData -XX:+EnableDynamicAgentLoading ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData -XX:+EnableDynamicAgentLoading ${test.vm.opts} ${test.java.opts}"
  *      -na attach050Agent00
  */
 

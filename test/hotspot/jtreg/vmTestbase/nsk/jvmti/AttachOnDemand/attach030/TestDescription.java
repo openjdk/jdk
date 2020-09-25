@@ -61,7 +61,7 @@
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach030.attach030Target
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -ja attach030Agent00.jar=-pathToNewByteCode=./bin/newclass00
  */
 

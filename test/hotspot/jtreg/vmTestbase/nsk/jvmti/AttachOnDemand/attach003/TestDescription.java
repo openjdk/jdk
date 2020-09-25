@@ -56,7 +56,7 @@
  * @run main/othervm
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -ja SimpleAgent00.jar,SimpleAgent00.jar
  */

@@ -71,7 +71,7 @@
  * @run main/othervm
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
- *      "-javaOpts=--add-reads java.base=ALL-UNNAMED -XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="--add-reads java.base=ALL-UNNAMED -XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -ja attach024Agent00.jar
  */

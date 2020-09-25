@@ -48,7 +48,7 @@
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach042.attach042Target
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -na attach042Agent00
  */
 

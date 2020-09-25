@@ -49,7 +49,7 @@
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach046.attach046Target
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -na attach046Agent00=-pathToNewByteCode=./bin/newclass00,attach046Agent00=-pathToNewByteCode=./bin/newclass01,attach046Agent00=-pathToNewByteCode=./bin/newclass02
  */
 

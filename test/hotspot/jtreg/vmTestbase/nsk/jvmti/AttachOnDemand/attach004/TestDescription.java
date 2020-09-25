@@ -56,7 +56,7 @@
  * @run main/othervm
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts} -Djava.security.manager -Djava.security.policy==${test.src}/attach004.policy"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts} -Djava.security.manager -Djava.security.policy==${test.src}/attach004.policy"
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -ja attach004Agent00.jar
  */

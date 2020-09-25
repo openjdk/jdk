@@ -54,7 +54,7 @@
  *      -Djdk.attach.allowAttachSelf
  *      nsk.jvmti.AttachOnDemand.attach001.attach001TestRunner
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData -Djdk.attach.allowAttachSelf ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData -Djdk.attach.allowAttachSelf ${test.vm.opts} ${test.java.opts}"
  *      -ja SimpleAgent00.jar
  *      -na simpleAgent00
  */
