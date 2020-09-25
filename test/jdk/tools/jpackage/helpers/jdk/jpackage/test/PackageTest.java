@@ -318,7 +318,7 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     public PackageTest addLauncherName(String name) {
-        launchersName.add(name);
+        launcherNames.add(name);
         return this;
     }
 
@@ -564,7 +564,7 @@ public final class PackageTest extends RunnablePackageTest {
                     // Check main launcher
                     new WindowsHelper.DesktopIntegrationVerifier(cmd, null);
                     // Check additional launchers
-                    launchersName.forEach(name -> {
+                    launcherNames.forEach(name -> {
                         new WindowsHelper.DesktopIntegrationVerifier(cmd, name);
                     });
                 }
@@ -584,7 +584,7 @@ public final class PackageTest extends RunnablePackageTest {
                     // Check main launcher
                     new WindowsHelper.DesktopIntegrationVerifier(cmd, null);
                     // Check additional launchers
-                    launchersName.forEach(name -> {
+                    launcherNames.forEach(name -> {
                         new WindowsHelper.DesktopIntegrationVerifier(cmd, name);
                     });
                 }
@@ -633,7 +633,7 @@ public final class PackageTest extends RunnablePackageTest {
     private Map<PackageType, Handler> handlers;
     private Set<String> namedInitializers;
     private Map<PackageType, PackageHandlers> packageHandlers;
-    private final List<String> launchersName = new ArrayList();
+    private final List<String> launcherNames = new ArrayList();
 
     private final static File BUNDLE_OUTPUT_DIR;
 

@@ -111,6 +111,7 @@ public final class AdditionalLauncher {
     }
 
     public void applyTo(PackageTest test) {
+        test.addLauncherName(name);
         test.addInitializer(this::initialize);
         test.addInstallVerifier(this::verify);
     }
