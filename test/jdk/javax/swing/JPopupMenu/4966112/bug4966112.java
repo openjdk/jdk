@@ -131,7 +131,6 @@ public class bug4966112 {
         robot.waitForIdle();
         closeFrame();
 
-        isAquaFileChooser = false;
         if (!shown) {
             throw new RuntimeException("Popup was not shown on filechooser");
         }
