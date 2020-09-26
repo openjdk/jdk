@@ -850,7 +850,7 @@ bool ZStat::should_print(LogTargetHandle log) const {
   return log.is_enabled();
 }
 
-static int sampler_cmp(const ZStatSampler* const &a, const ZStatSampler* const &b) {
+int ZStat::sampler_cmp(const ZStatSampler* const &a, const ZStatSampler* const &b) {
   const int cmp = strcmp(a->group(), b->group());
   return (cmp == 0) ? strcmp(a->name(), b->name()) : cmp;
 }
@@ -859,7 +859,7 @@ void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const
   // Sort sampled stats
   GrowableArray<const ZStatSampler*> samplers(ZStatSampler::count());
   for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
-    samplers.insert_sorted<cmp_sampler>(sampler);
+    samplers.insert_sorted<sampler_cmp>(sampler);
   }
 
   // Print
