@@ -305,6 +305,7 @@ jobs:
         run: echo "::set-env name=logsuffix::`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`"
 
       - name: Persist test logs
+        if: always()
         uses: actions/upload-artifact@v2
         with:
           name: linux-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
@@ -560,6 +561,7 @@ jobs:
         run: echo ("::set-env name=logsuffix::" + ("${{ matrix.test }}" -replace "/", "_" -replace " ", "_"))
 
       - name: Persist test logs
+        if: always()
         uses: actions/upload-artifact@v2
         with:
           name: windows-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
@@ -783,6 +785,7 @@ jobs:
         run: echo "::set-env name=logsuffix::`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`"
 
       - name: Persist test logs
+        if: always()
         uses: actions/upload-artifact@v2
         with:
           name: macos-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
