@@ -52,7 +52,6 @@
  * @build nsk.share.aod.AODTestRunner
  *
  * @comment compile newclassXX to bin/newclassXX
- * @build ExecDriver
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
  *      --patch-module java.base=${test.src}/newclass00/java.base

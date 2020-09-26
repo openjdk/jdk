@@ -39,8 +39,7 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      newclass00
  *
- * @build ExecDriver
- * @run main/othervm/native ExecDriver --java
+ * @run main/othervm/native
  *      -agentlib:hs103t002=pathToNewByteCode=./bin,-waittime=5,package=nsk,samples=100,mode=compiled
  *      nsk.jvmti.scenarios.hotswap.HS103.hs103t002.hs103t002
  */

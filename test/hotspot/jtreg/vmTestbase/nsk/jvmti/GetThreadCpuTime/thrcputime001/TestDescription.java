@@ -73,9 +73,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.GetThreadCpuTime.thrcputime001
- * @run main/othervm/native ExecDriver --java
+ * @build nsk.jvmti.GetThreadCpuTime.thrcputime001
+ * @run main/othervm/native
  *      -agentlib:thrcputime001=-waittime=5,iterations=1000
  *      nsk.jvmti.GetThreadCpuTime.thrcputime001
  */

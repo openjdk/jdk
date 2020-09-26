@@ -40,9 +40,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.GetObjectsWithTags.objwithtags001
- * @run main/othervm/native ExecDriver --java
+ * @build nsk.jvmti.GetObjectsWithTags.objwithtags001
+ * @run main/othervm/native
  *      -agentlib:objwithtags001=-waittime=5,tags=4,objects=5
  *      nsk.jvmti.GetObjectsWithTags.objwithtags001
  */

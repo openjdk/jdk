@@ -47,7 +47,6 @@
  * @comment create SimpleAgent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.sharedAgents.SimpleAgent00
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.sharedAgents.SimpleAgent00
- * @build ExecDriver
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm SimpleAgent00.jar ${test.src}/../sharedAgents/SimpleAgent00.mf

@@ -48,9 +48,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.IterateOverHeap.iterheap004
- * @run main/othervm/native ExecDriver --java
+ * @build nsk.jvmti.IterateOverHeap.iterheap004
+ * @run main/othervm/native
  *      -agentlib:iterheap004=-waittime=5,-verbose
  *      nsk.jvmti.IterateOverHeap.iterheap004
  */

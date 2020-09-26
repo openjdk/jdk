@@ -44,9 +44,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.unit.FollowReferences.followref006
- * @run main/othervm/native ExecDriver --java
+ * @build nsk.jvmti.unit.FollowReferences.followref006
+ * @run main/othervm/native
  *      -agentlib:followref006=-waittime=5,-verbose
  *      nsk.jvmti.unit.FollowReferences.followref006
  */

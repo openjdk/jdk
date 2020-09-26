@@ -46,9 +46,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.IterateOverInstancesOfClass.iterinstcls004
- * @run main/othervm/native ExecDriver --java
+ * @build nsk.jvmti.IterateOverInstancesOfClass.iterinstcls004
+ * @run main/othervm/native
  *      -agentlib:iterinstcls004=-waittime=5,-verbose
  *      nsk.jvmti.IterateOverInstancesOfClass.iterinstcls004
  */

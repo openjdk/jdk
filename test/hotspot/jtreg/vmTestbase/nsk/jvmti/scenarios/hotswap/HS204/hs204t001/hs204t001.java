@@ -45,14 +45,13 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *      nsk.jvmti.scenarios.hotswap.HS204.hs204t001.hs204t001
+ * @build nsk.jvmti.scenarios.hotswap.HS204.hs204t001.hs204t001
  *
  * @comment compile newclassXX to bin/newclassXX
  * @run driver nsk.share.ExtraClassesBuilder
  *      newclass02 newclass03 newclass01 newclass00
  *
- * @run main/othervm/native ExecDriver --java
+ * @run main/othervm/native
  *      -agentlib:hs204t001=pathToNewByteCode=./bin,-waittime=5,package=nsk,samples=100,mode=compiled
  *      nsk.jvmti.scenarios.hotswap.HS204.hs204t001.hs204t001
  */

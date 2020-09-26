@@ -51,8 +51,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.scenarios.general_functions.GF08.gf08t003
+ * @build nsk.jvmti.scenarios.general_functions.GF08.gf08t003
  *        nsk.jvmti.scenarios.general_functions.GF08.gf08t
  * @run main/othervm/native
  *      nsk.jvmti.scenarios.general_functions.GF08.gf08t

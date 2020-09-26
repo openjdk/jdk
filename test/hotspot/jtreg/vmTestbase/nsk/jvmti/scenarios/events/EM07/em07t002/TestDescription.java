@@ -60,8 +60,7 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @build ExecDriver
- * @run main/othervm/native ExecDriver --java
+ * @run main/othervm/native
  *      -agentlib:em07t002=attempts=2,-waittime=5
  *      -XX:-UseGCOverheadLimit
  *      nsk.jvmti.scenarios.events.EM07.em07t002

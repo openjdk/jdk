@@ -46,7 +46,6 @@
  * @comment create attach034Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach034.attach034Agent00
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach034.attach034Agent00
- * @build ExecDriver
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach034Agent00.jar ${test.src}/attach034Agent00.mf
@@ -55,7 +54,6 @@
  * @comment create AgentParent.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach034.AgentParent
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach034.AgentParent
- * @build ExecDriver
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm AgentParent.jar ${test.src}/AgentParent.mf

@@ -39,9 +39,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.scenarios.multienv.MA01.ma01t001
- * @run main/othervm/native ExecDriver --java
+ * @build nsk.jvmti.scenarios.multienv.MA01.ma01t001
+ * @run main/othervm/native
  *      -agentlib:ma01t001=opt1=opt1,-waittime=5
  *      -agentlib:ma01t001a=opt2=opt2,-waittime=5
  *      nsk.jvmti.scenarios.multienv.MA01.ma01t001

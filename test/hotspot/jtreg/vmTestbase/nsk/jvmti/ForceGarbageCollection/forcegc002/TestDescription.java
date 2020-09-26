@@ -41,9 +41,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.ForceGarbageCollection.forcegc002
- * @run main/othervm/native ExecDriver --java
+ * @build nsk.jvmti.ForceGarbageCollection.forcegc002
+ * @run main/othervm/native
  *      -agentlib:forcegc002=-waittime=5,objects=100
  *      nsk.jvmti.ForceGarbageCollection.forcegc002
  */

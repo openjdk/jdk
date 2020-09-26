@@ -45,8 +45,7 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      newclass00
  *
- * @build ExecDriver
- * @run main/othervm/native ExecDriver --java
+ * @run main/othervm/native
  *      -XX:-Inline
  *      -XX:CompileThreshold=900
  *      -Xbatch

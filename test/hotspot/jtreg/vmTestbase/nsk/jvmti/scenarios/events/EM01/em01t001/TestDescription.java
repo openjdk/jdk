@@ -55,8 +55,7 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @build ExecDriver
- * @run main/othervm/native ExecDriver --java
+ * @run main/othervm/native
  *      -agentlib:em01t001=classLoaderCount=100,-waittime=5
  *      nsk.jvmti.scenarios.events.EM01.em01t001
  *      ./bin/loadclass

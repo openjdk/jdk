@@ -49,9 +49,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.scenarios.allocation.AP03.ap03t001
- * @run main/othervm/native ExecDriver --java
+ * @build nsk.jvmti.scenarios.allocation.AP03.ap03t001
+ * @run main/othervm/native
  *      -agentlib:ap03t001=-waittime=5,-verbose
  *      nsk.jvmti.scenarios.allocation.AP03.ap03t001
  */

@@ -46,7 +46,6 @@
  *        nsk.jvmti.AttachOnDemand.attach024.attach024Agent00
  *
  * @comment compile modified java.util.TooManyListenersException
- * @build ExecDriver
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
  *      -cp ${test.class.path}

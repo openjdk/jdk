@@ -36,9 +36,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.ResumeThreadList.resumethrdlst002
- * @run main/othervm/native ExecDriver --java
+ * @build nsk.jvmti.ResumeThreadList.resumethrdlst002
+ * @run main/othervm/native
  *      -agentlib:resumethrdlst002=-waittime=5,threads=10
  *      nsk.jvmti.ResumeThreadList.resumethrdlst002
  */

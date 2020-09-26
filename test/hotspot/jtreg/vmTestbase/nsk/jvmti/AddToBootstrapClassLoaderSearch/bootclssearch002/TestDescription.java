@@ -88,7 +88,7 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      newclass
  *
- * @build ExecDriver
+ * @comment ExecDriver is used b/c main class isn't on source/class path
  * @run main/othervm/native ExecDriver --java
  *      -Xbootclasspath/a:./bin/loadclass
  *      -agentlib:bootclssearch_agent=-waittime=5,phasetocheck=onload,segment1=./bin/newclass

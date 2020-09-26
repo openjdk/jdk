@@ -54,9 +54,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.IterateOverReachableObjects.iterreachobj001
- * @run main/othervm/native ExecDriver --java
+ * @build nsk.jvmti.IterateOverReachableObjects.iterreachobj001
+ * @run main/othervm/native
  *      -agentlib:iterreachobj001=-waittime=5,objects=4
  *      nsk.jvmti.IterateOverReachableObjects.iterreachobj001
  */

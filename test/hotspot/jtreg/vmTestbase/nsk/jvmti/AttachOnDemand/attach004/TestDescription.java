@@ -47,7 +47,6 @@
  * @comment create attach004Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach004.attach004Agent00
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach004.attach004Agent00
- * @build ExecDriver
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach004Agent00.jar ${test.src}/attach004Agent00.mf

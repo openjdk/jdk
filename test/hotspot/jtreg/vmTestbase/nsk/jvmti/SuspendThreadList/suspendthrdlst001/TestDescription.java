@@ -38,9 +38,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.SuspendThreadList.suspendthrdlst001
- * @run main/othervm/native ExecDriver --java
+ * @run main/othervm/native
  *      -agentlib:suspendthrdlst001=-waittime=5,threads=10
  *      nsk.jvmti.SuspendThreadList.suspendthrdlst001
  */
