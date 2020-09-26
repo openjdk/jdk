@@ -391,22 +391,20 @@ ZStatIterableValue<T>::ZStatIterableValue(const char* group,
 template <typename T>
 T* ZStatIterableValue<T>::insert() const {
   T** current = &_first;
-  int group_cmp = 0;
 
-  // First sort by group
+  // Sort by group then name
   while (*current != NULL) {
-    group_cmp = ((*current)->group() == group()) ? 0 : strcmp((*current)->group(), group());
+    const int group_cmp = ((*current)->group() == group()) ? 0 : strcmp((*current)->group(), group());
     if (group_cmp >= 0) {
+      if (group_cmp == 0) {
+        // same group, sort by name
+        while (*current != NULL && strcmp((*current)->name(), name()) <= 0) {
+          current = &(*current)->_next;
+        }
+      }
       break;
     }
     current = &(*current)->_next;
-  }
-
-  // Then sort by name
-  if (group_cmp == 0) {
-    while (*current != NULL && strcmp((*current)->name(), name()) <= 0) {
-      current = &(*current)->_next;
-    }
   }
 
   T* const next = *current;
