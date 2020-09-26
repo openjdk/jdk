@@ -850,7 +850,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
   // before the allocation is that we avoid having to keep track of the newly
   // allocated memory while we do a GC.
   if (policy()->need_to_start_conc_mark("concurrent humongous allocation",
-                                           word_size)) {
+                                        word_size)) {
     collect(GCCause::_g1_humongous_allocation);
   }
 
@@ -2369,10 +2369,6 @@ bool G1CollectedHeap::block_is_obj(const HeapWord* addr) const {
   return hr->block_is_obj(addr);
 }
 
-bool G1CollectedHeap::supports_tlab_allocation() const {
-  return true;
-}
-
 size_t G1CollectedHeap::tlab_capacity(Thread* ignored) const {
   return (_policy->young_list_target_length() - _survivor.length()) * HeapRegion::GrainBytes;
 }
@@ -2717,12 +2713,18 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
   return result;
 }
 
-void G1CollectedHeap::do_concurrent_mark() {
+void G1CollectedHeap::start_concurrent_cycle(bool concurrent_operation_is_full_mark) {
+  assert(!_cm_thread->in_progress(), "Can not start concurrent operation while in progress");
+
   MutexLocker x(CGC_lock, Mutex::_no_safepoint_check_flag);
-  if (!_cm_thread->in_progress()) {
-    _cm_thread->set_started();
-    CGC_lock->notify();
+  if (concurrent_operation_is_full_mark) {
+    _cm->post_concurrent_mark_start();
+    _cm_thread->start_full_mark();
+  } else {
+    _cm->post_concurrent_undo_start();
+    _cm_thread->start_undo_mark();
   }
+  CGC_lock->notify();
 }
 
 bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const {
@@ -2975,13 +2977,11 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   // We also do not allow mixed GCs during marking.
   assert(!collector_state()->mark_or_rebuild_in_progress() || collector_state()->in_young_only_phase(), "sanity");
 
-  // Record whether this pause is a concurrent start. When the current
-  // thread has completed its logging output and it's safe to signal
-  // the CM thread, the flag's value in the policy has been reset.
-  bool should_start_conc_mark = collector_state()->in_concurrent_start_gc();
-  if (should_start_conc_mark) {
-    _cm->gc_tracer_cm()->set_gc_cause(gc_cause());
-  }
+  // Record whether this pause may need to trigger a concurrent operation. Later,
+  // when we signal the G1ConcurrentMarkThread, the collector state has already
+  // been reset for the next pause.
+  bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
+  bool concurrent_operation_is_full_mark = false;
 
   // Inner scope for scope based logging, timers, and stats collection
   {
@@ -3058,25 +3058,19 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
         _survivor_evac_stats.adjust_desired_plab_sz();
         _old_evac_stats.adjust_desired_plab_sz();
 
-        if (should_start_conc_mark) {
-          // We have to do this before we notify the CM threads that
-          // they can start working to make sure that all the
-          // appropriate initialization is done on the CM object.
-          concurrent_mark()->post_concurrent_start();
-          // Note that we don't actually trigger the CM thread at
-          // this point. We do that later when we're sure that
-          // the current thread has completed its logging output.
-        }
-
         allocate_dummy_regions();
 
         _allocator->init_mutator_alloc_regions();
 
         expand_heap_after_young_collection();
 
+        // Refine the type of a concurrent mark operation now that we did the
+        // evacuation, eventually aborting it.
+        concurrent_operation_is_full_mark = policy()->concurrent_operation_is_full_mark("Revise IHOP");
+
         double sample_end_time_sec = os::elapsedTime();
         double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
-        policy()->record_collection_pause_end(pause_time_ms);
+        policy()->record_collection_pause_end(pause_time_ms, concurrent_operation_is_full_mark);
       }
 
       verify_after_young_collection(verify_type);
@@ -3117,13 +3111,13 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   // without its logging output interfering with the logging output
   // that came from the pause.
 
-  if (should_start_conc_mark) {
-    // CAUTION: after the doConcurrentMark() call below, the concurrent marking
+  if (should_start_concurrent_mark_operation) {
+    // CAUTION: after the start_concurrent_cycle() call below, the concurrent marking
     // thread(s) could be running concurrently with us. Make sure that anything
     // after this point does not assume that we are the only GC thread running.
     // Note: of course, the actual marking work will not start until the safepoint
     // itself is released in SuspendibleThreadSet::desynchronize().
-    do_concurrent_mark();
+    start_concurrent_cycle(concurrent_operation_is_full_mark);
     ConcurrentGCBreakpoints::notify_idle_to_active();
   }
 }
@@ -3733,7 +3727,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
 
   // Concurrent start needs claim bits to keep track of the marked-through CLDs.
   if (collector_state()->in_concurrent_start_gc()) {
-    concurrent_mark()->pre_concurrent_start();
+    concurrent_mark()->pre_concurrent_start(gc_cause());
 
     double start_clear_claimed_marks = os::elapsedTime();
 

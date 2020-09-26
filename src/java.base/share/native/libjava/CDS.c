@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.event.gc.detailed;
 
-/**
- * @test
- * @key randomness
- * @summary Test allocates humongous objects with G1 GC. Objects
- * considered humongous when it allocates equals or more than one region. As
- * we're passing the size of byte array we need adjust it that entire structure
- * fits exactly to one region, if not - G1 will allocate another almost empty
- * region as a continue of humongous. Thus we will exhaust memory very fast and
- * test will fail with OOME.
- * @requires vm.hasJFR
- * @requires vm.gc == "null" | vm.gc == "G1"
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseG1GC -XX:MaxNewSize=5m -Xmx256m -XX:G1HeapRegionSize=1048576 jdk.jfr.event.gc.detailed.TestStressBigAllocationGCEventsWithG1 1048544
- */
-public class TestStressBigAllocationGCEventsWithG1 {
+#include "jvm.h"
+#include "jdk_internal_misc_CDS.h"
 
-    public static void main(String[] args) throws Exception {
-        new StressAllocationGCEvents().run(args);
-    }
+JNIEXPORT void JNICALL
+Java_jdk_internal_misc_CDS_initializeFromArchive(JNIEnv *env, jclass ignore,
+                                                jclass c) {
+    JVM_InitializeFromArchive(env, c);
+}
+
+JNIEXPORT void JNICALL
+Java_jdk_internal_misc_CDS_defineArchivedModules(JNIEnv *env, jclass ignore,
+                                                jobject platform_loader,
+                                                jobject system_loader) {
+    JVM_DefineArchivedModules(env, platform_loader, system_loader);
+}
+
+JNIEXPORT jlong JNICALL
+Java_jdk_internal_misc_CDS_getRandomSeedForDumping(JNIEnv *env, jclass ignore) {
+    return JVM_GetRandomSeedForDumping();
+}
+
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_misc_CDS_isDynamicDumpingEnabled(JNIEnv *env, jclass jcls) {
+    return JVM_IsDynamicDumpingEnabled(env);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_misc_CDS_isSharingEnabled(JNIEnv *env, jclass jcls) {
+    return JVM_IsSharingEnabled(env);
 }

@@ -316,20 +316,24 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     static JNF_MEMBER_CACHE(jm_setCollated, sjc_CPrinterJob, "setCollated", "(Z)V");
     static JNF_MEMBER_CACHE(jm_setPageRangeAttribute, sjc_CPrinterJob, "setPageRangeAttribute", "(IIZ)V");
     static JNF_MEMBER_CACHE(jm_setPrintToFile, sjc_CPrinterJob, "setPrintToFile", "(Z)V");
-
-    if (src.jobDisposition == NSPrintSaveJob) {
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, true);
-    } else {
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, false);
-    }
+    static JNF_MEMBER_CACHE(jm_setDestinationFile, sjc_CPrinterJob, "setDestinationFile", "(Ljava/lang/String;)V");
 
     // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSString *name = [[src printer] name];
     jstring printerName = JNFNSToJavaString(env, name);
     JNFCallVoidMethod(env, dstPrinterJob, jm_setService, printerName);
 
-
     NSMutableDictionary* printingDictionary = [src dictionary];
+
+    if (src.jobDisposition == NSPrintSaveJob) {
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, true);
+        NSURL *url = [printingDictionary objectForKey:NSPrintJobSavingURL];
+        NSString *nsStr = [url absoluteString];
+        jstring str = JNFNSToJavaString(env, nsStr);
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setDestinationFile, str);
+    } else {
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, false);
+    }
 
     NSNumber* nsCopies = [printingDictionary objectForKey:NSPrintCopies];
     if ([nsCopies respondsToSelector:@selector(integerValue)])
@@ -384,6 +388,8 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     static JNF_MEMBER_CACHE(jm_getSelectAttrib, sjc_CPrinterJob, "getSelectAttrib", "()I");
     static JNF_MEMBER_CACHE(jm_getNumberOfPages, jc_Pageable, "getNumberOfPages", "()I");
     static JNF_MEMBER_CACHE(jm_getPageFormat, sjc_CPrinterJob, "getPageFormatFromAttributes", "()Ljava/awt/print/PageFormat;");
+    static JNF_MEMBER_CACHE(jm_getDestinationFile, sjc_CPrinterJob,
+                            "getDestinationFile", "()Ljava/lang/String;");
 
     NSMutableDictionary* printingDictionary = [dst dictionary];
 
@@ -422,6 +428,16 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     jobject page = JNFCallObjectMethod(env, srcPrinterJob, jm_getPageFormat);
     if (page != NULL) {
         javaPageFormatToNSPrintInfo(env, NULL, page, dst);
+    }
+
+    jstring dest = JNFCallObjectMethod(env, srcPrinterJob, jm_getDestinationFile);
+    if (dest != NULL) {
+       [dst setJobDisposition:NSPrintSaveJob];
+       NSString *nsDestStr = JNFJavaToNSString(env, dest);
+       NSURL *nsURL = [NSURL fileURLWithPath:nsDestStr isDirectory:NO];
+       [printingDictionary setObject:nsURL forKey:NSPrintJobSavingURL];
+    } else {
+       [dst setJobDisposition:NSPrintSpoolJob];
     }
 }
 

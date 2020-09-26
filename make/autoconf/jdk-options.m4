@@ -228,23 +228,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 ])
 
 ###############################################################################
-#
-# Enable or disable the elliptic curve crypto implementation
-#
-AC_DEFUN_ONCE([JDKOPT_DETECT_INTREE_EC],
-[
-  AC_MSG_CHECKING([if elliptic curve crypto implementation is present])
-
-  if test -d "${TOPDIR}/src/jdk.crypto.ec/share/native/libsunec/impl"; then
-    ENABLE_INTREE_EC=true
-    AC_MSG_RESULT([yes])
-  else
-    ENABLE_INTREE_EC=false
-    AC_MSG_RESULT([no])
-  fi
-
-  AC_SUBST(ENABLE_INTREE_EC)
-])
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 [
