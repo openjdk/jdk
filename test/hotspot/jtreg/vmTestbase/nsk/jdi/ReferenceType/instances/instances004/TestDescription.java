@@ -53,7 +53,7 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xmx128M ${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="-Xmx128M ${test.vm.opts} ${test.java.opts}"
  *      -testClassNames nsk.share.jdi.TestClass1:boolean[]:float[]
  */
 

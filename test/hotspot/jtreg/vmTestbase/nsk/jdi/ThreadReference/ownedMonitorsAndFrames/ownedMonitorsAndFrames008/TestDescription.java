@@ -61,7 +61,7 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xmixed
+ *      -debugee.vmkeys="-Xmixed
  *      -XX:CompileThreshold=2"
  */
 

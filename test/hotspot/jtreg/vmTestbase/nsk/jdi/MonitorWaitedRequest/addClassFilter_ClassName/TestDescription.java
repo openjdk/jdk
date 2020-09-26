@@ -69,7 +69,7 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  *      -eventType MONITOR_WAITED
  *      -debuggeeClassName nsk.share.jdi.MonitorEventsDebuggee
  *      -classPatterns nsk.share.jdi.MonitorWaitExecutor_'*':'*'Subclass:nsk.share.jdi.MonitorWaitExecutor_1Subclass

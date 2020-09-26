@@ -52,7 +52,7 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xmx128M ${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="-Xmx128M ${test.vm.opts} ${test.java.opts}"
  *      -testClassNames nsk.jdi.ReferenceType.instances.instances003.instances003$TestClassLoader:java.lang.String:java.lang.Thread
  */
 

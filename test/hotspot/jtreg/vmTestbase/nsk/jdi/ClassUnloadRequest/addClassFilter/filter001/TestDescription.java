@@ -75,6 +75,6 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}" ./bin
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}" ./bin
  */
 

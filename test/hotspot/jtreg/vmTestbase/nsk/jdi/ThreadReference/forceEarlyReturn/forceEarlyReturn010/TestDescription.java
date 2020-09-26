@@ -52,7 +52,7 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-XX:+Inline"
+ *      -debugee.vmkeys="-XX:+Inline"
  *      -inlineType INLINE_METHOD_RETURNING_CONST
  */
 

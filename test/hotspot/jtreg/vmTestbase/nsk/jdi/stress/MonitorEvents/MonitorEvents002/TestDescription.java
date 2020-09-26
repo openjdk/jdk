@@ -66,7 +66,7 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  *      -allowMissedEvents MONITOR_CONTENTED_ENTERED:MONITOR_CONTENTED_ENTER
  *      -allowExtraEvents MONITOR_CONTENTED_ENTER:MONITOR_CONTENTED_ENTERED
  *      -eventTypes MONITOR_CONTENTED_ENTERED:MONITOR_CONTENTED_ENTER:MONITOR_WAIT:MONITOR_WAITED

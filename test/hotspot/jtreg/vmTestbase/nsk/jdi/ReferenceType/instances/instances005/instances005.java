@@ -48,7 +48,7 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 
 package nsk.jdi.ReferenceType.instances.instances005;

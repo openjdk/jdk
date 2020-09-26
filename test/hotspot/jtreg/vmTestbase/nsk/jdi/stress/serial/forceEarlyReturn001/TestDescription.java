@@ -68,7 +68,7 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -debugee.vmkeys="-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                       -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
  *      -configFile ${test.src}/forceEarlyReturn001.tests

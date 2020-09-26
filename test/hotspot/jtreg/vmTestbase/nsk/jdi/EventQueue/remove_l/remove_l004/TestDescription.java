@@ -73,6 +73,6 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts} -Dtest.timeout.factor=${test.timeout.factor}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts} -Dtest.timeout.factor=${test.timeout.factor}"
  */
 
