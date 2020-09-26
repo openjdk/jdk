@@ -65,7 +65,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.allMethods.allmethods006
  *        nsk.jdi.ReferenceType.allMethods.allmethods006a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.allMethods.allmethods006
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

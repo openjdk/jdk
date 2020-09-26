@@ -50,7 +50,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassUnloadRequest.addClassExclusionFilter.exclfilter002
  *        nsk.jdi.ClassUnloadRequest.addClassExclusionFilter.exclfilter002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassUnloadRequest.addClassExclusionFilter.exclfilter002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

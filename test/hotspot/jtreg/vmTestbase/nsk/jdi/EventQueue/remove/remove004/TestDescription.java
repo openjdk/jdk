@@ -65,7 +65,7 @@
  *          /test/lib
  * @build nsk.jdi.EventQueue.remove.remove004
  *        nsk.jdi.EventQueue.remove.remove004a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventQueue.remove.remove004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

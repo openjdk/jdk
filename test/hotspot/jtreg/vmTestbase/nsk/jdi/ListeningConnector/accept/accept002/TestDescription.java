@@ -45,7 +45,7 @@
  *          /test/lib
  * @build nsk.jdi.ListeningConnector.accept.accept002
  *        nsk.jdi.ListeningConnector.accept.accept002t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ListeningConnector.accept.accept002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

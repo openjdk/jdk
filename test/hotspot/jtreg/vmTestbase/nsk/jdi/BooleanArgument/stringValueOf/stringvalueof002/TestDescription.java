@@ -76,7 +76,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.BooleanArgument.stringValueOf.stringvalueof002
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.BooleanArgument.stringValueOf.stringvalueof002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

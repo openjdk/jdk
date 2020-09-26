@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.DoubleType._itself_.doubletype001
  *        nsk.jdi.DoubleType._itself_.doubletype001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.DoubleType._itself_.doubletype001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

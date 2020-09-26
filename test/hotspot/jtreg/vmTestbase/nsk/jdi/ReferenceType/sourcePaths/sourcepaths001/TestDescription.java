@@ -79,7 +79,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.sourcePaths.sourcepaths001
  *        nsk.jdi.ReferenceType.sourcePaths.sourcepaths001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.sourcePaths.sourcepaths001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

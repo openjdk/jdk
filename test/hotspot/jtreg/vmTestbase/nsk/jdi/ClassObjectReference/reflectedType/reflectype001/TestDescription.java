@@ -51,7 +51,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassObjectReference.reflectedType.reflectype001
  *        nsk.jdi.ClassObjectReference.reflectedType.reflectype001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassObjectReference.reflectedType.reflectype001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

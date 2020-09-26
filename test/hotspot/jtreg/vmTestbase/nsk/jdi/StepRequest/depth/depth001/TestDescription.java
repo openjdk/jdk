@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdi.StepRequest.depth.depth001
  *        nsk.jdi.StepRequest.depth.depth001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StepRequest.depth.depth001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

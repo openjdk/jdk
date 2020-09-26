@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassType.superclass.superclass002
  *        nsk.jdi.ClassType.superclass.superclass002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassType.superclass.superclass002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

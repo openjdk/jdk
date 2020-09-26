@@ -58,7 +58,7 @@
  * @clean nsk.jdi.LocalVariable.genericSignature.gensignature001a
  * @compile -g:lines,source,vars ../gensignature001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.LocalVariable.genericSignature.gensignature001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassLoaderReference.definedClasses.definedclasses002
  *        nsk.jdi.ClassLoaderReference.definedClasses.definedclasses002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassLoaderReference.definedClasses.definedclasses002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

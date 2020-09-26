@@ -64,7 +64,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.suspend.suspend001
  *        nsk.jdi.VirtualMachine.suspend.suspend001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.suspend.suspend001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

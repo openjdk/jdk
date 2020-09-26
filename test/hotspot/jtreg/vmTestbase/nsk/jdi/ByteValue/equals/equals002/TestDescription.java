@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.ByteValue.equals.equals002
  *        nsk.jdi.ByteValue.equals.equals002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ByteValue.equals.equals002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

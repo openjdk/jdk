@@ -41,7 +41,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.ownedMonitors.ownedmonitors002
  *        nsk.jdi.ThreadReference.ownedMonitors.ownedmonitors002t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.ownedMonitors.ownedmonitors002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

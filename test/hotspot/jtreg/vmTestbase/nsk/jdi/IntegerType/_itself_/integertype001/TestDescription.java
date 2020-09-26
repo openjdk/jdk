@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.IntegerType._itself_.integertype001
  *        nsk.jdi.IntegerType._itself_.integertype001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.IntegerType._itself_.integertype001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

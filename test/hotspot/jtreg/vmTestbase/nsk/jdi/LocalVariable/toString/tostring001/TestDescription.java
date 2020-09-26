@@ -49,7 +49,7 @@
  * @clean nsk.jdi.LocalVariable.toString.tostring001a
  * @compile -g:lines,source,vars ../tostring001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.LocalVariable.toString.tostring001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

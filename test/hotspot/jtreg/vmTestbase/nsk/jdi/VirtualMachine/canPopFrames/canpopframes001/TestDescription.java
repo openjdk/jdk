@@ -56,7 +56,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.canPopFrames.canpopframes001
  *        nsk.jdi.VirtualMachine.canPopFrames.canpopframes001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.canPopFrames.canpopframes001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

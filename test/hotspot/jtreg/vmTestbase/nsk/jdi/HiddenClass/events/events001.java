@@ -33,7 +33,7 @@
  *
  * @build nsk.jdi.HiddenClass.events.*
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.HiddenClass.events.events001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

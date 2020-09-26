@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.canGetOwnedMonitorInfo.cangetinfo001
  *        nsk.jdi.VirtualMachine.canGetOwnedMonitorInfo.cangetinfo001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.canGetOwnedMonitorInfo.cangetinfo001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

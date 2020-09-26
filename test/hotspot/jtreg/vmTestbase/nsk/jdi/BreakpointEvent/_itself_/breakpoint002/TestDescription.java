@@ -54,7 +54,7 @@
  * @clean nsk.jdi.BreakpointEvent._itself_.breakpoint002t
  * @compile -g:lines,source,vars ../breakpoint002t.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.BreakpointEvent._itself_.breakpoint002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

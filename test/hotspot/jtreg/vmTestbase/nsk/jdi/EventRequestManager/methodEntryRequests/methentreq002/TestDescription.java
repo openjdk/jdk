@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.methodEntryRequests.methentreq002
  *        nsk.jdi.EventRequestManager.methodEntryRequests.methentreq002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.methodEntryRequests.methentreq002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

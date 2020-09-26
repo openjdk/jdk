@@ -71,7 +71,7 @@
  *      -g:lines,source,vars
  *      newclass01 newclass02 newclass03 newclass04 newclass05 newclass06 newclass07 newclass08
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.redefineClasses.redefineclasses008
  *      ./bin
  *      -verbose

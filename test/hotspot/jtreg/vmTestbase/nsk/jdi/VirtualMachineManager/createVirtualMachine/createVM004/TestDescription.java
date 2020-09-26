@@ -49,7 +49,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachineManager.createVirtualMachine.createVM004
  *        nsk.jdi.VirtualMachineManager.createVirtualMachine.CreateVM004_TargetVM
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachineManager.createVirtualMachine.createVM004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

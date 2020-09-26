@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.isStatic.isstatic002
  *        nsk.jdi.ReferenceType.isStatic.isstatic002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.isStatic.isstatic002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

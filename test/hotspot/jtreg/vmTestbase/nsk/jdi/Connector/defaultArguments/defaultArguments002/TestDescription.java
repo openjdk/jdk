@@ -42,7 +42,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.Connector.defaultArguments.defaultArguments002
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Connector.defaultArguments.defaultArguments002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

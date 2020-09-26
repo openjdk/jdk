@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.Method.bytecodes.bytecodes001
  *        nsk.jdi.Method.bytecodes.bytecodes001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.bytecodes.bytecodes001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

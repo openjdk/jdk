@@ -66,7 +66,7 @@
  *          /test/lib
  * @build nsk.jdi.StackFrame.thisObject.thisobject002
  *        nsk.jdi.StackFrame.thisObject.thisobject002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StackFrame.thisObject.thisobject002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

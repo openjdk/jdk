@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.VoidValue.hashCode.hashcode001.hashcode001
  *        nsk.jdi.VoidValue.hashCode.hashcode001.hashcode001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VoidValue.hashCode.hashcode001.hashcode001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

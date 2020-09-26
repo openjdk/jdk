@@ -64,7 +64,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.setDefaultStratum.setdefaultstratum001
  *        nsk.jdi.VirtualMachine.setDefaultStratum.setdefaultstratum001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.setDefaultStratum.setdefaultstratum001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

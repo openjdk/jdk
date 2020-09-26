@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.TypeComponent.declaringType.decltype009
  *        nsk.jdi.TypeComponent.declaringType.decltype009a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.TypeComponent.declaringType.decltype009
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

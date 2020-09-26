@@ -66,7 +66,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.AttachingConnector.attach.attach003
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.AttachingConnector.attach.attach003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

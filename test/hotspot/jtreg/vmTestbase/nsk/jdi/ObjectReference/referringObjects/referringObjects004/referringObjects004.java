@@ -41,7 +41,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.ObjectReference.referringObjects.referringObjects004.referringObjects004
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdi.ObjectReference.referringObjects.referringObjects004.referringObjects004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

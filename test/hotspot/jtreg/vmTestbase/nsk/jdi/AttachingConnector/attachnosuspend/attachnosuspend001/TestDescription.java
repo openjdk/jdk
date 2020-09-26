@@ -42,7 +42,7 @@
  *          /test/lib
  * @build nsk.jdi.AttachingConnector.attachnosuspend.attachnosuspend001
  *        nsk.jdi.AttachingConnector.attachnosuspend.attachnosuspend001t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.AttachingConnector.attachnosuspend.attachnosuspend001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

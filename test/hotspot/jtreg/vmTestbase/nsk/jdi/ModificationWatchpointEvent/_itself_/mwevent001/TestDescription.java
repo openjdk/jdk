@@ -56,7 +56,7 @@
  *          /test/lib
  * @build nsk.jdi.ModificationWatchpointEvent._itself_.mwevent001
  *        nsk.jdi.ModificationWatchpointEvent._itself_.mwevent001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ModificationWatchpointEvent._itself_.mwevent001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -79,7 +79,7 @@
  *          /test/lib
  * @build nsk.jdi.BreakpointRequest.addInstanceFilter.instancefilter004
  *        nsk.jdi.BreakpointRequest.addInstanceFilter.instancefilter004a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.BreakpointRequest.addInstanceFilter.instancefilter004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

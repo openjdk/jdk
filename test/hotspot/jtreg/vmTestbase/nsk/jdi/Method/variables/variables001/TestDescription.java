@@ -90,7 +90,7 @@
  * @clean nsk.jdi.Method.variables.variables001a
  * @compile -g:lines,source,vars ../variables001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.variables.variables001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

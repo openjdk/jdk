@@ -69,7 +69,7 @@
  *          /test/lib
  * @build nsk.jdi.BScenarios.multithrd.tc02x001
  *        nsk.jdi.BScenarios.multithrd.tc02x001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.BScenarios.multithrd.tc02x001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.canUseInstanceFilters.canusefilters001
  *        nsk.jdi.VirtualMachine.canUseInstanceFilters.canusefilters001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.canUseInstanceFilters.canusefilters001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -41,7 +41,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.failedToInitialize.failedToInitialize001
  *        nsk.jdi.ReferenceType.failedToInitialize.failedToInitialize001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.failedToInitialize.failedToInitialize001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

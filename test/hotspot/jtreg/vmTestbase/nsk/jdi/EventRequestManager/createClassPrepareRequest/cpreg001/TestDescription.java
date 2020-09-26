@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.createClassPrepareRequest.cpreg001
  *        nsk.jdi.EventRequestManager.createClassPrepareRequest.cpreg001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.createClassPrepareRequest.cpreg001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

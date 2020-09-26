@@ -85,7 +85,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadStartEvent.thread.thread001
  *        nsk.jdi.ThreadStartEvent.thread.thread001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadStartEvent.thread.thread001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

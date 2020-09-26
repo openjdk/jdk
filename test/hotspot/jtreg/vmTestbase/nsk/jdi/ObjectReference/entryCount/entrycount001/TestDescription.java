@@ -74,7 +74,7 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference.entryCount.entrycount001
  *        nsk.jdi.ObjectReference.entryCount.entrycount001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference.entryCount.entrycount001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

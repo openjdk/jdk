@@ -83,7 +83,7 @@
  * @clean nsk.jdi.Location.sourcePath_s.sourcepath_s001a
  * @compile -g:lines,source,vars ../sourcepath_s001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Location.sourcePath_s.sourcepath_s001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

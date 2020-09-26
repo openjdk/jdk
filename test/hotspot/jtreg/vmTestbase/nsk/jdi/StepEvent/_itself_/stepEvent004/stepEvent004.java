@@ -62,7 +62,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.StepEvent._itself_.stepEvent004.stepEvent004
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StepEvent._itself_.stepEvent004.stepEvent004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

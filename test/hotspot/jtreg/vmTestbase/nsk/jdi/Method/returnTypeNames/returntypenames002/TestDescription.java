@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.Method.returnTypeNames.returntypenames002
  *        nsk.jdi.Method.returnTypeNames.returntypenames002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.returnTypeNames.returntypenames002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

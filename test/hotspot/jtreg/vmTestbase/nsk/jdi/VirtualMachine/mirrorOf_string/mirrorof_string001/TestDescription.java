@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.mirrorOf_string.mirrorof_string001
  *        nsk.jdi.VirtualMachine.mirrorOf_string.mirrorof_string001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.mirrorOf_string.mirrorof_string001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

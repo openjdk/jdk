@@ -82,7 +82,7 @@
  *          /test/lib
  * @build nsk.jdi.MethodEntryEvent.method.method002
  *        nsk.jdi.MethodEntryEvent.method.method002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.MethodEntryEvent.method.method002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

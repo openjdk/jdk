@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.classPrepareRequests.clsprepreq002
  *        nsk.jdi.EventRequestManager.classPrepareRequests.clsprepreq002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.classPrepareRequests.clsprepreq002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

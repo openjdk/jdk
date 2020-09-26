@@ -80,7 +80,7 @@
  *          /test/lib
  * @build nsk.jdi.BreakpointEvent._itself_.breakpoint001
  *        nsk.jdi.BreakpointEvent._itself_.breakpoint001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.BreakpointEvent._itself_.breakpoint001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

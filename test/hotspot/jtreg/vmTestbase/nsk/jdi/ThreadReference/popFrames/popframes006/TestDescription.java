@@ -48,7 +48,7 @@
  * @clean nsk.jdi.ThreadReference.popFrames.popframes006t
  * @compile -g:lines,source,vars ../popframes006t.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.popFrames.popframes006
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

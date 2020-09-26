@@ -62,7 +62,7 @@
  * @clean nsk.jdi.Value._itself_.value001a
  * @compile -g:lines,source,vars ../value001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Value._itself_.value001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

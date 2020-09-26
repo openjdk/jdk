@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.MethodEntryRequest.addThreadFilter.threadfilter002
  *        nsk.jdi.MethodEntryRequest.addThreadFilter.threadfilter002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.MethodEntryRequest.addThreadFilter.threadfilter002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

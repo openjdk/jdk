@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassType.invokeMethod.invokemethod011
  *        nsk.jdi.ClassType.invokeMethod.invokemethod011t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassType.invokeMethod.invokemethod011
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

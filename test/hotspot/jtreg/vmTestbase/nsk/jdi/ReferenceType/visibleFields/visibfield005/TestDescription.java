@@ -43,7 +43,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.visibleFields.visibfield005
  *        nsk.jdi.ReferenceType.visibleFields.visibfield005t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.visibleFields.visibfield005
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

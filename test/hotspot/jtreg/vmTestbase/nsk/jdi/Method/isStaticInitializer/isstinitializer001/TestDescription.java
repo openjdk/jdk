@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdi.Method.isStaticInitializer.isstinitializer001
  *        nsk.jdi.Method.isStaticInitializer.isstinitializer001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.isStaticInitializer.isstinitializer001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

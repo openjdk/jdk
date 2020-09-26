@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.ArrayType.componentTypeName.componenttypename002
  *        nsk.jdi.ArrayType.componentTypeName.componenttypename002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ArrayType.componentTypeName.componenttypename002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

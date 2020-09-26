@@ -44,7 +44,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.ownedMonitorsAndFrames.ownedMonitorsAndFrames009.ownedMonitorsAndFrames009
  *        nsk.jdi.ThreadReference.ownedMonitorsAndFrames.ownedMonitorsAndFrames009.ownedMonitorsAndFrames009a
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdi.ThreadReference.ownedMonitorsAndFrames.ownedMonitorsAndFrames009.ownedMonitorsAndFrames009
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

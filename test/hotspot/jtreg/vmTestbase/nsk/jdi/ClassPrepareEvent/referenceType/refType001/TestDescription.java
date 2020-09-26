@@ -81,7 +81,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassPrepareEvent.referenceType.refType001
  *        nsk.jdi.ClassPrepareEvent.referenceType.refType001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassPrepareEvent.referenceType.refType001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

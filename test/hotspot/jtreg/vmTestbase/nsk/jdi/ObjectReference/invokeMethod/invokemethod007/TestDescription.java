@@ -46,7 +46,7 @@
  * @clean nsk.jdi.ObjectReference.invokeMethod.invokemethod007t
  * @compile -g:lines,source,vars ../invokemethod007t.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference.invokeMethod.invokemethod007
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

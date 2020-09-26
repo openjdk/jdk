@@ -57,7 +57,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.IntegerArgument.min.min001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.IntegerArgument.min.min001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

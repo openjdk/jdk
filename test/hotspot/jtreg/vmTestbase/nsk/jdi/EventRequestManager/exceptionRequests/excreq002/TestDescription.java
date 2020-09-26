@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.exceptionRequests.excreq002
  *        nsk.jdi.EventRequestManager.exceptionRequests.excreq002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.exceptionRequests.excreq002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

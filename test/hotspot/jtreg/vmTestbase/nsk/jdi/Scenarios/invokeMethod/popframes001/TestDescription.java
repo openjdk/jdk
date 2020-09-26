@@ -55,7 +55,7 @@
  *          /test/lib
  * @build nsk.jdi.Scenarios.invokeMethod.popframes001
  *        nsk.jdi.Scenarios.invokeMethod.popframes001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Scenarios.invokeMethod.popframes001
  *      ./bin
  *      -verbose

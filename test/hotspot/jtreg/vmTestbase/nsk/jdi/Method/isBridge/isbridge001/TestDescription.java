@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.Method.isBridge.isbridge001
  *        nsk.jdi.Method.isBridge.isbridge001t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.isBridge.isbridge001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

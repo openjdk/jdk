@@ -41,7 +41,7 @@
  *          /test/lib
  * @build nsk.jdi.Field.isTransient.istrans001
  *        nsk.jdi.Field.isTransient.istrans001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Field.isTransient.istrans001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

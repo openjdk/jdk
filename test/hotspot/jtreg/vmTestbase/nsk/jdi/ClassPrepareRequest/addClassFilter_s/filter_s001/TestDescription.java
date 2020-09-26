@@ -69,7 +69,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassPrepareRequest.addClassFilter_s.filter_s001
  *        nsk.jdi.ClassPrepareRequest.addClassFilter_s.filter_s001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassPrepareRequest.addClassFilter_s.filter_s001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

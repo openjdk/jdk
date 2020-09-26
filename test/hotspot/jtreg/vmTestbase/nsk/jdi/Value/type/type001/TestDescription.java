@@ -57,7 +57,7 @@
  *          /test/lib
  * @build nsk.jdi.Value.type.type001
  *        nsk.jdi.Value.type.type001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Value.type.type001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

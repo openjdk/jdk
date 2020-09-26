@@ -95,7 +95,7 @@
  * @clean nsk.jdi.StackFrame.setValue.setvalue002.setvalue002a
  * @compile -g:lines,source,vars setvalue002a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StackFrame.setValue.setvalue002.setvalue002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

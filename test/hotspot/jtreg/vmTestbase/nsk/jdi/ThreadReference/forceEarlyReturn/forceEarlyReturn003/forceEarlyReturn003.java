@@ -45,7 +45,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn003.forceEarlyReturn003
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn003.forceEarlyReturn003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

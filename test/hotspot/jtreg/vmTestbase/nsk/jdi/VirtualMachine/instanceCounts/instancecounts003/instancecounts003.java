@@ -48,7 +48,7 @@
  * @build nsk.jdi.VirtualMachine.instanceCounts.instancecounts003.instancecounts003
  *        nsk.share.jdi.TestClass1
  *        nsk.share.jdi.TestInterfaceImplementer1
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.instanceCounts.instancecounts003.instancecounts003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

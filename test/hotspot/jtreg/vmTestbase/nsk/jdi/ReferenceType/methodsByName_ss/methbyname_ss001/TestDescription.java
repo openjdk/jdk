@@ -44,7 +44,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.methodsByName_ss.methbyname_ss001
  *        nsk.jdi.ReferenceType.methodsByName_ss.methbyname_ss001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.methodsByName_ss.methbyname_ss001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

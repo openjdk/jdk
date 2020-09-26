@@ -64,7 +64,7 @@
  *          /test/lib
  * @build nsk.jdi.WatchpointRequest.addThreadFilter.addthreadfilter001
  *        nsk.jdi.WatchpointRequest.addThreadFilter.addthreadfilter001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.WatchpointRequest.addThreadFilter.addthreadfilter001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

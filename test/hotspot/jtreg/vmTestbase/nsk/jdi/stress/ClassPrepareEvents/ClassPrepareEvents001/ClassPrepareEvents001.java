@@ -38,7 +38,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.stress.ClassPrepareEvents.ClassPrepareEvents001.ClassPrepareEvents001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.stress.ClassPrepareEvents.ClassPrepareEvents001.ClassPrepareEvents001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

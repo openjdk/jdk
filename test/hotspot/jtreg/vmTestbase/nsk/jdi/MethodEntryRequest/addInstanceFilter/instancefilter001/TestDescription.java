@@ -70,7 +70,7 @@
  *          /test/lib
  * @build nsk.jdi.MethodEntryRequest.addInstanceFilter.instancefilter001
  *        nsk.jdi.MethodEntryRequest.addInstanceFilter.instancefilter001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.MethodEntryRequest.addInstanceFilter.instancefilter001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

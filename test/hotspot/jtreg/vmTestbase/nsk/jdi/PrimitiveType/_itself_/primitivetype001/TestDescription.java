@@ -52,7 +52,7 @@
  *          /test/lib
  * @build nsk.jdi.PrimitiveType._itself_.primitivetype001
  *        nsk.jdi.PrimitiveType._itself_.primitivetype001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.PrimitiveType._itself_.primitivetype001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

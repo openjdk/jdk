@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.ExceptionRequest.notifyCaught.notifycaught001
  *        nsk.jdi.ExceptionRequest.notifyCaught.notifycaught001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ExceptionRequest.notifyCaught.notifycaught001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

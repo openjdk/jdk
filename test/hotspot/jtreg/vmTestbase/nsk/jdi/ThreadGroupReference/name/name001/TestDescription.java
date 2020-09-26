@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadGroupReference.name.name001
  *        nsk.jdi.ThreadGroupReference.name.name001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadGroupReference.name.name001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

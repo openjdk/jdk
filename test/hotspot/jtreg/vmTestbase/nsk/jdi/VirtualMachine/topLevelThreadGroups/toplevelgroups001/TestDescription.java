@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.topLevelThreadGroups.toplevelgroups001
  *        nsk.jdi.VirtualMachine.topLevelThreadGroups.toplevelgroups001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.topLevelThreadGroups.toplevelgroups001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

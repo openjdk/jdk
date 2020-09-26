@@ -55,7 +55,7 @@
  *          /test/lib
  * @build nsk.jdi.TypeComponent.isProtected.isprotected001
  *        nsk.jdi.TypeComponent.isProtected.isprotected001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.TypeComponent.isProtected.isprotected001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

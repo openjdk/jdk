@@ -52,7 +52,7 @@
  *          /test/lib
  * @build nsk.jdi.VoidValue.toString.tostring001
  *        nsk.jdi.VoidValue.toString.tostring001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VoidValue.toString.tostring001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

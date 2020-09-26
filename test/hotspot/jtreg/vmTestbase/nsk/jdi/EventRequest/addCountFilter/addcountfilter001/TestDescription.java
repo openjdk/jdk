@@ -76,7 +76,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequest.addCountFilter.addcountfilter001
  *        nsk.jdi.EventRequest.addCountFilter.addcountfilter001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequest.addCountFilter.addcountfilter001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

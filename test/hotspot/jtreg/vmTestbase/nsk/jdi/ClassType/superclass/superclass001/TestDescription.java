@@ -61,7 +61,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassType.superclass.superclass001
  *        nsk.jdi.ClassType.superclass.superclass001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassType.superclass.superclass001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

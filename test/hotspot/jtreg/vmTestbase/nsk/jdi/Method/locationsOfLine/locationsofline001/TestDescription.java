@@ -88,7 +88,7 @@
  * @clean nsk.jdi.Method.locationsOfLine.locationsofline001a
  * @compile -g:lines,source,vars ../locationsofline001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.locationsOfLine.locationsofline001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

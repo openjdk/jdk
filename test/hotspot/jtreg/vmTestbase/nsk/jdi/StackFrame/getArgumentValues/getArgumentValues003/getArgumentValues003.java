@@ -35,7 +35,7 @@
  *          /test/lib
  * @build nsk.jdi.StackFrame.getArgumentValues.getArgumentValues003.getArgumentValues003
  *        nsk.jdi.StackFrame.getArgumentValues.getArgumentValues003.getArgumentValues003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StackFrame.getArgumentValues.getArgumentValues003.getArgumentValues003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

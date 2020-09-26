@@ -41,7 +41,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.Argument.name.name001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Argument.name.name001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

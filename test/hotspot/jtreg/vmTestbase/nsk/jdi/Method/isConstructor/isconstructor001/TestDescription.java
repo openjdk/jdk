@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdi.Method.isConstructor.isconstructor001
  *        nsk.jdi.Method.isConstructor.isconstructor001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.isConstructor.isconstructor001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

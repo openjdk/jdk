@@ -42,7 +42,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.createModificationWatchpointRequest.crmodwtchpreq002
  *        nsk.jdi.EventRequestManager.createModificationWatchpointRequest.crmodwtchpreq002t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.createModificationWatchpointRequest.crmodwtchpreq002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

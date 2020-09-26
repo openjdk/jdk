@@ -52,7 +52,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.Location.sourcePath_s.sourcePath_s002.sourcePath_s002
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Location.sourcePath_s.sourcePath_s002.sourcePath_s002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

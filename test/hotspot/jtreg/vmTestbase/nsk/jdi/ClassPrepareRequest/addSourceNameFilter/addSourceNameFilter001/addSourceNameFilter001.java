@@ -49,7 +49,7 @@
  * @build nsk.jdi.ClassPrepareRequest.addSourceNameFilter.addSourceNameFilter001.addSourceNameFilter001
  *        nsk.jdi.ClassPrepareRequest.addSourceNameFilter.addSourceNameFilter001.TestClass2
  *        nsk.share.jdi.TestClass1
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassPrepareRequest.addSourceNameFilter.addSourceNameFilter001.addSourceNameFilter001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

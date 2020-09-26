@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdi.FloatValue.hashCode.hashcode001
  *        nsk.jdi.FloatValue.hashCode.hashcode001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.FloatValue.hashCode.hashcode001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

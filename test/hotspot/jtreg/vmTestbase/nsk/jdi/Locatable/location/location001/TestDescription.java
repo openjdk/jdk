@@ -64,7 +64,7 @@
  *          /test/lib
  * @build nsk.jdi.Locatable.location.location001
  *        nsk.jdi.Locatable.location.location001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Locatable.location.location001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

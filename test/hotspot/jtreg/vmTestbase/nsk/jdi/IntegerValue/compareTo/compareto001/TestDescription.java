@@ -57,7 +57,7 @@
  *          /test/lib
  * @build nsk.jdi.IntegerValue.compareTo.compareto001
  *        nsk.jdi.IntegerValue.compareTo.compareto001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.IntegerValue.compareTo.compareto001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

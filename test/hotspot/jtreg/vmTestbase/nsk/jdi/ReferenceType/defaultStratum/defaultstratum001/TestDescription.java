@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.defaultStratum.defaultstratum001
  *        nsk.jdi.ReferenceType.defaultStratum.defaultstratum001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.defaultStratum.defaultstratum001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

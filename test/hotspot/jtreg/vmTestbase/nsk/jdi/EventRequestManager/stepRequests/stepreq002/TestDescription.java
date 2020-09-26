@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.stepRequests.stepreq002
  *        nsk.jdi.EventRequestManager.stepRequests.stepreq002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.stepRequests.stepreq002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

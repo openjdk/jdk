@@ -44,7 +44,7 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference._bounds_.bounds003
  *        nsk.jdi.ObjectReference._bounds_.bounds003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference._bounds_.bounds003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

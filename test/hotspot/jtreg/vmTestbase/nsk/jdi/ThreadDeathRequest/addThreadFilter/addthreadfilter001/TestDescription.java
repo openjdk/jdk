@@ -61,7 +61,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadDeathRequest.addThreadFilter.addthreadfilter001
  *        nsk.jdi.ThreadDeathRequest.addThreadFilter.addthreadfilter001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadDeathRequest.addThreadFilter.addthreadfilter001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

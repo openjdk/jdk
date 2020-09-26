@@ -57,7 +57,7 @@
  *          /test/lib
  * @build nsk.jdi.FloatValue.compareTo.compareto001
  *        nsk.jdi.FloatValue.compareTo.compareto001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.FloatValue.compareTo.compareto001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

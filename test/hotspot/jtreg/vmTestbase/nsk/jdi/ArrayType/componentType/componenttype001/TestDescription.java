@@ -68,7 +68,7 @@
  *          /test/lib
  * @build nsk.jdi.ArrayType.componentType.componenttype001
  *        nsk.jdi.ArrayType.componentType.componenttype001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ArrayType.componentType.componenttype001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

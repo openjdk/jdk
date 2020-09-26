@@ -62,7 +62,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.IntegerArgument.intValue.intvalue001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.IntegerArgument.intValue.intvalue001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

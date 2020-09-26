@@ -90,7 +90,7 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassUnloadEvent.classSignature.signature001
  *      ./bin
  *      -verbose

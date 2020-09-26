@@ -41,7 +41,7 @@
  *          /test/lib
  * @build nsk.jdi.Field.isVolatile.isvol001
  *        nsk.jdi.Field.isVolatile.isvol001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Field.isVolatile.isvol001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

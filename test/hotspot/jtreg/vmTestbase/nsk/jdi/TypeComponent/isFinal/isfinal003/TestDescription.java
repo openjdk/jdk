@@ -48,7 +48,7 @@
  *          /test/lib
  * @build nsk.jdi.TypeComponent.isFinal.isfinal003
  *        nsk.jdi.TypeComponent.isFinal.isfinal003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.TypeComponent.isFinal.isfinal003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -69,7 +69,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachineManager.connectedVirtualMachines.convm003
  *        nsk.jdi.VirtualMachineManager.connectedVirtualMachines.convm003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachineManager.connectedVirtualMachines.convm003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

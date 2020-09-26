@@ -51,7 +51,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.Location.lineNumber_s.lineNumber_s002.lineNumber_s002
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Location.lineNumber_s.lineNumber_s002.lineNumber_s002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

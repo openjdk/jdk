@@ -42,7 +42,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.ListeningConnector.supportsMultipleConnections.supportsmultipleconnections001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ListeningConnector.supportsMultipleConnections.supportsmultipleconnections001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

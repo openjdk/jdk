@@ -48,7 +48,7 @@
  *          /test/lib
  * @build nsk.jdi.Accessible.isPrivate.isPrivate001
  *        nsk.jdi.Accessible.isPrivate.isPrivate001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Accessible.isPrivate.isPrivate001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdi.EventSet.eventIterator.eventiterator004
  *        nsk.jdi.EventSet.eventIterator.eventiterator004a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventSet.eventIterator.eventiterator004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

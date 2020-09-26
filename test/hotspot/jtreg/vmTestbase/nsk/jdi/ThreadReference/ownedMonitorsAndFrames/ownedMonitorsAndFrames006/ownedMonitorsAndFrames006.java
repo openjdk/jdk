@@ -48,7 +48,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.ThreadReference.ownedMonitorsAndFrames.ownedMonitorsAndFrames006.ownedMonitorsAndFrames006
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdi.ThreadReference.ownedMonitorsAndFrames.ownedMonitorsAndFrames006.ownedMonitorsAndFrames006
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

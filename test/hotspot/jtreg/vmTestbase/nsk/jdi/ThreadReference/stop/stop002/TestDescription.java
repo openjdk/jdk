@@ -48,7 +48,7 @@
  * @clean nsk.jdi.ThreadReference.stop.stop002t
  * @compile -g:lines,source,vars ../stop002t.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.stop.stop002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

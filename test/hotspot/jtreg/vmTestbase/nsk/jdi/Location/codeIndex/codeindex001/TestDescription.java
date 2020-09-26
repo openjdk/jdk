@@ -71,7 +71,7 @@
  * @clean nsk.jdi.Location.codeIndex.codeindex001a
  * @compile -g:lines,source,vars ../codeindex001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Location.codeIndex.codeindex001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

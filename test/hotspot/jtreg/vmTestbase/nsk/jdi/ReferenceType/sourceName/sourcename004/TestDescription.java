@@ -47,7 +47,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.sourceName.sourcename004
  *        nsk.jdi.ReferenceType.sourceName.sourcename004t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.sourceName.sourcename004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

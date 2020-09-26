@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.status.status004.status004
  *        nsk.jdi.ThreadReference.status.status004.status004a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.status.status004.status004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

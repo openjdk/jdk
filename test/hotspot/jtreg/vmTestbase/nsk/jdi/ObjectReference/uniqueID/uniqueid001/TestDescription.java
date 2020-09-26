@@ -65,7 +65,7 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference.uniqueID.uniqueid001
  *        nsk.jdi.ObjectReference.uniqueID.uniqueid001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference.uniqueID.uniqueid001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

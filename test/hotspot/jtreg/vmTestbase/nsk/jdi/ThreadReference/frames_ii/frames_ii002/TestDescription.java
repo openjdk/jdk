@@ -74,7 +74,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.frames_ii.frames_ii002
  *        nsk.jdi.ThreadReference.frames_ii.frames_ii002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.frames_ii.frames_ii002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

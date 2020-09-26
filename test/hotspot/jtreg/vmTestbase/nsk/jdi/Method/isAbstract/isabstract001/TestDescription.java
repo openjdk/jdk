@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdi.Method.isAbstract.isabstract001
  *        nsk.jdi.Method.isAbstract.isabstract001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.isAbstract.isabstract001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

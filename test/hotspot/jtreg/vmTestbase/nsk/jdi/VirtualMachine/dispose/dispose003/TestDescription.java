@@ -74,7 +74,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.dispose.dispose003
  *        nsk.jdi.VirtualMachine.dispose.dispose003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.dispose.dispose003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

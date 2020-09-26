@@ -55,7 +55,7 @@
  * @clean nsk.jdi.StackFrame.setValue.setvalue005.setvalue005t
  * @compile -g:lines,source,vars setvalue005t.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StackFrame.setValue.setvalue005.setvalue005
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

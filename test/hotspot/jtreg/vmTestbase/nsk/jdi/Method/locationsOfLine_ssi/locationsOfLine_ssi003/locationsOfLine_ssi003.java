@@ -57,7 +57,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.Method.locationsOfLine_ssi.locationsOfLine_ssi003.locationsOfLine_ssi003
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.locationsOfLine_ssi.locationsOfLine_ssi003.locationsOfLine_ssi003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

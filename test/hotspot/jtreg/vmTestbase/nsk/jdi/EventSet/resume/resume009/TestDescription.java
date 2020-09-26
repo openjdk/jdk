@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.EventSet.resume.resume009
  *        nsk.jdi.EventSet.resume.resume009a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventSet.resume.resume009
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -61,7 +61,7 @@
  *          /test/lib
  * @build nsk.jdi.PrimitiveValue.longValue.longvalue001
  *        nsk.jdi.PrimitiveValue.longValue.longvalue001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.PrimitiveValue.longValue.longvalue001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

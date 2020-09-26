@@ -87,7 +87,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassType.setValue.setvalue002
  *        nsk.jdi.ClassType.setValue.setvalue002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassType.setValue.setvalue002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -60,7 +60,7 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.isVerified.isverified002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -81,7 +81,7 @@
  *          /test/lib
  * @build nsk.jdi.StepRequest.addInstanceFilter.instancefilter001
  *        nsk.jdi.StepRequest.addInstanceFilter.instancefilter001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StepRequest.addInstanceFilter.instancefilter001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

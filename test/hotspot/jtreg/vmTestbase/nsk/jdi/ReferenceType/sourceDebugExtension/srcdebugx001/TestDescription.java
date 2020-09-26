@@ -45,7 +45,7 @@
  * @clean nsk.jdi.ReferenceType.sourceDebugExtension.srcdebugx001t
  * @compile -g:lines,source,vars ../srcdebugx001t.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.sourceDebugExtension.srcdebugx001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

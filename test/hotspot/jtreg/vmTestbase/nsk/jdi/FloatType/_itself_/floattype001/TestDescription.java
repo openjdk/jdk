@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.FloatType._itself_.floattype001
  *        nsk.jdi.FloatType._itself_.floattype001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.FloatType._itself_.floattype001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

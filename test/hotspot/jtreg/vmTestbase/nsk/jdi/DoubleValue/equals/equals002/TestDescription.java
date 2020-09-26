@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.DoubleValue.equals.equals002
  *        nsk.jdi.DoubleValue.equals.equals002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.DoubleValue.equals.equals002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

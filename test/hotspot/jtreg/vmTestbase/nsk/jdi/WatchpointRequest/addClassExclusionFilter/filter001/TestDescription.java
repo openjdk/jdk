@@ -69,7 +69,7 @@
  *          /test/lib
  * @build nsk.jdi.WatchpointRequest.addClassExclusionFilter.filter001
  *        nsk.jdi.WatchpointRequest.addClassExclusionFilter.filter001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.WatchpointRequest.addClassExclusionFilter.filter001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

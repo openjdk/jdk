@@ -67,7 +67,7 @@
  * @build nsk.jdi.VirtualMachine.redefineClasses.redefineclasses030
  *        nsk.jdi.VirtualMachine.redefineClasses.redefineclasses030a
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.redefineClasses.redefineclasses030
  *      ./bin
  *      -verbose

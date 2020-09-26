@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.deleteAllBreakpoints.delallbreakp002
  *        nsk.jdi.EventRequestManager.deleteAllBreakpoints.delallbreakp002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.deleteAllBreakpoints.delallbreakp002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference.owningThread.owningthread002
  *        nsk.jdi.ObjectReference.owningThread.owningthread002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference.owningThread.owningthread002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

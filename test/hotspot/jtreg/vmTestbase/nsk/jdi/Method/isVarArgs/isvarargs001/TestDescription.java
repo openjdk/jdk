@@ -51,7 +51,7 @@
  *          /test/lib
  * @build nsk.jdi.Method.isVarArgs.isvarargs001
  *        nsk.jdi.Method.isVarArgs.isvarargs001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.isVarArgs.isvarargs001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

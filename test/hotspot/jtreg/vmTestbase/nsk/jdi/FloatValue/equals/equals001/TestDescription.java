@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.FloatValue.equals.equals001
  *        nsk.jdi.FloatValue.equals.equals001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.FloatValue.equals.equals001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

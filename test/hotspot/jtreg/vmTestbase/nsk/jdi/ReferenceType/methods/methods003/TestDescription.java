@@ -58,7 +58,7 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.methods.methods003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

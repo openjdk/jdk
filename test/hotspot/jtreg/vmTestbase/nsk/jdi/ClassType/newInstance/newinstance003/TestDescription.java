@@ -52,7 +52,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassType.newInstance.newinstance003
  *        nsk.jdi.ClassType.newInstance.newinstance003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassType.newInstance.newinstance003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

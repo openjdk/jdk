@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.ByteType._itself_.bytetype001
  *        nsk.jdi.ByteType._itself_.bytetype001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ByteType._itself_.bytetype001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -61,7 +61,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.process.process001
  *        nsk.jdi.VirtualMachine.process.process001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.process.process001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

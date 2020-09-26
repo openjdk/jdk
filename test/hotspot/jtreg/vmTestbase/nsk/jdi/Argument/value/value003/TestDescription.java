@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.Argument.value.value003
  *        nsk.jdi.Argument.value.value003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Argument.value.value003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

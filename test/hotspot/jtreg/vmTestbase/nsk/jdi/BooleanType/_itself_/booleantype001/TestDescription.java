@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.BooleanType._itself_.booleantype001
  *        nsk.jdi.BooleanType._itself_.booleantype001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.BooleanType._itself_.booleantype001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

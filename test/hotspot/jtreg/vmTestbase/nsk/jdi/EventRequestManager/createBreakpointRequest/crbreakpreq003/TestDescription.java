@@ -66,7 +66,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.createBreakpointRequest.crbreakpreq003
  *        nsk.jdi.EventRequestManager.createBreakpointRequest.crbreakpreq003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.createBreakpointRequest.crbreakpreq003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

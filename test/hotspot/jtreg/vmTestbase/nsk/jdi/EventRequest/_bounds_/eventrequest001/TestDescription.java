@@ -56,7 +56,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequest._bounds_.eventrequest001
  *        nsk.jdi.EventRequest._bounds_.eventrequest001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequest._bounds_.eventrequest001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

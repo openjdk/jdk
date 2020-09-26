@@ -41,7 +41,7 @@
  *          /test/lib
  * @build nsk.jdi.Field.equals.equals002
  *        nsk.jdi.Field.equals.equals002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Field.equals.equals002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

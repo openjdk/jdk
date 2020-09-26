@@ -59,7 +59,7 @@
  * @build nsk.share.jdi.EventTestTemplates
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.share.jdi.EventTestTemplates$ClassFilterTest_ReferenceType
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

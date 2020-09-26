@@ -50,7 +50,7 @@
  *          /test/lib
  * @build nsk.jdi.Accessible.isPublic.ispublic003
  *        nsk.jdi.Accessible.isPublic.ispublic003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Accessible.isPublic.ispublic003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

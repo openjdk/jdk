@@ -51,7 +51,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.hashCode.hashcode001
  *        nsk.jdi.EventRequestManager.hashCode.hashcode001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.hashCode.hashcode001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

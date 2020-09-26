@@ -74,7 +74,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.suspend.suspend001
  *        nsk.jdi.ThreadReference.suspend.suspend001a
- * @run main/othervm/timeout=420 PropertyResolvingWrapper
+ * @run main/othervm/timeout=420
  *      nsk.jdi.ThreadReference.suspend.suspend001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

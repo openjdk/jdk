@@ -43,7 +43,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.getValue.getvalue005
  *        nsk.jdi.ReferenceType.getValue.getvalue005t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.getValue.getvalue005
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

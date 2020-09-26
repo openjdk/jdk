@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.vmDeathRequests.vmdeathreq001
  *        nsk.jdi.EventRequestManager.vmDeathRequests.vmdeathreq001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.vmDeathRequests.vmdeathreq001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -42,7 +42,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.Connector.transport.transport001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Connector.transport.transport001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

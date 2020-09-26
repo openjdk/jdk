@@ -75,7 +75,7 @@
  * @clean nsk.jdi.ReferenceType.nestedTypes.nestedtypes002a
  * @compile -g:lines,source,vars ../nestedtypes002a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.nestedTypes.nestedtypes002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

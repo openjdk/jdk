@@ -48,7 +48,7 @@
  *          /test/lib
  * @build nsk.jdi.WatchpointRequest._bounds_.filters001
  *        nsk.jdi.WatchpointRequest._bounds_.filters001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.WatchpointRequest._bounds_.filters001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

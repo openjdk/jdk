@@ -67,7 +67,7 @@
  *          /test/lib
  * @build nsk.jdi.Method.argumentTypes.argumenttypes001
  *        nsk.jdi.Method.argumentTypes.argumenttypes001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.argumentTypes.argumenttypes001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

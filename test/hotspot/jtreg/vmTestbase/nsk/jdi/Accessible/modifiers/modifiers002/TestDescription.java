@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdi.Accessible.modifiers.modifiers002
  *        nsk.jdi.Accessible.modifiers.modifiers002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Accessible.modifiers.modifiers002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

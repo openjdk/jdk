@@ -41,7 +41,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.instanceCounts.instancecounts004.instancecounts004
  *        nsk.jdi.VirtualMachine.instanceCounts.instancecounts004.instancecounts004a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.instanceCounts.instancecounts004.instancecounts004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

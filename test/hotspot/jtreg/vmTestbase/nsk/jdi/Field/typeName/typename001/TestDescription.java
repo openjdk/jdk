@@ -44,7 +44,7 @@
  *          /test/lib
  * @build nsk.jdi.Field.typeName.typename001
  *        nsk.jdi.Field.typeName.typename001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Field.typeName.typename001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

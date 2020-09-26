@@ -76,7 +76,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.currentContendedMonitor.currentcm001
  *        nsk.jdi.ThreadReference.currentContendedMonitor.currentcm001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.currentContendedMonitor.currentcm001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

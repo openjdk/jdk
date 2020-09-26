@@ -43,7 +43,7 @@
  *          /test/lib
  * @build nsk.jdi.EventQueue.remove_l.remove_l002
  *        nsk.jdi.EventQueue.remove_l.remove_l002t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventQueue.remove_l.remove_l002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

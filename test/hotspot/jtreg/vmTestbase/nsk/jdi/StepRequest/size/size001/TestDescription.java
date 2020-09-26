@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdi.StepRequest.size.size001
  *        nsk.jdi.StepRequest.size.size001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StepRequest.size.size001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

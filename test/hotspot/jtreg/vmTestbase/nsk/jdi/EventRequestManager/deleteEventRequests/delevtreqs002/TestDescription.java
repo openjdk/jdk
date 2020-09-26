@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.deleteEventRequests.delevtreqs002
  *        nsk.jdi.EventRequestManager.deleteEventRequests.delevtreqs002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.deleteEventRequests.delevtreqs002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

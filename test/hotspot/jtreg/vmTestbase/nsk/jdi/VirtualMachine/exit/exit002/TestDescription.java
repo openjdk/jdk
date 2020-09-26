@@ -68,7 +68,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.exit.exit002
  *        nsk.jdi.VirtualMachine.exit.exit002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.exit.exit002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

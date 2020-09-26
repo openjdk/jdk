@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdi.Method.isSynchronized.issynchronized001
  *        nsk.jdi.Method.isSynchronized.issynchronized001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.isSynchronized.issynchronized001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

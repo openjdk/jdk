@@ -79,7 +79,7 @@
  *          /test/lib
  * @build nsk.jdi.VMDeathEvent._itself_.vmdeath003
  *        nsk.jdi.VMDeathEvent._itself_.vmdeath003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VMDeathEvent._itself_.vmdeath003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

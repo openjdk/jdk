@@ -39,7 +39,7 @@
  *          /test/lib
  * @build nsk.jdi.LaunchingConnector.launchnosuspend.launchnosuspend001
  *        nsk.jdi.LaunchingConnector.launchnosuspend.launchnosuspend001o
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.LaunchingConnector.launchnosuspend.launchnosuspend001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

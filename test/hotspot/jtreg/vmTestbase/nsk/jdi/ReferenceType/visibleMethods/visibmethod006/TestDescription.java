@@ -43,7 +43,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.visibleMethods.visibmethod006
  *        nsk.jdi.ReferenceType.visibleMethods.visibmethod006t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.visibleMethods.visibmethod006
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

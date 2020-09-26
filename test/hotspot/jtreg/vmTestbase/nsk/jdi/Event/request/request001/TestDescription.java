@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.Event.request.request001
  *        nsk.jdi.Event.request.request001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Event.request.request001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

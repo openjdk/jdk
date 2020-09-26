@@ -71,7 +71,7 @@
  *          /test/lib
  * @build nsk.jdi.EventSet.suspendPolicy.suspendpolicy005
  *        nsk.jdi.EventSet.suspendPolicy.suspendpolicy005a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventSet.suspendPolicy.suspendpolicy005
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.BreakpointRequest.location.location001
  *        nsk.jdi.BreakpointRequest.location.location001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.BreakpointRequest.location.location001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -50,7 +50,7 @@
  *          /test/lib
  * @build nsk.jdi.Accessible.isProtected.isprotected002
  *        nsk.jdi.Accessible.isProtected.isprotected002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Accessible.isProtected.isprotected002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

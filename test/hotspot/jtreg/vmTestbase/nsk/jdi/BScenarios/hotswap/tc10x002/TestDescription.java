@@ -82,7 +82,7 @@
  *      -g:lines,source,vars
  *      newclass
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.BScenarios.hotswap.tc10x002
  *      ./bin
  *      -verbose

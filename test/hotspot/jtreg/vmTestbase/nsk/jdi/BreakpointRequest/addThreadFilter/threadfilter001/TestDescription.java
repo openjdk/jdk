@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.BreakpointRequest.addThreadFilter.threadfilter001
  *        nsk.jdi.BreakpointRequest.addThreadFilter.threadfilter001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.BreakpointRequest.addThreadFilter.threadfilter001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

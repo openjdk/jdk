@@ -78,7 +78,7 @@
  *          /test/lib
  * @build nsk.jdi.ArrayReference.setValues_ilii.setvaluesilii002
  *        nsk.jdi.ArrayReference.setValues_ilii.setvaluesilii002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ArrayReference.setValues_ilii.setvaluesilii002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

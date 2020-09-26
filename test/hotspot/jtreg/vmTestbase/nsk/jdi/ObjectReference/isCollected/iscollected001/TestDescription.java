@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference.isCollected.iscollected001
  *        nsk.jdi.ObjectReference.isCollected.iscollected001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference.isCollected.iscollected001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -58,7 +58,7 @@
  *          /test/lib
  * @build nsk.jdi.ArrayReference.length.length001
  *        nsk.jdi.ArrayReference.length.length001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ArrayReference.length.length001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

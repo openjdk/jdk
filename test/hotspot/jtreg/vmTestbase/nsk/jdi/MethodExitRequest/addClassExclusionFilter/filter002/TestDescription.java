@@ -68,7 +68,7 @@
  *          /test/lib
  * @build nsk.jdi.MethodExitRequest.addClassExclusionFilter.filter002
  *        nsk.jdi.MethodExitRequest.addClassExclusionFilter.filter002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.MethodExitRequest.addClassExclusionFilter.filter002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

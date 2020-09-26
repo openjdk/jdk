@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdi.WatchpointEvent.object.object001
  *        nsk.jdi.WatchpointEvent.object.object001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.WatchpointEvent.object.object001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

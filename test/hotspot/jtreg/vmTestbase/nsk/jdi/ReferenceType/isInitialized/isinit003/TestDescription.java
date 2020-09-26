@@ -52,7 +52,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.isInitialized.isinit003
  *        nsk.jdi.ReferenceType.isInitialized.isinit003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.isInitialized.isinit003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

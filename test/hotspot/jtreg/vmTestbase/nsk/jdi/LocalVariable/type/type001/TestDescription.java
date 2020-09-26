@@ -79,7 +79,7 @@
  * @clean nsk.jdi.LocalVariable.type.type001a
  * @compile -g:lines,source,vars ../type001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.LocalVariable.type.type001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

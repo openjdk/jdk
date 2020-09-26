@@ -96,7 +96,7 @@
  * @clean nsk.jdi.StackFrame.visibleVariables.visiblevariables001a
  * @compile -g:lines,source,vars ../visiblevariables001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StackFrame.visibleVariables.visiblevariables001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

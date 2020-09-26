@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.classUnloadRequests.clsunlreq002
  *        nsk.jdi.EventRequestManager.classUnloadRequests.clsunlreq002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.classUnloadRequests.clsunlreq002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

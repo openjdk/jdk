@@ -51,7 +51,7 @@
  *          /test/lib
  * @build nsk.jdi.Type.hashCode.hashcode001
  *        nsk.jdi.Type.hashCode.hashcode001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Type.hashCode.hashcode001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

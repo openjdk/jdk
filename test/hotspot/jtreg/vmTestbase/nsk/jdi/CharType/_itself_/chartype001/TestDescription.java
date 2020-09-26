@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.CharType._itself_.chartype001
  *        nsk.jdi.CharType._itself_.chartype001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.CharType._itself_.chartype001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

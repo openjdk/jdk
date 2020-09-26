@@ -69,7 +69,7 @@
  *          /test/lib
  * @build nsk.jdi.Method.variablesByName.variablesbyname002
  *        nsk.jdi.Method.variablesByName.variablesbyname002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.variablesByName.variablesbyname002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

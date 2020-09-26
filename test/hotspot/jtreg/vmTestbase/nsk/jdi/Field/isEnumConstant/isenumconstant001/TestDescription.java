@@ -51,7 +51,7 @@
  *          /test/lib
  * @build nsk.jdi.Field.isEnumConstant.isenumconstant001
  *        nsk.jdi.Field.isEnumConstant.isenumconstant001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Field.isEnumConstant.isenumconstant001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.ArrayReference.getValues_ii.getvaluesii003
  *        nsk.jdi.ArrayReference.getValues_ii.getvaluesii003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ArrayReference.getValues_ii.getvaluesii003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

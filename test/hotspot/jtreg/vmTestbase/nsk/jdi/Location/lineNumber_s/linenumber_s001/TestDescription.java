@@ -70,7 +70,7 @@
  * @clean nsk.jdi.Location.lineNumber_s.linenumber_s001a
  * @compile -g:lines,source,vars ../linenumber_s001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Location.lineNumber_s.linenumber_s001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

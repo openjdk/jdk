@@ -46,7 +46,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.ListeningConnector.stopListening.stoplis001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ListeningConnector.stopListening.stoplis001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -64,7 +64,7 @@
  *          /test/lib
  * @build nsk.jdi.InterfaceType.implementors.implementors001
  *        nsk.jdi.InterfaceType.implementors.implementors001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.InterfaceType.implementors.implementors001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

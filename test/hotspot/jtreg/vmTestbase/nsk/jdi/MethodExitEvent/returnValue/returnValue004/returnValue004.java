@@ -47,7 +47,7 @@
  *          /test/lib
  * @build nsk.jdi.MethodExitEvent.returnValue.returnValue004.returnValue004
  *        nsk.jdi.MethodExitEvent.returnValue.returnValue004.returnValue004a
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdi.MethodExitEvent.returnValue.returnValue004.returnValue004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

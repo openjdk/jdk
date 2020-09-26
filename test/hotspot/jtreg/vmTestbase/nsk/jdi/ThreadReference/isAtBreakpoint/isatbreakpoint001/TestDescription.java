@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.isAtBreakpoint.isatbreakpoint001
  *        nsk.jdi.ThreadReference.isAtBreakpoint.isatbreakpoint001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.isAtBreakpoint.isatbreakpoint001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

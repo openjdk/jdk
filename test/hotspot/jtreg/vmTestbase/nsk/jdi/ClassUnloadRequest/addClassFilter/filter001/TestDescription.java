@@ -68,7 +68,7 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @run main/othervm/timeout=420 PropertyResolvingWrapper
+ * @run main/othervm/timeout=420
  *      nsk.jdi.ClassUnloadRequest.addClassFilter.filter001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

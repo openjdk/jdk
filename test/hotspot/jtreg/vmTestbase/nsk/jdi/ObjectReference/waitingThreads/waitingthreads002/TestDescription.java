@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference.waitingThreads.waitingthreads002
  *        nsk.jdi.ObjectReference.waitingThreads.waitingthreads002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference.waitingThreads.waitingthreads002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

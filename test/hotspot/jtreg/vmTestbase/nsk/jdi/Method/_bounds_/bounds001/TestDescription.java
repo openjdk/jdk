@@ -52,7 +52,7 @@
  * @clean nsk.jdi.Method._bounds_.bounds001a
  * @compile -g:lines,source,vars ../bounds001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method._bounds_.bounds001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

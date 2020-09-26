@@ -48,7 +48,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.VirtualMachineManager.listeningConnectors.listening001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachineManager.listeningConnectors.listening001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

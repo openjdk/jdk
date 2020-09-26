@@ -81,7 +81,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.createExceptionRequest.crexreq010
  *        nsk.jdi.EventRequestManager.createExceptionRequest.crexreq010a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.createExceptionRequest.crexreq010
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -65,7 +65,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.allClasses.allclasses002
  *        nsk.jdi.VirtualMachine.allClasses.allclasses002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.allClasses.allclasses002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

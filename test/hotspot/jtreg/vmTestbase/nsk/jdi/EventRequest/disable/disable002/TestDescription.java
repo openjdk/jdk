@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequest.disable.disable002
  *        nsk.jdi.EventRequest.disable.disable002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequest.disable.disable002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

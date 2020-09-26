@@ -91,7 +91,7 @@
  * @clean nsk.jdi.Method.allLineLocations_ss.alllinelocations_ss001a
  * @compile -g:lines,source,vars ../alllinelocations_ss001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.allLineLocations_ss.alllinelocations_ss001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

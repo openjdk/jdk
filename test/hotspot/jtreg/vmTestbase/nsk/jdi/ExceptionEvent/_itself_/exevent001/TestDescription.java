@@ -55,7 +55,7 @@
  *          /test/lib
  * @build nsk.jdi.ExceptionEvent._itself_.exevent001
  *        nsk.jdi.ExceptionEvent._itself_.exevent001t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ExceptionEvent._itself_.exevent001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

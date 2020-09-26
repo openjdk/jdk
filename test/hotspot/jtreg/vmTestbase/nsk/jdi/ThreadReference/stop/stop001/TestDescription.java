@@ -72,7 +72,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.stop.stop001
  *        nsk.jdi.ThreadReference.stop.stop001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.stop.stop001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

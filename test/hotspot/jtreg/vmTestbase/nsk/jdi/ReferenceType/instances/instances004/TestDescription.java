@@ -46,7 +46,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.instances.instances003.instances003
  *        nsk.share.jdi.TestClass1
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdi.ReferenceType.instances.instances003.instances003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

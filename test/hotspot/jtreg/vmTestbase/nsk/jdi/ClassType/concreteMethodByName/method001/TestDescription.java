@@ -55,7 +55,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassType.concreteMethodByName.method001
  *        nsk.jdi.ClassType.concreteMethodByName.method001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassType.concreteMethodByName.method001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

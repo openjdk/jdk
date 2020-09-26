@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.interrupt.interrupt001
  *        nsk.jdi.ThreadReference.interrupt.interrupt001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.interrupt.interrupt001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

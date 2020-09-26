@@ -62,7 +62,6 @@
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
  * @run main/othervm
- *      PropertyResolvingWrapper
  *      nsk.share.jdi.EventTestTemplates$ClassExclusionFilterTest
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

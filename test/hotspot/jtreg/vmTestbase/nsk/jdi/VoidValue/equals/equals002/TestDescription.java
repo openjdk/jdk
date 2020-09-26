@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.VoidValue.equals.equals002
  *        nsk.jdi.VoidValue.equals.equals002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VoidValue.equals.equals002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

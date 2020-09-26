@@ -45,7 +45,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.locationsOfLine_i.locationsofline_i002
  *        nsk.jdi.ReferenceType.locationsOfLine_i.locationsofline_i002t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.locationsOfLine_i.locationsofline_i002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

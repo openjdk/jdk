@@ -77,7 +77,7 @@
  *          /test/lib
  * @build nsk.jdi.ModificationWatchpointEvent.valueToBe.valuetobe002
  *        nsk.jdi.ModificationWatchpointEvent.valueToBe.valuetobe002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ModificationWatchpointEvent.valueToBe.valuetobe002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -52,7 +52,7 @@
  *          /test/lib
  * @build nsk.jdi.EventSet.toString.tostring001
  *        nsk.jdi.EventSet.toString.tostring001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventSet.toString.tostring001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

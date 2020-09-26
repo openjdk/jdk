@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.PrimitiveValue.booleanValue.booleanvalue001
  *        nsk.jdi.PrimitiveValue.booleanValue.booleanvalue001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.PrimitiveValue.booleanValue.booleanvalue001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

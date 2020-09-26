@@ -56,7 +56,7 @@
  * @clean nsk.jdi.EventRequestManager.exceptionRequests.excreq001a
  * @compile -g:lines,source,vars ../excreq001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.exceptionRequests.excreq001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

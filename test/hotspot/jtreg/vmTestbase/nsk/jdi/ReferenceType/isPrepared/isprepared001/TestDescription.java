@@ -52,7 +52,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.isPrepared.isprepared001
  *        nsk.jdi.ReferenceType.isPrepared.isprepared001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.isPrepared.isprepared001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

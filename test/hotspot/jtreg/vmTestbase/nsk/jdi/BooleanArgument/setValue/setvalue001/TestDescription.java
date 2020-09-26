@@ -57,7 +57,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.BooleanArgument.setValue.setvalue001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.BooleanArgument.setValue.setvalue001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

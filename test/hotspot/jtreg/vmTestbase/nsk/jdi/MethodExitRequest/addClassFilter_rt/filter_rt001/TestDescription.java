@@ -66,7 +66,7 @@
  *          /test/lib
  * @build nsk.jdi.MethodExitRequest.addClassFilter_rt.filter_rt001
  *        nsk.jdi.MethodExitRequest.addClassFilter_rt.filter_rt001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.MethodExitRequest.addClassFilter_rt.filter_rt001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

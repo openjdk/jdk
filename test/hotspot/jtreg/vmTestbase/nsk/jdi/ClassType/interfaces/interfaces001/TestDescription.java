@@ -66,7 +66,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassType.interfaces.interfaces001
  *        nsk.jdi.ClassType.interfaces.interfaces001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassType.interfaces.interfaces001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

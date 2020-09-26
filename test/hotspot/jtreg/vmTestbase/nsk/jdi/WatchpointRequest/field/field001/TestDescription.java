@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.WatchpointRequest.field.field001
  *        nsk.jdi.WatchpointRequest.field.field001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.WatchpointRequest.field.field001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -54,7 +54,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.allFields.allfields006
  *        nsk.jdi.ReferenceType.allFields.allfields006a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.allFields.allfields006
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

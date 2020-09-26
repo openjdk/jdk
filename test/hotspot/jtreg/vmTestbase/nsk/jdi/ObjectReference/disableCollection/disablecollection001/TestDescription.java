@@ -74,7 +74,7 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference.disableCollection.disablecollection001
  *        nsk.jdi.ObjectReference.disableCollection.disablecollection001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference.disableCollection.disablecollection001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

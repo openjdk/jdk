@@ -53,7 +53,7 @@
  *          /test/lib
  * @build nsk.jdi.ShortType._itself_.shorttype001
  *        nsk.jdi.ShortType._itself_.shorttype001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ShortType._itself_.shorttype001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

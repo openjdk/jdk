@@ -105,7 +105,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.popFrames.popframes002
  *        nsk.jdi.ThreadReference.popFrames.popframes002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.popFrames.popframes002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

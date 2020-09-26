@@ -45,7 +45,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.allLineLocations_ss.alllinelocations_ss002
  *        nsk.jdi.ReferenceType.allLineLocations_ss.alllinelocations_ss002t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.allLineLocations_ss.alllinelocations_ss002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

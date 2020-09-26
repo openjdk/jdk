@@ -61,7 +61,7 @@
  *          /test/lib
  * @build nsk.jdi.PrimitiveValue.byteValue.bytevalue001
  *        nsk.jdi.PrimitiveValue.byteValue.bytevalue001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.PrimitiveValue.byteValue.bytevalue001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -43,7 +43,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.resume.resume001
  *        nsk.jdi.VirtualMachine.resume.resume001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.resume.resume001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

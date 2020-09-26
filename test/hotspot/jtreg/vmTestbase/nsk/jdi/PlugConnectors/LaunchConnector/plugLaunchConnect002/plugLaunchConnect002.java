@@ -66,7 +66,7 @@
  * @run driver nsk.jdi.ConnectorsJarBuilder
  *
  * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --java
+ * @run driver ExecDriver --java
  *      -cp jars${file.separator}connectors.jar${path.separator}${test.class.path}
  *      nsk.jdi.PlugConnectors.LaunchConnector.plugLaunchConnect002.plugLaunchConnect002
  *      -verbose

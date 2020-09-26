@@ -78,7 +78,7 @@
  *          /test/lib
  * @build nsk.jdi.ExceptionEvent.exception.exception001
  *        nsk.jdi.ExceptionEvent.exception.exception001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ExceptionEvent.exception.exception001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

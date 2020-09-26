@@ -47,7 +47,7 @@
  *          /test/lib
  * @build nsk.jdi.ReferenceType.isVerified.isVerified001
  *        nsk.jdi.ReferenceType.isVerified.isVerified001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.isVerified.isVerified001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

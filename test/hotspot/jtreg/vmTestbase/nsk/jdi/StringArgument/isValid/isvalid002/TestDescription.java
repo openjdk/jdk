@@ -55,7 +55,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.StringArgument.isValid.isvalid002
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StringArgument.isValid.isvalid002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

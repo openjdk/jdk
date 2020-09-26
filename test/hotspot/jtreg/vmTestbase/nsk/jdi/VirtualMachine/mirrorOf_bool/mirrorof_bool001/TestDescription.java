@@ -68,7 +68,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.mirrorOf_bool.mirrorof_bool001
  *        nsk.jdi.VirtualMachine.mirrorOf_bool.mirrorof_bool001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.mirrorOf_bool.mirrorof_bool001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

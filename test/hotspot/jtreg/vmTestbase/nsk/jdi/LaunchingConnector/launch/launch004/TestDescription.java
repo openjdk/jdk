@@ -47,7 +47,7 @@
  *          /test/lib
  * @build nsk.jdi.LaunchingConnector.launch.launch004
  *        nsk.jdi.LaunchingConnector.launch.launch004o
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.LaunchingConnector.launch.launch004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

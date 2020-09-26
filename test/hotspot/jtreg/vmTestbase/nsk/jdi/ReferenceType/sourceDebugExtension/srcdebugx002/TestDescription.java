@@ -47,7 +47,7 @@
  *        nsk.jdi.ReferenceType.sourceDebugExtension.srcdebugx002t
  * @compile srcdebugx002x.jcod
  * @build ExecDriver
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.sourceDebugExtension.srcdebugx002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

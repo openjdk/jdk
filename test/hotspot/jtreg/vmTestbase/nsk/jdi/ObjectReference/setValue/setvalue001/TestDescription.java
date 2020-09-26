@@ -86,7 +86,7 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference.setValue.setvalue001
  *        nsk.jdi.ObjectReference.setValue.setvalue001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference.setValue.setvalue001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

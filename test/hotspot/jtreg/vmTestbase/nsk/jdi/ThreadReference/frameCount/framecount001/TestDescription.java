@@ -69,7 +69,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.frameCount.framecount001
  *        nsk.jdi.ThreadReference.frameCount.framecount001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.frameCount.framecount001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

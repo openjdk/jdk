@@ -64,7 +64,7 @@
  *          /test/lib
  * @build nsk.jdi.ArrayType.componentSignature.componentsignature002
  *        nsk.jdi.ArrayType.componentSignature.componentsignature002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ArrayType.componentSignature.componentsignature002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

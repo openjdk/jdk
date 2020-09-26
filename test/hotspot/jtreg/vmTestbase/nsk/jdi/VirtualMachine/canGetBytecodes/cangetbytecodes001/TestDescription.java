@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.canGetBytecodes.cangetbytecodes001
  *        nsk.jdi.VirtualMachine.canGetBytecodes.cangetbytecodes001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.canGetBytecodes.cangetbytecodes001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

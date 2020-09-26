@@ -62,7 +62,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.threadStartRequests.thrstartreq002
  *        nsk.jdi.EventRequestManager.threadStartRequests.thrstartreq002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.threadStartRequests.thrstartreq002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

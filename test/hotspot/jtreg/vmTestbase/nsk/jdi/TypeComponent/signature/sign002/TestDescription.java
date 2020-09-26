@@ -52,7 +52,7 @@
  *          /test/lib
  * @build nsk.jdi.TypeComponent.signature.sign002
  *        nsk.jdi.TypeComponent.signature.sign002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.TypeComponent.signature.sign002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

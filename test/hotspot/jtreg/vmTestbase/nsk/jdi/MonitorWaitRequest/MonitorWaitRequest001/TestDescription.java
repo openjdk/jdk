@@ -52,7 +52,7 @@
  * @build nsk.share.jdi.EventTestTemplates
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.share.jdi.EventTestTemplates$StressTestTemplate
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

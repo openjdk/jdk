@@ -79,7 +79,7 @@
  * @clean nsk.jdi.LocalVariable.isVisible.isvisible001a
  * @compile -g:lines,source,vars ../isvisible001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.LocalVariable.isVisible.isvisible001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

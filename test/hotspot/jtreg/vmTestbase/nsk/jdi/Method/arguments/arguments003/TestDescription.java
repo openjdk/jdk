@@ -58,7 +58,7 @@
  * @clean nsk.jdi.Method.arguments.arguments003a
  * @compile -g:lines,source,vars ../arguments003a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.arguments.arguments003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

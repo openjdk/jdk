@@ -67,7 +67,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.isSuspended.issuspended003
  *        nsk.jdi.ThreadReference.isSuspended.issuspended003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.isSuspended.issuspended003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

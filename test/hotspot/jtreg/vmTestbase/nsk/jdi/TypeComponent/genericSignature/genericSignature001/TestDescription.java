@@ -49,7 +49,7 @@
  *          /test/lib
  * @build nsk.jdi.TypeComponent.genericSignature.genericSignature001
  *        nsk.jdi.TypeComponent.genericSignature.genericSignature001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.TypeComponent.genericSignature.genericSignature001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

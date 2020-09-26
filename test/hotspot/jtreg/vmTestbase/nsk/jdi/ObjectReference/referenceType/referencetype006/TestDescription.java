@@ -72,7 +72,7 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference.referenceType.referencetype006
  *        nsk.jdi.ObjectReference.referenceType.referencetype006a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference.referenceType.referencetype006
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

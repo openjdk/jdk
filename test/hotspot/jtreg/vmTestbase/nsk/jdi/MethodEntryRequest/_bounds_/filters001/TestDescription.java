@@ -46,7 +46,7 @@
  *          /test/lib
  * @build nsk.jdi.MethodEntryRequest._bounds_.filters001
  *        nsk.jdi.MethodEntryRequest._bounds_.filters001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.MethodEntryRequest._bounds_.filters001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

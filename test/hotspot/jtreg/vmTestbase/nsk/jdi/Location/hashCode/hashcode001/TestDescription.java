@@ -70,7 +70,7 @@
  * @clean nsk.jdi.Location.hashCode.hashcode001a
  * @compile -g:lines,source,vars ../hashcode001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Location.hashCode.hashcode001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -44,7 +44,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassPrepareRequest._bounds_.filters001
  *        nsk.jdi.ClassPrepareRequest._bounds_.filters001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassPrepareRequest._bounds_.filters001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

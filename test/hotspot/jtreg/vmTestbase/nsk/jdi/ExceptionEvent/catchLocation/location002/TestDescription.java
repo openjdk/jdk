@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.ExceptionEvent.catchLocation.location002
  *        nsk.jdi.ExceptionEvent.catchLocation.location002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ExceptionEvent.catchLocation.location002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

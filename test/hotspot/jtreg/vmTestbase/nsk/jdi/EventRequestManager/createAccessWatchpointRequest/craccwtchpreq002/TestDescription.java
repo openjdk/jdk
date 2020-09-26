@@ -42,7 +42,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.createAccessWatchpointRequest.craccwtchpreq002
  *        nsk.jdi.EventRequestManager.createAccessWatchpointRequest.craccwtchpreq002t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.createAccessWatchpointRequest.craccwtchpreq002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

@@ -55,7 +55,7 @@
  *          /test/lib
  * @build nsk.jdi.Accessible.isPackagePrivate.accipp001
  *        nsk.jdi.Accessible.isPackagePrivate.accipp001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Accessible.isPackagePrivate.accipp001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

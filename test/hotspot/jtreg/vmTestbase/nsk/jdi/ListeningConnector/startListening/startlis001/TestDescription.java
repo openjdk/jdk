@@ -52,7 +52,7 @@
  *          /test/lib
  * @build nsk.jdi.ListeningConnector.startListening.startlis001
  *        nsk.jdi.ListeningConnector.startListening.startlis001t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ListeningConnector.startListening.startlis001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

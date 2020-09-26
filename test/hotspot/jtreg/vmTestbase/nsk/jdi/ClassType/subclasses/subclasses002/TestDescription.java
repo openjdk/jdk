@@ -56,7 +56,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassType.subclasses.subclasses002
  *        nsk.jdi.ClassType.subclasses.subclasses002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassType.subclasses.subclasses002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

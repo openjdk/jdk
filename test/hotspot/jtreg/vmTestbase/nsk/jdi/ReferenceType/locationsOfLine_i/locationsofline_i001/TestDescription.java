@@ -81,7 +81,7 @@
  * @clean nsk.jdi.ReferenceType.locationsOfLine_i.locationsofline_i001a
  * @compile -g:lines,source,vars ../locationsofline_i001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ReferenceType.locationsOfLine_i.locationsofline_i001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

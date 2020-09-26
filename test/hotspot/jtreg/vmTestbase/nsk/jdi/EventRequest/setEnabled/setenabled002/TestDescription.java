@@ -70,7 +70,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequest.setEnabled.setenabled002
  *        nsk.jdi.EventRequest.setEnabled.setenabled002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequest.setEnabled.setenabled002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

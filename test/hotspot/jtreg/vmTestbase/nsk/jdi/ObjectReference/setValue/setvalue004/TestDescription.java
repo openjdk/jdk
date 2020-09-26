@@ -45,7 +45,7 @@
  * @clean nsk.jdi.ObjectReference.setValue.setvalue004t
  * @compile -g:lines,source,vars ../setvalue004t.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ObjectReference.setValue.setvalue004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

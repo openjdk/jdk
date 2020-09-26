@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.Location.method.method001
  *        nsk.jdi.Location.method.method001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Location.method.method001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

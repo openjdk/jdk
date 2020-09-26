@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.PrimitiveValue.doubleValue.doublevalue002
  *        nsk.jdi.PrimitiveValue.doubleValue.doublevalue002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.PrimitiveValue.doubleValue.doublevalue002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

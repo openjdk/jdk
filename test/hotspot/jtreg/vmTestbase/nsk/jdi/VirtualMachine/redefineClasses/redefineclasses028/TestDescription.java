@@ -50,7 +50,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.redefineClasses.redefineclasses028
  *        nsk.jdi.VirtualMachine.redefineClasses.redefineclasses028a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.redefineClasses.redefineclasses028
  *      ./bin
  *      -verbose

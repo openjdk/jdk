@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.VMStartEvent.thread.thread001
  *        nsk.jdi.VMStartEvent.thread.thread001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VMStartEvent.thread.thread001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

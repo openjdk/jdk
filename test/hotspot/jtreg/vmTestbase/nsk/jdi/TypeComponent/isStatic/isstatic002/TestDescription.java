@@ -48,7 +48,7 @@
  *          /test/lib
  * @build nsk.jdi.TypeComponent.isStatic.isstatic002
  *        nsk.jdi.TypeComponent.isStatic.isstatic002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.TypeComponent.isStatic.isstatic002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

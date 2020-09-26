@@ -37,7 +37,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.VMCannotBeModifiedEx._itself_.canntbemod001
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VMCannotBeModifiedEx._itself_.canntbemod001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

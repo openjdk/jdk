@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.LongValue.equals.equals001
  *        nsk.jdi.LongValue.equals.equals001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.LongValue.equals.equals001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

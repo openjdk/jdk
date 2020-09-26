@@ -141,7 +141,7 @@
  * @clean nsk.jdi.ClassType.newInstance.newinstance002a
  * @compile -g:lines,source,vars ../newinstance002a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassType.newInstance.newinstance002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

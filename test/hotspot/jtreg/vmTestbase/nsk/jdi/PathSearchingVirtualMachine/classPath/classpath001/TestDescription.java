@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.PathSearchingVirtualMachine.classPath.classpath001
  *        nsk.jdi.PathSearchingVirtualMachine.classPath.classpath001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.PathSearchingVirtualMachine.classPath.classpath001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

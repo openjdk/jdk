@@ -84,7 +84,7 @@
  * @clean nsk.jdi.StackFrame.getValue.getvalue001a
  * @compile -g:lines,source,vars ../getvalue001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StackFrame.getValue.getvalue001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

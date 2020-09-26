@@ -46,7 +46,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.redefineClasses.redefineclasses029
  *        nsk.jdi.VirtualMachine.redefineClasses.redefineclasses029a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.redefineClasses.redefineclasses029
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

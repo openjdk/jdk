@@ -63,7 +63,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequestManager.methodExitRequests.methexitreq002
  *        nsk.jdi.EventRequestManager.methodExitRequests.methexitreq002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequestManager.methodExitRequests.methexitreq002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

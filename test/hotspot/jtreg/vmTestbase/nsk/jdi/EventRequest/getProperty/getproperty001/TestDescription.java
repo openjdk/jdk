@@ -65,7 +65,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequest.getProperty.getproperty001
  *        nsk.jdi.EventRequest.getProperty.getproperty001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.EventRequest.getProperty.getproperty001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

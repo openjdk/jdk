@@ -56,7 +56,7 @@
  * @build nsk.jdi.ObjectReference.referringObjects.referringObjects002.referringObjects002
  *        nsk.jdi.ObjectReference.referringObjects.referringObjects002.referringObjects002a
  *        nsk.share.jdi.TestClass1
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdi.ObjectReference.referringObjects.referringObjects002.referringObjects002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

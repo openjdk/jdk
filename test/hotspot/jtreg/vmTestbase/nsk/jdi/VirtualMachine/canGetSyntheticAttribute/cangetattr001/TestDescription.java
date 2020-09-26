@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.canGetSyntheticAttribute.cangetattr001
  *        nsk.jdi.VirtualMachine.canGetSyntheticAttribute.cangetattr001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachine.canGetSyntheticAttribute.cangetattr001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

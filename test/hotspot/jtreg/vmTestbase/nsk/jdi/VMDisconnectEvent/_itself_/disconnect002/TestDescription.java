@@ -60,7 +60,7 @@
  *          /test/lib
  * @build nsk.jdi.VMDisconnectEvent._itself_.disconnect002
  *        nsk.jdi.VMDisconnectEvent._itself_.disconnect002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VMDisconnectEvent._itself_.disconnect002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

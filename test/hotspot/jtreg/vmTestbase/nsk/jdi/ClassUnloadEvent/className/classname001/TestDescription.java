@@ -84,7 +84,7 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassUnloadEvent.className.classname001
  *      ./bin
  *      -verbose

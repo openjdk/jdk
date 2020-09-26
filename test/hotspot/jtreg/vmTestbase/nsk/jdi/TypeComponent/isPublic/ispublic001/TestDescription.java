@@ -55,7 +55,7 @@
  *          /test/lib
  * @build nsk.jdi.TypeComponent.isPublic.ispublic001
  *        nsk.jdi.TypeComponent.isPublic.ispublic001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.TypeComponent.isPublic.ispublic001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

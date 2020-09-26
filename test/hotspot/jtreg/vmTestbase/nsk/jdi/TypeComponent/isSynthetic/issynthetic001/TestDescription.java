@@ -69,7 +69,7 @@
  *          /test/lib
  * @build nsk.jdi.TypeComponent.isSynthetic.issynthetic001
  *        nsk.jdi.TypeComponent.isSynthetic.issynthetic001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.TypeComponent.isSynthetic.issynthetic001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

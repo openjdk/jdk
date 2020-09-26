@@ -71,7 +71,7 @@
  *          /test/lib
  * @build nsk.jdi.MethodExitEvent._itself_.methodexit001
  *        nsk.jdi.MethodExitEvent._itself_.methodexit001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.MethodExitEvent._itself_.methodexit001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

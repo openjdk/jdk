@@ -85,7 +85,7 @@
  *          /test/lib
  * @build nsk.jdi.StackFrame.visibleVariables.visiblevariables002
  *        nsk.jdi.StackFrame.visibleVariables.visiblevariables002a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.StackFrame.visibleVariables.visiblevariables002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
