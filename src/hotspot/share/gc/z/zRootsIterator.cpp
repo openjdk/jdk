@@ -51,27 +51,27 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhasePauseWeakRootsTeardown("Pause Weak Roots Teardown");
-static const ZStatSubPhase ZSubPhasePauseWeakRootsSetup("Pause Weak Roots Setup");
-static const ZStatSubPhase ZSubPhasePauseWeakRootsJVMTIWeakExport("Pause Weak Roots JVMTIWeakExport");
-static const ZStatSubPhase ZSubPhasePauseWeakRoots("Pause Weak Roots");
-
-static const ZStatSubPhase ZSubPhasePauseRootsVMThread("Pause Roots VM Thread");
-static const ZStatSubPhase ZSubPhasePauseRootsTeardown("Pause Roots Teardown");
 static const ZStatSubPhase ZSubPhasePauseRootsSetup("Pause Roots Setup");
+static const ZStatSubPhase ZSubPhasePauseRoots("Pause Roots");
+static const ZStatSubPhase ZSubPhasePauseRootsTeardown("Pause Roots Teardown");
 static const ZStatSubPhase ZSubPhasePauseRootsJVMTIWeakExport("Pause Roots JVMTIWeakExport");
+static const ZStatSubPhase ZSubPhasePauseRootsVMThread("Pause Roots VM Thread");
 static const ZStatSubPhase ZSubPhasePauseRootsJavaThreads("Pause Roots Java Threads");
 static const ZStatSubPhase ZSubPhasePauseRootsCodeCache("Pause Roots CodeCache");
-static const ZStatSubPhase ZSubPhasePauseRoots("Pause Roots");
 
-static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsOopStorageSet("Concurrent Weak Roots OopStorageSet");
-static const ZStatSubPhase ZSubPhaseConcurrentWeakRoots("Concurrent Weak Roots");
-
-static const ZStatSubPhase ZSubPhaseConcurrentRootsTeardown("Concurrent Roots Teardown");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsSetup("Concurrent Roots Setup");
+static const ZStatSubPhase ZSubPhaseConcurrentRoots("Concurrent Roots");
+static const ZStatSubPhase ZSubPhaseConcurrentRootsTeardown("Concurrent Roots Teardown");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsOopStorageSet("Concurrent Roots OopStorageSet");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsClassLoaderDataGraph("Concurrent Roots ClassLoaderDataGraph");
-static const ZStatSubPhase ZSubPhaseConcurrentRoots("Concurrent Roots");
+
+static const ZStatSubPhase ZSubPhasePauseWeakRootsSetup("Pause Weak Roots Setup");
+static const ZStatSubPhase ZSubPhasePauseWeakRoots("Pause Weak Roots");
+static const ZStatSubPhase ZSubPhasePauseWeakRootsTeardown("Pause Weak Roots Teardown");
+static const ZStatSubPhase ZSubPhasePauseWeakRootsJVMTIWeakExport("Pause Weak Roots JVMTIWeakExport");
+
+static const ZStatSubPhase ZSubPhaseConcurrentWeakRoots("Concurrent Weak Roots");
+static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsOopStorageSet("Concurrent Weak Roots OopStorageSet");
 
 template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
 ZSerialOopsDo<T, F>::ZSerialOopsDo(T* iter) :
