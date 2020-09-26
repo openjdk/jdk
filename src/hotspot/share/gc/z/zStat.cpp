@@ -390,25 +390,8 @@ ZStatIterableValue<T>::ZStatIterableValue(const char* group,
 
 template <typename T>
 T* ZStatIterableValue<T>::insert() const {
-  T** current = &_first;
-
-  while (*current != NULL) {
-    // First sort by group, then by name
-    const int group_cmp = strcmp((*current)->group(), group());
-    if (group_cmp >= 0) {
-      if (group_cmp == 0) {
-        // Sort by name
-        while (*current != NULL && strcmp((*current)->name(), name()) <= 0) {
-          current = &(*current)->_next;
-        }
-      }
-      break;
-    }
-    current = &(*current)->_next;
-  }
-
-  T* const next = *current;
-  *current = (T*)this;
+  T* const next = _first;
+  _first = (T*)this;
   return next;
 }
 
@@ -867,13 +850,25 @@ bool ZStat::should_print(LogTargetHandle log) const {
   return log.is_enabled();
 }
 
+static int sampler_cmp(const ZStatSampler* const &a, const ZStatSampler* const &b) {
+  const int cmp = strcmp(a->group(), b->group());
+  return (cmp == 0) ? strcmp(a->name(), b->name()) : cmp;
+}
+
 void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const {
+  // Sort sampled stats
+  GrowableArray<const ZStatSampler*> samplers(ZStatSampler::count());
+  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+    samplers.insert_sorted<cmp_sampler>(sampler);
+  }
+
   // Print
   log.print("=== Garbage Collection Statistics =======================================================================================================================");
   log.print("                                                             Last 10s              Last 10m              Last 10h                Total");
   log.print("                                                             Avg / Max             Avg / Max             Avg / Max             Avg / Max");
 
-  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+  for (int i = 0; i < samplers.length(); i++) {
+    const ZStatSampler* sampler = samplers.at(i);
     const ZStatSamplerHistory& sampler_history = history[sampler->id()];
     const ZStatUnitPrinter printer = sampler->printer();
     printer(log, *sampler, sampler_history);
