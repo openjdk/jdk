@@ -86,8 +86,7 @@
  * @build nsk.share.jdi.PlugConnectors
  * @run driver nsk.jdi.ConnectorsJarBuilder
  *
- * @build ExecDriver
- * @run driver ExecDriver --java
+ * @run main/othervm
  *      -cp jars${file.separator}connectors.jar${path.separator}${test.class.path}
  *      nsk.jdi.PlugConnectors.MultiConnectors.plugMultiConnect003.plugMultiConnect003
  *      -verbose

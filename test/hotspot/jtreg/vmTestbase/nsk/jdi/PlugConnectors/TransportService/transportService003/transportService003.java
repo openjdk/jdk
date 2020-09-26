@@ -51,8 +51,7 @@
  * @build nsk.share.jdi.PlugTransportService
  * @run driver nsk.jdi.ConnectorsJarBuilder
  *
- * @build ExecDriver
- * @run driver ExecDriver --java
+ * @run main/othervm
  *      -cp jars${file.separator}connectors.jar${path.separator}${test.class.path}
  *      nsk.jdi.PlugConnectors.TransportService.transportService003.transportService003
  *      -verbose
