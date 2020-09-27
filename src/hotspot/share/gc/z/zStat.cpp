@@ -857,6 +857,7 @@ int ZStat::sampler_cmp(const ZStatSampler* const &a, const ZStatSampler* const &
 
 void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const {
   // Sort sampled stats
+  ResourceMark rm;
   GrowableArray<const ZStatSampler*> samplers(ZStatSampler::count());
   for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
     samplers.insert_sorted<sampler_cmp>(sampler);
