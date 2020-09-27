@@ -44,13 +44,6 @@ public:
   VM_ShenandoahOperation() : _gc_id(GCId::current()) {};
 };
 
-class VM_ShenandoahReferenceOperation : public VM_ShenandoahOperation {
-public:
-  VM_ShenandoahReferenceOperation() : VM_ShenandoahOperation() {};
-  bool doit_prologue();
-  void doit_epilogue();
-};
-
 class VM_ShenandoahInitMark: public VM_ShenandoahOperation {
 public:
   VM_ShenandoahInitMark() : VM_ShenandoahOperation() {};
@@ -59,31 +52,31 @@ public:
   virtual void doit();
 };
 
-class VM_ShenandoahFinalMarkStartEvac: public VM_ShenandoahReferenceOperation {
+class VM_ShenandoahFinalMarkStartEvac: public VM_ShenandoahOperation {
 public:
-  VM_ShenandoahFinalMarkStartEvac() : VM_ShenandoahReferenceOperation() {};
+  VM_ShenandoahFinalMarkStartEvac() : VM_ShenandoahOperation() {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalMarkStartEvac; }
   const char* name()             const { return "Shenandoah Final Mark and Start Evacuation"; }
   virtual  void doit();
 };
 
-class VM_ShenandoahDegeneratedGC: public VM_ShenandoahReferenceOperation {
+class VM_ShenandoahDegeneratedGC: public VM_ShenandoahOperation {
 private:
   // Really the ShenandoahHeap::ShenandoahDegenerationPoint, but casted to int here
   // in order to avoid dependency on ShenandoahHeap
   int _point;
 public:
-  VM_ShenandoahDegeneratedGC(int point) : VM_ShenandoahReferenceOperation(), _point(point) {};
+  VM_ShenandoahDegeneratedGC(int point) : VM_ShenandoahOperation(), _point(point) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahDegeneratedGC; }
   const char* name()             const { return "Shenandoah Degenerated GC"; }
   virtual  void doit();
 };
 
-class VM_ShenandoahFullGC : public VM_ShenandoahReferenceOperation {
+class VM_ShenandoahFullGC : public VM_ShenandoahOperation {
 private:
   GCCause::Cause _gc_cause;
 public:
-  VM_ShenandoahFullGC(GCCause::Cause gc_cause) : VM_ShenandoahReferenceOperation(), _gc_cause(gc_cause) {};
+  VM_ShenandoahFullGC(GCCause::Cause gc_cause) : VM_ShenandoahOperation(), _gc_cause(gc_cause) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFullGC; }
   const char* name()             const { return "Shenandoah Full GC"; }
   virtual void doit();

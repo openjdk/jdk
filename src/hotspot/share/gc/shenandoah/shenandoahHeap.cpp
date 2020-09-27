@@ -1819,6 +1819,15 @@ public:
   }
 };
 
+void ShenandoahHeap::op_weak_refs() {
+  // Concurrent weak refs processing
+  {
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_refs_work);
+    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs_work);
+    ref_processor()->process_references(workers());
+  }
+}
+
 void ShenandoahHeap::op_weak_roots() {
   if (is_concurrent_weak_root_in_progress()) {
     // Concurrent weak root processing
@@ -2837,6 +2846,19 @@ void ShenandoahHeap::entry_updaterefs() {
 
   try_inject_alloc_failure();
   op_updaterefs();
+}
+
+void ShenandoahHeap::entry_weak_refs() {
+  static const char* msg = "Concurrent weak references";
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_weak_refs);
+  EventMark em("%s", msg);
+
+  ShenandoahWorkerScope scope(workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
+                              "concurrent weak references");
+
+  try_inject_alloc_failure();
+  op_weak_refs();
 }
 
 void ShenandoahHeap::entry_weak_roots() {

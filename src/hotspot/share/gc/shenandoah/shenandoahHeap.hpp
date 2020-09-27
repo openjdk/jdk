@@ -385,6 +385,7 @@ public:
   // for concurrent operation.
   void entry_reset();
   void entry_mark();
+  void entry_weak_refs();
   void entry_weak_roots();
   void entry_class_unloading();
   void entry_strong_roots();
@@ -408,6 +409,7 @@ private:
 
   void op_reset();
   void op_mark();
+  void op_weak_refs();
   void op_weak_roots();
   void op_class_unloading();
   void op_strong_roots();

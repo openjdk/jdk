@@ -406,6 +406,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
   // Process weak roots that might still point to regions that would be broken by cleanup
   if (heap->is_concurrent_weak_root_in_progress()) {
+    heap->entry_weak_refs();
     heap->entry_weak_roots();
   }
 

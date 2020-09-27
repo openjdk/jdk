@@ -27,15 +27,21 @@
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "memory/allocation.hpp"
 
+class WorkGang;
+
 class ShenandoahRefProcThreadLocal : public CHeapObj<mtGC> {
 private:
-  oop _discovered_list;
+  void* _discovered_list;
 
 public:
   ShenandoahRefProcThreadLocal();
   void clear();
 
-  oop discovered_list_head() const;
+  template<typename T>
+  T* discovered_list_addr();
+  template<typename T>
+  T discovered_list_head() const;
+  template<typename T>
   void set_discovered_list_head(oop head);
 };
 
@@ -45,6 +51,9 @@ private:
 
   ShenandoahRefProcThreadLocal** _ref_proc_thread_locals;
 
+  oop _pending_list;
+  void* _pending_list_tail; // T*
+
   template <typename T>
   bool is_inactive(oop reference, oop referent, ReferenceType type) const;
   bool is_strongly_live(oop referent) const;
@@ -52,9 +61,26 @@ private:
 
   template <typename T>
   bool should_discover(oop reference, ReferenceType type) const;
+  template <typename T>
+  bool should_drop(oop reference, ReferenceType type) const;
+
+  // template <typename T>
+  // void keep_alive(oop reference, ReferenceType type) const;
+
+  template <typename T>
+  void make_inactive(oop reference, ReferenceType type) const;
 
   template <typename T>
   bool discover(oop reference, ReferenceType type);
+
+  template <typename T>
+  T drop(oop reference, ReferenceType type);
+  template <typename T>
+  T* keep(oop reference, ReferenceType type);
+
+  template <typename T>
+  void process_references(ShenandoahRefProcThreadLocal* refproc_data);
+  void enqueue_references();
 
 public:
   ShenandoahReferenceProcessor(uint max_workers);
@@ -64,6 +90,10 @@ public:
   void set_soft_reference_policy(bool clear);
 
   bool discover_reference(oop obj, ReferenceType type) override;
+
+  void process_references(WorkGang* workers);
+
+  void work();
 
   // TODO: Temporary methods to allow transition.
   void set_active_mt_degree(uint num_workers) {};
