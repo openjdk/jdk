@@ -87,7 +87,7 @@
  * @run driver nsk.jdi.ConnectorsJarBuilder
  *
  * @run main/othervm
- *      -cp jars${file.separator}connectors.jar${path.separator}${test.class.path}
+ *      -cp jars${file.separator}connectors.jar${path.separator}${test.class.path}${path.separator}${java.class.path}
  *      nsk.jdi.PlugConnectors.MultiConnectors.plugMultiConnect003.plugMultiConnect003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
