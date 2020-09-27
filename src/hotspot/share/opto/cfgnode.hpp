@@ -115,9 +115,7 @@ class JProjNode : public ProjNode {
 //------------------------------PhiNode----------------------------------------
 // PhiNodes merge values from different Control paths.  Slot 0 points to the
 // controlling RegionNode.  Other slots map 1-for-1 with incoming control flow
-// paths to the RegionNode.  For speed reasons (to avoid another pass) we
-// can turn PhiNodes into copys in-place by NULL'ing out their RegionNode
-// input in slot 0.
+// paths to the RegionNode.
 class PhiNode : public TypeNode {
   friend class PhaseRenumberLive;
 
@@ -172,13 +170,6 @@ public:
 
   // Accessors
   RegionNode* region() const { Node* r = in(Region); assert(!r || r->is_Region(), ""); return (RegionNode*)r; }
-
-  Node* is_copy() const {
-    // The node is a real phi if _in[0] is a Region node.
-    DEBUG_ONLY(const Node* r = _in[Region];)
-    assert(r != NULL && r->is_Region(), "Not valid control");
-    return NULL;  // not a copy!
-  }
 
   bool is_tripcount() const;
 

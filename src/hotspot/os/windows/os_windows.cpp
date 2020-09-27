@@ -4827,15 +4827,25 @@ static int stdinAvailable(int fd, long *pbytes) {
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
                         bool allow_exec) {
+
+  errno_t err;
+  wchar_t* wide_path = wide_abs_unc_path(file_name, err);
+
+  if (wide_path == NULL) {
+    return NULL;
+  }
+
   HANDLE hFile;
   char* base;
 
-  hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL,
+  hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, NULL,
                      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   if (hFile == INVALID_HANDLE_VALUE) {
-    log_info(os)("CreateFile() failed: GetLastError->%ld.", GetLastError());
+    log_info(os)("CreateFileW() failed: GetLastError->%ld.", GetLastError());
+    os::free(wide_path);
     return NULL;
   }
+  os::free(wide_path);
 
   if (allow_exec) {
     // CreateFileMapping/MapViewOfFileEx can't map executable memory

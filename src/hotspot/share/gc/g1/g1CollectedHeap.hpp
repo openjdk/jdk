@@ -746,6 +746,9 @@ private:
   void reset_taskqueue_stats();
   #endif // TASKQUEUE_STATS
 
+  // Start a concurrent cycle.
+  void start_concurrent_cycle(bool concurrent_operation_is_full_mark);
+
   // Schedule the VM operation that will do an evacuation pause to
   // satisfy an allocation request of word_size. *succeeded will
   // return whether the VM operation was successful (it did do an
@@ -1249,7 +1252,6 @@ public:
   // Section on thread-local allocation buffers (TLABs)
   // See CollectedHeap for semantics.
 
-  bool supports_tlab_allocation() const;
   size_t tlab_capacity(Thread* ignored) const;
   size_t tlab_used(Thread* ignored) const;
   size_t max_tlab_size() const;
@@ -1306,16 +1308,6 @@ public:
 #ifdef ASSERT
   bool check_young_list_empty();
 #endif
-
-  // *** Stuff related to concurrent marking.  It's not clear to me that so
-  // many of these need to be public.
-
-  // The functions below are helper functions that a subclass of
-  // "CollectedHeap" can use in the implementation of its virtual
-  // functions.
-  // This performs a concurrent marking of the live objects in a
-  // bitmap off to the side.
-  void do_concurrent_mark();
 
   bool is_marked_next(oop obj) const;
 

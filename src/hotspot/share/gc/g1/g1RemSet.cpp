@@ -38,6 +38,7 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1SharedDirtyCardQueue.hpp"
+#include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
@@ -481,12 +482,7 @@ G1RemSet::~G1RemSet() {
   delete _scan_state;
 }
 
-uint G1RemSet::num_par_rem_sets() {
-  return G1DirtyCardQueueSet::num_par_ids() + G1ConcurrentRefine::max_num_threads() + MAX2(ConcGCThreads, ParallelGCThreads);
-}
-
 void G1RemSet::initialize(uint max_reserved_regions) {
-  G1FromCardCache::initialize(num_par_rem_sets(), max_reserved_regions);
   _scan_state->initialize(max_reserved_regions);
 }
 

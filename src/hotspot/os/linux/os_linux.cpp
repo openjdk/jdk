@@ -978,13 +978,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     }
   }
 
-  // Aborted due to thread limit being reached
-  if (state == ZOMBIE) {
-    thread->set_osthread(NULL);
-    delete osthread;
-    return false;
-  }
-
   // The thread is returned suspended (in state INITIALIZED),
   // and is started higher up in the call chain
   assert(state == INITIALIZED, "race condition");

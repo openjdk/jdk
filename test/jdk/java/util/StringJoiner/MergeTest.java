@@ -26,7 +26,7 @@
  * @bug 8017231 8020977 8054221
  * @summary test  StringJoiner::merge
  * @modules java.base/jdk.internal.util
- * @requires os.maxMemory > 4G
+ * @requires vm.bits == "64" & os.maxMemory > 4G
  * @run testng/othervm -Xmx4g -XX:+CompactStrings MergeTest
  */
 

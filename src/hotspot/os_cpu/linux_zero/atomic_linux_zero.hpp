@@ -26,6 +26,7 @@
 #ifndef OS_CPU_LINUX_ZERO_ATOMIC_LINUX_ZERO_HPP
 #define OS_CPU_LINUX_ZERO_ATOMIC_LINUX_ZERO_HPP
 
+#include "orderAccess_linux_zero.hpp"
 #include "runtime/os.hpp"
 
 // Implementation of class atomic
@@ -74,8 +75,9 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
   // All atomic operations are expected to be full memory barriers
   // (see atomic.hpp). However, __sync_lock_test_and_set is not
   // a full memory barrier, but an acquire barrier. Hence, this added
-  // barrier.
-  __sync_synchronize();
+  // barrier. Some platforms (notably ARM) have peculiarities with
+  // their barrier implementations, delegate it to OrderAccess.
+  OrderAccess::fence();
   return result;
 }
 
@@ -86,7 +88,7 @@ inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   T result = __sync_lock_test_and_set (dest, exchange_value);
-  __sync_synchronize();
+  OrderAccess::fence();
   return result;
 }
 
