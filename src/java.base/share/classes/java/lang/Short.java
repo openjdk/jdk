@@ -25,7 +25,7 @@
 
 package java.lang;
 
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.Constable;
@@ -234,7 +234,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
             int size = -(-128) + 127 + 1;
 
             // Load and use the archived cache if it exists
-            VM.initializeFromArchive(ShortCache.class);
+            CDS.initializeFromArchive(ShortCache.class);
             if (archivedCache == null || archivedCache.length != size) {
                 Short[] c = new Short[size];
                 short value = -128;

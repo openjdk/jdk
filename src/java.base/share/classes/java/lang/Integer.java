@@ -32,6 +32,7 @@ import java.lang.constant.ConstantDesc;
 import java.util.Objects;
 import java.util.Optional;
 
+import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -1023,7 +1024,7 @@ public final class Integer extends Number
             high = h;
 
             // Load IntegerCache.archivedCache from archive, if possible
-            VM.initializeFromArchive(IntegerCache.class);
+            CDS.initializeFromArchive(IntegerCache.class);
             int size = (high - low) + 1;
 
             // Use the archived cache if it exists and is large enough

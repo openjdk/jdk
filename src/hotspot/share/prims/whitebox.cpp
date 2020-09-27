@@ -92,7 +92,7 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
-#include "gc/g1/g1ConcurrentMarkThread.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heterogeneousHeapRegionManager.hpp"
 #endif // INCLUDE_G1GC
@@ -473,7 +473,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    return g1h->concurrent_mark()->cm_thread()->during_cycle();
+    return g1h->concurrent_mark()->cm_thread()->in_progress();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
@@ -481,7 +481,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (!g1h->concurrent_mark()->cm_thread()->during_cycle()) {
+    if (!g1h->concurrent_mark()->cm_thread()->in_progress()) {
       g1h->collect(GCCause::_wb_conc_mark);
       return true;
     }
