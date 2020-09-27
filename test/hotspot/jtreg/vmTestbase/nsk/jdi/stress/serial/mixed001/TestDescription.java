@@ -60,7 +60,7 @@
  *        nsk.share.jdi.TestClass1
  *        nsk.share.jdi.TestClass2
  *        nsk.share.jdi.TestInterfaceImplementer1
- *        nsk.share.jdi.EventTestTemplates
+ *        nsk.share.jdi.ThreadFilterTest
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
  *

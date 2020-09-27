@@ -39,7 +39,7 @@
  *                 - add to request filter for single object
  *                 - add to request filter for the same object 2 times, expect behavior such as in previous case
  *                 - add to request filter for 2 different objects, so events shouldn't be received
- *         Test executes class nsk.share.jdi.EventTestTemplates$ClassExclusionFilterTest which uses JDI events testing
+ *         Test executes class nsk.share.jdi.ClassExclusionFilterTest which uses JDI events testing
  *         framework based on classes from package nsk.share.jdi.*.
  *         This framework uses following scenario:
  *                 - debugger VM forces debugge VM to create number of objects which should generate events during test
@@ -53,11 +53,11 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.share.jdi.EventTestTemplates
+ * @build nsk.share.jdi.InstanceFilterTest
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
  * @run main/othervm
- *      nsk.share.jdi.EventTestTemplates$InstanceFilterTest
+ *      nsk.share.jdi.InstanceFilterTest
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

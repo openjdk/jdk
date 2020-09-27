@@ -40,7 +40,7 @@
  *                 - begins with '*' ('*Subclass')
  *                 - ending  with '*' ('nsk.share.jdi.MonitorWaitExecutor_*')
  *                 - class name ('nsk.share.jdi.MonitorWaitExecutor_1Subclass')
- *         Test executes class nsk.share.jdi.EventTestTemplates$ClassExclusionFilterTest which uses JDI events testing
+ *         Test executes class nsk.share.jdi.ClassExclusionFilterTest which uses JDI events testing
  *         framework based on classes from package nsk.share.jdi.*.
  *         This framework uses following scenario:
  *                 - debugger VM forces debugge VM to create number of objects which should generate events during test
@@ -54,11 +54,11 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.share.jdi.EventTestTemplates
+ * @build nsk.share.jdi.ClassFilterTest_ClassName
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
  * @run main/othervm
- *      nsk.share.jdi.EventTestTemplates$ClassFilterTest_ClassName
+ *      nsk.share.jdi.ClassFilterTest_ClassName
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

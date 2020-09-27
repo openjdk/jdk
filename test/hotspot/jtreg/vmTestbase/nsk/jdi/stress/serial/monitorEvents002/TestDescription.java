@@ -47,8 +47,11 @@
  *
  *
  * @comment build classes required for tests from monitorEvents002.tests
- * @build nsk.share.jdi.EventTestTemplates
+ * @build nsk.share.jdi.ClassExclusionFilterTest
+ *        nsk.share.jdi.ClassFilterTest_ClassName
  *        nsk.share.jdi.JDIEventsDebuggee
+ *        nsk.share.jdi.ClassFilterTest_ReferenceType
+ *        nsk.share.jdi.ThreadFilterTest
  *        nsk.share.jdi.MonitorEventsDebuggee
  *
  * @build nsk.share.jdi.SerialExecutionDebugger

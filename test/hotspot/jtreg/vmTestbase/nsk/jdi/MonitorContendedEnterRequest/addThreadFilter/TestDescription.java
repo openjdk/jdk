@@ -39,9 +39,9 @@
  *                 - add to request filter for single thread
  *                 - add to request filter for the same thread 2 times, expect behavior such as in previous case
  *                 - add to request filter for 2 different threads, so events shouldn't be received
- *         Test execute class nsk.share.jdi.EventTestTemplates$ThreadFilterTest which use JDI events testing
+ *         Test execute class nsk.share.jdi.ThreadFilterTest which use JDI events testing
  *         framework based on classes from package nsk.share.jdi.*.
- *         Test executes class nsk.share.jdi.EventTestTemplates$ClassExclusionFilterTest which uses JDI events testing
+ *         Test executes class nsk.share.jdi.ClassExclusionFilterTest which uses JDI events testing
  *         framework based on classes from package nsk.share.jdi.*.
  *         This framework uses following scenario:
  *                 - debugger VM forces debugge VM to create number of objects which should generate events during test
@@ -59,11 +59,11 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.share.jdi.EventTestTemplates
+ * @build nsk.share.jdi.ThreadFilterTest
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
  * @run main/othervm/native
- *      nsk.share.jdi.EventTestTemplates$ThreadFilterTest
+ *      nsk.share.jdi.ThreadFilterTest
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
