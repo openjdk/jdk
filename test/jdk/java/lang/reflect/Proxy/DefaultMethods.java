@@ -322,17 +322,17 @@ public class DefaultMethods {
         }
     }
 
-    @DataProvider(name = "arguments")
-    private Object[][] arguments() {
+    @DataProvider(name = "illegalArguments")
+    private Object[][] illegalArguments() {
         return new Object[][] {
-                new Object[] {},
-                new Object[] { 100, "foo", 100 },
-                new Object[] { "foo", 100},
+            new Object[] {},
+            new Object[] { 100 },
+            new Object[] { 100, "foo", 100 }
         };
     }
 
-    @Test(dataProvider = "arguments", expectedExceptions = {IllegalArgumentException.class})
-    public void testWrongArguments(Object... args) throws Exception {
+    @Test(dataProvider = "illegalArguments", expectedExceptions = {IllegalArgumentException.class})
+    public void testIllegalArguments(Object... args) throws Exception {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I4 proxy = (I4)Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
         Method m = I4.class.getMethod("mix", int.class, String.class);
@@ -340,13 +340,42 @@ public class DefaultMethods {
         Proxy.invokeDefaultMethod(proxy, m, args);
     }
 
-    @Test(expectedExceptions = {IllegalArgumentException.class})
-    public void testNullArguments() throws Exception {
+    @DataProvider(name = "cceArguments")
+    private Object[][] cceArguments() {
+        return new Object[][] {
+            new Object[] { 100L, "foo" },
+            new Object[] { "foo", 100}
+        };
+    }
+
+    @Test(dataProvider = "cceArguments", expectedExceptions = {ClassCastException.class})
+    public void testCceArguments(Object... args) throws Exception {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I4 proxy = (I4)Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
         Method m = I4.class.getMethod("mix", int.class, String.class);
         assertTrue(m.isDefault());
-        Proxy.invokeDefaultMethod(proxy, m, (Object[])null);
+        Proxy.invokeDefaultMethod(proxy, m, args);
+    }
+
+    @DataProvider(name = "npeArguments")
+    private Object[][] npeArguments() {
+        return new Object[][] {
+            new Object[] {},
+            new Object[] { null, "foo" }
+        };
+    }
+
+    @Test(dataProvider = "npeArguments", expectedExceptions = {NullPointerException.class})
+    public void testNpeArguments(Object... args) throws Exception {
+        ClassLoader loader = DefaultMethods.class.getClassLoader();
+        I4 proxy = (I4)Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
+        Method m = I4.class.getMethod("mix", int.class, String.class);
+        assertTrue(m.isDefault());
+        if (args.length == 0) {
+            // substitute empty args with null since @DataProvider doesn't allow null array
+            args = null;
+        }
+        Proxy.invokeDefaultMethod(proxy, m, args);
     }
 
     private static final InvocationHandler HANDLER = (proxy, method, params) -> {
