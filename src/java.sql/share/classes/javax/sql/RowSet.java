@@ -463,7 +463,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param sqlType the SQL type code defined in <code>java.sql.Types</code>
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.4
@@ -528,7 +528,7 @@ public interface RowSet extends ResultSet {
      *        ignored if the parameter is not a user-defined type or
      *        SQL <code>REF</code> value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.4
@@ -555,7 +555,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @see #getBoolean
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
@@ -582,7 +582,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getByte
@@ -609,7 +609,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getShort
@@ -636,7 +636,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getInt
@@ -663,7 +663,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getLong
@@ -690,7 +690,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getFloat
@@ -717,7 +717,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getDouble
@@ -746,7 +746,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getBigDecimal
@@ -778,7 +778,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getString
@@ -809,7 +809,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getBytes
@@ -863,7 +863,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getTimestamp
@@ -909,7 +909,7 @@ public interface RowSet extends ResultSet {
      * @param x the Java input stream that contains the ASCII parameter value
      * @param length the number of bytes in the stream
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.4
@@ -953,7 +953,7 @@ public interface RowSet extends ResultSet {
      * @param x the java input stream which contains the binary parameter value
      * @param length the number of bytes in the stream
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.4
@@ -1001,7 +1001,7 @@ public interface RowSet extends ResultSet {
      *        contains the UNICODE data used as the designated parameter
      * @param length the number of characters in the stream
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.4
@@ -1029,7 +1029,7 @@ public interface RowSet extends ResultSet {
    * @param parameterIndex the first parameter is 1, the second is 2, ...
    * @param x the Java input stream that contains the ASCII parameter value
    * @throws SQLException if a database access error occurs or
-   * this method is called on a closed <code>PreparedStatement</code>
+   * this method is called on a closed {@code PreparedStatement}
    * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
    * @since 1.6
    */
@@ -1054,7 +1054,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the Java input stream that contains the ASCII parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
        * @since 1.6
     */
@@ -1079,7 +1079,7 @@ public interface RowSet extends ResultSet {
    * @param parameterIndex the first parameter is 1, the second is 2, ...
    * @param x the java input stream which contains the binary parameter value
    * @throws SQLException if a database access error occurs or
-   * this method is called on a closed <code>PreparedStatement</code>
+   * this method is called on a closed {@code PreparedStatement}
    * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
    * @since 1.6
    */
@@ -1103,7 +1103,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the java input stream which contains the binary parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
      * @since 1.6
      */
@@ -1131,7 +1131,7 @@ public interface RowSet extends ResultSet {
    * @param reader the <code>java.io.Reader</code> object that contains the
    *        Unicode data
    * @throws SQLException if a database access error occurs or
-   * this method is called on a closed <code>PreparedStatement</code>
+   * this method is called on a closed {@code PreparedStatement}
    * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
    * @since 1.6
    */
@@ -1158,7 +1158,7 @@ public interface RowSet extends ResultSet {
      * @param reader the <code>java.io.Reader</code> object that contains the
      *        Unicode data
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
      * @since 1.6
      */
@@ -1267,13 +1267,13 @@ public interface RowSet extends ResultSet {
      *          this is the number of digits after the decimal point.  For all other
      *          types, this value will be ignored.
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
-     * @throws SQLFeatureNotSupportedException if <code>targetSqlType</code> is
-     * a <code>ARRAY</code>, <code>BLOB</code>, <code>CLOB</code>,
-     * <code>DATALINK</code>, <code>JAVA_OBJECT</code>, <code>NCHAR</code>,
-     * <code>NCLOB</code>, <code>NVARCHAR</code>, <code>LONGNVARCHAR</code>,
-     *  <code>REF</code>, <code>ROWID</code>, <code>SQLXML</code>
-     * or  <code>STRUCT</code> data type and the JDBC driver does not support
+     * this method is called on a closed {@code CallableStatement}
+     * @throws SQLFeatureNotSupportedException if {@code targetSqlType} is
+     * a {@code ARRAY}, {@code BLOB}, {@code CLOB},
+     * {@code DATALINK}, {@code JAVA_OBJECT}, {@code NCHAR},
+     * {@code NCLOB}, {@code NVARCHAR}, {@code LONGNVARCHAR},
+     *  {@code REF}, {@code ROWID}, {@code SQLXML}
+     * or  {@code STRUCT} data type and the JDBC driver does not support
      * this data type
      * @see Types
      * @see #getObject
@@ -1312,13 +1312,13 @@ public interface RowSet extends ResultSet {
      * @param targetSqlType the SQL type (as defined in java.sql.Types) to be
      *                      sent to the database
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
-     * @throws SQLFeatureNotSupportedException if <code>targetSqlType</code> is
-     * a <code>ARRAY</code>, <code>BLOB</code>, <code>CLOB</code>,
-     * <code>DATALINK</code>, <code>JAVA_OBJECT</code>, <code>NCHAR</code>,
-     * <code>NCLOB</code>, <code>NVARCHAR</code>, <code>LONGNVARCHAR</code>,
-     *  <code>REF</code>, <code>ROWID</code>, <code>SQLXML</code>
-     * or  <code>STRUCT</code> data type and the JDBC driver does not support
+     * this method is called on a closed {@code CallableStatement}
+     * @throws SQLFeatureNotSupportedException if {@code targetSqlType} is
+     * a {@code ARRAY}, {@code BLOB}, {@code CLOB},
+     * {@code DATALINK}, {@code JAVA_OBJECT}, {@code NCHAR},
+     * {@code NCLOB}, {@code NVARCHAR}, {@code LONGNVARCHAR},
+     *  {@code REF}, {@code ROWID}, {@code SQLXML}
+     * or  {@code STRUCT} data type and the JDBC driver does not support
      * this data type
      * @see #getObject
      * @since 1.4
@@ -1355,8 +1355,8 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the object containing the input parameter value
      * @throws SQLException if a database access error occurs,
-     * this method is called on a closed <code>CallableStatement</code> or if the given
-     *            <code>Object</code> parameter is ambiguous
+     * this method is called on a closed {@code CallableStatement} or if the given
+     *            {@code Object} parameter is ambiguous
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getObject
@@ -1513,7 +1513,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x a <code>Blob</code> object that maps an SQL <code>BLOB</code> value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
@@ -1636,7 +1636,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x a <code>Clob</code> object that maps an SQL <code>CLOB</code> value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
@@ -1702,7 +1702,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getDate
@@ -1726,7 +1726,7 @@ public interface RowSet extends ResultSet {
      * @param cal the <code>Calendar</code> object the driver will use
      *            to construct the date
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getDate
@@ -1757,7 +1757,7 @@ public interface RowSet extends ResultSet {
      * @param parameterName the name of the parameter
      * @param x the parameter value
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getTime
@@ -1781,7 +1781,7 @@ public interface RowSet extends ResultSet {
      * @param cal the <code>Calendar</code> object the driver will use
      *            to construct the time
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getTime
@@ -1821,7 +1821,7 @@ public interface RowSet extends ResultSet {
      * @param cal the <code>Calendar</code> object the driver will use
      *            to construct the timestamp
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>CallableStatement</code>
+     * this method is called on a closed {@code CallableStatement}
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @see #getTimestamp
@@ -2182,7 +2182,7 @@ public interface RowSet extends ResultSet {
      * @param parameterIndex the first parameter is 1, the second is 2, ...
      * @param x the <code>java.net.URL</code> object to be set
      * @throws SQLException if a database access error occurs or
-     * this method is called on a closed <code>PreparedStatement</code>
+     * this method is called on a closed {@code PreparedStatement}
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
      * @since 1.4
      */

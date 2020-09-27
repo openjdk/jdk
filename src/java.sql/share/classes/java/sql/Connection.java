@@ -244,7 +244,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @throws SQLException if a database access error occurs,
      * this method is called while participating in a distributed transaction,
      * if this method is called on a closed connection or this
-     *            <code>Connection</code> object is in auto-commit mode
+     *            {@code Connection} object is in auto-commit mode
      * @see #setAutoCommit
      */
     void commit() throws SQLException;
@@ -258,7 +258,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @throws SQLException if a database access error occurs,
      * this method is called while participating in a distributed transaction,
      * this method is called on a closed connection or this
-     *            <code>Connection</code> object is in auto-commit mode
+     *            {@code Connection} object is in auto-commit mode
      * @see #setAutoCommit
      */
     void rollback() throws SQLException;
@@ -440,7 +440,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *        because it specifies that transactions are not supported.)
      * @throws SQLException if a database access error occurs, this
      * method is called on a closed connection
-     *            or the given parameter is not one of the <code>Connection</code>
+     *            or the given parameter is not one of the {@code Connection}
      *            constants
      * @see DatabaseMetaData#supportsTransactionIsolationLevel
      * @see #getTransactionIsolation
@@ -522,7 +522,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *         concurrency
      * @throws SQLException if a database access error occurs, this
      * method is called on a closed connection
-     *         or the given parameters are not <code>ResultSet</code>
+     *         or the given parameters are not {@code ResultSet}
      *         constants indicating type and concurrency
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method or this method is not supported for the specified result
@@ -557,7 +557,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * objects with the given type and concurrency
      * @throws SQLException if a database access error occurs, this
      * method is called on a closed connection
-     *         or the given parameters are not <code>ResultSet</code>
+     *         or the given parameters are not {@code ResultSet}
      *         constants indicating type and concurrency
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method or this method is not supported for the specified result
@@ -591,7 +591,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * objects with the given type and concurrency
      * @throws SQLException if a database access error occurs, this method
      * is called on a closed connection
-     *         or the given parameters are not <code>ResultSet</code>
+     *         or the given parameters are not {@code ResultSet}
      *         constants indicating type and concurrency
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method or this method is not supported for the specified result
@@ -647,7 +647,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *        object's default type map
      * @throws SQLException if a database access error occurs, this
      * method is called on a closed connection or
-     *        the given parameter is not a <code>java.util.Map</code>
+     *        the given parameter is not a {@code java.util.Map}
      *        object
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
@@ -707,7 +707,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @throws SQLException if a database access error occurs,
      * this method is called while participating in a distributed transaction,
      * this method is called on a closed connection
-     *            or this <code>Connection</code> object is currently in
+     *            or this {@code Connection} object is currently in
      *            auto-commit mode
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
@@ -728,7 +728,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @throws SQLException if a database access error occurs,
           * this method is called while participating in a distributed transaction,
      * this method is called on a closed connection
-     *            or this <code>Connection</code> object is currently in
+     *            or this {@code Connection} object is currently in
      *            auto-commit mode
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
@@ -747,8 +747,8 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @throws SQLException if a database access error occurs,
      * this method is called while participating in a distributed transaction,
      * this method is called on a closed connection,
-     *            the <code>Savepoint</code> object is no longer valid,
-     *            or this <code>Connection</code> object is currently in
+     *            the {@code Savepoint} object is no longer valid,
+     *            or this {@code Connection} object is currently in
      *            auto-commit mode
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
@@ -766,7 +766,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @param savepoint the <code>Savepoint</code> object to be removed
      * @throws SQLException if a database access error occurs, this
      *  method is called on a closed connection or
-     *            the given <code>Savepoint</code> object is not a valid
+     *            the given {@code Savepoint} object is not a valid
      *            savepoint in the current transaction
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
@@ -800,7 +800,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *         concurrency, and holdability
      * @throws SQLException if a database access error occurs, this
      * method is called on a closed connection
-     *            or the given parameters are not <code>ResultSet</code>
+     *            or the given parameters are not {@code ResultSet}
      *            constants indicating type, concurrency, and holdability
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method or this method is not supported for the specified result
@@ -842,7 +842,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *         concurrency, and holdability
      * @throws SQLException if a database access error occurs, this
      * method is called on a closed connection
-     *            or the given parameters are not <code>ResultSet</code>
+     *            or the given parameters are not {@code ResultSet}
      *            constants indicating type, concurrency, and holdability
       * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method or this method is not supported for the specified result
@@ -882,7 +882,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *         concurrency, and holdability
      * @throws SQLException if a database access error occurs, this
      * method is called on a closed connection
-     *            or the given parameters are not <code>ResultSet</code>
+     *            or the given parameters are not {@code ResultSet}
      *            constants indicating type, concurrency, and holdability
       * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method or this method is not supported for the specified result
@@ -930,7 +930,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *         returning auto-generated keys
      * @throws SQLException if a database access error occurs, this
      *  method is called on a closed connection
-     *         or the given parameter is not a <code>Statement</code>
+     *         or the given parameter is not a {@code Statement}
      *         constant indicating whether auto-generated keys should be
      *         returned
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
@@ -1116,7 +1116,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
          *                                              database operation.
          *
          * @return true if the connection is valid, false otherwise
-         * @throws SQLException if the value supplied for <code>timeout</code>
+         * @throws SQLException if the value supplied for {@code timeout}
          * is less than 0
          * @since 1.6
          *

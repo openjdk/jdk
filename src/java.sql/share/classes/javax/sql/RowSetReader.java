@@ -66,7 +66,7 @@ public interface RowSetReader {
    *         <code>RowSetInternal</code> interface, (2) with which this reader is
    *        registered, and (3) whose <code>execute</code> method called this reader
    * @throws SQLException if a database access error occurs or this method
-   *         invokes the <code>RowSet.execute</code> method
+   *         invokes the {@code RowSet.execute} method
    */
   void readData(RowSetInternal caller) throws SQLException;
 
