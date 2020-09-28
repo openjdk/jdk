@@ -4997,12 +4997,9 @@ void os::pause() {
   }
 }
 
-Thread* os::ThreadCrashProtection::_protected_thread = NULL;
-os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
-volatile intptr_t os::ThreadCrashProtection::_crash_mux = 0;
-
 os::ThreadCrashProtection::ThreadCrashProtection() {
-}
+  _protected_thread = Thread::current();
+};
 
 // See the caveats for this class in os_windows.hpp
 // Protects the callback call so that raised OS EXCEPTIONS causes a jump back
@@ -5011,23 +5008,17 @@ os::ThreadCrashProtection::ThreadCrashProtection() {
 // The callback is supposed to provide the method that should be protected.
 //
 bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
-
-  Thread::muxAcquire(&_crash_mux, "CrashProtection");
-
-  _protected_thread = Thread::current_or_null();
   assert(_protected_thread != NULL, "Cannot crash protect a NULL thread");
-
   bool success = true;
   __try {
-    _crash_protection = this;
+    _protected_thread->set_crash_protection(this);
     cb.call();
   } __except(EXCEPTION_EXECUTE_HANDLER) {
     // only for protection, nothing to do
+    assert(_protected_thread == Thread::current(), "protected thread must be current thread");
     success = false;
   }
-  _crash_protection = NULL;
-  _protected_thread = NULL;
-  Thread::muxRelease(&_crash_mux);
+  _protected_thread->set_crash_protection(NULL);
   return success;
 }
 

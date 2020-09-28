@@ -431,7 +431,9 @@ JVM_handle_bsd_signal(int sig,
 
   // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
   // (no destructors can be run)
-  os::ThreadCrashProtection::check_crash_protection(sig, t);
+  if (t != NULL) {
+    t->check_crash_protection(sig);
+  }
 
   SignalHandlerMark shm(t);
 

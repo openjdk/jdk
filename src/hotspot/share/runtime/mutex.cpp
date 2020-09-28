@@ -40,8 +40,7 @@ void Mutex::check_block_state(Thread* thread) {
     fatal("VM thread could block on lock that may be held by a JavaThread during safepoint: %s", name());
   }
 
-  assert(!os::ThreadCrashProtection::is_crash_protected(thread),
-         "locking not allowed when crash protection is set");
+  assert(!thread->has_crash_protection(), "locking not allowed when crash protection is set");
 }
 
 void Mutex::check_safepoint_state(Thread* thread) {

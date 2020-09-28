@@ -682,7 +682,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   // Since os::malloc can be called when the libjvm.{dll,so} is
   // first loaded and we don't have a thread yet we must accept NULL also here.
-  assert(!os::ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
+  assert(Thread::current_or_null() == NULL || !Thread::current()->has_crash_protection(),
          "malloc() not allowed when crash protection is set");
 
   if (size == 0) {

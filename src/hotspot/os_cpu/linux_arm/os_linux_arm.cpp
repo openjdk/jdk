@@ -250,7 +250,9 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
 
   // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
   // (no destructors can be run)
-  os::ThreadCrashProtection::check_crash_protection(sig, t);
+  if (t != NULL) {
+    t->check_crash_protection(sig);
+  }
 
   SignalHandlerMark shm(t);
 
