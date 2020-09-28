@@ -355,7 +355,6 @@ private:
   bool should_print(LogTargetHandle log) const;
   void print(LogTargetHandle log, const ZStatSamplerHistory* history) const;
 
-  static int sampler_cmp(const ZStatSampler* const &a, const ZStatSampler* const &b);
 protected:
   virtual void run_service();
   virtual void stop_service();

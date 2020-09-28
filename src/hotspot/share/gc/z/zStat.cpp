@@ -395,6 +395,32 @@ T* ZStatIterableValue<T>::insert() const {
   return next;
 }
 
+template <typename T>
+void ZStatIterableValue<T>::sort() {
+  T* first_unsorted = _first;
+  _first = NULL;
+
+  while (first_unsorted != NULL) {
+    T* const value = first_unsorted;
+    first_unsorted = value->_next;
+    value->_next = NULL;
+
+    T** current = &_first;
+
+    while (*current != NULL) {
+      // First sort by group, then by name
+      const int group_cmp = strcmp((*current)->group(), value->group());
+      if ((group_cmp > 0) || (group_cmp == 0 && strcmp((*current)->name(), value->name()) > 0)) {
+        break;
+      }
+
+      current = &(*current)->_next;
+    }
+    value->_next = *current;
+    *current = value;
+  }
+}
+
 //
 // Stat sampler
 //
@@ -850,26 +876,13 @@ bool ZStat::should_print(LogTargetHandle log) const {
   return log.is_enabled();
 }
 
-int ZStat::sampler_cmp(const ZStatSampler* const &a, const ZStatSampler* const &b) {
-  const int cmp = strcmp(a->group(), b->group());
-  return (cmp == 0) ? strcmp(a->name(), b->name()) : cmp;
-}
-
 void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const {
-  // Sort sampled stats
-  ResourceMark rm;
-  GrowableArray<const ZStatSampler*> samplers(ZStatSampler::count());
-  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
-    samplers.insert_sorted<sampler_cmp>(sampler);
-  }
-
   // Print
   log.print("=== Garbage Collection Statistics =======================================================================================================================");
   log.print("                                                             Last 10s              Last 10m              Last 10h                Total");
   log.print("                                                             Avg / Max             Avg / Max             Avg / Max             Avg / Max");
 
-  for (int i = 0; i < samplers.length(); i++) {
-    const ZStatSampler* sampler = samplers.at(i);
+  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
     const ZStatSamplerHistory& sampler_history = history[sampler->id()];
     const ZStatUnitPrinter printer = sampler->printer();
     printer(log, *sampler, sampler_history);
@@ -881,6 +894,8 @@ void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const
 void ZStat::run_service() {
   ZStatSamplerHistory* const history = new ZStatSamplerHistory[ZStatSampler::count()];
   LogTarget(Info, gc, stats) log;
+
+  ZStatSampler::sort();
 
   // Main loop
   while (_metronome.wait_for_tick()) {
