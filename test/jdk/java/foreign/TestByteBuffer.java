@@ -458,8 +458,7 @@ public class TestByteBuffer {
         byteBuffer.get(); // should throw
     }
 
-    @Test(expectedExceptions = { UnsupportedOperationException.class,
-                                 IllegalArgumentException.class })
+    @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testTooBigForByteBuffer() {
         try (MemorySegment segment = MemorySegment.ofNativeRestricted(MemoryAddress.NULL, (long)Integer.MAX_VALUE + 10L, null, null, null)) {
             segment.asByteBuffer();

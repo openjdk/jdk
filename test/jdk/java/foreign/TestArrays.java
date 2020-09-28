@@ -105,7 +105,7 @@ public class TestArrays {
         }
     }
 
-    @Test(expectedExceptions = { UnsupportedOperationException.class })
+    @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testTooBigForArray() {
         try (MemorySegment segment = MemorySegment.ofNativeRestricted(MemoryAddress.NULL, (long)Integer.MAX_VALUE + 10L, null, null, null)) {
             segment.toByteArray();
