@@ -112,6 +112,8 @@ public class bug7072653 {
         combobox.putClientProperty("JComboBox.isPopDown", true);
         frame.getContentPane().add(combobox);
         frame.setVisible(true);
+        robot.delay(3000); // wait some time to stabilize the size of the
+                           // screen insets after the window is shown
         combobox.addPopupMenuListener(new PopupMenuListener() {
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {

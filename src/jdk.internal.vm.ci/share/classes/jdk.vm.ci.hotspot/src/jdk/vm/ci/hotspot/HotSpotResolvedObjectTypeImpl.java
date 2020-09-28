@@ -77,6 +77,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     private HotSpotConstantPool constantPool;
     private final JavaConstant mirror;
     private HotSpotResolvedObjectTypeImpl superClass;
+    private HotSpotResolvedJavaType componentType;
 
     /**
      * Managed exclusively by {@link HotSpotJDKReflection#getField}.
@@ -157,7 +158,14 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public ResolvedJavaType getComponentType() {
-        return runtime().compilerToVm.getComponentType(this);
+        if (componentType == null) {
+            if (isArray()) {
+                componentType = runtime().compilerToVm.getComponentType(this);
+            } else {
+                componentType = this;
+            }
+        }
+        return this.equals(componentType) ? null : componentType;
     }
 
     @Override
@@ -298,12 +306,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public HotSpotResolvedObjectTypeImpl getSupertype() {
-        if (isArray()) {
-            ResolvedJavaType componentType = getComponentType();
-            if (componentType.equals(getJavaLangObject()) || componentType.isPrimitive()) {
+        ResolvedJavaType component = getComponentType();
+        if (component != null) {
+            if (component.equals(getJavaLangObject()) || component.isPrimitive()) {
                 return getJavaLangObject();
             }
-            HotSpotResolvedObjectTypeImpl supertype = ((HotSpotResolvedObjectTypeImpl) componentType).getSupertype();
+            HotSpotResolvedObjectTypeImpl supertype = ((HotSpotResolvedObjectTypeImpl) component).getSupertype();
             return (HotSpotResolvedObjectTypeImpl) supertype.getArrayClass();
         }
         if (isInterface()) {

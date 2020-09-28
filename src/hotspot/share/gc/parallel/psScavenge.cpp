@@ -92,10 +92,6 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
   PSPromoteRootsClosure  roots_to_old_closure(pm);
 
   switch (root_type) {
-    case ParallelRootType::object_synchronizer:
-      ObjectSynchronizer::oops_do(&roots_closure);
-      break;
-
     case ParallelRootType::class_loader_data:
       {
         PSScavengeCLDClosure cld_closure(pm);

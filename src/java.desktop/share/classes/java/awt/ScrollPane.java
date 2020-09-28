@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -790,6 +790,11 @@ public class ScrollPane extends Container implements Accessible {
          * JDK 1.3 serialVersionUID
          */
         private static final long serialVersionUID = 6100703663886637L;
+
+        /**
+         * Constructs an {@code AccessibleAWTScrollPane}.
+         */
+        protected AccessibleAWTScrollPane() {}
 
         /**
          * Get the role of this object.

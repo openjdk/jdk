@@ -454,6 +454,7 @@ void ModuleEntry::init_as_archived_entry() {
   if (_location != NULL) {
     _location = ArchiveBuilder::get_relocated_symbol(_location);
   }
+  JFR_ONLY(set_trace_id(0));// re-init at runtime
 
   ArchivePtrMarker::mark_pointer((address*)&_reads);
   ArchivePtrMarker::mark_pointer((address*)&_version);

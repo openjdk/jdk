@@ -326,7 +326,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
       MemTracker::record_virtual_memory_reserve((address)extra_base, extra_size, CALLER_PC);
     }
   } else {
-    extra_base = os::reserve_memory(extra_size, NULL, alignment);
+    extra_base = os::reserve_memory(extra_size, alignment);
   }
 
   if (extra_base == NULL) {

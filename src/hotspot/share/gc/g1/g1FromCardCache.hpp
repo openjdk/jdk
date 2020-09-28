@@ -54,6 +54,13 @@ private:
   // This means that the heap must not contain card zero.
   static const uintptr_t InvalidCard = 0;
 
+  // Gives an approximation on how many threads can be expected to add records to
+  // a remembered set in parallel. This is used for sizing the G1FromCardCache to
+  // decrease performance losses due to data structure sharing.
+  // Examples for quantities that influence this value are the maximum number of
+  // mutator threads, maximum number of concurrent refinement or GC threads.
+  static uint num_par_rem_sets();
+
 public:
   static void clear(uint region_idx);
 
@@ -79,7 +86,7 @@ public:
     _cache[region_idx][worker_id] = val;
   }
 
-  static void initialize(uint num_par_rem_sets, uint max_reserved_regions);
+  static void initialize(uint max_reserved_regions);
 
   static void invalidate(uint start_idx, size_t num_regions);
 

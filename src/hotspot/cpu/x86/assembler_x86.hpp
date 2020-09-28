@@ -256,6 +256,19 @@ class Address {
              "inconsistent address");
   }
 
+  // The following overloads are used in connection with the
+  // ByteSize type (see sizes.hpp).  They simplify the use of
+  // ByteSize'd arguments in assembly code.
+
+  Address(Register base, ByteSize disp)
+    : Address(base, in_bytes(disp)) {}
+
+  Address(Register base, Register index, ScaleFactor scale, ByteSize disp)
+    : Address(base, index, scale, in_bytes(disp)) {}
+
+  Address(Register base, RegisterOrConstant index, ScaleFactor scale, ByteSize disp)
+    : Address(base, index, scale, in_bytes(disp)) {}
+
   Address plus_disp(int disp) const {
     Address a = (*this);
     a._disp += disp;
@@ -275,51 +288,6 @@ class Address {
     // disregard _rspec
     return _base == a._base && _disp == a._disp && _index == a._index && _scale == a._scale;
   }
-
-  // The following two overloads are used in connection with the
-  // ByteSize type (see sizes.hpp).  They simplify the use of
-  // ByteSize'd arguments in assembly code. Note that their equivalent
-  // for the optimized build are the member functions with int disp
-  // argument since ByteSize is mapped to an int type in that case.
-  //
-  // Note: DO NOT introduce similar overloaded functions for WordSize
-  // arguments as in the optimized mode, both ByteSize and WordSize
-  // are mapped to the same type and thus the compiler cannot make a
-  // distinction anymore (=> compiler errors).
-
-#ifdef ASSERT
-  Address(Register base, ByteSize disp)
-    : _base(base),
-      _index(noreg),
-      _xmmindex(xnoreg),
-      _scale(no_scale),
-      _disp(in_bytes(disp)),
-      _isxmmindex(false){
-  }
-
-  Address(Register base, Register index, ScaleFactor scale, ByteSize disp)
-    : _base(base),
-      _index(index),
-      _xmmindex(xnoreg),
-      _scale(scale),
-      _disp(in_bytes(disp)),
-      _isxmmindex(false){
-    assert(!index->is_valid() == (scale == Address::no_scale),
-           "inconsistent address");
-  }
-  Address(Register base, RegisterOrConstant index, ScaleFactor scale, ByteSize disp)
-    : _base (base),
-      _index(index.register_or_noreg()),
-      _xmmindex(xnoreg),
-      _scale(scale),
-      _disp (in_bytes(disp) + (index.constant_or_zero() * scale_size(scale))),
-      _isxmmindex(false) {
-    if (!index.is_register())  scale = Address::no_scale;
-    assert(!_index->is_valid() == (scale == Address::no_scale),
-           "inconsistent address");
-  }
-
-#endif // ASSERT
 
   // accessors
   bool        uses(Register reg) const { return _base == reg || _index == reg; }

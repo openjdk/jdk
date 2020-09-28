@@ -36,6 +36,7 @@
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
@@ -398,7 +399,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass *relocate
       new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(50, mtClass);
   }
 
-  assert(relocated_k->is_shared(), "must be a shared class");
+  assert(ArchiveBuilder::singleton()->is_in_buffer_space(relocated_k), "must be a shared class");
 
   if (_k == relocated_k) {
     // Don't add the Klass containing the sub-graph to it's own klass

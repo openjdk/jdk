@@ -41,7 +41,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleTarget;
 import jdk.internal.vm.annotation.Stable;
@@ -110,7 +110,7 @@ public final class Configuration {
 
     static {
         // Initialize EMPTY_CONFIGURATION from the archive.
-        VM.initializeFromArchive(Configuration.class);
+        CDS.initializeFromArchive(Configuration.class);
         // Create a new empty Configuration if there is no archived version.
         if (EMPTY_CONFIGURATION == null) {
             EMPTY_CONFIGURATION = new Configuration();

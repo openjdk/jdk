@@ -332,7 +332,7 @@ void mutex_init() {
   def(UnsafeJlong_lock             , PaddedMutex  , special,     false, _safepoint_check_never);
 #endif
 
-  def(CodeHeapStateAnalytics_lock  , PaddedMutex  , leaf,        true,  _safepoint_check_never);
+  def(CodeHeapStateAnalytics_lock  , PaddedMutex  , nonleaf+6,   false, _safepoint_check_always);
   def(NMethodSweeperStats_lock     , PaddedMutex  , special,     true,  _safepoint_check_never);
   def(ThreadsSMRDelete_lock        , PaddedMonitor, special,     true,  _safepoint_check_never);
   def(ThreadIdTableCreate_lock     , PaddedMutex  , leaf,        false, _safepoint_check_always);

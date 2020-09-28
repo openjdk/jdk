@@ -3833,18 +3833,18 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 #endif // INCLUDE_CDS
 JVM_END
 
-JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
-    JVMWrapper("JVM_IsCDSDumpingEnable");
+JVM_ENTRY(jboolean, JVM_IsDynamicDumpingEnabled(JNIEnv* env))
+    JVMWrapper("JVM_IsDynamicDumpingEnable");
     return DynamicDumpSharedSpaces;
 JVM_END
 
-JVM_ENTRY(jboolean, JVM_IsCDSSharingEnabled(JNIEnv* env))
-    JVMWrapper("JVM_IsCDSSharingEnable");
+JVM_ENTRY(jboolean, JVM_IsSharingEnabled(JNIEnv* env))
+    JVMWrapper("JVM_IsSharingEnable");
     return UseSharedSpaces;
 JVM_END
 
-JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForCDSDump())
-  JVMWrapper("JVM_GetRandomSeedForCDSDump");
+JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
+  JVMWrapper("JVM_GetRandomSeedForDumping");
   if (DumpSharedSpaces) {
     const char* release = Abstract_VM_Version::vm_release();
     const char* dbg_level = Abstract_VM_Version::jdk_debug_level();
@@ -3859,7 +3859,7 @@ JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForCDSDump())
     if (seed == 0) { // don't let this ever be zero.
       seed = 0x87654321;
     }
-    log_debug(cds)("JVM_GetRandomSeedForCDSDump() = " JLONG_FORMAT, seed);
+    log_debug(cds)("JVM_GetRandomSeedForDumping() = " JLONG_FORMAT, seed);
     return seed;
   } else {
     return 0;
