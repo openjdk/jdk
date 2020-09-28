@@ -243,6 +243,17 @@ class OrderAccess : public AllStatic {
   static void     fence();
 
   static void     cross_modify_fence();
+
+  // Processors which are not multi-copy-atomic require a full fence
+  // to enforce a globally consistent order of Independent Reads of
+  // Independent Writes. Please use only for such patterns!
+  static void     loadload_for_iriw() {
+#ifndef CPU_MULTI_COPY_ATOMIC
+    OrderAccess::fence();
+#else
+    OrderAccess::loadload();
+#endif
+  }
 private:
   // This is a helper that invokes the StubRoutines::fence_entry()
   // routine if it exists, It should only be used by platforms that
