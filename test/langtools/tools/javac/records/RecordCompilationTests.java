@@ -26,7 +26,7 @@
 /**
  * RecordCompilationTests
  *
- * @test 8250629 8252307 8247352
+ * @test 8250629 8252307 8247352 8241151
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -148,7 +148,7 @@ public class RecordCompilationTests extends CompilationTestCase {
     boolean useAP;
 
     public RecordCompilationTests() {
-        useAP = System.getProperty("useAP") == null ? false : System.getProperty("useAP").equals("true");
+        useAP = System.getProperty("useAP", "false").equals("true");
         setDefaultFilename("R.java");
         setCompileOptions(useAP ? PREVIEW_OPTIONS_WITH_AP : PREVIEW_OPTIONS);
         System.out.println(useAP ? "running all tests using an annotation processor" : "running all tests without annotation processor");
