@@ -43,17 +43,21 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: jdk
+        if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine versions and locations to be used for dependencies
         id: check_deps
         run: "echo ::set-output name=dependencies::`cat make/autoconf/version-numbers make/conf/test-dependencies | sed -e '1i {' -e 's/#.*//g' -e 's/\"//g' -e 's/\\(.*\\)=\\(.*\\)/\"\\1\": \"\\2\",/g' -e '$s/,\\s\\{0,\\}$/\\}/'`"
         working-directory: jdk
+        if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Print extracted dependencies to the log
         run: "echo '${{ steps.check_deps.outputs.dependencies }}'"
+        if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine the jtreg ref to checkout
         run: "echo ::set-env name=JTREG_REF::jtreg${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_VERSION }}-${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_BUILD }}"
+        if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Check if a jtreg image is present in the cache
         id: jtreg
@@ -302,6 +306,7 @@ jobs:
           JTREG_KEYWORDS="!headful"
 
       - name: Create suitable test log artifact name
+        if: always()
         run: echo "::set-env name=logsuffix::`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`"
 
       - name: Persist test logs
@@ -558,6 +563,7 @@ jobs:
           JTREG_KEYWORDS="!headful"
 
       - name: Create suitable test log artifact name
+        if: always()
         run: echo ("::set-env name=logsuffix::" + ("${{ matrix.test }}" -replace "/", "_" -replace " ", "_"))
 
       - name: Persist test logs
@@ -782,6 +788,7 @@ jobs:
           JTREG_KEYWORDS="!headful"
 
       - name: Create suitable test log artifact name
+        if: always()
         run: echo "::set-env name=logsuffix::`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`"
 
       - name: Persist test logs
