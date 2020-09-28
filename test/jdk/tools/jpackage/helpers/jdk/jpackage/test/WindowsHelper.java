@@ -134,16 +134,17 @@ public class WindowsHelper {
 
     static class DesktopIntegrationVerifier {
 
-        DesktopIntegrationVerifier(JPackageCommand cmd) {
+        DesktopIntegrationVerifier(JPackageCommand cmd, String name) {
             cmd.verifyIsOfType(PackageType.WINDOWS);
             this.cmd = cmd;
+            this.name = (name == null ? cmd.name() : name);
             verifyStartMenuShortcut();
             verifyDesktopShortcut();
             verifyFileAssociationsRegistry();
         }
 
         private void verifyDesktopShortcut() {
-            boolean appInstalled = cmd.appLauncherPath().toFile().exists();
+            boolean appInstalled = cmd.appLauncherPath(name).toFile().exists();
             if (cmd.hasArgument("--win-shortcut")) {
                 if (isUserLocalInstall(cmd)) {
                     verifyUserLocalDesktopShortcut(appInstalled);
@@ -159,7 +160,7 @@ public class WindowsHelper {
         }
 
         private Path desktopShortcutPath() {
-            return Path.of(cmd.name() + ".lnk");
+            return Path.of(name + ".lnk");
         }
 
         private void verifyShortcut(Path path, boolean exists) {
@@ -183,7 +184,7 @@ public class WindowsHelper {
         }
 
         private void verifyStartMenuShortcut() {
-            boolean appInstalled = cmd.appLauncherPath().toFile().exists();
+            boolean appInstalled = cmd.appLauncherPath(name).toFile().exists();
             if (cmd.hasArgument("--win-menu")) {
                 if (isUserLocalInstall(cmd)) {
                     verifyUserLocalStartMenuShortcut(appInstalled);
@@ -200,7 +201,7 @@ public class WindowsHelper {
 
         private Path startMenuShortcutPath() {
             return Path.of(cmd.getArgumentValue("--win-menu-group",
-                    () -> "Unknown"), cmd.name() + ".lnk");
+                    () -> "Unknown"), name + ".lnk");
         }
 
         private void verifyStartMenuShortcut(Path shortcutsRoot, boolean exists) {
@@ -228,7 +229,7 @@ public class WindowsHelper {
         }
 
         private void verifyFileAssociationsRegistry(Path faFile) {
-            boolean appInstalled = cmd.appLauncherPath().toFile().exists();
+            boolean appInstalled = cmd.appLauncherPath(name).toFile().exists();
             try {
                 TKit.trace(String.format(
                         "Get file association properties from [%s] file",
@@ -279,6 +280,7 @@ public class WindowsHelper {
         }
 
         private final JPackageCommand cmd;
+        private final String name;
     }
 
     private static String queryRegistryValue(String keyPath, String valueName) {

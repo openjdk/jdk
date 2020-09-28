@@ -84,13 +84,15 @@ public:
   void scan_heap_roots(G1ParScanThreadState* pss,
                        uint worker_id,
                        G1GCPhaseTimes::GCParPhases scan_phase,
-                       G1GCPhaseTimes::GCParPhases objcopy_phase);
+                       G1GCPhaseTimes::GCParPhases objcopy_phase,
+                       bool remember_already_scanned_cards);
 
   // Merge cards from various sources (remembered sets, hot card cache, log buffers)
   // and calculate the cards that need to be scanned later (via scan_heap_roots()).
   // If initial_evacuation is set, this is called during the initial evacuation.
   void merge_heap_roots(bool initial_evacuation);
 
+  void complete_evac_phase(bool has_more_than_one_evacuation_phase);
   // Prepare for and cleanup after scanning the heap roots. Must be called
   // once before and after in sequential code.
   void prepare_for_scan_heap_roots();

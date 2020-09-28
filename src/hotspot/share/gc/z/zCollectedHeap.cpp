@@ -205,10 +205,6 @@ void ZCollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   ShouldNotReachHere();
 }
 
-bool ZCollectedHeap::supports_tlab_allocation() const {
-  return true;
-}
-
 size_t ZCollectedHeap::tlab_capacity(Thread* ignored) const {
   return _heap.tlab_capacity();
 }
