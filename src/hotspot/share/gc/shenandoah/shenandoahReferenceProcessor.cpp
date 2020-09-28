@@ -135,7 +135,9 @@ void ShenandoahRefProcThreadLocal::set_discovered_list_head<oop>(oop head) {
 
 ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(uint max_workers) :
   _soft_reference_policy(NULL),
-  _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)) {
+  _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)),
+  _pending_list(NULL),
+  _pending_list_tail(&_pending_list) {
   for (size_t i = 0; i < max_workers; i++) {
     _ref_proc_thread_locals[i].reset();
   }
