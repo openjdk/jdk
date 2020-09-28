@@ -109,7 +109,7 @@ ShenandoahRefProcThreadLocal::ShenandoahRefProcThreadLocal() :
 
 }
 
-void ShenandoahRefProcThreadLocal::clear() {
+void ShenandoahRefProcThreadLocal::reset() {
   _discovered_list = NULL;
 }
 
@@ -135,18 +135,17 @@ void ShenandoahRefProcThreadLocal::set_discovered_list_head<oop>(oop head) {
 
 ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(uint max_workers) :
   _soft_reference_policy(NULL),
-  _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal*, max_workers, mtGC)) {
+  _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)) {
   for (size_t i = 0; i < max_workers; i++) {
-    _ref_proc_thread_locals[i] = NULL;
+    _ref_proc_thread_locals[i].reset();
   }
 }
 
-void ShenandoahReferenceProcessor::init_thread_locals(uint worker_id) {
-  ShenandoahRefProcThreadLocal* refproc_data = _ref_proc_thread_locals[worker_id];
-  if (refproc_data == NULL) {
-    _ref_proc_thread_locals[worker_id] = new ShenandoahRefProcThreadLocal();
-  } else {
-    refproc_data->clear();
+void ShenandoahReferenceProcessor::reset_thread_locals() {
+  uint max_workers = ShenandoahHeap::heap()->max_workers();
+  for (uint i = 0; i < max_workers; i++) {
+    ShenandoahRefProcThreadLocal refproc_data = _ref_proc_thread_locals[i];
+    refproc_data.reset();
   }
 }
 
@@ -281,11 +280,10 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type) {
   assert(CompressedOops::is_null(reference_discovered<T>(reference)), "Already discovered: " PTR_FORMAT, p2i(reference));
   uint worker_id = ShenandoahThreadLocalData::worker_id(Thread::current());
   assert(worker_id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "need valid worker ID");
-  ShenandoahRefProcThreadLocal* refproc_data = _ref_proc_thread_locals[worker_id];
-  assert(refproc_data != NULL, "need thread-local refproc-data");
-  T discovered_head = refproc_data->discovered_list_head<T>();
+  ShenandoahRefProcThreadLocal refproc_data = _ref_proc_thread_locals[worker_id];
+  T discovered_head = refproc_data.discovered_list_head<T>();
   reference_set_discovered(reference, discovered_head);
-  refproc_data->set_discovered_list_head<T>(reference);
+  refproc_data.set_discovered_list_head<T>(reference);
 
   log_trace(gc, ref)("Discovered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
@@ -335,8 +333,8 @@ T* ShenandoahReferenceProcessor::keep(oop reference, ReferenceType type) {
 }
 
 template <typename T>
-void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLocal* refproc_data) {;
-  T* list = refproc_data->discovered_list_addr<T>();
+void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLocal& refproc_data) {;
+  T* list = refproc_data.discovered_list_addr<T>();
   T* p = list;
   while (!CompressedOops::is_null(*p)) {
     const oop reference = CompressedOops::decode(*p);
@@ -367,8 +365,7 @@ void ShenandoahReferenceProcessor::work() {
   // Process discovered references
   uint worker_id = ShenandoahThreadLocalData::worker_id(Thread::current());
   assert(worker_id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "need valid worker ID");
-  ShenandoahRefProcThreadLocal* refproc_data = _ref_proc_thread_locals[worker_id];
-  assert(refproc_data != NULL, "need thread-local refproc-data");
+  ShenandoahRefProcThreadLocal refproc_data = _ref_proc_thread_locals[worker_id];
   if (UseCompressedOops) {
     process_references<narrowOop>(refproc_data);
   } else {

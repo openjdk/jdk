@@ -306,8 +306,9 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-
   ShenandoahGCPhase phase(root_phase);
+
+  heap->ref_processor()->reset_thread_locals();
 
   WorkGang* workers = heap->workers();
   uint nworkers = workers->active_workers();
@@ -435,7 +436,6 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
 }
 
 void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
-  _rp->init_thread_locals(worker_id);
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
   ShenandoahMarkResolveRefsClosure cl(q, _rp);

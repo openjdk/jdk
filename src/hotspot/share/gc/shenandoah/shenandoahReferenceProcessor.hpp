@@ -35,7 +35,7 @@ private:
 
 public:
   ShenandoahRefProcThreadLocal();
-  void clear();
+  void reset();
 
   template<typename T>
   T* discovered_list_addr();
@@ -49,7 +49,7 @@ class ShenandoahReferenceProcessor : public ReferenceDiscoverer {
 private:
   ReferencePolicy* _soft_reference_policy;
 
-  ShenandoahRefProcThreadLocal** _ref_proc_thread_locals;
+  ShenandoahRefProcThreadLocal* _ref_proc_thread_locals;
 
   oop _pending_list;
   void* _pending_list_tail; // T*
@@ -79,13 +79,13 @@ private:
   T* keep(oop reference, ReferenceType type);
 
   template <typename T>
-  void process_references(ShenandoahRefProcThreadLocal* refproc_data);
+  void process_references(ShenandoahRefProcThreadLocal& refproc_data);
   void enqueue_references();
 
 public:
   ShenandoahReferenceProcessor(uint max_workers);
 
-  void init_thread_locals(uint worker_id);
+  void reset_thread_locals();
 
   void set_soft_reference_policy(bool clear);
 
