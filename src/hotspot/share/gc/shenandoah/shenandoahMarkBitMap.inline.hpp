@@ -47,7 +47,7 @@ inline bool ShenandoahMarkBitMap::mark_strong(HeapWord* addr) {
 
 inline bool ShenandoahMarkBitMap::is_marked_final(HeapWord* addr) const {
   check_mark(addr);
-  return _bit_map.at(address_to_index(addr) + 1);
+  return is_marked_strong(addr) || _bit_map.at(address_to_index(addr) + 1);
 }
 
 inline bool ShenandoahMarkBitMap::mark_final(HeapWord* addr) {
