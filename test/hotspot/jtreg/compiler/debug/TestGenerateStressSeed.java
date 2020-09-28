@@ -51,7 +51,7 @@ public class TestGenerateStressSeed {
             String className = TestGenerateStressSeed.class.getName();
             String log = "test.log";
             String[] procArgs = {
-                "-Xcomp", "-XX:-TieredCompilation",
+                "-Xcomp", "-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:CompileOnly=" + className + "::sum", "-XX:+StressIGVN",
                 "-XX:+LogCompilation", "-XX:LogFile=" + log, className, "10"};
             ProcessTools.createJavaProcessBuilder(procArgs).start().waitFor();
