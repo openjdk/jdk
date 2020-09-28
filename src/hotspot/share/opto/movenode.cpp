@@ -352,6 +352,30 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return abs;
 }
 
+//------------------------------MoveNode------------------------------------------
+
+Node* MoveNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (can_reshape) {
+    LoadNode* ld = in(1)->isa_Load();
+    if (ld != NULL && (ld->outcnt() == 1) && ld->has_reinterpret_variant()) {
+      if (phase->C->post_loop_opts_phase()) {
+        return ld->convert_to_reinterpret_load(*phase);
+      } else {
+        phase->C->record_for_post_loop_opts_igvn(this);
+      }
+    }
+  }
+  return NULL;
+}
+
+Node* MoveNode::Identity(PhaseGVN* phase) {
+  if (in(1)->is_Move()) {
+    assert(bottom_type() == in(1)->in(1)->bottom_type(), "sanity");
+    return in(1)->in(1); // back-to-back moves
+  }
+  return this;
+}
+
 //------------------------------Value------------------------------------------
 const Type* MoveL2DNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );

@@ -1268,6 +1268,74 @@ Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
                         is_unaligned_access(), is_mismatched_access());
 }
 
+bool LoadNode::has_reinterpret_variant() {
+  switch (Opcode()) {
+    case Op_LoadI: return true;
+    case Op_LoadL: return true;
+    case Op_LoadF: return true;
+    case Op_LoadD: return true;
+
+    default: return false;
+  }
+}
+
+Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn) {
+  assert(has_reinterpret_variant(), "no reinterpret variant: %s", Name());
+  BasicType bt = T_ILLEGAL;
+  const Type* rt = NULL;
+  switch (Opcode()) {
+    case Op_LoadI: bt = T_FLOAT;  rt = Type::FLOAT;    break;
+    case Op_LoadL: bt = T_DOUBLE; rt = Type::DOUBLE;   break;
+    case Op_LoadF: bt = T_INT;    rt = TypeInt::INT;   break;
+    case Op_LoadD: bt = T_LONG;   rt = TypeLong::LONG; break;
+    default:
+      return NULL;
+  }
+  bool is_mismatched = is_mismatched_access();
+  const TypeRawPtr* raw_type = gvn.type(in(MemNode::Memory))->isa_rawptr();
+  if (raw_type == NULL) {
+    is_mismatched = true; // conservatively match all non-raw accesses as mismatched
+  }
+  return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
+                        raw_adr_type(), rt, bt, _mo, _control_dependency,
+                        is_unaligned_access(), is_mismatched);
+}
+
+bool StoreNode::has_reinterpret_variant() {
+  switch (Opcode()) {
+    case Op_StoreI: return true;
+    case Op_StoreL: return true;
+    case Op_StoreF: return true;
+    case Op_StoreD: return true;
+
+    default: return false;
+  }
+}
+
+Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val) {
+  assert(has_reinterpret_variant(), "no reinterpret variant: %s, ", Name());
+  BasicType bt = T_ILLEGAL;
+  switch (Opcode()) {
+    case Op_StoreI: bt = T_FLOAT;  break;
+    case Op_StoreL: bt = T_DOUBLE; break;
+    case Op_StoreF: bt = T_INT;    break;
+    case Op_StoreD: bt = T_LONG;   break;
+    default:
+      return NULL;
+  }
+  StoreNode* st = StoreNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), raw_adr_type(), val, bt, _mo);
+
+  bool is_mismatched = is_mismatched_access();
+  const TypeRawPtr* raw_type = gvn.type(in(MemNode::Memory))->isa_rawptr();
+  if (raw_type == NULL) {
+    is_mismatched = true; // conservatively match all non-raw accesses as mismatched
+  }
+  if (is_mismatched) {
+    st->set_mismatched_access();
+  }
+  return st;
+}
+
 // We're loading from an object which has autobox behaviour.
 // If this object is result of a valueOf call we'll have a phi
 // merging a newly allocated object and a load from the cache.
@@ -2608,6 +2676,14 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         mem = MergeMemNode::make(mem);
         return mem;             // fold me away
       }
+    }
+  }
+
+  if (in(MemNode::ValueIn)->is_Move() && has_reinterpret_variant()) {
+    if (phase->C->post_loop_opts_phase()) {
+      return convert_to_reinterpret_store(*phase, in(MemNode::ValueIn)->in(1));
+    } else {
+      phase->C->record_for_post_loop_opts_igvn(this);
     }
   }
 
