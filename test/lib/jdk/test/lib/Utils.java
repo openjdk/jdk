@@ -25,8 +25,6 @@ package jdk.test.lib;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -35,11 +33,15 @@ import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.channels.SocketChannel;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -141,7 +143,24 @@ public final class Utils {
     /**
      * Contains the seed value used for {@link java.util.Random} creation.
      */
-    public static final long SEED = Long.getLong(SEED_PROPERTY_NAME, new Random().nextLong());
+    public static final long SEED;
+    static {
+       var seed = Long.getLong(SEED_PROPERTY_NAME);
+       if (seed != null) {
+           // use explicitly set seed
+           SEED = seed;
+       } else {
+           // use 1st 8 bytes of md5($version)
+           try {
+               var md = MessageDigest.getInstance("MD5");
+               var bytes = System.getProperty("java.vm.version").getBytes(StandardCharsets.UTF_8);
+               bytes = md.digest(bytes);
+               SEED = ByteBuffer.wrap(bytes).getLong();
+           } catch (NoSuchAlgorithmException e) {
+               throw new Error(e);
+           }
+       }
+    }
     /**
      * Returns the value of 'test.timeout.factor' system property
      * converted to {@code double}.

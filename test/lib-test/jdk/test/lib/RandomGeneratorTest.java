@@ -86,10 +86,6 @@ public class RandomGeneratorTest {
                 return SEED_VM_OPTION + Utils.SEED;
             }
 
-            @Override
-            protected boolean isOutputExpected(String orig, String output) {
-                return output.equals(orig);
-            }
         },
         DIFFERENT_SEED {
             @Override
@@ -101,6 +97,11 @@ public class RandomGeneratorTest {
             public void verify(String orig, String[] cmdLine) {
                 cmdLine[0] = getSeedOption();
                 super.verify(orig, cmdLine);
+            }
+
+            @Override
+            protected boolean isOutputExpected(String orig, String output) {
+                return !super.isOutputExpected(orig, output);
             }
         },
         NO_SEED {
@@ -119,7 +120,7 @@ public class RandomGeneratorTest {
         public abstract String getSeedOption();
 
         protected boolean isOutputExpected(String orig, String output) {
-            return !output.equals(orig);
+            return output.equals(orig);
         }
 
         /**
