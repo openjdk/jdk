@@ -1895,17 +1895,12 @@ JavaThread::~JavaThread() {
     delete old_array;
   }
 
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = JvmtiDeferredUpdates::deferred_locals(this);
-  if (deferred != NULL) {
+  JvmtiDeferredUpdates* updates = deferred_updates();
+  if (updates != NULL) {
     // This can only happen if thread is destroyed before deoptimization occurs.
-    assert(deferred->length() != 0, "empty array!");
-    do {
-      jvmtiDeferredLocalVariableSet* dlv = deferred->at(0);
-      deferred->remove_at(0);
-      // individual jvmtiDeferredLocalVariableSet are CHeapObj's
-      delete dlv;
-    } while (deferred->length() != 0);
-    delete deferred_updates();
+    assert(updates->count() > 0, "Updates holder not deleted");
+    // free deferred updates.
+    delete updates;
     set_deferred_updates(NULL);
   }
 

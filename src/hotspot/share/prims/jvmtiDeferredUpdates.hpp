@@ -30,6 +30,80 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
+// In order to implement set_locals for compiled vframes we must
+// store updated locals in a data structure that contains enough
+// information to recognize equality with a vframe and to store
+// any updated locals.
+
+class jvmtiDeferredLocalVariable;
+class StackValueCollection;
+class jvmtiDeferredLocalVariableSet : public CHeapObj<mtCompiler> {
+  friend class compiledVFrame;
+
+private:
+
+  Method* _method;
+  int       _bci;
+  intptr_t* _id;
+  int _vframe_id;
+  GrowableArray<jvmtiDeferredLocalVariable*>* _locals;
+  bool _objects_are_deoptimized;
+
+  void                              update_value(StackValueCollection* locals, BasicType type, int index, jvalue value);
+
+  void                              set_value_at(int idx, BasicType typ, jvalue val);
+
+ public:
+  // JVM state
+  Method*                           method()         const  { return _method; }
+  int                               bci()            const  { return _bci; }
+  intptr_t*                         id()             const  { return _id; }
+  int                               vframe_id()      const  { return _vframe_id; }
+  bool                              objects_are_deoptimized() const { return _objects_are_deoptimized; }
+
+  void                              update_locals(StackValueCollection* locals);
+  void                              update_stack(StackValueCollection* locals);
+  void                              update_monitors(GrowableArray<MonitorInfo*>* monitors);
+  void                              set_objs_are_deoptimized() { _objects_are_deoptimized = true; }
+
+  // Does the vframe match this jvmtiDeferredLocalVariableSet
+  bool                              matches(const vframe* vf);
+  // Does the underlying physical frame match this jvmtiDeferredLocalVariableSet
+  bool                              matches(intptr_t* fr_id) { return id() == fr_id; }
+  // GC
+  void                              oops_do(OopClosure* f);
+
+  // constructor
+  jvmtiDeferredLocalVariableSet(Method* method, int bci, intptr_t* id, int vframe_id);
+
+  // destructor
+  ~jvmtiDeferredLocalVariableSet();
+
+
+};
+
+class jvmtiDeferredLocalVariable : public CHeapObj<mtCompiler> {
+  public:
+
+    jvmtiDeferredLocalVariable(int index, BasicType type, jvalue value);
+
+    BasicType type(void)                   { return _type; }
+    int index(void)                        { return _index; }
+    jvalue value(void)                     { return _value; }
+    // Only mutator is for value as only it can change
+    void set_value(jvalue value)           { _value = value; }
+    // For gc
+    oop* oop_addr(void)                    { return (oop*) &_value.l; }
+
+  private:
+
+    BasicType         _type;
+    jvalue            _value;
+    int               _index;
+
+};
+
+
 // Holds updates for compiled frames by JVMTI agents that cannot be performed immediately.
 class jvmtiDeferredLocalVariableSet;
 class JvmtiDeferredUpdates : public CHeapObj<mtCompiler> {
@@ -58,6 +132,8 @@ class JvmtiDeferredUpdates : public CHeapObj<mtCompiler> {
                               ResourceObj::C_HEAP), 1), mtCompiler) { }
 
 public:
+  ~JvmtiDeferredUpdates();
+
   static void create_for(JavaThread* thread);
 
   static GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals(JavaThread* jt) {
@@ -65,10 +141,18 @@ public:
   }
 
   // Relocking has to be deferred if the lock owning thread is currently waiting on the monitor.
-  static int get_and_reset_relock_count_after_wait(JavaThread* jt) {
-    return jt->deferred_updates() == NULL ? 0 : jt->deferred_updates()->get_and_reset_relock_count_after_wait();
-  }
+  static int  get_and_reset_relock_count_after_wait(JavaThread* jt);
   static void inc_relock_count_after_wait(JavaThread* thread);
+
+  // Delete deferred updates for the compiled frame with id 'frame_id' on the
+  // given thread's stack. The thread's JvmtiDeferredUpdates instance will be
+  // deleted too if no updates remain.
+  static void delete_updates_for_frame(JavaThread* jt, intptr_t* frame_id);
+
+  // Number of deferred updates
+  int count() const {
+    return _deferred_locals_updates.length() + (_relock_count_after_wait > 0 ? 1 : 0);
+  }
 };
 
 #endif // SHARE_PRIMS_JVMTIDEFERREDUPDATES_HPP

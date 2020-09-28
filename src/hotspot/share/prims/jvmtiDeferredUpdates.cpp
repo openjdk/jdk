@@ -31,6 +31,14 @@ void JvmtiDeferredUpdates::create_for(JavaThread* thread) {
   thread->set_deferred_updates(new JvmtiDeferredUpdates());
 }
 
+JvmtiDeferredUpdates::~JvmtiDeferredUpdates() {
+  while (_deferred_locals_updates.length() != 0) {
+    jvmtiDeferredLocalVariableSet* dlv = _deferred_locals_updates.pop();
+    // individual jvmtiDeferredLocalVariableSet are CHeapObj's
+    delete dlv;
+  }
+}
+
 void JvmtiDeferredUpdates::inc_relock_count_after_wait(JavaThread* thread) {
   if (thread->deferred_updates() == NULL) {
     create_for(thread);
@@ -38,3 +46,42 @@ void JvmtiDeferredUpdates::inc_relock_count_after_wait(JavaThread* thread) {
   thread->deferred_updates()->inc_relock_count_after_wait();
 }
 
+int JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(JavaThread* jt) {
+  JvmtiDeferredUpdates* updates = jt->deferred_updates();
+  int result = 0;
+  if (updates != NULL) {
+    result = updates->get_and_reset_relock_count_after_wait();
+    if (updates->count() == 0) {
+      delete updates;
+      jt->set_deferred_updates(NULL);
+    }
+  }
+  return result;
+}
+
+void JvmtiDeferredUpdates::delete_updates_for_frame(JavaThread* jt, intptr_t* frame_id) {
+  JvmtiDeferredUpdates* updates = jt->deferred_updates();
+  if (updates != NULL) {
+    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = updates->deferred_locals();
+    assert(list->length() > 0, "Updates holder not deleted");
+    int i = 0;
+    do {
+      // Because of inlining we could have multiple vframes for a single frame
+      // and several of the vframes could have deferred writes. Find them all.
+      jvmtiDeferredLocalVariableSet* dlv = list->at(i);
+      if (dlv->id() == frame_id) {
+        list->remove_at(i);
+        // individual jvmtiDeferredLocalVariableSet are CHeapObj's
+        delete dlv;
+      } else {
+        i++;
+      }
+    } while ( i < list->length() );
+    if (updates->count() == 0) {
+      jt->set_deferred_updates(NULL);
+      // Free deferred updates.
+      // (Note the 'list' of local variable updates is embedded in 'updates')
+      delete updates;
+    }
+  }
+}

@@ -412,29 +412,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // added by jvmti then we can free up that structure as the data is now in the
   // vframeArray
 
-  if (JvmtiDeferredUpdates::deferred_locals(thread) != NULL) {
-    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread);
-    int i = 0;
-    do {
-      // Because of inlining we could have multiple vframes for a single frame
-      // and several of the vframes could have deferred writes. Find them all.
-      if (list->at(i)->id() == array->original().id()) {
-        jvmtiDeferredLocalVariableSet* dlv = list->at(i);
-        list->remove_at(i);
-        // individual jvmtiDeferredLocalVariableSet are CHeapObj's
-        delete dlv;
-      } else {
-        i++;
-      }
-    } while ( i < list->length() );
-    if (list->length() == 0) {
-      JvmtiDeferredUpdates* updates = thread->deferred_updates();
-      thread->set_deferred_updates(NULL);
-      // free deferred updates.
-      delete updates;
-    }
-
-  }
+  JvmtiDeferredUpdates::delete_updates_for_frame(thread, array->original().id());
 
   // Compute the caller frame based on the sender sp of stub_frame and stored frame sizes info.
   CodeBlob* cb = stub_frame.cb();
