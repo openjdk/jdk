@@ -2532,7 +2532,7 @@ bool os::can_execute_large_page_memory() {
   return false;
 }
 
-char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int file_desc) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   char* result = NULL;
 
@@ -2550,7 +2550,7 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int f
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
   char* addr = NULL;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.

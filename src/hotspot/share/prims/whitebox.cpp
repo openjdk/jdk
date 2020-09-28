@@ -762,7 +762,7 @@ WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
 WB_END
 
 WB_ENTRY(jlong, WB_NMTAttemptReserveMemoryAt(JNIEnv* env, jobject o, jlong addr, jlong size))
-  addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((size_t)size, (char*)(uintptr_t)addr);
+  addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size);
   MemTracker::record_virtual_memory_type((address)addr, mtTest);
 
   return addr;

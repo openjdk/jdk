@@ -115,8 +115,8 @@ class os: AllStatic {
 
   static char*  pd_reserve_memory(size_t bytes, size_t alignment_hint);
 
-  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr);
-  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc);
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc);
 
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -325,7 +325,7 @@ class os: AllStatic {
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc = -1);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc = -1);
 
   // Split a reserved memory region [base, base+size) into two regions [base, base+split) and
   //  [base+split, base+size).

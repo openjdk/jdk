@@ -188,7 +188,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
     // important.  If available space is not detected, return NULL.
 
     if (requested_address != 0) {
-      base = os::attempt_reserve_memory_at(size, requested_address, _fd_for_heap);
+      base = os::attempt_reserve_memory_at(requested_address, size, _fd_for_heap);
       if (failed_to_reserve_as_requested(base, requested_address, size, false, _fd_for_heap != -1)) {
         // OS ignored requested address. Try different address.
         base = NULL;
@@ -380,7 +380,7 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
     // important.  If available space is not detected, return NULL.
 
     if (requested_address != 0) {
-      base = os::attempt_reserve_memory_at(size, requested_address, _fd_for_heap);
+      base = os::attempt_reserve_memory_at(requested_address, size, _fd_for_heap);
     } else {
       base = os::reserve_memory_with_fd(size, alignment, _fd_for_heap);
     }

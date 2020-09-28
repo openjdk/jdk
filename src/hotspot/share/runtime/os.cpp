@@ -1684,15 +1684,15 @@ char* os::reserve_memory_with_fd(size_t bytes, size_t alignment_hint, int file_d
   return result;
 }
 
-char* os::attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc) {
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc) {
   char* result = NULL;
   if (file_desc != -1) {
-    result = pd_attempt_reserve_memory_at(bytes, addr, file_desc);
+    result = pd_attempt_reserve_memory_at(addr, bytes, file_desc);
     if (result != NULL) {
       MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
     }
   } else {
-    result = pd_attempt_reserve_memory_at(bytes, addr);
+    result = pd_attempt_reserve_memory_at(addr, bytes);
     if (result != NULL) {
       MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
     }
