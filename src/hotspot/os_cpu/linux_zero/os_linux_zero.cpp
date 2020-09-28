@@ -273,7 +273,7 @@ bool os::is_allocatable(size_t bytes) {
     return true;
   }
 
-  char* addr = reserve_memory(bytes, NULL);
+  char* addr = reserve_memory(bytes);
 
   if (addr != NULL) {
     release_memory(addr, bytes);

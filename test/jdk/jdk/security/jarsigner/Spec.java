@@ -31,7 +31,7 @@
  *          jdk.jartool
  *          jdk.crypto.ec
  * @build jdk.test.lib.util.JarUtils
- * @run main/othervm -Djdk.sunec.disableNative=false Spec
+ * @run main/othervm Spec
  */
 
 import com.sun.jarsigner.ContentSigner;
@@ -190,7 +190,7 @@ public class Spec {
                 .equals("SHA256withDSA"));
 
         kpg = KeyPairGenerator.getInstance("EC");
-        kpg.initialize(192);
+        kpg.initialize(256);
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                 .equals("SHA256withECDSA"));
@@ -198,7 +198,7 @@ public class Spec {
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                 .equals("SHA384withECDSA"));
-        kpg.initialize(571);
+        kpg.initialize(521);
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                 .equals("SHA512withECDSA"));

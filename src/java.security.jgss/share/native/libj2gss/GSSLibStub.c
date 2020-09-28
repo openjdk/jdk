@@ -34,6 +34,8 @@ const int TYPE_CRED_NAME = 10;
 const int TYPE_CRED_TIME = 11;
 const int TYPE_CRED_USAGE = 12;
 
+static jclass tlsCBCl = NULL;
+
 /*
  * Class:     sun_security_jgss_wrapper_GSSLibStub
  * Method:    init
@@ -68,6 +70,17 @@ Java_sun_security_jgss_wrapper_GSSLibStub_init(JNIEnv *env,
     /* initialize global function table */
     failed = loadNative(libName);
     (*env)->ReleaseStringUTFChars(env, jlibName, libName);
+
+    if (tlsCBCl == NULL) {
+
+        /* initialize TLS Channel Binding class wrapper */
+        jclass cl = (*env)->FindClass(env,
+                    "sun/security/jgss/krb5/internal/TlsChannelBindingImpl");
+        if (cl == NULL) {           /* exception thrown */
+            return JNI_FALSE;
+        }
+        tlsCBCl = (*env)->NewGlobalRef(env, cl);
+    }
 
     if (!failed) {
         return JNI_TRUE;
@@ -154,11 +167,13 @@ void deleteGSSCB(gss_channel_bindings_t cb) {
   if (cb == GSS_C_NO_CHANNEL_BINDINGS) return;
 
   /* release initiator address */
-  if (cb->initiator_addrtype != GSS_C_AF_NULLADDR) {
+  if (cb->initiator_addrtype != GSS_C_AF_NULLADDR &&
+      cb->initiator_addrtype != GSS_C_AF_UNSPEC) {
     resetGSSBuffer(&(cb->initiator_address));
   }
   /* release acceptor address */
-  if (cb->acceptor_addrtype != GSS_C_AF_NULLADDR) {
+  if (cb->acceptor_addrtype != GSS_C_AF_NULLADDR &&
+      cb->acceptor_addrtype != GSS_C_AF_UNSPEC) {
     resetGSSBuffer(&(cb->acceptor_address));
   }
   /* release application data */
@@ -189,9 +204,19 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
   }
 
   // initialize addrtype in CB first
-  cb->initiator_addrtype = GSS_C_AF_NULLADDR;
-  cb->acceptor_addrtype = GSS_C_AF_NULLADDR;
+  // LDAP TLS Channel Binding requires GSS_C_AF_UNSPEC address type
+  // for unspecified initiator and acceptor addresses.
+  // GSS_C_AF_NULLADDR value should be used for unspecified address
+  // in all other cases.
 
+  if ((*env)->IsInstanceOf(env, jcb, tlsCBCl)) {
+      // TLS Channel Binding requires unspecified addrtype=0
+      cb->initiator_addrtype = GSS_C_AF_UNSPEC;
+      cb->acceptor_addrtype = GSS_C_AF_UNSPEC;
+  } else {
+      cb->initiator_addrtype = GSS_C_AF_NULLADDR;
+      cb->acceptor_addrtype = GSS_C_AF_NULLADDR;
+  }
   // addresses needs to be initialized to empty
   memset(&cb->initiator_address, 0, sizeof(cb->initiator_address));
   memset(&cb->acceptor_address, 0, sizeof(cb->acceptor_address));

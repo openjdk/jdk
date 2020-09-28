@@ -42,7 +42,7 @@
 # List items are testnames followed by labels, all MUST BE commented
 #   as to why they are here and use a label:
 #     generic-all   Problems on all platforms
-#     generic-ARCH  Where ARCH is one of: x64, i586, ppc64, ppc64le, s390x etc.
+#     generic-ARCH  Where ARCH is one of: x64, i586, ppc64, ppc64le, s390x, aarch64 etc.
 #     OSNAME-all    Where OSNAME is one of: linux, windows, macosx, aix
 #     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. macosx-x64
 #     OSNAME-REV    Specific on to one OSNAME and REV, e.g. macosx-10.7.4
@@ -704,6 +704,7 @@ javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
+sun/security/ec/TestEC.java                                     8253637 linux-aarch64
 
 ############################################################################
 
@@ -889,8 +890,6 @@ sun/tools/jhsdb/BasicLauncherTest.java                          8211767 linux-pp
 
 # jdk_other
 
-com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i586,macosx-all,windows-x64
-
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
 javax/script/Test7.java                                         8239361 generic-all
@@ -906,8 +905,6 @@ jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-
 ############################################################################
 
 # jdk_internal
-
-jdk/internal/platform/docker/TestDockerMemoryMetrics.java 8250984 linux-5.4.0-1019-oracle
 
 ############################################################################
 
