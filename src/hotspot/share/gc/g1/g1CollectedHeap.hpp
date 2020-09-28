@@ -783,7 +783,7 @@ private:
 
   // Actually do the work of evacuating the parts of the collection set.
   // The has_optional_evacuation_work flag for the initial collection set
-  // evacuation indicates whether some or more optional evacuation steps may
+  // evacuation indicates whether one or more optional evacuation steps may
   // follow.
   // If not set, G1 can avoid clearing the card tables of regions that we scan
   // for roots from the heap: when scanning the card table for dirty cards after
