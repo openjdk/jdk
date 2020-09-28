@@ -42,7 +42,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -101,14 +100,29 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     typeArrayHandle h_bytes(THREAD, (typeArrayOop)h_array->obj_at(i+1));
     assert(h_name != NULL, "Class name is NULL");
     assert(h_bytes != NULL, "Class bytes is NULL");
-    reload_class(h_name, h_bytes, THREAD);
-  }
 
+    char *class_name = java_lang_String::as_utf8_string(h_name());
+    int len = h_bytes->length();
+    // make a copy of class bytes so GC will not affect us.
+    char *buf = resource_allocate_bytes(THREAD, len);
+    memcpy(buf, (char*)h_bytes->byte_at_addr(0), len);
+    ClassFileStream st((u1*)buf, len, NULL, ClassFileStream::verify);
+
+    reload_class(class_name, st, THREAD);
+    // free buf
+    resource_free_bytes(buf, len);
+
+    if (HAS_PENDING_EXCEPTION) {
+      log_info(cds)("Exception happened: %s", PENDING_EXCEPTION->klass()->name()->as_C_string());
+      log_info(cds)("Could not create InstanceKlass for class %s", class_name);
+      CLEAR_PENDING_EXCEPTION;
+      return;
+    }
+  }
 }
 
 // class_handle - the class name, bytes_handle - the class bytes
-void LambdaFormInvokers::reload_class(Handle name_handle, typeArrayHandle bytes_handle, TRAPS) {
-  char* name = java_lang_String::as_utf8_string(name_handle());
+void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
   Symbol* class_name = SymbolTable::new_symbol((const char*)name);
   // the class must exist
   Klass* klass = SystemDictionary::resolve_or_null(class_name, THREAD);
@@ -118,11 +132,6 @@ void LambdaFormInvokers::reload_class(Handle name_handle, typeArrayHandle bytes_
     return;
   }
 
-  int len = bytes_handle->length();
-  // make a copy of class bytes so GC will not affect us.
-  char *buf = resource_allocate_bytes(THREAD, len);
-  memcpy(buf, (char*)bytes_handle->byte_at_addr(0), len);
-  ClassFileStream st((u1*)buf, len, NULL, ClassFileStream::verify);
   ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
   Handle protection_domain;
   ClassLoadInfo cl_info(protection_domain);
@@ -132,15 +141,6 @@ void LambdaFormInvokers::reload_class(Handle name_handle, typeArrayHandle bytes_
                                                    cld,
                                                    cl_info,
                                                    CHECK);
-
-  // free buf
-  resource_free_bytes(buf, len);
-  if (HAS_PENDING_EXCEPTION) {
-    log_info(cds)("Exception happened: %s", PENDING_EXCEPTION->klass()->name()->as_C_string());
-    log_info(cds)("Could not create InstanceKlass for class %s", name);
-    CLEAR_PENDING_EXCEPTION;
-    return;
-  }
 
   {
     MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.

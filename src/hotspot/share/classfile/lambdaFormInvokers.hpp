@@ -29,11 +29,12 @@
 
 template <class T>
 class GrowableArray;
+class ClassFileStream;
 
 class LambdaFormInvokers : public AllStatic {
  private:
   static GrowableArray<char*>* _lambdaform_lines;
-  static void reload_class(Handle name, typeArrayHandle bytes, TRAPS);
+  static void reload_class(char* name, ClassFileStream& st, TRAPS);
  public:
 
   static void append(char* line);

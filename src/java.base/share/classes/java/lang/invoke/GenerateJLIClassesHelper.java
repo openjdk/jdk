@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -321,6 +322,7 @@ class GenerateJLIClassesHelper {
      * jlink phase.
      */
     static Map<String, byte[]> generateHolderClasses(Stream<String> traces)  {
+        Objects.requireNonNull(traces);
         HolderClassBuilder builder = new HolderClassBuilder();
         traces.map(line -> line.split(" "))
                 .forEach(parts -> {
@@ -364,22 +366,19 @@ class GenerateJLIClassesHelper {
     /**
      * called from vm to generate MethodHandle holder classes
      * @return @code { Object[] } if holder classes can be generated.
-     * @param lines the output lines from @code { VM.cdsTraceResolve }
+     * @param lines in format of LF_RESOLVE or SPECIES_RESOLVE output
      */
-    static Object[] cdsGenerateHolderClasses(String[] lines) {
+    private static Object[] cdsGenerateHolderClasses(String[] lines) {
         try {
             Map<String, byte[]> result = generateHolderClasses(Arrays.stream(lines));
-            if (result == null) {
-                return null;
-            }
             int size = result.size();
-            Object[] ret_array = new Object[size * 2];
+            Object[] retArray = new Object[size * 2];
             int index = 0;
             for (Map.Entry<String, byte[]> entry : result.entrySet()) {
-                ret_array[index++] = entry.getKey();
-                ret_array[index++] = entry.getValue();
+                retArray[index++] = entry.getKey();
+                retArray[index++] = entry.getValue();
             };
-            return ret_array;
+            return retArray;
         } catch (Exception e) {
             return null;
         }

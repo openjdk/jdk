@@ -27,8 +27,8 @@
  * @summary Tests the format checking of LF_RESOLVE in classlist.
  *
  * @requires vm.cds
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @compile ClassListFormatBase.java test-classes/Hello.java
+ * @library /test/lib
+ * @compile test-classes/Hello.java
  * @run driver DumpClassListWithLF
  */
 
@@ -84,13 +84,6 @@ public class DumpClassListWithLF extends ClassListFormatBase {
                 "Hello",
                 "@lambda-form-invoker [LF_XYRESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic  L7_L (success)",
                 "@lambda-form-invoker [LF_XYRESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic  LL_I (success)"),
-                MESSAGE_OK);
-        // 6. The line with manually setup signature
-        dumpShouldPass(
-            "TESTCASE 6: With manually setup for signature",
-            appJar, classlist(
-                "Hello",
-                "@lambda-form-invoker java.lang.invoke.DirectMethodHandle$Holder newInvokeSpecial LLLL_L (success)"),
                 MESSAGE_OK);
     }
 }
