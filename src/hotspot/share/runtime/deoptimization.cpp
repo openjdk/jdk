@@ -1623,7 +1623,6 @@ void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id,
   while (fr.id() != id) {
     fr = fr.sender(&reg_map);
   }
-  assert(fr.is_compiled_frame(), "Wrong frame type");
   deoptimize(thread, fr, reason);
 }
 
