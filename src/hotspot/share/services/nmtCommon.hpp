@@ -47,12 +47,12 @@ const int NMT_TrackingStackDepth = 4;
 // A few common utilities for native memory tracking
 class NMTUtil : AllStatic {
  public:
-  // Check if index is a valid MEMFLAGS enum value
+  // Check if index is a valid MEMFLAGS enum value (including mtNone)
   static inline bool flag_index_is_valid(int index) {
     return index >= 0 && index < mt_number_of_types;
   }
 
-  // Check if flag value is a valid MEMFLAGS enum value
+  // Check if flag value is a valid MEMFLAGS enum value (including mtNone)
   static inline bool flag_is_valid(MEMFLAGS flag) {
     const int index = static_cast<int>(flag);
     return flag_index_is_valid(index);
