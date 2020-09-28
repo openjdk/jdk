@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8040211 8191404 8203872 8222980 8225435 8241082 8242010
+ * @bug 8040211 8191404 8203872 8222980 8225435 8241082 8242010 8247432
  * @summary Checks the IANA language subtag registry data update
  *          (LSR Revision: 2020-04-01) with Locale and Locale.LanguageRange
  *          class methods.
@@ -45,7 +45,7 @@ public class Bug8040211 {
     private static final String ACCEPT_LANGUAGE =
         "Accept-Language: aam, adp, aog, aue, bcg, bpp, cey, cnp, cqu, csp, dif, dmw, ema,"
         + " en-gb-oed, gti, kdz, koj, kru, kwq, kxe, kzk, lii, lmm, lsn, lsv, lvi, mtm,"
-        + " ngv, nns, oyb, phr, pnd, pub, scv, snz, suj, szy, taj, tjj, tjp, tvx,"
+        + " ngv, nns, ola, oyb, phr, pnd, pub, scv, snz, suj, szy, taj, tjj, tjp, tvx,"
         + " uss, uth, wkr;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
     private static final List<LanguageRange> EXPECTED_RANGE_LIST = List.of(
             new LanguageRange("aam", 1.0),
@@ -105,6 +105,8 @@ public class Bug8040211 {
             new LanguageRange("nnx", 1.0),
             new LanguageRange("nns", 1.0),
             new LanguageRange("nbr", 1.0),
+            new LanguageRange("ola", 1.0),
+            new LanguageRange("thw", 1.0),
             new LanguageRange("oyb", 1.0),
             new LanguageRange("thx", 1.0),
             new LanguageRange("skk", 1.0),
