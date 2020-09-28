@@ -51,8 +51,8 @@ public:
 };
 
 
-// Two major user controls over G1 behavior are setting a pause 
-// time goal (MaxGCPauseMillis), over a time slice (GCPauseIntervalMillis). 
+// Two major user controls over G1 behavior are setting a pause
+// time goal (MaxGCPauseMillis), over a time slice (GCPauseIntervalMillis).
 // This defines the Minimum Mutator Utilisation (MMU) goal.
 //
 // * Definitions *
@@ -64,8 +64,8 @@ public:
 // Minimum Mutator Utilisation (MMU):
 // - the worst mutator utilisation across all time slices.
 //
-// The G1MMUTracker uses a fixed-size queue to keep track of all 
-// recent pause times. The pause time data is used to avoid 
+// The G1MMUTracker uses a fixed-size queue to keep track of all
+// recent pause times. The pause time data is used to avoid
 // breaking the MMU.
 //
 // ***** ALL TIMES ARE IN SECS!!!!!!! *****
@@ -75,8 +75,8 @@ private:
     QueueLength = 64
   };
 
-  double              _time_slice;
-  double              _max_gc_time; // this is per time slice
+  double _time_slice;
+  double _max_gc_time; // this is per time slice
 
   // The array keeps track of all the pauses that fall within a time
   // slice (the last time slice during which pauses took place).
@@ -87,13 +87,13 @@ private:
   // If the array is full, an easy fix is to look for the pauses with
   // the shortest gap between them and consolidate them.
   // For now, we have taken the expedient alternative of forgetting
-  // the oldest entry, thus potentially violating MMU specs for 
+  // the oldest entry, thus potentially violating MMU specs for
   // some time thereafter.
 
-  G1MMUTrackerElem    _array[QueueLength];
-  int                 _head_index;
-  int                 _tail_index;
-  int                 _no_entries;
+  G1MMUTrackerElem _array[QueueLength];
+  int _head_index;
+  int _tail_index;
+  int _no_entries;
 
   inline int trim_index(int index) {
     return (index + QueueLength) % QueueLength;
