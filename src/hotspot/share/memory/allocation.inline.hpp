@@ -57,7 +57,7 @@ E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
   size_t size = size_for(length);
   int alignment = os::vm_allocation_granularity();
 
-  char* addr = os::reserve_memory(size, NULL, alignment, flags);
+  char* addr = os::reserve_memory(size, alignment, flags);
   if (addr == NULL) {
     return NULL;
   }
@@ -75,7 +75,7 @@ E* MmapArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
   size_t size = size_for(length);
   int alignment = os::vm_allocation_granularity();
 
-  char* addr = os::reserve_memory(size, NULL, alignment, flags);
+  char* addr = os::reserve_memory(size, alignment, flags);
   if (addr == NULL) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
   }

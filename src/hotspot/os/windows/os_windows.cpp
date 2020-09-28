@@ -3063,8 +3063,8 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
   assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
 
   release_memory(base, size);
-  reserve_memory(split, base);
-  reserve_memory(size - split, split_address);
+  attempt_reserve_memory_at(base, split);
+  attempt_reserve_memory_at(split_address, size - split);
 
   // NMT: nothing to do here. Since Windows implements the split by
   //  releasing and re-reserving memory, the parts are already registered
@@ -3086,7 +3086,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   char* aligned_base = NULL;
 
   do {
-    char* extra_base = os::reserve_memory(extra_size, NULL, alignment, file_desc);
+    char* extra_base = os::reserve_memory_with_fd(extra_size, alignment, file_desc);
     if (extra_base == NULL) {
       return NULL;
     }
@@ -3099,14 +3099,21 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
       os::release_memory(extra_base, extra_size);
     }
 
-    aligned_base = os::reserve_memory(size, aligned_base, 0, file_desc);
+    aligned_base = os::attempt_reserve_memory_at(aligned_base, size, file_desc);
 
   } while (aligned_base == NULL);
 
   return aligned_base;
 }
 
-char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
+char* os::pd_reserve_memory(size_t bytes, size_t alignment_hint) {
+  // Ignores alignment hint
+  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes);
+}
+
+// Reserve memory at an arbitrary address, only if that area is
+// available (and not reserved for something else).
+char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_page_size() == 0, "reserve page size");
@@ -3137,15 +3144,7 @@ char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   return res;
 }
 
-// Reserve memory at an arbitrary address, only if that area is
-// available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
-  // Windows os::reserve_memory() fails of the requested address range is
-  // not avilable.
-  return reserve_memory(bytes, requested_addr);
-}
-
-char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int file_desc) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   return map_memory_to_file(requested_addr, bytes, file_desc);
 }
