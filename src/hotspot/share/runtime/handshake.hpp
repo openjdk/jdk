@@ -76,7 +76,7 @@ class HandshakeState {
   FilterQueue<HandshakeOperation*> _queue;
   // Provides mutual exclusion to this state and queue.
   Mutex   _lock;
-  // Set to the thread executing the handshake operation during the execution.
+  // Set to the thread executing the handshake operation.
   Thread* _active_handshaker;
 
   bool claim_handshake();
@@ -97,14 +97,13 @@ class HandshakeState {
     return !_queue.is_empty();
   }
 
-  // Both _queue and _lock must be check. If a thread have seen this _handshakee
+  // Both _queue and _lock must be checked. If a thread has seen this _handshakee
   // as safe it will execute all possible handshake operations in a loop while
   // holding _lock. We use lock free addition to the queue, which means it is
-  // possible to the queue to be seen as empty by _handshakee but as non-empty
-  // by the thread executing in the loop. To avoid the _handshakee eliding
-  // stopping while handshake operations are being executed, the _handshakee
-  // must take slow if _lock is held and make sure the queue is empty otherwise
-  // try process it.
+  // possible for the queue to be seen as empty by _handshakee but as non-empty
+  // by the thread executing in the loop. To avoid the _handshakee continuing
+  // while handshake operations are being executed, the _handshakee
+  // must take slow path, process_by_self(), if _lock is held.
   bool should_process() {
     return !_queue.is_empty() || _lock.is_locked();
   }

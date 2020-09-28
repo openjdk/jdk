@@ -46,9 +46,11 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   int32_t             _pending_threads;
   JavaThread*         _target;
 
- private:
   // Must use AsyncHandshakeOperation when using AsyncHandshakeClosure.
-  HandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target, jlong start_ns) {};
+  HandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target) :
+    _handshake_cl(cl),
+    _pending_threads(1),
+    _target(target) {}
 
  public:
   HandshakeOperation(HandshakeClosure* cl, JavaThread* target) :
@@ -199,12 +201,12 @@ void VM_Handshake::handle_timeout() {
   fatal("Handshake operation timed out");
 }
 
-static void log_handshake_info(jlong start_time_ns, const char* name, int targets, int non_self_executed, const char* extra = NULL) {
+static void log_handshake_info(jlong start_time_ns, const char* name, int targets, int emitted_handshakes_executed, const char* extra = NULL) {
   if (log_is_enabled(Info, handshake)) {
     jlong completion_time = os::javaTimeNanos() - start_time_ns;
     log_info(handshake)("Handshake \"%s\", Targeted threads: %d, Executed by requesting thread: %d, Total completion time: " JLONG_FORMAT " ns%s%s",
                         name, targets,
-                        non_self_executed,
+                        emitted_handshakes_executed,
                         completion_time,
                         extra != NULL ? ", " : "",
                         extra != NULL ? extra : "");

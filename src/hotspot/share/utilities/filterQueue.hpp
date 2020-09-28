@@ -29,8 +29,8 @@
 #include "runtime/atomic.hpp"
 
 // The FilterQueue is FIFO with the ability to skip over queued items.
-// The skipping is controlled by using a filter when poping.
-// It also supports lock free pushes, while poping (including contain())
+// The skipping is controlled by using a filter when popping.
+// It also supports lock free pushes, while popping (including contains())
 // needs to be externally serialized.
 template <class E>
 class FilterQueue {
@@ -60,10 +60,10 @@ class FilterQueue {
   void push(E data);
 
   // Applies the match_func to the items in the queue until match_func returns
-  // true and then return false, or there is no more items and then returns
-  // false. Any pushed item while executing may or may not have match_func
+  // true and then returns true, or there is no more items and then returns
+  // false. Items pushed after execution starts will not have match_func
   // applied. The method is not re-entrant and must be executed mutually
-  // exclusive other contains and pops calls.
+  // exclusive to other contains and pops calls.
   template <typename MATCH_FUNC>
   bool contains(MATCH_FUNC& match_func);
 
@@ -73,11 +73,12 @@ class FilterQueue {
     return pop(match_all);
   }
 
-  // Applies the match_func to all items in the queue returns the item which
-  // match_func return true for and was inserted first. Any pushed item while
-  // executing may or may not have be popped, if popped it was the first
-  // inserted match. The method is not re-entrant and must be executed mutual
-  // exclusive with other contains and pops calls.
+  // Applies the match_func to each item in the queue and returns the first
+  // inserted item for which match_func returns true. Returns false if there are
+  // no matches or the queue is empty. Any pushed item before execution is
+  // complete may or may not have match_func applied. The method is not
+  // re-entrant and must be executed mutual exclusive to other contains and pops
+  // calls.
   template <typename MATCH_FUNC>
   E pop(MATCH_FUNC& match_func);
 };
