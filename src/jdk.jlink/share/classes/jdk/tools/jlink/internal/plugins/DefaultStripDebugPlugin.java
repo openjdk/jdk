@@ -39,9 +39,8 @@ import jdk.tools.jlink.plugin.ResourcePoolBuilder;
  * symbols.
  *
  */
-public final class DefaultStripDebugPlugin extends DocumentedPlugin {
+public final class DefaultStripDebugPlugin extends AbstractPlugin {
 
-    public static final String NAME = "strip-debug";
     private static final String STRIP_NATIVE_DEBUG_PLUGIN = "strip-native-debug-symbols";
     private static final String EXCLUDE_DEBUGINFO = "exclude-debuginfo-files";
 
@@ -55,7 +54,7 @@ public final class DefaultStripDebugPlugin extends DocumentedPlugin {
 
     public DefaultStripDebugPlugin(Plugin javaStripPlugin,
                                    NativePluginFactory nativeStripPluginFact) {
-        super(NAME);
+        super("strip-debug");
         this.javaStripPlugin = javaStripPlugin;
         this.stripNativePluginFactory = nativeStripPluginFact;
     }

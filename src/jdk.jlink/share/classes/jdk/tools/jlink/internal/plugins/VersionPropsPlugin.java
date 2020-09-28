@@ -32,7 +32,6 @@ import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -45,7 +44,7 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  * We assume that the initialization code only has ldcs, method calls and
  * field instructions.
  */
-abstract class VersionPropsPlugin extends DocumentedPlugin {
+abstract class VersionPropsPlugin extends AbstractPlugin {
 
     private static final String VERSION_PROPS_CLASS
         = "/java.base/java/lang/VersionProps.class";
@@ -85,11 +84,6 @@ abstract class VersionPropsPlugin extends DocumentedPlugin {
     @Override
     public boolean hasRawArgument() {
         return true;
-    }
-
-    @Override
-    public String getArgumentsDescription() {
-       return PluginsResourceBundle.getArgument(getName());
     }
 
     @Override

@@ -48,7 +48,6 @@ import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
-import jdk.tools.jlink.plugin.Plugin;
 import sun.util.cldr.CLDRBaseLocaleDataMetaInfo;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleProviderAdapter.Type;
@@ -76,9 +75,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     start with at least one white space character, e.g., " ar ar-EG ..."
  *                                                           ^
  */
-public final class IncludeLocalesPlugin extends DocumentedPlugin implements ResourcePrevisitor {
+public final class IncludeLocalesPlugin extends AbstractPlugin implements ResourcePrevisitor {
 
-    public static final String NAME = "include-locales";
     private static final String MODULENAME = "jdk.localedata";
     private static final Set<String> LOCALEDATA_PACKAGES = Set.of(
         "sun.text.resources.cldr.ext",
@@ -148,7 +146,7 @@ public final class IncludeLocalesPlugin extends DocumentedPlugin implements Reso
     private static final Locale thTHTH = new Locale("th", "TH", "TH");
 
     public IncludeLocalesPlugin() {
-        super(NAME);
+        super("include-locales");
     }
 
     @Override
@@ -185,19 +183,14 @@ public final class IncludeLocalesPlugin extends DocumentedPlugin implements Reso
     }
 
     @Override
-    public String getArgumentsDescription() {
-       return PluginsResourceBundle.getArgument(NAME);
-    }
-
-    @Override
     public void configure(Map<String, String> config) {
-        userParam = config.get(NAME);
+        userParam = config.get(getName());
 
         try {
             priorityList = Locale.LanguageRange.parse(userParam, EQUIV_MAP);
         } catch (IllegalArgumentException iae) {
             throw new IllegalArgumentException(String.format(
-                PluginsResourceBundle.getMessage(NAME + ".invalidtag"),
+                PluginsResourceBundle.getMessage(getName() + ".invalidtag"),
                     iae.getMessage().replaceFirst("^range=", "")));
         }
     }
@@ -212,7 +205,7 @@ public final class IncludeLocalesPlugin extends DocumentedPlugin implements Reso
             ResourcePoolModule module = optMod.get();
             Set<String> packages = module.packages();
             if (!packages.containsAll(LOCALEDATA_PACKAGES)) {
-                throw new PluginException(PluginsResourceBundle.getMessage(NAME + ".missingpackages") +
+                throw new PluginException(PluginsResourceBundle.getMessage(getName()+ ".missingpackages") +
                     LOCALEDATA_PACKAGES.stream()
                         .filter(pn -> !packages.contains(pn))
                         .collect(Collectors.joining(",\n\t")));
@@ -229,14 +222,14 @@ public final class IncludeLocalesPlugin extends DocumentedPlugin implements Reso
                 .collect(Collectors.toList());
         } else {
             // jdk.localedata is not added.
-            throw new PluginException(PluginsResourceBundle.getMessage(NAME + ".localedatanotfound"));
+            throw new PluginException(PluginsResourceBundle.getMessage(getName() + ".localedatanotfound"));
         }
 
         filtered = filterLocales(available);
 
         if (filtered.isEmpty()) {
             throw new PluginException(
-                String.format(PluginsResourceBundle.getMessage(NAME + ".nomatchinglocales"), userParam));
+                String.format(PluginsResourceBundle.getMessage(getName() + ".nomatchinglocales"), userParam));
         }
 
         List<String> value = Stream.concat(

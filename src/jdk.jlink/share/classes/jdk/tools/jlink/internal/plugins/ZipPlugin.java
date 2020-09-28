@@ -36,20 +36,17 @@ import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
-import jdk.tools.jlink.plugin.Plugin;
 
 /**
  *
  * ZIP Compression plugin
  */
-public final class ZipPlugin extends DocumentedPlugin {
+public final class ZipPlugin extends AbstractPlugin {
 
-    public static final String NAME = "zip";
     private Predicate<String> predicate;
 
     public ZipPlugin() {
-        super(NAME);
-
+        this((Predicate<String>) null);
     }
 
     ZipPlugin(String[] patterns) {
@@ -57,7 +54,7 @@ public final class ZipPlugin extends DocumentedPlugin {
     }
 
     ZipPlugin(Predicate<String> predicate) {
-        super(NAME);
+        super("zip");
         this.predicate = predicate;
     }
 
@@ -72,13 +69,8 @@ public final class ZipPlugin extends DocumentedPlugin {
     }
 
     @Override
-    public String getArgumentsDescription() {
-        return PluginsResourceBundle.getArgument(NAME);
-    }
-
-    @Override
     public void configure(Map<String, String> config) {
-        predicate = ResourceFilter.includeFilter(config.get(NAME));
+        predicate = ResourceFilter.includeFilter(config.get(getName()));
     }
 
     static byte[] compress(byte[] bytesIn) {

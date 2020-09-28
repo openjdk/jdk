@@ -26,7 +26,7 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.util.Map;
 import java.util.function.Predicate;
-import jdk.tools.jlink.plugin.Plugin;
+
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -35,13 +35,12 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  *
  * Exclude files plugin
  */
-public final class ExcludeFilesPlugin extends DocumentedPlugin {
+public final class ExcludeFilesPlugin extends AbstractPlugin {
 
-    public static final String NAME = "exclude-files";
     private Predicate<String> predicate;
 
     public ExcludeFilesPlugin () {
-        super(NAME);
+        super("exclude-files");
     }
 
     @Override
@@ -66,12 +65,7 @@ public final class ExcludeFilesPlugin extends DocumentedPlugin {
     }
 
     @Override
-    public String getArgumentsDescription() {
-       return PluginsResourceBundle.getArgument(NAME);
-    }
-
-    @Override
     public void configure(Map<String, String> config) {
-        predicate = ResourceFilter.excludeFilter(config.get(NAME));
+        predicate = ResourceFilter.excludeFilter(config.get(getName()));
     }
 }

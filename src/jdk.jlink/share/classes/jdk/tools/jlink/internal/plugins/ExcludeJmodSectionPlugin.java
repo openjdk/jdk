@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
@@ -37,21 +36,20 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
  *
  * A plugin to exclude a JMOD section such as man pages or header files
  */
-public final class ExcludeJmodSectionPlugin extends DocumentedPlugin {
+public final class ExcludeJmodSectionPlugin extends AbstractPlugin {
 
-    public static final String NAME = "exclude-jmod-section";
     public static final String MAN_PAGES = "man";
     public static final String INCLUDE_HEADER_FILES = "headers";
 
     private final Set<Type> filters = new HashSet<>();
 
     public ExcludeJmodSectionPlugin() {
-        super(NAME);
+        super("exclude-jmod-section");
     }
 
     @Override
     public void configure(Map<String, String> config) {
-        String arg = config.get(NAME);
+        String arg = config.get(getName());
         if (arg.isEmpty()) {
             throw new IllegalArgumentException("Section name must be specified");
         }
@@ -90,8 +88,4 @@ public final class ExcludeJmodSectionPlugin extends DocumentedPlugin {
         return true;
     }
 
-    @Override
-    public String getArgumentsDescription() {
-       return PluginsResourceBundle.getArgument(NAME);
-    }
 }

@@ -30,10 +30,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.MissingResourceException;
+import java.util.Comparator;
+
 
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.builder.ImageBuilder;
@@ -363,7 +375,7 @@ public final class TaskHelper {
                         = new PluginOption(false,
                             (task, opt, arg) -> {
                                 Map<String, String> m = addArgumentMap(plugin);
-                                m.put(DefaultCompressPlugin.NAME, DefaultCompressPlugin.LEVEL_2);
+                                m.put(plugin.getName(), DefaultCompressPlugin.LEVEL_2);
                             }, false, "--compress", "-c");
                     mainOptions.add(plugOption);
                 } else if (plugin instanceof DefaultStripDebugPlugin) {
@@ -376,14 +388,14 @@ public final class TaskHelper {
                 } else if (plugin instanceof ExcludeJmodSectionPlugin) {
                     plugOption = new PluginOption(false, (task, opt, arg) -> {
                             Map<String, String> m = addArgumentMap(plugin);
-                            m.put(ExcludeJmodSectionPlugin.NAME,
+                            m.put(plugin.getName(),
                                   ExcludeJmodSectionPlugin.MAN_PAGES);
                         }, false, "--no-man-pages");
                     mainOptions.add(plugOption);
 
                     plugOption = new PluginOption(false, (task, opt, arg) -> {
                         Map<String, String> m = addArgumentMap(plugin);
-                        m.put(ExcludeJmodSectionPlugin.NAME,
+                        m.put(plugin.getName(),
                               ExcludeJmodSectionPlugin.INCLUDE_HEADER_FILES);
                     }, false, "--no-header-files");
                     mainOptions.add(plugOption);
@@ -440,8 +452,8 @@ public final class TaskHelper {
                     // aren't being used at the same time. --strip-debug invokes --strip-native-debug-symbols on
                     // platforms that support it, so it makes little sense to allow both at the same time.
                     if ((plugin instanceof DefaultStripDebugPlugin && seenPlugins.contains(STRIP_NATIVE_DEBUG_SYMBOLS_NAME)) ||
-                        (STRIP_NATIVE_DEBUG_SYMBOLS_NAME.equals(plugin.getName()) && seenPlugins.contains(DefaultStripDebugPlugin.NAME))) {
-                        throw new BadArgs("err.plugin.conflicts", "--" + DefaultStripDebugPlugin.NAME,
+                        (STRIP_NATIVE_DEBUG_SYMBOLS_NAME.equals(plugin.getName()) && seenPlugins.contains(plugin.getName()))) {
+                        throw new BadArgs("err.plugin.conflicts", "--" + plugin.getName(),
                                                                 "-G",
                                                                 "--" + STRIP_NATIVE_DEBUG_SYMBOLS_NAME);
                     }

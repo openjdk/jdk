@@ -27,18 +27,15 @@ package jdk.tools.jlink.internal.plugins;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
-import jdk.tools.jlink.plugin.Plugin;
 
 /**
  *
  * Strip Native Commands plugin
  */
-public final class StripNativeCommandsPlugin extends DocumentedPlugin {
-
-    public static final String NAME = "strip-native-commands";
+public final class StripNativeCommandsPlugin extends AbstractPlugin {
 
     public StripNativeCommandsPlugin() {
-        super(NAME);
+        super("strip-native-commands");
     }
 
     @Override
