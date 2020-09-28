@@ -975,6 +975,14 @@ PhaseIterGVN::PhaseIterGVN( PhaseGVN *gvn ) : PhaseGVN(gvn),
   }
 }
 
+void PhaseIterGVN::shuffle_worklist() {
+  if (_worklist.size() < 2) return;
+  for (uint i = _worklist.size() - 1; i >= 1; i--) {
+    uint j = C->random() % (i + 1);
+    swap(_worklist.adr()[i], _worklist.adr()[j]);
+  }
+}
+
 #ifndef PRODUCT
 void PhaseIterGVN::verify_step(Node* n) {
   if (VerifyIterativeGVN) {
@@ -1127,6 +1135,9 @@ void PhaseIterGVN::trace_PhaseIterGVN_verbose(Node* n, int num_processed) {
 void PhaseIterGVN::optimize() {
   DEBUG_ONLY(uint num_processed  = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
+  if (StressIGVN) {
+    shuffle_worklist();
+  }
 
   uint loop_count = 0;
   // Pull from worklist and transform the node. If the node has changed,

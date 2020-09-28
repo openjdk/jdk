@@ -815,7 +815,7 @@ void os::init_random(unsigned int initval) {
 }
 
 
-static int random_helper(unsigned int rand_seed) {
+int os::next_random(unsigned int rand_seed) {
   /* standard, well-known linear congruential random generator with
    * next_rand = (16807*seed) mod (2**31-1)
    * see
@@ -853,7 +853,7 @@ int os::random() {
   // Make updating the random seed thread safe.
   while (true) {
     unsigned int seed = _rand_seed;
-    unsigned int rand = random_helper(seed);
+    unsigned int rand = next_random(seed);
     if (Atomic::cmpxchg(&_rand_seed, seed, rand) == seed) {
       return static_cast<int>(rand);
     }
