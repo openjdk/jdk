@@ -27,6 +27,7 @@ package jdk.incubator.jpackage.internal;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
@@ -182,13 +183,17 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         }
 
         final List<String> neededLibPackages;
-        if (withFindNeededPackages) {
+        if (withFindNeededPackages && Files.exists(thePackage.sourceRoot())) {
             LibProvidersLookup lookup = new LibProvidersLookup();
             initLibProvidersLookup(params, lookup);
 
             neededLibPackages = lookup.execute(thePackage.sourceRoot());
         } else {
             neededLibPackages = Collections.emptyList();
+            if (!Files.exists(thePackage.sourceRoot())) {
+                Log.info(I18N.getString("warning.foreign-app-image"));
+
+            }
         }
 
         // Merge all package lists together.
