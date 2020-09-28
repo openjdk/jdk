@@ -3649,7 +3649,8 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 // may not start from the requested address. Unlike Linux mmap(), this
 // function returns NULL to indicate failure.
 static char* anon_mmap(char* requested_addr, size_t bytes) {
-  int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS;
+  // MAP_FIXED is intentionally left out, to leave existing mappings intact.
+  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS;
 
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
