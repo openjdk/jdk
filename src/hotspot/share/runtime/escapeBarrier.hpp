@@ -114,10 +114,12 @@ public:
     }
   }
 
-
-  bool all_threads()    const { return _deoptee_thread == NULL; }            // Should revert optimizations for all threads.
-  bool self_deopt()     const { return _calling_thread == _deoptee_thread; } // Current thread deoptimizes its own objects.
-  bool barrier_active() const { return _barrier_active; }                    // Inactive barriers are created if no local objects can escape.
+  // Should revert optimizations for all threads.
+  bool all_threads()    const { return _deoptee_thread == NULL; }
+  // Current thread deoptimizes its own objects.
+  bool self_deopt()     const { return _calling_thread == _deoptee_thread; }
+  // Inactive barriers are created if no local objects can escape.
+  bool barrier_active() const { return _barrier_active; }
 
   // accessors
   JavaThread* calling_thread() const     { return _calling_thread; }
