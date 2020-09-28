@@ -248,6 +248,7 @@ void ShenandoahReferenceProcessor::make_inactive(oop reference, ReferenceType ty
     // next field. An application can't call FinalReference.enqueue(), so there is
     // no race to worry about when setting the next field.
     assert(reference_next<T>(reference) == NULL, "Already inactive");
+    assert(ShenandoahHeap::heap()->marking_context()->is_marked(reference_referent<T>(reference)), "only make inactive final refs with alive referents");
     reference_set_next(reference, reference);
   } else {
     // Clear referent
@@ -311,8 +312,7 @@ template <typename T>
 T ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
-  // Keep referent alive
-  //keep_alive<T>(reference, type);
+  assert(ShenandoahHeap::heap()->marking_context()->is_marked(reference_referent<T>(reference)), "only drop references with alive referents");
 
   // Unlink and return next in list
   const T next = reference_discovered<T>(reference);
