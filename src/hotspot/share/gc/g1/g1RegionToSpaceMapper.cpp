@@ -220,7 +220,7 @@ static bool map_nvdimm_space(ReservedSpace rs) {
     return false;
   }
   // commit this memory in nv-dimm
-  char* ret = os::attempt_reserve_memory_at(rs.size(), rs.base(), _backing_fd);
+  char* ret = os::attempt_reserve_memory_at(rs.base(), rs.size(), _backing_fd);
 
   if (ret != rs.base()) {
     if (ret != NULL) {
@@ -267,7 +267,7 @@ bool G1RegionToHeteroSpaceMapper::initialize() {
   assert(rs_dram.size() == rs_nvdimm.size() && rs_nvdimm.size() == MaxHeapSize, "They all should be same");
 
   // Reserve dram memory
-  char* base = os::attempt_reserve_memory_at(rs_dram.size(), rs_dram.base());
+  char* base = os::attempt_reserve_memory_at(rs_dram.base(), rs_dram.size());
   if (base != rs_dram.base()) {
     if (base != NULL) {
       os::release_memory(base, rs_dram.size());
