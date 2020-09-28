@@ -71,7 +71,7 @@ public final class AMD64StringLatin1InflateOp extends AMD64LIRInstruction {
     public AMD64StringLatin1InflateOp(LIRGeneratorTool tool, int useAVX3Threshold, Value src, Value dst, Value len) {
         super(TYPE);
 
-        assert useAVX3Threshold == 0 || CodeUtil.isPowerOf2(useAVX3Threshold) : "AVX3Threshold must be power of 2";
+        assert CodeUtil.isPowerOf2(useAVX3Threshold) : "AVX3Threshold must be power of 2";
         this.useAVX3Threshold = useAVX3Threshold;
 
         assert asRegister(src).equals(rsi);

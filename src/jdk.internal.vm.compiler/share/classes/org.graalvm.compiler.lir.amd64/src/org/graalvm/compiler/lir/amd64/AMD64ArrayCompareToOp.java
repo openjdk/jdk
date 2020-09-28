@@ -84,7 +84,7 @@ public final class AMD64ArrayCompareToOp extends AMD64LIRInstruction {
     public AMD64ArrayCompareToOp(LIRGeneratorTool tool, int useAVX3Threshold, JavaKind kind1, JavaKind kind2, Value result, Value array1, Value array2, Value length1, Value length2) {
         super(TYPE);
 
-        assert useAVX3Threshold == 0 || CodeUtil.isPowerOf2(useAVX3Threshold) : "AVX3Threshold must be power of 2";
+        assert CodeUtil.isPowerOf2(useAVX3Threshold) : "AVX3Threshold must be power of 2";
         this.useAVX3Threshold = useAVX3Threshold;
         this.kind1 = kind1;
         this.kind2 = kind2;

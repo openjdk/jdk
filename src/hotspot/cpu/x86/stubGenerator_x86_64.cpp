@@ -1292,73 +1292,17 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  void generate_arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
-                                             Register to, Register count, int shift,
-                                             Register index, Register temp,
-                                             bool use64byteVector, Label& L_entry, Label& L_exit) {
-    Label L_entry_64, L_entry_96, L_entry_128;
-    Label L_entry_160, L_entry_192;
-
-    int size_mat[][6] = {
-    /* T_BYTE */ {32 , 64,  96 , 128 , 160 , 192 },
-    /* T_SHORT*/ {16 , 32,  48 , 64  , 80  , 96  },
-    /* T_INT  */ {8  , 16,  24 , 32  , 40  , 48  },
-    /* T_LONG */ {4  ,  8,  12 , 16  , 20  , 24  }
-    };
-
-    // Case A) Special case for length less than equal to 32 bytes.
-    __ cmpq(count, size_mat[shift][0]);
-    __ jccb(Assembler::greater, L_entry_64);
-    __ copy32_masked_avx(to, from, xmm, mask, count, index, temp, shift);
-    __ jmp(L_exit);
-
-    // Case B) Special case for length less than equal to 64 bytes.
-    __ BIND(L_entry_64);
-    __ cmpq(count, size_mat[shift][1]);
-    __ jccb(Assembler::greater, L_entry_96);
-    __ copy64_masked_avx(to, from, xmm, mask, count, index, temp, shift, 0, use64byteVector);
-    __ jmp(L_exit);
-
-    // Case C) Special case for length less than equal to 96 bytes.
-    __ BIND(L_entry_96);
-    __ cmpq(count, size_mat[shift][2]);
-    __ jccb(Assembler::greater, L_entry_128);
-    __ copy64_avx(to, from, index, xmm, false, shift, 0, use64byteVector);
-    __ subq(count, 64 >> shift);
-    __ copy32_masked_avx(to, from, xmm, mask, count, index, temp, shift, 64);
-    __ jmp(L_exit);
-
-    // Case D) Special case for length less than equal to 128 bytes.
-    __ BIND(L_entry_128);
-    __ cmpq(count, size_mat[shift][3]);
-    __ jccb(Assembler::greater, L_entry_160);
-    __ copy64_avx(to, from, index, xmm, false, shift, 0, use64byteVector);
-    __ copy32_avx(to, from, index, xmm, shift, 64);
-    __ subq(count, 96 >> shift);
-    __ copy32_masked_avx(to, from, xmm, mask, count, index, temp, shift, 96);
-    __ jmp(L_exit);
-
-    // Case E) Special case for length less than equal to 160 bytes.
-    __ BIND(L_entry_160);
-    __ cmpq(count, size_mat[shift][4]);
-    __ jccb(Assembler::greater, L_entry_192);
-    __ copy64_avx(to, from, index, xmm, false, shift, 0, use64byteVector);
-    __ copy64_avx(to, from, index, xmm, false, shift, 64, use64byteVector);
-    __ subq(count, 128 >> shift);
-    __ copy32_masked_avx(to, from, xmm, mask, count, index, temp, shift, 128);
-    __ jmp(L_exit);
-
-    // Case F) Special case for length less than equal to 192 bytes.
-    __ BIND(L_entry_192);
-    __ cmpq(count, size_mat[shift][5]);
-    __ jcc(Assembler::greater, L_entry);
-    __ copy64_avx(to, from, index, xmm, false, shift, 0, use64byteVector);
-    __ copy64_avx(to, from, index, xmm, false, shift, 64, use64byteVector);
-    __ copy32_avx(to, from, index, xmm, shift, 128);
-    __ subq(count, 160 >> shift);
-    __ copy32_masked_avx(to, from, xmm, mask, count, index, temp, shift, 160);
-    __ jmp(L_exit);
-  }
+  // Note: Following rules apply to AVX3 optimized arraycopy stubs:-
+  // - If target supports AVX3 features (BW+VL+F) then implementation uses 32 byte vectors (YMMs)
+  //   for both special cases (various small block sizes) and aligned copy loop. This is the
+  //   default configuration.
+  // - If copy length is above AVX3Threshold, then implementation use 64 byte vectors (ZMMs)
+  //   for main copy loop (and subsequent tail) since bulk of the cycles will be consumed in it.
+  // - If user forces MaxVectorSize=32 then above 4096 bytes its seen that REP MOVs shows a
+  //   better performance for disjoint copies. For conjoint/backward copy vector based
+  //   copy performs better.
+  // - If user sets AVX3Threshold=0, then special cases for small blocks sizes operate over
+  //   64 byte vector registers (ZMMs).
 
   // Inputs:
   //   c_rarg0   - source array address
@@ -1370,13 +1314,14 @@ class StubGenerator: public StubCodeGenerator {
   //   disjoint_copy_avx3_masked is set to the no-overlap entry point
   //   used by generate_conjoint_[byte/int/short/long]_copy().
   //
+
   address generate_disjoint_copy_avx3_masked(address* entry, const char *name, int shift,
                                              bool aligned, bool is_oop, bool dest_uninitialized) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
 
-    bool use64byteVector = false;
+    bool use64byteVector = MaxVectorSize > 32 && AVX3Threshold == 0;
     Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
     Label L_repmovs, L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
     const Register from        = rdi;  // source array address
@@ -1433,8 +1378,8 @@ class StubGenerator: public StubCodeGenerator {
       __ jcc(Assembler::lessEqual, L_exit);
 
       // Special cases using 32 byte [masked] vector copy operations.
-      generate_arraycopy_avx3_special_cases(xmm1, k2, from, to, temp1, shift,
-                                            temp4, temp3, use64byteVector, L_entry, L_exit);
+      __ arraycopy_avx3_special_cases(xmm1, k2, from, to, temp1, shift,
+                                      temp4, temp3, use64byteVector, L_entry, L_exit);
 
       // PRE-MAIN-POST loop for aligned copy.
       __ BIND(L_entry);
@@ -1557,8 +1502,8 @@ class StubGenerator: public StubCodeGenerator {
 
         // Tail handling using 64 byte [masked] vector copy operations.
         use64byteVector = true;
-        generate_arraycopy_avx3_special_cases(xmm1, k2, from, to, temp1, shift,
-                                              temp4, temp3, use64byteVector, L_entry, L_exit);
+        __ arraycopy_avx3_special_cases(xmm1, k2, from, to, temp1, shift,
+                                        temp4, temp3, use64byteVector, L_entry, L_exit);
       }
       __ BIND(L_exit);
     }
@@ -1579,81 +1524,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void generate_arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
-                                                      Register to, Register start_index, Register end_index,
-                                                      Register count, int shift, Register temp,
-                                                      bool use64byteVector, Label& L_entry, Label& L_exit) {
-    Label L_entry_64, L_entry_96, L_entry_128;
-    Label L_entry_160, L_entry_192;
-    bool avx3 = MaxVectorSize > 32 && AVX3Threshold == 0;
-
-    int size_mat[][6] = {
-    /* T_BYTE */ {32 , 64,  96 , 128 , 160 , 192 },
-    /* T_SHORT*/ {16 , 32,  48 , 64  , 80  , 96  },
-    /* T_INT  */ {8  , 16,  24 , 32  , 40  , 48  },
-    /* T_LONG */ {4  ,  8,  12 , 16  , 20  , 24  }
-    };
-
-    // Case A) Special case for length less than equal to 32 bytes.
-    __ cmpq(count, size_mat[shift][0]);
-    __ jccb(Assembler::greater, L_entry_64);
-    __ copy32_masked_avx(to, from, xmm, mask, count, start_index, temp, shift);
-    __ jmp(L_exit);
-
-    // Case B) Special case for length less than equal to 64 bytes.
-    __ BIND(L_entry_64);
-    __ cmpq(count, size_mat[shift][1]);
-    __ jccb(Assembler::greater, L_entry_96);
-    if (avx3) {
-       __ copy64_masked_avx(to, from, xmm, mask, count, start_index, temp, shift, 0, true);
-    } else {
-       __ copy32_avx(to, from, end_index, xmm, shift, -32);
-       __ subq(count, 32 >> shift);
-       __ copy32_masked_avx(to, from, xmm, mask, count, start_index, temp, shift);
-    }
-    __ jmp(L_exit);
-
-    // Case C) Special case for length less than equal to 96 bytes.
-    __ BIND(L_entry_96);
-    __ cmpq(count, size_mat[shift][2]);
-    __ jccb(Assembler::greater, L_entry_128);
-    __ copy64_avx(to, from, end_index, xmm, true, shift, -64, use64byteVector);
-    __ subq(count, 64 >> shift);
-    __ copy32_masked_avx(to, from, xmm, mask, count, start_index, temp, shift);
-    __ jmp(L_exit);
-
-    // Case D) Special case for length less than equal to 128 bytes.
-    __ BIND(L_entry_128);
-    __ cmpq(count, size_mat[shift][3]);
-    __ jccb(Assembler::greater, L_entry_160);
-    __ copy64_avx(to, from, end_index, xmm, true, shift, -64, use64byteVector);
-    __ copy32_avx(to, from, end_index, xmm, shift, -96);
-    __ subq(count, 96 >> shift);
-    __ copy32_masked_avx(to, from, xmm, mask, count, start_index, temp, shift);
-    __ jmp(L_exit);
-
-    // Case E) Special case for length less than equal to 160 bytes.
-    __ BIND(L_entry_160);
-    __ cmpq(count, size_mat[shift][4]);
-    __ jccb(Assembler::greater, L_entry_192);
-    __ copy64_avx(to, from, end_index, xmm, true, shift, -64, use64byteVector);
-    __ copy64_avx(to, from, end_index, xmm, true, shift, -128, use64byteVector);
-    __ subq(count, 128 >> shift);
-    __ copy32_masked_avx(to, from, xmm, mask, count, start_index, temp, shift);
-    __ jmp(L_exit);
-
-    // Case F) Special case for length less than equal to 192 bytes.
-    __ BIND(L_entry_192);
-    __ cmpq(count, size_mat[shift][5]);
-    __ jcc(Assembler::greater, L_entry);
-    __ copy64_avx(to, from, end_index, xmm, true, shift, -64, use64byteVector);
-    __ copy64_avx(to, from, end_index, xmm, true, shift, -128, use64byteVector);
-    __ copy32_avx(to, from, end_index, xmm, shift, -160);
-    __ subq(count, 160 >> shift);
-    __ copy32_masked_avx(to, from, xmm, mask, count, start_index, temp, shift);
-    __ jmp(L_exit);
-  }
-
   // Inputs:
   //   c_rarg0   - source array address
   //   c_rarg1   - destination array address
@@ -1667,7 +1537,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
 
-    bool use64byteVector = false;
+    bool use64byteVector = MaxVectorSize > 32 && AVX3Threshold == 0;
 
     Label L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
     Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
@@ -1726,8 +1596,8 @@ class StubGenerator: public StubCodeGenerator {
       __ mov64(temp2, 0);
       __ movq(temp3, temp1);
       // Special cases using 32 byte [masked] vector copy operations.
-      generate_arraycopy_avx3_special_cases_conjoint(xmm1, k2, from, to, temp2, temp3, temp1, shift,
-                                                     temp4, use64byteVector, L_entry, L_exit);
+      __ arraycopy_avx3_special_cases_conjoint(xmm1, k2, from, to, temp2, temp3, temp1, shift,
+                                               temp4, use64byteVector, L_entry, L_exit);
 
       // PRE-MAIN-POST loop for aligned copy.
       __ BIND(L_entry);
@@ -1805,8 +1675,8 @@ class StubGenerator: public StubCodeGenerator {
         use64byteVector = true;
         __ mov64(temp2, 0);
         __ movq(temp3, temp1);
-        generate_arraycopy_avx3_special_cases_conjoint(xmm1, k2, from, to, temp2, temp3, temp1, shift,
-                                                       temp4, use64byteVector, L_entry, L_exit);
+        __ arraycopy_avx3_special_cases_conjoint(xmm1, k2, from, to, temp2, temp3, temp1, shift,
+                                                 temp4, use64byteVector, L_entry, L_exit);
       }
       __ BIND(L_exit);
     }

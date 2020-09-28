@@ -1039,6 +1039,18 @@ public:
                 Register rax, Register rcx, Register rdx, Register tmp);
 #endif
 
+#ifdef _LP64
+  void arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
+                                    Register to, Register count, int shift,
+                                    Register index, Register temp,
+                                    bool use64byteVector, Label& L_entry, Label& L_exit);
+
+  void arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
+                                             Register to, Register start_index, Register end_index,
+                                             Register count, int shift, Register temp,
+                                             bool use64byteVector, Label& L_entry, Label& L_exit);
+#endif
+
 private:
 
   // these are private because users should be doing movflt/movdbl
