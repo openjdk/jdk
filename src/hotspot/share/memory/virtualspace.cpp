@@ -194,7 +194,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
         base = NULL;
       }
     } else {
-      base = os::reserve_memory(size, NULL, alignment, _fd_for_heap);
+      base = os::reserve_memory_with_fd(size, alignment, _fd_for_heap);
     }
 
     if (base == NULL) return;
@@ -382,7 +382,7 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
     if (requested_address != 0) {
       base = os::attempt_reserve_memory_at(size, requested_address, _fd_for_heap);
     } else {
-      base = os::reserve_memory(size, NULL, alignment, _fd_for_heap);
+      base = os::reserve_memory_with_fd(size, alignment, _fd_for_heap);
     }
   }
   if (base == NULL) { return; }
