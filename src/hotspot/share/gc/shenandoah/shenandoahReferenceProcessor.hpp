@@ -54,6 +54,8 @@ private:
   oop _pending_list;
   void* _pending_list_tail; // T*
 
+  volatile uint _iterate_discovered_list_id;
+
   template <typename T>
   bool is_inactive(oop reference, oop referent, ReferenceType type) const;
   bool is_strongly_live(oop referent) const;

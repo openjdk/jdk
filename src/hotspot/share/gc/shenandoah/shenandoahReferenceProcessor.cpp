@@ -27,7 +27,7 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-
+#include "runtime/atomic.hpp"
 #include "logging/log.hpp"
 
 static ReferenceType reference_type(oop reference) {
@@ -137,7 +137,8 @@ ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(uint max_workers) :
   _soft_reference_policy(NULL),
   _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)),
   _pending_list(NULL),
-  _pending_list_tail(&_pending_list) {
+  _pending_list_tail(&_pending_list),
+  _iterate_discovered_list_id(0U) {
   for (size_t i = 0; i < max_workers; i++) {
     _ref_proc_thread_locals[i].reset();
   }
@@ -365,13 +366,16 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
 
 void ShenandoahReferenceProcessor::work() {
   // Process discovered references
-  uint worker_id = ShenandoahThreadLocalData::worker_id(Thread::current());
-  assert(worker_id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "need valid worker ID");
-  ShenandoahRefProcThreadLocal refproc_data = _ref_proc_thread_locals[worker_id];
-  if (UseCompressedOops) {
-    process_references<narrowOop>(refproc_data);
-  } else {
-    process_references<oop>(refproc_data);
+  uint max_workers = ShenandoahHeap::heap()->max_workers();
+  uint worker_id = Atomic::add(&_iterate_discovered_list_id, 1U) - 1;
+  while (worker_id < max_workers) {
+    ShenandoahRefProcThreadLocal refproc_data = _ref_proc_thread_locals[worker_id];
+    if (UseCompressedOops) {
+      process_references<narrowOop>(refproc_data);
+    } else {
+      process_references<oop>(refproc_data);
+    }
+    worker_id = Atomic::add(&_iterate_discovered_list_id, 1U) - 1;
   }
 }
 
@@ -392,6 +396,9 @@ public:
 };
 
 void ShenandoahReferenceProcessor::process_references(WorkGang* workers) {
+
+  Atomic::release_store_fence(&_iterate_discovered_list_id, 0U);
+
   // Process discovered lists
   ShenandoahReferenceProcessorTask task(this);
   workers->run_task(&task);
