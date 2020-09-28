@@ -72,7 +72,7 @@ public abstract class EventFilterTest extends JDIEventsDebugger {
     }
 
     abstract protected int getTestFiltersNumber();
-    
+
     public final void doTest() {
         prepareDebuggee(new EventType[]{eventType});
 
