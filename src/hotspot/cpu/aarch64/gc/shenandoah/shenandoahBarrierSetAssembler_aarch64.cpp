@@ -459,39 +459,10 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
 // from-space, or it refers to the to-space version of an object that
 // is being evacuated out of from-space.
 //
-// By default, this operation implements sequential consistency and the
-// value held in the result register following execution of the
-// generated code sequence is 0 to indicate failure of CAS, non-zero
-// to indicate success.  Arguments support variations on this theme:
-//
-//  acquire: Allow relaxation of the memory ordering on CAS from
-//           sequential consistency.  This can be useful when
-//           sequential consistency is not required, such as when
-//           another sequentially consistent operation is already
-//           present in the execution stream.  If acquire, successful
-//           execution has the side effect of assuring that memory
-//           values updated by other threads and "released" will be
-//           visible to any read operations perfomed by this thread
-//           which follow this operation in program order.  This is a
-//           special optimization that should not be enabled by default.
-//  release: Allow relaxation of the memory ordering on CAS from
-//           sequential consistency.  This can be useful when
-//           sequential consistency is not required, such as when
-//           another sequentially consistent operation is already
-//           present in the execution stream.  If release, successful
-//           completion of this operation has the side effect of
-//           assuring that all writes to memory performed by this
-//           thread that precede this operation in program order are
-//           visible to all other threads that subsequently "acquire"
-//           before reading the respective memory values.  This is a
-//           special optimization that should not be enabled by default.
-//  is_cae:  This turns CAS (compare and swap) into CAE (compare and
-//           exchange).  This HotSpot convention is that CAE makes
-//           available to the caller the "failure witness", which is
-//           the value that was stored in memory which did not match
-//           the expected value.  If is_cae, the result is the value
-//           most recently fetched from addr rather than a boolean
-//           success indicator.
+// By default the value held in the result register following execution
+// of the generated code sequence is 0 to indicate failure of CAS,
+// non-zero to indicate success. If is_cae, the result is the value most
+// recently fetched from addr rather than a boolean success indicator.
 //
 // Clobbers rscratch1, rscratch2
 void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
@@ -526,11 +497,10 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   __ bind (step4);
 
   // Step 4. CAS has failed because the value most recently fetched
-  // from addr (which is now held in tmp1) is no longer the from-space
-  // pointer held in tmp2.  If a different thread replaced the
-  // in-memory value with its equivalent to-space pointer, then CAS
-  // may still be able to succeed.  The value held in the expected
-  // register has not changed.
+  // from addr is no longer the from-space pointer held in tmp2.  If a
+  // different thread replaced the in-memory value with its equivalent
+  // to-space pointer, then CAS may still be able to succeed.  The
+  // value held in the expected register has not changed.
   //
   // It is extremely rare we reach this point.  For this reason, the
   // implementation opts for smaller rather than potentially faster
@@ -603,8 +573,8 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   // Note that macro implementation of __cmpxchg cannot use same register
   // tmp2 for result and expected since it overwrites result before it
   // compares result with expected.
-  __ cmpxchg(addr, tmp2, new_val, size, acquire, release, false, tmp1);
-  // EQ flag set iff success.  tmp2 holds value fetched.
+  __ cmpxchg(addr, tmp2, new_val, size, acquire, release, false, noreg);
+  // EQ flag set iff success.  tmp2 holds value fetched, tmp1 (rscratch1) clobbered.
 
   // If fetched value did not equal the new expected, this could
   // still be a false negative because some other thread may have
