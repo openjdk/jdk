@@ -143,14 +143,14 @@ public abstract class Authenticator {
      * must return a {@link Failure}, {@link Success} or {@link Retry} object as appropriate:
      * <ul>
      *     <li> {@code Failure} means the authentication has completed, but has
-     *     failed due to invalid credentials.</li>
+     *     failed due to invalid credentials.
      *     <li> {@code Success} means that the authentication has succeeded,
      *     and a {@code Principal} object representing the user can be retrieved
-     *     by calling {@link Success#getPrincipal()}.</li>
+     *     by calling {@link Success#getPrincipal()}.
      *     <li> {@code Retry} means that another HTTP {@linkplain HttpExchange exchange}
      *     is required. Any response headers needing to be sent back to the client are set
      *     in the given {@code HttpExchange}. The response code to be returned must be
-     *     provided in the {@code Retry} object. {@code Retry} may occur multiple times.</li>
+     *     provided in the {@code Retry} object. {@code Retry} may occur multiple times.
      * <ul/>
      *
      * @param exch the {@code HttpExchange} upon which authenticate is called
