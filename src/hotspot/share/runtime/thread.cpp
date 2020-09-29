@@ -4579,16 +4579,16 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
   // Reclaim the ObjectMonitors from the om_in_use_list and om_free_list of the moribund thread.
   ObjectSynchronizer::om_flush(p);
 
-  // We must flush any deferred card marks and other various GC barrier
-  // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
-  // before removing a thread from the list of active threads.
-  // This must be done after ObjectSynchronizer::om_flush(), as GC barriers
-  // are used in om_flush().
-  BarrierSet::barrier_set()->on_thread_detach(p);
-
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice
   { MonitorLocker ml(Threads_lock);
+
+    // We must flush any deferred card marks and other various GC barrier
+    // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
+    // before removing a thread from the list of active threads.
+    // This must be done after ObjectSynchronizer::om_flush(), as GC barriers
+    // are used in om_flush().
+    BarrierSet::barrier_set()->on_thread_detach(p);
 
     assert(ThreadsSMRSupport::get_java_thread_list()->includes(p), "p must be present");
 
