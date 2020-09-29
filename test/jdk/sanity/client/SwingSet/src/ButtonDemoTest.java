@@ -24,8 +24,6 @@
 import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.JHyperlink;
 import com.sun.swingset3.demos.button.ButtonDemo;
-
-import java.awt.image.BufferedImage;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import javax.swing.ButtonModel;
@@ -35,7 +33,7 @@ import javax.swing.event.ChangeEvent;
 import static org.testng.AssertJUnit.*;
 import org.testng.annotations.Test;
 import org.jemmy2ext.JemmyExt.ByToolTipChooser;
-import static org.jemmy2ext.JemmyExt.*;
+import static org.jemmy2ext.JemmyExt.EXACT_STRING_COMPARATOR;
 import org.netbeans.jemmy.ClassReference;
 import org.netbeans.jemmy.operators.JButtonOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
