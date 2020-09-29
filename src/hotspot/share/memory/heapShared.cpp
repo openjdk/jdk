@@ -192,7 +192,7 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
     // identity_hash for all shared objects, so they are less likely to be written
     // into during run time, increasing the potential of memory sharing.
     int hash_original = obj->identity_hash();
-    archived_oop->set_mark_raw(markWord::prototype().copy_set_hash(hash_original));
+    archived_oop->set_mark(markWord::prototype().copy_set_hash(hash_original));
     assert(archived_oop->mark().is_unlocked(), "sanity");
 
     DEBUG_ONLY(int hash_archived = archived_oop->identity_hash());
