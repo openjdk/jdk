@@ -255,8 +255,6 @@ Thread::Thread() {
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  _vm_operation_started_count = 0;
-  _vm_operation_completed_count = 0;
   _current_pending_monitor = NULL;
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
