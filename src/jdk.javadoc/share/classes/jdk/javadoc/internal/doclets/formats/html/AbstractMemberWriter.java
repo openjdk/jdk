@@ -274,7 +274,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * @param contentTree the content tree to which the deprecated information will be added.
      */
     protected void addDeprecatedInfo(Element member, Content contentTree) {
-        Content output = (new DeprecatedTaglet()).getTagletOutput(member,
+        Content output = (new DeprecatedTaglet()).getAllBlockTagOutput(member,
             writer.getTagletWriterInstance(false));
         if (!output.isEmpty()) {
             Content deprecatedContent = output;
