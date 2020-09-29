@@ -627,7 +627,7 @@ features, use `bash configure --help=short` instead.)
 On Linux, BSD and AIX, it is possible to override where Java by default
 searches for runtime/JNI libraries. This can be useful in situations where
 there is a special shared directory for system JNI libraries. This setting
-can in turn be overriden at runtime by setting the `java.library.path` property.
+can in turn be overridden at runtime by setting the `java.library.path` property.
 
   * `--with-jni-libpath=<path>` - Use the specified path as a default
   when searching for runtime libraries.
@@ -693,7 +693,7 @@ hard to use properly. Therefore, `configure` will print a warning if this is
 detected.
 
 However, there are a few `configure` variables, known as *control variables*
-that are supposed to be overriden on the command line. These are variables that
+that are supposed to be overridden on the command line. These are variables that
 describe the location of tools needed by the build, like `MAKE` or `GREP`. If
 any such variable is specified, `configure` will use that value instead of
 trying to autodetect the tool. For instance, `bash configure
@@ -773,7 +773,7 @@ broken build. Unless you're well versed in the build system, this is hard to
 use properly. Therefore, `make` will print a warning if this is detected.
 
 However, there are a few `make` variables, known as *control variables* that
-are supposed to be overriden on the command line. These make up the "make time"
+are supposed to be overridden on the command line. These make up the "make time"
 configuration, as opposed to the "configure time" configuration.
 
 #### General Make Control Variables
@@ -1184,7 +1184,7 @@ for yourself. To enable it, make sure it's on the path and configure with
 
 ### Precompiled Headers
 
-By default, the Hotspot build uses preccompiled headers (PCH) on the toolchains
+By default, the Hotspot build uses precompiled headers (PCH) on the toolchains
 were it is properly supported (clang, gcc, and Visual Studio). Normally, this
 speeds up the build process, but in some circumstances, it can actually slow
 things down.
