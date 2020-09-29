@@ -31,9 +31,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.ProviderException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import sun.security.ec.ed.EdDSAAlgorithmParameters;
@@ -41,6 +43,7 @@ import sun.security.ec.ed.EdDSAKeyFactory;
 import sun.security.ec.ed.EdDSAKeyPairGenerator;
 import sun.security.ec.ed.EdDSASignature;
 import sun.security.util.CurveDB;
+import sun.security.util.KnownOIDs;
 import sun.security.util.NamedCurve;
 
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
@@ -48,53 +51,10 @@ import static sun.security.util.SecurityProviderConstants.*;
 
 /**
  * Provider class for the Elliptic Curve provider.
- * Supports EC keypair and parameter generation, ECDSA signing and
- * ECDH key agreement.
- *
- * IMPLEMENTATION NOTE:
- * The Java classes in this provider access a native ECC implementation
- * via JNI to a C++ wrapper class which in turn calls C functions.
- * The Java classes are packaged into the jdk.crypto.sunec module and the
- * C++ and C functions are packaged into libsunec.so or sunec.dll in the
- * JRE native libraries directory.  If the native library is not present
- * then this provider is registered with support for fewer ECC algorithms
- * (KeyPairGenerator, Signature and KeyAgreement are omitted).
- *
- * @since   1.7
  */
 public final class SunEC extends Provider {
 
     private static final long serialVersionUID = -2279741672933606418L;
-
-    // This flag is true if the native library is disabled or not loaded.
-    private static boolean disableNative = true;
-
-    static {
-        String s = sun.security.action.GetPropertyAction.privilegedGetProperty(
-                "jdk.sunec.disableNative");
-        if (s != null && s.equalsIgnoreCase("false")) {
-            disableNative = false;
-        }
-
-        // If native is enabled, verify the library is available.
-        if (!disableNative) {
-            try {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    public Void run() {
-                        System.loadLibrary("sunec"); // check for native library
-                        return null;
-                    }
-                });
-            } catch (UnsatisfiedLinkError e) {
-                disableNative = true;
-            }
-        }
-    }
-
-    // Check if native library support is disabled.
-    static boolean isNativeDisabled() {
-        return SunEC.disableNative;
-    }
 
     private static class ProviderServiceA extends ProviderService {
         ProviderServiceA(Provider p, String type, String algo, String cn,
@@ -157,8 +117,20 @@ public final class SunEC extends Provider {
                     } else if (algo.equals("NONEwithECDSA")) {
                         return (inP1363? new ECDSASignature.RawinP1363Format() :
                             new ECDSASignature.Raw());
-                    }
-                } else  if (type.equals("KeyFactory")) {
+                    } else if (algo.equals("SHA3-224withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA3_224inP1363Format() :
+                            new ECDSASignature.SHA3_224());
+                    } else if (algo.equals("SHA3-256withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA3_256inP1363Format() :
+                            new ECDSASignature.SHA3_256());
+                    } else if (algo.equals("SHA3-384withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA3_384inP1363Format() :
+                            new ECDSASignature.SHA3_384());
+                    } else if (algo.equals("SHA3-512withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA3_512inP1363Format() :
+                            new ECDSASignature.SHA3_512());
+                     }
+                } else if (type.equals("KeyFactory")) {
                     if (algo.equals("EC")) {
                         return new ECKeyFactory();
                     } else if (algo.equals("XDH")) {
@@ -246,17 +218,11 @@ public final class SunEC extends Provider {
         boolean firstCurve = true;
         StringBuilder names = new StringBuilder();
 
-        Collection<? extends NamedCurve> supportedCurves;
-        if (SunEC.isNativeDisabled()) {
-            supportedCurves = Collections.unmodifiableList(List.of(
-                    CurveDB.lookup("secp256r1"),
-                    CurveDB.lookup("secp384r1"),
-                    CurveDB.lookup("secp521r1")));
-        } else {
-            supportedCurves = CurveDB.getSupportedCurves();
-        }
-
-        for (NamedCurve namedCurve : supportedCurves) {
+        for (NamedCurve namedCurve :
+            List.of(
+                CurveDB.lookup("secp256r1"),
+                CurveDB.lookup("secp384r1"),
+                CurveDB.lookup("secp521r1"))) {
             if (!firstCurve) {
                 names.append("|");
             } else {
@@ -304,6 +270,18 @@ public final class SunEC extends Provider {
         putService(new ProviderServiceA(this, "Signature",
             "SHA512withECDSA", "sun.security.ec.ECDSASignature$SHA512",
             ATTRS));
+        putService(new ProviderServiceA(this, "Signature",
+            "SHA3-224withECDSA", "sun.security.ec.ECDSASignature$SHA3_224",
+            ATTRS));
+        putService(new ProviderServiceA(this, "Signature",
+            "SHA3-256withECDSA", "sun.security.ec.ECDSASignature$SHA3_256",
+            ATTRS));
+        putService(new ProviderServiceA(this, "Signature",
+            "SHA3-384withECDSA", "sun.security.ec.ECDSASignature$SHA3_384",
+            ATTRS));
+        putService(new ProviderServiceA(this, "Signature",
+            "SHA3-512withECDSA", "sun.security.ec.ECDSASignature$SHA3_512",
+            ATTRS));
 
         putService(new ProviderService(this, "Signature",
              "NONEwithECDSAinP1363Format",
@@ -324,6 +302,19 @@ public final class SunEC extends Provider {
             "SHA512withECDSAinP1363Format",
             "sun.security.ec.ECDSASignature$SHA512inP1363Format"));
 
+        putService(new ProviderService(this, "Signature",
+             "SHA3-224withECDSAinP1363Format",
+             "sun.security.ec.ECDSASignature$SHA3_224inP1363Format"));
+        putService(new ProviderService(this, "Signature",
+             "SHA3-256withECDSAinP1363Format",
+             "sun.security.ec.ECDSASignature$SHA3_256inP1363Format"));
+        putService(new ProviderService(this, "Signature",
+            "SHA3-384withECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$SHA3_384inP1363Format"));
+        putService(new ProviderService(this, "Signature",
+            "SHA3-512withECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$SHA3_512inP1363Format"));
+
         /*
          *  Key Pair Generator engine
          */
@@ -343,7 +334,6 @@ public final class SunEC extends Provider {
         HashMap<String, String> ATTRS = new HashMap<>(1);
         ATTRS.put("ImplementedIn", "Software");
 
-        /* XDH does not require native implementation */
         putService(new ProviderService(this, "KeyFactory",
             "XDH", "sun.security.ec.XDHKeyFactory", null, ATTRS));
         putService(new ProviderServiceA(this, "KeyFactory",
@@ -377,7 +367,6 @@ public final class SunEC extends Provider {
         HashMap<String, String> ATTRS = new HashMap<>(1);
         ATTRS.put("ImplementedIn", "Software");
 
-        /* EdDSA does not require native implementation */
         putService(new ProviderService(this, "KeyFactory",
             "EdDSA", "sun.security.ec.ed.EdDSAKeyFactory", null, ATTRS));
         putService(new ProviderServiceA(this, "KeyFactory",

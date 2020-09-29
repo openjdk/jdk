@@ -52,5 +52,5 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   ZLargePages::initialize();
   ZBarrierSet::set_barrier_set(barrier_set);
 
-  initialize_os();
+  pd_initialize();
 }

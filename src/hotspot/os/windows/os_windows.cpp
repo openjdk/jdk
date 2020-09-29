@@ -48,6 +48,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -2136,19 +2137,19 @@ int os::signal_wait() {
 
 LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
                       address handler) {
-  JavaThread* thread = (JavaThread*) Thread::current_or_null();
+  Thread* thread = Thread::current_or_null();
   // Save pc in thread
 #ifdef _M_AMD64
   // Do not blow up if no thread info available.
-  if (thread) {
-    thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
+  if (thread != NULL) {
+    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Rip = (DWORD64)handler;
 #else
   // Do not blow up if no thread info available.
-  if (thread) {
-    thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
+  if (thread != NULL) {
+    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Eip = (DWORD)(DWORD_PTR)handler;
@@ -2477,7 +2478,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   }
 
   if (t != NULL && t->is_Java_thread()) {
-    JavaThread* thread = (JavaThread*) t;
+    JavaThread* thread = t->as_Java_thread();
     bool in_java = thread->thread_state() == _thread_in_Java;
     bool in_native = thread->thread_state() == _thread_in_native;
     bool in_vm = thread->thread_state() == _thread_in_vm;
@@ -2570,7 +2571,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
     if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
       CompiledMethod* nm = NULL;
-      JavaThread* thread = (JavaThread*)t;
       if (in_java) {
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
@@ -3063,8 +3063,8 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
   assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
 
   release_memory(base, size);
-  reserve_memory(split, base);
-  reserve_memory(size - split, split_address);
+  attempt_reserve_memory_at(base, split);
+  attempt_reserve_memory_at(split_address, size - split);
 
   // NMT: nothing to do here. Since Windows implements the split by
   //  releasing and re-reserving memory, the parts are already registered
@@ -3086,7 +3086,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   char* aligned_base = NULL;
 
   do {
-    char* extra_base = os::reserve_memory(extra_size, NULL, alignment, file_desc);
+    char* extra_base = os::reserve_memory_with_fd(extra_size, alignment, file_desc);
     if (extra_base == NULL) {
       return NULL;
     }
@@ -3099,14 +3099,21 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
       os::release_memory(extra_base, extra_size);
     }
 
-    aligned_base = os::reserve_memory(size, aligned_base, 0, file_desc);
+    aligned_base = os::attempt_reserve_memory_at(aligned_base, size, file_desc);
 
   } while (aligned_base == NULL);
 
   return aligned_base;
 }
 
-char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
+char* os::pd_reserve_memory(size_t bytes, size_t alignment_hint) {
+  // Ignores alignment hint
+  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes);
+}
+
+// Reserve memory at an arbitrary address, only if that area is
+// available (and not reserved for something else).
+char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_page_size() == 0, "reserve page size");
@@ -3137,15 +3144,7 @@ char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   return res;
 }
 
-// Reserve memory at an arbitrary address, only if that area is
-// available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
-  // Windows os::reserve_memory() fails of the requested address range is
-  // not avilable.
-  return reserve_memory(bytes, requested_addr);
-}
-
-char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int file_desc) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   return map_memory_to_file(requested_addr, bytes, file_desc);
 }
@@ -4827,15 +4826,25 @@ static int stdinAvailable(int fd, long *pbytes) {
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
                         bool allow_exec) {
+
+  errno_t err;
+  wchar_t* wide_path = wide_abs_unc_path(file_name, err);
+
+  if (wide_path == NULL) {
+    return NULL;
+  }
+
   HANDLE hFile;
   char* base;
 
-  hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL,
+  hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, NULL,
                      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   if (hFile == INVALID_HANDLE_VALUE) {
-    log_info(os)("CreateFile() failed: GetLastError->%ld.", GetLastError());
+    log_info(os)("CreateFileW() failed: GetLastError->%ld.", GetLastError());
+    os::free(wide_path);
     return NULL;
   }
+  os::free(wide_path);
 
   if (allow_exec) {
     // CreateFileMapping/MapViewOfFileEx can't map executable memory

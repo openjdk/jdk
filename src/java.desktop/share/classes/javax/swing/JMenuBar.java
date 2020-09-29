@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,6 +509,11 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
     @SuppressWarnings("serial")
     protected class AccessibleJMenuBar extends AccessibleJComponent
         implements AccessibleSelection {
+
+        /**
+         * Constructs an {@code AccessibleJMenuBar}.
+         */
+        protected AccessibleJMenuBar() {}
 
         /**
          * Get the accessible state set of this object.

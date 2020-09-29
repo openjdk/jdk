@@ -111,7 +111,7 @@ bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
   if (ignore_mark_word) {
     return true;
   }
-  if (obj->mark_raw().value() != 0) {
+  if (obj->mark().value() != 0) {
     return true;
   }
   return !SafepointSynchronize::is_at_safepoint();
@@ -145,11 +145,11 @@ bool oopDesc::has_klass_gap() {
 
 void* oopDesc::load_klass_raw(oop obj) {
   if (UseCompressedClassPointers) {
-    narrowKlass narrow_klass = *(obj->compressed_klass_addr());
+    narrowKlass narrow_klass = obj->_metadata._compressed_klass;
     if (narrow_klass == 0) return NULL;
     return (void*)CompressedKlassPointers::decode_raw(narrow_klass);
   } else {
-    return *(void**)(obj->klass_addr());
+    return obj->_metadata._klass;
   }
 }
 

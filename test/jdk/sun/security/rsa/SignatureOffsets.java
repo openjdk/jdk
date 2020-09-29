@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.security.SignatureException;
 
 /*
  * @test
- * @bug 8050374 8146293
+ * @bug 8050374 8146293 8172366
  * @key randomness
  * @summary This test validates signature verification
  *          Signature.verify(byte[], int, int). The test uses RandomFactory to
@@ -46,6 +46,10 @@ import java.security.SignatureException;
  * @run main SignatureOffsets SunRsaSign SHA512withRSA
  * @run main SignatureOffsets SunRsaSign SHA512/224withRSA
  * @run main SignatureOffsets SunRsaSign SHA512/256withRSA
+ * @run main SignatureOffsets SunRsaSign SHA3-224withRSA
+ * @run main SignatureOffsets SunRsaSign SHA3-256withRSA
+ * @run main SignatureOffsets SunRsaSign SHA3-384withRSA
+ * @run main SignatureOffsets SunRsaSign SHA3-512withRSA
  */
 public class SignatureOffsets {
 

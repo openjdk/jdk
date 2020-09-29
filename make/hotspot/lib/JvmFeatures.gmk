@@ -119,7 +119,9 @@ ifneq ($(call check-jvm-feature, cds), true)
       archiveBuilder.cpp \
       archiveUtils.cpp \
       classListParser.cpp \
+      classLoaderDataShared.cpp \
       classLoaderExt.cpp \
+      cppVtables.cpp \
       dumpAllocStats.cpp \
       dynamicArchive.cpp \
       filemap.cpp \

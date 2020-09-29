@@ -51,7 +51,6 @@ import javax.tools.JavaFileManager.Location;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
-import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
@@ -71,6 +70,7 @@ import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.util.Names;
 
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclint.DocLint;
 import jdk.javadoc.internal.tool.ToolEnvironment;
 import jdk.javadoc.internal.tool.DocEnvImpl;
 

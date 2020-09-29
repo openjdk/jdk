@@ -106,7 +106,7 @@ InterpreterCodelet* ZeroInterpreter::codelet_containing(address pc) {
   fixup_after_potential_safepoint()
 
 int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
 
   // Allocate and initialize our frame.
   InterpreterFrame *frame = InterpreterFrame::build(method, CHECK_0);
@@ -144,7 +144,7 @@ intptr_t narrow(BasicType type, intptr_t result) {
 
 
 void ZeroInterpreter::main_loop(int recurse, TRAPS) {
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   ZeroStack *stack = thread->zero_stack();
 
   // If we are entering from a deopt we may need to call
@@ -277,7 +277,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Make sure method is native and not abstract
   assert(method->is_native() && !method->is_abstract(), "should be");
 
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   ZeroStack *stack = thread->zero_stack();
 
   // Allocate and initialize our frame
@@ -459,10 +459,8 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     if (header.to_pointer() != NULL) {
       markWord old_header = markWord::encode(lock);
       if (rcvr->cas_set_mark(header, old_header) != old_header) {
-        monitor->set_obj(rcvr); {
-          HandleMark hm(thread);
-          CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(thread, monitor));
-        }
+        monitor->set_obj(rcvr);
+        InterpreterRuntime::monitorexit(monitor);
       }
     }
   }
@@ -546,7 +544,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::accessor_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   ZeroStack *stack = thread->zero_stack();
   intptr_t *locals = stack->sp();
 
@@ -679,7 +677,7 @@ int ZeroInterpreter::accessor_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   ZeroStack *stack = thread->zero_stack();
 
   // Drop into the slow path if we need a safepoint check
@@ -698,7 +696,7 @@ int ZeroInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
 // Slots < insert_before will have the same slot number after the insert.
 // Slots >= insert_before will become old_slot + num_slots.
 void ZeroInterpreter::insert_vmslots(int insert_before, int num_slots, TRAPS) {
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   ZeroStack *stack = thread->zero_stack();
 
   // Allocate the space
@@ -712,7 +710,7 @@ void ZeroInterpreter::insert_vmslots(int insert_before, int num_slots, TRAPS) {
 }
 
 void ZeroInterpreter::remove_vmslots(int first_slot, int num_slots, TRAPS) {
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   ZeroStack *stack = thread->zero_stack();
   intptr_t *vmslots = stack->sp();
 
@@ -745,7 +743,7 @@ JRT_ENTRY(void, ZeroInterpreter::throw_exception(JavaThread* thread,
 JRT_END
 
 InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
-  JavaThread *thread = (JavaThread *) THREAD;
+  JavaThread *thread = THREAD->as_Java_thread();
   ZeroStack *stack = thread->zero_stack();
 
   // Calculate the size of the frame we'll build, including
@@ -821,7 +819,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
 }
 
 InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
-  ZeroStack *stack = ((JavaThread *) THREAD)->zero_stack();
+  ZeroStack *stack = THREAD->as_Java_thread()->zero_stack();
 
   int size_in_words = size >> LogBytesPerWord;
   assert(size_in_words * wordSize == size, "unaligned");

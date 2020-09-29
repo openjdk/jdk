@@ -28,12 +28,15 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @compile ../modules/CompilerUtils.java
  * @run driver CheckForProperDetailStackTrace
  */
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,6 +52,11 @@ import java.util.regex.Pattern;
  * through this test and update it accordingly.
  */
 public class CheckForProperDetailStackTrace {
+    private static final String TEST_SRC = System.getProperty("test.src");
+    private static final String TEST_CLASSES = System.getProperty("test.classes");
+
+    private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
+    private static final Path MODS_DIR = Paths.get(TEST_CLASSES, "mods");
 
     /* The stack trace we look for by default. Note that :: has been replaced by .*
        to make sure it matches even if the symbol is not unmangled.
@@ -83,11 +91,24 @@ public class CheckForProperDetailStackTrace {
     private static String expectedSymbol = "locked_create_entry";
 
     public static void main(String args[]) throws Exception {
+        boolean compiled;
+        // Compile module jdk.test declaration
+        compiled = CompilerUtils.compile(
+            SRC_DIR.resolve("jdk.test"),
+            MODS_DIR.resolve("jdk.test"));
+        if (!compiled) {
+            throw new RuntimeException("Test failed to compile module jdk.test");
+        }
+
+        // If modules in the system image have been archived in CDS, they will not be
+        // created again at run time. Explicitly use an external module to make sure
+        // we have a runtime-defined ModuleEntry
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:NativeMemoryTracking=detail",
             "-XX:+PrintNMTStatistics",
-            "-version");
+            "-p", MODS_DIR.toString(),
+            "-m", "jdk.test/test.Main");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.shouldHaveExitValue(0);

@@ -44,6 +44,11 @@ public class BasicViewportUI extends ViewportUI {
     private static ViewportUI viewportUI;
 
     /**
+     * Constructs a {@code BasicViewportUI}.
+     */
+    public BasicViewportUI() {}
+
+    /**
      * Returns an instance of {@code BasicViewportUI}.
      *
      * @param c a component

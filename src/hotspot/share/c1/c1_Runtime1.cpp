@@ -465,9 +465,7 @@ static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, Meth
     }
     bci = branch_bci + offset;
   }
-  assert(!HAS_PENDING_EXCEPTION, "Should not have any exceptions pending");
   osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
-  assert(!HAS_PENDING_EXCEPTION, "Event handler should not throw any exceptions");
   return osr_nm;
 }
 
@@ -1257,32 +1255,32 @@ JRT_END
 
 #else // DEOPTIMIZE_WHEN_PATCHING
 
-JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_id ))
-  RegisterMap reg_map(thread, false);
+void Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_id) {
+  NOT_PRODUCT(_patch_code_slowcase_cnt++);
 
-  NOT_PRODUCT(_patch_code_slowcase_cnt++;)
   if (TracePatching) {
     tty->print_cr("Deoptimizing because patch is needed");
   }
 
+  RegisterMap reg_map(thread, false);
+
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
+  assert(caller_frame.is_compiled_frame(), "Wrong frame type");
 
-  // It's possible the nmethod was invalidated in the last
-  // safepoint, but if it's still alive then make it not_entrant.
+  // Make sure the nmethod is invalidated, i.e. made not entrant.
   nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
   if (nm != NULL) {
     nm->make_not_entrant();
   }
 
   Deoptimization::deoptimize_frame(thread, caller_frame.id());
-
   // Return to the now deoptimized frame.
-JRT_END
+  postcond(caller_is_deopted());
+}
 
 #endif // DEOPTIMIZE_WHEN_PATCHING
 
-//
 // Entry point for compiled code. We want to patch a nmethod.
 // We don't do a normal VM transition here because we want to
 // know after the patching is complete and any safepoint(s) are taken
@@ -1347,7 +1345,7 @@ int Runtime1::move_appendix_patching(JavaThread* thread) {
 
   return caller_is_deopted();
 }
-//
+
 // Entry point for compiled code. We want to patch a nmethod.
 // We don't do a normal VM transition here because we want to
 // know after the patching is complete and any safepoint(s) are taken
@@ -1356,7 +1354,6 @@ int Runtime1::move_appendix_patching(JavaThread* thread) {
 // completes we can check for deoptimization. This simplifies the
 // assembly code in the cpu directories.
 //
-
 int Runtime1::access_field_patching(JavaThread* thread) {
 //
 // NOTE: we are still in Java
@@ -1374,7 +1371,7 @@ int Runtime1::access_field_patching(JavaThread* thread) {
   // Return true if calling code is deoptimized
 
   return caller_is_deopted();
-JRT_END
+}
 
 
 JRT_LEAF(void, Runtime1::trace_block_entry(jint block_id))
@@ -1416,6 +1413,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
     // that simply means we won't have an MDO to update.
     Method::build_interpreter_method_data(m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
+      // Only metaspace OOM is expected. No Java code executed.
       assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
       CLEAR_PENDING_EXCEPTION;
     }

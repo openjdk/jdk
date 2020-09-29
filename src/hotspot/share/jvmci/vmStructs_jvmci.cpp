@@ -149,12 +149,6 @@
   nonstatic_field(ExceptionTableElement,       handler_pc,                                    u2)                                    \
   nonstatic_field(ExceptionTableElement,       catch_type_index,                              u2)                                    \
                                                                                                                                      \
-  nonstatic_field(JVMFlag,                     _type,                                         const char*)                           \
-  nonstatic_field(JVMFlag,                     _name,                                         const char*)                           \
-  unchecked_nonstatic_field(JVMFlag,           _addr,                                         sizeof(void*))                         \
-  nonstatic_field(JVMFlag,                     _flags,                                        JVMFlag::Flags)                        \
-  static_field(JVMFlag,                        flags,                                         JVMFlag*)                              \
-                                                                                                                                     \
   nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _init_state,                                   u1)                                    \
@@ -169,6 +163,7 @@
   nonstatic_field(JVMCICompileState,           _jvmti_can_access_local_variables,             jbyte)                                 \
   nonstatic_field(JVMCICompileState,           _jvmti_can_post_on_exceptions,                 jbyte)                                 \
   nonstatic_field(JVMCICompileState,           _jvmti_can_pop_frame,                          jbyte)                                 \
+  nonstatic_field(JVMCICompileState,           _compilation_ticks,                            jint)                                  \
                                                                                                                                      \
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
@@ -729,7 +724,7 @@
 #ifdef AARCH64
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
-  static_field(VM_Version, _psr_info.dczid_el0, uint32_t)               \
+  static_field(VM_Version, _zva_length, int)                            \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \

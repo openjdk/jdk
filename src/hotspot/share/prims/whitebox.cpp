@@ -66,6 +66,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/handshake.hpp"
@@ -91,7 +92,7 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
-#include "gc/g1/g1ConcurrentMarkThread.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heterogeneousHeapRegionManager.hpp"
 #endif // INCLUDE_G1GC
@@ -472,7 +473,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    return g1h->concurrent_mark()->cm_thread()->during_cycle();
+    return g1h->concurrent_mark()->cm_thread()->in_progress();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
@@ -480,7 +481,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (!g1h->concurrent_mark()->cm_thread()->during_cycle()) {
+    if (!g1h->concurrent_mark()->cm_thread()->in_progress()) {
       g1h->collect(GCCause::_wb_conc_mark);
       return true;
     }
@@ -761,7 +762,7 @@ WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
 WB_END
 
 WB_ENTRY(jlong, WB_NMTAttemptReserveMemoryAt(JNIEnv* env, jobject o, jlong addr, jlong size))
-  addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((size_t)size, (char*)(uintptr_t)addr);
+  addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size);
   MemTracker::record_virtual_memory_type((address)addr, mtTest);
 
   return addr;
@@ -1053,7 +1054,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
   DirectivesStack::release(directive);
 
   // Compile method and check result
-  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, THREAD);
+  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
   MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != NULL) {
@@ -1205,8 +1206,8 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   }
 WB_END
 
-template <typename T>
-static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, JVMFlag::Error (*TAt)(const JVMFlag*, T*)) {
+template <typename T, int type_enum>
+static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value) {
   if (name == NULL) {
     return false;
   }
@@ -1214,13 +1215,13 @@ static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, J
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
   const JVMFlag* flag = JVMFlag::find_declared_flag(flag_name);
-  JVMFlag::Error result = (*TAt)(flag, value);
+  JVMFlag::Error result = JVMFlagAccess::get<T, type_enum>(flag, value);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == JVMFlag::SUCCESS);
 }
 
-template <typename T>
-static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, JVMFlag::Error (*TAtPut)(JVMFlag* flag, T*, JVMFlag::Flags)) {
+template <typename T, int type_enum>
+static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value) {
   if (name == NULL) {
     return false;
   }
@@ -1228,7 +1229,7 @@ static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, J
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
   JVMFlag* flag = JVMFlag::find_flag(flag_name);
-  JVMFlag::Error result = (*TAtPut)(flag, value, JVMFlag::INTERNAL);
+  JVMFlag::Error result = JVMFlagAccess::set<T, type_enum>(flag, value, JVMFlag::INTERNAL);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == JVMFlag::SUCCESS);
 }
@@ -1284,7 +1285,7 @@ WB_END
 
 WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
   bool result;
-  if (GetVMFlag <bool> (thread, env, name, &result, &JVMFlag::boolAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(bool)> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return booleanBox(thread, env, result);
   }
@@ -1293,7 +1294,7 @@ WB_END
 
 WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
   int result;
-  if (GetVMFlag <int> (thread, env, name, &result, &JVMFlag::intAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(int)> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);
   }
@@ -1302,7 +1303,7 @@ WB_END
 
 WB_ENTRY(jobject, WB_GetUintVMFlag(JNIEnv* env, jobject o, jstring name))
   uint result;
-  if (GetVMFlag <uint> (thread, env, name, &result, &JVMFlag::uintAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(uint)> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);
   }
@@ -1311,7 +1312,7 @@ WB_END
 
 WB_ENTRY(jobject, WB_GetIntxVMFlag(JNIEnv* env, jobject o, jstring name))
   intx result;
-  if (GetVMFlag <intx> (thread, env, name, &result, &JVMFlag::intxAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(intx)> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);
   }
@@ -1320,7 +1321,7 @@ WB_END
 
 WB_ENTRY(jobject, WB_GetUintxVMFlag(JNIEnv* env, jobject o, jstring name))
   uintx result;
-  if (GetVMFlag <uintx> (thread, env, name, &result, &JVMFlag::uintxAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(uintx)> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);
   }
@@ -1329,7 +1330,7 @@ WB_END
 
 WB_ENTRY(jobject, WB_GetUint64VMFlag(JNIEnv* env, jobject o, jstring name))
   uint64_t result;
-  if (GetVMFlag <uint64_t> (thread, env, name, &result, &JVMFlag::uint64_tAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(uint64_t)> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);
   }
@@ -1338,7 +1339,7 @@ WB_END
 
 WB_ENTRY(jobject, WB_GetSizeTVMFlag(JNIEnv* env, jobject o, jstring name))
   size_t result;
-  if (GetVMFlag <size_t> (thread, env, name, &result, &JVMFlag::size_tAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(size_t)> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);
   }
@@ -1347,7 +1348,7 @@ WB_END
 
 WB_ENTRY(jobject, WB_GetDoubleVMFlag(JNIEnv* env, jobject o, jstring name))
   double result;
-  if (GetVMFlag <double> (thread, env, name, &result, &JVMFlag::doubleAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(double)> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return doubleBox(thread, env, result);
   }
@@ -1356,7 +1357,7 @@ WB_END
 
 WB_ENTRY(jstring, WB_GetStringVMFlag(JNIEnv* env, jobject o, jstring name))
   ccstr ccstrResult;
-  if (GetVMFlag <ccstr> (thread, env, name, &ccstrResult, &JVMFlag::ccstrAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(ccstr)> (thread, env, name, &ccstrResult)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     jstring result = env->NewStringUTF(ccstrResult);
     CHECK_JNI_EXCEPTION_(env, NULL);
@@ -1367,42 +1368,42 @@ WB_END
 
 WB_ENTRY(void, WB_SetBooleanVMFlag(JNIEnv* env, jobject o, jstring name, jboolean value))
   bool result = value == JNI_TRUE ? true : false;
-  SetVMFlag <bool> (thread, env, name, &result, &JVMFlag::boolAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(bool)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetIntVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   int result = value;
-  SetVMFlag <int> (thread, env, name, &result, &JVMFlag::intAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(int)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetUintVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   uint result = value;
-  SetVMFlag <uint> (thread, env, name, &result, &JVMFlag::uintAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(uint)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetIntxVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   intx result = value;
-  SetVMFlag <intx> (thread, env, name, &result, &JVMFlag::intxAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(intx)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetUintxVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   uintx result = value;
-  SetVMFlag <uintx> (thread, env, name, &result, &JVMFlag::uintxAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(uintx)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetUint64VMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   uint64_t result = value;
-  SetVMFlag <uint64_t> (thread, env, name, &result, &JVMFlag::uint64_tAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(uint64_t)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetSizeTVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   size_t result = value;
-  SetVMFlag <size_t> (thread, env, name, &result, &JVMFlag::size_tAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(size_t)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetDoubleVMFlag(JNIEnv* env, jobject o, jstring name, jdouble value))
   double result = value;
-  SetVMFlag <double> (thread, env, name, &result, &JVMFlag::doubleAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(double)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring value))
@@ -1419,7 +1420,7 @@ WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring 
   bool needFree;
   {
     ThreadInVMfromNative ttvfn(thread); // back to VM
-    needFree = SetVMFlag <ccstr> (thread, env, name, &ccstrResult, &JVMFlag::ccstrAtPut);
+    needFree = SetVMFlag <JVM_FLAG_TYPE(ccstr)> (thread, env, name, &ccstrResult);
   }
   if (value != NULL) {
     env->ReleaseStringUTFChars(value, ccstrValue);
@@ -1472,7 +1473,7 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
   static char c;
   static volatile char* p;
 
-  p = os::reserve_memory(os::vm_allocation_granularity(), NULL, 0);
+  p = os::reserve_memory(os::vm_allocation_granularity());
   if (p == NULL) {
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "Failed to reserve memory");
   }
@@ -1997,8 +1998,7 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
     jint _num_threads_completed;
 
     void do_thread(Thread* th) {
-      assert(th->is_Java_thread(), "sanity");
-      JavaThread* jt = (JavaThread*)th;
+      JavaThread* jt = th->as_Java_thread();
       ResourceMark rm;
 
       jt->print_on(tty);
@@ -2024,6 +2024,32 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
     }
   }
   return tsc.num_threads_completed();
+WB_END
+
+WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle))
+  class TraceSelfClosure : public AsyncHandshakeClosure {
+    JavaThread* _self;
+    void do_thread(Thread* th) {
+      assert(th->is_Java_thread(), "sanity");
+      // AsynchHandshake handshakes are only executed by target.
+      assert(_self == th, "Must be");
+      assert(Thread::current() == th, "Must be");
+      JavaThread* jt = th->as_Java_thread();
+      ResourceMark rm;
+      jt->print_on(tty);
+      jt->print_stack_on(tty);
+      tty->cr();
+    }
+
+  public:
+    TraceSelfClosure(JavaThread* self_target) : AsyncHandshakeClosure("WB_TraceSelf"), _self(self_target) {}
+  };
+  oop thread_oop = JNIHandles::resolve(thread_handle);
+  if (thread_oop != NULL) {
+    JavaThread* target = java_lang_Thread::thread(thread_oop);
+    TraceSelfClosure* tsc = new TraceSelfClosure(target);
+    Handshake::execute(tsc, target);
+  }
 WB_END
 
 //Some convenience methods to deal with objects from java
@@ -2487,6 +2513,7 @@ static JNINativeMethod methods[] = {
 
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
+  {CC"asyncHandshakeWalkStack", CC"(Ljava/lang/Thread;)V", (void*)&WB_AsyncHandshakeWalkStack },
   {CC"checkThreadObjOfTerminatingThread", CC"(Ljava/lang/Thread;)V", (void*)&WB_CheckThreadObjOfTerminatingThread },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
                                                       (void*)&WB_AddCompilerDirective },

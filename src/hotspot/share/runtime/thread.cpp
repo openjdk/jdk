@@ -68,8 +68,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -256,8 +255,6 @@ Thread::Thread() {
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  _vm_operation_started_count = 0;
-  _vm_operation_completed_count = 0;
   _current_pending_monitor = NULL;
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
@@ -355,14 +352,18 @@ void Thread::record_stack_base_and_size() {
 
   // Set stack limits after thread is initialized.
   if (is_Java_thread()) {
-    ((JavaThread*) this)->set_stack_overflow_limit();
-    ((JavaThread*) this)->set_reserved_stack_activation(stack_base());
+    as_Java_thread()->set_stack_overflow_limit();
+    as_Java_thread()->set_reserved_stack_activation(stack_base());
   }
 }
 
 #if INCLUDE_NMT
 void Thread::register_thread_stack_with_NMT() {
   MemTracker::record_thread_stack(stack_end(), stack_size());
+}
+
+void Thread::unregister_thread_stack_with_NMT() {
+  MemTracker::release_thread_stack(stack_end(), stack_size());
 }
 #endif // INCLUDE_NMT
 
@@ -429,19 +430,6 @@ Thread::~Thread() {
     barrier_set->on_thread_destroy(this);
   }
 
-  // stack_base can be NULL if the thread is never started or exited before
-  // record_stack_base_and_size called. Although, we would like to ensure
-  // that all started threads do call record_stack_base_and_size(), there is
-  // not proper way to enforce that.
-#if INCLUDE_NMT
-  if (_stack_base != NULL) {
-    MemTracker::release_thread_stack(stack_end(), stack_size());
-#ifdef ASSERT
-    set_stack_base(NULL);
-#endif
-  }
-#endif // INCLUDE_NMT
-
   // deallocate data structures
   delete resource_area();
   // since the handle marks are using the handle area, we have to deallocated the root
@@ -477,15 +465,14 @@ Thread::~Thread() {
 }
 
 #ifdef ASSERT
-// A JavaThread is considered "dangling" if it is not the current
-// thread, has been added the Threads list, the system is not at a
-// safepoint and the Thread is not "protected".
-//
+// A JavaThread is considered dangling if it not handshake-safe with respect to
+// the current thread, it is not on a ThreadsList, or not at safepoint.
 void Thread::check_for_dangling_thread_pointer(Thread *thread) {
-  assert(!thread->is_Java_thread() || Thread::current() == thread ||
-         !((JavaThread *) thread)->on_thread_list() ||
+  assert(!thread->is_Java_thread() ||
+         thread->as_Java_thread()->is_handshake_safe_for(Thread::current()) ||
+         !thread->as_Java_thread()->on_thread_list() ||
          SafepointSynchronize::is_at_safepoint() ||
-         ThreadsSMRSupport::is_a_protected_JavaThread_with_lock((JavaThread *) thread),
+         ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(thread->as_Java_thread()),
          "possibility of dangling Thread pointer");
 }
 #endif
@@ -514,7 +501,7 @@ void Thread::start(Thread* thread) {
       // Can not set it after the thread started because we do not know the
       // exact thread state at that time. It could be in MONITOR_WAIT or
       // in SLEEPING or some other state.
-      java_lang_Thread::set_thread_status(((JavaThread*)thread)->threadObj(),
+      java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
                                           java_lang_Thread::RUNNABLE);
     }
     os::start_thread(thread);
@@ -527,7 +514,7 @@ public:
   InstallAsyncExceptionClosure(Handle throwable) : HandshakeClosure("InstallAsyncException"), _throwable(throwable) {}
 
   void do_thread(Thread* thr) {
-    JavaThread* target = (JavaThread*)thr;
+    JavaThread* target = thr->as_Java_thread();
     // Note that this now allows multiple ThreadDeath exceptions to be
     // thrown at a thread.
     // The target thread has run and has not exited yet.
@@ -847,7 +834,7 @@ bool JavaThread::wait_for_ext_suspend_completion(int retries, int delay,
 //
 bool
 JavaThread::is_thread_fully_suspended(bool wait_for_suspend, uint32_t *bits) {
-  if (this != JavaThread::current()) {
+  if (this != Thread::current()) {
     // "other" threads require special handling.
     if (wait_for_suspend) {
       // We are allowed to wait for the external suspend to complete
@@ -889,10 +876,6 @@ void Thread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
-
-  // We scan thread local monitor lists here, and the remaining global
-  // monitors in ObjectSynchronizer::oops_do().
-  ObjectSynchronizer::thread_local_used_oops_do(this, f);
 }
 
 void Thread::metadata_handles_do(void f(Metadata*)) {
@@ -1005,7 +988,7 @@ void Thread::check_for_valid_safepoint_state() {
   // are held.
   check_possible_safepoint();
 
-  if (((JavaThread*)this)->thread_state() != _thread_in_vm) {
+  if (this->as_Java_thread()->thread_state() != _thread_in_vm) {
     fatal("LEAF method calling lock?");
   }
 
@@ -1030,7 +1013,7 @@ bool Thread::set_as_starting_thread() {
          "_starting_thread=" INTPTR_FORMAT, p2i(_starting_thread));
   // NOTE: this must be called inside the main thread.
   DEBUG_ONLY(_starting_thread = this;)
-  return os::create_main_thread((JavaThread*)this);
+  return os::create_main_thread(this->as_Java_thread());
 }
 
 static void initialize_class(Symbol* class_name, TRAPS) {
@@ -1345,6 +1328,7 @@ void NonJavaThread::pre_run() {
 void NonJavaThread::post_run() {
   JFR_ONLY(Jfr::on_thread_exit(this);)
   remove_from_the_list();
+  unregister_thread_stack_with_NMT();
   // Ensure thread-local-storage is cleared before termination.
   Thread::clear_thread_current();
 }
@@ -1728,7 +1712,6 @@ void JavaThread::initialize() {
   _SleepEvent = ParkEvent::Allocate(this);
   // Setup safepoint state info for this thread
   ThreadSafepointState::create(this);
-  _handshake.set_handshakee(this);
 
   debug_only(_java_call_counter = 0);
 
@@ -1746,7 +1729,7 @@ void JavaThread::initialize() {
 }
 
 JavaThread::JavaThread(bool is_attaching_via_jni) :
-                       Thread() {
+                       Thread(), _handshake(this) {
   initialize();
   if (is_attaching_via_jni) {
     _jni_attach_state = _attaching_via_jni;
@@ -1820,13 +1803,6 @@ bool JavaThread::reguard_stack(address cur_sp) {
     return true; // Stack already guarded or guard pages not needed.
   }
 
-  if (register_stack_overflow()) {
-    // For those architectures which have separate register and
-    // memory stacks, we must check the register stack to see if
-    // it has overflowed.
-    return false;
-  }
-
   // Java code never executes within the yellow zone: the latter is only
   // there to provoke an exception during stack banging.  If java code
   // is executing there, either StackShadowPages should be larger, or
@@ -1868,7 +1844,7 @@ static void compiler_thread_entry(JavaThread* thread, TRAPS);
 static void sweeper_thread_entry(JavaThread* thread, TRAPS);
 
 JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
-                       Thread() {
+                       Thread(), _handshake(this) {
   initialize();
   _jni_attach_state = _not_attaching_via_jni;
   set_entry_point(entry_point);
@@ -1955,13 +1931,6 @@ void JavaThread::run() {
   // initialize thread-local alloc buffer related fields
   this->initialize_tlab();
 
-  // Used to test validity of stack trace backs.
-  // This can't be moved into pre_run() else we invalidate
-  // the requirement that thread_main_inner is lower on
-  // the stack. Consequently all the initialization logic
-  // stays here in run() rather than pre_run().
-  this->record_base_of_stack_pointer();
-
   this->create_stack_guard_pages();
 
   this->cache_global_variables();
@@ -2018,6 +1987,7 @@ void JavaThread::thread_main_inner() {
 // Shared teardown for all JavaThreads
 void JavaThread::post_run() {
   this->exit(false);
+  this->unregister_thread_stack_with_NMT();
   // Defer deletion to here to ensure 'this' is still referenceable in call_run
   // for any shared tear-down.
   this->smr_delete();
@@ -2217,11 +2187,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     thread_name = os::strdup(get_thread_name());
   }
 
-  // We must flush any deferred card marks and other various GC barrier
-  // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
-  // before removing a thread from the list of active threads.
-  BarrierSet::barrier_set()->on_thread_detach(this);
-
   log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
     exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
     os::current_thread_id());
@@ -2269,8 +2234,6 @@ void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
     tlab().retire();
   }
 
-  BarrierSet::barrier_set()->on_thread_detach(this);
-
   Threads::remove(this, is_daemon);
   this->smr_delete();
 }
@@ -2278,12 +2241,11 @@ void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
 JavaThread* JavaThread::active() {
   Thread* thread = Thread::current();
   if (thread->is_Java_thread()) {
-    return (JavaThread*) thread;
+    return thread->as_Java_thread();
   } else {
     assert(thread->is_VM_thread(), "this must be a vm thread");
     VM_Operation* op = ((VMThread*) thread)->vm_operation();
-    JavaThread *ret=op == NULL ? NULL : (JavaThread *)op->calling_thread();
-    assert(ret->is_Java_thread(), "must be a Java thread");
+    JavaThread *ret = op == NULL ? NULL : op->calling_thread()->as_Java_thread();
     return ret;
   }
 }
@@ -2328,8 +2290,6 @@ void JavaThread::remove_monitor_chunk(MonitorChunk* chunk) {
 // _thread_in_native_trans state (such as from
 // check_special_condition_for_native_trans()).
 void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
-  // May be we are at method entry and requires to save do not unlock flag.
-  UnlockFlagSaver fs(this);
   if (has_last_Java_frame() && has_async_condition()) {
     // If we are at a polling page safepoint (not a poll return)
     // then we must defer async exception because live registers
@@ -2392,21 +2352,26 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
 
   if (check_unsafe_error &&
       condition == _async_unsafe_access_error && !has_pending_exception()) {
+    // We may be at method entry which requires we save the do-not-unlock flag.
+    UnlockFlagSaver fs(this);
     condition = _no_async_condition;  // done
     switch (thread_state()) {
     case _thread_in_vm: {
       JavaThread* THREAD = this;
-      THROW_MSG(vmSymbols::java_lang_InternalError(), "a fault occurred in an unsafe memory access operation");
+      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
+      return;
     }
     case _thread_in_native: {
       ThreadInVMfromNative tiv(this);
       JavaThread* THREAD = this;
-      THROW_MSG(vmSymbols::java_lang_InternalError(), "a fault occurred in an unsafe memory access operation");
+      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
+      return;
     }
     case _thread_in_Java: {
       ThreadInVMfromJava tiv(this);
       JavaThread* THREAD = this;
-      THROW_MSG(vmSymbols::java_lang_InternalError(), "a fault occurred in a recent unsafe memory access operation in compiled Java code");
+      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in a recent unsafe memory access operation in compiled Java code");
+      return;
     }
     default:
       ShouldNotReachHere();
@@ -2437,7 +2402,8 @@ void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
 
 void JavaThread::send_thread_stop(oop java_throwable)  {
   ResourceMark rm;
-  assert(Thread::current()->is_VM_thread() || Thread::current() == this, "should be in the vm thread");
+  assert(is_handshake_safe_for(Thread::current()),
+         "should be self or handshakee");
 
   // Do not throw asynchronous exceptions against the compiler thread
   // (the compiler thread should not be a Java thread -- fix in 1.4.2)
@@ -2554,8 +2520,7 @@ int JavaThread::java_suspend_self() {
     return ret;
   }
 
-  assert(_anchor.walkable() ||
-         (is_Java_thread() && !((JavaThread*)this)->has_last_Java_frame()),
+  assert(_anchor.walkable() || !has_last_Java_frame(),
          "must have walkable stack");
 
   MonitorLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
@@ -2595,20 +2560,22 @@ int JavaThread::java_suspend_self() {
 // Helper routine to set up the correct thread state before calling java_suspend_self.
 // This is called when regular thread-state transition helpers can't be used because
 // we can be in various states, in particular _thread_in_native_trans.
-// Because this thread is external suspended the safepoint code will count it as at
-// a safepoint, regardless of what its actual current thread-state is. But
-// is_ext_suspend_completed() may be waiting to see a thread transition from
-// _thread_in_native_trans to _thread_blocked. So we set the thread state directly
-// to _thread_blocked. The problem with setting thread state directly is that a
+// We have to set the thread state directly to _thread_blocked so that it will
+// be seen to be safepoint/handshake safe whilst suspended. This is also
+// necessary to allow a thread in is_ext_suspend_completed, that observed the
+// _thread_in_native_trans state, to proceed.
+// The problem with setting thread state directly is that a
 // safepoint could happen just after java_suspend_self() returns after being resumed,
 // and the VM thread will see the _thread_blocked state. So we must check for a safepoint
 // after restoring the state to make sure we won't leave while a safepoint is in progress.
 // However, not all initial-states are allowed when performing a safepoint check, as we
-// should never be blocking at a safepoint whilst in those states. Of these 'bad' states
+// should never be blocking at a safepoint whilst in those states(*). Of these 'bad' states
 // only _thread_in_native is possible when executing this code (based on our two callers).
 // A thread that is _thread_in_native is already safepoint-safe and so it doesn't matter
 // whether the VMThread sees the _thread_blocked state, or the _thread_in_native state,
 // and so we don't need the explicit safepoint check.
+// (*) See switch statement in SafepointSynchronize::block() for thread states that are
+// allowed when performing a safepoint check.
 
 void JavaThread::java_suspend_self_with_safepoint_check() {
   assert(this == Thread::current(), "invariant");
@@ -2812,7 +2779,6 @@ void JavaThread::enable_stack_reserved_zone() {
   } else {
     warning("Attempt to guard stack reserved zone failed.");
   }
-  enable_register_stack_guard();
 }
 
 void JavaThread::disable_stack_reserved_zone() {
@@ -2830,7 +2796,6 @@ void JavaThread::disable_stack_reserved_zone() {
   } else {
     warning("Attempt to unguard stack reserved zone failed.");
   }
-  disable_register_stack_guard();
 }
 
 void JavaThread::enable_stack_yellow_reserved_zone() {
@@ -2849,7 +2814,6 @@ void JavaThread::enable_stack_yellow_reserved_zone() {
   } else {
     warning("Attempt to guard stack yellow zone failed.");
   }
-  enable_register_stack_guard();
 }
 
 void JavaThread::disable_stack_yellow_reserved_zone() {
@@ -2868,7 +2832,6 @@ void JavaThread::disable_stack_yellow_reserved_zone() {
   } else {
     warning("Attempt to unguard stack yellow zone failed.");
   }
-  disable_register_stack_guard();
 }
 
 void JavaThread::enable_stack_red_zone() {
@@ -3202,10 +3165,9 @@ const char* JavaThread::get_thread_name() const {
 #ifdef ASSERT
   // early safepoints can hit while current thread does not yet have TLS
   if (!SafepointSynchronize::is_at_safepoint()) {
-    Thread *cur = Thread::current();
-    if (!(cur->is_Java_thread() && cur == this)) {
-      // Current JavaThreads are allowed to get their own name without
-      // the Threads_lock.
+    // Current JavaThreads are allowed to get their own name without
+    // the Threads_lock.
+    if (Thread::current() != this) {
       assert_locked_or_safepoint_or_handshake(Threads_lock, this);
     }
   }
@@ -3839,12 +3801,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (ergo_result != JNI_OK) return ergo_result;
 
   // Final check of all ranges after ergonomics which may change values.
-  if (!JVMFlagRangeList::check_ranges()) {
+  if (!JVMFlagLimit::check_all_ranges()) {
     return JNI_EINVAL;
   }
 
   // Final check of all 'AfterErgo' constraints after ergonomics which may change values.
-  bool constraint_result = JVMFlagConstraintList::check_constraints(JVMFlagConstraint::AfterErgo);
+  bool constraint_result = JVMFlagLimit::check_all_constraints(JVMFlagConstraintPhase::AfterErgo);
   if (!constraint_result) {
     return JNI_EINVAL;
   }
@@ -4597,6 +4559,13 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
 
   // Reclaim the ObjectMonitors from the om_in_use_list and om_free_list of the moribund thread.
   ObjectSynchronizer::om_flush(p);
+
+  // We must flush any deferred card marks and other various GC barrier
+  // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
+  // before removing a thread from the list of active threads.
+  // This must be done after ObjectSynchronizer::om_flush(), as GC barriers
+  // are used in om_flush().
+  BarrierSet::barrier_set()->on_thread_detach(p);
 
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice

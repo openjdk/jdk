@@ -149,6 +149,6 @@ const size_t      ZMarkProactiveFlushMax        = 10;
 const size_t      ZMarkTerminateFlushMax        = 3;
 
 // Try complete mark timeout
-const uint64_t    ZMarkCompleteTimeout          = 1; // ms
+const uint64_t    ZMarkCompleteTimeout          = 1000; // us
 
 #endif // SHARE_GC_Z_ZGLOBALS_HPP

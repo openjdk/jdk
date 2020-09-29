@@ -123,7 +123,7 @@ JVM_GetPermittedSubclasses
 JVM_GetPrimitiveArrayElement
 JVM_GetProperties
 JVM_GetProtectionDomain
-JVM_GetRandomSeedForCDSDump
+JVM_GetRandomSeedForDumping
 JVM_GetRecordComponents
 JVM_GetSimpleBinaryName
 JVM_GetStackAccessControlContext
@@ -143,8 +143,8 @@ JVM_InternString
 JVM_Interrupt
 JVM_InvokeMethod
 JVM_IsArrayClass
-JVM_IsCDSDumpingEnabled
-JVM_IsCDSSharingEnabled
+JVM_IsDynamicDumpingEnabled
+JVM_IsSharingEnabled
 JVM_IsConstructorIx
 JVM_IsHiddenClass
 JVM_IsInterface
@@ -198,5 +198,6 @@ JVM_AddModuleExports
 JVM_AddModuleExportsToAll
 JVM_AddModuleExportsToAllUnnamed
 JVM_AddReadsModule
+JVM_DefineArchivedModules
 JVM_DefineModule
 JVM_SetBootLoaderUnnamedModule

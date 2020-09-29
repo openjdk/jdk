@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -535,6 +535,11 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
          * JDK 1.3 serialVersionUID
          */
         private static final long serialVersionUID = -1122642964303476L;
+
+        /**
+         * Constructs an {@code AccessibleAWTCheckboxMenuItem}.
+         */
+        protected AccessibleAWTCheckboxMenuItem() {}
 
         /**
          * Get the AccessibleAction associated with this object.  In the

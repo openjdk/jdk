@@ -36,6 +36,8 @@
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
 
+template <class T> class Array;
+class MetaspaceClosure;
 
 // A PackageEntry basically represents a Java package.  It contains:
 //   - Symbol* containing the package's name.
@@ -217,6 +219,14 @@ public:
   void print(outputStream* st = tty);
   void verify();
 
+#if INCLUDE_CDS_JAVA_HEAP
+  void iterate_symbols(MetaspaceClosure* closure);
+  PackageEntry* allocate_archived_entry() const;
+  void init_as_archived_entry();
+  static PackageEntry* get_archived_entry(PackageEntry* orig_entry);
+  void load_from_archive();
+#endif
+
   static int max_index_for_defined_in_class_path() {
     return sizeof(int) * BitsPerByte;
   }
@@ -295,6 +305,13 @@ public:
 
   void print(outputStream* st = tty);
   void verify();
+
+#if INCLUDE_CDS_JAVA_HEAP
+  void iterate_symbols(MetaspaceClosure* closure);
+  Array<PackageEntry*>* allocate_archived_entries();
+  void init_archived_entries(Array<PackageEntry*>* archived_packages);
+  void load_archived_entries(Array<PackageEntry*>* archived_packages);
+#endif
 };
 
 #endif // SHARE_CLASSFILE_PACKAGEENTRY_HPP

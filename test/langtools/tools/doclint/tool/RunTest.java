@@ -25,14 +25,10 @@
  * @test
  * @bug 8006263
  * @summary Supplementary test cases needed for doclint
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  *          jdk.compiler/com.sun.tools.javac.api
  */
 
-import com.sun.source.util.JavacTask;
-import com.sun.tools.doclint.DocLint;
-import com.sun.tools.doclint.DocLint.BadArgs;
-import com.sun.tools.javac.api.JavacTool;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -45,6 +41,12 @@ import java.util.List;
 import java.util.Objects;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
+
+import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.api.JavacTool;
+
+import jdk.javadoc.internal.doclint.DocLint;
+import jdk.javadoc.internal.doclint.DocLint.BadArgs;
 
 public class RunTest {
     static class SimpleSecurityManager extends SecurityManager {

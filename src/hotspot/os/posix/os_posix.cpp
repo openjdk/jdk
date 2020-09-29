@@ -26,6 +26,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "os_posix.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -325,7 +326,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
       MemTracker::record_virtual_memory_reserve((address)extra_base, extra_size, CALLER_PC);
     }
   } else {
-    extra_base = os::reserve_memory(extra_size, NULL, alignment);
+    extra_base = os::reserve_memory(extra_size, alignment);
   }
 
   if (extra_base == NULL) {
@@ -2073,9 +2074,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   // since we are doing a lock-free update to _counter.
   if (Atomic::xchg(&_counter, 0) > 0) return;
 
-  Thread* thread = Thread::current();
-  assert(thread->is_Java_thread(), "Must be JavaThread");
-  JavaThread *jt = (JavaThread *)thread;
+  JavaThread *jt = JavaThread::current();
 
   // Optional optimization -- avoid state transitions if there's
   // an interrupt pending.
@@ -2120,7 +2119,7 @@ void Parker::park(bool isAbsolute, jlong time) {
     return;
   }
 
-  OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
+  OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
   jt->set_suspend_equivalent();
   // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
 

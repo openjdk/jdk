@@ -271,10 +271,6 @@ class CompileBroker: AllStatic {
   static void shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread);
 
 public:
-
-  static DirectivesStack* dirstack();
-  static void set_dirstack(DirectivesStack* stack);
-
   enum {
     // The entry bci used for non-OSR compilations.
     standard_entry_bci = InvocationEntryBci
@@ -289,7 +285,6 @@ public:
   static bool compilation_is_complete(const methodHandle& method, int osr_bci, int comp_level);
   static bool compilation_is_in_queue(const methodHandle& method);
   static void print_compile_queues(outputStream* st);
-  static void print_directives(outputStream* st);
   static int queue_size(int comp_level) {
     CompileQueue *q = compile_queue(comp_level);
     return q != NULL ? q->size() : 0;
@@ -303,7 +298,7 @@ public:
                                  const methodHandle& hot_method,
                                  int hot_count,
                                  CompileTask::CompileReason compile_reason,
-                                 Thread* thread);
+                                 TRAPS);
 
   static nmethod* compile_method(const methodHandle& method,
                                    int osr_bci,
@@ -312,7 +307,7 @@ public:
                                    int hot_count,
                                    CompileTask::CompileReason compile_reason,
                                    DirectiveSet* directive,
-                                   Thread* thread);
+                                   TRAPS);
 
   // Acquire any needed locks and assign a compile id
   static uint assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci);

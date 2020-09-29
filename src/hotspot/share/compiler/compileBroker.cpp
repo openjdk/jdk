@@ -50,6 +50,7 @@
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -249,11 +250,6 @@ bool compileBroker_init() {
 CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
-#if INCLUDE_JVMCI
-  if (task->is_blocking() && CompileBroker::compiler(task->comp_level())->is_jvmci()) {
-    task->set_jvmci_compiler_thread(thread);
-  }
-#endif
   CompileLog*     log  = thread->log();
   if (log != NULL && !task->is_unloaded())  task->log_task_start(log);
 }
@@ -277,7 +273,7 @@ CompileTaskWrapper::~CompileTaskWrapper() {
           // The waiting thread timed out and thus did not free the task.
           free_task = true;
         }
-        task->set_jvmci_compiler_thread(NULL);
+        task->set_blocking_jvmci_compile_state(NULL);
       }
 #endif
       if (!free_task) {
@@ -606,19 +602,16 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
   ResourceMark rm;
   static bool first_registration = true;
   if (compiler_type == compiler_jvmci) {
-    // register serializer, phases will be added later lazily.
-    GrowableArray<const char*>* jvmci_phase_names = new GrowableArray<const char*>(1);
-    jvmci_phase_names->append("NOT_A_PHASE_NAME");
-    CompilerEvent::PhaseEvent::register_phases(jvmci_phase_names);
+    CompilerEvent::PhaseEvent::get_phase_id("NOT_A_PHASE_NAME", false, false, false);
     first_registration = false;
 #ifdef COMPILER2
   } else if (compiler_type == compiler_c2) {
     assert(first_registration, "invariant"); // c2 must be registered first.
     GrowableArray<const char*>* c2_phase_names = new GrowableArray<const char*>(PHASE_NUM_TYPES);
     for (int i = 0; i < PHASE_NUM_TYPES; i++) {
-      c2_phase_names->append(CompilerPhaseTypeHelper::to_string((CompilerPhaseType)i));
+      const char* phase_name = CompilerPhaseTypeHelper::to_string((CompilerPhaseType) i);
+      CompilerEvent::PhaseEvent::get_phase_id(phase_name, false, false, false);
     }
-    CompilerEvent::PhaseEvent::register_phases(c2_phase_names);
     first_registration = false;
 #endif // COMPILER2
   }
@@ -1183,7 +1176,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
 
       if (!UseJVMCINativeLibrary) {
         // Don't allow blocking compiles if inside a class initializer or while performing class loading
-        vframeStream vfst((JavaThread*) thread);
+        vframeStream vfst(thread->as_Java_thread());
         for (; !vfst.at_end(); vfst.next()) {
           if (vfst.method()->is_static_initializer() ||
               (vfst.method()->method_holder()->is_subclass_of(SystemDictionary::ClassLoader_klass()) &&
@@ -1263,7 +1256,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        int comp_level,
                                        const methodHandle& hot_method, int hot_count,
                                        CompileTask::CompileReason compile_reason,
-                                       Thread* THREAD) {
+                                       TRAPS) {
   // Do nothing if compilebroker is not initalized or compiles are submitted on level none
   if (!_initialized || comp_level == CompLevel_none) {
     return NULL;
@@ -1273,6 +1266,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(comp != NULL, "Ensure we have a compiler");
 
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
+  // CompileBroker::compile_method can trap and can have pending aysnc exception.
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
   DirectivesStack::release(directive);
   return nm;
@@ -1283,7 +1277,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                          const methodHandle& hot_method, int hot_count,
                                          CompileTask::CompileReason compile_reason,
                                          DirectiveSet* directive,
-                                         Thread* THREAD) {
+                                         TRAPS) {
 
   // make sure arguments make sense
   assert(method->method_holder()->is_instance_klass(), "not an instance method");
@@ -1336,10 +1330,10 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
   if (comp->is_c2()) {
-    method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NULL);
+    method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NONASYNC_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
-    Method::load_signature_classes(method, CHECK_AND_CLEAR_NULL);
+    Method::load_signature_classes(method, CHECK_AND_CLEAR_NONASYNC_NULL);
   }
 
   // If the method is native, do the lookup in the thread requesting
@@ -1604,22 +1598,27 @@ bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask*
   assert(UseJVMCICompiler, "sanity");
   MonitorLocker ml(thread, task->lock());
   int progress_wait_attempts = 0;
-  int methods_compiled = jvmci->methods_compiled();
+  jint thread_jvmci_compilation_ticks = 0;
+  jint global_jvmci_compilation_ticks = jvmci->global_compilation_ticks();
   while (!task->is_complete() && !is_compilation_disabled_forever() &&
          ml.wait(JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE)) {
-    CompilerThread* jvmci_compiler_thread = task->jvmci_compiler_thread();
+    JVMCICompileState* jvmci_compile_state = task->blocking_jvmci_compile_state();
 
     bool progress;
-    if (jvmci_compiler_thread != NULL) {
-      // If the JVMCI compiler thread is not blocked or suspended, we deem it to be making progress.
-      progress = jvmci_compiler_thread->thread_state() != _thread_blocked &&
-        !jvmci_compiler_thread->is_external_suspend();
+    if (jvmci_compile_state != NULL) {
+      jint ticks = jvmci_compile_state->compilation_ticks();
+      progress = (ticks - thread_jvmci_compilation_ticks) != 0;
+      JVMCI_event_1("waiting on compilation %d [ticks=%d]", task->compile_id(), ticks);
+      thread_jvmci_compilation_ticks = ticks;
     } else {
       // Still waiting on JVMCI compiler queue. This thread may be holding a lock
-      // that all JVMCI compiler threads are blocked on. We use the counter for
-      // successful JVMCI compilations to determine whether JVMCI compilation
+      // that all JVMCI compiler threads are blocked on. We use the global JVMCI
+      // compilation ticks to determine whether JVMCI compilation
       // is still making progress through the JVMCI compiler queue.
-      progress = jvmci->methods_compiled() != methods_compiled;
+      jint ticks = jvmci->global_compilation_ticks();
+      progress = (ticks - global_jvmci_compilation_ticks) != 0;
+      JVMCI_event_1("waiting on compilation %d to be queued [ticks=%d]", task->compile_id(), ticks);
+      global_jvmci_compilation_ticks = ticks;
     }
 
     if (!progress) {
@@ -1627,13 +1626,11 @@ bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask*
         if (PrintCompilation) {
           task->print(tty, "wait for blocking compilation timed out");
         }
+        JVMCI_event_1("waiting on compilation %d timed out", task->compile_id());
         break;
       }
     } else {
       progress_wait_attempts = 0;
-      if (jvmci_compiler_thread == NULL) {
-        methods_compiled = jvmci->methods_compiled();
-      }
     }
   }
   task->clear_waiter();
@@ -2152,7 +2149,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     TraceTime t1("compilation", &time);
     EventCompilation event;
-    JVMCICompileState compile_state(task);
+    JVMCICompileState compile_state(task, jvmci);
     JVMCIRuntime *runtime = NULL;
 
     if (JVMCI::in_shutdown()) {
@@ -2767,42 +2764,59 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
   }
 
   // We hold the CodeHeapStateAnalytics_lock all the time, from here until we leave this function.
-  // That prevents another thread from destroying our view on the CodeHeap.
+  // That prevents other threads from destroying (making inconsistent) our view on the CodeHeap.
   // When we request individual parts of the analysis via the jcmd interface, it is possible
   // that in between another thread (another jcmd user or the vm running into CodeCache OOM)
-  // updated the aggregated data. That's a tolerable tradeoff because we can't hold a lock
-  // across user interaction.
-  // Acquire this lock before acquiring the CodeCache_lock.
-  // CodeHeapStateAnalytics_lock could be held by a concurrent thread for a long time,
-  // leading to an unnecessarily long hold time of the CodeCache_lock.
+  // updated the aggregated data. We will then see a modified, but again consistent, view
+  // on the CodeHeap. That's a tolerable tradeoff we have to accept because we can't hold
+  // a lock across user interaction.
+
+  // We should definitely acquire this lock before acquiring Compile_lock and CodeCache_lock.
+  // CodeHeapStateAnalytics_lock may be held by a concurrent thread for a long time,
+  // leading to an unnecessarily long hold time of the other locks we acquired before.
   ts.update(); // record starting point
-  MutexLocker mu1(CodeHeapStateAnalytics_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu0(CodeHeapStateAnalytics_lock, Mutex::_safepoint_check_flag);
   out->print_cr("\n__ CodeHeapStateAnalytics lock wait took %10.3f seconds _________\n", ts.seconds());
 
-  // If we serve an "allFun" call, it is beneficial to hold the CodeCache_lock
-  // for the entire duration of aggregation and printing. That makes sure
-  // we see a consistent picture and do not run into issues caused by
-  // the CodeHeap being altered concurrently.
-  Mutex* global_lock   = allFun ? CodeCache_lock : NULL;
-  Mutex* function_lock = allFun ? NULL : CodeCache_lock;
+  // Holding the CodeCache_lock protects from concurrent alterations of the CodeCache.
+  // Unfortunately, such protection is not sufficient:
+  // When a new nmethod is created via ciEnv::register_method(), the
+  // Compile_lock is taken first. After some initializations,
+  // nmethod::new_nmethod() takes over, grabbing the CodeCache_lock
+  // immediately (after finalizing the oop references). To lock out concurrent
+  // modifiers, we have to grab both locks as well in the described sequence.
+  //
+  // If we serve an "allFun" call, it is beneficial to hold CodeCache_lock and Compile_lock
+  // for the entire duration of aggregation and printing. That makes sure we see
+  // a consistent picture and do not run into issues caused by concurrent alterations.
+  bool should_take_Compile_lock   = !SafepointSynchronize::is_at_safepoint() &&
+                                    !Compile_lock->owned_by_self();
+  bool should_take_CodeCache_lock = !SafepointSynchronize::is_at_safepoint() &&
+                                    !CodeCache_lock->owned_by_self();
+  Mutex*   global_lock_1   = allFun ? (should_take_Compile_lock   ? Compile_lock   : NULL) : NULL;
+  Monitor* global_lock_2   = allFun ? (should_take_CodeCache_lock ? CodeCache_lock : NULL) : NULL;
+  Mutex*   function_lock_1 = allFun ? NULL : (should_take_Compile_lock   ? Compile_lock    : NULL);
+  Monitor* function_lock_2 = allFun ? NULL : (should_take_CodeCache_lock ? CodeCache_lock  : NULL);
   ts_global.update(); // record starting point
-  MutexLocker mu2(global_lock, Mutex::_no_safepoint_check_flag);
-  if (global_lock != NULL) {
-    out->print_cr("\n__ CodeCache (global) lock wait took %10.3f seconds _________\n", ts_global.seconds());
+  MutexLocker mu1(global_lock_1, Mutex::_safepoint_check_flag);
+  MutexLocker mu2(global_lock_2, Mutex::_no_safepoint_check_flag);
+  if ((global_lock_1 != NULL) || (global_lock_2 != NULL)) {
+    out->print_cr("\n__ Compile & CodeCache (global) lock wait took %10.3f seconds _________\n", ts_global.seconds());
     ts_global.update(); // record starting point
   }
 
   if (aggregate) {
     ts.update(); // record starting point
-    MutexLocker mu3(function_lock, Mutex::_no_safepoint_check_flag);
-    if (function_lock != NULL) {
-      out->print_cr("\n__ CodeCache (function) lock wait took %10.3f seconds _________\n", ts.seconds());
+    MutexLocker mu11(function_lock_1, Mutex::_safepoint_check_flag);
+    MutexLocker mu22(function_lock_2, Mutex::_no_safepoint_check_flag);
+    if ((function_lock_1 != NULL) || (function_lock_1 != NULL)) {
+      out->print_cr("\n__ Compile & CodeCache (function) lock wait took %10.3f seconds _________\n", ts.seconds());
     }
 
     ts.update(); // record starting point
     CodeCache::aggregate(out, granularity);
-    if (function_lock != NULL) {
-      out->print_cr("\n__ CodeCache (function) lock hold took %10.3f seconds _________\n", ts.seconds());
+    if ((function_lock_1 != NULL) || (function_lock_1 != NULL)) {
+      out->print_cr("\n__ Compile & CodeCache (function) lock hold took %10.3f seconds _________\n", ts.seconds());
     }
   }
 
@@ -2812,15 +2826,18 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
   if (methodSpace) CodeCache::print_space(out);
   if (methodAge) CodeCache::print_age(out);
   if (methodNames) {
-    // print_names() has shown to be sensitive to concurrent CodeHeap modifications.
-    // Therefore, request  the CodeCache_lock before calling...
-    MutexLocker mu3(function_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::print_names(out);
+    if (allFun) {
+      // print_names() can only be used safely if the locks have been continuously held
+      // since aggregation begin. That is true only for function "all".
+      CodeCache::print_names(out);
+    } else {
+      out->print_cr("\nCodeHeapStateAnalytics: Function 'MethodNames' is only available as part of function 'all'");
+    }
   }
   if (discard) CodeCache::discard(out);
 
-  if (global_lock != NULL) {
-    out->print_cr("\n__ CodeCache (global) lock hold took %10.3f seconds _________\n", ts_global.seconds());
+  if ((global_lock_1 != NULL) || (global_lock_2 != NULL)) {
+    out->print_cr("\n__ Compile & CodeCache (global) lock hold took %10.3f seconds _________\n", ts_global.seconds());
   }
   out->print_cr("\n__ CodeHeapStateAnalytics total duration %10.3f seconds _________\n", ts_total.seconds());
 }

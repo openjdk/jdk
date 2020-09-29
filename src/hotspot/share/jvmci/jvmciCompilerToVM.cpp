@@ -48,6 +48,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
@@ -132,7 +133,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   TRACE_CALL(result_type, jvmci_ ## name signature)  \
   JVMCI_VM_ENTRY_MARK;                               \
   ResourceMark rm;                                   \
-  JNI_JVMCIENV(thread, env);
+  JNI_JVMCIENV(JVMCI::compilation_tick(thread), env);
 
 static JavaThread* get_current_thread(bool allow_null=true) {
   Thread* thread = Thread::current_or_null_safe();
@@ -140,8 +141,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
     assert(allow_null, "npe");
     return NULL;
   }
-  assert(thread->is_Java_thread(), "must be");
-  return (JavaThread*) thread;
+  return thread->as_Java_thread();
 }
 
 // Entry to native method implementation that transitions
@@ -237,7 +237,7 @@ C2V_VMENTRY_NULL(jobject, getFlagValue, (JNIEnv* env, jobject c2vm, jobject name
   } else if (flag->is_double()) {
     RETURN_BOXED_DOUBLE(flag->get_double());
   } else {
-    JVMCI_ERROR_NULL("VM flag %s has unsupported type %s", flag->_name, flag->_type);
+    JVMCI_ERROR_NULL("VM flag %s has unsupported type %s", flag->name(), flag->type_string());
   }
 #undef RETURN_BOXED_LONG
 #undef RETURN_BOXED_DOUBLE
@@ -2640,19 +2640,11 @@ C2V_VMENTRY_0(jlong, ticksNow, (JNIEnv* env, jobject))
   return CompilerEvent::ticksNow();
 }
 
-C2V_VMENTRY_0(jint, registerCompilerPhases, (JNIEnv* env, jobject, jobjectArray jphases))
+C2V_VMENTRY_0(jint, registerCompilerPhase, (JNIEnv* env, jobject, jstring jphase_name))
 #if INCLUDE_JFR
-  if (jphases == NULL) {
-    return -1;
-  }
-  JVMCIObjectArray phases = JVMCIENV->wrap(jphases);
-  int len = JVMCIENV->get_length(phases);
-  GrowableArray<const char*>* jvmci_phase_names = new GrowableArray<const char*>(len);
-  for (int i = 0; i < len; i++) {
-    JVMCIObject phase = JVMCIENV->get_object_at(phases, i);
-    jvmci_phase_names->append(strdup(JVMCIENV->as_utf8_string(phase)));
-  }
-  return CompilerEvent::PhaseEvent::register_phases(jvmci_phase_names);
+  JVMCIObject phase_name = JVMCIENV->wrap(jphase_name);
+  const char *name = JVMCIENV->as_utf8_string(phase_name);
+  return CompilerEvent::PhaseEvent::get_phase_id(name, true, true, true);
 #else
   return -1;
 #endif // !INCLUDE_JFR
@@ -2824,7 +2816,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "addFailedSpeculation",                         CC "(J[B)Z",                                                                          FN_PTR(addFailedSpeculation)},
   {CC "callSystemExit",                               CC "(I)V",                                                                            FN_PTR(callSystemExit)},
   {CC "ticksNow",                                     CC "()J",                                                                             FN_PTR(ticksNow)},
-  {CC "registerCompilerPhases",                       CC "([" STRING ")I",                                                                  FN_PTR(registerCompilerPhases)},
+  {CC "registerCompilerPhase",                        CC "(" STRING ")I",                                                                   FN_PTR(registerCompilerPhase)},
   {CC "notifyCompilerPhaseEvent",                     CC "(JIII)V",                                                                         FN_PTR(notifyCompilerPhaseEvent)},
   {CC "notifyCompilerInliningEvent",                  CC "(I" HS_RESOLVED_METHOD HS_RESOLVED_METHOD "ZLjava/lang/String;I)V",               FN_PTR(notifyCompilerInliningEvent)},
 };

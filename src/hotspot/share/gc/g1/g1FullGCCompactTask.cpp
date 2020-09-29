@@ -48,7 +48,7 @@ public:
         if (_bitmap->is_marked(obj)) {
           // Clear bitmap and fix mark word.
           _bitmap->clear(obj);
-          obj->init_mark_raw();
+          obj->init_mark();
         } else {
           assert(current->is_empty(), "Should have been cleared in phase 2.");
         }
@@ -71,7 +71,7 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
   assert(obj_addr != destination, "everything in this pass should be moving");
   Copy::aligned_conjoint_words(obj_addr, destination, size);
-  oop(destination)->init_mark_raw();
+  oop(destination)->init_mark();
   assert(oop(destination)->klass() != NULL, "should have a class");
 
   return size;

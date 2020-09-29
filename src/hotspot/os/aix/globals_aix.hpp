@@ -27,18 +27,16 @@
 #define OS_AIX_GLOBALS_AIX_HPP
 
 //
-// Defines Aix specific flags. They are not available on other platforms.
+// Declare Aix specific flags. They are not available on other platforms.
 //
 // (Please keep the switches sorted alphabetically.)
-#define RUNTIME_OS_FLAGS(develop, \
-                         develop_pd, \
-                         product, \
-                         product_pd, \
-                         diagnostic, \
-                         diagnostic_pd, \
-                         notproduct, \
-                         range, \
-                         constraint) \
+#define RUNTIME_OS_FLAGS(develop,                                                   \
+                         develop_pd,                                                \
+                         product,                                                   \
+                         product_pd,                                                \
+                         notproduct,                                                \
+                         range,                                                     \
+                         constraint)                                                \
                                                                                     \
   /* Whether to allow the VM to run if EXTSHM=ON. EXTSHM is an environment */       \
   /* variable used on AIX to activate certain hacks which allow more shm segments */\
@@ -77,9 +75,9 @@
   /* explicit commit behaviour. This flag, if true, causes the VM to touch     */   \
   /* memory on os::commit_memory() (which normally is a noop).                 */   \
   product(bool, UseExplicitCommit, false,                                           \
-          "Explicit commit for virtual memory.")                                    \
-                                                                                    \
+          "Explicit commit for virtual memory.")
 
+// end of RUNTIME_OS_FLAGS
 
 //
 // Defines Aix-specific default values. The flags are available on all

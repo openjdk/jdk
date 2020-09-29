@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
+#include "memory/cppVtables.hpp"
 #include "memory/dumpAllocStats.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
@@ -39,6 +41,7 @@
 #include "utilities/hashtable.inline.hpp"
 
 ArchiveBuilder* ArchiveBuilder::_singleton = NULL;
+intx ArchiveBuilder::_buffer_to_target_delta = 0;
 
 ArchiveBuilder::OtherROAllocMark::~OtherROAllocMark() {
   char* newtop = ArchiveBuilder::singleton()->_ro_region->top();
@@ -218,6 +221,11 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   log_info(cds)("Gathering classes and symbols ... ");
   GatherKlassesAndSymbols doit(this);
   iterate_roots(&doit, /*is_relocating_pointers=*/false);
+#if INCLUDE_CDS_JAVA_HEAP
+  if (DumpSharedSpaces && MetaspaceShared::use_full_module_graph()) {
+    ClassLoaderDataShared::iterate_symbols(&doit);
+  }
+#endif
   doit.finish();
 
   log_info(cds)("Number of classes %d", _num_instance_klasses + _num_obj_array_klasses + _num_type_array_klasses);
@@ -473,7 +481,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 
   memcpy(dest, src, bytes);
 
-  intptr_t* archived_vtable = MetaspaceShared::get_archived_cpp_vtable(ref->msotype(), (address)dest);
+  intptr_t* archived_vtable = CppVtables::get_archived_cpp_vtable(ref->msotype(), (address)dest);
   if (archived_vtable != NULL) {
     *(address*)dest = (address)archived_vtable;
     ArchivePtrMarker::mark_pointer((address*)dest);
@@ -555,6 +563,34 @@ void ArchiveBuilder::relocate_well_known_klasses() {
   ResourceMark rm;
   RefRelocator doit(this);
   SystemDictionary::well_known_klasses_do(&doit);
+}
+
+void ArchiveBuilder::make_klasses_shareable() {
+  for (int i = 0; i < klasses()->length(); i++) {
+    Klass* k = klasses()->at(i);
+    k->remove_java_mirror();
+    if (k->is_objArray_klass()) {
+      // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
+      // on their array classes.
+    } else if (k->is_typeArray_klass()) {
+      k->remove_unshareable_info();
+    } else {
+      assert(k->is_instance_klass(), " must be");
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      if (DynamicDumpSharedSpaces) {
+        // For static dump, class loader type are already set.
+        ik->assign_class_loader_type();
+      }
+
+      MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
+      ik->remove_unshareable_info();
+
+      if (log_is_enabled(Debug, cds, class)) {
+        ResourceMark rm;
+        log_debug(cds, class)("klasses[%4d] = " PTR_FORMAT " %s", i, p2i(to_target(ik)), ik->external_name());
+      }
+    }
+  }
 }
 
 void ArchiveBuilder::print_stats(int ro_all, int rw_all, int mc_all) {
