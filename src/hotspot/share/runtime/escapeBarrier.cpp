@@ -172,7 +172,7 @@ void EscapeBarrier::sync_and_suspend_one() {
 
   // Use a handshake to synchronize with the target thread.
   EscapeBarrierSuspendHandshake sh(NULL, "EscapeBarrierSuspendOne");
-  Handshake::execute_direct(&sh, _deoptee_thread);
+  Handshake::execute(&sh, _deoptee_thread);
   assert(!_deoptee_thread->has_last_Java_frame() || _deoptee_thread->frame_anchor()->walkable(),
          "stack should be walkable now");
 }

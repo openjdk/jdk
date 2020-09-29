@@ -1305,7 +1305,7 @@ VM_GetAllStackTraces::doit() {
 // HandleMark must be defined in the caller only.
 // It is to keep a ret_ob_h handle alive after return to the caller.
 jvmtiError
-JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
+JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_thread,
                               jvalue value, TosState tos, Handle* ret_ob_h) {
   ResourceMark rm(current_thread);
 
@@ -1381,7 +1381,7 @@ JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
 
 jvmtiError
 JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState tos) {
-  Thread* current_thread = Thread::current();
+  JavaThread* current_thread = JavaThread::current();
   HandleMark   hm(current_thread);
   uint32_t debug_bits = 0;
 
