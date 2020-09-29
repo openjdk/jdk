@@ -395,10 +395,6 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
                                                                             \
-  product(bool, Debugging, false, DIAGNOSTIC,                               \
-          "Set when executing debug methods in debug.cpp "                  \
-          "(to prevent triggering assertions)")                             \
-                                                                            \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
                                                                             \
