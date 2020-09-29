@@ -792,6 +792,11 @@ public class ScrollPane extends Container implements Accessible {
         private static final long serialVersionUID = 6100703663886637L;
 
         /**
+         * Constructs an {@code AccessibleAWTScrollPane}
+         */
+        protected AccessibleAWTScrollPane() {}
+
+        /**
          * Get the role of this object.
          *
          * @return an instance of AccessibleRole describing the role of the
