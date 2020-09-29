@@ -1162,13 +1162,6 @@ void VM_Version::get_processor_features() {
   }
 #endif // COMPILER2 && ASSERT
 
-  if (!FLAG_IS_DEFAULT(AVX3Threshold)) {
-    if (!is_power_of_2(AVX3Threshold)) {
-      warning("AVX3Threshold must be a power of 2");
-      FLAG_SET_DEFAULT(AVX3Threshold, 4096);
-    }
-  }
-
 #ifdef _LP64
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;
