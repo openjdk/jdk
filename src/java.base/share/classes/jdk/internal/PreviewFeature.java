@@ -62,6 +62,7 @@ public @interface PreviewFeature {
         // JDK 15. Since the JDK 14 codebase uses the enum constant, it is
         // necessary for PreviewFeature in JDK 15 to declare the enum constant.
         TEXT_BLOCKS,
+        // remove the RECORDS entry before pushing
         RECORDS,
         SEALED_CLASSES,
         ;
