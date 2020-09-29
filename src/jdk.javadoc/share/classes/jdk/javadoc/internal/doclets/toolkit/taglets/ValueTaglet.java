@@ -101,7 +101,7 @@ public class ValueTaglet extends BaseTaglet {
             }
         } else if (field.getConstantValue() != null) {
             return writer.valueTagOutput(field,
-                utils.constantValueExpresion(field),
+                utils.constantValueExpression(field),
                 // TODO: investigate and cleanup
                 // in the j.l.m world, equals will not be accurate
                 // !field.equals(tag.holder())
