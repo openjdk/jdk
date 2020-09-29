@@ -152,6 +152,13 @@ public class JarFile extends ZipFile {
     private static final boolean MULTI_RELEASE_ENABLED;
     private static final boolean MULTI_RELEASE_FORCED;
     private static final ThreadLocal<Boolean> isInitializing = new ThreadLocal<>();
+    /**
+     * The maximum size of array to allocate.
+     * Some VMs reserve some header words in an array.
+     * Attempts to allocate larger arrays may result in
+     * OutOfMemoryError: Required array size too large
+     */
+    private static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
 
     private SoftReference<Manifest> manRef;
     private JarEntry manEntry;
@@ -788,15 +795,16 @@ public class JarFile extends ZipFile {
      */
     private byte[] getBytes(ZipEntry ze) throws IOException {
         try (InputStream is = super.getInputStream(ze)) {
-            int len = (int)ze.getSize();
+            long len = ze.getSize();
+            if (len > MAX_BUFFER_SIZE) {
+                throw new OutOfMemoryError("Required array size too large");
+            }
             int bytesRead;
             byte[] b;
-            if (len == 0) {
-                b = new byte[0];
-                bytesRead = 0;
-            } else if (len > 0 && len <= 65535) { // trust specified entry sizes when reasonably small
-                b = new byte[len];
-                bytesRead = is.readNBytes(b, 0, len);
+            // trust specified entry sizes when reasonably small
+            if (len >= 0 && len <= 65535) {
+                b = new byte[(int) len];
+                bytesRead = is.readNBytes(b, 0, (int) len);
             } else {
                 b = is.readAllBytes();
                 bytesRead = b.length;
