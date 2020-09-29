@@ -30,7 +30,7 @@ import jdk.test.lib.Asserts;
 /*
  * @test
  * @bug 8252219
- * @requires vm.compiler2.enabled
+ * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Tests that compilations with the same seed yield the same IGVN
  *          trace, and compilations with different seeds yield different IGVN
  *          traces.

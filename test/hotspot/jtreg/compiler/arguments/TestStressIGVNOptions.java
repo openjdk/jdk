@@ -27,9 +27,9 @@
  * @requires vm.compiler2.enabled
  * @summary Tests that different combinations of the options -XX:+StressIGVN and
  *          -XX:StressSeed=N are accepted.
- * @run main/othervm -XX:+StressIGVN
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN
  *      compiler.arguments.TestStressIGVNOptions
- * @run main/othervm -XX:+StressIGVN -XX:StressSeed=42
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=42
  *      compiler.arguments.TestStressIGVNOptions
  */
 
