@@ -327,46 +327,15 @@ public class DefaultMethods {
         return new Object[][] {
             new Object[] {},
             new Object[] { 100 },
-            new Object[] { 100, "foo", 100 }
+            new Object[] { 100, "foo", 100 },
+            new Object[] { 100L, "foo" },
+            new Object[] { "foo", 100},
+            new Object[] { null, "foo" }
         };
     }
 
     @Test(dataProvider = "illegalArguments", expectedExceptions = {IllegalArgumentException.class})
     public void testIllegalArguments(Object... args) throws Exception {
-        ClassLoader loader = DefaultMethods.class.getClassLoader();
-        I4 proxy = (I4)Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
-        Method m = I4.class.getMethod("mix", int.class, String.class);
-        assertTrue(m.isDefault());
-        Proxy.invokeDefaultMethod(proxy, m, args);
-    }
-
-    @DataProvider(name = "cceArguments")
-    private Object[][] cceArguments() {
-        return new Object[][] {
-            new Object[] { 100L, "foo" },
-            new Object[] { "foo", 100}
-        };
-    }
-
-    @Test(dataProvider = "cceArguments", expectedExceptions = {ClassCastException.class})
-    public void testCceArguments(Object... args) throws Exception {
-        ClassLoader loader = DefaultMethods.class.getClassLoader();
-        I4 proxy = (I4)Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
-        Method m = I4.class.getMethod("mix", int.class, String.class);
-        assertTrue(m.isDefault());
-        Proxy.invokeDefaultMethod(proxy, m, args);
-    }
-
-    @DataProvider(name = "npeArguments")
-    private Object[][] npeArguments() {
-        return new Object[][] {
-            new Object[] {},
-            new Object[] { null, "foo" }
-        };
-    }
-
-    @Test(dataProvider = "npeArguments", expectedExceptions = {NullPointerException.class})
-    public void testNpeArguments(Object... args) throws Exception {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I4 proxy = (I4)Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
         Method m = I4.class.getMethod("mix", int.class, String.class);

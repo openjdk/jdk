@@ -1156,6 +1156,8 @@ public class Proxy implements java.io.Serializable {
         }
     };
 
+    private static final Object[] EMPTY_ARGS = new Object[0];
+
     /**
      * Invokes the specified default method on the given {@code proxy} instance with
      * the given parameters.  The given {@code method} must be a default method
@@ -1244,18 +1246,18 @@ public class Proxy implements java.io.Serializable {
      *             the proxy interfaces and the method reference to the named
      *             method never resolves to the given {@code method}; or</li>
      *         <li>if length of given {@code args} array doesn't match the number of
-     *             parameters of the method to be invoked/li>
+     *             parameters of the method to be invoked or if {@code args} is null
+     *             and the method to be invoked has parameters</li>
+     *         <li>if any of the {@code args} elements can't be assigned to the
+     *             boxed type of the corresponding method parameter or any of the
+     *             {@code args} elements is null while the corresponding method
+     *             parameter is of primitive type</li>
      *         </ul>
-     * @throws ClassCastException if length of given {@code args} array matches the number
-     *         of parameters of the method to be invoked but any of the {@code args}
-     *         elements can't be assigned to the boxed type of the corresponding
-     *         method parameter
      * @throws InvocationTargetException if the invoked default method throws
      *         any exception, it is wrapped by {@code InvocationTargetException}
      *         and rethrown
-     * @throws NullPointerException if {@code proxy} or {@code method} or {@code args}
-     *         is {@code null} or any of the {@code args} elements is null while
-     *         the corresponding method parameter is of primitive type
+     * @throws NullPointerException if {@code proxy} or {@code method} is {@code null}
+     *
      * @since 16
      * @jvms 5.4.3. Method Resolution
      */
@@ -1263,6 +1265,10 @@ public class Proxy implements java.io.Serializable {
             throws InvocationTargetException {
         Objects.requireNonNull(proxy);
         Objects.requireNonNull(method);
+        if (args == null) {
+            // consistency with Method::invoke: null args array is equivalent to empty array
+            args = EMPTY_ARGS;
+        }
 
         // verify that the object is actually a proxy instance
         Class<?> proxyClass = proxy.getClass();
@@ -1323,6 +1329,8 @@ public class Proxy implements java.io.Serializable {
         // invoke the super method
         try {
             return superMH.invokeExact(proxy, args);
+        } catch (ClassCastException | NullPointerException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
         } catch (InvocationTargetException | RuntimeException | Error e) {
             throw e;
         } catch (Throwable e) {
