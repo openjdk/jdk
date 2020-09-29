@@ -237,6 +237,7 @@ public class LinuxHelper {
                     if (getPackageFiles(cmd).count() > 01L) {
                         // there is something there so round up to 1 KB
                         estimate = 01L;
+                    }
                 }
                 return estimate;
 
