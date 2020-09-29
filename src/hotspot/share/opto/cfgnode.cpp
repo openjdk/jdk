@@ -818,7 +818,8 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   } else if (cmp1->Opcode() == Op_CmpF || cmp1->Opcode() == Op_CmpD ||
              cmp2->Opcode() == Op_CmpF || cmp2->Opcode() == Op_CmpD ||
              cmp1->Opcode() == Op_CmpP || cmp1->Opcode() == Op_CmpN ||
-             cmp2->Opcode() == Op_CmpP || cmp2->Opcode() == Op_CmpN) {
+             cmp2->Opcode() == Op_CmpP || cmp2->Opcode() == Op_CmpN ||
+             cmp1->is_SubTypeCheck() || cmp2->is_SubTypeCheck()) {
     // Floats and pointers don't exactly obey trichotomy. To be on the safe side, don't transform their tests.
     return false;
   } else if (cmp1 != cmp2) {
