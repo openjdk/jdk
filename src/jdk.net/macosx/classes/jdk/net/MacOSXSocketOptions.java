@@ -79,11 +79,11 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
 
     @Override
     UnixDomainPrincipal getSoPeerCred(int fd) throws SocketException {
-        int[] result = new int[2];
-
-        getSoPeerCred0(fd, result);
-        UserPrincipal user = UnixUserPrincipals.fromUid(result[0]);
-        GroupPrincipal group = UnixUserPrincipals.fromGid(result[1]);
+        long l = getSoPeerCred0(fd);
+        int uid = (int)(l >> 32);
+        int gid = (int)l;
+        UserPrincipal user = UnixUserPrincipals.fromUid(uid);
+        GroupPrincipal group = UnixUserPrincipals.fromGid(gid);
         return new UnixDomainPrincipal(user, group);
     }
 
@@ -93,7 +93,7 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
     private static native int getTcpkeepAliveProbes0(int fd) throws SocketException;
     private static native int getTcpKeepAliveTime0(int fd) throws SocketException;
     private static native int getTcpKeepAliveIntvl0(int fd) throws SocketException;
-    private static native void getSoPeerCred0(int fd, int[] result) throws SocketException;
+    private static native long getSoPeerCred0(int fd) throws SocketException;
     private static native boolean keepAliveOptionsSupported0();
     static {
         if (System.getSecurityManager() == null) {

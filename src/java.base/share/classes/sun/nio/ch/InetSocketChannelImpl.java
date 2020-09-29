@@ -44,16 +44,16 @@ import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 
 /**
- * An implementation of SocketChannels
+ * An implementation of SocketChannels for AF_INET/AF_INET6 sockets
  */
 
 class InetSocketChannelImpl extends SocketChannelImpl
 {
-    // set true when exclusive binding is on and SO_REUSEADDR is emulated
-    private boolean isReuseAddress;
-
     // the protocol family of the socket
     private final ProtocolFamily family;
+
+    // set true when exclusive binding is on and SO_REUSEADDR is emulated
+    private boolean isReuseAddress;
 
     // Constructor for normal connecting sockets
     //

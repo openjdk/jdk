@@ -80,9 +80,11 @@ public abstract class SelectorProviderImpl
         Objects.requireNonNull(family, "'family' is null");
         if (family == StandardProtocolFamily.INET6 && !Net.isIPv6Available()) {
             throw new UnsupportedOperationException("IPv6 not available");
-        } else if (family == StandardProtocolFamily.INET || family == StandardProtocolFamily.INET6)  {
+        } else if (family == StandardProtocolFamily.INET ||
+                   family == StandardProtocolFamily.INET6)  {
             return new InetSocketChannelImpl(this, family);
-        } else if (family == StandardProtocolFamily.UNIX && UnixDomainSockets.isSupported()) {
+        } else if (family == StandardProtocolFamily.UNIX &&
+                   UnixDomainSockets.isSupported()) {
             return new UnixDomainSocketChannelImpl(this, UnixDomainSockets.socket(), false);
         } else
             return super.openSocketChannel(family);
@@ -93,9 +95,11 @@ public abstract class SelectorProviderImpl
         Objects.requireNonNull(family, "'family' is null");
         if (family == StandardProtocolFamily.INET6 && !Net.isIPv6Available()) {
             throw new UnsupportedOperationException("IPv6 not available");
-        } else if (family == StandardProtocolFamily.INET || family == StandardProtocolFamily.INET6)  {
+        } else if (family == StandardProtocolFamily.INET ||
+                   family == StandardProtocolFamily.INET6)  {
             return new InetServerSocketChannelImpl(this, family);
-        } else if (family == StandardProtocolFamily.UNIX && UnixDomainSockets.isSupported()) {
+        } else if (family == StandardProtocolFamily.UNIX &&
+                   UnixDomainSockets.isSupported()) {
             return new UnixDomainServerSocketChannelImpl(this);
         } else
             return super.openServerSocketChannel(family);

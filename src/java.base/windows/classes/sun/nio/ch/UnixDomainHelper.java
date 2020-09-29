@@ -45,33 +45,31 @@ class UnixDomainHelper {
      *
      * On Windows we search the following directories in sequence:
      *
-     * 1. ${jdk.nio.channels.tmpdir} if set, Use that unconditionally
+     * 1. ${jdk.nio.unixdomain.tmpdir} if set, Use that unconditionally
      * 2. %TEMP%
      * 3. ${java.io.tmpdir}
      *
      */
     static Path getTempDir() {
-        return AccessController.doPrivileged(
-            (PrivilegedAction<Path>) () -> {
-                try {
-                    String s = System.getProperty("jdk.nio.channels.tmpdir");
-                    if (s != null) {
-                        return Path.of(s);
-                    }
-                    String temp = System.getenv("TEMP");
-                    if (temp != null) {
-                        Path p = Path.of(temp);
-                        if (Files.exists(p)) {
-                            return p;
-                        }
-                    }
-                    return Path.of(System.getProperty("java.io.tmpdir"));
-                } catch (InvalidPathException ipe) {
-                    return null;
+        PrivilegedAction<Path> action = () -> {
+            try {
+                String s = System.getProperty("jdk.nio.unixdomain.tmpdir");
+                if (s != null) {
+                    return Path.of(s);
                 }
+                String temp = System.getenv("TEMP");
+                if (temp != null) {
+                    Path p = Path.of(temp);
+                    if (Files.exists(p)) {
+                        return p;
+                    }
+                }
+                return Path.of(System.getProperty("java.io.tmpdir"));
+            } catch (InvalidPathException ipe) {
+                return null;
             }
-        );
+        };
+        return AccessController.doPrivileged(action);
     }
-
 }
 

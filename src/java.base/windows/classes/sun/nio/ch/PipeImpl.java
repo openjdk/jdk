@@ -34,6 +34,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.net.StandardProtocolFamily;
+import java.net.StandardSocketOptions;
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.file.Files;
@@ -62,8 +63,6 @@ class PipeImpl
     // Source and sink channels
     private SourceChannel source;
     private SinkChannel sink;
-    // Allowed to buffer data if set
-    private final boolean buffering;
 
     private class Initializer
         implements PrivilegedExceptionAction<Void>
@@ -151,7 +150,11 @@ class PipeImpl
 
                     // Create source and sink channels
                     source = new SourceChannelImpl(sp, sc1);
-                    sink = new SinkChannelImpl(sp, sc2, buffering);
+                    sink = new SinkChannelImpl(sp, sc2);
+                    if (sc2 instanceof InetSocketChannelImpl) {
+                        var isc = (InetSocketChannelImpl)sc2;
+                        isc.setOption(StandardSocketOptions.TCP_NODELAY, true);
+                    }
                 } catch (IOException e) {
                     try {
                         if (sc1 != null)
@@ -173,11 +176,6 @@ class PipeImpl
     }
 
     PipeImpl(final SelectorProvider sp) throws IOException {
-        this(sp, true);
-    }
-
-    PipeImpl(final SelectorProvider sp, boolean buffering) throws IOException {
-        this.buffering = buffering;
         try {
             AccessController.doPrivileged(new Initializer(sp));
         } catch (PrivilegedActionException x) {
@@ -193,21 +191,21 @@ class PipeImpl
         return sink;
     }
 
-    private static volatile boolean tryUnixDomain = true;
+    private static volatile boolean noUnixDomainSockets = false;
 
     private static ServerSocketChannel createListener() throws IOException {
         ServerSocketChannel listener = null;
-        try {
-            if (tryUnixDomain) {
+        if (!noUnixDomainSockets) {
+            try {
                 listener = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
                 return listener.bind(null);
+            } catch (UnsupportedOperationException | IOException e) {
+                // IOException is most likely to be caused by the temporary directory
+                // name being too long. Possibly should log this.
+                noUnixDomainSockets = true;
+                if (listener != null)
+                    listener.close();
             }
-        } catch (UnsupportedOperationException | IOException e) {
-            // IOException is most likely to be caused by the temporary directory
-            // name being too long. Possibly should log this.
-            tryUnixDomain = false;
-            if (listener != null)
-                listener.close();
         }
         listener = ServerSocketChannel.open();
         InetAddress lb = InetAddress.getLoopbackAddress();

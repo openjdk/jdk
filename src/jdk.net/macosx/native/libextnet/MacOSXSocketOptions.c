@@ -127,17 +127,19 @@ JNIEXPORT jint JNICALL Java_jdk_net_MacOSXSocketOptions_getTcpkeepAliveProbes0
 /*
  * Class:     jdk_net_MacOSXSocketOptions
  * Method:    getSoPeerCred0
- * Signature: (I[I)I
+ * Signature: (I)L
  */
-JNIEXPORT void JNICALL Java_jdk_net_MacOSXSocketOptions_getSoPeerCred0
-  (JNIEnv *env, jclass clazz, jint fd, jintArray result) {
-
-    int *rr = (int *)(*env)->GetIntArrayElements(env, result, NULL);
+JNIEXPORT jlong JNICALL Java_jdk_net_MacOSXSocketOptions_getSoPeerCred0
+  (JNIEnv *env, jclass clazz, jint fd) {
 
     jint rv;
-    rv = getpeereid(fd, (uid_t *)&rr[0], (gid_t *)&rr[1]);
-    (*env)->ReleaseIntArrayElements(env, result, rr, 0);
+    int uid, gid;
+    rv = getpeereid(fd, (uid_t *)&uid, (gid_t *)&gid);
     handleError(env, rv, "get peer eid failed");
+    if (rv == -1) {
+        uid = gid = -1;
+    }
+    return (((long)uid) << 32) | (gid & 0xffffffffL);
 }
 
 

@@ -43,19 +43,17 @@ import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 
 /**
- * An implementation of ServerSocketChannels
+ * An implementation of ServerSocketChannels for AF_INET/AF_INET6 sockets
  */
 
 class InetServerSocketChannelImpl
     extends ServerSocketChannelImpl
 {
-    // set true when exclusive binding is on and SO_REUSEADDR is emulated
-    private boolean isReuseAddress;
-
-    // -- End of fields protected by stateLock
-
     // the protocol family requested by the user, or Net.UNSPEC if not specified
     private final ProtocolFamily family;
+
+    // set true when exclusive binding is on and SO_REUSEADDR is emulated
+    private boolean isReuseAddress;
 
     InetServerSocketChannelImpl(SelectorProvider sp) throws IOException {
         this(sp, Net.isIPv6Available()

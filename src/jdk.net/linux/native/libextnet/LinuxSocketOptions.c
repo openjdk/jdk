@@ -114,27 +114,24 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_LinuxSocketOptions_quickAckSupported0
 /*
  * Class:     jdk_net_LinuxSocketOptions
  * Method:    getSoPeerCred0
- * Signature: (I[I)I
+ * Signature: (I)L
  */
-JNIEXPORT void JNICALL Java_jdk_net_LinuxSocketOptions_getSoPeerCred0
-  (JNIEnv *env, jclass clazz, jint fd, jintArray result) {
+JNIEXPORT jlong JNICALL Java_jdk_net_LinuxSocketOptions_getSoPeerCred0
+  (JNIEnv *env, jclass clazz, jint fd) {
 
     int rv;
     struct ucred cred;
     socklen_t len = sizeof(cred);
-    int *rr = (int *)(*env)->GetIntArrayElements(env, result, NULL);
 
     if ((rv=getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &len)) < 0) {
         handleError(env, rv, "get SO_PEERCRED failed");
     } else {
         if ((int)cred.uid == -1) {
             handleError(env, -1, "get SO_PEERCRED failed");
-        } else {
-            rr[0] = cred.uid;
-            rr[1] = cred.gid;
+            cred.uid = cred.gid = -1;
         }
     }
-    (*env)->ReleaseIntArrayElements(env, result, rr, 0);
+    return (((long)cred.uid) << 32) | (cred.gid & 0xffffffffL);
 }
 
 /*

@@ -54,16 +54,21 @@ public final class SocketExceptions {
      * Only specific IOException subtypes are supported.
      */
     public static IOException of(IOException e, SocketAddress addr) {
-        if (addr instanceof UnixDomainSocketAddress)
+        if (addr instanceof UnixDomainSocketAddress) {
             return ofUnixDomain(e, (UnixDomainSocketAddress)addr);
-        if (!(addr instanceof InetSocketAddress))
+        } else if (addr instanceof InetSocketAddress) {
+            return ofInet(e, (InetSocketAddress)addr);
+        } else {
             return e;
+        }
+    }
 
-        InetSocketAddress address = (InetSocketAddress)addr;
-        if (!enhancedExceptionText || address == null)
+    private static IOException ofInet(IOException e, InetSocketAddress addr) {
+        if (!enhancedExceptionText || addr == null) {
             return e;
-        int port = address.getPort();
-        String host = address.getHostString();
+        }
+        int port = addr.getPort();
+        String host = addr.getHostString();
         StringBuilder sb = new StringBuilder();
         sb.append(e.getMessage());
         sb.append(": ");
@@ -75,8 +80,9 @@ public final class SocketExceptions {
     }
 
     private static IOException ofUnixDomain(IOException e, UnixDomainSocketAddress addr) {
-        if (!enhancedExceptionText || addr == null)
+        if (!enhancedExceptionText) {
             return e;
+        }
         String path = addr.getPath().toString();
         StringBuilder sb = new StringBuilder();
         sb.append(e.getMessage());

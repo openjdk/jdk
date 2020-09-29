@@ -30,7 +30,6 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.io.FileDescriptor;
-import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
@@ -55,13 +54,9 @@ class SinkChannelImpl
         return ((SocketChannelImpl)sc).getFDVal();
     }
 
-    SinkChannelImpl(SelectorProvider sp, SocketChannel sc, boolean buffering) throws IOException {
+    SinkChannelImpl(SelectorProvider sp, SocketChannel sc) throws IOException {
         super(sp);
         this.sc = sc;
-        if (!buffering && sc instanceof InetSocketChannelImpl) {
-            InetSocketChannelImpl isc = (InetSocketChannelImpl)sc;
-            isc.setOption(StandardSocketOptions.TCP_NODELAY, true);
-        }
     }
 
     protected void implCloseSelectableChannel() throws IOException {

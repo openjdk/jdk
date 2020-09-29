@@ -29,7 +29,6 @@ import java.lang.ref.Reference;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.InetSocketAddress;
-import java.net.ProtocolFamily;
 import java.net.ProxySelector;
 import java.net.Socket;
 import java.net.SocketAddress;

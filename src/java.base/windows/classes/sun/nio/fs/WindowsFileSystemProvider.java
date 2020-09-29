@@ -625,13 +625,11 @@ class WindowsFileSystemProvider
     }
 
     @Override
-    public byte[] getByteArrayForSocket(Path file) throws IOException {
-        if (file == null)
+    public byte[] getSunPathForSocketFile(Path obj) {
+        if (obj == null)
             return null;
-        if (!(file instanceof WindowsPath))
-            throw new IllegalArgumentException();
-        WindowsPath wp = (WindowsPath)file;
-        String s = wp.toString();
+        WindowsPath file = WindowsPath.toWindowsPathobj);
+        String s = file.toString();
         return s.getBytes(StandardCharsets.UTF_8);
     }
 

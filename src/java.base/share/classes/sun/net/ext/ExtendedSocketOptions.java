@@ -90,22 +90,18 @@ public abstract class ExtendedSocketOptions {
     }
 
     private static boolean isDatagramOption(SocketOption<?> option) {
-        return !option.name().startsWith("TCP_") && !isUnixOption(option);
+        return !option.name().startsWith("TCP_") && !isUnixDomainOption(option);
     }
 
-    private static boolean isUnixOption(SocketOption<?> option) {
+    private static boolean isUnixDomainOption(SocketOption<?> option) {
         return option.name().equals("SO_PEERCRED");
     }
 
     private static boolean isStreamOption(SocketOption<?> option, boolean server) {
-        if (server && "SO_FLOW_SLA".equals(option.name())) {
+        if (isUnixDomainOption(option)) {
             return false;
-        } else {
-            if (isUnixOption(option)) {
-                return false;
-            }
-            return !option.name().startsWith("UDP_");
         }
+        return !option.name().startsWith("UDP_");
     }
 
     private Set<SocketOption<?>> options0(short type, boolean server) {
@@ -148,7 +144,7 @@ public abstract class ExtendedSocketOptions {
             if (isStreamOption(option, false)) {
                 clientStreamOptions.add(option);
             }
-            if (isUnixOption(option)) {
+            if (isUnixDomainOption(option)) {
                 unixOptions.add(option);
             }
         }

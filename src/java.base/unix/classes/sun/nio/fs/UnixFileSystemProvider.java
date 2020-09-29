@@ -559,12 +559,10 @@ public abstract class UnixFileSystemProvider
     }
 
     @Override
-    public byte[] getByteArrayForSocket(Path file) {
-        if (file == null)
+    public byte[] getSunPathForSocketFile(Path obj) {
+        if (obj == null)
             return null;
-        if (!(file instanceof UnixPath))
-            throw new IllegalArgumentException();
-        UnixPath up = (UnixPath)file;
-        return up.getByteArrayForSysCalls();
+        UnixPath file = UnixPath.toUnixPath(obj);
+        return file.getByteArrayForSysCalls();
     }
 }

@@ -138,7 +138,7 @@ class UnixDomainSockets {
     static byte[] getPathBytes(Path path) throws IOException {
         AbstractFileSystemProvider provider = (AbstractFileSystemProvider)
             FileSystems.getDefault().provider();
-        return provider.getByteArrayForSocket(path);
+        return provider.getSunPathForSocketFile(path);
     }
 
     public static FileDescriptor socket() throws IOException {

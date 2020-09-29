@@ -21,6 +21,12 @@
  * questions.
  */
 
+/* @test
+ * @bug 4927640
+ * @summary Tests the SCTP protocol implementation
+ * @author chegar
+ */
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.io.IOException;
