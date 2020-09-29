@@ -525,11 +525,6 @@ public:
     _num_workers(num_workers) {}
 
   void work(uint worker_id) {
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
-      Tracer t("deflating idle monitors");
-      ObjectSynchronizer::do_safepoint_work();
-    }
-
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
       Tracer t("updating inline caches");
       InlineCacheBuffer::update_inline_caches();

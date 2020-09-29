@@ -34,16 +34,35 @@
 class ObjectMonitor;
 class ThreadsList;
 
-#ifndef OM_CACHE_LINE_SIZE
-// Use DEFAULT_CACHE_LINE_SIZE if not already specified for
-// the current build platform.
-#define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
-#endif
+class MonitorList {
+  ObjectMonitor* volatile _head;
+  volatile size_t _count;
+  volatile size_t _max;
 
-typedef PaddedEnd<ObjectMonitor, OM_CACHE_LINE_SIZE> PaddedObjectMonitor;
+public:
+  void add(ObjectMonitor* monitor);
+  void unlink_deflated(GrowableArray<ObjectMonitor*>* unlinked_list);
+  size_t count() const;
+  size_t max() const;
+
+  class Iterator;
+  Iterator iterator() const;
+};
+
+class MonitorList::Iterator {
+  ObjectMonitor* _current;
+
+public:
+  Iterator(ObjectMonitor* head) : _current(head) {}
+  bool has_next() const { return _current != NULL; }
+  ObjectMonitor* next();
+};
 
 class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
+
+  static MonitorList _in_use_list;
+
  public:
   typedef enum {
     owner_self,
@@ -99,12 +118,6 @@ class ObjectSynchronizer : AllStatic {
   static intx complete_exit(Handle obj, TRAPS);
   static void reenter (Handle obj, intx recursions, TRAPS);
 
-  // thread-specific and global ObjectMonitor free list accessors
-  static ObjectMonitor* om_alloc(Thread* self);
-  static void om_release(Thread* self, ObjectMonitor* m,
-                         bool FromPerThreadAlloc);
-  static void om_flush(Thread* self);
-
   // Inflate light weight monitor to heavy weight monitor
   static ObjectMonitor* inflate(Thread* self, oop obj, const InflateCause cause);
   // This version is only for internal use
@@ -129,21 +142,10 @@ class ObjectSynchronizer : AllStatic {
   // GC: we current use aggressive monitor deflation policy
   // Basically we deflate all monitors that are not busy.
   // An adaptive profile-based deflation policy could be used if needed
-  static void deflate_idle_monitors_using_JT();
-  static void deflate_global_idle_monitors_using_JT();
-  static void deflate_per_thread_idle_monitors_using_JT(JavaThread* target);
-  static void deflate_common_idle_monitors_using_JT(bool is_global, JavaThread* target);
+  static void deflate_idle_monitors();
 
-  // For a given in-use monitor list: global or per-thread, deflate idle
-  // monitors using a JavaThread.
-  static int deflate_monitor_list_using_JT(ObjectMonitor** list_p,
-                                           int* count_p,
-                                           ObjectMonitor** free_head_p,
-                                           ObjectMonitor** free_tail_p,
-                                           ObjectMonitor** saved_mid_in_use_p);
-  static bool deflate_monitor_using_JT(ObjectMonitor* mid,
-                                       ObjectMonitor** free_head_p,
-                                       ObjectMonitor** free_tail_p);
+  // For a given monitor list: global or per-thread, deflate idle monitors
+  static size_t deflate_monitor_list();
   static bool is_async_deflation_needed();
   static bool is_async_deflation_requested() { return _is_async_deflation_requested; }
   static jlong last_async_deflation_time_ns() { return _last_async_deflation_time_ns; }
@@ -151,41 +153,11 @@ class ObjectSynchronizer : AllStatic {
   static void set_is_async_deflation_requested(bool new_value) { _is_async_deflation_requested = new_value; }
   static jlong time_since_last_async_deflation_ms();
 
-  // debugging
-  static void audit_and_print_stats(bool on_exit);
-  static void chk_free_entry(JavaThread* jt, ObjectMonitor* n,
-                             outputStream * out, int *error_cnt_p);
-  static void chk_global_free_list_and_count(outputStream * out,
-                                             int *error_cnt_p);
-  static void chk_global_wait_list_and_count(outputStream * out,
-                                             int *error_cnt_p);
-  static void chk_global_in_use_list_and_count(outputStream * out,
-                                               int *error_cnt_p);
-  static void chk_in_use_entry(JavaThread* jt, ObjectMonitor* n,
-                               outputStream * out, int *error_cnt_p);
-  static void chk_per_thread_in_use_list_and_count(JavaThread *jt,
-                                                   outputStream * out,
-                                                   int *error_cnt_p);
-  static void chk_per_thread_free_list_and_count(JavaThread *jt,
-                                                 outputStream * out,
-                                                 int *error_cnt_p);
-  static void log_in_use_monitor_details(outputStream * out);
-  static int  log_monitor_list_counts(outputStream * out);
-  static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
-
-  static void do_safepoint_work();
-
  private:
   friend class SynchronizerTest;
 
-  enum { _BLOCKSIZE = 128 };
-  // global list of blocks of monitors
-  static PaddedObjectMonitor* g_block_list;
   static volatile bool _is_async_deflation_requested;
   static jlong         _last_async_deflation_time_ns;
-
-  // Function to prepend new blocks to the appropriate lists:
-  static void prepend_block_to_lists(PaddedObjectMonitor* new_blk);
 
   // Support for SynchronizerTest access to GVars fields:
   static u_char* get_gvars_addr();

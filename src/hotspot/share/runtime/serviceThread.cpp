@@ -234,7 +234,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     }
 
     if (deflate_idle_monitors) {
-      ObjectSynchronizer::deflate_idle_monitors_using_JT();
+      ObjectSynchronizer::deflate_idle_monitors();
     }
 
     if (oop_handles_to_release) {
