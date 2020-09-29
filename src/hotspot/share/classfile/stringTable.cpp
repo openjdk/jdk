@@ -750,7 +750,7 @@ public:
     }
 
     // add to the compact table
-    _writer->add(hash, CompressedOops::narrow_oop_value(CompressedOops::encode(new_s)));
+    _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
     return true;
   }
 };

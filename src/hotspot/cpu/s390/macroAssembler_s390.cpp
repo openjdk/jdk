@@ -1273,9 +1273,7 @@ int MacroAssembler::patch_compare_immediate_32(address pos, int64_t np) {
 // The passed ptr must NOT be in compressed format!
 int MacroAssembler::patch_load_narrow_oop(address pos, oop o) {
   assert(UseCompressedOops, "Can only patch compressed oops");
-
-  narrowOop no = CompressedOops::encode(o);
-  return patch_load_const_32to64(pos, CompressedOops::narrow_oop_value(no));
+  return patch_load_const_32to64(pos, CompressedOops::narrow_oop_value(o));
 }
 
 // Patching the immediate value of CPU version dependent load_narrow_klass sequence.
@@ -1291,9 +1289,7 @@ int MacroAssembler::patch_load_narrow_klass(address pos, Klass* k) {
 // The passed ptr must NOT be in compressed format!
 int MacroAssembler::patch_compare_immediate_narrow_oop(address pos, oop o) {
   assert(UseCompressedOops, "Can only patch compressed oops");
-
-  narrowOop no = CompressedOops::encode(o);
-  return patch_compare_immediate_32(pos, CompressedOops::narrow_oop_value(no));
+  return patch_compare_immediate_32(pos, CompressedOops::narrow_oop_value(o));
 }
 
 // Patching the immediate value of CPU version dependent compare_immediate_narrow_klass sequence.

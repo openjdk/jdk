@@ -131,17 +131,11 @@ public:
   static narrowOop encode_not_null(narrowOop v) { return v; }
   static narrowOop encode(narrowOop v)          { return v; }
 
-  static uint32_t narrow_oop_value(narrowOop o) {
-    return static_cast<uint32_t>(o);
-  }
+  static uint32_t narrow_oop_value(oop o);
+  static uint32_t narrow_oop_value(narrowOop o);
 
   template<typename T>
-  static narrowOop narrow_oop_cast(T i) {
-    static_assert(std::is_integral<T>::value, "precondition");
-    static_assert(sizeof(T) >= sizeof(narrowOop), "precondition");
-    assert(i == static_cast<T>(static_cast<uint32_t>(i)), "narrowOop overflow");
-    return static_cast<narrowOop>(static_cast<uint32_t>(i));
-  }
+  static narrowOop narrow_oop_cast(T i);
 };
 
 // For UseCompressedClassPointers.

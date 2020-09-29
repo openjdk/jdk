@@ -382,7 +382,7 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
       new(ResourceObj::C_HEAP, mtClass) GrowableArray<juint>(10, mtClass);
   }
   _subgraph_entry_fields->append((juint)static_field_offset);
-  _subgraph_entry_fields->append(CompressedOops::narrow_oop_value(CompressedOops::encode(v)));
+  _subgraph_entry_fields->append(CompressedOops::narrow_oop_value(v));
   _subgraph_entry_fields->append(is_closed_archive ? 1 : 0);
 }
 

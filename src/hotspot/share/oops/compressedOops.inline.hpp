@@ -71,6 +71,23 @@ inline narrowOop CompressedOops::encode(oop v) {
   return is_null(v) ? narrowOop::null : encode_not_null(v);
 }
 
+inline uint32_t CompressedOops::narrow_oop_value(oop o) {
+  return narrow_oop_value(encode(o));
+}
+
+inline uint32_t CompressedOops::narrow_oop_value(narrowOop o) {
+  return static_cast<uint32_t>(o);
+}
+
+template<typename T>
+inline narrowOop CompressedOops::narrow_oop_cast(T i) {
+  static_assert(std::is_integral<T>::value, "precondition");
+  uint32_t narrow_value = static_cast<uint32_t>(i);
+  // Ensure no bits lost in conversion to uint32_t.
+  assert(i == static_cast<T>(narrow_value), "narrowOop overflow");
+  return static_cast<narrowOop>(narrow_value);
+}
+
 static inline bool check_alignment(Klass* v) {
   return (intptr_t)v % KlassAlignmentInBytes == 0;
 }
