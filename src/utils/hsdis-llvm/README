@@ -1,0 +1,121 @@
+Copyright (c) 2020 Microsoft Corporation. All rights reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+or visit www.oracle.com if you need additional information or have any
+questions.
+
+________________________________________________________________________
+
+'hsdis':  A HotSpot plugin for disassembling dynamically generated code.
+
+The files in this directory (Makefile, hsdis.[ch], hsdis-demo.c)
+are built independently of the HotSpot JVM.
+
+To use the plugin with a JVM, you need a new version that can load it.
+If the product mode of your JVM does not accept -XX:+PrintAssembly,
+you do not have a version that is new enough.
+
+* Building Windows+Arm64
+
+1. cross-compile LLVM on Windows-x86_64 for Windows-Arm64
+
+```
+PS> cd llvm-src
+PS> mkdir build
+PS> cd build
+PS> & "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsamd64_arm64.bat"
+PS> & 'C:\Program Files\CMake\bin\cmake.exe' .. -Thost=x64 -G "Visual Studio 15 2017" -A arm64 \
+  -DCMAKE_INSTALL_PREFIX="C:\LLVM-9-arm64" -DCMAKE_PREFIX_PATH="C:\LLVM-9-arm64" \
+  -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_LIBXML2=OFF -DLLVM_USE_CRT_RELEASE=MT -DLLVM_TARGETS_TO_BUILD=AArch64 \
+  -DLLVM_TABLEGEN="C:\LLVM-9-x86_64\bin\llvm-tblgen.exe" -DCMAKE_SYSTEM_VERSION="10.0.16299.0" -DLLVM_TOOL_LLVM_SHLIB_BUILD=OFF
+```
+
+2. cross-compile hsdis on Windows-x86_64 for Windows-Arm64
+
+```
+PS> & "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsamd64_arm64.bat"
+PS> & "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\bin\Hostx64\arm64\cl.exe" \
+  -I"C:\LLVM-9-arm64\include" -I"C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt" \
+  -I"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\include" -D_CRT_SECURE_NO_DEPRECATE \
+  -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE \
+  -D_SCL_SECURE_NO_WARNINGS -DUNICODE -D_UNICODE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS \
+  -DLIBARCH_aarch64 C:\git\jdk~arm64\src\utils\hsdis-llvm\hsdis.c /LD /link -LIBPATH:"C:\LLVM-9-arm64\lib" \
+  -LIBPATH:"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\lib\arm64" \
+  -LIBPATH:"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.17763.0\ucrt\arm64" \
+  -LIBPATH:"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.17763.0\um\arm64" /NODEFAULTLIB:libcmt.lib \
+  C:\LLVM-9-arm64\lib\LLVMAArch64Disassembler.lib C:\LLVM-9-arm64\lib\LLVMMCDisassembler.lib \
+  C:\LLVM-9-arm64\lib\LLVMAArch64CodeGen.lib C:\LLVM-9-arm64\lib\LLVMGlobalISel.lib C:\LLVM-9-arm64\lib\LLVMSelectionDAG.lib \
+  C:\LLVM-9-arm64\lib\LLVMAArch64AsmParser.lib C:\LLVM-9-arm64\lib\LLVMAArch64Desc.lib C:\LLVM-9-arm64\lib\LLVMAArch64Utils.lib \
+  C:\LLVM-9-arm64\lib\LLVMAArch64Info.lib C:\LLVM-9-arm64\lib\LLVMAsmPrinter.lib C:\LLVM-9-arm64\lib\LLVMDebugInfoDWARF.lib \
+  C:\LLVM-9-arm64\lib\LLVMCodeGen.lib C:\LLVM-9-arm64\lib\LLVMTarget.lib C:\LLVM-9-arm64\lib\LLVMScalarOpts.lib \
+  C:\LLVM-9-arm64\lib\LLVMInstCombine.lib C:\LLVM-9-arm64\lib\LLVMAggressiveInstCombine.lib \
+  C:\LLVM-9-arm64\lib\LLVMTransformUtils.lib C:\LLVM-9-arm64\lib\LLVMBitWriter.lib C:\LLVM-9-arm64\lib\LLVMAnalysis.lib \
+  C:\LLVM-9-arm64\lib\LLVMProfileData.lib C:\LLVM-9-arm64\lib\LLVMObject.lib C:\LLVM-9-arm64\lib\LLVMMCParser.lib \
+  C:\LLVM-9-arm64\lib\LLVMMC.lib C:\LLVM-9-arm64\lib\LLVMDebugInfoCodeView.lib C:\LLVM-9-arm64\lib\LLVMDebugInfoMSF.lib \
+  C:\LLVM-9-arm64\lib\LLVMBitReader.lib C:\LLVM-9-arm64\lib\LLVMCore.lib C:\LLVM-9-arm64\lib\LLVMRemarks.lib \
+  C:\LLVM-9-arm64\lib\LLVMBinaryFormat.lib C:\LLVM-9-arm64\lib\LLVMBitstreamReader.lib C:\LLVM-9-arm64\lib\LLVMSupport.lib \
+  C:\LLVM-9-arm64\lib\LLVMDemangle.lib psapi.lib shell32.lib ole32.lib uuid.lib advapi32.lib msvcrt.lib
+```
+
+* Building macOS-Arm64
+
+1. configure LLVM like so:
+
+```console
+$ git clone git@github.com:llvm/llvm-project.git
+$ cd llvm-project/llvm
+$ mkdir build; cd build
+$ cmake .. -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_LIBXML2=OFF -DLLVM_TARGETS_TO_BUILD=AArch64
+```
+
+2. change Makefile so that `LLVM_PRE` points to `llvm-project/llvm` from the previous step
+
+3. `make` should build `hsdis-aarch64.dylib`
+
+4. `make hsdis-demo && ./hsdis-demo` should give you a demo of its functionality
+
+* Installing
+
+Products are named like build/$OS-$LIBARCH/hsdis-$LIBARCH.so. You can
+install them next to your libjvm.so inside your JRE/JDK or alternatively
+put it anywhere on your LD_LIBRARY_PATH. The search path in the JVM is:
+
+1. <home>/lib/<vm>/libhsdis-<arch>.so
+2. <home>/lib/<vm>/hsdis-<arch>.so
+3. <home>/lib/hsdis-<arch>.so
+4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
+
+Now test:
+
+  export LD_LIBRARY_PATH .../hsdis/build/$OS-$LIBARCH:$LD_LIBRARY_PATH
+  dargs='-XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly'
+  dargs=$dargs' -XX:PrintAssemblyOptions=hsdis-print-bytes'
+  java $dargs -Xbatch CompileCommand=print,*String.hashCode HelloWorld
+
+If the product mode of the JVM does not accept -XX:+PrintAssembly,
+you do not have a version new enough to use the hsdis plugin.
+
+* Wiki
+
+More information can be found in the OpenJDK HotSpot Wiki [1].
+
+
+Resources:
+
+[1] https://wiki.openjdk.java.net/display/HotSpot/PrintAssembly
+[2] http://sourceware.org/bugzilla/show_bug.cgi?id=15345
