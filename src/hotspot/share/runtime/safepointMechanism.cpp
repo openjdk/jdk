@@ -56,7 +56,7 @@ void SafepointMechanism::default_initialize() {
     // Polling page
     const size_t page_size = os::vm_page_size();
     const size_t allocation_size = 2 * page_size;
-    char* polling_page = os::reserve_memory(allocation_size, NULL, page_size);
+    char* polling_page = os::reserve_memory(allocation_size, page_size);
     os::commit_memory_or_exit(polling_page, allocation_size, false, "Unable to commit Safepoint polling page");
     MemTracker::record_virtual_memory_type((address)polling_page, mtSafepoint);
 
@@ -91,8 +91,8 @@ void SafepointMechanism::process(JavaThread *thread) {
   // 3) Before the handshake code is run
   StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
 
-  if (thread->has_handshake()) {
-    thread->handshake_process_by_self();
+  if (thread->handshake_state()->should_process()) {
+    thread->handshake_state()->process_by_self(); // Recursive
   }
 }
 
@@ -111,7 +111,7 @@ uintptr_t SafepointMechanism::compute_poll_word(bool armed, uintptr_t stack_wate
 
 void SafepointMechanism::update_poll_values(JavaThread* thread) {
   for (;;) {
-    bool armed = global_poll() || thread->has_handshake();
+    bool armed = global_poll() || thread->handshake_state()->has_operation();
     uintptr_t stack_watermark = StackWatermarkSet::lowest_watermark(thread);
     uintptr_t poll_page = armed ? _poll_page_armed_value
                                 : _poll_page_disarmed_value;
@@ -119,7 +119,7 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
     thread->poll_data()->set_polling_page(poll_page);
     thread->poll_data()->set_polling_word(poll_word);
     OrderAccess::fence();
-    if (!armed && (global_poll() || thread->has_handshake())) {
+    if (!armed && (global_poll() || thread->handshake_state()->has_operation())) {
       // We disarmed an old safepoint, but a new one is synchronizing.
       // We need to arm the poll for the subsequent safepoint poll.
       continue;

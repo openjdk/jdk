@@ -1080,7 +1080,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 void InterpreterMacroAssembler::unlock_object(Register monitor, Register object) {
 
   if (UseHeavyMonitors) {
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
     return;
   }
 
@@ -1095,7 +1095,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
   //   monitor->set_obj(NULL);
   // } else {
   //   // Slow path.
-  //   InterpreterRuntime::monitorexit(THREAD, monitor);
+  //   InterpreterRuntime::monitorexit(monitor);
   // }
 
   const Register displaced_header = Z_ARG4;
@@ -1149,12 +1149,12 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   // } else {
   //   // Slow path.
-  //   InterpreterRuntime::monitorexit(THREAD, monitor);
+  //   InterpreterRuntime::monitorexit(monitor);
 
   // The lock has been converted into a heavy lock and hence
   // we need to get into the slow case.
   z_stg(object, obj_entry);   // Restore object entry, has been cleared above.
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
 
   // }
 

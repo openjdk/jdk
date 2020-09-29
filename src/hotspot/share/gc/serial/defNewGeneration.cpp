@@ -693,7 +693,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
-  _preserved_marks_set.get()->push_if_necessary(old, old->mark_raw());
+  _preserved_marks_set.get()->push_if_necessary(old, old->mark());
   // forward to self
   old->forward_to(old);
 

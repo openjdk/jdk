@@ -202,8 +202,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   void ensure_parsability(bool retire_tlabs);
   void resize_all_tlabs();
 
-  bool supports_tlab_allocation() const { return true; }
-
   size_t tlab_capacity(Thread* thr) const;
   size_t tlab_used(Thread* thr) const;
   size_t unsafe_max_tlab_alloc(Thread* thr) const;

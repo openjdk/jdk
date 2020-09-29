@@ -1156,7 +1156,7 @@ void MacroAssembler::biased_locking_enter(Register lock_reg,
   // the prototype header is no longer biased and we have to revoke
   // the bias on this object.
   testptr(header_reg, markWord::biased_lock_mask_in_place);
-  jccb(Assembler::notZero, try_revoke_bias);
+  jcc(Assembler::notZero, try_revoke_bias);
 
   // Biasing is still enabled for this data type. See whether the
   // epoch of the current bias is still valid, meaning that the epoch

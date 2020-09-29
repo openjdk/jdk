@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -809,7 +809,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
     protected class AccessibleJTableHeader extends AccessibleJComponent {
 
         /**
-         * Constructor for subclasses to call.
+         * Constructs an {@code AccessibleJTableHeader}.
          */
         protected AccessibleJTableHeader() {}
 

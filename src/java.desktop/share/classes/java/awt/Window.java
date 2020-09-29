@@ -3164,7 +3164,7 @@ public class Window extends Container implements Accessible {
         private static final long serialVersionUID = 4215068635060671780L;
 
         /**
-         * Constructs an {@code AccessibleAWTWindow}
+         * Constructs an {@code AccessibleAWTWindow}.
          */
         protected AccessibleAWTWindow() {}
 

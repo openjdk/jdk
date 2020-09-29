@@ -1728,7 +1728,7 @@ static void local_sem_init() {
   } else {
     // Memory semaphores must live in shared mem.
     guarantee0(p_sig_msem == NULL);
-    p_sig_msem = (msemaphore*)os::reserve_memory(sizeof(msemaphore), NULL);
+    p_sig_msem = (msemaphore*)os::reserve_memory(sizeof(msemaphore));
     guarantee(p_sig_msem, "Cannot allocate memory for memory semaphore");
     guarantee(::msem_init(p_sig_msem, 0) == p_sig_msem, "msem_init failed");
   }
@@ -2347,19 +2347,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 }
 
 // Reserves and attaches a shared memory segment.
-// Will assert if a wish address is given and could not be obtained.
-char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
-
-  // All other Unices do a mmap(MAP_FIXED) if the addr is given,
-  // thereby clobbering old mappings at that place. That is probably
-  // not intended, never used and almost certainly an error were it
-  // ever be used this way (to try attaching at a specified address
-  // without clobbering old mappings an alternate API exists,
-  // os::attempt_reserve_memory_at()).
-  // Instead of mimicking the dangerous coding of the other platforms, here I
-  // just ignore the request address (release) or assert(debug).
-  assert0(requested_addr == NULL);
-
+char* os::pd_reserve_memory(size_t bytes, size_t alignment_hint) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
   const size_t alignment_hint0 =
@@ -2368,12 +2356,12 @@ char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
   if (os::vm_page_size() == 4*K) {
-    return reserve_mmaped_memory(bytes, requested_addr, alignment_hint);
+    return reserve_mmaped_memory(bytes, NULL /* requested_addr */, alignment_hint);
   } else {
     if (bytes >= Use64KPagesThreshold) {
-      return reserve_shmated_memory(bytes, requested_addr, alignment_hint);
+      return reserve_shmated_memory(bytes, NULL /* requested_addr */, alignment_hint);
     } else {
-      return reserve_mmaped_memory(bytes, requested_addr, alignment_hint);
+      return reserve_mmaped_memory(bytes, NULL /* requested_addr */, alignment_hint);
     }
   }
 }
@@ -2544,7 +2532,7 @@ bool os::can_execute_large_page_memory() {
   return false;
 }
 
-char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int file_desc) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   char* result = NULL;
 
@@ -2562,7 +2550,7 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int f
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
   char* addr = NULL;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
