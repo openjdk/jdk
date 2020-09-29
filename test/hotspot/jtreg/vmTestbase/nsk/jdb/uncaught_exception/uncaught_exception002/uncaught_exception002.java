@@ -66,21 +66,20 @@
 
 package nsk.jdb.uncaught_exception.uncaught_exception002;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
 
 public class uncaught_exception002 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new uncaught_exception002(true).runTest(argv, out);
@@ -89,34 +88,55 @@ public class uncaught_exception002 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.uncaught_exception.uncaught_exception002";
     static final String TEST_CLASS = PACKAGE_NAME + ".uncaught_exception002";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
 
-    public uncaught_exception002(boolean debuggeeShouldFail) {
+    static final String[] FRAMES = new String[] {
+        DEBUGGEE_CLASS + ".func",
+        DEBUGGEE_CLASS + ".runIt",
+        DEBUGGEE_CLASS + ".main"                };
+
+    public uncaught_exception002 (boolean debuggeeShouldFail) {
         super(debuggeeShouldFail);
     }
 
     protected void runCases() {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+
         jdb.receiveReplyFor(JdbCommand.cont);
         jdb.receiveReplyFor(JdbCommand.locals);
         jdb.contToExit(1);
 
-        String[] reply = jdb.getTotalReply();
-        var grep = new Paragrep(reply);
+        reply = jdb.getTotalReply();
+        grep = new Paragrep(reply);
 
-        var v = new Vector<String>();
+        v = new Vector();
         v.add("Exception occurred");
         v.add(PACKAGE_NAME + ".TenMultipleException");
         if (grep.find(v) == 0) {
             failure("jdb does not reported of TenMultipleException occurence");
         }
 
-        v = new Vector<>();
+        v = new Vector();
         v.add("localVar");
         v.add("1234");
         if (grep.find(v) == 0) {
             failure("Local variable of stack frame the exception was thrown " +
-                    "is not accessible");
+                "is not accessible");
         }
+    }
+
+    private boolean checkStop () {
+        Paragrep grep;
+        String[] reply;
+        String found;
+        Vector v;
+        boolean result = true;
+
+        return result;
     }
 }

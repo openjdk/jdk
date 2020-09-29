@@ -61,37 +61,33 @@
 
 package nsk.jdb.interrupt.interrupt001;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class interrupt001 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         return new interrupt001().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME = "nsk.jdb.interrupt.interrupt001";
-    static final String TEST_CLASS = PACKAGE_NAME + ".interrupt001";
-    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".breakHere";
-    static final String MYTHREAD = "MyThread";
+    static final String PACKAGE_NAME    = "nsk.jdb.interrupt.interrupt001";
+    static final String TEST_CLASS      = PACKAGE_NAME + ".interrupt001";
+    static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
+    static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK      = DEBUGGEE_CLASS + ".breakHere";
+    static final String MYTHREAD        = "MyThread";
     static final String DEBUGGEE_THREAD = DEBUGGEE_CLASS + "$" + MYTHREAD;
     static final String DEBUGGEE_RESULT = DEBUGGEE_CLASS + ".notInterrupted.get()";
 
@@ -106,10 +102,16 @@ public class interrupt001 extends JdbTest {
     private static Pattern tidPattern = Pattern.compile("\\(.+" + MYTHREAD + "\\)(\\S+)");
 
     protected void runCases() {
-        jdb.setBreakpointInMethod(LAST_BREAK);
-        jdb.receiveReplyFor(JdbCommand.cont);
+        String[] reply;
+        Paragrep grep;
+        String found;
+        String[] threads;
 
-        String[] threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+        jdb.setBreakpointInMethod(LAST_BREAK);
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
+
+        threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+
         if (threads.length != numThreads) {
             log.complain("jdb should report " + numThreads + " instance of " + DEBUGGEE_THREAD);
             log.complain("Found: " + threads.length);
@@ -118,21 +120,21 @@ public class interrupt001 extends JdbTest {
 
         pauseTillAllThreadsWaiting(threads);
 
-        for (String thread : threads) {
-            jdb.receiveReplyFor(JdbCommand.interrupt + thread);
+        for (int i = 0; i < threads.length; i++) {
+            reply = jdb.receiveReplyFor(JdbCommand.interrupt + threads[i]);
         }
 
-        jdb.receiveReplyFor(JdbCommand.threads);
-        jdb.receiveReplyFor(JdbCommand.cont, true);
+        reply = jdb.receiveReplyFor(JdbCommand.threads);
+        reply = jdb.receiveReplyFor(JdbCommand.cont, true);
 
-        String[] reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_RESULT);
-        var grep = new Paragrep(reply);
-        String found = grep.findFirst(DEBUGGEE_RESULT + " =");
+        reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_RESULT);
+        grep = new Paragrep(reply);
+        found = grep.findFirst(DEBUGGEE_RESULT + " =" );
         if (found.length() > 0) {
-            if (!found.contains(DEBUGGEE_RESULT + " = 0")) {
-                log.complain("Not all " + MYTHREAD + "s were interrupted.");
-                log.complain(found);
-                success = false;
+            if (found.indexOf(DEBUGGEE_RESULT + " = 0") < 0) {
+               log.complain("Not all " + MYTHREAD + "s were interrupted.");
+               log.complain(found);
+               success = false;
             }
         } else {
             log.complain("TEST BUG: not found value for " + DEBUGGEE_RESULT);
@@ -142,33 +144,34 @@ public class interrupt001 extends JdbTest {
     }
 
     private void pauseTillAllThreadsWaiting(String[] threads) {
+        String[] reply;
         boolean tidswaiting = false;
 
         Set<String> tids = new HashSet<>(Arrays.asList(threads));
         Set<String> waitingTids = null;
 
         do {
-            String[] thrdsRply = jdb.receiveReplyFor(JdbCommand.threads);
-            waitingTids = Arrays.stream(thrdsRply)
-                    .filter((r) -> r.endsWith("waiting"))
-                    .map((r) -> {
-                        Matcher m = tidPattern.matcher(r);
-                        if (m.find()) {
-                            return m.group(1);
-                        }
-                        return null;
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
+            String[] thrdsRply = (String[])jdb.receiveReplyFor(JdbCommand.threads);
+            waitingTids = Arrays.asList(thrdsRply).stream()
+                .filter((r)-> r.endsWith("waiting"))
+                .map((r)->{
+                    Matcher m = tidPattern.matcher(r);
+                    if (m.find()) {
+                        return m.group(1);
+                    }
+                    return null;
+                })
+                .filter((r)-> r != null)
+                .collect(Collectors.toSet());
 
             // If all Tids are waiting set allWorkersAreWaiting to true so
             // the main test thread will get out of its breakpoint loop
             // and continue with the test.
             if (waitingTids.containsAll(tids)) {
-                jdb.receiveReplyFor(JdbCommand.set + DEBUGGEE_CLASS + ".allWorkersAreWaiting=true");
+                reply = jdb.receiveReplyFor(JdbCommand.set + DEBUGGEE_CLASS + ".allWorkersAreWaiting=true");
                 tidswaiting = true;
             } else {
-                jdb.receiveReplyFor(JdbCommand.cont);
+                reply = jdb.receiveReplyFor(JdbCommand.cont);
             }
         } while (!tidswaiting);
     }

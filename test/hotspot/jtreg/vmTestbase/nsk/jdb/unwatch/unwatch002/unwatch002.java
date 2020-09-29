@@ -65,103 +65,118 @@
 
 package nsk.jdb.unwatch.unwatch002;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
 
 public class unwatch002 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new unwatch002().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME = "nsk.jdb.unwatch.unwatch002";
-    static final String TEST_CLASS = PACKAGE_NAME + ".unwatch002";
-    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String DEBUGGEE_CLASS2 = DEBUGGEE_CLASS + "$CheckedFields";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".breakHere";
-    static final String expectedPrompt = "main[1]";
+    static final String PACKAGE_NAME       = "nsk.jdb.unwatch.unwatch002";
+    static final String TEST_CLASS         = PACKAGE_NAME + ".unwatch002";
+    static final String DEBUGGEE_CLASS     = TEST_CLASS + "a";
+    static final String DEBUGGEE_CLASS2    = DEBUGGEE_CLASS + "$CheckedFields";
+    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".breakHere";
+    static final String expectedPrompt     = "main[1]";
 
-    static String[] checkedFields = {"FS1"};
-    static String[] checkedFields2 = {"FT1", "FV1"};
+    static String[] checkedFields  = { "FS1" };
+    static String[] checkedFields2 = { "FT1", "FV1" };
 
     protected void runCases() {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+
         jdb.setBreakpointInMethod(LAST_BREAK);
 
-        jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS);
+        reply = jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS);
 
-        jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS2);
+        reply = jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS2);
 
-        watchFields(DEBUGGEE_CLASS, checkedFields);
-        watchFields(DEBUGGEE_CLASS2, checkedFields2);
+        watchFields (DEBUGGEE_CLASS, checkedFields);
+        watchFields (DEBUGGEE_CLASS2, checkedFields2);
 
 //        jdb.contToExit((checkedFields.length *2)  + (checkedFields2.length *2) + 2);
-        for (int i = 0; i < (checkedFields.length * 2 + checkedFields2.length * 2 + 2); i++) {
-            jdb.receiveReplyForWithMessageWait(JdbCommand.cont, expectedPrompt);
+        for (int i = 0; i < (checkedFields.length *2 + checkedFields2.length*2 + 2); i++) {
+            reply = jdb.receiveReplyForWithMessageWait(JdbCommand.cont, expectedPrompt);
         }
 
-        unwatchFields(DEBUGGEE_CLASS, checkedFields);
-        unwatchFields(DEBUGGEE_CLASS2, checkedFields2);
+        unwatchFields (DEBUGGEE_CLASS, checkedFields);
+        unwatchFields (DEBUGGEE_CLASS2, checkedFields2);
 
         // excessive number of cont commands in case if unwatch command does not work.
-        jdb.contToExit(checkedFields.length * 2 + checkedFields2.length * 2 + 1);
+        jdb.contToExit(checkedFields.length*2 + checkedFields2.length*2 + 1);
 
-        String[] reply = jdb.getTotalReply();
-        if (!checkFields(DEBUGGEE_CLASS, reply, checkedFields)) {
+        reply = jdb.getTotalReply();
+        if (!checkFields (DEBUGGEE_CLASS, reply, checkedFields)) {
             success = false;
         }
-        if (!checkFields(DEBUGGEE_CLASS2, reply, checkedFields2)) {
+        if (!checkFields (DEBUGGEE_CLASS2, reply, checkedFields2)) {
             success = false;
         }
     }
 
-    private void watchFields(String className, String[] checkedFields) {
-        for (String checkedField : checkedFields) {
-            jdb.receiveReplyFor(JdbCommand.watch + " all " + className + "." + checkedField);
+    private void watchFields (String className, String[] checkedFields) {
+        String[] reply;
+
+        for (int i = 0; i < checkedFields.length; i++) {
+            reply = jdb.receiveReplyFor(JdbCommand.watch + " all " + className + "." + checkedFields[i]);
         }
+
     }
 
-    private void unwatchFields(String className, String[] checkedFields) {
-        for (String checkedField : checkedFields) {
-            jdb.receiveReplyFor(JdbCommand.unwatch + " all " + className + "." + checkedField);
+    private void unwatchFields (String className, String[] checkedFields) {
+        String[] reply;
+
+        for (int i = 0; i < checkedFields.length; i++) {
+            reply = jdb.receiveReplyFor(JdbCommand.unwatch + " all " + className + "." + checkedFields[i]);
         }
+
     }
 
-    private boolean checkFields(String className, String[] reply, String[] checkedFields) {
+    private boolean checkFields (String className, String[] reply, String[] checkedFields) {
+        Paragrep grep;
+        String found;
         boolean result = true;
-        var v = new Vector<String>();
-        var grep = new Paragrep(reply);
+        int count;
+        Vector v = new Vector();
 
-        for (String checkedField : checkedFields) {
+        grep = new Paragrep(reply);
+        v.add("access encountered");
+        for (int i = 0; i < checkedFields.length; i++) {
             v.removeAllElements();
             v.add("access encountered");
-            v.add(className + "." + checkedField);
+            v.add(className + "." + checkedFields[i]);
 
-            int count = grep.find(v);
+            count = grep.find(v);
             if (count != 1) {
-                log.complain("jdb reported wrong number of access to the field " + className + "." + checkedField);
+                log.complain("jdb reported wrong number of access to the field " + className + "." + checkedFields[i]);
                 log.complain("Should be 1, reported: " + count);
                 result = false;
             }
 
             v.removeAllElements();
-            v.add(className + "." + checkedField);
+            v.add(className + "." + checkedFields[i]);
             v.add("will be instance");
 
             count = grep.find(v);
             if (count != 1) {
-                log.complain("jdb reported wrong number of modification of the field " + className + "." + checkedField);
+                log.complain("jdb reported wrong number of modification of the field " + className + "." + checkedFields[i]);
                 log.complain("Should be 1, reported: " + count);
                 result = false;
             }

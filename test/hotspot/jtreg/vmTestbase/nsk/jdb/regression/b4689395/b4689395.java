@@ -115,59 +115,58 @@
 
 package nsk.jdb.regression.b4689395;
 
-import nsk.share.Paragrep;
-import nsk.share.TestFailure;
+import nsk.share.*;
+import nsk.share.jdb.*;
 import nsk.share.classload.ClassLoadUtils;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
 
-import java.io.File;
-import java.io.PrintStream;
+import java.io.*;
+import java.util.*;
 
 public class b4689395 extends JdbTest {
-    final static String TEST_CLASS = b4689395.class.getName();
-    final static String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    final static String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    final static String ERROR_MESSAGE = "ERROR_M";
-    final static int LINE_NUMBER = 54;
-    private String classFile;
+        final static String TEST_CLASS     = b4689395.class.getName();
+        final static String DEBUGGEE_CLASS = TEST_CLASS + "a";
+        final static String FIRST_BREAK    = DEBUGGEE_CLASS + ".main";
+        final static String ERROR_MESSAGE  = "ERROR_M";
+        final static int    LINE_NUMBER    = 54;
+        private String classFile;
 
-    public static void main(String[] argv) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
-        firstBreak = FIRST_BREAK;
-        return new b4689395().runTest(argv, out);
-    }
-
-    public b4689395() {
-        classFile = ClassLoadUtils.getRedefineClassFileName(DEBUGGEE_CLASS);
-        if (classFile == null) {
-            throw new TestFailure("Unable to find redefine class file in classpath for: " + DEBUGGEE_CLASS);
-        }
-    }
-
-    protected void runCases() {
-        jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + LINE_NUMBER);
-        jdb.receiveReplyFor(JdbCommand.cont);
-
-        if (new File(classFile).exists()) {
-            jdb.receiveReplyFor(JdbCommand.redefine + DEBUGGEE_CLASS + " " + classFile);
-            String[] reply = jdb.receiveReplyFor(JdbCommand.next);
-
-            var grep = new Paragrep(reply);
-            if (grep.find(ERROR_MESSAGE) != 0) {
-                log.complain("'" + ERROR_MESSAGE + "' is not expected to be "
-                        + "printed after 'next' command.");
-                success = false;
-            }
-        } else {
-            log.complain("File does not exist: " + classFile);
-            success = false;
+        public static void main (String argv[]) {
+                System.exit(run(argv, System.out) + JCK_STATUS_BASE);
         }
 
-        jdb.contToExit(1);
-    }
+        public static int run(String argv[], PrintStream out) {
+                debuggeeClass =  DEBUGGEE_CLASS;
+                firstBreak = FIRST_BREAK;
+                return new b4689395().runTest(argv, out);
+        }
+
+        public b4689395() {
+                classFile = ClassLoadUtils.getRedefineClassFileName(DEBUGGEE_CLASS);
+                if (classFile == null)
+                        throw new TestFailure("Unable to find redefine class file in classpath for: " + DEBUGGEE_CLASS);
+        }
+
+        protected void runCases() {
+                String[] reply;
+                reply = jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + LINE_NUMBER);
+                reply = jdb.receiveReplyFor(JdbCommand.cont);
+
+                if (new File(classFile).exists()) {
+                        reply = jdb.receiveReplyFor(JdbCommand.redefine + DEBUGGEE_CLASS
+                                        + " " + classFile);
+                        reply = jdb.receiveReplyFor(JdbCommand.next);
+
+                        Paragrep grep = new Paragrep(reply);
+                        if (grep.find(ERROR_MESSAGE) != 0) {
+                                log.complain("'" + ERROR_MESSAGE + "' is not expected to be "
+                                                + "printed after 'next' command.");
+                                success = false;
+                        }
+                } else {
+                        log.complain("File does not exist: " + classFile);
+                        success = false;
+                }
+
+                jdb.contToExit(1);
+        }
 }

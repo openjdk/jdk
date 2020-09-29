@@ -48,36 +48,38 @@
 
 package nsk.jdb.pop_exception.pop_exception001;
 
-import nsk.share.Failure;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
+import java.io.*;
+import java.util.*;
 
 public class pop_exception001 extends JdbTest {
 
-    static final String PACKAGE_NAME = "nsk.jdb.pop_exception.pop_exception001";
-    static final String TEST_CLASS = PACKAGE_NAME + ".pop_exception001";
-    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String PACKAGE_NAME    = "nsk.jdb.pop_exception.pop_exception001";
+    static final String TEST_CLASS      = PACKAGE_NAME + ".pop_exception001";
+    static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
+    static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK      = DEBUGGEE_CLASS + ".lastBreak";
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new pop_exception001().runTest(argv, out);
     }
 
 
+
     protected void runCases() {
+
         jdb.receiveReplyFor(JdbCommand._catch + "java.lang.NullPointerException");
         jdb.receiveReplyFor(JdbCommand.cont);
-        // exception
+        //exception
         jdb.receiveReplyFor(JdbCommand.pop);
         jdb.receiveReplyFor(JdbCommand.pop);
         jdb.receiveReplyFor(JdbCommand.ignore + "java.lang.NullPointerException");
@@ -91,11 +93,11 @@ public class pop_exception001 extends JdbTest {
     }
 
     private void checkJdbReply(String[] jdbReply) {
-        StringBuilder replyString = new StringBuilder();
-        for (String s : jdbReply) {
-            replyString.append(s);
-            if (s.contains("line=")) {
-                if (!s.contains("line=" + pop_exception001a.expectedFinish)) {
+        String replyString = "";
+        for(String s: jdbReply) {
+            replyString += s;
+            if(s.contains("line=")){
+                if(!s.contains("line=" + pop_exception001a.expectedFinish)) {
                     throw new Failure("FAILED: Expected location: line=" + pop_exception001a.expectedFinish + "\n found: " + s);
                 } else {
                     return;

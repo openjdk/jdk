@@ -70,46 +70,53 @@
 
 package nsk.jdb.step.step002;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
+import java.io.*;
+import java.util.*;
 
 public class step002 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new step002().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME = "nsk.jdb.step.step002";
-    static final String TEST_CLASS = PACKAGE_NAME + ".step002";
-    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
-    static final int BREAKPOINT_LINE = 50;
+    static final String PACKAGE_NAME    = "nsk.jdb.step.step002";
+    static final String TEST_CLASS      = PACKAGE_NAME + ".step002";
+    static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
+    static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK      = DEBUGGEE_CLASS + ".lastBreak";
+    static final int    BREAKPOINT_LINE = 50;
 
     protected void runCases() {
-        jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + BREAKPOINT_LINE);
-        jdb.receiveReplyFor(JdbCommand.cont);
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+        String[] threads;
+
+        reply = jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + BREAKPOINT_LINE);
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
 
         // case #1 : step inside frame;
-        jdb.receiveReplyFor(JdbCommand.step);
-        String[] reply = jdb.receiveReplyFor(JdbCommand.eval + "intVar");
-        var grep = new Paragrep(reply);
+        reply = jdb.receiveReplyFor(JdbCommand.step);
+        reply = jdb.receiveReplyFor(JdbCommand.eval + "intVar");
+        grep = new Paragrep(reply);
         if (grep.find("1234") == 0) {
             failure("CASE #1 FAILED: Wrong location after step inside current method");
         }
 
         // case #1 : step into called frame;
-        jdb.receiveReplyFor(JdbCommand.step);
+        reply = jdb.receiveReplyFor(JdbCommand.step);
         reply = jdb.receiveReplyFor(JdbCommand.where);
         grep = new Paragrep(reply);
         if (grep.find("foo") == 0) {
@@ -117,7 +124,7 @@ public class step002 extends JdbTest {
         }
 
         // case #1 : step out to calling frame;
-        jdb.receiveReplyFor(JdbCommand.step);
+        reply = jdb.receiveReplyFor(JdbCommand.step);
         reply = jdb.receiveReplyFor(JdbCommand.where);
         grep = new Paragrep(reply);
         if (grep.find("foo") > 0) {

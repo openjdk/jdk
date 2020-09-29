@@ -56,46 +56,51 @@
 
 package nsk.jdb.where.where006;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
+import java.io.*;
+import java.util.*;
 
 public class where006 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new where006().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME = "nsk.jdb.where.where006";
-    static final String TEST_CLASS = PACKAGE_NAME + ".where006";
-    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String PACKAGE_NAME     = "nsk.jdb.where.where006";
+    static final String TEST_CLASS       = PACKAGE_NAME + ".where006";
+    static final String DEBUGGEE_CLASS   = TEST_CLASS + "a";
+    static final String FIRST_BREAK      = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK       = DEBUGGEE_CLASS + ".lastBreak";
 
-    static final String[][] FRAMES = new String[][]{
-            {PACKAGE_NAME + ".MyThread.func5", "111"},
-            {PACKAGE_NAME + ".MyThread.func4", "103"},
-            {PACKAGE_NAME + ".MyThread.func3", "99"},
-            {PACKAGE_NAME + ".MyThread.func2", "95"},
-            {PACKAGE_NAME + ".MyThread.func1", "91"},
-            {PACKAGE_NAME + ".MyThread.run", "85"},
-    };
-
+    static final String[][] FRAMES = new String[][] {
+        {PACKAGE_NAME + ".MyThread.func5", "111"},
+        {PACKAGE_NAME + ".MyThread.func4", "103"},
+        {PACKAGE_NAME + ".MyThread.func3", "99"},
+        {PACKAGE_NAME + ".MyThread.func2", "95"},
+        {PACKAGE_NAME + ".MyThread.func1", "91"},
+        {PACKAGE_NAME + ".MyThread.run", "85"},
+                                                };
     protected void runCases() {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
         String[] threadIds = jdb.getThreadIds(PACKAGE_NAME + ".MyThread");
-        String[] reply = jdb.receiveReplyFor(JdbCommand.where + "all");
+        reply = jdb.receiveReplyFor(JdbCommand.where + "all");
         for (int i = 0; i < where006a.numThreads; i++) {
             checkFrames(threadIds[i], reply, 5);
         }
@@ -108,20 +113,25 @@ public class where006 extends JdbTest {
         jdb.contToExit(1);
     }
 
-    void checkFrames(String threadId, String[] reply, int expectedVal) {
-        var grep = new Paragrep(reply);
-        for (String[] frame : FRAMES) {
-            int count = grep.find(frame[0]);
+    void checkFrames (String threadId, String[] reply, int expectedVal) {
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+
+        grep = new Paragrep(reply);
+        for (int j = 0; j < FRAMES.length; j++) {
+            count = grep.find(FRAMES[j][0]);
             if (count != expectedVal) {
-                failure("Unexpected number of occurencies of the stack frame: " + frame[0] +
-                        " for thread " + threadId +
-                        "\n\t Expected number of occurence: " + expectedVal + ", got : " + count);
+                failure("Unexpected number of occurencies of the stack frame: " + FRAMES[j][0] +
+                    " for thread " + threadId +
+                    "\n\t Expected number of occurence: " + expectedVal +", got : " + count);
                 if (count > 0) {
-                    String found = grep.findFirst(frame[0]);
-                    if (!found.contains(frame[1])) {
-                        failure("Unexpected location in the stack frame: " + frame[0] +
-                                " for thread " + threadId +
-                                "\n\t Expected location: " + frame[1] + ", got :\n\t" + found);
+                    found = grep.findFirst(FRAMES[j][0]);
+                    if (found.indexOf(FRAMES[j][1]) < 0) {
+                        failure("Unexpected location in the stack frame: " + FRAMES[j][0] +
+                            " for thread " + threadId +
+                            "\n\t Expected location: " + FRAMES[j][1] + ", got :\n\t" + found);
                     }
                 }
             }

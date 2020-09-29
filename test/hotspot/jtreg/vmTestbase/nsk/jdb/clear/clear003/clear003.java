@@ -53,21 +53,20 @@
 
 package nsk.jdb.clear.clear003;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.Jdb;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
+import java.io.*;
+import java.util.*;
 
 public class clear003 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new clear003().runTest(argv, out);
@@ -76,20 +75,26 @@ public class clear003 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.clear.clear003";
     static final String TEST_CLASS = PACKAGE_NAME + ".clear003";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String FIRST_BREAK      = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK       = DEBUGGEE_CLASS + ".lastBreak";
     static final String METHOD4 = "func4";
     static final String METHOD5 = "func5";
     static final String METHOD_TO_CLEAR = DEBUGGEE_CLASS + "." + METHOD4;
 
     protected void runCases() {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+
         log.display("Setting breakpoint in method: " + METHOD5);
         jdb.setBreakpointInMethod(DEBUGGEE_CLASS + "." + METHOD5);
 
         log.display("Clearing breakpoint.");
-        String[] reply = jdb.receiveReplyFor(JdbCommand.clear + METHOD_TO_CLEAR);
-        var grep = new Paragrep(reply);
-        int count = grep.find("Removed:");
+        reply = jdb.receiveReplyFor(JdbCommand.clear + METHOD_TO_CLEAR);
+        grep = new Paragrep(reply);
+        count = grep.find("Removed:");
         if (count > 0) {
             log.complain("Cleared non-existent breakpoint in method: " + METHOD_TO_CLEAR);
             success = false;

@@ -60,21 +60,20 @@
 
 package nsk.jdb.monitor.monitor001;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
 
 public class monitor001 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new monitor001().runTest(argv, out);
@@ -83,28 +82,34 @@ public class monitor001 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.monitor.monitor001";
     static final String TEST_CLASS = PACKAGE_NAME + ".monitor001";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
-    static final int LINE_NUMBER = 47;
+    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
+    static final int    LINE_NUMBER        = 47;
 
     static final String[] CHECKED_COMMANDS = {
-            JdbCommand.threads,
-            JdbCommand.methods + DEBUGGEE_CLASS,
-            JdbCommand.fields + DEBUGGEE_CLASS,
-            JdbCommand.eval + "(new java.lang.String(\"Hello, World\")).length()"
-    };
+        JdbCommand.threads,
+        JdbCommand.methods + DEBUGGEE_CLASS,
+        JdbCommand.fields  + DEBUGGEE_CLASS,
+        JdbCommand.eval + "(new java.lang.String(\"Hello, World\")).length()"
+                                             };
 
     protected void runCases() {
-        jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + LINE_NUMBER);
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
 
-        for (String checkedCommand : CHECKED_COMMANDS) {
-            jdb.receiveReplyFor(JdbCommand.monitor + checkedCommand);
+        reply = jdb.receiveReplyFor(JdbCommand.stop_at + DEBUGGEE_CLASS + ":" + LINE_NUMBER);
+
+        for (int i = 0; i < CHECKED_COMMANDS.length; i++) {
+            reply = jdb.receiveReplyFor(JdbCommand.monitor + CHECKED_COMMANDS[i]);
         }
 
         int repliesCount = CHECKED_COMMANDS.length + 1;
-        jdb.receiveReplyFor(JdbCommand.cont, true, repliesCount);
+        reply = jdb.receiveReplyFor(JdbCommand.cont, true, repliesCount);
 
-        String[] reply = jdb.receiveReplyFor(JdbCommand.monitor);
+        reply = jdb.receiveReplyFor(JdbCommand.monitor);
         if (!checkMonitors(reply)) {
             success = false;
         }
@@ -118,13 +123,16 @@ public class monitor001 extends JdbTest {
     }
 
     private boolean checkMonitors(String[] reply) {
+        Paragrep grep;
+        String found;
+        Vector v;
         boolean result = true;
+        int count;
 
-        var grep = new Paragrep(reply);
-        for (String checkedCommand : CHECKED_COMMANDS) {
-            int count =  grep.find(checkedCommand);
-            if (count != 1) {
-                log.complain("Wrong number of monitor command: " + checkedCommand);
+        grep = new Paragrep(reply);
+        for (int i = 0; i < CHECKED_COMMANDS.length; i++) {
+            if ((count = grep.find(CHECKED_COMMANDS[i])) != 1) {
+                log.complain("Wrong number of monitor command: " + CHECKED_COMMANDS[i]);
                 log.complain("    Expected: 1; found: " + count);
                 result = false;
             }
@@ -134,13 +142,15 @@ public class monitor001 extends JdbTest {
     }
 
     private boolean checkCommands(String[] reply) {
+        Paragrep grep;
+        String found;
+        Vector v = new Vector();
         boolean result = true;
-
-        var grep = new Paragrep(reply);
         int count;
 
+        grep = new Paragrep(reply);
+
         // check 'threads'
-        var v = new Vector<String>();
         v.add("java.lang.Thread");
         v.add("main");
         if ((count = grep.find(v)) != 1) {

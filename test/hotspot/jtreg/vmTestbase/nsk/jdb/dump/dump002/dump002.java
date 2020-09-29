@@ -61,21 +61,20 @@
 
 package nsk.jdb.dump.dump002;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
 
 public class dump002 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         compoundPromptIdent = COMPOUND_PROMPT_IDENT;
@@ -85,51 +84,56 @@ public class dump002 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.dump.dump002";
     static final String TEST_CLASS = PACKAGE_NAME + ".dump002";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
     static final String COMPOUND_PROMPT_IDENT = "main";
 
     static final String[] CHECKED_FIELDS = {
-            "_dump002a",
-            "iStatic",
-            "iPrivate",
-            "iProtect",
-            "iPublic",
-            "iFinal",
-            "iTransient",
-            "iVolatile",
-            "iArray",
-            "sStatic",
-            "sPrivate",
-            "sProtected",
-            "sPublic",
-            "sFinal",
-            "sTransient",
-            "sVolatile",
-            "sArray",
-            "fBoolean",
-            "fByte",
-            "fChar",
-            "fDouble",
-            "fFloat",
-            "fInt",
-            "fLong",
-            "fShort"
-    };
+        "_dump002a",
+        "iStatic",
+        "iPrivate",
+        "iProtect",
+        "iPublic",
+        "iFinal",
+        "iTransient",
+        "iVolatile",
+        "iArray",
+        "sStatic",
+        "sPrivate",
+        "sProtected",
+        "sPublic",
+        "sFinal",
+        "sTransient",
+        "sVolatile",
+        "sArray",
+        "fBoolean",
+        "fByte",
+        "fChar",
+        "fDouble",
+        "fFloat",
+        "fInt",
+        "fLong",
+        "fShort"
+                                         };
 
     protected void runCases() {
-        jdb.setBreakpointInMethod(LAST_BREAK);
-        jdb.receiveReplyFor(JdbCommand.cont);
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v = new Vector();
+        String found;
 
-        String[] reply = jdb.receiveReplyFor(JdbCommand.dump + DEBUGGEE_CLASS + "._dump002a");
-        var grep = new Paragrep(reply);
-        var v = new Vector<String>();
-        for (String field : CHECKED_FIELDS) {
+        jdb.setBreakpointInMethod(LAST_BREAK);
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
+
+        reply = jdb.receiveReplyFor(JdbCommand.dump + DEBUGGEE_CLASS + "._dump002a");
+        grep = new Paragrep(reply);
+        for (int i = 0; i < CHECKED_FIELDS.length; i++) {
             v.setSize(0);
-            v.add(field);
+            v.add(CHECKED_FIELDS[i]);
             v.add("null");
             if (grep.find(v) > 0) {
-                failure("The field is not dumped : " + field);
+                failure("The field is not dumped : " + CHECKED_FIELDS[i]);
             }
         }
 
@@ -144,9 +148,9 @@ public class dump002 extends JdbTest {
         jdb.contToExit(1);
     }
 
-    void checkField(String[] reply, String fieldName) {
+    void checkField (String[] reply, String fieldName) {
         Paragrep grep;
-        var v = new Vector<String>();
+        Vector v = new Vector();
 
         grep = new Paragrep(reply);
         v.setSize(0);

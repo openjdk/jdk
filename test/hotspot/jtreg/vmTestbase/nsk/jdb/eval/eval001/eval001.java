@@ -66,21 +66,20 @@
 
 package nsk.jdb.eval.eval001;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
 
 public class eval001 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new eval001().runTest(argv, out);
@@ -89,29 +88,35 @@ public class eval001 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.eval.eval001";
     static final String TEST_CLASS = PACKAGE_NAME + ".eval001";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
 
     static final String[][] checkedExpr = {
-            {DEBUGGEE_CLASS + ".myStaticField", "-2147483648"},
-            {DEBUGGEE_CLASS + "._eval001a.myInstanceField", "9223372036854775807"},
-            {DEBUGGEE_CLASS + "._eval001a.myArrayField[0][0].toString()", "ABCDE"},
-            {DEBUGGEE_CLASS + "._eval001a.myMethod()", "2147483647"},
-            {"myClass.toString().equals(\"abcde\")", "true"},
-            {"i + j + k", "777"},
-            {"new java.lang.String(\"Hello, World\").length()", "12"},
-            {DEBUGGEE_CLASS + "._eval001a.testPrimitiveArray(test)", "1.0"}
-    };
+        { DEBUGGEE_CLASS + ".myStaticField", "-2147483648" },
+        { DEBUGGEE_CLASS + "._eval001a.myInstanceField", "9223372036854775807" },
+        { DEBUGGEE_CLASS + "._eval001a.myArrayField[0][0].toString()", "ABCDE" },
+        { DEBUGGEE_CLASS + "._eval001a.myMethod()", "2147483647" },
+        { "myClass.toString().equals(\"abcde\")", "true"},
+        { "i + j + k", "777"},
+        { "new java.lang.String(\"Hello, World\").length()", "12"},
+        { DEBUGGEE_CLASS + "._eval001a.testPrimitiveArray(test)", "1.0" }
+                                          };
 
     protected void runCases() {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+
         jdb.setBreakpointInMethod(LAST_BREAK);
-        jdb.receiveReplyFor(JdbCommand.cont);
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
 
         // to get out of lastBreak()
-        jdb.receiveReplyFor(JdbCommand.step);
+        reply = jdb.receiveReplyFor(JdbCommand.step);
 
-        for (String[] strings : checkedExpr) {
-            if (!checkValue(strings[0], strings[1])) {
+        for (int i = 0; i < checkedExpr.length; i++) {
+            if (!checkValue(checkedExpr[i][0], checkedExpr[i][1])) {
                 success = false;
             }
         }
@@ -119,15 +124,19 @@ public class eval001 extends JdbTest {
         jdb.contToExit(1);
     }
 
-    private boolean checkValue(String expr, String value) {
+    private boolean checkValue (String expr, String value) {
+        Paragrep grep;
+        String[] reply;
+        String found;
+        Vector v;
         boolean result = true;
 
-        String[] reply = jdb.receiveReplyFor(JdbCommand.eval + expr);
-        var grep = new Paragrep(reply);
-        String found = grep.findFirst(value);
+        reply = jdb.receiveReplyFor(JdbCommand.eval + expr);
+        grep = new Paragrep(reply);
+        found = grep.findFirst(value);
         if (found.length() <= 0) {
             log.complain("jdb failed to report value of expression: " + expr);
-            log.complain("expected : " + value + " ;\nreported: " + (reply.length > 0 ? reply[0] : ""));
+            log.complain("expected : " + value + " ;\nreported: " + (reply.length > 0? reply[0]: ""));
             result = false;
         }
         return result;

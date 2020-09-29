@@ -73,37 +73,44 @@
 
 package nsk.jdb.exclude.exclude001;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
+import java.io.*;
+import java.util.*;
 
 public class exclude001 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new exclude001().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME = "nsk.jdb.exclude.exclude001";
-    static final String TEST_CLASS = PACKAGE_NAME + ".exclude001";
-    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
-    static final String MYTHREAD = "MyThread";
+    static final String PACKAGE_NAME    = "nsk.jdb.exclude.exclude001";
+    static final String TEST_CLASS      = PACKAGE_NAME + ".exclude001";
+    static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
+    static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK      = DEBUGGEE_CLASS + ".lastBreak";
+    static final String MYTHREAD        = "MyThread";
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + "." + MYTHREAD;
 
     static final String JAVA_CORE_METHOD = "java.lang.System.currentTimeMillis";
-    static final String SUN_METHOD = "sun.util.calendar.Gregorian";
+    static final String SUN_METHOD   = "sun.util.calendar.Gregorian";
 
     protected void runCases() {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+        String[] threads;
+
         String oldExclude = "";
         boolean javaTraced = false;
         boolean comTraced = false;
@@ -112,11 +119,12 @@ public class exclude001 extends JdbTest {
         jdb.setBreakpointInMethod(LAST_BREAK);
 
         // getting predefined 'exclude' value
-        String[] reply = jdb.receiveReplyFor(JdbCommand.exclude);
+        reply = jdb.receiveReplyFor(JdbCommand.exclude);
         if (reply.length == 0) {
             log.complain("Predefined excluded lists of classes is empty");
             success = false;
         } else {
+
             oldExclude = reply[0];
 
             for (int testCase = 0; testCase < exclude001a.numThreads; testCase++) {
@@ -124,7 +132,8 @@ public class exclude001 extends JdbTest {
                 reply = jdb.receiveReplyFor(JdbCommand.cont);
 
                 if (jdb.isAtBreakpoint(reply, LAST_BREAK)) {
-                    String[] threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+
+                    threads = jdb.getThreadIds(DEBUGGEE_THREAD);
 
                     if (threads.length != 1) {
                         log.complain("jdb should report 1 instance of " + DEBUGGEE_THREAD);
@@ -132,27 +141,28 @@ public class exclude001 extends JdbTest {
                         success = false;
                     } else {
 
-                        jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak;
+                        reply = jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak;
 
                         switch (testCase) {
-                            case 0: // block all
-                                jdb.receiveReplyFor(JdbCommand.exclude + "java.*,javax.*,sun.*,com.sun.*,jdk.*");
+                        case 0: // block all
+                                reply = jdb.receiveReplyFor(JdbCommand.exclude + "java.*,javax.*,sun.*,com.sun.*,jdk.*");
+
                                 break;
-                            case 1: // allow java.*
-                                jdb.receiveReplyFor(JdbCommand.exclude + "javax.*,sun.*,com.sun.*,jdk.*");
+                        case 1: // allow java.*
+                                reply = jdb.receiveReplyFor(JdbCommand.exclude + "javax.*,sun.*,com.sun.*,jdk.*");
                                 break;
-                            case 2: // allow sun.*
-                                jdb.receiveReplyFor(JdbCommand.exclude + "java.*,javax.*,com.sun.*,jdk.*");
+                        case 2: // allow sun.*
+                                reply = jdb.receiveReplyFor(JdbCommand.exclude + "java.*,javax.*,com.sun.*,jdk.*");
                                 break;
                         }
 
-                        jdb.receiveReplyFor(JdbCommand.trace + "methods " + threads[0]);
+                        reply = jdb.receiveReplyFor(JdbCommand.trace + "methods " + threads[0]);
 
                         while (true) {
                             reply = jdb.receiveReplyForWithMessageWait(JdbCommand.cont, expectedPrompt);
 
-                            var grep = new Paragrep(reply);
-                            int count = grep.find(JAVA_CORE_METHOD);
+                            grep = new Paragrep(reply);
+                            count = grep.find(JAVA_CORE_METHOD);
                             if (count > 0) {
                                 if (testCase != 0) {
                                     javaTraced = true;
@@ -174,8 +184,8 @@ public class exclude001 extends JdbTest {
                             if (count > 0) {
                                 nskTraced = true;
 
-                                jdb.receiveReplyFor(JdbCommand.exclude + oldExclude);
-                                jdb.receiveReplyFor(JdbCommand.untrace + "methods " + threads[0]);
+                                reply = jdb.receiveReplyFor(JdbCommand.exclude + oldExclude);
+                                reply = jdb.receiveReplyFor(JdbCommand.untrace + "methods "+ threads[0]);
                                 break;
                             }
                         }

@@ -62,89 +62,100 @@
 
 package nsk.jdb.watch.watch002;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
 
 public class watch002 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         compoundPromptIdent = COMPOUND_PROMPT_IDENT;
         return new watch002().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME = "nsk.jdb.watch.watch002";
-    static final String TEST_CLASS = PACKAGE_NAME + ".watch002";
-    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String DEBUGGEE_CLASS2 = DEBUGGEE_CLASS + "$CheckedFields";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".breakHere";
+    static final String PACKAGE_NAME       = "nsk.jdb.watch.watch002";
+    static final String TEST_CLASS         = PACKAGE_NAME + ".watch002";
+    static final String DEBUGGEE_CLASS     = TEST_CLASS + "a";
+    static final String DEBUGGEE_CLASS2    = DEBUGGEE_CLASS + "$CheckedFields";
+    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".breakHere";
     static final String COMPOUND_PROMPT_IDENT = "main";
 
-    static String[] checkedFields = {"FS0", "FS1"};
-    static String[] checkedFields2 = {"FP1", "FU1", "FR1", "FT1", "FV1"};
+    static String[] checkedFields  = { "FS0", "FS1" };
+    static String[] checkedFields2 = { "FP1", "FU1", "FR1", "FT1", "FV1" };
 
     protected void runCases() {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+
         jdb.setBreakpointInMethod(LAST_BREAK);
 
-        jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS);
+        reply = jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS);
 
-        jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS2);
+        reply = jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS2);
 
-        watchFields(DEBUGGEE_CLASS, checkedFields);
-        watchFields(DEBUGGEE_CLASS2, checkedFields2);
+        watchFields (DEBUGGEE_CLASS, checkedFields);
+        watchFields (DEBUGGEE_CLASS2, checkedFields2);
 
-        jdb.contToExit((checkedFields.length * 2) + (checkedFields2.length * 2) + 2);
+        jdb.contToExit((checkedFields.length *2)  + (checkedFields2.length *2) + 2);
 
-        String[] reply = jdb.getTotalReply();
-        if (!checkFields(DEBUGGEE_CLASS, reply, checkedFields)) {
+        reply = jdb.getTotalReply();
+        if (!checkFields (DEBUGGEE_CLASS, reply, checkedFields)) {
             success = false;
         }
-        if (!checkFields(DEBUGGEE_CLASS2, reply, checkedFields2)) {
+        if (!checkFields (DEBUGGEE_CLASS2, reply, checkedFields2)) {
             success = false;
         }
     }
 
-    private void watchFields(String className, String[] checkedFields) {
-        for (String checkedField : checkedFields) {
-            jdb.receiveReplyFor(JdbCommand.watch + " all " + className + "." + checkedField);
+    private void watchFields (String className, String[] checkedFields) {
+        String[] reply;
+
+        for (int i = 0; i < checkedFields.length; i++) {
+            reply = jdb.receiveReplyFor(JdbCommand.watch + " all " + className + "." + checkedFields[i]);
         }
 
     }
 
-    private boolean checkFields(String className, String[] reply, String[] checkedFields) {
+    private boolean checkFields (String className, String[] reply, String[] checkedFields) {
+        Paragrep grep;
+        String found;
         boolean result = true;
-        var v = new Vector<String>();
-        var grep = new Paragrep(reply);
+        int count;
+        Vector v = new Vector();
 
-        for (String checkedField : checkedFields) {
+        grep = new Paragrep(reply);
+        v.add("access encountered");
+        for (int i = 0; i < checkedFields.length; i++) {
             v.removeAllElements();
             v.add("access encountered");
-            v.add(className + "." + checkedField);
+            v.add(className + "." + checkedFields[i]);
 
-            String found = grep.findFirst(v);
+            found = grep.findFirst(v);
             if (found.length() == 0) {
-                log.complain("Failed to report access to field " + className + "." + checkedField);
+                log.complain("Failed to report access to field " + className + "." + checkedFields[i]);
                 result = false;
             }
 
             v.removeAllElements();
             v.add("will be");
-            v.add(className + "." + checkedField);
+            v.add(className + "." + checkedFields[i]);
 
             found = grep.findFirst(v);
             if (found.length() == 0) {
-                log.complain("Failed to report modification of field " + className + "." + checkedField);
+                log.complain("Failed to report modification of field " + className + "." + checkedFields[i]);
                 result = false;
             }
         }

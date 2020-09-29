@@ -66,39 +66,41 @@
 
 package nsk.jdb.options.listconnectors.listconnectors001;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.Jdb;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
 
 public class listconnectors001 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new listconnectors001().runTest(argv, out);
     }
 
+    static final String PACKAGE_NAME = "nsk.jdb.options.connect";
+    static final String TEST_CLASS = PACKAGE_NAME + ".connect001";
     static final String DEBUGGEE_CLASS = null;
-    static final String FIRST_BREAK = null;
-    static final String LAST_BREAK = null;
+    static final String FIRST_BREAK    = null;
+    static final String LAST_BREAK     = null;
 
+    static final String TESTED_OPTION = "-listconnectors";
     static final String TESTED_CONNECTORS_LIST[] = {
-            "com.sun.jdi.CommandLineLaunch", "dt_socket",
-            "com.sun.jdi.CommandLineLaunch", "dt_shmem",
-            "com.sun.jdi.RawCommandLineLaunch", "dt_socket",
-            "com.sun.jdi.RawCommandLineLaunch", "dt_shmem",
-            "com.sun.jdi.SocketAttach", "dt_socket",
-            "com.sun.jdi.SocketListen", "dt_socket",
-            "com.sun.jdi.SharedMemoryAttach", "dt_shmem",
-            "com.sun.jdi.SharedMemoryListen", "dt_shmem",
+        "com.sun.jdi.CommandLineLaunch", "dt_socket",
+        "com.sun.jdi.CommandLineLaunch", "dt_shmem",
+        "com.sun.jdi.RawCommandLineLaunch", "dt_socket",
+        "com.sun.jdi.RawCommandLineLaunch", "dt_shmem",
+        "com.sun.jdi.SocketAttach", "dt_socket",
+        "com.sun.jdi.SocketListen", "dt_socket",
+        "com.sun.jdi.SharedMemoryAttach", "dt_shmem",
+        "com.sun.jdi.SharedMemoryListen", "dt_shmem",
     };
     static final int TESTED_CONNECTORS_COUNT = TESTED_CONNECTORS_LIST.length / 2;
 /*
@@ -124,11 +126,11 @@ public class listconnectors001 extends JdbTest {
         String[] reply = jdb.getTotalReply();
 
         for (int i = 0; i < TESTED_CONNECTORS_COUNT; i++) {
-            String connector = TESTED_CONNECTORS_LIST[i * 2];
-            String transport = TESTED_CONNECTORS_LIST[i * 2 + 1];
-            var grep = new Paragrep(reply);
+            String connector = TESTED_CONNECTORS_LIST[i*2 + 0];
+            String transport = TESTED_CONNECTORS_LIST[i*2 + 1];
+            Paragrep grep = new Paragrep(reply);
 
-            var v = new Vector<String>();
+            Vector<String> v = new Vector<String>();
             v.add(Jdb.SUPPORTED_CONNECTOR_NAME);
             v.add(connector);
             v.add(Jdb.SUPPORTED_TRANSPORT_NAME);
@@ -148,7 +150,7 @@ public class listconnectors001 extends JdbTest {
                         + "  transport: " + transport
                         + "  found: " + found);
             } else if (argumentHandler.shouldPass(connector)
-                    || argumentHandler.shouldPass(connector, transport)) {
+                            || argumentHandler.shouldPass(connector, transport)) {
                 display("unsupported connector not found:\n"
                         + "  connector: " + connector
                         + "  transport: " + transport

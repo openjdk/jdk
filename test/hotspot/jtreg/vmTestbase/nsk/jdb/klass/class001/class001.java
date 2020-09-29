@@ -54,51 +54,57 @@
 
 package nsk.jdb.klass.class001;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
+import java.io.*;
+import java.util.*;
 
 public class class001 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new class001().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME = "nsk.jdb.klass.class001";
-    static final String TEST_CLASS = PACKAGE_NAME + ".class001";
-    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
-    static final String NOT_VALID_SAMPLE = "is not a valid";
+    static final String PACKAGE_NAME       = "nsk.jdb.klass.class001";
+    static final String TEST_CLASS         = PACKAGE_NAME + ".class001";
+    static final String DEBUGGEE_CLASS     = TEST_CLASS + "a";
+    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
+    static final String NOT_VALID_SAMPLE   = "is not a valid";
 
     static String[] checkedClasses = {
-            DEBUGGEE_CLASS,
-            DEBUGGEE_CLASS + "$InnerInt1",
-            DEBUGGEE_CLASS + "$Inner2",
-            DEBUGGEE_CLASS + "$Inner3",
-            DEBUGGEE_CLASS + "$Inner4",
-            DEBUGGEE_CLASS + "$Inner5",
-            DEBUGGEE_CLASS + "$Inner6",
-            PACKAGE_NAME + ".Outer1"
-    };
+        DEBUGGEE_CLASS,
+        DEBUGGEE_CLASS + "$InnerInt1",
+        DEBUGGEE_CLASS + "$Inner2",
+        DEBUGGEE_CLASS + "$Inner3",
+        DEBUGGEE_CLASS + "$Inner4",
+        DEBUGGEE_CLASS + "$Inner5",
+        DEBUGGEE_CLASS + "$Inner6",
+        PACKAGE_NAME + ".Outer1"
+                                      };
 
     /* ------------------------------------- */
 
     protected void runCases() {
-        jdb.setBreakpointInMethod(LAST_BREAK);
-        jdb.receiveReplyFor(JdbCommand.cont);
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
 
-        for (String checkedClass : checkedClasses) {
-            if (!checkClass(checkedClass)) {
+        jdb.setBreakpointInMethod(LAST_BREAK);
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
+
+        for (int i = 0; i < checkedClasses.length; i++) {
+            if (!checkClass(checkedClasses[i])) {
                 success = false;
             }
         }
@@ -106,12 +112,17 @@ public class class001 extends JdbTest {
         jdb.contToExit(1);
     }
 
-    private boolean checkClass(String className) {
+    private boolean checkClass (String className) {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        String found;
         boolean result = true;
 
-        String[] reply = jdb.receiveReplyFor(JdbCommand._class + className);
-        var grep = new Paragrep(reply);
-        String found = grep.findFirst(NOT_VALID_SAMPLE);
+        reply = jdb.receiveReplyFor(JdbCommand._class + className);
+
+        grep = new Paragrep(reply);
+        found = grep.findFirst(NOT_VALID_SAMPLE);
         if (found.length() > 0) {
             log.complain("Failed to report class " + className);
             result = false;

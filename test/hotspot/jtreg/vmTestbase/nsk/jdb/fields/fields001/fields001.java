@@ -55,64 +55,70 @@
 
 package nsk.jdb.fields.fields001;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
 
 public class fields001 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new fields001().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME = "nsk.jdb.fields.fields001";
-    static final String TEST_CLASS = PACKAGE_NAME + ".fields001";
-    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String DEBUGGEE_CLASS1 = DEBUGGEE_CLASS + "$Inner";
-    static final String DEBUGGEE_CLASS2 = DEBUGGEE_CLASS + "$Extender";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String PACKAGE_NAME       = "nsk.jdb.fields.fields001";
+    static final String TEST_CLASS         = PACKAGE_NAME + ".fields001";
+    static final String DEBUGGEE_CLASS     = TEST_CLASS + "a";
+    static final String DEBUGGEE_CLASS1    = DEBUGGEE_CLASS + "$Inner";
+    static final String DEBUGGEE_CLASS2    = DEBUGGEE_CLASS + "$Extender";
+    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
+    static final String NOT_VALID_SAMPLE   = "is not a valid";
 
     static String[] checkedFields1 = {
-            "i_st", "o_st",
-            "i_pv", "o_pv",
-            "i_pt", "o_pt",
-            "i_pb", "o_pb",
-            "i_fn", "o_fn",
-            "i_tr", "o_tr",
-            "i_vl", "o_vl",
-            "i_a", "o_a",
-            "i_aa", "o_aa",
-            "i_aaa", "o_aaa"
-    };
+        "i_st",    "o_st",
+        "i_pv",    "o_pv",
+        "i_pt",    "o_pt",
+        "i_pb",    "o_pb",
+        "i_fn",    "o_fn",
+        "i_tr",    "o_tr",
+        "i_vl",    "o_vl",
+        "i_a",     "o_a",
+        "i_aa",    "o_aa",
+        "i_aaa",   "o_aaa"
+                                      };
 
     static String[] checkedFields2 = {
-            "ii_pv", "oi_pv",
-            "ii_pt", "oi_pt",
-            "ii_pb", "oi_pb",
-            "ii_fn", "oi_fn",
-            "ii_tr", "oi_tr",
-            "ii_vl", "oi_vl",
-            "ii_a", "oi_a",
-            "ii_aa", "oi_aa",
-            "ii_aaa", "oi_aaa"
-    };
+        "ii_pv",    "oi_pv",
+        "ii_pt",    "oi_pt",
+        "ii_pb",    "oi_pb",
+        "ii_fn",    "oi_fn",
+        "ii_tr",    "oi_tr",
+        "ii_vl",    "oi_vl",
+        "ii_a",     "oi_a",
+        "ii_aa",    "oi_aa",
+        "ii_aaa",   "oi_aaa"
+                                      };
 
     protected void runCases() {
-        jdb.setBreakpointInMethod(LAST_BREAK);
-        jdb.receiveReplyFor(JdbCommand.cont);
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
 
-        String[] reply = jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS);
+        jdb.setBreakpointInMethod(LAST_BREAK);
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
+
+        reply = jdb.receiveReplyFor(JdbCommand.fields + DEBUGGEE_CLASS);
         if (!checkFields(DEBUGGEE_CLASS, reply, checkedFields1)) {
             success = false;
         }
@@ -130,13 +136,17 @@ public class fields001 extends JdbTest {
         jdb.contToExit(1);
     }
 
-    private boolean checkFields(String className, String[] reply, String[] checkedFields) {
+    private boolean checkFields (String className, String[] reply, String[] checkedFields) {
+        Paragrep grep;
+        String found;
         boolean result = true;
-        var grep = new Paragrep(reply);
-        for (String checkedField : checkedFields) {
-            int count = grep.find(checkedField);
+        int count;
+
+        grep = new Paragrep(reply);
+        for (int i = 0; i < checkedFields.length; i++) {
+            count = grep.find(checkedFields[i]);
             if (count == 0) {
-                log.complain("Failed to report field " + checkedField + " for class " + className);
+                log.complain("Failed to report field " + checkedFields[i] + " for class " + className);
                 result = false;
             }
         }

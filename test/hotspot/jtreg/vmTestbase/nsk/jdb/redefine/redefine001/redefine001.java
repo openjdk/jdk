@@ -70,22 +70,21 @@
 
 package nsk.jdb.redefine.redefine001;
 
-import nsk.share.Paragrep;
+import nsk.share.*;
+import nsk.share.jdb.*;
 import nsk.share.classload.ClassLoadUtils;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
 
-import java.io.File;
-import java.io.PrintStream;
+import java.io.*;
+import java.util.*;
 
 public class redefine001 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new redefine001().runTest(argv, out);
@@ -94,38 +93,44 @@ public class redefine001 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.redefine.redefine001";
     static final String TEST_CLASS = PACKAGE_NAME + ".redefine001";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
 
-    static final String REDEFINED_CLASS = PACKAGE_NAME + ".RedefinedClass";
+    static final String REDEFINED_CLASS    = PACKAGE_NAME + ".RedefinedClass";
     static final String BEFORE_REDEFINITION = "BEFORE_REDEFINITION";
-    static final String FIRST_REDEFINITION = "AFTER_REDEFINITION";
+    static final String FIRST_REDEFINITION  = "AFTER_REDEFINITION";
     static final String SECOND_REDEFINITION = BEFORE_REDEFINITION;
 
     protected void runCases() {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+
         jdb.setBreakpointInMethod(LAST_BREAK);
-        jdb.receiveReplyFor(JdbCommand.cont);
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
 
-        jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak()
+        reply = jdb.receiveReplyFor(JdbCommand.step); // to get out of lastBreak()
 
-        String[] reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_CLASS + ".flag");
-        var grep = new Paragrep(reply);
+        reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_CLASS + ".flag");
+        grep = new Paragrep(reply);
         if (grep.find(BEFORE_REDEFINITION) == 0) {
-            log.complain("Wrong value of redefine001a.flag before redefinition: " + (reply.length > 0 ? reply[0] : ""));
+            log.complain("Wrong value of redefine001a.flag before redefinition: " + (reply.length > 0? reply[0]: ""));
             success = false;
         }
 
         String className = RedefinedClass.class.getName();
         String pathToRedefFile1 = ClassLoadUtils.getRedefineClassFileName("newclass_g", className);
         if (new File(pathToRedefFile1).exists()) {
-            jdb.receiveReplyFor(JdbCommand.redefine + REDEFINED_CLASS + " " + pathToRedefFile1);
+            reply = jdb.receiveReplyFor(JdbCommand.redefine + REDEFINED_CLASS + " " + pathToRedefFile1);
 
-            jdb.receiveReplyFor(JdbCommand.cont);
+            reply = jdb.receiveReplyFor(JdbCommand.cont);
 
             reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_CLASS + ".flag");
             grep = new Paragrep(reply);
             if (grep.find(FIRST_REDEFINITION) == 0) {
-                log.complain("Wrong value of redefine001a.flag after first redefinition: " + (reply.length > 0 ? reply[0] : ""));
+                log.complain("Wrong value of redefine001a.flag after first redefinition: " + (reply.length > 0? reply[0]: ""));
                 success = false;
             }
         } else {
@@ -135,14 +140,14 @@ public class redefine001 extends JdbTest {
 
         String pathToRedefFile2 = ClassLoadUtils.getClassPathFileName(className);
         if (new File(pathToRedefFile2).exists()) {
-            jdb.receiveReplyFor(JdbCommand.redefine + REDEFINED_CLASS + " " + pathToRedefFile2);
+            reply = jdb.receiveReplyFor(JdbCommand.redefine + REDEFINED_CLASS + " " + pathToRedefFile2);
 
-            jdb.receiveReplyFor(JdbCommand.cont);
+            reply = jdb.receiveReplyFor(JdbCommand.cont);
 
             reply = jdb.receiveReplyFor(JdbCommand.eval + DEBUGGEE_CLASS + ".flag");
             grep = new Paragrep(reply);
             if (grep.find(SECOND_REDEFINITION) == 0) {
-                log.complain("Wrong value of redefine001a.flag after second redefinition: " + (reply.length > 0 ? reply[0] : ""));
+                log.complain("Wrong value of redefine001a.flag after second redefinition: " + (reply.length > 0? reply[0]: ""));
                 success = false;
             }
         } else {
@@ -151,5 +156,15 @@ public class redefine001 extends JdbTest {
         }
 
         jdb.contToExit(2);
+    }
+
+    private boolean checkStop () {
+        Paragrep grep;
+        String[] reply;
+        String found;
+        Vector v;
+        boolean result = true;
+
+        return result;
     }
 }

@@ -66,22 +66,21 @@
 
 package nsk.jdb.read.read001;
 
+import nsk.share.*;
+import nsk.share.jdb.*;
 import jdk.test.lib.Utils;
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
 
-import java.io.File;
-import java.io.PrintStream;
+import java.io.*;
+import java.util.*;
 
 public class read001 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new read001().runTest(argv, out);
@@ -90,25 +89,26 @@ public class read001 extends JdbTest {
     static final String PACKAGE_NAME = "nsk.jdb.read.read001";
     static final String TEST_CLASS = PACKAGE_NAME + ".read001";
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String FIRST_BREAK    = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK     = DEBUGGEE_CLASS + ".lastBreak";
 
     static final String SCENARIO_FILE = "jdb.scenario";
     static final int SCENARIO_COMMANDS_COUNT = 5;
 
     protected void runCases() {
+        String[] reply;
         String srcdir = Utils.TEST_SRC;
 
         // stop in lastBreak() method
         jdb.setBreakpointInMethod(LAST_BREAK);
-        jdb.receiveReplyFor(JdbCommand.cont);
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
 
         // return to testedInstanceMethod()
-        jdb.receiveReplyFor(JdbCommand.step);
+        reply = jdb.receiveReplyFor(JdbCommand.step);
 
         String command = JdbCommand.read + srcdir + File.separator + SCENARIO_FILE;
         int count = SCENARIO_COMMANDS_COUNT + 1;
-        String[] reply = jdb.receiveReplyFor(command, true, count);
+        reply = jdb.receiveReplyFor(command, true, count);
 
         if (!checkCommands(reply)) {
             success = false;
@@ -118,10 +118,13 @@ public class read001 extends JdbTest {
     }
 
     private boolean checkCommands(String[] reply) {
+        Paragrep grep;
+        String found;
+        Vector v = new Vector();
         boolean result = true;
         int count;
 
-        var grep = new Paragrep(reply);
+        grep = new Paragrep(reply);
 
         // check 'threads'
         log.display("Check reply for command: classes");

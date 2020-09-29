@@ -64,45 +64,50 @@
 
 package nsk.jdb.resume.resume002;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
+import java.io.*;
+import java.util.*;
 
 public class resume002 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new resume002().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME = "nsk.jdb.resume.resume002";
-    static final String TEST_CLASS = PACKAGE_NAME + ".resume002";
-    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String PACKAGE_NAME     = "nsk.jdb.resume.resume002";
+    static final String TEST_CLASS       = PACKAGE_NAME + ".resume002";
+    static final String DEBUGGEE_CLASS   = TEST_CLASS + "a";
+    static final String FIRST_BREAK      = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK       = DEBUGGEE_CLASS + ".lastBreak";
 
-    static final String THREAD_NAME = "MyThread";
+    static final String THREAD_NAME      = "MyThread";
 
     protected void runCases() {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
         String[] threadIds = jdb.getThreadIds(PACKAGE_NAME + "." + THREAD_NAME);
 
-        String[] reply = jdb.receiveReplyFor(JdbCommand.suspend);
-        var grep = new Paragrep(reply);
+        reply = jdb.receiveReplyFor(JdbCommand.suspend);
+        grep = new Paragrep(reply);
         if (grep.find("All threads suspended") == 0) {
             failure("jdb cannot suspend all threads");
         }
-
         reply = jdb.receiveReplyFor(JdbCommand.resume, false);
         grep = new Paragrep(reply);
         if (grep.find("All threads resumed") == 0) {

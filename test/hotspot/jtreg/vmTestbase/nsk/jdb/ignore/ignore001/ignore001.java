@@ -54,72 +54,77 @@
 
 package nsk.jdb.ignore.ignore001;
 
-import nsk.share.Paragrep;
-import nsk.share.jdb.JdbCommand;
-import nsk.share.jdb.JdbTest;
+import nsk.share.*;
+import nsk.share.jdb.*;
 
-import java.io.PrintStream;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
 
 public class ignore001 extends JdbTest {
 
-    public static void main(String[] argv) {
+    public static void main (String argv[]) {
         System.exit(run(argv, System.out) + JCK_STATUS_BASE);
     }
 
-    public static int run(String[] argv, PrintStream out) {
-        debuggeeClass = DEBUGGEE_CLASS;
+    public static int run(String argv[], PrintStream out) {
+        debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         return new ignore001().runTest(argv, out);
     }
 
-    static final String PACKAGE_NAME = "nsk.jdb.ignore.ignore001";
-    static final String TEST_CLASS = PACKAGE_NAME + ".ignore001";
-    static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
-    static final String EXCEPTION_SAMPLE = "Exception occurred:";
-    static final String REMOVED_SAMPLE = "Removed:";
-    static final String FIRST_BREAK = DEBUGGEE_CLASS + ".main";
-    static final String LAST_BREAK = DEBUGGEE_CLASS + ".lastBreak";
+    static final String PACKAGE_NAME       = "nsk.jdb.ignore.ignore001";
+    static final String TEST_CLASS         = PACKAGE_NAME + ".ignore001";
+    static final String DEBUGGEE_CLASS     = TEST_CLASS + "a";
+    static final String EXCEPTION_SAMPLE   = "Exception occurred:";
+    static final String REMOVED_SAMPLE     = "Removed:";
+    static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
+    static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
 
     protected void runCases() {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
+
 //        jdb.setBreakpointInMethod(LAST_BREAK);
 
         log.display("Setting catch for: " + nsk.jdb.ignore.ignore001.ignore001a.JAVA_EXCEPTION);
-        jdb.receiveReplyFor(JdbCommand._catch + " caught " + nsk.jdb.ignore.ignore001.ignore001a.JAVA_EXCEPTION);
+        reply = jdb.receiveReplyFor(JdbCommand._catch + " caught " + nsk.jdb.ignore.ignore001.ignore001a.JAVA_EXCEPTION);
 
         log.display("Setting catch for: " + nsk.jdb.ignore.ignore001.ignore001a.USER_EXCEPTION1);
-        jdb.receiveReplyFor(JdbCommand._catch + " caught " + nsk.jdb.ignore.ignore001.ignore001a.USER_EXCEPTION1);
+        reply = jdb.receiveReplyFor(JdbCommand._catch + " caught " + nsk.jdb.ignore.ignore001.ignore001a.USER_EXCEPTION1);
 
         log.display("Setting catch for: " + nsk.jdb.ignore.ignore001.ignore001a.USER_EXCEPTION2);
-        jdb.receiveReplyFor(JdbCommand._catch + " caught " + nsk.jdb.ignore.ignore001.ignore001a.USER_EXCEPTION2);
+        reply = jdb.receiveReplyFor(JdbCommand._catch + " caught " + nsk.jdb.ignore.ignore001.ignore001a.USER_EXCEPTION2);
 
-        while (true) {
-            if (!checkCatch(ignore001a.JAVA_EXCEPTION)) {
-                success = false;
+        for (;;) {
+            if (!checkCatch(nsk.jdb.ignore.ignore001.ignore001a.JAVA_EXCEPTION)) {
+               success = false;
             }
-            if (!checkCatch(ignore001a.USER_EXCEPTION1)) {
-                success = false;
+            if (!checkCatch(nsk.jdb.ignore.ignore001.ignore001a.USER_EXCEPTION1)) {
+               success = false;
             }
-            if (!checkCatch(ignore001a.USER_EXCEPTION2)) {
-                success = false;
+            if (!checkCatch(nsk.jdb.ignore.ignore001.ignore001a.USER_EXCEPTION2)) {
+               success = false;
             }
 
-            if (!checkIgnore(ignore001a.JAVA_EXCEPTION)) {
-                success = false;
+            if (!checkIgnore(nsk.jdb.ignore.ignore001.ignore001a.JAVA_EXCEPTION)) {
+               success = false;
             }
-            if (!checkIgnore(ignore001a.USER_EXCEPTION1)) {
-                success = false;
+            if (!checkIgnore(nsk.jdb.ignore.ignore001.ignore001a.USER_EXCEPTION1)) {
+               success = false;
             }
-            if (!checkIgnore(ignore001a.USER_EXCEPTION2)) {
-                success = false;
+            if (!checkIgnore(nsk.jdb.ignore.ignore001.ignore001a.USER_EXCEPTION2)) {
+               success = false;
             }
 
             jdb.contToExit(6);
 
-            String[] reply = jdb.getTotalReply();
-            var grep = new Paragrep(reply);
-            int count = grep.find(EXCEPTION_SAMPLE);
+            reply = jdb.getTotalReply();
+            grep = new Paragrep(reply);
+            count = grep.find(EXCEPTION_SAMPLE);
             if (count != 3) {
                 success = false;
                 log.complain("Should report 3 catched exceptions.");
@@ -129,18 +134,23 @@ public class ignore001 extends JdbTest {
         }
     }
 
-    private boolean checkCatch(String exceptionName) {
+    private boolean checkCatch (String exceptionName) {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
         boolean result = true;
 
 //        log.display("Resuming debuggee.");
-        String[] reply = jdb.receiveReplyFor(JdbCommand.cont);
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
 
-        var v = new Vector<String>();
+        v = new Vector();
         v.add(EXCEPTION_SAMPLE);
         v.add(exceptionName);
 
-        var grep = new Paragrep(reply);
-        String found = grep.findFirst(v);
+        grep = new Paragrep(reply);
+        found = grep.findFirst(v);
         if (found.length() == 0) {
             log.complain("Failed to catch " + exceptionName);
             result = false;
@@ -148,18 +158,23 @@ public class ignore001 extends JdbTest {
         return result;
     }
 
-    private boolean checkIgnore(String exceptionName) {
+    private boolean checkIgnore (String exceptionName) {
+        String[] reply;
+        Paragrep grep;
+        int count;
+        Vector v;
+        String found;
         boolean result = true;
 
         log.display("Unsetting catch for: " + exceptionName);
-        String[] reply = jdb.receiveReplyFor(JdbCommand.ignore + " caught " + exceptionName);
+        reply = jdb.receiveReplyFor(JdbCommand.ignore + " caught " + exceptionName);
 
-        var v = new Vector<String>();
+        v = new Vector();
         v.add(REMOVED_SAMPLE);
         v.add(exceptionName);
 
-        var grep = new Paragrep(reply);
-        String found = grep.findFirst(v);
+        grep = new Paragrep(reply);
+        found = grep.findFirst(v);
         if (found.length() == 0) {
             log.complain("Failed to remove catch for " + exceptionName);
             result = false;
