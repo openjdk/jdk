@@ -147,8 +147,7 @@ ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(uint max_workers) :
 void ShenandoahReferenceProcessor::reset_thread_locals() {
   uint max_workers = ShenandoahHeap::heap()->max_workers();
   for (uint i = 0; i < max_workers; i++) {
-    ShenandoahRefProcThreadLocal refproc_data = _ref_proc_thread_locals[i];
-    refproc_data.reset();
+    _ref_proc_thread_locals[i].reset();
   }
 }
 
@@ -284,7 +283,7 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type) {
   assert(CompressedOops::is_null(reference_discovered<T>(reference)), "Already discovered: " PTR_FORMAT, p2i(reference));
   uint worker_id = ShenandoahThreadLocalData::worker_id(Thread::current());
   assert(worker_id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "need valid worker ID");
-  ShenandoahRefProcThreadLocal refproc_data = _ref_proc_thread_locals[worker_id];
+  ShenandoahRefProcThreadLocal& refproc_data = _ref_proc_thread_locals[worker_id];
   T discovered_head = refproc_data.discovered_list_head<T>();
   reference_set_discovered(reference, discovered_head);
   refproc_data.set_discovered_list_head<T>(reference);
@@ -369,11 +368,10 @@ void ShenandoahReferenceProcessor::work() {
   uint max_workers = ShenandoahHeap::heap()->max_workers();
   uint worker_id = Atomic::add(&_iterate_discovered_list_id, 1U) - 1;
   while (worker_id < max_workers) {
-    ShenandoahRefProcThreadLocal refproc_data = _ref_proc_thread_locals[worker_id];
     if (UseCompressedOops) {
-      process_references<narrowOop>(refproc_data);
+      process_references<narrowOop>(_ref_proc_thread_locals[worker_id]);
     } else {
-      process_references<oop>(refproc_data);
+      process_references<oop>(_ref_proc_thread_locals[worker_id]);
     }
     worker_id = Atomic::add(&_iterate_discovered_list_id, 1U) - 1;
   }
