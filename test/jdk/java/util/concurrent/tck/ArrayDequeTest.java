@@ -738,7 +738,7 @@ public class ArrayDequeTest extends JSR166TestCase {
             Integer x = (Integer) it.next();
             assertEquals(s + i, (int) x);
             for (Object[] a : as)
-                assertSame(a1[i], x);
+                assertSame(a[i], x);
         }
     }
 
