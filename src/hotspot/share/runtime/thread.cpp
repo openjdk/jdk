@@ -255,8 +255,6 @@ Thread::Thread() {
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  _vm_operation_started_count = 0;
-  _vm_operation_completed_count = 0;
   _current_pending_monitor = NULL;
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
@@ -467,12 +465,11 @@ Thread::~Thread() {
 }
 
 #ifdef ASSERT
-// A JavaThread is considered "dangling" if it is not the current
-// thread, has been added the Threads list, the system is not at a
-// safepoint and the Thread is not "protected".
-//
+// A JavaThread is considered dangling if it not handshake-safe with respect to
+// the current thread, it is not on a ThreadsList, or not at safepoint.
 void Thread::check_for_dangling_thread_pointer(Thread *thread) {
-  assert(!thread->is_Java_thread() || Thread::current() == thread ||
+  assert(!thread->is_Java_thread() ||
+         thread->as_Java_thread()->is_handshake_safe_for(Thread::current()) ||
          !thread->as_Java_thread()->on_thread_list() ||
          SafepointSynchronize::is_at_safepoint() ||
          ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(thread->as_Java_thread()),
@@ -837,7 +834,7 @@ bool JavaThread::wait_for_ext_suspend_completion(int retries, int delay,
 //
 bool
 JavaThread::is_thread_fully_suspended(bool wait_for_suspend, uint32_t *bits) {
-  if (this != JavaThread::current()) {
+  if (this != Thread::current()) {
     // "other" threads require special handling.
     if (wait_for_suspend) {
       // We are allowed to wait for the external suspend to complete
@@ -1715,7 +1712,6 @@ void JavaThread::initialize() {
   _SleepEvent = ParkEvent::Allocate(this);
   // Setup safepoint state info for this thread
   ThreadSafepointState::create(this);
-  _handshake.set_handshakee(this);
 
   debug_only(_java_call_counter = 0);
 
@@ -1733,7 +1729,7 @@ void JavaThread::initialize() {
 }
 
 JavaThread::JavaThread(bool is_attaching_via_jni) :
-                       Thread() {
+                       Thread(), _handshake(this) {
   initialize();
   if (is_attaching_via_jni) {
     _jni_attach_state = _attaching_via_jni;
@@ -1848,7 +1844,7 @@ static void compiler_thread_entry(JavaThread* thread, TRAPS);
 static void sweeper_thread_entry(JavaThread* thread, TRAPS);
 
 JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
-                       Thread() {
+                       Thread(), _handshake(this) {
   initialize();
   _jni_attach_state = _not_attaching_via_jni;
   set_entry_point(entry_point);
@@ -2406,7 +2402,8 @@ void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
 
 void JavaThread::send_thread_stop(oop java_throwable)  {
   ResourceMark rm;
-  assert(Thread::current()->is_VM_thread() || Thread::current() == this, "should be in the vm thread");
+  assert(is_handshake_safe_for(Thread::current()),
+         "should be self or handshakee");
 
   // Do not throw asynchronous exceptions against the compiler thread
   // (the compiler thread should not be a Java thread -- fix in 1.4.2)

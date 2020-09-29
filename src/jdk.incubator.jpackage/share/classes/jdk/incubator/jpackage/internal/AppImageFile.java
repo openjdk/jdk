@@ -27,6 +27,8 @@ package jdk.incubator.jpackage.internal;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.NoSuchFileException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -214,8 +216,15 @@ public class AppImageFile {
                 launchers.addAll(appImageInfo.getAddLauncherNames());
                 return launchers;
             }
+        } catch (NoSuchFileException nsfe) {
+            // non jpackage generated app-image (no app/.jpackage.xml)
+            Log.info(MessageFormat.format(I18N.getString(
+                    "warning.foreign-app-image"), appImageDir));
         } catch (IOException ioe) {
             Log.verbose(ioe);
+            Log.info(MessageFormat.format(I18N.getString(
+                    "warning.invalid-app-image"), appImageDir));
+
         }
 
         launchers.add(APP_NAME.fetchFrom(params));

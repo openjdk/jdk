@@ -30,6 +30,7 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.*;
+import java.net.URI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -37,6 +38,7 @@ import javax.print.*;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.Copies;
+import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
@@ -249,6 +251,21 @@ public final class CPrinterJob extends RasterPrinterJob {
     boolean isPrintToFile = false;
     private void setPrintToFile(boolean printToFile) {
         isPrintToFile = printToFile;
+    }
+
+    private void setDestinationFile(String dest) {
+        if (attributes != null && dest != null) {
+            try {
+               URI destURI = new URI(dest);
+               attributes.add(new Destination(destURI));
+               destinationAttr = "" + destURI.getSchemeSpecificPart();
+            } catch (Exception e) {
+            }
+        }
+    }
+
+    private String getDestinationFile() {
+        return destinationAttr;
     }
 
     @Override

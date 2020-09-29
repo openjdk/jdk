@@ -302,8 +302,22 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
           cg_infos[MEMORY_IDX]._root_mount_path = os::strdup(tmproot);
           cg_infos[MEMORY_IDX]._data_complete = true;
         } else if (strcmp(token, "cpuset") == 0) {
-          assert(cg_infos[CPUSET_IDX]._mount_path == NULL, "stomping of _mount_path");
-          cg_infos[CPUSET_IDX]._mount_path = os::strdup(tmpmount);
+          if (cg_infos[CPUSET_IDX]._mount_path != NULL) {
+            // On some systems duplicate cpuset controllers get mounted in addition to
+            // the main cgroup controllers most likely under /sys/fs/cgroup. In that
+            // case pick the one under /sys/fs/cgroup and discard others.
+            if (strstr(cg_infos[CPUSET_IDX]._mount_path, "/sys/fs/cgroup") != cg_infos[CPUSET_IDX]._mount_path) {
+              log_warning(os, container)("Duplicate cpuset controllers detected. Picking %s, skipping %s.",
+                                         tmpmount, cg_infos[CPUSET_IDX]._mount_path);
+              os::free(cg_infos[CPUSET_IDX]._mount_path);
+              cg_infos[CPUSET_IDX]._mount_path = os::strdup(tmpmount);
+            } else {
+              log_warning(os, container)("Duplicate cpuset controllers detected. Picking %s, skipping %s.",
+                                         cg_infos[CPUSET_IDX]._mount_path, tmpmount);
+            }
+          } else {
+            cg_infos[CPUSET_IDX]._mount_path = os::strdup(tmpmount);
+          }
           cg_infos[CPUSET_IDX]._root_mount_path = os::strdup(tmproot);
           cg_infos[CPUSET_IDX]._data_complete = true;
         } else if (strcmp(token, "cpu") == 0) {

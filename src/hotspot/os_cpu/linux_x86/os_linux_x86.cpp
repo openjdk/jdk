@@ -650,7 +650,7 @@ bool os::is_allocatable(size_t bytes) {
     return true;
   }
 
-  char* addr = reserve_memory(bytes, NULL);
+  char* addr = reserve_memory(bytes);
 
   if (addr != NULL) {
     release_memory(addr, bytes);
@@ -859,7 +859,7 @@ void os::workaround_expand_exec_shield_cs_limit() {
    */
   char* hint = (char*)(Linux::initial_thread_stack_bottom() -
                        (JavaThread::stack_guard_zone_size() + page_size));
-  char* codebuf = os::attempt_reserve_memory_at(page_size, hint);
+  char* codebuf = os::attempt_reserve_memory_at(hint, page_size);
 
   if (codebuf == NULL) {
     // JDK-8197429: There may be a stack gap of one megabyte between
@@ -867,7 +867,7 @@ void os::workaround_expand_exec_shield_cs_limit() {
     // Linux kernel workaround for CVE-2017-1000364.  If we failed to
     // map our codebuf, try again at an address one megabyte lower.
     hint -= 1 * M;
-    codebuf = os::attempt_reserve_memory_at(page_size, hint);
+    codebuf = os::attempt_reserve_memory_at(hint, page_size);
   }
 
   if ((codebuf == NULL) || (!os::commit_memory(codebuf, page_size, true))) {

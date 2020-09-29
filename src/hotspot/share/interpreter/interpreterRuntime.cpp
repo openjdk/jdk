@@ -733,24 +733,21 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* thread, Ba
 JRT_END
 
 
-//%note monitor_1
-JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorexit(JavaThread* thread, BasicObjectLock* elem))
-#ifdef ASSERT
-  thread->last_frame().interpreter_frame_verify_monitor(elem);
-#endif
-  Handle h_obj(thread, elem->obj());
-  assert(Universe::heap()->is_in_or_null(h_obj()),
-         "must be NULL or an object");
-  if (elem == NULL || h_obj()->is_unlocked()) {
-    THROW(vmSymbols::java_lang_IllegalMonitorStateException());
+JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
+  oop obj = elem->obj();
+  assert(Universe::heap()->is_in(obj), "must be an object");
+  // The object could become unlocked through a JNI call, which we have no other checks for.
+  // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
+  if (obj->is_unlocked()) {
+    if (CheckJNICalls) {
+      fatal("Object has been unlocked by JNI");
+    }
+    return;
   }
-  ObjectSynchronizer::exit(h_obj(), elem->lock(), thread);
-  // Free entry. This must be done here, since a pending exception might be installed on
-  // exit. If it is not cleared, the exception handling code will try to unlock the monitor again.
+  ObjectSynchronizer::exit(obj, elem->lock(), Thread::current());
+  // Free entry. If it is not cleared, the exception handling code will try to unlock the monitor
+  // again at method exit or in the case of an exception.
   elem->set_obj(NULL);
-#ifdef ASSERT
-  thread->last_frame().interpreter_frame_verify_monitor(elem);
-#endif
 JRT_END
 
 
