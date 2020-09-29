@@ -170,9 +170,10 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         byte[] result;
         Optional<byte[]> resultOpt = deriveKeyImpl(privateKey, publicKey);
         if (resultOpt.isEmpty()) {
+            NamedCurve nc = CurveDB.lookup(publicKey.getParams());
             throw new IllegalStateException(
                 new InvalidAlgorithmParameterException("Curve not supported: " +
-                    publicKey.getParams().toString()));
+                    (nc != null ? nc.toString() : "unknown")));
         }
         result = resultOpt.get();
         publicKey = null;
