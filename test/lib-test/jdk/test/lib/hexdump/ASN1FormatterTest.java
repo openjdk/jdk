@@ -102,6 +102,22 @@ public class ASN1FormatterTest {
     }
 
     @Test
+    static void testIndefinate() {
+        byte[] bytes = {0x24, (byte) 0x80, 4, 2, 'a', 'b', 4, 2, 'c', 'd', 0, 0};
+        HexPrinter p = HexPrinter.simple()
+                .formatter(ASN1Formatter.formatter(), "; ", 100);
+        String result = p.toString(bytes);
+        System.out.println(result);
+
+        Assert.assertEquals(result.lines().filter(s -> s.contains("OCTET STRING [INDEFINITE]")).count(),
+                1, "Indefinite length");
+        Assert.assertEquals(result.lines().filter(s -> s.contains(";   OCTET STRING [2]")).count(),
+                2, "Octet Sequences");
+        Assert.assertEquals(result.lines().filter(s -> s.contains(";   END-OF-CONTENT")).count(),
+                1, "end of content");
+    }
+
+    @Test
     static void testMain() {
         String file = "openssl.p12.pem";
         Path path = Path.of(DIR, file);

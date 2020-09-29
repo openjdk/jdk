@@ -144,7 +144,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      */
     private int annotate(DataInputStream in, Appendable out, int available, String prefix) throws IOException {
         int origAvailable = available;
-        while (available != 0) {
+        while (available != 0 || origAvailable < 0) {
             // Read the tag
             int tag = in.readByte() & 0xff;
             available--;
@@ -173,7 +173,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 for (; nbytes > 0; nbytes--) {
                     int inc = in.readByte() & 0xff;
                     len = (len << 8) | inc;
-                    available -= nbytes;
+                    available -= 1;
                 }
             } else if (len == 0x80) {
                 // Tag with Indefinite-length; flag the length as unknown
@@ -306,7 +306,9 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                             out.append(String.format("%s [%s]%n", tagName(tag), lenStr));
                         }
                         int remaining = annotate(in, out, len, prefix + "  ");
-                        available -= len - remaining;
+                        if (len > 0) {
+                            available -= len - remaining;
+                        }
                         continue;
                     } else {
                         // Any other tag not already handled, dump the bytes
