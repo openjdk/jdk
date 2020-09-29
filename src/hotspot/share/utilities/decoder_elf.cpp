@@ -57,8 +57,8 @@ bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line
 
 
   char filepath[JVM_MAXPATHLEN];
-  int offset;
-  if (!os::dll_address_to_library_name(pc, filepath, sizeof(filepath), &offset)) {
+  int offset_in_library;
+  if (!os::dll_address_to_library_name(pc, filepath, sizeof(filepath), &offset_in_library)) {
     return false;
   }
 
@@ -68,7 +68,7 @@ bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line
   }
 
   Elf_Shdr shdr;
-  if (file->get_source_info(offset, buf, buflen, line)) {
+  if (file->get_source_info(offset_in_library, buf, buflen, line)) {
     return false;
   }
 
