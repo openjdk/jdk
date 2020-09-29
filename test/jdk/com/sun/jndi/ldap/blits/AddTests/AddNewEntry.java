@@ -27,7 +27,7 @@
  * @summary Verify capability to add a new entry to the directory using the
  *          ADD operation.
  * @modules java.naming/com.sun.jndi.ldap
- * @library ../../lib/ /javax/naming/module/src/test/test/
+ * @library /test/lib ../../lib/ /javax/naming/module/src/test/test/
  * @build LDAPServer LDAPTestUtils
  * @run main/othervm AddNewEntry
  */
@@ -41,19 +41,36 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.SocketAddress;
 import java.util.Hashtable;
+import jdk.test.lib.net.URIBuilder;
 
 public class AddNewEntry {
 
     public static void main(String[] args) throws Exception {
-        ServerSocket serverSocket = new ServerSocket(0);
+        // Create unbound server socket
+        ServerSocket serverSocket = new ServerSocket();
+
+        // Bind it to the loopback address
+        SocketAddress sockAddr = new InetSocketAddress(
+                InetAddress.getLoopbackAddress(), 0);
+        serverSocket.bind(sockAddr);
+
+        // Construct the provider URL for LDAPTestUtils
+        String providerURL = URIBuilder.newBuilder()
+                .scheme("ldap")
+                .loopback()
+                .port(serverSocket.getLocalPort())
+                .buildUnchecked().toString();
 
         Hashtable<Object, Object> env;
 
         // initialize test
-        env = LDAPTestUtils
-                .initEnv(serverSocket, AddNewEntry.class.getName(), args, true);
+        env = LDAPTestUtils.initEnv(serverSocket, providerURL,
+                         AddNewEntry.class.getName(), args, true);
 
         /* Build attribute set */
         String[] ids = { "objectClass", "sn", "cn", "telephoneNumber", "mail",

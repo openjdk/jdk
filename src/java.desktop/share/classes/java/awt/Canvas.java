@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ public class Canvas extends Component implements Accessible {
         private static final long serialVersionUID = -6325592262103146699L;
 
         /**
-         * Constructs an {@code AccessibleAWTCanvas}
+         * Constructs an {@code AccessibleAWTCanvas}.
          */
         protected AccessibleAWTCanvas() {}
 

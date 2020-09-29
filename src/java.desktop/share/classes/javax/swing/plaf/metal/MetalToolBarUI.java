@@ -86,6 +86,11 @@ public class MetalToolBarUI extends BasicToolBarUI
     private JMenuBar lastMenuBar;
 
     /**
+     * Constructs a {@code MetalToolBarUI}.
+     */
+    public MetalToolBarUI() {}
+
+    /**
      * Registers the specified component.
      */
     static synchronized void register(JComponent c) {
@@ -361,13 +366,23 @@ public class MetalToolBarUI extends BasicToolBarUI
      * No longer used. The class cannot be removed for compatibility reasons.
      */
     protected class MetalContainerListener
-        extends BasicToolBarUI.ToolBarContListener {}
+        extends BasicToolBarUI.ToolBarContListener {
+        /**
+         * Constructs a {@code MetalContainerListener}.
+         */
+        protected MetalContainerListener() {}
+    }
 
     /**
      * No longer used. The class cannot be removed for compatibility reasons.
      */
     protected class MetalRolloverListener
-        extends BasicToolBarUI.PropertyListener {}
+        extends BasicToolBarUI.PropertyListener {
+        /**
+         * Constructs a {@code MetalRolloverListener}.
+         */
+        protected MetalRolloverListener() {}
+    }
 
     /**
      * {@code DockingListener} for {@code MetalToolBarUI}.

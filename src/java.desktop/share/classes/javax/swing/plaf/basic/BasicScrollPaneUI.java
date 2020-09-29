@@ -624,6 +624,11 @@ public class BasicScrollPaneUI
         // class calls into the Handler.
 
         /**
+         * Constructs a {@code MouseWheelHandler}.
+         */
+        protected MouseWheelHandler() {}
+
+        /**
          * Called when the mouse wheel is rotated while over a
          * JScrollPane.
          *

@@ -9342,7 +9342,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             private static final long serialVersionUID = -1009684107426231869L;
 
             /**
-             * Constructs an {@code AccessibleAWTComponentHandler}
+             * Constructs an {@code AccessibleAWTComponentHandler}.
              */
             protected AccessibleAWTComponentHandler() {}
 
@@ -9379,7 +9379,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             private static final long serialVersionUID = 3150908257351582233L;
 
             /**
-             * Constructs an {@code AccessibleAWTFocusHandler}
+             * Constructs an {@code AccessibleAWTFocusHandler}.
              */
             protected AccessibleAWTFocusHandler() {}
 

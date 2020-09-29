@@ -124,7 +124,7 @@ static bool is_cloop_increment(Node* inc) {
   }
   const PhiNode* phi = inc->in(1)->as_Phi();
 
-  if (phi->is_copy() || !phi->region()->is_CountedLoop()) {
+  if (!phi->region()->is_CountedLoop()) {
     return false;
   }
 
