@@ -78,7 +78,6 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 import jdk.tools.jlink.internal.ModuleSorter;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -97,10 +96,7 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  * @see jdk.internal.module.SystemModules
  */
 
-public final class SystemModulesPlugin implements Plugin {
-    private static final String NAME = "system-modules";
-    private static final String DESCRIPTION =
-            PluginsResourceBundle.getDescription(NAME);
+public final class SystemModulesPlugin extends AbstractPlugin {
     private static final String SYSTEM_MODULES_MAP_CLASS =
             "jdk/internal/module/SystemModulesMap";
     private static final String SYSTEM_MODULES_CLASS_PREFIX =
@@ -113,17 +109,8 @@ public final class SystemModulesPlugin implements Plugin {
     private boolean enabled;
 
     public SystemModulesPlugin() {
+        super("system-modules");
         this.enabled = true;
-    }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return DESCRIPTION;
     }
 
     @Override
@@ -138,22 +125,17 @@ public final class SystemModulesPlugin implements Plugin {
     }
 
     @Override
-    public String getArgumentsDescription() {
-        return PluginsResourceBundle.getArgument(NAME);
-    }
-
-    @Override
     public void configure(Map<String, String> config) {
-        String arg = config.get(NAME);
+        String arg = config.get(getName());
         if (arg != null) {
-            throw new IllegalArgumentException(NAME + ": " + arg);
+            throw new IllegalArgumentException(getName() + ": " + arg);
         }
     }
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         if (!enabled) {
-            throw new PluginException(NAME + " was set");
+            throw new PluginException(getName() + " was set");
         }
 
         // validate, transform (if needed), and add the module-info.class files

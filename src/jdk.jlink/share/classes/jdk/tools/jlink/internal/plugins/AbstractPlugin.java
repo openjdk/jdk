@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jlink.internal.plugins;
 
-import java.text.MessageFormat;
+import jdk.tools.jlink.plugin.Plugin;
+
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
-public final class PluginsResourceBundle {
+public abstract class AbstractPlugin implements Plugin {
 
     static final String DESCRIPTION = "description";
-    static final String ARGUMENT = "argument";
     static final String USAGE = "usage";
-    private static final ResourceBundle pluginsBundle;
+
+    private static final ResourceBundle standardPluginsBundle;
 
     static {
         Locale locale = Locale.getDefault();
         try {
-            pluginsBundle = ResourceBundle.getBundle("jdk.tools.jlink."
+            standardPluginsBundle = ResourceBundle.getBundle("jdk.tools.jlink."
                     + "resources.plugins", locale);
         } catch (MissingResourceException e) {
             throw new InternalError("Cannot find jlink resource bundle for "
@@ -47,31 +49,39 @@ public final class PluginsResourceBundle {
         }
     }
 
-    private PluginsResourceBundle() {
+    private final ResourceBundle pluginsBundle;
+    private final String name;
+
+    protected AbstractPlugin(String name) {
+        this.name = name;
+        this.pluginsBundle = standardPluginsBundle;
     }
 
-    public static String getArgument(String name, Object... args) {
-        return getMessage(name + "." + ARGUMENT, args);
+    protected AbstractPlugin(String name, ResourceBundle bundle) {
+        this.name = name;
+        this.pluginsBundle = bundle;
+    }
+    @Override
+    public String getName() {
+        return name;
     }
 
-    public static String getDescription(String name) {
-        return getMessage(name + "." + DESCRIPTION, name);
+    @Override
+    public String getDescription() {
+        return getMessage(getName() + "." + DESCRIPTION, getName());
     }
 
-    public static String getUsage(String name) {
-        return getMessage(name + "." + USAGE, name);
+    @Override
+    public String getUsage() {
+        return getMessage(getName() + "." + USAGE, getName());
     }
 
-    public static String getOption(String name, String option) {
-        return getMessage(name + "." + option);
+    @Override
+    public String getArgumentsDescription() {
+        return PluginsResourceBundle.getArgument(getName());
     }
 
-    public static String getMessage(String key, Object... args) throws MissingResourceException {
-        return getMessage(pluginsBundle, key, args);
-    }
-
-    public static String getMessage(ResourceBundle bundle, String key, Object... args) throws MissingResourceException {
-        String val = bundle.getString(key);
-        return MessageFormat.format(val, args);
+    protected String getMessage(String key, Object...args) {
+       return PluginsResourceBundle.getMessage(this.pluginsBundle, key, args);
     }
 }
