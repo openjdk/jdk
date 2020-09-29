@@ -314,20 +314,6 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
           // of the page below heap depending on compressed oops mode.
           continue;
         }
-#ifdef ASSERT
-        if ((((uintptr_t)loc & (sizeof(oop)-1)) != 0) ||
-            !Universe::heap()->is_in_or_null((oop)NativeAccess<AS_NO_KEEPALIVE>::oop_load(&val))) {
-          tty->print_cr("# Found non oop pointer.  Dumping state at failure");
-          // try to dump out some helpful debugging information
-          trace_codeblob_maps(fr, reg_map);
-          omv.print();
-          tty->print_cr("register r");
-          omv.reg()->print();
-          tty->print_cr("loc = %p *loc = %p\n", loc, cast_from_oop<address>(*loc));
-          // do the real assert.
-          assert(Universe::heap()->is_in_or_null(*loc), "found non oop pointer");
-        }
-#endif // ASSERT
         oop_fn->do_oop(loc);
       } else if ( omv.type() == OopMapValue::narrowoop_value ) {
         narrowOop *nl = (narrowOop*)loc;
