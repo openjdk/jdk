@@ -182,7 +182,7 @@ public:
 
   bool open_valid_debuginfo_file(const char* path_name, uint crc);
 
-  bool get_source_info(int offset, char* buf, size_t buflen, int* line);
+  bool get_source_info(int offset_in_library, char* buf, size_t buflen, int* line);
 
 private:
   // sanity check, if the file is a real elf file
@@ -227,6 +227,44 @@ public:
 };
 
 class DwarfFile : public ElfFile {
+
+  // Tag encoding from Figure 18 in DWARF 4 spec
+  static constexpr uint8_t DW_TAG_compile_unit = 0x11;
+
+  // Child determination encoding from Figure 19 in DWARF 4 spec
+  static constexpr uint8_t DW_CHILDREN_yes = 0x01;
+
+  // Attribute encoding from Figure 20 in DWARF 4 spec
+  static constexpr uint8_t DW_AT_stmt_list = 0x10;
+
+  // Attribute form encodings from Figure 21 in DWARF 4 spec
+  static constexpr uint8_t DW_FORM_addr = 0x01; // address
+  static constexpr uint8_t DW_FORM_block2 = 0x03; // block
+  static constexpr uint8_t DW_FORM_block4 = 0x04; // block
+  static constexpr uint8_t DW_FORM_data2 = 0x05; // constant
+  static constexpr uint8_t DW_FORM_data4 = 0x06; // constant
+  static constexpr uint8_t DW_FORM_data8 = 0x07; // constant
+  static constexpr uint8_t DW_FORM_string = 0x08; // string
+  static constexpr uint8_t DW_FORM_block = 0x09; // block
+  static constexpr uint8_t DW_FORM_block1 = 0x0a; // block
+  static constexpr uint8_t DW_FORM_data1 = 0x0b; // constant
+  static constexpr uint8_t DW_FORM_flag = 0x0c; // flag
+  static constexpr uint8_t DW_FORM_sdata = 0x0d; // constant
+  static constexpr uint8_t DW_FORM_strp = 0x0e; // string
+  static constexpr uint8_t DW_FORM_udata = 0x0f; // constant
+  static constexpr uint8_t DW_FORM_ref_addr = 0x10; // reference0;
+  static constexpr uint8_t DW_FORM_ref1 = 0x11; // reference
+  static constexpr uint8_t DW_FORM_ref2 = 0x12; // reference
+  static constexpr uint8_t DW_FORM_ref4 = 0x13; // reference
+  static constexpr uint8_t DW_FORM_ref8 = 0x14; // reference
+  static constexpr uint8_t DW_FORM_ref_udata = 0x15; // reference
+  static constexpr uint8_t DW_FORM_indirect = 0x16; // see Section 7.5.3
+  static constexpr uint8_t DW_FORM_sec_offset = 0x17; // lineptr, loclistptr, macptr, rangelistptr
+  static constexpr uint8_t DW_FORM_exprloc = 0x18;// exprloc
+  static constexpr uint8_t DW_FORM_flag_present = 0x19; // flag
+  static constexpr uint8_t DW_FORM_ref_sig8 = 0x20; // reference
+
+
   // See DWARF4 specification section 6.1.2.
   struct DebugArangesSetHeader32 {
     // The total length of all of the entries for that set, not including the length field itself
@@ -249,7 +287,7 @@ class DwarfFile : public ElfFile {
 
     static const uint SIZE = 12; // 4 + 2 + 4 + 1 + 1
 
-    void print_fields() {
+    void print_fields() const {
       tty->print_cr("%x", unit_length);
       tty->print_cr("%x", version);
       tty->print_cr("%x", debug_info_offset);
@@ -267,12 +305,35 @@ class DwarfFile : public ElfFile {
     return set.beginning_address == 0 && set.length == 0;
   }
 
-  public:
-    bool find_compilation_unit(int offset, uint64_t* compilation_unit_offset);
+  // See DWARF4 spec section 7.5.1.1
+  struct CompilationUnitHeader32 {
+    //  the length of the .debug_info contribution for that compilation unit, not including the length field itself.
+    uint32_t unit_length;
+
+    // The version of the DWARF information for the compilation unit. The value in this field is 4 for DWARF 4.
+    uint16_t version;
+
+    // The unsigned offset into the .debug_abbrev section. This offset associates the compilation unit with a particular
+    // set of debugging information entry abbreviations.
+    uint32_t debug_abbrev_offset;
+
+    // The size in bytes of an address on the target architecture. If the system uses segmented addressing, this value
+    // represents the size of the offset portion of an address.
+    uint8_t  address_size;
+  };
+
+  static bool read_uleb128(MarkedFileReader* mfd, uint64_t* result);
+
+ public:
+  bool find_compilation_unit_offset(const int offset_in_library, uint64_t* compilation_unit_offset);
+  bool find_debug_line_offset(const int offset_in_library, const uint64_t compilation_unit_offset, uint64_t* debug_line_offset);
 
   DwarfFile(const char* filepath) : ElfFile(filepath) {}
-  bool get_line_number(int offset, char* buf, size_t buflen, int* line);
+  bool get_line_number(int offset_in_library, char* buf, size_t buflen, int* line);
 
+  bool get_debug_line_offset_from_debug_abbrev(MarkedFileReader* debug_info_reader, const CompilationUnitHeader32 *cu_header, const uint64_t abbrev_code, uint64_t *debug_line_offset);
+
+  bool process_attribute(const uint64_t attribute, const uint8_t address_size, long* current_debug_info_position,uint64_t* debug_line_offset = nullptr);
 };
 
 #endif // !_WINDOWS && !__APPLE__
