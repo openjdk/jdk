@@ -118,6 +118,7 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
   // assert(oopDesc::is_oop_or_null(obj), "expected an oop");
   assert(is_object_aligned(obj), "oop must be aligned");
   assert(g1h->is_in_reserved(obj), "oop must be in reserved");
+  assert_object_is_in_heap(obj);
 
   HeapRegion* from = g1h->heap_region_containing(p);
 

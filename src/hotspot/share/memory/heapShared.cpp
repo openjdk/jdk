@@ -1150,9 +1150,6 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
   FindEmbeddedNonNullPointers(narrowOop* start, BitMap* oopmap)
     : _start(start), _oopmap(oopmap), _num_total_oops(0),  _num_null_oops(0) {}
 
-  virtual bool should_verify_oops(void) {
-    return false;
-  }
   virtual void do_oop(narrowOop* p) {
     _num_total_oops ++;
     narrowOop v = *p;

@@ -114,6 +114,7 @@ public:
   static bool is_null(oop v)       { return v == NULL; }
   static bool is_null(narrowOop v) { return v == 0; }
 
+  static inline oop decode_raw_not_null(narrowOop v);
   static inline oop decode_raw(narrowOop v);
   static inline oop decode_not_null(narrowOop v);
   static inline oop decode(narrowOop v);
@@ -121,10 +122,10 @@ public:
   static inline narrowOop encode(oop v);
 
   // No conversions needed for these overloads
-  static oop decode_not_null(oop v)             { return v; }
-  static oop decode(oop v)                      { return v; }
-  static narrowOop encode_not_null(narrowOop v) { return v; }
-  static narrowOop encode(narrowOop v)          { return v; }
+  static inline oop decode_not_null(oop v);
+  static inline oop decode(oop v);
+  static inline narrowOop encode_not_null(narrowOop v);
+  static inline narrowOop encode(narrowOop v);
 };
 
 // For UseCompressedClassPointers.

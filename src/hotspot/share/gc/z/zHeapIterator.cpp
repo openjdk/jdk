@@ -117,12 +117,6 @@ public:
   virtual void do_oop(narrowOop* p) {
     ShouldNotReachHere();
   }
-
-#ifdef ASSERT
-  virtual bool should_verify_oops() {
-    return false;
-  }
-#endif
 };
 
 ZHeapIterator::ZHeapIterator() :
