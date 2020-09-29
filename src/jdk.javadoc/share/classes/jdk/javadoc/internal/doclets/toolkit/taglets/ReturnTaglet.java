@@ -70,7 +70,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Content getTagletOutput(Element holder, TagletWriter writer) {
+    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         Messages messages = writer.configuration().getMessages();
         Utils utils = writer.configuration().utils;
         TypeMirror returnType = utils.getReturnType(writer.getCurrentPageElement(), (ExecutableElement)holder);

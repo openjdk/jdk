@@ -51,7 +51,7 @@ public class LiteralTaglet extends BaseTaglet {
     }
 
     @Override
-    public Content getTagletOutput(Element e, DocTree tag, TagletWriter writer) {
+    public Content getInlineTagOutput(Element e, DocTree tag, TagletWriter writer) {
         return writer.literalTagOutput(e, tag);
     }
 }

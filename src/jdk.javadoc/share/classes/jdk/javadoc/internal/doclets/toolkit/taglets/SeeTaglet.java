@@ -66,7 +66,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Content getTagletOutput(Element holder, TagletWriter writer) {
+    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         List<? extends DocTree> tags = utils.getSeeTrees(holder);
         Element e = holder;

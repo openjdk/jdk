@@ -49,7 +49,7 @@ public class DeprecatedTaglet extends BaseTaglet {
     }
 
     @Override
-    public Content getTagletOutput(Element holder, TagletWriter writer) {
+    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         return writer.deprecatedTagOutput(holder);
     }
 }

@@ -45,7 +45,7 @@ public class IndexTaglet extends BaseTaglet {
     }
 
     @Override
-    public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) {
+    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
         return writer.indexTagOutput(element, tag);
     }
 }

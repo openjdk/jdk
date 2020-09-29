@@ -53,7 +53,7 @@ public class DocRootTaglet extends BaseTaglet {
     }
 
     @Override
-    public Content getTagletOutput(Element holder, DocTree tag, TagletWriter writer) {
+    public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter writer) {
         return writer.getDocRootOutput();
     }
 }

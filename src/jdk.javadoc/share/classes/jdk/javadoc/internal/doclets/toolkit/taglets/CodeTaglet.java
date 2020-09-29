@@ -58,7 +58,7 @@ public class CodeTaglet extends BaseTaglet {
     }
 
     @Override
-    public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) {
+    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
         return writer.codeTagOutput(element, tag);
     }
 }
