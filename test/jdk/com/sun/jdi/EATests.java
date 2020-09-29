@@ -19,6 +19,7 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /**
@@ -1137,6 +1138,8 @@ class EAMaterializeLocalVariableUponGet extends EATestCaseBaseDebugger {
         printStack(bpe.thread());
         // check 1.
         o = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "xy");
+        // o is referenced in checkPostConditions() and must not be gc'ed.
+        o.disableCollection();
         checkPrimitiveField(o, FD.I, "x", 4);
         checkPrimitiveField(o, FD.I, "y", 2);
     }
