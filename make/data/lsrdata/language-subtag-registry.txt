@@ -1,4 +1,4 @@
-File-Date: 2020-07-17
+File-Date: 2020-09-29
 %%
 Type: language
 Subtag: aa
@@ -47548,6 +47548,14 @@ Added: 2010-06-29
 Prefix: rm
 Comments: Vallader is one of the five traditional written standards or
   "idioms" of the Romansh language.
+%%
+Type: variant
+Subtag: vecdruka
+Description: Latvian orthography used before 1920s ("vecā druka")
+Added: 2020-09-26
+Prefix: lv
+Comments: The subtag represents the old orthography of the Latvian
+  language used during c. 1600s–1920s.
 %%
 Type: variant
 Subtag: vivaraup
