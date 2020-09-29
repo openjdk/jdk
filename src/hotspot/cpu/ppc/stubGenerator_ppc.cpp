@@ -3651,7 +3651,25 @@ class StubGenerator: public StubCodeGenerator {
        2,  3,  4,  5,  6,  7,
        0,  0,  0,  0 };
 
-    const unsigned loop_unrolls = 8; // needs to be a power of two so that the rounding can be done using a mask
+    // loop_unrolls needs to be a power of two so that the rounding can be
+    // done using a mask.
+    //
+    // The amount of loop unrolling was determined by running a benchmark
+    // that decodes a 20k block of Base64 data on a Power9 machine:
+    // loop_unrolls = 1 :
+    // (min, avg, max) = (101097.676, 101611.387, 101838.460), stdev = 182.156
+    // loop_unrolls = 2 :
+    // (min, avg, max) = (106430.268, 106717.050, 106977.072), stdev = 171.667
+    // loop_unrolls = 4 :
+    // (min, avg, max) = (105342.240, 106084.930, 106390.059), stdev = 264.617
+    // loop_unrolls = 8 :
+    // min, avg, max) = (105790.841, 106318.585, 106602.132), stdev = 243.740
+    //
+    // Given that the performance is about 5% better at 2, and that there's
+    // an advantage to keeping loop_unrolls small (to be able to process
+    // smaller buffers), 2 is clearly the best choice.
+    const unsigned loop_unrolls = 2;
+
     const unsigned vec_size = 16; // size of vector registers in bytes
     const unsigned block_size = vec_size * loop_unrolls;  // number of bytes to process in each pass through the loop
     const unsigned block_size_clear = exact_log2(block_size); // the lower log2(block_size) bits of the size
@@ -3665,11 +3683,11 @@ class StubGenerator: public StubCodeGenerator {
     Register isURL  = R8_ARG6; // boolean, if non-zero indicates use of RFC 4648 base64url encoding
 
     // Local variables
-    Register const_ptr     = R9; // used for loading constants
+    Register const_ptr     = R9;  // used for loading constants
     Register tmp_reg       = R10; // used for speeding up load_constant_optimized()
 
     // Re-use R9 and R10 to avoid using non-volatile registers (requires save/restore)
-    Register out           = R9; // moving out (destination) pointer
+    Register out           = R9;  // moving out (destination) pointer
     Register in            = R10; // moving in (source) pointer
     Register end           = R11; // pointer to the last byte of the source
 
@@ -3715,10 +3733,10 @@ class StubGenerator: public StubCodeGenerator {
 
     // The upper 32 bits of the non-pointer parameter registers are not
     // guaranteed to be zero, so mask off those upper bits.
-    __ clrldi(sp, sp, 31);
-    __ clrldi(sl, sl, 31);
-    __ clrldi(dp, dp, 31);
-    __ clrldi(isURL, isURL, 31);
+    __ clrldi(sp, sp, 32);
+    __ clrldi(sl, sl, 32);
+    __ clrldi(dp, dp, 32);
+    __ clrldi(isURL, isURL, 32);
 
     // Load constant vec registers that need to be loaded from memory
     __ load_const_optimized(const_ptr, (address)&bitposLUT_val, tmp_reg);
@@ -3745,7 +3763,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // The rest of the constants use different values depending on the
     // setting of isURL
-    __ cmpdi(CCR0, isURL, 0);
+    __ cmpwi(CCR0, isURL, 0);
     __ beq(CCR0, not_URL);
 
     // isURL != 0 (true)
@@ -3797,6 +3815,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ cmpd(CCR0, end, in);
     __ blt_predict_not_taken(CCR0, unrolled_loop_exit);
+    __ align(32);
     for (unsigned unroll_cnt=0; unroll_cnt < loop_unrolls; unroll_cnt++) {
         // We can use a static displacement in the load since it's always a
         // multiple of 16, which is a requirement of lxv/stxv.  This saves
