@@ -55,7 +55,6 @@ import javax.tools.JavaFileObject;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.TreePath;
-import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.doclet.Doclet;
@@ -78,6 +77,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.Pair;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberCache;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.doclint.DocLint;
 
 /**
  * Configure the output based on the options. Doclets should sub-class
