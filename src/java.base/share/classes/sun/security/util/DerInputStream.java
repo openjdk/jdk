@@ -58,14 +58,20 @@ public class DerInputStream {
 
     // The static part
     final byte[] data;
-    final int start;
-    final int end;
+    final int start;    // inclusive
+    final int end;      // exclusive
     final boolean allowBER;
 
     // The moving part
     int pos;
     int mark;
 
+    /**
+     * Constructs a DerInputStream by assigning all its fields.
+     *
+     * No checking on arguments since all callers are internal.
+     * {@code data} should never be null even if length is 0.
+     */
     public DerInputStream(byte[] data, int start, int length, boolean allowBER) {
         this.data = data;
         this.start = start;
@@ -73,10 +79,6 @@ public class DerInputStream {
         this.allowBER = allowBER;
         this.pos = start;
         this.mark = start;
-    }
-
-    public DerInputStream(DerValue v) {
-        this(v.buffer, v.start, v.end - v.start, v.allowBER);
     }
 
     public DerInputStream(byte[] data) throws IOException {
@@ -87,22 +89,34 @@ public class DerInputStream {
         this(data, offset, len, true);
     }
 
+    /**
+     * Returns the remaining unread bytes, or, all bytes if none read yet.
+     */
     public byte[] toByteArray() {
         return Arrays.copyOfRange(data, pos, end);
     }
 
     /**
-     * Reads a DerValue from this stream. After the call, the data pointer is right after
-     * this DerValue so that the next call will read the next DerValue.
+     * Reads a DerValue from this stream. After the call, the data pointer
+     * is right after this DerValue so that the next call will read the
+     * next DerValue.
      *
      * @return the read DerValue.
-     * @throws IOException if a DerValue cannot be constructed starting from this position
-     *                     because of byte shortage or encoding error.
+     * @throws IOException if a DerValue cannot be constructed starting from
+     *      this position because of byte shortage or encoding error.
      */
     public DerValue getDerValue() throws IOException {
         DerValue result = new DerValue(
                 this.data, this.pos, this.end - this.pos, this.allowBER, true);
-        this.pos = result.end;
+        if (result.buffer != this.data) {
+            // Indefinite length observed. Unused bytes in data are appended
+            // to the end of return value by DerIndefLenConverter::convertBytes
+            // and stay inside result.buffer.
+            int unused = result.buffer.length - result.end;
+            this.pos = this.data.length - unused;
+        } else {
+            this.pos = result.end;
+        }
         return result;
     }
 
@@ -204,25 +218,23 @@ public class DerInputStream {
         return data[pos];
     }
 
-    static int getLength(InputStream in) throws IOException {
-        return getLength(in.read(), in);
-    }
-
     /**
      * Get a length from the input stream, allowing for at most 32 bits of
      * encoding to be used.  (Not the same as getting a tagged integer!)
      *
-     * @param lenByte
-     *
      * @return the length or -1 if indefinite length found.
      * @exception IOException on parsing error or unsupported lengths.
      */
-    static int getLength(int lenByte, InputStream in) throws IOException {
-        int value, tmp;
+    static int getLength(InputStream in) throws IOException {
+        int lenByte = in.read();
         if (lenByte == -1) {
             throw new IOException("Short read of DER length");
         }
+        if (lenByte == 0x80) {
+            return -1;
+        }
 
+        int value, tmp;
         String mdName = "DerInputStream.getLength(): ";
         tmp = lenByte;
         if ((tmp & 0x080) == 0x00) { // short form, 1 byte datum
@@ -230,15 +242,11 @@ public class DerInputStream {
         } else {                     // long form or indefinite
             tmp &= 0x07f;
 
-            /*
-             * NOTE:  tmp == 0 indicates indefinite length encoded data.
-             * tmp > 4 indicates more than 4Gb of data.
-             */
-            if (tmp == 0)
-                return -1;
-            if (tmp < 0 || tmp > 4)
+            // tmp > 4 indicates more than 4Gb of data.
+            if (tmp < 0 || tmp > 4) {
                 throw new IOException(mdName + "lengthTag=" + tmp + ", "
-                    + ((tmp < 0) ? "incorrect DER encoding." : "too big."));
+                        + ((tmp < 0) ? "incorrect DER encoding." : "too big."));
+            }
 
             value = 0x0ff & in.read();
             tmp--;
@@ -276,8 +284,10 @@ public class DerInputStream {
     /**
      * Mark the current position in the buffer, so that
      * a later call to <code>reset</code> will return here.
+     * The {@code readAheadLimit} is useless here because
+     * all data is available and we can go to anywhere at will.
      */
-    public void mark(int value) { mark = pos; }
+    public void mark(int readAheadLimit) { mark = pos; }
 
     /**
      * Return to the position of the last <code>mark</code>

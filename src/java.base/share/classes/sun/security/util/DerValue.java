@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -152,19 +152,22 @@ public class DerValue {
      */
     public static final byte    tag_SetOf = 0x31;
 
-    // This class is 99% immutable except that:
+    // This class is mostly immutable except that:
     //
     // 1. resetTag() modifies the tag
-    // 2. reading from the data field advances the internal position
+    // 2. the data field is mutable
     //
-    // For compatibility, data and resetTag() are preserved. A modern caller
-    // should call withTag() or data() instead (do not use the data field).
+    // For compatibility, data, getData() and resetTag() are preserved.
+    // A modern caller should call withTag() or data() instead.
+    //
+    // Also, some constructors have not cloned buffer, so the data could
+    // be modified externally.
 
     public /*final*/ byte tag;
     final byte[] buffer;
-    final int start;
+    private final int start;
     final int end;
-    final boolean allowBER;
+    private final boolean allowBER;
 
     // Unsafe. Legacy. Never null.
     final public DerInputStream data;
@@ -223,7 +226,7 @@ public class DerValue {
         this.start = start;
         this.end = end;
         this.allowBER = allowBER;
-        this.data = new DerInputStream(this);
+        this.data = data();
     }
 
     /**
@@ -291,18 +294,18 @@ public class DerValue {
     }
 
     /**
-     * Parse an ASN.1/BER encoded datum from a byte array.
+     * Parse an ASN.1 encoded datum from a byte array.
      *
      * @param buf the byte array containing the DER-encoded datum
      * @param offset where the encoded datum starts inside {@code buf}
      * @param len length of bytes to parse inside {@code buf}
      * @param allowBER whether BER is allowed
      * @param allowMore whether extra bytes are allowed after the encoded datum.
-     *                  If true, {@code len} can be bigger than the length og
+     *                  If true, {@code len} can be bigger than the length of
      *                  the encoded datum.
      *
      * @throws IOException if it's an invalid encoding or there are extra bytes
-     *                     after the encoded datum but {@code allowMore} is false.
+     *                     after the encoded datum and {@code allowMore} is false.
      */
     DerValue(byte[] buf, int offset, int len, boolean allowBER, boolean allowMore)
             throws IOException {
@@ -315,38 +318,7 @@ public class DerValue {
         int lenByte = buf[pos++];
 
         int length;
-        if (lenByte == (byte)0x80) {
-            length = -1;
-        } else if ((lenByte & 0x080) == 0x00) { // short form, 1 byte datum
-            length = lenByte;
-        } else {                     // long form or indefinite
-            lenByte &= 0x07f;
-            if (lenByte == 0) {
-                length = -1;
-            } else if (lenByte < 0 || lenByte > 4) {
-                throw new IOException("Invalid lenByte");
-            } else {
-                if (len < 2 + lenByte) {
-                    throw new IOException("Not enough length bytes");
-                }
-                length = 0x0ff & buf[pos++];
-                lenByte--;
-                if (length == 0 && !allowBER) {
-                    // DER requires length value be encoded in minimum number of bytes
-                    throw new IOException("Redundant length bytes found");
-                }
-                while (lenByte-- > 0) {
-                    length <<= 8;
-                    length += 0x0ff & buf[pos++];
-                }
-                if (length < 0) {
-                    throw new IOException("Invalid length bytes");
-                } else if (length <= 127 && !allowBER) {
-                    throw new IOException("Should use short form for length");
-                }
-            }
-        }
-        if (length == -1) { // indefinite length encoding found
+        if (lenByte == (byte) 0x80) { // indefinite length
             if (!allowBER) {
                 throw new IOException("Indefinite length encoding " +
                         "not supported with DER");
@@ -355,39 +327,68 @@ public class DerValue {
                 throw new IOException("Indefinite length encoding " +
                         "not supported with non-constructed data");
             }
-            InputStream in = new ByteArrayInputStream(
-                    DerIndefLenConverter.convertStream(
-                            new ByteArrayInputStream(buf, pos, len - (pos - offset)),
-                            (byte)lenByte, tag));
-            if (tag != in.read()) {
-                throw new IOException
-                        ("Indefinite length encoding not supported");
+
+            // Reconstruct data source
+            buf = DerIndefLenConverter.convertStream(
+                    new ByteArrayInputStream(buf, pos, len - (pos - offset)), tag);
+            offset = 0;
+            len = buf.length;
+            pos = 2;
+
+            if (tag != buf[0]) {
+                throw new IOException("Indefinite length encoding not supported");
             }
-            length = DerInputStream.getDefiniteLength(in);
-            this.buffer = IOUtils.readExactlyNBytes(in, length);
-            this.start = 0;
-            this.end = length;
-        } else {
-            if (len - length < pos - offset) {
-                throw new EOFException("Too little");
+            lenByte = buf[1];
+            if (lenByte == (byte) 0x80) {
+                throw new IOException("Indefinite len conversion failed");
             }
-            if (len - length > pos - offset && !allowMore) {
-                throw new IOException("Too much");
-            }
-            this.buffer = buf;
-            this.start = pos;
-            this.end = pos + length;
         }
+
+        if ((lenByte & 0x080) == 0x00) { // short form, 1 byte datum
+            length = lenByte;
+        } else {                     // long form
+            lenByte &= 0x07f;
+            if (lenByte < 0 || lenByte > 4) {
+                throw new IOException("Invalid lenByte");
+            }
+            if (len < 2 + lenByte) {
+                throw new IOException("Not enough length bytes");
+            }
+            length = 0x0ff & buf[pos++];
+            lenByte--;
+            if (length == 0 && !allowBER) {
+                // DER requires length value be encoded in minimum number of bytes
+                throw new IOException("Redundant length bytes found");
+            }
+            while (lenByte-- > 0) {
+                length <<= 8;
+                length += 0x0ff & buf[pos++];
+            }
+            if (length < 0) {
+                throw new IOException("Invalid length bytes");
+            } else if (length <= 127 && !allowBER) {
+                throw new IOException("Should use short form for length");
+            }
+        }
+        // pos is now at the beginning of the content
+        if (len - length < pos - offset) {
+            throw new EOFException("not enough content");
+        }
+        if (len - length > pos - offset && !allowMore) {
+            throw new IOException("extra data at the end");
+        }
+        this.buffer = buf;
+        this.start = pos;
+        this.end = pos + length;
         this.allowBER = allowBER;
-        this.data = new DerInputStream(this);
+        this.data = data();
     }
 
     // Get an ASN1/DER encoded datum from an input stream w/ additional
     // arg to control whether DER checks are enforced.
     DerValue(InputStream in, boolean allowBER) throws IOException {
         this.tag = (byte)in.read();
-        byte lenByte = (byte)in.read();
-        int length = DerInputStream.getLength(lenByte, in);
+        int length = DerInputStream.getLength(in);
         if (length == -1) { // indefinite length encoding found
             if (!allowBER) {
                 throw new IOException("Indefinite length encoding " +
@@ -397,25 +398,34 @@ public class DerValue {
                 throw new IOException("Indefinite length encoding " +
                         "not supported with non-constructed data");
             }
-            in = new ByteArrayInputStream(
-                    DerIndefLenConverter.convertStream(in, lenByte, tag));
-            if (tag != in.read())
+            this.buffer = DerIndefLenConverter.convertStream(in, tag);
+            ByteArrayInputStream bin = new ByteArrayInputStream(this.buffer);
+            if (tag != bin.read()) {
                 throw new IOException
                         ("Indefinite length encoding not supported");
-            length = DerInputStream.getDefiniteLength(in);
+            }
+            length = DerInputStream.getDefiniteLength(bin);
+            this.start = this.buffer.length - bin.available();
+            this.end = this.start + length;
+            // position of in is undetermined. Precisely, it might be n-bytes
+            // after DerValue, and these n bytes are at the end of this.buffer
+            // after this.end.
+        } else {
+            this.buffer = IOUtils.readExactlyNBytes(in, length);
+            this.start = 0;
+            this.end = length;
+            // position of in is right after the DerValue
         }
-        this.buffer = IOUtils.readExactlyNBytes(in, length);
-        this.start = 0;
-        this.end = length;
         this.allowBER = allowBER;
-        this.data = new DerInputStream(this);
+        this.data = data();
     }
 
     /**
      * Get an ASN1/DER encoded datum from an input stream.  The
      * stream may have additional data following the encoded datum.
      * In case of indefinite length encoded datum, the input stream
-     * must hold only one datum.
+     * must hold only one datum, i.e. all bytes in the stream might
+     * be consumed. Otherwise, only one DerValue will be consumed.
      *
      * @param in the input stream holding a single DER datum,
      *  which may be followed by additional data
@@ -435,14 +445,25 @@ public class DerValue {
     }
 
     /**
-     * Returns a new DerInputStream pointing at the start of buffer.
+     * Returns a new DerInputStream pointing at the start of this
+     * DerValue's content.
      *
      * @return the new DerInputStream value
      */
     public final DerInputStream data() {
-        return new DerInputStream(this);
+        return new DerInputStream(buffer, start, end - start, allowBER);
     }
 
+    /**
+     * Returns the data field inside this class. This method should be
+     * avoided because the data field is mutable but every call always
+     * return the same object. The caller had better directly use the
+     * data field. A better way is to call data() that will always return
+     * a new DerInputStream that points to the beginning of the content.
+     *
+     * Both this method and the {@link #data} field should be avoided.
+     * Consider using {@link #data()} instead.
+     */
     public final DerInputStream getData() {
         return data;
     }
@@ -503,7 +524,7 @@ public class DerValue {
             return Arrays.copyOfRange(buffer, start, end);
         } else {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
-            DerInputStream dis = new DerInputStream(this);
+            DerInputStream dis = data();
             while (dis.available() > 0) {
                 bout.write(dis.getDerValue().getOctetString());
             }
@@ -517,7 +538,11 @@ public class DerValue {
      * @return the integer held in this DER value.
      */
     public int getInteger() throws IOException {
-        BigInteger result = getBigInteger();
+        return getIntegerInternal(tag_Integer);
+    }
+
+    private int getIntegerInternal(byte expectedTag) throws IOException {
+        BigInteger result = getBigIntegerInternal(expectedTag, false);
         if (result.compareTo(BigInteger.valueOf(Integer.MIN_VALUE)) < 0) {
             throw new IOException("Integer below minimum valid value");
         }
@@ -533,7 +558,7 @@ public class DerValue {
      * @return the integer held in this DER value as a BigInteger.
      */
     public BigInteger getBigInteger() throws IOException {
-        return getBigIntegerInternal(false);
+        return getBigIntegerInternal(tag_Integer, false);
     }
 
     /**
@@ -544,7 +569,7 @@ public class DerValue {
      * @return the integer held in this DER value as a BigInteger.
      */
     public BigInteger getPositiveBigInteger() throws IOException {
-        return getBigIntegerInternal(true);
+        return getBigIntegerInternal(tag_Integer, true);
     }
 
     /**
@@ -554,9 +579,9 @@ public class DerValue {
      *   irrespective of actual encoding
      * @return the integer as a BigInteger.
      */
-    private BigInteger getBigIntegerInternal(boolean makePositive) throws IOException {
-        if (tag != tag_Integer) {
-            throw new IOException("DerValue.getBigInteger, not an int " + tag);
+    private BigInteger getBigIntegerInternal(byte expectedTag, boolean makePositive) throws IOException {
+        if (tag != expectedTag) {
+            throw new IOException("DerValue.getBigIntegerInternal, not expected " + tag);
         }
         if (end == start) {
             throw new IOException("Invalid encoding: zero length Int value");
@@ -576,12 +601,7 @@ public class DerValue {
      * @return the integer held in this DER value.
      */
     public int getEnumerated() throws IOException {
-        if (tag != tag_Enumerated) {
-            throw new IOException("DerValue.getEnumerated, incorrect tag: "
-                                  + tag);
-        }
-        // TODO
-        return new BigInteger(1, buffer, start, end - start).intValue();
+        return getIntegerInternal(tag_Enumerated);
     }
 
     /**
@@ -635,7 +655,7 @@ public class DerValue {
             }
         }
         if (end == start) {
-            throw new IOException("No padding");
+            throw new IOException("Invalid encoding: zero length bit string");
         }
         int numOfPadBits = buffer[start];
         if ((numOfPadBits < 0) || (numOfPadBits > 7)) {
@@ -667,17 +687,17 @@ public class DerValue {
             }
         }
         if (end == start) {
-            throw new IOException("No padding");
+            throw new IOException("Invalid encoding: zero length bit string");
         }
         data.pos = data.end; // Compatibility. Reach end.
+        int numOfPadBits = buffer[start];
+        if ((numOfPadBits < 0) || (numOfPadBits > 7)) {
+            throw new IOException("Invalid number of padding bits");
+        }
         if (end == start + 1) {
             return new BitArray(0);
         } else {
-            int numOfPadBits = buffer[start];
-            if ((numOfPadBits < 0) || (numOfPadBits > 7)) {
-                throw new IOException("Invalid number of padding bits");
-            }
-            return new BitArray((end - start - 1) * 8 - numOfPadBits,
+            return new BitArray(((end - start - 1) << 3) - numOfPadBits,
                     Arrays.copyOfRange(buffer, start + 1, end));
         }
     }
@@ -761,20 +781,30 @@ public class DerValue {
      * Returns the ASN.1 UNIVERSAL (UTF-32) STRING value as a Java String.
      *
      * @return a string corresponding to the encoded UniversalString held in
-     * this value or an empty string if UTF_32BE is not a supported character
-     * set.
+     * this value
      */
     public String getUniversalString() throws IOException {
         return readStringInternal(tag_UniversalString, new UTF_32BE());
     }
 
     /**
+     * Reads the ASN.1 NULL value
+     */
+    public void getNull() throws IOException {
+        if (tag != tag_Null) {
+            throw new IOException("DerValue.getNull, not NULL: " + tag);
+        }
+        if (end != start) {
+            throw new IOException("NULL should contain no data");
+        }
+    }
+
+    /**
      * Private helper routine to extract time from the der value.
-     * @param len the number of bytes to use
      * @param generalized true if Generalized Time is to be read, false
      * if UTC Time is to be read.
      */
-    private Date getTime(int len, boolean generalized) throws IOException {
+    private Date getTimeInternal(boolean generalized) throws IOException {
 
         /*
          * UTC time encoded as ASCII chars:
@@ -797,6 +827,7 @@ public class DerValue {
         int year, month, day, hour, minute, second, millis;
         String type = null;
         int pos = start;
+        int len = end - start;
 
         if (generalized) {
             type = "Generalized";
@@ -966,15 +997,6 @@ public class DerValue {
         return b - '0';
     }
 
-    public void getNull() throws IOException {
-        if (tag != tag_Null) {
-            throw new IOException("DerValue.getUTCTime, not a UtcTime: " + tag);
-        }
-        if (end != start) {
-            throw new IOException("DER UTC Time length error");
-        }
-    }
-
     /**
      * Returns a Date if the DerValue is UtcTime.
      *
@@ -988,7 +1010,7 @@ public class DerValue {
             throw new IOException("DER UTC Time length error");
 
         data.pos = data.end; // Compatibility. Reach end.
-        return getTime(end - start, false);
+        return getTimeInternal(false);
     }
 
     /**
@@ -1005,7 +1027,7 @@ public class DerValue {
             throw new IOException("DER Generalized Time length error");
 
         data.pos = data.end; // Compatibility. Reach end.
-        return getTime(end - start, true);
+        return getTimeInternal(true);
     }
 
     /**
@@ -1040,7 +1062,7 @@ public class DerValue {
      */
     @Override
     public String toString() {
-        return String.format("DerValue(%02x, %s, %d, 5d)",
+        return String.format("DerValue(%02x, %s, %d, %d)",
                 0xff & tag, buffer, start, end);
     }
 
@@ -1139,6 +1161,8 @@ public class DerValue {
      * Set the tag of the attribute. Commonly used to reset the
      * tag value used for IMPLICIT encodings.
      *
+     * This method should be avoided, consider using withTag() instead.
+     *
      * @param tag the tag value
      */
     public void resetTag(byte tag) {
@@ -1146,7 +1170,9 @@ public class DerValue {
     }
 
     /**
-     * Returns a new DerValuw with a different tag.
+     * Returns a new DerValue with a different tag. This method is used
+     * to convert a DerValue decoded from an IMPLICIT encoding to its real
+     * tag. The content is not checked against the tag in this method.
      *
      * @param newTag the new tag
      * @return a new DerValue
@@ -1169,12 +1195,20 @@ public class DerValue {
         return result;
     }
 
+    /**
+     * Reads the sub-values in a constructed DerValue.
+     *
+     * @param expectedTag the expected tag, or zero if we don't check.
+     *                    This is useful when this DerValue is IMPLICIT.
+     * @param startLen estimated number of sub-values
+     * @return the sub-values in an array
+     */
     DerValue[] subs(byte expectedTag, int startLen) throws IOException {
         if (expectedTag != 0 && expectedTag != tag) {
             throw new IOException("Not the correct tag");
         }
         List<DerValue> result = new ArrayList<>(startLen);
-        DerInputStream dis = new DerInputStream(this);
+        DerInputStream dis = data();
         while (dis.available() > 0) {
             result.add(dis.getDerValue());
         }
