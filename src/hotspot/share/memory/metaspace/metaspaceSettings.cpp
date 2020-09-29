@@ -28,8 +28,8 @@
 #include "logging/logStream.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "runtime/java.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 namespace metaspace {
 

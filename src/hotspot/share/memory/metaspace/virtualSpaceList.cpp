@@ -25,14 +25,15 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/freeChunkList.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
+#include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
-#include "memory/metaspace.hpp"
 #include "runtime/mutexLocker.hpp"
 
 namespace metaspace {
@@ -41,25 +42,25 @@ namespace metaspace {
 #define LOGFMT_ARGS    p2i(this), this->_name
 
 // Create a new, empty, expandable list.
-VirtualSpaceList::VirtualSpaceList(const char* name, CommitLimiter* commit_limiter)
-  : _name(name),
-    _first_node(NULL),
-    _can_expand(true),
-    _commit_limiter(commit_limiter),
-    _reserved_words_counter(),
-    _committed_words_counter()
+VirtualSpaceList::VirtualSpaceList(const char* name, CommitLimiter* commit_limiter) :
+  _name(name),
+  _first_node(NULL),
+  _can_expand(true),
+  _commit_limiter(commit_limiter),
+  _reserved_words_counter(),
+  _committed_words_counter()
 {
 }
 
 // Create a new list. The list will contain one node only, which uses the given ReservedSpace.
 // It will be not expandable beyond that first node.
-VirtualSpaceList::VirtualSpaceList(const char* name, ReservedSpace rs, CommitLimiter* commit_limiter)
-  : _name(name),
-    _first_node(NULL),
-    _can_expand(false),
-    _commit_limiter(commit_limiter),
-    _reserved_words_counter(),
-    _committed_words_counter()
+VirtualSpaceList::VirtualSpaceList(const char* name, ReservedSpace rs, CommitLimiter* commit_limiter) :
+  _name(name),
+  _first_node(NULL),
+  _can_expand(false),
+  _commit_limiter(commit_limiter),
+  _reserved_words_counter(),
+  _committed_words_counter()
 {
   // Create the first node spanning the existing ReservedSpace. This will be the only node created
   // for this list since we cannot expand.

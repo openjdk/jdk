@@ -90,9 +90,12 @@ class BlockTree: public CHeapObj<mtMetaspace> {
     // tree and need additional space for weighting information).
     const size_t _word_size;
 
-    Node(size_t word_size)
-      : _parent(NULL), _left(NULL), _right(NULL),
-        _next(NULL), _word_size(word_size)
+    Node(size_t word_size) :
+      _parent(NULL),
+      _left(NULL),
+      _right(NULL),
+      _next(NULL),
+      _word_size(word_size)
     {}
 
   };
@@ -215,7 +218,7 @@ private:
   // Given a node n and an insertion point, insert n under insertion point.
   void insert(Node* insertion_point, Node* n) {
     assert(n->_parent == NULL, "Sanity");
-    for(;;) {
+    for (;;) {
       if (n->_word_size == insertion_point->_word_size) {
         add_to_list(n, insertion_point); // parent stays NULL in this case.
         break;

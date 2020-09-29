@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
@@ -37,7 +38,6 @@
 #include "memory/metaspace/rootChunkArea.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
-#include "memory/metaspace.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
@@ -223,18 +223,18 @@ void VirtualSpaceNode::uncommit_range(MetaWord* p, size_t word_size) {
 //// creation, destruction ////
 
 VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter* limiter,
-                                   SizeCounter* reserve_counter, SizeCounter* commit_counter)
-  : _next(NULL),
-    _rs(rs),
-    _owns_rs(owns_rs),
-    _base((MetaWord*)rs.base()),
-    _word_size(rs.size() / BytesPerWord),
-    _used_words(0),
-    _commit_mask((MetaWord*)rs.base(), rs.size() / BytesPerWord),
-    _root_chunk_area_lut((MetaWord*)rs.base(), rs.size() / BytesPerWord),
-    _commit_limiter(limiter),
-    _total_reserved_words_counter(reserve_counter),
-    _total_committed_words_counter(commit_counter)
+                                   SizeCounter* reserve_counter, SizeCounter* commit_counter) :
+  _next(NULL),
+  _rs(rs),
+  _owns_rs(owns_rs),
+  _base((MetaWord*)rs.base()),
+  _word_size(rs.size() / BytesPerWord),
+  _used_words(0),
+  _commit_mask((MetaWord*)rs.base(), rs.size() / BytesPerWord),
+  _root_chunk_area_lut((MetaWord*)rs.base(), rs.size() / BytesPerWord),
+  _commit_limiter(limiter),
+  _total_reserved_words_counter(reserve_counter),
+  _total_committed_words_counter(commit_counter)
 {
   UL2(debug, "born (word_size " SIZE_FORMAT ").", _word_size);
 

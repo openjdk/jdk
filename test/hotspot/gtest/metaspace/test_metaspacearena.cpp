@@ -82,16 +82,16 @@ public:
   // Create a helper; growth policy for arena is determined by the given spacetype|class tupel
   MetaspaceArenaTestHelper(MetaspaceGtestContext& helper,
                             Metaspace::MetaspaceType space_type, bool is_class,
-                            const char* name = "gtest-MetaspaceArena")
-    :_context(helper)
+                            const char* name = "gtest-MetaspaceArena") :
+    _context(helper)
   {
     initialize(ArenaGrowthPolicy::policy_for_space_type(space_type, is_class), name);
   }
 
   // Create a helper; growth policy is directly specified
   MetaspaceArenaTestHelper(MetaspaceGtestContext& helper, const ArenaGrowthPolicy* growth_policy,
-                            const char* name = "gtest-MetaspaceArena")
-    :_context(helper)
+                           const char* name = "gtest-MetaspaceArena") :
+    _context(helper)
   {
     initialize(growth_policy, name);
   }

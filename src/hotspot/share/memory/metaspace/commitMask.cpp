@@ -33,17 +33,46 @@
 
 namespace metaspace {
 
-CommitMask::CommitMask(const MetaWord* start, size_t word_size)
-  : CHeapBitMap(mask_size(word_size, Settings::commit_granule_words()))
-  , _base(start)
-  , _word_size(word_size)
-  , _words_per_bit(Settings::commit_granule_words())
+CommitMask::CommitMask(const MetaWord* start, size_t word_size) :
+  CHeapBitMap(mask_size(word_size, Settings::commit_granule_words())),
+  _base(start),
+  _word_size(word_size),
+  _words_per_bit(Settings::commit_granule_words())
 {
   assert(_word_size > 0 && _words_per_bit > 0 &&
          is_aligned(_word_size, _words_per_bit), "Sanity");
 }
 
 #ifdef ASSERT
+
+// Given a pointer, check if it points into the range this bitmap covers.
+bool CommitMask::is_pointer_valid(const MetaWord* p) const {
+  return p >= _base && p < _base + _word_size;
+}
+
+// Given a pointer, check if it points into the range this bitmap covers.
+void CommitMask::check_pointer(const MetaWord* p) const {
+  assert(is_pointer_valid(p),
+         "Pointer " PTR_FORMAT " not in range of this bitmap [" PTR_FORMAT ", " PTR_FORMAT ").",
+         p2i(p), p2i(_base), p2i(_base + _word_size));
+}
+// Given a pointer, check if it points into the range this bitmap covers,
+// and if it is aligned to commit granule border.
+void CommitMask::check_pointer_aligned(const MetaWord* p) const {
+  check_pointer(p);
+  assert(is_aligned(p, _words_per_bit * BytesPerWord),
+         "Pointer " PTR_FORMAT " should be aligned to commit granule size " SIZE_FORMAT ".",
+         p2i(p), _words_per_bit * BytesPerWord);
+}
+// Given a range, check if it points into the range this bitmap covers,
+// and if its borders are aligned to commit granule border.
+void CommitMask::check_range(const MetaWord* start, size_t word_size) const {
+  check_pointer_aligned(start);
+  assert(is_aligned(word_size, _words_per_bit),
+         "Range " SIZE_FORMAT " should be aligned to commit granule size " SIZE_FORMAT ".",
+         word_size, _words_per_bit);
+  check_pointer(start + word_size - 1);
+}
 
 void CommitMask::verify() const {
 

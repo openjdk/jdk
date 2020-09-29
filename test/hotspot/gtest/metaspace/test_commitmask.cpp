@@ -26,11 +26,11 @@
 #include "precompiled.hpp"
 #include "memory/metaspace/commitMask.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
+#include "metaspaceGtestCommon.hpp"
+#include "metaspaceGtestRangeHelpers.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-#include "metaspaceGtestCommon.hpp"
-#include "metaspaceGtestRangeHelpers.hpp"
 
 using metaspace::CommitMask;
 using metaspace::Settings;
@@ -244,8 +244,10 @@ class CommitMaskTest {
 
 public:
 
-  CommitMaskTest(const MetaWord* base, size_t size)
-    : _base(base), _word_size(size), _mask(base, size)
+  CommitMaskTest(const MetaWord* base, size_t size) :
+    _base(base),
+    _word_size(size),
+    _mask(base, size)
   {}
 
   void test() {

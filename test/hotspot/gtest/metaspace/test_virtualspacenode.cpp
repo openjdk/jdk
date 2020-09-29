@@ -288,9 +288,13 @@ class VirtualSpaceNodeTest {
 
 public:
 
-  VirtualSpaceNodeTest(size_t vs_word_size, size_t commit_limit)
-    : _counter_reserved_words(), _counter_committed_words(), _commit_limiter(commit_limit),
-      _node(NULL), _vs_word_size(vs_word_size), _commit_limit(commit_limit)
+  VirtualSpaceNodeTest(size_t vs_word_size, size_t commit_limit) :
+    _counter_reserved_words(),
+    _counter_committed_words(),
+    _commit_limiter(commit_limit),
+    _node(NULL),
+    _vs_word_size(vs_word_size),
+    _commit_limit(commit_limit)
   {
     {
       MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);

@@ -62,8 +62,11 @@ class MetaspaceContext : public CHeapObj<mtMetaspace> {
   VirtualSpaceList* const _vslist;
   ChunkManager* const _cm;
 
-  MetaspaceContext(const char* name, VirtualSpaceList* vslist, ChunkManager* cm)
-    : _name(name), _vslist(vslist), _cm(cm) {}
+  MetaspaceContext(const char* name, VirtualSpaceList* vslist, ChunkManager* cm) :
+    _name(name),
+    _vslist(vslist),
+    _cm(cm)
+  {}
 
   static MetaspaceContext* _nonclass_space_context;
   static MetaspaceContext* _class_space_context;

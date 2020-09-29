@@ -27,8 +27,8 @@
 #define SHARE_MEMORY_METASPACE_VIRTUALSPACELIST_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
+#include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"

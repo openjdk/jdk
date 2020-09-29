@@ -29,9 +29,9 @@
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestContexts.hpp"
+#include "runtime/mutexLocker.hpp"
 
 using metaspace::ChunkManager;
 using metaspace::FreeChunkListVector;

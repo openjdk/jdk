@@ -30,15 +30,17 @@
 #include "memory/metaspace/testHelpers.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 namespace metaspace {
 
 ///// MetaspaceTestArena //////
 
-MetaspaceTestArena::MetaspaceTestArena(Mutex* lock, MetaspaceArena* arena)
-  : _lock(lock), _arena(arena) {}
+MetaspaceTestArena::MetaspaceTestArena(Mutex* lock, MetaspaceArena* arena) :
+  _lock(lock),
+  _arena(arena)
+{}
 
 MetaspaceTestArena::~MetaspaceTestArena() {
   delete _arena;
@@ -55,12 +57,14 @@ void MetaspaceTestArena::deallocate(MetaWord* p, size_t word_size) {
 
 ///// MetaspaceTestArea //////
 
-MetaspaceTestContext::MetaspaceTestContext(const char* name, size_t commit_limit, size_t reserve_limit)
-  : _name(name), _reserve_limit(reserve_limit), _commit_limit(commit_limit),
-    _context(NULL),
-    _commit_limiter(commit_limit == 0 ? max_uintx : commit_limit), // commit_limit == 0 -> no limit
-    _used_words_counter(),
-    _rs()
+MetaspaceTestContext::MetaspaceTestContext(const char* name, size_t commit_limit, size_t reserve_limit) :
+  _name(name),
+  _reserve_limit(reserve_limit),
+  _commit_limit(commit_limit),
+  _context(NULL),
+  _commit_limiter(commit_limit == 0 ? max_uintx : commit_limit), // commit_limit == 0 -> no limit
+  _used_words_counter(),
+  _rs()
 {
   assert(is_aligned(reserve_limit, Metaspace::reserve_alignment_words()), "reserve_limit (" SIZE_FORMAT ") "
                     "not aligned to metaspace reserve alignment (" SIZE_FORMAT ")",

@@ -172,7 +172,9 @@ public:
     _rgen_feeding(128, 4096),
     _rgen_allocations(avg_alloc_size / 4, avg_alloc_size * 2, 0.01f, avg_alloc_size / 3, avg_alloc_size * 30),
     _allocations(NULL),
-    _num_allocs(0), _num_deallocs(0), _num_feeds(0)
+    _num_allocs(0),
+    _num_deallocs(0),
+    _num_feeds(0)
   {
     CHECK_CONTENT(_freeblocks, 0, 0);
     // some initial feeding

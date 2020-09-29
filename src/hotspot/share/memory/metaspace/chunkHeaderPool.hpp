@@ -75,25 +75,19 @@ public:
 
   // Allocates a Metachunk structure. The structure is uninitialized.
   Metachunk* allocate_chunk_header() {
-
-    Metachunk* c = NULL;
-
     DEBUG_ONLY(verify());
 
+    Metachunk* c = NULL;
     c = _freelist.remove_first();
     assert(c == NULL || c->is_dead(), "Not a freelist chunk header?");
-
     if (c == NULL) {
-
       if (_current_slab == NULL ||
           _current_slab->_top == SlabCapacity) {
         allocate_new_slab();
         assert(_current_slab->_top < SlabCapacity, "Sanity");
       }
-
       c = _current_slab->_elems + _current_slab->_top;
       _current_slab->_top++;
-
     }
 
     _num_handed_out.increment();
@@ -103,7 +97,6 @@ public:
     DEBUG_ONLY(c->zap_header(0xBB);)
 
     return c;
-
   }
 
   void return_chunk_header(Metachunk* c) {
@@ -119,7 +112,6 @@ public:
     c->set_dead();
     _freelist.add(c);
     _num_handed_out.decrement();
-
   }
 
   // Returns number of allocated elements.

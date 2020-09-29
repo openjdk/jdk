@@ -27,8 +27,8 @@
 #define SHARE_MEMORY_METASPACE_PRINTCLDMETASPACEINFOCLOSURE_HPP
 
 #include "memory/iterator.hpp"
-#include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspace/metaspaceStatistics.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
@@ -59,7 +59,7 @@ public:
   uintx                           _num_classes_shared;
 
   PrintCLDMetaspaceInfoClosure(outputStream* out, size_t scale, bool do_print,
-      bool do_print_classes, bool break_down_by_chunktype);
+                               bool do_print_classes, bool break_down_by_chunktype);
   void do_cld(ClassLoaderData* cld);
 
 };

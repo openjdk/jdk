@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
@@ -39,8 +38,9 @@
 
 namespace metaspace {
 
-RootChunkArea::RootChunkArea(const MetaWord* base)
-  : _base(base), _first_chunk(NULL)
+RootChunkArea::RootChunkArea(const MetaWord* base) :
+  _base(base),
+  _first_chunk(NULL)
 {}
 
 RootChunkArea::~RootChunkArea() {
@@ -507,10 +507,10 @@ void RootChunkArea::print_on(outputStream* st) const {
 
 // Create an array of ChunkTree objects, all initialized to NULL, covering
 // a given memory range. Memory range must be a multiple of root chunk size.
-RootChunkAreaLUT::RootChunkAreaLUT(const MetaWord* base, size_t word_size)
-  : _base(base),
-    _num((int)(word_size / chunklevel::MAX_CHUNK_WORD_SIZE)),
-    _arr(NULL)
+RootChunkAreaLUT::RootChunkAreaLUT(const MetaWord* base, size_t word_size) :
+  _base(base),
+  _num((int)(word_size / chunklevel::MAX_CHUNK_WORD_SIZE)),
+  _arr(NULL)
 {
   assert_is_aligned(word_size, chunklevel::MAX_CHUNK_WORD_SIZE);
   _arr = NEW_C_HEAP_ARRAY(RootChunkArea, _num, mtClass);

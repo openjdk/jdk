@@ -26,8 +26,8 @@
 #include "precompiled.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
-#include "metaspaceGtestContexts.hpp"
 #include "metaspaceGtestCommon.hpp"
+#include "metaspaceGtestContexts.hpp"
 
 using metaspace::Settings;
 

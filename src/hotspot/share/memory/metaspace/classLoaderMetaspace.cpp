@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/internalStats.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
@@ -32,7 +33,6 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/runningCounters.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/metaspaceTracer.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
@@ -57,11 +57,11 @@ static bool use_class_space(Metaspace::MetadataType mdType) {
   return use_class_space(Metaspace::is_class_space_allocation(mdType));
 }
 
-ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type)
-  : _lock(lock)
-  , _space_type(space_type)
-  , _non_class_space_arena(NULL)
-  , _class_space_arena(NULL)
+ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type) :
+  _lock(lock),
+  _space_type(space_type),
+  _non_class_space_arena(NULL),
+  _class_space_arena(NULL)
 {
   ChunkManager* const non_class_cm =
           ChunkManager::chunkmanager_nonclass();

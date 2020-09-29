@@ -120,12 +120,10 @@ void MetaspaceArena::add_allocation_to_fbl(MetaWord* p, size_t word_size) {
   _fbl->add_block(p, word_size);
 }
 
-MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager,
-             const ArenaGrowthPolicy* growth_policy,
-             Mutex* lock,
-             SizeAtomicCounter* total_used_words_counter,
-             const char* name)
-: _lock(lock),
+MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
+                               Mutex* lock, SizeAtomicCounter* total_used_words_counter,
+                               const char* name) :
+  _lock(lock),
   _chunk_manager(chunk_manager),
   _growth_policy(growth_policy),
   _chunks(),
@@ -155,7 +153,7 @@ MetaspaceArena::~MetaspaceArena() {
   Metachunk* c = _chunks.first();
   Metachunk* c2 = NULL;
 
-  while(c) {
+  while (c) {
     c2 = c->next();
     return_counter.add(c->used_words());
     DEBUG_ONLY(c->set_prev(NULL);)
@@ -498,7 +496,6 @@ void MetaspaceArena::verify_allocation_guards() const {
              num_broken_blocks, p2i(first_broken_block));
     }
   }
-
 
 }
 

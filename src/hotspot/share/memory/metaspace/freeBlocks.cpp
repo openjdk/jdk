@@ -25,8 +25,8 @@
 
 #include "precompiled.hpp"
 #include "memory/metaspace/freeBlocks.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 namespace metaspace {
 

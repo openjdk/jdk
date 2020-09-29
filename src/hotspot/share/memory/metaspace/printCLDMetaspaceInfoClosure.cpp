@@ -26,10 +26,10 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/printCLDMetaspaceInfoClosure.hpp"
 #include "memory/metaspace/printMetaspaceInfoKlassClosure.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -38,11 +38,16 @@
 namespace metaspace {
 
 PrintCLDMetaspaceInfoClosure::PrintCLDMetaspaceInfoClosure(outputStream* out, size_t scale, bool do_print,
-    bool do_print_classes, bool break_down_by_chunktype)
-: _out(out), _scale(scale), _do_print(do_print), _do_print_classes(do_print_classes)
-, _break_down_by_chunktype(break_down_by_chunktype)
-, _num_loaders(0), _num_loaders_without_metaspace(0), _num_loaders_unloading(0)
-,  _num_classes(0), _num_classes_shared(0)
+                                                           bool do_print_classes, bool break_down_by_chunktype) :
+  _out(out),
+  _scale(scale),
+  _do_print(do_print),
+  _do_print_classes(do_print_classes),
+  _break_down_by_chunktype(break_down_by_chunktype),
+  _num_loaders(0),
+  _num_loaders_without_metaspace(0),
+  _num_loaders_unloading(0),
+  _num_classes(0), _num_classes_shared(0)
 {
   memset(_num_loaders_by_spacetype, 0, sizeof(_num_loaders_by_spacetype));
   memset(_num_classes_by_spacetype, 0, sizeof(_num_classes_by_spacetype));

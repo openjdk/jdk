@@ -115,7 +115,7 @@ public:
   FreeChunkList() :
     _first(NULL),
     _last(NULL)
-    {}
+  {}
 
   // Remove given chunk from anywhere in the list.
   Metachunk* remove(Metachunk* c) {

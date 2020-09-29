@@ -23,8 +23,8 @@
  *
  */
 #include "precompiled.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/metaspace/printMetaspaceInfoKlassClosure.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "utilities/globalDefinitions.hpp"

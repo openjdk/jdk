@@ -79,8 +79,9 @@ class BinListImpl {
   struct Block {
     Block* const _next;
     const size_t _word_size;
-    Block(Block* next, size_t word_size)
-      : _next(next), _word_size(word_size)
+    Block(Block* next, size_t word_size) :
+      _next(next),
+      _word_size(word_size)
     {}
   };
 

@@ -79,12 +79,20 @@ class RandSizeGenerator {
   const size_t _outlier_min; // [
   const size_t _outlier_max; // )
 public:
-  RandSizeGenerator(size_t min, size_t max)
-    : _min(min), _max(max), _outlier_chance(0.0), _outlier_min(min), _outlier_max(max)
+  RandSizeGenerator(size_t min, size_t max) :
+    _min(min),
+    _max(max),
+    _outlier_chance(0.0),
+    _outlier_min(min),
+    _outlier_max(max)
   {}
 
-  RandSizeGenerator(size_t min, size_t max, float outlier_chance, size_t outlier_min, size_t outlier_max)
-    : _min(min), _max(max), _outlier_chance(outlier_chance), _outlier_min(outlier_min), _outlier_max(outlier_max)
+  RandSizeGenerator(size_t min, size_t max, float outlier_chance, size_t outlier_min, size_t outlier_max) :
+    _min(min),
+    _max(max),
+    _outlier_chance(outlier_chance),
+    _outlier_min(outlier_min),
+    _outlier_max(outlier_max)
   {}
 
   size_t min() const { return _min; }

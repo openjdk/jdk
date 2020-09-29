@@ -228,20 +228,20 @@ class ChunkManagerRandomChunkAllocTest {
 public:
 
   // A test with no limits
-  ChunkManagerRandomChunkAllocTest(ChunkLevelRange r, float commit_factor)
-    : _context(),
-      _chunks(max_num_live_chunks(r, commit_factor)),
-      _chunklevel_range(r),
-      _commit_factor(commit_factor)
+  ChunkManagerRandomChunkAllocTest(ChunkLevelRange r, float commit_factor) :
+    _context(),
+    _chunks(max_num_live_chunks(r, commit_factor)),
+    _chunklevel_range(r),
+    _commit_factor(commit_factor)
   {}
 
   // A test with no reserve limit but commit limit
   ChunkManagerRandomChunkAllocTest(size_t commit_limit,
-                                   ChunkLevelRange r, float commit_factor)
-    : _context(commit_limit),
-      _chunks(max_num_live_chunks(r, commit_factor)),
-      _chunklevel_range(r),
-      _commit_factor(commit_factor)
+                                   ChunkLevelRange r, float commit_factor) :
+    _context(commit_limit),
+    _chunks(max_num_live_chunks(r, commit_factor)),
+    _chunklevel_range(r),
+    _commit_factor(commit_factor)
   {}
 
   // A test with both reserve and commit limit

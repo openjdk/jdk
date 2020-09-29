@@ -23,11 +23,11 @@
  *
  */
 
-#ifndef SHARE_MEMORY_METASPACE_ARENAGROWTHPOLICY_HPP
-#define SHARE_MEMORY_METASPACE_ARENAGROWTHPOLICY_HPP
+#ifndef SHARE_MEMORY_METASPACE_METASPACEARENAGROWTHPOLICY_HPP
+#define SHARE_MEMORY_METASPACE_METASPACEARENAGROWTHPOLICY_HPP
 
-#include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace.hpp" // For Metaspace::MetaspaceType
+#include "memory/metaspace/chunklevel.hpp"
 #include "utilities/debug.hpp"
 
 namespace metaspace {
@@ -53,8 +53,10 @@ class ArenaGrowthPolicy {
 
 public:
 
-  ArenaGrowthPolicy(const chunklevel_t* array, int num_entries)
-    : _entries(array), _num_entries(num_entries) {
+  ArenaGrowthPolicy(const chunklevel_t* array, int num_entries) :
+    _entries(array),
+    _num_entries(num_entries)
+  {
     assert(_num_entries > 0, "must not be empty.");
   }
 
@@ -74,4 +76,4 @@ public:
 
 } // namespace metaspace
 
-#endif // SHARE_MEMORY_METASPACE_ARENAGROWTHPOLICY_HPP
+#endif // SHARE_MEMORY_METASPACE_METASPACEARENAGROWTHPOLICY_HPP

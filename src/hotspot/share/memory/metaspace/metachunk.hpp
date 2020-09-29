@@ -161,28 +161,26 @@ class Metachunk {
 
 public:
 
-  Metachunk()
-    : _base(NULL),
-      _used_words(0),
-      _committed_words(0),
-      _level(chunklevel::ROOT_CHUNK_LEVEL),
-      _state(State::Free),
-      _vsnode(NULL),
-      _prev(NULL), _next(NULL),
-      _prev_in_vs(NULL), _next_in_vs(NULL)
+  Metachunk() :
+    _base(NULL),
+    _used_words(0),
+    _committed_words(0),
+    _level(chunklevel::ROOT_CHUNK_LEVEL),
+    _state(State::Free),
+    _vsnode(NULL),
+    _prev(NULL), _next(NULL),
+    _prev_in_vs(NULL),
+    _next_in_vs(NULL)
   {}
 
- void clear() {
-   _base = NULL;
-   _used_words = 0;
-   _committed_words = 0;
-   _level = chunklevel::ROOT_CHUNK_LEVEL;
-   _state = State::Free;
-   _vsnode = NULL;
-   _prev = NULL;
-   _next = NULL;
-   _prev_in_vs = NULL;
-   _next_in_vs = NULL;
+  void clear() {
+    _base = NULL;
+    _used_words = 0; _committed_words = 0;
+    _level = chunklevel::ROOT_CHUNK_LEVEL;
+    _state = State::Free;
+    _vsnode = NULL;
+    _prev = NULL; _next = NULL;
+    _prev_in_vs = NULL; _next_in_vs = NULL;
   }
 
   size_t word_size() const        { return chunklevel::word_size_for_level(_level); }
@@ -267,9 +265,8 @@ public:
 
   // Initialize structure for reuse.
   void initialize(VirtualSpaceNode* node, MetaWord* base, chunklevel_t lvl) {
+    clear();
     _vsnode = node; _base = base; _level = lvl;
-    _used_words = _committed_words = 0; _state = State::Free;
-    _next = _prev = _next_in_vs = _prev_in_vs = NULL;
   }
 
   // Returns true if this chunk is the leader in its buddy pair, false if not.

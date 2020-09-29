@@ -36,7 +36,6 @@ using metaspace::MemRangeCounter;
 using metaspace::MetachunkList;
 using metaspace::FreeChunkListVector;
 
-
 TEST_VM(metaspace, metachunklist) {
 
   ChunkGtestContext context;

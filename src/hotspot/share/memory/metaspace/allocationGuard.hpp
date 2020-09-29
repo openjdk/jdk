@@ -80,9 +80,9 @@ struct Prefix {
   const size_t _word_size;   // raw word size including prefix
   // MetaWord payload [0];   // varsized (but unfortunately not all our compilers understand that)
 
-  Prefix(size_t word_size)
-    : _mark(EyeCatcher),
-      _word_size(word_size)
+  Prefix(size_t word_size) :
+    _mark(EyeCatcher),
+    _word_size(word_size)
   {}
 
   MetaWord* payload() const {

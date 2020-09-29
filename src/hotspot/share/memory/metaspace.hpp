@@ -231,7 +231,6 @@ public:
 
 }; // end: ClassLoaderMetaspace
 
-
 ////////////////// MetaspaceGC ///////////////////////
 
 // Metaspace are deallocated when their class loader are GC'ed.
@@ -296,9 +295,6 @@ class MetaspaceGC : public AllStatic {
   // a GC.
   static void compute_new_size();
 };
-
-
-
 
 class MetaspaceUtils : AllStatic {
 public:

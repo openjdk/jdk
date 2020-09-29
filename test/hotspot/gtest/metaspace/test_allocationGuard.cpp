@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/testHelpers.hpp"

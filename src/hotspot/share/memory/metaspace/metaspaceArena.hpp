@@ -23,16 +23,16 @@
  *
  */
 
-#ifndef SHARE_MEMORY_METASPACE_ARENA_HPP
-#define SHARE_MEMORY_METASPACE_ARENA_HPP
+#ifndef SHARE_MEMORY_METASPACE_METASPACEARENA_HPP
+#define SHARE_MEMORY_METASPACE_METASPACEARENA_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metachunkList.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
-#include "memory/metaspace.hpp"
 
 class outputStream;
 class Mutex;
@@ -140,11 +140,9 @@ class MetaspaceArena : public CHeapObj<mtClass> {
 
 public:
 
-  MetaspaceArena(ChunkManager* chunk_manager,
-               const ArenaGrowthPolicy* growth_policy,
-               Mutex* lock,
-               SizeAtomicCounter* total_used_words_counter,
-               const char* name);
+  MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
+                 Mutex* lock, SizeAtomicCounter* total_used_words_counter,
+                 const char* name);
 
   ~MetaspaceArena();
 
@@ -178,5 +176,5 @@ public:
 
 } // namespace metaspace
 
-#endif // SHARE_MEMORY_METASPACE_ARENA_HPP
+#endif // SHARE_MEMORY_METASPACE_METASPACEARENA_HPP
 

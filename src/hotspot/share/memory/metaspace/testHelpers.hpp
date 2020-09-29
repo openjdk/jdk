@@ -27,10 +27,10 @@
 #define SHARE_MEMORY_METASPACE_TESTHELPERS_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/metaspace/commitLimiter.hpp"
-#include "memory/metaspace/metaspaceContext.hpp"
-#include "memory/metaspace/counters.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspace/commitLimiter.hpp"
+#include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
 

@@ -47,7 +47,7 @@ const size_t BlockTree::MinWordSize;
       print_tree(tty); \
       assert(cond, format, __VA_ARGS__); \
     } \
-  } while(0)
+  } while (0)
 
   // This assert prints the tree, then stops (generic message)
 #define assrt0(cond) \
@@ -56,9 +56,7 @@ const size_t BlockTree::MinWordSize;
       print_tree(tty); \
       assert(cond, "sanity"); \
     } \
-  } while(0)
-
-
+  } while (0)
 
 // walkinfo keeps a node plus the size corridor it and its children
 //  are supposed to be in.

@@ -130,13 +130,14 @@ public:
   MetaspaceArena* arena() { return _arena; }
 
   MetaspaceArenaTestBed(ChunkManager* cm, const ArenaGrowthPolicy* alloc_sequence,
-                      SizeAtomicCounter* used_words_counter, SizeRange allocation_range)
-    : _arena(NULL),
-      _lock(NULL),
-      _allocation_range(allocation_range),
-      _size_of_last_failed_allocation(0),
-      _allocations(NULL),
-      _alloc_count(), _dealloc_count()
+                        SizeAtomicCounter* used_words_counter, SizeRange allocation_range) :
+    _arena(NULL),
+    _lock(NULL),
+    _allocation_range(allocation_range),
+    _size_of_last_failed_allocation(0),
+    _allocations(NULL),
+    _alloc_count(),
+    _dealloc_count()
   {
     _lock = new Mutex(Monitor::native, "gtest-MetaspaceArenaTestBed-lock", false, Monitor::_safepoint_check_never);
     // Lock during space creation, since this is what happens in the VM too

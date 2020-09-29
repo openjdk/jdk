@@ -26,8 +26,8 @@
 #ifndef SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP
 #define SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP
 
-#include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace.hpp"             // for MetadataType enum
+#include "memory/metaspace/chunklevel.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
@@ -92,9 +92,13 @@ struct InUseChunkStats {
   // Total waste committed area, in words.
   size_t _waste_words;
 
-  InUseChunkStats()
-    : _num(0), _word_size(0), _committed_words(0),
-      _used_words(0), _free_words(0), _waste_words(0)
+  InUseChunkStats() :
+    _num(0),
+    _word_size(0),
+    _committed_words(0),
+    _used_words(0),
+    _free_words(0),
+    _waste_words(0)
   {}
 
   void add(const InUseChunkStats& other) {
@@ -121,10 +125,10 @@ struct  ArenaStats {
   uintx _free_blocks_num;
   size_t _free_blocks_word_size;
 
-  ArenaStats()
-    : _stats(),
-      _free_blocks_num(0),
-      _free_blocks_word_size(0)
+  ArenaStats() :
+    _stats(),
+    _free_blocks_num(0),
+    _free_blocks_word_size(0)
   {}
 
   void add(const ArenaStats& other);

@@ -28,8 +28,6 @@
 
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metachunk.hpp"
-#include "memory/metaspace/metaspaceCommon.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
@@ -49,6 +47,10 @@ class MetachunkList {
   // So, do not call c->word size on them or anything else which may not
   // work with dead chunks.
 
+  // Check that list does not contain the given chunk; Note that since that check
+  //  is expensive, it is subject to VerifyMetaspaceInterval.
+  DEBUG_ONLY(void verify_does_not_contain(const Metachunk* c) const;)
+
 public:
 
   MetachunkList() : _first(NULL), _num_chunks() {}
@@ -56,8 +58,7 @@ public:
   int count() const { return _num_chunks.get(); }
 
   void add(Metachunk* c) {
-    // Note: contains is expensive (linear search).
-    ASSERT_SOMETIMES(contains(c) == false, "Chunk already in this list");
+    DEBUG_ONLY(verify_does_not_contain(c);)
     c->set_next(_first);
     if (_first) {
       _first->set_prev(c);

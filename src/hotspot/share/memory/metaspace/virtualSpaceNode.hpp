@@ -27,14 +27,14 @@
 #define SHARE_MEMORY_METASPACE_VIRTUALSPACENODE_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
 #include "memory/metaspace/commitMask.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/rootChunkArea.hpp"
-#include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/bitMap.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;

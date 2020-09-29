@@ -28,10 +28,10 @@
 #include "logging/logStream.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/internalStats.hpp"
+#include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
-#include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
@@ -65,10 +65,10 @@ void ChunkManager::return_chunk_simple_locked(Metachunk* c) {
 // Creates a chunk manager with a given name (which is for debug purposes only)
 // and an associated space list which will be used to request new chunks from
 // (see get_chunk())
-ChunkManager::ChunkManager(const char* name, VirtualSpaceList* space_list)
-  : _vslist(space_list),
-    _name(name),
-    _chunks()
+ChunkManager::ChunkManager(const char* name, VirtualSpaceList* space_list) :
+  _vslist(space_list),
+  _name(name),
+  _chunks()
 {
 }
 

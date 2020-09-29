@@ -89,10 +89,10 @@ class SparseArray : public StackObj {
 
 public:
 
-  SparseArray(int num)
-    : _slots(NEW_C_HEAP_ARRAY(T, num, mtInternal)),
-      _num(num),
-      _index_range(num)
+  SparseArray(int num) :
+    _slots(NEW_C_HEAP_ARRAY(T, num, mtInternal)),
+    _num(num),
+    _index_range(num)
   {
     for (int i = 0; i < _num; i++) {
       _slots[i] = NULL;

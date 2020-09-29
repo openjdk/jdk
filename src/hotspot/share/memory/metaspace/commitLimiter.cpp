@@ -24,8 +24,8 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspace/commitLimiter.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

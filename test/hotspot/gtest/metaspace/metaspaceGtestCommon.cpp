@@ -24,10 +24,9 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/os.hpp"
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
-
+#include "runtime/os.hpp"
 
 void zap_range(MetaWord* p, size_t word_size) {
   for (MetaWord* pzap = p; pzap < p + word_size; pzap += os::vm_page_size() / BytesPerWord) {

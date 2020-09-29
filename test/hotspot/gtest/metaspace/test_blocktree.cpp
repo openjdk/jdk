@@ -332,7 +332,7 @@ class BlockTreeTest {
     for (int which = 0; which < 2; which++) {
       BlockTree* bt = _bt + which;
       size_t last_size = 0;
-      while(!bt->is_empty()) {
+      while (!bt->is_empty()) {
 
         // We only query for the minimal size. Actually returned size should be
         // monotonously growing since remove_block should always return the closest fit.

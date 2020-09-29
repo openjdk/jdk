@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "memory/metaspace/metachunkList.hpp"
+#include "memory/metaspace/metaspaceCommon.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -32,6 +33,10 @@
 namespace metaspace {
 
 #ifdef ASSERT
+
+void MetachunkList::verify_does_not_contain(const Metachunk* c) const {
+  SOMETIMES(assert(contains(c) == false, "List contains this chunk.");)
+}
 
 bool MetachunkList::contains(const Metachunk* c) const {
   for (Metachunk* c2 = _first; c2 != NULL; c2 = c2->next()) {

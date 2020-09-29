@@ -28,6 +28,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/filemap.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
@@ -38,7 +39,6 @@
 #include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceTracer.hpp"
 #include "memory/universe.hpp"
@@ -54,14 +54,12 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
 using metaspace::ChunkManager;
 using metaspace::CommitLimiter;
 using metaspace::MetaspaceContext;
 using metaspace::MetaspaceReporter;
 using metaspace::RunningCounters;
 using metaspace::VirtualSpaceList;
-
 
 size_t MetaspaceUtils::used_words() {
   return RunningCounters::used_words();
@@ -86,8 +84,6 @@ size_t MetaspaceUtils::committed_words() {
 size_t MetaspaceUtils::committed_words(Metaspace::MetadataType mdtype) {
   return Metaspace::is_class_space_allocation(mdtype) ? RunningCounters::committed_words_class() : RunningCounters::committed_words_nonclass();
 }
-
-
 
 void MetaspaceUtils::print_metaspace_change(const metaspace::MetaspaceSizesSnapshot& pre_meta_values) {
   const metaspace::MetaspaceSizesSnapshot meta_values;
@@ -390,7 +386,6 @@ void MetaspaceGC::compute_new_size() {
                            minimum_free_percentage, maximum_used_percentage);
   log_trace(gc, metaspace)("     used_after_gc       : %6.1fKB", used_after_gc / (double) K);
 
-
   size_t shrink_bytes = 0;
   if (capacity_until_GC < minimum_desired_capacity) {
     // If we have less capacity below the metaspace HWM, then
@@ -475,8 +470,6 @@ void MetaspaceGC::compute_new_size() {
                                              MetaspaceGCThresholdUpdater::ComputeNewSize);
   }
 }
-
-
 
 //////  Metaspace methods /////
 
@@ -580,7 +573,6 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
 }
 
 #endif // _LP64
-
 
 size_t Metaspace::reserve_alignment_words() {
   return metaspace::Settings::virtual_space_node_reserve_alignment_words();

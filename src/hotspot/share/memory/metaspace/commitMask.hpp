@@ -26,8 +26,8 @@
 #ifndef SHARE_MEMORY_METASPACE_COMMITMASK_HPP
 #define SHARE_MEMORY_METASPACE_COMMITMASK_HPP
 
-#include "utilities/debug.hpp"
 #include "utilities/bitMap.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
@@ -60,37 +60,6 @@ class CommitMask : public CHeapBitMap {
     return bitno_for_word_offset(word_size, words_per_bit);
   }
 
-#ifdef ASSERT
-  // Given a pointer, check if it points into the range this bitmap covers.
-  bool is_pointer_valid(const MetaWord* p) const {
-    return p >= _base && p < _base + _word_size;
-  }
-
-  // Given a pointer, check if it points into the range this bitmap covers.
-  void check_pointer(const MetaWord* p) const {
-    assert(is_pointer_valid(p),
-           "Pointer " PTR_FORMAT " not in range of this bitmap [" PTR_FORMAT ", " PTR_FORMAT ").",
-           p2i(p), p2i(_base), p2i(_base + _word_size));
-  }
-  // Given a pointer, check if it points into the range this bitmap covers,
-  // and if it is aligned to commit granule border.
-  void check_pointer_aligned(const MetaWord* p) const {
-    check_pointer(p);
-    assert(is_aligned(p, _words_per_bit * BytesPerWord),
-           "Pointer " PTR_FORMAT " should be aligned to commit granule size " SIZE_FORMAT ".",
-           p2i(p), _words_per_bit * BytesPerWord);
-  }
-  // Given a range, check if it points into the range this bitmap covers,
-  // and if its borders are aligned to commit granule border.
-  void check_range(const MetaWord* start, size_t word_size) const {
-    check_pointer_aligned(start);
-    assert(is_aligned(word_size, _words_per_bit),
-           "Range " SIZE_FORMAT " should be aligned to commit granule size " SIZE_FORMAT ".",
-           word_size, _words_per_bit);
-    check_pointer(start + word_size - 1);
-  }
-#endif
-
   // Marks a single commit granule as committed (value == true)
   // or uncomitted (value == false) and returns
   // its prior state.
@@ -99,6 +68,24 @@ class CommitMask : public CHeapBitMap {
     at_put(bitno, value);
     return b;
   }
+
+#ifdef ASSERT
+
+  // Given a pointer, check if it points into the range this bitmap covers.
+  bool is_pointer_valid(const MetaWord* p) const;
+
+  // Given a pointer, check if it points into the range this bitmap covers.
+  void check_pointer(const MetaWord* p) const;
+
+  // Given a pointer, check if it points into the range this bitmap covers,
+  // and if it is aligned to commit granule border.
+  void check_pointer_aligned(const MetaWord* p) const;
+
+  // Given a range, check if it points into the range this bitmap covers,
+  // and if its borders are aligned to commit granule border.
+  void check_range(const MetaWord* start, size_t word_size) const;
+
+#endif // ASSERT
 
 public:
 
