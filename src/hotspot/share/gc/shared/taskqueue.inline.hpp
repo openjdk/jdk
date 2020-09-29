@@ -219,7 +219,7 @@ bool GenericTaskQueue<E, F, N>::pop_global(E& t) {
   // The requirement is that Thread3 must never read an older bottom
   // value than Thread2 after Thread3 has seen the age value from
   // Thread2.
-  OrderAccess::loadload_for_iriw();
+  OrderAccess::loadload_for_IRIW();
 
   uint localBot = bottom_acquire();
   uint n_elems = clean_size(localBot, oldAge.top());

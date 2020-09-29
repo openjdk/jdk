@@ -1108,7 +1108,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* self, oop obj) {
 
         // dmw/header and _contentions may get written by different threads.
         // Make sure to observe them in the same order when having several observers.
-        OrderAccess::loadload_for_iriw();
+        OrderAccess::loadload_for_IRIW();
 
         if (monitor->is_being_async_deflated()) {
           // But we can't safely use the hash if we detect that async

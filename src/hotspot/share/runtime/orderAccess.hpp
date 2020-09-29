@@ -247,11 +247,11 @@ class OrderAccess : public AllStatic {
   // Processors which are not multi-copy-atomic require a full fence
   // to enforce a globally consistent order of Independent Reads of
   // Independent Writes. Please use only for such patterns!
-  static void     loadload_for_iriw() {
+  static void     loadload_for_IRIW() {
 #ifndef CPU_MULTI_COPY_ATOMIC
-    OrderAccess::fence();
+    fence();
 #else
-    OrderAccess::loadload();
+    loadload();
 #endif
   }
 private:
