@@ -1604,7 +1604,7 @@ public class JavacParserTest extends TestCase {
                           } """;
         assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
         assertEquals("Unexpected errors, got:\n" + out.toString(),
-                     out.toString(),
+                     out.toString().replaceAll("\\R", "\n"),
                      """
                      Test.java:5:17: compiler.err.expected: token.identifier
                      Test.java:5:16: compiler.err.not.stmt

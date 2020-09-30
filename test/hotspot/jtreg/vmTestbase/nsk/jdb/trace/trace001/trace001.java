@@ -46,9 +46,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.trace.trace001.trace001
- *        nsk.jdb.trace.trace001.trace001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.trace.trace001.trace001
+ * @build nsk.jdb.trace.trace001.trace001a
+ * @run main/othervm
+ *      nsk.jdb.trace.trace001.trace001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
