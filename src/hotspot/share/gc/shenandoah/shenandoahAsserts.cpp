@@ -403,7 +403,7 @@ void ShenandoahAsserts::assert_heaplocked_or_safepoint(const char* file, int lin
     return;
   }
 
-  if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
+  if (ShenandoahSafepoint::is_at_shenandoah_safepoint() && Thread::current()->is_VM_thread()) {
     return;
   }
 
