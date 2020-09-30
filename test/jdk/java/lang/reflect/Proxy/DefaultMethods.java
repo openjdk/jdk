@@ -21,7 +21,9 @@
  * questions.
  */
 
+import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
@@ -87,6 +89,12 @@ public class DefaultMethods {
         }
     }
 
+    public interface IX {
+        default void doThrow(Throwable exception) throws Throwable {
+            throw exception;
+        }
+    }
+
     private static Method findDefaultMethod(Class<?> refc, Method m) {
         try {
             assertTrue(refc.isInterface());
@@ -113,15 +121,15 @@ public class DefaultMethods {
     // a default method is declared in one of the proxy interfaces
     @DataProvider(name = "defaultMethods")
     private Object[][] defaultMethods() {
-        return new Object[][] {
-                new Object[] { new Class<?>[] { I1.class, I2.class },  true, 10 },
-                new Object[] { new Class<?>[] { I1.class, I3.class },  true, 10 },
-                new Object[] { new Class<?>[] { I1.class, I12.class }, true, 10 },
-                new Object[] { new Class<?>[] { I2.class, I12.class }, true, 20 },
-                new Object[] { new Class<?>[] { I4.class },            true, 40 },
-                new Object[] { new Class<?>[] { I4.class, I3.class },  true, 40 },
-                new Object[] { new Class<?>[] { I12.class },                     false, -1 },
-                new Object[] { new Class<?>[] { I12.class, I1.class, I2.class }, false, -1 },
+        return new Object[][]{
+            new Object[]{new Class<?>[]{I1.class, I2.class}, true, 10},
+            new Object[]{new Class<?>[]{I1.class, I3.class}, true, 10},
+            new Object[]{new Class<?>[]{I1.class, I12.class}, true, 10},
+            new Object[]{new Class<?>[]{I2.class, I12.class}, true, 20},
+            new Object[]{new Class<?>[]{I4.class}, true, 40},
+            new Object[]{new Class<?>[]{I4.class, I3.class}, true, 40},
+            new Object[]{new Class<?>[]{I12.class}, false, -1},
+            new Object[]{new Class<?>[]{I12.class, I1.class, I2.class}, false, -1}
         };
     }
 
@@ -155,28 +163,28 @@ public class DefaultMethods {
     // inherited from a superinterface of a proxy interface
     @DataProvider(name = "supers")
     private Object[][] supers() {
-        return new Object[][] {
-                // invoke "m" implemented in the first proxy interface
-                // same as the method passed to InvocationHandler::invoke
-                new Object[]{new Class<?>[]{ I1.class }, I1.class, 10},
-                new Object[]{new Class<?>[]{ I2.class }, I2.class, 20},
-                new Object[]{new Class<?>[]{ I1.class, I2.class }, I1.class, 10},
-                // "m" is implemented in I2, an indirect superinterface of I3
-                new Object[]{new Class<?>[]{ I3.class }, I3.class, 20},
-                // "m" is implemented in I1, I2 and overridden in I4
-                new Object[]{new Class<?>[]{ I4.class }, I4.class, 40},
-                // invoke "m" implemented in the second proxy interface
-                // different from the method passed to InvocationHandler::invoke
-                new Object[]{new Class<?>[]{ I1.class, I2.class }, I2.class, 20},
-                new Object[]{new Class<?>[]{ I1.class, I3.class }, I3.class, 20},
-                // I2::m is implemented in more than one proxy interface directly or indirectly
-                // I3::m resolves to I2::m (indirect superinterface)
-                // I2 is the superinterface of I4 and I4 overrides m
-                // the proxy class can invoke I4::m and I2::m
-                new Object[]{new Class<?>[]{ I3.class, I4.class }, I3.class, 20},
-                new Object[]{new Class<?>[]{ I3.class, I4.class }, I4.class, 40},
-                new Object[]{new Class<?>[]{ I4.class, I3.class }, I3.class, 20},
-                new Object[]{new Class<?>[]{ I4.class, I3.class }, I4.class, 40},
+        return new Object[][]{
+            // invoke "m" implemented in the first proxy interface
+            // same as the method passed to InvocationHandler::invoke
+            new Object[]{new Class<?>[]{I1.class}, I1.class, 10},
+            new Object[]{new Class<?>[]{I2.class}, I2.class, 20},
+            new Object[]{new Class<?>[]{I1.class, I2.class}, I1.class, 10},
+            // "m" is implemented in I2, an indirect superinterface of I3
+            new Object[]{new Class<?>[]{I3.class}, I3.class, 20},
+            // "m" is implemented in I1, I2 and overridden in I4
+            new Object[]{new Class<?>[]{I4.class}, I4.class, 40},
+            // invoke "m" implemented in the second proxy interface
+            // different from the method passed to InvocationHandler::invoke
+            new Object[]{new Class<?>[]{I1.class, I2.class}, I2.class, 20},
+            new Object[]{new Class<?>[]{I1.class, I3.class}, I3.class, 20},
+            // I2::m is implemented in more than one proxy interface directly or indirectly
+            // I3::m resolves to I2::m (indirect superinterface)
+            // I2 is the superinterface of I4 and I4 overrides m
+            // the proxy class can invoke I4::m and I2::m
+            new Object[]{new Class<?>[]{I3.class, I4.class}, I3.class, 20},
+            new Object[]{new Class<?>[]{I3.class, I4.class}, I4.class, 40},
+            new Object[]{new Class<?>[]{I4.class, I3.class}, I3.class, 20},
+            new Object[]{new Class<?>[]{I4.class, I3.class}, I4.class, 40}
         };
     }
 
@@ -291,24 +299,24 @@ public class DefaultMethods {
     // negative cases
     @DataProvider(name = "negativeCases")
     private Object[][] negativeCases() {
-        return new Object[][] {
-                // I4::m overrides I1::m and I2::m
-                new Object[] { new Class<?>[]{ I4.class },  I1.class, "m"},
-                new Object[] { new Class<?>[]{ I4.class },  I2.class, "m"},
-                // I12::m is not a default method
-                new Object[] { new Class<?>[]{ I12.class }, I12.class, "m"},
-                // non-proxy default method
-                new Object[] { new Class<?>[]{ I3.class },  I1.class, "m"},
-                // not a default method and not a proxy interface
-                new Object[] { new Class<?>[]{ I12.class }, DefaultMethods.class, "test"},
-                new Object[] { new Class<?>[]{ I12.class }, Runnable.class, "run"},
-                // I2::privateMethod is a private method
-                new Object[] { new Class<?>[]{ I3.class }, I2.class, "privateMethod"},
+        return new Object[][]{
+            // I4::m overrides I1::m and I2::m
+            new Object[]{new Class<?>[]{I4.class}, I1.class, "m"},
+            new Object[]{new Class<?>[]{I4.class}, I2.class, "m"},
+            // I12::m is not a default method
+            new Object[]{new Class<?>[]{I12.class}, I12.class, "m"},
+            // non-proxy default method
+            new Object[]{new Class<?>[]{I3.class}, I1.class, "m"},
+            // not a default method and not a proxy interface
+            new Object[]{new Class<?>[]{I12.class}, DefaultMethods.class, "test"},
+            new Object[]{new Class<?>[]{I12.class}, Runnable.class, "run"},
+            // I2::privateMethod is a private method
+            new Object[]{new Class<?>[]{I3.class}, I2.class, "privateMethod"}
         };
     }
 
     @Test(dataProvider = "negativeCases", expectedExceptions = {IllegalArgumentException.class})
-    public void testIllegalArgument(Class<?>[] interfaces, Class<?> defc, String name)
+    public void testNegativeCase(Class<?>[] interfaces, Class<?> defc, String name)
             throws Exception {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         Object proxy = Proxy.newProxyInstance(loader, interfaces, HANDLER);
@@ -335,7 +343,7 @@ public class DefaultMethods {
     }
 
     @Test(dataProvider = "illegalArguments", expectedExceptions = {IllegalArgumentException.class})
-    public void testIllegalArguments(Object... args) throws Exception {
+    public void testIllegalArgument(Object... args) throws Exception {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I4 proxy = (I4)Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
         Method m = I4.class.getMethod("mix", int.class, String.class);
@@ -345,6 +353,30 @@ public class DefaultMethods {
             args = null;
         }
         Proxy.invokeDefaultMethod(proxy, m, args);
+    }
+
+    @DataProvider(name = "invocationTargetExceptions")
+    private Object[][] invocationTargetExceptions() {
+        return new Object[][] {
+            new Object[] { new IOException() },
+            new Object[] { new IllegalArgumentException() },
+            new Object[] { new ClassCastException() },
+            new Object[] { new NullPointerException() },
+            new Object[] { new AssertionError() },
+            new Object[] { new Throwable() }
+        };
+    }
+
+    @Test(dataProvider = "invocationTargetExceptions")
+    public void testInvocationTargetException(Throwable exception) throws Exception {
+        ClassLoader loader = DefaultMethods.class.getClassLoader();
+        IX proxy = (IX)Proxy.newProxyInstance(loader, new Class<?>[]{IX.class}, HANDLER);
+        Method m = IX.class.getMethod("doThrow", Throwable.class);
+        try {
+            Proxy.invokeDefaultMethod(proxy, m, exception);
+        } catch (InvocationTargetException e) {
+            assertEquals(e.getCause(), exception);
+        }
     }
 
     private static final InvocationHandler HANDLER = (proxy, method, params) -> {
