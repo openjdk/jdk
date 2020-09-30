@@ -179,7 +179,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
   }
 
   if (base == NULL) {
-    // Optimistically assume that the OSes returns an aligned base pointer.
+    // Optimistically assume that the OS returns an aligned base pointer.
     // When reserving a large address range, most OSes seem to align to at
     // least 64K.
 
