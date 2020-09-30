@@ -448,6 +448,10 @@ JRT_END
 // from a call, the expression stack contains the values for the bci at the
 // invoke w/o arguments (i.e., as if one were inside the call).
 JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThread* thread, oopDesc* exception))
+  // We get here after we have unwound from a callee throwing an exception
+  // into the interpreter. Any deferred stack processing is notified of
+  // the event via the StackWatermarkSet.
+  StackWatermarkSet::after_unwind(thread);
 
   LastFrameAccessor last_frame(thread);
   Handle             h_exception(thread, exception);

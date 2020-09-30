@@ -448,12 +448,19 @@ class FrameValues {
 //
 // StackFrameStream iterates through the frames of a thread starting from
 // top most frame. It automatically takes care of updating the location of
-// all (callee-saved) registers. Notice: If a thread is stopped at
-// a safepoint, all registers are saved, not only the callee-saved ones.
+// all (callee-saved) registers iff the update flag is set. It also
+// automatically takes care of lazily applying deferred GC processing
+// onto exposed frames, such that all oops are valid iff the process_frames
+// flag is set.
+//
+// Notice: If a thread is stopped at a safepoint, all registers are saved,
+// not only the callee-saved ones.
 //
 // Use:
 //
-//   for(StackFrameStream fst(thread); !fst.is_done(); fst.next()) {
+//   for(StackFrameStream fst(thread, true /* update */, true /* process_frames */);
+//       !fst.is_done();
+//       fst.next()) {
 //     ...
 //   }
 //

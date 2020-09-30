@@ -1287,11 +1287,6 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
 // directly from compiled code. Compiled code will call the C++ method following.
 // We can't allow async exception to be installed during  exception processing.
 JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* thread, nmethod* &nm))
-  // We get here when we are about to throw an exception. The exception could
-  // return into a not yet safe to use frame. We catch such conditions in the
-  // following stack watermark barrier poll.
-  StackWatermarkSet::before_unwind(thread);
-
   // Do not confuse exception_oop with pending_exception. The exception_oop
   // is only used to pass arguments into the method. Not for general
   // exception handling.  DO NOT CHANGE IT to use pending_exception, since

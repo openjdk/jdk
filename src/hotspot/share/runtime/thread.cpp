@@ -890,6 +890,7 @@ public:
     Thread* self = Thread::current();
     if (self->is_Named_thread()) {
       _cur_thr = (NamedThread *)self;
+      assert(_cur_thr->processed_thread() == NULL, "nesting not supported");
       _cur_thr->set_processed_thread(thread);
     } else {
       _cur_thr = NULL;
@@ -898,6 +899,7 @@ public:
 
   ~RememberProcessedThread() {
     if (_cur_thr) {
+      assert(_cur_thr->processed_thread() != NULL, "nesting not supported");
       _cur_thr->set_processed_thread(NULL);
     }
   }
@@ -2660,11 +2662,6 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
     SafepointMechanism::process_if_requested(thread);
   }
 
-  // After returning from native, it could be that the stack frames are not
-  // yet safe to use. We catch such situations in the subsequent stack watermark
-  // barrier, which will trap unsafe stack frames.
-  StackWatermarkSet::before_unwind(thread);
-
   JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(thread);)
 }
 
@@ -2677,6 +2674,11 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
 // thread state is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   check_safepoint_and_suspend_for_native_trans(thread);
+
+  // After returning from native, it could be that the stack frames are not
+  // yet safe to use. We catch such situations in the subsequent stack watermark
+  // barrier, which will trap unsafe stack frames.
+  StackWatermarkSet::before_unwind(thread);
 
   if (thread->has_async_exception()) {
     // We are in _thread_in_native_trans state, don't handle unsafe

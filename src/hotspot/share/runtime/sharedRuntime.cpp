@@ -455,6 +455,12 @@ JRT_END
 // previous frame depending on the return address.
 
 address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thread, address return_address) {
+  // Note: This is called when we have unwound the frame of the callee that did
+  // throw an exception. So far, no check has been performed by the StackWatermarkSet.
+  // Notably, the stack is not walkable at this point, and hence the check must
+  // be deferred until later. Specifically, any of the handlers returned here in
+  // this function, will get dispatched to, and call deferred checks to
+  // StackWatermarkSet::after_unwind at a point where the stack is walkable.
   assert(frame::verify_return_pc(return_address), "must be a return address: " INTPTR_FORMAT, p2i(return_address));
   assert(thread->frames_to_pop_failed_realloc() == 0 || Interpreter::contains(return_address), "missed frames to pop?");
 
@@ -487,18 +493,27 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
         thread->set_reserved_stack_activation(thread->stack_base());
       }
       assert(guard_pages_enabled, "stack banging in deopt blob may cause crash");
+      // The deferred StackWatermarkSet::after_unwind check will be performed in
+      // Deoptimization::fetch_unroll_info (with exec_mode == Unpack_exception)
       return SharedRuntime::deopt_blob()->unpack_with_exception();
     } else {
+      // The deferred StackWatermarkSet::after_unwind check will be performed in
+      // * OptoRuntime::rethrow_C for C2 code
+      // * exception_handler_for_pc_helper via Runtime1::handle_exception_from_callee_id for C1 code
       return nm->exception_begin();
     }
   }
 
   // Entry code
   if (StubRoutines::returns_to_call_stub(return_address)) {
+    // The deferred StackWatermarkSet::after_unwind check will be performed in
+    // JavaCallWrapper::~JavaCallWrapper
     return StubRoutines::catch_exception_entry();
   }
   // Interpreted code
   if (Interpreter::contains(return_address)) {
+    // The deferred StackWatermarkSet::after_unwind check will be performed in
+    // InterpreterRuntime::exception_handler_for_exception
     return Interpreter::rethrow_exception_entry();
   }
 
@@ -519,10 +534,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
 
 
 JRT_LEAF(address, SharedRuntime::exception_handler_for_return_address(JavaThread* thread, address return_address))
-  // This is called when we are about to throw an exception. We must make sure the
-  // frame we are unwinding to is safe to be access w.r.t. concurrent stack processing.
-  // The stack watermark code will take care of ensuring that.
-  StackWatermarkSet::after_unwind(thread);
   return raw_exception_handler_for_return_address(thread, return_address);
 JRT_END
 

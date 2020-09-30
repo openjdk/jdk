@@ -136,6 +136,14 @@ JavaCallWrapper::~JavaCallWrapper() {
   // Release handles after we are marked as being inside the VM again, since this
   // operation might block
   JNIHandleBlock::release_block(_old_handles, _thread);
+
+  if (_thread->has_pending_exception() && _thread->has_last_Java_frame()) {
+    // If we get here, the Java code threw an exception that unwound a frame.
+    // It could be that the new frame anchor has not passed through the required
+    // StackWatermark barriers. Therefore, we process any such deferred unwind
+    // requests here.
+    StackWatermarkSet::after_unwind(_thread);
+  }
 }
 
 

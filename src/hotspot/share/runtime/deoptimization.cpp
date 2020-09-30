@@ -161,6 +161,13 @@ JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(
   }
   thread->inc_in_deopt_handler();
 
+  if (exec_mode == Unpack_exception) {
+    // When we get here, a callee has thrown an exception into a deoptimized
+    // frame. That throw might have deferred stack watermark checking until
+    // after unwinding. So we deal with such deferred requests here.
+    StackWatermarkSet::after_unwind(thread);
+  }
+
   return fetch_unroll_info_helper(thread, exec_mode);
 JRT_END
 
@@ -255,9 +262,9 @@ static void eliminate_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* 
 
 // This is factored, since it is both called from a JRT_LEAF (deoptimization) and a JRT_ENTRY (uncommon_trap)
 Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread* thread, int exec_mode) {
-  // When we get here we are about to unwind a frame. In order to catch not yet
-  // safe to use frames, the following stack watermark barrier poll will make
-  // such frames safe to use.
+  // When we get here we are about to unwind the deoptee frame. In order to
+  // catch not yet safe to use frames, the following stack watermark barrier
+  // poll will make such frames safe to use.
   StackWatermarkSet::before_unwind(thread);
 
   // Note: there is a safepoint safety issue here. No matter whether we enter

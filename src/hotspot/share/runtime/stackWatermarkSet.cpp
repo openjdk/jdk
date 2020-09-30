@@ -80,11 +80,7 @@ static void verify_processing_context() {
 
 void StackWatermarkSet::before_unwind(JavaThread* jt) {
   verify_processing_context();
-  if (!jt->has_last_Java_frame()) {
-    // Sometimes we throw exceptions and use native transitions on threads that
-    // do not have any Java threads. Skip those callsites.
-    return;
-  }
+  assert(jt->has_last_Java_frame(), "must have a Java frame");
   for (StackWatermark* current = head(jt); current != NULL; current = current->next()) {
     current->before_unwind();
   }
@@ -93,11 +89,7 @@ void StackWatermarkSet::before_unwind(JavaThread* jt) {
 
 void StackWatermarkSet::after_unwind(JavaThread* jt) {
   verify_processing_context();
-  if (!jt->has_last_Java_frame()) {
-    // Sometimes we throw exceptions and use native transitions on threads that
-    // do not have any Java threads. Skip those callsites.
-    return;
-  }
+  assert(jt->has_last_Java_frame(), "must have a Java frame");
   for (StackWatermark* current = head(jt); current != NULL; current = current->next()) {
     current->after_unwind();
   }
