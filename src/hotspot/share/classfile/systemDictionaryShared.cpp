@@ -334,6 +334,7 @@ public:
 
   static unsigned int dumptime_hash(Symbol* sym)  {
     if (sym == NULL) {
+      // _invoked_name maybe NULL
       return 0;
     }
     return java_lang_String::hash_code((const jbyte*)sym->bytes(), sym->utf8_length());
@@ -1969,24 +1970,6 @@ size_t SystemDictionaryShared::estimate_size_for_archive() {
   return total_size;
 }
 
-class RunTimeLambdaProxyClassNode {
-  RunTimeLambdaProxyClassInfo* _info;
-public:
-  RunTimeLambdaProxyClassNode(RunTimeLambdaProxyClassInfo* info) : _info(info) {}
-  RunTimeLambdaProxyClassInfo* info() const { return _info; }
-  bool equals(const RunTimeLambdaProxyClassNode& info) const {
-    return (_info->key().equals(info._info->key()));
-  }
-};
-
-int compare_runtime_lambda_proxy_class_info(const RunTimeLambdaProxyClassNode& r1,
-                                            const RunTimeLambdaProxyClassNode& r2) {
-  ResourceMark rm;
-  char* name1 = r1.info()->proxy_klass_head()->name()->as_C_string();
-  char* name2 = r2.info()->proxy_klass_head()->name()->as_C_string();
-  return strcmp((const char*)name1, (const char*)name2);
-}
-
 class CopyLambdaProxyClassInfoToArchive : StackObj {
   CompactHashtableWriter* _writer;
 public:
@@ -2221,26 +2204,28 @@ public:
   }
 };
 
+void SystemDictionaryShared::print_on(const char* prefix,
+                                      RunTimeSharedDictionary builtin_dictionary,
+                                      RunTimeSharedDictionary unregistered_dictionary,
+                                      LambdaProxyClassDictionary lambda_dictionary,
+                                      outputStream* st) {
+  st->print_cr("%sShared Dictionary", prefix);
+  SharedDictionaryPrinter p(st);
+  builtin_dictionary.iterate(&p);
+  unregistered_dictionary.iterate(&p);
+  if (!lambda_dictionary.empty()) {
+    st->print_cr("%sShared Lambda Dictionary", prefix);
+    SharedLambdaDictionaryPrinter ldp(st);
+    lambda_dictionary.iterate(&ldp);
+  }
+}
+
 void SystemDictionaryShared::print_on(outputStream* st) {
   if (UseSharedSpaces) {
-    st->print_cr("Shared Dictionary");
-    SharedDictionaryPrinter p(st);
-    _builtin_dictionary.iterate(&p);
-    _unregistered_dictionary.iterate(&p);
-    if (!_lambda_proxy_class_dictionary.empty()) {
-      st->print_cr("Shared Lambda Dictionary");
-      SharedLambdaDictionaryPrinter ldp(st);
-      _lambda_proxy_class_dictionary.iterate(&ldp);
-    }
+    print_on("", _builtin_dictionary, _unregistered_dictionary, _lambda_proxy_class_dictionary, st);
     if (DynamicArchive::is_mapped()) {
-      st->print_cr("Dynamic Shared Dictionary");
-      _dynamic_builtin_dictionary.iterate(&p);
-      _unregistered_dictionary.iterate(&p);
-      if (!_dynamic_lambda_proxy_class_dictionary.empty()) {
-        st->print_cr("Dynamic Shared Lambda Dictionary");
-        SharedLambdaDictionaryPrinter ldp(st);
-        _dynamic_lambda_proxy_class_dictionary.iterate(&ldp);
-      }
+      print_on("", _dynamic_builtin_dictionary, _dynamic_unregistered_dictionary,
+               _dynamic_lambda_proxy_class_dictionary, st);
     }
   }
 }
@@ -2272,6 +2257,7 @@ bool SystemDictionaryShared::empty_dumptime_table() {
 #if INCLUDE_CDS_JAVA_HEAP
 
 class ArchivedMirrorPatcher {
+protected:
   static void update(Klass* k) {
     if (k->has_raw_archived_mirror()) {
       oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
@@ -2296,16 +2282,7 @@ public:
   }
 };
 
-class ArchivedLambdaMirrorPatcher {
-  static void update(Klass* k) {
-    if (k->has_raw_archived_mirror()) {
-      oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
-      if (m != NULL) {
-        java_lang_Class::update_archived_mirror_native_pointers(m);
-      }
-    }
-  }
-
+class ArchivedLambdaMirrorPatcher : public ArchivedMirrorPatcher {
 public:
   void do_value(const RunTimeLambdaProxyClassInfo* info) {
     InstanceKlass* ik = info->proxy_klass_head();

@@ -220,6 +220,11 @@ private:
 
   static bool _dump_in_progress;
   DEBUG_ONLY(static bool _no_class_loading_should_happen;)
+  static void print_on(const char* prefix,
+                       RunTimeSharedDictionary builtin_dictionary,
+                       RunTimeSharedDictionary unregistered_dictionary,
+                       LambdaProxyClassDictionary lambda_dictionary,
+                       outputStream* st) NOT_CDS_RETURN;
 
 public:
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
