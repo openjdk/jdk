@@ -600,19 +600,34 @@ class hsdis_backend : public hsdis_backend_base {
     if (_arch_name[0] == '\0')
       _arch_name = native_target_triple();
 
+    static bool complained = false;
+
     if (LLVMInitializeNativeTarget() != 0) {
-      fprintf(stderr, "failed to initialize LLVM native target\n");
+      if (!complained)
+        (*_printf_callback)(_printf_stream, "failed to initialize LLVM native target\n");
+      complained = true;
+      /* must bail out */
+      _losing = true;
+      return;
     }
     if (LLVMInitializeNativeAsmPrinter() != 0) {
-      fprintf(stderr, "failed to initialize LLVM native asm printer\n");
+      if (!complained)
+        (*_printf_callback)(_printf_stream, "failed to initialize LLVM native asm printer\n");
+      complained = true;
+      /* must bail out */
+      _losing = true;
+      return;
     }
     if (LLVMInitializeNativeDisassembler() != 0) {
-      fprintf(stderr, "failed to initialize LLVM native disassembler\n");
+      if (!complained)
+        (*_printf_callback)(_printf_stream, "failed to initialize LLVM native disassembler\n");
+      complained = true;
+      /* must bail out */
+      _losing = true;
+      return;
     }
-
     if ((_dcontext = LLVMCreateDisasm(_arch_name, NULL, 0, NULL, NULL)) == NULL) {
       const char* bad = _arch_name;
-      static bool complained;
       if (bad == &_target_triple[0])
         print_help("bad target_triple=%s", bad);
       else if (!complained)
