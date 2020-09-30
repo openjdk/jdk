@@ -53,9 +53,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second);
         String expected = String.format(
                 "Arrays differ starting from [index: 4]:%n" +
-                        "[7, 8, 9, 10,  11, 12, 13]%n" +
-                        "[7, 8, 9, 10, 125, 12, 13]%n" +
-                        "             ^^^^");
+                "[7, 8, 9, 10,  11, 12, 13]%n" +
+                "[7, 8, 9, 10, 125, 12, 13]%n" +
+                "             ^^^^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -69,9 +69,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second);
         String expected = String.format(
                 "Arrays differ starting from [index: 2]:%n" +
-                        "[7, 8, 10, 11, 12]%n" +
-                        "[7, 8,  9, 10, 11, 12, 13]%n" +
-                        "      ^^^");
+                "[7, 8, 10, 11, 12]%n" +
+                "[7, 8,  9, 10, 11, 12, 13]%n" +
+                "      ^^^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -85,9 +85,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second);
         String expected = String.format(
                 "Arrays differ starting from [index: 3]:%n" +
-                        "[1, 2, 3,  4]%n" +
-                        "[1, 2, 3, 10]%n" +
-                        "         ^^^");
+                "[1, 2, 3,  4]%n" +
+                "[1, 2, 3, 10]%n" +
+                "         ^^^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -101,9 +101,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second);
         String expected = String.format(
                 "Arrays differ starting from [index: 0]:%n" +
-                        "[122]%n" +
-                        "[  7, 8, 9, 10, 125, 12, 13]%n" +
-                        " ^^^");
+                "[122]%n" +
+                "[  7, 8, 9, 10, 125, 12, 13]%n" +
+                " ^^^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -117,9 +117,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second);
         String expected = String.format(
                 "Arrays differ starting from [index: 0]:%n" +
-                        "[7, 8, 9, 10, 125, 12, 13]%n" +
-                        "[]%n" +
-                        " ^");
+                "[7, 8, 9, 10, 125, 12, 13]%n" +
+                "[]%n" +
+                " ^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -133,9 +133,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second, 20, Integer.MAX_VALUE);
         String expected = String.format(
                 "Arrays differ starting from [index: 1]:%n" +
-                        "[1, 2, 3, 4, 5, ...%n" +
-                        "[1, F, 3, 4, 5, ...%n" +
-                        "   ^^");
+                "[1, 2, 3, 4, 5, ...%n" +
+                "[1, F, 3, 4, 5, ...%n" +
+                "   ^^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -149,9 +149,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second, 20, Integer.MAX_VALUE);
         String expected = String.format(
                 "Arrays differ starting from [index: 1]:%n" +
-                        "[1,   2, 3, 4, 5, ...%n" +
-                        "[1, 112, 3, 4, 5, ...%n" +
-                        "   ^^^^");
+                "[1,   2, 3, 4, 5, ...%n" +
+                "[1, 112, 3, 4, 5, ...%n" +
+                "   ^^^^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -165,9 +165,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second, 20, 2);
         String expected = String.format(
                 "Arrays differ starting from [index: 4]:%n" +
-                        "... 3, 4, 5, 6, 7]%n" +
-                        "... 3, 4, F, 6, 7]%n" +
-                        "         ^^");
+                "... 3, 4, 5, 6, 7]%n" +
+                "... 3, 4, F, 6, 7]%n" +
+                "         ^^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -181,9 +181,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second, 24, 2);
         String expected = String.format(
                 "Arrays differ starting from [index: 4]:%n" +
-                        "... 2, 3, 125, 5, 6, 7]%n" +
-                        "... 2, 3,   4, 5, 6, 7]%n" +
-                        "         ^^^^");
+                "... 2, 3, 125, 5, 6, 7]%n" +
+                "... 2, 3,   4, 5, 6, 7]%n" +
+                "         ^^^^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -197,9 +197,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second, 25, 2);
         String expected = String.format(
                 "Arrays differ starting from [index: 0]:%n" +
-                        "[101, 102, 103, 104, ...%n" +
-                        "[  2]%n" +
-                        " ^^^");
+                "[101, 102, 103, 104, ...%n" +
+                "[  2]%n" +
+                " ^^^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -213,9 +213,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second, 10, 2);
         String expected = String.format(
                 "Arrays differ starting from [index: 0]:%n" +
-                        "[a, b, ...%n" +
-                        "[]%n" +
-                        " ^");
+                "[a, b, ...%n" +
+                "[]%n" +
+                " ^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -229,9 +229,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second);
         String expected = String.format(
                 "Arrays differ starting from [index: 0]:%n" +
-                        "[a, b, c, d, e]%n" +
-                        "[]%n" +
-                        " ^");
+                "[a, b, c, d, e]%n" +
+                "[]%n" +
+                " ^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -262,9 +262,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second);
         String expected = String.format(
                 "Arrays differ starting from [index: 2]:%n" +
-                        "[\"first\", \"second\",     \"third\", \"u\\nprintable\"]%n" +
-                        "[\"first\", \"second\", \"incorrect\", \"u\\nprintable\"]%n" +
-                        "                   ^^^^^^^^^^^^");
+                "[\"first\", \"second\",     \"third\", \"u\\nprintable\"]%n" +
+                "[\"first\", \"second\", \"incorrect\", \"u\\nprintable\"]%n" +
+                "                   ^^^^^^^^^^^^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
@@ -285,9 +285,9 @@ public class ArrayDiffTest {
         ArrayDiff diff = ArrayDiff.of(first, second);
         String expected = String.format(
                 "Arrays differ starting from [index: 1]:%n" +
-                        "[1, Unp\\rintable, 5]%n" +
-                        "[1,            2, 5]%n" +
-                        "   ^^^^^^^^^^^^^");
+                "[1, Unp\\rintable, 5]%n" +
+                "[1,            2, 5]%n" +
+                "   ^^^^^^^^^^^^^");
 
         assertFalse(diff.areEqual());
         assertEquals(diff.format(), expected);
