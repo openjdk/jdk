@@ -154,7 +154,7 @@ public class ArgumentHandler extends ArgumentParser {
         if (optionString == null)
             return;
 
-        StringTokenizer st = new StringTokenizer(optionString, " ~,");
+        StringTokenizer st = new StringTokenizer(optionString, " ,~");
         while (st.hasMoreTokens()) {
             String token = st.nextToken();
             int start = token.startsWith("-")? 1 : 0;
