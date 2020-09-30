@@ -301,17 +301,17 @@ public class DefaultMethods {
     private Object[][] negativeCases() {
         return new Object[][]{
             // I4::m overrides I1::m and I2::m
-            new Object[]{new Class<?>[]{I4.class}, I1.class, "m"},
-            new Object[]{new Class<?>[]{I4.class}, I2.class, "m"},
+            new Object[] { new Class<?>[]{I4.class}, I1.class, "m" },
+            new Object[] { new Class<?>[]{I4.class}, I2.class, "m" },
             // I12::m is not a default method
-            new Object[]{new Class<?>[]{I12.class}, I12.class, "m"},
+            new Object[] { new Class<?>[]{I12.class}, I12.class, "m" },
             // non-proxy default method
-            new Object[]{new Class<?>[]{I3.class}, I1.class, "m"},
+            new Object[] { new Class<?>[]{I3.class}, I1.class, "m" },
             // not a default method and not a proxy interface
-            new Object[]{new Class<?>[]{I12.class}, DefaultMethods.class, "test"},
-            new Object[]{new Class<?>[]{I12.class}, Runnable.class, "run"},
+            new Object[] { new Class<?>[]{I12.class}, DefaultMethods.class, "test" },
+            new Object[] { new Class<?>[]{I12.class}, Runnable.class, "run" },
             // I2::privateMethod is a private method
-            new Object[]{new Class<?>[]{I3.class}, I2.class, "privateMethod"}
+            new Object[] { new Class<?>[]{I3.class}, I2.class, "privateMethod" }
         };
     }
 

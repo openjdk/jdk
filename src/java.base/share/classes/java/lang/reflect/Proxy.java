@@ -1232,7 +1232,8 @@ public class Proxy implements java.io.Serializable {
      * @param method  the {@code Method} instance corresponding to a default method
      *                declared in a proxy interface of the proxy class or inherited
      *                from its superinterface directly or indirectly
-     * @param args    the parameters used for the method invocation
+     * @param args    the parameters used for the method invocation; can be {@code null}
+     *                if the number of formal parameters required by the method is zero.
      * @return the value returned from the method invocation
      *
      * @throws IllegalArgumentException if any of the following conditions is {@code true}:
@@ -1245,13 +1246,13 @@ public class Proxy implements java.io.Serializable {
      *         <li>the given {@code method} is overridden directly or indirectly by
      *             the proxy interfaces and the method reference to the named
      *             method never resolves to the given {@code method}; or</li>
-     *         <li>if length of given {@code args} array doesn't match the number of
-     *             parameters of the method to be invoked or if {@code args} is null
-     *             and the method to be invoked has parameters</li>
-     *         <li>if any of the {@code args} elements can't be assigned to the
-     *             boxed type of the corresponding method parameter or any of the
-     *             {@code args} elements is null while the corresponding method
-     *             parameter is of primitive type</li>
+     *         <li>the length of the given {@code args} array does not match the
+     *             number of parameters of the method to be invoked; or</li>
+     *         <li>any of the {@code args} elements fails the unboxing
+     *             conversion if the corresponding method parameter type is
+     *             a primitive type; or if, after possible unboxing, any of the
+     *             {@code args} elements cannot be assigned to the corresponding
+     *             method parameter type.</li>
      *         </ul>
      * @throws InvocationTargetException if the invoked default method throws
      *         any exception, it is wrapped by {@code InvocationTargetException}
@@ -1265,10 +1266,6 @@ public class Proxy implements java.io.Serializable {
             throws InvocationTargetException {
         Objects.requireNonNull(proxy);
         Objects.requireNonNull(method);
-        if (args == null) {
-            // consistency with Method::invoke: null args array is equivalent to empty array
-            args = EMPTY_ARGS;
-        }
 
         // verify that the object is actually a proxy instance
         Class<?> proxyClass = proxy.getClass();
@@ -1328,7 +1325,10 @@ public class Proxy implements java.io.Serializable {
 
         // invoke the super method
         try {
-            return superMH.invokeExact(proxy, args);
+            // the args array can be null if the number of formal parameters required by
+            // the method is zero (consistent with Method::invoke)
+            Object[] params = args != null ? args : EMPTY_ARGS;
+            return superMH.invokeExact(proxy, params);
         } catch (ClassCastException | NullPointerException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         } catch (InvocationTargetException | RuntimeException | Error e) {
