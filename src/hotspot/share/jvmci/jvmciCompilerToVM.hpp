@@ -25,11 +25,11 @@
 #define SHARE_JVMCI_JVMCICOMPILERTOVM_HPP
 
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/signature.hpp"
 
+class CollectedHeap;
 class JVMCIObjectArray;
 
 class CompilerToVM {

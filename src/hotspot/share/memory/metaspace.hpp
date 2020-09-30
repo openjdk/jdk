@@ -154,13 +154,11 @@ public:
 
 };
 
-// ClassLoaderMetaspace is an inbetween-object between a CLD and its MetaspaceArena(s).
+// A ClassLoaderMetaspace manages MetaspaceArena(s) for a CLD.
 //
-// A CLD owns one MetaspaceArena if compressed class space is off, two if its one
-// (one for allocations of Klass* structures from class space, one for the rest from
-//  non-class space).
-//
-// ClassLoaderMetaspace only exists to hide this logic from upper layers:
+// A CLD owns one MetaspaceArena if UseCompressedClassPointers is false. Otherwise
+// it owns two - one for the Klass* objects from the class space, one for the other
+// types of MetaspaceObjs from the non-class space.
 //
 // +------+       +----------------------+       +-------------------+
 // | CLD  | --->  | ClassLoaderMetaspace | ----> | (non class) Arena |

@@ -1579,9 +1579,6 @@ const intx ObjectAlignmentInBytes = 8;
           "class pointers are used")                                        \
           range(1*M, 3*G)                                                   \
                                                                             \
-  product(uintx, ForceCompressedClassSpaceStartAddress, 0, EXPERIMENTAL,    \
-          "Force class space start address to a given value.")              \
-                                                                            \
   product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
           "options: balanced, aggressive, none")                            \
                                                                             \
