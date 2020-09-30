@@ -257,7 +257,7 @@ public class ArrayCodec<E> {
             int delta = another.element.length() - element.length();
             if (delta > 0) {
                 element = Format.paddingForWidth(delta) + element;
-        }
+            }
         }
     }
 
