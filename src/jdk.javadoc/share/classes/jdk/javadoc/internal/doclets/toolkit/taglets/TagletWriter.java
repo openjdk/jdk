@@ -238,6 +238,12 @@ public abstract class TagletWriter {
     public Content getBlockTagOutput(TagletManager tagletManager,
                                     Element element,
                                     List<Taglet> taglets) {
+        for (Taglet t : taglets) {
+            if (!t.isBlockTag()) {
+                throw new IllegalArgumentException(t.getName());
+            }
+        }
+
         Content output = getOutputInstance();
         Utils utils = configuration().utils;
         tagletManager.checkTags(element, utils.getBlockTags(element), false);
