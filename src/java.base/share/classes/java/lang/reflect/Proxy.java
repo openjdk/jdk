@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BooleanSupplier;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -55,6 +56,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.loader.ClassLoaderValue;
+import jdk.internal.vm.annotation.Stable;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
@@ -1154,6 +1156,8 @@ public class Proxy implements java.io.Serializable {
         }
     };
 
+    private static final Object[] EMPTY_ARGS = new Object[0];
+
     /**
      * Invokes the specified default method on the given {@code proxy} instance with
      * the given parameters.  The given {@code method} must be a default method
@@ -1241,14 +1245,19 @@ public class Proxy implements java.io.Serializable {
      *         <li>the given {@code method} is overridden directly or indirectly by
      *             the proxy interfaces and the method reference to the named
      *             method never resolves to the given {@code method}; or</li>
-     *         <li>any of the given {@code args} does not match the parameter type of
-     *             the default method to be invoked</li>
+     *         <li>if length of given {@code args} array doesn't match the number of
+     *             parameters of the method to be invoked or if {@code args} is null
+     *             and the method to be invoked has parameters</li>
+     *         <li>if any of the {@code args} elements can't be assigned to the
+     *             boxed type of the corresponding method parameter or any of the
+     *             {@code args} elements is null while the corresponding method
+     *             parameter is of primitive type</li>
      *         </ul>
      * @throws InvocationTargetException if the invoked default method throws
      *         any exception, it is wrapped by {@code InvocationTargetException}
      *         and rethrown
-     * @throws NullPointerException if {@code proxy} or {@code method} is
-     *         {@code null}
+     * @throws NullPointerException if {@code proxy} or {@code method} is {@code null}
+     *
      * @since 16
      * @jvms 5.4.3. Method Resolution
      */
@@ -1256,6 +1265,10 @@ public class Proxy implements java.io.Serializable {
             throws InvocationTargetException {
         Objects.requireNonNull(proxy);
         Objects.requireNonNull(method);
+        if (args == null) {
+            // consistency with Method::invoke: null args array is equivalent to empty array
+            args = EMPTY_ARGS;
+        }
 
         // verify that the object is actually a proxy instance
         Class<?> proxyClass = proxy.getClass();
@@ -1270,61 +1283,63 @@ public class Proxy implements java.io.Serializable {
         ConcurrentHashMap<Method, MethodHandle> methods = DEFAULT_METHODS_MAP.get(proxyClass);
         MethodHandle superMH = methods.get(method);
 
-        MethodType type = methodType(method.getReturnType(), method.getParameterTypes());
-        if (superMH != null) {
-            try {
-                // make sure that the method type matches
-                superMH.asType(type.insertParameterTypes(0, proxyClass));
-            } catch (WrongMethodTypeException e) {
-                throw new IllegalArgumentException(e.getMessage(), e);
-            }
-        } else {
+        if (superMH == null) {
+            MethodType type = methodType(method.getReturnType(), method.getParameterTypes());
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
             Class<?> proxyInterface = findProxyInterfaceOrElseThrow(proxyClass, method);
+            MethodHandle mh0;
             try {
-                superMH = ((Proxy) proxy).proxyClassLookup(MethodHandles.lookup())
-                                         .findSpecial(proxyInterface, method.getName(), type, proxyClass)
-                                         .withVarargs(false);
-            } catch (IllegalAccessException|NoSuchMethodException e) {
+                mh0 = ((Proxy) proxy).proxyClassLookup(lookup)
+                                     .findSpecial(proxyInterface, method.getName(), type, proxyClass)
+                                     .withVarargs(false);
+            } catch (IllegalAccessException | NoSuchMethodException e) {
                 // should not reach here
                 throw new InternalError(e);
             }
+            // this check can be turned into assertion as it is guaranteed to succeed by the virtue of
+            // looking up a default (instance) method declared or inherited by proxyInterface
+            // while proxyClass implements (is a subtype of) proxyInterface ...
+            assert ((BooleanSupplier) () -> {
+                try {
+                    // make sure that the method type matches
+                    mh0.asType(type.insertParameterTypes(0, proxyClass));
+                    return true;
+                } catch (WrongMethodTypeException e) {
+                    return false;
+                }
+            }).getAsBoolean() : "Wrong method type";
+            // change return type to Object
+            MethodHandle mh = mh0.asType(mh0.type().changeReturnType(Object.class));
+            // wrap any exception thrown with InvocationTargetException
+            mh = MethodHandles.catchException(mh, Throwable.class, wrapWithInvocationTargetExceptionMH());
+            // spread array of arguments among parameters (skipping 1st parameter - target)
+            mh = mh.asSpreader(1, Object[].class, type.parameterCount());
+            // change target type to Object
+            mh = mh.asType(MethodType.methodType(Object.class, Object.class, Object[].class));
+
             // push MH into cache
-            MethodHandle cached = methods.putIfAbsent(method, superMH);
+            MethodHandle cached = methods.putIfAbsent(method, mh);
             if (cached != null) {
                 superMH = cached;
-            }
-        }
-
-        // validate the arguments if they match the method type
-        int numArgs = args != null ? args.length : 0;
-        if (numArgs != type.parameterCount()) {
-            throw new IllegalArgumentException("args not matching the formal parameter types: " + type);
-        }
-        try {
-            if (numArgs > 0) {
-                Class<?>[] paramTypes = new Class<?>[numArgs];
-                for (int i = 0; i < numArgs; i++) {
-                    Object o = args[i];
-                    paramTypes[i] = o != null ? o.getClass() : type.parameterType(i);
-                }
-                superMH.asType(methodType(type.returnType(), proxyClass, paramTypes));
             } else {
-                superMH.asType(methodType(type.returnType(), proxyClass));
+                superMH = mh;
             }
-        } catch (WrongMethodTypeException e) {
-            throw new IllegalArgumentException(e);
         }
 
         // invoke the super method
         try {
-            return superMH.asSpreader(1, Object[].class, type.parameterCount())
-                          .invoke(proxy, args);
-        } catch (Throwable t) {
-            throw new InvocationTargetException(t);
+            return superMH.invokeExact(proxy, args);
+        } catch (ClassCastException | NullPointerException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        } catch (InvocationTargetException | RuntimeException | Error e) {
+            throw e;
+        } catch (Throwable e) {
+            // should not reach here
+            throw new InternalError(e);
         }
     }
 
-    /*
+    /**
      * Finds the first proxy interface that declares the given method
      * directly or indirectly.
      *
@@ -1409,5 +1424,33 @@ public class Proxy implements java.io.Serializable {
                 }
             }
         });
+    }
+
+    /**
+     * Wraps given cause with InvocationTargetException and throws it.
+     *
+     * @throws InvocationTargetException wrapping given cause
+     */
+    private static Object wrapWithInvocationTargetException(Throwable cause) throws InvocationTargetException {
+        throw new InvocationTargetException(cause, cause.toString());
+    }
+
+    @Stable
+    private static MethodHandle wrapWithInvocationTargetExceptionMH;
+
+    private static MethodHandle wrapWithInvocationTargetExceptionMH() {
+        MethodHandle mh = wrapWithInvocationTargetExceptionMH;
+        if (mh == null) {
+            try {
+                wrapWithInvocationTargetExceptionMH = mh = MethodHandles.lookup().findStatic(
+                    Proxy.class,
+                    "wrapWithInvocationTargetException",
+                    MethodType.methodType(Object.class, Throwable.class)
+                );
+            } catch (NoSuchMethodException | IllegalAccessException e) {
+                throw new InternalError(e);
+            }
+        }
+        return mh;
     }
 }
