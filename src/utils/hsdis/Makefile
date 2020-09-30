@@ -195,18 +195,9 @@ LIBRARIES =	$(TARGET_DIR)/bfd/libbfd.a \
 		$(TARGET_DIR)/opcodes/libopcodes.a \
 		$(TARGET_DIR)/libiberty/libiberty.a
 else
-LIBRARIES/amd64 = LLVMX86Disassembler LLVMX86AsmParser LLVMX86CodeGen LLVMCFGuard LLVMGlobalISel LLVMSelectionDAG \
-	LLVMAsmPrinter LLVMDebugInfoDWARF LLVMCodeGen LLVMTarget LLVMScalarOpts LLVMInstCombine LLVMAggressiveInstCombine \
-	LLVMTransformUtils LLVMBitWriter LLVMAnalysis LLVMProfileData LLVMX86Desc LLVMObject LLVMTextAPI LLVMMCParser \
-	LLVMBitReader LLVMCore LLVMRemarks LLVMBitstreamReader LLVMMCDisassembler LLVMMC LLVMDebugInfoCodeView \
-	LLVMDebugInfoMSF LLVMBinaryFormat LLVMX86Utils LLVMX86Info LLVMSupport LLVMDemangle
-
-LIBRARIES/aarch64 = LLVMAArch64Disassembler LLVMMCDisassembler LLVMAArch64CodeGen LLVMCFGuard LLVMGlobalISel \
-	LLVMSelectionDAG LLVMAsmPrinter LLVMDebugInfoDWARF LLVMCodeGen LLVMTarget LLVMScalarOpts LLVMInstCombine \
-	LLVMAggressiveInstCombine LLVMTransformUtils LLVMBitWriter LLVMAnalysis LLVMProfileData LLVMObject \
-	LLVMTextAPI LLVMBitReader LLVMCore LLVMRemarks LLVMBitstreamReader LLVMAArch64AsmParser LLVMMCParser \
-	LLVMAArch64Desc LLVMMC LLVMDebugInfoCodeView LLVMDebugInfoMSF LLVMBinaryFormat LLVMAArch64Utils LLVMAArch64Info \
-	LLVMSupport LLVMDemangle
+LIBRARIES/i386 = $(patsubst -l%,%,$(shell $(LLVMDIR)/bin/llvm-config --libs x86 x86disassembler))
+LIBRARIES/amd64 = $(patsubst -l%,%,$(shell $(LLVMDIR)/bin/llvm-config --libs x86 x86disassembler))
+LIBRARIES/aarch64 = $(patsubst -l%,%,$(shell $(LLVMDIR)/bin/llvm-config --libs aarch64 aarch64disassembler))
 
 ifeq ($(LIBRARIES/$(ARCH)),)
 $(error "unknown LLVM libraries for ARCH=$(ARCH))
@@ -217,6 +208,10 @@ endif
 
 ifneq ($(MINGW),)
 LIBRARIES +=	$(TARGET_DIR)/zlib/libz.a
+endif
+
+ifneq ($(LLVM),)
+DLDFLAGS+=$(shell $(LLVMDIR)/bin/llvm-config --system-libs)
 endif
 
 DEMO_TARGET	= $(TARGET_DIR)/hsdis-demo
