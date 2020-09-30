@@ -202,7 +202,9 @@ oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj) {
     }
   }
 
-  return load_reference_barrier_not_null(obj);
+  oop fwd = load_reference_barrier_not_null(obj);
+  log_trace(gc,ref)("Reference or native access/resurrection: " PTR_FORMAT, p2i(fwd));
+  return fwd;
 }
 
 template <class T>

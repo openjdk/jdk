@@ -235,6 +235,7 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
   if (reference_discovered<T>(reference) != NULL) {
     // Already discovered. This can happen if the reference is marked finalizable first, and then strong,
     // in which case it will be seen 2x by marking.
+    log_trace(gc,ref)("Reference already discovered: " PTR_FORMAT, p2i(reference));
     return false;
   }
   T* referent_addr = (T*) java_lang_ref_Reference::referent_addr_raw(reference);
@@ -242,14 +243,17 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
   oop referent = CompressedOops::decode_not_null(heap_oop);
 
   if (is_inactive<T>(reference, referent, type)) {
+    log_trace(gc,ref)("Reference inactive: " PTR_FORMAT, p2i(reference));
     return false;
   }
 
   if (is_strongly_live(referent)) {
+    log_trace(gc,ref)("Reference strongly live: " PTR_FORMAT, p2i(reference));
     return false;
   }
 
   if (is_softly_live(reference, type)) {
+    log_trace(gc,ref)("Reference softly live: " PTR_FORMAT, p2i(reference));
     return false;
   }
 
