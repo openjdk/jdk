@@ -95,7 +95,7 @@ bool ShenandoahBarrierSet::use_load_reference_barrier_native(DecoratorSet decora
     return false;
   }
 
-  return (decorators & IN_NATIVE) != 0;
+  return (decorators & (IN_NATIVE | ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
 }
 
 bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
@@ -187,8 +187,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, narrowOop* load
   return load_reference_barrier_native_impl(obj, load_addr);
 }
 
-template <class T>
-oop ShenandoahBarrierSet::load_reference_barrier_native_impl(oop obj, T* load_addr) {
+oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj) {
   if (CompressedOops::is_null(obj)) {
     return NULL;
   }
@@ -203,12 +202,16 @@ oop ShenandoahBarrierSet::load_reference_barrier_native_impl(oop obj, T* load_ad
     }
   }
 
-  oop fwd = load_reference_barrier_not_null(obj);
-  if (load_addr != NULL && fwd != obj) {
+  return load_reference_barrier_not_null(obj);
+}
+
+template <class T>
+oop ShenandoahBarrierSet::load_reference_barrier_native_impl(oop obj, T* load_addr) {
+  oop fwd = load_reference_barrier_native(obj);
+  if (fwd != NULL && load_addr != NULL && fwd != obj) {
     // Since we are here and we know the load address, update the reference.
     ShenandoahHeap::cas_oop(fwd, load_addr, obj);
   }
-
   return fwd;
 }
 

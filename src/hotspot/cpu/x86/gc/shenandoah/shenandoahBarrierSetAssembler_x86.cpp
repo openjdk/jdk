@@ -396,7 +396,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   __ lea(rsi, src);
 
   save_xmm_registers(masm);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), dst, rsi);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), dst, rsi);
   restore_xmm_registers(masm);
 
 #ifdef _LP64

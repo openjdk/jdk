@@ -1571,6 +1571,12 @@ void ShenandoahHeap::op_final_mark() {
       _free_set->rebuild();
     }
 
+    if (!collection_set()->is_empty()) {
+      if (ShenandoahVerify) {
+        verifier()->verify_before_evacuation();
+      }
+    }
+
     if (!is_degenerated_gc_in_progress()) {
       prepare_concurrent_roots();
       prepare_concurrent_unloading();
@@ -1580,10 +1586,6 @@ void ShenandoahHeap::op_final_mark() {
     // Otherwise, bypass the rest of the cycle.
     if (!collection_set()->is_empty()) {
       ShenandoahGCPhase init_evac(ShenandoahPhaseTimings::init_evac);
-
-      if (ShenandoahVerify) {
-        verifier()->verify_before_evacuation();
-      }
 
       set_evacuation_in_progress(true);
       // From here on, we need to update references.

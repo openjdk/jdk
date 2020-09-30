@@ -155,7 +155,11 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
   oop value = Raw::oop_load_in_heap(addr);
   if (value != NULL) {
     ShenandoahBarrierSet *const bs = ShenandoahBarrierSet::barrier_set();
-    value = bs->load_reference_barrier_not_null(value);
+    if (bs->use_load_reference_barrier_native(decorators, T_OBJECT)) {
+      value = bs->load_reference_barrier_native(value);
+    } else {
+      value = bs->load_reference_barrier_not_null(value);
+    }
     bs->keep_alive_if_weak<decorators>(value);
   }
   return value;
@@ -166,9 +170,13 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
   oop value = Raw::oop_load_in_heap_at(base, offset);
   if (value != NULL) {
     ShenandoahBarrierSet *const bs = ShenandoahBarrierSet::barrier_set();
-    value = bs->load_reference_barrier_not_null(value);
-    bs->keep_alive_if_weak(AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset),
-                           value);
+    DecoratorSet resolved_decorators = AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
+    if (bs->use_load_reference_barrier_native(decorators, T_OBJECT)) {
+      value = bs->load_reference_barrier_native(value);
+    } else {
+      value = bs->load_reference_barrier_not_null(value);
+    }
+    bs->keep_alive_if_weak(resolved_decorators, value);
   }
   return value;
 }
