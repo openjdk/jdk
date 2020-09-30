@@ -45,7 +45,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public abstract class AudioFileReader {
 
     /**
-     * Constructs an {@code AudioFileReader}.
+     * Constructor for subclasses to call.
      */
     protected AudioFileReader() {}
 

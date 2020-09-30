@@ -5266,7 +5266,7 @@ void MacroAssembler::cache_wb(Address line) {
   assert(line.offset() == 0, "offset should be 0");
   // would like to assert this
   // assert(line._ext.shift == 0, "shift should be zero");
-  if (VM_Version::supports_dcpop()) {
+  if (VM_Version::features() & VM_Version::CPU_DCPOP) {
     // writeback using clear virtual address to point of persistence
     dc(Assembler::CVAP, line.base());
   } else {

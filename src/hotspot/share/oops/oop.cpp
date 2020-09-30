@@ -111,7 +111,7 @@ bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
   if (ignore_mark_word) {
     return true;
   }
-  if (obj->mark_raw().value() != 0) {
+  if (obj->mark().value() != 0) {
     return true;
   }
   return !SafepointSynchronize::is_at_safepoint();

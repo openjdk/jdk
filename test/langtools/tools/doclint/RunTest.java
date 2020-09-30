@@ -25,7 +25,7 @@
  * @bug 8004832 8000103
  * @summary Add new doclint package
  * @summary Create doclint utility
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  */
 
 import java.io.File;
@@ -38,8 +38,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.sun.tools.doclint.DocLint;
-import com.sun.tools.doclint.DocLint.BadArgs;
+import jdk.javadoc.internal.doclint.DocLint;
+import jdk.javadoc.internal.doclint.DocLint.BadArgs;
 
 /** javadoc error on toplevel:  a & b. */
 public class RunTest {

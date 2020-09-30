@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,13 +62,6 @@ public class Utils {
      */
     public static final Pattern PATH_SEPARATOR = Pattern.compile(
             File.pathSeparator, Pattern.LITERAL);
-    /**
-     * Value of {@code -DDeoptimizeAllClassesRate}. Frequency of
-     * {@code WB.deoptimizeAll()} invocation If it less that {@code 0},
-     * {@code WB.deoptimizeAll()} will not be invoked.
-     */
-    public static final int DEOPTIMIZE_ALL_CLASSES_RATE
-            = Integer.getInteger("DeoptimizeAllClassesRate", -1);
     /**
      * Value of {@code -DCompileTheWorldStopAt}. Last class to consider.
      */
