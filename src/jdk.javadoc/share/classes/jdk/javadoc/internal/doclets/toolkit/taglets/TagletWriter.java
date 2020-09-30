@@ -95,7 +95,7 @@ public abstract class TagletWriter {
     protected abstract Content getDocRootOutput();
 
     /**
-     * Returns the output for a {@code @deprecated ...} tag.
+     * Returns the output for a {@code @deprecated} tag.
      *
      * @param element The element that owns the doc comment
      *
@@ -104,7 +104,7 @@ public abstract class TagletWriter {
     protected abstract Content deprecatedTagOutput(Element element);
 
     /**
-     * Return the output for a {@code {@literal ...}} tag.
+     * Returns the output for a {@code {@literal ...}} tag.
      *
      * @param element The element that owns the doc comment
      * @param tag     the tag
@@ -279,7 +279,8 @@ public abstract class TagletWriter {
                 }
             } catch (UnsupportedTagletOperationException e) {
                 // malformed taglet:
-                // claims to support block tags but does not provide the appropriate method.
+                // claims to support block tags (see Taglet.isBlockTag) but does not provide the
+                // appropriate method, Taglet.getAllBlockTagOutput.
             }
         }
         return output;
@@ -318,7 +319,8 @@ public abstract class TagletWriter {
             return tagletOutput;
         } catch (UnsupportedTagletOperationException e) {
             // malformed taglet:
-            // claims to support inline tags but does not provide the appropriate method.
+            // claims to support inline tags (see Taglet.isInlineTag) but does not provide the
+            // appropriate method, Taglet.getInlineTagOutput.
             return null;
         }
     }
@@ -369,7 +371,7 @@ public abstract class TagletWriter {
                                                 List<? extends DocTree> trees, boolean isFirstSentence);
 
     /**
-     * Returns  an instance of the configuration used for this doclet.
+     * Returns an instance of the configuration used for this doclet.
      *
      * @return an instance of the configuration used for this doclet
      */

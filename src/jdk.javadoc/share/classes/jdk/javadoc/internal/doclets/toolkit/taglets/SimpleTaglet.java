@@ -178,11 +178,6 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
-        return null;
-    }
-
-    @Override
     public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         List<? extends DocTree> tags = utils.getBlockTags(holder, this);
