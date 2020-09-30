@@ -219,6 +219,8 @@ static char cpu_arch[] = "i386";
 static char cpu_arch[] = "amd64";
 #elif defined(ARM)
 static char cpu_arch[] = "arm";
+#elif defined(AARCH64)
+static char cpu_arch[] = "aarch64";
 #elif defined(PPC32)
 static char cpu_arch[] = "ppc";
 #else

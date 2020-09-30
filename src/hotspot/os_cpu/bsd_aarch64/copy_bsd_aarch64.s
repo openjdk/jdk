@@ -21,8 +21,11 @@
  * questions.
  *
  */
-        .global _Copy_conjoint_words
-        .global _Copy_disjoint_words
+
+#define CFUNC(x) _##x
+
+        .global CFUNC(_Copy_conjoint_words)
+        .global CFUNC(_Copy_disjoint_words)
 
 s       .req    x0
 d       .req    x1
@@ -37,7 +40,7 @@ t6      .req    x9
 t7      .req    x10
 
         .align  6
-_Copy_disjoint_words:
+CFUNC(_Copy_disjoint_words):
         // Ensure 2 word aligned
         tbz     s, #3, fwd_copy_aligned
         ldr     t0, [s], #8
@@ -135,10 +138,10 @@ fwd_copy_drain:
         ret
 
         .align  6
-_Copy_conjoint_words:
+CFUNC(_Copy_conjoint_words):
         sub     t0, d, s
         cmp     t0, count, lsl #3
-        bhs     _Copy_disjoint_words
+        bhs     CFUNC(_Copy_disjoint_words)
 
         add     s, s, count, lsl #3
         add     d, d, count, lsl #3

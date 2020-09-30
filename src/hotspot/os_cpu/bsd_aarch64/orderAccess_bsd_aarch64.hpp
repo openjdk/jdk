@@ -28,8 +28,6 @@
 
 // Included in orderAccess.hpp header file.
 
-#include "runtime/vm_version.hpp"
-
 // Implementation of class OrderAccess.
 
 inline void OrderAccess::loadload()   { acquire(); }
