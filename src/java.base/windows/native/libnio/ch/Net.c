@@ -34,7 +34,6 @@
 #include "nio_util.h"
 #include "net_util.h"
 
-#include "java_net_InetAddress.h"
 #include "sun_nio_ch_Net.h"
 #include "sun_nio_ch_PollArrayWrapper.h"
 
@@ -327,7 +326,7 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
         NET_ThrowNew(env, WSAGetLastError(), "getsockname");
         return NULL;
     }
-    return NET_SockaddrToInetAddress(env, (SOCKETADDRESS *)&sa, &port);
+    return NET_SockaddrToInetAddress(env, &sa, &port);
 }
 
 JNIEXPORT jint JNICALL
@@ -358,7 +357,7 @@ Java_sun_nio_ch_Net_remoteInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
         NET_ThrowNew(env, WSAGetLastError(), "getsockname");
         return NULL;
     }
-    return NET_SockaddrToInetAddress(env, (SOCKETADDRESS *)&sa, &port);
+    return NET_SockaddrToInetAddress(env, &sa, &port);
 }
 
 JNIEXPORT jint JNICALL
