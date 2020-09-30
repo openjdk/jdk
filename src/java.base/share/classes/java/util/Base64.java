@@ -743,7 +743,7 @@ public class Base64 {
 
         /**
          * Decodes base64 characters, and returns the number of data bytes
-         * produced by the base64 decode intrinsic.
+         * written into the destination array.
          *
          * It is the fast path for full 4-byte to 3-byte decoding w/o errors.
          *
@@ -764,6 +764,9 @@ public class Base64 {
          * decodeBlock, so it will not process a block of 4 bytes
          * containing pad characters.
          *
+         * Given the parameters, no length check is possible on dst, so dst
+         * is assumed to be large enough to store the decoded bytes.
+         *
          * @param  src
          *         the source byte array of Base64 encoded bytes
          * @param  sp
@@ -778,7 +781,7 @@ public class Base64 {
          *         boolean, when true decode RFC4648 URL-safe base64 characters
          * @return the number of destination data bytes produced
          */
-        @HotSpotIntrinsicCandidate
+        @IntrinsicCandidate
         private int decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
             int[] base64 = isURL ? fromBase64URL : fromBase64;
             int sl0 = sp + ((sl - sp) & ~0b11);
@@ -817,7 +820,7 @@ public class Base64 {
                     sp += chars_decoded;
                     dp += dl;
                 }
-                if (sp == sl) {
+                if (sp >= sl) {
                     // we're done
                     break;
                 }
