@@ -38,3 +38,5 @@
 #
 #############################################################################
 
+
+jdk/test/lib/hexdump/ASN1FormatterTest.java         8253876 generic-all
