@@ -145,6 +145,11 @@ public:
   static inline bool is_at_shenandoah_safepoint() {
     if (!SafepointSynchronize::is_at_safepoint()) return false;
 
+    // This is not VM thread, cannot see what VM thread is doing,
+    // so pretend this is a proper Shenandoah safepoint
+    if (!Thread::current()->is_VM_thread()) return true;
+
+    // Otherwise check we are at proper safepoint type
     VM_Operation* vm_op = VMThread::vm_operation();
     if (vm_op == NULL) return false;
 
