@@ -131,11 +131,11 @@ public:
   static narrowOop encode_not_null(narrowOop v) { return v; }
   static narrowOop encode(narrowOop v)          { return v; }
 
-  static uint32_t narrow_oop_value(oop o);
-  static uint32_t narrow_oop_value(narrowOop o);
+  static inline uint32_t narrow_oop_value(oop o);
+  static inline uint32_t narrow_oop_value(narrowOop o);
 
   template<typename T>
-  static narrowOop narrow_oop_cast(T i);
+  static inline narrowOop narrow_oop_cast(T i);
 };
 
 // For UseCompressedClassPointers.
