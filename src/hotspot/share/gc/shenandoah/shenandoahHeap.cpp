@@ -1582,7 +1582,7 @@ void ShenandoahHeap::op_final_mark() {
       ShenandoahGCPhase init_evac(ShenandoahPhaseTimings::init_evac);
 
       if (ShenandoahVerify) {
-        //verifier()->verify_before_evacuation();
+        verifier()->verify_before_evacuation();
       }
 
       set_evacuation_in_progress(true);
