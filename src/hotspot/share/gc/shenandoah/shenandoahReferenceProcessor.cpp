@@ -55,6 +55,27 @@ static const char* reference_type_name(ReferenceType type) {
 }
 
 template <typename T>
+static void set_oop_field(T* field, oop value);
+
+template <>
+void set_oop_field<oop>(oop* field, oop value) {
+  *field = value;
+}
+
+template <>
+void set_oop_field<narrowOop>(narrowOop* field, oop value) {
+  *field = CompressedOops::encode(value);
+}
+
+static oop lrb(oop obj) {
+  if (obj != NULL && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
+    return ShenandoahBarrierSet::barrier_set()->load_reference_barrier_not_null(obj);
+  } else {
+    return obj;
+  }
+}
+
+template <typename T>
 static volatile T* reference_referent_addr(oop reference) {
   return (volatile T*)java_lang_ref_Reference::referent_addr_raw(reference);
 }
@@ -62,7 +83,7 @@ static volatile T* reference_referent_addr(oop reference) {
 template <typename T>
 static oop reference_referent(oop reference) {
   T heap_oop = Atomic::load(reference_referent_addr<T>(reference));
-  return CompressedOops::decode(heap_oop);
+  return lrb(CompressedOops::decode(heap_oop));
 }
 
 static void reference_set_referent(oop reference, oop referent) {
@@ -75,13 +96,22 @@ static T* reference_discovered_addr(oop reference) {
 }
 
 template <typename T>
-static T reference_discovered(oop reference) {
-  return *reference_discovered_addr<T>(reference);
+static oop reference_discovered(oop reference) {
+  T heap_oop = *reference_discovered_addr<T>(reference);
+  return lrb(CompressedOops::decode(heap_oop));
 }
 
 template <typename T>
-static void reference_set_discovered(oop reference, T discovered) {
-  *reference_discovered_addr<T>(reference) = discovered;
+static void reference_set_discovered(oop reference, oop discovered);
+
+template <>
+void reference_set_discovered<oop>(oop reference, oop discovered) {
+  *reference_discovered_addr<oop>(reference) = discovered;
+}
+
+template <>
+void reference_set_discovered<narrowOop>(oop reference, oop discovered) {
+  *reference_discovered_addr<narrowOop>(reference) = CompressedOops::encode(discovered);
 }
 
 template <typename T>
@@ -92,7 +122,7 @@ static T* reference_next_addr(oop reference) {
 template <typename T>
 static oop reference_next(oop reference) {
   T heap_oop = RawAccess<>::oop_load(reference_next_addr<T>(reference));
-  return CompressedOops::decode(heap_oop);
+  return lrb(CompressedOops::decode(heap_oop));
 }
 
 static void reference_set_next(oop reference, oop next) {
@@ -118,9 +148,14 @@ T* ShenandoahRefProcThreadLocal::discovered_list_addr() {
   return reinterpret_cast<T*>(&_discovered_list);
 }
 
-template <typename T>
-T ShenandoahRefProcThreadLocal::discovered_list_head() const {
-  return *reinterpret_cast<const T*>(&_discovered_list);
+template <>
+oop ShenandoahRefProcThreadLocal::discovered_list_head<oop>() const {
+  return *reinterpret_cast<const oop*>(&_discovered_list);
+}
+
+template <>
+oop ShenandoahRefProcThreadLocal::discovered_list_head<narrowOop>() const {
+  return CompressedOops::decode(*reinterpret_cast<const narrowOop*>(&_discovered_list));
 }
 
 template <>
@@ -197,7 +232,7 @@ bool ShenandoahReferenceProcessor::is_softly_live(oop reference, ReferenceType t
 
 template <typename T>
 bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType type) const {
-  if (!CompressedOops::is_null(reference_discovered<T>(reference))) {
+  if (reference_discovered<T>(reference) != NULL) {
     // Already discovered. This can happen if the reference is marked finalizable first, and then strong,
     // in which case it will be seen 2x by marking.
     return false;
@@ -280,13 +315,14 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type) {
   }
 
   // Add reference to discovered list
-  assert(CompressedOops::is_null(reference_discovered<T>(reference)), "Already discovered: " PTR_FORMAT, p2i(reference));
+  assert(reference_discovered<T>(reference) == NULL, "Already discovered: " PTR_FORMAT, p2i(reference));
   uint worker_id = ShenandoahThreadLocalData::worker_id(Thread::current());
   assert(worker_id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "need valid worker ID");
   ShenandoahRefProcThreadLocal& refproc_data = _ref_proc_thread_locals[worker_id];
-  T discovered_head = refproc_data.discovered_list_head<T>();
-  reference_set_discovered(reference, discovered_head);
+  oop discovered_head = refproc_data.discovered_list_head<T>();
+  reference_set_discovered<T>(reference, discovered_head);
   refproc_data.set_discovered_list_head<T>(reference);
+  assert(refproc_data.discovered_list_head<T>() == reference, "reference must be new discovered head");
 
   log_trace(gc, ref)("Discovered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
@@ -309,14 +345,15 @@ bool ShenandoahReferenceProcessor::discover_reference(oop reference, ReferenceTy
 }
 
 template <typename T>
-T ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
+oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
-  assert(ShenandoahHeap::heap()->marking_context()->is_marked(reference_referent<T>(reference)), "only drop references with alive referents");
+  assert(reference_referent<T>(reference) == NULL ||
+         ShenandoahHeap::heap()->marking_context()->is_marked(reference_referent<T>(reference)), "only drop references with alive referents");
 
   // Unlink and return next in list
-  const T next = reference_discovered<T>(reference);
-  reference_set_discovered(reference, NULL);
+  oop next = reference_discovered<T>(reference);
+  reference_set_discovered<T>(reference, NULL);
   return next;
 }
 
@@ -335,15 +372,23 @@ T* ShenandoahReferenceProcessor::keep(oop reference, ReferenceType type) {
 }
 
 template <typename T>
-void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLocal& refproc_data) {;
+void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id) {;
+  log_trace(gc, ref)("Processing discovered list #%u : " PTR_FORMAT, worker_id, p2i(refproc_data.discovered_list_head<T>()));
   T* list = refproc_data.discovered_list_addr<T>();
+  // The list head is basically a GC root, we need to resolve and update it,
+  // otherwise we will later swap a from-space ref into Universe::pending_list().
+  if (!CompressedOops::is_null(*list)) {
+    oop first_resolved = lrb(CompressedOops::decode_not_null(*list));
+    set_oop_field(list, first_resolved);
+  }
   T* p = list;
   while (!CompressedOops::is_null(*p)) {
     const oop reference = CompressedOops::decode(*p);
+    log_trace(gc, ref)("Processing reference: " PTR_FORMAT, p2i(reference));
     const ReferenceType type = reference_type(reference);
 
     if (should_drop<T>(reference, type)) {
-      *p = drop<T>(reference, type);
+      set_oop_field(p, drop<T>(reference, type));
     } else {
       p = keep<T>(reference, type);
     }
@@ -359,7 +404,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
     }
 
     // Clear discovered list
-    RawAccess<>::oop_store(list, oop(NULL));
+    set_oop_field(list, oop(NULL));
   }
 }
 
@@ -369,9 +414,9 @@ void ShenandoahReferenceProcessor::work() {
   uint worker_id = Atomic::add(&_iterate_discovered_list_id, 1U) - 1;
   while (worker_id < max_workers) {
     if (UseCompressedOops) {
-      process_references<narrowOop>(_ref_proc_thread_locals[worker_id]);
+      process_references<narrowOop>(_ref_proc_thread_locals[worker_id], worker_id);
     } else {
-      process_references<oop>(_ref_proc_thread_locals[worker_id]);
+      process_references<oop>(_ref_proc_thread_locals[worker_id], worker_id);
     }
     worker_id = Atomic::add(&_iterate_discovered_list_id, 1U) - 1;
   }

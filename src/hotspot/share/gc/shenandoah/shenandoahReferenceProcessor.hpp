@@ -44,7 +44,7 @@ public:
   template<typename T>
   T* discovered_list_addr();
   template<typename T>
-  T discovered_list_head() const;
+  oop discovered_list_head() const;
   template<typename T>
   void set_discovered_list_head(oop head);
 };
@@ -80,12 +80,12 @@ private:
   bool discover(oop reference, ReferenceType type);
 
   template <typename T>
-  T drop(oop reference, ReferenceType type);
+  oop drop(oop reference, ReferenceType type);
   template <typename T>
   T* keep(oop reference, ReferenceType type);
 
   template <typename T>
-  void process_references(ShenandoahRefProcThreadLocal& refproc_data);
+  void process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id);
   void enqueue_references();
 
 public:
