@@ -154,7 +154,7 @@ public class ArrayCodec<E> {
         } else if (type == String.class) {
             return ArrayCodec.of((String[])array);
         } else if (!type.isPrimitive() && !type.isArray()) {
-            return ArrayCodec.of((String[])array);
+            return ArrayCodec.of((Object[])array);
         }
 
         throw new IllegalArgumentException("Unsupported array component type: " + type);
