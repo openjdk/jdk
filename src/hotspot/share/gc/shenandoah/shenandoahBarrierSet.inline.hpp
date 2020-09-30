@@ -160,7 +160,9 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
     } else {
       value = bs->load_reference_barrier_not_null(value);
     }
-    bs->keep_alive_if_weak<decorators>(value);
+    if (value != NULL) {
+      bs->keep_alive_if_weak<decorators>(value);
+    }
   }
   return value;
 }
@@ -176,7 +178,9 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
     } else {
       value = bs->load_reference_barrier_not_null(value);
     }
-    bs->keep_alive_if_weak(resolved_decorators, value);
+    if (value != NULL) {
+      bs->keep_alive_if_weak(resolved_decorators, value);
+    }
   }
   return value;
 }
