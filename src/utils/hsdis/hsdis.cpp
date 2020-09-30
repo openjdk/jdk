@@ -91,8 +91,8 @@ class hsdis_backend_base {
   void*             _printf_stream;
   int               _do_newline;
 
-  bool              _losing = false;
-  const char*       _arch_name = NULL;
+  bool              _losing;
+  const char*       _arch_name;
 
   virtual void print_help(const char* msg, const char* arg) = 0;
   virtual void print_insns_config() = 0;
@@ -142,7 +142,8 @@ protected:
       _buffer(buffer), _length(length),
       _event_callback(event_callback), _event_stream(event_stream),
       _printf_callback(printf_callback), _printf_stream(printf_stream),
-      _do_newline(do_newline)
+      _do_newline(do_newline),
+      _losing(false), _arch_name(NULL)
   {
     /* Make reasonable defaults for null callbacks.
       A non-null stream for a null callback is assumed to be a FILE* for output.
@@ -531,7 +532,7 @@ class hsdis_backend : public hsdis_backend_base {
 
 class hsdis_backend : public hsdis_backend_base {
  private:
-  LLVMDisasmContextRef      _dcontext = NULL;
+  LLVMDisasmContextRef      _dcontext;
   char                      _target_triple[128];
 
   void parse_caller_options(const char* options) {
@@ -590,7 +591,8 @@ class hsdis_backend : public hsdis_backend_base {
                          buffer, length,
                          event_callback, event_stream,
                          printf_callback, printf_stream,
-                         newline) {
+                         newline),
+      _dcontext(NULL) {
     /* Look into _options for anything interesting. */
     if (options != NULL)
       parse_caller_options(options);
