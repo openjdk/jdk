@@ -79,8 +79,8 @@ public class ArrayDiff<E> implements Diff {
      * Default limits for the formatter
      */
     public static class Defaults {
-        final static int WIDTH = 80;
-        final static int CONTEXT_BEFORE = 2;
+        public final static int WIDTH = 80;
+        public final static int CONTEXT_BEFORE = 2;
     }
 
     private ArrayDiff(ArrayCodec<E> first, ArrayCodec<E> second,
