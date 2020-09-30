@@ -72,7 +72,7 @@ public class SpinnerTest
                 frame.setLocationRelativeTo(null);
             });
             robot.waitForIdle();
-	    robot.delay(1000);
+            robot.delay(1000);
             Point loc = spinner.getLocationOnScreen();
 
             robot.mouseMove(loc.x, loc.y);
