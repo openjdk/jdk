@@ -316,7 +316,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
 
   char* extra_base;
   if (file_desc != -1) {
-    // For file mapping, we do not call os:reserve_memory(extra_size, NULL, alignment, file_desc) because
+    // For file mapping, we do not call os:reserve_memory() because
     // we need to deal with shrinking of the file space later when we release extra memory after alignment.
     // We also cannot called os:reserve_memory() with file_desc set to -1 because on aix we might get SHM memory.
     // So here to call a helper function while reserve memory for us. After we have a aligned base,
@@ -326,7 +326,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
       MemTracker::record_virtual_memory_reserve((address)extra_base, extra_size, CALLER_PC);
     }
   } else {
-    extra_base = os::reserve_memory(extra_size, alignment);
+    extra_base = os::reserve_memory(extra_size);
   }
 
   if (extra_base == NULL) {
