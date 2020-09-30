@@ -141,7 +141,9 @@ public:
 
 class ShenandoahSafepoint : public AllStatic {
 public:
-  // check if Shenandoah GC safepoint is in progress
+  // Check if Shenandoah GC safepoint is in progress. This is nominally
+  // equivalent to calling SafepointSynchronize::is_at_safepoint(), but
+  // it also checks the Shenandoah specifics, when it can.
   static inline bool is_at_shenandoah_safepoint() {
     if (!SafepointSynchronize::is_at_safepoint()) return false;
 
@@ -149,7 +151,7 @@ public:
     // so pretend this is a proper Shenandoah safepoint
     if (!Thread::current()->is_VM_thread()) return true;
 
-    // Otherwise check we are at proper safepoint type
+    // Otherwise check we are at proper operation type
     VM_Operation* vm_op = VMThread::vm_operation();
     if (vm_op == NULL) return false;
 
