@@ -272,15 +272,19 @@ public class TestStringIntrinsics {
      * returned value equals 'expectedResult'.
      */
     private void invokeAndCheck(Method m, Object expectedResult, Object... args) throws Exception {
-        Object result = m.invoke(null, args);
-        if (!result.equals(expectedResult)) {
-            String message = "Result of '" + m.getName() + "' not equal to expected value.";
-            System.err.println(message);
-            System.err.println("Expected: " + Format.asLiteral(expectedResult));
-            System.err.println("Result: " + Format.asLiteral(result));
+        Object actualResult = m.invoke(null, args);
+        if (!actualResult.equals(expectedResult)) {
+            var nl = System.lineSeparator();
+            String message =
+                "Actual result of '" + m.getName() + "' is not equal to expected value." + nl +
+                "Expected: " + Format.asLiteral(expectedResult) + nl +
+                "Actual: " + Format.asLiteral(actualResult);
+
             for (int i = 0; i < args.length; i++) {
-                System.err.println("Arg" + i + ": " + Format.asLiteral(args[i]));
+                message += nl + "    Arg" + i + ": " + Format.asLiteral(args[i]);
             }
+
+            System.err.println(message);
             throw new RuntimeException(message);
         }
     }
