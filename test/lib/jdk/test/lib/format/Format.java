@@ -106,7 +106,7 @@ public class Format {
      * @return Padding string of spaces
      */
     public static String paddingForWidth(int width) {
-        return new String(" ").repeat(width);
+        return " ".repeat(width);
     }
 
     private static void appendCharToSb(char c, StringBuilder sb) {
