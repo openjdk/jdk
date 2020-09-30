@@ -2329,8 +2329,6 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 char* os::pd_reserve_memory(size_t bytes) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
-  const size_t alignment_hint0 =
-    alignment_hint ? align_up(alignment_hint, os::vm_page_size()) : 0;
 
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
