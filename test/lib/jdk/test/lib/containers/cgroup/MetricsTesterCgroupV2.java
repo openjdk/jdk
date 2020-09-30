@@ -252,9 +252,9 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
         }
 
         oldVal = metrics.getMemorySoftLimit();
-        newVal = getLongLimitValueFromFile("memory.high");
+        newVal = getLongLimitValueFromFile("memory.low");
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
-            fail("memory.high", oldVal, newVal);
+            fail("memory.low", oldVal, newVal);
         }
 
     }

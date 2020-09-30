@@ -57,6 +57,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final String METHOD_DESCRIPTOR_VOID = Type.getMethodDescriptor(Type.VOID_TYPE);
     private static final String JAVA_LANG_OBJECT = "java/lang/Object";
     private static final String NAME_CTOR = "<init>";
+    private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
 
     //Serialization support
     private static final String NAME_SERIALIZED_LAMBDA = "java/lang/invoke/SerializedLambda";
@@ -206,32 +207,42 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     @Override
     CallSite buildCallSite() throws LambdaConversionException {
         final Class<?> innerClass = spinInnerClass();
-        if (invokedType.parameterCount() == 0 && !disableEagerInitialization) {
+        if (invokedType.parameterCount() == 0) {
             // In the case of a non-capturing lambda, we optimize linkage by pre-computing a single instance,
             // unless we've suppressed eager initialization
-            final Constructor<?>[] ctrs = AccessController.doPrivileged(
-                    new PrivilegedAction<>() {
-                @Override
-                public Constructor<?>[] run() {
-                    Constructor<?>[] ctrs = innerClass.getDeclaredConstructors();
-                    if (ctrs.length == 1) {
-                        // The lambda implementing inner class constructor is private, set
-                        // it accessible (by us) before creating the constant sole instance
-                        ctrs[0].setAccessible(true);
-                    }
-                    return ctrs;
+            if (disableEagerInitialization) {
+                try {
+                    return new ConstantCallSite(caller.findStaticGetter(innerClass, LAMBDA_INSTANCE_FIELD,
+                            invokedType.returnType()));
+                } catch (ReflectiveOperationException e) {
+                    throw new LambdaConversionException(
+                            "Exception finding " +  LAMBDA_INSTANCE_FIELD + " static field", e);
                 }
-                    });
-            if (ctrs.length != 1) {
-                throw new LambdaConversionException("Expected one lambda constructor for "
-                        + innerClass.getCanonicalName() + ", got " + ctrs.length);
-            }
+            } else {
+                final Constructor<?>[] ctrs = AccessController.doPrivileged(
+                        new PrivilegedAction<>() {
+                            @Override
+                            public Constructor<?>[] run() {
+                                Constructor<?>[] ctrs = innerClass.getDeclaredConstructors();
+                                if (ctrs.length == 1) {
+                                    // The lambda implementing inner class constructor is private, set
+                                    // it accessible (by us) before creating the constant sole instance
+                                    ctrs[0].setAccessible(true);
+                                }
+                                return ctrs;
+                            }
+                        });
+                if (ctrs.length != 1) {
+                    throw new LambdaConversionException("Expected one lambda constructor for "
+                            + innerClass.getCanonicalName() + ", got " + ctrs.length);
+                }
 
-            try {
-                Object inst = ctrs[0].newInstance();
-                return new ConstantCallSite(MethodHandles.constant(samBase, inst));
-            } catch (ReflectiveOperationException e) {
-                throw new LambdaConversionException("Exception instantiating lambda object", e);
+                try {
+                    Object inst = ctrs[0].newInstance();
+                    return new ConstantCallSite(MethodHandles.constant(samBase, inst));
+                } catch (ReflectiveOperationException e) {
+                    throw new LambdaConversionException("Exception instantiating lambda object", e);
+                }
             }
         } else {
             try {
@@ -331,6 +342,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         generateConstructor();
 
+        if (invokedType.parameterCount() == 0 && disableEagerInitialization) {
+            generateClassInitializer();
+        }
+
         // Forward the SAM method
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, samMethodName,
                                           samMethodType.toMethodDescriptorString(), null, null);
@@ -396,6 +411,32 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         } catch (Throwable t) {
             throw new InternalError(t);
         }
+    }
+
+    /**
+     * Generate a static field and a static initializer that sets this field to an instance of the lambda
+     */
+    private void generateClassInitializer() {
+        String lambdaTypeDescriptor = invokedType.returnType().descriptorString();
+
+        // Generate the static final field that holds the lambda singleton
+        FieldVisitor fv = cw.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL,
+                LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor, null, null);
+        fv.visitEnd();
+
+        // Instantiate the lambda and store it to the static final field
+        MethodVisitor clinit = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+        clinit.visitCode();
+
+        clinit.visitTypeInsn(NEW, lambdaClassName);
+        clinit.visitInsn(Opcodes.DUP);
+        assert invokedType.parameterCount() == 0;
+        clinit.visitMethodInsn(INVOKESPECIAL, lambdaClassName, NAME_CTOR, constructorType.toMethodDescriptorString(), false);
+        clinit.visitFieldInsn(PUTSTATIC, lambdaClassName, LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor);
+
+        clinit.visitInsn(RETURN);
+        clinit.visitMaxs(-1, -1);
+        clinit.visitEnd();
     }
 
     /**
