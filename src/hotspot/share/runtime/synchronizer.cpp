@@ -1105,13 +1105,11 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* self, oop obj) {
 
         // Separate load of dmw/header above from the loads in
         // is_being_async_deflated().
-        if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-          // A non-multiple copy atomic (nMCA) machine needs a bigger
-          // hammer to separate the load above and the loads below.
-          OrderAccess::fence();
-        } else {
-          OrderAccess::loadload();
-        }
+
+        // dmw/header and _contentions may get written by different threads.
+        // Make sure to observe them in the same order when having several observers.
+        OrderAccess::loadload_for_IRIW();
+
         if (monitor->is_being_async_deflated()) {
           // But we can't safely use the hash if we detect that async
           // deflation has occurred. So we attempt to restore the
