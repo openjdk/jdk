@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,29 +30,40 @@
 
 #include "runtime/vm_version.hpp"
 
+#define inlasm_dmb(opt) asm volatile("dmb " #opt : : : "memory")
+
 // Implementation of class OrderAccess.
 
-inline void OrderAccess::loadload()   { acquire(); }
-inline void OrderAccess::storestore() { release(); }
-inline void OrderAccess::loadstore()  { acquire(); }
-inline void OrderAccess::storeload()  { fence(); }
+inline void OrderAccess::loadload() {
+  inlasm_dmb(ishld);
+}
 
-#define FULL_MEM_BARRIER  __sync_synchronize()
-#define READ_MEM_BARRIER  __atomic_thread_fence(__ATOMIC_ACQUIRE);
-#define WRITE_MEM_BARRIER __atomic_thread_fence(__ATOMIC_RELEASE);
+inline void OrderAccess::storestore() {
+  inlasm_dmb(ishst);
+}
+
+inline void OrderAccess::loadstore() {
+  inlasm_dmb(ishld);
+}
+
+inline void OrderAccess::storeload() {
+  inlasm_dmb(ish);
+}
 
 inline void OrderAccess::acquire() {
-  READ_MEM_BARRIER;
+  inlasm_dmb(ishld);
 }
 
 inline void OrderAccess::release() {
-  WRITE_MEM_BARRIER;
+  inlasm_dmb(ish);
 }
 
 inline void OrderAccess::fence() {
-  FULL_MEM_BARRIER;
+  inlasm_dmb(ish);
 }
 
 inline void OrderAccess::cross_modify_fence() { }
+
+#undef inlasm_dmb
 
 #endif // OS_CPU_LINUX_AARCH64_ORDERACCESS_LINUX_AARCH64_HPP

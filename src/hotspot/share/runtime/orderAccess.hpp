@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,28 +120,28 @@
 //
 // The following table shows the implementations on some architectures:
 //
-//                       Constraint     x86          sparc TSO          ppc
-// ---------------------------------------------------------------------------
-// fence                 LoadStore  |   lock         membar #StoreLoad  sync
+//                       Constraint     x86          sparc TSO          ppc      AArch64
+// ---------------------------------------------------------------------------------------
+// fence                 LoadStore  |   lock         membar #StoreLoad  sync     dmb ish
 //                       StoreStore |   addl 0,(sp)
 //                       LoadLoad   |
 //                       StoreLoad
 //
-// release               LoadStore  |                                   lwsync
+// release               LoadStore  |                                   lwsync   dmb ish
 //                       StoreStore
 //
-// acquire               LoadLoad   |                                   lwsync
+// acquire               LoadLoad   |                                   lwsync   dmb ishld
 //                       LoadStore
 //
-// release_store                        <store>      <store>            lwsync
+// release_store                        <store>      <store>            lwsync   stlr
 //                                                                      <store>
 //
-// release_store_fence                  xchg         <store>            lwsync
-//                                                   membar #StoreLoad  <store>
+// release_store_fence                  xchg         <store>            lwsync   stlr
+//                                                   membar #StoreLoad  <store>  dmb ish
 //                                                                      sync
 //
 //
-// load_acquire                         <load>       <load>             <load>
+// load_acquire                         <load>       <load>             <load>   ldar
 //                                                                      lwsync
 //
 // Ordering a load relative to preceding stores requires a StoreLoad,

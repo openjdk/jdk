@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,7 +37,7 @@ struct Atomic::PlatformAdd {
   template<typename D, typename I>
   D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
     D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
-    FULL_MEM_BARRIER;
+    OrderAccess::fence();
     return res;
   }
 
@@ -54,7 +54,7 @@ inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
                                                      atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
   T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELEASE);
-  FULL_MEM_BARRIER;
+  OrderAccess::fence();
   return res;
 }
 
@@ -73,10 +73,10 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attri
     return value;
   } else {
     T value = compare_value;
-    FULL_MEM_BARRIER;
+    OrderAccess::fence();
     __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
                               __ATOMIC_RELAXED, __ATOMIC_RELAXED);
-    FULL_MEM_BARRIER;
+    OrderAccess::fence();
     return value;
   }
 }
