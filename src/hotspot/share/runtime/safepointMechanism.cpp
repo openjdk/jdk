@@ -47,7 +47,7 @@ void SafepointMechanism::default_initialize() {
     // Polling page
     const size_t page_size = os::vm_page_size();
     const size_t allocation_size = 2 * page_size;
-    char* polling_page = os::reserve_memory(allocation_size, NULL, page_size);
+    char* polling_page = os::reserve_memory(allocation_size, page_size);
     os::commit_memory_or_exit(polling_page, allocation_size, false, "Unable to commit Safepoint polling page");
     MemTracker::record_virtual_memory_type((address)polling_page, mtSafepoint);
 
@@ -78,8 +78,8 @@ void SafepointMechanism::process(JavaThread *thread) {
     OrderAccess::loadload();
     SafepointSynchronize::block(thread);
   }
-  if (thread->has_handshake()) {
-    thread->handshake_process_by_self();
+  if (thread->handshake_state()->should_process()) {
+    thread->handshake_state()->process_by_self(); // Recursive
   }
 }
 
@@ -96,7 +96,7 @@ void SafepointMechanism::process_if_requested_slow(JavaThread *thread) {
     disarm_local_poll_release(thread);
     // We might have disarmed next safepoint/handshake
     OrderAccess::storeload();
-    if (global_poll() || thread->has_handshake()) {
+    if (global_poll() || thread->handshake_state()->has_operation()) {
       arm_local_poll(thread);
     }
   }

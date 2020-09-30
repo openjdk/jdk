@@ -47,7 +47,7 @@ inline void PreservedMarks::push_if_necessary(oop obj, markWord m) {
 }
 
 inline void PreservedMarks::init_forwarded_mark(oop obj) {
-  obj->init_mark_raw();
+  obj->init_mark();
 }
 
 inline PreservedMarks::PreservedMarks()
@@ -59,7 +59,7 @@ inline PreservedMarks::PreservedMarks()
              0 /* max_cache_size */) { }
 
 void PreservedMarks::OopAndMarkWord::set_mark() const {
-  _o->set_mark_raw(_m);
+  _o->set_mark(_m);
 }
 
 #endif // SHARE_GC_SHARED_PRESERVEDMARKS_INLINE_HPP

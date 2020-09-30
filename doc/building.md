@@ -302,9 +302,9 @@ issues.
 
  Operating system   Toolchain version
  ------------------ -------------------------------------------------------
- Linux              gcc 9.2.0
+ Linux              gcc 10.2.0
  macOS              Apple Xcode 10.1 (using clang 10.0.0)
- Windows            Microsoft Visual Studio 2019 update 16.5.3
+ Windows            Microsoft Visual Studio 2019 update 16.7.2
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio
@@ -316,7 +316,7 @@ features that it does support.
 The minimum accepted version of gcc is 5.0. Older versions will generate a warning
 by `configure` and are unlikely to work.
 
-The JDK is currently known to be able to compile with at least version 9.2 of
+The JDK is currently known to be able to compile with at least version 10.2 of
 gcc.
 
 In general, any version between these two should be usable.

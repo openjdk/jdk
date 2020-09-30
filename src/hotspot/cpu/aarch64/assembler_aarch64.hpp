@@ -401,10 +401,8 @@ class Address {
     : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
   Address(Register r, unsigned long long o)
     : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-#ifdef ASSERT
   Address(Register r, ByteSize disp)
-    : _base(r), _index(noreg), _offset(in_bytes(disp)), _mode(base_plus_offset), _target(0) { }
-#endif
+    : Address(r, in_bytes(disp)) { }
   Address(Register r, Register r1, extend ext = lsl())
     : _base(r), _index(r1), _offset(0), _mode(base_plus_offset_reg),
       _ext(ext), _target(0) { }

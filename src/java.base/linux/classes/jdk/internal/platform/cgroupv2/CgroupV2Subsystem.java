@@ -287,7 +287,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
 
     @Override
     public long getMemorySoftLimit() {
-        String softLimitStr = CgroupSubsystemController.getStringValue(unified, "memory.high");
+        String softLimitStr = CgroupSubsystemController.getStringValue(unified, "memory.low");
         return limitFromString(softLimitStr);
     }
 

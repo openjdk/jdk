@@ -121,14 +121,12 @@ class VM_Operation : public StackObj {
 
  private:
   Thread*         _calling_thread;
-  VM_Operation*   _next;
-  VM_Operation*   _prev;
 
   // The VM operation name array
   static const char* _names[];
 
  public:
-  VM_Operation() : _calling_thread(NULL), _next(NULL), _prev(NULL) {}
+  VM_Operation() : _calling_thread(NULL) {}
 
   // VM operation support (used by VM thread)
   Thread* calling_thread() const                 { return _calling_thread; }
@@ -147,12 +145,6 @@ class VM_Operation : public StackObj {
   virtual void doit()                            = 0;
   virtual bool doit_prologue()                   { return true; };
   virtual void doit_epilogue()                   {};
-
-  // Linking
-  VM_Operation *next() const                     { return _next; }
-  VM_Operation *prev() const                     { return _prev; }
-  void set_next(VM_Operation *next)              { _next = next; }
-  void set_prev(VM_Operation *prev)              { _prev = prev; }
 
   // Configuration. Override these appropriately in subclasses.
   virtual VMOp_Type type() const = 0;

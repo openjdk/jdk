@@ -32,16 +32,10 @@
 #include "runtime/globals.hpp"
 
 inline HeapWord* objArrayOopDesc::base() const { return (HeapWord*) arrayOopDesc::base(T_OBJECT); }
-inline HeapWord* objArrayOopDesc::base_raw() const { return (HeapWord*) arrayOopDesc::base_raw(T_OBJECT); }
 
 template <class T> T* objArrayOopDesc::obj_at_addr(int index) const {
   assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
   return &((T*)base())[index];
-}
-
-template <class T> T* objArrayOopDesc::obj_at_addr_raw(int index) const {
-  assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
-  return &((T*)base_raw())[index];
 }
 
 inline oop objArrayOopDesc::obj_at(int index) const {

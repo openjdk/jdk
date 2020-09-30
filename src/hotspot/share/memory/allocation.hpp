@@ -151,14 +151,20 @@ class AllocatedObj {
 /*
  * Memory types
  */
-enum MemoryType {
+enum class MEMFLAGS {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_ENUM)
   mt_number_of_types   // number of memory types (mtDontTrack
                        // is not included as validate type)
 };
 
-typedef MemoryType MEMFLAGS;
+#define MEMORY_TYPE_SHORTNAME(type, human_readable) \
+  constexpr MEMFLAGS type = MEMFLAGS::type;
 
+// Generate short aliases for the enum values. E.g. mtGC instead of MEMFLAGS::mtGC.
+MEMORY_TYPES_DO(MEMORY_TYPE_SHORTNAME)
+
+// Make an int version of the sentinel end value.
+constexpr int mt_number_of_types = static_cast<int>(MEMFLAGS::mt_number_of_types);
 
 #if INCLUDE_NMT
 

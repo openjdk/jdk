@@ -4657,6 +4657,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * marker value. Therefore, no explicit action to set these fields needs to
      * be taken in readObject because those fields already have a 0 value by
      * default since defaultReadObject is not being used.
+     *
+     * @param  s the stream being read.
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
@@ -4724,6 +4728,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * {@code firstNonzeroByteNum}, respectively.  These values are compatible
      * with older implementations, but will be ignored by current
      * implementations.
+     *
+     * @param  s the stream to serialize to.
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(ObjectOutputStream s) throws IOException {

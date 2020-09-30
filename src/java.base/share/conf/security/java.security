@@ -495,16 +495,7 @@ sun.security.krb5.maxReferrals=5
 # in the jdk.[tls|certpath|jar].disabledAlgorithms properties.  To include this
 # list in any of the disabledAlgorithms properties, add the property name as
 # an entry.
-jdk.disabled.namedCurves = secp112r1, secp112r2, secp128r1, secp128r2, \
-    secp160k1, secp160r1, secp160r2, secp192k1, secp192r1, secp224k1, \
-    secp224r1, secp256k1, sect113r1, sect113r2, sect131r1, sect131r2, \
-    sect163k1, sect163r1, sect163r2, sect193r1, sect193r2, sect233k1, \
-    sect233r1, sect239k1, sect283k1, sect283r1, sect409k1, sect409r1, \
-    sect571k1, sect571r1, X9.62 c2tnb191v1, X9.62 c2tnb191v2, \
-    X9.62 c2tnb191v3, X9.62 c2tnb239v1, X9.62 c2tnb239v2, X9.62 c2tnb239v3, \
-    X9.62 c2tnb359v1, X9.62 c2tnb431r1, X9.62 prime192v2, X9.62 prime192v3, \
-    X9.62 prime239v1, X9.62 prime239v2, X9.62 prime239v3, brainpoolP256r1, \
-    brainpoolP320r1, brainpoolP384r1, brainpoolP512r1
+#jdk.disabled.namedCurves=
 
 #
 # Algorithm restrictions for certification path (CertPath) processing
@@ -642,8 +633,7 @@ jdk.disabled.namedCurves = secp112r1, secp112r2, secp128r1, secp128r2, \
 #
 #
 jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
-    RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224, \
-    include jdk.disabled.namedCurves
+    RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224
 
 #
 # Legacy algorithms for certification path (CertPath) processing and
@@ -707,7 +697,7 @@ jdk.security.legacyAlgorithms=SHA1, \
 # See "jdk.certpath.disabledAlgorithms" for syntax descriptions.
 #
 jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
-      DSA keySize < 1024, include jdk.disabled.namedCurves
+      DSA keySize < 1024
 
 #
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security
@@ -742,8 +732,7 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
 #       rsa_pkcs1_sha1, secp224r1
 jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA, DH keySize < 1024, \
-    EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
-    include jdk.disabled.namedCurves
+    EC keySize < 224, 3DES_EDE_CBC, anon, NULL
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
