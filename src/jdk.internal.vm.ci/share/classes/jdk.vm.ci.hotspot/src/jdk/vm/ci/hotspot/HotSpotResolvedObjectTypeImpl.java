@@ -480,8 +480,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             return null;
         }
         if (method.isConstructor()) {
-            // Constructor calls should have be checked in the verifier and the declaring class
-            // isAssignableFrom this so treat it as resolved.
+            // Constructor calls should have been checked in the verifier and method's
+            // declaring class is assignable from this (see above) so treat it as resolved.
             return method;
         }
         HotSpotResolvedJavaMethodImpl hotSpotMethod = (HotSpotResolvedJavaMethodImpl) method;
