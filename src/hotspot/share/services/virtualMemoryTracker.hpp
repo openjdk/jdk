@@ -97,12 +97,6 @@ class VirtualMemorySnapshot : public ResourceObj {
     return &_virtual_memory[index];
   }
 
-  inline VirtualMemory* by_index(int index) {
-    assert(index >= 0, "Index out of bound");
-    assert(index < mt_number_of_types, "Index out of bound");
-    return &_virtual_memory[index];
-  }
-
   inline size_t total_reserved() const {
     size_t amount = 0;
     for (int index = 0; index < mt_number_of_types; index ++) {

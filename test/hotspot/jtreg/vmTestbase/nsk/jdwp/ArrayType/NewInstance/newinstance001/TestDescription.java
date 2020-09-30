@@ -54,9 +54,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ArrayType.NewInstance.newinstance001
- *        nsk.jdwp.ArrayType.NewInstance.newinstance001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.ArrayType.NewInstance.newinstance001a
+ * @run main/othervm
  *      nsk.jdwp.ArrayType.NewInstance.newinstance001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
