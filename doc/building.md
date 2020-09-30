@@ -7,7 +7,7 @@ the time. They assume that you have installed Mercurial (and Cygwin if running
 on Windows) and cloned the top-level JDK repository that you want to build.
 
  1. [Get the complete source code](#getting-the-source-code): \
-    `hg clone http://hg.openjdk.java.net/jdk/jdk`
+    `gh clone http://hg.openjdk.java.net/jdk/jdk`
 
  2. [Run configure](#running-configure): \
     `bash configure`
