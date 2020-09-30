@@ -232,7 +232,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * Adds the modifier for the member.
      *
      * @param member the member to add the type for
-     * @param code   the content tree to which the modified will be added
+     * @param code   the content tree to which the modifier will be added
      */
     private void addModifier(Element member, Content code) {
         if (utils.isProtected(member)) {
