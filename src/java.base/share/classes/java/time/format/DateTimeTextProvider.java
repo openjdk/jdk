@@ -73,20 +73,12 @@ import java.time.chrono.JapaneseChronology;
 import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalField;
+import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import sun.util.locale.provider.CalendarDataUtility;
@@ -479,7 +471,7 @@ class DateTimeTextProvider {
                     styleMap.put(textStyle, map);
                 }
             }
-            return new LocaleStore(styleMap);
+            return new LocaleStore(styleMap, true);
         }
 
         if (field == IsoFields.QUARTER_OF_YEAR) {
@@ -569,21 +561,33 @@ class DateTimeTextProvider {
          */
         private final Map<TextStyle, List<Entry<String, Long>>> parsable;
 
+        LocaleStore(Map<TextStyle, Map<Long, String>> valueTextMap) {
+            this(valueTextMap, false);
+        }
+
         /**
          * Constructor.
          *
          * @param valueTextMap  the map of values to text to store, assigned and not altered, not null
          */
-        LocaleStore(Map<TextStyle, Map<Long, String>> valueTextMap) {
+        LocaleStore(Map<TextStyle, Map<Long, String>> valueTextMap, boolean allowMultiple) {
             this.valueTextMap = valueTextMap;
             Map<TextStyle, List<Entry<String, Long>>> map = new HashMap<>();
             List<Entry<String, Long>> allList = new ArrayList<>();
             for (Map.Entry<TextStyle, Map<Long, String>> vtmEntry : valueTextMap.entrySet()) {
                 Map<String, Entry<String, Long>> reverse = new HashMap<>();
-                for (Map.Entry<Long, String> entry : vtmEntry.getValue().entrySet()) {
-                    if (reverse.put(entry.getValue(), createEntry(entry.getValue(), entry.getKey())) != null) {
-                        // TODO: BUG: this has no effect
-                        continue;  // not parsable, try next style
+                if (allowMultiple) {
+                    Map<Object, Set<Entry<Long, String>>> revmap = vtmEntry.getValue().entrySet().stream()
+                            .collect(Collectors.groupingBy(e -> e.getValue(), Collectors.toSet()));
+                    revmap.entrySet().stream()
+                            .forEach(e -> reverse.put((String)e.getKey(),
+                                    createEntry((String)e.getKey(), DateTimeTextProvider.getLongValue(e.getValue()))));
+                } else {
+                    for (Map.Entry<Long, String> entry : vtmEntry.getValue().entrySet()) {
+                        if (reverse.put(entry.getValue(), createEntry(entry.getValue(), entry.getKey())) != null) {
+                            // TODO: BUG: this has no effect
+                            continue;  // not parsable, try next style
+                        }
                     }
                 }
                 List<Entry<String, Long>> list = new ArrayList<>(reverse.values());
@@ -594,6 +598,9 @@ class DateTimeTextProvider {
             }
             Collections.sort(allList, COMPARATOR);
             this.parsable = map;
+        }
+
+        private void multiMap(Map<Long, String> vtm, Map<String, Entry<String, Long>> reverse) {
         }
 
         /**
@@ -622,5 +629,32 @@ class DateTimeTextProvider {
             List<Entry<String, Long>> list = parsable.get(style);
             return list != null ? list.iterator() : null;
         }
+    }
+
+    private static Long getLongValue(Set<Entry<Long, String>> s) {
+        List<Long> l = s.stream()
+                .map(e -> e.getKey())
+                .sorted()
+                .collect(Collectors.toList());
+        long start = l.get(0);
+        long end = l.get(l.size()-1);
+        for(int i = 0; i < l.size(); i++) {
+            long current = l.get(i);
+            if (i+1 < l.size()) {
+                long next = l.get(i+1);
+                if (current + 1 != next) {
+                    // there's a gap
+                    start = next;
+                    end = current;
+                    break;
+                }
+            }
+        }
+        long gap = start > end ?
+                24 - start + end :
+                end - start;
+        long mid = (start + gap / 2) % 24;
+        return mid;
+
     }
 }
