@@ -34,7 +34,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
@@ -1169,7 +1169,7 @@ public final class Long extends Number
             int size = -(-128) + 127 + 1;
 
             // Load and use the archived cache if it exists
-            VM.initializeFromArchive(LongCache.class);
+            CDS.initializeFromArchive(LongCache.class);
             if (archivedCache == null || archivedCache.length != size) {
                 Long[] c = new Long[size];
                 long value = -128;

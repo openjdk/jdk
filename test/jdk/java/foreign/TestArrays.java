@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @run testng TestArrays
+ * @run testng/othervm -Dforeign.restricted=permit TestArrays
  */
 
 import jdk.incubator.foreign.MemoryAddress;
@@ -105,10 +105,11 @@ public class TestArrays {
         }
     }
 
-    @Test(expectedExceptions = { UnsupportedOperationException.class,
-                                 IllegalArgumentException.class })
+    @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testTooBigForArray() {
-        MemorySegment.allocateNative((long) Integer.MAX_VALUE * 2).toByteArray();
+        try (MemorySegment segment = MemorySegment.ofNativeRestricted(MemoryAddress.NULL, (long)Integer.MAX_VALUE + 10L, null, null, null)) {
+            segment.toByteArray();
+        }
     }
 
     @Test(expectedExceptions = IllegalStateException.class)

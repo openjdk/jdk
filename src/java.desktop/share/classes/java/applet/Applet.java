@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,7 +579,7 @@ public class Applet extends Panel {
         private static final long serialVersionUID = 8127374778187708896L;
 
         /**
-         * Constructs an {@code AccessibleApplet}
+         * Constructs an {@code AccessibleApplet}.
          */
         protected AccessibleApplet() {}
 

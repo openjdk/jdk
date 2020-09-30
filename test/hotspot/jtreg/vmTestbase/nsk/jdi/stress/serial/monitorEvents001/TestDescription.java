@@ -45,19 +45,22 @@
  *
  *
  * @comment build classes required for tests from monitorEvents001.tests
- * @build nsk.share.jdi.EventTestTemplates
+ * @build nsk.share.jdi.ClassExclusionFilterTest
+ *        nsk.share.jdi.ClassFilterTest_ClassName
+ *        nsk.share.jdi.ClassFilterTest_ReferenceType
+ *        nsk.share.jdi.ThreadFilterTest
  *
  * @build nsk.share.jdi.SerialExecutionDebugger
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.share.jdi.SerialExecutionDebugger
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -debugee.vmkeys="-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                       -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
  *      -configFile ${test.src}/monitorEvents001.tests

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package nsk.aod.VirtualMachine.VirtualMachine04;
 
 import nsk.share.TestBug;
@@ -30,28 +31,26 @@ import nsk.share.aod.DummyTargetApplication;
  * main test application tries to get this property using VirtualMachine.getSystemProperties()
  */
 public class VM04Target extends DummyTargetApplication {
-
-    static String testPropertyKey = "VirtualMachine04_testPropertyKey";
-
-    static String testPropertyValue = "VirtualMachine04_testPropertyValue";
-
-    static String changedTestPropertyValue = "VirtualMachine04_testPropertyValue_changed";
+    static final String TEST_PROPERTY_KEY = "VirtualMachine04_testPropertyKey";
+    static final String TEST_PROPERTY_VALUE = "VirtualMachine04_testPropertyValue";
+    static final String CHANGED_TEST_PROPERTY_VALUE = "VirtualMachine04_testPropertyValue_changed";
 
     VM04Target(String[] args) {
         super(args);
 
-        log.display("Setting property " + testPropertyKey + " = " + testPropertyValue);
-        System.setProperty(testPropertyKey, testPropertyValue);
+        log.display("Setting property " + TEST_PROPERTY_KEY + " = " + TEST_PROPERTY_VALUE);
+        System.setProperty(TEST_PROPERTY_KEY, TEST_PROPERTY_VALUE);
     }
 
     protected void targetApplicationActions() {
         String signal = pipe.readln();
-        log.display("Received signal: "  + signal);
-        if (!signal.equals(VirtualMachine04.SIGNAL_CHANGE_PROPERTY))
+        log.display("Received signal: " + signal);
+        if (!signal.equals(VirtualMachine04.SIGNAL_CHANGE_PROPERTY)) {
             throw new TestBug("Received unexpected signal: " + signal);
+        }
 
-        log.display("Setting property " + testPropertyKey + " = " + changedTestPropertyValue);
-        System.setProperty(testPropertyKey, changedTestPropertyValue);
+        log.display("Setting property " + TEST_PROPERTY_KEY + " = " + CHANGED_TEST_PROPERTY_VALUE);
+        System.setProperty(TEST_PROPERTY_KEY, CHANGED_TEST_PROPERTY_VALUE);
 
         log.display("Sending signal " + VirtualMachine04.SIGNAL_PROPERTY_CHANGED);
         pipe.println(VirtualMachine04.SIGNAL_PROPERTY_CHANGED);
