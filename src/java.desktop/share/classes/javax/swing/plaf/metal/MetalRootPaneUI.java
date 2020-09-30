@@ -485,7 +485,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
             }
 
             return new Dimension(Math.max(Math.max(cpWidth, mbWidth), tpWidth) + i.left + i.right,
-                                 cpHeight + mbHeight + tpWidth + i.top + i.bottom);
+                                 cpHeight + mbHeight + tpHeight + i.top + i.bottom);
         }
 
         /**
@@ -536,7 +536,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
             }
 
             return new Dimension(Math.max(Math.max(cpWidth, mbWidth), tpWidth) + i.left + i.right,
-                                 cpHeight + mbHeight + tpWidth + i.top + i.bottom);
+                                 cpHeight + mbHeight + tpHeight + i.top + i.bottom);
         }
 
         /**
