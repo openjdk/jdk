@@ -55,6 +55,8 @@ AR		= ar
 ifeq		($(OS),Linux)
 ifneq           ($(MINGW),)
 LIB_EXT		= .dll
+ARC_EXT		= .lib
+ARC_PRE		=
 CPPFLAGS += -I$(TARGET_DIR)/include
 LDFLAGS += -L$(TARGET_DIR)/lib
 OS=windows
@@ -64,6 +66,7 @@ else
 ARCH=i386
 endif
 CC 		= $(MINGW)-gcc
+CXX 	= $(MINGW)-g++
 CONFIGURE_ARGS= --host=$(MINGW) --target=$(MINGW)
 else   #linux
 CPU             = $(shell uname -m)
@@ -84,7 +87,10 @@ CFLAGS		+= $(CFLAGS/$(ARCH))
 CFLAGS		+= -fPIC
 OS		= linux
 LIB_EXT		= .so
+ARC_EXT		= .a
+ARC_PRE		= lib
 CC 		= gcc
+CXX 	= g++
 endif
 CFLAGS		+= -O
 DLDFLAGS	+= -shared
@@ -96,12 +102,15 @@ ifeq		($(OS),AIX)
 OS              = aix
 ARCH            = ppc64
 CC              = xlc_r
+CXX             = xlc_r
 CFLAGS          += -DAIX -g -qpic=large -q64
 CFLAGS/ppc64    += -q64
 AR              = ar -X64
 DLDFLAGS        += -qmkshrobj -lz
 OUTFLAGS        += -o $@
 LIB_EXT		= .so
+ARC_EXT		= .a
+ARC_PRE		= lib
 else
 ## OS = Darwin ##
 ifeq ($(OS),Darwin)
@@ -118,7 +127,10 @@ CFLAGS          += $(CFLAGS/$(ARCH))
 CFLAGS          += -fPIC
 OS              = macosx
 LIB_EXT         = .dylib
+ARC_EXT			= .a
+ARC_PRE			= lib
 CC              = gcc
+CXX             = g++
 CFLAGS          += -O
 # CFLAGS        += -DZ_PREFIX
 DLDFLAGS        += -shared
@@ -129,12 +141,15 @@ else
 ## OS = Windows ##
 OS		= windows
 CC		= gcc
+CXX		= g++
 CFLAGS		+=  /nologo /MD /W3 /WX /O2 /Fo$(@:.dll=.obj) /Gi-
 CFLAGS		+= LIBARCH=\"$(LIBARCH)\"
 DLDFLAGS	+= /dll /subsystem:windows /incremental:no \
 			/export:decode_instruction
 OUTFLAGS	+= /link /out:$@
 LIB_EXT		= .dll
+ARC_EXT		= .lib
+ARC_PRE		=
 endif   # Darwin
 endif   # AIX
 endif	# Linux
@@ -150,6 +165,7 @@ endif   # LP64
 
 JDKARCH=$(LIBARCH:i386=i586)
 
+ifeq ($(LLVM),)
 ifeq            ($(BINUTILS),)
 # Pop all the way out of the workspace to look for binutils.
 # ...You probably want to override this setting.
@@ -159,16 +175,45 @@ BINUTILSDIR	= $(shell cd $(BINUTILS);pwd)
 endif
 
 CPPFLAGS	+= -I$(BINUTILSDIR)/include -I$(BINUTILSDIR)/bfd -I$(TARGET_DIR)/bfd
-CPPFLAGS	+= -DLIBARCH_$(LIBARCH) -DLIBARCH=\"$(LIBARCH)\" -DLIB_EXT=\"$(LIB_EXT)\"
+else
+# LLVM
+LLVMDIR		= $(shell cd $(LLVM);pwd)
+
+CFLAGS		+= -DLLVM=1
+CPPFLAGS	+= -I$(LLVMDIR)/include
+endif
+
+CPPFLAGS	+= -DLIBOS_$(OS) -DLIBOS=\"$(OS)\" -DLIBARCH_$(LIBARCH) -DLIBARCH=\"$(LIBARCH)\" -DLIB_EXT=\"$(LIB_EXT)\"
 
 TARGET_DIR	= build/$(OS)-$(JDKARCH)
 TARGET		= $(TARGET_DIR)/hsdis-$(LIBARCH)$(LIB_EXT)
 
-SOURCE		= hsdis.c
+SOURCE		= hsdis.cpp
 
+ifeq ($(LLVM),)
 LIBRARIES =	$(TARGET_DIR)/bfd/libbfd.a \
 		$(TARGET_DIR)/opcodes/libopcodes.a \
 		$(TARGET_DIR)/libiberty/libiberty.a
+else
+LIBRARIES/amd64 = LLVMX86Disassembler LLVMX86AsmParser LLVMX86CodeGen LLVMCFGuard LLVMGlobalISel LLVMSelectionDAG \
+	LLVMAsmPrinter LLVMDebugInfoDWARF LLVMCodeGen LLVMTarget LLVMScalarOpts LLVMInstCombine LLVMAggressiveInstCombine \
+	LLVMTransformUtils LLVMBitWriter LLVMAnalysis LLVMProfileData LLVMX86Desc LLVMObject LLVMTextAPI LLVMMCParser \
+	LLVMBitReader LLVMCore LLVMRemarks LLVMBitstreamReader LLVMMCDisassembler LLVMMC LLVMDebugInfoCodeView \
+	LLVMDebugInfoMSF LLVMBinaryFormat LLVMX86Utils LLVMX86Info LLVMSupport LLVMDemangle
+
+LIBRARIES/aarch64 = LLVMAArch64Disassembler LLVMMCDisassembler LLVMAArch64CodeGen LLVMCFGuard LLVMGlobalISel \
+	LLVMSelectionDAG LLVMAsmPrinter LLVMDebugInfoDWARF LLVMCodeGen LLVMTarget LLVMScalarOpts LLVMInstCombine \
+	LLVMAggressiveInstCombine LLVMTransformUtils LLVMBitWriter LLVMAnalysis LLVMProfileData LLVMObject \
+	LLVMTextAPI LLVMBitReader LLVMCore LLVMRemarks LLVMBitstreamReader LLVMAArch64AsmParser LLVMMCParser \
+	LLVMAArch64Desc LLVMMC LLVMDebugInfoCodeView LLVMDebugInfoMSF LLVMBinaryFormat LLVMAArch64Utils LLVMAArch64Info \
+	LLVMSupport LLVMDemangle
+
+ifeq ($(LIBRARIES/$(ARCH)),)
+$(error "unknown LLVM libraries for ARCH=$(ARCH))
+endif
+
+LIBRARIES=$(addprefix $(LLVMDIR)/lib/,$(patsubst %,$(ARC_PRE)%$(ARC_EXT),$(LIBRARIES/$(ARCH))))
+endif
 
 ifneq ($(MINGW),)
 LIBRARIES +=	$(TARGET_DIR)/zlib/libz.a
@@ -188,14 +233,16 @@ both: all all64
 
 demo: $(TARGET) $(DEMO_TARGET)
 
+ifeq ($(LLVM),)
 $(LIBRARIES): $(TARGET_DIR) $(TARGET_DIR)/Makefile
 	if [ ! -f $@ ]; then cd $(TARGET_DIR); make all-opcodes; fi
 
 $(TARGET_DIR)/Makefile:
 	(cd $(TARGET_DIR); CC=$(CC) CFLAGS="$(CFLAGS)" AR="$(AR)" $(BINUTILSDIR)/configure --disable-nls $(CONFIGURE_ARGS))
+endif
 
 $(TARGET): $(SOURCE) $(LIBS) $(LIBRARIES) $(TARGET_DIR)
-	$(CC) $(OUTFLAGS) $(CPPFLAGS) $(CFLAGS) $(SOURCE) $(DLDFLAGS) $(LIBRARIES)
+	$(CXX) $(OUTFLAGS) $(CPPFLAGS) $(CFLAGS) $(SOURCE) $(DLDFLAGS) $(LIBRARIES)
 
 $(DEMO_TARGET): $(DEMO_SOURCE) $(TARGET) $(TARGET_DIR)
 	$(CC) $(OUTFLAGS) -DTARGET_DIR=\"$(TARGET_DIR)\" $(CPPFLAGS) -g $(CFLAGS/$(ARCH)) $(DEMO_SOURCE) $(LDFLAGS)
