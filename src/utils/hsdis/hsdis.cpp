@@ -75,12 +75,6 @@
 
 #include "hsdis.h"
 
-#ifndef bool
-#define bool int
-#define true 1
-#define false 0
-#endif /*bool*/
-
 /* short names for stuff in hsdis.h */
 typedef decode_instructions_event_callback_ftype  event_callback_t;
 typedef decode_instructions_printf_callback_ftype printf_callback_t;
