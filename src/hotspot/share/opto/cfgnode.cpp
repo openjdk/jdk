@@ -821,6 +821,7 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
              cmp2->Opcode() == Op_CmpP || cmp2->Opcode() == Op_CmpN ||
              cmp1->is_SubTypeCheck() || cmp2->is_SubTypeCheck()) {
     // Floats and pointers don't exactly obey trichotomy. To be on the safe side, don't transform their tests.
+    // SubTypeCheck is not commutative
     return false;
   } else if (cmp1 != cmp2) {
     if (cmp1->in(1) == cmp2->in(2) &&
