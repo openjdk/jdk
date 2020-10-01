@@ -25,8 +25,8 @@ import jdk.test.lib.util.JarUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,7 +41,8 @@ import java.util.jar.JarFile;
  * @run testng LargeManifestOOMTest
  */
 public class LargeManifestOOMTest {
-
+    // file will be created with size greater than Integer.MAX_VALUE
+    private static final long MANIFEST_FILE_SIZE = Integer.MAX_VALUE + 1024L;
 
     /**
      * Creates a jar which has a large manifest file and then uses the {@link JarFile} to
@@ -55,30 +56,23 @@ public class LargeManifestOOMTest {
         final Path jarFilePath = Paths.get("oom-test.jar");
         JarUtils.createJarFile(jarFilePath.toAbsolutePath(), jarSourceRoot);
         final JarFile jar = new JarFile(jarFilePath.toFile());
-        final OutOfMemoryError oome = Assert.expectThrows(OutOfMemoryError.class, () -> jar.getManifest());
-        // additionally verify that the OOM was for the right/expected reason
-        if (!"Required array size too large".equals(oome.getMessage())) {
-            Assert.fail("Unexpected OutOfMemoryError", oome);
-        }
+        Assert.assertThrows(OutOfMemoryError.class, () -> jar.getManifest());
     }
 
     /**
-     * Creates a {@code MANIFEST.MF}, whose content is 2GB in size, in the {@code parentDir}
+     * Creates a {@code MANIFEST.MF}, whose content is {@link #MANIFEST_FILE_SIZE} in size,
+     * in the {@code parentDir}
      *
      * @param parentDir The directory in which the MANIFEST.MF file will be created
      */
     private static void createLargeManifest(final Path parentDir) throws IOException {
         Files.createDirectories(parentDir.toAbsolutePath());
         final Path manifestFile = parentDir.resolve("MANIFEST.MF");
-        try (final BufferedWriter bw = Files.newBufferedWriter(manifestFile)) {
-            bw.write("Manifest-Version: 1.0");
-            bw.newLine();
-            bw.write("OOM-Test: ");
-            for (long i = 0; i < 2147483648L; i++) {
-                bw.write("a");
-            }
-            bw.newLine();
+        try (final RandomAccessFile largeManifest = new RandomAccessFile(manifestFile.toFile(), "rw")) {
+            largeManifest.writeUTF("Manifest-Version: 1.0\n");
+            largeManifest.writeUTF("OOM-Test: a\n");
+            largeManifest.setLength(MANIFEST_FILE_SIZE);
         }
+        System.out.println("Size of file " + manifestFile + " is " + manifestFile.toFile().length());
     }
-
 }
