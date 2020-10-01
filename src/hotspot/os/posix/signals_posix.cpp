@@ -439,7 +439,7 @@ bool PosixSignals::chained_handler(int sig, siginfo_t* siginfo, void* context) {
 // handlers, unless invoked with the option "-XX:+AllowUserSignalHandlers".
 //
 
-#if defined(__APPLE__)
+#if defined(BSD)
 extern "C" JNIEXPORT int JVM_handle_bsd_signal(int signo, siginfo_t* siginfo,
                                                void* ucontext,
                                                int abort_if_unrecognized);
@@ -452,6 +452,8 @@ extern "C" JNIEXPORT int JVM_handle_linux_signal(int signo, siginfo_t* siginfo,
                                                void* ucontext,
                                                int abort_if_unrecognized);
 #endif
+
+#if defined(AIX)
 
 // Set thread signal mask (for some reason on AIX sigthreadmask() seems
 // to be the thing to call; documentation is not terribly clear about whether
@@ -478,6 +480,8 @@ bool unblock_program_error_signals() {
   return set_thread_signal_mask(SIG_UNBLOCK, &set, NULL);
 }
 
+#endif
+
 // Renamed from 'signalHandler' to avoid collision with other shared libs.
 static void javaSignalHandler(int sig, siginfo_t* info, void* uc) {
   assert(info != NULL && uc != NULL, "it must be old kernel");
@@ -491,7 +495,7 @@ static void javaSignalHandler(int sig, siginfo_t* info, void* uc) {
 #endif
 
   int orig_errno = errno;  // Preserve errno value over signal handler.
-#if defined(__APPLE__)
+#if defined(BSD)
   JVM_handle_bsd_signal(sig, info, uc, true);
 #elif defined(AIX)
   JVM_handle_aix_signal(sig, info, uc, true);
@@ -568,7 +572,6 @@ static const char* describe_sa_flags(int flags, char* buffer, size_t size) {
     { SA_NOCLDWAIT, "SA_NOCLDWAIT" },
     { SA_NODEFER,   "SA_NODEFER"   },
 #if defined(AIX)
-    { SA_ONSTACK,   "SA_ONSTACK"   },
     { SA_OLDSTYLE,  "SA_OLDSTYLE"  },
 #endif
     { 0, NULL }

@@ -229,7 +229,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
   if (PosixSignals::are_signal_handlers_installed()) {
     if (t != NULL) {
       if(t->is_Java_thread()) {
-        thread = (JavaThread*)t;
+        thread = t->as_Java_thread();
       }
       else if(t->is_VM_thread()) {
         vmthread = (VMThread *)t;
