@@ -208,7 +208,11 @@ public class DerInputStream {
     }
 
     public DerValue[] getSet(int startLen, boolean implicit) throws IOException {
-        return getDerValue().subs((byte)0, startLen);
+        if (implicit) {
+            return getDerValue().subs((byte) 0, startLen);
+        } else {
+            return getSet(startLen);
+        }
     }
 
     public int peekByte() throws IOException {
@@ -239,13 +243,12 @@ public class DerInputStream {
         tmp = lenByte;
         if ((tmp & 0x080) == 0x00) { // short form, 1 byte datum
             value = tmp;
-        } else {                     // long form or indefinite
+        } else {                     // long form
             tmp &= 0x07f;
 
             // tmp > 4 indicates more than 4Gb of data.
-            if (tmp < 0 || tmp > 4) {
-                throw new IOException(mdName + "lengthTag=" + tmp + ", "
-                        + ((tmp < 0) ? "incorrect DER encoding." : "too big."));
+            if (tmp > 4) {
+                throw new IOException(mdName + "lengthTag=" + tmp + ", too big.");
             }
 
             value = 0x0ff & in.read();

@@ -348,7 +348,7 @@ public class DerValue {
             length = lenByte;
         } else {                     // long form
             lenByte &= 0x07f;
-            if (lenByte < 0 || lenByte > 4) {
+            if (lenByte > 4) {
                 throw new IOException("Invalid lenByte");
             }
             if (len < 2 + lenByte) {
@@ -455,11 +455,7 @@ public class DerValue {
     }
 
     /**
-     * Returns the data field inside this class. This method should be
-     * avoided because the data field is mutable but every call always
-     * return the same object. The caller had better directly use the
-     * data field. A better way is to call data() that will always return
-     * a new DerInputStream that points to the beginning of the content.
+     * Returns the data field inside this class directly.
      *
      * Both this method and the {@link #data} field should be avoided.
      * Consider using {@link #data()} instead.
@@ -825,7 +821,7 @@ public class DerValue {
          */
 
         int year, month, day, hour, minute, second, millis;
-        String type = null;
+        String type;
         int pos = start;
         int len = end - start;
 
@@ -896,15 +892,9 @@ public class DerValue {
                     }
                     pos++;
                     switch (precision) {
-                        case 1:
-                            millis += 100 * thisDigit;
-                            break;
-                        case 2:
-                            millis += 10 * thisDigit;
-                            break;
-                        case 3:
-                            millis += thisDigit;
-                            break;
+                        case 1 -> millis += 100 * thisDigit;
+                        case 2 -> millis += 10 * thisDigit;
+                        case 3 -> millis += thisDigit;
                     }
                 }
                 if (precision == 0) {
@@ -1212,6 +1202,6 @@ public class DerValue {
         while (dis.available() > 0) {
             result.add(dis.getDerValue());
         }
-        return result.toArray(new DerValue[result.size()]);
+        return result.toArray(new DerValue[0]);
     }
 }
