@@ -49,7 +49,7 @@ ClassUnload(jvmtiEnv* jvmti_env, ...) {
     jni_env = va_arg(ap, JNIEnv *);
     const char * name = va_arg(ap, const char *);
     va_end(ap);
-    
+
     // The name argument should never be null
     if (name == NULL) {
         nsk_jvmti_setFailStatus();
