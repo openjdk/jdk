@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import com.sun.source.doctree.SerialFieldTree;
-import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;

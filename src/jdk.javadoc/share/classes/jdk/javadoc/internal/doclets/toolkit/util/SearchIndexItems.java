@@ -23,10 +23,9 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html;
+package jdk.javadoc.internal.doclets.toolkit.util;
 
-import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem.Category;
 
 import java.util.Comparator;
 import java.util.HashMap;

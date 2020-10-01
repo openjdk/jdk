@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.Set;
 import java.util.TreeSet;
 
-import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -41,6 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem.Category;
 
 
 /**

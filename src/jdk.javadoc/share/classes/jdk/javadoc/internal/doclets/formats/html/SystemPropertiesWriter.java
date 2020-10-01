@@ -24,7 +24,6 @@
  */
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
@@ -40,6 +39,8 @@ import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem;
+import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem.Category;
 
 import javax.lang.model.element.Element;
 import java.nio.file.Path;

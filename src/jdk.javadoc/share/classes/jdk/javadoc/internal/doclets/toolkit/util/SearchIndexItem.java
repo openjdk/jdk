@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html;
+package jdk.javadoc.internal.doclets.toolkit.util;
 
 import javax.lang.model.element.Element;
 
@@ -37,7 +37,7 @@ import javax.lang.model.element.Element;
  */
 public class SearchIndexItem {
 
-    enum Category {
+    public enum Category {
         MODULES,
         PACKAGES,
         TYPES,
@@ -110,7 +110,7 @@ public class SearchIndexItem {
         return description;
     }
 
-    protected Category getCategory() {
+    public Category getCategory() {
         return category;
     }
 

@@ -41,7 +41,6 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.SystemPropertyTree;
-import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -59,6 +58,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
+import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem;
+import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem.Category;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**

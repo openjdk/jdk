@@ -42,7 +42,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
+
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -56,6 +56,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
+import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem;
+import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem.Category;
 
 /**
  * Generate Index for all the Member Names with Indexing in
