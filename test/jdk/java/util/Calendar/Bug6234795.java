@@ -26,7 +26,7 @@
  * @bug 6234795
  * @summary Rolling of HOUR or HOUR_OF_SET must set the other hour field.
  */
-
+// Importing calendar likes Gregorian calendar,scanner etc.
 import java.util.GregorianCalendar;
 import static java.util.Calendar.AM;
 import static java.util.Calendar.AM_PM;
