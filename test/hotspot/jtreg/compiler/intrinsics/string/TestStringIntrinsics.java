@@ -275,15 +275,16 @@ public class TestStringIntrinsics {
         Object actualResult = m.invoke(null, args);
         if (!actualResult.equals(expectedResult)) {
             var nl = System.lineSeparator();
-            String message =
-                "Actual result of '" + m.getName() + "' is not equal to expected value." + nl +
-                "Expected: " + Format.asLiteral(expectedResult) + nl +
-                "Actual: " + Format.asLiteral(actualResult);
+            StringBuilder msgBuilder = new StringBuilder();
+            msgBuilder.append("Actual result of '" + m.getName() + "' is not equal to expected value." + nl);
+            msgBuilder.append("Expected: " + Format.asLiteral(expectedResult) + nl);
+            msgBuilder.append("Actual: " + Format.asLiteral(actualResult));
 
             for (int i = 0; i < args.length; i++) {
-                message += nl + "    Arg" + i + ": " + Format.asLiteral(args[i]);
+                msgBuilder.append(nl + "    Arg" + i + ": " + Format.asLiteral(args[i]));
             }
 
+            final String message = msgBuilder.toString();
             System.err.println(message);
             throw new RuntimeException(message);
         }

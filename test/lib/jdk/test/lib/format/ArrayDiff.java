@@ -124,40 +124,10 @@ public class ArrayDiff<E> implements Diff {
             throw new IllegalArgumentException("Both arguments should be arrays of the same type");
         }
 
-        var type = first.getClass().getComponentType();
-        if (type == byte.class) {
-            return new ArrayDiff<>(
-                    ArrayCodec.of((byte[])first),
-                    ArrayCodec.of((byte[])second),
-                    width, contextBefore);
-        } else if (type == int.class) {
-            return new ArrayDiff<>(
-                    ArrayCodec.of((int[])first),
-                    ArrayCodec.of((int[])second),
-                    width, contextBefore);
-        } else if (type == long.class) {
-            return new ArrayDiff<>(
-                    ArrayCodec.of((long[])first),
-                    ArrayCodec.of((long[])second),
-                    width, contextBefore);
-        } else if (type == char.class) {
-            return new ArrayDiff<>(
-                    ArrayCodec.of((char[])first),
-                    ArrayCodec.of((char[])second),
-                    width, contextBefore);
-        } else if (type == String.class) {
-            return new ArrayDiff<>(
-                    ArrayCodec.of((String[])first),
-                    ArrayCodec.of((String[])second),
-                    width, contextBefore);
-        } else if (!type.isPrimitive() && !type.isArray()) {
-            return new ArrayDiff<>(
-                    ArrayCodec.of((Object[])first),
-                    ArrayCodec.of((Object[])second),
-                    width, contextBefore);
-        }
-
-        throw new IllegalArgumentException("Unsupported array component type: " + type);
+        return new ArrayDiff(
+                ArrayCodec.of(first),
+                ArrayCodec.of(second),
+                width, contextBefore);
     }
 
     /**
