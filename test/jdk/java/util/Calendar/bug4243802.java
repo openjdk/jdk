@@ -29,7 +29,7 @@
  * be protected methods.)
  * @library /java/text/testlib
  */
-
+//Importing scanner
 import java.util.*;
 
 public class bug4243802 extends IntlTest {
