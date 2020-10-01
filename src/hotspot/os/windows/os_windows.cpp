@@ -3086,7 +3086,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   char* aligned_base = NULL;
 
   do {
-    char* extra_base = os::reserve_memory_with_fd(extra_size, alignment, file_desc);
+    char* extra_base = os::reserve_memory_with_fd(extra_size, file_desc);
     if (extra_base == NULL) {
       return NULL;
     }
@@ -3106,8 +3106,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   return aligned_base;
 }
 
-char* os::pd_reserve_memory(size_t bytes, size_t alignment_hint) {
-  // Ignores alignment hint
+char* os::pd_reserve_memory(size_t bytes) {
   return pd_attempt_reserve_memory_at(NULL /* addr */, bytes);
 }
 
