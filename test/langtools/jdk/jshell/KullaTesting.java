@@ -82,6 +82,7 @@ import static java.util.stream.Collectors.toSet;
 import static jdk.jshell.Snippet.Status.*;
 import static org.testng.Assert.*;
 import static jdk.jshell.Snippet.SubKind.METHOD_SUBKIND;
+import jdk.jshell.SourceCodeAnalysis.CompletionContext;
 import jdk.jshell.SourceCodeAnalysis.Documentation;
 
 public class KullaTesting {
@@ -984,6 +985,16 @@ public class KullaTesting {
                                           .collect(Collectors.toSet());
         Set<String> expectedSet = Stream.of(expected).collect(Collectors.toSet());
         assertEquals(docSet, expectedSet, "Input: " + code);
+    }
+
+    public void assertDocumentationURL(String code, CompletionContext context, String... expected) {
+        int cursor =  code.indexOf('|');
+        code = code.replace("|", "");
+        assertTrue(cursor > -1, "'|' expected, but not found in: " + code);
+        List<Documentation> documentation = getAnalysis().documentation(code, cursor, context, false);
+        Set<String> urlSet = documentation.stream().map(doc -> doc.url().toString()).collect(Collectors.toSet());
+        Set<String> expectedSet = Stream.of(expected).collect(Collectors.toSet());
+        assertEquals(urlSet, expectedSet, "Input: " + code);
     }
 
     public enum ClassType {

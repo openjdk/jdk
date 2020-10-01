@@ -28,7 +28,8 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- *          jdk.jshell/jdk.internal.jshell.tool
+ *          jdk.jshell/jdk.internal.jshell.tool:+open
+ *          jdk.jshell/jdk.jshell:open
  * @library /tools/lib
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build ReplToolTesting TestingInputStream Compiler
@@ -36,6 +37,8 @@
  */
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -134,7 +137,7 @@ public class CommandCompletionTest extends ReplToolTesting {
     @Test
     public void testDrop() {
         test(false, new String[] {"--no-startup"},
-                a -> assertCompletion(a, "/d|", false, "/drop "),
+                a -> assertCompletion(a, "/d|", false, "/doc ", "/drop "),
                 a -> assertClass(a, "class cTest {}", "class", "cTest"),
                 a -> assertMethod(a, "int mTest() { return 0; }", "()I", "mTest"),
                 a -> assertVariable(a, "int", "fTest"),
@@ -166,14 +169,14 @@ public class CommandCompletionTest extends ReplToolTesting {
     public void testHelp() {
         testNoStartUp(
                 a -> assertCompletion(a, "/help |", false,
-                "/! ", "/-<n> ", "/<id> ", "/? ", "/drop ",
+                "/! ", "/-<n> ", "/<id> ", "/? ", "/doc ", "/drop ",
                 "/edit ", "/env ", "/exit ",
                 "/help ", "/history ", "/imports ",
                 "/list ", "/methods ", "/open ", "/reload ", "/reset ",
                 "/save ", "/set ", "/types ", "/vars ", "context ",
                 "id ", "intro ", "keys ", "rerun ", "shortcuts "),
                 a -> assertCompletion(a, "/? |", false,
-                "/! ", "/-<n> ", "/<id> ", "/? ", "/drop ",
+                "/! ", "/-<n> ", "/<id> ", "/? ", "/doc ", "/drop ",
                 "/edit ", "/env ", "/exit ",
                 "/help ", "/history ", "/imports ",
                 "/list ", "/methods ", "/open ", "/reload ", "/reset ",
@@ -182,9 +185,9 @@ public class CommandCompletionTest extends ReplToolTesting {
                 a -> assertCompletion(a, "/help /s|", false,
                 "/save ", "/set "),
                 a -> assertCompletion(a, "/help /set |", false,
-                "editor", "feedback", "format", "indent", "mode", "prompt", "start", "truncation"),
+                "browser", "editor", "feedback", "format", "indent", "mode", "prompt", "start", "truncation"),
                 a -> assertCompletion(a, "/help set |", false,
-                "editor", "feedback", "format", "indent", "mode", "prompt", "start", "truncation"),
+                "browser", "editor", "feedback", "format", "indent", "mode", "prompt", "start", "truncation"),
                 a -> assertCompletion(a, "/help /edit |", false),
                 a -> assertCompletion(a, "/help dr|", false,
                 "drop ")
@@ -354,7 +357,11 @@ public class CommandCompletionTest extends ReplToolTesting {
         String[] modesWithOptions = Stream.concat(Arrays.stream(options), Arrays.stream(modes)).sorted().toArray(String[]::new);
         test(false, new String[] {"--no-startup"},
                 a -> assertCompletion(a, "/se|", false, "/set "),
-                a -> assertCompletion(a, "/set |", false, "editor ", "feedback ", "format ", "indent ", "mode ", "prompt ", "start ", "truncation "),
+                a -> assertCompletion(a, "/set |", false, "browser ", "editor ", "feedback ", "format ", "indent ", "mode ", "prompt ", "start ", "truncation "),
+
+                // /set editor
+                a -> assertCompletion(a, "/set b|", false, "browser "),
+                a -> assertCompletion(a, "/set browser |", false, p1.toArray(new String[p1.size()])),
 
                 // /set editor
                 a -> assertCompletion(a, "/set e|", false, "editor "),
@@ -387,6 +394,24 @@ public class CommandCompletionTest extends ReplToolTesting {
                 // /set truncation
                 a -> assertCompletion(a, "/set tr|", false, "truncation "),
                 a -> assertCompletion(a, "/set tr |", false, modes)
+        );
+    }
+
+    @Test
+    public void testDoc() throws IOException {
+        test(false, new String[]{"--no-startup"},
+                a -> assertCompletion(a, "/do|", false, "/doc "),
+                a -> {
+                    if (!a) {
+                        setCommandInput("\n");
+                    } else {
+                                waitIndexingFinished();
+                    }
+                },
+                a -> assertCompletion(a, "/doc java.la|", true, "lang."),
+                a -> assertCompletion(a, "/doc java.lang.Byt|", true, "Byte"),
+                a -> assertCompletion(a, "/doc java.lang.Byte.valu|", true, "valueOf"),
+                a -> assertCompletion(a, "/doc java.lang.Byte.MIN|", true, "MIN_VALUE")
         );
     }
 
@@ -424,4 +449,19 @@ public class CommandCompletionTest extends ReplToolTesting {
                             .filter(p -> Files.exists(p))
                             .collect(Collectors.toList());
     }
+
+    protected void waitIndexingFinished() {
+        try {
+            Field analysisField = JShellTool.class.getDeclaredField("analysis");
+            analysisField.setAccessible(true);
+            Object analysis = analysisField.get(repl);
+            Method waitBackgroundTaskFinished = analysis.getClass().getDeclaredMethod("waitBackgroundTaskFinished");
+
+            waitBackgroundTaskFinished.setAccessible(true);
+            waitBackgroundTaskFinished.invoke(analysis);
+        } catch (Exception ex) {
+            throw new AssertionError("Cannot wait for indexing end.", ex);
+        }
+    }
+
 }

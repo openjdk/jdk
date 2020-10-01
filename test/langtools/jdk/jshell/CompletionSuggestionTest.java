@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -55,6 +56,8 @@ import org.testng.annotations.Test;
 
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
+import jdk.jshell.SourceCodeAnalysis;
+import jdk.jshell.SourceCodeAnalysis.CompletionContext;
 
 @Test
 public class CompletionSuggestionTest extends KullaTesting {
@@ -719,6 +722,11 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("String s = m8(x -> {x.tri|", "trim()");
     }
 
+    public void testDocURL() {
+        assertDocumentationURL("java.lang.String|", CompletionContext.LOOKUP, "http://documentation/java.base/java/lang/String.html");
+        assertDocumentationURL("java.lang.String.charAt|", CompletionContext.LOOKUP, "http://documentation/java.base/java/lang/String.html#charAt(int)");
+    }
+
     @BeforeMethod
     public void setUp() {
         super.setUp();
@@ -772,5 +780,16 @@ public class CompletionSuggestionTest extends KullaTesting {
 
         assertEval("import p.*;");
         assertCompletion("Broke|", "BrokenA", "BrokenC");
+    }
+
+    static {
+        try {
+            Class scai = Class.forName("jdk.jshell.SourceCodeAnalysisImpl");
+            Field baseDocumentation = scai.getDeclaredField("BASE_DOCUMENTATION_URL");
+            baseDocumentation.setAccessible(true);
+            baseDocumentation.set(null, (Supplier<String>) () -> "http://documentation/");
+        } catch (Throwable t) {
+            throw new AssertionError(t);
+        }
     }
 }

@@ -76,7 +76,9 @@ import javax.lang.model.type.TypeMirror;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_COMPA;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -99,6 +101,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -251,9 +256,14 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     @Override
     public List<Suggestion> completionSuggestions(String code, int cursor, int[] anchor) {
+        return completionSuggestions(code, cursor, CompletionContext.SNIPPET, anchor);
+    }
+
+    @Override
+    public List<Suggestion> completionSuggestions(String code, int cursor, CompletionContext context, int[] anchor) {
         suspendIndexing();
         try {
-            return completionSuggestionsImpl(code, cursor, anchor);
+            return completionSuggestionsImpl(code, cursor, context, anchor);
         } catch (Throwable exc) {
             proc.debug(exc, "Exception thrown in SourceCodeAnalysisImpl.completionSuggestions");
             return Collections.emptyList();
@@ -262,7 +272,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
-    private List<Suggestion> completionSuggestionsImpl(String code, int cursor, int[] anchor) {
+    private List<Suggestion> completionSuggestionsImpl(String code, int cursor, CompletionContext context, int[] anchor) {
         code = code.substring(0, cursor);
         Matcher m = JAVA_IDENTIFIER.matcher(code);
         String identifier = "";
@@ -291,13 +301,13 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 break;
         }
         String requiredPrefix = identifier;
-        return computeSuggestions(codeWrap, cursor, anchor).stream()
+        return computeSuggestions(codeWrap, cursor, context, anchor).stream()
                 .filter(s -> s.continuation().startsWith(requiredPrefix) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
                 .sorted(Comparator.comparing(Suggestion::continuation))
                 .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 
-    private List<Suggestion> computeSuggestions(OuterWrap code, int cursor, int[] anchor) {
+    private List<Suggestion> computeSuggestions(OuterWrap code, int cursor, CompletionContext context, int[] anchor) {
         return proc.taskFactory.analyze(code, at -> {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
@@ -386,7 +396,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             break;
                         TreePath exprPath = new TreePath(tp, expression);
                         TypeMirror site = at.trees().getTypeMirror(exprPath);
-                        boolean staticOnly = isStaticContext(at, exprPath);
+                        boolean staticOnly = isStaticContext(at, context, exprPath);
                         ImportTree it = findImport(tp);
                         boolean isImport = it != null;
 
@@ -417,7 +427,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             filter = filter.and(IS_CONSTRUCTOR.negate());
                         }
 
-                        filter = filter.and(staticOnly ? STATIC_ONLY : INSTANCE_ONLY);
+                        if (context == CompletionContext.SNIPPET) {
+                            filter = filter.and(staticOnly ? STATIC_ONLY : INSTANCE_ONLY);
+                        } else {
+                            paren = NO_PAREN;
+                        }
 
                         addElements(members, filter, smartFilter, paren, result);
                         break;
@@ -607,7 +621,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return proc.maps.getDependents(snippet);
     }
 
-    private boolean isStaticContext(AnalyzeTask at, TreePath path) {
+    private boolean isStaticContext(AnalyzeTask at, CompletionContext context, TreePath path) {
+        if (context == CompletionContext.LOOKUP) {
+            //non-static methods OK in lookup:
+            return false;
+        }
         switch (path.getLeaf().getKind()) {
             case ARRAY_TYPE:
             case PRIMITIVE_TYPE:
@@ -1028,7 +1046,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 if (actuals == null)
                     return null;
 
-                Iterable<Pair<ExecutableElement, ExecutableType>> candidateMethods = methodCandidates(at, forPath.getParentPath());
+                Iterable<Pair<ExecutableElement, ExecutableType>> candidateMethods = methodCandidates(at, CompletionContext.SNIPPET, new TreePath(forPath.getParentPath(), mit.getMethodSelect()));
 
                 return computeSmartTypesForExecutableType(at, candidateMethods, actuals);
             }
@@ -1120,16 +1138,16 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         addElements(scopeContent(at, scope, elementConvertor), filter, smartFilter, result);
     }
 
-    private Iterable<Pair<ExecutableElement, ExecutableType>> methodCandidates(AnalyzeTask at, TreePath invocation) {
-        MethodInvocationTree mit = (MethodInvocationTree) invocation.getLeaf();
-        ExpressionTree select = mit.getMethodSelect();
+    private Iterable<Pair<ExecutableElement, ExecutableType>> methodCandidates(AnalyzeTask at, CompletionContext context, TreePath selectPath) {
+//        MethodInvocationTree mit = (MethodInvocationTree) invocation.getLeaf();
+        ExpressionTree select = (ExpressionTree) selectPath.getLeaf();
         List<Pair<ExecutableElement, ExecutableType>> result = new ArrayList<>();
-        Predicate<Element> accessibility = createAccessibilityFilter(at, invocation);
+        Predicate<Element> accessibility = createAccessibilityFilter(at, selectPath);
 
         switch (select.getKind()) {
             case MEMBER_SELECT:
                 MemberSelectTree mst = (MemberSelectTree) select;
-                TreePath tp = new TreePath(new TreePath(invocation, select), mst.getExpression());
+                TreePath tp = new TreePath(new TreePath(selectPath, select), mst.getExpression());
                 TypeMirror site = at.trees().getTypeMirror(tp);
 
                 if (site == null || site.getKind() != TypeKind.DECLARED)
@@ -1140,7 +1158,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 if (siteEl == null)
                     break;
 
-                if (isStaticContext(at, tp)) {
+                if (isStaticContext(at, context, tp)) {
                     accessibility = accessibility.and(STATIC_ONLY);
                 }
 
@@ -1154,7 +1172,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 break;
             case IDENTIFIER:
                 IdentifierTree it = (IdentifierTree) select;
-                for (ExecutableElement ee : ElementFilter.methodsIn(scopeContent(at, at.trees().getScope(invocation), IDENTITY))) {
+                for (ExecutableElement ee : ElementFilter.methodsIn(scopeContent(at, at.trees().getScope(selectPath), IDENTITY))) {
                     if (ee.getSimpleName().contentEquals(it.getName())) {
                         if (accessibility.test(ee)) {
                             result.add(Pair.of(ee, (ExecutableType) ee.asType())); //XXX: proper site
@@ -1203,10 +1221,15 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     @Override
-    public List<Documentation> documentation(String code, int cursor, boolean computeJavadoc) {
+    public List<Documentation> documentation(String input, int cursor, boolean computeJavadoc) {
+        return documentation(input, cursor, CompletionContext.SNIPPET, computeJavadoc);
+    }
+
+    @Override
+    public List<Documentation> documentation(String code, int cursor, CompletionContext context, boolean computeJavadoc) {
         suspendIndexing();
         try {
-            return documentationImpl(code, cursor, computeJavadoc);
+            return documentationImpl(code, cursor, context, computeJavadoc);
         } catch (Throwable exc) {
             proc.debug(exc, "Exception thrown in SourceCodeAnalysisImpl.documentation");
             return Collections.emptyList();
@@ -1221,7 +1244,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         "-parameters"
     };
 
-    private List<Documentation> documentationImpl(String code, int cursor, boolean computeJavadoc) {
+    private List<Documentation> documentationImpl(String code, int cursor, CompletionContext context, boolean computeJavadoc) {
         code = code.substring(0, cursor);
         if (code.trim().isEmpty()) { //TODO: comment handling
             code += ";";
@@ -1251,13 +1274,13 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 return Collections.emptyList();
 
             Stream<Element> elements;
-            Iterable<Pair<ExecutableElement, ExecutableType>> candidates;
             List<? extends ExpressionTree> arguments;
 
             if (tp.getLeaf().getKind() == Kind.METHOD_INVOCATION || tp.getLeaf().getKind() == Kind.NEW_CLASS) {
+                Iterable<Pair<ExecutableElement, ExecutableType>> candidates;
                 if (tp.getLeaf().getKind() == Kind.METHOD_INVOCATION) {
                     MethodInvocationTree mit = (MethodInvocationTree) tp.getLeaf();
-                    candidates = methodCandidates(at, tp);
+                    candidates = methodCandidates(at, context, new TreePath(tp, mit.getMethodSelect()));
                     arguments = mit.getArguments();
                 } else {
                     NewClassTree nct = (NewClassTree) tp.getLeaf();
@@ -1284,17 +1307,21 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     el.asType().getKind() == TypeKind.ERROR ||
                     (el.getKind() == ElementKind.PACKAGE && el.getEnclosedElements().isEmpty())) {
                     //erroneous element:
-                    return Collections.emptyList();
+                    if (context == CompletionContext.SNIPPET) {
+                        return Collections.emptyList();
+                    } else {
+                        elements = Util.stream(methodCandidates(at, context, tp)).map(method -> method.fst);
+                    }
+                } else {
+                    Predicate<Element> accessibility = createAccessibilityFilter(at, tp);
+
+                    if (!accessibility.test(el)) {
+                        //not accessible
+                        return Collections.emptyList();
+                    }
+
+                    elements = Stream.of(el);
                 }
-
-                Predicate<Element> accessibility = createAccessibilityFilter(at, tp);
-
-                if (!accessibility.test(el)) {
-                    //not accessible
-                    return Collections.emptyList();
-                }
-
-                elements = Stream.of(el);
             } else {
                 return Collections.emptyList();
             }
@@ -1326,7 +1353,30 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             proc.debug(ex, "SourceCodeAnalysisImpl.element2String(..., " + el + ")");
         }
         String signature = Util.expunge(elementHeader(at, el, !hasSyntheticParameterNames(el), true));
-        return new DocumentationImpl(signature,  javadoc);
+        String moduleName = at.getElements().getModuleOf(el).getQualifiedName().toString(); //XXX - unnamed module
+        String typeName;
+        String anchor;
+        if (el.getKind().isClass() || el.getKind().isInterface()) {
+            typeName = ((QualifiedNameable) el).getQualifiedName().toString();
+            anchor = null;
+        } else {
+            typeName = ((QualifiedNameable) el.getEnclosingElement()).getQualifiedName().toString();
+            anchor = switch (el.getKind()) {
+                case METHOD -> {
+                    yield el.getSimpleName() + "(" + ((ExecutableElement) el).getParameters().stream().map(p -> p.asType()).map(Object::toString).collect(Collectors.joining(",")) + ")";
+                }
+                default -> null;
+            };
+        }
+        URL url;
+        try {
+            String baseURL = BASE_DOCUMENTATION_URL.get();
+            url = new URL(baseURL + moduleName + "/" + typeName.replace(".", "/") + ".html" + (anchor != null ? "#" + anchor : ""));
+        } catch (MalformedURLException ex) {
+            //should not happen?????
+            url = null;
+        }
+        return new DocumentationImpl(signature,  javadoc, url);
     }
 
     public void close() {
@@ -1343,10 +1393,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
         private final String signature;
         private final String javadoc;
+        private final URL url;
 
-        public DocumentationImpl(String signature, String javadoc) {
+        public DocumentationImpl(String signature, String javadoc, URL url) {
             this.signature = signature;
             this.javadoc = javadoc;
+            this.url = url;
         }
 
         @Override
@@ -1357,6 +1409,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         @Override
         public String javadoc() {
             return javadoc;
+        }
+
+        @Override
+        public URL url() {
+            return url;
         }
 
     }
@@ -1956,4 +2013,15 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
+    private static Supplier<String> BASE_DOCUMENTATION_URL = () -> {
+        Runtime.Version version = Runtime.version();
+        String template;
+        //based on URLs hardcoded in javadoc:
+        if (version.pre().isPresent()) {
+            template = "https://download.java.net/java/early_access/jdk{0}/docs/api/";
+        } else {
+            template = "https://docs.oracle.com/en/java/javase/{0}/docs/api/";
+        }
+        return template.replace("{0}", String.valueOf(version.feature()));
+    };
 }

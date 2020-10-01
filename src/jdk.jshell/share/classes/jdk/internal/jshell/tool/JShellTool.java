@@ -40,7 +40,10 @@ import java.io.StringReader;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -120,6 +123,8 @@ import jdk.internal.editor.external.ExternalEditor;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.singletonList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Snippet.SubKind.TEMP_VAR_EXPRESSION_SUBKIND;
@@ -132,6 +137,7 @@ import static jdk.internal.jshell.debug.InternalDebugControl.DBG_FMGR;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_WRAP;
 import static jdk.internal.jshell.tool.ContinuousCompletionProvider.STARTSWITH_MATCHER;
+import jdk.jshell.SourceCodeAnalysis.CompletionContext;
 
 /**
  * Command line REPL tool for Java using the JShell API.
@@ -209,19 +215,15 @@ public class JShellTool implements MessageHandler {
     private JShell state = null;
     Subscription shutdownSubscription = null;
 
-    static final EditorSetting BUILT_IN_EDITOR = new EditorSetting(null, false);
-
     private boolean debug = false;
     private int debugFlags = 0;
     public boolean testPrompt = false;
     private Startup startup = null;
     private boolean isCurrentlyRunningStartup = false;
     private String executionControlSpec = null;
-    private EditorSetting editor = BUILT_IN_EDITOR;
+    private ToolSetting browser = ToolType.BROWSER.defaultTool;
+    private ToolSetting editor = ToolType.EDITOR.defaultTool;
     private int exitCode = 0;
-
-    private static final String[] EDITOR_ENV_VARS = new String[] {
-        "JSHELLEDITOR", "VISUAL", "EDITOR"};
 
     // Commands and snippets which can be replayed
     private ReplayableHistory replayableHistory;
@@ -229,6 +231,7 @@ public class JShellTool implements MessageHandler {
 
     static final String STARTUP_KEY  = "STARTUP";
     static final String EDITOR_KEY   = "EDITOR";
+    static final String BROWSER_KEY   = "BROWSER";
     static final String MODE_KEY     = "MODE";
     static final String MODE2_KEY     = "MODE2";
     static final String FEEDBACK_KEY = "FEEDBACK";
@@ -934,7 +937,8 @@ public class JShellTool implements MessageHandler {
             return exitCode;
         }
         startup = commandLineArgs.startup();
-        // initialize editor settings
+        // initialize browser and editor settings
+        configBrowser();
         configEditor();
         // initialize JShell instance
         try {
@@ -1004,22 +1008,30 @@ public class JShellTool implements MessageHandler {
         closeState();
         return exitCode;
     }
+    
+    private void configBrowser() {
+        browser = configTool(ToolType.BROWSER);
+    }
 
-    private EditorSetting configEditor() {
+    private void configEditor() {
+        editor = configTool(ToolType.EDITOR);
+    }
+    
+    private ToolSetting configTool(ToolType type) {
         // Read retained editor setting (if any)
-        editor = EditorSetting.fromPrefs(prefs);
-        if (editor != null) {
-            return editor;
+        ToolSetting tool = ToolSetting.fromPrefs(prefs, type);
+        if (tool != null) {
+            return tool;
         }
         // Try getting editor setting from OS environment variables
-        for (String envvar : EDITOR_ENV_VARS) {
+        for (String envvar : type.envVars) {
             String v = envvars.get(envvar);
             if (v != null) {
-                return editor = new EditorSetting(v.split("\\s+"), false);
+                return new ToolSetting(v.split("\\s+"), false, type);
             }
         }
         // Default to the built-in editor
-        return editor = BUILT_IN_EDITOR;
+        return type.defaultTool;
     }
 
     private void printUsage() {
@@ -1840,6 +1852,18 @@ public class JShellTool implements MessageHandler {
                 this::cmdDebug,
                 EMPTY_COMPLETION_PROVIDER,
                 CommandKind.HIDDEN));
+        registerCommand(new Command("/doc",
+                this::cmdDoc,
+                (sn, c, a) -> {
+                    if (analysis == null || sn.isEmpty()) {
+                        // No completions if uninitialized or snippet not started
+                        return Collections.emptyList();
+                    } else {
+                        // Give exit code an int context by prefixing the arg
+                        List<Suggestion> suggestions = analysis.completionSuggestions(sn, c, CompletionContext.LOOKUP, a);
+                        return suggestions;
+                    }
+                }));
         registerCommand(new Command("/help",
                 this::cmdHelp,
                 helpCompletion()));
@@ -1855,6 +1879,7 @@ public class JShellTool implements MessageHandler {
                                 SET_MODE_OPTIONS_COMPLETION_PROVIDER)),
                         "prompt", feedback.modeCompletions(),
                         "editor", fileCompletions(Files::isExecutable),
+                        "browser", fileCompletions(Files::isExecutable),
                         "start", FILE_COMPLETION_PROVIDER,
                         "indent", EMPTY_COMPLETION_PROVIDER),
                         STARTSWITH_MATCHER)));
@@ -1967,7 +1992,7 @@ public class JShellTool implements MessageHandler {
     // --- Command implementations ---
 
     private static final String[] SET_SUBCOMMANDS = new String[]{
-        "format", "truncation", "feedback", "mode", "prompt", "editor", "start", "indent"};
+        "format", "truncation", "feedback", "mode", "prompt", "browser", "editor", "start", "indent"};
 
     final boolean cmdSet(String arg) {
         String cmd = "/set";
@@ -1983,7 +2008,8 @@ public class JShellTool implements MessageHandler {
             }
             case "_blank": {
                 // show top-level settings
-                new SetEditor().set();
+                new SetTool(ToolType.BROWSER).set();
+                new SetTool(ToolType.EDITOR).set();
                 showIndent();
                 showSetStart();
                 setFeedback(this, at); // no args so shows feedback setting
@@ -2001,8 +2027,10 @@ public class JShellTool implements MessageHandler {
                         retained -> prefs.put(MODE2_KEY, retained));
             case "prompt":
                 return feedback.setPrompt(this, at);
+            case "browser":
+                return new SetTool(at, ToolType.BROWSER).set();
             case "editor":
-                return new SetEditor(at).set();
+                return new SetTool(at, ToolType.EDITOR).set();
             case "start":
                 return setStart(at);
             case "indent":
@@ -2066,7 +2094,24 @@ public class JShellTool implements MessageHandler {
         return matches[0];
     }
 
-    static class EditorSetting {
+    enum ToolType {
+
+        BROWSER(BROWSER_KEY, "JSHELLBROWSER", "BROWSER"),
+        EDITOR(EDITOR_KEY, "JSHELLEDITOR", "VISUAL", "EDITOR");
+
+        private final ToolSetting defaultTool;
+        private final String prefKey;
+        private final String[] envVars;
+
+        private ToolType(String prefKey, String... envVars) {
+            this.defaultTool = new ToolSetting(null, false, this);
+            this.prefKey = prefKey;
+            this.envVars = envVars;
+        }
+        
+    }
+
+    static class ToolSetting {
 
         static String BUILT_IN_REP = "-default";
         static char WAIT_PREFIX = '-';
@@ -2074,20 +2119,22 @@ public class JShellTool implements MessageHandler {
 
         final String[] cmd;
         final boolean wait;
+        final ToolType tool;
 
-        EditorSetting(String[] cmd, boolean wait) {
+        ToolSetting(String[] cmd, boolean wait, ToolType tool) {
             this.wait = wait;
             this.cmd = cmd;
+            this.tool = tool;
         }
 
         // returns null if not stored in preferences
-        static EditorSetting fromPrefs(PersistentStorage prefs) {
+        static ToolSetting fromPrefs(PersistentStorage prefs, ToolType tool) {
             // Read retained editor setting (if any)
-            String editorString = prefs.get(EDITOR_KEY);
+            String editorString = prefs.get(tool.prefKey);
             if (editorString == null || editorString.isEmpty()) {
                 return null;
             } else if (editorString.equals(BUILT_IN_REP)) {
-                return BUILT_IN_EDITOR;
+                return tool.defaultTool;
             } else {
                 boolean wait = false;
                 char waitMarker = editorString.charAt(0);
@@ -2096,24 +2143,24 @@ public class JShellTool implements MessageHandler {
                     editorString = editorString.substring(1);
                 }
                 String[] cmd = editorString.split(RECORD_SEPARATOR);
-                return new EditorSetting(cmd, wait);
+                return new ToolSetting(cmd, wait, tool);
             }
         }
 
-        static void removePrefs(PersistentStorage prefs) {
-            prefs.remove(EDITOR_KEY);
+        static void removePrefs(PersistentStorage prefs, ToolType tool) {
+            prefs.remove(tool.prefKey);
         }
 
         void toPrefs(PersistentStorage prefs) {
-            prefs.put(EDITOR_KEY, (this == BUILT_IN_EDITOR)
+            prefs.put(tool.prefKey, (this == tool.defaultTool)
                     ? BUILT_IN_REP
                     : (wait ? WAIT_PREFIX : NORMAL_PREFIX) + String.join(RECORD_SEPARATOR, cmd));
         }
 
         @Override
         public boolean equals(Object o) {
-            if (o instanceof EditorSetting) {
-                EditorSetting ed = (EditorSetting) o;
+            if (o instanceof ToolSetting) {
+                ToolSetting ed = (ToolSetting) o;
                 return Arrays.equals(cmd, ed.cmd) && wait == ed.wait;
             } else {
                 return false;
@@ -2129,8 +2176,9 @@ public class JShellTool implements MessageHandler {
         }
     }
 
-    class SetEditor {
+    class SetTool {
 
+        private final ToolType type;
         private final ArgTokenizer at;
         private final String[] command;
         private final boolean hasCommand;
@@ -2140,8 +2188,13 @@ public class JShellTool implements MessageHandler {
         private final boolean retainOption;
         private final int primaryOptionCount;
 
-        SetEditor(ArgTokenizer at) {
-            at.allowedOptions("-default", "-wait", "-retain", "-delete");
+        SetTool(ArgTokenizer at, ToolType tool) {
+            this.type = tool;
+            if (tool == ToolType.EDITOR) {
+                at.allowedOptions("-default", "-wait", "-retain", "-delete");
+            } else {
+                at.allowedOptions("-default", "-retain", "-delete");
+            }
             String prog = at.next();
             List<String> ed = new ArrayList<>();
             while (at.val() != null) {
@@ -2153,39 +2206,40 @@ public class JShellTool implements MessageHandler {
             this.hasCommand = command.length > 0;
             this.defaultOption = at.hasOption("-default");
             this.deleteOption = at.hasOption("-delete");
-            this.waitOption = at.hasOption("-wait");
+            this.waitOption = tool == ToolType.EDITOR ? at.hasOption("-wait") : false;
             this.retainOption = at.hasOption("-retain");
             this.primaryOptionCount = (hasCommand? 1 : 0) + (defaultOption? 1 : 0) + (deleteOption? 1 : 0);
         }
 
-        SetEditor() {
-            this(new ArgTokenizer("", ""));
+        SetTool(ToolType tool) {
+            this(new ArgTokenizer("", ""), tool);
         }
 
         boolean set() {
             if (!check()) {
                 return false;
             }
+            ToolSetting tool = type == ToolType.BROWSER ? browser : editor;
             if (primaryOptionCount == 0 && !retainOption) {
                 // No settings or -retain, so this is a query
-                EditorSetting retained = EditorSetting.fromPrefs(prefs);
+                ToolSetting retained = ToolSetting.fromPrefs(prefs, type);
                 if (retained != null) {
                     // retained editor is set
                     hard("/set editor -retain %s", format(retained));
                 }
-                if (retained == null || !retained.equals(editor)) {
+                if (retained == null || !retained.equals(tool)) {
                     // editor is not retained or retained is different from set
-                    hard("/set editor %s", format(editor));
+                    hard("/set editor %s", format(tool)); //XXX: editor -> editor/browser
                 }
                 return true;
             }
             if (retainOption && deleteOption) {
-                EditorSetting.removePrefs(prefs);
+                ToolSetting.removePrefs(prefs, type);
             }
             install();
             if (retainOption && !deleteOption) {
-                editor.toPrefs(prefs);
-                fluffmsg("jshell.msg.set.editor.retain", format(editor));
+                tool.toPrefs(prefs);
+                fluffmsg("jshell.msg.set.editor.retain", format(tool));
             }
             return true;
         }
@@ -2206,20 +2260,26 @@ public class JShellTool implements MessageHandler {
         }
 
         private void install() {
+            ToolSetting tool;
             if (hasCommand) {
-                editor = new EditorSetting(command, waitOption);
+                tool = new ToolSetting(command, waitOption, type);
             } else if (defaultOption) {
-                editor = BUILT_IN_EDITOR;
+                tool = type.defaultTool;
             } else if (deleteOption) {
-                configEditor();
+                tool = configTool(type);
             } else {
                 return;
             }
-            fluffmsg("jshell.msg.set.editor.set", format(editor));
+            if (type == ToolType.BROWSER) {
+                browser = tool;
+            } else {
+                editor = tool;
+            }
+            fluffmsg("jshell.msg.set.editor.set", format(tool));
         }
 
-        private String format(EditorSetting ed) {
-            if (ed == BUILT_IN_EDITOR) {
+        private String format(ToolSetting ed) {
+            if (ed == type.defaultTool) {
                 return "-default";
             } else {
                 Stream<String> elems = Arrays.stream(ed.cmd);
@@ -2353,6 +2413,38 @@ public class JShellTool implements MessageHandler {
                 }
             }
             InternalDebugControl.setDebugFlags(state, debugFlags);
+        }
+        return true;
+    }
+
+    boolean cmdDoc(String arg) {
+        try {
+            List<SourceCodeAnalysis.Documentation> documentations = analysis.documentation(arg, arg.length(), CompletionContext.LOOKUP, false);
+            Optional<SourceCodeAnalysis.Documentation> doc = documentations.stream().filter(d -> d.url() != null).findFirst();
+            if (doc.isPresent()) {
+                if (browser == ToolType.BROWSER.defaultTool) {
+                    try {
+                        Class<?> desktop = Class.forName("java.awt.Desktop");
+                        Method getDesktop = desktop.getDeclaredMethod("getDesktop");
+                        Method browse = desktop.getDeclaredMethod("browse", URI.class);
+                        browse.invoke(getDesktop.invoke(null), doc.get().url().toURI());
+                        return true;
+                    } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+                    }
+                    System.err.println("No browser configured, please use /set browser <path-to-browser>.");
+                    System.err.println("Documentation URL:");
+                    System.err.println(doc.get().url());
+                } else {
+                    List<String> cmd = new ArrayList<>();
+                    cmd.addAll(List.of(browser.cmd));
+                    cmd.add(doc.get().url().toURI().toString());
+                    new ProcessBuilder(cmd).start();
+                }
+            } else {
+                System.err.println("No source documentation found.");
+            }
+        } catch (IOException | URISyntaxException ex) {
+            Logger.getLogger(JShellTool.class.getName()).log(Level.SEVERE, null, ex);
         }
         return true;
     }
@@ -2912,7 +3004,7 @@ public class JShellTool implements MessageHandler {
         String src = sb.toString();
         Consumer<String> saveHandler = new SaveHandler(src, srcSet);
         Consumer<String> errorHandler = s -> hard("Edit Error: %s", s);
-        if (editor == BUILT_IN_EDITOR) {
+        if (editor == ToolType.EDITOR.defaultTool) {
             return builtInEdit(src, saveHandler, errorHandler);
         } else {
             // Changes have occurred in temp edit directory,
