@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,7 @@ public class Position {
             int column = 0;
             for (int bp = lineStart; bp < pos; bp++) {
                 if (tabMap.get(bp))
-                    column = tabulate(column);
+                    column = (column / TabInc * TabInc) + TabInc;
                 else
                     column++;
             }
@@ -279,7 +279,7 @@ public class Position {
             while (col < column) {
                 pos++;
                 if (tabMap.get(pos))
-                    col = tabulate(col);
+                    col = (col / TabInc * TabInc) + TabInc;
                 else
                     col++;
             }
