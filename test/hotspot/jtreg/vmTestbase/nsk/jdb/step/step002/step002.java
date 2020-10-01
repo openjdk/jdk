@@ -56,7 +56,8 @@
  * @clean nsk.jdb.step.step002.step002a
  * @compile -g:lines,source,vars step002a.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.step.step002.step002
+ * @run main/othervm
+ *      nsk.jdb.step.step002.step002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

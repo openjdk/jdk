@@ -1039,7 +1039,7 @@ bool Node::verify_jvms(const JVMState* using_jvms) const {
 
 //------------------------------init_NodeProperty------------------------------
 void Node::init_NodeProperty() {
-  assert(_max_classes <= max_jushort, "too many NodeProperty classes");
+  assert(_max_classes <= max_juint, "too many NodeProperty classes");
   assert(max_flags() <= max_jushort, "too many NodeProperty flags");
 }
 
