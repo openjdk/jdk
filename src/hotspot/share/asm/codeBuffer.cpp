@@ -257,11 +257,6 @@ int CodeBuffer::locator(address addr) const {
   return -1;
 }
 
-address CodeBuffer::locator_address(int locator) const {
-  if (locator < 0)  return NULL;
-  address start = code_section(locator_sect(locator))->start();
-  return start + locator_pos(locator);
-}
 
 bool CodeBuffer::is_backward_branch(Label& L) {
   return L.is_bound() && insts_end() <= locator_address(L.loc());
