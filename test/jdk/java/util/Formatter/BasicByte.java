@@ -29,7 +29,7 @@
  */
 
 // -- This file was mechanically generated: Do not edit! -- //
-
+//Importing modules
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -41,7 +41,7 @@ import static java.util.Calendar.*;
 
 
 
-
+//Creating class
 public class BasicByte extends Basic {
 
     private static void test(String fs, String exp, Object ... args) {
