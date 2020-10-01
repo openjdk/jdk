@@ -262,9 +262,11 @@ class MetaspaceShared : AllStatic {
     return is_windows;
   }
 
-  static void write_core_archive_regions(FileMapInfo* mapinfo,
-                                         GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                                         GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps);
+  // Returns the bitmap region
+  static char* write_core_archive_regions(FileMapInfo* mapinfo,
+                                          GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
+                                          GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
+                                          size_t& bitmap_size_in_bytes);
 
   // Can we skip some expensive operations related to modules?
   static bool use_optimized_module_handling() { return NOT_CDS(false) CDS_ONLY(_use_optimized_module_handling); }

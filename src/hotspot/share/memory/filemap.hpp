@@ -331,6 +331,7 @@ class FileMapInfo : public CHeapObj<mtInternal> {
 private:
   friend class ManifestStream;
   friend class VMStructs;
+  friend class ArchiveBuilder;
   friend class CDSOffsets;
   friend class FileMapHeader;
 
@@ -457,9 +458,10 @@ public:
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
-  void  write_bitmap_region(const CHeapBitMap* ptrmap,
+  char* write_bitmap_region(const CHeapBitMap* ptrmap,
                             GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                            GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps);
+                            GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
+                            size_t &size_in_bytes);
   size_t write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
                                     GrowableArray<ArchiveHeapOopmapInfo> *oopmaps,
                                     int first_region_id, int max_num_regions);
@@ -571,7 +573,7 @@ public:
   bool  read_region(int i, char* base, size_t size);
   bool  relocate_pointers(intx addr_delta);
   static size_t set_oopmaps_offset(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_size);
-  static size_t write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_offset, uintptr_t* buffer);
+  static size_t write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_offset, char* buffer);
 
   // The starting address of spc, as calculated with CompressedOop::decode_non_null()
   address start_address_as_decoded_with_current_oop_encoding_mode(FileMapRegion* spc) {

@@ -1278,28 +1278,28 @@ size_t FileMapInfo::set_oopmaps_offset(GrowableArray<ArchiveHeapOopmapInfo>* oop
   return curr_size;
 }
 
-size_t FileMapInfo::write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo>* oopmaps, size_t curr_offset, uintptr_t* buffer) {
+size_t FileMapInfo::write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo>* oopmaps, size_t curr_offset, char* buffer) {
   for (int i = 0; i < oopmaps->length(); i++) {
-    memcpy(((char*)buffer) + curr_offset, oopmaps->at(i)._oopmap, oopmaps->at(i)._oopmap_size_in_bytes);
+    memcpy(buffer + curr_offset, oopmaps->at(i)._oopmap, oopmaps->at(i)._oopmap_size_in_bytes);
     curr_offset += oopmaps->at(i)._oopmap_size_in_bytes;
   }
   return curr_offset;
 }
 
-void FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
-                                      GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                                      GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps) {
-  ResourceMark rm;
+char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
+                                       GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
+                                       GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
+                                       size_t &size_in_bytes) {
   size_t size_in_bits = ptrmap->size();
-  size_t size_in_bytes = ptrmap->size_in_bytes();
+  size_in_bytes = ptrmap->size_in_bytes();
 
   if (closed_oopmaps != NULL && open_oopmaps != NULL) {
     size_in_bytes = set_oopmaps_offset(closed_oopmaps, size_in_bytes);
     size_in_bytes = set_oopmaps_offset(open_oopmaps, size_in_bytes);
   }
 
-  uintptr_t* buffer = (uintptr_t*)NEW_RESOURCE_ARRAY(char, size_in_bytes);
-  ptrmap->write_to(buffer, ptrmap->size_in_bytes());
+  char* buffer = NEW_C_HEAP_ARRAY(char, size_in_bytes, mtClassShared);
+  ptrmap->write_to((BitMap::bm_word_t*)buffer, ptrmap->size_in_bytes());
   header()->set_ptrmap_size_in_bits(size_in_bits);
 
   if (closed_oopmaps != NULL && open_oopmaps != NULL) {
@@ -1308,6 +1308,7 @@ void FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
   }
 
   write_region(MetaspaceShared::bm, (char*)buffer, size_in_bytes, /*read_only=*/true, /*allow_exec=*/false);
+  return (char*)buffer;
 }
 
 // Write out the given archive heap memory regions.  GC code combines multiple
