@@ -27,7 +27,7 @@
  * @summary Make sure that setting HOUR right after a construction works
  *          as expected.
  */
-
+//Importing calendar,scanner etc.
 import java.util.GregorianCalendar;
 import static java.util.Calendar.*;
 
