@@ -74,6 +74,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
@@ -2289,6 +2290,12 @@ WB_ENTRY(jboolean, WB_IsJVMTIIncluded(JNIEnv* env, jobject wb))
   return INCLUDE_JVMTI ? JNI_TRUE : JNI_FALSE;
 WB_END
 
+WB_ENTRY(jboolean, WB_WaitUnsafe(JNIEnv* env, jobject wb, jint time))
+    SafepointStateTracker tracker = SafepointSynchronize::safepoint_state_tracker();
+    os::naked_short_sleep(time);
+    return tracker.safepoint_state_changed();
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2540,6 +2547,7 @@ static JNINativeMethod methods[] = {
   {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
   {CC"getKlassMetadataSize", CC"(Ljava/lang/Class;)I",(void*)&WB_GetKlassMetadataSize},
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
+  {CC"waitUnsafe", CC"(I)Z",                          (void*)&WB_WaitUnsafe},
 };
 
 

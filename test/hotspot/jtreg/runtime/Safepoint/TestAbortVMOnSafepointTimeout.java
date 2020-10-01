@@ -23,70 +23,51 @@
 
 import jdk.test.lib.*;
 import jdk.test.lib.process.*;
+import sun.hotspot.WhiteBox;
 
 /*
  * @test TestAbortVMOnSafepointTimeout
  * @summary Check if VM can kill thread which doesn't reach safepoint.
  * @bug 8219584 8227528
- * @requires vm.compiler2.enabled
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver TestAbortVMOnSafepointTimeout
+ * @library /testlibrary /test/lib
+ * @build TestAbortVMOnSafepointTimeout
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestAbortVMOnSafepointTimeout
  */
 
 public class TestAbortVMOnSafepointTimeout {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            int result = test_loop(3);
-            System.out.println("This message would occur after some time with result " + result);
-            return;
-        }
-
-        testWith(500, 500);
-    }
-
-    static int test_loop(int x) {
-        int sum = 0;
-        if (x != 0) {
-            // Long running loop without safepoint.
-            for (int y = 1; y < Integer.MAX_VALUE; ++y) {
-                if (y % x == 0) ++sum;
+            Integer waitTime = Integer.parseInt(args[0]);
+            WhiteBox wb = WhiteBox.getWhiteBox();
+            while (!wb.waitUnsafe(waitTime)) {
+                System.out.println("Waiting for safepoint");
             }
+            System.out.println("This message would occur after some time.");
+        } else {
+            testWith(50, 1, 999);
         }
-        return sum;
     }
 
-    public static void testWith(int sfpt_interval, int timeout_delay) throws Exception {
-        // -XX:-UseCountedLoopSafepoints - is used to prevent the loop
-        // in test_loop() to poll for safepoints.
-        // -XX:LoopStripMiningIter=0 and -XX:LoopUnrollLimit=0 - are
-        // used to prevent optimizations over the loop in test_loop()
-        // since we actually want it to provoke a safepoint timeout.
-        // -XX:-UseBiasedLocking - is used to prevent biased locking
-        // handshakes from changing the timing of this test.
+    public static void testWith(int sfpt_interval, int timeout_delay, int unsafe_wait) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-Xbootclasspath/a:.",
                 "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:-UseBiasedLocking",
+                "-XX:+WhiteBoxAPI",
                 "-XX:+SafepointTimeout",
                 "-XX:+SafepointALot",
                 "-XX:+AbortVMOnSafepointTimeout",
                 "-XX:SafepointTimeoutDelay=" + timeout_delay,
                 "-XX:GuaranteedSafepointInterval=" + sfpt_interval,
-                "-XX:-TieredCompilation",
-                "-XX:-UseCountedLoopSafepoints",
-                "-XX:LoopStripMiningIter=0",
-                "-XX:LoopUnrollLimit=0",
-                "-XX:CompileCommand=compileonly,TestAbortVMOnSafepointTimeout::test_loop",
-                "-Xcomp",
                 "-XX:-CreateCoredumpOnCrash",
                 "-Xms64m",
                 "TestAbortVMOnSafepointTimeout",
-                "runTestLoop"
+                "" + unsafe_wait
         );
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldMatch("Timed out while spinning to reach a safepoint.");
         if (Platform.isWindows()) {
             output.shouldMatch("Safepoint sync time longer than");
         } else {
@@ -94,7 +75,6 @@ public class TestAbortVMOnSafepointTimeout {
             if (Platform.isLinux()) {
                 output.shouldMatch("(sent by kill)");
             }
-            output.shouldMatch("TestAbortVMOnSafepointTimeout.test_loop");
         }
         output.shouldNotHaveExitValue(0);
     }
