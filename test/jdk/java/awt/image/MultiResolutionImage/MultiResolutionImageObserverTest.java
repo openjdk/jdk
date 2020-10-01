@@ -101,7 +101,7 @@ public class MultiResolutionImageObserverTest {
     private static class LoadImageObserver implements ImageObserver {
 
         private final int infoflags;
-        private boolean loaded;
+        private volatile boolean loaded;
 
         public LoadImageObserver(int flags) {
             this.infoflags = flags;
