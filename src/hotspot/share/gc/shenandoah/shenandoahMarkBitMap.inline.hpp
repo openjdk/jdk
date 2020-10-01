@@ -36,27 +36,123 @@ inline HeapWord* ShenandoahMarkBitMap::index_to_address(size_t offset) const {
   return _covered.start() + ((offset >> 1) << _shift);
 }
 
+inline bool ShenandoahMarkBitMap::mark_strong(HeapWord* heap_addr) {
+  check_mark(heap_addr);
+
+  idx_t bit = address_to_index(heap_addr);
+  verify_index(bit);
+  volatile bm_word_t* const addr = word_addr(bit);
+  const bm_word_t mask = bit_mask(bit);
+  bm_word_t old_val = load_word_ordered(addr, memory_order_conservative);
+
+  do {
+    const bm_word_t new_val = old_val | mask;
+    if (new_val == old_val) {
+      return false;     // Someone else beat us to it.
+    }
+    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order_conservative);
+    if (cur_val == old_val) {
+      return true;      // Success.
+    }
+    old_val = cur_val;  // The value changed, try again.
+  } while (true);
+}
+
+inline bool ShenandoahMarkBitMap::mark_final(HeapWord* heap_addr) {
+  check_mark(heap_addr);
+
+  idx_t bit = address_to_index(heap_addr);
+  verify_index(bit);
+  volatile bm_word_t* const addr = word_addr(bit);
+  const bm_word_t mask_final = (bm_word_t)1 << (bit_in_word(bit) + 1);
+  const bm_word_t mask_strong = (bm_word_t)1 << bit_in_word(bit);
+  bm_word_t old_val = load_word_ordered(addr, memory_order_conservative);
+
+  do {
+    if ((old_val & mask_strong) != 0) {
+      return false; // Already marked strong,
+    }
+    const bm_word_t new_val = old_val | mask_final;
+    if (new_val == old_val) {
+      return false;     // Someone else beat us to it.
+    }
+    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order_conservative);
+    if (cur_val == old_val) {
+      return true;      // Success.
+    }
+    old_val = cur_val;  // The value changed, try again.
+  } while (true);
+}
+
 inline bool ShenandoahMarkBitMap::is_marked_strong(HeapWord* addr)  const {
   check_mark(addr);
   return at(address_to_index(addr));
 }
 
-inline bool ShenandoahMarkBitMap::mark_strong(HeapWord* addr) {
-  check_mark(addr);
-  return par_set_bit(address_to_index(addr));
-}
-
 inline bool ShenandoahMarkBitMap::is_marked_final(HeapWord* addr) const {
   check_mark(addr);
-  return is_marked_strong(addr) || at(address_to_index(addr) + 1);
+  return at(address_to_index(addr) + 1);
 }
 
-inline bool ShenandoahMarkBitMap::mark_final(HeapWord* addr) {
+inline bool ShenandoahMarkBitMap::is_marked_strong_and_final(HeapWord* addr) const {
   check_mark(addr);
-  if (is_marked_strong(addr)) {
-    return false;
-  }
-  return par_set_bit(address_to_index(addr) + 1);
+  idx_t index = address_to_index(addr);
+  verify_index(index);
+  bm_word_t mask = (bm_word_t)3 << bit_in_word(index);
+  return (*word_addr(index) & mask) == mask;
+}
+
+inline bool ShenandoahMarkBitMap::is_marked_strong_or_final(HeapWord* addr) const {
+  check_mark(addr);
+  idx_t index = address_to_index(addr);
+  verify_index(index);
+  bm_word_t mask = (bm_word_t)3 << bit_in_word(index);
+  return (*word_addr(index) & mask) != 0;
+}
+
+inline bool ShenandoahMarkBitMap::par_is_marked_strong(HeapWord* heap_addr)  const {
+  check_mark(heap_addr);
+  idx_t index = address_to_index(heap_addr);
+  const volatile bm_word_t* const addr = word_addr(index);
+  bm_word_t word = load_word_ordered(addr, memory_order_acquire);
+  return (word & bit_mask(index)) != 0;
+}
+
+inline bool ShenandoahMarkBitMap::par_is_marked_final(HeapWord* heap_addr) const {
+  check_mark(heap_addr);
+  idx_t index = address_to_index(heap_addr) + 1;
+  const volatile bm_word_t* const addr = word_addr(index);
+  bm_word_t word = load_word_ordered(addr, memory_order_acquire);
+  return (word & bit_mask(index)) != 0;
+}
+
+inline bool ShenandoahMarkBitMap::par_is_marked_strong_and_final(HeapWord* heap_addr) const {
+  check_mark(heap_addr);
+  idx_t index = address_to_index(heap_addr);
+  verify_index(index);
+  bm_word_t mask = (bm_word_t)3 << bit_in_word(index);
+  const volatile bm_word_t* const addr = word_addr(index);
+  bm_word_t word = load_word_ordered(addr, memory_order_acquire);
+  return (word & mask) == mask;
+}
+
+inline bool ShenandoahMarkBitMap::par_is_marked_strong_or_final(HeapWord* heap_addr) const {
+  check_mark(heap_addr);
+  idx_t index = address_to_index(heap_addr);
+  verify_index(index);
+  bm_word_t mask = (bm_word_t)3 << bit_in_word(index);
+  const volatile bm_word_t* const addr = word_addr(index);
+  bm_word_t word = load_word_ordered(addr, memory_order_acquire);
+  return (word & mask) != 0;
+}
+
+inline uintptr_t ShenandoahMarkBitMap::par_marking_bits(HeapWord* heap_addr) const {
+  check_mark(heap_addr);
+  idx_t index = address_to_index(heap_addr);
+  verify_index(index);
+  const volatile bm_word_t* const addr = word_addr(index);
+  bm_word_t word = load_word_ordered(addr, memory_order_acquire);
+  return word >> bit_in_word(index);
 }
 
 inline const ShenandoahMarkBitMap::bm_word_t ShenandoahMarkBitMap::load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order) {
@@ -69,25 +165,6 @@ inline const ShenandoahMarkBitMap::bm_word_t ShenandoahMarkBitMap::load_word_ord
            "unexpected memory ordering");
     return Atomic::load_acquire(addr);
   }
-}
-
-inline bool ShenandoahMarkBitMap::par_set_bit(idx_t bit, atomic_memory_order memory_order) {
-  verify_index(bit);
-  volatile bm_word_t* const addr = word_addr(bit);
-  const bm_word_t mask = bit_mask(bit);
-  bm_word_t old_val = load_word_ordered(addr, memory_order);
-
-  do {
-    const bm_word_t new_val = old_val | mask;
-    if (new_val == old_val) {
-      return false;     // Someone else beat us to it.
-    }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order);
-    if (cur_val == old_val) {
-      return true;      // Success.
-    }
-    old_val = cur_val;  // The value changed, try again.
-  } while (true);
 }
 
 template<ShenandoahMarkBitMap::bm_word_t flip, bool aligned_right>

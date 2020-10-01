@@ -33,6 +33,7 @@ public:
   typedef size_t idx_t;         // Type used for bit and word indices.
   typedef uintptr_t bm_word_t;  // Element type of array that represents the
                                 // bitmap, with BitsPerWord bits per element.
+
 private:
   // Values for get_next_bit_impl flip parameter.
   static const bm_word_t find_ones_flip = 0;
@@ -85,14 +86,6 @@ private:
     verify_index(index);
     return (*word_addr(index) & bit_mask(index)) != 0;
   }
-
-  // Attempts to change a bit to a desired value. The operation returns true if
-  // this thread changed the value of the bit. It was changed with a RMW operation
-  // using the specified memory_order. The operation returns false if the change
-  // could not be set due to the bit already being observed in the desired state.
-  // The atomic access that observed the bit in the desired state has acquire
-  // semantics, unless memory_order is memory_order_relaxed or memory_order_release.
-  inline bool par_set_bit(idx_t bit, atomic_memory_order memory_order = memory_order_conservative);
 
   // Assumes relevant validity checking for bit has already been done.
   static idx_t raw_to_words_align_up(idx_t bit) {
@@ -148,9 +141,6 @@ public:
 
   ShenandoahMarkBitMap(MemRegion heap, MemRegion storage);
 
-  // Return true if the word is marked strong.
-  inline bool is_marked_strong(HeapWord* w)  const;
-
   // Mark word as 'strong' if it hasn't been marked strong yet.
   // Return true if the word has been marked strong, false if it has already been
   // marked strong or if another thread has beat us by marking it
@@ -159,14 +149,32 @@ public:
   // upgraded to strong. In this case, this method also returns true.
   inline bool mark_strong(HeapWord* w);
 
-  // Return true if the word is marked final.
-  inline bool is_marked_final(HeapWord* w) const;
-
   // Mark word as 'final' if it hasn't been marked final or strong yet.
   // Return true if the word has been marked final, false if it has already been
   // marked strong or final or if another thread has beat us by marking it
   // strong or final.
   inline bool mark_final(HeapWord* w);
+
+  inline bool is_marked_strong(HeapWord* w)  const;
+  inline bool is_marked_final(HeapWord* w) const;
+  inline bool is_marked_strong_and_final(HeapWord* w) const;
+  inline bool is_marked_strong_or_final(HeapWord* w) const;
+
+  inline bool par_is_marked_strong(HeapWord* w)  const;
+  inline bool par_is_marked_final(HeapWord* w) const;
+  inline bool par_is_marked_strong_and_final(HeapWord* w) const;
+  inline bool par_is_marked_strong_or_final(HeapWord* w) const;
+
+  static bool is_marked_strong(uintptr_t mark) {
+    return (mark & 1) != 0;
+  }
+  static bool is_marked_final(uintptr_t mark) {
+    return (mark & 2) != 0;
+  }
+  static bool is_marked_strong_and_final(uintptr_t mark) {
+    return (mark & 3) == 3;
+  }
+  inline uintptr_t par_marking_bits(HeapWord* w) const;
 
   // Return the address corresponding to the next marked bit at or after
   // "addr", and before "limit", if "limit" is non-NULL.  If there is no

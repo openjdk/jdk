@@ -453,8 +453,6 @@ void ShenandoahConcurrentMark::mark_from_roots() {
   rp->enable_discovery(true /*verify_no_refs*/);
   rp->set_soft_reference_policy(_heap->soft_ref_policy()->should_clear_all_soft_refs());
 
-  ShenandoahIsAliveSelector is_alive;
-
   task_queues()->reserve(nworkers);
 
   {

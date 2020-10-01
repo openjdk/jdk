@@ -45,10 +45,14 @@ void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, Shena
   shenandoah_assert_marked(NULL, obj);
   shenandoah_assert_not_in_cset_except(NULL, obj, _heap->cancelled_gc());
 
-  if (!_heap->marking_context()->is_marked_strong(obj)) {
-    assert(_heap->marking_context()->is_marked_final(obj), "must be marked final if not marked strong");
+  ShenandoahMarkingContext* ctx = _heap->marking_context();
+  uintptr_t mark = ctx->par_marking_bits(obj);
+#ifdef ASSERT
+  if (!ShenandoahMarkBitMap::is_marked_strong(mark)) {
+    assert(ShenandoahMarkBitMap::is_marked_final(mark), "must be marked final if not marked strong");
   }
-  cl->set_strong(_heap->marking_context()->is_marked_strong(obj));
+#endif
+  cl->set_strong(ShenandoahMarkBitMap::is_marked_strong(mark));
   if (task->is_not_chunked()) {
     if (obj->is_instance()) {
       // Case 1: Normal oop, process as usual.
@@ -65,7 +69,11 @@ void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, Shena
       assert (obj->is_typeArray(), "should be type array");
     }
     // Count liveness the last: push the outstanding work to the queues first
-    count_liveness(live_data, obj);
+    // Avoid double-counting objects that are visited twice due to upgrade
+    // from final- to strong mark.
+    if (!ShenandoahMarkBitMap::is_marked_strong_and_final(mark)) {
+      count_liveness(live_data, obj);
+    }
   } else {
     // Case 4: Array chunk, has sensible chunk id. Process it.
     do_chunked_array<T>(q, cl, obj, task->chunk(), task->pow());
