@@ -37,8 +37,8 @@ import java.util.ListIterator;
  * occurs after the exchange handler returns.  Filters
  * are organised in chains, and are associated with {@link HttpContext} instances.
  *
- * <p> Each Filter in the chain, invokes the next filter within its own
- * {@link #doFilter(HttpExchange, Chain)} implementation. The final Filter in
+ * <p> Each {@Filter} in the chain, invokes the next filter within its own
+ * {@link #doFilter(HttpExchange, Chain)} implementation. The final {@Filter} in
  * the chain invokes the applications exchange handler.
  *
  * @since 1.6
@@ -58,7 +58,7 @@ public abstract class Filter {
     public static class Chain {
 
         /**
-         * The last element in the chain must invoke the users
+         * The last element in the chain must invoke the user's
          * handler.
          */
         private ListIterator<Filter> iter;
@@ -106,7 +106,7 @@ public abstract class Filter {
      *     <li> Examine or modify the request headers.
      *     <li> Filter the request body or the response body, by creating suitable
      *     filter streams and calling {@link HttpExchange#setStreams(InputStream, OutputStream)}.
-     *     <li> Set attribute Objects in the exchange, which other filters or
+     *     <li> Set attribute objects in the exchange, which other filters or
      *     the exchange handler can access.
      *     <li> Decide to either:
      *
@@ -117,10 +117,10 @@ public abstract class Filter {
      *         {@link Filter.Chain#doFilter(HttpExchange)}.
      *     </ol>
      *
-     *     <li> If option 1. above taken, then when doFilter() returns all subsequent
+     *     <li> If option 1. above is taken, then when doFilter() returns all subsequent
      *     filters in the Chain have been called, and the response headers can be
      *     examined or modified.
-     *     <li> If option 2. above taken, then this Filter must use the HttpExchange
+     *     <li> If option 2. above is taken, then this Filter must use the HttpExchange
      *     to send back an appropriate response.
      * </ul>
      *

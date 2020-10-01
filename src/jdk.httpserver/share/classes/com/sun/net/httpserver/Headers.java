@@ -33,10 +33,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * HTTP request and response headers are represented by this class which implements
- * the interface
- * {@link java.util.Map}{@literal <}{@link java.lang.String}, {@link java.util.List}
- * {@literal <}{@link java.lang.String}{@literal >>}.
+ * HTTP request and response headers are represented by this class which
+ * implements the interface
+ * {@link java.util.Map}{@literal <}{@link java.lang.String},
+ * {@link java.util.List} {@literal <}{@link java.lang.String}{@literal >>}.
  * The keys are case-insensitive Strings representing the header names and
  * the value associated with each key is
  * a {@link List}{@literal <}{@link String}{@literal >} with one
@@ -51,22 +51,25 @@ import java.util.Set;
  * HeaderName: value2
  * </pre></blockquote>
  *
- * <p> All the normal {@link java.util.Map} methods are provided, but the following
- * additional convenience methods are most likely to be used:
+ * All the normal {@link java.util.Map} methods are provided, but the
+ * following additional convenience methods are most likely to be used:
  *
  * <ul>
- *     <li>{@link #getFirst(String)} returns a single valued header or the first value of
- *     a multi-valued header.
- *     <li>{@link #add(String,String)} adds the given header value to the list for the given key
- *     <li>{@link #set(String,String)} sets the given header field to the single value given
- *     overwriting any existing values in the value list
+ *     <li>{@link #getFirst(String)} returns a single valued header or the first
+ *     value of a multi-valued header.
+ *     <li>{@link #add(String,String)} adds the given header value to the list
+ *     for the given key.
+ *     <li>{@link #set(String,String)} sets the given header field to the single
+ *     value given overwriting any existing values in the value list.
  * </ul>
  *
- * <p> All methods in this class accept {@code null} values for keys and values. However, {@code null}
- * keys will never will be present in HTTP request headers, and will not be output/sent in response headers.
- * Null values can be represented as either a {@code null} entry for the key (i.e. the list is {@code null}) or
- * where the key has a list, but one (or more) of the list's values is {@code null}. Null values are output
- * as a header line containing the key but no associated value.
+ * <p> All methods in this class accept {@code null} values for keys and values.
+ * However, {@code null} keys will never will be present in HTTP request
+ * headers, and will not be output/sent in response headers. Null values can be
+ * represented as either a {@code null} entry for the key (i.e. the list is
+ * {@code null}) or where the key has a list, but one (or more) of the list's
+ * values is {@code null}. Null values are output as a header line containing
+ * the key but no associated value.
  *
  * @since 1.6
  */
@@ -130,8 +133,8 @@ public class Headers implements Map<String,List<String>> {
         }
 
         /**
-         * Returns the first value from the {@link List} of {@code String} values
-         * for the given key (if at least one exists).
+         * Returns the first value from the {@link List} of {@code String}
+         * values for the given key (if at least one exists).
          *
          * @param key the key to search for
          * @return the first {@code String} value associated with the key
