@@ -25,19 +25,116 @@
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_HPP
 
 #include "memory/memRegion.hpp"
-#include "utilities/bitMap.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahMarkBitMap {
+public:
+  typedef size_t idx_t;         // Type used for bit and word indices.
+  typedef uintptr_t bm_word_t;  // Element type of array that represents the
+                                // bitmap, with BitsPerWord bits per element.
 private:
+  // Values for get_next_bit_impl flip parameter.
+  static const bm_word_t find_ones_flip = 0;
+  static const bm_word_t find_zeros_flip = ~(bm_word_t)0;
+
   int const _shift;
   MemRegion _covered;
-  BitMapView _bit_map;
+
+  bm_word_t* _map;     // First word in bitmap
+  idx_t      _size;    // Size of bitmap (in bits)
+
+  // Threshold for performing small range operation, even when large range
+  // operation was requested. Measured in words.
+  static const size_t small_range_words = 32;
+
+  static bool is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word);
 
   inline size_t address_to_index(const HeapWord* addr) const;
   inline HeapWord* index_to_address(size_t offset) const;
 
   void check_mark(HeapWord* addr) const NOT_DEBUG_RETURN;
+
+  // Return a mask that will select the specified bit, when applied to the word
+  // containing the bit.
+  static bm_word_t bit_mask(idx_t bit) { return (bm_word_t)1 << bit_in_word(bit); }
+
+  // Return the bit number of the first bit in the specified word.
+  static idx_t bit_index(idx_t word)  { return word << LogBitsPerWord; }
+
+  // Return the position of bit within the word that contains it (e.g., if
+  // bitmap words are 32 bits, return a number 0 <= n <= 31).
+  static idx_t bit_in_word(idx_t bit) { return bit & (BitsPerWord - 1); }
+
+  bm_word_t* map()                 { return _map; }
+  const bm_word_t* map() const     { return _map; }
+  bm_word_t map(idx_t word) const { return _map[word]; }
+
+  // Return a pointer to the word containing the specified bit.
+  bm_word_t* word_addr(idx_t bit) {
+    return map() + to_words_align_down(bit);
+  }
+
+  const bm_word_t* word_addr(idx_t bit) const {
+    return map() + to_words_align_down(bit);
+  }
+
+  static inline const bm_word_t load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order);
+
+  bool at(idx_t index) const {
+    verify_index(index);
+    return (*word_addr(index) & bit_mask(index)) != 0;
+  }
+
+  // Attempts to change a bit to a desired value. The operation returns true if
+  // this thread changed the value of the bit. It was changed with a RMW operation
+  // using the specified memory_order. The operation returns false if the change
+  // could not be set due to the bit already being observed in the desired state.
+  // The atomic access that observed the bit in the desired state has acquire
+  // semantics, unless memory_order is memory_order_relaxed or memory_order_release.
+  inline bool par_set_bit(idx_t bit, atomic_memory_order memory_order = memory_order_conservative);
+
+  // Assumes relevant validity checking for bit has already been done.
+  static idx_t raw_to_words_align_up(idx_t bit) {
+    return raw_to_words_align_down(bit + (BitsPerWord - 1));
+  }
+
+  // Assumes relevant validity checking for bit has already been done.
+  static idx_t raw_to_words_align_down(idx_t bit) {
+    return bit >> LogBitsPerWord;
+  }
+
+  // Word-aligns bit and converts it to a word offset.
+  // precondition: bit <= size()
+  idx_t to_words_align_up(idx_t bit) const {
+    verify_limit(bit);
+    return raw_to_words_align_up(bit);
+  }
+
+  // Word-aligns bit and converts it to a word offset.
+  // precondition: bit <= size()
+  inline idx_t to_words_align_down(idx_t bit) const {
+    verify_limit(bit);
+    return raw_to_words_align_down(bit);
+  }
+
+  // Helper for get_next_{zero,one}_bit variants.
+  // - flip designates whether searching for 1s or 0s.  Must be one of
+  //   find_{zeros,ones}_flip.
+  // - aligned_right is true if r_index is a priori on a bm_word_t boundary.
+  template<bm_word_t flip, bool aligned_right>
+  inline idx_t get_next_bit_impl(idx_t l_index, idx_t r_index) const;
+
+  inline idx_t get_next_one_offset (idx_t l_index, idx_t r_index) const;
+
+  void clear_large_range (idx_t beg, idx_t end);
+
+  // Verify bit is less than size().
+  void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
+  // Verify bit is not greater than size().
+  void verify_limit(idx_t bit) const NOT_DEBUG_RETURN;
+  // Verify [beg,end) is a valid range, e.g. beg <= end <= size().
+  void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
 
 public:
   static size_t compute_size(size_t heap_size);
@@ -77,7 +174,14 @@ public:
   HeapWord* get_next_marked_addr(const HeapWord* addr,
                                  const HeapWord* limit) const;
 
+  bm_word_t inverted_bit_mask_for_range(idx_t beg, idx_t end) const;
+  void  clear_range_within_word    (idx_t beg, idx_t end);
+  void clear_range (idx_t beg, idx_t end);
   void clear_range_large(MemRegion mr);
+
+  void clear_range_of_words(idx_t beg, idx_t end);
+  void clear_large_range_of_words(idx_t beg, idx_t end);
+  static void clear_range_of_words(bm_word_t* map, idx_t beg, idx_t end);
 
 };
 

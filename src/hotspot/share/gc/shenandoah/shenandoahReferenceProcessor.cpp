@@ -273,7 +273,7 @@ bool ShenandoahReferenceProcessor::should_drop(oop reference, ReferenceType type
   // Check if the referent is still alive, in which case we should
   // drop the reference.
   if (type == REF_PHANTOM) {
-    return ShenandoahHeap::heap()->complete_marking_context()->is_marked_final(referent);
+    return ShenandoahHeap::heap()->complete_marking_context()->is_marked(referent);
   } else {
     return ShenandoahHeap::heap()->complete_marking_context()->is_marked_strong(referent);
   }
