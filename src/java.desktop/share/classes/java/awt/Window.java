@@ -3164,6 +3164,11 @@ public class Window extends Container implements Accessible {
         private static final long serialVersionUID = 4215068635060671780L;
 
         /**
+         * Constructs an {@code AccessibleAWTWindow}.
+         */
+        protected AccessibleAWTWindow() {}
+
+        /**
          * Get the role of this object.
          *
          * @return an instance of AccessibleRole describing the role of the

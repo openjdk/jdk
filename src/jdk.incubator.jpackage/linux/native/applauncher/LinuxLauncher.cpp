@@ -44,8 +44,6 @@ size_t hash(const std::string& str) {
 }
 
 void launchApp() {
-    setlocale(LC_ALL, "en_US.utf8");
-
     const tstring launcherPath = SysInfo::getProcessModulePath();
 
     const Package ownerPackage = Package::findOwnerOfFile(launcherPath);

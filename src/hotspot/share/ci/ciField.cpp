@@ -400,7 +400,7 @@ bool ciField::will_link(ciMethod* accessing_method,
                      _name->get_symbol(), _signature->get_symbol(),
                      methodHandle(THREAD, accessing_method->get_Method()));
   fieldDescriptor result;
-  LinkResolver::resolve_field(result, link_info, bc, false, KILL_COMPILE_ON_FATAL_(false));
+  LinkResolver::resolve_field(result, link_info, bc, false, CHECK_AND_CLEAR_(false));
 
   // update the hit-cache, unless there is a problem with memory scoping:
   if (accessing_method->holder()->is_shared() || !is_shared()) {

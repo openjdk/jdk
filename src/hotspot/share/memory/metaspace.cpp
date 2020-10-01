@@ -42,6 +42,7 @@
 #include "oops/compressedOops.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/copy.hpp"

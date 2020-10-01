@@ -1004,27 +1004,22 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // }
   Label search, found_method;
 
-  for (int peel = 1; peel >= 0; peel--) {
-    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
-    cmp(intf_klass, method_result);
-
-    if (peel) {
-      br(Assembler::EQ, found_method);
-    } else {
-      br(Assembler::NE, search);
-      // (invert the test to fall through to found_method...)
-    }
-
-    if (!peel)  break;
-
-    bind(search);
-
-    // Check that the previous entry is non-null.  A null entry means that
-    // the receiver class doesn't implement the interface, and wasn't the
-    // same as when the caller was compiled.
-    cbz(method_result, L_no_such_interface);
+  ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+  cmp(intf_klass, method_result);
+  br(Assembler::EQ, found_method);
+  bind(search);
+  // Check that the previous entry is non-null.  A null entry means that
+  // the receiver class doesn't implement the interface, and wasn't the
+  // same as when the caller was compiled.
+  cbz(method_result, L_no_such_interface);
+  if (itableOffsetEntry::interface_offset_in_bytes() != 0) {
     add(scan_temp, scan_temp, scan_step);
+    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+  } else {
+    ldr(method_result, Address(pre(scan_temp, scan_step)));
   }
+  cmp(intf_klass, method_result);
+  br(Assembler::NE, search);
 
   bind(found_method);
 
@@ -5271,7 +5266,7 @@ void MacroAssembler::cache_wb(Address line) {
   assert(line.offset() == 0, "offset should be 0");
   // would like to assert this
   // assert(line._ext.shift == 0, "shift should be zero");
-  if (VM_Version::supports_dcpop()) {
+  if (VM_Version::features() & VM_Version::CPU_DCPOP) {
     // writeback using clear virtual address to point of persistence
     dc(Assembler::CVAP, line.base());
   } else {

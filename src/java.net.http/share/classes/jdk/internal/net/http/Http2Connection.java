@@ -700,7 +700,7 @@ class Http2Connection  {
         Throwable initialCause = this.cause;
         if (initialCause == null) this.cause = t;
         client2.deleteConnection(this);
-        List<Stream<?>> c = new LinkedList<>(streams.values());
+        List<Stream<?>> c = new ArrayList<>(streams.values());
         for (Stream<?> s : c) {
             try {
                 s.connectionClosing(t);

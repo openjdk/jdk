@@ -693,7 +693,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
-  _preserved_marks_set.get()->push_if_necessary(old, old->mark_raw());
+  _preserved_marks_set.get()->push_if_necessary(old, old->mark());
   // forward to self
   old->forward_to(old);
 
@@ -931,11 +931,7 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   // Note that since DefNewGeneration supports lock-free allocation, we
   // have to use it here, as well.
   HeapWord* result = eden()->par_allocate(word_size);
-  if (result != NULL) {
-    if (_old_gen != NULL) {
-      _old_gen->sample_eden_chunk();
-    }
-  } else {
+  if (result == NULL) {
     // If the eden is full and the last collection bailed out, we are running
     // out of heap space, and we try to allocate the from-space, too.
     // allocate_from_space can't be inlined because that would introduce a
@@ -947,11 +943,7 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
 
 HeapWord* DefNewGeneration::par_allocate(size_t word_size,
                                          bool is_tlab) {
-  HeapWord* res = eden()->par_allocate(word_size);
-  if (_old_gen != NULL) {
-    _old_gen->sample_eden_chunk();
-  }
-  return res;
+  return eden()->par_allocate(word_size);
 }
 
 size_t DefNewGeneration::tlab_capacity() const {

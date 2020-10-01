@@ -458,8 +458,8 @@ private:
 
 protected:
 
-  // Warm up hash table, type table and initial worklist
-  void init_worklist( Node *a_root );
+  // Shuffle worklist, for stress testing
+  void shuffle_worklist();
 
   virtual const Type* saturate(const Type* new_type, const Type* old_type,
                                const Type* limit_type) const;

@@ -205,10 +205,6 @@ void ZCollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   ShouldNotReachHere();
 }
 
-bool ZCollectedHeap::supports_tlab_allocation() const {
-  return true;
-}
-
 size_t ZCollectedHeap::tlab_capacity(Thread* ignored) const {
   return _heap.tlab_capacity();
 }
@@ -223,22 +219,6 @@ size_t ZCollectedHeap::max_tlab_size() const {
 
 size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   return _heap.unsafe_max_tlab_alloc();
-}
-
-bool ZCollectedHeap::can_elide_tlab_store_barriers() const {
-  return false;
-}
-
-bool ZCollectedHeap::can_elide_initializing_store_barrier(oop new_obj) {
-  // Not supported
-  ShouldNotReachHere();
-  return true;
-}
-
-bool ZCollectedHeap::card_mark_must_follow_store() const {
-  // Not supported
-  ShouldNotReachHere();
-  return false;
 }
 
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {

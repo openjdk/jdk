@@ -54,7 +54,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.ClassLoaders;
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 import jdk.internal.perf.PerfCounter;
 
 /**
@@ -167,7 +167,7 @@ public final class ModuleBootstrap {
             assert canUseArchivedBootLayer();
             bootLayer = archivedBootLayer.bootLayer();
             BootLoader.getUnnamedModule(); // trigger <clinit> of BootLoader.
-            VM.defineArchivedModules(ClassLoaders.platformClassLoader(), ClassLoaders.appClassLoader());
+            CDS.defineArchivedModules(ClassLoaders.platformClassLoader(), ClassLoaders.appClassLoader());
 
             // assume boot layer has at least one module providing a service
             // that is mapped to the application class loader.

@@ -113,10 +113,11 @@ class os: AllStatic {
     _page_sizes[1] = 0; // sentinel
   }
 
-  static char*  pd_reserve_memory(size_t bytes, char* addr = 0,
-                                  size_t alignment_hint = 0);
-  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr);
-  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc);
+  static char*  pd_reserve_memory(size_t bytes, size_t alignment_hint);
+
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc);
+
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
                                  bool executable);
@@ -310,13 +311,21 @@ class os: AllStatic {
                                                   const size_t size);
 
   static int    vm_allocation_granularity();
-  static char*  reserve_memory(size_t bytes, char* addr = 0,
-                               size_t alignment_hint = 0, int file_desc = -1);
-  static char*  reserve_memory(size_t bytes, char* addr,
-                               size_t alignment_hint, MEMFLAGS flags);
-  static char*  reserve_memory_aligned(size_t size, size_t alignment, int file_desc = -1);
-  static char*  attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc = -1);
 
+  // Reserves virtual memory.
+  // alignment_hint - currently only used by AIX
+  static char*  reserve_memory(size_t bytes, size_t alignment_hint = 0, MEMFLAGS flags = mtOther);
+
+  // Reserves virtual memory.
+  // if file_desc != -1, also attaches the memory to the file.
+  static char*  reserve_memory_with_fd(size_t bytes, size_t alignment_hint, int file_desc);
+
+  // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
+  static char*  reserve_memory_aligned(size_t size, size_t alignment, int file_desc = -1);
+
+  // Attempts to reserve the virtual memory at [addr, addr + bytes).
+  // Does not overwrite existing mappings.
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc = -1);
 
   // Split a reserved memory region [base, base+size) into two regions [base, base+split) and
   //  [base+split, base+size).
@@ -756,6 +765,7 @@ class os: AllStatic {
 
   // random number generation
   static int random();                     // return 32bit pseudorandom number
+  static int next_random(unsigned int rand_seed); // pure version of random()
   static void init_random(unsigned int initval);    // initialize random sequence
 
   // Structured OS Exception support

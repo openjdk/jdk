@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,6 +316,7 @@ public class Box extends JComponent implements Accessible {
             setMinimumSize(min);
             setPreferredSize(pref);
             setMaximumSize(max);
+            setFocusable(false);
         }
 
         /**
@@ -383,6 +384,12 @@ public class Box extends JComponent implements Accessible {
          */
         @SuppressWarnings("serial")
         protected class AccessibleBoxFiller extends AccessibleAWTComponent {
+
+            /**
+             * Constructs an {@code AccessibleBoxFiller}.
+             */
+            protected AccessibleBoxFiller() {}
+
             // AccessibleContext methods
             //
             /**
@@ -425,6 +432,12 @@ public class Box extends JComponent implements Accessible {
      */
     @SuppressWarnings("serial")
     protected class AccessibleBox extends AccessibleAWTContainer {
+
+        /**
+         * Constructs an {@code AccessibleBox}.
+         */
+        protected AccessibleBox() {}
+
         // AccessibleContext methods
         //
         /**
