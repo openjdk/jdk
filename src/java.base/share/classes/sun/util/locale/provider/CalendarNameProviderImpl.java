@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
 
             // If standalone names are requested and no "standalone." resources are found,
             // try the default ones instead.
-            if (strings == null && key.indexOf("standalone.") != -1) {
+            if (strings == null && key.contains("standalone.")) {
                 key = key.replaceFirst("standalone.", "");
                 strings = javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
             }
@@ -129,7 +129,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         return name;
     }
 
-    private static int[] REST_OF_STYLES = {
+    private static final int[] REST_OF_STYLES = {
         SHORT_STANDALONE, LONG_FORMAT, LONG_STANDALONE,
         NARROW_FORMAT, NARROW_STANDALONE
     };
@@ -166,7 +166,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
 
             // If standalone names are requested and no "standalone." resources are found,
             // try the default ones instead.
-            if (strings == null && key.indexOf("standalone.") != -1) {
+            if (strings == null && key.contains("standalone.")) {
                 key = key.replaceFirst("standalone.", "");
                 strings = javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
             }

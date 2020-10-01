@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ package java.time.format;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.FLEXIBLE_PERIOD_OF_DAY;
 import static java.time.temporal.ChronoField.HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
@@ -437,6 +438,21 @@ final class Parsed implements TemporalAccessor {
             updateCheckConflict(SECOND_OF_DAY, HOUR_OF_DAY, sod / 3600);
             updateCheckConflict(SECOND_OF_DAY, MINUTE_OF_HOUR, (sod / 60) % 60);
             updateCheckConflict(SECOND_OF_DAY, SECOND_OF_MINUTE, sod % 60);
+        }
+        if (fieldValues.containsKey(FLEXIBLE_PERIOD_OF_DAY)) {
+            long fpd = fieldValues.remove(FLEXIBLE_PERIOD_OF_DAY);
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                FLEXIBLE_PERIOD_OF_DAY.checkValidValue(fpd);
+            }
+            if (!fieldValues.containsKey(MINUTE_OF_DAY) &&
+                !fieldValues.containsKey(HOUR_OF_DAY)) {
+                updateCheckConflict(FLEXIBLE_PERIOD_OF_DAY, MINUTE_OF_DAY, fpd);
+            }
+            // FlexiblePeriod precedes AmPm. Override it if exists without conflict
+            // checking as for, e.g., "at night" can either be "AM" or "PM".
+            if (fieldValues.containsKey(AMPM_OF_DAY)) {
+                fieldValues.put(AMPM_OF_DAY, fpd / 720);
+            }
         }
         if (fieldValues.containsKey(MINUTE_OF_DAY)) {
             long mod = fieldValues.remove(MINUTE_OF_DAY);
