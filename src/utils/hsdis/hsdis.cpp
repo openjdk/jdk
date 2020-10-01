@@ -642,7 +642,7 @@ class hsdis_backend : public hsdis_backend_base {
       return;
     }
 
-    LLVMSetDisasmOptions(_dcontext, LLVMDisassembler_Option_PrintImmHex | LLVMDisassembler_Option_AsmPrinterVariant);
+    LLVMSetDisasmOptions(_dcontext, LLVMDisassembler_Option_PrintImmHex);
   }
 
   ~hsdis_backend() {
