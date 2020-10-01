@@ -4208,6 +4208,11 @@ void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
     bool skip = false;
     if (is_shared()) {
       assert(stream == NULL, "shared class with stream");
+      if (is_hidden()) {
+        // Not including archived lambda proxy class in the classlist.
+        assert(!is_non_strong_hidden(), "unexpected non-string hidden class");
+        return;
+      }
     } else {
       assert(stream != NULL, "non-shared class without stream");
       // skip hidden class and unsafe anonymous class.
