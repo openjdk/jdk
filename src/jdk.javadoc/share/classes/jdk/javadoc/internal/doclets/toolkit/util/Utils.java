@@ -2268,7 +2268,7 @@ public class Utils {
 
     private ConstantValueExpression cve = null;
 
-    public String constantValueExpresion(VariableElement ve) {
+    public String constantValueExpression(VariableElement ve) {
         if (cve == null)
             cve = new ConstantValueExpression();
         return cve.constantValueExpression(configuration.workArounds, ve);

@@ -43,10 +43,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.scenarios.allocation.AP07.ap07t002
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:ap07t002=-waittime=5 -verbose"
+ * @build nsk.jvmti.scenarios.allocation.AP07.ap07t002
+ * @run main/othervm/native
+ *      -agentlib:ap07t002=-waittime=5,-verbose
  *      nsk.jvmti.scenarios.allocation.AP07.ap07t002
  */
 
