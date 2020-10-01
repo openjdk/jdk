@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ static char* create_standard_memory(size_t size) {
   }
 
   // commit memory
-  if (!os::commit_memory(mapAddress, size, !ExecMem)) {
+  if (!os::commit_memory(mapAddress, size, false)) {
     if (PrintMiscellaneous && Verbose) {
       warning("Could not commit PerfData memory\n");
     }

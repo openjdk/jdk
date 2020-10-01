@@ -63,7 +63,7 @@ static char* create_standard_memory(size_t size) {
   }
 
   // commit memory
-  if (!os::commit_memory(mapAddress, size, !ExecMem)) {
+  if (!os::commit_memory(mapAddress, size, false)) {
     if (PrintMiscellaneous && Verbose) {
       warning("Could not commit PerfData memory\n");
     }

@@ -2002,7 +2002,7 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size, !ExecMem);
+  return os::commit_memory(addr, size, false);
 }
 
 // If this is a growable mapping, remove the guard pages entirely by

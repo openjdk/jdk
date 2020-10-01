@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -572,7 +572,7 @@ bool PSCardTable::resize_commit_uncommit(int changed_region,
       MemRegion new_committed =
         MemRegion(new_start_aligned, new_end_for_commit);
       os::commit_memory_or_exit((char*)new_committed.start(),
-                                new_committed.byte_size(), !ExecMem,
+                                new_committed.byte_size(), false,
                                 "card table expansion");
     }
     result = true;

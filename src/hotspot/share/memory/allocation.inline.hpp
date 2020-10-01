@@ -62,7 +62,7 @@ E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
     return NULL;
   }
 
-  if (os::commit_memory(addr, size, !ExecMem)) {
+  if (os::commit_memory(addr, size, false)) {
     return (E*)addr;
   } else {
     os::release_memory(addr, size);
@@ -80,7 +80,7 @@ E* MmapArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
   }
 
-  os::commit_memory_or_exit(addr, size, !ExecMem, "Allocator (commit)");
+  os::commit_memory_or_exit(addr, size, false, "Allocator (commit)");
 
   return (E*)addr;
 }

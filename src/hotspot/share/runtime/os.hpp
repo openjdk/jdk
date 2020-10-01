@@ -76,10 +76,6 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
-// Executable parameter flag for os::commit_memory() and
-// os::commit_memory_or_exit().
-const bool ExecMem = true;
-
 // Typedef for structured exception handling support
 typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
 

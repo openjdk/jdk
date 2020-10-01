@@ -103,7 +103,7 @@ void CardTable::initialize() {
   HeapWord* guard_page = align_down((HeapWord*)guard_card, _page_size);
   _guard_region = MemRegion(guard_page, _page_size);
   os::commit_memory_or_exit((char*)guard_page, _page_size, _page_size,
-                            !ExecMem, "card table last card");
+                            false, "card table last card");
   *guard_card = last_card;
 
   log_trace(gc, barrier)("CardTable::CardTable: ");
@@ -244,7 +244,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
       assert(!new_committed.is_empty(), "Region should not be empty here");
       os::commit_memory_or_exit((char*)new_committed.start(),
                                 new_committed.byte_size(), _page_size,
-                                !ExecMem, "card table expansion");
+                                false, "card table expansion");
     // Use new_end_aligned (as opposed to new_end_for_commit) because
     // the cur_committed region may include the guard region.
     } else if (new_end_aligned < cur_committed.end()) {
