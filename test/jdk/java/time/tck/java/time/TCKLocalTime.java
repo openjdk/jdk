@@ -62,6 +62,7 @@ package tck.java.time;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.FLEXIBLE_PERIOD_OF_DAY;
 import static java.time.temporal.ChronoField.HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MICRO_OF_DAY;
@@ -179,6 +180,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
             CLOCK_HOUR_OF_DAY,
             HOUR_OF_DAY,
             AMPM_OF_DAY,
+            FLEXIBLE_PERIOD_OF_DAY,
         };
         return Arrays.asList(array);
     }

@@ -72,6 +72,7 @@ import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.EPOCH_DAY;
 import static java.time.temporal.ChronoField.ERA;
+import static java.time.temporal.ChronoField.FLEXIBLE_PERIOD_OF_DAY;
 import static java.time.temporal.ChronoField.HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
@@ -194,6 +195,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
             CLOCK_HOUR_OF_DAY,
             HOUR_OF_DAY,
             AMPM_OF_DAY,
+            FLEXIBLE_PERIOD_OF_DAY,
             DAY_OF_WEEK,
             ALIGNED_DAY_OF_WEEK_IN_MONTH,
             ALIGNED_DAY_OF_WEEK_IN_YEAR,

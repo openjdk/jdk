@@ -517,7 +517,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @return the ampm strings.
      */
     public String[] getAmPmStrings() {
-        return Arrays.copyOf(ampms, 2);
+        return Arrays.copyOf(ampms, ampms.length);
     }
 
     /**
@@ -525,7 +525,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @param newAmpms the new ampm strings.
      */
     public void setAmPmStrings(String[] newAmpms) {
-        ampms = Arrays.copyOf(newAmpms, Math.max(newAmpms.length, 2));
+        ampms = Arrays.copyOf(newAmpms, newAmpms.length);
         cachedHashCode = 0;
     }
 
@@ -758,6 +758,11 @@ public class DateFormatSymbols implements Serializable, Cloneable {
             dfs.months = resource.getStringArray("MonthNames");
             dfs.shortMonths = resource.getStringArray("MonthAbbreviations");
             dfs.ampms = resource.getStringArray("AmPmMarkers");
+            // the array in the resource bundle may contain more elements for day periods.
+            // Extract only am/pm.
+            if (dfs.ampms.length > 2) {
+                dfs.ampms = Arrays.copyOf(dfs.ampms, 2);
+            }
             dfs.localPatternChars = resource.getString("DateTimePatternChars");
 
             // Day of week names are stored in a 1-based array.

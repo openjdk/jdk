@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ package tck.java.time;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.FLEXIBLE_PERIOD_OF_DAY;
 import static java.time.temporal.ChronoField.HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MICRO_OF_DAY;
@@ -166,6 +167,7 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
             CLOCK_HOUR_OF_DAY,
             HOUR_OF_DAY,
             AMPM_OF_DAY,
+            FLEXIBLE_PERIOD_OF_DAY,
             OFFSET_SECONDS,
         };
         return Arrays.asList(array);

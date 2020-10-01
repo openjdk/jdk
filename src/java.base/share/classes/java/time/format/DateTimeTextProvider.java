@@ -78,9 +78,10 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import sun.text.resources.DayPeriodRules;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
@@ -99,15 +100,25 @@ class DateTimeTextProvider {
     /** Cache. */
     private static final ConcurrentMap<Entry<TemporalField, Locale>, Object> CACHE = new ConcurrentHashMap<>(16, 0.75f, 2);
     /** Comparator. */
-    private static final Comparator<Entry<String, Long>> COMPARATOR = new Comparator<Entry<String, Long>>() {
-        @Override
-        public int compare(Entry<String, Long> obj1, Entry<String, Long> obj2) {
-            return obj2.getKey().length() - obj1.getKey().length();  // longest to shortest
-        }
+    private static final Comparator<Entry<String, Long>> COMPARATOR = (obj1, obj2) -> {
+        return obj2.getKey().length() - obj1.getKey().length();  // longest to shortest
     };
 
     // Singleton instance
     private static final DateTimeTextProvider INSTANCE = new DateTimeTextProvider();
+
+    // DayPeriod constants
+    private static final Pattern RULE = Pattern.compile("(?<type>[a-z12]+):(?<from>\\d{2}):00(-(?<to>\\d{2}))*");
+    private static final int DP_MIDNIGHT = 2;
+    private static final int DP_NOON = 3;
+    private static final int DP_MORNING1 = 4;
+    private static final int DP_MORNING2 = 5;
+    private static final int DP_AFTERNOON1 = 6;
+    private static final int DP_AFTERNOON2 = 7;
+    private static final int DP_EVENING1 = 8;
+    private static final int DP_EVENING2 = 9;
+    private static final int DP_NIGHT1 = 10;
+    private static final int DP_NIGHT2 = 11;
 
     DateTimeTextProvider() {}
 
@@ -137,6 +148,15 @@ class DateTimeTextProvider {
     public String getText(TemporalField field, long value, TextStyle style, Locale locale) {
         Object store = findStore(field, locale);
         if (store instanceof LocaleStore) {
+            if (field == FLEXIBLE_PERIOD_OF_DAY) {
+                final long val = value;
+                final var map = getDayPeriodMap(locale);
+                value = map.keySet().stream()
+                    .filter(k -> k.includes(val))
+                    .min(DayPeriod.DPCOMPARATOR)
+                    .map(DayPeriod::mid)
+                    .orElse((long) (val / 720 == 0 ? 360 : 1_080));
+            }
             return ((LocaleStore) store).getText(value, style);
         }
         return null;
@@ -191,7 +211,7 @@ class DateTimeTextProvider {
             fieldValue = (int) value;
         } else if (field == FLEXIBLE_PERIOD_OF_DAY) {
             fieldIndex = Calendar.AM_PM;
-            fieldValue = getFlexibleDayPeriod(locale, value);
+            fieldValue = getDayPeriodIndex(locale, value);
         } else {
             return null;
         }
@@ -275,7 +295,7 @@ class DateTimeTextProvider {
         List<Entry<String, Long>> list = new ArrayList<>(map.size());
         switch (fieldIndex) {
         case Calendar.ERA:
-            for (Map.Entry<String, Integer> entry : map.entrySet()) {
+            for (Entry<String, Integer> entry : map.entrySet()) {
                 int era = entry.getValue();
                 if (chrono == JapaneseChronology.INSTANCE) {
                     if (era == 0) {
@@ -288,17 +308,17 @@ class DateTimeTextProvider {
             }
             break;
         case Calendar.MONTH:
-            for (Map.Entry<String, Integer> entry : map.entrySet()) {
+            for (Entry<String, Integer> entry : map.entrySet()) {
                 list.add(createEntry(entry.getKey(), (long)(entry.getValue() + 1)));
             }
             break;
         case Calendar.DAY_OF_WEEK:
-            for (Map.Entry<String, Integer> entry : map.entrySet()) {
+            for (Entry<String, Integer> entry : map.entrySet()) {
                 list.add(createEntry(entry.getKey(), (long)toWeekDay(entry.getValue())));
             }
             break;
         default:
-            for (Map.Entry<String, Integer> entry : map.entrySet()) {
+            for (Entry<String, Integer> entry : map.entrySet()) {
                 list.add(createEntry(entry.getKey(), (long)entry.getValue()));
             }
             break;
@@ -458,12 +478,14 @@ class DateTimeTextProvider {
                     }
                 } else {
                     assert field == FLEXIBLE_PERIOD_OF_DAY;
-                    IntStream.range(0, 24).forEach(hour -> {
-                        String displayName =
-                            CalendarDataUtility.retrieveJavaTimeFieldValueName("gregory", Calendar.AM_PM,
-                                        getFlexibleDayPeriod(locale, hour), calStyle, locale);
+                    var periodMap = getDayPeriodMap(locale);
+                    periodMap.forEach((key, value) -> {
+                        String displayName = CalendarDataUtility.retrieveJavaTimeFieldValueName(
+                                "gregory", Calendar.AM_PM, value, calStyle, locale);
                         if (displayName != null) {
-                            map.put((long) hour, displayName);
+                            map.put(key.mid(), displayName);
+                        } else {
+                            periodMap.remove(key);
                         }
                     });
                 }
@@ -471,7 +493,7 @@ class DateTimeTextProvider {
                     styleMap.put(textStyle, map);
                 }
             }
-            return new LocaleStore(styleMap, true);
+            return new LocaleStore(styleMap);
         }
 
         if (field == IsoFields.QUARTER_OF_YEAR) {
@@ -530,16 +552,125 @@ class DateTimeTextProvider {
     }
 
     /**
-     * Returns the localized flexible period
+     * DayPeriod class that represents a DayPeriod defined in CLDR.
+     */
+    static final class DayPeriod {
+        static final Comparator<DayPeriod> DPCOMPARATOR = (dp1, dp2) -> (int)(dp1.duration() - dp2.duration());
+
+        private final long from;
+        private final long to;
+
+        DayPeriod(long from, long to) {
+            this.from = from;
+            this.to = to;
+        }
+
+        /**
+         * Returns the midpoint of this day period in minute-of-day
+         * @return midpoint
+         */
+        long mid() {
+            return (from + duration() / 2) % 1_440;
+        }
+
+        /**
+         * Checks whether the passed minute-of-day is within this
+         * day period or not.
+         *
+         * @param mod minute-of-day to check
+         * @return true if {@code mod} is within this day period
+         */
+        boolean includes(long mod) {
+            return (from <= mod && mod <= to || // contiguous from-to
+                    from > to && (from <= mod || to > mod)); // beyond midnight
+        }
+
+        /**
+         * Calculates the duration of this day period
+         * @return the duration in minutes
+         */
+        private long duration() {
+            return from > to ? 1_440 - from + to: to - from;
+        }
+
+        /**
+         * Gets the index to the am/pm array returned from the Calendar resource
+         * bundle.
+         *
+         * @param period day period name defined in LDML
+         * @return the array index
+         */
+        static int index(String period) {
+            return switch (period) {
+                case "am" -> Calendar.AM;
+                case "pm" -> Calendar.PM;
+                case "midnight" -> DP_MIDNIGHT;
+                case "noon" -> DP_NOON;
+                case "morning1" -> DP_MORNING1;
+                case "morning2" -> DP_MORNING2;
+                case "afternoon1" -> DP_AFTERNOON1;
+                case "afternoon2" -> DP_AFTERNOON2;
+                case "evening1" -> DP_EVENING1;
+                case "evening2" -> DP_EVENING2;
+                case "night1" -> DP_NIGHT1;
+                case "night2" -> DP_NIGHT2;
+                default -> throw new InternalError("invalid day period type");
+            };
+        }
+    }
+
+    private final static Map<Locale, Map<DayPeriod, Integer>> DAY_PERIOD_CACHE = new ConcurrentHashMap<>();
+
+     /**
+     * Returns the DayPeriod to array index map for a locale.
      *
      * @param locale  the locale, not null
-     * @param hour hour of day
+     * @return the DayPeriod to index map
+     */
+    private static Map<DayPeriod, Integer> getDayPeriodMap(Locale locale) {
+        return DAY_PERIOD_CACHE.computeIfAbsent(locale, l -> {
+            final Map<DayPeriod, Integer> pm = new ConcurrentHashMap<>();
+            Arrays.stream(DayPeriodRules.rulesArray)
+                .filter(ra -> ra[0].equals(l.getLanguage()))
+                .flatMap(ra -> Arrays.stream(ra[1].split(";")))
+                .forEach(period -> {
+                    Matcher m = RULE.matcher(period);
+                    if (m.find()) {
+                        String from = m.group("from");
+                        String to = m.group("to");
+                        if (to == null) {
+                            to = from;
+                        }
+                        pm.putIfAbsent(
+                            new DayPeriod(
+                                Long.parseLong(from) * 60,
+                                Long.parseLong(to) * 60),
+                            DayPeriod.index(m.group("type")));
+                    }
+                });
+
+                // add am/pm
+                pm.putIfAbsent(new DayPeriod(0, 720), 0);
+                pm.putIfAbsent(new DayPeriod(720, 1_440), 1);
+                return pm;
+            });
+    }
+
+    /**
+     * Returns the localized flexible period array index
+     *
+     * @param locale  the locale, not null
+     * @param mod minute of day
      * @return the flexible period index
      */
-    static int getFlexibleDayPeriod(Locale locale, long hour) {
-        return LocaleProviderAdapter.getResourceBundleBased()
-                .getCalendarDataProvider()
-                .getFlexibleDayPeriod(locale, (int)hour);
+    private static int getDayPeriodIndex(Locale locale, long mod) {
+        var map = getDayPeriodMap(locale);
+
+        return map.keySet().stream()
+            .filter(k -> k.includes(mod))
+            .min(DayPeriod.DPCOMPARATOR)
+            .map(map::get)
+            .orElse((int) (mod / 720));
     }
 
     /**
@@ -561,46 +692,31 @@ class DateTimeTextProvider {
          */
         private final Map<TextStyle, List<Entry<String, Long>>> parsable;
 
-        LocaleStore(Map<TextStyle, Map<Long, String>> valueTextMap) {
-            this(valueTextMap, false);
-        }
-
         /**
          * Constructor.
          *
          * @param valueTextMap  the map of values to text to store, assigned and not altered, not null
          */
-        LocaleStore(Map<TextStyle, Map<Long, String>> valueTextMap, boolean allowMultiple) {
+        LocaleStore(Map<TextStyle, Map<Long, String>> valueTextMap) {
             this.valueTextMap = valueTextMap;
             Map<TextStyle, List<Entry<String, Long>>> map = new HashMap<>();
             List<Entry<String, Long>> allList = new ArrayList<>();
-            for (Map.Entry<TextStyle, Map<Long, String>> vtmEntry : valueTextMap.entrySet()) {
+            valueTextMap.forEach((key1, value1) -> {
                 Map<String, Entry<String, Long>> reverse = new HashMap<>();
-                if (allowMultiple) {
-                    Map<Object, Set<Entry<Long, String>>> revmap = vtmEntry.getValue().entrySet().stream()
-                            .collect(Collectors.groupingBy(e -> e.getValue(), Collectors.toSet()));
-                    revmap.entrySet().stream()
-                            .forEach(e -> reverse.put((String)e.getKey(),
-                                    createEntry((String)e.getKey(), DateTimeTextProvider.getLongValue(e.getValue()))));
-                } else {
-                    for (Map.Entry<Long, String> entry : vtmEntry.getValue().entrySet()) {
-                        if (reverse.put(entry.getValue(), createEntry(entry.getValue(), entry.getKey())) != null) {
-                            // TODO: BUG: this has no effect
-                            continue;  // not parsable, try next style
-                        }
+                for (Entry<Long, String> entry : value1.entrySet()) {
+                    if (reverse.put(entry.getValue(), createEntry(entry.getValue(), entry.getKey())) != null) {
+                        // TODO: BUG: this has no effect
+                        continue;  // not parsable, try next style
                     }
                 }
                 List<Entry<String, Long>> list = new ArrayList<>(reverse.values());
-                Collections.sort(list, COMPARATOR);
-                map.put(vtmEntry.getKey(), list);
+                list.sort(COMPARATOR);
+                map.put(key1, list);
                 allList.addAll(list);
                 map.put(null, allList);
-            }
-            Collections.sort(allList, COMPARATOR);
+            });
+            allList.sort(COMPARATOR);
             this.parsable = map;
-        }
-
-        private void multiMap(Map<Long, String> vtm, Map<String, Entry<String, Long>> reverse) {
         }
 
         /**
@@ -629,32 +745,5 @@ class DateTimeTextProvider {
             List<Entry<String, Long>> list = parsable.get(style);
             return list != null ? list.iterator() : null;
         }
-    }
-
-    private static Long getLongValue(Set<Entry<Long, String>> s) {
-        List<Long> l = s.stream()
-                .map(e -> e.getKey())
-                .sorted()
-                .collect(Collectors.toList());
-        long start = l.get(0);
-        long end = l.get(l.size()-1);
-        for(int i = 0; i < l.size(); i++) {
-            long current = l.get(i);
-            if (i+1 < l.size()) {
-                long next = l.get(i+1);
-                if (current + 1 != next) {
-                    // there's a gap
-                    start = next;
-                    end = current;
-                    break;
-                }
-            }
-        }
-        long gap = start > end ?
-                24 - start + end :
-                end - start;
-        long mid = (start + gap / 2) % 24;
-        return mid;
-
     }
 }

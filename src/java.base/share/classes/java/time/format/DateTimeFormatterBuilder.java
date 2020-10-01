@@ -218,10 +218,9 @@ public final class DateTimeFormatterBuilder {
         }
         LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, locale);
         JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
-        String pattern = provider.getJavaTimeDateTimePattern(convertStyle(timeStyle),
+        return provider.getJavaTimeDateTimePattern(convertStyle(timeStyle),
                          convertStyle(dateStyle), chrono.getCalendarType(),
                          CalendarDataUtility.findRegionOverride(locale));
-        return pattern;
     }
 
     /**
@@ -678,7 +677,7 @@ public final class DateTimeFormatterBuilder {
      * the minimum and maximum width. In strict mode, if the minimum and maximum widths
      * are equal and there is no decimal point then the parser will
      * participate in adjacent value parsing, see
-     * {@link appendValue(java.time.temporal.TemporalField, int)}. When parsing in lenient mode,
+     * {@link #appendValue(java.time.temporal.TemporalField, int)}. When parsing in lenient mode,
      * the minimum width is considered to be zero and the maximum is nine.
      * <p>
      * If the value cannot be obtained then an exception will be thrown.
@@ -2166,9 +2165,7 @@ public final class DateTimeFormatterBuilder {
     private int appendInternal(DateTimePrinterParser pp) {
         Objects.requireNonNull(pp, "pp");
         if (active.padNextWidth > 0) {
-            if (pp != null) {
-                pp = new PadPrinterParserDecorator(pp, active.padNextWidth, active.padNextChar);
-            }
+            pp = new PadPrinterParserDecorator(pp, active.padNextWidth, active.padNextChar);
             active.padNextWidth = 0;
             active.padNextChar = 0;
         }
@@ -2317,7 +2314,7 @@ public final class DateTimeFormatterBuilder {
         private final boolean optional;
 
         CompositePrinterParser(List<DateTimePrinterParser> printerParsers, boolean optional) {
-            this(printerParsers.toArray(new DateTimePrinterParser[printerParsers.size()]), optional);
+            this(printerParsers.toArray(new DateTimePrinterParser[0]), optional);
         }
 
         CompositePrinterParser(DateTimePrinterParser[] printerParsers, boolean optional) {
@@ -3135,11 +3132,11 @@ public final class DateTimeFormatterBuilder {
         }
 
         /**
-         * For FractionPrinterPrinterParser, the width is fixed if context is sttrict,
+         * For FractionPrinterPrinterParser, the width is fixed if context is strict,
          * minWidth equal to maxWidth and decimalpoint is absent.
          * @param context the context
          * @return if the field is fixed width
-         * @see DateTimeFormatterBuilder#appendValueFraction(java.time.temporal.TemporalField, int, int, boolean)
+         * @see #appendFraction(java.time.temporal.TemporalField, int, int, boolean)
          */
         @Override
         boolean isFixedWidth(DateTimeParseContext context) {
