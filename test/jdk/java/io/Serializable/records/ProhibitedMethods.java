@@ -23,10 +23,11 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Basic tests for prohibited magic serialization methods
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
- * @run testng/othervm ProhibitedMethods
+ * @run testng ProhibitedMethods
  */
 
 import java.io.ByteArrayInputStream;

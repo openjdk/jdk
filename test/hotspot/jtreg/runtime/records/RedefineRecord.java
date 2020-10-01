@@ -23,14 +23,14 @@
 
 /*
  * @test
+ * @bug 8246774
  * @library /test/lib
  * @summary Test that a class that is a record can be redefined.
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  *          jdk.jartool/sun.tools.jar
  * @requires vm.jvmti
- * @compile RedefineRecord.java
- * @run main/othervm RedefineRecord buildagent
+ * @run main RedefineRecord buildagent
  * @run main/othervm/timeout=6000 RedefineRecord runtest
  */
 

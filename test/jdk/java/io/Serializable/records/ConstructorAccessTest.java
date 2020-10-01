@@ -23,9 +23,10 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Ensures that the serialization implementation can *always* access
  *          the record constructor
- * @run testng/othervm ConstructorAccessTest
+ * @run testng ConstructorAccessTest
  * @run testng/othervm/java.security.policy=empty_security.policy ConstructorAccessTest
  */
 

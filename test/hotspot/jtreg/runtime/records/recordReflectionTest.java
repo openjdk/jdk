@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @run main/othervm recordReflectionTest
+ * @bug 8246774
+ * @summary testing reflection APIs for record classes
  */
 
 

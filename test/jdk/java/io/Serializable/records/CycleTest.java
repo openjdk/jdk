@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Ensures basic behavior of cycles from record components
- * @run testng/othervm CycleTest
+ * @run testng CycleTest
  * @run testng/othervm/java.security.policy=empty_security.policy CycleTest
  */
 

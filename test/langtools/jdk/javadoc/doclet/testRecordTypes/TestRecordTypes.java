@@ -23,12 +23,11 @@
 
 /*
  * @test
- * @bug      8225055 8239804
+ * @bug      8225055 8239804 8246774
  * @summary  Record types
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    toolbox.ToolBox javadoc.tester.*
- * @compile TestRecordTypes.java
  * @run main TestRecordTypes
  */
 

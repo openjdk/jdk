@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Tests for stream references
- * @run testng/othervm StreamRefTest
+ * @run testng StreamRefTest
  */
 
 import java.io.ByteArrayInputStream;

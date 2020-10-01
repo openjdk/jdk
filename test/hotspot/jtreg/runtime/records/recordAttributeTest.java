@@ -23,10 +23,10 @@
 
 /*
  * @test
+ * @bug 8246774
  * @compile abstractRecord.jcod notFinalRecord.jcod oldRecordAttribute.jcod superNotJLRecord.jcod
  * @compile shortRecordAttribute.jcod twoRecordAttributes.jcod badRecordAttribute.jcod
- *
- * @run main/othervm recordAttributeTest
+ * @run main recordAttributeTest
  */
 
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8242478
+ * @bug 8242478 8246774
  * @summary test local records
  * @compile LocalRecord.java
  */

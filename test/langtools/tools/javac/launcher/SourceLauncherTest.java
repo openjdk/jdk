@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588
+ * @bug 8192920 8204588 8246774
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api

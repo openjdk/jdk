@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary test for javax.lang.model.util.Elements::recordComponentFor
  * @modules jdk.compiler
  */

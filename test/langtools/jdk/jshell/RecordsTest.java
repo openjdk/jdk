@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8235474 8236715
+ * @bug 8235474 8236715 8246774
  * @summary Tests for evalution of records
  * @modules jdk.jshell
  * @build KullaTesting TestingInputStream ExpectedDiagnostic

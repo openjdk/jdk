@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Basic tests for writeReplace
- * @run testng/othervm WriteReplaceTest
+ * @run testng WriteReplaceTest
  * @run testng/othervm/java.security.policy=empty_security.policy WriteReplaceTest
  */
 

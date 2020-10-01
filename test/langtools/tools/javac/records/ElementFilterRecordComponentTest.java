@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8241312
+ * @bug 8241312 8246774
  * @summary test for javax.lang.model.util.ElementFilter::recordComponentsIn
  * @modules jdk.compiler/com.sun.tools.javac.util
  */

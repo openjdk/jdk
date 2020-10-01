@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Basic test that serializes and deserializes a number of records
- * @run testng/othervm BasicRecordSer
+ * @run testng BasicRecordSer
  * @run testng/othervm/java.security.policy=empty_security.policy BasicRecordSer
  */
 

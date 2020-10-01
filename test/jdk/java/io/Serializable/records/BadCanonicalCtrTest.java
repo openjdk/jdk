@@ -23,11 +23,12 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary InvalidClassException is thrown when the canonical constructor
  *          cannot be found during deserialization.
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
- * @run testng/othervm BadCanonicalCtrTest
+ * @run testng BadCanonicalCtrTest
  */
 
 import java.io.ByteArrayInputStream;

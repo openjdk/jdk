@@ -23,12 +23,13 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Test for subtype stream field value assign-ability
  * @library /test/lib
  * @modules jdk.compiler
  * @compile AssignableFrom.java Point.java
- *          DefaultValues.java SuperStreamFields.java AssignableFromTest.java
- * @run testng/othervm AssignableFromTest
+ *          DefaultValues.java SuperStreamFields.java
+ * @run testng AssignableFromTest
  */
 
 import java.math.BigDecimal;

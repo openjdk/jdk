@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Basic tests for ObjectMethods
- * @run testng/othervm ObjectMethodsTest
+ * @run testng ObjectMethodsTest
  * @run testng/othervm/java.security.policy=empty.policy ObjectMethodsTest
  */
 

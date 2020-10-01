@@ -24,11 +24,10 @@
  /*
  * @test
  * @summary test for com.sun.tools.javac.comp.Check::validateAnnotation, com.sun.tools.javac.code.SymbolMetadata::removeDeclarationMetadata and ::removeFromCompoundList
- * @bug 8241312
+ * @bug 8241312 8246774
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.classfile
- * @compile ApplicableAnnotationsOnRecords.java
  * @run main ApplicableAnnotationsOnRecords
  */
 import com.sun.tools.classfile.*;

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      7151010 8006547 8007766 8029017
+ * @bug      7151010 8006547 8007766 8029017 8246774
  * @summary  Default test cases for running combinations for Target values
  * @modules jdk.compiler
  * @build    Helper

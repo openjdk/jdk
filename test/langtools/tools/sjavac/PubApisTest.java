@@ -23,13 +23,12 @@
 
  /*
  * @test
- * @bug 8241312
+ * @bug 8241312 8246774
  * @summary test for com.sun.tools.sjavac.comp.PubAPIs and com.sun.tools.sjavac.comp.PubapiVisitor
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.util
  *          jdk.compiler/com.sun.tools.sjavac.comp
  *          jdk.compiler/com.sun.tools.sjavac.pubapi
- * @run main PubApisTest
  */
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.util.Context;

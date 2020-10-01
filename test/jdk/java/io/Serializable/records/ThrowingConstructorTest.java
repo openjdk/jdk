@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Tests constructor invocation exceptions are handled appropriately
- * @run testng/othervm ThrowingConstructorTest
+ * @run testng ThrowingConstructorTest
  * @run testng/othervm/java.security.policy=empty_security.policy ThrowingConstructorTest
  */
 

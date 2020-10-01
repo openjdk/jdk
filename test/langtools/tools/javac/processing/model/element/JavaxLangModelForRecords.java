@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Verify that annotation processing works for records
  * @library /tools/lib /tools/javac/lib
  * @modules
@@ -67,7 +68,6 @@ public class JavaxLangModelForRecords extends TestRunner {
     }
 
     public static void main(String... args) throws Exception {
-        System.out.println(System.getProperties());
         new JavaxLangModelForRecords().runTests();
     }
 

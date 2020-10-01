@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Checks that the appropriate default value is given to the canonical ctr
- * @run testng/othervm AbsentStreamValuesTest
+ * @run testng AbsentStreamValuesTest
  * @run testng/othervm/java.security.policy=empty_security.policy AbsentStreamValuesTest
  */
 

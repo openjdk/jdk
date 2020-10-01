@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Basic tests for SUID in the serial stream
- * @run testng/othervm SerialVersionUIDTest
+ * @run testng SerialVersionUIDTest
  * @run testng/othervm/java.security.policy=empty_security.policy SerialVersionUIDTest
  */
 

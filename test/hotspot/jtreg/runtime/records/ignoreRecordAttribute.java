@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary test logging of reasons for ignoring Record attribute
  * @library /test/lib
  * @compile superNotJLRecord.jcod recordIgnoredVersion.jcod

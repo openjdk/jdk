@@ -23,10 +23,11 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Basic tests for prohibited magic serialPersistentFields
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
- * @run testng/othervm SerialPersistentFieldsTest
+ * @run testng SerialPersistentFieldsTest
  */
 
 import java.io.ByteArrayInputStream;

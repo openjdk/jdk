@@ -26,7 +26,8 @@
 /**
  * RecordCompilationTests
  *
- * @test 8250629 8252307 8247352 8241151
+ * @test
+ * @bug 8250629 8252307 8247352 8241151 8246774
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -35,7 +36,6 @@
  *      jdk.compiler/com.sun.tools.javac.util
  *      jdk.jdeps/com.sun.tools.classfile
  * @build JavacTestingAbstractProcessor
- * @compile RecordCompilationTests.java
  * @run testng/othervm -DuseAP=false RecordCompilationTests
  * @run testng/othervm -DuseAP=true RecordCompilationTests
  */

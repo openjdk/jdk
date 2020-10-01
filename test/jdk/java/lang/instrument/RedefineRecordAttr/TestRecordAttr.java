@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Class redefinition must preclude changes to Record attributes
  * @comment This is a copy of test/jdk/java/lang/instrument/RedefineNestmateAttr/
  * @comment modified for records and the Record attribute.
@@ -34,7 +35,6 @@
  * @compile ../NamedBuffer.java
  * @run main RedefineClassHelper
  * @compile Host/Host.java
- * @compile TestRecordAttr.java
  * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+record=trace TestRecordAttr Host
  * @compile HostA/Host.java
  * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+record=trace TestRecordAttr HostA

@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Checks that the appropriate value is given to the canonical ctr
- * @run testng/othervm DifferentStreamFieldsTest
+ * @run testng DifferentStreamFieldsTest
  * @run testng/othervm/java.security.policy=empty_security.policy DifferentStreamFieldsTest
  */
 

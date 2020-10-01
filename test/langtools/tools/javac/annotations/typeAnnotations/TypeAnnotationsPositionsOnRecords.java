@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Verify location of type annotations on records
  * @library /tools/lib
  * @modules
@@ -32,7 +33,6 @@
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
- * @compile TypeAnnotationsPositionsOnRecords.java
  * @run main TypeAnnotationsPositionsOnRecords
  */
 

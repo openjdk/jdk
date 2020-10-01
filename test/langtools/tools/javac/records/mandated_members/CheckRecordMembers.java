@@ -25,6 +25,7 @@
  * CheckRecordMembers
  *
  * @test
+ * @bug 8246774
  * @summary check that the accessors, equals, hashCode and toString methods
  *          work as expected
  * @library /tools/javac/lib

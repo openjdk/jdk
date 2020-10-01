@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Basic tests for readResolve
- * @run testng/othervm ReadResolveTest
+ * @run testng ReadResolveTest
  * @run testng/othervm/java.security.policy=empty_security.policy ReadResolveTest
  */
 

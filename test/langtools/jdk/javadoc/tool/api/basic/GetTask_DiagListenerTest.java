@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6493690
+ * @bug 6493690 8246774
  * @summary javadoc should have a javax.tools.Tool service provider
  * @modules java.compiler
  *          jdk.compiler
