@@ -1113,17 +1113,12 @@ public interface Map<K, V> {
      * <pre> {@code
      * V oldValue = map.get(key);
      * V newValue = remappingFunction.apply(key, oldValue);
-     * if (oldValue != null) {
-     *    if (newValue != null)
-     *       map.put(key, newValue);
-     *    else
-     *       map.remove(key);
+     * if (newValue != null) {
+     *     map.put(key, newValue);
      * } else {
-     *    if (newValue != null)
-     *       map.put(key, newValue);
-     *    else
-     *       return null;
+     *     map.remove(key);
      * }
+     * return newValue;
      * }</pre>
      *
      * <p>The default implementation makes no guarantees about detecting if the
