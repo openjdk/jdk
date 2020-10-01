@@ -25,8 +25,8 @@
 
 package java.lang;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.Constable;
 import java.lang.constant.DynamicConstantDesc;
@@ -263,7 +263,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @return a {@code Short} instance representing {@code s}.
      * @since  1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static Short valueOf(short s) {
         final int offset = 128;
         int sAsInt = s;
@@ -383,7 +383,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * Returns the value of this {@code Short} as a
      * {@code short}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public short shortValue() {
         return value;
     }
@@ -553,7 +553,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      *     the bytes in the specified {@code short} value.
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static short reverseBytes(short i) {
         return (short) (((i & 0xFF00) >> 8) | (i << 8));
     }

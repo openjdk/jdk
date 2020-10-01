@@ -66,7 +66,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.misc.Unsafe;
@@ -76,6 +75,7 @@ import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.invoke.util.Wrapper;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
@@ -682,7 +682,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @since 1.1
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isInstance(Object obj);
 
 
@@ -711,7 +711,7 @@ public final class Class<T> implements java.io.Serializable,
      *            null.
      * @since     1.1
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isAssignableFrom(Class<?> cls);
 
 
@@ -722,7 +722,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return  {@code true} if this {@code Class} object represents an interface;
      *          {@code false} otherwise.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isInterface();
 
 
@@ -733,7 +733,7 @@ public final class Class<T> implements java.io.Serializable,
      *          {@code false} otherwise.
      * @since   1.1
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isArray();
 
 
@@ -765,7 +765,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see     java.lang.Void#TYPE
      * @since 1.1
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isPrimitive();
 
     /**
@@ -976,7 +976,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the direct superclass of the class represented by this {@code Class} object
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native Class<? super T> getSuperclass();
 
 
@@ -1275,7 +1275,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see     java.lang.reflect.Modifier
      * @since 1.1
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native int getModifiers();
 
 
@@ -3810,7 +3810,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     @SuppressWarnings("unchecked")
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public T cast(Object obj) {
         if (obj != null && !isInstance(obj))
             throw new ClassCastException(cannotCastMsg(obj));
@@ -4381,7 +4381,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 15
      * @see MethodHandles.Lookup#defineHiddenClass
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isHidden();
 
     /**
