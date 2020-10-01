@@ -318,13 +318,10 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   if (file_desc != -1) {
     // For file mapping, we do not call os:reserve_memory_with_fd since:
     // - we later chop away parts of the mapping using os::release_memory and that could fail if the
-    //   original mmap call had been tied to a fd (TODO: really?)
-    // - there is no guarantee that os::reserve_memory even returns mmaped memory. In fact it never does
-    //   on Windows, obviously, and usually on AIX SystemV shm is used.
-    //
-    // Todo: this probably works more out of accident. Using reserve_mmapped_memory would require an munmap
-    //  to release, but later in this function os::release_memory is used which is not guaranteed to use mmap.
-    //  See JDK-8253851.
+    //   original mmap call had been tied to an fd.
+    // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
+    //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
+    //   chopping off and unmapping excess bits back and front (see below) would not work.
     extra_base = reserve_mmapped_memory(extra_size, NULL);
     if (extra_base != NULL) {
       MemTracker::record_virtual_memory_reserve((address)extra_base, extra_size, CALLER_PC);
