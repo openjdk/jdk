@@ -195,23 +195,34 @@ LIBRARIES =	$(TARGET_DIR)/bfd/libbfd.a \
 		$(TARGET_DIR)/opcodes/libopcodes.a \
 		$(TARGET_DIR)/libiberty/libiberty.a
 else
-LIBRARIES/i386 = $(patsubst -l%,%,$(shell $(LLVMDIR)/bin/llvm-config --libs x86 x86disassembler))
-LIBRARIES/amd64 = $(patsubst -l%,%,$(shell $(LLVMDIR)/bin/llvm-config --libs x86 x86disassembler))
-LIBRARIES/aarch64 = $(patsubst -l%,%,$(shell $(LLVMDIR)/bin/llvm-config --libs aarch64 aarch64disassembler))
+
+# llvm-config may not be available when you've cross-compiled LLVM (build != host). That is the
+# case when you want to cross-compile hsdis as well. To work around that limitation, you can
+# simply specify the LLVM libraries and system libraries by hand. To do so, set the following
+# variables to the values outputed when running llvm-config on the target platform:
+#  - LIBRARIES/$(ARCH) to the output of `llvm-config --libs {ARCH} {ARCH}disassembler`
+#  - SYSTEM_LIBRARIES to the output of `llvm-config --system-libs`
+LLVM_CONFIG := $(if $(shell $(LLVMDIR)/bin/llvm-config --version),$(LLVMDIR)/bin/llvm-config)
+
+ifneq ($(LLVM_CONFIG),)
+LIBRARIES/i386 = $(patsubst -l%,%,$(shell $(LLVM_CONFIG) --libs x86 x86disassembler))
+LIBRARIES/amd64 = $(patsubst -l%,%,$(shell $(LLVM_CONFIG) --libs x86 x86disassembler))
+LIBRARIES/aarch64 = $(patsubst -l%,%,$(shell $(LLVM_CONFIG) --libs aarch64 aarch64disassembler))
+endif
 
 ifeq ($(LIBRARIES/$(ARCH)),)
-$(error "unknown LLVM libraries for ARCH=$(ARCH))
+$(error "Unknown LLVM libraries for ARCH=$(ARCH))
 endif
 
 LIBRARIES=$(addprefix $(LLVMDIR)/lib/,$(patsubst %,$(ARC_PRE)%$(ARC_EXT),$(LIBRARIES/$(ARCH))))
+
+ifneq ($(LLVM_CONFIG),)
+SYSTEM_LIBRARIES=$(shell $(LLVM_CONFIG) --system-libs)
+endif
 endif
 
 ifneq ($(MINGW),)
 LIBRARIES +=	$(TARGET_DIR)/zlib/libz.a
-endif
-
-ifneq ($(LLVM),)
-DLDFLAGS+=$(shell $(LLVMDIR)/bin/llvm-config --system-libs)
 endif
 
 DEMO_TARGET	= $(TARGET_DIR)/hsdis-demo
@@ -237,7 +248,7 @@ $(TARGET_DIR)/Makefile:
 endif
 
 $(TARGET): $(SOURCE) $(LIBS) $(LIBRARIES) $(TARGET_DIR)
-	$(CXX) $(OUTFLAGS) $(CPPFLAGS) $(CFLAGS) $(SOURCE) $(DLDFLAGS) $(LIBRARIES)
+	$(CXX) $(OUTFLAGS) $(CPPFLAGS) $(CFLAGS) $(SOURCE) $(DLDFLAGS) $(LIBRARIES) $(SYSTEM_LIBRARIES)
 
 $(DEMO_TARGET): $(DEMO_SOURCE) $(TARGET) $(TARGET_DIR)
 	$(CC) $(OUTFLAGS) -DTARGET_DIR=\"$(TARGET_DIR)\" $(CPPFLAGS) -g $(CFLAGS/$(ARCH)) $(DEMO_SOURCE) $(LDFLAGS)

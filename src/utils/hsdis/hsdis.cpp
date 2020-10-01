@@ -602,9 +602,8 @@ class hsdis_backend : public hsdis_backend_base {
     if (_arch_name[0] == '\0')
       _arch_name = native_target_triple();
 
-    static bool complained = false;
-
     if (LLVMInitializeNativeTarget() != 0) {
+      static bool complained = false;
       if (!complained)
         (*_printf_callback)(_printf_stream, "failed to initialize LLVM native target\n");
       complained = true;
@@ -613,6 +612,7 @@ class hsdis_backend : public hsdis_backend_base {
       return;
     }
     if (LLVMInitializeNativeAsmPrinter() != 0) {
+      static bool complained = false;
       if (!complained)
         (*_printf_callback)(_printf_stream, "failed to initialize LLVM native asm printer\n");
       complained = true;
@@ -621,6 +621,7 @@ class hsdis_backend : public hsdis_backend_base {
       return;
     }
     if (LLVMInitializeNativeDisassembler() != 0) {
+      static bool complained = false;
       if (!complained)
         (*_printf_callback)(_printf_stream, "failed to initialize LLVM native disassembler\n");
       complained = true;
@@ -629,6 +630,7 @@ class hsdis_backend : public hsdis_backend_base {
       return;
     }
     if ((_dcontext = LLVMCreateDisasm(_arch_name, NULL, 0, NULL, NULL)) == NULL) {
+      static bool complained = false;
       const char* bad = _arch_name;
       if (bad == &_target_triple[0])
         print_help("bad target_triple=%s", bad);
@@ -657,6 +659,7 @@ class hsdis_backend : public hsdis_backend_base {
       (*_printf_callback)(_printf_stream, "\n");
     }
     (*_printf_callback)(_printf_stream, "hsdis output options:\n");
+    (*_printf_callback)(_printf_stream, "  target_triple=<triple> select disassembly target\n");
     (*_printf_callback)(_printf_stream, "  help          print this message\n");
   }
 
@@ -669,7 +672,7 @@ class hsdis_backend : public hsdis_backend_base {
     char buf[128];
     size_t size = LLVMDisasmInstruction(_dcontext, (uint8_t*)p, (uint64_t)(end - start), (uint64_t)p, buf, sizeof(buf));
     if (size > 0) {
-      _printf_callback(_printf_stream, "%s", buf);
+      (*_printf_callback)(_printf_stream, "%s", buf);
     }
     return size;
   }
