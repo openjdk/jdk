@@ -1210,6 +1210,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
 
     // Add loop predicate first.
     kit.add_empty_predicates();
+    C->set_has_loops(true);
 
     RegionNode *loop = new RegionNode(3);
     loop->init_req(1, kit.control());
@@ -1287,6 +1288,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   // Add loop predicate first.
   kit.add_empty_predicates();
 
+  C->set_has_loops(true);
   RegionNode* head = new RegionNode(3);
   head->init_req(1, kit.control());
 
