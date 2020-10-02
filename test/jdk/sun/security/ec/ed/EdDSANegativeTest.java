@@ -34,14 +34,13 @@ import java.security.interfaces.EdECPrivateKey;
 import java.security.interfaces.EdECPublicKey;
 import java.security.spec.EdDSAParameterSpec;
 import java.util.Arrays;
-import jdk.test.lib.Convert;
+import java.util.HexFormat;
 
 /*
  * @test
  * @bug 8209632
  * @summary Negative cases for EDDSA.
  * @library /test/lib
- * @build jdk.test.lib.Convert
  * @run main EdDSANegativeTest
  */
 public class EdDSANegativeTest {
@@ -138,7 +137,7 @@ public class EdDSANegativeTest {
             new byte[255], new byte[500]}) {
                 System.out.printf("Testing signature for name: %s, algorithm "
                         + "spec: (prehash:%s, context:%s)%n", name, preHash,
-                        Convert.byteArrayToHexString(context));
+                        HexFormat.of().withUpperCase().formatHex(context));
                 try {
                     verify(sig, kp.getPublic(), MSG,
                             new EdDSAParameterSpec(preHash, context),
@@ -219,8 +218,8 @@ public class EdDSANegativeTest {
                 throw new RuntimeException(String.format("Signature verification"
                         + " success with different param context(actual:%s, "
                         + "expected:%s), Prehash(actual:%s, expected:%s)",
-                        Convert.byteArrayToHexString(context),
-                        Convert.byteArrayToHexString(initContext),
+                        HexFormat.of().withUpperCase().formatHex(context),
+                        HexFormat.of().withUpperCase().formatHex(initContext),
                         preHash, initPreHash));
             } else {
                 System.out.println("Atleast a case matched");
@@ -253,8 +252,8 @@ public class EdDSANegativeTest {
         boolean equals = Arrays.equals(actual, expected);
         if (!equals) {
             throw new RuntimeException(String.format("Actual array: %s, "
-                    + "Expected array:%s", Convert.byteArrayToHexString(actual),
-                    Convert.byteArrayToHexString(expected)));
+                    + "Expected array:%s", HexFormat.of().withUpperCase().formatHex(actual),
+                    HexFormat.of().withUpperCase().formatHex(expected)));
         }
         return equals;
     }

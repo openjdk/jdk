@@ -39,8 +39,6 @@ import java.nio.file.*;
 import java.math.*;
 import java.util.*;
 
-import jdk.test.lib.Convert;
-
 import sun.security.util.*;
 
 public class EdECKeyFormat {
@@ -98,7 +96,7 @@ public class EdECKeyFormat {
 
     private static void pubKeyTest(Provider p, String key) throws Exception {
         // ensure that a properly-formatted key can be read
-        byte[] encodedKey = Convert.hexStringToByteArray(key);
+        byte[] encodedKey = HexFormat.of().parseHex(key);
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encodedKey);
         KeyFactory kf = KeyFactory.getInstance("EdDSA", p);
         kf.generatePublic(keySpec);
@@ -125,7 +123,7 @@ public class EdECKeyFormat {
         checkPrivKeyFormat(keySpec.getEncoded());
 
         // ensure that a properly-formatted key can be read
-        byte[] encodedKey = Convert.hexStringToByteArray(privKeys.get(algName));
+        byte[] encodedKey = HexFormat.of().parseHex(privKeys.get(algName));
         keySpec = new PKCS8EncodedKeySpec(encodedKey);
         kf.generatePrivate(keySpec);
     }

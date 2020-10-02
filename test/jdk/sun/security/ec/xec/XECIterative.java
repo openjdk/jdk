@@ -45,7 +45,6 @@ import sun.security.ec.*;
 import java.io.*;
 import java.security.spec.NamedParameterSpec;
 import java.util.*;
-import jdk.test.lib.Convert;
 
 /*
  * This test is derived from the iterative test in RFC 7748. To produce the
@@ -95,7 +94,7 @@ public class XECIterative {
             StringTokenizer tok = new StringTokenizer(line, ",");
             long iter = Long.parseLong(tok.nextToken());
             String kOrU = tok.nextToken();
-            byte[] value = Convert.hexStringToByteArray(tok.nextToken());
+            byte[] value = HexFormat.of().parseHex(tok.nextToken());
             KU entry = testIters.get(iter);
             if (entry == null) {
                 entry = new KU();
@@ -117,13 +116,13 @@ public class XECIterative {
             if (i % 1000 == 0 && (curEntry = testIters.get(i)) != null) {
                 if (!Arrays.equals(k, curEntry.k)) {
                     throw new RuntimeException("At iter " + i + ": expected k: "
-                        + Convert.byteArrayToHexString(curEntry.k)
-                        + ", computed k: " + Convert.byteArrayToHexString(k));
+                        + HexFormat.of().withUpperCase().formatHex(curEntry.k)
+                        + ", computed k: " + HexFormat.of().withUpperCase().formatHex(k));
                 }
                 if (!Arrays.equals(u, curEntry.u)) {
                     throw new RuntimeException("At iter " + i + ": expected u: "
-                     + Convert.byteArrayToHexString(curEntry.u)
-                     + ", computed u: " + Convert.byteArrayToHexString(u));
+                     + HexFormat.of().withUpperCase().formatHex(curEntry.u)
+                     + ", computed u: " + HexFormat.of().withUpperCase().formatHex(u));
                 }
                 System.out.println(opName + " checkpoint passed at " + i);
             }

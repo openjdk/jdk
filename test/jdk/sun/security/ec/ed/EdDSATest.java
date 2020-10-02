@@ -49,7 +49,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.NamedParameterSpec;
 import java.security.spec.EdDSAParameterSpec;
 import java.util.Arrays;
-import jdk.test.lib.Convert;
+import java.util.HexFormat;
 
 /*
  * @test
@@ -349,8 +349,8 @@ public class EdDSATest {
     private static void equals(byte[] actual, byte[] expected) {
         if (!Arrays.equals(actual, expected)) {
             throw new RuntimeException(String.format("Actual array: %s, "
-                    + "Expected array:%s", Convert.byteArrayToHexString(actual),
-                    Convert.byteArrayToHexString(expected)));
+                    + "Expected array:%s", HexFormat.of().withUpperCase().formatHex(actual),
+                    HexFormat.of().withUpperCase().formatHex(expected)));
         }
     }
 }

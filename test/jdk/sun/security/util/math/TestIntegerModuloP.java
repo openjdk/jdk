@@ -195,21 +195,11 @@ public class TestIntegerModuloP {
             byte[] baselineResult = func.apply(baseline, right.baseline);
             if (!Arrays.equals(testResult, baselineResult)) {
                 throw new RuntimeException("Array values do not match: "
-                    + byteArrayToHexString(testResult) + " != "
-                    + byteArrayToHexString(baselineResult));
+                    + HexFormat.of().withUpperCase().formatHex(testResult) + " != "
+                    + HexFormat.of().withUpperCase().formatHex(baselineResult));
             }
         }
 
-    }
-
-    static String byteArrayToHexString(byte[] arr) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < arr.length; ++i) {
-            byte curVal = arr[i];
-            result.append(Character.forDigit(curVal >> 4 & 0xF, 16));
-            result.append(Character.forDigit(curVal & 0xF, 16));
-        }
-        return result.toString();
     }
 
     static TestPair<IntegerModuloP>

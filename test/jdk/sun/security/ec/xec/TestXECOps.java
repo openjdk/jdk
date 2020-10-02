@@ -95,9 +95,9 @@ public class TestXECOps {
 
         byte[] basePoint = Convert.byteToByteArray(settings.getBasePoint(),
             settings.getBytes());
-        byte[] a = Convert.hexStringToByteArray(a_str);
-        byte[] b = Convert.hexStringToByteArray(b_str);
-        byte[] expectedResult = Convert.hexStringToByteArray(result_str);
+        byte[] a = HexFormat.of().parseHex(a_str);
+        byte[] b = HexFormat.of().parseHex(b_str);
+        byte[] expectedResult = HexFormat.of().parseHex(result_str);
 
         byte[] a_copy = Arrays.copyOf(a, a.length);
         byte[] b_copy = Arrays.copyOf(b, b.length);
@@ -118,9 +118,9 @@ public class TestXECOps {
     private void runTest(String opName, String k_in_str,
         String u_in_str, String u_out_str) {
 
-        byte[] k_in = Convert.hexStringToByteArray(k_in_str);
-        byte[] u_in = Convert.hexStringToByteArray(u_in_str);
-        byte[] u_out_expected = Convert.hexStringToByteArray(u_out_str);
+        byte[] k_in = HexFormat.of().parseHex(k_in_str);
+        byte[] u_in = HexFormat.of().parseHex(u_in_str);
+        byte[] u_out_expected = HexFormat.of().parseHex(u_out_str);
 
         NamedParameterSpec paramSpec = new NamedParameterSpec(opName);
         XECParameters settings =
