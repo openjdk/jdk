@@ -185,8 +185,7 @@ endif
 NET_PROPERTIES_SRC := $(TOPDIR)/src/java.base/share/conf/net.properties.common
 NET_PROPERTIES_DST := $(CONF_DST_DIR)/net.properties
 
-NET_PROPERTIES_SRC += $(TOPDIR)/src/java.base/unix/conf/net.properties.unix
-NET_PROPERTIES_SRC += $(TOPDIR)/src/java.base/windows/conf/net.properties.windows
+NET_PROPERTIES_SRC += $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/conf/net.properties.$(OPENJDK_TARGET_OS_TYPE)
 
 NET_PROPERTIES_SRC_LIST := $(NET_PROPERTIES_SRC)
 
