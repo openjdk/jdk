@@ -359,8 +359,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         DocFile jsFile = DocFile.createFileForOutput(configuration, searchIndexJS);
         try (Writer wr = jsFile.openWriter()) {
             wr.write(varName);
-            wr.write(" = ");
-            Iterator<SearchIndexItem> index = searchIndex.iterator();
+            wr.write(" = [");
             boolean first = true;
             while (index.hasNext()) {
                 SearchIndexItem item = index.next();
