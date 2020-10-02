@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "utilities/powerOfTwo.hpp"

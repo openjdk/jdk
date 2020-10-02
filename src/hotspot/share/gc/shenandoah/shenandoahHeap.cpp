@@ -71,7 +71,7 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
-#include "memory/metaspace.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"

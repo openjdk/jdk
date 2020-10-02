@@ -39,9 +39,7 @@ class Mutex;
 class outputStream;
 
 namespace metaspace {
-  class MetaspaceArena;
   class MetaspaceSizesSnapshot;
-  struct ClmsStats;
 }
 
 ////////////////// Metaspace ///////////////////////
@@ -153,81 +151,6 @@ public:
   static bool initialized();
 
 };
-
-// A ClassLoaderMetaspace manages MetaspaceArena(s) for a CLD.
-//
-// A CLD owns one MetaspaceArena if UseCompressedClassPointers is false. Otherwise
-// it owns two - one for the Klass* objects from the class space, one for the other
-// types of MetaspaceObjs from the non-class space.
-//
-// +------+       +----------------------+       +-------------------+
-// | CLD  | --->  | ClassLoaderMetaspace | ----> | (non class) Arena |
-// +------+       +----------------------+  |    +-------------------+     allocation top
-//                                          |       |                        v
-//                                          |       + chunk -- chunk ... -- chunk
-//                                          |
-//                                          |    +-------------------+
-//                                          +--> | (class) Arena     |
-//                                               +-------------------+
-//                                                  |
-//                                                  + chunk ... chunk
-//                                                               ^
-//                                                               alloc top
-//
-class ClassLoaderMetaspace : public CHeapObj<mtClass> {
-
-  // A reference to an outside lock, held by the CLD.
-  Mutex* const _lock;
-
-  const Metaspace::MetaspaceType _space_type;
-
-  // Arena for allocations from non-class  metaspace
-  //  (resp. for all allocations if -XX:-UseCompressedClassPointers).
-  metaspace::MetaspaceArena* _non_class_space_arena;
-
-  // Arena for allocations from class space
-  //  (NULL if -XX:-UseCompressedClassPointers).
-  metaspace::MetaspaceArena* _class_space_arena;
-
-  Mutex* lock() const                             { return _lock; }
-  metaspace::MetaspaceArena* non_class_space_arena() const   { return _non_class_space_arena; }
-  metaspace::MetaspaceArena* class_space_arena() const       { return _class_space_arena; }
-
-  metaspace::MetaspaceArena* get_arena(bool is_class) {
-    return is_class ? class_space_arena() : non_class_space_arena();
-  }
-
-public:
-
-  ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type);
-
-  ~ClassLoaderMetaspace();
-
-  Metaspace::MetaspaceType space_type() const { return _space_type; }
-
-  // Allocate word_size words from Metaspace.
-  MetaWord* allocate(size_t word_size, Metaspace::MetadataType mdType);
-
-  // Attempt to expand the GC threshold to be good for at least another word_size words
-  // and allocate. Returns NULL if failure. Used during Metaspace GC.
-  MetaWord* expand_and_allocate(size_t word_size, Metaspace::MetadataType mdType);
-
-  // Prematurely returns a metaspace allocation to the _block_freelists
-  // because it is not needed anymore.
-  void deallocate(MetaWord* ptr, size_t word_size, bool is_class);
-
-  // Update statistics. This walks all in-use chunks.
-  void add_to_statistics(metaspace::ClmsStats* out) const;
-
-  DEBUG_ONLY(void verify() const;)
-
-  // This only exists for JFR and jcmd VM.classloader_stats. We may want to
-  //  change this. Capacity as a stat is of questionable use since it may
-  //  contain committed and uncommitted areas. For now we do this to maintain
-  //  backward compatibility with JFR.
-  void calculate_jfr_stats(size_t* p_used_bytes, size_t* p_capacity_bytes) const;
-
-}; // end: ClassLoaderMetaspace
 
 ////////////////// MetaspaceGC ///////////////////////
 

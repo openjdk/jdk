@@ -28,6 +28,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/filemap.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunkManager.hpp"

@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "runtime/mutex.hpp"
