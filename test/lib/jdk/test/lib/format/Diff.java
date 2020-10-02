@@ -27,7 +27,7 @@
 package jdk.test.lib.format;
 
 /**
- * An abstraction representing formattabe difference between two or more objects
+ * An abstraction representing formattable difference between two or more objects
  */
 public interface Diff {
 
