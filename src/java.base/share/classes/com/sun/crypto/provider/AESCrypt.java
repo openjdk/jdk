@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * Rijndael --pronounced Reindaal-- is a symmetric cipher with a 128-bit
@@ -356,7 +356,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
     }
 
     // Encryption operation. Possibly replaced with a compiler intrinsic.
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private void implEncryptBlock(byte[] in, int inOffset,
                                   byte[] out, int outOffset)
     {
@@ -435,7 +435,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
     }
 
     // Decrypt operation. Possibly replaced with a compiler intrinsic.
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private void implDecryptBlock(byte[] in, int inOffset,
                                   byte[] out, int outOffset)
     {

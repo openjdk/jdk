@@ -255,8 +255,6 @@ Thread::Thread() {
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  _vm_operation_started_count = 0;
-  _vm_operation_completed_count = 0;
   _current_pending_monitor = NULL;
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
@@ -467,12 +465,11 @@ Thread::~Thread() {
 }
 
 #ifdef ASSERT
-// A JavaThread is considered "dangling" if it is not the current
-// thread, has been added the Threads list, the system is not at a
-// safepoint and the Thread is not "protected".
-//
+// A JavaThread is considered dangling if it not handshake-safe with respect to
+// the current thread, it is not on a ThreadsList, or not at safepoint.
 void Thread::check_for_dangling_thread_pointer(Thread *thread) {
-  assert(!thread->is_Java_thread() || Thread::current() == thread ||
+  assert(!thread->is_Java_thread() ||
+         thread->as_Java_thread()->is_handshake_safe_for(Thread::current()) ||
          !thread->as_Java_thread()->on_thread_list() ||
          SafepointSynchronize::is_at_safepoint() ||
          ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(thread->as_Java_thread()),
@@ -837,7 +834,7 @@ bool JavaThread::wait_for_ext_suspend_completion(int retries, int delay,
 //
 bool
 JavaThread::is_thread_fully_suspended(bool wait_for_suspend, uint32_t *bits) {
-  if (this != JavaThread::current()) {
+  if (this != Thread::current()) {
     // "other" threads require special handling.
     if (wait_for_suspend) {
       // We are allowed to wait for the external suspend to complete
@@ -1715,7 +1712,6 @@ void JavaThread::initialize() {
   _SleepEvent = ParkEvent::Allocate(this);
   // Setup safepoint state info for this thread
   ThreadSafepointState::create(this);
-  _handshake.set_handshakee(this);
 
   debug_only(_java_call_counter = 0);
 
@@ -1733,7 +1729,7 @@ void JavaThread::initialize() {
 }
 
 JavaThread::JavaThread(bool is_attaching_via_jni) :
-                       Thread() {
+                       Thread(), _handshake(this) {
   initialize();
   if (is_attaching_via_jni) {
     _jni_attach_state = _attaching_via_jni;
@@ -1807,13 +1803,6 @@ bool JavaThread::reguard_stack(address cur_sp) {
     return true; // Stack already guarded or guard pages not needed.
   }
 
-  if (register_stack_overflow()) {
-    // For those architectures which have separate register and
-    // memory stacks, we must check the register stack to see if
-    // it has overflowed.
-    return false;
-  }
-
   // Java code never executes within the yellow zone: the latter is only
   // there to provoke an exception during stack banging.  If java code
   // is executing there, either StackShadowPages should be larger, or
@@ -1855,7 +1844,7 @@ static void compiler_thread_entry(JavaThread* thread, TRAPS);
 static void sweeper_thread_entry(JavaThread* thread, TRAPS);
 
 JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
-                       Thread() {
+                       Thread(), _handshake(this) {
   initialize();
   _jni_attach_state = _not_attaching_via_jni;
   set_entry_point(entry_point);
@@ -1941,13 +1930,6 @@ void JavaThread::pre_run() {
 void JavaThread::run() {
   // initialize thread-local alloc buffer related fields
   this->initialize_tlab();
-
-  // Used to test validity of stack trace backs.
-  // This can't be moved into pre_run() else we invalidate
-  // the requirement that thread_main_inner is lower on
-  // the stack. Consequently all the initialization logic
-  // stays here in run() rather than pre_run().
-  this->record_base_of_stack_pointer();
 
   this->create_stack_guard_pages();
 
@@ -2420,7 +2402,8 @@ void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
 
 void JavaThread::send_thread_stop(oop java_throwable)  {
   ResourceMark rm;
-  assert(Thread::current()->is_VM_thread() || Thread::current() == this, "should be in the vm thread");
+  assert(is_handshake_safe_for(Thread::current()),
+         "should be self or handshakee");
 
   // Do not throw asynchronous exceptions against the compiler thread
   // (the compiler thread should not be a Java thread -- fix in 1.4.2)
@@ -2796,7 +2779,6 @@ void JavaThread::enable_stack_reserved_zone() {
   } else {
     warning("Attempt to guard stack reserved zone failed.");
   }
-  enable_register_stack_guard();
 }
 
 void JavaThread::disable_stack_reserved_zone() {
@@ -2814,7 +2796,6 @@ void JavaThread::disable_stack_reserved_zone() {
   } else {
     warning("Attempt to unguard stack reserved zone failed.");
   }
-  disable_register_stack_guard();
 }
 
 void JavaThread::enable_stack_yellow_reserved_zone() {
@@ -2833,7 +2814,6 @@ void JavaThread::enable_stack_yellow_reserved_zone() {
   } else {
     warning("Attempt to guard stack yellow zone failed.");
   }
-  enable_register_stack_guard();
 }
 
 void JavaThread::disable_stack_yellow_reserved_zone() {
@@ -2852,7 +2832,6 @@ void JavaThread::disable_stack_yellow_reserved_zone() {
   } else {
     warning("Attempt to unguard stack yellow zone failed.");
   }
-  disable_register_stack_guard();
 }
 
 void JavaThread::enable_stack_red_zone() {

@@ -105,7 +105,7 @@ Java_java_util_zip_Deflater_setDictionary(JNIEnv *env, jclass cls, jlong addr,
     Bytef *buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
     if (buf == NULL) /* out of memory */
         return;
-    res = deflateSetDictionary(jlong_to_ptr(addr), buf, len);
+    res = deflateSetDictionary(jlong_to_ptr(addr), buf + off, len);
     (*env)->ReleasePrimitiveArrayCritical(env, b, buf, 0);
     checkSetDictionaryResult(env, addr, res);
 }

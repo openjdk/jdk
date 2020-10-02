@@ -4250,16 +4250,6 @@ pipe_class ialu_reg_fat(rRegI dst)
     ALU    : S3;        // any alu
 %}
 
-// Long ALU reg operation using big decoder
-pipe_class ialu_reg_long_fat(rRegL dst)
-%{
-    instruction_count(2);
-    dst    : S4(write);
-    dst    : S3(read);
-    D0     : S0(2);     // big decoder only; twice
-    ALU    : S3(2);     // any 2 alus
-%}
-
 // Integer ALU reg-reg operation
 pipe_class ialu_reg_reg(rRegI dst, rRegI src)
 %{
@@ -4270,16 +4260,6 @@ pipe_class ialu_reg_reg(rRegI dst, rRegI src)
     ALU    : S3;        // any alu
 %}
 
-// Long ALU reg-reg operation
-pipe_class ialu_reg_reg_long(rRegL dst, rRegL src)
-%{
-    instruction_count(2);
-    dst    : S4(write);
-    src    : S3(read);
-    DECODE : S0(2);     // any 2 decoders
-    ALU    : S3(2);     // both alus
-%}
-
 // Integer ALU reg-reg operation
 pipe_class ialu_reg_reg_fat(rRegI dst, memory src)
 %{
@@ -4288,16 +4268,6 @@ pipe_class ialu_reg_reg_fat(rRegI dst, memory src)
     src    : S3(read);
     D0     : S0;        // big decoder only
     ALU    : S3;        // any alu
-%}
-
-// Long ALU reg-reg operation
-pipe_class ialu_reg_reg_long_fat(rRegL dst, rRegL src)
-%{
-    instruction_count(2);
-    dst    : S4(write);
-    src    : S3(read);
-    D0     : S0(2);     // big decoder only; twice
-    ALU    : S3(2);     // both alus
 %}
 
 // Integer ALU reg-mem operation

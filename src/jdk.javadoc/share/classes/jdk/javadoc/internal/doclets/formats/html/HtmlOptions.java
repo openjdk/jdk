@@ -411,7 +411,7 @@ public class HtmlOptions extends BaseOptions {
                             messages.error("doclet.Option_doclint_no_qualifiers");
                             return false;
                         }
-                        if (!DocLint.isValidOption(dopt)) {
+                        if (!DocLint.newDocLint().isValidOption(dopt)) {
                             messages.error("doclet.Option_doclint_invalid_arg");
                             return false;
                         }
@@ -424,7 +424,7 @@ public class HtmlOptions extends BaseOptions {
                     @Override
                     public boolean process(String opt,  List<String> args) {
                         String dopt = opt.replace("-Xdoclint/package:", DocLint.XCHECK_PACKAGE);
-                        if (!DocLint.isValidOption(dopt)) {
+                        if (!DocLint.newDocLint().isValidOption(dopt)) {
                             messages.error("doclet.Option_doclint_package_invalid_arg");
                             return false;
                         }

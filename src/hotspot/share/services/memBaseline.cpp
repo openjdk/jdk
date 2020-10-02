@@ -64,7 +64,7 @@ int compare_malloc_site(const MallocSite& s1, const MallocSite& s2) {
 int compare_malloc_site_and_type(const MallocSite& s1, const MallocSite& s2) {
   int res = compare_malloc_site(s1, s2);
   if (res == 0) {
-    res = (int)(s1.flag() - s2.flag());
+    res = (int)(NMTUtil::flag_to_index(s1.flag()) - NMTUtil::flag_to_index(s2.flag()));
   }
 
   return res;
