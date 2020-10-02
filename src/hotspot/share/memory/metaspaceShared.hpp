@@ -262,7 +262,8 @@ class MetaspaceShared : AllStatic {
     return is_windows;
   }
 
-  // Returns the bitmap region
+  // Returns the bitmap region which is allocated from C heap.
+  // Caller must free it with FREE_C_HEAP_ARRAY()
   static char* write_core_archive_regions(FileMapInfo* mapinfo,
                                           GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
                                           GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,

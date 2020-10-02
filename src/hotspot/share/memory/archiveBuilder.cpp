@@ -26,7 +26,8 @@
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "logging/log.hpp"
-#include "logging/logMessage.hpp"
+#include "logging/logStream.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/cppVtables.hpp"
@@ -606,7 +607,7 @@ void ArchiveBuilder::make_klasses_shareable() {
 // a different location at runtime. At dump time, the buffers may be at arbitrary locations
 // picked by the OS. At runtime, we try to map at a fixed location (SharedBaseAddress). For
 // consistency, we log everything using runtime addresses.
-class ArchiveBuilder::CDSMapLogger {
+class ArchiveBuilder::CDSMapLogger : AllStatic {
   static intx buffer_to_runtime_delta() {
     // Translate the buffers used by the MC/RW/RO regions to their eventual locations
     // at runtime.
@@ -614,7 +615,7 @@ class ArchiveBuilder::CDSMapLogger {
   }
 
   // mc/rw/ro regions only
-  void write_dump_region(const char* name, DumpRegion* region) {
+  static void write_dump_region(const char* name, DumpRegion* region) {
     address region_base = address(region->base());
     address region_top  = address(region->top());
     write_region(name, region_base, region_top, region_base + buffer_to_runtime_delta());
@@ -622,19 +623,19 @@ class ArchiveBuilder::CDSMapLogger {
 
 #define _LOG_PREFIX PTR_FORMAT ": @@ %-17s %d"
 
-  void write_klass(Klass* k, address runtime_dest, const char* type_name, int bytes, Thread* THREAD) {
+  static void write_klass(Klass* k, address runtime_dest, const char* type_name, int bytes, Thread* THREAD) {
     ResourceMark rm(THREAD);
     log_debug(cds, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes, k->external_name());
   }
-  void write_method(Method* m, address runtime_dest, const char* type_name, int bytes, Thread* THREAD) {
+  static void write_method(Method* m, address runtime_dest, const char* type_name, int bytes, Thread* THREAD) {
     ResourceMark rm(THREAD);
     log_debug(cds, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes,  m->external_name());
   }
 
   // rw/ro regions only
-  void write_objects(DumpRegion* region, const ArchiveBuilder::SourceObjList* src_objs) {
+  static void write_objects(DumpRegion* region, const ArchiveBuilder::SourceObjList* src_objs) {
     address last_obj_base = address(region->base());
     address last_obj_end  = address(region->base());
     address region_end    = address(region->end());
@@ -700,7 +701,7 @@ class ArchiveBuilder::CDSMapLogger {
   // runtime, this region will be mapped to runtime_base.  runtime_base is 0 if this
   // region will be mapped at os-selected addresses (such as the bitmap region), or will
   // be accessed with os::read (the header).
-  void write_region(const char* name, address base, address top, address runtime_base) {
+  static void write_region(const char* name, address base, address top, address runtime_base) {
     size_t size = top - base;
     base = runtime_base;
     top = runtime_base + size;
@@ -709,7 +710,7 @@ class ArchiveBuilder::CDSMapLogger {
   }
 
   // open and closed archive regions
-  void write_heap_region(const char* which, GrowableArray<MemRegion> *regions) {
+  static void write_heap_region(const char* which, GrowableArray<MemRegion> *regions) {
     for (int i = 0; i < regions->length(); i++) {
       address start = address(regions->at(i).start());
       address end = address(regions->at(i).end());
@@ -723,55 +724,30 @@ class ArchiveBuilder::CDSMapLogger {
   static void write_data(address base, address top, address runtime_base) {
     assert(top >= base, "must be");
 
-    if (log_is_enabled(Trace, cds, map)) {
-      intx* p = (intx*)base;
-      size_t words = (top - base) / sizeof(uintx);
+    LogStreamHandle(Trace, cds, map) lsh;
+    if (lsh.is_enabled()) {
+      os::print_hex_dump(&lsh, base, top, sizeof(address), 32, runtime_base);
+    }
+  }
 
-      for (size_t i = 0; i < words; i += 4, p += 4) {
-        size_t offset = address(p) - base;
-        address runtime_p = runtime_base + offset;
-        switch (words - i) {
-        case 1:
-          log_trace(cds, map)(PTR_FORMAT ": " PTR_FORMAT,
-                              p2i(runtime_p), p[0]);
-          break;
-        case 2:
-          log_trace(cds, map)(PTR_FORMAT ": " PTR_FORMAT " " PTR_FORMAT,
-                              p2i(runtime_p), p[0], p[1]);
-          break;
-        case 3:
-          log_trace(cds, map)(PTR_FORMAT ": " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT,
-                              p2i(runtime_p), p[0], p[1], p[2]);
-          break;
-        default:
-          log_trace(cds, map)(PTR_FORMAT ": " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT,
-                              p2i(runtime_p), p[0], p[1], p[2], p[3]);
-        }
-      }
+  static void write_header(FileMapInfo* mapinfo) {
+    LogStreamHandle(Info, cds, map) lsh;
+    if (lsh.is_enabled()) {
+      mapinfo->print(&lsh);
     }
   }
 
 public:
-  CDSMapLogger() {}
-  void write(ArchiveBuilder* builder, FileMapInfo* mapinfo,
+  static void write(ArchiveBuilder* builder, FileMapInfo* mapinfo,
              GrowableArray<MemRegion> *closed_heap_regions,
              GrowableArray<MemRegion> *open_heap_regions,
              char* bitmap, size_t bitmap_size_in_bytes) {
     log_info(cds, map)("%s CDS archive map for %s", DumpSharedSpaces ? "Static" : "Dynamic", mapinfo->full_path());
-    if (log_is_enabled(Trace, cds, map)) {
-      log_info(cds, map)("Log level = trace");
-    } else if (log_is_enabled(Debug, cds, map)) {
-      log_info(cds, map)("Log level = debug");
-      log_info(cds, map)("Run with -Xlog:cds+map=trace for more detailed information");
-    } else {
-      log_info(cds, map)("Log level = info");
-      log_info(cds, map)("Run with -Xlog:cds+map=debug for more detailed information");
-      log_info(cds, map)("Run with -Xlog:cds+map=trace for even more detailed information");
-    }
 
     address header = address(mapinfo->header());
     address header_end = header + mapinfo->header()->header_size();
     write_region("header", header, header_end, 0);
+    write_header(mapinfo);
     write_data(header, header_end, 0);
 
     DumpRegion* mc_region = builder->_mc_region;
@@ -809,9 +785,8 @@ void ArchiveBuilder::write_cds_map_to_log(FileMapInfo* mapinfo,
                                           GrowableArray<MemRegion> *open_heap_regions,
                                           char* bitmap, size_t bitmap_size_in_bytes) {
   if (log_is_enabled(Info, cds, map)) {
-    CDSMapLogger logger;
-    logger.write(this, mapinfo, closed_heap_regions,open_heap_regions,
-                 bitmap, bitmap_size_in_bytes);
+    CDSMapLogger::write(this, mapinfo, closed_heap_regions,open_heap_regions,
+                        bitmap, bitmap_size_in_bytes);
   }
 }
 

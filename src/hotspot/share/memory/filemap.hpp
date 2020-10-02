@@ -44,6 +44,7 @@
 static const int JVM_IDENT_MAX = 256;
 
 class CHeapBitMap;
+class outputStream;
 
 class SharedClassPathEntry {
   enum {
@@ -175,6 +176,8 @@ public:
     _oopmap_offset = oopmap_offset;
     _oopmap_size_in_bits = size_in_bits;
   }
+
+  void print(outputStream* st, int region_index);
 };
 
 class FileMapHeader: private CDSFileMapHeaderBase {
@@ -325,6 +328,8 @@ public:
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
   }
+
+  void print(outputStream* st);
 };
 
 class FileMapInfo : public CHeapObj<mtInternal> {
@@ -551,6 +556,10 @@ public:
 
   FileMapRegion* space_at(int i) const {
     return header()->space_at(i);
+  }
+
+  void print(outputStream* st) {
+    header()->print(st);
   }
 
  private:
