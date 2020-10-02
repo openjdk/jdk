@@ -1652,8 +1652,8 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, size_t alignment_hint, MEMFLAGS flags) {
-  char* result = pd_reserve_memory(bytes, alignment_hint);
+char* os::reserve_memory(size_t bytes, MEMFLAGS flags) {
+  char* result = pd_reserve_memory(bytes);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
     if (flags != mtOther) {
@@ -1664,7 +1664,7 @@ char* os::reserve_memory(size_t bytes, size_t alignment_hint, MEMFLAGS flags) {
   return result;
 }
 
-char* os::reserve_memory_with_fd(size_t bytes, size_t alignment_hint, int file_desc) {
+char* os::reserve_memory_with_fd(size_t bytes, int file_desc) {
   char* result;
 
   if (file_desc != -1) {
@@ -1675,7 +1675,7 @@ char* os::reserve_memory_with_fd(size_t bytes, size_t alignment_hint, int file_d
       MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC);
     }
   } else {
-    result = pd_reserve_memory(bytes, alignment_hint);
+    result = pd_reserve_memory(bytes);
     if (result != NULL) {
       MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
     }

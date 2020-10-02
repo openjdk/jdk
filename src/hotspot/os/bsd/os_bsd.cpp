@@ -2030,8 +2030,7 @@ static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
 
-char* os::pd_reserve_memory(size_t bytes, size_t alignment_hint) {
-  // Ignores alignment hint
+char* os::pd_reserve_memory(size_t bytes) {
   return anon_mmap(NULL /* addr */, bytes);
 }
 
