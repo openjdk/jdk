@@ -42,9 +42,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.CreateString.createstr001
- *        nsk.jdwp.VirtualMachine.CreateString.createstr001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.VirtualMachine.CreateString.createstr001a
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.CreateString.createstr001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -55,9 +55,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.EventRequest.ClearAllBreakpoints.clrallbreakp001
- *        nsk.jdwp.EventRequest.ClearAllBreakpoints.clrallbreakp001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.EventRequest.ClearAllBreakpoints.clrallbreakp001a
+ * @run main/othervm
  *      nsk.jdwp.EventRequest.ClearAllBreakpoints.clrallbreakp001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
