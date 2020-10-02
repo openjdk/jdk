@@ -30,8 +30,6 @@
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.hpp"
 
-#define SharedSpaceObjectAlignment      8
-
 class ReservedSpace;
 class VirtualSpace;
 
