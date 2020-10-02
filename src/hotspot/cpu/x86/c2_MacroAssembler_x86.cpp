@@ -1886,7 +1886,7 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1, Regis
 
     bind(SCAN_TO_32_CHAR_LOOP);
     vmovdqu(vec3, Address(result, 0));
-    vpcmpeqb(vec3, vec3, vec1, 1);
+    vpcmpeqb(vec3, vec3, vec1, Assembler::AVX_256bit);
     vptest(vec2, vec3);
     jcc(Assembler::carryClear, FOUND_CHAR);
     addptr(result, 32);
