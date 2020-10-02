@@ -32,8 +32,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.net.NetProperties;
 
-class UnixDomainHelper {
+class UnixDomainSocketsUtil {
 
     static Charset getCharset() {
         return StandardCharsets.UTF_8;
@@ -45,15 +46,16 @@ class UnixDomainHelper {
      *
      * On Windows we search the following directories in sequence:
      *
-     * 1. ${jdk.nio.unixdomain.tmpdir} if set, Use that unconditionally
-     * 2. %TEMP%
-     * 3. ${java.io.tmpdir}
+     * 1. ${jdk.nio.unixdomain.tmpdir} if set as system property
+     * 2. ${jdk.nio.unixdomain.tmpdir} if set as net property
+     * 3. %TEMP%
+     * 4. ${java.io.tmpdir}
      *
      */
     static Path getTempDir() {
         PrivilegedAction<Path> action = () -> {
             try {
-                String s = System.getProperty("jdk.nio.unixdomain.tmpdir");
+                String s = NetProperties.get("jdk.nio.unixdomain.tmpdir");
                 if (s != null) {
                     return Path.of(s);
                 }

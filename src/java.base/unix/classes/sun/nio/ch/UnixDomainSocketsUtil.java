@@ -31,11 +31,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.net.NetProperties;
 
 /**
- * Platform specific helper functions
+ * Platform specific utility functions
  */
-class UnixDomainHelper {
+class UnixDomainSocketsUtil {
     static Charset getCharset() {
         return Charset.defaultCharset();
     }
@@ -46,26 +47,17 @@ class UnixDomainHelper {
      *
      * On UNIX we search the following directories in sequence:
      *
-     * 1. ${jdk.nio.unixdomain.tmpdir} if set, Use that unconditionally
-     * 2. /tmp
-     * 3. /var/tmp
-     * 4. ${java.io.tmpdir}
+     * 1. ${jdk.nio.unixdomain.tmpdir} if set as system property
+     * 2. ${jdk.nio.unixdomain.tmpdir} if set as net property
+     * 3. ${java.io.tmpdir} system property
      *
      */
     static Path getTempDir() {
         PrivilegedAction<Path> action = () -> {
             try {
-                String s = System.getProperty("jdk.nio.unixdomain.tmpdir");
-                if (s != null) {
+                String s = NetProperties.get("jdk.nio.unixdomain.tmpdir");
+                if (s != null && s.length() > 0) {
                     return Path.of(s);
-                }
-                Path p = Path.of("/tmp");
-                if (Files.exists(p)) {
-                    return p;
-                }
-                p = Path.of("/var/tmp");
-                if (Files.exists(p)) {
-                    return p;
                 }
                 return Path.of(System.getProperty("java.io.tmpdir"));
             } catch (InvalidPathException ipe) {

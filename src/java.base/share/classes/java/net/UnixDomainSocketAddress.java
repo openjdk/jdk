@@ -28,6 +28,7 @@ package java.net;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.net.SocketAddress;
+import java.nio.channels.SocketChannel;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.InvalidPathException;
@@ -39,8 +40,8 @@ import java.nio.file.Path;
  * bind or connect to.
  *
  * <p> An <a id="unnamed"></a><i>unnamed</i> {@code UnixDomainSocketAddress} has
- * an empty path. The local address of a Unix domain socket that is automatically
- * bound will be unnamed.
+ * an empty path. The local address of a {@link SocketChannel} to a Unix domain socket
+ * that is <i>automatically</i> or <i>implicitly</i> bound will be unnamed.
  *
  * <p> {@link Path} objects used to create instances of this class must be obtained
  * from the {@linkplain FileSystems#getDefault system-default} file system.

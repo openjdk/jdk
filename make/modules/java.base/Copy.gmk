@@ -182,12 +182,21 @@ endif
 
 ################################################################################
 
-$(eval $(call SetupCopyFiles, COPY_NET_PROPERTIES, \
-    FILES := $(TOPDIR)/src/java.base/share/conf/net.properties, \
-    DEST := $(CONF_DST_DIR), \
-))
+NET_PROPERTIES_SRC := $(TOPDIR)/src/java.base/share/conf/net.properties.common
+NET_PROPERTIES_DST := $(CONF_DST_DIR)/net.properties
 
-TARGETS += $(COPY_NET_PROPERTIES)
+NET_PROPERTIES_SRC += $(TOPDIR)/src/java.base/unix/conf/net.properties.unix
+NET_PROPERTIES_SRC += $(TOPDIR)/src/java.base/windows/conf/net.properties.windows
+
+NET_PROPERTIES_SRC_LIST := $(NET_PROPERTIES_SRC)
+
+$(NET_PROPERTIES_DST): $(NET_PROPERTIES_SRC_LIST)
+	$(call MakeTargetDir)
+	$(RM) $@ $@.tmp
+	$(foreach f,$(NET_PROPERTIES_SRC_LIST),$(CAT) $(f) >> $@.tmp;)
+	$(MV) $@.tmp $@
+
+TARGETS += $(NET_PROPERTIES_DST)
 
 ifeq ($(call isTargetOs, linux), true)
   $(eval $(call SetupCopyFiles, COPY_SDP_CONF, \

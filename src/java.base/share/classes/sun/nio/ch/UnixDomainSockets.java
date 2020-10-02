@@ -86,7 +86,8 @@ class UnixDomainSockets {
 
     public static UnixDomainSocketAddress localAddress(FileDescriptor fd) throws IOException {
         byte[] bytes = localAddress0(fd);
-        return UnixDomainSocketAddress.of(new String(bytes, UnixDomainHelper.getCharset()));
+        return UnixDomainSocketAddress.of(
+                    new String(bytes, UnixDomainSocketsUtil.getCharset()));
     }
 
     static native byte[] localAddress0(FileDescriptor fd)
@@ -94,7 +95,8 @@ class UnixDomainSockets {
 
     public static UnixDomainSocketAddress remoteAddress(FileDescriptor fd) throws IOException {
         byte[] bytes = remoteAddress0(fd);
-        return UnixDomainSocketAddress.of(new String(bytes, UnixDomainHelper.getCharset()));
+        return UnixDomainSocketAddress.of(new String(bytes,
+                    UnixDomainSocketsUtil.getCharset()));
     }
 
     static native byte[] remoteAddress0(FileDescriptor fd)
@@ -133,7 +135,7 @@ class UnixDomainSockets {
         return parent.equals(tempDir);
     }
 
-    static final Path tempDir = UnixDomainHelper.getTempDir();
+    static final Path tempDir = UnixDomainSocketsUtil.getTempDir();
 
     static byte[] getPathBytes(Path path) throws IOException {
         AbstractFileSystemProvider provider = (AbstractFileSystemProvider)
@@ -161,7 +163,7 @@ class UnixDomainSockets {
         Object[] barray  = new Object[1];
         int ret = accept0(fd, newfd, barray);
         byte[] bytes = (byte[])barray[0];
-        isaa[0] = bytes == null ? null : new String(bytes, UnixDomainHelper.getCharset());
+        isaa[0] = bytes == null ? null : new String(bytes, UnixDomainSocketsUtil.getCharset());
         return ret;
     }
 
