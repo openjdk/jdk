@@ -75,14 +75,6 @@ public class ArrayDiff<E> implements Diff {
     private final ArrayCodec<E> first;
     private final ArrayCodec<E> second;
 
-    /**
-     * Default limits for the formatter
-     */
-    public static class Defaults {
-        public final static int WIDTH = 80;
-        public final static int CONTEXT_BEFORE = 2;
-    }
-
     private ArrayDiff(ArrayCodec<E> first, ArrayCodec<E> second,
                       int width, int getContextBefore) {
         this.first = first;
@@ -101,7 +93,7 @@ public class ArrayDiff<E> implements Diff {
      * @return an ArrayDiff instance for the two arrays
      */
     public static ArrayDiff of(Object first, Object second) {
-        return ArrayDiff.of(first, second, Defaults.WIDTH, Defaults.CONTEXT_BEFORE);
+        return ArrayDiff.of(first, second, Diff.Defaults.WIDTH, Diff.Defaults.CONTEXT_BEFORE);
     }
 
     /**

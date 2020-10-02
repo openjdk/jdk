@@ -32,6 +32,14 @@ package jdk.test.lib.format;
 public interface Diff {
 
     /**
+     * Default limits for formatters
+     */
+    public static class Defaults {
+        public final static int WIDTH = 80;
+        public final static int CONTEXT_BEFORE = 2;
+    }
+
+    /**
      * Formats the given diff. Different implementations can provide different
      * result and formatting style.
      *
