@@ -390,22 +390,35 @@ ZStatIterableValue<T>::ZStatIterableValue(const char* group,
 
 template <typename T>
 T* ZStatIterableValue<T>::insert() const {
-  T** current = &_first;
-
-  while (*current != NULL) {
-    // First sort by group, then by name
-    const int group_cmp = strcmp((*current)->group(), group());
-    const int name_cmp = strcmp((*current)->name(), name());
-    if ((group_cmp > 0) || (group_cmp == 0 && name_cmp > 0)) {
-      break;
-    }
-
-    current = &(*current)->_next;
-  }
-
-  T* const next = *current;
-  *current = (T*)this;
+  T* const next = _first;
+  _first = (T*)this;
   return next;
+}
+
+template <typename T>
+void ZStatIterableValue<T>::sort() {
+  T* first_unsorted = _first;
+  _first = NULL;
+
+  while (first_unsorted != NULL) {
+    T* const value = first_unsorted;
+    first_unsorted = value->_next;
+    value->_next = NULL;
+
+    T** current = &_first;
+
+    while (*current != NULL) {
+      // First sort by group, then by name
+      const int group_cmp = strcmp((*current)->group(), value->group());
+      if ((group_cmp > 0) || (group_cmp == 0 && strcmp((*current)->name(), value->name()) > 0)) {
+        break;
+      }
+
+      current = &(*current)->_next;
+    }
+    value->_next = *current;
+    *current = value;
+  }
 }
 
 //
@@ -881,6 +894,8 @@ void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const
 void ZStat::run_service() {
   ZStatSamplerHistory* const history = new ZStatSamplerHistory[ZStatSampler::count()];
   LogTarget(Info, gc, stats) log;
+
+  ZStatSampler::sort();
 
   // Main loop
   while (_metronome.wait_for_tick()) {

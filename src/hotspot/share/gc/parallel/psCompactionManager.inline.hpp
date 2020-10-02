@@ -133,7 +133,7 @@ inline void follow_array_specialized(objArrayOop obj, int index, ParCompactionMa
 
   const size_t stride = MIN2(len - beg_index, (size_t)ObjArrayMarkingStride);
   const size_t end_index = beg_index + stride;
-  T* const base = (T*)obj->base_raw();
+  T* const base = (T*)obj->base();
   T* const beg = base + beg_index;
   T* const end = base + end_index;
 

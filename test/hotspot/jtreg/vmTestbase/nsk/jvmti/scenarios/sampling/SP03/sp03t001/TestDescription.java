@@ -56,10 +56,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.scenarios.sampling.SP03.sp03t001
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:sp03t001=-waittime=5 threads=10"
+ * @build nsk.jvmti.scenarios.sampling.SP03.sp03t001
+ * @run main/othervm/native
+ *      -agentlib:sp03t001=-waittime=5,threads=10
  *      nsk.jvmti.scenarios.sampling.SP03.sp03t001
  */
 

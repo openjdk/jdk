@@ -192,7 +192,7 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
     // identity_hash for all shared objects, so they are less likely to be written
     // into during run time, increasing the potential of memory sharing.
     int hash_original = obj->identity_hash();
-    archived_oop->set_mark_raw(markWord::prototype().copy_set_hash(hash_original));
+    archived_oop->set_mark(markWord::prototype().copy_set_hash(hash_original));
     assert(archived_oop->mark().is_unlocked(), "sanity");
 
     DEBUG_ONLY(int hash_archived = archived_oop->identity_hash());
@@ -383,7 +383,7 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
       new(ResourceObj::C_HEAP, mtClass) GrowableArray<juint>(10, mtClass);
   }
   _subgraph_entry_fields->append((juint)static_field_offset);
-  _subgraph_entry_fields->append(CompressedOops::encode(v));
+  _subgraph_entry_fields->append(CompressedOops::narrow_oop_value(v));
   _subgraph_entry_fields->append(is_closed_archive ? 1 : 0);
 }
 
@@ -591,7 +591,7 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k, TRAPS) {
       assert(efr_len % 3 == 0, "sanity");
       for (i = 0; i < efr_len;) {
         int field_offset = entry_field_records->at(i);
-        narrowOop nv = entry_field_records->at(i+1);
+        narrowOop nv = CompressedOops::narrow_oop_cast(entry_field_records->at(i+1));
         int is_closed_archive = entry_field_records->at(i+2);
         oop v;
         if (is_closed_archive == 0) {

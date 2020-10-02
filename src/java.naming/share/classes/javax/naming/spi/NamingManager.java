@@ -99,11 +99,11 @@ public class NamingManager {
      *
      * @param builder The factory builder to install. If null, no builder
      *                  is installed.
-     * @exception SecurityException builder cannot be installed
-     *          for security reasons.
-     * @exception NamingException builder cannot be installed for
+     * @throws SecurityException builder cannot be installed
+     *         for security reasons.
+     * @throws NamingException builder cannot be installed for
      *         a non-security-related reason.
-     * @exception IllegalStateException If a factory has already been installed.
+     * @throws IllegalStateException If a factory has already been installed.
      * @see #getObjectInstance
      * @see ObjectFactory
      * @see ObjectFactoryBuilder
@@ -280,10 +280,10 @@ public class NamingManager {
      * @return An object created using {@code refInfo}; or
      *          {@code refInfo} if an object cannot be created using
      *          the algorithm described above.
-     * @exception NamingException if a naming exception was encountered
+     * @throws NamingException if a naming exception was encountered
      *  while attempting to get a URL context, or if one of the
      *          factories accessed throws a NamingException.
-     * @exception Exception if one of the factories accessed throws an
+     * @throws Exception if one of the factories accessed throws an
      *          exception, or if an error was encountered while loading
      *          and instantiating the factory and object classes.
      *          A factory should only throw an exception if it does not want
@@ -547,8 +547,8 @@ public class NamingManager {
      *         scheme id {@code scheme};
      *  {@code null} if the factory for creating the
      *         context is not found.
-     * @exception NamingException If a naming exception occurs while creating
-     *          the context.
+     * @throws NamingException If a naming exception occurs while creating
+     *         the context.
      * @see #getObjectInstance
      * @see ObjectFactory#getObjectInstance
      */
@@ -665,13 +665,13 @@ public class NamingManager {
      * @param env The possibly null environment properties used when
      *                  creating the context.
      * @return A non-null initial context.
-     * @exception NoInitialContextException If the
+     * @throws NoInitialContextException If the
      *          {@code Context.INITIAL_CONTEXT_FACTORY} property
      *         is not found or names a nonexistent
      *         class or a class that cannot be instantiated,
      *          or if the initial context could not be created for some other
      *          reason.
-     * @exception NamingException If some other naming exception was encountered.
+     * @throws NamingException If some other naming exception was encountered.
      * @see javax.naming.InitialContext
      * @see javax.naming.directory.InitialDirContext
      */
@@ -766,11 +766,11 @@ public class NamingManager {
      * be replaced.
      * @param builder The initial context factory builder to install. If null,
      *                no builder is set.
-     * @exception SecurityException builder cannot be installed for security
-     *                  reasons.
-     * @exception NamingException builder cannot be installed for
+     * @throws SecurityException builder cannot be installed for security
+     *         reasons.
+     * @throws NamingException builder cannot be installed for
      *         a non-security-related reason.
-     * @exception IllegalStateException If a builder was previous installed.
+     * @throws IllegalStateException If a builder was previous installed.
      * @see #hasInitialContextFactoryBuilder
      * @see java.lang.SecurityManager#checkSetFactory
      */
@@ -841,7 +841,7 @@ public class NamingManager {
      * @param cpe
      *          The non-null exception that triggered this continuation.
      * @return A non-null Context object for continuing the operation.
-     * @exception NamingException If a naming exception occurred.
+     * @throws NamingException If a naming exception occurred.
      */
     @SuppressWarnings("unchecked")
     public static Context getContinuationContext(CannotProceedException cpe)
@@ -913,7 +913,7 @@ public class NamingManager {
      *  the object's state.
      * @return The non-null object representing {@code obj}'s state for
      *  binding.  It could be the object ({@code obj}) itself.
-     * @exception NamingException If one of the factories accessed throws an
+     * @throws NamingException If one of the factories accessed throws an
      *          exception, or if an error was encountered while loading
      *          and instantiating the factory and object classes.
      *          A factory should only throw an exception if it does not want

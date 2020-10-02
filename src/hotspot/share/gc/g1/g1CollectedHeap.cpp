@@ -3045,10 +3045,11 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
                                                   collection_set()->optional_region_length());
         pre_evacuate_collection_set(evacuation_info, &per_thread_states);
 
+        bool may_do_optional_evacuation = _collection_set.optional_region_length() != 0;
         // Actually do the work...
-        evacuate_initial_collection_set(&per_thread_states);
+        evacuate_initial_collection_set(&per_thread_states, may_do_optional_evacuation);
 
-        if (_collection_set.optional_region_length() != 0) {
+        if (may_do_optional_evacuation) {
           evacuate_optional_collection_set(&per_thread_states);
         }
         post_evacuate_collection_set(evacuation_info, &rdcqs, &per_thread_states);
@@ -3814,10 +3815,11 @@ public:
 
 class G1EvacuateRegionsTask : public G1EvacuateRegionsBaseTask {
   G1RootProcessor* _root_processor;
+  bool _has_optional_evacuation_work;
 
   void scan_roots(G1ParScanThreadState* pss, uint worker_id) {
     _root_processor->evacuate_roots(pss, worker_id);
-    _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ObjCopy);
+    _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ObjCopy, _has_optional_evacuation_work);
     _g1h->rem_set()->scan_collection_set_regions(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::CodeRoots, G1GCPhaseTimes::ObjCopy);
   }
 
@@ -3838,13 +3840,16 @@ public:
                         G1ParScanThreadStateSet* per_thread_states,
                         G1ScannerTasksQueueSet* task_queues,
                         G1RootProcessor* root_processor,
-                        uint num_workers) :
+                        uint num_workers,
+                        bool has_optional_evacuation_work) :
     G1EvacuateRegionsBaseTask("G1 Evacuate Regions", per_thread_states, task_queues, num_workers),
-    _root_processor(root_processor)
+    _root_processor(root_processor),
+    _has_optional_evacuation_work(has_optional_evacuation_work)
   { }
 };
 
-void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states) {
+void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states,
+                                                      bool has_optional_evacuation_work) {
   G1GCPhaseTimes* p = phase_times();
 
   {
@@ -3859,7 +3864,12 @@ void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* p
   Ticks start_processing = Ticks::now();
   {
     G1RootProcessor root_processor(this, num_workers);
-    G1EvacuateRegionsTask g1_par_task(this, per_thread_states, _task_queues, &root_processor, num_workers);
+    G1EvacuateRegionsTask g1_par_task(this,
+                                      per_thread_states,
+                                      _task_queues,
+                                      &root_processor,
+                                      num_workers,
+                                      has_optional_evacuation_work);
     task_time = run_task_timed(&g1_par_task);
     // Closing the inner scope will execute the destructor for the G1RootProcessor object.
     // To extract its code root fixup time we measure total time of this scope and
@@ -3869,12 +3879,14 @@ void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* p
 
   p->record_initial_evac_time(task_time.seconds() * 1000.0);
   p->record_or_add_code_root_fixup_time((total_processing - task_time).seconds() * 1000.0);
+
+  rem_set()->complete_evac_phase(has_optional_evacuation_work);
 }
 
 class G1EvacuateOptionalRegionsTask : public G1EvacuateRegionsBaseTask {
 
   void scan_roots(G1ParScanThreadState* pss, uint worker_id) {
-    _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::OptObjCopy);
+    _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::OptObjCopy, true /* remember_already_scanned_cards */);
     _g1h->rem_set()->scan_collection_set_regions(pss, worker_id, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::OptCodeRoots, G1GCPhaseTimes::OptObjCopy);
   }
 
@@ -3934,6 +3946,8 @@ void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* 
       evacuate_next_optional_regions(per_thread_states);
       phase_times()->record_or_add_optional_evac_time((Ticks::now() - start).seconds() * 1000.0);
     }
+
+    rem_set()->complete_evac_phase(true /* has_more_than_one_evacuation_phase */);
   }
 
   _collection_set.abandon_optional_collection_set(per_thread_states);
