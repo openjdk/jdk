@@ -67,10 +67,26 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     theItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     [theItem retain];
 
-    view = [[AWTTrayIconView alloc] initWithTrayIcon:self];
-    [theItem setView:view];
+    menuDelegate = [[AWTTrayIconDelegate alloc] initWithTrayIcon:self];
+
+    [theItem.button sendActionOn: NSEventMaskLeftMouseDown | NSEventMaskRightMouseDown];
+    theItem.button.action = @selector(mouseDown:);
+    theItem.button.target = self;
+
+    trackingArea = [[NSTrackingArea alloc] initWithRect: CGRectZero
+                                            options: NSTrackingMouseMoved |
+                                                NSTrackingInVisibleRect |
+                                                NSTrackingActiveAlways
+                                            owner: self
+                                            userInfo: nil];
+
+    [[theItem button] addTrackingArea:trackingArea];
 
     return self;
+}
+
+-(void) setMenu:(NSMenu *) menu{
+    [theItem setMenu: menu];
 }
 
 -(void) dealloc {
@@ -83,17 +99,23 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     // the item's view to nil: it can lead to a crash in some scenarios.
     // The item will release the view later on, so just set the view's image
     // and tray icon to nil since we are done with it.
-    [view setImage: nil];
-    [view setTrayIcon: nil];
-    [view release];
 
+    [menuDelegate setImage: nil];
+    [menuDelegate setTrayIcon: nil];
+    [menuDelegate release];
+
+    [trackingArea release];
     [theItem release];
 
     [super dealloc];
 }
 
 - (void) setTooltip:(NSString *) tooltip{
-    [view setToolTip:tooltip];
+    [[theItem button] setToolTip:tooltip];
+}
+
+- (void) updateMenuRes {
+    [menuDelegate updateMenuRes];
 }
 
 -(NSStatusItem *) theItem{
@@ -104,7 +126,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     return peer;
 }
 
-- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize {
+- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize template:(BOOL)isTemplate {
     NSSize imageSize = [imagePtr size];
     NSSize scaledSize = ScaledImageSizeForStatusBar(imageSize, autosize);
     if (imageSize.width != scaledSize.width ||
@@ -114,12 +136,10 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 
     CGFloat itemLength = scaledSize.width + 2.0*kImageInset;
     [theItem setLength:itemLength];
+    theItem.button.image = imagePtr;
 
-    [view setImage:imagePtr];
-}
-
-- (NSPoint) getLocationOnScreen {
-    return [[view window] convertBaseToScreen: NSZeroPoint];
+    [[[theItem button] image] setTemplate: isTemplate];
+    [[theItem button] setNeedsDisplay: true];
 }
 
 -(void) deliverJavaMouseEvent: (NSEvent *) event {
@@ -128,8 +148,9 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 
     NSPoint eventLocation = [event locationInWindow];
-    NSPoint localPoint = [view convertPoint: eventLocation fromView: nil];
-    localPoint.y = [view bounds].size.height - localPoint.y;
+
+    NSPoint localPoint = [[theItem button] convertPoint: eventLocation fromView: nil];
+    localPoint.y = [[theItem button] bounds].size.height - localPoint.y;
 
     NSPoint absP = [NSEvent mouseLocation];
     NSEventType type = [event type];
@@ -166,50 +187,81 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     (*env)->DeleteLocalRef(env, jEvent);
 }
 
+
+- (void) mouseDown:(id)sender {
+    [self deliverJavaMouseEvent: [NSApp currentEvent]];
+
+    //find CTrayIcon.getPopupMenuModel method and call it to get popup menu ptr.
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    static JNF_CLASS_CACHE(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
+    static JNF_MEMBER_CACHE(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
+    jlong res = JNFCallLongMethod(env, menuDelegate->trayIcon->peer, jm_getPopupMenuModel);
+
+    if (res != 0) {
+        CPopupMenu *cmenu = jlong_to_ptr(res);
+        NSMenu* menu = [cmenu menu];
+        [menu setDelegate:menuDelegate];
+        [theItem popUpStatusItemMenu: menu];
+    }
+}
+
+
+- (void) mouseUp:(NSEvent *)event {
+    [self deliverJavaMouseEvent: event];
+}
+
+- (void) mouseDragged:(NSEvent *)event {
+    [self deliverJavaMouseEvent: event];
+}
+
+- (void) mouseMoved: (NSEvent *)event {
+    [self deliverJavaMouseEvent: event];
+}
+
+- (void) rightMouseDown:(NSEvent *)event {
+    [self deliverJavaMouseEvent: event];
+}
+
+- (void) rightMouseUp:(NSEvent *)event {
+    [self deliverJavaMouseEvent: event];
+}
+
+- (void) rightMouseDragged:(NSEvent *)event {
+    [self deliverJavaMouseEvent: event];
+}
+
+- (void) otherMouseDown:(NSEvent *)event {
+    [self deliverJavaMouseEvent: event];
+}
+
+- (void) otherMouseUp:(NSEvent *)event {
+    [self deliverJavaMouseEvent: event];
+}
+
+- (void) otherMouseDragged:(NSEvent *)event {
+    [self deliverJavaMouseEvent: event];
+}
+
 @end //AWTTrayIcon
 //================================================
 
-@implementation AWTTrayIconView
+@implementation AWTTrayIconDelegate
 
 -(id)initWithTrayIcon:(AWTTrayIcon *)theTrayIcon {
-    self = [super initWithFrame:NSMakeRect(0, 0, 1, 1)];
+    self = [super init];
 
     [self setTrayIcon: theTrayIcon];
-    isHighlighted = NO;
     image = nil;
-    trackingArea = nil;
-
-    [self addTrackingArea];
 
     return self;
 }
 
-- (void)addTrackingArea {
-    NSTrackingAreaOptions options = NSTrackingMouseMoved |
-                                    NSTrackingInVisibleRect |
-                                    NSTrackingActiveAlways;
-    trackingArea = [[NSTrackingArea alloc] initWithRect: CGRectZero
-                                                options: options
-                                                owner: self
-                                                userInfo: nil];
-    [self addTrackingArea:trackingArea];
-}
-
 -(void) dealloc {
     [image release];
-    [trackingArea release];
     [super dealloc];
 }
 
-- (void)setHighlighted:(BOOL)aFlag
-{
-    if (isHighlighted != aFlag) {
-        isHighlighted = aFlag;
-        [self setNeedsDisplay:YES];
-    }
-}
-
-- (void)setImage:(NSImage*)anImage {
+-(void)setImage:(NSImage*)anImage {
     [anImage retain];
     [image release];
     image = anImage;
@@ -223,103 +275,25 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     trayIcon = theTrayIcon;
 }
 
-- (void)menuWillOpen:(NSMenu *)menu
-{
-    [self setHighlighted:YES];
-}
-
-- (void)menuDidClose:(NSMenu *)menu
-{
-    [menu setDelegate:nil];
-    [self setHighlighted:NO];
-}
-
-- (void)drawRect:(NSRect)dirtyRect
-{
-    if (image == nil) {
-        return;
+- (NSMenu *) getMenu {
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    static JNF_CLASS_CACHE(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
+    static JNF_MEMBER_CACHE(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
+    jlong res = JNFCallLongMethod(env, trayIcon.peer, jm_getPopupMenuModel);
+    if (res != 0) {
+        CPopupMenu *cmenu = jlong_to_ptr(res);
+        NSMenu* menu = [cmenu menu];
+        [menu setDelegate:self];
+        return menu;
+    } else {
+        NSMenu* menu = [[NSMenu alloc] initWithTitle:@""];
+        [menu setDelegate:self];
+        return menu;
     }
-
-    NSRect bounds = [self bounds];
-    NSSize imageSize = [image size];
-
-    NSRect drawRect = {{ (bounds.size.width - imageSize.width) / 2.0,
-        (bounds.size.height - imageSize.height) / 2.0 }, imageSize};
-
-    // don't cover bottom pixels of the status bar with the image
-    if (drawRect.origin.y < 1.0) {
-        drawRect.origin.y = 1.0;
-    }
-    drawRect = NSIntegralRect(drawRect);
-
-    [trayIcon.theItem drawStatusBarBackgroundInRect:bounds
-                                withHighlight:isHighlighted];
-    [image drawInRect:drawRect
-             fromRect:NSZeroRect
-            operation:NSCompositeSourceOver
-             fraction:1.0
-     ];
+    return NULL;
 }
 
-- (void)mouseDown:(NSEvent *)event {
-    [trayIcon deliverJavaMouseEvent: event];
-
-    // don't show the menu on ctrl+click: it triggers ACTION event, like right click
-    if (([event modifierFlags] & NSControlKeyMask) == 0) {
-        //find CTrayIcon.getPopupMenuModel method and call it to get popup menu ptr.
-        JNIEnv *env = [ThreadUtilities getJNIEnv];
-        static JNF_CLASS_CACHE(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
-        static JNF_MEMBER_CACHE(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
-        jlong res = JNFCallLongMethod(env, trayIcon.peer, jm_getPopupMenuModel);
-
-        if (res != 0) {
-            CPopupMenu *cmenu = jlong_to_ptr(res);
-            NSMenu* menu = [cmenu menu];
-            [menu setDelegate:self];
-            [trayIcon.theItem popUpStatusItemMenu:menu];
-            [self setNeedsDisplay:YES];
-        }
-    }
-}
-
-- (void) mouseUp:(NSEvent *)event {
-    [trayIcon deliverJavaMouseEvent: event];
-}
-
-- (void) mouseDragged:(NSEvent *)event {
-    [trayIcon deliverJavaMouseEvent: event];
-}
-
-- (void) mouseMoved: (NSEvent *)event {
-    [trayIcon deliverJavaMouseEvent: event];
-}
-
-- (void) rightMouseDown:(NSEvent *)event {
-    [trayIcon deliverJavaMouseEvent: event];
-}
-
-- (void) rightMouseUp:(NSEvent *)event {
-    [trayIcon deliverJavaMouseEvent: event];
-}
-
-- (void) rightMouseDragged:(NSEvent *)event {
-    [trayIcon deliverJavaMouseEvent: event];
-}
-
-- (void) otherMouseDown:(NSEvent *)event {
-    [trayIcon deliverJavaMouseEvent: event];
-}
-
-- (void) otherMouseUp:(NSEvent *)event {
-    [trayIcon deliverJavaMouseEvent: event];
-}
-
-- (void) otherMouseDragged:(NSEvent *)event {
-    [trayIcon deliverJavaMouseEvent: event];
-}
-
-
-@end //AWTTrayIconView
+@end //AWTTrayIconDelegate
 //================================================
 
 /*
@@ -375,15 +349,15 @@ JNF_COCOA_EXIT(env);
 /*
  * Class:     sun_lwawt_macosx_CTrayIcon
  * Method:    setNativeImage
- * Signature: (JJZ)V
+ * Signature: (JJZZ)V
  */
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTrayIcon_setNativeImage
-(JNIEnv *env, jobject self, jlong model, jlong imagePtr, jboolean autosize) {
+(JNIEnv *env, jobject self, jlong model, jlong imagePtr, jboolean autosize, jboolean isTemplate) {
 JNF_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize];
+        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize template:isTemplate];
     }];
 
 JNF_COCOA_EXIT(env);
