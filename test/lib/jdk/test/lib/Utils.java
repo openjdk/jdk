@@ -129,9 +129,10 @@ public final class Utils {
      */
     public static final String SEED_PROPERTY_NAME = "jdk.test.lib.random.seed";
 
-    /* (non-javadoc)
-     * Random generator with (or without) predefined seed. Depends on
-     * "jdk.test.lib.random.seed" property value.
+    /**
+     * Random generator with predefined seed. If "jdk.test.lib.random.seed" is
+     * specified, its value is used as seed, otherwise, seed based on string
+     * representation of {@link Runtime#version()} is used.
      */
     private static volatile Random RANDOM_GENERATOR;
 
@@ -153,7 +154,9 @@ public final class Utils {
            // use 1st 8 bytes of md5($version)
            try {
                var md = MessageDigest.getInstance("MD5");
-               var bytes = System.getProperty("java.vm.version").getBytes(StandardCharsets.UTF_8);
+               var bytes = Runtime.version()
+                                  .toString()
+                                  .getBytes(StandardCharsets.UTF_8);
                bytes = md.digest(bytes);
                SEED = ByteBuffer.wrap(bytes).getLong();
            } catch (NoSuchAlgorithmException e) {
@@ -550,8 +553,9 @@ public final class Utils {
 
     /**
      * Returns {@link java.util.Random} generator initialized with particular seed.
-     * The seed could be provided via system property {@link Utils#SEED_PROPERTY_NAME}
-     * In case no seed is provided, the method uses a random number.
+     * The seed could be provided via system property {@link Utils#SEED_PROPERTY_NAME}.
+     * In case no seed is provided, the seed based on string representation of
+     * {@link Runtime#version()}, which is different from build to build, is used.
      * The used seed printed to stdout.
      * @return {@link java.util.Random} generator with particular seed.
      */
