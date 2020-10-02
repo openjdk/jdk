@@ -34,6 +34,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -94,8 +95,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
     {
         DocPath path = DocPaths.INDEX_FILES;
         SortedSet<Character> keys = new TreeSet<>(indexBuilder.asMap().keySet());
-        Set<Character> searchItemsKeys = configuration.searchItems
-                .itemsOfCategories(Category.INDEX, Category.SYSTEM_PROPERTY)
+        Set<Character> searchItemsKeys = configuration.searchItems.getItems(Category.TAGS).stream()
                 .map(i -> keyCharacter(i.getLabel()))
                 .collect(Collectors.toSet());
         keys.addAll(searchItemsKeys);
@@ -173,7 +173,9 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.ALLPACKAGES_INDEX),
                                              contents.allPackagesLabel));
         }
-        if (searchItems.containsAnyOfCategories(Category.SYSTEM_PROPERTY)) {
+        boolean anySystemProperties = searchItems.getItems(Category.TAGS).stream()
+                .anyMatch(sii -> sii.getDocTree().getKind() == DocTree.Kind.SYSTEM_PROPERTY);
+        if (anySystemProperties) {
             contentTree.add(getVerticalSeparator());
             contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.SYSTEM_PROPERTIES),
                                              contents.systemPropertiesLabel));

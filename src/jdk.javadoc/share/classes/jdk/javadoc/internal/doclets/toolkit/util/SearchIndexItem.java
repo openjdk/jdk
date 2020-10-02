@@ -75,19 +75,16 @@ import com.sun.source.doctree.DocTree;
  */
 public abstract class SearchIndexItem {
 
+    /**
+     * The "category" used to group items for the interactive search index.
+     * Categories correspond directly to the JavaScript files that will be generated.
+     */
     public enum Category {
         MODULES,
         PACKAGES,
         TYPES,
         MEMBERS,
-        /**
-         * The category of items corresponding to {@code {@index}} tags.
-         */
-        INDEX,
-        /**
-         * The category of items corresponding to {@code {@systemProperty}} tags.
-         */
-        SYSTEM_PROPERTY
+        TAGS
     }
 
     private final Element element;
@@ -180,8 +177,7 @@ public abstract class SearchIndexItem {
 
     protected Category getCategory(DocTree docTree) {
         return switch (docTree.getKind()) {
-            case INDEX ->           Category.INDEX;
-            case SYSTEM_PROPERTY -> Category.SYSTEM_PROPERTY;
+            case INDEX, SYSTEM_PROPERTY -> Category.TAGS;
             default -> throw new IllegalArgumentException(docTree.getKind().toString());
         };
     }
@@ -324,8 +320,7 @@ public abstract class SearchIndexItem {
                 item.append("}");
                 break;
 
-            case INDEX:
-            case SYSTEM_PROPERTY:
+            case TAGS:
                 item.append("{")
                         .append("\"l\":\"").append(label).append("\",")
                         .append("\"h\":\"").append(holder).append("\",");

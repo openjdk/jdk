@@ -28,11 +28,10 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -97,10 +96,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         super(configuration, path);
         this.indexBuilder = indexBuilder;
         this.navBar = new Navigation(null, configuration, PageMode.INDEX, path);
-        Stream<SearchIndexItem> items =
-                searchItems.itemsOfCategories(Category.INDEX, Category.SYSTEM_PROPERTY)
-                        .sorted(comparators.makeGenericSearchIndexComparator());
-        this.tagSearchIndexMap = buildSearchTagIndex(items);
+        this.tagSearchIndexMap = buildSearchTagIndex(searchItems.getItems(Category.TAGS));
     }
 
     protected void addContents(Character uc, List<IndexItem> memberlist,
@@ -312,34 +308,56 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     }
 
     /**
+     * Generates the set of index files used by interactive search.
+     *
      * @throws DocFileIOException if there is a problem creating any of the search index files
      */
     protected void createSearchIndexFiles() throws DocFileIOException {
-        createSearchIndexFile(DocPaths.MODULE_SEARCH_INDEX_JS,
-                              searchItems.itemsOfCategories(Category.MODULES),
-                              "moduleSearchIndex");
-        if (!configuration.packages.isEmpty()) {
-            SearchIndexItem si = SearchIndexItem.of(Category.PACKAGES)
-                .setLabel(resources.getText("doclet.All_Packages"))
-                .setUrl(DocPaths.ALLPACKAGES_INDEX.getPath());
-            searchItems.add(si);
+        for (Category category : Category.values()) {
+            DocPath file;
+            String varName;
+            switch (category) {
+                case MODULES:
+                    file = DocPaths.MODULE_SEARCH_INDEX_JS;
+                    varName = "moduleSearchIndex";
+                    break;
+
+                case PACKAGES:
+                    if (!configuration.packages.isEmpty()) {
+                        SearchIndexItem si = SearchIndexItem.of(Category.PACKAGES)
+                                .setLabel(resources.getText("doclet.All_Packages"))
+                                .setUrl(DocPaths.ALLPACKAGES_INDEX.getPath());
+                        searchItems.add(si);
+                    }
+                    file = DocPaths.PACKAGE_SEARCH_INDEX_JS;
+                    varName = "packageSearchIndex";
+                    break;
+
+                case TYPES:
+                    SearchIndexItem si = SearchIndexItem.of(Category.TYPES)
+                            .setLabel(resources.getText("doclet.All_Classes"))
+                            .setUrl(DocPaths.ALLCLASSES_INDEX.getPath());
+                    searchItems.add(si);
+                    file = DocPaths.TYPE_SEARCH_INDEX_JS;
+                    varName = "typeSearchIndex";
+                    break;
+
+                case MEMBERS:
+                    file = DocPaths.MEMBER_SEARCH_INDEX_JS;
+                    varName = "memberSearchIndex";
+                    break;
+
+                case TAGS:
+                    file = DocPaths.TAG_SEARCH_INDEX_JS;
+                    varName = "tagSearchIndex";
+                    break;
+
+                default:
+                    throw new Error();
+            }
+
+            createSearchIndexFile(file, searchItems.getItems(category), varName);
         }
-        createSearchIndexFile(DocPaths.PACKAGE_SEARCH_INDEX_JS,
-                              searchItems.itemsOfCategories(Category.PACKAGES),
-                              "packageSearchIndex");
-        SearchIndexItem si = SearchIndexItem.of(Category.TYPES)
-            .setLabel(resources.getText("doclet.All_Classes"))
-            .setUrl(DocPaths.ALLCLASSES_INDEX.getPath());
-        searchItems.add(si);
-        createSearchIndexFile(DocPaths.TYPE_SEARCH_INDEX_JS,
-                              searchItems.itemsOfCategories(Category.TYPES),
-                              "typeSearchIndex");
-        createSearchIndexFile(DocPaths.MEMBER_SEARCH_INDEX_JS,
-                              searchItems.itemsOfCategories(Category.MEMBERS),
-                              "memberSearchIndex");
-        createSearchIndexFile(DocPaths.TAG_SEARCH_INDEX_JS,
-                              searchItems.itemsOfCategories(Category.INDEX, Category.SYSTEM_PROPERTY),
-                              "tagSearchIndex");
     }
 
     /**
@@ -351,7 +369,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem creating the search index file
      */
     protected void createSearchIndexFile(DocPath searchIndexJS,
-                                         Stream<SearchIndexItem> searchIndex,
+                                         SortedSet<SearchIndexItem> searchIndex,
                                          String varName)
             throws DocFileIOException
     {
@@ -361,8 +379,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
             wr.write(varName);
             wr.write(" = [");
             boolean first = true;
-            while (index.hasNext()) {
-                SearchIndexItem item = index.next();
+            for (SearchIndexItem item : searchIndex) {
                 if (first) {
                     first = false;
                 } else {
@@ -378,9 +395,9 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     }
 
     private static Map<Character, List<SearchIndexItem>> buildSearchTagIndex(
-            Stream<? extends SearchIndexItem> searchItems)
+            SortedSet<? extends SearchIndexItem> searchItems)
     {
-        return searchItems.collect(Collectors.groupingBy(i -> keyCharacter(i.getLabel())));
+        return searchItems.stream().collect(Collectors.groupingBy(i -> keyCharacter(i.getLabel())));
     }
 
     protected static Character keyCharacter(String s) {

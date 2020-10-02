@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -147,7 +148,9 @@ public class SingleIndexWriter extends AbstractIndexWriter {
             contentTree.add(links.createLink(DocPaths.ALLPACKAGES_INDEX,
                                              contents.allPackagesLabel));
         }
-        if (searchItems.containsAnyOfCategories(Category.SYSTEM_PROPERTY)) {
+        boolean anySystemProperties = searchItems.getItems(Category.TAGS).stream()
+                .anyMatch(sii -> sii.getDocTree().getKind() == DocTree.Kind.SYSTEM_PROPERTY);
+        if (anySystemProperties) {
             contentTree.add(getVerticalSeparator());
             contentTree.add(links.createLink(DocPaths.SYSTEM_PROPERTIES, contents.systemPropertiesLabel));
         }
