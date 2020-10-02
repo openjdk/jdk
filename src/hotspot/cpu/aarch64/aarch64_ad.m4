@@ -301,6 +301,21 @@ instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
   ins_pipe(ialu_reg_shift);
 %}
 
+define(`BFI_INSN', `// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct bfi$1(iReg$1NoSp dst, iReg$1NoSp src, immI lsb, immI width)
+%{
+  match(Set dst (BitfieldInsert$1 (Binary dst src) (Binary lsb width)));
+  ins_cost(INSN_COST);
+  format %{ "bfi $dst, $src, #$lsb, #$width" %}
+  ins_encode %{
+    __ bfi(as_Register($dst$$reg), as_Register($src$$reg), $lsb$$constant, $width$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+')dnl
+BFI_INSN(I)
+BFI_INSN(L)
 
 // Rotations dnl
 define(`EXTRACT_INSN',`

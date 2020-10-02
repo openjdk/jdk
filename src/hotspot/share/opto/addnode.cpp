@@ -764,6 +764,30 @@ Node* rotate_shift(PhaseGVN* phase, Node* lshift, Node* rshift, int mask) {
   return NULL;
 }
 
+// Check if (offset,width) bitrange contains only zero bits in the value, the goal is
+// to prove that bitranges do not overlap in expressions like "((v1 & 0xFF) << 8) | (v2 & 0xFF)"
+static bool is_bitrange_zero(PhaseGVN *phase, Node* value, int offset, int width) {
+  int opcode = value->Opcode();
+  if (opcode == Op_LShiftI && value->in(2)->is_Con()) {
+    int lshift = value->in(2)->get_int();
+    return (lshift >= offset + width) || is_bitrange_zero(phase, value->in(1), offset - lshift, width);
+  } else if (opcode == Op_AndI && value->in(2)->is_Con()) {
+    int mask1 = value->in(2)->get_int();
+    int mask2 = ((1 << width) - 1) << offset;
+    return (mask1 & mask2) == 0;
+  } else if (opcode == Op_BitfieldInsertI) {
+    int width1 = value->in(3)->get_int();
+    int offset1 = value->in(4)->get_int();
+    if (offset >= offset1 + width1 || offset1 >= offset + width) {
+      return is_bitrange_zero(phase, value->in(1), offset, width);
+    }
+  } else if (opcode == Op_OrI) {
+    return is_bitrange_zero(phase, value->in(1), offset, width) &
+           is_bitrange_zero(phase, value->in(2), offset, width);
+  }
+  return false;
+}
+
 Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int lopcode = in(1)->Opcode();
   int ropcode = in(2)->Opcode();
@@ -785,6 +809,30 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
      if (shift != NULL) {
        return new RotateRightNode(in(1)->in(1), shift, TypeInt::INT);
      }
+  }
+  // major_progress() check postpones the transformation after loop optimization
+  if (can_reshape && !phase->C->major_progress() && Matcher::match_rule_supported(Op_BitfieldInsertI)) {
+    Node *andi = NULL;
+    Node *dst = in(1);
+    Node *src = in(2);
+    int offset = 0;
+    // Convert Or(v1, Shift(And(v2, 0xFF), shift)) into BitfieldInsert(dst, src, width, offset)
+    if (src->Opcode() == Op_LShiftI && src->in(1)->Opcode() == Op_AndI && src->in(2)->is_Con()) {
+      andi   = src->in(1);
+      offset = src->in(2)->get_int();
+    } else if (src->Opcode() == Op_AndI) {
+      andi = src;
+    }
+    if (andi != NULL) {
+      Node* value = andi->in(1);
+      Node* mask  = andi->in(2);
+      if (mask->is_Con() && is_power_of_2(mask->get_int() + 1)) {
+        int width = exact_log2(mask->get_int() + 1);
+        if (width + offset <= 32 && is_bitrange_zero(phase, dst, offset, width)) {
+          return new BitfieldInsertINode(dst, value, phase->intcon(offset), phase->intcon(width));
+        }
+      }
+    }
   }
   return NULL;
 }
@@ -830,6 +878,28 @@ Node* OrLNode::Identity(PhaseGVN* phase) {
   return AddNode::Identity(phase);
 }
 
+static bool is_bitrangeL_zero(PhaseGVN *phase, Node* value, int offset, int width) {
+  int opcode = value->Opcode();
+  if (opcode == Op_LShiftL && value->in(2)->is_Con()) {
+    int lshift = value->in(2)->get_int();
+    return (lshift >= offset + width) || is_bitrangeL_zero(phase, value->in(1), offset - lshift, width);
+  } else if (opcode == Op_AndL && value->in(2)->is_Con()) {
+    jlong mask1 = value->in(2)->get_long();
+    jlong mask2 = ((1L << width) - 1) << offset;
+    return (mask1 & mask2) == 0;
+  } else if (opcode == Op_BitfieldInsertL) {
+    int width1 = value->in(3)->get_int();
+    int offset1 = value->in(4)->get_int();
+    if (offset >= offset1 + width1 || offset1 >= offset + width) {
+      return is_bitrangeL_zero(phase, value->in(1), offset, width);
+    }
+  } else if (opcode == Op_OrL) {
+    return is_bitrange_zero(phase, value->in(1), offset, width) &
+           is_bitrange_zero(phase, value->in(2), offset, width);
+  }
+  return false;
+}
+
 Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int lopcode = in(1)->Opcode();
   int ropcode = in(2)->Opcode();
@@ -850,6 +920,28 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* shift = rotate_shift(phase, rshift, lshift, 0x3F);
     if (shift != NULL) {
       return new RotateRightNode(in(1)->in(1), shift, TypeLong::LONG);
+    }
+  }
+  if (can_reshape && !phase->C->major_progress() && Matcher::match_rule_supported(Op_BitfieldInsertL)) {
+    Node *andl = NULL;
+    Node *dst = in(1);
+    Node *src = in(2);
+    int offset = 0;
+    if (src->Opcode() == Op_LShiftL && src->in(1)->Opcode() == Op_AndL && src->in(2)->is_Con()) {
+      andl   = src->in(1);
+      offset = src->in(2)->get_int();
+    } else if (src->Opcode() == Op_AndL) {
+      andl = src;
+    }
+    if (andl != NULL) {
+      Node* value = andl->in(1);
+      Node* mask  = andl->in(2);
+      if (mask->is_Con() && is_power_of_2(mask->get_long() + 1)) {
+        int width = exact_log2_long(mask->get_long() + 1);
+        if (width + offset <= 64 && is_bitrangeL_zero(phase, dst, offset, width)) {
+          return new BitfieldInsertLNode(dst, value, phase->intcon(offset), phase->intcon(width));
+        }
+      }
     }
   }
   return NULL;

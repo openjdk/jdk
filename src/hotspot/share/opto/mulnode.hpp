@@ -185,6 +185,26 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+//-------------------------- BitfieldInsertINode ------------------------------
+// BitfieldInsert copies a bitfield from the least significant bits of the src to
+// bit position lsb of the dst, leaving the other destination bits unchanged.
+class BitfieldInsertINode : public Node {
+public:
+  BitfieldInsertINode(Node *src, Node *dst, Node *lsb, Node *width) : Node(0, src, dst, lsb, width) {}
+  virtual int Opcode() const;
+  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//-------------------------- BitfieldInsertLNode ------------------------------
+class BitfieldInsertLNode : public Node {
+public:
+  BitfieldInsertLNode(Node *src, Node *dst, Node *lsb, Node *width) : Node(0, src, dst, lsb, width) {}
+  virtual int Opcode() const;
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
 //------------------------------LShiftINode------------------------------------
 // Logical shift left
 class LShiftINode : public Node {

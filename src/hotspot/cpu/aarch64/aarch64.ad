@@ -12657,6 +12657,32 @@ instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
   ins_pipe(ialu_reg_shift);
 %}
 
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct bfiI(iRegINoSp dst, iRegINoSp src, immI lsb, immI width)
+%{
+  match(Set dst (BitfieldInsertI (Binary dst src) (Binary lsb width)));
+  ins_cost(INSN_COST);
+  format %{ "bfi $dst, $src, #$lsb, #$width" %}
+  ins_encode %{
+    __ bfi(as_Register($dst$$reg), as_Register($src$$reg), $lsb$$constant, $width$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct bfiL(iRegLNoSp dst, iRegLNoSp src, immI lsb, immI width)
+%{
+  match(Set dst (BitfieldInsertL (Binary dst src) (Binary lsb width)));
+  ins_cost(INSN_COST);
+  format %{ "bfi $dst, $src, #$lsb, #$width" %}
+  ins_encode %{
+    __ bfi(as_Register($dst$$reg), as_Register($src$$reg), $lsb$$constant, $width$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 
 // Rotations 
 // This pattern is automatically generated from aarch64_ad.m4

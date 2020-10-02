@@ -1996,6 +1996,27 @@ bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
   return true;
 }
 
+// execute posponed transformations
+void Compile::post_optimize_loops_igvn(PhaseIterGVN& igvn) {
+  Unique_Node_List worklist;
+  worklist.push(root());
+  for (uint next = 0; next < worklist.size(); ++next) {
+    Node *n = worklist.at(next);
+    int opcode = n->Opcode();
+    // OrI/OrL: Or+Shift+And -> BitfieldInsert transformation
+    if (opcode == Op_OrI || opcode == Op_OrL) {
+      igvn._worklist.push(n);
+    }
+    uint max = n->len();
+    for (uint i = 0; i < max; ++i) {
+      Node *m = n->in(i);
+      if (not_a_node(m))  continue;
+      worklist.push(m);
+    }
+  }
+  igvn.optimize();
+}
+
 // Remove edges from "root" to each SafePoint at a backward branch.
 // They were inserted during parsing (see add_safepoint()) to make
 // infinite loops without calls or exceptions visible to root, i.e.,
@@ -2207,6 +2228,8 @@ void Compile::Optimize() {
 
   // Ensure that major progress is now clear
   C->clear_major_progress();
+
+  post_optimize_loops_igvn(igvn);
 
   {
     // Verify that all previous optimizations produced a valid graph

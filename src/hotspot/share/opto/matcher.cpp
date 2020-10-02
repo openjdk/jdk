@@ -2291,6 +2291,8 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_BitfieldInsertI:
+    case Op_BitfieldInsertL:
     case Op_MulAddS2I: {
       Node* pair1 = new BinaryNode(n->in(1), n->in(2));
       Node* pair2 = new BinaryNode(n->in(3), n->in(4));
