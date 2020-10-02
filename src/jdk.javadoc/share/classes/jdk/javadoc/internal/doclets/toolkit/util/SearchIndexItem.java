@@ -25,17 +25,55 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
+import java.util.Objects;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.util.SimpleElementVisitor14;
+
+import com.sun.source.doctree.DocTree;
 
 /**
- * Index item for search.
+ * An item in the index for interactive search.
+ *
+ * Items are primarily defined by their position in the documentation,
+ * which is one of:
+ *
+ * <ul>
+ * <li>An element (module, package, type or member)
+ * <li>One of a small set of tags in the doc comment for an element:
+ *     {@code {@index ...}}, {@code {@systemProperty ...}}, etc
+ * <li>One of a small set of outliers, corresponding to summary pages:
+ *     "All Classes", "All Packages", etc
+ * </ul>
+ *
+ * Each item provides details to be included in the search index files
+ * read and processed by JavaScript.
+ * Items have a "category", which is normally derived from the element
+ * kind or doc tree kind; it is used to determine the JavaScript file
+ * in which this file will be written.
+ *
+ * All items have a "label", which is the presentation string used
+ * to display the item in the list of matching choices.
+ *
+ * Items for an element may have one or more of the following:
+ * "containing module", "containing package", "containing type".
+ *
+ * Items for a node in a doc tree have a "holder", which is a
+ * text form of the enclosing element or page.
+ * They will typically also have a "description" derived from
+ * content in the doc tree node.
+ *
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class SearchIndexItem {
+public abstract class SearchIndexItem {
 
     public enum Category {
         MODULES,
@@ -52,7 +90,8 @@ public class SearchIndexItem {
         SYSTEM_PROPERTY
     }
 
-    private Category category;
+    private final Element element;
+
     private String label = "";
     private String url = "";
     private String containingModule = "";
@@ -60,61 +99,74 @@ public class SearchIndexItem {
     private String containingClass = "";
     private String holder = "";
     private String description = "";
-    private Element element;
 
-    public void setLabel(String l) {
-        label = l;
+    /**
+     * Creates a search index item for an element.
+     *
+     * @param element the element
+     *
+     * @return the item
+     */
+    public static SearchIndexItem of(Element element) {
+        Objects.requireNonNull(element);
+        return new SearchIndexItem(element) {
+            @Override
+            public DocTree getDocTree() {
+                return null;
+            }
+            @Override
+            public Category getCategory() {
+                return getCategory(getElement());
+            }
+        };
     }
 
-    public String getLabel() {
-        return label;
+    /**
+     * Creates a search index item for a node in the doc comment for an element.
+     *
+     * @param element the element
+     * @param docTree the node in the doc comment
+     *
+     * @return the item
+     */
+    public static SearchIndexItem of(Element element, DocTree docTree) {
+        Objects.requireNonNull(element);
+        Objects.requireNonNull(docTree);
+        return new SearchIndexItem(element) {
+            @Override
+            public DocTree getDocTree() {
+                return docTree;
+            }
+            @Override
+            public Category getCategory() {
+                return getCategory(docTree);
+            }
+        };
     }
 
-    public void setUrl(String u) {
-        url = u;
+    /**
+     * Creates a search index item that is not associated with any element or
+     * node in a doc comment.
+     *
+     * @param category the category for the item
+     *
+     * @return the item
+     */
+    public static SearchIndexItem of(Category category) {
+        Objects.requireNonNull(category);
+        return new SearchIndexItem(null) {
+            @Override
+            public DocTree getDocTree() {
+                return null;
+            }
+            @Override
+            public Category getCategory() {
+                return category;
+            }
+        };
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    public void setContainingModule(String m) {
-        containingModule = m;
-    }
-
-    public void setContainingPackage(String p) {
-        containingPackage = p;
-    }
-
-    public void setContainingClass(String c) {
-        containingClass = c;
-    }
-
-    public void setCategory(Category c) {
-        category = c;
-    }
-
-    public void setHolder(String h) {
-        holder = h;
-    }
-
-    public String getHolder() {
-        return holder;
-    }
-
-    public void setDescription(String d) {
-        description = d;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setElement(Element element) {
+    private SearchIndexItem(Element element) {
         this.element = element;
     }
 
@@ -122,16 +174,115 @@ public class SearchIndexItem {
         return element;
     }
 
-    @Override
-    public String toString() {
+    public abstract DocTree getDocTree();
+
+    public abstract Category getCategory();
+
+    protected Category getCategory(DocTree docTree) {
+        return switch (docTree.getKind()) {
+            case INDEX ->           Category.INDEX;
+            case SYSTEM_PROPERTY -> Category.SYSTEM_PROPERTY;
+            default -> throw new IllegalArgumentException(docTree.getKind().toString());
+        };
+    }
+
+    @SuppressWarnings("preview")
+    protected Category getCategory(Element element) {
+        return new SimpleElementVisitor14<Category, Void>() {
+            @Override
+            public Category visitModule(ModuleElement t, Void v) {
+                return Category.MODULES;
+            }
+
+            @Override
+            public Category visitPackage(PackageElement e, Void v) {
+                return Category.PACKAGES;
+            }
+
+            @Override
+            public Category visitType(TypeElement e, Void v) {
+                return Category.TYPES;
+            }
+
+            @Override
+            public Category visitVariable(VariableElement e, Void v) {
+                return Category.MEMBERS;
+            }
+
+            @Override
+            public Category visitExecutable(ExecutableElement e, Void v) {
+                return Category.MEMBERS;
+            }
+
+            @Override
+            public Category defaultAction(Element e, Void v) {
+                throw new IllegalArgumentException(e.toString());
+            }
+        }.visit(element);
+    }
+
+    public SearchIndexItem setLabel(String l) {
+        label = l;
+        return this;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public SearchIndexItem setUrl(String u) {
+        url = u;
+        return this;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public SearchIndexItem setContainingModule(String m) {
+        containingModule = m;
+        return this;
+    }
+
+    public SearchIndexItem setContainingPackage(String p) {
+        containingPackage = p;
+        return this;
+    }
+
+    public SearchIndexItem setContainingClass(String c) {
+        containingClass = c;
+        return this;
+    }
+
+    public SearchIndexItem setHolder(String h) {
+        holder = h;
+        return this;
+    }
+
+    public String getHolder() {
+        return holder;
+    }
+
+    public SearchIndexItem setDescription(String d) {
+        description = d;
+        return this;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String toJavaScript() {
         // TODO: Additional processing is required, see JDK-8238495
         StringBuilder item = new StringBuilder();
+        Category category = getCategory();
         switch (category) {
             case MODULES:
                 item.append("{")
                         .append("\"l\":\"").append(label).append("\"")
                         .append("}");
                 break;
+
             case PACKAGES:
                 item.append("{");
                 if (!containingModule.isEmpty()) {
@@ -143,6 +294,7 @@ public class SearchIndexItem {
                 }
                 item.append("}");
                 break;
+
             case TYPES:
                 item.append("{");
                 if (!containingPackage.isEmpty()) {
@@ -157,6 +309,7 @@ public class SearchIndexItem {
                 }
                 item.append("}");
                 break;
+
             case MEMBERS:
                 item.append("{");
                 if (!containingModule.isEmpty()) {
@@ -170,6 +323,7 @@ public class SearchIndexItem {
                 }
                 item.append("}");
                 break;
+
             case INDEX:
             case SYSTEM_PROPERTY:
                 item.append("{")
@@ -181,6 +335,7 @@ public class SearchIndexItem {
                 item.append("\"u\":\"").append(url).append("\"")
                         .append("}");
                 break;
+
             default:
                 throw new AssertionError("Unexpected category: " + category);
         }

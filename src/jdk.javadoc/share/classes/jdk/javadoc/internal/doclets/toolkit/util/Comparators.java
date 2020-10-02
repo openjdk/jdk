@@ -314,8 +314,9 @@ public class Comparators {
     private Comparator<TypeMirror> typeMirrorClassUseComparator = null;
 
     /**
-     * Compares the FullyQualifiedNames of two TypeMirrors
-     * @return
+     * Returns a comparator that compares the fully qualified names of two type mirrors.
+     *
+     * @return the comparator
      */
     public Comparator<TypeMirror> makeTypeMirrorClassUseComparator() {
         if (typeMirrorClassUseComparator == null) {
@@ -331,10 +332,10 @@ public class Comparators {
     private Comparator<TypeMirror> typeMirrorIndexUseComparator = null;
 
     /**
-     * Compares the SimpleNames of TypeMirrors if equal then the
-     * FullyQualifiedNames of TypeMirrors.
+     * Returns a comparator that compares the simple names of two type mirrors,
+     * or the fully qualified names if the simple names are equal.
      *
-     * @return
+     * @return the comparator
      */
     public Comparator<TypeMirror> makeTypeMirrorIndexUseComparator() {
         if (typeMirrorIndexUseComparator == null) {
@@ -467,7 +468,7 @@ public class Comparators {
          *         argument is less than, equal to, or greater than the second.
          */
         protected int compareFullyQualifiedNames(Element e1, Element e2) {
-            // add simplename to be compatible
+            // add simple name to be compatible
             String thisElement = getFullyQualifiedName(e1);
             String thatElement = getFullyQualifiedName(e2);
             return utils.compareStrings(thisElement, thatElement);
@@ -526,20 +527,20 @@ public class Comparators {
         }
 
         private int getKindIndex(Element e) {
-            switch (e.getKind()) {
-                case MODULE:            return 0;
-                case PACKAGE:           return 1;
-                case CLASS:             return 2;
-                case ENUM:              return 3;
-                case ENUM_CONSTANT:     return 4;
-                case RECORD:            return 5;
-                case INTERFACE:         return 6;
-                case ANNOTATION_TYPE:   return 7;
-                case FIELD:             return 8;
-                case CONSTRUCTOR:       return 9;
-                case METHOD:            return 10;
-                default: throw new IllegalArgumentException(e.getKind().toString());
-            }
+            return switch (e.getKind()) {
+                case MODULE ->          0;
+                case PACKAGE ->         1;
+                case CLASS ->           2;
+                case ENUM ->            3;
+                case ENUM_CONSTANT ->   4;
+                case RECORD ->          5;
+                case INTERFACE ->       6;
+                case ANNOTATION_TYPE -> 7;
+                case FIELD ->           8;
+                case CONSTRUCTOR ->     9;
+                case METHOD ->          10;
+                default -> throw new IllegalArgumentException(e.getKind().toString());
+            };
         }
 
         @SuppressWarnings("preview")
@@ -600,7 +601,7 @@ public class Comparators {
 
     /**
      * Returns a Comparator for SearchIndexItems representing types. Items are
-     * compared by short name, or full string representation if names are equal.
+     * compared by short name, or full JavaScript representation if names are equal.
      *
      * @return a Comparator
      */
@@ -610,7 +611,7 @@ public class Comparators {
             if (result == 0) {
                 // TreeSet needs this to be consistent with equal so we do
                 // a plain comparison of string representations as fallback.
-                result = sii1.toString().compareTo(sii2.toString());
+                result = sii1.toJavaScript().compareTo(sii2.toJavaScript());
             }
             return result;
         };
@@ -621,7 +622,7 @@ public class Comparators {
     /**
      * Returns a Comparator for SearchIndexItems representing modules, packages, or members.
      * Items are compared by label (member name plus signature for members, package name for
-     * packages, and module name for modules). If labels are equal then full string
+     * packages, and module name for modules). If labels are equal then full JavaScript
      * representation is compared.
      *
      * @return a Comparator
@@ -633,7 +634,7 @@ public class Comparators {
                 if (result == 0) {
                     // TreeSet needs this to be consistent with equal so we do
                     // a plain comparison of string representations as fallback.
-                    result = sii1.toString().compareTo(sii2.toString());
+                    result = sii1.toJavaScript().compareTo(sii2.toJavaScript());
                 }
                 return result;
             };

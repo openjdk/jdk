@@ -132,8 +132,8 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         if (si != null) {
             addDescription(si, dl);
         } else {
-            si = new SearchIndexItem();
-            si.setLabel(indexItem.getLabel());
+            si = SearchIndexItem.of(indexItem.getElement())
+                .setLabel(indexItem.getLabel());
             addElementDescription(indexItem, dl, si, addModuleInfo);
             searchItems.add(si);
         }
@@ -155,7 +155,6 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         switch (element.getKind()) {
             case MODULE:
                 dt = HtmlTree.DT(getModuleLink((ModuleElement)element, new StringContent(label)));
-                si.setCategory(Category.MODULES);
                 dt.add(" - ").add(contents.module_).add(" " + label);
                 break;
             case PACKAGE:
@@ -163,7 +162,6 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                 if (configuration.showModules) {
                     si.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
                 }
-                si.setCategory(Category.PACKAGES);
                 dt.add(" - ").add(contents.package_).add(" " + label);
                 break;
             case CLASS:
@@ -177,7 +175,6 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                 if (configuration.showModules && addModuleInfo) {
                     si.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
                 }
-                si.setCategory(Category.TYPES);
                 dt.add(" - ");
                 addClassInfo((TypeElement)element, dt);
                 break;
@@ -196,7 +193,6 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                         si.setUrl(url);
                     }
                 }
-                si.setCategory(Category.MEMBERS);
                 dt.add(" - ");
                 addMemberDesc(element, containingType, dt);
                 break;
@@ -323,19 +319,17 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                               searchItems.itemsOfCategories(Category.MODULES),
                               "moduleSearchIndex");
         if (!configuration.packages.isEmpty()) {
-            SearchIndexItem si = new SearchIndexItem();
-            si.setCategory(Category.PACKAGES);
-            si.setLabel(resources.getText("doclet.All_Packages"));
-            si.setUrl(DocPaths.ALLPACKAGES_INDEX.getPath());
+            SearchIndexItem si = SearchIndexItem.of(Category.PACKAGES)
+                .setLabel(resources.getText("doclet.All_Packages"))
+                .setUrl(DocPaths.ALLPACKAGES_INDEX.getPath());
             searchItems.add(si);
         }
         createSearchIndexFile(DocPaths.PACKAGE_SEARCH_INDEX_JS,
                               searchItems.itemsOfCategories(Category.PACKAGES),
                               "packageSearchIndex");
-        SearchIndexItem si = new SearchIndexItem();
-        si.setCategory(Category.TYPES);
-        si.setLabel(resources.getText("doclet.All_Classes"));
-        si.setUrl(DocPaths.ALLCLASSES_INDEX.getPath());
+        SearchIndexItem si = SearchIndexItem.of(Category.TYPES)
+            .setLabel(resources.getText("doclet.All_Classes"))
+            .setUrl(DocPaths.ALLCLASSES_INDEX.getPath());
         searchItems.add(si);
         createSearchIndexFile(DocPaths.TYPE_SEARCH_INDEX_JS,
                               searchItems.itemsOfCategories(Category.TYPES),
@@ -362,25 +356,22 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
             throws DocFileIOException
     {
         // The file needs to be created even if there are no searchIndex items
-        // File could be written straight-through, without an intermediate StringBuilder
-        Iterator<SearchIndexItem> index = searchIndex.iterator();
-        StringBuilder searchVar = new StringBuilder("[");
-        boolean first = true;
-        while (index.hasNext()) {
-            SearchIndexItem item = index.next();
-            if (first) {
-                searchVar.append(item.toString());
-                first = false;
-            } else {
-                searchVar.append(",").append(item.toString());
-            }
-        }
-        searchVar.append("];");
         DocFile jsFile = DocFile.createFileForOutput(configuration, searchIndexJS);
         try (Writer wr = jsFile.openWriter()) {
             wr.write(varName);
             wr.write(" = ");
-            wr.write(searchVar.toString());
+            Iterator<SearchIndexItem> index = searchIndex.iterator();
+            boolean first = true;
+            while (index.hasNext()) {
+                SearchIndexItem item = index.next();
+                if (first) {
+                    first = false;
+                } else {
+                    wr.write(",");
+                }
+                wr.write(item.toJavaScript());
+            }
+            wr.write("];");
             wr.write("updateSearchResults();");
         } catch (IOException ie) {
             throw new DocFileIOException(jsFile, DocFileIOException.Mode.WRITE, ie);

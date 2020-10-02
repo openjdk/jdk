@@ -24,6 +24,7 @@
  */
 package jdk.javadoc.internal.doclets.formats.html;
 
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
@@ -160,17 +161,17 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     }
 
     private Content createLink(SearchIndexItem i) {
-        assert i.getCategory() == Category.SYSTEM_PROPERTY : i;
-        if (i.getElement() != null) {
-            if (i.getElement() instanceof OverviewElement) {
-                return links.createLink(pathToRoot.resolve(i.getUrl()),
-                                        resources.getText("doclet.Overview"));
-            }
-            DocletElement e = ((DocletElement) i.getElement());
+        assert i.getDocTree().getKind() == DocTree.Kind.SYSTEM_PROPERTY : i;
+        Element element = i.getElement();
+        if (element instanceof OverviewElement) {
+            return links.createLink(pathToRoot.resolve(i.getUrl()),
+                    resources.getText("doclet.Overview"));
+        } else if (element instanceof DocletElement) {
+            DocletElement e = (DocletElement) element;
             // Implementations of DocletElement do not override equals and
             // hashCode; putting instances of DocletElement in a map is not
             // incorrect, but might well be inefficient
-            String t = titles.computeIfAbsent(i.getElement(), utils::getHTMLTitle);
+            String t = titles.computeIfAbsent(element, utils::getHTMLTitle);
             if (t.isBlank()) {
                 // The user should probably be notified (a warning?) that this
                 // file does not have a title

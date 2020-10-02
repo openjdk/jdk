@@ -112,7 +112,7 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     protected Content indexTagOutput(Element element, DocTree tag) {
         CommentHelper ch = utils.getCommentHelper(element);
-        IndexTree itt = (IndexTree)tag;
+        IndexTree itt = (IndexTree) tag;
 
         String tagText = ch.getText(itt.getSearchTerm());
         if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
@@ -121,7 +121,7 @@ public class TagletWriterImpl extends TagletWriter {
         }
         String desc = ch.getText(itt.getDescription());
 
-        return createAnchorAndSearchIndex(element, tagText, desc, false);
+        return createAnchorAndSearchIndex(element, tagText, desc, tag);
     }
 
     @Override
@@ -284,7 +284,7 @@ public class TagletWriterImpl extends TagletWriter {
         SystemPropertyTree itt = (SystemPropertyTree) tag;
         String tagText = itt.getPropertyName().toString();
         return HtmlTree.CODE(createAnchorAndSearchIndex(element, tagText,
-                resources.getText("doclet.System_Property"), true));
+                resources.getText("doclet.System_Property"), tag));
     }
 
     @Override
@@ -367,7 +367,7 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @SuppressWarnings("preview")
-    private Content createAnchorAndSearchIndex(Element element, String tagText, String desc, boolean isSystemProperty) {
+    private Content createAnchorAndSearchIndex(Element element, String tagText, String desc, DocTree tree) {
         Content result = null;
         if (isFirstSentence && inSummary) {
             result = new StringContent(tagText);
@@ -380,10 +380,10 @@ public class TagletWriterImpl extends TagletWriter {
             }
             result = HtmlTree.SPAN(anchorName, HtmlStyle.searchTagResult, new StringContent(tagText));
             if (options.createIndex() && !tagText.isEmpty()) {
-                SearchIndexItem si = new SearchIndexItem();
-                si.setLabel(tagText);
-                si.setDescription(desc);
-                si.setUrl(htmlWriter.path.getPath() + "#" + anchorName);
+                SearchIndexItem si = SearchIndexItem.of(element, tree)
+                    .setLabel(tagText)
+                    .setDescription(desc)
+                    .setUrl(htmlWriter.path.getPath() + "#" + anchorName);
                 new SimpleElementVisitor14<Void, Void>() {
 
                     @Override
@@ -426,7 +426,6 @@ public class TagletWriterImpl extends TagletWriter {
                     public Void visitUnknown(Element e, Void p) {
                         if (e instanceof DocletElement) {
                             DocletElement de = (DocletElement) e;
-                            si.setElement(de);
                             switch (de.getSubKind()) {
                                 case OVERVIEW:
                                     si.setHolder(resources.getText("doclet.Overview"));
@@ -449,7 +448,6 @@ public class TagletWriterImpl extends TagletWriter {
                         return null;
                     }
                 }.visit(element);
-                si.setCategory(isSystemProperty ? Category.SYSTEM_PROPERTY : Category.INDEX);
                 configuration.searchItems.add(si);
             }
         }
