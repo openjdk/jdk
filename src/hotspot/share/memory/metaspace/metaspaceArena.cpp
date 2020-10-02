@@ -96,7 +96,6 @@ Metachunk* MetaspaceArena::allocate_new_chunk(size_t requested_word_size) {
             "Requested size too large (" SIZE_FORMAT ") - max allowed size per allocation is " SIZE_FORMAT ".",
             requested_word_size, chunklevel::MAX_CHUNK_WORD_SIZE);
 
-  const int growth_step = _chunks.count();
   const chunklevel_t max_level = chunklevel::level_fitting_word_size(requested_word_size);
   const chunklevel_t preferred_level = MIN2(max_level, next_chunk_level());
 

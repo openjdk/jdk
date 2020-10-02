@@ -63,7 +63,12 @@ class Settings : public AllStatic {
   // If true, metablock allocations are guarded and periodically checked.
   DEBUG_ONLY(static bool _use_allocation_guard;)
 
-  // If true, we handle deallocated blocks (default).
+  // This enables or disables premature deallocation of metaspace allocated blocks. Using
+  //  Metaspace::deallocate(), blocks can be returned prematurely (before the associated
+  //  Arena dies, e.g. after class unloading) and can be reused by the arena.
+  //  If disabled, those blocks will not be reused until the Arena dies.
+  // Note that premature deallocation is rare under normal circumstances.
+  // By default deallocation handling is enabled.
   DEBUG_ONLY(static bool _handle_deallocations;)
 
 public:
