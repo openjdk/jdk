@@ -3667,7 +3667,7 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
     extra_size += alignment;
   }
 
-  char* start = anon_mmap(req_addr, bytes);
+  char* start = anon_mmap(req_addr, extra_size);
   if (start != NULL) {
     if (req_addr != NULL) {
       if (start != req_addr) {
