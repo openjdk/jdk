@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,19 +39,6 @@ import sun.hotspot.WhiteBox;
 public class TestAbortVMOnSafepointTimeout {
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 0) {
-            Integer waitTime = Integer.parseInt(args[0]);
-            WhiteBox wb = WhiteBox.getWhiteBox();
-            while (!wb.waitUnsafe(waitTime)) {
-                System.out.println("Waiting for safepoint");
-            }
-            System.out.println("This message would occur after some time.");
-        } else {
-            testWith(50, 1, 999);
-        }
-    }
-
-    public static void testWith(int sfpt_interval, int timeout_delay, int unsafe_wait) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-Xbootclasspath/a:.",
                 "-XX:+UnlockDiagnosticVMOptions",
@@ -58,12 +46,12 @@ public class TestAbortVMOnSafepointTimeout {
                 "-XX:+SafepointTimeout",
                 "-XX:+SafepointALot",
                 "-XX:+AbortVMOnSafepointTimeout",
-                "-XX:SafepointTimeoutDelay=" + timeout_delay,
-                "-XX:GuaranteedSafepointInterval=" + sfpt_interval,
+                "-XX:SafepointTimeoutDelay=50",
+                "-XX:GuaranteedSafepointInterval=1",
                 "-XX:-CreateCoredumpOnCrash",
                 "-Xms64m",
-                "TestAbortVMOnSafepointTimeout",
-                "" + unsafe_wait
+                "TestAbortVMOnSafepointTimeout$Test",
+                "999" /* 999 is max unsafe sleep */
         );
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -77,5 +65,16 @@ public class TestAbortVMOnSafepointTimeout {
             }
         }
         output.shouldNotHaveExitValue(0);
+    }
+
+    public static class Test {
+        public static void main(String[] args) throws Exception {
+            Integer waitTime = Integer.parseInt(args[0]);
+            WhiteBox wb = WhiteBox.getWhiteBox();
+            // While no safepoint timeout.
+            while (true) {
+                wb.waitUnsafe(waitTime);
+            }
+        }
     }
 }
