@@ -2042,7 +2042,7 @@ public class JFileChooser extends JComponent implements Accessible {
     protected class AccessibleJFileChooser extends AccessibleJComponent {
 
         /**
-         * Constructor for subclasses to call.
+         * Constructs an {@code AccessibleJFileChooser}.
          */
         protected AccessibleJFileChooser() {}
 

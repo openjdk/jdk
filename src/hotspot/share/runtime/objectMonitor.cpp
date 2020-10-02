@@ -489,13 +489,10 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
 
   // Separate loads in is_being_async_deflated(), which is almost always
   // called before this function, from the load of dmw/header below.
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    // A non-multiple copy atomic (nMCA) machine needs a bigger
-    // hammer to separate the loads before and the load below.
-    OrderAccess::fence();
-  } else {
-    OrderAccess::loadload();
-  }
+
+  // _contentions and dmw/header may get written by different threads.
+  // Make sure to observe them in the same order when having several observers.
+  OrderAccess::loadload_for_IRIW();
 
   const oop l_object = object_peek();
   if (l_object == NULL) {

@@ -111,7 +111,7 @@ public final class TestModuleEvents {
         assertEquals(edges.get("jdk/jfr"), UNNAMED);
         assertEquals(edges.get("java/util"), UNNAMED);
         assertEquals(edges.get("jdk/jfr/events"), "java.base");
-        assertEquals(edges.get("jdk/internal"), "jdk.jfr");
+        assertEquals(edges.get("jdk/internal/vm/annotation"), "jdk.jfr");
 
         recording.close();
     }

@@ -379,7 +379,7 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
   } else {
     // if the object isn't moving we can just set the mark to the default
     // mark and handle it specially later on.
-    q->init_mark_raw();
+    q->init_mark();
     assert(q->forwardee() == NULL, "should be forwarded to NULL");
   }
 
@@ -617,14 +617,14 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
     // allocate uninitialized int array
     typeArrayOop t = (typeArrayOop) allocate(size);
     assert(t != NULL, "allocation should succeed");
-    t->set_mark_raw(markWord::prototype());
+    t->set_mark(markWord::prototype());
     t->set_klass(Universe::intArrayKlassObj());
     t->set_length((int)length);
   } else {
     assert(size == CollectedHeap::min_fill_size(),
            "size for smallest fake object doesn't match");
     instanceOop obj = (instanceOop) allocate(size);
-    obj->set_mark_raw(markWord::prototype());
+    obj->set_mark(markWord::prototype());
     obj->set_klass_gap(0);
     obj->set_klass(SystemDictionary::Object_klass());
   }

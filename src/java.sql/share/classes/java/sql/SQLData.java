@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,8 @@ public interface SQLData {
   *
   * @return the type name that was passed to the method <code>readSQL</code>
   *            when this object was constructed and populated
-  * @exception SQLException if there is a database access error
-  * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+  * @throws SQLException if there is a database access error
+  * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
   * this method
   * @since 1.2
   */
@@ -104,8 +104,8 @@ public interface SQLData {
   * @param stream the <code>SQLInput</code> object from which to read the data for
   * the value that is being custom mapped
   * @param typeName the SQL type name of the value on the data stream
-  * @exception SQLException if there is a database access error
-  * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+  * @throws SQLException if there is a database access error
+  * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
   * this method
   * @see SQLInput
   * @since 1.2
@@ -127,8 +127,8 @@ public interface SQLData {
   *
   * @param stream the <code>SQLOutput</code> object to which to write the data for
   * the value that was custom mapped
-  * @exception SQLException if there is a database access error
-  * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+  * @throws SQLException if there is a database access error
+  * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
   * this method
   * @see SQLOutput
   * @since 1.2

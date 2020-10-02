@@ -1176,6 +1176,11 @@ public class BasicScrollBarUI
      * A listener to listen for model changes.
      */
     protected class ModelListener implements ChangeListener {
+        /**
+         * Constructs a {@code ModelListener}.
+         */
+        protected ModelListener() {}
+
         public void stateChanged(ChangeEvent e) {
             if (!useCachedValue) {
                 scrollBarValue = scrollbar.getValue();
@@ -1199,6 +1204,11 @@ public class BasicScrollBarUI
         /** Current mouse y position */
         protected transient int currentMouseY;
         private transient int direction = +1;
+
+        /**
+         * Constructs a {@code TrackListener}.
+         */
+        protected TrackListener() {}
 
         /** {@inheritDoc} */
         public void mouseReleased(MouseEvent e)
@@ -1497,6 +1507,11 @@ public class BasicScrollBarUI
         // we need to make sure we don't fire under both conditions.
         // (keyfocus on scrollbars causes action without mousePress
         boolean handledEvent;
+
+        /**
+         * Constructs an {@code ArrowButtonListener}.
+         */
+        protected ArrowButtonListener() {}
 
         public void mousePressed(MouseEvent e)          {
             if(!scrollbar.isEnabled()) { return; }

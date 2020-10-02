@@ -42,9 +42,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.up.up002.up002
- *        nsk.jdb.up.up002.up002a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.up.up002.up002
+ * @build nsk.jdb.up.up002.up002a
+ * @run main/othervm
+ *      nsk.jdb.up.up002.up002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

@@ -61,9 +61,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ThreadReference.Frames.frames001
- *        nsk.jdwp.ThreadReference.Frames.frames001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.ThreadReference.Frames.frames001a
+ * @run main/othervm
  *      nsk.jdwp.ThreadReference.Frames.frames001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
