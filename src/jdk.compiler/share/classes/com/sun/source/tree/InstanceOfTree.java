@@ -70,7 +70,7 @@ public interface InstanceOfTree extends ExpressionTree {
      * returns null.
      *
      * @return the tested pattern, or null if this instanceof does not use a pattern
-     * @since 14
+     * @since 16
      */
     PatternTree getPattern();
 }

@@ -141,7 +141,7 @@ public enum ElementKind {
 
     /**
      * A binding variable in a pattern.
-     * @since 14
+     * @since 16
      */
     BINDING_VARIABLE;
 

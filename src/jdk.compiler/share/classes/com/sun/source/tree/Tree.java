@@ -222,7 +222,7 @@ public interface Tree {
         /**
          * Used for instances of {@link BindingPatternTree}.
          *
-         * @since 14
+         * @since 16
          */
         BINDING_PATTERN(BindingPatternTree.class),
 

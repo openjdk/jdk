@@ -30,7 +30,7 @@ import javax.lang.model.element.Name;
 /**
  * A binding pattern tree
  *
- * @since 14
+ * @since 16
  */
 public interface BindingPatternTree extends PatternTree {
 
