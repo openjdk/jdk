@@ -34,12 +34,12 @@ import java.util.ListIterator;
 /**
  * A filter used to pre- and post-process incoming requests. Pre-processing occurs
  * before the application's exchange handler is invoked, and post-processing
- * occurs after the exchange handler returns.  Filters
- * are organised in chains, and are associated with {@link HttpContext} instances.
+ * occurs after the exchange handler returns. Filters are organised in chains,
+ * and are associated with {@link HttpContext} instances.
  *
- * <p> Each {@Filter} in the chain, invokes the next filter within its own
- * {@link #doFilter(HttpExchange, Chain)} implementation. The final {@Filter} in
- * the chain invokes the applications exchange handler.
+ * <p> Each {@code Filter} in the chain, invokes the next filter within its own
+ * {@link #doFilter(HttpExchange, Chain)} implementation. The final {@code Filter}
+ * in the chain invokes the applications exchange handler.
  *
  * @since 1.6
  */
