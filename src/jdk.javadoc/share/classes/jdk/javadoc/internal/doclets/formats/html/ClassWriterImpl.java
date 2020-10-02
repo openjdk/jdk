@@ -42,16 +42,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor8;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.tools.doclint.HtmlTag;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import javax.lang.model.element.ElementKind;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -60,7 +50,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -70,11 +59,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils.Pair;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewAPIType;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
 
 /**
  * Generate the Class Information Page.
@@ -417,7 +401,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public void addParamInfo(Content classInfoTree) {
         if (utils.hasBlockTag(typeElement, DocTree.Kind.PARAM)) {
-            Content paramInfo = (new ParamTaglet()).getTagletOutput(typeElement,
+            Content paramInfo = (new ParamTaglet()).getAllBlockTagOutput(typeElement,
                     getTagletWriterInstance(false));
             if (!paramInfo.isEmpty()) {
                 classInfoTree.add(HtmlTree.DL(HtmlStyle.notes, paramInfo));

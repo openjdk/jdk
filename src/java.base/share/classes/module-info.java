@@ -231,6 +231,7 @@ module java.base {
     exports jdk.internal.vm.annotation to
         jdk.internal.vm.ci,
         jdk.incubator.foreign,
+        jdk.jfr,
         jdk.unsupported;
     exports jdk.internal.util to
             jdk.incubator.foreign;

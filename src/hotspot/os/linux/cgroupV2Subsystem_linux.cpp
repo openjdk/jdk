@@ -149,7 +149,7 @@ jlong CgroupV2Subsystem::memory_max_usage_in_bytes() {
 }
 
 char* CgroupV2Subsystem::mem_soft_limit_val() {
-  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.high",
+  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.low",
                          "Memory Soft Limit is: %s", "%s", mem_soft_limit_str, 1024);
   if (mem_soft_limit_str == NULL) {
     return NULL;

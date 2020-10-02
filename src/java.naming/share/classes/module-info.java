@@ -59,6 +59,20 @@
  *         <br>If this property is not specified, the default is to wait
  *         for the response until it is received.
  *     </li>
+ *     <li>{@code com.sun.jndi.ldap.tls.cbtype}:
+ *         <br>The value of this property is the string representing the TLS
+ *         Channel Binding type required for an LDAP connection over SSL/TLS.
+ *         Possible value is :
+ *         <ul>
+ *             <li>"tls-server-end-point" - Channel Binding data is created on
+ *                 the basis of the TLS server certificate.
+ *             </li>
+ *         </ul>
+ *         <br>"tls-unique" TLS Channel Binding type is specified in RFC-5929
+ *         but not supported.
+ *         <br>If this property is not specified, the client does not send
+ *         channel binding information to the server.
+ *     </li>
  * </ul>
  *
  * @provides javax.naming.ldap.spi.LdapDnsProvider

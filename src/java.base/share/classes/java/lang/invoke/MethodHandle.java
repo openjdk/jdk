@@ -26,7 +26,7 @@
 package java.lang.invoke;
 
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
@@ -499,7 +499,7 @@ public abstract class MethodHandle implements Constable {
      * @throws WrongMethodTypeException if the target's type is not identical with the caller's symbolic type descriptor
      * @throws Throwable anything thrown by the underlying method propagates unchanged through the method handle call
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public final native @PolymorphicSignature Object invokeExact(Object... args) throws Throwable;
 
     /**
@@ -537,7 +537,7 @@ public abstract class MethodHandle implements Constable {
      * @throws ClassCastException if the target's type can be adjusted to the caller, but a reference cast fails
      * @throws Throwable anything thrown by the underlying method propagates unchanged through the method handle call
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public final native @PolymorphicSignature Object invoke(Object... args) throws Throwable;
 
     /**
@@ -557,7 +557,7 @@ public abstract class MethodHandle implements Constable {
      * @param args the signature-polymorphic parameter list, statically represented using varargs
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     /*non-public*/
     final native @PolymorphicSignature Object invokeBasic(Object... args) throws Throwable;
 
@@ -568,7 +568,7 @@ public abstract class MethodHandle implements Constable {
      * @param args the signature-polymorphic parameter list, statically represented using varargs
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     /*non-public*/
     static native @PolymorphicSignature Object linkToVirtual(Object... args) throws Throwable;
 
@@ -579,7 +579,7 @@ public abstract class MethodHandle implements Constable {
      * @param args the signature-polymorphic parameter list, statically represented using varargs
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     /*non-public*/
     static native @PolymorphicSignature Object linkToStatic(Object... args) throws Throwable;
 
@@ -590,7 +590,7 @@ public abstract class MethodHandle implements Constable {
      * @param args the signature-polymorphic parameter list, statically represented using varargs
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     /*non-public*/
     static native @PolymorphicSignature Object linkToSpecial(Object... args) throws Throwable;
 
@@ -601,7 +601,7 @@ public abstract class MethodHandle implements Constable {
      * @param args the signature-polymorphic parameter list, statically represented using varargs
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     /*non-public*/
     static native @PolymorphicSignature Object linkToInterface(Object... args) throws Throwable;
 

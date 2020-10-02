@@ -55,9 +55,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ReferenceType.Methods.methods001
- *        nsk.jdwp.ReferenceType.Methods.methods001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.ReferenceType.Methods.methods001a
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.Methods.methods001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

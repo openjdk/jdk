@@ -187,8 +187,7 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
 
   // hash a given key (oop) with the specified size
   static unsigned int hash(oop key, int size) {
-    const oop obj = Access<>::resolve(key);
-    const unsigned int hash = Universe::heap()->hash_oop(obj);
+    const unsigned int hash = Universe::heap()->hash_oop(key);
     return hash % size;
   }
 
@@ -1751,7 +1750,6 @@ static jvmtiHeapRootKind toJvmtiHeapRootKind(jvmtiHeapReferenceKind kind) {
   switch (kind) {
     case JVMTI_HEAP_REFERENCE_JNI_GLOBAL:   return JVMTI_HEAP_ROOT_JNI_GLOBAL;
     case JVMTI_HEAP_REFERENCE_SYSTEM_CLASS: return JVMTI_HEAP_ROOT_SYSTEM_CLASS;
-    case JVMTI_HEAP_REFERENCE_MONITOR:      return JVMTI_HEAP_ROOT_MONITOR;
     case JVMTI_HEAP_REFERENCE_STACK_LOCAL:  return JVMTI_HEAP_ROOT_STACK_LOCAL;
     case JVMTI_HEAP_REFERENCE_JNI_LOCAL:    return JVMTI_HEAP_ROOT_JNI_LOCAL;
     case JVMTI_HEAP_REFERENCE_THREAD:       return JVMTI_HEAP_ROOT_THREAD;
@@ -3013,13 +3011,6 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
   blk.set_kind(JVMTI_HEAP_REFERENCE_SYSTEM_CLASS);
   CLDToOopClosure cld_closure(&blk, false);
   ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
-  if (blk.stopped()) {
-    return false;
-  }
-
-  // Inflated monitors
-  blk.set_kind(JVMTI_HEAP_REFERENCE_MONITOR);
-  ObjectSynchronizer::oops_do(&blk);
   if (blk.stopped()) {
     return false;
   }

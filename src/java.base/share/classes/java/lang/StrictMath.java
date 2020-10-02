@@ -27,7 +27,7 @@ package java.lang;
 
 import java.util.Random;
 import jdk.internal.math.DoubleConsts;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * The class {@code StrictMath} contains methods for performing basic
@@ -283,7 +283,7 @@ public final class StrictMath {
      * @param   a   a value.
      * @return  the positive square root of {@code a}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native double sqrt(double a);
 
     /**
@@ -1261,7 +1261,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int max(int a, int b) {
         return Math.max(a, b);
     }
@@ -1294,7 +1294,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float max(float a, float b) {
         return Math.max(a, b);
     }
@@ -1313,7 +1313,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double max(double a, double b) {
         return Math.max(a, b);
     }
@@ -1328,7 +1328,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int min(int a, int b) {
         return Math.min(a, b);
     }
@@ -1361,7 +1361,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b.}
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float min(float a, float b) {
         return Math.min(a, b);
     }
@@ -1380,7 +1380,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double min(double a, double b) {
         return Math.min(a, b);
     }

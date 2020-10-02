@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 package nsk.share.jvmti;
 
-import nsk.share.*;
+import nsk.share.ArgumentParser;
+import nsk.share.Failure;
 
-import java.io.*;
-import java.util.*;
+import java.util.StringTokenizer;
 
 /**
  * Parser for JVMTI test's specific command-line arguments.
@@ -37,16 +37,14 @@ import java.util.*;
  * form agent option string. These options are added to the options list
  * and can be found using <i>FindOption*Value()</i> methods.
  * <p>
- * Currently no specific options are recognized by <code>AgrumentHandler</code>.
+ * Currently no specific options are recognized by <code>ArgumentHandler</code>.
  * <p>
  * See description of <code>ArgumentParser</code> to know which general options
  * are recognized and how to get them.
  *
  * @see ArgumentParser
- *
  * @see #findOptionValue(String)
- * @see #findOptionStringValue(String,String)
- * @see #findOptionIntValue(String,int)
+ * @see #findOptionIntValue(String, int)
  */
 public class ArgumentHandler extends ArgumentParser {
 
@@ -55,15 +53,13 @@ public class ArgumentHandler extends ArgumentParser {
      * but throw an exception on parsing error; and also add options
      * obtained from agent options string.
      *
-     * @param  args  Array of the raw command-line arguments.
-     *
-     * @throws  NullPointerException  If <code>args==null</code>.
-     * @throws  IllegalArgumentException  If Binder or Log options
-     *                                    are set incorrectly.
-     *
+     * @param args Array of the raw command-line arguments.
+     * @throws NullPointerException     If <code>args==null</code>.
+     * @throws IllegalArgumentException If Binder or Log options
+     *                                  are set incorrectly.
      * @see #setRawArguments(String[])
      */
-    public ArgumentHandler(String args[]) {
+    public ArgumentHandler(String[] args) {
         super(args);
         String agentOptions = getAgentOptionsString();
         if (agentOptions == null) {
@@ -76,25 +72,7 @@ public class ArgumentHandler extends ArgumentParser {
      * Return value of given option if specified; or <i>null</i> otherwise.
      */
     public String findOptionValue(String name) {
-        String value = options.getProperty(name);
-        return value;
-    }
-
-    /**
-     * Return string value of given option if specified; or <i>defaultValue</i> otherwise.
-     *
-     * @throws BadOption if option is specified but has empty value.
-     */
-    public String findOptionStringValue(String name, String defaultValue) {
-        String value = options.getProperty(name);
-        if (value == null) {
-            return defaultValue;
-        }
-
-        if (value.length() <= 0) {
-            throw new BadOption("Empty value of option: " + name + "=" + value);
-        }
-        return value;
+        return options.getProperty(name);
     }
 
     /**
@@ -120,13 +98,11 @@ public class ArgumentHandler extends ArgumentParser {
      * This method is invoked by <code>parseArguments()</code>.
      *
      * @param option option name
-     * @param value string representation of value (could be an empty string);
-     *              or null if this option has no value
+     * @param value  string representation of value (could be an empty string);
+     *               or null if this option has no value
      * @return <i>true</i> if option is admissible and has proper value;
-     *         <i>false</i> if otion is not admissible
-     *
-     * @throws <i>BadOption</i> if admissible option has illegal value
-     *
+     * <i>false</i> if option is not admissible
+     * @throws BadOption if admissible option has illegal value
      * @see #parseArguments()
      */
     protected boolean checkOption(String option, String value) {
@@ -147,17 +123,17 @@ public class ArgumentHandler extends ArgumentParser {
      * Parse options string and add all recognized options and their values.
      * If optionString is <i>null</i> this method just does nothing.
      *
-     * @throws BadOption if known option has illegel value
-     *                  or all options are inconsistent
+     * @throws BadOption if known option has illegal value
+     *                   or all options are inconsistent
      */
     protected void parseOptionString(String optionString) {
         if (optionString == null)
             return;
 
-        StringTokenizer st = new StringTokenizer(optionString);
+        StringTokenizer st = new StringTokenizer(optionString, " ,~");
         while (st.hasMoreTokens()) {
             String token = st.nextToken();
-            int start = token.startsWith("-")? 1 : 0;
+            int start = token.startsWith("-") ? 1 : 0;
             String name, value;
             int k = token.indexOf('=');
             if (k < 0) {

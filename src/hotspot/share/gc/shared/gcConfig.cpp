@@ -78,23 +78,21 @@ SHENANDOAHGC_ONLY_ARG(IncludedGC(UseShenandoahGC,    CollectedHeap::Shenandoah, 
 #define FOR_EACH_INCLUDED_GC(var)                                            \
   for (const IncludedGC* var = &IncludedGCs[0]; var < &IncludedGCs[ARRAY_SIZE(IncludedGCs)]; var++)
 
-#define FAIL_IF_SELECTED(option, enabled)                                   \
-  if (option == enabled && FLAG_IS_CMDLINE(option)) {                       \
-    vm_exit_during_initialization(enabled ?                                 \
-                                  "Option -XX:+" #option " not supported" : \
-                                  "Option -XX:-" #option " not supported"); \
+#define FAIL_IF_SELECTED(option)                                            \
+  if (option) {                                                             \
+    vm_exit_during_initialization("Option -XX:+" #option " not supported"); \
   }
 
 GCArguments* GCConfig::_arguments = NULL;
 bool GCConfig::_gc_selected_ergonomically = false;
 
 void GCConfig::fail_if_non_included_gc_is_selected() {
-  NOT_EPSILONGC(   FAIL_IF_SELECTED(UseEpsilonGC,       true));
-  NOT_G1GC(        FAIL_IF_SELECTED(UseG1GC,            true));
-  NOT_PARALLELGC(  FAIL_IF_SELECTED(UseParallelGC,      true));
-  NOT_SERIALGC(    FAIL_IF_SELECTED(UseSerialGC,        true));
-  NOT_SHENANDOAHGC(FAIL_IF_SELECTED(UseShenandoahGC,    true));
-  NOT_ZGC(         FAIL_IF_SELECTED(UseZGC,             true));
+  NOT_EPSILONGC(   FAIL_IF_SELECTED(UseEpsilonGC));
+  NOT_G1GC(        FAIL_IF_SELECTED(UseG1GC));
+  NOT_PARALLELGC(  FAIL_IF_SELECTED(UseParallelGC));
+  NOT_SERIALGC(    FAIL_IF_SELECTED(UseSerialGC));
+  NOT_SHENANDOAHGC(FAIL_IF_SELECTED(UseShenandoahGC));
+  NOT_ZGC(         FAIL_IF_SELECTED(UseZGC));
 }
 
 void GCConfig::select_gc_ergonomically() {

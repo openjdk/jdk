@@ -169,22 +169,13 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         }
         byte[] result;
         Optional<byte[]> resultOpt = deriveKeyImpl(privateKey, publicKey);
-        if (resultOpt.isPresent()) {
-            result = resultOpt.get();
-        } else {
-            if (SunEC.isNativeDisabled()) {
-                NamedCurve privNC = CurveDB.lookup(privateKey.getParams());
-                NamedCurve pubNC = CurveDB.lookup(publicKey.getParams());
-                throw new IllegalStateException(
-                        new InvalidAlgorithmParameterException("Legacy SunEC " +
-                                "curve disabled, one or both keys:  " +
-                                "Private: " + ((privNC != null) ?
-                                privNC.toString() : " unknown") +
-                                ", PublicKey:" + ((pubNC != null) ?
-                                pubNC.toString() : " unknown")));
-            }
-            result = deriveKeyNative(privateKey, publicKey);
+        if (resultOpt.isEmpty()) {
+            NamedCurve nc = CurveDB.lookup(publicKey.getParams());
+            throw new IllegalStateException(
+                new InvalidAlgorithmParameterException("Curve not supported: " +
+                    (nc != null ? nc.toString() : "unknown")));
         }
+        result = resultOpt.get();
         publicKey = null;
         return result;
     }
@@ -263,42 +254,4 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
 
         return Optional.of(result);
     }
-
-    private static
-    byte[] deriveKeyNative(ECPrivateKey privateKey, ECPublicKey publicKey) {
-
-        ECParameterSpec params = privateKey.getParams();
-        byte[] s = privateKey.getS().toByteArray();
-        byte[] encodedParams =                   // DER OID
-            ECUtil.encodeECParameterSpec(null, params);
-
-        byte[] publicValue;
-        if (publicKey instanceof ECPublicKeyImpl) {
-            ECPublicKeyImpl ecPub = (ECPublicKeyImpl) publicKey;
-            publicValue = ecPub.getEncodedPublicValue();
-        } else { // instanceof ECPublicKey
-            publicValue =
-                ECUtil.encodePoint(publicKey.getW(), params.getCurve());
-        }
-
-        try {
-            return deriveKey(s, publicValue, encodedParams);
-
-        } catch (GeneralSecurityException e) {
-            throw new ProviderException("Could not derive key", e);
-        }
-    }
-
-
-    /**
-     * Generates a secret key using the public and private keys.
-     *
-     * @param s the private key's S value.
-     * @param w the public key's W point (in uncompressed form).
-     * @param encodedParams the curve's DER encoded object identifier.
-     *
-     * @return byte[] the secret key.
-     */
-    private static native byte[] deriveKey(byte[] s, byte[] w,
-        byte[] encodedParams) throws GeneralSecurityException;
 }

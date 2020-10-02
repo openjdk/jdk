@@ -119,13 +119,9 @@ class Abstract_VM_Version: AllStatic {
   static const char* jdk_debug_level();
   static const char* printable_jdk_debug_level();
 
-  static uint64_t features() {
-    return _features;
-  }
-
-  static const char* features_string() {
-    return _features_string;
-  }
+  static uint64_t features()           { return _features; }
+  static const char* features_string() { return _features_string; }
+  static void insert_features_names(char* buf, size_t buflen, const char* features_names[]);
 
   static VirtualizationType get_detected_virtualization() {
     return _detected_virtualization;
