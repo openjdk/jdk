@@ -108,6 +108,14 @@ public class ArrayDiff<E> implements Diff {
      * @return an ArrayDiff instance for the two arrays and formatting parameters provided
      */
     public static ArrayDiff of(Object first, Object second, int width, int contextBefore) {
+        if (first == null) {
+            throw new IllegalArgumentException("First array argument for ArrayDiff is null");
+        }
+
+        if (second == null) {
+            throw new IllegalArgumentException("Second array argument for ArrayDiff is null");
+        }
+
         boolean bothAreArrays = first.getClass().isArray() && second.getClass().isArray();
         boolean componentTypesAreSame =
             first.getClass().getComponentType() == second.getClass().getComponentType();
@@ -177,7 +185,8 @@ public class ArrayDiff<E> implements Diff {
                 if (idx < failureIdx) {
                     failureMark.append(Format.paddingForWidth(first.getElementLength()));
                 } else  if (idx == failureIdx) {
-                    failureMark.append(failureMarkForWidth(first.getElementLength()-1));
+                    int markLength = Math.max(first.getElementLength(), second.getElementLength()) - 1;
+                    failureMark.append(failureMarkForWidth(markLength));
                 }
             }
 

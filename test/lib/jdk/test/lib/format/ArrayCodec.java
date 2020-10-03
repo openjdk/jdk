@@ -304,13 +304,25 @@ public class ArrayCodec<E> {
      * @return the first mismatched element's index
      */
     public int findMismatchIndex(ArrayCodec<E> another) {
-        int result = 0;
-        while ((source.size() > result) &&
-                (another.source.size() > result) &&
-                (source.get(result).equals(another.source.get(result)))) {
-            result += 1;
+        for (int result = 0; (source.size() > result) && (another.source.size() > result); result++) {
+            Object first = source.get(result);
+            Object second = another.source.get(result);
+
+            if (first == null || second == null) {
+                if (first == null && second == null) {
+                    continue;   // Both elements are null (i.e. equal)
+                } else {
+                    return result;  // Only one element is null, here's the failure index
+                }
+            }
+
+            if (!first.equals(second)) {
+                return result;
+            }
+
         }
-        return result;
+
+        return 0;
     }
 
     /**

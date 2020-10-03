@@ -47,227 +47,226 @@ public class ArrayDiffTest {
 
     @Test
     public void testOutputFitsWidth() {
-        byte[] first = new byte[]  {7, 8, 9, 10,  11, 12, 13};
-        byte[] second = new byte[] {7, 8, 9, 10, 125, 12, 13};
-
-        ArrayDiff diff = ArrayDiff.of(first, second);
-        String expected = String.format(
-                "Arrays differ starting from [index: 4]:%n" +
-                "[7, 8, 9, 10,  11, 12, 13]%n" +
-                "[7, 8, 9, 10, 125, 12, 13]%n" +
-                "             ^^^^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withDefaultParams()
+            .withArrays(
+                new byte[] {7, 8, 9, 10,  11, 12, 13},
+                new byte[] {7, 8, 9, 10, 125, 12, 13})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                4,
+                "[7, 8, 9, 10,  11, 12, 13]",
+                "[7, 8, 9, 10, 125, 12, 13]",
+                "             ^^^^")
+            .assertTwoWay();
     }
 
     @Test
     public void testIntegers() {
-        int[] first = new int[]  {7, 8, 10, 11, 12};
-        int[] second = new int[] {7, 8, 9, 10, 11, 12, 13};
-
-        ArrayDiff diff = ArrayDiff.of(first, second);
-        String expected = String.format(
-                "Arrays differ starting from [index: 2]:%n" +
-                "[7, 8, 10, 11, 12]%n" +
-                "[7, 8,  9, 10, 11, 12, 13]%n" +
-                "      ^^^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withDefaultParams()
+            .withArrays(
+                new int[] {7, 8, 10, 11, 12},
+                new int[] {7, 8, 9, 10, 11, 12, 13})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                2,
+                "[7, 8, 10, 11, 12]",
+                "[7, 8,  9, 10, 11, 12, 13]",
+                "      ^^^")
+            .assertTwoWay();
     }
 
     @Test
     public void testLongs() {
-        long[] first = new long[]  {1, 2, 3, 4};
-        long[] second = new long[] {1, 2, 3, 10};
-
-        ArrayDiff diff = ArrayDiff.of(first, second);
-        String expected = String.format(
-                "Arrays differ starting from [index: 3]:%n" +
-                "[1, 2, 3,  4]%n" +
-                "[1, 2, 3, 10]%n" +
-                "         ^^^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withDefaultParams()
+            .withArrays(
+                new long[] {1, 2, 3, 4},
+                new long[] {1, 2, 3, 10})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                3,
+                "[1, 2, 3,  4]",
+                "[1, 2, 3, 10]",
+                "         ^^^")
+            .assertTwoWay();
     }
 
     @Test
     public void testFirstElementIsWrong() {
-        byte[] first = new byte[]  {122};
-        byte[] second = new byte[] {7, 8, 9, 10, 125, 12, 13};
-
-        ArrayDiff diff = ArrayDiff.of(first, second);
-        String expected = String.format(
-                "Arrays differ starting from [index: 0]:%n" +
-                "[122]%n" +
-                "[  7, 8, 9, 10, 125, 12, 13]%n" +
-                " ^^^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withDefaultParams()
+            .withArrays(
+                new byte[] {122},
+                new byte[] {7, 8, 9, 10, 125, 12, 13})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                0,
+                "[122]",
+                "[  7, 8, 9, 10, 125, 12, 13]",
+                " ^^^")
+            .assertTwoWay();
     }
 
     @Test
     public void testOneElementIsEmpty() {
-        byte[] first = new byte[]  {7, 8, 9, 10, 125, 12, 13};
-        byte[] second = new byte[] {};
-
-        ArrayDiff diff = ArrayDiff.of(first, second);
-        String expected = String.format(
-                "Arrays differ starting from [index: 0]:%n" +
-                "[7, 8, 9, 10, 125, 12, 13]%n" +
-                "[]%n" +
-                " ^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withDefaultParams()
+            .withArrays(
+                new byte[] {7, 8, 9, 10, 125, 12, 13},
+                new byte[] {})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                0,
+                "[7, 8, 9, 10, 125, 12, 13]",
+                "[]",
+                " ^")
+            .assertTwoWay();
     }
 
     @Test
     public void testOutputDoesntFitWidth() {
-        char[] first = new char[]  {'1', '2', '3', '4', '5', '6', '7'};
-        char[] second = new char[] {'1', 'F', '3', '4', '5', '6', '7'};
-
-        ArrayDiff diff = ArrayDiff.of(first, second, 20, Integer.MAX_VALUE);
-        String expected = String.format(
-                "Arrays differ starting from [index: 1]:%n" +
-                "[1, 2, 3, 4, 5, ...%n" +
-                "[1, F, 3, 4, 5, ...%n" +
-                "   ^^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withParams(20, Integer.MAX_VALUE)
+            .withArrays(
+                new char[] {'1', '2', '3', '4', '5', '6', '7'},
+                new char[] {'1', 'F', '3', '4', '5', '6', '7'})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                1,
+                "[1, 2, 3, 4, 5, ...",
+                "[1, F, 3, 4, 5, ...",
+                "   ^^")
+            .assertTwoWay();
     }
 
     @Test
     public void testVariableElementWidthOutputDoesntFitWidth() {
-        byte[] first = new byte[]  {1,   2, 3, 4, 5, 6, 7};
-        byte[] second = new byte[] {1, 112, 3, 4, 5, 6, 7};
-
-        ArrayDiff diff = ArrayDiff.of(first, second, 20, Integer.MAX_VALUE);
-        String expected = String.format(
-                "Arrays differ starting from [index: 1]:%n" +
-                "[1,   2, 3, 4, 5, ...%n" +
-                "[1, 112, 3, 4, 5, ...%n" +
-                "   ^^^^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withParams(20, Integer.MAX_VALUE)
+            .withArrays(
+                new byte[] {1,   2, 3, 4, 5, 6, 7},
+                new byte[] {1, 112, 3, 4, 5, 6, 7})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                1,
+                "[1,   2, 3, 4, 5, ...",
+                "[1, 112, 3, 4, 5, ...",
+                "   ^^^^")
+            .assertTwoWay();
     }
 
     @Test
     public void testContextBefore() {
-        char[] first = new char[]  {'1', '2', '3', '4', '5', '6', '7'};
-        char[] second = new char[] {'1', '2', '3', '4', 'F', '6', '7'};
-
-        ArrayDiff diff = ArrayDiff.of(first, second, 20, 2);
-        String expected = String.format(
-                "Arrays differ starting from [index: 4]:%n" +
-                "... 3, 4, 5, 6, 7]%n" +
-                "... 3, 4, F, 6, 7]%n" +
-                "         ^^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withParams(20, 2)
+            .withArrays(
+                new char[] {'1', '2', '3', '4', '5', '6', '7'},
+                new char[] {'1', '2', '3', '4', 'F', '6', '7'})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                4,
+                "... 3, 4, 5, 6, 7]",
+                "... 3, 4, F, 6, 7]",
+                "         ^^")
+            .assertTwoWay();
     }
 
     @Test
     public void testBoundedBytesWithDifferentWidth() {
-        byte[] first = new byte[]  {0, 1, 2, 3, 125, 5, 6, 7};
-        byte[] second = new byte[] {0, 1, 2, 3,   4, 5, 6, 7};
-
-        ArrayDiff diff = ArrayDiff.of(first, second, 24, 2);
-        String expected = String.format(
-                "Arrays differ starting from [index: 4]:%n" +
-                "... 2, 3, 125, 5, 6, 7]%n" +
-                "... 2, 3,   4, 5, 6, 7]%n" +
-                "         ^^^^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withParams(24, 2)
+            .withArrays(
+                new byte[] {0, 1, 2, 3, 125, 5, 6, 7},
+                new byte[] {0, 1, 2, 3,   4, 5, 6, 7})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                4,
+                "... 2, 3, 125, 5, 6, 7]",
+                "... 2, 3,   4, 5, 6, 7]",
+                "         ^^^^")
+            .assertTwoWay();
     }
 
     @Test
     public void testBoundedFirstElementIsWrong() {
-        byte[] first = new byte[] {101, 102, 103, 104, 105, 110};
-        byte[] second = new byte[] {2};
-
-        ArrayDiff diff = ArrayDiff.of(first, second, 25, 2);
-        String expected = String.format(
-                "Arrays differ starting from [index: 0]:%n" +
-                "[101, 102, 103, 104, ...%n" +
-                "[  2]%n" +
-                " ^^^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withParams(25, 2)
+            .withArrays(
+                new byte[] {101, 102, 103, 104, 105, 110},
+                new byte[] {2})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                0,
+                "[101, 102, 103, 104, ...",
+                "[  2]",
+                " ^^^")
+            .assertTwoWay();
     }
 
     @Test
     public void testBoundedOneArchiveIsEmpty() {
-        char[] first = new char[] {'a', 'b', 'c', 'd', 'e'};
-        char[] second = new char[] {};
-
-        ArrayDiff diff = ArrayDiff.of(first, second, 10, 2);
-        String expected = String.format(
-                "Arrays differ starting from [index: 0]:%n" +
-                "[a, b, ...%n" +
-                "[]%n" +
-                " ^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withParams(10, 2)
+            .withArrays(
+                new char[] {'a', 'b', 'c', 'd', 'e'},
+                new char[] {})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                0,
+                "[a, b, ...",
+                "[]",
+                " ^")
+            .assertTwoWay();
     }
 
     @Test
     public void testUnboundedOneArchiveIsEmpty() {
-        char[] first = new char[] {'a', 'b', 'c', 'd', 'e'};
-        char[] second = new char[] {};
-
-        ArrayDiff diff = ArrayDiff.of(first, second);
-        String expected = String.format(
-                "Arrays differ starting from [index: 0]:%n" +
-                "[a, b, c, d, e]%n" +
-                "[]%n" +
-                " ^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withDefaultParams()
+            .withArrays(
+                new char[] {'a', 'b', 'c', 'd', 'e'},
+                new char[] {})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                0,
+                "[a, b, c, d, e]",
+                "[]",
+                " ^")
+            .assertTwoWay();
     }
 
     @Test
     public void testUnprintableCharFormatting() {
-        char[] first = new char[]  {0, 1, 2, 3, 4, 5, 6,   7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
-        char[] second = new char[] {0, 1, 2, 3, 4, 5, 6, 125, 8, 9, 10, 11, 12, 13, 14, 15, 16};
-
-        ArrayDiff diff = ArrayDiff.of(first, second);
-
-        // Lines in the code look like aren't aligned due to slashes taking more space than spaces.
-        var nl = System.lineSeparator();
-        String expected = "Arrays differ starting from [index: 7]:" + nl +
-                "... \\u0005, \\u0006, \\u0007, \\u0008, \\u0009, \\n, \\u000B, \\u000C, \\r, \\u000E, ..." + nl +
-                "... \\u0005, \\u0006,      }, \\u0008, \\u0009, \\n, \\u000B, \\u000C, \\r, \\u000E, ..." + nl +
-                "                   ^^^^^^^";
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withDefaultParams()
+            .withArrays(
+                new char[] {0, 1, 2, 3, 4, 5, 6,   7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+                new char[] {0, 1, 2, 3, 4, 5, 6, 125, 8, 9, 10, 11, 12, 13, 14, 15, 16})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                7,
+                "... \\u0005, \\u0006, \\u0007, \\u0008, \\u0009, \\n, \\u000B, \\u000C, \\r, \\u000E, ...",
+                "... \\u0005, \\u0006,      }, \\u0008, \\u0009, \\n, \\u000B, \\u000C, \\r, \\u000E, ...",
+                "                   ^^^^^^^")
+            .assertTwoWay();
     }
 
     @Test
     public void testStringElements() {
-        String[] first = new String[]  {"first", "second", "third", "u\nprintable"};
-        String[] second = new String[] {"first", "second", "incorrect", "u\nprintable"};
-
-        ArrayDiff diff = ArrayDiff.of(first, second);
-        String expected = String.format(
-                "Arrays differ starting from [index: 2]:%n" +
-                "[\"first\", \"second\",     \"third\", \"u\\nprintable\"]%n" +
-                "[\"first\", \"second\", \"incorrect\", \"u\\nprintable\"]%n" +
-                "                   ^^^^^^^^^^^^");
-
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+        new AssertBuilder()
+            .withDefaultParams()
+            .withArrays(
+                new String[]  {"first", "second", "third", "u\nprintable"},
+                new String[] {"first", "second", "incorrect", "u\nprintable"})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                2,
+                "[\"first\", \"second\",     \"third\", \"u\\nprintable\"]",
+                "[\"first\", \"second\", \"incorrect\", \"u\\nprintable\"]",
+                "                   ^^^^^^^^^^^^")
+            .assertTwoWay();
     }
 
     @Test
@@ -279,18 +278,132 @@ public class ArrayDiffTest {
             public String toString() { return value; }
         }
 
-        StrObj[] first = new StrObj[]  {new StrObj("1"), new StrObj("Unp\rintable"), new StrObj("5")};
-        StrObj[] second = new StrObj[]  {new StrObj("1"), new StrObj("2"), new StrObj("5")};
+        new AssertBuilder()
+            .withDefaultParams()
+            .withArrays(
+                new StrObj[] {new StrObj("1"), new StrObj("Unp\rintable"), new StrObj("5")},
+                new StrObj[] {new StrObj("1"), new StrObj("2"),            new StrObj("5")})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                1,
+                "[1, Unp\\rintable, 5]",
+                "[1,            2, 5]",
+                "   ^^^^^^^^^^^^^")
+            .assertTwoWay();
+    }
 
-        ArrayDiff diff = ArrayDiff.of(first, second);
-        String expected = String.format(
-                "Arrays differ starting from [index: 1]:%n" +
-                "[1, Unp\\rintable, 5]%n" +
-                "[1,            2, 5]%n" +
-                "   ^^^^^^^^^^^^^");
+    @Test
+    public void testNullElements() {
+        new AssertBuilder()
+            .withDefaultParams()
+            .withArrays(
+                new String[] {"Anna", null,   "Bill",    "Julia"},
+                new String[] {"Anna", "null", "William", "Julia"})
+            .thatResultIs(false)
+            .thatFormattedValuesAre(
+                1,
+                "[\"Anna\",   null,    \"Bill\", \"Julia\"]",
+                "[\"Anna\", \"null\", \"William\", \"Julia\"]",
+                "        ^^^^^^^")
+            .assertTwoWay();
+    }
 
-        assertFalse(diff.areEqual());
-        assertEquals(diff.format(), expected);
+    @Test (expectedExceptions = IllegalArgumentException.class)
+    public void testFirstArrayIsNull() {
+        var diff = ArrayDiff.of(null, new String[] {"a", "b"});
+    }
+
+    @Test (expectedExceptions = IllegalArgumentException.class)
+    public void testSecondArrayIsNull() {
+        var diff = ArrayDiff.of(null, new String[] {"a", "b"});
+    }
+
+    class AssertBuilder {
+        private boolean defaultParameters;
+        private int width;
+        private int contextBefore;
+        private Object firstArray;
+        private Object secondArray;
+        private boolean expectedResult;
+        private int expectedIndex;
+        private String firstFormattedArray;
+        private String secondFormattedArray;
+        private String failureMark;
+
+        public AssertBuilder withDefaultParams() {
+            defaultParameters = true;
+            return this;
+        }
+
+        public AssertBuilder withParams(int width, int contextBefore) {
+            defaultParameters = false;
+            this.width = width;
+            this.contextBefore = contextBefore;
+            return this;
+        }
+
+        public AssertBuilder withArrays(Object first, Object second) {
+            firstArray = first;
+            secondArray = second;
+            return this;
+        }
+
+        public AssertBuilder thatResultIs(boolean result) {
+            expectedResult = result;
+            return this;
+        }
+
+        public AssertBuilder thatFormattedValuesAre(
+                int idx, String first, String second, String mark) {
+            expectedIndex = idx;
+            firstFormattedArray = first;
+            secondFormattedArray = second;
+            failureMark = mark;
+            return this;
+        }
+
+        public void assertTwoWay() {
+            ArrayDiff diff;
+
+            // Direct
+            if (defaultParameters) {
+                diff = ArrayDiff.of(firstArray, secondArray);
+            } else {
+                diff = ArrayDiff.of(firstArray, secondArray, width, contextBefore);
+            }
+
+            if (expectedResult == true) {
+                assertTrue(diff.areEqual());
+            } else {
+                String expected = String.format(
+                    "Arrays differ starting from [index: %d]:%n" +
+                    "%s%n" + "%s%n" + "%s",
+                    expectedIndex, firstFormattedArray, secondFormattedArray, failureMark);
+
+                assertFalse(diff.areEqual());
+                assertEquals(diff.format(), expected);
+            }
+
+            // Reversed
+            if (defaultParameters) {
+                diff = ArrayDiff.of(secondArray, firstArray);
+            } else {
+                diff = ArrayDiff.of(secondArray, firstArray, width, contextBefore);
+            }
+
+            if (expectedResult == true) {
+                assertTrue(diff.areEqual());
+            } else {
+                String expected = String.format(
+                    "Arrays differ starting from [index: %d]:%n" +
+                    "%s%n" + "%s%n" + "%s",
+                    expectedIndex, secondFormattedArray, firstFormattedArray, failureMark);
+
+                assertFalse(diff.areEqual());
+                assertEquals(diff.format(), expected);
+            }
+        }
+
     }
 
 }
