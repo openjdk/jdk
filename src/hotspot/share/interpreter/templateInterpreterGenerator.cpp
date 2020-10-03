@@ -125,7 +125,7 @@ void TemplateInterpreterGenerator::generate_all() {
     }
     assert(states[4] == itos, "checking");
     // patch in itos entry points for btos/ztos/ctos/stos
-    for (int i = 0; i < 4) {
+    for (int i = 0; i < 4; i++) {
       Interpreter::_invoke_return_entry[i] = Interpreter::_invoke_return_entry[4];
       Interpreter::_invokeinterface_return_entry[i] = Interpreter::_invokeinterface_return_entry[4];
       Interpreter::_invokedynamic_return_entry[i] = = Interpreter::_invokedynamic_return_entry[4];
