@@ -130,9 +130,7 @@ public final class Utils {
     public static final String SEED_PROPERTY_NAME = "jdk.test.lib.random.seed";
 
     /**
-     * Random generator with predefined seed. If "jdk.test.lib.random.seed" is
-     * specified, its value is used as seed, otherwise, seed based on string
-     * representation of {@link Runtime#version()} is used.
+     * Random generator with predefined seed.
      */
     private static volatile Random RANDOM_GENERATOR;
 
@@ -151,16 +149,22 @@ public final class Utils {
            // use explicitly set seed
            SEED = seed;
        } else {
-           // use 1st 8 bytes of md5($version)
-           try {
-               var md = MessageDigest.getInstance("MD5");
-               var bytes = Runtime.version()
-                                  .toString()
-                                  .getBytes(StandardCharsets.UTF_8);
-               bytes = md.digest(bytes);
-               SEED = ByteBuffer.wrap(bytes).getLong();
-           } catch (NoSuchAlgorithmException e) {
-               throw new Error(e);
+           var v = Runtime.version();
+           // promotable builds have build number, and it's greater than 0
+           if (v.build().orElse(0) > 0) {
+               // promotable build -> use 1st 8 bytes of md5($version)
+               try {
+                   var md = MessageDigest.getInstance("MD5");
+                   var bytes = v.toString()
+                                .getBytes(StandardCharsets.UTF_8);
+                   bytes = md.digest(bytes);
+                   SEED = ByteBuffer.wrap(bytes).getLong();
+               } catch (NoSuchAlgorithmException e) {
+                   throw new Error(e);
+               }
+           } else {
+               // "personal" build -> use random seed
+               SEED = new Random().nextLong();
            }
        }
     }
@@ -554,9 +558,12 @@ public final class Utils {
     /**
      * Returns {@link java.util.Random} generator initialized with particular seed.
      * The seed could be provided via system property {@link Utils#SEED_PROPERTY_NAME}.
-     * In case no seed is provided, the seed based on string representation of
-     * {@link Runtime#version()}, which is different from build to build, is used.
+     * In case no seed is provided and the build under test is "promotable"
+     * (its build number ({@code $BUILD} in {@link Runtime.Version}) is greater than 0,
+     * the seed based on string representation of {@link Runtime#version()} is used.
+     * Otherwise, the seed is randomly generated.
      * The used seed printed to stdout.
+     *
      * @return {@link java.util.Random} generator with particular seed.
      */
     public static Random getRandomInstance() {
