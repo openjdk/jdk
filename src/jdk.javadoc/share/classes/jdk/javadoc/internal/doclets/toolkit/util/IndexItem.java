@@ -42,9 +42,40 @@ import javax.lang.model.element.TypeElement;
 public class IndexItem {
 
     private final Element element;
+    private final String label;
     private final SearchIndexItem searchTag;
-    private String label;
-    private TypeElement typeElement;
+
+    public static IndexItem of(ModuleElement moduleElement, Utils utils) {
+        return new IndexItem(moduleElement, utils.getFullyQualifiedName(moduleElement));
+    }
+
+    public static IndexItem of(PackageElement packageElement, Utils utils) {
+        return new IndexItem(packageElement, utils.getPackageName(packageElement));
+    }
+
+    public static IndexItem of(TypeElement typeElement, Utils utils) {
+        return new IndexItem(typeElement, utils.getSimpleName(typeElement));
+    }
+
+    public static IndexItem of(TypeElement typeElement, Element member, Utils utils) {
+        String name = utils.getSimpleName(member);
+        if (utils.isExecutableElement(member)) {
+            ExecutableElement ee = (ExecutableElement)member;
+            name += utils.flatSignature(ee, typeElement);
+        }
+        return new IndexItem(member, name) {
+            @Override
+            public TypeElement getTypeElement() {
+                return typeElement;
+            }
+        };
+    }
+
+    private IndexItem(Element element, String label) {
+        this.element = element;
+        this.label = label;
+        this.searchTag = null;
+    }
 
     public IndexItem(SearchIndexItem searchTag) {
         this.element = null;
@@ -52,42 +83,12 @@ public class IndexItem {
         this.label = searchTag.getLabel();
     }
 
-    private IndexItem(Element element) {
-        this.element = element;
-        this.searchTag = null;
-    }
-
-    public IndexItem(TypeElement typeElement, Utils utils) {
-        this(typeElement);
-        this.label = utils.getSimpleName(typeElement);
-    }
-
-    public IndexItem(ModuleElement moduleElement, Utils utils) {
-        this(moduleElement);
-        this.label = utils.getFullyQualifiedName(moduleElement);
-    }
-
-    public IndexItem(PackageElement packageElement, Utils utils) {
-        this(packageElement);
-        this.label = utils.getPackageName(packageElement);
-    }
-
-    public IndexItem(Element member, TypeElement typeElement, Utils utils) {
-        this(member);
-        this.typeElement = typeElement;
-        String name = utils.getSimpleName(member);
-        if (utils.isExecutableElement(member)) {
-            ExecutableElement ee = (ExecutableElement)member;
-            name += utils.flatSignature(ee, typeElement);
-        }
-        this.label = name;
-    }
-
     public String getLabel() {
         return label;
     }
 
     public String getFullyQualifiedLabel(Utils utils) {
+        TypeElement typeElement = getTypeElement();
         if (typeElement != null) {
             return utils.getFullyQualifiedName(typeElement) + "." + label;
         } else if (element != null) {
@@ -106,6 +107,6 @@ public class IndexItem {
     }
 
     public TypeElement getTypeElement() {
-        return typeElement;
+        return null;
     }
 }

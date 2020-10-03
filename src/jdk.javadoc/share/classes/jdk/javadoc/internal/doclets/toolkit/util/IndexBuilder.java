@@ -181,26 +181,26 @@ public class IndexBuilder {
      */
     private void indexMembers(TypeElement te) {
         VisibleMemberTable vmt = configuration.getVisibleMemberTable(te);
-        indexElements(vmt.getVisibleMembers(FIELDS), te);
-        indexElements(vmt.getVisibleMembers(ANNOTATION_TYPE_MEMBER_OPTIONAL), te);
-        indexElements(vmt.getVisibleMembers(ANNOTATION_TYPE_MEMBER_REQUIRED), te);
-        indexElements(vmt.getVisibleMembers(METHODS), te);
-        indexElements(vmt.getVisibleMembers(CONSTRUCTORS), te);
-        indexElements(vmt.getVisibleMembers(ENUM_CONSTANTS), te);
+        indexMembers(te, vmt.getVisibleMembers(FIELDS));
+        indexMembers(te, vmt.getVisibleMembers(ANNOTATION_TYPE_MEMBER_OPTIONAL));
+        indexMembers(te, vmt.getVisibleMembers(ANNOTATION_TYPE_MEMBER_REQUIRED));
+        indexMembers(te, vmt.getVisibleMembers(METHODS));
+        indexMembers(te, vmt.getVisibleMembers(CONSTRUCTORS));
+        indexMembers(te, vmt.getVisibleMembers(ENUM_CONSTANTS));
     }
 
     /**
      * Indexes the provided elements.
      *
-     * @param elements a collection of elements
+     * @param members a collection of elements
      */
-    private void indexElements(Iterable<? extends Element> elements, TypeElement typeElement) {
-        for (Element element : elements) {
-            if (shouldIndex(element)) {
-                String name = utils.getSimpleName(element);
+    private void indexMembers(TypeElement typeElement, Iterable<? extends Element> members) {
+        for (Element member : members) {
+            if (shouldIndex(member)) {
+                String name = utils.getSimpleName(member);
                 Character ch = keyCharacter(name);
                 SortedSet<IndexItem> set = indexMap.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-                set.add(new IndexItem(element, typeElement, utils));
+                set.add(IndexItem.of(typeElement, member, utils));
             }
         }
     }
@@ -216,7 +216,7 @@ public class IndexBuilder {
                 String name = utils.getSimpleName(typeElement);
                 Character ch = keyCharacter(name);
                 SortedSet<IndexItem> set = indexMap.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-                set.add(new IndexItem(typeElement, utils));
+                set.add(IndexItem.of(typeElement, utils));
             }
         }
     }
@@ -232,7 +232,7 @@ public class IndexBuilder {
         for (ModuleElement m : configuration.modules) {
             Character ch = keyCharacter(m.getQualifiedName().toString());
             SortedSet<IndexItem> set = indexMap.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-            set.add(new IndexItem(m, utils));
+            set.add(IndexItem.of(m, utils));
         }
     }
 
@@ -245,7 +245,7 @@ public class IndexBuilder {
         if (shouldIndex(packageElement)) {
             Character ch = keyCharacter(utils.getPackageName(packageElement));
             SortedSet<IndexItem> set = indexMap.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-            set.add(new IndexItem(packageElement, utils));
+            set.add(IndexItem.of(packageElement, utils));
         }
     }
 
