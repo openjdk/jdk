@@ -90,6 +90,7 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 class ParallelObjectIterator : public CHeapObj<mtGC> {
 public:
   virtual void object_iterate(ObjectClosure* cl, uint worker_id) = 0;
+  virtual ~ParallelObjectIterator() {}
 };
 
 //

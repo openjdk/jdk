@@ -381,7 +381,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "14";
+    common.boot_jdk_version = "15";
     common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
@@ -959,10 +959,10 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc9.2.0-OL6.4+1.0",
+        linux_x64: "gcc10.2.0-OL6.4+1.0",
         macosx_x64: "Xcode11.3.1-MacOSX10.15+1.0",
         windows_x64: "VS2019-16.7.2+1.0",
-        linux_aarch64: "gcc9.2.0-OL7.6+1.0",
+        linux_aarch64: "gcc10.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0"
@@ -994,17 +994,8 @@ var getJibProfilesDependencies = function (input, common) {
         ? input.get("gnumake", "install_path") + "/cygwin/bin"
         : input.get("gnumake", "install_path") + "/bin");
 
-    if (input.build_cpu == 'aarch64') {
-        boot_jdk = {
-            organization: common.organization,
-            ext: "tar.gz",
-            module: "jdk-linux_aarch64",
-            revision: "14+1.0",
-            configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
-            environment_path: common.boot_jdk_home + "/bin"
-        }
-    } else {
-        boot_jdk = {
+    var dependencies = {
+        boot_jdk: {
             server: "jpg",
             product: "jdk",
             version: common.boot_jdk_version,
@@ -1013,11 +1004,7 @@ var getJibProfilesDependencies = function (input, common) {
                 + boot_jdk_platform + "_bin" + boot_jdk_ext,
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
-        }
-    }
-
-    var dependencies = {
-        boot_jdk: boot_jdk,
+        },
 
         devkit: {
             organization: common.organization,

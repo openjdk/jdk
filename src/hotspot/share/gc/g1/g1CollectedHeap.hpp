@@ -785,7 +785,23 @@ private:
   void calculate_collection_set(G1EvacuationInfo& evacuation_info, double target_pause_time_ms);
 
   // Actually do the work of evacuating the parts of the collection set.
-  void evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states);
+  // The has_optional_evacuation_work flag for the initial collection set
+  // evacuation indicates whether one or more optional evacuation steps may
+  // follow.
+  // If not set, G1 can avoid clearing the card tables of regions that we scan
+  // for roots from the heap: when scanning the card table for dirty cards after
+  // all remembered sets have been dumped onto it, for optional evacuation we
+  // mark these cards as "Scanned" to know that we do not need to re-scan them
+  // in the additional optional evacuation passes. This means that in the "Clear
+  // Card Table" phase we need to clear those marks. However, if there is no
+  // optional evacuation, g1 can immediately clean the dirty cards it encounters
+  // as nobody else will be looking at them again, saving the clear card table
+  // work later.
+  // This case is very common (young only collections and most mixed gcs), so
+  // depending on the ratio between scanned and evacuated regions (which g1 always
+  // needs to clear), this is a big win.
+  void evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states,
+                                       bool has_optional_evacuation_work);
   void evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states);
 private:
   // Evacuate the next set of optional regions.

@@ -28,4 +28,3 @@
 #############################################################################
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
-java/math/BigInteger/largeMemory/SymmetricRangeTests.java 8232840 generic-all

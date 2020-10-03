@@ -719,7 +719,10 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigAccess {
     // ARMv8-A architecture reference manual D12.2.35 Data Cache Zero ID register says:
     // * BS, bits [3:0] indicate log2 of the DC ZVA block size in (4-byte) words.
     // * DZP, bit [4] of indicates whether use of DC ZVA instruction is prohibited.
-    public final int psrInfoDczidValue = getFieldValue("VM_Version::_psr_info.dczid_el0", Integer.class, "uint32_t", 0x10, (JVMCI ? jvmciGE(JVMCI_19_3_b04) : JDK >= 14) && osArch.equals("aarch64"));
+    public final int psrInfoDczidValue = getFieldValue("VM_Version::_psr_info.dczid_el0", Integer.class, "uint32_t", 0x10,
+                    (JVMCI ? jvmciGE(JVMCI_19_3_b04) : (JDK == 14 || JDK == 15)) && osArch.equals("aarch64"));
+
+    public final int zvaLength = getFieldValue("VM_Version::_zva_length", Integer.class, "int", 0, JDK >= 16 && osArch.equals("aarch64"));
 
     // FIXME This is only temporary until the GC code is changed.
     public final boolean inlineContiguousAllocationSupported = getFieldValue("CompilerToVM::Data::_supports_inline_contig_alloc", Boolean.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@ package com.sun.crypto.provider;
 
 import java.security.ProviderException;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class represents the GHASH function defined in NIST 800-38D
@@ -229,7 +229,7 @@ final class GHASH {
      * the hotspot signature.  This method and methods called by it, cannot
      * throw exceptions or allocate arrays as it will breaking intrinsics
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static void processBlocks(byte[] data, int inOfs, int blocks, long[] st, long[] subH) {
         int offset = inOfs;
         while (blocks > 0) {
