@@ -103,7 +103,7 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-  return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
+  return (T) __sync_val_compare_and_swap((uint32_t volatile*)dest, (uint32_t)compare_value, (uint32_t)exchange_value);
 }
 
 template<>
