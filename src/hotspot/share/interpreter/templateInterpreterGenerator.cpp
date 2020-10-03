@@ -110,8 +110,8 @@ void TemplateInterpreterGenerator::generate_all() {
     const int invokeinterface_length = Bytecodes::length_for(Bytecodes::_invokeinterface);
     const int invokedynamic_length = Bytecodes::length_for(Bytecodes::_invokedynamic);
 
-    assert(invoke_length >= 0 && < invoke_length < Interpreter::number_of_return_entries, "invariant");
-    assert(invokeinterface_length >= 0 && < invokeinterface_length < Interpreter::number_of_return_entries, "invariant");
+    assert(invoke_length >= 0 && invoke_length < Interpreter::number_of_return_entries, "invariant");
+    assert(invokeinterface_length >= 0 && invokeinterface_length < Interpreter::number_of_return_entries, "invariant");
 
     for (int i = 4; i < Interpreter::number_of_return_addrs; i++) {
       TosState state = states[i];
