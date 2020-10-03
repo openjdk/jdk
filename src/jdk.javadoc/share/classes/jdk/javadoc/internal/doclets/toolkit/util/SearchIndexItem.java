@@ -101,12 +101,13 @@ public abstract class SearchIndexItem {
      * Creates a search index item for an element.
      *
      * @param element the element
+     * @param label   the label
      *
      * @return the item
      */
-    public static SearchIndexItem of(Element element) {
+    public static SearchIndexItem of(Element element, String label) {
         Objects.requireNonNull(element);
-        return new SearchIndexItem(element) {
+        return new SearchIndexItem(element, label) {
             @Override
             public DocTree getDocTree() {
                 return null;
@@ -123,13 +124,14 @@ public abstract class SearchIndexItem {
      *
      * @param element the element
      * @param docTree the node in the doc comment
+     * @param label   the label
      *
      * @return the item
      */
-    public static SearchIndexItem of(Element element, DocTree docTree) {
+    public static SearchIndexItem of(Element element, DocTree docTree, String label) {
         Objects.requireNonNull(element);
         Objects.requireNonNull(docTree);
-        return new SearchIndexItem(element) {
+        return new SearchIndexItem(element, label) {
             @Override
             public DocTree getDocTree() {
                 return docTree;
@@ -149,9 +151,9 @@ public abstract class SearchIndexItem {
      *
      * @return the item
      */
-    public static SearchIndexItem of(Category category) {
+    public static SearchIndexItem of(Category category, String label) {
         Objects.requireNonNull(category);
-        return new SearchIndexItem(null) {
+        return new SearchIndexItem(null, label) {
             @Override
             public DocTree getDocTree() {
                 return null;
@@ -163,8 +165,9 @@ public abstract class SearchIndexItem {
         };
     }
 
-    private SearchIndexItem(Element element) {
+    private SearchIndexItem(Element element, String label) {
         this.element = element;
+        this.label = label;
     }
 
     public Element getElement() {
@@ -215,11 +218,6 @@ public abstract class SearchIndexItem {
                 throw new IllegalArgumentException(e.toString());
             }
         }.visit(element);
-    }
-
-    public SearchIndexItem setLabel(String l) {
-        label = l;
-        return this;
     }
 
     public String getLabel() {

@@ -123,8 +123,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         if (si != null) {
             addDescription(si, dl);
         } else {
-            si = SearchIndexItem.of(indexItem.getElement())
-                .setLabel(indexItem.getLabel());
+            si = SearchIndexItem.of(indexItem.getElement(), indexItem.getLabel());
             addElementDescription(indexItem, dl, si, addModuleInfo);
             mainIndex.add(si);
         }
@@ -319,8 +318,8 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
 
                 case PACKAGES:
                     if (!configuration.packages.isEmpty()) {
-                        SearchIndexItem si = SearchIndexItem.of(Category.PACKAGES)
-                                .setLabel(resources.getText("doclet.All_Packages"))
+                        SearchIndexItem si = SearchIndexItem.of(Category.PACKAGES,
+                                            resources.getText("doclet.All_Packages"))
                                 .setUrl(DocPaths.ALLPACKAGES_INDEX.getPath());
                         mainIndex.add(si);
                     }
@@ -329,8 +328,8 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                     break;
 
                 case TYPES:
-                    SearchIndexItem si = SearchIndexItem.of(Category.TYPES)
-                            .setLabel(resources.getText("doclet.All_Classes"))
+                    SearchIndexItem si = SearchIndexItem.of(Category.TYPES,
+                                                    resources.getText("doclet.All_Classes"))
                             .setUrl(DocPaths.ALLCLASSES_INDEX.getPath());
                     mainIndex.add(si);
                     file = DocPaths.TYPE_SEARCH_INDEX_JS;

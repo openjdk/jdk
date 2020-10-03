@@ -380,8 +380,7 @@ public class TagletWriterImpl extends TagletWriter {
             }
             result = HtmlTree.SPAN(anchorName, HtmlStyle.searchTagResult, new StringContent(tagText));
             if (options.createIndex() && !tagText.isEmpty()) {
-                SearchIndexItem si = SearchIndexItem.of(element, tree)
-                    .setLabel(tagText)
+                SearchIndexItem si = SearchIndexItem.of(element, tree, tagText)
                     .setDescription(desc)
                     .setUrl(htmlWriter.path.getPath() + "#" + anchorName);
                 new SimpleElementVisitor14<Void, Void>() {
