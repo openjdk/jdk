@@ -279,33 +279,33 @@ public class Comparators {
     }
 
     /**
-     * Returns a comparator for the {@code IndexItem}s in the index page. This is a composite
-     * comparator that must be able to compare all kinds {@code Element}s as well as
-     * {@code SearchIndexItem}s.
+     * Returns a comparator for the {@code IndexItem}s in the index page.
+     * This is a composite comparator that must be able to compare all kinds of items:
+     * for element items, tag items, and others.
      *
-     * @return a comparator for index page items.
+     * @return a comparator for index page items
      */
     public Comparator<IndexItem> makeIndexComparator(boolean classesOnly) {
         Comparator<Element> elementComparator = classesOnly
                 ? makeAllClassesComparator()
                 : makeIndexElementComparator();
-        Comparator<SearchIndexItem> searchTagComparator =
-                makeGenericSearchIndexComparator();
+        Comparator<IndexItem> searchTagComparator =
+                makeGenericIndexComparator();
 
-        return (o1, o2) -> {
+        return (ii1, ii2) -> {
             // Compare two elements
-            if (o1.getElement() != null && o2.getElement() != null) {
-                return elementComparator.compare(o1.getElement(), o2.getElement());
+            if (ii1.isElementItem() && ii2.isElementItem()) {
+                return elementComparator.compare(ii1.getElement(), ii2.getElement());
             }
             // Compare two search tags
-            if (o1.getSearchTag() != null && o2.getSearchTag() != null) {
-                return searchTagComparator.compare(o1.getSearchTag(), o2.getSearchTag());
+            if (ii1.isTagItem() && ii2.isTagItem()) {
+                return searchTagComparator.compare(ii1, ii2);
             }
             // Compare an element with a search tag.
             // Compares labels, if those are equal put the search tag first.
-            int d = utils.compareStrings(o1.getLabel(), o2.getLabel());
+            int d = utils.compareStrings(ii1.getLabel(), ii2.getLabel());
             if (d == 0) {
-                d = o1.getElement() == null ? 1 : -1;
+                d = ii1.getElement() == null ? 1 : -1;
             }
             return d;
         };
@@ -600,13 +600,13 @@ public class Comparators {
     }
 
     /**
-     * Returns a Comparator for SearchIndexItems representing types. Items are
+     * Returns a Comparator for IndexItems representing types. Items are
      * compared by short name, or full JavaScript representation if names are equal.
      *
      * @return a Comparator
      */
-    public Comparator<SearchIndexItem> makeTypeSearchIndexComparator() {
-        return (SearchIndexItem sii1, SearchIndexItem sii2) -> {
+    public Comparator<IndexItem> makeTypeIndexComparator() {
+        return (IndexItem sii1, IndexItem sii2) -> {
             int result = utils.compareStrings(sii1.getSimpleName(), sii2.getSimpleName());
             if (result == 0) {
                 // TreeSet needs this to be consistent with equal so we do
@@ -617,29 +617,29 @@ public class Comparators {
         };
     }
 
-    private Comparator<SearchIndexItem> genericSearchIndexComparator = null;
+    private Comparator<IndexItem> genericIndexComparator = null;
 
     /**
-     * Returns a Comparator for SearchIndexItems representing modules, packages, or members.
+     * Returns a Comparator for IndexItems representing modules, packages, or members.
      * Items are compared by label (member name plus signature for members, package name for
      * packages, and module name for modules). If labels are equal then full JavaScript
      * representation is compared.
      *
      * @return a Comparator
      */
-    public Comparator<SearchIndexItem> makeGenericSearchIndexComparator() {
-        if (genericSearchIndexComparator == null) {
-            genericSearchIndexComparator = (SearchIndexItem sii1, SearchIndexItem sii2) -> {
-                int result = utils.compareStrings(sii1.getLabel(), sii2.getLabel());
+    public Comparator<IndexItem> makeGenericIndexComparator() {
+        if (genericIndexComparator == null) {
+            genericIndexComparator = (IndexItem i1, IndexItem i2) -> {
+                int result = utils.compareStrings(i1.getLabel(), i2.getLabel());
                 if (result == 0) {
                     // TreeSet needs this to be consistent with equal so we do
                     // a plain comparison of string representations as fallback.
-                    result = sii1.toJavaScript().compareTo(sii2.toJavaScript());
+                    result = i1.toJavaScript().compareTo(i2.toJavaScript());
                 }
                 return result;
             };
         }
-        return genericSearchIndexComparator;
+        return genericIndexComparator;
     }
 
 }

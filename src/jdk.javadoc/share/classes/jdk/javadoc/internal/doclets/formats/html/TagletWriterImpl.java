@@ -58,8 +58,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem;
-import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem.Category;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -380,7 +379,7 @@ public class TagletWriterImpl extends TagletWriter {
             }
             result = HtmlTree.SPAN(anchorName, HtmlStyle.searchTagResult, new StringContent(tagText));
             if (options.createIndex() && !tagText.isEmpty()) {
-                SearchIndexItem si = SearchIndexItem.of(element, tree, tagText)
+                IndexItem si = IndexItem.of(element, tree, tagText)
                     .setDescription(desc)
                     .setUrl(htmlWriter.path.getPath() + "#" + anchorName);
                 new SimpleElementVisitor14<Void, Void>() {

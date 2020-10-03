@@ -47,7 +47,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
-import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem.Category;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem.Category;
 
 /**
  * Generate Separate Index Files for all the member names with Indexing in

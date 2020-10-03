@@ -40,8 +40,8 @@ import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem;
-import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem.Category;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem.Category;
 
 import javax.lang.model.element.Element;
 import java.nio.file.Path;
@@ -135,15 +135,15 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
      * @param content HtmlTree content to which the links will be added
      */
     protected void addSystemProperties(Content content) {
-        Map<String, List<SearchIndexItem>> searchIndexMap = groupSystemProperties();
+        Map<String, List<IndexItem>> searchIndexMap = groupSystemProperties();
         Content separator = new StringContent(", ");
         Table table = new Table(HtmlStyle.systemPropertiesSummary, HtmlStyle.summaryTable)
                 .setCaption(contents.systemPropertiesSummaryLabel)
                 .setHeader(new TableHeader(contents.propertyLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
-        for (Entry<String, List<SearchIndexItem>> entry : searchIndexMap.entrySet()) {
+        for (Entry<String, List<IndexItem>> entry : searchIndexMap.entrySet()) {
             Content propertyName = new StringContent(entry.getKey());
-            List<SearchIndexItem> searchIndexItems = entry.getValue();
+            List<IndexItem> searchIndexItems = entry.getValue();
             Content separatedReferenceLinks = new ContentBuilder();
             separatedReferenceLinks.add(createLink(searchIndexItems.get(0)));
             for (int i = 1; i < searchIndexItems.size(); i++) {
@@ -155,13 +155,13 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         content.add(table);
     }
 
-    private Map<String, List<SearchIndexItem>> groupSystemProperties() {
+    private Map<String, List<IndexItem>> groupSystemProperties() {
         return configuration.mainIndex.getItems(Category.TAGS).stream()
                 .filter(ssi -> ssi.getDocTree().getKind() == DocTree.Kind.SYSTEM_PROPERTY)
-                .collect(groupingBy(SearchIndexItem::getLabel, TreeMap::new, toList()));
+                .collect(groupingBy(IndexItem::getLabel, TreeMap::new, toList()));
     }
 
-    private Content createLink(SearchIndexItem i) {
+    private Content createLink(IndexItem i) {
         assert i.getDocTree().getKind() == DocTree.Kind.SYSTEM_PROPERTY : i;
         Element element = i.getElement();
         if (element instanceof OverviewElement) {
