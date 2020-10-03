@@ -863,14 +863,14 @@ class PeerFixer implements AdjustmentListener, java.io.Serializable {
 
         Component c = scroller.getComponent(0);
         switch(adj.getOrientation()) {
-            case Adjustable.VERTICAL:
-                c.move(c.getLocation().x, -(value));
-                break;
-            case Adjustable.HORIZONTAL:
-                c.move(-(value), c.getLocation().y);
-                break;
-            default:
-                throw new IllegalArgumentException("Illegal adjustable orientation");
+        case Adjustable.VERTICAL:
+            c.move(c.getLocation().x, -(value));
+            break;
+        case Adjustable.HORIZONTAL:
+            c.move(-(value), c.getLocation().y);
+            break;
+        default:
+            throw new IllegalArgumentException("Illegal adjustable orientation");
         }
     }
 
