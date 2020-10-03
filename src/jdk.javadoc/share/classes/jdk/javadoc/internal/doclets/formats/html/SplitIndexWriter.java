@@ -29,10 +29,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
@@ -90,11 +88,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath path = DocPaths.INDEX_FILES;
         IndexBuilder mainIndex = configuration.mainIndex;
-        SortedSet<Character> keys = new TreeSet<>(mainIndex.keys());
-        Set<Character> searchItemsKeys = mainIndex.getItems(Category.TAGS).stream()
-                .map(i -> keyCharacter(i.getLabel()))
-                .collect(Collectors.toSet());
-        keys.addAll(searchItemsKeys);
+        SortedSet<Character> keys = new TreeSet<>(mainIndex.getFirstCharacters());
         ListIterator<Character> li = new ArrayList<>(keys).listIterator();
         while (li.hasNext()) {
             Character ch = li.next();
@@ -130,9 +124,6 @@ public class SplitIndexWriter extends AbstractIndexWriter {
                         contents.getContent("doclet.Index"))));
         Content mainContent = new ContentBuilder();
         addLinksForIndexes(mainContent);
-        if (tagSearchIndexMap.get(unicode) != null) {
-            mainIndex.addSearchTags(unicode, tagSearchIndexMap.get(unicode));
-        }
         addContents(unicode, mainIndex.getItems(unicode), mainContent);
         addLinksForIndexes(mainContent);
         main.add(mainContent);

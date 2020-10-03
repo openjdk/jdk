@@ -57,7 +57,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexItem.Category;
  */
 public class SingleIndexWriter extends AbstractIndexWriter {
 
-    private Set<Character> elements;
+    private Set<Character> firstCharacters;
 
     /**
      * Construct the SingleIndexWriter with filename "index-all.html" and the
@@ -93,14 +93,10 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         navBar.setUserHeader(getUserHeaderFooter(true));
         headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content mainContent = new ContentBuilder();
-        elements = new TreeSet<>(mainIndex.keys());
-        elements.addAll(tagSearchIndexMap.keySet());
+        firstCharacters = new TreeSet<>(mainIndex.getFirstCharacters());
         addLinksForIndexes(mainContent);
-        for (Character unicode : elements) {
-            if (tagSearchIndexMap.get(unicode) != null) {
-                mainIndex.addSearchTags(unicode, tagSearchIndexMap.get(unicode));
-            }
-            addContents(unicode, mainIndex.getItems(unicode), mainContent);
+        for (Character ch : firstCharacters) {
+            addContents(ch, mainIndex.getItems(ch), mainContent);
         }
         addLinksForIndexes(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
@@ -124,7 +120,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      * @param contentTree the content tree to which the links for indexes will be added
      */
     protected void addLinksForIndexes(Content contentTree) {
-        for (Character ch : elements) {
+        for (Character ch : firstCharacters) {
             String unicode = ch.toString();
             contentTree.add(
                     links.createLink(getNameForIndex(unicode),

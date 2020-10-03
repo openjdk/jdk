@@ -76,8 +76,6 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
 
     protected final Navigation navBar;
 
-    protected final Map<Character, List<IndexItem>> tagSearchIndexMap;
-
     /**
      * Initializes the common data for a writers that can generate index files
      * based on the information in {@code configuration.mainIndex}.
@@ -90,7 +88,6 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         super(configuration, path);
         this.mainIndex = configuration.mainIndex;
         this.navBar = new Navigation(null, configuration, PageMode.INDEX, path);
-        this.tagSearchIndexMap = buildSearchTagIndex(mainIndex.getItems(Category.TAGS));
     }
 
     protected void addContents(Character uc, SortedSet<IndexItem> memberlist,
@@ -393,15 +390,5 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         } catch (IOException ie) {
             throw new DocFileIOException(jsFile, DocFileIOException.Mode.WRITE, ie);
         }
-    }
-
-    private static Map<Character, List<IndexItem>> buildSearchTagIndex(
-            SortedSet<? extends IndexItem> indexItems)
-    {
-        return indexItems.stream().collect(Collectors.groupingBy(i -> keyCharacter(i.getLabel())));
-    }
-
-    protected static Character keyCharacter(String s) {
-        return s.isEmpty() ? '*' : Character.toUpperCase(s.charAt(0));
     }
 }

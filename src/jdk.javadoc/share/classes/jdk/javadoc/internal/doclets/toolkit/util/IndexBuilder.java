@@ -72,7 +72,11 @@ public class IndexBuilder {
 
     private final BaseConfiguration configuration;
     private final Utils utils;
-    private final Comparator<IndexItem> comparator;
+
+    /**
+     * The comparator used for the sets in {@code itemsByFirstChar}.
+     */
+    private final Comparator<IndexItem> mainComparator;
 
     /**
      * Creates a new {@code IndexBuilder}.
@@ -115,7 +119,7 @@ public class IndexBuilder {
         itemsByFirstChar = new TreeMap<>();
         itemsByCategory = new EnumMap<>(IndexItem.Category.class);
 
-        comparator = utils.comparators.makeIndexComparator(classesOnly);
+        mainComparator = utils.comparators.makeIndexComparator(classesOnly);
     }
 
     /**
@@ -147,25 +151,40 @@ public class IndexBuilder {
     }
 
     /**
-     * Adds the specified item to this container.
+     * Adds an individual item to the two collections of items.
      *
-     * @param item
-     *         the item to add
+     * @param item the item to add
      */
     public void add(IndexItem item) {
         Objects.requireNonNull(item);
-        itemsByCategory.computeIfAbsent(item.getCategory(), this::newSetForCategory)
+
+        itemsByFirstChar.computeIfAbsent(keyCharacter(item.getLabel()),
+                    c -> new TreeSet<>(mainComparator))
+                .add(item);
+
+        itemsByCategory.computeIfAbsent(item.getCategory(),
+                    c -> new TreeSet<>(c == IndexItem.Category.TYPES
+                            ? utils.comparators.makeTypeIndexComparator()
+                            : utils.comparators.makeGenericIndexComparator()))
                 .add(item);
     }
 
-    private SortedSet<IndexItem> newSetForCategory(IndexItem.Category category) {
-        final Comparator<IndexItem> cmp;
-        if (category == IndexItem.Category.TYPES) {
-            cmp = utils.comparators.makeTypeIndexComparator();
-        } else {
-            cmp = utils.comparators.makeGenericIndexComparator();
-        }
-        return new TreeSet<>(cmp);
+    /**
+     * Returns a sorted list of items whose names start with the
+     * provided character.
+     *
+     * @param key index key
+     * @return list of items keyed by the provided character
+     */
+    public SortedSet<IndexItem> getItems(Character key) {
+        return itemsByFirstChar.get(key);
+    }
+
+    /**
+     * Returns a list of index keys.
+     */
+    public List<Character> getFirstCharacters() {
+        return new ArrayList<>(itemsByFirstChar.keySet());
     }
 
     public SortedSet<IndexItem> getItems(IndexItem.Category cat) {
@@ -197,10 +216,7 @@ public class IndexBuilder {
     private void indexMembers(TypeElement typeElement, Iterable<? extends Element> members) {
         for (Element member : members) {
             if (shouldIndex(member)) {
-                String name = utils.getSimpleName(member);
-                Character ch = keyCharacter(name);
-                SortedSet<IndexItem> set = itemsByFirstChar.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-                set.add(IndexItem.of(typeElement, member, utils));
+                add(IndexItem.of(typeElement, member, utils));
             }
         }
     }
@@ -213,16 +229,9 @@ public class IndexBuilder {
     private void indexTypeElements(Iterable<TypeElement> elements) {
         for (TypeElement typeElement : elements) {
             if (shouldIndex(typeElement)) {
-                String name = utils.getSimpleName(typeElement);
-                Character ch = keyCharacter(name);
-                SortedSet<IndexItem> set = itemsByFirstChar.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-                set.add(IndexItem.of(typeElement, utils));
+                add(IndexItem.of(typeElement, utils));
             }
         }
-    }
-
-    private static Character keyCharacter(String s) {
-        return s.isEmpty() ? '*' : Character.toUpperCase(s.charAt(0));
     }
 
     /**
@@ -230,9 +239,7 @@ public class IndexBuilder {
      */
     private void indexModules() {
         for (ModuleElement m : configuration.modules) {
-            Character ch = keyCharacter(m.getQualifiedName().toString());
-            SortedSet<IndexItem> set = itemsByFirstChar.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-            set.add(IndexItem.of(m, utils));
+            add(IndexItem.of(m, utils));
         }
     }
 
@@ -243,9 +250,7 @@ public class IndexBuilder {
      */
     private void indexPackage(PackageElement packageElement) {
         if (shouldIndex(packageElement)) {
-            Character ch = keyCharacter(utils.getPackageName(packageElement));
-            SortedSet<IndexItem> set = itemsByFirstChar.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-            set.add(IndexItem.of(packageElement, utils));
+            add(IndexItem.of(packageElement, utils));
         }
     }
 
@@ -271,39 +276,7 @@ public class IndexBuilder {
         }
     }
 
-    /**
-     * Returns a sorted list of items whose names start with the
-     * provided character.
-     *
-     * @param key index key
-     * @return list of items keyed by the provided character
-     */
-    public SortedSet<IndexItem> getItems(Character key) {
-        SortedSet<IndexItem> set = itemsByFirstChar.get(key);
-        if (set == null) {
-            return null;
-        }
-        return set;
+    private static Character keyCharacter(String s) {
+        return s.isEmpty() ? '*' : Character.toUpperCase(s.charAt(0));
     }
-
-    /**
-     * Returns a list of index keys.
-     */
-    public List<Character> keys() {
-        return new ArrayList<>(itemsByFirstChar.keySet());
-    }
-
-    /**
-     * Add search tags for the key {@code key}.
-     *
-     * @param key the index key
-     * @param searchTags the search tags
-     */
-    public void addSearchTags(char key, List<IndexItem> searchTags) {
-        searchTags.forEach(searchTag -> {
-            SortedSet<IndexItem> set = itemsByFirstChar.computeIfAbsent(key, c -> new TreeSet<>(comparator));
-            set.add(searchTag);
-        });
-    }
-
 }
