@@ -104,7 +104,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItems;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
@@ -155,8 +154,6 @@ public class HtmlDocletWriter {
      * The global configuration information for this run.
      */
     public final HtmlConfiguration configuration;
-
-    protected final SearchIndexItems searchItems;
 
     protected final HtmlOptions options;
 
@@ -217,7 +214,6 @@ public class HtmlDocletWriter {
      */
     public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
         this.configuration = configuration;
-        this.searchItems = configuration.searchItems;
         this.options = configuration.getOptions();
         this.contents = configuration.contents;
         this.messages = configuration.messages;

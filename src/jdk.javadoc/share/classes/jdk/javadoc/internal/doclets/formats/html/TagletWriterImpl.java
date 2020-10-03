@@ -448,7 +448,7 @@ public class TagletWriterImpl extends TagletWriter {
                         return null;
                     }
                 }.visit(element);
-                configuration.searchItems.add(si);
+                configuration.mainIndex.add(si);
             }
         }
         return result;

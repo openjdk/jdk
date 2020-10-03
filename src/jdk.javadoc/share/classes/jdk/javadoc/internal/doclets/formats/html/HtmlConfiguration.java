@@ -51,7 +51,7 @@ import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItems;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 
 /**
  * Configure the output based on the command-line options.
@@ -91,7 +91,16 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     public TypeElement currentTypeElement = null;  // Set this TypeElement in the ClassWriter.
 
-    protected SearchIndexItems searchItems;
+    /**
+     * The collections of items for the main index.
+     * This field is only initialized if {@code options.createIndex()}
+     * is {@code true}.
+     * This index is populated somewhat lazily:
+     * 1. items found in doc comments are found while generating declaration pages
+     * 2. items for elements are added in bulk before generating the index files
+     * 3. additional items are added as needed
+     */
+    protected IndexBuilder mainIndex;
 
     public final Contents contents;
 
@@ -198,6 +207,9 @@ public class HtmlConfiguration extends BaseConfiguration {
                     map.put(utils.getPackageName(pkg), pkg);
                 }
             }
+        }
+        if (options.createIndex()) {
+            mainIndex = new IndexBuilder(this, options.noDeprecated());
         }
         docPaths = new DocPaths(utils);
         setCreateOverview();
@@ -349,11 +361,5 @@ public class HtmlConfiguration extends BaseConfiguration {
             }
         }
         return super.finishOptionSettings0();
-    }
-
-    @Override
-    protected void initConfiguration(DocletEnvironment docEnv) {
-        super.initConfiguration(docEnv);
-        searchItems = new SearchIndexItems(utils);
     }
 }

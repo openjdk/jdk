@@ -134,7 +134,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 .addTab(resources.annotationTypeSummary, utils::isAnnotationType)
                 .setTabScript(i -> "show(" + i + ");");
         for (Character unicode : indexBuilder.keys()) {
-            for (IndexItem indexItem : indexBuilder.getMemberList(unicode)) {
+            for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
                 TypeElement typeElement = (TypeElement) indexItem.getElement();
                 if (typeElement == null || !utils.isCoreClass(typeElement)) {
                     continue;

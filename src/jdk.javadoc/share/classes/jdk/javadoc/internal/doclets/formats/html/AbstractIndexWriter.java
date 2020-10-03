@@ -69,37 +69,32 @@ import jdk.javadoc.internal.doclets.toolkit.util.SearchIndexItem.Category;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  *
- * @see    IndexBuilder
+ * @see IndexBuilder
  */
 public class AbstractIndexWriter extends HtmlDocletWriter {
 
-    /**
-     * The index of all the members with unicode character.
-     */
-    protected IndexBuilder indexBuilder;
+    protected final IndexBuilder mainIndex;
 
-    protected Navigation navBar;
+    protected final Navigation navBar;
 
     protected final Map<Character, List<SearchIndexItem>> tagSearchIndexMap;
 
     /**
-     * This constructor will be used by {@link SplitIndexWriter}. Initializes
-     * path to this file and relative path from this file.
+     * Initializes the common data for a writers that can generate index files
+     * based on the information in {@code configuration.mainIndex}.
      *
-     * @param configuration  The current configuration
-     * @param path       Path to the file which is getting generated.
-     * @param indexBuilder Unicode based Index from {@link IndexBuilder}
+     * @param configuration  the current configuration
+     * @param path           path to the file which is getting generated.
      */
     protected AbstractIndexWriter(HtmlConfiguration configuration,
-                                  DocPath path,
-                                  IndexBuilder indexBuilder) {
+                                  DocPath path) {
         super(configuration, path);
-        this.indexBuilder = indexBuilder;
+        this.mainIndex = configuration.mainIndex;
         this.navBar = new Navigation(null, configuration, PageMode.INDEX, path);
-        this.tagSearchIndexMap = buildSearchTagIndex(searchItems.getItems(Category.TAGS));
+        this.tagSearchIndexMap = buildSearchTagIndex(mainIndex.getItems(Category.TAGS));
     }
 
-    protected void addContents(Character uc, List<IndexItem> memberlist,
+    protected void addContents(Character uc, SortedSet<IndexItem> memberlist,
             Content contentTree) {
         addHeading(uc, contentTree);
 
@@ -131,7 +126,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
             si = SearchIndexItem.of(indexItem.getElement())
                 .setLabel(indexItem.getLabel());
             addElementDescription(indexItem, dl, si, addModuleInfo);
-            searchItems.add(si);
+            mainIndex.add(si);
         }
     }
 
@@ -327,7 +322,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                         SearchIndexItem si = SearchIndexItem.of(Category.PACKAGES)
                                 .setLabel(resources.getText("doclet.All_Packages"))
                                 .setUrl(DocPaths.ALLPACKAGES_INDEX.getPath());
-                        searchItems.add(si);
+                        mainIndex.add(si);
                     }
                     file = DocPaths.PACKAGE_SEARCH_INDEX_JS;
                     varName = "packageSearchIndex";
@@ -337,7 +332,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                     SearchIndexItem si = SearchIndexItem.of(Category.TYPES)
                             .setLabel(resources.getText("doclet.All_Classes"))
                             .setUrl(DocPaths.ALLCLASSES_INDEX.getPath());
-                    searchItems.add(si);
+                    mainIndex.add(si);
                     file = DocPaths.TYPE_SEARCH_INDEX_JS;
                     varName = "typeSearchIndex";
                     break;
@@ -356,7 +351,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                     throw new Error();
             }
 
-            createSearchIndexFile(file, searchItems.getItems(category), varName);
+            createSearchIndexFile(file, mainIndex.getItems(category), varName);
         }
     }
 
