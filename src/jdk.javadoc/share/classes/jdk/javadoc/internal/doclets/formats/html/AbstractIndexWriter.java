@@ -311,13 +311,13 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         // add last-minute items
         if (!configuration.packages.isEmpty()) {
             IndexItem item = IndexItem.of(Category.PACKAGES,
-                    resources.getText("doclet.All_Packages"))
-                    .setUrl(DocPaths.ALLPACKAGES_INDEX.getPath());
+                    resources.getText("doclet.All_Packages"),
+                    DocPaths.ALLPACKAGES_INDEX);
             mainIndex.add(item);
         }
         IndexItem item = IndexItem.of(Category.TYPES,
-                resources.getText("doclet.All_Classes"))
-                .setUrl(DocPaths.ALLCLASSES_INDEX.getPath());
+                resources.getText("doclet.All_Classes"),
+                DocPaths.ALLCLASSES_INDEX);
         mainIndex.add(item);
 
         for (Category category : Category.values()) {

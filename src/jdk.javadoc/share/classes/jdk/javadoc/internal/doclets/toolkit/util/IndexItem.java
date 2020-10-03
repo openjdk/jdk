@@ -95,28 +95,91 @@ public class IndexItem {
         TAGS
     }
 
+    /**
+     * The presentation string for the item. It must be non-empty.
+     */
     private final String label;
+
+    /**
+     * The element for the item. It is only null for items for summary pages that are not
+     * associated with any specific element.
+     *
+     */
     private final Element element;
 
+    /**
+     * The URL pointing to the element, doc tree or page being indexed.
+     * It may be empty if the information can be determined from other fields.
+     */
     private String url = "";
-    private String description = "";
-    private String containingModule = "";
-    private String containingPackage = "";
-    private String containingClass = "";
-    private String holder = "";
 
+    /**
+     * The containing module, if any, for the item.
+     * It will be empty if the element is not in a package, and may be omitted if the
+     * name of the package is unique.
+     */
+    private String containingModule = "";
+
+    /**
+     * The containing package, if any, for the item.
+     */
+    private String containingPackage = "";
+
+    /**
+     * The containing class, if any, for the item.
+     */
+    private String containingClass = "";
+
+    /**
+     * Creates an index item for a module element.
+     *
+     * @param moduleElement the element
+     * @param utils         the common utilities class
+     *
+     * @return the item
+     */
     public static IndexItem of(ModuleElement moduleElement, Utils utils) {
         return new IndexItem(moduleElement, utils.getFullyQualifiedName(moduleElement));
     }
 
+    /**
+     * Creates an index item for a package element.
+     *
+     * @param packageElement the element
+     * @param utils          the common utilities class
+     *
+     * @return the item
+     */
     public static IndexItem of(PackageElement packageElement, Utils utils) {
         return new IndexItem(packageElement, utils.getPackageName(packageElement));
     }
 
+    /**
+     * Creates an index item for a type element.
+     * Note: use {@code getElement()} to access this value, not {@code getTypeElement}.
+     *
+     * @param typeElement the element
+     * @param utils       the common utilities class
+     *
+     * @return the item
+     */
     public static IndexItem of(TypeElement typeElement, Utils utils) {
         return new IndexItem(typeElement, utils.getSimpleName(typeElement));
     }
 
+    /**
+     * Creates an index item for a member element.
+     * Note: the given type element may not be the same as the enclosing element of the member
+     *       in cases where the enclosing element is not visible in the documentation.
+     *
+     * @param typeElement the element that contains the member
+     * @param member      the member
+     * @param utils       the common utilities class
+     *
+     * @return the item
+     *
+     * @see #getTypeElement()
+     */
     public static IndexItem of(TypeElement typeElement, Element member, Utils utils) {
         String name = utils.getSimpleName(member);
         if (utils.isExecutableElement(member)) {
@@ -133,17 +196,30 @@ public class IndexItem {
 
     /**
      * Creates an index item for a node in the doc comment for an element.
+     * The node should only be one that gives rise to an entry in the index.
      *
-     * @param element the element
-     * @param docTree the node in the doc comment
-     * @param label   the label
+     * @param element     the element
+     * @param docTree     the node in the doc comment
+     * @param label       the label
+     * @param holder      the holder for the comment
+     * @param description the description of the item
+     * @param link        the root-relative link to the item in the generated docs
      *
      * @return the item
      */
-    public static IndexItem of(Element element, DocTree docTree, String label) {
+    public static IndexItem of(Element element, DocTree docTree, String label,
+                               String holder, String description, DocLink link) {
         Objects.requireNonNull(element);
-        Objects.requireNonNull(docTree);
-        return new IndexItem(element, label) {
+        Objects.requireNonNull(holder);
+        Objects.requireNonNull(description);
+        Objects.requireNonNull(link);
+
+        switch (docTree.getKind()) {
+            case INDEX, SYSTEM_PROPERTY -> { }
+            default -> throw new IllegalArgumentException(docTree.getKind().toString());
+        }
+
+        return new IndexItem(element, label, link.toString()) {
             @Override
             public DocTree getDocTree() {
                 return docTree;
@@ -152,20 +228,30 @@ public class IndexItem {
             public Category getCategory() {
                 return getCategory(docTree);
             }
+            @Override
+            public String getHolder() {
+                return holder;
+            }
+            @Override
+            public String getDescription() {
+                return description;
+            }
         };
     }
 
     /**
-     * Creates an index item that is not associated with any element or
+     * Creates an index item for a summary page, that is not associated with any element or
      * node in a doc comment.
      *
      * @param category the category for the item
+     * @param label the label for the item
+     * @param path the path for the page
      *
      * @return the item
      */
-    public static IndexItem of(Category category, String label) {
+    public static IndexItem of(Category category, String label, DocPath path) {
         Objects.requireNonNull(category);
-        return new IndexItem(null, label) {
+        return new IndexItem(null, label, path.getPath()) {
             @Override
             public DocTree getDocTree() {
                 return null;
@@ -178,16 +264,30 @@ public class IndexItem {
     }
 
     private IndexItem(Element element, String label) {
+        if (label.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+
         this.element = element;
-        this.label = Objects.requireNonNull(label);
+        this.label = label;
     }
 
+    private IndexItem(Element element, String label, String url) {
+        this(element, label);
+        setUrl(url);
+    }
+
+    /**
+     * Returns the label of the item.
+     *
+     * @return the label
+     */
     public String getLabel() {
         return label;
     }
 
     /**
-     * Get the part of the label after the last dot, or whole label if no dots.
+     * Returns the part of the label after the last dot, or the whole label if there are no dots.
      *
      * @return the simple name
      */
@@ -195,6 +295,14 @@ public class IndexItem {
         return label.substring(label.lastIndexOf('.') + 1);
     }
 
+    /**
+     * Returns the label with a fully-qualified type name.
+     * (Used to determine if labels are unique or need to be qualified.)
+     *
+     * @param utils the common utilities class
+     *
+     * @return the fully qualified name
+     */
     public String getFullyQualifiedLabel(Utils utils) {
         TypeElement typeElement = getTypeElement();
         if (typeElement != null) {
@@ -206,10 +314,21 @@ public class IndexItem {
         }
     }
 
+    /**
+     * Returns the element associate with this item, or {@code null}.
+     *
+     * @return the element
+     */
     public Element getElement() {
         return element;
     }
 
+    /**
+     * Returns the category for this item, that indicates the JavaScript file
+     * in which this item should be written.
+     *
+     * @return the category
+     */
     public Category getCategory() {
         return getCategory(element);
     }
@@ -256,64 +375,126 @@ public class IndexItem {
         }.visit(element);
     }
 
+    /**
+     * Returns the type element that is documented as containing a member element,
+     * or {@code null} if this item does not represent a member element.
+     *
+     * @return the type element
+     */
     public TypeElement getTypeElement() {
         return null;
     }
 
+    /**
+     * Returns the documentation tree node for this item, of {@code null} if this item
+     * does not represent a documentation tree node.
+     *
+     * @return the documentation tree node
+     */
     public DocTree getDocTree() {
         return null;
     }
 
+    /**
+     * Returns {@code true} if this index is for an element.
+     *
+     * @return {@code true} if this index is for an element
+     */
     public boolean isElementItem() {
         return element != null && getDocTree() == null;
     }
 
+    /**
+     * Returns {@code true} if this index is for a tag in a doc comment.
+     *
+     * @return {@code true} if this index is for a tag in a doc comment
+     */
     public boolean isTagItem() {
         return getDocTree() != null;
     }
 
+    /**
+     * Sets the URL for the item, when it cannot otherwise be inferred from other fields.
+     *
+     * @param u the url
+     *
+     * @return this item
+     */
     public IndexItem setUrl(String u) {
-        url = u;
+        url = Objects.requireNonNull(u);
         return this;
     }
 
+    /**
+     * Returns the URL for this item, or an empty string if no value has been set.
+     *
+     * @return the URL for this item, or an empty string if no value has been set
+     */
     public String getUrl() {
         return url;
     }
 
+    /**
+     * Sets the name of the containing module for this item.
+     *
+     * @param m the module
+     *
+     * @return this item
+     */
     public IndexItem setContainingModule(String m) {
-        containingModule = m;
+        containingModule = Objects.requireNonNull(m);
         return this;
     }
 
+    /**
+     * Sets the name of the containing package for this item.
+     *
+     * @param p the package
+     *
+     * @return this item
+     */
     public IndexItem setContainingPackage(String p) {
-        containingPackage = p;
+        containingPackage = Objects.requireNonNull(p);
         return this;
     }
 
+    /**
+     * Sets the name of the containing class for this item.
+     *
+     * @param c the class
+     *
+     * @return this item
+     */
     public IndexItem setContainingClass(String c) {
-        containingClass = c;
+        containingClass = Objects.requireNonNull(c);
         return this;
     }
 
-    public IndexItem setHolder(String h) {
-        holder = h;
-        return this;
-    }
-
+    /**
+     * Returns a description of the element owning the documentation comment for this item,
+     * or {@code null} if this is not a item for a tag for an item in a documentation tag.
+     *
+     * @return the description of the element that owns this item
+     */
     public String getHolder() {
-        return holder;
+        return null;
     }
 
-    public IndexItem setDescription(String d) {
-        description = d;
-        return this;
-    }
-
+    /**
+     * Returns a description of the tag for this item or {@code null} if this is not a item
+     * for a tag for an item in a documentation tag.
+     *
+     * @return the description of the tag
+     */
     public String getDescription() {
-        return description;
+        return null;
     }
 
+    /**
+     * Returns a string representing this item in JSON notation.
+     *
+     * @return a string representing this item in JSON notation
+     */
     public String toJavaScript() {
         // TODO: Additional processing is required, see JDK-8238495
         StringBuilder item = new StringBuilder();
@@ -367,6 +548,8 @@ public class IndexItem {
                 break;
 
             case TAGS:
+                String holder = getHolder();
+                String description = getDescription();
                 item.append("{")
                         .append("\"l\":\"").append(label).append("\",")
                         .append("\"h\":\"").append(holder).append("\",");
