@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,18 @@
  */
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
+
+import javax.imageio.ImageIO;
 
 /**
  * @test
@@ -58,6 +66,7 @@ public final class CheckCommonColors {
                                          Color.GREEN, Color.MAGENTA, Color.CYAN,
                                          Color.BLUE)) {
             frame.dispose();
+            robot.waitForIdle();
             frame.setBackground(color);
             frame.setVisible(true);
             checkPixels(color);
@@ -68,14 +77,25 @@ public final class CheckCommonColors {
         int attempt = 0;
         while (true) {
             Point p = frame.getLocationOnScreen();
-            Color pixel = robot.getPixelColor(p.x + frame.getWidth() / 2,
-                                              p.y + frame.getHeight() / 2);
+            p.translate(frame.getWidth() / 2, frame.getHeight() / 2);
+            Color pixel = robot.getPixelColor(p.x, p.y);
             if (color.equals(pixel)) {
                 return;
             }
-            if (attempt > 10) {
+            frame.repaint();
+            if (attempt > 11) {
                 System.err.println("Expected: " + color);
                 System.err.println("Actual: " + pixel);
+                System.err.println("Point: " + p);
+                Dimension screenSize =
+                        Toolkit.getDefaultToolkit().getScreenSize();
+                BufferedImage screen = robot.createScreenCapture(
+                        new Rectangle(screenSize));
+                try {
+                    File output = new File("ScreenCapture.png");
+                    System.err.println("Dump screen to: " + output);
+                    ImageIO.write(screen, "png", output);
+                } catch (IOException ex) {}
                 throw new RuntimeException("Too many attempts: " + attempt);
             }
             // skip Robot.waitForIdle to speedup the common case, but also take
