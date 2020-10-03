@@ -650,6 +650,8 @@ void InterpreterMacroAssembler::pop(TosState state) {
   case ztos:
   case ctos:
   case stos:
+    ShouldNotReachHere();
+    break;
   case itos: pop_i();                   break;
   case ltos: pop_l();                   break;
   case ftos: pop_f(xmm0);               break;
@@ -668,6 +670,8 @@ void InterpreterMacroAssembler::push(TosState state) {
   case ztos:
   case ctos:
   case stos:
+    ShouldNotReachHere();
+    break;
   case itos: push_i();                  break;
   case ltos: push_l();                  break;
   case ftos: push_f(xmm0);              break;

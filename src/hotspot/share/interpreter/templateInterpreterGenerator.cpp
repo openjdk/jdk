@@ -121,14 +121,15 @@ void TemplateInterpreterGenerator::generate_all() {
   }
 
   { CodeletMark cm(_masm, "earlyret entry points");
+    address earlyret_entry_itos = generate_earlyret_entry_for(itos);
     Interpreter::_earlyret_entry =
       EntryPoint(
-                 generate_earlyret_entry_for(btos),
-                 generate_earlyret_entry_for(ztos),
-                 generate_earlyret_entry_for(ctos),
-                 generate_earlyret_entry_for(stos),
+                 earlyret_entry_itos, /* btos */
+                 earlyret_entry_itos, /* ztos */
+                 earlyret_entry_itos, /* ctos */
+                 earlyret_entry_itos, /* stos */
                  generate_earlyret_entry_for(atos),
-                 generate_earlyret_entry_for(itos),
+                 earlyret_entry_itos, /* itos */
                  generate_earlyret_entry_for(ltos),
                  generate_earlyret_entry_for(ftos),
                  generate_earlyret_entry_for(dtos),
@@ -151,14 +152,15 @@ void TemplateInterpreterGenerator::generate_all() {
 
 
   { CodeletMark cm(_masm, "safepoint entry points");
+    address safept_entry_itos = generate_safept_entry_for(itos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
     Interpreter::_safept_entry =
       EntryPoint(
-                 generate_safept_entry_for(btos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                 generate_safept_entry_for(ztos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                 generate_safept_entry_for(ctos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                 generate_safept_entry_for(stos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
+                 safept_entry_itos, /* btos */
+                 safept_entry_itos, /* ztos */
+                 safept_entry_itos, /* ctos */
+                 safept_entry_itos, /* stos */
                  generate_safept_entry_for(atos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                 generate_safept_entry_for(itos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
+                 safept_entry_itos, /* itos */
                  generate_safept_entry_for(ltos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
                  generate_safept_entry_for(ftos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
                  generate_safept_entry_for(dtos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
