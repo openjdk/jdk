@@ -40,7 +40,7 @@ import org.w3c.dom.TypeInfo;
 import org.w3c.dom.UserDataHandler;
 
 /**
- * A {@code IIODOMException} is thrown by the {@code IIOMetadataNode} in
+ * An {@code IIODOMException} is thrown by the {@code IIOMetadataNode} in
  * "exceptional" circumstances.
  */
 class IIODOMException extends DOMException {
