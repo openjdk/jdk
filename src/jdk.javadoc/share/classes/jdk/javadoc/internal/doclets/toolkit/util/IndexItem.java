@@ -260,6 +260,14 @@ public class IndexItem {
             public Category getCategory() {
                 return category;
             }
+            @Override
+            public String getHolder() {
+                return "";
+            }
+            @Override
+            public String getDescription() {
+                return "";
+            }
         };
     }
 

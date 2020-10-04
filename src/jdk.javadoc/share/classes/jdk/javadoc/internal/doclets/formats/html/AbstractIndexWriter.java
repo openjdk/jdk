@@ -119,7 +119,6 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
             addTagDescription(indexItem, dl);
         } else if (indexItem.isElementItem()) {
             addElementDescription(indexItem, dl, addModuleInfo);
-            mainIndex.add(indexItem);
         }
     }
 

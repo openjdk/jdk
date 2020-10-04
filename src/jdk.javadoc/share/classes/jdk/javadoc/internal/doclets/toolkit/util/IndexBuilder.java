@@ -39,7 +39,11 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 /**
- *  An alphabetical index of {@link Element elements}.
+ *  An alphabetical index of elements, search tags, and other items.
+ *  Two tables are maintained:
+ *  one is indexed by the first character of each items name;
+ *  the other is index by the item's category, indicating the JavaScript
+ *  file in which the item should be written.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -163,9 +167,7 @@ public class IndexBuilder {
                 .add(item);
 
         itemsByCategory.computeIfAbsent(item.getCategory(),
-                    c -> new TreeSet<>(c == IndexItem.Category.TYPES
-                            ? makeTypeIndexComparator()
-                            : makeGenericIndexComparator()))
+                    c -> new TreeSet<>(mainComparator))
                 .add(item);
     }
 
@@ -292,69 +294,30 @@ public class IndexBuilder {
         Comparator<Element> elementComparator = classesOnly
                 ? utils.comparators.makeAllClassesComparator()
                 : utils.comparators.makeIndexElementComparator();
-        Comparator<IndexItem> searchTagComparator = makeGenericIndexComparator();
+
+        Comparator<IndexItem> labelComparator =
+                (ii1, ii2) -> utils.compareStrings(ii1.getLabel(), ii2.getLabel());
+        Comparator<IndexItem> searchTagComparator =
+                labelComparator
+                        .thenComparing(IndexItem::getHolder)
+                        .thenComparing(IndexItem::getDescription)
+                        .thenComparing(IndexItem::getUrl);
 
         return (ii1, ii2) -> {
-            // Compare two elements
+            // If both are element items, compare the elements
             if (ii1.isElementItem() && ii2.isElementItem()) {
                 return elementComparator.compare(ii1.getElement(), ii2.getElement());
             }
-            // Compare two search tags
-            if (ii1.isTagItem() && ii2.isTagItem()) {
-                return searchTagComparator.compare(ii1, ii2);
+
+            // If one is an element item, compare labels; if equal, put element item last
+            if (ii1.isElementItem() || ii2.isElementItem()) {
+                int d = labelComparator.compare(ii1, ii2);
+                return d != 0 ? d : ii1.isElementItem() ? 1 : -1;
             }
-            // Compare an element with a search tag.
-            // Compares labels, if those are equal put the search tag first.
-            int d = utils.compareStrings(ii1.getLabel(), ii2.getLabel());
-            if (d == 0) {
-                d = ii1.getElement() == null ? 1 : -1;
-            }
-            return d;
+
+            // Otherwise, compare labels and other fields of the items
+            return searchTagComparator.compare(ii1, ii2);
         };
     }
-
-    /**
-     * Returns a Comparator for IndexItems representing types. Items are
-     * compared by short name, or full JavaScript representation if names are equal.
-     *
-     * @return a Comparator
-     */
-    private Comparator<IndexItem> makeTypeIndexComparator() {
-        return (IndexItem sii1, IndexItem sii2) -> {
-            int result = utils.compareStrings(sii1.getSimpleName(), sii2.getSimpleName());
-            if (result == 0) {
-                // TreeSet needs this to be consistent with equal so we do
-                // a plain comparison of string representations as fallback.
-                result = sii1.toJavaScript().compareTo(sii2.toJavaScript());
-            }
-            return result;
-        };
-    }
-
-    private Comparator<IndexItem> genericIndexComparator = null;
-
-    /**
-     * Returns a Comparator for IndexItems representing modules, packages, or members.
-     * Items are compared by label (member name plus signature for members, package name for
-     * packages, and module name for modules). If labels are equal then full JavaScript
-     * representation is compared.
-     *
-     * @return a Comparator
-     */
-    private Comparator<IndexItem> makeGenericIndexComparator() {
-        if (genericIndexComparator == null) {
-            genericIndexComparator = (IndexItem i1, IndexItem i2) -> {
-                int result = utils.compareStrings(i1.getLabel(), i2.getLabel());
-                if (result == 0) {
-                    // TreeSet needs this to be consistent with equal so we do
-                    // a plain comparison of string representations as fallback.
-                    result = i1.toJavaScript().compareTo(i2.toJavaScript());
-                }
-                return result;
-            };
-        }
-        return genericIndexComparator;
-    }
-
 
 }
