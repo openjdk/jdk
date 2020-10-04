@@ -143,9 +143,9 @@ public class TagletWriterImpl extends TagletWriter {
                 result.add(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
                         htmlWriter.getDeprecatedPhrase(element)));
                 if (!deprs.isEmpty()) {
-                    List<? extends DocTree> commentTags = ch.getDescription(deprs.get(0));
-                    if (!commentTags.isEmpty()) {
-                        result.add(commentTagsToOutput(null, element, commentTags, false));
+                    List<? extends DocTree> commentTrees = ch.getDescription(deprs.get(0));
+                    if (!commentTrees.isEmpty()) {
+                        result.add(commentTagsToOutput(element, null, commentTrees, false));
                     }
                 }
             }
@@ -154,8 +154,8 @@ public class TagletWriterImpl extends TagletWriter {
                 result.add(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
                         htmlWriter.getDeprecatedPhrase(element)));
                 if (!deprs.isEmpty()) {
-                    List<? extends DocTree> bodyTags = ch.getBody(deprs.get(0));
-                    Content body = commentTagsToOutput(null, element, bodyTags, false);
+                    List<? extends DocTree> bodyTrees = ch.getBody(deprs.get(0));
+                    Content body = commentTagsToOutput(element, null, bodyTrees, false);
                     if (!body.isEmpty())
                         result.add(HtmlTree.DIV(HtmlStyle.deprecationComment, body));
                 }
@@ -203,18 +203,6 @@ public class TagletWriterImpl extends TagletWriter {
         List<? extends DocTree> description = ch.getDescription(paramTag);
         body.add(htmlWriter.commentTagsToContent(paramTag, element, description, false, inSummary));
         return HtmlTree.DD(body);
-    }
-
-    @Override
-    public Content propertyTagOutput(Element element, DocTree tag, String prefix) {
-        Content body = new ContentBuilder();
-        CommentHelper ch = utils.getCommentHelper(element);
-        body.add(new RawHtml(prefix));
-        body.add(" ");
-        body.add(HtmlTree.CODE(new RawHtml(ch.getText(tag))));
-        body.add(".");
-        Content result = HtmlTree.P(body);
-        return result;
     }
 
     @Override
@@ -273,7 +261,7 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
-    public Content simpleTagOutput(Element element, List<? extends DocTree> simpleTags, String header) {
+    public Content simpleBlockTagOutput(Element element, List<? extends DocTree> simpleTags, String header) {
         CommentHelper ch = utils.getCommentHelper(element);
         ContentBuilder body = new ContentBuilder();
         boolean many = false;
@@ -285,16 +273,6 @@ public class TagletWriterImpl extends TagletWriter {
             body.add(htmlWriter.commentTagsToContent(simpleTag, element, bodyTags, false, inSummary));
             many = true;
         }
-        return new ContentBuilder(
-                HtmlTree.DT(new RawHtml(header)),
-                HtmlTree.DD(body));
-    }
-
-    @Override
-    public Content simpleTagOutput(Element element, DocTree simpleTag, String header) {
-        CommentHelper ch = utils.getCommentHelper(element);
-        List<? extends DocTree> description = ch.getDescription(simpleTag);
-        Content body = htmlWriter.commentTagsToContent(simpleTag, element, description, false, inSummary);
         return new ContentBuilder(
                 HtmlTree.DT(new RawHtml(header)),
                 HtmlTree.DD(body));
@@ -358,18 +336,18 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
-    public Content commentTagsToOutput(DocTree holderTag, List<? extends DocTree> tags) {
-        return commentTagsToOutput(holderTag, null, tags, false);
-    }
-
-    @Override
-    public Content commentTagsToOutput(Element holder, List<? extends DocTree> tags) {
+    public Content commentTagsToOutput(DocTree holder, List<? extends DocTree> tags) {
         return commentTagsToOutput(null, holder, tags, false);
     }
 
     @Override
-    public Content commentTagsToOutput(DocTree holderTag,
-                                       Element holder,
+    public Content commentTagsToOutput(Element element, List<? extends DocTree> tags) {
+        return commentTagsToOutput(element, null, tags, false);
+    }
+
+    @Override
+    public Content commentTagsToOutput(Element holder,
+                                       DocTree holderTag,
                                        List<? extends DocTree> tags,
                                        boolean isFirstSentence)
     {

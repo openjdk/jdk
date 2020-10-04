@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.security.InvalidKeyException;
 import java.security.ProviderException;
 import sun.security.util.ArrayUtil;
 import java.util.Objects;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class represents ciphers in electronic codebook (ECB) mode.
@@ -97,7 +97,7 @@ final class ElectronicCodeBook extends FeedbackCipher {
         embeddedCipher.init(decrypting, algorithm, key);
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private int implECBEncrypt(byte [] in, int inOff, int len, byte[] out, int outOff) {
         for (int i = len; i >= blockSize; i -= blockSize) {
             embeddedCipher.encryptBlock(in, inOff, out, outOff);
@@ -131,7 +131,7 @@ final class ElectronicCodeBook extends FeedbackCipher {
         return implECBEncrypt(in, inOff, len, out, outOff);
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private int implECBDecrypt(byte [] in, int inOff, int len, byte[] out, int outOff) {
         for (int i = len; i >= blockSize; i -= blockSize) {
             embeddedCipher.decryptBlock(in, inOff, out, outOff);

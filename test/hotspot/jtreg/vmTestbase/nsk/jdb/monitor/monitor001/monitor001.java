@@ -45,9 +45,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.monitor.monitor001.monitor001
- *        nsk.jdb.monitor.monitor001.monitor001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.monitor.monitor001.monitor001
+ * @build nsk.jdb.monitor.monitor001.monitor001a
+ * @run main/othervm
+ *      nsk.jdb.monitor.monitor001.monitor001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
