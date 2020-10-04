@@ -666,6 +666,8 @@ public final class JarSigner {
                 return Boolean.toString(sectionsonly);
             case "altsignerpath":
                 return altSignerPath;
+            case "directsign":
+                return Boolean.toString(directsign);
             case "altsigner":
                 return altSigner;
             default:
