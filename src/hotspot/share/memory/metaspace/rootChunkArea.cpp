@@ -58,16 +58,11 @@ RootChunkArea::~RootChunkArea() {
 // root chunk header. It will be partly initialized.
 // Note: this just allocates a memory-less header; memory itself is allocated inside VirtualSpaceNode.
 Metachunk* RootChunkArea::alloc_root_chunk_header(VirtualSpaceNode* node) {
-
   assert(_first_chunk == 0, "already have a root");
-
   Metachunk* c = ChunkHeaderPool::pool()->allocate_chunk_header();
   c->initialize(node, const_cast<MetaWord*>(_base), chunklevel::ROOT_CHUNK_LEVEL);
-
   _first_chunk = c;
-
   return c;
-
 }
 
 // Given a chunk c, split it recursively until you get a chunk of the given target_level.
@@ -78,7 +73,6 @@ Metachunk* RootChunkArea::alloc_root_chunk_header(VirtualSpaceNode* node) {
 // Returns pointer to the result chunk; the splitted-off chunks are added as
 //  free chunks to the freelists.
 void RootChunkArea::split(chunklevel_t target_level, Metachunk* c, FreeChunkListVector* freelists) {
-
   // Splitting a chunk once works like this:
   //
   // For a given chunk we want to split:
@@ -149,14 +143,12 @@ void RootChunkArea::split(chunklevel_t target_level, Metachunk* c, FreeChunkList
 
     // Add splinter to free lists
     freelists->add(splinter_chunk);
-
   }
 
   assert(c->level() == target_level, "Sanity");
 
   DEBUG_ONLY(verify();)
   DEBUG_ONLY(c->verify();)
-
 }
 
 // Given a chunk, attempt to merge it recursively with its neighboring chunks.
@@ -169,7 +161,6 @@ void RootChunkArea::split(chunklevel_t target_level, Metachunk* c, FreeChunkList
 // !!! Please note that if this method returns a non-NULL value, the
 // original chunk will be invalid and should not be accessed anymore! !!!
 Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
-
   // Note rules:
   //
   // - a chunk always has a buddy, unless it is a root chunk.
@@ -236,17 +227,12 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
     // Is this really my buddy (same level) or a splinter of it (higher level)?
     // Also, is it free?
     if (buddy->level() != c->level() || buddy->is_free() == false) {
-
       log_trace(metaspace)("cannot merge with chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(buddy));
-
       stop = true;
-
     } else {
-
       log_trace(metaspace)("will merge with chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(buddy));
 
       // We can merge with the buddy.
-
       // First, remove buddy from the chunk manager.
       assert(buddy->is_free(), "Sanity");
       freelists->remove(buddy);
@@ -294,11 +280,8 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
       }
 
       result = c = leader;
-
       DEBUG_ONLY(leader->verify();)
-
     }
-
   } while (!stop);
 
 #ifdef ASSERT
@@ -307,9 +290,7 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
     result->verify();
   }
 #endif // ASSERT
-
   return result;
-
 }
 
 // Given a chunk c, which must be "in use" and must not be a root chunk, attempt to
@@ -322,14 +303,12 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
 //
 // On success, true is returned, false otherwise.
 bool RootChunkArea::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* freelists) {
-
   DEBUG_ONLY(check_pointer(c->base());)
   assert(!c->is_root_chunk(), "Cannot be merged further.");
 
   // There is no real reason for this limitation other than it is not
   // needed on free chunks since they should be merged already:
   assert(c->is_in_use(), "Can only enlarge in use chunks.");
-
   DEBUG_ONLY(c->verify();)
 
   if (!c->is_leader()) {
@@ -347,14 +326,12 @@ bool RootChunkArea::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* fre
   if (!buddy->is_free()) {
     return false;
   }
-
   // ... nor if it is splintered.
   if (buddy->level() != c->level()) {
     return false;
   }
 
   // Okay, lets enlarge c.
-
   log_trace(metaspace)("Enlarging chunk " METACHUNK_FULL_FORMAT " by merging in follower " METACHUNK_FULL_FORMAT ".",
                        METACHUNK_FULL_FORMAT_ARGS(c), METACHUNK_FULL_FORMAT_ARGS(buddy));
 
@@ -384,12 +361,9 @@ bool RootChunkArea::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* fre
   c->set_committed_words(merged_committed_words);
 
   log_debug(metaspace)("Enlarged chunk " METACHUNK_FULL_FORMAT ".", METACHUNK_FULL_FORMAT_ARGS(c));
-//  log_debug(metaspace)("Enlarged chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
 
   DEBUG_ONLY(verify());
-
   return true;
-
 }
 
 // Returns true if this root chunk area is completely free:
@@ -410,7 +384,6 @@ bool RootChunkArea::is_free() const {
   }
 
 void RootChunkArea::verify() const {
-
   assert_lock_strong(MetaspaceExpand_lock);
   assert_is_aligned(_base, chunklevel::MAX_CHUNK_BYTE_SIZE);
 
@@ -419,7 +392,6 @@ void RootChunkArea::verify() const {
   int num_chunk = 0;
 
   if (_first_chunk != NULL) {
-
     assrt_(_first_chunk->prev_in_vs() == NULL, "Sanity");
 
     const Metachunk* c = _first_chunk;
@@ -427,40 +399,30 @@ void RootChunkArea::verify() const {
     const MetaWord* const area_end = _base + word_size();
 
     while (c != NULL) {
-
       assrt_(c->is_free() || c->is_in_use(),
           "Chunk No. %d " METACHUNK_FORMAT " - invalid state.",
           num_chunk, METACHUNK_FORMAT_ARGS(c));
-
       assrt_(c->base() == expected_next_base,
              "Chunk No. %d " METACHUNK_FORMAT " - unexpected base.",
              num_chunk, METACHUNK_FORMAT_ARGS(c));
-
       assrt_(c->base() >= base() && c->end() <= end(),
              "chunk %d " METACHUNK_FORMAT " oob for this root area [" PTR_FORMAT ".." PTR_FORMAT ").",
              num_chunk, METACHUNK_FORMAT_ARGS(c), p2i(base()), p2i(end()));
-
       assrt_(is_aligned(c->base(), c->word_size()),
              "misaligned chunk %d " METACHUNK_FORMAT ".", num_chunk, METACHUNK_FORMAT_ARGS(c));
 
       c->verify_neighborhood();
       c->verify();
-
       expected_next_base = c->end();
       num_chunk++;
-
       c = c->next_in_vs();
-
     }
     assrt_(expected_next_base == _base + word_size(), "Sanity");
   }
-
 }
 
 void RootChunkArea::verify_area_is_ideally_merged() const {
-
   SOMETIMES(assert_lock_strong(MetaspaceExpand_lock);)
-
   int num_chunk = 0;
   for (const Metachunk* c = _first_chunk; c != NULL; c = c->next_in_vs()) {
     if (!c->is_root_chunk() && c->is_free()) {
@@ -480,7 +442,6 @@ void RootChunkArea::verify_area_is_ideally_merged() const {
 #endif
 
 void RootChunkArea::print_on(outputStream* st) const {
-
   st->print(PTR_FORMAT ": ", p2i(base()));
   if (_first_chunk != NULL) {
     const Metachunk* c = _first_chunk;
@@ -490,7 +451,6 @@ void RootChunkArea::print_on(outputStream* st) const {
     while (c != NULL) {
       const chunklevel_t l = c->level();
       if (l >= 0 && (size_t)l < strlen(letters_for_levels)) {
-//        c->print_on(st); st->cr();
         st->print("%c", c->is_free() ? letters_for_levels[c->level()] : letters_for_levels_cap[c->level()]);
       } else {
         // Obviously garbage, but lets not crash.
@@ -502,7 +462,6 @@ void RootChunkArea::print_on(outputStream* st) const {
     st->print(" (no chunks)");
   }
   st->cr();
-
 }
 
 // Create an array of ChunkTree objects, all initialized to NULL, covering

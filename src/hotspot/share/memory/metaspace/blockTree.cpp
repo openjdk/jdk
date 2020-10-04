@@ -68,7 +68,6 @@ struct BlockTree::walkinfo {
 };
 
 void BlockTree::verify() const {
-
   // Traverse the tree and test that all nodes are in the correct order.
 
   MemRangeCounter counter;
@@ -77,7 +76,6 @@ void BlockTree::verify() const {
   if (_root != NULL) {
 
     ResourceMark rm;
-
     GrowableArray<walkinfo> stack;
 
     walkinfo info;
@@ -89,14 +87,12 @@ void BlockTree::verify() const {
     stack.push(info);
 
     while (stack.length() > 0) {
-
       info = stack.pop();
       const Node* n = info.n;
 
       // Assume a (ridiculously large) edge limit to catch cases
       //  of badly degenerated or circular trees.
       assrt0(info.depth < 10000);
-
       counter.add(n->_word_size);
 
       // Verify node.
@@ -149,7 +145,6 @@ void BlockTree::verify() const {
 
   // At the end, check that counters match
   _counter.check(counter);
-
 }
 
 void BlockTree::zap_range(MetaWord* p, size_t word_size) {
@@ -160,11 +155,9 @@ void BlockTree::zap_range(MetaWord* p, size_t word_size) {
 #undef assrt0
 
 void BlockTree::print_tree(outputStream* st) const {
-
   if (_root != NULL) {
 
     ResourceMark rm;
-
     GrowableArray<walkinfo> stack;
 
     walkinfo info;

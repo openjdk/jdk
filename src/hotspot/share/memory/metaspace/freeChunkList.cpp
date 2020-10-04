@@ -32,7 +32,6 @@
 namespace metaspace {
 
 void FreeChunkList::print_on(outputStream* st) const {
-
   if (_num_chunks.get() > 0) {
     for (const Metachunk* c = _first; c != NULL; c = c->next()) {
       st->print(" - <");
@@ -43,7 +42,6 @@ void FreeChunkList::print_on(outputStream* st) const {
   } else {
     st->print("empty");
   }
-
 }
 
 #ifdef ASSERT
@@ -58,7 +56,6 @@ bool FreeChunkList::contains(const Metachunk* c) const {
 }
 
 void FreeChunkList::verify() const {
-
   if (_first == NULL) {
     assert(_last == NULL, "Sanity");
   } else {
@@ -80,7 +77,6 @@ void FreeChunkList::verify() const {
     _num_chunks.check(num);
     _committed_word_size.check(committed);
   }
-
 }
 
 #endif // ASSERT

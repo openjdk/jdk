@@ -55,7 +55,6 @@ void Metachunk::assert_have_expand_lock() {
 // Commit uncommitted section of the chunk.
 // Fails if we hit a commit limit.
 bool Metachunk::commit_up_to(size_t new_committed_words) {
-
   // Please note:
   //
   // VirtualSpaceNode::ensure_range_is_committed(), when called over a range containing both committed and uncommitted parts,
@@ -96,14 +95,11 @@ bool Metachunk::commit_up_to(size_t new_committed_words) {
 
   const size_t commit_from = _committed_words;
   const size_t commit_to =   MIN2(align_up(new_committed_words, Settings::commit_granule_words()), word_size());
-
   assert(commit_from >= used_words(), "Sanity");
   assert(commit_to <= word_size(), "Sanity");
-
   if (commit_to > commit_from) {
     log_debug(metaspace)("Chunk " METACHUNK_FORMAT ": attempting to move commit line to "
                          SIZE_FORMAT " words.", METACHUNK_FORMAT_ARGS(this), commit_to);
-
     if (!_vsnode->ensure_range_is_committed(base() + commit_from, commit_to - commit_from)) {
       DEBUG_ONLY(verify();)
       return false;
@@ -112,41 +108,29 @@ bool Metachunk::commit_up_to(size_t new_committed_words) {
 
   // Remember how far we have committed.
   _committed_words = commit_to;
-
   DEBUG_ONLY(verify();)
-
   return true;
-
 }
 
 // Ensure that chunk is committed up to at least new_committed_words words.
 // Fails if we hit a commit limit.
 bool Metachunk::ensure_committed(size_t new_committed_words) {
-
   bool rc = true;
-
   if (new_committed_words > committed_words()) {
     MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
     rc = commit_up_to(new_committed_words);
   }
-
   return rc;
-
 }
 
 bool Metachunk::ensure_committed_locked(size_t new_committed_words) {
-
   // the .._locked() variant should be called if we own the lock already.
   assert_lock_strong(MetaspaceExpand_lock);
-
   bool rc = true;
-
   if (new_committed_words > committed_words()) {
     rc = commit_up_to(new_committed_words);
   }
-
   return rc;
-
 }
 
 // Uncommit chunk area. The area must be a common multiple of the
@@ -181,19 +165,13 @@ void Metachunk::set_committed_words(size_t v) {
 // to hold the allocation. Will always work.
 //
 MetaWord* Metachunk::allocate(size_t request_word_size) {
-
   // Caller must have made sure this works
   assert(free_words() >= request_word_size, "Chunk too small.");
   assert(free_below_committed_words() >= request_word_size, "Chunk not committed.");
-
   MetaWord* const p = top();
-
   _used_words += request_word_size;
-
   SOMETIMES(verify();)
-
   return p;
-
 }
 
 #ifdef ASSERT
@@ -206,24 +184,17 @@ void Metachunk::zap_header(uint8_t c) {
 // Verifies linking with neighbors in virtual space.
 // Can only be done under expand lock protection.
 void Metachunk::verify_neighborhood() const {
-
   assert_lock_strong(MetaspaceExpand_lock);
   assert(!is_dead(), "Do not call on dead chunks.");
-
   if (is_root_chunk()) {
-
     // Root chunks are all alone in the world.
     assert(next_in_vs() == NULL || prev_in_vs() == NULL, "Root chunks should have no neighbors");
-
   } else {
-
     // Non-root chunks have neighbors, at least one, possibly two.
-
     assert(next_in_vs() != NULL || prev_in_vs() != NULL,
            "A non-root chunk should have neighbors (chunk @" PTR_FORMAT
            ", base " PTR_FORMAT ", level " CHKLVL_FORMAT ".",
            p2i(this), p2i(base()), level());
-
     if (prev_in_vs() != NULL) {
       assert(prev_in_vs()->end() == base(),
              "Chunk " METACHUNK_FULL_FORMAT ": should be adjacent to predecessor: " METACHUNK_FULL_FORMAT ".",
@@ -232,7 +203,6 @@ void Metachunk::verify_neighborhood() const {
              "Chunk " METACHUNK_FULL_FORMAT ": broken link to left neighbor: " METACHUNK_FULL_FORMAT " (" PTR_FORMAT ").",
              METACHUNK_FULL_FORMAT_ARGS(this), METACHUNK_FULL_FORMAT_ARGS(prev_in_vs()), p2i(prev_in_vs()->next_in_vs()));
     }
-
     if (next_in_vs() != NULL) {
       assert(end() == next_in_vs()->base(),
              "Chunk " METACHUNK_FULL_FORMAT ": should be adjacent to successor: " METACHUNK_FULL_FORMAT ".",
@@ -246,7 +216,6 @@ void Metachunk::verify_neighborhood() const {
 
     // The chunk following us or preceeding us may be our buddy or a splintered part of it.
     Metachunk* buddy = is_leader() ? next_in_vs() : prev_in_vs();
-
     assert(buddy != NULL, "Missing neighbor.");
     assert(!buddy->is_dead(), "Invalid buddy state.");
 
@@ -255,19 +224,14 @@ void Metachunk::verify_neighborhood() const {
     assert(buddy->level() >= level(), "Wrong level.");
 
     if (buddy->level() == level()) {
-
       // If the buddy is of the same size as us, it is unsplintered.
       assert(buddy->is_leader() == !is_leader(),
              "Only one chunk can be leader in a pair");
 
       // When direct buddies are neighbors, one or both should be in use, otherwise they should
       // have been merged.
-
       // But since we call this verification function from internal functions where we are about to merge or just did split,
       // do not test this. We have RootChunkArea::verify_area_is_ideally_merged() for testing that.
-
-      // assert(buddy->is_in_use() || is_in_use(), "incomplete merging?");
-
       if (is_leader()) {
         assert(buddy->base() == end(), "Sanity");
         assert(is_aligned(base(), word_size() * 2 * BytesPerWord), "Sanity");
@@ -275,16 +239,13 @@ void Metachunk::verify_neighborhood() const {
         assert(buddy->end() == base(), "Sanity");
         assert(is_aligned(buddy->base(), word_size() * 2 * BytesPerWord), "Sanity");
       }
-
     } else {
-
       // Buddy, but splintered, and this is a part of it.
       if (is_leader()) {
         assert(buddy->base() == end(), "Sanity");
       } else {
         assert(buddy->end() > (base() - word_size()), "Sanity");
       }
-
     }
   }
 }
@@ -292,15 +253,12 @@ void Metachunk::verify_neighborhood() const {
 volatile MetaWord dummy = 0;
 
 void Metachunk::verify() const {
-
   // Note. This should be called under CLD lock protection.
 
   // We can verify everything except the _prev_in_vs/_next_in_vs pair.
   // This is because neighbor chunks may be added concurrently, so we cannot rely
   //  on the content of _next_in_vs/_prev_in_vs unless we have the expand lock.
-
   assert(!is_dead(), "Do not call on dead chunks.");
-
   if (is_free()) {
     assert(used_words() == 0, "free chunks are not used.");
   }
@@ -309,11 +267,9 @@ void Metachunk::verify() const {
   chunklevel::check_valid_level(level());
 
   assert(base() != NULL, "No base ptr");
-
   assert(committed_words() >= used_words(),
          "mismatch: committed: " SIZE_FORMAT ", used: " SIZE_FORMAT ".",
          committed_words(), used_words());
-
   assert(word_size() >= committed_words(),
          "mismatch: word_size: " SIZE_FORMAT ", committed: " SIZE_FORMAT ".",
          word_size(), committed_words());
@@ -336,12 +292,10 @@ void Metachunk::verify() const {
       dummy = *(_base + _committed_words - 1);
     }
   )
-
 }
 #endif // ASSERT
 
 void Metachunk::print_on(outputStream* st) const {
-
   // Note: must also work with invalid/random data. (e.g. do not call word_size())
   st->print("Chunk @" PTR_FORMAT ", state %c, base " PTR_FORMAT ", "
             "level " CHKLVL_FORMAT " (" SIZE_FORMAT " words), "
@@ -349,7 +303,6 @@ void Metachunk::print_on(outputStream* st) const {
             p2i(this), get_state_char(), p2i(base()), level(),
             (chunklevel::is_valid_level(level()) ? chunklevel::word_size_for_level(level()) : (size_t)-1),
             used_words(), committed_words());
-
 }
 
 } // namespace metaspace

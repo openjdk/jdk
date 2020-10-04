@@ -65,12 +65,10 @@ void MetachunkList::verify() const {
 #endif // ASSERT
 
 size_t MetachunkList::calc_committed_word_size() const {
-
   if (_first != NULL && _first->is_dead()) {
     // list used for chunk header pool; dead chunks have no size.
     return 0;
   }
-
   size_t s = 0;
   for (Metachunk* c = _first; c != NULL; c = c->next()) {
     assert(c->is_dead() == false, "Sanity");
@@ -80,23 +78,19 @@ size_t MetachunkList::calc_committed_word_size() const {
 }
 
 size_t MetachunkList::calc_word_size() const {
-
   if (_first != NULL && _first->is_dead()) {
     // list used for chunk header pool; dead chunks have no size.
     return 0;
   }
-
   size_t s = 0;
   for (Metachunk* c = _first; c != NULL; c = c->next()) {
     assert(c->is_dead() == false, "Sanity");
     s += c->committed_words();
   }
   return s;
-
 }
 
 void MetachunkList::print_on(outputStream* st) const {
-
   if (_num_chunks.get() > 0) {
     for (const Metachunk* c = _first; c != NULL; c = c->next()) {
       st->print(" - <");
@@ -107,7 +101,6 @@ void MetachunkList::print_on(outputStream* st) const {
   } else {
     st->print("empty");
   }
-
 }
 
 } // namespace metaspace

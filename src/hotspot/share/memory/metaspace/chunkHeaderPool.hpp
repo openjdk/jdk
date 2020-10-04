@@ -89,9 +89,7 @@ public:
       c = _current_slab->_elems + _current_slab->_top;
       _current_slab->_top++;
     }
-
     _num_handed_out.increment();
-
     // By contract, the returned structure is uninitialized.
     // Zap to make this clear.
     DEBUG_ONLY(c->zap_header(0xBB);)

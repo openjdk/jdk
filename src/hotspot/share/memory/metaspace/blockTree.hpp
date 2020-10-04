@@ -272,7 +272,6 @@ private:
 
   // Given a node n, remove it from the tree and repair tree.
   void remove_node_from_tree(Node* n) {
-
     assert(n->_next == NULL, "do not delete a node which has a non-empty list");
 
     if (n->_left == NULL && n->_right == NULL) {
@@ -285,7 +284,6 @@ private:
       replace_node_in_parent(n, n->_left);
 
     } else {
-
       // Node has two children.
 
       // 1) Find direct successor (the next larger node).
@@ -298,7 +296,6 @@ private:
       //     is supposed to be the next larger node, so it must be the mostleft node
       //     in the sub tree rooted at n->right
       assert(succ->_left == NULL, "must be");
-
       assert(succ->_word_size > n->_word_size, "sanity");
 
       Node* successor_parent = succ->_parent;
@@ -316,9 +313,7 @@ private:
         // Take over n's old left child, too.
         // We keep the successor's right child.
         set_left_child(succ, n->_left);
-
       } else {
-
         // If the successors parent is not n, we are deeper in the tree,
         //  the successor has to be the left child of its parent.
         assert(successor_parent->_left == succ, "sanity");
@@ -333,7 +328,6 @@ private:
         // and takes over n's old children
         set_left_child(succ, n->_left);
         set_right_child(succ, n->_right);
-
       }
     }
   }
@@ -386,7 +380,6 @@ public:
       _counter.sub(n->_word_size);
 
       DEBUG_ONLY(zap_range(p, n->_word_size));
-
       return p;
     }
     return NULL;
@@ -402,7 +395,6 @@ public:
 
   DEBUG_ONLY(void print_tree(outputStream* st) const;)
   DEBUG_ONLY(void verify() const;)
-
 };
 
 } // namespace metaspace

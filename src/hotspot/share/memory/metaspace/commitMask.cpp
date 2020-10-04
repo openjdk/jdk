@@ -75,29 +75,22 @@ void CommitMask::check_range(const MetaWord* start, size_t word_size) const {
 }
 
 void CommitMask::verify() const {
-
   // Walk the whole commit mask.
   // For each 1 bit, check if the associated granule is accessible.
   // For each 0 bit, check if the associated granule is not accessible. Slow mode only.
-
   assert(_base != NULL && _word_size > 0 && _words_per_bit > 0, "Sanity");
   assert_is_aligned(_base, _words_per_bit * BytesPerWord);
   assert_is_aligned(_word_size, _words_per_bit);
-
 }
 
 #endif // ASSERT
 
 void CommitMask::print_on(outputStream* st) const {
-
   st->print("commit mask, base " PTR_FORMAT ":", p2i(base()));
-
   for (idx_t i = 0; i < size(); i++) {
     st->print("%c", at(i) ? 'X' : '-');
   }
-
   st->cr();
-
 }
 
 } // namespace metaspace

@@ -35,19 +35,14 @@ namespace metaspace {
 // - _cap == 0: hitting GC threshold or the MaxMetaspaceSize
 // - _cap > 0: hitting cap (this is just for testing purposes)
 size_t CommitLimiter::possible_expansion_words() const {
-
   if (_cap > 0) { // Testing.
     assert(_cnt.get() <= _cap, "Beyond limit?");
     return _cap - _cnt.get();
   }
-
   assert(_cnt.get() * BytesPerWord <= MaxMetaspaceSize, "Beyond limit?");
   const size_t words_left_below_max = MaxMetaspaceSize / BytesPerWord - _cnt.get();
-
   const size_t words_left_below_gc_threshold = MetaspaceGC::allowed_expansion();
-
   return MIN2(words_left_below_max, words_left_below_gc_threshold);
-
 }
 
 static CommitLimiter g_global_limiter(0);

@@ -72,7 +72,6 @@ public:
 }; // end: PrintKlassInfoClosure
 
 void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
-
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
 
   if (cld->is_unloading()) {
@@ -107,12 +106,10 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
 
   // Optionally, print
   if (_do_print) {
-
     _out->print(UINTX_FORMAT_W(4) ": ", _num_loaders);
 
     // Print "CLD for [<loader name>,] instance of <loader class name>"
     // or    "CLD for <hidden or anonymous class>, loaded by [<loader name>,] instance of <loader class name>"
-
     ResourceMark rm;
     const char* name = NULL;
     const char* class_name = NULL;
@@ -168,9 +165,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
     // Print statistics
     this_cld_stat.print_on(_out, _scale, _break_down_by_chunktype);
     _out->cr();
-
   }
-
 }
 
 } // namespace metaspace

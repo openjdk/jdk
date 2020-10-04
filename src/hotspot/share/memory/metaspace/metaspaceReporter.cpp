@@ -54,13 +54,11 @@ static const char* describe_spacetype(Metaspace::MetaspaceType st) {
 }
 
 static void print_vs(outputStream* out, size_t scale) {
-
   const size_t reserved_nc = RunningCounters::reserved_words_nonclass();
   const size_t committed_nc = RunningCounters::committed_words_nonclass();
   const int num_nodes_nc = VirtualSpaceList::vslist_nonclass()->num_nodes();
 
   if (Metaspace::using_class_space()) {
-
     const size_t reserved_c = RunningCounters::reserved_words_class();
     const size_t committed_c = RunningCounters::committed_words_class();
     const int num_nodes_c = VirtualSpaceList::vslist_class()->num_nodes();
@@ -85,7 +83,6 @@ static void print_vs(outputStream* out, size_t scale) {
     print_scaled_words_and_percentage(out, committed_c + committed_nc, reserved_c + reserved_nc, scale, 7);
     out->print(" committed. ");
     out->cr();
-
   } else {
     print_scaled_words(out, reserved_nc, scale, 7);
     out->print(" reserved, ");
@@ -117,15 +114,12 @@ static void print_settings(outputStream* out, size_t scale) {
 // This will print out a basic metaspace usage report but
 // unlike print_report() is guaranteed not to lock or to walk the CLDG.
 void MetaspaceReporter::print_basic_report(outputStream* out, size_t scale) {
-
   if (!Metaspace::initialized()) {
     out->print_cr("Metaspace not yet initialized.");
     return;
   }
-
   out->cr();
   out->print_cr("Usage:");
-
   if (Metaspace::using_class_space()) {
     out->print("  Non-class:  ");
   }
@@ -139,29 +133,23 @@ void MetaspaceReporter::print_basic_report(outputStream* out, size_t scale) {
   print_scaled_words(out, used_nc, scale, 5);
   out->print(" used.");
   out->cr();
-
   if (Metaspace::using_class_space()) {
     const size_t used_c = MetaspaceUtils::used_words(Metaspace::ClassType);
     out->print("      Class:  ");
     print_scaled_words(out, used_c, scale, 5);
     out->print(" used.");
     out->cr();
-
     out->print("       Both:  ");
     const size_t used = used_nc + used_c;
     print_scaled_words(out, used, scale, 5);
     out->print(" used.");
     out->cr();
   }
-
   out->cr();
   out->print_cr("Virtual space:");
-
   print_vs(out, scale);
-
   out->cr();
   out->print_cr("Chunk freelists:");
-
   if (Metaspace::using_class_space()) {
     out->print("   Non-Class:  ");
   }
@@ -176,29 +164,23 @@ void MetaspaceReporter::print_basic_report(outputStream* out, size_t scale) {
                             ChunkManager::chunkmanager_class()->total_word_size(), scale);
     out->cr();
   }
-
   out->cr();
 
   // Print basic settings
   print_settings(out, scale);
-
   out->cr();
-
   out->cr();
   out->print_cr("Internal statistics:");
   out->cr();
   InternalStats::print_on(out);
   out->cr();
-
 }
 
 void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags) {
-
   if (!Metaspace::initialized()) {
     out->print_cr("Metaspace not yet initialized.");
     return;
   }
-
   const bool print_loaders = (flags & (int)Option::ShowLoaders) > 0;
   const bool print_classes = (flags & (int)Option::ShowClasses) > 0;
   const bool print_by_chunktype = (flags & (int)Option::BreakDownByChunkType) > 0;
@@ -384,7 +366,6 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
   out->cr();
 
   DEBUG_ONLY(MetaspaceUtils::verify();)
-
 } // MetaspaceUtils::print_report()
 
 } // namespace metaspace

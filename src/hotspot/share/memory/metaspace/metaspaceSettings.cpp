@@ -43,45 +43,30 @@ DEBUG_ONLY(bool Settings::_use_allocation_guard = false;)
 DEBUG_ONLY(bool Settings::_handle_deallocations = true;)
 
 void Settings::ergo_initialize() {
-
   if (strcmp(MetaspaceReclaimPolicy, "none") == 0) {
-
     log_info(metaspace)("Initialized with strategy: no reclaim.");
-
     _commit_granule_bytes = MAX2((size_t)os::vm_page_size(), 64 * K);
     _commit_granule_words = _commit_granule_bytes / BytesPerWord;
-
     // In "none" reclamation mode, we do not uncommit, and we commit new chunks fully;
     // that very closely mimicks the behaviour of old Metaspace.
     _new_chunks_are_fully_committed = true;
     _uncommit_free_chunks = false;
-
   } else if (strcmp(MetaspaceReclaimPolicy, "aggressive") == 0) {
-
     log_info(metaspace)("Initialized with strategy: aggressive reclaim.");
-
     // Set the granule size rather small; may increase
     // mapping fragmentation but also increase chance to uncommit.
     _commit_granule_bytes = MAX2((size_t)os::vm_page_size(), 16 * K);
     _commit_granule_words = _commit_granule_bytes / BytesPerWord;
-
     _new_chunks_are_fully_committed = false;
     _uncommit_free_chunks = true;
-
   } else if (strcmp(MetaspaceReclaimPolicy, "balanced") == 0) {
-
     log_info(metaspace)("Initialized with strategy: balanced reclaim.");
-
     _commit_granule_bytes = MAX2((size_t)os::vm_page_size(), 64 * K);
     _commit_granule_words = _commit_granule_bytes / BytesPerWord;
-
     _new_chunks_are_fully_committed = false;
     _uncommit_free_chunks = true;
-
   } else {
-
     vm_exit_during_initialization("Invalid value for MetaspaceReclaimPolicy: \"%s\".", MetaspaceReclaimPolicy);
-
   }
 
   // Sanity checks.
@@ -106,27 +91,19 @@ void Settings::ergo_initialize() {
     _handle_deallocations = false;
   }
 #endif
-
   LogStream ls(Log(metaspace)::info());
   Settings::print_on(&ls);
-
 }
 
 void Settings::print_on(outputStream* st) {
-
   st->print_cr(" - commit_granule_bytes: " SIZE_FORMAT ".", commit_granule_bytes());
   st->print_cr(" - commit_granule_words: " SIZE_FORMAT ".", commit_granule_words());
-
   st->print_cr(" - virtual_space_node_default_size: " SIZE_FORMAT ".", virtual_space_node_default_word_size());
-
   st->print_cr(" - enlarge_chunks_in_place: %d.", (int)enlarge_chunks_in_place());
-
   st->print_cr(" - new_chunks_are_fully_committed: %d.", (int)new_chunks_are_fully_committed());
   st->print_cr(" - uncommit_free_chunks: %d.", (int)uncommit_free_chunks());
-
   st->print_cr(" - use_allocation_guard: %d.", (int)use_allocation_guard());
   st->print_cr(" - handle_deallocations: %d.", (int)handle_deallocations());
-
 }
 
 } // namespace metaspace

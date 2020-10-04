@@ -173,7 +173,6 @@ void print_number_of_classes(outputStream* out, uintx classes, uintx classes_sha
 // Note: externally visible for gtests.
 //static
 size_t get_raw_word_size_for_requested_word_size(size_t word_size) {
-
   size_t byte_size = word_size * BytesPerWord;
 
   // Deallocated metablocks are kept in a binlist which limits their minimal
@@ -189,13 +188,9 @@ size_t get_raw_word_size_for_requested_word_size(size_t word_size) {
     byte_size += align_up(prefix_size(), AllocationAlignmentByteSize);
   }
 #endif
-
   size_t raw_word_size = byte_size / BytesPerWord;
-
   assert(raw_word_size * BytesPerWord == byte_size, "Sanity");
-
   return raw_word_size;
-
 }
 
 } // namespace metaspace

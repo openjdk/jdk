@@ -47,19 +47,14 @@ namespace metaspace {
 
 // Return a single chunk to the freelist and adjust accounting. No merge is attempted.
 void ChunkManager::return_chunk_simple_locked(Metachunk* c) {
-
   assert_lock_strong(MetaspaceExpand_lock);
-
   DEBUG_ONLY(c->verify());
-
   const chunklevel_t lvl = c->level();
   _chunks.add(c);
   c->reset_used_words();
-
   // Tracing
   log_debug(metaspace)("ChunkManager %s: returned chunk " METACHUNK_FORMAT ".",
                        _name, METACHUNK_FORMAT_ARGS(c));
-
 }
 
 // Creates a chunk manager with a given name (which is for debug purposes only)
@@ -81,9 +76,7 @@ ChunkManager::ChunkManager(const char* name, VirtualSpaceList* space_list) :
 // The committed areas within the original chunk carry over to the resulting
 //  chunks.
 void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t target_level) {
-
   assert_lock_strong(MetaspaceExpand_lock);
-
   assert(c->is_free(), "chunk to be split must be free.");
   assert(c->level() < target_level, "Target level must be higher than current level.");
   assert(c->prev() == NULL && c->next() == NULL, "Chunk must be outside of any list.");
@@ -109,16 +102,11 @@ void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t targ
   } else {
     assert(c->committed_words() == committed_words_before, "Sanity");
   }
-#endif
-
-  DEBUG_ONLY(c->verify());
-
-  DEBUG_ONLY(verify_locked();)
-
+  c->verify();
+  verify_locked();
   SOMETIMES(c->vsnode()->verify_locked();)
-
+#endif
   InternalStats::inc_num_chunk_splits();
-
 }
 
 // On success, returns a chunk of level of <preferred_level>, but at most <max_level>.
@@ -131,14 +119,12 @@ void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t targ
 // - Or, if the necessary space cannot be committed because we hit a commit limit.
 //   This may be either the GC threshold or MaxMetaspaceSize.
 Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t max_level, size_t min_committed_words) {
-
   assert(preferred_level <= max_level, "Sanity");
   assert(chunklevel::level_fitting_word_size(min_committed_words) >= max_level, "Sanity");
 
   MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
 
   DEBUG_ONLY(verify_locked();)
-
   DEBUG_ONLY(chunklevel::check_valid_level(max_level);)
   DEBUG_ONLY(chunklevel::check_valid_level(preferred_level);)
   assert(max_level >= preferred_level, "invalid level.");
@@ -163,21 +149,17 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
   if (c == NULL) {
     c = _chunks.search_chunk_descending(preferred_level, min_committed_words);
   }
-
   // 3) Search best or smaller committed chunks (second attempt):
   //    Repeat (1) but now consider even the tiniest chunks as long as they are large enough to hold the
   //    committed min size.
   if (c == NULL) {
     c = _chunks.search_chunk_ascending(preferred_level, max_level, min_committed_words);
   }
-
   // if we did not get anything yet, there are no free chunks commmitted enough. Repeat search but look for uncommitted chunks too:
-
   // 4) Search best or smaller chunks, can be uncommitted:
   if (c == NULL) {
     c = _chunks.search_chunk_ascending(preferred_level, max_level, 0);
   }
-
   // 5) Search a larger uncommitted chunk:
   if (c == NULL) {
     c = _chunks.search_chunk_descending(preferred_level, 0);
@@ -198,7 +180,6 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
       UL(debug, "allocated new root chunk.");
     }
   }
-
   if (c == NULL) {
     // If we end up here, we found no match in the freelists and were unable to get a new
     // root chunk (so we used up all address space, e.g. out of CompressedClassSpace).
@@ -206,9 +187,7 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
        ", max level " CHKLVL_FORMAT ".", preferred_level, max_level);
     c = NULL;
   }
-
   if (c != NULL) {
-
     // Now we have a chunk.
     //  It may be larger than what the caller wanted, so we may want to split it. This should
     //  always work.
@@ -216,7 +195,6 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
       split_chunk_and_add_splinters(c, preferred_level);
       assert(c->level() == preferred_level, "split failed?");
     }
-
     // Attempt to commit the chunk (depending on settings, we either fully commit it or just
     //  commit enough to get the caller going). That may fail if we hit a commit limit. In
     //  that case put the chunk back to the freelist (re-merging it with its neighbors if we
@@ -231,9 +209,7 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
         c = NULL;
       }
     }
-
     if (c != NULL) {
-
       // Still here? We have now a good chunk, all is well.
       assert(c->committed_words() >= min_committed_words, "Sanity");
 
@@ -245,15 +221,11 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
       InternalStats::inc_num_chunks_taken_from_freelist();
 
       SOMETIMES(c->vsnode()->verify_locked();)
-
     }
-
   }
 
   DEBUG_ONLY(verify_locked();)
-
   return c;
-
 }
 
 // Return a single chunk to the ChunkManager and adjust accounting. May merge chunk
@@ -269,20 +241,15 @@ void ChunkManager::return_chunk(Metachunk* c) {
 
 // See return_chunk().
 void ChunkManager::return_chunk_locked(Metachunk* c) {
-
   assert_lock_strong(MetaspaceExpand_lock);
-
   UL2(debug, ": returning chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
-
   DEBUG_ONLY(c->verify();)
-
   assert(contains_chunk(c) == false, "A chunk to be added to the freelist must not be in the freelist already.");
-
   assert(c->is_in_use(), "Unexpected chunk state");
   assert(!c->in_list(), "Remove from list first");
+
   c->set_free();
   c->reset_used_words();
-
   const chunklevel_t orig_lvl = c->level();
 
   Metachunk* merged = NULL;
@@ -292,36 +259,24 @@ void ChunkManager::return_chunk_locked(Metachunk* c) {
   }
 
   if (merged != NULL) {
-
     InternalStats::inc_num_chunk_merges();
-
     DEBUG_ONLY(merged->verify());
-
-    // We did merge our chunk into a different chunk.
-
     // We did merge chunks and now have a bigger chunk.
     assert(merged->level() < orig_lvl, "Sanity");
-
     UL2(debug, "merged into chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(merged));
-
     c = merged;
-
   }
 
   if (Settings::uncommit_free_chunks() &&
-      c->word_size() >= Settings::commit_granule_words())
-  {
+      c->word_size() >= Settings::commit_granule_words()) {
     UL2(debug, "uncommitting free chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
     c->uncommit_locked();
   }
 
   return_chunk_simple_locked(c);
-
   DEBUG_ONLY(verify_locked();)
   SOMETIMES(c->vsnode()->verify_locked();)
-
   InternalStats::inc_num_chunks_returned_to_freelist();
-
 }
 
 // Given a chunk c, whose state must be "in-use" and must not be a root chunk, attempt to
@@ -359,9 +314,7 @@ static void print_word_size_delta(outputStream* st, size_t word_size_1, size_t w
 }
 
 void ChunkManager::purge() {
-
   MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
-
   UL(info, ": reclaiming memory...");
 
   const size_t reserved_before = _vslist->reserved_words();
@@ -389,8 +342,7 @@ void ChunkManager::purge() {
         chunklevel::level_fitting_word_size(Settings::commit_granule_words());
     for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL;
          l <= max_level;
-         l++)
-    {
+         l++) {
       // Since we uncommit all chunks at this level, we do not break the "committed chunks are
       //  at the front of the list" condition.
       for (Metachunk* c = _chunks.first_at_level(l); c != NULL; c = c->next()) {
@@ -410,22 +362,17 @@ void ChunkManager::purge() {
     if (lt.is_enabled()) {
       LogStream ls(lt);
       ls.print_cr(LOGFMT ": finished reclaiming memory: ", LOGFMT_ARGS);
-
       ls.print("reserved: ");
       print_word_size_delta(&ls, reserved_before, reserved_after);
       ls.cr();
-
       ls.print("committed: ");
       print_word_size_delta(&ls, committed_before, committed_after);
       ls.cr();
-
       ls.print_cr("full nodes purged: %d", num_nodes_purged);
     }
   }
-
   DEBUG_ONLY(_vslist->verify_locked());
   DEBUG_ONLY(verify_locked());
-
 }
 
 // Convenience methods to return the global class-space chunkmanager
@@ -440,16 +387,12 @@ ChunkManager* ChunkManager::chunkmanager_nonclass() {
 
 // Update statistics.
 void ChunkManager::add_to_statistics(ChunkManagerStats* out) const {
-
   MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
-
   for (chunklevel_t l = chunklevel::ROOT_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
     out->_num_chunks[l] += _chunks.num_chunks_at_level(l);
     out->_committed_word_size[l] += _chunks.committed_word_size_at_level(l);
   }
-
   DEBUG_ONLY(out->verify();)
-
 }
 
 #ifdef ASSERT

@@ -129,20 +129,16 @@ Metachunk*  VirtualSpaceList::allocate_root_chunk() {
   }
 
   Metachunk* c = _first_node->allocate_root_chunk();
-
   assert(c != NULL, "This should have worked");
 
   return c;
-
 }
 
 // Attempts to purge nodes. This will remove and delete nodes which only contain free chunks.
 // The free chunks are removed from the freelists before the nodes are deleted.
 // Return number of purged nodes.
 int VirtualSpaceList::purge(FreeChunkListVector* freelists) {
-
   assert_lock_strong(MetaspaceExpand_lock);
-
   UL(debug, "purging.");
 
   VirtualSpaceNode* vsn = _first_node;
@@ -172,9 +168,7 @@ int VirtualSpaceList::purge(FreeChunkListVector* freelists) {
 
   UL2(debug, "purged %d nodes (before: %d, now: %d)",
       num_purged, num, num_nodes());
-
   return num_purged;
-
 }
 
 // Print all nodes in this space list.
@@ -196,15 +190,12 @@ void VirtualSpaceList::print_on(outputStream* st) const {
 
 #ifdef ASSERT
 void VirtualSpaceList::verify_locked() const {
-
   assert_lock_strong(MetaspaceExpand_lock);
-
   assert(_name != NULL, "Sanity");
 
   int n = 0;
 
   if (_first_node != NULL) {
-
     size_t total_reserved_words = 0;
     size_t total_committed_words = 0;
     const VirtualSpaceNode* vsn = _first_node;
@@ -215,16 +206,12 @@ void VirtualSpaceList::verify_locked() const {
       total_committed_words += vsn->committed_words();
       vsn = vsn->next();
     }
-
     _nodes_counter.check(n);
     _reserved_words_counter.check(total_reserved_words);
     _committed_words_counter.check(total_committed_words);
-
   } else {
-
     _reserved_words_counter.check(0);
     _committed_words_counter.check(0);
-
   }
 }
 
