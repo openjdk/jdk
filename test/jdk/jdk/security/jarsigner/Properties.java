@@ -52,6 +52,7 @@ public class Properties {
 
     public static void main(String[] args) throws Exception {
 
+        Files.writeString(Path.of("anything"), "anything");
         JarUtils.createJarFile(Path.of("src.jar"), Path.of("."),
                 Files.write(Path.of("anything"), new byte[100]));
 

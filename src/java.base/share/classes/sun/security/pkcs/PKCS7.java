@@ -765,24 +765,6 @@ public class PKCS7 {
     }
 
     /**
-     * Extracts the digest algorithm names from a signature
-     * algorithm name in either the "DIGESTwithENCRYPTION" or the
-     * "DIGESTwithENCRYPTIONandWHATEVER" format.
-     *
-     * It's OK to return "SHA1" instead of "SHA-1".
-     */
-    private static String extractDigestAlgFromDwithE(String signatureAlgorithm) {
-        signatureAlgorithm = signatureAlgorithm.toUpperCase(Locale.ENGLISH);
-        int with = signatureAlgorithm.indexOf("WITH");
-        if (with > 0) {
-            return signatureAlgorithm.substring(0, with);
-        } else {
-            throw new IllegalArgumentException(
-                    "Unknown algorithm: " + signatureAlgorithm);
-        }
-    }
-
-    /**
      * Generate a PKCS7 data block.
      *
      * @param sigalg signature algorithm to be used
@@ -809,45 +791,8 @@ public class PKCS7 {
 
         Signature signer = SignatureUtil.fromKey(sigalg, privateKey, sigProvider);
 
-        AlgorithmId digAlgID;
-        String kAlg = privateKey.getAlgorithm();
-        if (privateKey instanceof EdECPrivateKey
-                    || kAlg.equalsIgnoreCase("Ed25519")
-                    || kAlg.equalsIgnoreCase("Ed448")) {
-            if (privateKey instanceof EdECPrivateKey) {
-                // Note: SunEC's kAlg is EdDSA, find out the real one
-                kAlg = ((EdECPrivateKey) privateKey).getParams().getName();
-            }
-            // https://www.rfc-editor.org/rfc/rfc8419.html#section-3
-            switch (kAlg.toUpperCase(Locale.ENGLISH)) {
-                case "ED25519":
-                    digAlgID = AlgorithmId.get(KnownOIDs.SHA_512.stdName());
-                    break;
-                case "ED448":
-                    if (directsign) {
-                        digAlgID = AlgorithmId.get(KnownOIDs.SHAKE256.stdName());
-                    } else {
-                        digAlgID = new AlgorithmId(
-                                ObjectIdentifier.of(KnownOIDs.SHAKE256_LEN),
-                                new DerValue(new byte[]{2, 2, 2, 0})); // int 512
-                    }
-                    break;
-                default:
-                    throw new AssertionError("Unknown curve name: " + kAlg);
-            }
-        } else {
-            if (sigalg.equalsIgnoreCase("RSASSA-PSS")) {
-                try {
-                    digAlgID = AlgorithmId.get(signer.getParameters()
-                            .getParameterSpec(PSSParameterSpec.class)
-                            .getDigestAlgorithm());
-                } catch (InvalidParameterSpecException e) {
-                    throw new AssertionError("Should not happen", e);
-                }
-            } else {
-                digAlgID = AlgorithmId.get(extractDigestAlgFromDwithE(sigalg));
-            }
-        }
+        AlgorithmId digAlgID = SignatureUtil.getDigestAlgInPkcs7SignerInfo(
+                signer, sigalg, privateKey, directsign);
 
         PKCS9Attributes authAttrs = null;
         if (!directsign) {
@@ -951,7 +896,7 @@ public class PKCS7 {
      *         generating the signature timestamp or while generating the signed
      *         data message.
      */
-    @Deprecated(since="15", forRemoval=true)
+    @Deprecated(since="16", forRemoval=true)
     public static byte[] generateSignedData(byte[] signature,
                                             X509Certificate[] signerChain,
                                             byte[] content,
@@ -982,7 +927,7 @@ public class PKCS7 {
         return constructToken(signature, signerChain, content,
                 null,
                 unauthAttrs,
-                AlgorithmId.get(extractDigestAlgFromDwithE(signatureAlgorithm)),
+                AlgorithmId.get(SignatureUtil.extractDigestAlgFromDwithE(signatureAlgorithm)),
                 AlgorithmId.get(signatureAlgorithm));
     }
 

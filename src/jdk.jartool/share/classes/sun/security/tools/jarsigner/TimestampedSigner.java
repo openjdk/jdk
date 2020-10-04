@@ -43,7 +43,7 @@ import sun.security.pkcs.PKCS7;
  *
  * @author Vincent Ryan
  */
-@Deprecated(since="15", forRemoval=true)
+@Deprecated(since="16", forRemoval=true)
 @SuppressWarnings("removal")
 public final class TimestampedSigner extends ContentSigner {
 

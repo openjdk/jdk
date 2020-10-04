@@ -194,6 +194,94 @@ public class SignatureUtil {
         SharedSecrets.getJavaSecuritySignatureAccess().initSign(s, key, params, sr);
     }
 
+    private static class EdDSADigestAlgHolder {
+        final static AlgorithmId sha512;
+        final static AlgorithmId shake256;
+        final static AlgorithmId shake256$512;
+
+        static {
+            try {
+                sha512 = AlgorithmId.get(KnownOIDs.SHA_512.stdName());
+                shake256 = AlgorithmId.get(KnownOIDs.SHAKE256.stdName());
+                shake256$512 = new AlgorithmId(
+                        ObjectIdentifier.of(KnownOIDs.SHAKE256_LEN),
+                        new DerValue((byte) 2, new byte[]{2, 0})); // int 512
+            } catch (IOException | NoSuchAlgorithmException e) {
+                throw new AssertionError("Shoudl not happen", e);
+            }
+        }
+    }
+    /**
+     * Determines the digestEncryptionAlgorithmId in PKCS& SignerInfo.
+     *
+     * @param signer Signature object that tells you RSASA-PSS params
+     * @param sigalg Signature algorithm tells you who with who
+     * @param privateKey key tells you EdDSA params
+     * @param directsign Ed448 uses different digest algs depending on this
+     * @return the digest alg
+     * @throws NoSuchAlgorithmException
+     */
+    public static AlgorithmId getDigestAlgInPkcs7SignerInfo(
+            Signature signer, String sigalg, PrivateKey privateKey, boolean directsign)
+            throws NoSuchAlgorithmException {
+        AlgorithmId digAlgID;
+        String kAlg = privateKey.getAlgorithm();
+        if (privateKey instanceof EdECPrivateKey
+                || kAlg.equalsIgnoreCase("Ed25519")
+                || kAlg.equalsIgnoreCase("Ed448")) {
+            if (privateKey instanceof EdECPrivateKey) {
+                // Note: SunEC's kAlg is EdDSA, find out the real one
+                kAlg = ((EdECPrivateKey) privateKey).getParams().getName();
+            }
+            // https://www.rfc-editor.org/rfc/rfc8419.html#section-3
+            switch (kAlg.toUpperCase(Locale.ENGLISH)) {
+                case "ED25519":
+                    digAlgID = EdDSADigestAlgHolder.sha512;
+                    break;
+                case "ED448":
+                    if (directsign) {
+                        digAlgID = EdDSADigestAlgHolder.shake256;
+                    } else {
+                        digAlgID = EdDSADigestAlgHolder.shake256$512;
+                    }
+                    break;
+                default:
+                    throw new AssertionError("Unknown curve name: " + kAlg);
+            }
+        } else {
+            if (sigalg.equalsIgnoreCase("RSASSA-PSS")) {
+                try {
+                    digAlgID = AlgorithmId.get(signer.getParameters()
+                            .getParameterSpec(PSSParameterSpec.class)
+                            .getDigestAlgorithm());
+                } catch (InvalidParameterSpecException e) {
+                    throw new AssertionError("Should not happen", e);
+                }
+            } else {
+                digAlgID = AlgorithmId.get(extractDigestAlgFromDwithE(sigalg));
+            }
+        }
+        return digAlgID;
+    }
+
+    /**
+     * Extracts the digest algorithm names from a signature
+     * algorithm name in either the "DIGESTwithENCRYPTION" or the
+     * "DIGESTwithENCRYPTIONandWHATEVER" format.
+     *
+     * It's OK to return "SHA1" instead of "SHA-1".
+     */
+    public static String extractDigestAlgFromDwithE(String signatureAlgorithm) {
+        signatureAlgorithm = signatureAlgorithm.toUpperCase(Locale.ENGLISH);
+        int with = signatureAlgorithm.indexOf("WITH");
+        if (with > 0) {
+            return signatureAlgorithm.substring(0, with);
+        } else {
+            throw new IllegalArgumentException(
+                    "Unknown algorithm: " + signatureAlgorithm);
+        }
+    }
+
     /**
      * Returns default AlgorithmParameterSpec for a key used in a signature.
      * This is only useful for RSASSA-PSS now, which is the only algorithm

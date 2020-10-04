@@ -512,9 +512,9 @@ public final class JarSigner {
     private final boolean internalsf; // include the .SF inside the PKCS7 block
     private final boolean directsign;
 
-    @Deprecated(since="15", forRemoval=true)
+    @Deprecated(since="16", forRemoval=true)
     private final String altSignerPath;
-    @Deprecated(since="15", forRemoval=true)
+    @Deprecated(since="16", forRemoval=true)
     private final String altSigner;
     private boolean extraAttrsDetected;
 
@@ -558,9 +558,12 @@ public final class JarSigner {
         this.tSAPolicyID = builder.tSAPolicyID;
         this.sectionsonly = builder.sectionsonly;
         this.internalsf = builder.internalsf;
-        this.directsign = builder.directsign;
         this.altSigner = builder.altSigner;
         this.altSignerPath = builder.altSignerPath;
+
+        this.directsign = this.altSigner != null
+                ? true
+                : builder.directsign;
     }
 
     /**
@@ -1238,7 +1241,7 @@ public final class JarSigner {
     }
 
     @SuppressWarnings("removal")
-    @Deprecated(since="15", forRemoval=true)
+    @Deprecated(since="16", forRemoval=true)
     class JarSignerParameters implements ContentSignerParameters {
 
         private String[] args;
