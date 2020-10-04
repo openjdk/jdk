@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,8 @@ public class LinkRef extends Reference {
       * Retrieves the name of this link.
       *
       * @return The non-null name of this link.
-      * @exception MalformedLinkException If a link name could not be extracted
-      * @exception NamingException If a naming exception was encountered.
+      * @throws MalformedLinkException If a link name could not be extracted
+      * @throws NamingException If a naming exception was encountered.
       */
     public String getLinkName() throws NamingException {
         if (className != null && className.equals(linkClassName)) {

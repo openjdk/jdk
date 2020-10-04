@@ -1925,21 +1925,10 @@ static void vmembk_print_on(outputStream* os) {
 // If <requested_addr> is not NULL, function will attempt to attach the memory at the given
 // address. Failing that, it will attach the memory anywhere.
 // If <requested_addr> is NULL, function will attach the memory anywhere.
-//
-// <alignment_hint> is being ignored by this function. It is very probable however that the
-// alignment requirements are met anyway, because shmat() attaches at 256M boundaries.
-// Should this be not enogh, we can put more work into it.
-static char* reserve_shmated_memory (
-  size_t bytes,
-  char* requested_addr,
-  size_t alignment_hint) {
+static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
 
   trcVerbose("reserve_shmated_memory " UINTX_FORMAT " bytes, wishaddress "
-    PTR_FORMAT ", alignment_hint " UINTX_FORMAT "...",
-    bytes, p2i(requested_addr), alignment_hint);
-
-  // Either give me wish address or wish alignment but not both.
-  assert0(!(requested_addr != NULL && alignment_hint != 0));
+    PTR_FORMAT "...", bytes, p2i(requested_addr));
 
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
@@ -2061,15 +2050,10 @@ static bool uncommit_shmated_memory(char* addr, size_t size) {
 // Reserve memory via mmap.
 // If <requested_addr> is given, an attempt is made to attach at the given address.
 // Failing that, memory is allocated at any address.
-// If <alignment_hint> is given and <requested_addr> is NULL, an attempt is made to
-// allocate at an address aligned with the given alignment. Failing that, memory
-// is aligned anywhere.
-static char* reserve_mmaped_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
-  trcVerbose("reserve_mmaped_memory " UINTX_FORMAT " bytes, wishaddress " PTR_FORMAT ", "
-    "alignment_hint " UINTX_FORMAT "...",
-    bytes, p2i(requested_addr), alignment_hint);
+static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
+  trcVerbose("reserve_mmaped_memory " UINTX_FORMAT " bytes, wishaddress " PTR_FORMAT "...",
+    bytes, p2i(requested_addr));
 
-  // If a wish address is given, but not aligned to 4K page boundary, mmap will fail.
   if (requested_addr && !is_aligned_to(requested_addr, os::vm_page_size()) != 0) {
     trcVerbose("Wish address " PTR_FORMAT " not aligned to page boundary.", p2i(requested_addr));
     return NULL;
@@ -2084,26 +2068,21 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr, size_t al
     requested_addr = NULL;
   }
 
-  // Specify one or the other but not both.
-  assert0(!(requested_addr != NULL && alignment_hint > 0));
-
-  // In 64K mode, we claim the global page size (os::vm_page_size())
-  // is 64K. This is one of the few points where that illusion may
-  // break, because mmap() will always return memory aligned to 4K. So
-  // we must ensure we only ever return memory aligned to 64k.
-  if (alignment_hint) {
-    alignment_hint = lcm(alignment_hint, os::vm_page_size());
-  } else {
-    alignment_hint = os::vm_page_size();
-  }
+  // In 64K mode, we lie and claim the global page size (os::vm_page_size()) is 64K
+  //  (complicated story). This mostly works just fine since 64K is a multiple of the
+  //  actual 4K lowest page size. Only at a few seams light shines thru, e.g. when
+  //  calling mmap. mmap will return memory aligned to the lowest pages size - 4K -
+  //  so we must make sure - transparently - that the caller only ever sees 64K
+  //  aligned mapping start addresses.
+  const size_t alignment = os::vm_page_size();
 
   // Size shall always be a multiple of os::vm_page_size (esp. in 64K mode).
   const size_t size = align_up(bytes, os::vm_page_size());
 
   // alignment: Allocate memory large enough to include an aligned range of the right size and
   // cut off the leading and trailing waste pages.
-  assert0(alignment_hint != 0 && is_aligned_to(alignment_hint, os::vm_page_size())); // see above
-  const size_t extra_size = size + alignment_hint;
+  assert0(alignment != 0 && is_aligned_to(alignment, os::vm_page_size())); // see above
+  const size_t extra_size = size + alignment;
 
   // Note: MAP_SHARED (instead of MAP_PRIVATE) needed to be able to
   // later use msync(MS_INVALIDATE) (see os::uncommit_memory).
@@ -2131,7 +2110,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr, size_t al
   }
 
   // Handle alignment.
-  char* const addr_aligned = align_up(addr, alignment_hint);
+  char* const addr_aligned = align_up(addr, alignment);
   const size_t waste_pre = addr_aligned - addr;
   char* const addr_aligned_end = addr_aligned + size;
   const size_t waste_post = extra_size - waste_pre - size;
@@ -2347,21 +2326,19 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 }
 
 // Reserves and attaches a shared memory segment.
-char* os::pd_reserve_memory(size_t bytes, size_t alignment_hint) {
+char* os::pd_reserve_memory(size_t bytes) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
-  const size_t alignment_hint0 =
-    alignment_hint ? align_up(alignment_hint, os::vm_page_size()) : 0;
 
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
   if (os::vm_page_size() == 4*K) {
-    return reserve_mmaped_memory(bytes, NULL /* requested_addr */, alignment_hint);
+    return reserve_mmaped_memory(bytes, NULL /* requested_addr */);
   } else {
     if (bytes >= Use64KPagesThreshold) {
-      return reserve_shmated_memory(bytes, NULL /* requested_addr */, alignment_hint);
+      return reserve_shmated_memory(bytes, NULL /* requested_addr */);
     } else {
-      return reserve_mmaped_memory(bytes, NULL /* requested_addr */, alignment_hint);
+      return reserve_mmaped_memory(bytes, NULL /* requested_addr */);
     }
   }
 }
@@ -2538,7 +2515,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, int f
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
-  result = reserve_mmaped_memory(bytes, requested_addr, 0);
+  result = reserve_mmaped_memory(bytes, requested_addr);
 
   if (result != NULL) {
     if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == NULL) {
@@ -2559,12 +2536,12 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
   if (os::vm_page_size() == 4*K) {
-    return reserve_mmaped_memory(bytes, requested_addr, 0);
+    return reserve_mmaped_memory(bytes, requested_addr);
   } else {
     if (bytes >= Use64KPagesThreshold) {
-      return reserve_shmated_memory(bytes, requested_addr, 0);
+      return reserve_shmated_memory(bytes, requested_addr);
     } else {
-      return reserve_mmaped_memory(bytes, requested_addr, 0);
+      return reserve_mmaped_memory(bytes, requested_addr);
     }
   }
 
