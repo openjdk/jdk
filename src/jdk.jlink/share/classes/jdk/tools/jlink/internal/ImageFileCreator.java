@@ -262,14 +262,14 @@ public final class ImageFileCreator {
                 return writer.getString(id);
             }
         });
-
-        for (Archive archive : archives) {
-            String mn = archive.moduleName();
-            entriesForModule.get(mn).stream()
-                .map(e -> new ArchiveEntryResourcePoolEntry(mn,
-                                    e.getResourcePoolEntryName(), e))
+        archives.stream()
+                .map(Archive::moduleName)
+                .sorted()
+                .flatMap(mn ->
+                    entriesForModule.get(mn).stream()
+                            .map(e -> new ArchiveEntryResourcePoolEntry(mn,
+                                    e.getResourcePoolEntryName(), e)))
                 .forEach(resources::add);
-        }
         return resources;
     }
 

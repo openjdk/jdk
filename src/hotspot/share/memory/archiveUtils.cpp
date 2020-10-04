@@ -271,8 +271,8 @@ void ReadClosure::do_tag(int tag) {
 }
 
 void ReadClosure::do_oop(oop *p) {
-  narrowOop o = (narrowOop)nextPtr();
-  if (o == 0 || !HeapShared::open_archive_heap_region_mapped()) {
+  narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
+  if (CompressedOops::is_null(o) || !HeapShared::open_archive_heap_region_mapped()) {
     *p = NULL;
   } else {
     assert(HeapShared::is_heap_object_archiving_allowed(),

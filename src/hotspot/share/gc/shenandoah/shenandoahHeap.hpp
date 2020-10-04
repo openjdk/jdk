@@ -606,9 +606,6 @@ public:
 
   void notify_mutator_alloc_words(size_t words, bool waste);
 
-  // Shenandoah supports TLAB allocation
-  bool supports_tlab_allocation() const { return true; }
-
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size);
   size_t tlab_capacity(Thread *thr) const;
   size_t unsafe_max_tlab_alloc(Thread *thread) const;

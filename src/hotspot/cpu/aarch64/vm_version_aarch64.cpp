@@ -24,65 +24,15 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
-#include "asm/macroAssembler.inline.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
-#include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 
 #include OS_HEADER_INLINE(os)
-
-#include <asm/hwcap.h>
-#include <sys/auxv.h>
-#include <sys/prctl.h>
-
-#ifndef HWCAP_AES
-#define HWCAP_AES   (1<<3)
-#endif
-
-#ifndef HWCAP_PMULL
-#define HWCAP_PMULL (1<<4)
-#endif
-
-#ifndef HWCAP_SHA1
-#define HWCAP_SHA1  (1<<5)
-#endif
-
-#ifndef HWCAP_SHA2
-#define HWCAP_SHA2  (1<<6)
-#endif
-
-#ifndef HWCAP_CRC32
-#define HWCAP_CRC32 (1<<7)
-#endif
-
-#ifndef HWCAP_ATOMICS
-#define HWCAP_ATOMICS (1<<8)
-#endif
-
-#ifndef HWCAP_SHA512
-#define HWCAP_SHA512 (1 << 21)
-#endif
-
-#ifndef HWCAP_SVE
-#define HWCAP_SVE (1 << 22)
-#endif
-
-#ifndef HWCAP2_SVE2
-#define HWCAP2_SVE2 (1 << 1)
-#endif
-
-#ifndef PR_SVE_GET_VL
-// For old toolchains which do not have SVE related macros defined.
-#define PR_SVE_SET_VL   50
-#define PR_SVE_GET_VL   51
-#endif
 
 int VM_Version::_cpu;
 int VM_Version::_model;
@@ -90,58 +40,20 @@ int VM_Version::_model2;
 int VM_Version::_variant;
 int VM_Version::_revision;
 int VM_Version::_stepping;
-bool VM_Version::_dcpop;
+
+int VM_Version::_zva_length;
+int VM_Version::_dcache_line_size;
+int VM_Version::_icache_line_size;
 int VM_Version::_initial_sve_vector_length;
-VM_Version::PsrInfo VM_Version::_psr_info   = { 0, };
 
-static BufferBlob* stub_blob;
-static const int stub_size = 550;
-
-extern "C" {
-  typedef void (*getPsrInfo_stub_t)(void*);
-}
-static getPsrInfo_stub_t getPsrInfo_stub = NULL;
-
-
-class VM_Version_StubGenerator: public StubCodeGenerator {
- public:
-
-  VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
-
-  address generate_getPsrInfo() {
-    StubCodeMark mark(this, "VM_Version", "getPsrInfo_stub");
-#   define __ _masm->
-    address start = __ pc();
-
-    // void getPsrInfo(VM_Version::PsrInfo* psr_info);
-
-    address entry = __ pc();
-
-    __ enter();
-
-    __ get_dczid_el0(rscratch1);
-    __ strw(rscratch1, Address(c_rarg0, in_bytes(VM_Version::dczid_el0_offset())));
-
-    __ get_ctr_el0(rscratch1);
-    __ strw(rscratch1, Address(c_rarg0, in_bytes(VM_Version::ctr_el0_offset())));
-
-    __ leave();
-    __ ret(lr);
-
-#   undef __
-
-    return start;
-  }
-};
-
-void VM_Version::get_processor_features() {
+void VM_Version::initialize() {
   _supports_cx8 = true;
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
   _supports_atomic_getadd8 = true;
 
-  getPsrInfo_stub(&_psr_info);
+  get_os_cpu_info();
 
   int dcache_line = VM_Version::dcache_line_size();
 
@@ -183,45 +95,12 @@ void VM_Version::get_processor_features() {
     SoftwarePrefetchHintDistance &= ~7;
   }
 
-  uint64_t auxv = getauxval(AT_HWCAP);
-  uint64_t auxv2 = getauxval(AT_HWCAP2);
-
-  char buf[512];
-
-  _features = auxv;
-
-  int cpu_lines = 0;
-  if (FILE *f = fopen("/proc/cpuinfo", "r")) {
-    // need a large buffer as the flags line may include lots of text
-    char buf[1024], *p;
-    while (fgets(buf, sizeof (buf), f) != NULL) {
-      if ((p = strchr(buf, ':')) != NULL) {
-        long v = strtol(p+1, NULL, 0);
-        if (strncmp(buf, "CPU implementer", sizeof "CPU implementer" - 1) == 0) {
-          _cpu = v;
-          cpu_lines++;
-        } else if (strncmp(buf, "CPU variant", sizeof "CPU variant" - 1) == 0) {
-          _variant = v;
-        } else if (strncmp(buf, "CPU part", sizeof "CPU part" - 1) == 0) {
-          if (_model != v)  _model2 = _model;
-          _model = v;
-        } else if (strncmp(buf, "CPU revision", sizeof "CPU revision" - 1) == 0) {
-          _revision = v;
-        } else if (strncmp(buf, "flags", sizeof("flags") - 1) == 0) {
-          if (strstr(p+1, "dcpop")) {
-            _dcpop = true;
-          }
-        }
-      }
-    }
-    fclose(f);
-  }
 
   if (os::supports_map_sync()) {
     // if dcpop is available publish data cache line flush size via
     // generic field, otherwise let if default to zero thereby
     // disabling writeback
-    if (_dcpop) {
+    if (_features & CPU_DCPOP) {
       _data_cache_line_flush_size = dcache_line;
     }
   }
@@ -302,30 +181,31 @@ void VM_Version::get_processor_features() {
   }
 
   if (_cpu == CPU_ARM && (_model == 0xd07 || _model2 == 0xd07)) _features |= CPU_STXR_PREFETCH;
-  // If an olde style /proc/cpuinfo (cpu_lines == 1) then if _model is an A57 (0xd07)
+  // If an olde style /proc/cpuinfo (cores == 1) then if _model is an A57 (0xd07)
   // we assume the worst and assume we could be on a big little system and have
   // undisclosed A53 cores which we could be swapped to at any stage
-  if (_cpu == CPU_ARM && cpu_lines == 1 && _model == 0xd07) _features |= CPU_A53MAC;
+  if (_cpu == CPU_ARM && os::processor_count() == 1 && _model == 0xd07) _features |= CPU_A53MAC;
 
+  char buf[512];
   sprintf(buf, "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
   if (_model2) sprintf(buf+strlen(buf), "(0x%03x)", _model2);
-  if (auxv & HWCAP_ASIMD) strcat(buf, ", simd");
-  if (auxv & HWCAP_CRC32) strcat(buf, ", crc");
-  if (auxv & HWCAP_AES)   strcat(buf, ", aes");
-  if (auxv & HWCAP_SHA1)  strcat(buf, ", sha1");
-  if (auxv & HWCAP_SHA2)  strcat(buf, ", sha256");
-  if (auxv & HWCAP_SHA512) strcat(buf, ", sha512");
-  if (auxv & HWCAP_ATOMICS) strcat(buf, ", lse");
-  if (auxv & HWCAP_SVE) strcat(buf, ", sve");
-  if (auxv2 & HWCAP2_SVE2) strcat(buf, ", sve2");
+  if (_features & CPU_ASIMD) strcat(buf, ", simd");
+  if (_features & CPU_CRC32) strcat(buf, ", crc");
+  if (_features & CPU_AES)   strcat(buf, ", aes");
+  if (_features & CPU_SHA1)  strcat(buf, ", sha1");
+  if (_features & CPU_SHA2)  strcat(buf, ", sha256");
+  if (_features & CPU_SHA512) strcat(buf, ", sha512");
+  if (_features & CPU_LSE) strcat(buf, ", lse");
+  if (_features & CPU_SVE) strcat(buf, ", sve");
+  if (_features & CPU_SVE2) strcat(buf, ", sve2");
 
   _features_string = os::strdup(buf);
 
   if (FLAG_IS_DEFAULT(UseCRC32)) {
-    UseCRC32 = (auxv & HWCAP_CRC32) != 0;
+    UseCRC32 = (_features & CPU_CRC32) != 0;
   }
 
-  if (UseCRC32 && (auxv & HWCAP_CRC32) == 0) {
+  if (UseCRC32 && (_features & CPU_CRC32) == 0) {
     warning("UseCRC32 specified, but not supported on this CPU");
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
@@ -339,7 +219,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-  if (auxv & HWCAP_ATOMICS) {
+  if (_features & CPU_LSE) {
     if (FLAG_IS_DEFAULT(UseLSE))
       FLAG_SET_DEFAULT(UseLSE, true);
   } else {
@@ -349,7 +229,7 @@ void VM_Version::get_processor_features() {
     }
   }
 
-  if (auxv & HWCAP_AES) {
+  if (_features & CPU_AES) {
     UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);
     UseAESIntrinsics =
         UseAESIntrinsics || (UseAES && FLAG_IS_DEFAULT(UseAESIntrinsics));
@@ -377,7 +257,7 @@ void VM_Version::get_processor_features() {
     UseCRC32Intrinsics = true;
   }
 
-  if (auxv & HWCAP_CRC32) {
+  if (_features & CPU_CRC32) {
     if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
     }
@@ -395,7 +275,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
   }
 
-  if (auxv & (HWCAP_SHA1 | HWCAP_SHA2)) {
+  if (_features & (CPU_SHA1 | CPU_SHA2)) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       FLAG_SET_DEFAULT(UseSHA, true);
     }
@@ -404,7 +284,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (UseSHA && (auxv & HWCAP_SHA1)) {
+  if (UseSHA && (_features & CPU_SHA1)) {
     if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
     }
@@ -413,7 +293,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-  if (UseSHA && (auxv & HWCAP_SHA2)) {
+  if (UseSHA && (_features & CPU_SHA2)) {
     if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
     }
@@ -422,7 +302,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
   }
 
-  if (UseSHA && (auxv & HWCAP_SHA512)) {
+  if (UseSHA && (_features & CPU_SHA512)) {
     // Do not auto-enable UseSHA512Intrinsics until it has been fully tested on hardware
     // if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
       // FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
@@ -436,7 +316,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (auxv & HWCAP_PMULL) {
+  if (_features & CPU_PMULL) {
     if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
       FLAG_SET_DEFAULT(UseGHASHIntrinsics, true);
     }
@@ -457,12 +337,12 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
-  if (auxv & HWCAP_SVE) {
+  if (_features & CPU_SVE) {
     if (FLAG_IS_DEFAULT(UseSVE)) {
-      FLAG_SET_DEFAULT(UseSVE, (auxv2 & HWCAP2_SVE2) ? 2 : 1);
+      FLAG_SET_DEFAULT(UseSVE, (_features & CPU_SVE2) ? 2 : 1);
     }
     if (UseSVE > 0) {
-      _initial_sve_vector_length = prctl(PR_SVE_GET_VL);
+      _initial_sve_vector_length = get_current_sve_vector_length();
     }
   } else if (UseSVE > 0) {
     warning("UseSVE specified, but not supported on current CPU. Disabling SVE.");
@@ -510,11 +390,9 @@ void VM_Version::get_processor_features() {
       warning("SVE does not support vector length less than 16 bytes. Disabling SVE.");
       UseSVE = 0;
     } else if ((MaxVectorSize % 16) == 0 && is_power_of_2(MaxVectorSize)) {
-      int new_vl = prctl(PR_SVE_SET_VL, MaxVectorSize);
+      int new_vl = set_and_get_current_sve_vector_lenght(MaxVectorSize);
       _initial_sve_vector_length = new_vl;
-      // If MaxVectorSize is larger than system largest supported SVE vector length, above prctl()
-      // call will set task vector length to the system largest supported value. So, we also update
-      // MaxVectorSize to that largest supported value.
+      // Update MaxVectorSize to the largest supported value.
       if (new_vl < 0) {
         vm_exit_during_initialization(
           err_msg("Current system does not support SVE vector length for MaxVectorSize: %d",
@@ -555,22 +433,6 @@ void VM_Version::get_processor_features() {
     AlignVector = AvoidUnalignedAccesses;
   }
 #endif
-}
-
-void VM_Version::initialize() {
-  ResourceMark rm;
-
-  stub_blob = BufferBlob::create("getPsrInfo_stub", stub_size);
-  if (stub_blob == NULL) {
-    vm_exit_during_initialization("Unable to allocate getPsrInfo_stub");
-  }
-
-  CodeBuffer c(stub_blob);
-  VM_Version_StubGenerator g(&c);
-  getPsrInfo_stub = CAST_TO_FN_PTR(getPsrInfo_stub_t,
-                                   g.generate_getPsrInfo());
-
-  get_processor_features();
 
   UNSUPPORTED_OPTION(CriticalJNINatives);
 }

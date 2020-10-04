@@ -27,7 +27,7 @@
  * @test
  * @modules java.base/sun.nio.ch
  *          jdk.incubator.foreign/jdk.internal.foreign
- * @run testng TestByteBuffer
+ * @run testng/othervm -Dforeign.restricted=permit TestByteBuffer
  */
 
 
@@ -458,10 +458,9 @@ public class TestByteBuffer {
         byteBuffer.get(); // should throw
     }
 
-    @Test(expectedExceptions = { UnsupportedOperationException.class,
-                                 IllegalArgumentException.class })
+    @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testTooBigForByteBuffer() {
-        try (MemorySegment segment = MemorySegment.allocateNative((long)Integer.MAX_VALUE + 10L)) {
+        try (MemorySegment segment = MemorySegment.ofNativeRestricted(MemoryAddress.NULL, (long)Integer.MAX_VALUE + 10L, null, null, null)) {
             segment.asByteBuffer();
         }
     }

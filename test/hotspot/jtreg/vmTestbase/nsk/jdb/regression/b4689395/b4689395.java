@@ -94,14 +94,15 @@
  *        nsk.jdb.regression.b4689395.b4689395a
  *
  * @comment compile newclass/b4689395a.java to newclass
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver
+ *      ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
  *      -d ${test.classes}/newclass
  *      -cp ${test.class.path}
  *      ${test.src}/newclass/b4689395a.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.regression.b4689395.b4689395
+ * @run main/othervm
+ *      nsk.jdb.regression.b4689395.b4689395
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

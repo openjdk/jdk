@@ -2258,7 +2258,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 // Search for Non-ASCII character (Negative byte value) in a byte array,
 // return true if it has any and false otherwise.
 //   ..\jdk\src\java.base\share\classes\java\lang\StringCoding.java
-//   @HotSpotIntrinsicCandidate
+//   @IntrinsicCandidate
 //   private static boolean hasNegatives(byte[] ba, int off, int len) {
 //     for (int i = off; i < off + len; i++) {
 //       if (ba[i] < 0) {
