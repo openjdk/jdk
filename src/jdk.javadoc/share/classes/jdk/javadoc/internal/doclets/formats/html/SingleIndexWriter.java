@@ -110,7 +110,6 @@ public class SingleIndexWriter extends AbstractIndexWriter {
                                 contents.getContent("doclet.Index"))))
                 .addMainContent(mainContent)
                 .setFooter(footer));
-        createSearchIndexFiles();
         printHtmlDocument(null, "index", body);
     }
 

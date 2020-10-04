@@ -96,9 +96,6 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             SplitIndexWriter indexgen = new SplitIndexWriter(configuration,
                                                              path.resolve(filename), keys);
             indexgen.generateIndexFile(ch);
-            if (!li.hasNext()) {
-                indexgen.createSearchIndexFiles();
-            }
         }
     }
 

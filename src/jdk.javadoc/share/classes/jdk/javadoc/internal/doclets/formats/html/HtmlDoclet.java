@@ -182,6 +182,7 @@ public class HtmlDoclet extends AbstractDoclet {
                 AllPackagesIndexWriter.generate(configuration);
             }
             SystemPropertiesWriter.generate(configuration);
+            configuration.mainIndex.createSearchIndexFiles();
         }
 
         if (options.createOverview()) {

@@ -72,7 +72,7 @@ public class IndexBuilder {
     /**
      * Build this index only for classes?
      */
-    private final boolean classesOnly;
+    protected final boolean classesOnly;
 
     private final BaseConfiguration configuration;
     private final Utils utils;

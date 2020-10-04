@@ -25,16 +25,11 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedSet;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -48,13 +43,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
-import jdk.javadoc.internal.doclets.toolkit.util.IndexItem.Category;
 
 /**
  * Generate Index for all the Member Names with Indexing in
@@ -94,12 +85,8 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         addHeading(uc, contentTree);
 
         HtmlTree dl = HtmlTree.DL(HtmlStyle.index);
-        Map<String,Integer> duplicateLabelCheck = new HashMap<>();
-        memberlist.forEach(e -> duplicateLabelCheck.compute(e.getFullyQualifiedLabel(utils),
-                (k, v) -> v == null ? 1 : v + 1));
-        for (IndexItem indexItem : memberlist) {
-            addDescription(indexItem, dl,
-                    duplicateLabelCheck.get(indexItem.getFullyQualifiedLabel(utils)) > 1);
+        for (IndexItem item : memberlist) {
+            addDescription(item, dl);
         }
         contentTree.add(dl);
     }
@@ -113,11 +100,11 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         contentTree.add(heading);
     }
 
-    protected void addDescription(IndexItem indexItem, Content dl, boolean addModuleInfo) {
+    protected void addDescription(IndexItem indexItem, Content dl) {
         if (indexItem.isTagItem()) {
             addTagDescription(indexItem, dl);
         } else if (indexItem.isElementItem()) {
-            addElementDescription(indexItem, dl, addModuleInfo);
+            addElementDescription(indexItem, dl);
         }
     }
 
@@ -126,9 +113,8 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      *
      * @param item the element to be documented
      * @param dlTree the content tree to which the description will be added
-     * @param addModuleInfo whether to include module information
      */
-    protected void addElementDescription(IndexItem item, Content dlTree, boolean addModuleInfo) {
+    protected void addElementDescription(IndexItem item, Content dlTree) {
         Content dt;
         Element element = item.getElement();
         String label = item.getLabel();
@@ -153,10 +139,6 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
             case INTERFACE:
                 dt = HtmlTree.DT(getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.INDEX, (TypeElement) element).strong(true)));
-                item.setContainingPackage(utils.getPackageName(utils.containingPackage(element)));
-                if (configuration.showModules && addModuleInfo) {
-                    item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
-                }
                 dt.add(" - ");
                 addClassInfo((TypeElement) element, dt);
                 break;
@@ -168,17 +150,6 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                 TypeElement containingType = item.getTypeElement();
                 dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.memberNameLink,
                         getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element, new StringContent(label))));
-                item.setContainingPackage(utils.getPackageName(utils.containingPackage(element)));
-                item.setContainingClass(utils.getSimpleName(containingType));
-                if (configuration.showModules && addModuleInfo) {
-                    item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
-                }
-                if (utils.isExecutableElement(element)) {
-                    String url = HtmlTree.encodeURL(links.getAnchor((ExecutableElement)element));
-                    if (!label.equals(url)) {
-                        item.setUrl(url);
-                    }
-                }
                 dt.add(" - ");
                 addMemberDesc(element, containingType, dt);
                 break;
@@ -300,93 +271,4 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         return "I:" + links.getName(unicode);
     }
 
-    /**
-     * Generates the set of index files used by interactive search.
-     *
-     * @throws DocFileIOException if there is a problem creating any of the search index files
-     */
-    protected void createSearchIndexFiles() throws DocFileIOException {
-        // add last-minute items
-        if (!configuration.packages.isEmpty()) {
-            IndexItem item = IndexItem.of(Category.PACKAGES,
-                    resources.getText("doclet.All_Packages"),
-                    DocPaths.ALLPACKAGES_INDEX);
-            mainIndex.add(item);
-        }
-        IndexItem item = IndexItem.of(Category.TYPES,
-                resources.getText("doclet.All_Classes"),
-                DocPaths.ALLCLASSES_INDEX);
-        mainIndex.add(item);
-
-        for (Category category : Category.values()) {
-            DocPath file;
-            String varName;
-            switch (category) {
-                case MODULES:
-                    file = DocPaths.MODULE_SEARCH_INDEX_JS;
-                    varName = "moduleSearchIndex";
-                    break;
-
-                case PACKAGES:
-                    file = DocPaths.PACKAGE_SEARCH_INDEX_JS;
-                    varName = "packageSearchIndex";
-                    break;
-
-                case TYPES:
-                    file = DocPaths.TYPE_SEARCH_INDEX_JS;
-                    varName = "typeSearchIndex";
-                    break;
-
-                case MEMBERS:
-                    file = DocPaths.MEMBER_SEARCH_INDEX_JS;
-                    varName = "memberSearchIndex";
-                    break;
-
-                case TAGS:
-                    file = DocPaths.TAG_SEARCH_INDEX_JS;
-                    varName = "tagSearchIndex";
-                    break;
-
-                default:
-                    throw new Error();
-            }
-
-            createSearchIndexFile(file, mainIndex.getItems(category), varName);
-        }
-    }
-
-    /**
-     * Creates a search index file.
-     *
-     * @param searchIndexJS the file for the JavaScript to be generated
-     * @param indexItems    the search index items
-     * @param varName       the variable name to write in the JavaScript file
-     *
-     * @throws DocFileIOException if there is a problem creating the search index file
-     */
-    protected void createSearchIndexFile(DocPath searchIndexJS,
-                                         SortedSet<IndexItem> indexItems,
-                                         String varName)
-            throws DocFileIOException
-    {
-        // The file needs to be created even if there are no searchIndex items
-        DocFile jsFile = DocFile.createFileForOutput(configuration, searchIndexJS);
-        try (Writer wr = jsFile.openWriter()) {
-            wr.write(varName);
-            wr.write(" = [");
-            boolean first = true;
-            for (IndexItem item : indexItems) {
-                if (first) {
-                    first = false;
-                } else {
-                    wr.write(",");
-                }
-                wr.write(item.toJavaScript());
-            }
-            wr.write("];");
-            wr.write("updateSearchResults();");
-        } catch (IOException ie) {
-            throw new DocFileIOException(jsFile, DocFileIOException.Mode.WRITE, ie);
-        }
-    }
 }
