@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -175,7 +174,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                     item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
                 }
                 if (utils.isExecutableElement(element)) {
-                    String url = HtmlTree.encodeURL(links.getName(getAnchor((ExecutableElement)element)));
+                    String url = HtmlTree.encodeURL(links.getAnchor((ExecutableElement)element));
                     if (!label.equals(url)) {
                         item.setUrl(url);
                     }
