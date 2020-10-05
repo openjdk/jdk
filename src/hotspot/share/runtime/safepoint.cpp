@@ -511,6 +511,7 @@ class ParallelSPCleanupTask : public AbstractGangTask {
 private:
   SubTasksDone _subtasks;
   uint _num_workers;
+  bool _do_lazy_roots;
 
   class Tracer {
   private:
@@ -532,12 +533,12 @@ public:
   ParallelSPCleanupTask(uint num_workers) :
     AbstractGangTask("Parallel Safepoint Cleanup"),
     _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
-    _num_workers(num_workers) {}
+    _num_workers(num_workers),
+    _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&
+                   Universe::heap()->uses_stack_watermark_barrier()) {}
 
   void work(uint worker_id) {
-    if (!VMThread::vm_operation()->skip_thread_oop_barriers() &&
-        Universe::heap()->uses_stack_watermark_barrier() &&
-        _subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
+    if (_do_lazy_roots && _subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
       Tracer t("lazy partial thread root processing");
       ParallelSPCleanupThreadClosure cl;
       Threads::threads_do(&cl);
