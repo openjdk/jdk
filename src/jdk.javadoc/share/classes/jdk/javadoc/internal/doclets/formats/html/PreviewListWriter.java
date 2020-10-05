@@ -363,9 +363,9 @@ public class PreviewListWriter extends SubWriterHolderWriter {
                         link = getPreviewLink(e);
                 }
                 Content desc = new ContentBuilder();
-                List<? extends DocTree> tags = utils.getDeprecatedTrees(e);
+                List<? extends DocTree> tags = utils.getFirstSentenceTrees(e);
                 if (!tags.isEmpty()) {
-                    addInlineDeprecatedComment(e, tags.get(0), desc);
+                    addPreviewComment(e, tags, desc);
                 } else {
                     desc.add(HtmlTree.EMPTY);
                 }
@@ -401,6 +401,6 @@ public class PreviewListWriter extends SubWriterHolderWriter {
             default:
                 writer = new AnnotationTypeOptionalMemberWriterImpl(this, null);
         }
-        return writer.getDeprecatedLink(e);
+        return writer.getDeprecatedOrPreviewLink(e);
     }
 }

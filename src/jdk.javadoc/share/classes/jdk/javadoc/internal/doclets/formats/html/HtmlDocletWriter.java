@@ -1035,10 +1035,11 @@ public class HtmlDocletWriter {
             ExecutableElement emd = (ExecutableElement) element;
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(links.getName(getAnchor(emd))));
+                .where(links.getName(getAnchor(emd)))
+                .whereMember(element));
         } else if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
-                .label(label).where(links.getName(element.getSimpleName().toString())));
+                .label(label).where(links.getName(element.getSimpleName().toString())).whereMember(element));
         } else {
             return label;
         }
@@ -1216,7 +1217,7 @@ public class HtmlDocletWriter {
     public void addInlineComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> description = ch.getDescription(tag);
-        addCommentTags(element, tag, description, false, false, false, htmltree);
+        addCommentTags(element, tag, description, false, false, false, false, htmltree);
     }
 
     /**
@@ -1240,7 +1241,7 @@ public class HtmlDocletWriter {
      */
     public void addInlineDeprecatedComment(Element e, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(e);
-        addCommentTags(e, ch.getBody(tag), true, false, false, htmltree);
+        addCommentTags(e, ch.getBody(tag), true, false, false, false, htmltree);
     }
 
     /**
@@ -1254,6 +1255,17 @@ public class HtmlDocletWriter {
     }
 
     /**
+     * Adds the preview content.
+     *
+     * @param element the Element for which the summary will be generated
+     * @param firstSentenceTags the first sentence tags for the doc
+     * @param htmltree the documentation tree to which the summary will be added
+     */
+    public void addPreviewComment(Element element, List<? extends DocTree> firstSentenceTags, Content htmltree) {
+        addCommentTags(element, firstSentenceTags, false, true, true, true, htmltree);
+    }
+
+    /**
      * Adds the summary content.
      *
      * @param element the Element for which the summary will be generated
@@ -1261,13 +1273,13 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the summary will be added
      */
     public void addSummaryComment(Element element, List<? extends DocTree> firstSentenceTags, Content htmltree) {
-        addCommentTags(element, firstSentenceTags, false, true, true, htmltree);
+        addCommentTags(element, firstSentenceTags, false, false, true, true, htmltree);
     }
 
     public void addSummaryDeprecatedComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> body = ch.getBody(tag);
-        addCommentTags(element, ch.getFirstSentenceTrees(body), true, true, true, htmltree);
+        addCommentTags(element, ch.getFirstSentenceTrees(body), true, false, true, true, htmltree);
     }
 
     /**
@@ -1277,7 +1289,7 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the inline comments will be added
      */
     public void addInlineComment(Element element, Content htmltree) {
-        addCommentTags(element, utils.getFullBody(element), false, false, false, htmltree);
+        addCommentTags(element, utils.getFullBody(element), false, false, false, false, htmltree);
     }
 
     /**
@@ -1291,8 +1303,8 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the comment tags will be added
      */
     private void addCommentTags(Element element, List<? extends DocTree> tags, boolean depr,
-            boolean first, boolean inSummary, Content htmltree) {
-        addCommentTags(element, null, tags, depr, first, inSummary, htmltree);
+            boolean preview, boolean first, boolean inSummary, Content htmltree) {
+        addCommentTags(element, null, tags, depr, preview, first, inSummary, htmltree);
     }
 
     /**
@@ -1307,7 +1319,7 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the comment tags will be added
      */
     private void addCommentTags(Element element, DocTree holderTag, List<? extends DocTree> tags, boolean depr,
-            boolean first, boolean inSummary, Content htmltree) {
+            boolean preview, boolean first, boolean inSummary, Content htmltree) {
         if (options.noComment()){
             return;
         }
@@ -1316,8 +1328,10 @@ public class HtmlDocletWriter {
         if (depr) {
             div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
             htmltree.add(div);
-        }
-        else {
+        } else if (preview) {
+            div = HtmlTree.DIV(HtmlStyle.block, result); //TODO: or preview comment (italics)
+            htmltree.add(div);
+        } else {
             div = HtmlTree.DIV(HtmlStyle.block, result);
             htmltree.add(div);
         }
@@ -2259,8 +2273,7 @@ public class HtmlDocletWriter {
                 String fullName = switch (forWhat.getKind()) {
                     case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -> forWhat.getSimpleName().toString();
                     case CONSTRUCTOR -> /*TODO?*/((TypeElement) forWhat.getEnclosingElement()).getQualifiedName().toString();
-                    case ENUM_CONSTANT, FIELD, METHOD -> 
-                        ((TypeElement) forWhat.getEnclosingElement()).getQualifiedName() + "." + forWhat.getSimpleName();
+                    case ENUM_CONSTANT, FIELD, METHOD -> forWhat.getSimpleName().toString();
                     case PACKAGE, MODULE -> ((QualifiedNameable) forWhat).getQualifiedName().toString();
                     default -> forWhat.getSimpleName().toString();
                 };
@@ -2367,7 +2380,7 @@ public class HtmlDocletWriter {
                     Stream.concat(elements1.stream(), elements2.stream())
                           .sorted((te1, te2) -> te1.getSimpleName().toString().compareTo(te2.getSimpleName().toString()))
                           .distinct()
-                          .map(te -> getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS, te).skipPreview(true)))
+                          .map(te -> getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS, te).label(HtmlTree.CODE(new StringContent(te.getSimpleName()))).skipPreview(true)))
                           .forEach(c -> {
                               result.add(sep[0]);
                               result.add(c);

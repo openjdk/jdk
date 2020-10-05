@@ -201,9 +201,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Content getDeprecatedLink(Element member) {
+    protected Content getDeprecatedOrPreviewLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
-        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER, member, name);
+        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
     }
 
     private TypeMirror getType(Element member) {

@@ -166,7 +166,10 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Content classLink = getLink(new LinkInfoImpl(
                 configuration, LinkInfoImpl.Kind.INDEX, klass));
         ContentBuilder description = new ContentBuilder();
-        if (utils.isDeprecated(klass)) {
+        if (utils.isPreview(klass)) {
+            description.add(contents.previewPhrase);
+            addSummaryComment(klass, description);
+        } else if (utils.isDeprecated(klass)) {
             description.add(getDeprecatedPhrase(klass));
             List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
             if (!tags.isEmpty()) {

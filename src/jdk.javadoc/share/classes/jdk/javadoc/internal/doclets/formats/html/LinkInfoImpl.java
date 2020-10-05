@@ -59,6 +59,11 @@ public class LinkInfoImpl extends LinkInfo {
         MEMBER,
 
         /**
+         * Indicate that the link appears in member documentation on the Deprecated or Preview page.
+         */
+        MEMBER_DEPRECATED_PREVIEW,
+
+        /**
          * Indicate that the link appears in class use documentation.
          */
         CLASS_USE,

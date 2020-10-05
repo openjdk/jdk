@@ -99,7 +99,7 @@ public class LinkFactoryImpl extends LinkFactory {
         boolean noPreview = classLinkInfo.skipPreview;
         if (!hasWhere && !noPreview) {
             flags = utils.elementFlags(typeElement);
-        } else if (classLinkInfo.context == LinkInfoImpl.Kind.SEE_TAG && classLinkInfo.whereMember != null && !noPreview) {
+        } else if ((classLinkInfo.context == LinkInfoImpl.Kind.SEE_TAG || classLinkInfo.context == LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW) && classLinkInfo.whereMember != null && !noPreview) {
             flags = utils.elementFlags(classLinkInfo.whereMember);
         } else {
             flags = EnumSet.noneOf(ElementFlag.class);

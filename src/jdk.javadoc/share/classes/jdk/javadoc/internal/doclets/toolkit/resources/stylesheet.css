@@ -576,7 +576,6 @@ h1.hidden {
 .preview-block {
     font-size:14px;
     font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
-    border-color:red;
     border-style:solid;
     border-width:thin;
     border-radius:10px;

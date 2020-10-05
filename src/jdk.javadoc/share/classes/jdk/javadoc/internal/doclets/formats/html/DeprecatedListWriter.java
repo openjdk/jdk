@@ -427,6 +427,6 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             default:
                 writer = new AnnotationTypeOptionalMemberWriterImpl(this, null);
         }
-        return writer.getDeprecatedLink(e);
+        return writer.getDeprecatedOrPreviewLink(e);
     }
 }

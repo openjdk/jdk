@@ -49,6 +49,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.EXECUTABLE_MEMBER_PARAM;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER;
+import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER_TYPE_PARAMS;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.RECEIVER_TYPE;
 import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.THROWS_TYPE;
@@ -84,7 +85,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     }
 
     @Override
-    protected Content getDeprecatedLink(Element member) {
+    protected Content getDeprecatedOrPreviewLink(Element member) {
         Content deprecatedLinkContent = new ContentBuilder();
         deprecatedLinkContent.add(utils.getFullyQualifiedName(member));
         if (!utils.isConstructor(member)) {
@@ -97,7 +98,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         }
         deprecatedLinkContent.add(signature);
 
-        return writer.getDocLink(MEMBER, utils.getEnclosingTypeElement(member), member, deprecatedLinkContent);
+        return writer.getDocLink(MEMBER_DEPRECATED_PREVIEW, utils.getEnclosingTypeElement(member), member, deprecatedLinkContent);
     }
 
     /**

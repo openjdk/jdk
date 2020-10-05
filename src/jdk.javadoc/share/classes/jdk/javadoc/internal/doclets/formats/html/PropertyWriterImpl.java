@@ -219,8 +219,8 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Content getDeprecatedLink(Element member) {
-        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER, member,
+    protected Content getDeprecatedOrPreviewLink(Element member) {
+        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member,
                 utils.getFullyQualifiedName(member));
     }
 

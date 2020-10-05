@@ -146,7 +146,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Content getDeprecatedLink(Element member) {
-        return writer.getQualifiedClassLink(LinkInfoImpl.Kind.MEMBER, member);
+    protected Content getDeprecatedOrPreviewLink(Element member) {
+        return writer.getQualifiedClassLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member);
     }
 }
