@@ -42,7 +42,7 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
                                              size_t page_size,
                                              size_t region_granularity,
                                              size_t commit_factor,
-                                             MemoryType type) :
+                                             MEMFLAGS type) :
   _listener(NULL),
   _storage(rs, used_size, page_size),
   _region_granularity(region_granularity),
@@ -67,7 +67,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                       size_t page_size,
                                       size_t alloc_granularity,
                                       size_t commit_factor,
-                                      MemoryType type) :
+                                      MEMFLAGS type) :
     G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
     _pages_per_region(alloc_granularity / (page_size * commit_factor)) {
 
@@ -130,7 +130,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                        size_t page_size,
                                        size_t alloc_granularity,
                                        size_t commit_factor,
-                                       MemoryType type) :
+                                       MEMFLAGS type) :
     G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
     _regions_per_page((page_size * commit_factor) / alloc_granularity) {
 
@@ -240,7 +240,7 @@ G1RegionToHeteroSpaceMapper::G1RegionToHeteroSpaceMapper(ReservedSpace rs,
                                                          size_t page_size,
                                                          size_t alloc_granularity,
                                                          size_t commit_factor,
-                                                         MemoryType type) :
+                                                         MEMFLAGS type) :
   G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
   _rs(rs),
   _dram_mapper(NULL),
@@ -337,7 +337,7 @@ G1RegionToSpaceMapper* G1RegionToSpaceMapper::create_heap_mapper(ReservedSpace r
                                                                  size_t page_size,
                                                                  size_t region_granularity,
                                                                  size_t commit_factor,
-                                                                 MemoryType type) {
+                                                                 MEMFLAGS type) {
   if (AllocateOldGenAt != NULL) {
     G1RegionToHeteroSpaceMapper* mapper = new G1RegionToHeteroSpaceMapper(rs, actual_size, page_size, region_granularity, commit_factor, type);
     if (!mapper->initialize()) {
@@ -355,7 +355,7 @@ G1RegionToSpaceMapper* G1RegionToSpaceMapper::create_mapper(ReservedSpace rs,
                                                             size_t page_size,
                                                             size_t region_granularity,
                                                             size_t commit_factor,
-                                                            MemoryType type) {
+                                                            MEMFLAGS type) {
   if (region_granularity >= (page_size * commit_factor)) {
     return new G1RegionsLargerThanCommitSizeMapper(rs, actual_size, page_size, region_granularity, commit_factor, type);
   } else {

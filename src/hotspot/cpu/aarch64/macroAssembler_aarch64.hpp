@@ -187,7 +187,15 @@ class MacroAssembler: public Assembler {
     mov(rscratch2, call_site);
   }
 
+// Microsoft's MSVC team thinks that the __FUNCSIG__ is approximately (sympathy for calling conventions) equivalent to __PRETTY_FUNCTION__
+// Also, from Clang patch: "It is very similar to GCC's PRETTY_FUNCTION, except it prints the calling convention."
+// https://reviews.llvm.org/D3311
+
+#ifdef _WIN64
+#define call_Unimplemented() _call_Unimplemented((address)__FUNCSIG__)
+#else
 #define call_Unimplemented() _call_Unimplemented((address)__PRETTY_FUNCTION__)
+#endif
 
   // aliases defined in AARCH64 spec
 
@@ -195,7 +203,7 @@ class MacroAssembler: public Assembler {
   inline void cmpw(Register Rd, T imm)  { subsw(zr, Rd, imm); }
 
   inline void cmp(Register Rd, unsigned char imm8)  { subs(zr, Rd, imm8); }
-  inline void cmp(Register Rd, unsigned imm) __attribute__ ((deprecated));
+  inline void cmp(Register Rd, unsigned imm) = delete;
 
   inline void cmnw(Register Rd, unsigned imm) { addsw(zr, Rd, imm); }
   inline void cmn(Register Rd, unsigned imm) { adds(zr, Rd, imm); }
@@ -469,6 +477,8 @@ public:
   void push_fp(RegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
   void pop_fp(RegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
 
+  static RegSet call_clobbered_registers();
+
   // Push and pop everything that might be clobbered by a native
   // runtime call except rscratch1 and rscratch2.  (They are always
   // scratch, so we don't have to protect them.)  Only save the lower
@@ -521,10 +531,10 @@ public:
 
   // Generalized Test Bit And Branch, including a "far" variety which
   // spans more than 32KiB.
-  void tbr(Condition cond, Register Rt, int bitpos, Label &dest, bool far = false) {
+  void tbr(Condition cond, Register Rt, int bitpos, Label &dest, bool isfar = false) {
     assert(cond == EQ || cond == NE, "must be");
 
-    if (far)
+    if (isfar)
       cond = ~cond;
 
     void (Assembler::* branch)(Register Rt, int bitpos, Label &L);
@@ -533,7 +543,7 @@ public:
     else
       branch = &Assembler::tbnz;
 
-    if (far) {
+    if (isfar) {
       Label L;
       (this->*branch)(Rt, bitpos, L);
       b(dest);

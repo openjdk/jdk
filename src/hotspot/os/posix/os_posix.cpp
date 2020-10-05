@@ -316,17 +316,18 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
 
   char* extra_base;
   if (file_desc != -1) {
-    // For file mapping, we do not call os:reserve_memory(extra_size, NULL, alignment, file_desc) because
-    // we need to deal with shrinking of the file space later when we release extra memory after alignment.
-    // We also cannot called os:reserve_memory() with file_desc set to -1 because on aix we might get SHM memory.
-    // So here to call a helper function while reserve memory for us. After we have a aligned base,
-    // we will replace anonymous mapping with file mapping.
+    // For file mapping, we do not call os:reserve_memory_with_fd since:
+    // - we later chop away parts of the mapping using os::release_memory and that could fail if the
+    //   original mmap call had been tied to an fd.
+    // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
+    //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
+    //   chopping off and unmapping excess bits back and front (see below) would not work.
     extra_base = reserve_mmapped_memory(extra_size, NULL);
     if (extra_base != NULL) {
       MemTracker::record_virtual_memory_reserve((address)extra_base, extra_size, CALLER_PC);
     }
   } else {
-    extra_base = os::reserve_memory(extra_size, alignment);
+    extra_base = os::reserve_memory(extra_size);
   }
 
   if (extra_base == NULL) {

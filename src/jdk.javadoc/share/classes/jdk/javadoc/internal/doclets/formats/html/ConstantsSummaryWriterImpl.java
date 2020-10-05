@@ -258,7 +258,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      * @return the value column of the constant table row
      */
     private Content getValue(VariableElement member) {
-        String value = utils.constantValueExpresion(member);
+        String value = utils.constantValueExpression(member);
         Content valueContent = new StringContent(value);
         return HtmlTree.CODE(valueContent);
     }

@@ -146,10 +146,19 @@ jobs:
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
           name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ env.bundleid }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Checkout gtest sources
         uses: actions/checkout@v2
@@ -265,16 +274,34 @@ jobs:
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
           name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ env.bundleid }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Restore build artifacts
+        id: build_restore
         uses: actions/download-artifact@v2
         with:
           name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ env.bundleid }}
           path: ~/jdk-linux-x64${{ matrix.artifact }}
+        continue-on-error: true
+
+      - name: Restore build artifacts (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          path: ~/jdk-linux-x64${{ matrix.artifact }}
+        if: steps.build_restore.outcome == 'failure'
 
       - name: Unpack jdk
         run: |
@@ -304,6 +331,15 @@ jobs:
           TEST="${{ matrix.suites }}"
           TEST_OPTS_JAVA_OPTIONS=
           JTREG_KEYWORDS="!headful"
+          JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
+
+      - name: Check that all tests executed successfully
+        if: always()
+        run: >
+          if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
+            cat build/*/test-results/*/text/newfailures.txt ;
+            exit 1 ;
+          fi
 
       - name: Create suitable test log artifact name
         if: always()
@@ -388,10 +424,19 @@ jobs:
           path: gtest
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
           name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ env.bundleid }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Configure
         run: >
@@ -516,16 +561,34 @@ jobs:
           Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
           name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ env.bundleid }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Restore build artifacts
+        id: build_restore
         uses: actions/download-artifact@v2
         with:
           name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ env.bundleid }}
           path: ~/jdk-windows-x64${{ matrix.artifact }}
+        continue-on-error: true
+
+      - name: Restore build artifacts (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          path: ~/jdk-windows-x64${{ matrix.artifact }}
+        if: steps.build_restore.outcome == 'failure'
 
       - name: Unpack jdk
         run: |
@@ -561,6 +624,15 @@ jobs:
           TEST=${{ matrix.suites }}
           TEST_OPTS_JAVA_OPTIONS=
           JTREG_KEYWORDS="!headful"
+          JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
+
+      - name: Check that all tests executed successfully
+        if: always()
+        run: >
+          if ((Get-ChildItem -Path build\*\test-results\test-summary.txt -Recurse | Select-String -Pattern "TEST SUCCESS" ).Count -eq 0) {
+            Get-Content -Path build\*\test-results\*\*\newfailures.txt ;
+            exit 1
+          }
 
       - name: Create suitable test log artifact name
         if: always()
@@ -625,10 +697,19 @@ jobs:
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
           name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ env.bundleid }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Checkout gtest sources
         uses: actions/checkout@v2
@@ -744,16 +825,34 @@ jobs:
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
           name: transient_jtreg_${{ env.bundleid }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ env.bundleid }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Restore build artifacts
+        id: build_restore
         uses: actions/download-artifact@v2
         with:
           name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ env.bundleid }}
           path: ~/jdk-macos-x64${{ matrix.artifact }}
+        continue-on-error: true
+
+      - name: Restore build artifacts (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          path: ~/jdk-macos-x64${{ matrix.artifact }}
+        if: steps.build_restore.outcome == 'failure'
 
       - name: Unpack jdk
         run: |
@@ -786,6 +885,15 @@ jobs:
           TEST=${{ matrix.suites }}
           TEST_OPTS_JAVA_OPTIONS=
           JTREG_KEYWORDS="!headful"
+          JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
+
+      - name: Check that all tests executed successfully
+        if: always()
+        run: >
+          if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
+            cat build/*/test-results/*/text/newfailures.txt ;
+            exit 1 ;
+          fi
 
       - name: Create suitable test log artifact name
         if: always()

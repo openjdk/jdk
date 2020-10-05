@@ -40,10 +40,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.scenarios.allocation.AP02.ap02t001
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:ap02t001=-waittime=5 -verbose"
+ * @build nsk.jvmti.scenarios.allocation.AP02.ap02t001
+ * @run main/othervm/native
+ *      -agentlib:ap02t001=-waittime=5,-verbose
  *      nsk.jvmti.scenarios.allocation.AP02.ap02t001
  */
 

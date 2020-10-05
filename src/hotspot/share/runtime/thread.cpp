@@ -256,8 +256,6 @@ Thread::Thread() {
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  _vm_operation_started_count = 0;
-  _vm_operation_completed_count = 0;
   _current_pending_monitor = NULL;
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
@@ -969,13 +967,18 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
     st->print(" \"%s\"", name());
   }
 
-  st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
-            p2i(stack_end()), p2i(stack_base()));
-
-  if (osthread()) {
-    st->print(" [id=%d]", osthread()->thread_id());
+  OSThread* os_thr = osthread();
+  if (os_thr != NULL) {
+    if (os_thr->get_state() != ZOMBIE) {
+      st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
+                p2i(stack_end()), p2i(stack_base()));
+      st->print(" [id=%d]", osthread()->thread_id());
+    } else {
+      st->print(" terminated");
+    }
+  } else {
+    st->print(" unknown state (no osThread)");
   }
-
   ThreadsSMRSupport::print_info_on(this, st);
 }
 
@@ -1365,6 +1368,7 @@ void NonJavaThread::post_run() {
   unregister_thread_stack_with_NMT();
   // Ensure thread-local-storage is cleared before termination.
   Thread::clear_thread_current();
+  osthread()->set_state(ZOMBIE);
 }
 
 // NamedThread --  non-JavaThread subclasses with multiple
