@@ -127,27 +127,29 @@ public interface Taglet {
 
     /**
      * Returns the content to be included in the generated output for an
-     * instance of a tag handled by this taglet.
+     * instance of an inline tag handled by this taglet.
      *
-     * @param element the element for the enclosing doc comment
-     * @param tag     the tag
-     * @param writer  the taglet-writer used in this doclet
+     * @param owner  the element for the enclosing doc comment
+     * @param tag    the tag
+     * @param writer the taglet-writer used in this doclet
+     *
      * @return the output for this tag
-     * @throws UnsupportedTagletOperationException thrown when the method is not supported by the taglet
+     * @throws UnsupportedTagletOperationException if the method is not supported by the taglet
      */
-    Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) throws
+    Content getInlineTagOutput(Element owner, DocTree tag, TagletWriter writer) throws
             UnsupportedTagletOperationException;
 
     /**
      * Returns the content to be included in the generated output for
-     * instances of a tag handled by this taglet.
+     * all instances of block tags handled by this taglet.
      *
-     * @param element the element for the enclosing doc comment
-     * @param writer  the taglet-writer used in this doclet
+     * @param owner  the element for the enclosing doc comment
+     * @param writer the taglet-writer used in this doclet
+     *
      * @return the output for this tag
-     * @throws UnsupportedTagletOperationException thrown when the method is not supported by the taglet
+     * @throws UnsupportedTagletOperationException if the method is not supported by the taglet
      */
-    Content getTagletOutput(Element element, TagletWriter writer) throws
+    Content getAllBlockTagOutput(Element owner, TagletWriter writer) throws
             UnsupportedTagletOperationException;
 
     class UnsupportedTagletOperationException extends UnsupportedOperationException {

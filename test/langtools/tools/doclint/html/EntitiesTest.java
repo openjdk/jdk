@@ -26,7 +26,7 @@
  * @bug 8006263
  * @summary Supplementary test cases needed for doclint
  * @library ..
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs:-html EntitiesTest.java
  * @run main DocLintTester -Xmsgs:html -ref EntitiesTest.out EntitiesTest.java

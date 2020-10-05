@@ -30,53 +30,6 @@
 #include "runtime/task.hpp"
 #include "runtime/vmOperations.hpp"
 
-class VM_QueueHead : public VM_None {
- public:
-  VM_QueueHead() : VM_None("QueueHead") {}
-};
-
-//
-// Prioritized queue of VM operations.
-//
-// Encapsulates both queue management and
-// and priority policy
-//
-class VMOperationQueue : public CHeapObj<mtInternal> {
- private:
-  enum Priorities {
-     SafepointPriority, // Highest priority (operation executed at a safepoint)
-     MediumPriority,    // Medium priority
-     nof_priorities
-  };
-
-  // We maintain a doubled linked list, with explicit count.
-  int           _queue_length[nof_priorities];
-  int           _queue_counter;
-  VM_Operation* _queue       [nof_priorities];
-
-  static VM_QueueHead _queue_head[nof_priorities];
-
-  // Double-linked non-empty list insert.
-  void insert(VM_Operation* q,VM_Operation* n);
-  void unlink(VM_Operation* q);
-
-  // Basic queue manipulation
-  bool queue_empty                (int prio);
-  void queue_add                  (int prio, VM_Operation *op);
-  VM_Operation* queue_remove_front(int prio);
-  // lock-free query: may return the wrong answer but must not break
-  bool queue_peek(int prio) { return _queue_length[prio] > 0; }
-
- public:
-  VMOperationQueue();
-
-  // Highlevel operations. Encapsulates policy
-  void add(VM_Operation *op);
-  VM_Operation* remove_next();                        // Returns next or null
-  bool peek_at_safepoint_priority() { return queue_peek(SafepointPriority); }
-};
-
-
 // VM operation timeout handling: warn or abort the VM when VM operation takes
 // too long. Periodic tasks do not participate in safepoint protocol, and therefore
 // can fire when application threads are stopped.
@@ -114,9 +67,12 @@ class VMThread: public NamedThread {
 
   static VMOperationTimeoutTask* _timeout_task;
 
-  static VM_Operation* no_op_safepoint();
+  static bool handshake_alot();
+  static void setup_periodic_safepoint_if_needed();
 
   void evaluate_operation(VM_Operation* op);
+  void inner_execute(VM_Operation* op);
+  void wait_for_operation();
 
  public:
   // Constructor
@@ -143,8 +99,16 @@ class VMThread: public NamedThread {
   static void execute(VM_Operation* op);
 
   // Returns the current vm operation if any.
-  static VM_Operation* vm_operation()             { return _cur_vm_operation; }
-  static VM_Operation::VMOp_Type vm_op_type()     { return _cur_vm_operation->type(); }
+  static VM_Operation* vm_operation()             {
+    assert(Thread::current()->is_VM_thread(), "Must be");
+    return _cur_vm_operation;
+  }
+
+  static VM_Operation::VMOp_Type vm_op_type()     {
+    VM_Operation* op = vm_operation();
+    assert(op != NULL, "sanity");
+    return op->type();
+  }
 
   // Returns the single instance of VMThread.
   static VMThread* vm_thread()                    { return _vm_thread; }
@@ -152,7 +116,9 @@ class VMThread: public NamedThread {
   void verify();
 
   // Performance measurement
-  static PerfCounter* perf_accumulated_vm_operation_time()               { return _perf_accumulated_vm_operation_time; }
+  static PerfCounter* perf_accumulated_vm_operation_time() {
+    return _perf_accumulated_vm_operation_time;
+  }
 
   // Entry for starting vm thread
   virtual void run();
@@ -161,10 +127,14 @@ class VMThread: public NamedThread {
   static void create();
   static void destroy();
 
+  static void wait_until_executed(VM_Operation* op);
+
  private:
   // VM_Operation support
   static VM_Operation*     _cur_vm_operation;   // Current VM operation
-  static VMOperationQueue* _vm_queue;           // Queue (w/ policy) of VM operations
+  static VM_Operation*     _next_vm_operation;  // Next VM operation
+
+  bool set_next_operation(VM_Operation *op);    // Set the _next_vm_operation if possible.
 
   // Pointer to single-instance of VM thread
   static VMThread*     _vm_thread;

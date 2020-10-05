@@ -76,7 +76,6 @@ public final class AMD64StringUTF16CompressOp extends AMD64LIRInstruction {
     public AMD64StringUTF16CompressOp(LIRGeneratorTool tool, int useAVX3Threshold, Value res, Value src, Value dst, Value len) {
         super(TYPE);
 
-        assert CodeUtil.isPowerOf2(useAVX3Threshold) : "AVX3Threshold must be power of 2";
         this.useAVX3Threshold = useAVX3Threshold;
 
         assert asRegister(src).equals(rsi);

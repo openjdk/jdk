@@ -39,9 +39,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.Version.version002
- *        nsk.jdwp.VirtualMachine.Version.version002a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.VirtualMachine.Version.version002a
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.Version.version002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

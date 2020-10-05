@@ -459,10 +459,8 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     if (header.to_pointer() != NULL) {
       markWord old_header = markWord::encode(lock);
       if (rcvr->cas_set_mark(header, old_header) != old_header) {
-        monitor->set_obj(rcvr); {
-          HandleMark hm(thread);
-          CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(thread, monitor));
-        }
+        monitor->set_obj(rcvr);
+        InterpreterRuntime::monitorexit(monitor);
       }
     }
   }

@@ -627,7 +627,7 @@ BytecodeInterpreter::run(interpreterState istate) {
                 (* BiasedLocking::rebiased_lock_entry_count_addr())++;
               }
             } else {
-              CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
+              InterpreterRuntime::monitorenter(THREAD, mon);
             }
             success = true;
           } else {
@@ -1822,7 +1822,7 @@ run:
                 if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
                   // restore object for the slow case
                   most_recent->set_obj(lockee);
-                  CALL_VM(InterpreterRuntime::monitorexit(THREAD, most_recent), handle_exception);
+                  InterpreterRuntime::monitorexit(most_recent);
                 }
               }
             }
@@ -2959,11 +2959,7 @@ run:
               if (lockee->cas_set_mark(header, old_header) != old_header) {
                 // restore object for the slow case
                 end->set_obj(lockee);
-                {
-                  // Prevent any HandleMarkCleaner from freeing our live handles
-                  HandleMark __hm(THREAD);
-                  CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(THREAD, end));
-                }
+                InterpreterRuntime::monitorexit(end);
               }
             }
           }
@@ -3013,11 +3009,7 @@ run:
               THREAD->clear_pending_exception();
             }
           } else if (UseHeavyMonitors) {
-            {
-              // Prevent any HandleMarkCleaner from freeing our live handles.
-              HandleMark __hm(THREAD);
-              CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(THREAD, base));
-            }
+            InterpreterRuntime::monitorexit(base);
             if (THREAD->has_pending_exception()) {
               if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
@@ -3035,11 +3027,7 @@ run:
                 if (rcvr->cas_set_mark(header, old_header) != old_header) {
                   // restore object for the slow case
                   base->set_obj(rcvr);
-                  {
-                    // Prevent any HandleMarkCleaner from freeing our live handles
-                    HandleMark __hm(THREAD);
-                    CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(THREAD, base));
-                  }
+                  InterpreterRuntime::monitorexit(base);
                   if (THREAD->has_pending_exception()) {
                     if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
                     THREAD->clear_pending_exception();

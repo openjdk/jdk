@@ -27,20 +27,27 @@
 
 #include "runtime/flags/jvmFlag.hpp"
 
-#define ALL_LIMIT_TYPES(f)  \
-  f(int)                    \
-  f(intx)                   \
-  f(uint)                   \
-  f(uintx)                  \
-  f(uint64_t)               \
-  f(size_t)                 \
-  f(double)
-
-#define ALL_RANGE_TYPES(f) ALL_LIMIT_TYPES(f)
-#define ALL_CONSTRAINT_TYPES(f) ALL_LIMIT_TYPES(f) f(bool)
-
+class outputStream;
 template <typename T> class JVMTypedFlagLimit;
 
+enum class JVMFlagConstraintPhase : int {
+  // Will be validated during argument processing (Arguments::parse_argument).
+  AtParse         = 0,
+  // Will be validated inside Threads::create_vm(), right after Arguments::apply_ergo().
+  AfterErgo       = 1,
+  // Will be validated inside universe_init(), right after Metaspace::global_initialize().
+  AfterMemoryInit = 2
+};
+
+
+typedef JVMFlag::Error (*JVMFlagConstraintFunc_bool)(bool value, bool verbose);
+typedef JVMFlag::Error (*JVMFlagConstraintFunc_int)(int value, bool verbose);
+typedef JVMFlag::Error (*JVMFlagConstraintFunc_intx)(intx value, bool verbose);
+typedef JVMFlag::Error (*JVMFlagConstraintFunc_uint)(uint value, bool verbose);
+typedef JVMFlag::Error (*JVMFlagConstraintFunc_uintx)(uintx value, bool verbose);
+typedef JVMFlag::Error (*JVMFlagConstraintFunc_uint64_t)(uint64_t value, bool verbose);
+typedef JVMFlag::Error (*JVMFlagConstraintFunc_size_t)(size_t value, bool verbose);
+typedef JVMFlag::Error (*JVMFlagConstraintFunc_double)(double value, bool verbose);
 
 // A JVMFlagLimit is created for each JVMFlag that has a range() and/or constraint() in its declaration in
 // the globals_xxx.hpp file.
@@ -61,14 +68,15 @@ class JVMFlagLimit {
   char  _kind;
 
   static const JVMFlagLimit* const* flagLimits;
-  static int _last_checked;
+  static JVMFlagsEnum _last_checked;
+  static JVMFlagConstraintPhase _validating_phase;
 
 protected:
   static constexpr int HAS_RANGE = 1;
   static constexpr int HAS_CONSTRAINT = 2;
 
 private:
-  static const JVMFlagLimit* get_kind_at(int flag_enum, int required_kind) {
+  static const JVMFlagLimit* get_kind_at(JVMFlagsEnum flag_enum, int required_kind) {
     const JVMFlagLimit* limit = at(flag_enum);
     if (limit != NULL && (limit->_kind & required_kind) != 0) {
       _last_checked = flag_enum;
@@ -78,9 +86,9 @@ private:
     }
   }
 
-  static const JVMFlagLimit* at(int flag_enum) {
+  static const JVMFlagLimit* at(JVMFlagsEnum flag_enum) {
     JVMFlag::assert_valid_flag_enum(flag_enum);
-    return flagLimits[flag_enum];
+    return flagLimits[static_cast<int>(flag_enum)];
   }
 
 public:
@@ -93,28 +101,34 @@ public:
   static const JVMFlagLimit* get_range(const JVMFlag* flag) {
     return get_range_at(flag->flag_enum());
   }
-  static const JVMFlagLimit* get_range_at(int flag_enum) {
+  static const JVMFlagLimit* get_range_at(JVMFlagsEnum flag_enum) {
     return get_kind_at(flag_enum, HAS_RANGE);
   }
 
   static const JVMFlagLimit* get_constraint(const JVMFlag* flag) {
     return get_constraint_at(flag->flag_enum());
   }
-  static const JVMFlagLimit* get_constraint_at(int flag_enum) {
+  static const JVMFlagLimit* get_constraint_at(JVMFlagsEnum flag_enum) {
     return get_kind_at(flag_enum, HAS_CONSTRAINT);
   }
 
-  static const JVMFlag* last_checked_flag() {
-    if (_last_checked >= 0) {
-      return JVMFlag::flag_from_enum(_last_checked);
-    } else {
-      return NULL;
-    }
+  static const JVMFlag* last_checked_flag();
+
+  // Is the current value of each JVM flag within the allowed range (if specified)
+  static bool check_all_ranges();
+  void print_range(outputStream* st, const JVMFlag* flag) const;
+
+  // Does the current value of each JVM flag satisfy the specified constraint
+  static bool check_all_constraints(JVMFlagConstraintPhase phase);
+
+  // If range/constraint checks fail, print verbose error messages only if we are parsing
+  // arguments from the command-line. Silently ignore any invalid values that are
+  // set programmatically via FLAG_SET_ERGO, etc.
+  static bool verbose_checks_needed() {
+    return _validating_phase == JVMFlagConstraintPhase::AtParse;
   }
 
-#define AS_TYPED_LIMIT(type) inline JVMTypedFlagLimit<type>* as_ ## type() const { return (JVMTypedFlagLimit<type>*)this; }
-  ALL_RANGE_TYPES(AS_TYPED_LIMIT)
-
+  static JVMFlagConstraintPhase validating_phase() { return _validating_phase; }
 };
 
 enum ConstraintMarker {

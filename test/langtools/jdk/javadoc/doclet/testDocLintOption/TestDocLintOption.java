@@ -26,7 +26,7 @@
  * @bug     8236949 8238259
  * @summary javadoc -Xdoclint does not accumulate options correctly
  * @library /tools/lib ../../lib
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  *          jdk.javadoc/jdk.javadoc.internal.tool
  * @build   toolbox.ToolBox javadoc.tester.*
  * @run main TestDocLintOption
@@ -40,8 +40,8 @@ import java.util.Set;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.sun.tools.doclint.Messages.Group;
-import static com.sun.tools.doclint.Messages.Group.*;
+import jdk.javadoc.internal.doclint.Messages.Group;
+import static jdk.javadoc.internal.doclint.Messages.Group.*;
 
 import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;

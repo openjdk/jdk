@@ -165,7 +165,7 @@ public class IndexBuilder {
                 String name = utils.getSimpleName(element);
                 Character ch = keyCharacter(name);
                 SortedSet<IndexItem> set = indexMap.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-                set.add(new IndexItem(element, typeElement, configuration.utils));
+                set.add(new IndexItem(element, typeElement, utils));
             }
         }
     }
@@ -181,7 +181,7 @@ public class IndexBuilder {
                 String name = utils.getSimpleName(typeElement);
                 Character ch = keyCharacter(name);
                 SortedSet<IndexItem> set = indexMap.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-                set.add(new IndexItem(typeElement, configuration.utils));
+                set.add(new IndexItem(typeElement, utils));
             }
         }
     }
@@ -197,7 +197,7 @@ public class IndexBuilder {
         for (ModuleElement m : configuration.modules) {
             Character ch = keyCharacter(m.getQualifiedName().toString());
             SortedSet<IndexItem> set = indexMap.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-            set.add(new IndexItem(m, configuration.utils));
+            set.add(new IndexItem(m, utils));
         }
     }
 
@@ -210,7 +210,7 @@ public class IndexBuilder {
         if (shouldIndex(packageElement)) {
             Character ch = keyCharacter(utils.getPackageName(packageElement));
             SortedSet<IndexItem> set = indexMap.computeIfAbsent(ch, c -> new TreeSet<>(comparator));
-            set.add(new IndexItem(packageElement, configuration.utils));
+            set.add(new IndexItem(packageElement, utils));
         }
     }
 
@@ -225,14 +225,14 @@ public class IndexBuilder {
         if (utils.isPackage(element)) {
             // Do not add to index map if -nodeprecated option is set and the
             // package is marked as deprecated.
-            return !(noDeprecated && configuration.utils.isDeprecated(element));
+            return !(noDeprecated && utils.isDeprecated(element));
         } else {
             // Do not add to index map if -nodeprecated option is set and if the
             // element is marked as deprecated or the containing package is marked as
             // deprecated.
             return !(noDeprecated &&
-                    (configuration.utils.isDeprecated(element) ||
-                    configuration.utils.isDeprecated(utils.containingPackage(element))));
+                    (utils.isDeprecated(element) ||
+                    utils.isDeprecated(utils.containingPackage(element))));
         }
     }
 

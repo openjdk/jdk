@@ -55,9 +55,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.ReleaseEvents.releaseevents001
- *        nsk.jdwp.VirtualMachine.ReleaseEvents.releaseevents001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.VirtualMachine.ReleaseEvents.releaseevents001a
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.ReleaseEvents.releaseevents001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
