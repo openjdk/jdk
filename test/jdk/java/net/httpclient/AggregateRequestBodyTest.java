@@ -102,6 +102,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     static final int RESPONSE_CODE = 200;
     static final int ITERATION_COUNT = 4;
+    static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = new TestExecutor(Executors.newCachedThreadPool());
     static final ConcurrentMap<String, Throwable> FAILURES = new ConcurrentHashMap<>();
@@ -532,6 +533,19 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         BodyPublisher publisher = BodyPublishers.concat(publishers);
         assertEquals(publisher.contentLength(), length,
                 description.replace("null", "length(-1)"));
+    }
+
+    @Test
+    public void testNonPositiveRequest() {
+        BodyPublisher publisher = BodyPublishers.concat(ContentLengthPublisher.of(List.of(1L, 2L, 3L)));
+        RequestSubscriber subscriber = new RequestSubscriber();
+        publisher.subscribe(subscriber);
+        Subscription subscription = subscriber.subscriptionCF.join();
+        LongStream.of(0L, -1L, -2L, Long.MIN_VALUE).forEach((l) -> {
+            IllegalArgumentException iae = expectThrows(IAE,
+                    () -> subscription.request(l));
+            System.out.printf("Got expected IAE for %d: %s%n", l, iae);
+        });
     }
 
     @Test(dataProvider = "contentLengths")
