@@ -499,7 +499,7 @@ public final class RequestPublishers {
 
 
     public static BodyPublisher concat(BodyPublisher... publishers) {
-        if (publishers == null || publishers.length == 0) {
+        if (publishers.length == 0) {
             return new EmptyPublisher();
         } else if (publishers.length == 1) {
             return Objects.requireNonNull(publishers[0]);
@@ -566,7 +566,7 @@ public final class RequestPublishers {
         AggregateSubscription(List<BodyPublisher> bodies, Flow.Subscriber<? super ByteBuffer> subscriber) {
             this.bodies = new ConcurrentLinkedQueue<>(bodies);
             this.subscriber = subscriber;
-            scheduler = SequentialScheduler.synchronizedScheduler(this::run);
+            this.scheduler = SequentialScheduler.synchronizedScheduler(this::run);
         }
 
         @Override
