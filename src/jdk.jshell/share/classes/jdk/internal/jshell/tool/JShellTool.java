@@ -1008,7 +1008,7 @@ public class JShellTool implements MessageHandler {
         closeState();
         return exitCode;
     }
-    
+
     private void configBrowser() {
         browser = configTool(ToolType.BROWSER);
     }
@@ -1016,7 +1016,7 @@ public class JShellTool implements MessageHandler {
     private void configEditor() {
         editor = configTool(ToolType.EDITOR);
     }
-    
+
     private ToolSetting configTool(ToolType type) {
         // Read retained editor setting (if any)
         ToolSetting tool = ToolSetting.fromPrefs(prefs, type);
@@ -2110,7 +2110,7 @@ public class JShellTool implements MessageHandler {
             this.prefKey = prefKey;
             this.envVars = envVars;
         }
-        
+
     }
 
     static class ToolSetting {
