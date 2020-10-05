@@ -60,7 +60,7 @@ class GenerateJLIClassesHelper {
         if (TRACE_RESOLVE || CDS.isDumpLoadedClassList()) {
             String traceLF = LF_RESOLVE + " " + holder.getName() + " " + name + " " +
                     shortenSignature(basicTypeSignature(type)) +
-                    (resolvedMember != null ? " (success)" : " (fail)");
+                    (TRACE_RESOLVE ? (resolvedMember != null ? " (success)" : " (fail)") : "");
             if (TRACE_RESOLVE) {
                 System.out.println(traceLF);
             }
@@ -70,7 +70,8 @@ class GenerateJLIClassesHelper {
 
     static void traceSpeciesType(String cn, Class<?> salvage) {
         if (TRACE_RESOLVE || CDS.isDumpLoadedClassList()) {
-            String traceSP = SPECIES_RESOLVE + " " + cn + (salvage != null ? " (salvaged)" : " (generated)");
+            String traceSP = SPECIES_RESOLVE + " " + cn +
+                    (TRACE_RESOLVE ? (salvage != null ? " (salvaged)" : " (generated)") : "");
             if (TRACE_RESOLVE) {
                 System.out.println(traceSP);
             }
@@ -91,8 +92,11 @@ class GenerateJLIClassesHelper {
             );
 
     static final String DIRECT_HOLDER = "java/lang/invoke/DirectMethodHandle$Holder";
+    static final String DIRECT_HOLDER_CLASS_NAME = DIRECT_HOLDER.replace('/', '.');
     static final String DELEGATING_HOLDER = "java/lang/invoke/DelegatingMethodHandle$Holder";
+    static final String DELEGATING_HOLDER_CLASS_NAME = DELEGATING_HOLDER.replace('/', '.');
     static final String BASIC_FORMS_HOLDER = "java/lang/invoke/LambdaForm$Holder";
+    static final String BASIC_FORMS_HOLDER_CLASS_NAME = BASIC_FORMS_HOLDER.replace('/', '.');
     static final String INVOKERS_HOLDER = "java/lang/invoke/Invokers$Holder";
     static final String INVOKERS_HOLDER_CLASS_NAME = INVOKERS_HOLDER.replace('/', '.');
     static final String BMH_SPECIES_PREFIX = "java.lang.invoke.BoundMethodHandle$Species_";
@@ -321,7 +325,7 @@ class GenerateJLIClassesHelper {
      * Used by GenerateJLIClassesPlugin to pre-generate holder classes during
      * jlink phase.
      */
-    static Map<String, byte[]> generateHolderClasses(Stream<String> traces)  {
+    static Map<String, byte[]> generateHolderClasses(Stream<String> traces, boolean isFromCDS)  {
         Objects.requireNonNull(traces);
         HolderClassBuilder builder = new HolderClassBuilder();
         traces.map(line -> line.split(" "))
@@ -329,7 +333,11 @@ class GenerateJLIClassesHelper {
                     switch (parts[0]) {
                         case SPECIES_RESOLVE:
                             // Allow for new types of species data classes being resolved here
-                            assert parts.length == 3;
+                            if (isFromCDS) {
+                                assert parts.length == 2;
+                            } else {
+                                assert parts.length == 3;
+                            }
                             if (parts[1].startsWith(BMH_SPECIES_PREFIX)) {
                                 String species = parts[1].substring(BMH_SPECIES_PREFIX.length());
                                 if (!"L".equals(species)) {
@@ -363,14 +371,75 @@ class GenerateJLIClassesHelper {
         return builder.build();
     }
 
+    private static boolean isValidHolderName(String name) {
+        return name.equals(DIRECT_HOLDER_CLASS_NAME)      ||
+               name.equals(DELEGATING_HOLDER_CLASS_NAME)  ||
+               name.equals(BASIC_FORMS_HOLDER_CLASS_NAME) ||
+               name.equals(INVOKERS_HOLDER_CLASS_NAME);
+    }
+
+    private static String[] END_WORDS = {"(success)", "(fail)", "(generated)", "(salvaged)"};
+    // The line could ended with END_WORDS.
+    private static String cdsGetString(String str) {
+        for (String s : END_WORDS) {
+            if (str.contains(s)) {
+                return str.replace(s, "").trim();
+            }
+        }
+        return str.trim();
+    }
+
+    // return the valid lines, called from cdsGenerateHolderClasses which is called only from vm.
+    // return null for invalid input
+    private static Stream<String>  validateInputLines(String[] lines) {
+        ArrayList<String> list = new ArrayList<String>(lines.length);
+        for (String s: lines) {
+            System.out.println("1X: " + s);
+            String line = cdsGetString(s);
+            System.out.println("1Y: " + line);
+            if (!line.startsWith("[LF_RESOLVE]") && !line.startsWith("[SPECIES_RESOLVE]")) {
+                System.out.println("Wrong prefix: " + line);
+                return null;
+            }
+
+            String[] parts = line.split(" ");
+            boolean isLF = line.startsWith("[LF_RESOLVE]");
+
+            if (isLF) {
+                if (parts.length != 4) {
+                    System.out.println("Incorrecct number of items in the line: " + parts.length);
+                    System.out.println("line: " + line);
+                    return null;
+                }
+                if (!isValidHolderName(parts[1])) {
+                    System.out.println("Invalid holder class name: " + parts[1]);
+                    return null;
+                }
+            } else {
+                if (parts.length != 2) {
+                   System.out.println("Incorrect number of items in the line: " + parts.length);
+                   return null;
+                }
+           }
+           list.add(line);
+      }
+      return list.stream();
+    }
+
     /**
      * called from vm to generate MethodHandle holder classes
      * @return @code { Object[] } if holder classes can be generated.
      * @param lines in format of LF_RESOLVE or SPECIES_RESOLVE output
      */
     private static Object[] cdsGenerateHolderClasses(String[] lines) {
+        Objects.requireNonNull(lines);
         try {
-            Map<String, byte[]> result = generateHolderClasses(Arrays.stream(lines));
+            Stream<String> validLines = validateInputLines(lines);
+            if (validLines == null) {
+                // invalid input, quit regeneration of holder classes
+                return null;
+            }
+            Map<String, byte[]> result = generateHolderClasses(validLines, true);
             int size = result.size();
             Object[] retArray = new Object[size * 2];
             int index = 0;
@@ -380,6 +449,7 @@ class GenerateJLIClassesHelper {
             };
             return retArray;
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }

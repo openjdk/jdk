@@ -48,16 +48,6 @@
 
 GrowableArray<char*>* LambdaFormInvokers::_lambdaform_lines = NULL;
 
-// trim white spaces from front and end of string.
-char* trim(char* s) {
-  assert(s != NULL && strlen(s) > 0, "Must not be NULL");
-  while(isspace(*s)) s++;
-  char* i = s + strlen(s);
-  while(isspace(*--i));
-  *(i+1) = '\0';
-  return s;
-}
-
 void LambdaFormInvokers::append(char* line) {
   if (_lambdaform_lines == NULL) {
     _lambdaform_lines = new GrowableArray<char*>(100);
@@ -78,7 +68,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   for (int i = 0; i < len; i++) {
     char* record = _lambdaform_lines->at(i);
     record += strlen(lambda_form_invoker_tag()) + 1; // skip the @lambda_form_invoker prefix
-    Handle h_line = java_lang_String::create_from_str(trim(record), CHECK);
+    Handle h_line = java_lang_String::create_from_str(record, CHECK);
     list_lines->obj_at_put(i, h_line());
   }
 
