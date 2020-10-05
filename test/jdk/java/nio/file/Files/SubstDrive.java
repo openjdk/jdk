@@ -57,17 +57,17 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class SubstDrive {
 
     private static final Path SUBST_DRIVE = Path.of("X:");
-    private static Path TEST_TEMP_FOLDER;
+    private static Path TEST_TEMP_DIRECTORY;
 
     /**
      * Create a temporary directory where all subsequently created temp
-     * directories will be in. This folder and all of its contents will be
+     * directories will be in. This directory and all of its contents will be
      * deleted when the test finishes.
      */
     @BeforeTest
     public void createRootTempDirectory() throws IOException {
-        TEST_TEMP_FOLDER = TestUtil.createTemporaryDirectory();
-        System.out.printf("Test folder is at %s\n", TEST_TEMP_FOLDER);
+        TEST_TEMP_DIRECTORY = TestUtil.createTemporaryDirectory();
+        System.out.printf("Test directory is at %s\n", TEST_TEMP_DIRECTORY);
     }
 
     /**
@@ -76,11 +76,11 @@ public class SubstDrive {
      */
     @AfterTest
     public void removeRootTempDirectory() throws IOException {
-        TestUtil.removeAll(TEST_TEMP_FOLDER);
+        TestUtil.removeAll(TEST_TEMP_DIRECTORY);
     }
 
     /**
-     * Each test method maps drive `SUBST_DRIVE` to a temporary folder,
+     * Each test method maps drive `SUBST_DRIVE` to a temporary directory,
      * unmap the drive after every test so that subsequent ones can reuse
      * the drive.
      */
@@ -98,7 +98,7 @@ public class SubstDrive {
      */
     @Test
     public void testCreateAndDeleteFile() throws IOException {
-        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_FOLDER);
+        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_DIRECTORY);
         substCreate(SUBST_DRIVE, tempDirectory);
 
         String fileContents = "Hello world!";
@@ -112,11 +112,11 @@ public class SubstDrive {
     }
 
     /**
-     * Test if we can delete the substituted drive (essentially just a folder).
+     * Test if we can delete the substituted drive (essentially just a directory).
      */
     @Test
     public void testDeleteSubstitutedDrive() throws IOException {
-        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_FOLDER);
+        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_DIRECTORY);
         substCreate(SUBST_DRIVE, tempDirectory);
 
         Assert.assertTrue(Files.exists(tempDirectory));
@@ -130,7 +130,7 @@ public class SubstDrive {
      */
     @Test
     public void testAttributes() throws IOException {
-        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_FOLDER);
+        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_DIRECTORY);
         substCreate(SUBST_DRIVE, tempDirectory);
 
         Assert.assertTrue(Files.isSameFile(tempDirectory, SUBST_DRIVE));
@@ -174,7 +174,7 @@ public class SubstDrive {
      */
     @Test
     public void testGetSetAttributes() throws IOException {
-        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_FOLDER);
+        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_DIRECTORY);
         substCreate(SUBST_DRIVE, tempDirectory);
 
         Files.setAttribute(SUBST_DRIVE, "dos:hidden", true);
@@ -196,7 +196,7 @@ public class SubstDrive {
      */
     @Test
     public void testFileStore() throws IOException {
-        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_FOLDER);
+        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_DIRECTORY);
         substCreate(SUBST_DRIVE, tempDirectory);
 
         FileStore fileStore1 = Files.getFileStore(tempDirectory);
@@ -237,7 +237,7 @@ public class SubstDrive {
      */
     @Test
     public void testMoveAndCopySubstDrive() throws IOException {
-        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_FOLDER);
+        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_DIRECTORY);
         Path tempDirectoryCopy = Path.of(tempDirectory.toString() + "_copy");
 
         substCreate(SUBST_DRIVE, tempDirectory);
@@ -281,15 +281,15 @@ public class SubstDrive {
      */
     @Test
     public void testRealPath() throws IOException {
-        if (!TestUtil.supportsLinks(TEST_TEMP_FOLDER)) {
+        if (!TestUtil.supportsLinks(TEST_TEMP_DIRECTORY)) {
             return;
         }
 
-        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_FOLDER);
+        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_DIRECTORY);
         substCreate(SUBST_DRIVE, tempDirectory);
 
-        Path substDir = Files.createDirectory(SUBST_DRIVE.resolve("folder"));
-        Path dir = tempDirectory.resolve("folder");
+        Path substDir = Files.createDirectory(SUBST_DRIVE.resolve("directory"));
+        Path dir = tempDirectory.resolve("directory");
 
         Path substFile = Files.createFile(substDir.resolve("foo"));
         Path substLink = substDir.resolve("link");
@@ -309,11 +309,11 @@ public class SubstDrive {
      */
     @Test
     public void testGetResolvedSymlinkAttribute() throws IOException {
-        if (!TestUtil.supportsLinks(TEST_TEMP_FOLDER)) {
+        if (!TestUtil.supportsLinks(TEST_TEMP_DIRECTORY)) {
             return;
         }
 
-        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_FOLDER);
+        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_DIRECTORY);
         substCreate(SUBST_DRIVE, tempDirectory);
 
         Path tempFile = Path.of(SUBST_DRIVE.toString(), "test.txt");
@@ -335,17 +335,17 @@ public class SubstDrive {
     }
 
     /**
-     * Test if files and folders can be created, moved, and cut when the
+     * Test if files and directories can be created, moved, and cut when the
      * substituted drive is a symlink.
      * Note: requires administrator privileges.
      */
     @Test
-    public void testSubstWithSymlinkedFolder() throws IOException {
-        if (!TestUtil.supportsLinks(TEST_TEMP_FOLDER)) {
+    public void testSubstWithSymlinkedDirectory() throws IOException {
+        if (!TestUtil.supportsLinks(TEST_TEMP_DIRECTORY)) {
             return;
         }
 
-        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_FOLDER);
+        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_DIRECTORY);
         Path tempLink = Path.of(tempDirectory.toString() + "_link");
         Files.createSymbolicLink(tempLink, tempDirectory);
 
@@ -362,7 +362,7 @@ public class SubstDrive {
         Files.writeString(tempFile, contents);
         Assert.assertEquals(Files.readString(tempFile), contents);
 
-        Path tempDirectory2 = TestUtil.createTemporaryDirectory(TEST_TEMP_FOLDER);
+        Path tempDirectory2 = TestUtil.createTemporaryDirectory(TEST_TEMP_DIRECTORY);
         Path copy = Path.of(tempDirectory2.toString(), "copied");
         Files.copy(tempFile, copy);
 
@@ -383,11 +383,11 @@ public class SubstDrive {
      */
     @Test
     public void testMoveAndCopyFilesToSymlinkedDrive() throws IOException {
-        if (!TestUtil.supportsLinks(TEST_TEMP_FOLDER)) {
+        if (!TestUtil.supportsLinks(TEST_TEMP_DIRECTORY)) {
             return;
         }
 
-        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_FOLDER);
+        Path tempDirectory = TestUtil.createTemporaryDirectory(TEST_TEMP_DIRECTORY);
         Path tempLink = Path.of(tempDirectory.toString() + "_link");
         Files.createSymbolicLink(tempLink, tempDirectory);
 
