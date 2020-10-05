@@ -26,7 +26,6 @@
  * @bug 8181386
  * @summary CipherSpi ByteBuffer to byte array conversion fails for
  *          certain data overlap conditions
- * @library /test/lib
  * @run main CipherByteBufferOverwriteTest 0 false
  * @run main CipherByteBufferOverwriteTest 0 true
  * @run main CipherByteBufferOverwriteTest 4 false
@@ -173,7 +172,6 @@ public class CipherByteBufferOverwriteTest {
         // now do decryption
         outBuf.position(ofs);
         outBuf.limit(ofs + ciphertextSize);
-//        System.out.println("decrypt");
         c.init(Cipher.DECRYPT_MODE, KEY, PARAMS);
         ByteBuffer finalPTBuf = ByteBuffer.allocate(
                 c.getOutputSize(outBuf.remaining()));
@@ -185,8 +183,6 @@ public class CipherByteBufferOverwriteTest {
         finalPTBuf.get(finalPT);
 
         if (!Arrays.equals(finalPT, expectedPT)) {
-//            System.out.println("fin: " + jdk.test.lib.Convert.byteArrayToHexString(finalPT));
-//            System.out.println("exp: " + jdk.test.lib.Convert.byteArrayToHexString(expectedPT));
             throw new Exception("ERROR: Plaintext does not match");
         }
     }

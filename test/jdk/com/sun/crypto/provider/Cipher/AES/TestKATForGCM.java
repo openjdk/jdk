@@ -319,51 +319,6 @@ public class TestKATForGCM {
         }
     }
 
-    /*
-        public boolean executeByteBufferArray(TestVector[] testValues) throws Exception {
-            boolean testFailed = false;
-
-            for (TestVector tv : testValues) {
-                ByteBuffer src = ByteBuffer.allocate(tv.plainText.length);
-                ByteBuffer ctdst = ByteBuffer.allocate(tv.cipherText.length + tv.tag.length);
-                ByteBuffer ptdst = ByteBuffer.allocate(tv.plainText.length);
-
-                src.put(tv.plainText);
-                src.flip();
-
-                if (runByteBufferTest(tv, src, ctdst, ptdst)) {
-                    testFailed = true;
-                }
-            }
-            if (testFailed) {
-                throw new Exception("ByteBuffer Test Failed");
-            }
-            // passed all tests...hooray!
-            return true;
-        }
-
-        public boolean executeByteBuffer(TestVector[] testValues) throws Exception {
-            boolean testFailed = false;
-
-            for (TestVector tv : testValues) {
-                ByteBuffer src = ByteBuffer.allocateDirect(tv.plainText.length);
-                ByteBuffer ctdst = ByteBuffer.allocateDirect(tv.cipherText.length + tv.tag.length);
-                ByteBuffer ptdst = ByteBuffer.allocateDirect(tv.plainText.length);
-
-                src.put(tv.plainText);
-                src.flip();
-
-                if (runByteBufferTest(tv, src, ctdst, ptdst)) {
-                    testFailed = true;
-                }
-            }
-            if (testFailed) {
-                throw new Exception("ByteBuffer Test Failed");
-            }
-            // passed all tests...hooray!
-            return true;
-        }
-    */
     void executeByteBuffer(TestVector tv, boolean direct, int offset) throws Exception {
         Cipher c = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
 

@@ -607,22 +607,6 @@ final class GaloisCounterMode extends FeedbackCipher {
                 ("Can't fit both data and tag into one buffer");
         }
 
-        // PRINT
-        /*
-        {
-            byte[] data = new byte[src.remaining()];
-            System.out.println("encryptFinal src");
-            src.get(data);
-            for (byte b : data) {
-                System.out.printf("%02X", b);
-            }
-            src.position(pos);
-        }
-        System.out.println();
-
-         */
-
-
         if (dst.remaining() < len + tagLenBytes) {
             throw new ShortBufferException("Output buffer too small");
         }
@@ -646,25 +630,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         }
         GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
         gctrForSToTag.doFinal(s, 0, s.length, block, 0);
-        //System.arraycopy(sOut, 0, out, (outOfs + len), tagLenBytes);
         dst.put(block, 0, tagLenBytes);
-
-        // PRINT
-        /*
-        {
-            int posx = dst.position();
-            dst.position(pos);
-            byte[] data = new byte[dst.remaining()];
-            System.out.println("encryptFinal dst");
-            dst.get(data);
-            for (byte b : data) {
-                System.out.printf("%02X", b);
-            }
-            dst.position(posx);
-            System.out.println();
-        }
-
-         */
 
         return (processed + tagLenBytes);
     }
@@ -799,21 +765,6 @@ final class GaloisCounterMode extends FeedbackCipher {
         ByteBuffer data = src.duplicate();
         data.mark();
 
-        // PRINT
-        /*
-        {
-            byte[] data = new byte[src.remaining()];
-            System.out.println("decryptFinal src");
-            src.get(data);
-            for (byte b : data) {
-                System.out.printf("%02X", b);
-            }
-            src.position(pos);
-            System.out.println();
-        }
-
-         */
-
         ByteBuffer buffer = ((ibuffer == null || ibuffer.size() == 0) ? null :
             ByteBuffer.wrap(ibuffer.toByteArray()));
         int len;
@@ -907,16 +858,6 @@ final class GaloisCounterMode extends FeedbackCipher {
         for (int i = 0; i < tagLenBytes; i++) {
             mismatch |= tag.get() ^ block[i];
         }
-            /*
-            if (tag.length < tagLenBytes) {
-                gsrc.limit(gsrc.position() + tagLenBytes - limit);
-                tag = new byte[tagLenBytes - limit];
-                gsrc.get(tag);
-                for (int i = 0; i < tag.length; i++) {
-                    mismatch |= tag[i] ^ block[i];
-                }
-            }
-             */
 
         if (mismatch != 0) {
             throw new AEADBadTagException("Tag mismatch!");
@@ -932,38 +873,10 @@ final class GaloisCounterMode extends FeedbackCipher {
         doLastBlock(buffer, data, dst);
         dst.limit(dst.position());
 
-        //PRINT
-        /*
-        {
-            int posx = dst.position();
-            dst.position(pos);
-            byte[] data = new byte[dst.remaining()];
-            System.out.println("decryptFinal dst");
-            dst.get(data);
-            for (byte b : data) {
-                System.out.printf("%02X", b);
-            }
-            dst.position(posx);
-        }
-         */
-
         // 'processed' from the gctr decryption operation, not ghash
         return processed;
     }
 
-    boolean getBlockFromBuffer(ByteBuffer b1, ByteBuffer b2, byte[] b) {
-        if (b1.remaining() > b.length) {
-            b1.get(b);
-            return false;
-        } else {
-            int l = b1.remaining();
-            if (l > 0) {
-                b1.get(b, 0, l);
-            }
-            b2.get(b, l, b.length - l);
-        }
-        return true;
-    }
     // return tag length in bytes
     int getTagLen() {
         return this.tagLenBytes;
