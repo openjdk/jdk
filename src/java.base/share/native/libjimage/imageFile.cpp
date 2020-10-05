@@ -372,7 +372,7 @@ ImageFileReader::~ImageFileReader() {
     }
 
     if (_module_data != NULL) {
-      delete _module_data;
+        delete _module_data;
     }
 }
 
@@ -443,8 +443,8 @@ void ImageFileReader::close() {
     }
 
     if (_module_data != NULL) {
-      delete _module_data;
-      _module_data = NULL;
+        delete _module_data;
+        _module_data = NULL;
     }
 }
 
@@ -578,5 +578,5 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
 
 // Return the ImageModuleData for this image
 ImageModuleData * ImageFileReader::get_image_module_data() {
-        return _module_data;
+    return _module_data;
 }
