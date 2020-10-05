@@ -38,7 +38,7 @@ import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.BasicFileAttributes;
 
-import org.testng.Assert;
+import static org.testng.Assert.*;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.AfterMethod;
@@ -105,10 +105,10 @@ public class SubstDrive {
         Path p = Path.of(SUBST_DRIVE.toString(), "testFile.txt");
         Files.createFile(p);
 
-        Assert.assertTrue(Files.exists(p));
+        assertTrue(Files.exists(p));
 
         Files.writeString(p, fileContents);
-        Assert.assertEquals(Files.readString(p), fileContents);
+        assertEquals(Files.readString(p), fileContents);
     }
 
     /**
@@ -119,9 +119,9 @@ public class SubstDrive {
         Path tempDirectory = Files.createTempDirectory(TEST_TEMP_DIRECTORY, "tmp");
         substCreate(SUBST_DRIVE, tempDirectory);
 
-        Assert.assertTrue(Files.exists(tempDirectory));
+        assertTrue(Files.exists(tempDirectory));
         Files.delete(SUBST_DRIVE);
-        Assert.assertTrue(Files.notExists(tempDirectory));
+        assertTrue(Files.notExists(tempDirectory));
     }
 
     /**
@@ -133,37 +133,37 @@ public class SubstDrive {
         Path tempDirectory = Files.createTempDirectory(TEST_TEMP_DIRECTORY, "tmp");
         substCreate(SUBST_DRIVE, tempDirectory);
 
-        Assert.assertTrue(Files.isSameFile(tempDirectory, SUBST_DRIVE));
+        assertTrue(Files.isSameFile(tempDirectory, SUBST_DRIVE));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isExecutable(tempDirectory),
             Files.isExecutable(SUBST_DRIVE));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isReadable(tempDirectory),
             Files.isReadable(SUBST_DRIVE));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isDirectory(tempDirectory),
             Files.isDirectory(SUBST_DRIVE));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isHidden(tempDirectory),
             Files.isHidden(SUBST_DRIVE));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isRegularFile(tempDirectory),
             Files.isRegularFile(SUBST_DRIVE));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isSymbolicLink(tempDirectory),
             Files.isSymbolicLink(SUBST_DRIVE));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.getOwner(tempDirectory),
             Files.getOwner(SUBST_DRIVE));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isWritable(tempDirectory),
             Files.isWritable(SUBST_DRIVE));
     }
@@ -178,16 +178,16 @@ public class SubstDrive {
         substCreate(SUBST_DRIVE, tempDirectory);
 
         Files.setAttribute(SUBST_DRIVE, "dos:hidden", true);
-        Assert.assertTrue(Files.isHidden(SUBST_DRIVE));
-        Assert.assertTrue(Files.isHidden(tempDirectory));
+        assertTrue(Files.isHidden(SUBST_DRIVE));
+        assertTrue(Files.isHidden(tempDirectory));
 
         Files.setAttribute(tempDirectory, "dos:hidden", false);
-        Assert.assertFalse(Files.isHidden(SUBST_DRIVE));
-        Assert.assertFalse(Files.isHidden(tempDirectory));
+        assertFalse(Files.isHidden(SUBST_DRIVE));
+        assertFalse(Files.isHidden(tempDirectory));
 
         Map<String, Object> attr1 = Files.readAttributes(SUBST_DRIVE, "*");
         Map<String, Object> attr2 = Files.readAttributes(tempDirectory, "*");
-        Assert.assertEquals(attr1, attr2);
+        assertEquals(attr1, attr2);
     }
 
     /**
@@ -202,31 +202,31 @@ public class SubstDrive {
         FileStore fileStore1 = Files.getFileStore(tempDirectory);
         FileStore fileStore2 = Files.getFileStore(SUBST_DRIVE);
 
-        Assert.assertEquals(
+        assertEquals(
             fileStore1.getTotalSpace(),
             fileStore2.getTotalSpace());
 
-        Assert.assertEquals(
+        assertEquals(
             fileStore1.getBlockSize(),
             fileStore2.getBlockSize());
 
-        Assert.assertEquals(
+        assertEquals(
             fileStore1.getUnallocatedSpace(),
             fileStore2.getUnallocatedSpace());
 
-        Assert.assertEquals(
+        assertEquals(
             fileStore1.getUsableSpace(),
             fileStore2.getUsableSpace());
 
-        Assert.assertEquals(
+        assertEquals(
             fileStore1.name(),
             fileStore2.name());
 
-        Assert.assertEquals(
+        assertEquals(
             fileStore1.type(),
             fileStore2.type());
 
-        Assert.assertEquals(
+        assertEquals(
             SUBST_DRIVE.getFileSystem().getRootDirectories(),
             tempDirectory.getFileSystem().getRootDirectories());
     }
@@ -244,31 +244,31 @@ public class SubstDrive {
 
         Files.copy(SUBST_DRIVE, tempDirectoryCopy);
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isExecutable(SUBST_DRIVE),
             Files.isExecutable(tempDirectoryCopy));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isReadable(SUBST_DRIVE),
             Files.isReadable(tempDirectoryCopy));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isDirectory(SUBST_DRIVE),
             Files.isDirectory(tempDirectoryCopy));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isHidden(SUBST_DRIVE),
             Files.isHidden(tempDirectoryCopy));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isRegularFile(SUBST_DRIVE),
             Files.isRegularFile(tempDirectoryCopy));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.isWritable(SUBST_DRIVE),
             Files.isWritable(tempDirectoryCopy));
 
-        Assert.assertEquals(
+        assertEquals(
             Files.getOwner(SUBST_DRIVE),
             Files.getOwner(tempDirectoryCopy));
     }
@@ -289,19 +289,19 @@ public class SubstDrive {
         Path tempFile = Path.of(SUBST_DRIVE.toString(), "test.txt");
         String contents = "Hello world!";
         Files.writeString(tempFile, contents);
-        Assert.assertEquals(Files.readString(tempFile), contents);
+        assertEquals(Files.readString(tempFile), contents);
 
         Path link = Path.of(SUBST_DRIVE.toString(), "link");
         Files.createSymbolicLink(link, tempFile);
 
-        Assert.assertEquals(Files.readString(link), contents);
-        Assert.assertEquals(Files.isExecutable(link), Files.isExecutable(tempFile));
-        Assert.assertEquals(Files.isReadable(link), Files.isReadable(tempFile));
-        Assert.assertEquals(Files.isDirectory(link), Files.isDirectory(tempFile));
-        Assert.assertEquals(Files.isHidden(link), Files.isHidden(tempFile));
-        Assert.assertEquals(Files.isRegularFile(link), Files.isRegularFile(tempFile));
-        Assert.assertEquals(Files.isWritable(link), Files.isWritable(tempFile));
-        Assert.assertEquals(Files.getOwner(link), Files.getOwner(tempFile));
+        assertEquals(Files.readString(link), contents);
+        assertEquals(Files.isExecutable(link), Files.isExecutable(tempFile));
+        assertEquals(Files.isReadable(link), Files.isReadable(tempFile));
+        assertEquals(Files.isDirectory(link), Files.isDirectory(tempFile));
+        assertEquals(Files.isHidden(link), Files.isHidden(tempFile));
+        assertEquals(Files.isRegularFile(link), Files.isRegularFile(tempFile));
+        assertEquals(Files.isWritable(link), Files.isWritable(tempFile));
+        assertEquals(Files.getOwner(link), Files.getOwner(tempFile));
     }
 
     /**
@@ -321,29 +321,29 @@ public class SubstDrive {
 
         substCreate(SUBST_DRIVE, tempLink);
 
-        Assert.assertEquals(
+        assertEquals(
             Files.readAttributes(SUBST_DRIVE, "*"),
             Files.readAttributes(tempDirectory, "*"));
 
-        Assert.assertTrue(Files.isWritable(SUBST_DRIVE));
+        assertTrue(Files.isWritable(SUBST_DRIVE));
 
         Path tempFile = Files.createTempFile(SUBST_DRIVE, "prefix", "suffix");
         String contents = "Hello world!";
         Files.writeString(tempFile, contents);
-        Assert.assertEquals(Files.readString(tempFile), contents);
+        assertEquals(Files.readString(tempFile), contents);
 
         Path tempDirectory2 = Files.createTempDirectory(TEST_TEMP_DIRECTORY, "tmp");
         Path copy = Path.of(tempDirectory2.toString(), "copied");
         Files.copy(tempFile, copy);
 
-        Assert.assertTrue(Files.exists(copy));
-        Assert.assertEquals(Files.readString(copy), contents);
+        assertTrue(Files.exists(copy));
+        assertEquals(Files.readString(copy), contents);
 
         Path cut = Path.of(tempDirectory2.toString(), "cut");
         Files.move(tempFile, cut);
-        Assert.assertTrue(Files.notExists(tempFile));
-        Assert.assertTrue(Files.exists(cut));
-        Assert.assertEquals(Files.readString(cut), contents);
+        assertTrue(Files.notExists(tempFile));
+        assertTrue(Files.exists(cut));
+        assertEquals(Files.readString(cut), contents);
     }
 
     /**
@@ -363,11 +363,11 @@ public class SubstDrive {
 
         substCreate(SUBST_DRIVE, tempLink);
 
-        Assert.assertEquals(
+        assertEquals(
             Files.readAttributes(SUBST_DRIVE, "*"),
             Files.readAttributes(tempDirectory, "*"));
 
-        Assert.assertTrue(Files.isWritable(SUBST_DRIVE));
+        assertTrue(Files.isWritable(SUBST_DRIVE));
     }
 
     /**
@@ -384,7 +384,7 @@ public class SubstDrive {
                                             .errorTo(System.err);
 
             int exitCode = outputAnalyzer.getExitValue();
-            Assert.assertEquals(
+            assertEquals(
                 exitCode /* actual value */,
                 0        /* expected value */,
                 String.format(
