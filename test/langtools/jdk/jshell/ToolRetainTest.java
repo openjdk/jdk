@@ -151,7 +151,7 @@ public class ToolRetainTest extends ReplToolTesting {
         );
         test(
                 (a) -> assertCommand(a, "/set browser", "|  /set browser -retain nonexistent"),
-                (a) -> assertCommandOutputContains(a, "/doc String", "Edit Error:")
+                (a) -> assertCommandOutputContains(a, "/doc String", "Browser Error:")
         );
     }
 
@@ -163,7 +163,7 @@ public class ToolRetainTest extends ReplToolTesting {
         );
         test(
                 (a) -> assertCommandOutputContains(a, "int h =8", ""),
-                (a) -> assertCommandOutputContains(a, "/doc String", "Edit Error:")
+                (a) -> assertCommandOutputContains(a, "/doc String", "Browser Error:")
         );
     }
 

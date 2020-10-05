@@ -1004,9 +1004,9 @@ public class KullaTesting {
         code = code.replace("|", "");
         assertTrue(cursor > -1, "'|' expected, but not found in: " + code);
         List<Documentation> documentation = getAnalysis().documentation(code, cursor, context, false);
-        Set<String> urlSet = documentation.stream().map(doc -> doc.url().toString()).collect(Collectors.toSet());
+        Set<String> uriSet = documentation.stream().map(doc -> doc.uri().toString()).collect(Collectors.toSet());
         Set<String> expectedSet = Stream.of(expected).collect(Collectors.toSet());
-        assertEquals(urlSet, expectedSet, "Input: " + code);
+        assertEquals(uriSet, expectedSet, "Input: " + code);
     }
 
     public enum ClassType {
