@@ -809,7 +809,6 @@ final class GaloisCounterMode extends FeedbackCipher {
 
         // If there is data stored in the buffer
         if (buffer != null && buffer.remaining() > 0) {
-            System.err.println("Update GHASH");
             ghashAllToS.update(buffer, buffer.remaining());
             // Process the overage
             if (buffer.remaining() > 0) {
