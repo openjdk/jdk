@@ -56,6 +56,11 @@ public abstract class SourceCodeAnalysis {
      * Compute possible follow-ups for the given input.
      * Uses information from the current {@code JShell} state, including
      * type information, to filter the suggestions.
+     *
+     * It is equivalent to calling
+     * {@link #completionSuggestions(java.lang.String, int, jdk.jshell.SourceCodeAnalysis.CompletionContext, int[]) }
+     * with context {@link CompletionContext#SNIPPET}.
+     *
      * @param input the user input, so far
      * @param cursor the current position of the cursors in the given {@code input} text
      * @param anchor outgoing parameter - when an option will be completed, the text between
@@ -70,10 +75,12 @@ public abstract class SourceCodeAnalysis {
      * type information, to filter the suggestions.
      * @param input the user input, so far
      * @param cursor the current position of the cursors in the given {@code input} text
-     * @param context XXX
+     * @param context the context in which the completion has been invoked
      * @param anchor outgoing parameter - when an option will be completed, the text between
      *               the anchor and cursor will be deleted and replaced with the given option
      * @return list of candidate continuations of the given input.
+     *
+     * @since 16
      */
     public List<Suggestion> completionSuggestions(String input, int cursor, CompletionContext context, int[] anchor) {
         return context == CompletionContext.SNIPPET ? completionSuggestions(input, cursor, anchor) : List.of();
@@ -82,12 +89,19 @@ public abstract class SourceCodeAnalysis {
     /**
      * Compute documentation for the given user's input. Multiple {@code Documentation} objects may
      * be returned when multiple elements match the user's input (like for overloaded methods).
+     *
+     * It is equivalent to calling
+     * {@link #documentation(java.lang.String, int, jdk.jshell.SourceCodeAnalysis.CompletionContext, boolean) }
+     * with context {@link CompletionContext#SNIPPET}.
+     *
      * @param input the snippet the user wrote so far
      * @param cursor the current position of the cursors in the given {@code input} text
      * @param computeJavadoc true if the javadoc for the given input should be computed in
      *                       addition to the signature
      * @return the documentations for the given user's input, if multiple elements match the input,
      *         multiple {@code Documentation} objects are returned.
+     *
+     * @since 16
      */
     public abstract List<Documentation> documentation(String input, int cursor, boolean computeJavadoc);
 
@@ -96,7 +110,7 @@ public abstract class SourceCodeAnalysis {
      * be returned when multiple elements match the user's input (like for overloaded methods).
      * @param input the snippet the user wrote so far
      * @param cursor the current position of the cursors in the given {@code input} text
-     * @param context XXX
+     * @param context the context in which the documentation has been requested
      * @param computeJavadoc true if the javadoc for the given input should be computed in
      *                       addition to the signature
      * @return the documentations for the given user's input, if multiple elements match the input,
@@ -358,15 +372,18 @@ public abstract class SourceCodeAnalysis {
     }
 
     /**
-     * XXX
+     * A context in which completion or documentation is requested.
+     *
+     * @since 16
      */
     public enum CompletionContext {
         /**
-         * XXX
+         * The context is a snippet.
          */
         SNIPPET,
+
         /**
-         * XXX
+         * The context is an element reference.
          */
         LOOKUP;
     }
