@@ -698,6 +698,23 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * applicable to the corresponding argument, then an {@link
  * IllegalFormatConversionException} will be thrown.
  *
+ * <p> Values of <i>precision</i> and <i>width</i> are maximally constrained by
+ * {@link Integer#MAX_VALUE}. Values appearing for these arguments that are
+ * larger than {@link Integer#MAX_VALUE} will result in
+ * {@link IllegalFormatPrecisionException} or
+ * {@link IllegalFormatWidthException} being thrown, respectively.
+ * Values for these fields in their associated exceptions will be given as
+ * {@link Integer#MIN_VALUE} for these cases.
+ * </p>
+ *
+ * <p>Values of <i>index</i> are maximally constrained by
+ * {@link Integer#MAX_VALUE} and minimally constrained by
+ * {@link Integer#MIN_VALUE}. Values appearing for <i>index</i> outside of these
+ * bounds will result in {@link IllegalFormatArgumentIndexException} being
+ * thrown with an indicated field value of {@link Integer#MIN_VALUE} for these
+ * cases.
+ * </p>
+ *
  * <p> All specified exceptions may be thrown by any of the {@code format}
  * methods of {@code Formatter} as well as by any {@code format} convenience
  * methods such as {@link String#format(String,Object...) String.format} and
@@ -2784,7 +2801,7 @@ public final class Formatter implements Closeable, Flushable {
                     // skip the trailing '$'
                     index = Integer.parseInt(s, start, end - 1, 10);
                 } catch (NumberFormatException x) {
-                    assert(false);
+                    throw new IllegalFormatArgumentIndexException(Integer.MIN_VALUE);
                 }
             } else {
                 index = 0;
@@ -2811,7 +2828,7 @@ public final class Formatter implements Closeable, Flushable {
                     if (width < 0)
                         throw new IllegalFormatWidthException(width);
                 } catch (NumberFormatException x) {
-                    assert(false);
+                    throw new IllegalFormatWidthException(Integer.MIN_VALUE);
                 }
             }
             return width;
@@ -2826,7 +2843,7 @@ public final class Formatter implements Closeable, Flushable {
                     if (precision < 0)
                         throw new IllegalFormatPrecisionException(precision);
                 } catch (NumberFormatException x) {
-                    assert(false);
+                    throw new IllegalFormatPrecisionException(Integer.MIN_VALUE);
                 }
             }
             return precision;
