@@ -71,7 +71,7 @@ public class TestAbortVMOnSafepointTimeout {
         public static void main(String[] args) throws Exception {
             Integer waitTime = Integer.parseInt(args[0]);
             WhiteBox wb = WhiteBox.getWhiteBox();
-            // While no safepoint timeout.
+            // Loop here to cause a safepoint timeout.
             while (true) {
                 wb.waitUnsafe(waitTime);
             }
