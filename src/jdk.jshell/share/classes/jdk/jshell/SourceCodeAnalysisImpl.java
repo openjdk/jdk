@@ -754,6 +754,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private void addElements(Iterable<? extends Element> elements, Predicate<Element> accept, Predicate<Element> smart, List<Suggestion> result) {
         addElements(elements, accept, smart, DEFAULT_PAREN, result);
     }
+
     private void addElements(Iterable<? extends Element> elements, Predicate<Element> accept, Predicate<Element> smart, Function<Boolean, String> paren, List<Suggestion> result) {
         Set<String> hasParams = Util.stream(elements)
                 .filter(accept)

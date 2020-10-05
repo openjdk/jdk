@@ -1878,8 +1878,8 @@ public class JShellTool implements MessageHandler {
                                 feedback.modeCompletions(SET_MODE_OPTIONS_COMPLETION_PROVIDER),
                                 SET_MODE_OPTIONS_COMPLETION_PROVIDER)),
                         "prompt", feedback.modeCompletions(),
-                        "editor", fileCompletions(Files::isExecutable),
                         "browser", fileCompletions(Files::isExecutable),
+                        "editor", fileCompletions(Files::isExecutable),
                         "start", FILE_COMPLETION_PROVIDER,
                         "indent", EMPTY_COMPLETION_PROVIDER),
                         STARTSWITH_MATCHER)));
@@ -2096,15 +2096,17 @@ public class JShellTool implements MessageHandler {
 
     enum ToolType {
 
-        BROWSER(BROWSER_KEY, "JSHELLBROWSER", "BROWSER"),
-        EDITOR(EDITOR_KEY, "JSHELLEDITOR", "VISUAL", "EDITOR");
+        BROWSER("browser", BROWSER_KEY, "JSHELLBROWSER", "BROWSER"),
+        EDITOR("editor", EDITOR_KEY, "JSHELLEDITOR", "VISUAL", "EDITOR");
 
         private final ToolSetting defaultTool;
+        private final String toolName;
         private final String prefKey;
         private final String[] envVars;
 
-        private ToolType(String prefKey, String... envVars) {
+        private ToolType(String toolName, String prefKey, String... envVars) {
             this.defaultTool = new ToolSetting(null, false, this);
+            this.toolName = toolName;
             this.prefKey = prefKey;
             this.envVars = envVars;
         }
@@ -2225,11 +2227,11 @@ public class JShellTool implements MessageHandler {
                 ToolSetting retained = ToolSetting.fromPrefs(prefs, type);
                 if (retained != null) {
                     // retained editor is set
-                    hard("/set editor -retain %s", format(retained));
+                    hard("/set " + type.toolName + " -retain %s", format(retained));
                 }
                 if (retained == null || !retained.equals(tool)) {
                     // editor is not retained or retained is different from set
-                    hard("/set editor %s", format(tool)); //XXX: editor -> editor/browser
+                    hard("/set " + type.toolName + " %s", format(tool));
                 }
                 return true;
             }
@@ -2239,7 +2241,7 @@ public class JShellTool implements MessageHandler {
             install();
             if (retainOption && !deleteOption) {
                 tool.toPrefs(prefs);
-                fluffmsg("jshell.msg.set.editor.retain", format(tool));
+                fluffmsg("jshell.msg.set." + type.toolName + ".retain", format(tool));
             }
             return true;
         }
@@ -2275,7 +2277,7 @@ public class JShellTool implements MessageHandler {
             } else {
                 editor = tool;
             }
-            fluffmsg("jshell.msg.set.editor.set", format(tool));
+            fluffmsg("jshell.msg.set." + type.toolName + ".set", format(tool));
         }
 
         private String format(ToolSetting ed) {

@@ -722,6 +722,12 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("String s = m8(x -> {x.tri|", "trim()");
     }
 
+    public void testLookupCompletion() {
+        assertCompletion("Bool|", CompletionContext.LOOKUP, "Boolean");
+        assertCompletion("Boolean.val|", CompletionContext.LOOKUP, "valueOf");
+        assertCompletion("Boolean.boo|", CompletionContext.LOOKUP, "booleanValue");
+    }
+
     public void testDocURL() {
         assertDocumentationURL("java.lang.String|", CompletionContext.LOOKUP, "http://documentation/java.base/java/lang/String.html");
         assertDocumentationURL("java.lang.String.charAt|", CompletionContext.LOOKUP, "http://documentation/java.base/java/lang/String.html#charAt(int)");
