@@ -76,7 +76,8 @@ public:
     _ld(ld),
     _interior_loc(NULL),
     _loc(NULL) {
-    if (options._verify_marked == ShenandoahVerifier::_verify_marked_complete_except_references) {
+    if (options._verify_marked == ShenandoahVerifier::_verify_marked_complete_except_references ||
+        options._verify_marked == ShenandoahVerifier::_verify_marked_disable) {
       set_ref_discoverer_internal(new ShenandoahIgnoreReferenceDiscoverer());
     }
   }
@@ -826,7 +827,7 @@ void ShenandoahVerifier::verify_after_concmark() {
   verify_at_safepoint(
           "After Mark",
           _verify_forwarded_none,      // no forwarded references
-          _verify_marked_complete,     // bitmaps as precise as we can get
+          _verify_marked_complete_except_references, // bitmaps as precise as we can get, except dangling j.l.r.Refs
           _verify_cset_none,           // no references to cset anymore
           _verify_liveness_complete,   // liveness data must be complete here
           _verify_regions_disable,     // trash regions not yet recycled
