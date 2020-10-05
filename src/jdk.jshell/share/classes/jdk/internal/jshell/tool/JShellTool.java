@@ -2221,8 +2221,8 @@ public class JShellTool implements MessageHandler {
             if (!check()) {
                 return false;
             }
-            ToolSetting tool = type == ToolType.BROWSER ? browser : editor;
             if (primaryOptionCount == 0 && !retainOption) {
+                ToolSetting tool = type == ToolType.BROWSER ? browser : editor;
                 // No settings or -retain, so this is a query
                 ToolSetting retained = ToolSetting.fromPrefs(prefs, type);
                 if (retained != null) {
@@ -2240,6 +2240,7 @@ public class JShellTool implements MessageHandler {
             }
             install();
             if (retainOption && !deleteOption) {
+                ToolSetting tool = type == ToolType.BROWSER ? browser : editor;
                 tool.toPrefs(prefs);
                 fluffmsg("jshell.msg.set." + type.toolName + ".retain", format(tool));
             }
@@ -2420,33 +2421,31 @@ public class JShellTool implements MessageHandler {
     }
 
     boolean cmdDoc(String arg) {
-        try {
-            List<SourceCodeAnalysis.Documentation> documentations = analysis.documentation(arg, arg.length(), CompletionContext.LOOKUP, false);
-            Optional<SourceCodeAnalysis.Documentation> doc = documentations.stream().filter(d -> d.url() != null).findFirst();
-            if (doc.isPresent()) {
-                if (browser == ToolType.BROWSER.defaultTool) {
-                    try {
-                        Class<?> desktop = Class.forName("java.awt.Desktop");
-                        Method getDesktop = desktop.getDeclaredMethod("getDesktop");
-                        Method browse = desktop.getDeclaredMethod("browse", URI.class);
-                        browse.invoke(getDesktop.invoke(null), doc.get().url().toURI());
-                        return true;
-                    } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
-                    }
-                    System.err.println("No browser configured, please use /set browser <path-to-browser>.");
-                    System.err.println("Documentation URL:");
-                    System.err.println(doc.get().url());
-                } else {
-                    List<String> cmd = new ArrayList<>();
-                    cmd.addAll(List.of(browser.cmd));
-                    cmd.add(doc.get().url().toURI().toString());
-                    new ProcessBuilder(cmd).start();
+        List<SourceCodeAnalysis.Documentation> documentations = analysis.documentation(arg, arg.length(), CompletionContext.LOOKUP, false);
+        Optional<SourceCodeAnalysis.Documentation> doc = documentations.stream().filter(d -> d.uri() != null).findFirst();
+        if (doc.isPresent()) {
+            if (browser == ToolType.BROWSER.defaultTool) {
+                try {
+                    Class<?> desktop = Class.forName("java.awt.Desktop");
+                    Method getDesktop = desktop.getDeclaredMethod("getDesktop");
+                    Method browse = desktop.getDeclaredMethod("browse", URI.class);
+                    browse.invoke(getDesktop.invoke(null), doc.get().uri());
+                    return true;
+                } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
                 }
+                hardmsg("jshell.no.browser.configured", doc.get().uri());
             } else {
-                System.err.println("No source documentation found.");
+                List<String> cmd = new ArrayList<>();
+                cmd.addAll(List.of(browser.cmd));
+                cmd.add(doc.get().uri().toString());
+                try {
+                    new ProcessBuilder(cmd).start();
+                } catch (IOException ex) {
+                    hard("Browser Error: %s", ex.getLocalizedMessage());
+                }
             }
-        } catch (IOException | URISyntaxException ex) {
-            Logger.getLogger(JShellTool.class.getName()).log(Level.SEVERE, null, ex);
+        } else {
+            hardmsg("jshell.no.documentation.found");
         }
         return true;
     }

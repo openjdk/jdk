@@ -1367,15 +1367,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 default -> null;
             };
         }
-        URL url;
-        try {
-            String baseURL = BASE_DOCUMENTATION_URL.get();
-            url = new URL(baseURL + moduleName + "/" + typeName.replace(".", "/") + ".html" + (anchor != null ? "#" + anchor : ""));
-        } catch (MalformedURLException ex) {
-            //should not happen?????
-            url = null;
-        }
-        return new DocumentationImpl(signature,  javadoc, url);
+        String baseURL = BASE_DOCUMENTATION_URI.get();
+        URI uri = URI.create(baseURL + moduleName + "/" + typeName.replace(".", "/") + ".html" + (anchor != null ? "#" + anchor : ""));
+        return new DocumentationImpl(signature,  javadoc, uri);
     }
 
     public void close() {
@@ -1392,12 +1386,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
         private final String signature;
         private final String javadoc;
-        private final URL url;
+        private final URI uri;
 
-        public DocumentationImpl(String signature, String javadoc, URL url) {
+        public DocumentationImpl(String signature, String javadoc, URI uri) {
             this.signature = signature;
             this.javadoc = javadoc;
-            this.url = url;
+            this.uri = uri;
         }
 
         @Override
@@ -1411,8 +1405,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
 
         @Override
-        public URL url() {
-            return url;
+        public URI uri() {
+            return uri;
         }
 
     }
@@ -2012,7 +2006,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
-    private static Supplier<String> BASE_DOCUMENTATION_URL = () -> {
+    private static Supplier<String> BASE_DOCUMENTATION_URI = () -> {
         Runtime.Version version = Runtime.version();
         String template;
         //based on URLs hardcoded in javadoc:

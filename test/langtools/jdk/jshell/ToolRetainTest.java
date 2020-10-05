@@ -142,6 +142,31 @@ public class ToolRetainTest extends ReplToolTesting {
         );
     }
 
+    public void testRetainBrowser() {
+        test(
+                (a) -> assertCommand(a, "/set browser -retain nonexistent",
+                        "|  Browser set to: nonexistent\n" +
+                        "|  Browser setting retained: nonexistent"),
+                (a) -> assertCommand(a, "/exit", "")
+        );
+        test(
+                (a) -> assertCommand(a, "/set browser", "|  /set browser -retain nonexistent"),
+                (a) -> assertCommandOutputContains(a, "/doc String", "Edit Error:")
+        );
+    }
+
+    public void testRetainBrowserBlank() {
+        test(
+                (a) -> assertCommand(a, "/set browser nonexistent", "|  Browser set to: nonexistent"),
+                (a) -> assertCommand(a, "/set browser -retain", "|  Browser setting retained: nonexistent"),
+                (a) -> assertCommand(a, "/exit", "")
+        );
+        test(
+                (a) -> assertCommandOutputContains(a, "int h =8", ""),
+                (a) -> assertCommandOutputContains(a, "/doc String", "Edit Error:")
+        );
+    }
+
     public void testRetainModeNeg() {
         test(
                 (a) -> assertCommandOutputStartsWith(a, "/set mode -retain verbose",

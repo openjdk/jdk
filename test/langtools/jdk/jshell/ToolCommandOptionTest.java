@@ -244,6 +244,123 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    public void setBrowserTest() {
+        test(
+                (a) -> assertCommand(a, "/set browser -furball",
+                        "|  Unknown option: -furball -- /set browser -furball"),
+                (a) -> assertCommand(a, "/set browser -furball prog",
+                        "|  Unknown option: -furball -- /set browser -furball prog"),
+                (a) -> assertCommand(a, "/set browser -furball -mattress",
+                        "|  Unknown option: -furball -mattress -- /set browser -furball -mattress"),
+                (a) -> assertCommand(a, "/set browser -default prog",
+                        "|  Specify -default option, -delete option, or program -- /set browser -default prog"),
+                (a) -> assertCommand(a, "/set browser prog",
+                        "|  Browser set to: prog"),
+                (a) -> assertCommand(a, "/set browser prog -default",
+                        "|  Browser set to: prog -default"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser prog -default"),
+                (a) -> assertCommand(a, "/se br prog -furball",
+                        "|  Browser set to: prog -furball"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser prog -furball"),
+                (a) -> assertCommand(a, "/se br -delete",
+                        "|  Browser set to: -default"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser -default"),
+                (a) -> assertCommand(a, "/set browser prog arg1 -furball arg3 -default arg4",
+                        "|  Browser set to: prog arg1 -furball arg3 -default arg4"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser prog arg1 -furball arg3 -default arg4"),
+                (a) -> assertCommand(a, "/set browser -default",
+                        "|  Browser set to: -default"),
+                (a) -> assertCommand(a, "/se br -def",
+                        "|  Browser set to: -default"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser -default")
+        );
+    }
+
+    public void retainBrowserTest() {
+        test(
+                (a) -> assertCommand(a, "/set browser -retain -furball",
+                        "|  Unknown option: -furball -- /set browser -retain -furball"),
+                (a) -> assertCommand(a, "/set browser -retain -furball prog",
+                        "|  Unknown option: -furball -- /set browser -retain -furball prog"),
+                (a) -> assertCommand(a, "/set browser -retain -furball -mattress",
+                        "|  Unknown option: -furball -mattress -- /set browser -retain -furball -mattress"),
+                (a) -> assertCommand(a, "/set browser -retain -default prog",
+                        "|  Specify -default option, -delete option, or program -- /set browser -retain -default prog"),
+                (a) -> assertCommand(a, "/set browser -retain prog",
+                        "|  Browser set to: prog\n" +
+                        "|  Browser setting retained: prog"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser -retain prog"),
+                (a) -> assertCommand(a, "/se br other",
+                        "|  Browser set to: other"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser -retain prog\n" +
+                        "|  /set browser other"),
+                (a) -> assertCommand(a, "/se br -delete",
+                        "|  Browser set to: prog"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser -retain prog"),
+                (a) -> assertCommand(a, "/set browser -retain prog -default",
+                        "|  Browser set to: prog -default\n" +
+                        "|  Browser setting retained: prog -default"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser -retain prog -default"),
+                (a) -> assertCommand(a, "/se br -retain prog -furball",
+                        "|  Browser set to: prog -furball\n" +
+                        "|  Browser setting retained: prog -furball"),
+                (a) -> assertCommand(a, "/set browser -retain prog arg1 -furball arg3 -default arg4",
+                        "|  Browser set to: prog arg1 -furball arg3 -default arg4\n" +
+                        "|  Browser setting retained: prog arg1 -furball arg3 -default arg4"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser -retain prog arg1 -furball arg3 -default arg4"),
+                (a) -> assertCommand(a, "/set browser -retain -default",
+                        "|  Browser set to: -default\n" +
+                        "|  Browser setting retained: -default"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser -retain -default"),
+                (a) -> assertCommand(a, "/se b -ret -def",
+                        "|  Browser set to: -default\n" +
+                        "|  Browser setting retained: -default"),
+                (a) -> assertCommand(a, "/set browser -retain",
+                        "|  Browser setting retained: -default")
+        );
+    }
+
+    public void setBwoserEnvTest() {
+        setEnvVar("BROWSER", "best one");
+        setBrowserEnvSubtest();
+        setEnvVar("BROWSER", "not this");
+        setEnvVar("JSHELLBROWSER", "best one");
+        setBrowserEnvSubtest();
+    }
+
+    private void setBrowserEnvSubtest() {
+        test(
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser best one"),
+                (a) -> assertCommand(a, "/set browser prog",
+                        "|  Browser set to: prog"),
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser prog"),
+                (a) -> assertCommand(a, "/set browser -delete",
+                        "|  Browser set to: best one"),
+                (a) -> assertCommand(a, "/set browser -retain stored browser",
+                        "|  Browser set to: stored browser\n" +
+                        "|  Browser setting retained: stored browser")
+        );
+        test(
+                (a) -> assertCommand(a, "/set browser",
+                        "|  /set browser -retain stored browser"),
+                (a) -> assertCommand(a, "/set browser -delete -retain",
+                        "|  Browser set to: best one")
+        );
+    }
+
     public void setStartTest() {
         Compiler compiler = new Compiler();
         Path startup = compiler.getPath("StartTest/startup.txt");

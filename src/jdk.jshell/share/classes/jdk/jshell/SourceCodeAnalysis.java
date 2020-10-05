@@ -25,6 +25,7 @@
 
 package jdk.jshell;
 
+import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
@@ -364,11 +365,13 @@ public abstract class SourceCodeAnalysis {
         String javadoc();
 
         /**
-         * XXX.
+         * URI of the full documentation of the given element, if known.
          *
-         * @return XXX
+         * @return the URI of the element's documentation.
+         *
+         * @since 16
          */
-        default URL url() { return null; } //TODO: better URI?
+        default URI uri() { return null; }
     }
 
     /**
