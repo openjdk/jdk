@@ -274,36 +274,6 @@ public class SubstDrive {
     }
 
     /**
-     * Test if .toRealPath() works consistently when both the resolved symlink
-     * and its target are in the same substituted drive.
-     * https://bugs.openjdk.java.net/browse/JDK-8213216
-     * Note: requires administrator privileges.
-     */
-    @Test
-    public void testRealPath() throws IOException {
-        if (!TestUtil.supportsLinks(TEST_TEMP_DIRECTORY)) {
-            return;
-        }
-
-        Path tempDirectory = Files.createTempDirectory(TEST_TEMP_DIRECTORY, "tmp");
-        substCreate(SUBST_DRIVE, tempDirectory);
-
-        Path substDir = Files.createDirectory(SUBST_DRIVE.resolve("directory"));
-        Path dir = tempDirectory.resolve("directory");
-
-        Path substFile = Files.createFile(substDir.resolve("foo"));
-        Path substLink = substDir.resolve("link");
-
-        Path file = dir.resolve("foo");
-        Path link = dir.resolve("link");
-
-        Files.createSymbolicLink(substLink, substFile.toAbsolutePath());
-
-        Assert.assertEquals(file.toRealPath(), link.toRealPath());
-        Assert.assertEquals(substFile.toRealPath(), substLink.toRealPath());
-    }
-
-    /**
      * Test if the attributes of a resolved symlink are the same as its target's
      * Note: requires administrator privileges.
      */
