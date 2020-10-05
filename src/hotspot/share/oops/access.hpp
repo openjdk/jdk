@@ -269,11 +269,6 @@ public:
     OopType new_oop_value = new_value;
     return AccessInternal::atomic_xchg<decorators | INTERNAL_VALUE_IS_OOP>(addr, new_oop_value);
   }
-
-  static oop resolve(oop obj) {
-    verify_decorators<DECORATORS_NONE>();
-    return AccessInternal::resolve<decorators>(obj);
-  }
 };
 
 // Helper for performing raw accesses (knows only of memory ordering

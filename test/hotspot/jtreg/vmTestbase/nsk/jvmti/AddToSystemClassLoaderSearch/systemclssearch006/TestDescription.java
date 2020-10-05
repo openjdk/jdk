@@ -66,15 +66,15 @@
  *      ../systemclssearch002/newclass
  *
  * @comment create systemclssearch002.jar in current directory
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cf systemclssearch002.jar
  *      -C ./bin/newclass/
  *      nsk/jvmti/AddToSystemClassLoaderSearch/systemclssearch002.class
  *
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:systemclssearch_agent=-waittime=5 phasetocheck=live segment1=systemclssearch002.jar"
+ * @comment ExecDriver is used b/c main class isn't on source/class path
+ * @run main/othervm/native ExecDriver --java
+ *      -agentlib:systemclssearch_agent=-waittime=5,phasetocheck=live,segment1=systemclssearch002.jar
  *      nsk.jvmti.AddToSystemClassLoaderSearch.systemclssearch002
  */
 

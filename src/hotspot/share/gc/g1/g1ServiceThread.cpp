@@ -59,7 +59,7 @@ void G1ServiceThread::sleep_before_next_cycle() {
 bool G1ServiceThread::should_start_periodic_gc() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   // If we are currently in a concurrent mark we are going to uncommit memory soon.
-  if (g1h->concurrent_mark()->cm_thread()->during_cycle()) {
+  if (g1h->concurrent_mark()->cm_thread()->in_progress()) {
     log_debug(gc, periodic)("Concurrent cycle in progress. Skipping.");
     return false;
   }

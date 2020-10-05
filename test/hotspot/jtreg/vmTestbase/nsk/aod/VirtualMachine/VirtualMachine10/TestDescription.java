@@ -38,12 +38,12 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.aod.VirtualMachine.VirtualMachine09.VirtualMachine09
- *        nsk.aod.VirtualMachine.VirtualMachine09.VM09Target
- * @run main/othervm/native -XX:+UsePerfData PropertyResolvingWrapper
+ * @build nsk.aod.VirtualMachine.VirtualMachine09.VM09Target
+ * @run main/othervm/native
+ *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachine.VirtualMachine09.VirtualMachine09
  *      -jdk ${test.jdk}
- *      "-javaOpts=-agentlib:VirtualMachine09agent00 -XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-agentlib:VirtualMachine09agent00 -XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.aod.VirtualMachine.VirtualMachine09.VM09Target
  *      -na ${test.nativepath}/VirtualMachine09agent00
  *      -testedMethod loadAgentPath

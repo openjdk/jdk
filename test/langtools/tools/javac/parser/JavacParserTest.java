@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1562,6 +1562,53 @@ public class JavacParserTest extends TestCase {
                               }
                           }""";
         assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
+    }
+
+    @Test //JDK-8253584
+    void testElseRecovery() throws IOException {
+        //verify the errors and AST form produced for member selects which are
+        //missing the selected member name:
+        String code = """
+                      package t;
+                      class Test {
+                          void t() {
+                              if (true) {
+                                  s().
+                              } else {
+                              }
+                          }
+                          String s() {
+                              return null;
+                          }
+                      }
+                      """;
+        StringWriter out = new StringWriter();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null, List.of("-XDrawDiagnostics"),
+                null, Arrays.asList(new MyFileObject(code)));
+        String ast = ct.parse().iterator().next().toString().replaceAll("\\R", "\n");
+        String expected = """
+                          package t;
+                          \n\
+                          class Test {
+                              \n\
+                              void t() {
+                                  if (true) {
+                                      (ERROR);
+                                  } else {
+                                  }
+                              }
+                              \n\
+                              String s() {
+                                  return null;
+                              }
+                          } """;
+        assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
+        assertEquals("Unexpected errors, got:\n" + out.toString(),
+                     out.toString().replaceAll("\\R", "\n"),
+                     """
+                     Test.java:5:17: compiler.err.expected: token.identifier
+                     Test.java:5:16: compiler.err.not.stmt
+                     """);
     }
 
     void run(String[] args) throws Exception {

@@ -112,15 +112,15 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
       // with BiasedLocking, in this case forwardee() will return NULL
       // even if the mark-word is used. This is no problem since
       // forwardee() will return NULL in the compaction phase as well.
-      object->init_mark_raw();
+      object->init_mark();
     } else {
       // Make sure object has the correct mark-word set or that it will be
       // fixed when restoring the preserved marks.
-      assert(object->mark_raw() == markWord::prototype_for_klass(object->klass()) || // Correct mark
+      assert(object->mark() == markWord::prototype_for_klass(object->klass()) || // Correct mark
              object->mark_must_be_preserved() || // Will be restored by PreservedMarksSet
-             (UseBiasedLocking && object->has_bias_pattern_raw()), // Will be restored by BiasedLocking
+             (UseBiasedLocking && object->has_bias_pattern()), // Will be restored by BiasedLocking
              "should have correct prototype obj: " PTR_FORMAT " mark: " PTR_FORMAT " prototype: " PTR_FORMAT,
-             p2i(object), object->mark_raw().value(), markWord::prototype_for_klass(object->klass()).value());
+             p2i(object), object->mark().value(), markWord::prototype_for_klass(object->klass()).value());
     }
     assert(object->forwardee() == NULL, "should be forwarded to NULL");
   }

@@ -29,6 +29,7 @@
 #include "compiler/disassembler.hpp"
 #include "code/compiledIC.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"

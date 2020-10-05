@@ -37,8 +37,10 @@
 #include "gc/shenandoah/shenandoahUnload.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/stack.hpp"
 
 class ConcurrentGCTimer;
+class ObjectIterateScanRootClosure;
 class ShenandoahCollectorPolicy;
 class ShenandoahControlThread;
 class ShenandoahGCSession;
@@ -107,6 +109,7 @@ public:
 
 typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
+typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
 
 // Shenandoah GC is low-pause concurrent GC that uses Brooks forwarding pointers
 // to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
@@ -117,7 +120,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class VMStructs;
   friend class ShenandoahGCSession;
   friend class ShenandoahGCStateResetter;
-
+  friend class ShenandoahParallelObjectIterator;
 // ---------- Locks that guard important data structures in Heap
 //
 private:
@@ -514,6 +517,10 @@ private:
   // Prepare and finish concurrent unloading
   void prepare_concurrent_unloading();
   void finish_concurrent_unloading();
+  // Heap iteration support
+  void scan_roots_for_iteration(ShenandoahScanObjectStack* oop_stack, ObjectIterateScanRootClosure* oops);
+  bool prepare_aux_bitmap_for_iteration();
+  void reclaim_aux_bitmap_for_iteration();
 
 // ---------- Generic interface hooks
 // Minor things that super-interface expects us to implement to play nice with
@@ -539,6 +546,8 @@ public:
 
   // Used for native heap walkers: heap dumpers, mostly
   void object_iterate(ObjectClosure* cl);
+  // Parallel heap iteration support
+  virtual ParallelObjectIterator* parallel_object_iterator(uint workers);
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj);
@@ -585,9 +594,6 @@ public:
                                                Metaspace::MetadataType mdtype);
 
   void notify_mutator_alloc_words(size_t words, bool waste);
-
-  // Shenandoah supports TLAB allocation
-  bool supports_tlab_allocation() const { return true; }
 
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size);
   size_t tlab_capacity(Thread *thr) const;

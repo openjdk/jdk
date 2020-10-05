@@ -118,6 +118,16 @@ AC_DEFUN([BASIC_EVAL_DEVKIT_VARIABLE],
 ])
 
 ###############################################################################
+# Evaluates platform specific overrides for build devkit variables.
+# $1: Name of variable
+AC_DEFUN([BASIC_EVAL_BUILD_DEVKIT_VARIABLE],
+[
+  if test "x[$]$1" = x; then
+    eval $1="\${$1_${OPENJDK_BUILD_CPU}}"
+  fi
+])
+
+###############################################################################
 AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 [
   AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],

@@ -25,7 +25,7 @@
  * @test
  * @bug 8010317
  * @summary DocLint incorrectly reports some <pre> tags as empty
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs:html EmptyPreTest.java
  */

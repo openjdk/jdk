@@ -232,7 +232,6 @@ class Universe: AllStatic {
 
   static oop java_mirror(BasicType t);
   static void replace_mirror(BasicType t, oop obj);
-  static void clear_basic_type_mirrors();
 
   static oop      main_thread_group();
   static void set_main_thread_group(oop group);
@@ -357,8 +356,6 @@ class Universe: AllStatic {
   static int  verify_count()       { return _verify_count; }
   static void print_on(outputStream* st);
   static void print_heap_at_SIGBREAK();
-  static void print_heap_before_gc();
-  static void print_heap_after_gc();
 
   // Change the number of dummy objects kept reachable by the full gc dummy
   // array; this should trigger relocation in a sliding compaction collector.

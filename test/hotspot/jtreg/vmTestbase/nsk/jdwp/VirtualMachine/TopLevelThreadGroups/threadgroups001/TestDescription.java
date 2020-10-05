@@ -39,9 +39,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.VirtualMachine.TopLevelThreadGroups.threadgroups001
- *        nsk.jdwp.VirtualMachine.TopLevelThreadGroups.threadgroups001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.VirtualMachine.TopLevelThreadGroups.threadgroups001a
+ * @run main/othervm
  *      nsk.jdwp.VirtualMachine.TopLevelThreadGroups.threadgroups001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

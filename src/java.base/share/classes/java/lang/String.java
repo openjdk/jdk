@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.util.function.Predicate.not;
@@ -248,7 +248,7 @@ public final class String
      * @param  original
      *         A {@code String}
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public String(String original) {
         this.value = original.value;
         this.coder = original.coder;
@@ -3180,12 +3180,12 @@ public final class String
      * string. The function should expect a single String argument
      * and produce an {@code R} result.
      * <p>
-     * Any exception thrown by {@code f()} will be propagated to the
+     * Any exception thrown by {@code f.apply()} will be propagated to the
      * caller.
      *
-     * @param f    functional interface to a apply
+     * @param f    a function to apply
      *
-     * @param <R>  class of the result
+     * @param <R>  the type of the result
      *
      * @return     the result of applying the function to this string
      *

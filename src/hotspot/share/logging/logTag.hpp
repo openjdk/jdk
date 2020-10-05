@@ -27,15 +27,16 @@
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// List of available logging tags. New tags should be added here.
+// List of available logging tags. New tags should be added here, in
+// alphabetical order.
 // (The tags 'all', 'disable' and 'help' are special tags that can
 // not be used in log calls, and should not be listed below.)
 #define LOG_TAG_LIST \
   LOG_TAG(add) \
   LOG_TAG(age) \
   LOG_TAG(alloc) \
-  LOG_TAG(aot) \
   LOG_TAG(annotation) \
+  LOG_TAG(aot) \
   LOG_TAG(arguments) \
   LOG_TAG(attach) \
   LOG_TAG(barrier) \
@@ -53,8 +54,8 @@
   LOG_TAG(compaction) \
   LOG_TAG(compilation) \
   LOG_TAG(condy) \
-  LOG_TAG(constraints) \
   LOG_TAG(constantpool) \
+  LOG_TAG(constraints) \
   LOG_TAG(container) \
   LOG_TAG(coops) \
   LOG_TAG(cpu) \
@@ -101,10 +102,11 @@
   LOG_TAG(marking) \
   LOG_TAG(membername) \
   LOG_TAG(memops) \
-  LOG_TAG(methodcomparator) \
   LOG_TAG(metadata) \
   LOG_TAG(metaspace) \
+  LOG_TAG(methodcomparator) \
   LOG_TAG(methodhandles) \
+  LOG_TAG(mirror) \
   LOG_TAG(mmu) \
   LOG_TAG(module) \
   LOG_TAG(monitorinflation) \
@@ -123,27 +125,27 @@
   LOG_TAG(os) \
   LOG_TAG(owner) \
   LOG_TAG(pagesize) \
+  LOG_TAG(parser) \
   LOG_TAG(patch) \
   LOG_TAG(path) \
   LOG_TAG(perf) \
   LOG_TAG(periodic) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
+  LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
   LOG_TAG(primitivewrappers) \
   LOG_TAG(promotion) \
-  LOG_TAG(preorder) /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
-  LOG_TAG(ref) \
+  LOG_TAG(ptrqueue) \
+  LOG_TAG(purge) \
+  LOG_TAG(record) \
   LOG_TAG(redefine) \
+  LOG_TAG(ref) \
   LOG_TAG(refine) \
   LOG_TAG(region) \
   LOG_TAG(reloc) \
   LOG_TAG(remset) \
-  LOG_TAG(parser) \
-  LOG_TAG(ptrqueue) \
-  LOG_TAG(purge) \
-  LOG_TAG(record) \
   LOG_TAG(resolve) \
   LOG_TAG(safepoint) \
   LOG_TAG(sampling) \
@@ -151,6 +153,7 @@
   LOG_TAG(sealed) \
   LOG_TAG(setting) \
   LOG_TAG(smr) \
+  LOG_TAG(stackmap) \
   LOG_TAG(stacktrace) \
   LOG_TAG(stackwalk) \
   LOG_TAG(start) \
@@ -160,24 +163,22 @@
   LOG_TAG(streaming) \
   LOG_TAG(stringdedup) \
   LOG_TAG(stringtable) \
-  LOG_TAG(symboltable) \
-  LOG_TAG(stackmap) \
   LOG_TAG(subclass) \
   LOG_TAG(survivor) \
   LOG_TAG(sweep) \
+  LOG_TAG(symboltable) \
   LOG_TAG(system) \
   LOG_TAG(table) \
   LOG_TAG(task) \
   DEBUG_ONLY(LOG_TAG(test)) \
   LOG_TAG(thread) \
-  LOG_TAG(tlab) \
   LOG_TAG(time) \
   LOG_TAG(timer) \
+  LOG_TAG(tlab) \
   LOG_TAG(tracking) \
-  LOG_TAG(update) \
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(unshareable) \
-  LOG_TAG(mirror) \
+  LOG_TAG(update) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
   LOG_TAG(vmmutex) \
@@ -227,7 +228,7 @@ class LogTag : public AllStatic {
   static void list_tags(outputStream* out);
 
  private:
-  static const char* _name[];
+  static const char* const _name[];
 };
 
 typedef LogTag::type LogTagType;

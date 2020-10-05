@@ -24,17 +24,22 @@
 /**
  * @test
  * @bug 6449574
+ * @library /test/lib
  * @summary Invalid ldap filter is accepted and processed
  */
 
 import java.io.*;
 import javax.naming.*;
 import javax.naming.directory.*;
-import java.util.Properties;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Hashtable;
 
 import java.net.Socket;
 import java.net.ServerSocket;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class BalancedParentheses {
     // Should we run the client or server in a separate thread?
@@ -54,7 +59,13 @@ public class BalancedParentheses {
     // If the server prematurely exits, serverReady will be set to true
     // to avoid infinite hangs.
     void doServerSide() throws Exception {
-        ServerSocket serverSock = new ServerSocket(serverPort);
+        // Create unbound server socket
+        ServerSocket serverSock = new ServerSocket();
+
+        // And bind it to the loopback address
+        SocketAddress sockAddr = new InetSocketAddress(
+                InetAddress.getLoopbackAddress(), 0);
+        serverSock.bind(sockAddr);
 
         // signal client, it's ready to accecpt connection
         serverPort = serverSock.getLocalPort();
@@ -106,7 +117,13 @@ public class BalancedParentheses {
         Hashtable<Object, Object> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                                 "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, "ldap://localhost:" + serverPort);
+        // Construct the provider URL
+        String providerURL = URIBuilder.newBuilder()
+                .scheme("ldap")
+                .loopback()
+                .port(serverPort)
+                .build().toString();
+        env.put(Context.PROVIDER_URL, providerURL);
         env.put("com.sun.jndi.ldap.read.timeout", "1000");
 
         // env.put(Context.SECURITY_AUTHENTICATION, "simple");

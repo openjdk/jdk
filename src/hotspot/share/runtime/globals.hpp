@@ -101,10 +101,10 @@
 
 //
 // range is a macro that will expand to min and max arguments for range
-//    checking code if provided - see jvmFlagRangeList.hpp
+//    checking code if provided - see jvmFlagLimit.hpp
 //
 // constraint is a macro that will expand to custom function call
-//    for constraint checking if provided - see jvmFlagConstraintList.hpp
+//    for constraint checking if provided - see jvmFlagLimit.hpp
 
 // Default and minimum StringTable and SymbolTable size values
 // Must be powers of 2
@@ -394,10 +394,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
-                                                                            \
-  product(bool, Debugging, false,                                           \
-          "Set when executing debug methods in debug.cpp "                  \
-          "(to prevent triggering assertions)")                             \
                                                                             \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
@@ -2421,10 +2417,10 @@ const intx ObjectAlignmentInBytes = 8;
              "When a class C is loaded, check that "                        \
              "(1) all intrinsics defined by the VM for class C are present "\
              "in the loaded class file and are marked with the "            \
-             "@HotSpotIntrinsicCandidate annotation, that "                 \
+             "@IntrinsicCandidate annotation, that "                        \
              "(2) there is an intrinsic registered for all loaded methods " \
-             "that are annotated with the @HotSpotIntrinsicCandidate "      \
-             "annotation, and that "                                        \
+             "that are annotated with the @IntrinsicCandidate annotation, " \
+             "and that "                                                    \
              "(3) no orphan methods exist for class C (i.e., methods for "  \
              "which the VM declares an intrinsic but that are not declared "\
              "in the loaded class C. "                                      \
