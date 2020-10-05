@@ -1119,6 +1119,12 @@ private:
 
 //----------------- Printing, etc
 #ifndef PRODUCT
+  int _indent;
+
+ public:
+  void set_indent(int indent) { _indent = indent; }
+
+ private:
   static bool add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, VectorSet* old_space, VectorSet* new_space);
 public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
