@@ -43,7 +43,7 @@ import java.net.URI;
  *     <li>{@link #getRequestMethod()} to determine the command.
  *     <li>{@link #getRequestHeaders()} to examine the request headers (if
  *     needed).
- *     <li>{@link #getRequestBody()} returns a {@link java.io.InputStream} for
+ *     <li>{@link #getRequestBody()} returns an {@link java.io.InputStream} for
  *     reading the request body. After reading the request body, the stream
  *     should be closed.
  *     <li>{@link #getResponseHeaders()} to set any response headers, except
@@ -272,14 +272,14 @@ public abstract class HttpExchange implements AutoCloseable {
     public abstract void setAttribute(String name, Object value);
 
     /**
-     * Used by {@linkplain #Filter Filters} to wrap either (or both) of this exchange's InputStream
-     * and OutputStream, with the given filtered streams so that subsequent
-     * calls to {@link #getRequestBody()} will return the given
-     * {@link java.io.InputStream}, and calls to {@link #getResponseBody()} will
-     * return the given {@link java.io.OutputStream}. The streams provided to
-     * this call must wrap the original streams, and may be (but are not required
-     * to be) sub-classes of {@link java.io.FilterInputStream} and
-     * {@link java.io.FilterOutputStream}.
+     * Used by {@linkplain com.sun.net.httpserver.Filter Filters} to wrap either
+     * (or both) of this exchange's {@link java.io.InputStream} and
+     * {@link java.io.OutputStream}, with the given filtered streams so that
+     * subsequent calls to {@link #getRequestBody()} will return the given
+     * {@code InputStream}, and calls to {@link #getResponseBody()} will return
+     * the given {@code OutputStream}. The streams provided to this call must wrap
+     * the original streams, and may be (but are not required to be) sub-classes
+     * of {@link java.io.FilterInputStream} and {@link java.io.FilterOutputStream}.
      *
      * @param i the filtered input stream to set as this object's
      *          {@code Inputstream}, or {@code null} if no change
