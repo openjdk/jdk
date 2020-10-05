@@ -387,7 +387,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
   }
   T* p = list;
   while (!CompressedOops::is_null(*p)) {
-    const oop reference = CompressedOops::decode(*p);
+    const oop reference = lrb(CompressedOops::decode(*p));
     log_trace(gc, ref)("Processing reference: " PTR_FORMAT, p2i(reference));
     const ReferenceType type = reference_type(reference);
 
