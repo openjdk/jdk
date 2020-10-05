@@ -738,16 +738,16 @@ public class TestModules extends JavadocTester {
                     <!-- ============ MODULES SUMMARY =========== -->
                     <h2>Modules</h2>""",
                 """
-                    <div class="col-first alt-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last alt-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""",
+                    <div class="col-first even-row-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
+                    <div class="col-last even-row-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""",
                 """
                     <section class="packages-summary" id="packages.summary">
                     <!-- ============ PACKAGES SUMMARY =========== -->
                     <h2>Packages</h2>""",
                 """
-                    <div class="col-first alt-color">transitive</div>
-                    <div class="col-second alt-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color">transitive</div>
+                    <div class="col-second even-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">This is a test description for the moduleB module.</div>
                     </div>
                     """);
@@ -761,8 +761,8 @@ public class TestModules extends JavadocTester {
                     <!-- ============ PACKAGES SUMMARY =========== -->
                     <h2>Packages</h2>""",
                 """
-                    <div class="col-first alt-color package-summary-table package-summary-table-tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-last alt-color package-summary-table package-summary-table-tab2">&nbsp;</div>
+                    <div class="col-first even-row-color package-summary-table package-summary-table-tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2">&nbsp;</div>
                     </div>""",
                 """
                     <!-- ============ PACKAGES SUMMARY =========== -->
@@ -771,8 +771,8 @@ public class TestModules extends JavadocTester {
                     <!-- ============ SERVICES SUMMARY =========== -->
                     <h2>Services</h2>""",
                 """
-                    <div class="col-first alt-color"><a href="testpkgmdlB/TestClassInModuleB.html" title="class in testpkgmdlB">TestClassInModuleB</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color"><a href="testpkgmdlB/TestClassInModuleB.html" title="class in testpkgmdlB">TestClassInModuleB</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">With a test description for uses.</div>
                     </div>""",
                 """
@@ -803,14 +803,14 @@ public class TestModules extends JavadocTester {
                     ase <span id="searchphrase" class="search-tag-result">search phrase</span>. Make\
                      sure there are no exported packages.</div>""",
                 """
-                    <div class="col-first alt-color">transitive</div>
-                    <div class="col-second alt-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color">transitive</div>
+                    <div class="col-second even-row-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>
                     </div>
-                    <div class="col-first row-color">transitive</div>
-                    <div class="col-second row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last row-color">
+                    <div class="col-first odd-row-color">transitive</div>
+                    <div class="col-second odd-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
+                    <div class="col-last odd-row-color">
                     <div class="block">This is a test description for the moduleB module.</div>
                     </div>""");
     }
@@ -881,16 +881,16 @@ public class TestModules extends JavadocTester {
     void checkModuleModeCommon() {
         checkOutput("index.html", true,
                 """
-                    <div class="col-first alt-color all-modules-table-tab1 all-modules-table"><a href="moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last alt-color all-modules-table-tab1 all-modules-table">
+                    <div class="col-first even-row-color all-modules-table-tab1 all-modules-table"><a href="moduleA/module-summary.html">moduleA</a></div>
+                    <div class="col-last even-row-color all-modules-table-tab1 all-modules-table">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>""",
                 """
-                    <div class="col-first row-color all-modules-table-tab1 all-modules-table"><a href="moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last row-color all-modules-table-tab1 all-modules-table">
+                    <div class="col-first odd-row-color all-modules-table-tab1 all-modules-table"><a href="moduleB/module-summary.html">moduleB</a></div>
+                    <div class="col-last odd-row-color all-modules-table-tab1 all-modules-table">
                     <div class="block">This is a test description for the moduleB module.</div>""",
                 """
-                    <div class="col-first row-color all-modules-table-tab1 all-modules-table"><a href="moduletags/module-summary.html">moduletags</a></div>
-                    <div class="col-last row-color all-modules-table-tab1 all-modules-table">
+                    <div class="col-first odd-row-color all-modules-table-tab1 all-modules-table"><a href="moduletags/module-summary.html">moduletags</a></div>
+                    <div class="col-last odd-row-color all-modules-table-tab1 all-modules-table">
                     <div class="block">This is a test description for the moduletags module.<br>
                      Type Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html" title="class in testpkgmdltags"><code>TestClassInModuleTags</code></a>.<br>
                      Member Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html#testMethod(java.lang.String)"><code>testMethod(String)</code></a>.<br>
@@ -903,13 +903,13 @@ public class TestModules extends JavadocTester {
                     <li><a href="#packages.summary">Packages</a>&nbsp;|&nbsp;</li>
                     <li>Services</li>""",
                 """
-                    <div class="col-first alt-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last alt-color"><a href="../moduleB/testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
+                    <div class="col-first even-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
+                    <div class="col-last even-row-color"><a href="../moduleB/testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
                     """);
         checkOutput("moduletags/module-summary.html", true,
                 """
-                    <div class="col-first alt-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdltags/package-summary.html">testpkgmdltags</a></div>
-                    <div class="col-last alt-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""",
+                    <div class="col-first even-row-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdltags/package-summary.html">testpkgmdltags</a></div>
+                    <div class="col-last even-row-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""",
                 """
                     <li><a href="#module.description">Description</a>&nbsp;|&nbsp;</li>
                     <li><a href="#modules.summary">Modules</a>&nbsp;|&nbsp;</li>
@@ -919,9 +919,9 @@ public class TestModules extends JavadocTester {
                     <div class="caption"><span>Indirect Requires</span></div>
                     <div class="details-table three-column-summary">""",
                 """
-                    <div class="col-first alt-color">transitive</div>
-                    <div class="col-second alt-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color">transitive</div>
+                    <div class="col-second even-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">This is a test description for the moduleB module.</div>
                     </div>""",
                 """
@@ -945,16 +945,16 @@ public class TestModules extends JavadocTester {
                     <div class="table-header col-first">From</div>
                     <div class="table-header col-last">Packages</div>""",
                 """
-                    <div class="col-first alt-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last alt-color"><a href="../moduleB/testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
+                    <div class="col-first even-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
+                    <div class="col-last even-row-color"><a href="../moduleB/testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
                     """);
     }
 
     void checkModuleModeApi(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
                 """
-                    <div class="col-first alt-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last alt-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""");
+                    <div class="col-first even-row-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
+                    <div class="col-last even-row-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
                     <li><a href="#module.description">Description</a>&nbsp;|&nbsp;</li>
@@ -962,67 +962,69 @@ public class TestModules extends JavadocTester {
                     <li><a href="#packages.summary">Packages</a>&nbsp;|&nbsp;</li>
                     <li><a href="#services.summary">Services</a></li>""",
                 """
-                    <div class="col-first alt-color package-summary-table package-summary-table-tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-last alt-color package-summary-table package-summary-table-tab2">&nbsp;</div>""",
+                    <div class="col-first even-row-color package-summary-table package-summary-table-tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2">&nbsp;</div>""",
                 """
                     <div id="package-summary-table">
                     <div class="caption"><span>Opens</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color package-summary-table package-summary-table-tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-last alt-color package-summary-table package-summary-table-tab2">&nbsp;</div>
+                    <div class="col-first even-row-color package-summary-table package-summary-table-tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2">&nbsp;</div>
                     </div>
                     </div>""",
                 """
-                    <div class="col-first alt-color"><a href="testpkgmdlB/TestClassInModuleB.html" title="class in testpkgmdlB">TestClassInModuleB</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color"><a href="testpkgmdlB/TestClassInModuleB.html" title="class in testpkgmdlB">TestClassInModuleB</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">With a test description for uses.</div>
                     """);
         checkOutput("moduletags/module-summary.html", found,
                 """
-                    <div class="col-first alt-color">transitive static</div>
-                    <div class="col-second alt-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color">transitive static</div>
+                    <div class="col-second even-row-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>""");
     }
 
     void checkModuleModeAll(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
                 """
-                    <div class="col-first alt-color"> </div>
-                    <div class="col-second alt-color">java.base</div>
-                    <div class="col-last alt-color">&nbsp;</div>""",
+                    <div class="col-first even-row-color"> </div>
+                    <div class="col-second even-row-color">java.base</div>
+                    <div class="col-last even-row-color">&nbsp;</div>""",
                 """
-                    <div class="col-first alt-color"> </div>
-                    <div class="col-second alt-color"><a href="../moduleC/module-summary.html">moduleC</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color"> </div>
+                    <div class="col-second even-row-color"><a href="../moduleC/module-summary.html">moduleC</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">This is a test description for the moduleC module.</div>
                     </div>""",
                 """
-                    <div class="col-first alt-color"><a href="../moduleC/module-summary.html">moduleC</a></div>
-                    <div class="col-last alt-color"><a href="../moduleC/testpkgmdlC/package-summary.html">testpkgmdlC</a></div>""",
+                    <div class="col-first even-row-color"><a href="../moduleC/module-summary.html">moduleC</a></div>
+                    <div class="col-last even-row-color"><a href="../moduleC/testpkgmdlC/package-summary.html">testpkgmdlC</a></div>""",
                 """
-                    <div class="col-first row-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-second row-color package-summary-table-tab1 package-summary-table">All Modules</div>
-                    <div class="col-last row-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""",
+                    <div class="col-first odd-row-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
+                    <div class="col-second odd-row-color package-summary-table-tab1 package-summary-table">All Modules</div>
+                    <div class="col-last odd-row-color package-summary-table-tab1 package-summary-table">&nbsp;</div>""",
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="package-summary-table.tabpanel" tabi\
-                    ndex="0" onkeydown="switchTab(event)" id="package-summary-table-tab0" onclick="s\
-                    how('package-summary-table', 'package-summary-table', 3)" class="active-table-ta\
-                    b">All Packages</button><button role="tab" aria-selected="false" aria-controls="\
-                    package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="p\
-                    ackage-summary-table-tab1" onclick="show('package-summary-table', 'package-summa\
-                    ry-table-tab1', 3)" class="table-tab">Exports</button><button role="tab" aria-se\
-                    lected="false" aria-controls="package-summary-table.tabpanel" tabindex="-1" onke\
-                    ydown="switchTab(event)" id="package-summary-table-tab3" onclick="show('package-\
-                    summary-table', 'package-summary-table-tab3', 3)" class="table-tab">Concealed</b\
-                    utton></div>""",
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="package-summary-table-tab0" role="tab" aria-selected="true" aria-con\
+                    trols="package-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)"\
+                     onclick="show('package-summary-table', 'package-summary-table', 3)" class="acti\
+                    ve-table-tab">All Packages</button>\
+                    <button id="package-summary-table-tab1" role="tab" aria-selected="false" aria-co\
+                    ntrols="package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event\
+                    )" onclick="show('package-summary-table', 'package-summary-table-tab1', 3)" clas\
+                    s="table-tab">Exports</button>\
+                    <button id="package-summary-table-tab3" role="tab" aria-selected="false" aria-co\
+                    ntrols="package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event\
+                    )" onclick="show('package-summary-table', 'package-summary-table-tab3', 3)" clas\
+                    s="table-tab">Concealed</button>\
+                    </div>""",
                 """
-                    <div class="col-first alt-color package-summary-table-tab3 package-summary-table"><a href="concealedpkgmdlA/package-summary.html">concealedpkgmdlA</a></div>
-                    <div class="col-second alt-color package-summary-table-tab3 package-summary-table">None</div>
-                    <div class="col-last alt-color package-summary-table-tab3 package-summary-table">&nbsp;</div>""");
+                    <div class="col-first even-row-color package-summary-table-tab3 package-summary-table"><a href="concealedpkgmdlA/package-summary.html">concealedpkgmdlA</a></div>
+                    <div class="col-second even-row-color package-summary-table-tab3 package-summary-table">None</div>
+                    <div class="col-last even-row-color package-summary-table-tab3 package-summary-table">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
                     <li><a href="#module.description">Description</a>&nbsp;|&nbsp;</li>
@@ -1030,46 +1032,48 @@ public class TestModules extends JavadocTester {
                     <li><a href="#packages.summary">Packages</a>&nbsp;|&nbsp;</li>
                     <li><a href="#services.summary">Services</a></li>""",
                 """
-                    <div class="col-first alt-color package-summary-table package-summary-table-tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-second alt-color package-summary-table package-summary-table-tab2">None</div>
-                    <div class="col-second alt-color package-summary-table package-summary-table-tab2">All Modules</div>
-                    <div class="col-last alt-color package-summary-table package-summary-table-tab2">&nbsp;</div>""",
+                    <div class="col-first even-row-color package-summary-table package-summary-table-tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
+                    <div class="col-second even-row-color package-summary-table package-summary-table-tab2">None</div>
+                    <div class="col-second even-row-color package-summary-table package-summary-table-tab2">All Modules</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2">&nbsp;</div>""",
                 """
-                    <div class="col-first alt-color"> </div>
-                    <div class="col-second alt-color">java.base</div>
-                    <div class="col-last alt-color">&nbsp;</div>""",
+                    <div class="col-first even-row-color"> </div>
+                    <div class="col-second even-row-color">java.base</div>
+                    <div class="col-last even-row-color">&nbsp;</div>""",
                 """
-                    <div class="col-first alt-color"><a href="testpkgmdlB/TestClass2InModuleB.html"\
+                    <div class="col-first even-row-color"><a href="testpkgmdlB/TestClass2InModuleB.html"\
                      title="class in testpkgmdlB">TestClass2InModuleB</a></div>
-                    <div class="col-last alt-color">&nbsp;</div>""",
+                    <div class="col-last even-row-color">&nbsp;</div>""",
                 """
-                    <div class="col-first alt-color"><a href="testpkg2mdlB/TestInterface2InModuleB.h\
+                    <div class="col-first even-row-color"><a href="testpkg2mdlB/TestInterface2InModuleB.h\
                     tml" title="interface in testpkg2mdlB">TestInterface2InModuleB</a></div>
-                    <div class="col-last alt-color">&nbsp;<br>(<span class="implementation-label">Im\
+                    <div class="col-last even-row-color">&nbsp;<br>(<span class="implementation-label">Im\
                     plementation(s):</span>&nbsp;<a href="testpkgmdlB/TestClass2InModuleB.html" titl\
                     e="class in testpkgmdlB">TestClass2InModuleB</a>)</div>""",
                 """
-                    <div class="col-first row-color"><a href="testpkg2mdlB/TestInterfaceInModuleB.ht\
+                    <div class="col-first odd-row-color"><a href="testpkg2mdlB/TestInterfaceInModuleB.ht\
                     ml" title="interface in testpkg2mdlB">TestInterfaceInModuleB</a></div>
-                    <div class="col-last row-color">&nbsp;<br>(<span class="implementation-label">Im\
+                    <div class="col-last odd-row-color">&nbsp;<br>(<span class="implementation-label">Im\
                     plementation(s):</span>&nbsp;<a href="testpkgmdlB/TestClassInModuleB.html" title\
                     ="class in testpkgmdlB">TestClassInModuleB</a>)</div>""",
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="package-summary-table.tabpanel" tabi\
-                    ndex="0" onkeydown="switchTab(event)" id="package-summary-table-tab0" onclick="s\
-                    how('package-summary-table', 'package-summary-table', 4)" class="active-table-ta\
-                    b">All Packages</button><button role="tab" aria-selected="false" aria-controls="\
-                    package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="p\
-                    ackage-summary-table-tab1" onclick="show('package-summary-table', 'package-summa\
-                    ry-table-tab1', 4)" class="table-tab">Exports</button><button role="tab" aria-se\
-                    lected="false" aria-controls="package-summary-table.tabpanel" tabindex="-1" onke\
-                    ydown="switchTab(event)" id="package-summary-table-tab2" onclick="show('package-\
-                    summary-table', 'package-summary-table-tab2', 4)" class="table-tab">Opens</butto\
-                    n></div>""",
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="package-summary-table-tab0" role="tab" aria-selected="true" aria-con\
+                    trols="package-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)"\
+                     onclick="show('package-summary-table', 'package-summary-table', 4)" class="acti\
+                    ve-table-tab">All Packages</button>\
+                    <button id="package-summary-table-tab1" role="tab" aria-selected="false" aria-co\
+                    ntrols="package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event\
+                    )" onclick="show('package-summary-table', 'package-summary-table-tab1', 4)" clas\
+                    s="table-tab">Exports</button>\
+                    <button id="package-summary-table-tab2" role="tab" aria-selected="false" aria-co\
+                    ntrols="package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event\
+                    )" onclick="show('package-summary-table', 'package-summary-table-tab2', 4)" clas\
+                    s="table-tab">Opens</button>\
+                    </div>""",
                 """
-                    <div class="col-first row-color"><a href="testpkgmdlB/TestClassInModuleB.html" title="class in testpkgmdlB">TestClassInModuleB</a></div>
-                    <div class="col-last row-color">
+                    <div class="col-first odd-row-color"><a href="testpkgmdlB/TestClassInModuleB.html" title="class in testpkgmdlB">TestClassInModuleB</a></div>
+                    <div class="col-last odd-row-color">
                     <div class="block">With a test description for uses.</div>
                     """);
         checkOutput("moduleC/module-summary.html", found,
@@ -1081,9 +1085,9 @@ public class TestModules extends JavadocTester {
                     <div class="table-header col-last">Description</div>""");
         checkOutput("moduletags/module-summary.html", found,
                 """
-                    <div class="col-first row-color">transitive static</div>
-                    <div class="col-second row-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last row-color">
+                    <div class="col-first odd-row-color">transitive static</div>
+                    <div class="col-second odd-row-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
+                    <div class="col-last odd-row-color">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>""");
     }
 
@@ -1101,8 +1105,8 @@ public class TestModules extends JavadocTester {
                     <li><a href="#module">Modules</a></li>
                     </ul>""",
                 """
-                    <div class="col-deprecated-item-name alt-color"><a href="moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-deprecated-item-name even-row-color"><a href="moduleA/module-summary.html">moduleA</a></div>
+                    <div class="col-last even-row-color">
                     <div class="deprecation-comment">This module is deprecated.</div>""");
         checkOutput("moduleB/module-summary.html", !found,
                 """
@@ -1141,26 +1145,29 @@ public class TestModules extends JavadocTester {
         checkOutput("index.html", true,
                 """
                     <div id="all-modules-table">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="all-modules-table.tabpanel" tabindex\
-                    ="0" onkeydown="switchTab(event)" id="all-modules-table-tab0" onclick="show('all\
-                    -modules-table', 'all-modules-table', 2)" class="active-table-tab">All Modules</\
-                    button><button role="tab" aria-selected="false" aria-controls="all-modules-table\
-                    .tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="all-modules-table-tab1\
-                    " onclick="show('all-modules-table', 'all-modules-table-tab1', 2)" class="table-\
-                    tab">Module Group A</button><button role="tab" aria-selected="false" aria-contro\
-                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="a\
-                    ll-modules-table-tab2" onclick="show('all-modules-table', 'all-modules-table-tab\
-                    2', 2)" class="table-tab">Module Group B &amp; C</button><button role="tab" aria\
-                    -selected="false" aria-controls="all-modules-table.tabpanel" tabindex="-1" onkey\
-                    down="switchTab(event)" id="all-modules-table-tab3" onclick="show('all-modules-t\
-                    able', 'all-modules-table-tab3', 2)" class="table-tab">Other Modules</button></d\
-                    iv>
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="all-modules-table-tab0" role="tab" aria-selected="true" aria-control\
+                    s="all-modules-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick\
+                    ="show('all-modules-table', 'all-modules-table', 2)" class="active-table-tab">Al\
+                    l Modules</button>\
+                    <button id="all-modules-table-tab1" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-modules-table', 'all-modules-table-tab1', 2)" class="table-tab">Mo\
+                    dule Group A</button>\
+                    <button id="all-modules-table-tab2" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-modules-table', 'all-modules-table-tab2', 2)" class="table-tab">Mo\
+                    dule Group B &amp; C</button>\
+                    <button id="all-modules-table-tab3" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-modules-table', 'all-modules-table-tab3', 2)" class="table-tab">Ot\
+                    her Modules</button>\
+                    </div>
                     <div id="all-modules-table.tabpanel" role="tabpanel">
                     <div class="summary-table two-column-summary" aria-labelledby="all-modules-table-tab0">""",
                 """
-                    var altColor = "alt-color";
-                    var rowColor = "row-color";
+                    var evenRowColor = "even-row-color";
+                    var oddRowColor = "odd-row-color";
                     var tableTab = "table-tab";
                     var activeTableTab = "active-table-tab";""");
         checkOutput("index.html", false,
@@ -1174,42 +1181,52 @@ public class TestModules extends JavadocTester {
     void checkGroupOptionOrdering() {
         checkOutput("index.html", true,
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="all-modules-table.tabpanel" tabindex\
-                    ="0" onkeydown="switchTab(event)" id="all-modules-table-tab0" onclick="show('all\
-                    -modules-table', 'all-modules-table', 2)" class="active-table-tab">All Modules</\
-                    button><button role="tab" aria-selected="false" aria-controls="all-modules-table\
-                    .tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="all-modules-table-tab1\
-                    " onclick="show('all-modules-table', 'all-modules-table-tab1', 2)" class="table-\
-                    tab">B Group</button><button role="tab" aria-selected="false" aria-controls="all\
-                    -modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="all-modu\
-                    les-table-tab2" onclick="show('all-modules-table', 'all-modules-table-tab2', 2)"\
-                     class="table-tab">C Group</button><button role="tab" aria-selected="false" aria\
-                    -controls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)\
-                    " id="all-modules-table-tab3" onclick="show('all-modules-table', 'all-modules-ta\
-                    ble-tab3', 2)" class="table-tab">A Group</button><button role="tab" aria-selecte\
-                    d="false" aria-controls="all-modules-table.tabpanel" tabindex="-1" onkeydown="sw\
-                    itchTab(event)" id="all-modules-table-tab4" onclick="show('all-modules-table', '\
-                    all-modules-table-tab4', 2)" class="table-tab">Other Modules</button></div>""");
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="all-modules-table-tab0" role="tab" aria-selected="true" aria-control\
+                    s="all-modules-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick\
+                    ="show('all-modules-table', 'all-modules-table', 2)" class="active-table-tab">Al\
+                    l Modules</button>\
+                    <button id="all-modules-table-tab1" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-modules-table', 'all-modules-table-tab1', 2)" class="table-tab">B\
+                     Group</button>\
+                    <button id="all-modules-table-tab2" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-modules-table', 'all-modules-table-tab2', 2)" class="table-tab">C\
+                     Group</button>\
+                    <button id="all-modules-table-tab3" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-modules-table', 'all-modules-table-tab3', 2)" class="table-tab">A\
+                     Group</button>\
+                    <button id="all-modules-table-tab4" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-modules-table', 'all-modules-table-tab4', 2)" class="table-tab">Ot\
+                    her Modules</button>\
+                    </div>""");
         checkOutput("index.html", false,
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="all-modules-table.tabpanel" tabindex\
-                    ="0" onkeydown="switchTab(event)" id="all-modules-table-tab0" onclick="show('all\
-                    -modules-table', 'all-modules-table', 2)" class="active-table-tab">All Modules</\
-                    button><button role="tab" aria-selected="false" aria-controls="all-modules-table\
-                    .tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="all-modules-table-tab1\
-                    " onclick="show('all-modules-table', 'all-modules-table-tab1', 2)" class="table-\
-                    tab">A Group</button><button role="tab" aria-selected="false" aria-controls="all\
-                    -modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="all-modu\
-                    les-table-tab2" onclick="show('all-modules-table', 'all-modules-table-tab2', 2)"\
-                     class="table-tab">B Group</button><button role="tab" aria-selected="false" aria\
-                    -controls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)\
-                    " id="all-modules-table-tab3" onclick="show('all-modules-table', 'all-modules-ta\
-                    ble-tab3', 2)" class="table-tab">C Group</button><button role="tab" aria-selecte\
-                    d="false" aria-controls="all-modules-table.tabpanel" tabindex="-1" onkeydown="sw\
-                    itchTab(event)" id="all-modules-table-tab4" onclick="show('all-modules-table', '\
-                    all-modules-table-tab4', 2)" class="table-tab">Other Modules</button></div>""",
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="all-modules-table-tab0" role="tab" aria-selected="true" aria-control\
+                    s="all-modules-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick\
+                    ="show('all-modules-table', 'all-modules-table', 2)" class="active-table-tab">Al\
+                    l Modules</button>\
+                    <button id="all-modules-table-tab1" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-modules-table', 'all-modules-table-tab1', 2)" class="table-tab">A\
+                     Group</button>\
+                    <button id="all-modules-table-tab2" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-modules-table', 'all-modules-table-tab2', 2)" class="table-tab">B\
+                     Group</button>\
+                    <button id="all-modules-table-tab3" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-modules-table', 'all-modules-table-tab3', 2)" class="table-tab">C\
+                     Group</button>\
+                    <button id="all-modules-table-tab4" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-modules-table', 'all-modules-table-tab4', 2)" class="table-tab">Ot\
+                    her Modules</button>\
+                    </div>""",
                 "Java SE Modules");
     }
 
@@ -1218,22 +1235,25 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="block">The overview summary page header.</div>
                     <div id="all-packages-table">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="all-packages-table.tabpanel" tabinde\
-                    x="0" onkeydown="switchTab(event)" id="all-packages-table-tab0" onclick="show('a\
-                    ll-packages-table', 'all-packages-table', 2)" class="active-table-tab">All Packa\
-                    ges</button><button role="tab" aria-selected="false" aria-controls="all-packages\
-                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="all-packages-tab\
-                    le-tab1" onclick="show('all-packages-table', 'all-packages-table-tab1', 2)" clas\
-                    s="table-tab">Package Group 0</button><button role="tab" aria-selected="false" a\
-                    ria-controls="all-packages-table.tabpanel" tabindex="-1" onkeydown="switchTab(ev\
-                    ent)" id="all-packages-table-tab2" onclick="show('all-packages-table', 'all-pack\
-                    ages-table-tab2', 2)" class="table-tab">Package Group 1</button></div>
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="all-packages-table-tab0" role="tab" aria-selected="true" aria-contro\
+                    ls="all-packages-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-packages-table', 'all-packages-table', 2)" class="active-table-tab\
+                    ">All Packages</button>\
+                    <button id="all-packages-table-tab1" role="tab" aria-selected="false" aria-contro\
+                    ls="all-packages-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-packages-table', 'all-packages-table-tab1', 2)" class="table-tab">P\
+                    ackage Group 0</button>\
+                    <button id="all-packages-table-tab2" role="tab" aria-selected="false" aria-contro\
+                    ls="all-packages-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-packages-table', 'all-packages-table-tab2', 2)" class="table-tab">P\
+                    ackage Group 1</button>\
+                    </div>
                     <div id="all-packages-table.tabpanel" role="tabpanel">
                     <div class="summary-table two-column-summary" aria-labelledby="all-packages-table-tab0">""",
                 """
-                    var altColor = "alt-color";
-                    var rowColor = "row-color";
+                    var evenRowColor = "even-row-color";
+                    var oddRowColor = "odd-row-color";
                     var tableTab = "table-tab";
                     var activeTableTab = "active-table-tab";""");
     }
@@ -1241,17 +1261,20 @@ public class TestModules extends JavadocTester {
     void checkGroupOptionPackageOrdering() {
         checkOutput("index.html", true,
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="all-packages-table.tabpanel" tabinde\
-                    x="0" onkeydown="switchTab(event)" id="all-packages-table-tab0" onclick="show('a\
-                    ll-packages-table', 'all-packages-table', 2)" class="active-table-tab">All Packa\
-                    ges</button><button role="tab" aria-selected="false" aria-controls="all-packages\
-                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="all-packages-tab\
-                    le-tab1" onclick="show('all-packages-table', 'all-packages-table-tab1', 2)" clas\
-                    s="table-tab">Z Group</button><button role="tab" aria-selected="false" aria-cont\
-                    rols="all-packages-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id\
-                    ="all-packages-table-tab2" onclick="show('all-packages-table', 'all-packages-tab\
-                    le-tab2', 2)" class="table-tab">A Group</button></div>""");
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="all-packages-table-tab0" role="tab" aria-selected="true" aria-contro\
+                    ls="all-packages-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-packages-table', 'all-packages-table', 2)" class="active-table-tab\
+                    ">All Packages</button>\
+                    <button id="all-packages-table-tab1" role="tab" aria-selected="false" aria-contr\
+                    ols="all-packages-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onc\
+                    lick="show('all-packages-table', 'all-packages-table-tab1', 2)" class="table-tab\
+                    ">Z Group</button>\
+                    <button id="all-packages-table-tab2" role="tab" aria-selected="false" aria-contr\
+                    ols="all-packages-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onc\
+                    lick="show('all-packages-table', 'all-packages-table-tab2', 2)" class="table-tab\
+                    ">A Group</button>\
+                    </div>""");
     }
 
     void checkGroupOptionSingleModule() {
@@ -1312,8 +1335,9 @@ public class TestModules extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color package-summary-table-tab1 package-summary-table"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last alt-color package-summary-table-tab1 package-summary-table">&nbsp;</div>
+                    <div class="col-first even-row-color package-summary-table-tab1 package-summary-table">\
+                    <a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
+                    <div class="col-last even-row-color package-summary-table-tab1 package-summary-table">&nbsp;</div>
                     </div>
                     </div>
                     """);
@@ -1350,17 +1374,20 @@ public class TestModules extends JavadocTester {
     void checkAllPkgsAllClasses(boolean found) {
         checkOutput("allclasses-index.html", true,
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="all-classes-table.tabpanel" tabindex\
-                    ="0" onkeydown="switchTab(event)" id="all-classes-table-tab0" onclick="show('all\
-                    -classes-table', 'all-classes-table', 2)" class="active-table-tab">All Classes</\
-                    button><button role="tab" aria-selected="false" aria-controls="all-classes-table\
-                    .tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="all-classes-table-tab2\
-                    " onclick="show('all-classes-table', 'all-classes-table-tab2', 2)" class="table-\
-                    tab">Class Summary</button><button role="tab" aria-selected="false" aria-control\
-                    s="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="al\
-                    l-classes-table-tab6" onclick="show('all-classes-table', 'all-classes-table-tab6\
-                    ', 2)" class="table-tab">Annotation Types Summary</button></div>
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="all-classes-table-tab0" role="tab" aria-selected="true" aria-control\
+                    s="all-classes-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick\
+                    ="show('all-classes-table', 'all-classes-table', 2)" class="active-table-tab">Al\
+                    l Classes</button>\
+                    <button id="all-classes-table-tab2" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab2', 2)" class="table-tab">Cl\
+                    ass Summary</button>\
+                    <button id="all-classes-table-tab6" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
+                    notation Types Summary</button>\
+                    </div>
                     """,
                 """
                     <div class="table-header col-first">Class</div>

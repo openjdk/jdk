@@ -119,7 +119,7 @@ public class TestOptionOrder extends JavadocTester {
                 "<dd><a href=\"http://example.com/" + first + "/lib/LibClass.html",
                 // Instance in Field declaration
                 """
-                    <div class="col-first alt-color"><code><a href="http://example.com/""" + first + "/lib/LibClass.html"
+                    <div class="col-first even-row-color"><code><a href="http://example.com/""" + first + "/lib/LibClass.html"
                 );
     }
 

@@ -455,11 +455,6 @@ div.table-tabs > button.table-tab {
 .col-second, .col-second, .col-last, .col-constructor-name, .col-deprecated-item-name, .col-last {
     font-size:13px;
 }
-.provides-summary .col-first, .provides-summary .col-last, .provides-summary .col-first,
-.provides-summary .col-last {
-    white-space:normal;
-    font-size:13px;
-}
 .col-first, .col-second, .col-constructor-name {
     vertical-align:top;
     overflow: auto;
@@ -481,10 +476,10 @@ div.table-tabs > button.table-tab {
 .table-sub-heading-color {
     background-color:#EEEEFF;
 }
-.alt-color, .alt-color .table-header {
+.even-row-color, .even-row-color .table-header {
     background-color:#FFFFFF;
 }
-.row-color, .row-color .table-header {
+.odd-row-color, .odd-row-color .table-header {
     background-color:#EEEEEF;
 }
 /*

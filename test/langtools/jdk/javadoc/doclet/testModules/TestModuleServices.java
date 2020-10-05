@@ -135,22 +135,22 @@ public class TestModuleServices extends JavadocTester {
 
         checkOutput("moduleServiceProvider/module-summary.html", true,
                 """
-                    <div class="col-first alt-color"><a href="../moduleService/pkgService/Service.ht\
+                    <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\
                     ml" title="interface in pkgService">Service</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-last even-row-color">
                     <div class="block">Provides a service whose name is ServiceProvider.</div>""");
         checkOutput("moduleServiceUser/module-summary.html", true,
                 """
-                    <div class="col-first alt-color"><a href="../moduleService/pkgService/Service.ht\
+                    <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\
                     ml" title="interface in pkgService">Service</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-last even-row-color">
                     <div class="block">If no other provider is found, a default internal implementat\
                     ion will be used.</div>""");
         checkOutput("moduleServiceUserNoDescription/module-summary.html", true,
                 """
-                    <div class="col-first alt-color"><a href="../moduleService/pkgService/Service.ht\
+                    <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\
                     ml" title="interface in pkgService">Service</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-last even-row-color">
                     <div class="block">A service Interface for service providers.</div>""");
         checkOutput("moduleServiceProvider/module-summary.html", false,
                 "A service Interface for service providers.");
@@ -205,10 +205,10 @@ public class TestModuleServices extends JavadocTester {
                     <div class="details-table two-column-summary">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color"><a href="p1/A.html" title="class in p1">A</a></div>
-                    <div class="col-last alt-color">&nbsp;</div>
-                    <div class="col-first row-color"><a href="p1/B.html" title="class in p1">B</a></div>
-                    <div class="col-last row-color">&nbsp;</div>
+                    <div class="col-first even-row-color"><a href="p1/A.html" title="class in p1">A</a></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-first odd-row-color"><a href="p1/B.html" title="class in p1">B</a></div>
+                    <div class="col-last odd-row-color">&nbsp;</div>
                     </div>
                     """);
 
@@ -240,8 +240,8 @@ public class TestModuleServices extends JavadocTester {
                     <div class="details-table two-column-summary">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color"><a href="p1/A.html" title="class in p1">A</a></div>
-                    <div class="col-last alt-color">&nbsp;</div>
+                    <div class="col-first even-row-color"><a href="p1/A.html" title="class in p1">A</a></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
                     </div>
                     """);
 
@@ -303,10 +303,10 @@ public class TestModuleServices extends JavadocTester {
                     <div class="details-table two-column-summary">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color"><a href="p1/A.html" title="interface in p1">A</a></div>
-                    <div class="col-last alt-color">&nbsp;<br>(<span class="implementation-label">Implementation(s):</span>&nbsp;<a href="p1/B.html" title="class in p1">B</a>)</div>
-                    <div class="col-first row-color"><a href="p2/A.html" title="interface in p2">A</a></div>
-                    <div class="col-last row-color">&nbsp;<br>(<span class="implementation-label">Implementation(s):</span>&nbsp;<a href="p2/B.html" title="class in p2">B</a>)</div>
+                    <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
+                    <div class="col-last even-row-color">&nbsp;<br>(<span class="implementation-label">Implementation(s):</span>&nbsp;<a href="p1/B.html" title="class in p1">B</a>)</div>
+                    <div class="col-first odd-row-color"><a href="p2/A.html" title="interface in p2">A</a></div>
+                    <div class="col-last odd-row-color">&nbsp;<br>(<span class="implementation-label">Implementation(s):</span>&nbsp;<a href="p2/B.html" title="class in p2">B</a>)</div>
                     </div>
                     """);
 
@@ -342,8 +342,8 @@ public class TestModuleServices extends JavadocTester {
                     <div class="details-table two-column-summary">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color"><a href="p1/A.html" title="interface in p1">A</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">abc</div>
                     </div>
                     </div>
@@ -385,8 +385,8 @@ public class TestModuleServices extends JavadocTester {
                     <div class="details-table two-column-summary">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color"><a href="p1/A.html" title="interface in p1">A</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">abc</div>
                     </div>
                     </div>
@@ -396,8 +396,8 @@ public class TestModuleServices extends JavadocTester {
                     <div class="details-table two-column-summary">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color"><a href="p2/B.html" title="class in p2">B</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color"><a href="p2/B.html" title="class in p2">B</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">def</div>
                     </div>
                     </div>

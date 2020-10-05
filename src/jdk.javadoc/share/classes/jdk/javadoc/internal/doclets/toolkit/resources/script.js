@@ -56,8 +56,8 @@ function show(tableId, selected, columns) {
         .forEach(function(elem, index) {
             elem.style.display = '';
             var isEvenRow = index % (columns * 2) < columns;
-            elem.classList.remove(isEvenRow ? rowColor : altColor);
-            elem.classList.add(isEvenRow ? altColor : rowColor);
+            elem.classList.remove(isEvenRow ? oddRowColor : evenRowColor);
+            elem.classList.add(isEvenRow ? evenRowColor : oddRowColor);
         });
     updateTabs(tableId, selected);
 }

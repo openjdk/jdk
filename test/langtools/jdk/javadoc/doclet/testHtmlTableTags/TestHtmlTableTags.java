@@ -298,21 +298,24 @@ public class TestHtmlTableTags extends JavadocTester {
         checkOutput("pkg1/C1.html", true,
                 "<div class=\"caption\"><span>Fields</span></div>",
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabin\
-                    dex="0" onkeydown="switchTab(event)" id="method-summary-table-tab0" onclick="sho\
-                    w('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">A\
-                    ll Methods</button><button role="tab" aria-selected="false" aria-controls="metho\
-                    d-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="method-\
-                    summary-table-tab2" onclick="show('method-summary-table', 'method-summary-table-\
-                    tab2', 3)" class="table-tab">Instance Methods</button><button role="tab" aria-se\
-                    lected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkey\
-                    down="switchTab(event)" id="method-summary-table-tab4" onclick="show('method-sum\
-                    mary-table', 'method-summary-table-tab4', 3)" class="table-tab">Concrete Methods\
-                    </button><button role="tab" aria-selected="false" aria-controls="method-summary-\
-                    table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="method-summary-ta\
-                    ble-tab6" onclick="show('method-summary-table', 'method-summary-table-tab6', 3)"\
-                     class="table-tab">Deprecated Methods</button></div>
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-cont\
+                    rols="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" o\
+                    nclick="show('method-summary-table', 'method-summary-table', 3)" class="active-t\
+                    able-tab">All Methods</button>\
+                    <button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-con\
+                    trols="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
+                     onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="t\
+                    able-tab">Instance Methods</button>\
+                    <button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-con\
+                    trols="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
+                     onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="t\
+                    able-tab">Concrete Methods</button>\
+                    <button id="method-summary-table-tab6" role="tab" aria-selected="false" aria-con\
+                    trols="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
+                     onclick="show('method-summary-table', 'method-summary-table-tab6', 3)" class="t\
+                    able-tab">Deprecated Methods</button>\
+                    </div>
                     """);
 
         checkOutput("pkg2/C2.html", true,

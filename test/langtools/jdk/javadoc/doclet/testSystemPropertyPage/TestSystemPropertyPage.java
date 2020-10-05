@@ -82,12 +82,12 @@ public class TestSystemPropertyPage extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Property</div>
                     <div class="table-header col-last">Referenced In</div>
-                    <div class="col-first alt-color">user.address</div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color">user.address</div>
+                    <div class="col-last even-row-color">
                     <div class="block"><code><a href="pkg2/B.html#user.address">class pkg2.B</a></code>, <a href="pkg1/doc-files/WithTitle.html#user.address"><code>package pkg1: </code>Example Title</a></div>
                     </div>
-                    <div class="col-first row-color">user.name</div>
-                    <div class="col-last row-color">
+                    <div class="col-first odd-row-color">user.name</div>
+                    <div class="col-last odd-row-color">
                     <div class="block"><a href="index.html#user.name">Overview</a>, <code><a href="pkg1/A.html#user.name">class pkg1.A</a></code>, <a href="pkg1/doc-files/WithEmptyTitle.html#user.name"><code>package pkg1: </code>WithEmptyTitle.html</a>, <a href="pkg1/doc-files/WithTitle.html#user.name"><code>package pkg1: </code>Example Title</a>, <a href="pkg1/doc-files/WithoutTitle.html#user.name"><code>package pkg1: </code>WithoutTitle.html</a></div>
                     </div>
                     </div>""");

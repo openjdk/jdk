@@ -66,8 +66,8 @@ public class TestGroupName extends JavadocTester {
 
         checkOutput("index.html", true,
                 """
-                    <button role="tab" aria-selected="false" aria-controls="all-packages-table.tabpa\
-                    nel" tabindex="-1" onkeydown="switchTab(event)" id="all-packages-table-tab1" onc\
+                    <button id="all-packages-table-tab1" role="tab" aria-selected="false" aria-contr\
+                    ols="all-packages-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onc\
                     lick="show('all-packages-table', 'all-packages-table-tab1', 2)" class="table-tab\
                     ">abc &lt; &amp; &gt; def</button>""");
     }
@@ -102,8 +102,8 @@ public class TestGroupName extends JavadocTester {
 
         checkOutput("index.html", true,
                 """
-                    <button role="tab" aria-selected="false" aria-controls="all-modules-table.tabpan\
-                    el" tabindex="-1" onkeydown="switchTab(event)" id="all-modules-table-tab2" oncli\
+                    <button id="all-modules-table-tab2" role="tab" aria-selected="false" aria-contro\
+                    ls="all-modules-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-modules-table', 'all-modules-table-tab2', 2)" class="table-tab">Ot\
                     her Modules</button>""");
     }

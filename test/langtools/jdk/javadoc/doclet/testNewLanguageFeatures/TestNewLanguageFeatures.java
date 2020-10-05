@@ -139,10 +139,10 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      V&nbsp;param2)</span></div>""",
                 // Method that returns TypeParameters
                 """
-                    <div class="col-first alt-color method-summary-table-tab2 method-summary-table-t\
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
                     ab4 method-summary-table"><code><a href="TypeParameters.html" title="type parame\
                     ter in TypeParameters">E</a>[]</code></div>
-                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
                     tab4 method-summary-table"><code><span class="member-name-link"><a href="#method\
                     ThatReturnsTypeParameterA(E%5B%5D)">methodThatReturnsTypeParameterA</a></span>&#\
                     8203;(<a href="TypeParameters.html" title="type parameter in TypeParameters">E</\
@@ -155,10 +155,10 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     le="type parameter in TypeParameters">E</a>[]&nbsp;e)</span></div>
                     """,
                 """
-                    <div class="col-first alt-color method-summary-table-tab2 method-summary-table-t\
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
                     ab4 method-summary-table"><code>&lt;T extends java.lang.Object &amp; java.lang.C\
                     omparable&lt;? super T&gt;&gt;<br>T</code></div>
-                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
                     tab4 method-summary-table"><code><span class="member-name-link"><a href="#method\
                     tThatReturnsTypeParametersB(java.util.Collection)">methodtThatReturnsTypeParamet\
                     ersB</a></span>&#8203;(java.util.Collection&lt;? extends T&gt;&nbsp;coll)</code>""",
@@ -167,11 +167,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     """,
                 // Method takes a TypeVariable
                 """
-                    <div class="col-first row-color method-summary-table-tab2 method-summary-table-t\
+                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table-t\
                     ab4 method-summary-table"><code>&lt;X extends java.lang.Throwable&gt;<br><a href\
                     ="TypeParameters.html" title="type parameter in TypeParameters">E</a></code></di\
                     v>
-                    <div class="col-second row-color method-summary-table-tab2 method-summary-table-\
+                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table-\
                     tab4 method-summary-table"><code><span class="member-name-link"><a href="#orElse\
                     Throw(java.util.function.Supplier)">orElseThrow</a></span>&#8203;(java.util.func\
                     tion.Supplier&lt;? extends X&gt;&nbsp;exceptionSupplier)</code>"""
@@ -244,7 +244,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     arameters of type <a href="../Foo.html" title="class in pkg2">Foo</a></span></\
                     div>""",
                 """
-                    <div class="col-second alt-color"><code><span class="member-name-link"><a href=\
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
                     "../ClassUseTest1.html" title="class in pkg2">ClassUseTest1</a>&lt;T extends <a\
                      href="../Foo.html" title="class in pkg2">Foo</a> &amp; <a href="../Foo2.html"\
                      title="interface in pkg2">Foo2</a>&gt;</span></code></div>""",
@@ -253,7 +253,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../Foo.html" title="class in pkg2">Foo<\
                     /a></span></div>""",
                 """
-                    <div class="col-second alt-color"><span class="type-name-label">ClassUseTest1.<\
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest1.<\
                     /span><code><span class="member-name-link"><a href="../ClassUseTest1.html#metho\
                     d(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>""",
                 """
@@ -261,7 +261,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      with type parameters of type <a href="../Foo.html" title="class in pkg2">Foo</a\
                     ></span></div>""",
                 """
-                    <div class="col-first alt-color"><code><a href="../ParamTest.html" title="class\
+                    <div class="col-first even-row-color"><code><a href="../ParamTest.html" title="class\
                      in pkg2">ParamTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&g\
                     t;</code></div>"""
         );
@@ -272,7 +272,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      declared as <a href="../ParamTest.html" title="class in pkg2">ParamTest</a></s\
                     pan></div>""",
                 """
-                    <div class="col-first alt-color"><code><a href="../ParamTest.html" title="class\
+                    <div class="col-first even-row-color"><code><a href="../ParamTest.html" title="class\
                      in pkg2">ParamTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&\
                     gt;</code></div>"""
         );
@@ -283,7 +283,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../Foo2.html" title="interface in pkg2"\
                     >Foo2</a></span></div>""",
                 """
-                    <div class="col-second alt-color"><code><span class="member-name-link"><a href=\
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
                     "../ClassUseTest1.html" title="class in pkg2">ClassUseTest1</a>&lt;T extends <a\
                      href="../Foo.html" title="class in pkg2">Foo</a> &amp; <a href="../Foo2.html"\
                      title="interface in pkg2">Foo2</a>&gt;</span></code></div>""",
@@ -292,7 +292,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../Foo2.html" title="interface in pkg2"\
                     >Foo2</a></span></div>""",
                 """
-                    <div class="col-second alt-color"><span class="type-name-label">ClassUseTest1.<\
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest1.<\
                     /span><code><span class="member-name-link"><a href="../ClassUseTest1.html#metho\
                     d(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>"""
         );
@@ -304,7 +304,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../ParamTest.html" title="class in pkg2\
                     ">ParamTest</a></span></div>""",
                 """
-                    <div class="col-second alt-color"><code><span class="member-name-link"><a href=\
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
                     "../ClassUseTest2.html" title="class in pkg2">ClassUseTest2</a>&lt;T extends <a\
                      href="../ParamTest.html" title="class in pkg2">ParamTest</a>&lt;<a href="../Fo\
                     o3.html" title="class in pkg2">Foo3</a>&gt;&gt;</span></code></div>""",
@@ -313,7 +313,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../ParamTest.html" title="class in pkg2\
                     ">ParamTest</a></span></div>""",
                 """
-                    <div class="col-second alt-color"><span class="type-name-label">ClassUseTest2.<\
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest2.<\
                     /span><code><span class="member-name-link"><a href="../ClassUseTest2.html#metho\
                     d(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>""",
                 """
@@ -321,7 +321,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      declared as <a href="../ParamTest.html" title="class in pkg2">ParamTest</a></s\
                     pan></div>""",
                 """
-                    <div class="col-first alt-color"><code><a href="../ParamTest.html" title="class\
+                    <div class="col-first even-row-color"><code><a href="../ParamTest.html" title="class\
                      in pkg2">ParamTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&\
                     gt;</code></div>""",
                 """
@@ -329,7 +329,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../ParamTest.html" title="class in pkg2\
                     ">ParamTest</a></span></div>""",
                 """
-                    <div class="col-first alt-color"><code>&lt;T extends <a href="../ParamTest.html\
+                    <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest.html\
                     " title="class in pkg2">ParamTest</a>&lt;<a href="../Foo3.html" title="class in\
                      pkg2">Foo3</a>&gt;&gt;<br><a href="../ParamTest.html" title="class in pkg2">Pa\
                     ramTest</a>&lt;<a href="../Foo3.html" title="class in pkg2">Foo3</a>&gt;</code>\
@@ -342,7 +342,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../Foo3.html" title="class in pkg2">Foo\
                     3</a></span></div>""",
                 """
-                    <div class="col-second alt-color"><code><span class="member-name-link"><a href=\
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
                     "../ClassUseTest2.html" title="class in pkg2">ClassUseTest2</a>&lt;T extends <a\
                      href="../ParamTest.html" title="class in pkg2">ParamTest</a>&lt;<a href="../Fo\
                     o3.html" title="class in pkg2">Foo3</a>&gt;&gt;</span></code></div>""",
@@ -351,7 +351,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../Foo3.html" title="class in pkg2">Foo\
                     3</a></span></div>""",
                 """
-                    <div class="col-second alt-color"><span class="type-name-label">ClassUseTest2.<\
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest2.<\
                     /span><code><span class="member-name-link"><a href="../ClassUseTest2.html#metho\
                     d(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>""",
                 """
@@ -359,7 +359,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > that return types with arguments of type <a href="../Foo3.html" title="class\
                      in pkg2">Foo3</a></span></div>""",
                 """
-                    <div class="col-first alt-color"><code>&lt;T extends <a href="../ParamTest.html\
+                    <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest.html\
                     " title="class in pkg2">ParamTest</a>&lt;<a href="../Foo3.html" title="class in\
                      pkg2">Foo3</a>&gt;&gt;<br><a href="../ParamTest.html" title="class in pkg2">Pa\
                     ramTest</a>&lt;<a href="../Foo3.html" title="class in pkg2">Foo3</a>&gt;</code>\
@@ -373,7 +373,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../ParamTest2.html" title="class in pkg\
                     2">ParamTest2</a></span></div>""",
                 """
-                    <div class="col-second alt-color"><code><span class="member-name-link"><a href=\
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
                     "../ClassUseTest3.html" title="class in pkg2">ClassUseTest3</a>&lt;T extends <a\
                      href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.Li\
                     st&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&g\
@@ -383,11 +383,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../ParamTest2.html" title="class in pkg\
                     2">ParamTest2</a></span></div>""",
                 """
-                    <div class="col-second alt-color"><span class="type-name-label">ClassUseTest3.<\
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest3.<\
                     /span><code><span class="member-name-link"><a href="../ClassUseTest3.html#metho\
                     d(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>""",
                 """
-                    <div class="col-first alt-color"><code>&lt;T extends <a href="../ParamTest2.htm\
+                    <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest2.htm\
                     l" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\
                     "../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&gt;<br><a href="../ParamT\
                     est2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends\
@@ -400,7 +400,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../Foo4.html" title="class in pkg2">Foo\
                     4</a></span></div>""",
                 """
-                    <div class="col-second alt-color"><code><span class="member-name-link"><a href=\
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href=\
                     "../ClassUseTest3.html" title="class in pkg2">ClassUseTest3</a>&lt;T extends <a\
                      href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.Li\
                     st&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&g\
@@ -410,7 +410,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > with type parameters of type <a href="../Foo4.html" title="class in pkg2">Foo\
                     4</a></span></div>""",
                 """
-                    <div class="col-second alt-color"><span class="type-name-label">ClassUseTest3.\
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest3.\
                     </span><code><span class="member-name-link"><a href="../ClassUseTest3.html#met\
                     hod(T)">method</a></span>&#8203;(T&nbsp;t)</code></div>""",
                 """
@@ -418,7 +418,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     > that return types with arguments of type <a href="../Foo4.html" title="class\
                      in pkg2">Foo4</a></span></div>""",
                 """
-                    <div class="col-first alt-color"><code>&lt;T extends <a href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&gt;<br><a href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></div>"""
+                    <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&gt;<br><a href="../ParamTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></div>"""
         );
 
         // Type parameters in constructor and method args
@@ -431,12 +431,12 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color"><code>void</code></div>
-                    <div class="col-second alt-color"><span class="type-name-label">ClassUseTest3.<\
+                    <div class="col-first even-row-color"><code>void</code></div>
+                    <div class="col-second even-row-color"><span class="type-name-label">ClassUseTest3.<\
                     /span><code><span class="member-name-link"><a href="../ClassUseTest3.html#metho\
                     d(java.util.Set)">method</a></span>&#8203;(java.util.Set&lt;<a href="../Foo4.ht\
                     ml" title="class in pkg2">Foo4</a>&gt;&nbsp;p)</code></div>
-                    <div class="col-last alt-color">&nbsp;</div>""",
+                    <div class="col-last even-row-color">&nbsp;</div>""",
                 """
                     <div class="caption"><span>Constructor parameters in <a href="../package-summary.html">pkg2<\
                     /a> with type arguments of type <a href="../Foo4.html" title="class in pkg2">Foo\

@@ -480,35 +480,35 @@ public class TestModulePackages extends JavadocTester {
             Set<TabKind> kindSet = Set.of(kinds);
             StringBuilder sb = new StringBuilder();
             sb.append("""
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="package-summary-table.tabpanel" tabi\
-                    ndex="0" onkeydown="switchTab(event)" id="package-summary-table-tab0" onclick="s\
-                    how('package-summary-table', 'package-summary-table',\s"""
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="package-summary-table-tab0" role="tab" aria-selected="true" aria-con\
+                    trols="package-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)"\
+                     onclick="show('package-summary-table', 'package-summary-table',\s"""
                     + numberOfColumns + """
                     )" class="active-table-tab">All Packages</button>""");
             if (kindSet.contains(TabKind.EXPORTS)) {
                 sb.append("""
-                    <button role="tab" aria-selected="false" aria-controls="package-summary-table.ta\
-                    bpanel" tabindex="-1" onkeydown="switchTab(event)" id="package-summary-table-tab\
-                    1" onclick="show('package-summary-table', 'package-summary-table-tab1',\s"""
+                    <button id="package-summary-table-tab1" role="tab" aria-selected="false" aria-co\
+                    ntrols="package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event\
+                    )" onclick="show('package-summary-table', 'package-summary-table-tab1',\s"""
                     + numberOfColumns + """
                     )" class="table-tab">Exports</button>""");
             }
             if (kindSet.contains(TabKind.OPENS)) {
                 sb.append("""
-                    <button role="tab" aria-selected="false" aria-controls="package-summary-table.ta\
-                    bpanel" tabindex="-1" onkeydown="switchTab(event)" id="package-summary-table-tab\
-                    2" onclick="show('package-summary-table', 'package-summary-table-tab2',\s"""
+                    <button id="package-summary-table-tab2" role="tab" aria-selected="false" aria-co\
+                    ntrols="package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event\
+                    )" onclick="show('package-summary-table', 'package-summary-table-tab2',\s"""
                     + numberOfColumns + """
                     )" class="table-tab">Opens</button>""");
             }
             if (kindSet.contains(TabKind.CONCEALED)) {
                 sb.append("""
-                    <button role="tab" aria-selected="false" aria-controls="package-summary-table.ta\
-                    bpanel" tabindex="-1" onkeydown="switchTab(event)" id="package-summary-table-tab\
-                    3" onclick="show('package-summary-table', 'package-summary-table-tab3',\s"""
-                    + numberOfColumns + """
-                    )" class="table-tab">Concealed</button>""");
+                   <button id="package-summary-table-tab3" role="tab" aria-selected="false" aria-con\
+                   trols="package-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
+                    onclick="show('package-summary-table', 'package-summary-table-tab3',\s"""
+                   + numberOfColumns + """
+                   )" class="table-tab">Concealed</button>""");
             }
             sb.append("</div>");
             expect = sb.toString();
@@ -547,7 +547,7 @@ public class TestModulePackages extends JavadocTester {
     private void checkPackageRow(String moduleName, String packageName, int index,
             String classes, String exportedTo, String openedTo, String desc) {
         StringBuilder sb = new StringBuilder();
-        String color = (index % 2 == 1 ? "row-color" : "alt-color");
+        String color = (index % 2 == 1 ? "odd-row-color" : "even-row-color");
         sb.append("<div class=\"col-first " + color + " " + classes + "\"><a href=\""
                 + packageName.replace('.', '/') + "/package-summary.html\">"
                 + packageName + "</a></div>\n");

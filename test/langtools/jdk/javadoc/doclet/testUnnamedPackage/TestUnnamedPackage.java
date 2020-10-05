@@ -75,9 +75,9 @@ public class TestUnnamedPackage extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color all-classes-table-tab2 all-classes-table"><a hre\
+                    <div class="col-first even-row-color all-classes-table-tab2 all-classes-table"><a hre\
                     f="C.html" title="class in &lt;Unnamed&gt;">C</a></div>
-                    <div class="col-last alt-color all-classes-table-tab2 all-classes-table">
+                    <div class="col-last even-row-color all-classes-table-tab2 all-classes-table">
                     <div class="block">This is a class in the unnamed package.</div>
                     </div>
                     </div>""");
@@ -88,8 +88,8 @@ public class TestUnnamedPackage extends JavadocTester {
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color"><a href="package-summary.html">&lt;Unnamed&gt;</a></div>
-                    <div class="col-last alt-color">
+                    <div class="col-first even-row-color"><a href="package-summary.html">&lt;Unnamed&gt;</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">This is a package comment for the unnamed package.</div>
                     </div>
                     </div>""");

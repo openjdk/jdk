@@ -101,9 +101,9 @@ public class TestMemberInheritance extends JavadocTester {
         checkOutput("pkg1/Implementer.html", true,
                 // ensure the method makes it
                 """
-                    <div class="col-first alt-color method-summary-table-tab1 method-summary-table-t\
+                    <div class="col-first even-row-color method-summary-table-tab1 method-summary-table-t\
                     ab4 method-summary-table"><code>static java.time.Period</code></div>
-                    <div class="col-second alt-color method-summary-table-tab1 method-summary-table-\
+                    <div class="col-second even-row-color method-summary-table-tab1 method-summary-table-\
                     tab4 method-summary-table"><code><span class="member-name-link"><a href="#betwee\
                     n(java.time.LocalDate,java.time.LocalDate)">between</a></span>&#8203;(java.time.\
                     LocalDate&nbsp;startDateInclusive,
@@ -126,12 +126,12 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
-                    <div class="col-first alt-color method-summary-table-tab2 method-summary-table m\
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table m\
                     ethod-summary-table-tab3"><code>protected abstract java.lang.String</code></div>
-                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table \
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table \
                     method-summary-table-tab3"><code><span class="member-name-link"><a href="#parent\
                     Method(T)">parentMethod</a></span>&#8203;(java.lang.String&nbsp;t)</code></div>
-                    <div class="col-last alt-color method-summary-table-tab2 method-summary-table me\
+                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table me\
                     thod-summary-table-tab3">
                     <div class="block">Returns some value with an inherited search tag.</div>
                     """);
@@ -159,10 +159,10 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
-                    <div class="col-first alt-color"><code>java.lang.String</code></div>
-                    <div class="col-second alt-color"><code><span class="member-name-link"><a href="\
+                    <div class="col-first even-row-color"><code>java.lang.String</code></div>
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="\
                     #parentField">parentField</a></span></code></div>
-                    <div class="col-last alt-color">
+                    <div class="col-last even-row-color">
                     <div class="block">A field.</div>""",
                 """
                     <section class="detail" id="parentField">
@@ -175,9 +175,9 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg3/PrivateGenericParent.PublicChild.html", true,
                 """
-                    <div class="col-first alt-color method-summary-table-tab2 method-summary-table-t\
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
                     ab4 method-summary-table"><code>java.lang.String</code></div>
-                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
                     tab4 method-summary-table"><code><span class="member-name-link"><a href="#method\
                     (T)">method</a></span>&#8203;(java.lang.String&nbsp;t)</code></div>""",
                 """

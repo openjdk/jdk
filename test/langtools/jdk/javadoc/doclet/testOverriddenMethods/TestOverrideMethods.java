@@ -317,12 +317,12 @@ public class TestOverrideMethods  extends JavadocTester {
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first alt-color method-summary-table-tab2 method-summary-table-t\
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
                     ab4 method-summary-table"><code>java.lang.String</code></div>
-                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
                     tab4 method-summary-table"><code><span class="member-name-link"><a href="#m2()">\
                     m2</a></span>()</code></div>
-                    <div class="col-last alt-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
+                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
                     <div class="block">This is Base::m2.</div>
                     </div>
                     </div>

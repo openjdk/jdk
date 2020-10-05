@@ -814,30 +814,36 @@ public class TestSearch extends JavadocTester {
         checkOutput("allclasses-index.html", true,
                 """
                     <div id="all-classes-table">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="all-classes-table.tabpanel" tabindex\
-                    ="0" onkeydown="switchTab(event)" id="all-classes-table-tab0" onclick="show('all\
-                    -classes-table', 'all-classes-table', 2)" class="active-table-tab">All Classes</\
-                    button><button role="tab" aria-selected="false" aria-controls="all-classes-table\
-                    .tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="all-classes-table-tab1\
-                    " onclick="show('all-classes-table', 'all-classes-table-tab1', 2)" class="table-\
-                    tab">Interface Summary</button><button role="tab" aria-selected="false" aria-con\
-                    trols="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id\
-                    ="all-classes-table-tab2" onclick="show('all-classes-table', 'all-classes-table-\
-                    tab2', 2)" class="table-tab">Class Summary</button><button role="tab" aria-selec\
-                    ted="false" aria-controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="\
-                    switchTab(event)" id="all-classes-table-tab3" onclick="show('all-classes-table',\
-                     'all-classes-table-tab3', 2)" class="table-tab">Enum Summary</button><button ro\
-                    le="tab" aria-selected="false" aria-controls="all-classes-table.tabpanel" tabind\
-                    ex="-1" onkeydown="switchTab(event)" id="all-classes-table-tab4" onclick="show('\
-                    all-classes-table', 'all-classes-table-tab4', 2)" class="table-tab">Exception Su\
-                    mmary</button><button role="tab" aria-selected="false" aria-controls="all-classe\
-                    s-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="all-classes-tab\
-                    le-tab5" onclick="show('all-classes-table', 'all-classes-table-tab5', 2)" class=\
-                    "table-tab">Error Summary</button><button role="tab" aria-selected="false" aria-\
-                    controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
-                     id="all-classes-table-tab6" onclick="show('all-classes-table', 'all-classes-tab\
-                    le-tab6', 2)" class="table-tab">Annotation Types Summary</button></div>
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="all-classes-table-tab0" role="tab" aria-selected="true" aria-control\
+                    s="all-classes-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick\
+                    ="show('all-classes-table', 'all-classes-table', 2)" class="active-table-tab">Al\
+                    l Classes</button>\
+                    <button id="all-classes-table-tab1" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab1', 2)" class="table-tab">In\
+                    terface Summary</button>\
+                    <button id="all-classes-table-tab2" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab2', 2)" class="table-tab">Cl\
+                    ass Summary</button>\
+                    <button id="all-classes-table-tab3" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab3', 2)" class="table-tab">En\
+                    um Summary</button>\
+                    <button id="all-classes-table-tab4" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab4', 2)" class="table-tab">Ex\
+                    ception Summary</button>\
+                    <button id="all-classes-table-tab5" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab5', 2)" class="table-tab">Er\
+                    ror Summary</button>\
+                    <button id="all-classes-table-tab6" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
+                    notation Types Summary</button>\
+                    </div>
                     <div id="all-classes-table.tabpanel" role="tabpanel">
                     <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">
                     <div class="table-header col-first">Class</div>

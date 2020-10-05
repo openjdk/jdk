@@ -161,16 +161,16 @@ public class TestIndirectExportsOpens extends JavadocTester {
         checkOutput("a/module-summary.html", true,
                 "Indirect Exports",
                 """
-                    <div class="col-first row-color"><a href="../m/module-summary.html">m</a></div>
-                    <div class="col-last row-color"><a href="../m/exportsto/package-summary.html">exportsto</a></div>
+                    <div class="col-first odd-row-color"><a href="../m/module-summary.html">m</a></div>
+                    <div class="col-last odd-row-color"><a href="../m/exportsto/package-summary.html">exportsto</a></div>
                     </div>
                     """);
 
         checkOutput("a/module-summary.html", true,
                 "Indirect Opens",
                 """
-                    <div class="col-first alt-color"><a href="../m/module-summary.html">m</a></div>
-                    <div class="col-last alt-color">opensto</div>
+                    <div class="col-first even-row-color"><a href="../m/module-summary.html">m</a></div>
+                    <div class="col-last even-row-color">opensto</div>
                     </div>
                     """);
     }
@@ -200,8 +200,8 @@ public class TestIndirectExportsOpens extends JavadocTester {
                     <div class="details-table two-column-summary">
                     <div class="table-header col-first">From</div>
                     <div class="table-header col-last">Packages</div>
-                    <div class="col-first alt-color"><a href="../m/module-summary.html">m</a></div>
-                    <div class="col-last alt-color"><a href="../m/pm/package-summary.html">pm</a></div>
+                    <div class="col-first even-row-color"><a href="../m/module-summary.html">m</a></div>
+                    <div class="col-last even-row-color"><a href="../m/pm/package-summary.html">pm</a></div>
                     </div>""");
     }
 }

@@ -50,16 +50,16 @@ public class TestPackageSummary extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <div class="col-first alt-color"><a href="C0.html" title="class in pkg">C0</a></div>
-                    <div class="col-last alt-color">&nbsp;</div>
-                    <div class="col-first row-color"><a href="C1.html" title="class in pkg">C1</a></div>
-                    <div class="col-last row-color">&nbsp;</div>
-                    <div class="col-first alt-color"><a href="C2.html" title="class in pkg">C2</a></div>
-                    <div class="col-last alt-color">&nbsp;</div>
-                    <div class="col-first row-color"><a href="C3.html" title="class in pkg">C3</a></div>
-                    <div class="col-last row-color">&nbsp;</div>
-                    <div class="col-first alt-color"><a href="C4.html" title="class in pkg">C4</a></div>
-                    <div class="col-last alt-color">&nbsp;</div>
+                    <div class="col-first even-row-color"><a href="C0.html" title="class in pkg">C0</a></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-first odd-row-color"><a href="C1.html" title="class in pkg">C1</a></div>
+                    <div class="col-last odd-row-color">&nbsp;</div>
+                    <div class="col-first even-row-color"><a href="C2.html" title="class in pkg">C2</a></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-first odd-row-color"><a href="C3.html" title="class in pkg">C3</a></div>
+                    <div class="col-last odd-row-color">&nbsp;</div>
+                    <div class="col-first even-row-color"><a href="C4.html" title="class in pkg">C4</a></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
                     """
         );
     }

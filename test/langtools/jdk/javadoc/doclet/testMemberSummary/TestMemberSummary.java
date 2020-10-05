@@ -54,7 +54,7 @@ public class TestMemberSummary extends JavadocTester {
                 // Check return type in member summary.
                 """
                     <code><a href="PublicChild.html" title="class in pkg">PublicChild</a></code></div>
-                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
                     tab4 method-summary-table"><code><span class="member-name-link"><a href="#return\
                     TypeTest()">returnTypeTest</a></span>()</code></div>""",
                 // Check return type in member detail.
@@ -63,14 +63,14 @@ public class TestMemberSummary extends JavadocTester {
                     lass="return-type"><a href="PublicChild.html" title="class in pkg">PublicChild</\
                     a></span>&nbsp;<span class="member-name">returnTypeTest</span>()</div>""",
                 """
-                    <div class="col-constructor-name alt-color"><code><span class="member-name-link"\
+                    <div class="col-constructor-name even-row-color"><code><span class="member-name-link"\
                     ><a href="#%3Cinit%3E()">PublicChild</a></span>()</code></div>
-                    <div class="col-last alt-color">&nbsp;</div>""");
+                    <div class="col-last even-row-color">&nbsp;</div>""");
 
         checkOutput("pkg/PrivateParent.html", true,
                 """
-                    <div class="col-first alt-color"><code>private </code></div>
-                    <div class="col-constructor-name alt-color"><code><span class="member-name-link"\
+                    <div class="col-first even-row-color"><code>private </code></div>
+                    <div class="col-constructor-name even-row-color"><code><span class="member-name-link"\
                     ><a href="#%3Cinit%3E(int)">PrivateParent</a></span>&#8203;(int&nbsp;i)</code></\
                     div>""");
 

@@ -80,7 +80,7 @@ public class Table extends Content {
     private BiFunction<String, Integer, String> tabId = (tableId, tabIndex) -> tableId + "-tab" + tabIndex;
     private TableHeader header;
     private List<HtmlStyle> columnStyles;
-    private List<HtmlStyle> stripedStyles = Arrays.asList(HtmlStyle.altColor, HtmlStyle.rowColor);
+    private List<HtmlStyle> stripedStyles = Arrays.asList(HtmlStyle.evenRowColor, HtmlStyle.oddRowColor);
     private final List<Content> bodyRows;
     private String id;
 
@@ -171,7 +171,7 @@ public class Table extends Content {
 
     /**
      * Sets the styles used for {@code <tr>} tags, to give a "striped" appearance.
-     * The defaults are currently {@code rowColor} and {@code altColor}.
+     * The defaults are currently {@code evenRowColor} and {@code oddRowColor}.
      *
      * @param evenRowStyle  the style to use for even-numbered rows
      * @param oddRowStyle   the style to use for odd-numbered rows
@@ -210,24 +210,6 @@ public class Table extends Content {
      */
     public Table setColumnStyles(List<HtmlStyle> styles) {
         columnStyles = styles;
-        return this;
-    }
-
-    /**
-     * Sets the prefix used for the {@code id} attribute for each row in the table.
-     * The default is "i".
-     *
-     * <p>Note:
-     * <ul>
-     * <li>The prefix should probably be a value such that the generated ids cannot
-     *      clash with any other id, such as those that might be created for fields within
-     *      a class.
-     * </ul>
-     *
-     * @param prefix the prefix
-     * @return  this object
-     */
-    public Table setRowIdPrefix(String prefix) {
         return this;
     }
 
@@ -424,12 +406,12 @@ public class Table extends Content {
 
     private HtmlTree createTab(String tabId, HtmlStyle style, boolean defaultTab, String tabName) {
         HtmlTree tab = new HtmlTree(TagName.BUTTON)
+                .put(HtmlAttr.ID, tabId)
                 .put(HtmlAttr.ROLE, "tab")
                 .put(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")
                 .put(HtmlAttr.ARIA_CONTROLS, id + ".tabpanel")
                 .put(HtmlAttr.TABINDEX, defaultTab ? "0" : "-1")
                 .put(HtmlAttr.ONKEYDOWN, "switchTab(event)")
-                .put(HtmlAttr.ID, tabId)
                 .put(HtmlAttr.ONCLICK, "show('" + id + "', '" + (defaultTab ? id : tabId)
                         + "', " + columnStyles.size() + ")")
                 .setStyle(style);

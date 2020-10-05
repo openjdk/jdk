@@ -76,20 +76,20 @@ public class TestProperty extends JavadocTester {
 
                 // no tab classes should be used in the property table
                 """
-                    <div class="col-first alt-color"><code><a href="ObjectProperty.html" title="clas\
+                    <div class="col-first even-row-color"><code><a href="ObjectProperty.html" title="clas\
                     s in pkg">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj<\
                     /a>[]&gt;</code></div>
-                    <div class="col-second alt-color"><code><span class="member-name-link"><a href="\
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="\
                     #badProperty">bad</a></span></code></div>
-                    <div class="col-last alt-color">""",
+                    <div class="col-last even-row-color">""",
 
                 // tab classes should be used in the method table
                 """
-                    <div class="col-first alt-color method-summary-table-tab2 method-summary-table-t\
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
                     ab4 method-summary-table"><code><a href="ObjectProperty.html" title="class in pk\
                     g">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>[]&g\
                     t;</code></div>
-                    <div class="col-second alt-color method-summary-table-tab2 method-summary-table-\
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
                     tab4 method-summary-table"><code><span class="member-name-link"><a href="#badPro\
                     perty()">badProperty</a></span>()</code></div>"""
         );
