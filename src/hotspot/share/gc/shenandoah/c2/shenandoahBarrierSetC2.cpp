@@ -304,7 +304,8 @@ bool ShenandoahBarrierSetC2::is_shenandoah_lrb_call(Node* call) {
   address entry_point = call->as_CallLeaf()->entry_point();
   return (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier)) ||
          (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow)) ||
-         (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native));
+         (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native)) ||
+         (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow));
 }
 
 bool ShenandoahBarrierSetC2::is_shenandoah_marking_if(PhaseTransform *phase, Node* n) {
@@ -544,9 +545,8 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
 
   // 2: apply LRB if needed
   if (ShenandoahBarrierSet::need_load_reference_barrier(decorators, type)) {
-    load = new ShenandoahLoadReferenceBarrierNode(NULL,
-                                                  load,
-                                                  ShenandoahBarrierSet::use_load_reference_barrier_native(decorators, type));
+    ShenandoahBarrierSet::ShenandoahLRBKind kind = ShenandoahBarrierSet::access_kind(decorators, type);
+    load = new ShenandoahLoadReferenceBarrierNode(NULL, load, kind);
     if (access.is_parse_access()) {
       load = static_cast<C2ParseAccess &>(access).kit()->gvn().transform(load);
     } else {
@@ -643,7 +643,7 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
       load_store = kit->gvn().transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
     }
 #endif
-    load_store = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(NULL, load_store, false));
+    load_store = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(NULL, load_store, ShenandoahBarrierSet::NORMAL));
     return load_store;
   }
   return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
@@ -711,7 +711,7 @@ Node* ShenandoahBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& acces
   }
   Node* result = BarrierSetC2::atomic_xchg_at_resolved(access, val, value_type);
   if (access.is_oop()) {
-    result = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(NULL, result, false));
+    result = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(NULL, result, ShenandoahBarrierSet::NORMAL));
     shenandoah_write_barrier_pre(kit, false /* do_load */,
                                  NULL, NULL, max_juint, NULL, NULL,
                                  result /* pre_val */, T_OBJECT);

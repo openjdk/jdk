@@ -33,6 +33,12 @@
 class ShenandoahBarrierSetAssembler;
 
 class ShenandoahBarrierSet: public BarrierSet {
+public:
+  enum ShenandoahLRBKind {
+    NORMAL,
+    NATIVE,
+    WEAK
+  };
 private:
 
   ShenandoahHeap* _heap;
@@ -55,6 +61,8 @@ public:
   static bool need_load_reference_barrier(DecoratorSet decorators, BasicType type);
   static bool use_load_reference_barrier_native(DecoratorSet decorators, BasicType type);
   static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
+  static bool is_access_on_jlr_reference(DecoratorSet decorators, BasicType type);
+  static ShenandoahLRBKind access_kind(DecoratorSet decorators, BasicType type);
 
   void print_on(outputStream* st) const;
 
@@ -90,13 +98,11 @@ public:
   oop load_reference_barrier(oop obj);
   oop load_reference_barrier_not_null(oop obj);
 
-  oop load_reference_barrier_native(oop obj);
-
   template <class T>
   inline oop load_reference_barrier_mutator(oop obj, T* load_addr);
 
-  oop load_reference_barrier_native(oop obj, oop* load_addr);
-  oop load_reference_barrier_native(oop obj, narrowOop* load_addr);
+  template<typename T>
+  inline oop load_reference_barrier_native(oop obj, T* load_addr);
 
 private:
   template <class T>
@@ -114,9 +120,6 @@ private:
   inline void arraycopy_work(T* src, size_t count);
 
   oop load_reference_barrier_impl(oop obj);
-
-  template <class T>
-  oop load_reference_barrier_native_impl(oop obj, T* load_addr);
 
   inline bool need_bulk_update(HeapWord* dst);
 public:

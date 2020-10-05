@@ -76,6 +76,33 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
   return fwd;
 }
 
+template <class T>
+inline oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, T* load_addr) {
+  if (CompressedOops::is_null(obj)) {
+    return NULL;
+  }
+
+  ShenandoahMarkingContext* const marking_context = _heap->marking_context();
+  if (_heap->is_concurrent_weak_root_in_progress() && !marking_context->is_marked(obj)) {
+    Thread* thr = Thread::current();
+    if (thr->is_Java_thread()) {
+      return NULL;
+    } else {
+      log_trace(gc,ref)("LRB-native returning naked oop: " PTR_FORMAT, p2i(obj));
+      return obj;
+    }
+  }
+
+  oop fwd = load_reference_barrier_not_null(obj);
+  if (fwd != NULL && load_addr != NULL && fwd != obj) {
+    // Since we are here and we know the load address, update the reference.
+    ShenandoahHeap::cas_oop(fwd, load_addr, obj);
+  }
+  assert(!_heap->in_collection_set(fwd) || !_heap->has_forwarded_objects() || _heap->cancelled_gc(), "must not return cset-object from LRB-native");
+  log_trace(gc,ref)("Reference or native access/resurrection: obj: " PTR_FORMAT ", fwd: " PTR_FORMAT ", has_fwd: %s", p2i(obj), p2i(fwd), BOOL_TO_STR(_heap->has_forwarded_objects()));
+  return fwd;
+}
+
 inline void ShenandoahBarrierSet::enqueue(oop obj) {
   assert(obj != NULL, "checked by caller");
   assert(_satb_mark_queue_set.is_active(), "only get here when SATB active");
@@ -156,7 +183,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
   if (value != NULL) {
     ShenandoahBarrierSet *const bs = ShenandoahBarrierSet::barrier_set();
     if (bs->use_load_reference_barrier_native(decorators, T_OBJECT)) {
-      value = bs->load_reference_barrier_native(value);
+      value = bs->load_reference_barrier_native(value, addr);
     } else {
       value = bs->load_reference_barrier_not_null(value);
     }
@@ -173,8 +200,8 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
   if (value != NULL) {
     ShenandoahBarrierSet *const bs = ShenandoahBarrierSet::barrier_set();
     DecoratorSet resolved_decorators = AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
-    if (bs->use_load_reference_barrier_native(decorators, T_OBJECT)) {
-      value = bs->load_reference_barrier_native(value);
+    if (bs->use_load_reference_barrier_native(resolved_decorators, T_OBJECT)) {
+      value = bs->load_reference_barrier_native(value, AccessInternal::oop_field_addr<decorators>(base, offset));
     } else {
       value = bs->load_reference_barrier_not_null(value);
     }
@@ -189,6 +216,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_not_in_heap(T* addr, oop value) {
   shenandoah_assert_marked_if(NULL, value, !CompressedOops::is_null(value) && ShenandoahHeap::heap()->is_evacuation_in_progress());
+  shenandoah_assert_not_in_cset_if(addr, value, value != NULL && !ShenandoahHeap::heap()->cancelled_gc());
   ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
   bs->storeval_barrier(value);
   bs->satb_barrier<decorators>(addr);

@@ -336,7 +336,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembl
 #endif
 }
 
-void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler* masm, Register dst, Address src) {
+void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler* masm, Register dst, Address src, bool weak) {
   if (!ShenandoahLoadRefBarrier) {
     return;
   }
@@ -366,7 +366,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   assert_different_registers(dst, thread);
 
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state, ShenandoahHeap::EVACUATION);
+  __ testb(gc_state, ShenandoahHeap::HAS_FORWARDED);
 #ifndef _LP64
   __ pop(thread);
 #endif
@@ -396,7 +396,11 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   __ lea(rsi, src);
 
   save_xmm_registers(masm);
-  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), dst, rsi);
+  if (UseCompressedOops && weak) {
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow), dst, rsi);
+  } else {
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), dst, rsi);
+  }
   restore_xmm_registers(masm);
 
 #ifdef _LP64
@@ -518,7 +522,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
     BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
 
     if (ShenandoahBarrierSet::use_load_reference_barrier_native(decorators, type)) {
-      load_reference_barrier_native(masm, dst, src);
+      load_reference_barrier_native(masm, dst, src, (decorators & IN_NATIVE) == 0);
     } else {
       load_reference_barrier(masm, dst, src);
     }
@@ -870,10 +874,18 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   __ bind(slow_path);
   ce->store_parameter(res, 0);
   ce->store_parameter(addr, 1);
-  if (stub->is_native()) {
-    __ call(RuntimeAddress(bs->load_reference_barrier_native_rt_code_blob()->code_begin()));
-  } else {
-    __ call(RuntimeAddress(bs->load_reference_barrier_rt_code_blob()->code_begin()));
+  switch (stub->kind()) {
+    case ShenandoahBarrierSet::NORMAL:
+      __ call(RuntimeAddress(bs->load_reference_barrier_normal_rt_code_blob()->code_begin()));
+      break;
+    case ShenandoahBarrierSet::NATIVE:
+      __ call(RuntimeAddress(bs->load_reference_barrier_native_rt_code_blob()->code_begin()));
+      break;
+    case ShenandoahBarrierSet::WEAK:
+      __ call(RuntimeAddress(bs->load_reference_barrier_weakref_rt_code_blob()->code_begin()));
+      break;
+    default:
+      ShouldNotReachHere();
   }
   __ jmp(*stub->continuation());
 }
@@ -938,7 +950,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ epilogue();
 }
 
-void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, bool is_native) {
+void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, ShenandoahBarrierSet::ShenandoahLRBKind kind) {
   __ prologue("shenandoah_load_reference_barrier", false);
   // arg0 : object to be resolved
 
@@ -947,12 +959,21 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
 #ifdef _LP64
   __ load_parameter(0, c_rarg0);
   __ load_parameter(1, c_rarg1);
-  if (is_native) {
+  if (kind == ShenandoahBarrierSet::NATIVE) {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), c_rarg0, c_rarg1);
-  } else if (UseCompressedOops) {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), c_rarg0, c_rarg1);
+  } else if (kind == ShenandoahBarrierSet::WEAK) {
+    if (UseCompressedOops) {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow), c_rarg0, c_rarg1);
+    } else {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), c_rarg0, c_rarg1);
+    }
   } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), c_rarg0, c_rarg1);
+    assert(kind == ShenandoahBarrierSet::NORMAL, "what else?");
+    if (UseCompressedOops) {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), c_rarg0, c_rarg1);
+    } else {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), c_rarg0, c_rarg1);
+    }
   }
 #else
   __ load_parameter(0, rax);
