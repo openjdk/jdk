@@ -152,26 +152,6 @@ private:
     }
   }
 
-  // Given a node n, return its predecessor in the tree
-  // (node with the next-smaller size).
-  static Node* predecessor(Node* n) {
-    Node* pred = NULL;
-    if (n->_left != NULL) {
-      pred = n->_left;
-      while (pred->_right != NULL) {
-        pred = pred->_right;
-      }
-    } else {
-      pred = n->_parent;
-      Node* n2 = n;
-      while (pred != NULL && n2 == pred->_left) {
-        n2 = pred;
-        pred = pred->_parent;
-      }
-    }
-    return pred;
-  }
-
   // Given a node n, return its successor in the tree
   // (node with the next-larger size).
   static Node* successor(Node* n) {
@@ -216,7 +196,7 @@ private:
   }
 
   // Given a node n and an insertion point, insert n under insertion point.
-  void insert(Node* insertion_point, Node* n) {
+  static void insert(Node* insertion_point, Node* n) {
     assert(n->_parent == NULL, "Sanity");
     for (;;) {
       if (n->_word_size == insertion_point->_word_size) {
@@ -243,9 +223,7 @@ private:
   // Given a node and a wish size, search this node and all children for
   // the node closest (equal or larger sized) to the size s.
   static Node* find_closest_fit(Node* n, size_t s) {
-
     Node* best_match = NULL;
-
     while (n != NULL) {
       if (n->_word_size >= s) {
         best_match = n;
@@ -257,7 +235,6 @@ private:
         n = n->_right;
       }
     }
-
     return best_match;
   }
 

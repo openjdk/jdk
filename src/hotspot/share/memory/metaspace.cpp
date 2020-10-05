@@ -480,7 +480,7 @@ DEBUG_ONLY(bool Metaspace::_frozen = false;)
 
 bool Metaspace::initialized() {
   return metaspace::MetaspaceContext::context_nonclass() != NULL &&
-      (using_class_space() ? metaspace::MetaspaceContext::context_class() != NULL : true);
+      (using_class_space() ? Metaspace::class_space_is_initialized() : true);
 }
 
 #ifdef _LP64

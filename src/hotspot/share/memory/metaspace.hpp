@@ -133,7 +133,7 @@ public:
   static void purge();
 
   static void report_metadata_oome(ClassLoaderData* loader_data, size_t word_size,
-                                   MetaspaceObj::Type type, Metaspace::MetadataType mdtype, TRAPS);
+                                   MetaspaceObj::Type type, MetadataType mdtype, TRAPS);
 
   static const char* metadata_type_name(Metaspace::MetadataType mdtype);
 

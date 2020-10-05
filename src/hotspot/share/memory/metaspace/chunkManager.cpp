@@ -49,7 +49,6 @@ namespace metaspace {
 void ChunkManager::return_chunk_simple_locked(Metachunk* c) {
   assert_lock_strong(MetaspaceExpand_lock);
   DEBUG_ONLY(c->verify());
-  const chunklevel_t lvl = c->level();
   _chunks.add(c);
   c->reset_used_words();
   // Tracing
@@ -127,7 +126,6 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
   DEBUG_ONLY(verify_locked();)
   DEBUG_ONLY(chunklevel::check_valid_level(max_level);)
   DEBUG_ONLY(chunklevel::check_valid_level(preferred_level);)
-  assert(max_level >= preferred_level, "invalid level.");
 
   UL2(debug, "requested chunk: pref_level: " CHKLVL_FORMAT
      ", max_level: " CHKLVL_FORMAT ", min committed size: " SIZE_FORMAT ".",

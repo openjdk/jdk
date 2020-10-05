@@ -115,7 +115,7 @@ public:
   ChunkManager(const char* name, VirtualSpaceList* space_list);
 
   // On success, returns a chunk of level of <preferred_level>, but at most <max_level>.
-  //  The first first <min_committed_words> of the chunk are guaranteed to be committed.
+  //  The first <min_committed_words> of the chunk are guaranteed to be committed.
   // On error, will return NULL.
   //
   // This function may fail for two reasons:

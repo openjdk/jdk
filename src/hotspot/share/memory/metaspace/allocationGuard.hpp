@@ -65,7 +65,7 @@
 // Note: this feature is only available in debug, and is activated using
 //  -XX:+MetaspaceGuardAllocations. When active, it disables deallocation handling - since
 //  freeblock handling in the freeblock lists would get too complex - so one may run leaks
-//  in deallocation-heavvy scenarios (e.g. lots of class redefinitions).
+//  in deallocation-heavy scenarios (e.g. lots of class redefinitions).
 //
 
 namespace metaspace {

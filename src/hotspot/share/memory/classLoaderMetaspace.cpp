@@ -47,17 +47,6 @@ using metaspace::InternalStats;
 #define LOGFMT         "CLMS @" PTR_FORMAT " "
 #define LOGFMT_ARGS    p2i(this)
 
-static bool use_class_space(bool is_class) {
-  if (Metaspace::using_class_space() && is_class) {
-    return true;
-  }
-  return false;
-}
-
-static bool use_class_space(Metaspace::MetadataType mdType) {
-  return use_class_space(Metaspace::is_class_space_allocation(mdType));
-}
-
 ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type) :
   _lock(lock),
   _space_type(space_type),
@@ -87,7 +76,7 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
         "class sm");
   }
 
-  UL2(debug, "born (SpcMgr nonclass: " PTR_FORMAT ", SpcMgr class: " PTR_FORMAT ".",
+  UL2(debug, "born (nonclass arena: " PTR_FORMAT ", class arena: " PTR_FORMAT ".",
       p2i(_non_class_space_arena), p2i(_class_space_arena));
 }
 
@@ -104,7 +93,7 @@ ClassLoaderMetaspace::~ClassLoaderMetaspace() {
 // Allocate word_size words from Metaspace.
 MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataType mdType) {
   Metaspace::assert_not_frozen();
-  if (use_class_space(mdType)) {
+  if (Metaspace::is_class_space_allocation(mdType)) {
     return class_space_arena()->allocate(word_size);
   } else {
     return non_class_space_arena()->allocate(word_size);
@@ -146,17 +135,13 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
 // Prematurely returns a metaspace allocation to the _block_freelists
 // because it is not needed anymore.
 void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
-
   Metaspace::assert_not_frozen();
-
-  if (use_class_space(is_class)) {
+  if (Metaspace::using_class_space() && is_class) {
     class_space_arena()->deallocate(ptr, word_size);
   } else {
     non_class_space_arena()->deallocate(ptr, word_size);
   }
-
   DEBUG_ONLY(InternalStats::inc_num_deallocs();)
-
 }
 
 // Update statistics. This walks all in-use chunks.

@@ -80,7 +80,7 @@ void RootChunkArea::split(chunklevel_t target_level, Metachunk* c, FreeChunkList
   // - (but leave base address as it is since it will be the leader of the newly
   //    created chunk pair)
   // - then create a new chunk header of the same level, set its memory range
-  //   to cover the second halfof the old chunk.
+  //   to cover the second half of the old chunk.
   // - wire them up (prev_in_vs/next_in_vs)
   // - return the follower chunk as "splinter chunk" in the splinters array.
 
@@ -95,13 +95,6 @@ void RootChunkArea::split(chunklevel_t target_level, Metachunk* c, FreeChunkList
   //
   // D D C B  <- first half split again ...
   //
-
-  // As an optimization, since we usually do not split once but multiple times,
-  // to not do each split separately, since we would have to wire up prev_in_vs/next_in_vs
-  // on every level just to tear it open in the next level when we reintroduce a new
-  // half chunk splinter.
-  // Instead, just split split split and delay building up the double linked list of the
-  // new chunks at the end of all splits.
 
   DEBUG_ONLY(check_pointer(c->base());)
   DEBUG_ONLY(c->verify();)

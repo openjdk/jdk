@@ -128,7 +128,6 @@ private:
     int i2 = index;
     mask_t m = _mask >> i2;
     if (m > 0) {
-      // count leading zeros would be helpful.
       while ((m & 1) == 0) {
         assert(_blocks[i2] == NULL, "mask mismatch");
         i2++;

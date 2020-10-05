@@ -75,10 +75,6 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   metaspace::MetaspaceArena* non_class_space_arena() const   { return _non_class_space_arena; }
   metaspace::MetaspaceArena* class_space_arena() const       { return _class_space_arena; }
 
-  metaspace::MetaspaceArena* get_arena(bool is_class) {
-    return is_class ? class_space_arena() : non_class_space_arena();
-  }
-
 public:
 
   ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type);
