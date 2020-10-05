@@ -459,22 +459,29 @@ void ShenandoahReferenceProcessor::process_references(WorkGang* workers) {
   enqueue_references();
 }
 
+void ShenandoahReferenceProcessor::enqueue_references_locked() {
+  // Prepend internal pending list to external pending list
+  shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list, ShenandoahHeap::heap()->cancelled_gc());
+  if (UseCompressedOops) {
+    *reinterpret_cast<narrowOop*>(_pending_list_tail) = CompressedOops::encode(Universe::swap_reference_pending_list(_pending_list));
+  } else {
+    *reinterpret_cast<oop*>(_pending_list_tail) = Universe::swap_reference_pending_list(_pending_list);
+  }
+}
+
 void ShenandoahReferenceProcessor::enqueue_references() {
   if (_pending_list == NULL) {
     // Nothing to enqueue
     return;
   }
 
-  {
+  if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
+    enqueue_references_locked();
+  } else {
     // Heap_lock protects external pending list
     MonitorLocker ml(Heap_lock);
 
-    // Prepend internal pending list to external pending list
-    if (UseCompressedOops) {
-      *reinterpret_cast<narrowOop*>(_pending_list_tail) = CompressedOops::encode(Universe::swap_reference_pending_list(_pending_list));
-    } else {
-      *reinterpret_cast<oop*>(_pending_list_tail) = Universe::swap_reference_pending_list(_pending_list);
-    }
+    enqueue_references_locked();
 
     // Notify ReferenceHandler thread
     ml.notify_all();

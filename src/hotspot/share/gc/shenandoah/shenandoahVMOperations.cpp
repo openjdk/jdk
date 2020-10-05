@@ -29,6 +29,18 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "memory/universe.hpp"
 
+bool VM_ShenandoahReferenceOperation::doit_prologue() {
+  Heap_lock->lock();
+  return true;
+}
+
+void VM_ShenandoahReferenceOperation::doit_epilogue() {
+  if (Universe::has_reference_pending_list()) {
+    Heap_lock->notify_all();
+  }
+  Heap_lock->unlock();
+}
+
 void VM_ShenandoahInitMark::doit() {
   ShenandoahGCPauseMark mark(_gc_id, SvcGCMarker::CONCURRENT);
   ShenandoahHeap::heap()->entry_init_mark();

@@ -1968,6 +1968,8 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
         ShenandoahCodeRoots::disarm_nmethods();
       }
 
+      op_weak_refs();
+
       op_cleanup_early();
 
     case _degenerated_evac:

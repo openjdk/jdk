@@ -86,6 +86,7 @@ private:
 
   template <typename T>
   void process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id);
+  void enqueue_references_locked();
   void enqueue_references();
 
 public:
