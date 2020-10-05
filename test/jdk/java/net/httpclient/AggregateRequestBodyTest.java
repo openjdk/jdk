@@ -301,6 +301,14 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         };
     }
 
+    @DataProvider(name="negativeRequests")
+    Object[][] negativeRequests() {
+        return new Object[][] {
+                {0L}, {-1L}, {-2L}, {Long.MIN_VALUE + 1L}, {Long.MIN_VALUE}
+        };
+    }
+
+
     static class ContentLengthPublisher implements BodyPublisher {
         final long length;
         ContentLengthPublisher(long length) {
@@ -535,17 +543,16 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                 description.replace("null", "length(-1)"));
     }
 
-    @Test
-    public void testNonPositiveRequest() {
-        BodyPublisher publisher = BodyPublishers.concat(ContentLengthPublisher.of(List.of(1L, 2L, 3L)));
+    @Test(dataProvider = "negativeRequests")
+    public void testNegativeRequest(long n) {
+        assert n <= 0 : "test for negative request called with n > 0 : " + n;
+        BodyPublisher[] publishers = ContentLengthPublisher.of(List.of(1L, 2L, 3L));
+        BodyPublisher publisher = BodyPublishers.concat(publishers);
         RequestSubscriber subscriber = new RequestSubscriber();
         publisher.subscribe(subscriber);
         Subscription subscription = subscriber.subscriptionCF.join();
-        LongStream.of(0L, -1L, -2L, Long.MIN_VALUE).forEach((l) -> {
-            IllegalArgumentException iae = expectThrows(IAE,
-                    () -> subscription.request(l));
-            System.out.printf("Got expected IAE for %d: %s%n", l, iae);
-        });
+        IllegalArgumentException iae = expectThrows(IAE, () -> subscription.request(n));
+        System.out.printf("Got expected IAE for %d: %s%n", n, iae);
     }
 
     @Test(dataProvider = "contentLengths")
