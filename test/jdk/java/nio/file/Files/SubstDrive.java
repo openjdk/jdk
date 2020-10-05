@@ -24,7 +24,7 @@
 
 import java.util.Map;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.ByteArrayOutputStream;
@@ -80,9 +80,9 @@ public class SubstDrive {
      */
     @AfterMethod
     public void deleteSubstDrive() throws IOException {
-        Stream<String> substitutedDrives = substList();
+        List<String> substitutedDrives = substList();
         // Only delete `SUBST_DRIVE` if it is currently being substituted
-        if (substitutedDrives.anyMatch(e -> e.contains(SUBST_DRIVE.toString()))) {
+        if (substitutedDrives.stream().anyMatch(e -> e.contains(SUBST_DRIVE.toString()))) {
             substDelete(SUBST_DRIVE);
         }
     }
@@ -428,7 +428,7 @@ public class SubstDrive {
      * For reference, see:
      * https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/subst
      */
-    private Stream<String> substList() throws UnsupportedEncodingException {
+    private List<String> substList() throws UnsupportedEncodingException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         String utf8 = StandardCharsets.UTF_8.name();
         try (PrintStream ps = new PrintStream(baos, true, utf8)) {
@@ -442,7 +442,8 @@ public class SubstDrive {
                     // only examine lines with "=>"
                     .filter(line -> line.contains("=>"))
                     // split each line into 2 components and take the first one
-                    .map(line -> line.split("=>")[0].trim());
+                    .map(line -> line.split("=>")[0].trim())
+                    .collect(Collectors.toList());
         }
     }
 }
