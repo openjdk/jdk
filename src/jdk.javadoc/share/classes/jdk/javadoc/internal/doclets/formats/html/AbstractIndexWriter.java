@@ -67,7 +67,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     protected final Navigation navBar;
 
     /**
-     * Initializes the common data for a writers that can generate index files
+     * Initializes the common data for writers that can generate index files
      * based on the information in {@code configuration.mainIndex}.
      *
      * @param configuration  the current configuration
