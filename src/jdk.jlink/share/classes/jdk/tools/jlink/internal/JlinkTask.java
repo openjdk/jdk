@@ -229,8 +229,8 @@ public class JlinkTask {
             List<String> remaining = optionsHelper.handleOptions(this, args);
             if (remaining.size() > 0 && !options.suggestProviders) {
                 throw taskHelper.newBadArgs("err.orphan.arguments",
-                        remaining.stream().collect(Collectors.joining(" ")))
-                        .showUsage(true);
+                                                 remaining.stream().collect(Collectors.joining(" ")))
+                                .showUsage(true);
             }
             if (options.help) {
                 optionsHelper.showHelp(PROGNAME);
