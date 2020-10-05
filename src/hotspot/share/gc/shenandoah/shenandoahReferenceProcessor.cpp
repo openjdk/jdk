@@ -400,7 +400,9 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
 
   // Prepend discovered references to internal pending list
   if (!CompressedOops::is_null(*list)) {
-    oop prev = Atomic::xchg(&_pending_list, CompressedOops::decode_not_null(*list));
+    oop head = lrb(CompressedOops::decode_not_null(*list));
+    shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
+    oop prev = Atomic::xchg(&_pending_list, head);
     RawAccess<>::oop_store(p, prev);
     if (prev == NULL) {
       // First to prepend to list, record tail
@@ -461,7 +463,7 @@ void ShenandoahReferenceProcessor::process_references(WorkGang* workers) {
 
 void ShenandoahReferenceProcessor::enqueue_references_locked() {
   // Prepend internal pending list to external pending list
-  shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list, ShenandoahHeap::heap()->cancelled_gc());
+  shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
   if (UseCompressedOops) {
     *reinterpret_cast<narrowOop*>(_pending_list_tail) = CompressedOops::encode(Universe::swap_reference_pending_list(_pending_list));
   } else {
