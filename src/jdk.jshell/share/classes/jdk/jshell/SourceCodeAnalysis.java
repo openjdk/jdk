@@ -26,7 +26,6 @@
 package jdk.jshell;
 
 import java.net.URI;
-import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 
@@ -101,8 +100,6 @@ public abstract class SourceCodeAnalysis {
      *                       addition to the signature
      * @return the documentations for the given user's input, if multiple elements match the input,
      *         multiple {@code Documentation} objects are returned.
-     *
-     * @since 16
      */
     public abstract List<Documentation> documentation(String input, int cursor, boolean computeJavadoc);
 
@@ -116,6 +113,8 @@ public abstract class SourceCodeAnalysis {
      *                       addition to the signature
      * @return the documentations for the given user's input, if multiple elements match the input,
      *         multiple {@code Documentation} objects are returned.
+     *
+     * @since 16
      */
     public List<Documentation> documentation(String input, int cursor, CompletionContext context, boolean computeJavadoc) {
         return context == CompletionContext.SNIPPET ? documentation(input, cursor, computeJavadoc)
