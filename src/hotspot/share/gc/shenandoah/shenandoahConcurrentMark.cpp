@@ -308,7 +308,9 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahGCPhase phase(root_phase);
 
-  heap->ref_processor()->reset_thread_locals();
+  ShenandoahReferenceProcessor* ref_processor = heap->ref_processor();
+  ref_processor->reset_thread_locals();
+  ref_processor->set_soft_reference_policy(_heap->soft_ref_policy()->should_clear_all_soft_refs());
 
   WorkGang* workers = heap->workers();
   uint nworkers = workers->active_workers();
@@ -451,7 +453,6 @@ void ShenandoahConcurrentMark::mark_from_roots() {
 
   // enable ("weak") refs discovery
   rp->enable_discovery(true /*verify_no_refs*/);
-  rp->set_soft_reference_policy(_heap->soft_ref_policy()->should_clear_all_soft_refs());
 
   task_queues()->reserve(nworkers);
 
