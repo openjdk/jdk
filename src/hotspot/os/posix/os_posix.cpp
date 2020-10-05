@@ -1404,8 +1404,8 @@ jint os::Posix::set_minimum_stack_sizes() {
   size_t os_min_stack_allowed = PTHREAD_STACK_MIN;
 
   _java_thread_min_stack_allowed = _java_thread_min_stack_allowed +
-                                   JavaThread::stack_guard_zone_size() +
-                                   JavaThread::stack_shadow_zone_size();
+                                   StackOverflow::stack_guard_zone_size() +
+                                   StackOverflow::stack_shadow_zone_size();
 
   _java_thread_min_stack_allowed = align_up(_java_thread_min_stack_allowed, vm_page_size());
   _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, os_min_stack_allowed);
@@ -1428,8 +1428,8 @@ jint os::Posix::set_minimum_stack_sizes() {
 
   // Reminder: a compiler thread is a Java thread.
   _compiler_thread_min_stack_allowed = _compiler_thread_min_stack_allowed +
-                                       JavaThread::stack_guard_zone_size() +
-                                       JavaThread::stack_shadow_zone_size();
+                                       StackOverflow::stack_guard_zone_size() +
+                                       StackOverflow::stack_shadow_zone_size();
 
   _compiler_thread_min_stack_allowed = align_up(_compiler_thread_min_stack_allowed, vm_page_size());
   _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, os_min_stack_allowed);
