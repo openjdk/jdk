@@ -28,6 +28,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.instrument
  *          java.management
+ * @requires vm.jvmti
  * @build compiler.profiling.spectrapredefineclass.Agent
  * @run driver ClassFileInstaller compiler.profiling.spectrapredefineclass.Agent
  * @run driver compiler.profiling.spectrapredefineclass.Launcher

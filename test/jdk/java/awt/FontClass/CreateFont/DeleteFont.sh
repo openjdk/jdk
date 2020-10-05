@@ -20,7 +20,8 @@
 # questions.
 
 # @test
-# @bug 6189812 6380357 6632886
+# @bug 6189812 6380357 6632886 8249142
+# @key intermittent
 # @summary Verify that temporary font files are deleted on exit.
 
 if [ -z "${TESTSRC}" ]; then

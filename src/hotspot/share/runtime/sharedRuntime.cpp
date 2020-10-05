@@ -2097,6 +2097,14 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
   assert(JavaThread::current() == thread, "invariant");
   // Exit must be non-blocking, and therefore no exceptions can be thrown.
   EXCEPTION_MARK;
+  // The object could become unlocked through a JNI call, which we have no other checks for.
+  // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
+  if (obj->is_unlocked()) {
+    if (CheckJNICalls) {
+      fatal("Object has been unlocked by JNI");
+    }
+    return;
+  }
   ObjectSynchronizer::exit(obj, lock, THREAD);
 }
 
@@ -2173,8 +2181,8 @@ class MethodArityHistogram {
   static int _max_size;                       // max. arg size seen
 
   static void add_method_to_histogram(nmethod* nm) {
-    if (CompiledMethod::nmethod_access_is_safe(nm)) {
-      Method* method = nm->method();
+    Method* method = (nm == NULL) ? NULL : nm->method();
+    if ((method != NULL) && nm->is_alive()) {
       ArgumentCount args(method->signature());
       int arity   = args.size() + (method->is_static() ? 0 : 1);
       int argsize = method->size_of_parameters();
@@ -2215,7 +2223,10 @@ class MethodArityHistogram {
 
  public:
   MethodArityHistogram() {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    // Take the Compile_lock to protect against changes in the CodeBlob structures
+    MutexLocker mu1(Compile_lock, Mutex::_safepoint_check_flag);
+    // Take the CodeCache_lock to protect against changes in the CodeHeap structure
+    MutexLocker mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     _max_arity = _max_size = 0;
     for (int i = 0; i < MAX_ARITY; i++) _arity_histogram[i] = _size_histogram[i] = 0;
     CodeCache::nmethods_do(add_method_to_histogram);
@@ -2845,8 +2856,8 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
     BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
       CodeBuffer buffer(buf);
-      double locs_buf[20];
-      buffer.insts()->initialize_shared_locs((relocInfo*)locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
+      struct { double data[20]; } locs_buf;
+      buffer.insts()->initialize_shared_locs((relocInfo*)&locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
 #if defined(AARCH64)
       // On AArch64 with ZGC and nmethod entry barriers, we need all oops to be
       // in the constant pool to ensure ordering between the barrier and oops

@@ -25,9 +25,13 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -36,7 +40,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.util.DocTreePath;
-
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
@@ -201,7 +204,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         docPaths = new DocPaths(utils);
         setCreateOverview();
         setTopFile(docEnv);
-        workArounds.initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
+        initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
         return true;
     }
 
@@ -321,12 +324,12 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     @Override
     public boolean showMessage(DocTreePath path, String key) {
-        return (path == null || workArounds.haveDocLint());
+        return (path == null || !haveDocLint());
     }
 
     @Override
     public boolean showMessage(Element e, String key) {
-        return (e == null || workArounds.haveDocLint());
+        return (e == null || !haveDocLint());
     }
 
     @Override

@@ -1179,8 +1179,7 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
     if (!(ik->is_shared_boot_class() || ik->is_shared_platform_class() ||
           ik->is_shared_app_class())) {
       // Archiving mirror for classes from non-builtin loaders is not
-      // supported. Clear the _java_mirror within the archived class.
-      k->clear_java_mirror_handle();
+      // supported.
       return NULL;
     }
   }
@@ -4791,6 +4790,27 @@ void java_lang_reflect_RecordComponent::set_annotations(oop element, oop value) 
 void java_lang_reflect_RecordComponent::set_typeAnnotations(oop element, oop value) {
   element->obj_field_put(_typeAnnotations_offset, value);
 }
+
+// java_lang_InternalError
+int java_lang_InternalError::_during_unsafe_access_offset;
+
+void java_lang_InternalError::set_during_unsafe_access(oop internal_error) {
+  internal_error->bool_field_put(_during_unsafe_access_offset, true);
+}
+
+jboolean java_lang_InternalError::during_unsafe_access(oop internal_error) {
+  return internal_error->bool_field(_during_unsafe_access_offset);
+}
+
+void java_lang_InternalError::compute_offsets() {
+  INTERNALERROR_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
+  INTERNALERROR_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
+}
+#endif
 
 #define DO_COMPUTE_OFFSETS(k) k::compute_offsets();
 

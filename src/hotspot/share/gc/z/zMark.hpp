@@ -95,8 +95,8 @@ private:
   void work_with_timeout(ZMarkCache* cache,
                          ZMarkStripe* stripe,
                          ZMarkThreadLocalStacks* stacks,
-                         uint64_t timeout_in_millis);
-  void work(uint64_t timeout_in_millis);
+                         uint64_t timeout_in_micros);
+  void work(uint64_t timeout_in_micros);
 
   void verify_all_stacks_empty() const;
 

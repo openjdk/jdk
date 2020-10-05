@@ -99,6 +99,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   // info to the class file load hook event handler.
   Klass*                _class_being_redefined;
   JvmtiClassLoadKind    _class_load_kind;
+  GrowableArray<Klass*>* _classes_being_redefined;
 
   // This is only valid when is_interp_only_mode() returns true
   int               _cur_stack_depth;
@@ -242,6 +243,15 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   inline JvmtiClassLoadKind get_class_load_kind() {
     return _class_load_kind;
+  }
+
+  // Get the classes that are currently being redefined by this thread.
+  inline GrowableArray<Klass*>* get_classes_being_redefined() {
+    return _classes_being_redefined;
+  }
+
+  inline void set_classes_being_redefined(GrowableArray<Klass*>* redef_classes) {
+    _classes_being_redefined = redef_classes;
   }
 
   // RedefineClasses support

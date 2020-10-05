@@ -30,12 +30,14 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/heapRegionSet.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/compilerWarnings.hpp"
+#include "utilities/numberSeq.hpp"
 
 class ConcurrentGCTimer;
 class G1ConcurrentMarkThread;
@@ -305,7 +307,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   MemRegion const         _heap;
 
   // Root region tracking and claiming
-  G1CMRootMemRegions         _root_regions;
+  G1CMRootMemRegions      _root_regions;
 
   // For grey objects
   G1CMMarkStack           _global_mark_stack; // Grey objects behind global finger
@@ -542,8 +544,9 @@ public:
 
   // These two methods do the work that needs to be done at the start and end of the
   // concurrent start pause.
-  void pre_concurrent_start();
-  void post_concurrent_start();
+  void pre_concurrent_start(GCCause::Cause cause);
+  void post_concurrent_mark_start();
+  void post_concurrent_undo_start();
 
   // Scan all the root regions and mark everything reachable from
   // them.
@@ -594,7 +597,6 @@ public:
   inline bool is_marked_in_next_bitmap(oop p) const;
 
   ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
-  G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }
 
 private:
   // Rebuilds the remembered sets for chosen regions in parallel and concurrently to the application.

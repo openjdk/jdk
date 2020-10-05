@@ -24,7 +24,7 @@
  */
 package jdk.internal.module;
 
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 
 /**
  * Used by ModuleBootstrap for archiving the boot layer and the builder needed to
@@ -59,6 +59,6 @@ class ArchivedBootLayer {
     }
 
     static {
-        VM.initializeFromArchive(ArchivedBootLayer.class);
+        CDS.initializeFromArchive(ArchivedBootLayer.class);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -718,6 +718,11 @@ public class TextArea extends TextComponent {
          * JDK 1.3 serialVersionUID
          */
         private static final long serialVersionUID = 3472827823632144419L;
+
+        /**
+         * Constructs an {@code AccessibleAWTTextArea}.
+         */
+        protected AccessibleAWTTextArea() {}
 
         /**
          * Gets the state set of this object.
