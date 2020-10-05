@@ -349,7 +349,7 @@ ImageFileReader* ImageFileReader::id_to_reader(u8 id) {
 
 // Constructor intializes to a closed state.
 ImageFileReader::ImageFileReader(const char* name, bool big_endian) :
-  _module_data(NULL) {
+    _module_data(NULL) {
     // Copy the image file name.
      int len = (int) strlen(name) + 1;
     _name = new char[len];
