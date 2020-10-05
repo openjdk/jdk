@@ -5001,8 +5001,8 @@ Thread* os::ThreadCrashProtection::_protected_thread = NULL;
 os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
 
 os::ThreadCrashProtection::ThreadCrashProtection() {
-  assert(Thread::current()->is_JfrSampler_thread(), "should be JFRSampler");
   _protected_thread = Thread::current();
+  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
 }
 
 // See the caveats for this class in os_windows.hpp
