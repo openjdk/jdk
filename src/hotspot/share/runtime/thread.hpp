@@ -493,6 +493,7 @@ class Thread: public ThreadShadow {
   virtual bool is_ConcurrentGC_thread() const        { return false; }
   virtual bool is_Named_thread() const               { return false; }
   virtual bool is_Worker_thread() const              { return false; }
+  virtual bool is_JfrSampler_thread() const          { return false; }
 
   // Can this thread make Java upcalls
   virtual bool can_call_java() const                 { return false; }
@@ -736,23 +737,6 @@ class Thread: public ThreadShadow {
   // Sets this thread as starting thread. Returns failure if thread
   // creation fails due to lack of memory, too many threads etc.
   bool set_as_starting_thread();
-
-private:
-  os::ThreadCrashProtection *_crash_protection;
-
-public:
-  bool has_crash_protection() const { return _crash_protection != NULL; }
-  void set_crash_protection(os::ThreadCrashProtection *crash_protection) {
-    _crash_protection = crash_protection;
-  }
-#ifndef _WINDOWS
-  void check_crash_protection(int sig) const {
-    assert(this == Thread::current(), "should only call check_crash_protection() on self");
-    if (_crash_protection != NULL) {
-      _crash_protection->check_crash_protection(sig);
-    }
-  }
-#endif
 
 protected:
   // OS data associated with the thread

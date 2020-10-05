@@ -1522,9 +1522,13 @@ bool os::Posix::matches_effective_uid_and_gid_or_root(uid_t uid, gid_t gid) {
     return is_root(uid) || (geteuid() == uid && getegid() == gid);
 }
 
+Thread* os::ThreadCrashProtection::_protected_thread = NULL;
+os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
+
 os::ThreadCrashProtection::ThreadCrashProtection() {
+  assert(Thread::current()->is_JfrSampler_thread(), "should be JFRSampler");
   _protected_thread = Thread::current();
-};
+}
 
 /*
  * See the caveats for this class in os_posix.hpp
@@ -1533,7 +1537,6 @@ os::ThreadCrashProtection::ThreadCrashProtection() {
  * The callback is supposed to provide the method that should be protected.
  */
 bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
-  assert(_protected_thread != NULL, "Cannot crash protect a NULL thread");
   sigset_t saved_sig_mask;
 
   // we cannot rely on sigsetjmp/siglongjmp to save/restore the signal mask
@@ -1543,22 +1546,35 @@ bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
   if (sigsetjmp(_jmpbuf, 0) == 0) {
     // make sure we can see in the signal handler that we have crash protection
     // installed
-    _protected_thread->set_crash_protection(this);
+    _crash_protection = this;
     cb.call();
     // and clear the crash protection
-    _protected_thread->set_crash_protection(NULL);
+    _crash_protection = NULL;
+    _protected_thread = NULL;
     return true;
   }
   // this happens when we siglongjmp() back
-  assert(_protected_thread == Thread::current(), "protected thread must be current thread");
   pthread_sigmask(SIG_SETMASK, &saved_sig_mask, NULL);
-  _protected_thread->set_crash_protection(NULL);
+  _crash_protection = NULL;
+  _protected_thread = NULL;
   return false;
 }
 
-void os::ThreadCrashProtection::check_crash_protection(int sig) {
-  if (sig == SIGSEGV || sig == SIGBUS) {
-    siglongjmp(_jmpbuf, 1);
+void os::ThreadCrashProtection::restore() {
+  assert(_crash_protection != NULL, "must have crash protection");
+  siglongjmp(_jmpbuf, 1);
+}
+
+void os::ThreadCrashProtection::check_crash_protection(int sig,
+    Thread* thread) {
+
+  if (thread != NULL &&
+      thread == _protected_thread &&
+      _crash_protection != NULL) {
+
+    if (sig == SIGSEGV || sig == SIGBUS) {
+      _crash_protection->restore();
+    }
   }
 }
 

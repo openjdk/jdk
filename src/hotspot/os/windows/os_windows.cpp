@@ -4997,9 +4997,13 @@ void os::pause() {
   }
 }
 
+Thread* os::ThreadCrashProtection::_protected_thread = NULL;
+os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
+
 os::ThreadCrashProtection::ThreadCrashProtection() {
+  assert(Thread::current()->is_JfrSampler_thread(), "should be JFRSampler");
   _protected_thread = Thread::current();
-};
+}
 
 // See the caveats for this class in os_windows.hpp
 // Protects the callback call so that raised OS EXCEPTIONS causes a jump back
@@ -5008,17 +5012,16 @@ os::ThreadCrashProtection::ThreadCrashProtection() {
 // The callback is supposed to provide the method that should be protected.
 //
 bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
-  assert(_protected_thread != NULL, "Cannot crash protect a NULL thread");
   bool success = true;
   __try {
-    _protected_thread->set_crash_protection(this);
+    _crash_protection = this;
     cb.call();
   } __except(EXCEPTION_EXECUTE_HANDLER) {
     // only for protection, nothing to do
-    assert(_protected_thread == Thread::current(), "protected thread must be current thread");
     success = false;
   }
-  _protected_thread->set_crash_protection(NULL);
+  _crash_protection = NULL;
+  _protected_thread = NULL;
   return success;
 }
 
