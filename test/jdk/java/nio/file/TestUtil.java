@@ -30,13 +30,9 @@ public class TestUtil {
     private TestUtil() {
     }
 
-    static Path createTemporaryDirectory(Path where) throws IOException {
-        return Files.createTempDirectory(where, "name");
-    }
-
     static Path createTemporaryDirectory(String where) throws IOException {
         Path dir = FileSystems.getDefault().getPath(where);
-        return createTemporaryDirectory(dir);
+        return Files.createTempDirectory(dir, "name");
     }
 
     static Path createTemporaryDirectory() throws IOException {
