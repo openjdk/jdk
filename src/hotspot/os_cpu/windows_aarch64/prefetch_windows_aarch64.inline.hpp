@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,16 @@
  *
  */
 
-#ifndef CPU_AARCH64_ICACHE_AARCH64_HPP
-#define CPU_AARCH64_ICACHE_AARCH64_HPP
+#ifndef OS_CPU_WINDOWS_AARCH64_PREFETCH_WINDOWS_AARCH64_INLINE_HPP
+#define OS_CPU_WINDOWS_AARCH64_PREFETCH_WINDOWS_AARCH64_INLINE_HPP
 
-#include OS_CPU_HEADER(icache)
+#include "runtime/prefetch.hpp"
 
-#endif // CPU_AARCH64_ICACHE_AARCH64_HPP
+
+inline void Prefetch::read (void *loc, intx interval) {
+}
+
+inline void Prefetch::write(void *loc, intx interval) {
+}
+
+#endif // OS_CPU_WINDOWS_AARCH64_PREFETCH_WINDOWS_AARCH64_INLINE_HPP

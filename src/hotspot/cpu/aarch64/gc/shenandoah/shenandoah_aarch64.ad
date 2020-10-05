@@ -23,6 +23,7 @@
 //
 
 source_hpp %{
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 %}
 

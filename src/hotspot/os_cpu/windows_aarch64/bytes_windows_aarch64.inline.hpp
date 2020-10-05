@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,25 @@
  *
  */
 
-#ifndef CPU_AARCH64_ICACHE_AARCH64_HPP
-#define CPU_AARCH64_ICACHE_AARCH64_HPP
+#ifndef OS_CPU_WINDOWS_AARCH64_BYTES_WINDOWS_AARCH64_INLINE_HPP
+#define OS_CPU_WINDOWS_AARCH64_BYTES_WINDOWS_AARCH64_INLINE_HPP
 
-#include OS_CPU_HEADER(icache)
+#include <stdlib.h>
 
-#endif // CPU_AARCH64_ICACHE_AARCH64_HPP
+// Efficient swapping of data bytes from Java byte
+// ordering to native byte ordering and vice versa.
+inline u2   Bytes::swap_u2(u2 x) {
+  return _byteswap_ushort(x);
+}
+
+inline u4   Bytes::swap_u4(u4 x) {
+  return _byteswap_ulong(x);
+}
+
+inline u8 Bytes::swap_u8(u8 x) {
+  return _byteswap_uint64(x);
+}
+
+#pragma warning(default: 4035) // Enable warning 4035: no return value
+
+#endif // OS_CPU_WINDOWS_AARCH64_BYTES_WINDOWS_AARCH64_INLINE_HPP
