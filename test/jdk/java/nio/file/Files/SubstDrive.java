@@ -31,7 +31,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.attribute.BasicFileAttributes;
 
 import static org.testng.Assert.*;
 import org.testng.annotations.BeforeTest;
