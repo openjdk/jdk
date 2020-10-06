@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -43,6 +44,7 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.ThrowsTree;
 
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -129,7 +131,7 @@ public class ThrowsTaglet extends BaseTaglet
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         if (utils.isExecutableElement(holder)) {
-            Map<List<? extends DocTree>, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
+            Map<List<? extends ThrowsTree>, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
             for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
                 Input input = new DocFinder.Input(utils, holder, this,
                         utils.getTypeName(declaredExceptionType, false));
@@ -143,7 +145,10 @@ public class ThrowsTaglet extends BaseTaglet
                     if (inheritedDoc.holder == null) {
                         inheritedDoc.holder = holder;
                     }
-                    declaredExceptionTags.put(inheritedDoc.tagList, (ExecutableElement)inheritedDoc.holder);
+                    List<? extends ThrowsTree> inheritedTags = inheritedDoc.tagList.stream()
+                            .map(t -> (ThrowsTree) t)
+                            .collect(Collectors.toList());
+                    declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
                 }
             }
             result.add(throwsTagsOutput(declaredExceptionTags, writer, alreadyDocumented,
@@ -161,7 +166,7 @@ public class ThrowsTaglet extends BaseTaglet
         List<? extends TypeMirror> thrownTypes = instantiatedType.getThrownTypes();
         Map<String, TypeMirror> typeSubstitutions = getSubstitutedThrownTypes(
                 ((ExecutableElement) holder).getThrownTypes(), thrownTypes);
-        Map<List<? extends DocTree>, ExecutableElement> tagsMap = new LinkedHashMap<>();
+        Map<List<? extends ThrowsTree>, ExecutableElement> tagsMap = new LinkedHashMap<>();
         tagsMap.put(utils.getThrowsTrees(execHolder), execHolder);
         Content result = writer.getOutputInstance();
         HashSet<String> alreadyDocumented = new HashSet<>();
@@ -183,16 +188,16 @@ public class ThrowsTaglet extends BaseTaglet
      * @param allowDuplicates   {@code true} if we allow duplicate tags to be documented
      * @return the generated content for the tags
      */
-    protected Content throwsTagsOutput(Map<List<? extends DocTree>, ExecutableElement> throwTags,
+    protected Content throwsTagsOutput(Map<List<? extends ThrowsTree>, ExecutableElement> throwTags,
                                        TagletWriter writer, Set<String> alreadyDocumented,
                                        Map<String,TypeMirror> typeSubstitutions, boolean allowDuplicates) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         if (!throwTags.isEmpty()) {
-            for (Entry<List<? extends DocTree>, ExecutableElement> entry : throwTags.entrySet()) {
+            for (Entry<List<? extends ThrowsTree>, ExecutableElement> entry : throwTags.entrySet()) {
                 CommentHelper ch = utils.getCommentHelper(entry.getValue());
                 Element e = entry.getValue();
-                for (DocTree dt : entry.getKey()) {
+                for (ThrowsTree dt : entry.getKey()) {
                     Element te = ch.getException(dt);
                     String excName = ch.getExceptionName(dt).toString();
                     TypeMirror substituteType = typeSubstitutions.get(excName);
