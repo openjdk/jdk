@@ -637,17 +637,26 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
     from_space()->check_mangled_unused_area(limit);
       to_space()->check_mangled_unused_area(limit);
   }
+
+  WorkGang* workers = Thread::current()->is_VM_thread() ?
+                      &ParallelScavengeHeap::heap()->workers() : NULL;
   // When an existing space is being initialized, it is not
   // mangled because the space has been previously mangled.
   eden_space()->initialize(edenMR,
                            SpaceDecorator::Clear,
-                           SpaceDecorator::DontMangle);
+                           SpaceDecorator::DontMangle,
+                           MutableSpace::SetupPages,
+                           workers);
     to_space()->initialize(toMR,
                            SpaceDecorator::Clear,
-                           SpaceDecorator::DontMangle);
+                           SpaceDecorator::DontMangle,
+                           MutableSpace::SetupPages,
+                           workers);
   from_space()->initialize(fromMR,
                            SpaceDecorator::DontClear,
-                           SpaceDecorator::DontMangle);
+                           SpaceDecorator::DontMangle,
+                           MutableSpace::SetupPages,
+                           workers);
 
   assert(from_space()->top() == old_from_top, "from top changed!");
 
@@ -784,9 +793,15 @@ void PSYoungGen::reset_survivors_after_shrink() {
   // Was there a shrink of the survivor space?
   if (new_end < space_shrinking->end()) {
     MemRegion mr(space_shrinking->bottom(), new_end);
+
+    WorkGang* workers = Thread::current()->is_VM_thread() ?
+                        &ParallelScavengeHeap::heap()->workers() : NULL;
+
     space_shrinking->initialize(mr,
                                 SpaceDecorator::DontClear,
-                                SpaceDecorator::Mangle);
+                                SpaceDecorator::Mangle,
+                                MutableSpace::SetupPages,
+                                workers);
   }
 }
 

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/preTouch.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -59,54 +60,6 @@ void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
     }
   }
 }
-
-class PGCPretouchTask: public AbstractGangTask {
-  char* volatile _cur_addr;
-  char* const _start_addr;
-  char* const _end_addr;
-  size_t _page_size;
-  uint _total_workers;
-
-public:
-  PGCPretouchTask(MemRegion mr, size_t page_size) :
-    AbstractGangTask("ParallelGC PreTouch"),
-    _cur_addr((char*)mr.start()),
-    _start_addr((char*)mr.start()),
-    _end_addr((char*)mr.end()),
-    _page_size(0) {
-#ifdef LINUX
-    _page_size = UseTransparentHugePages ? (size_t)os::vm_page_size() : page_size;
-#else
-    _page_size = page_size;
-#endif
-  }
-
-  virtual void work(uint worker_id) {
-
-    // Get chunk size
-    size_t const actual_chunk_size = MAX2(chunk_size(), _page_size);
-
-    char* touch_addr = Atomic::fetch_and_add(&_cur_addr, actual_chunk_size);
-
-    if (touch_addr > _end_addr) {
-      return ;
-    }
-
-    char* end_addr   = touch_addr + actual_chunk_size;
-    if (end_addr > _end_addr)
-       end_addr = _end_addr;
-
-    os::pretouch_memory(touch_addr, end_addr, _page_size);
-  }
-
-  void set_total_workers(uint total_workers) { _total_workers = total_workers; }
-
-  size_t chunk_size() { return align_down((_end_addr-_start_addr)/_total_workers, _page_size); }
-
-  static void pretouch_pages(MemRegion mr) {
-    os::pretouch_memory(mr.start(), mr.end());
-  }
-};
 
 void MutableSpace::initialize(MemRegion mr,
                               bool clear_space,
@@ -161,31 +114,12 @@ void MutableSpace::initialize(MemRegion mr,
     if (AlwaysPreTouch) {
 
       size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
-      PGCPretouchTask pretouch_task(head, page_size);
 
-      if (pretouch_gang) {
-        uint num_workers = pretouch_gang->total_workers();
-        pretouch_task.set_total_workers(num_workers);
+      PretouchTask::pretouch("ParallelGC PreTouch", (char*)head.start(),
+                             (char*)head.end(), page_size, pretouch_gang);
 
-        log_debug(gc, heap)("Running %s with %u workers for pre-touching " SIZE_FORMAT "B.",
-                            pretouch_task.name(), num_workers, head.byte_size());
-
-        pretouch_gang->run_task(&pretouch_task, num_workers);
-
-      } else {
-
-        if (head.byte_size() != 0) {
-          log_debug(gc, heap)("Running %s with 1 thread for pre-touching " SIZE_FORMAT "B.",
-                              pretouch_task.name(), head.byte_size());
-          PGCPretouchTask::pretouch_pages(head);
-        }
-      }
-
-      if (tail.byte_size() != 0) {
-        log_debug(gc, heap)("Running %s with 1 thread for pre-touching " SIZE_FORMAT "B.",
-                            pretouch_task.name(), tail.byte_size());
-        PGCPretouchTask::pretouch_pages(tail);
-      }
+      PretouchTask::pretouch("ParallelGC PreTouch", (char*)tail.start(),
+                             (char*)tail.end(), page_size, pretouch_gang);
     }
 
     // Remember where we stopped so that we can continue later.
