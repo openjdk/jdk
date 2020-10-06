@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.security.cert.*;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -52,6 +53,8 @@ public class GetPolicyQualifiers {
         PKIXParameters params = new PKIXParameters(trustAnchors);
         params.setPolicyQualifiersRejected(false);
         params.setRevocationEnabled(false);
+        // Certificates expired on Oct 6th, 2020
+        params.setDate(new Date("July 01, 2020"));
         List certList = Collections.singletonList(eeCert);
         CertPath cp = cf.generateCertPath(certList);
         PKIXCertPathValidatorResult result =
