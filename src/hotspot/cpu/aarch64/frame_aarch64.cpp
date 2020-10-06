@@ -713,7 +713,7 @@ void internal_pf(uintptr_t sp, uintptr_t fp, uintptr_t pc, uintptr_t bcx) {
     nextsp = (uintptr_t)&p[frame::sender_sp_offset];
   }
 
-  if (bcx == -1ULL)
+  if (bcx == (uintptr_t)-1)
     bcx = p[frame::interpreter_frame_bcp_offset];
 
   if (Interpreter::contains((address)pc)) {
