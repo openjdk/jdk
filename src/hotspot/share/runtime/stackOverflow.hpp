@@ -30,6 +30,9 @@
 
 class JavaThread;
 
+// StackOverflow handling is encapsulated in this class.  This class contains state variables
+// for each JavaThread that implement stack overflow checking and guard page implementation.
+
 class StackOverflow {
   friend class JVMCIVMStructs;
   friend class JavaThread;
