@@ -23,19 +23,21 @@
  */
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 
 import static org.testng.Assert.*;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
+import org.testng.SkipException;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -49,25 +51,35 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 public class SubstDrive {
 
-    private static final Path SUBST_DRIVE = Path.of("X:");
+    private static Path SUBST_DRIVE;
     private static Path TEST_TEMP_DIRECTORY;
 
     /**
-     * Create a temporary directory where all subsequently created temp
-     * directories will be in. This directory and all of its contents will be
-     * deleted when the test finishes.
+     * Setup for the test:
+     *      + Create a temporary directory where all subsequently created temp
+     *        directories will be in. This directory and all of its contents will be
+     *        deleted when the test finishes.
+     *      + Find a drive that is available for use with subst.
      */
-    @BeforeTest
-    public void createRootTempDirectory() throws IOException {
+    @BeforeClass
+    public void setup() throws IOException {
         TEST_TEMP_DIRECTORY = Files.createTempDirectory("tmp");
         System.out.printf("Test directory is at %s\n", TEST_TEMP_DIRECTORY);
+
+        Optional<Path> substDrive = findAvailableDrive(TEST_TEMP_DIRECTORY);
+        if (!substDrive.isPresent()) {
+            throw new SkipException(
+                "Could not find any available drive to use with subst, skipping the tests");
+        }
+        SUBST_DRIVE = substDrive.get();
+        System.out.printf("Using drive %s\n with subst", SUBST_DRIVE);
     }
 
     /**
      * Delete the root temporary directory together with all of its contents
      * when all tests finish.
      */
-    @AfterTest
+    @AfterClass
     public void removeRootTempDirectory() throws IOException {
         TestUtil.removeAll(TEST_TEMP_DIRECTORY);
     }
@@ -443,5 +455,23 @@ public class SubstDrive {
                     // split each line into 2 components and take the first one
                     .map(line -> line.split("=>")[0].trim());
         }
+    }
+
+    /**
+     * subst can fail if the drive to be mapped already exists. The method returns
+     * a drive that is available.
+     */
+    private Optional<Path> findAvailableDrive(Path tempDirectory) {
+        for (char letter = 'Z'; letter >= 'A'; letter--) {
+            try {
+                Path p = Path.of(letter + ":");
+                substCreate(p, tempDirectory);
+                substDelete(p);
+                return Optional.of(p);
+            } catch (Throwable t) {
+                // fall through
+            }
+        }
+        return Optional.empty();
     }
 }
