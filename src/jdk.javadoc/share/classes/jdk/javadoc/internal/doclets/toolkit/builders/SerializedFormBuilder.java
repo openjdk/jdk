@@ -238,7 +238,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
             if (field.getSimpleName().toString().compareTo(SERIAL_VERSION_UID) == 0 &&
                 field.getConstantValue() != null) {
                 writer.addSerialUIDInfo(SERIAL_VERSION_UID_HEADER,
-                                        utils.constantValueExpresion(field), serialUidTree);
+                                        utils.constantValueExpression(field), serialUidTree);
                 break;
             }
         }

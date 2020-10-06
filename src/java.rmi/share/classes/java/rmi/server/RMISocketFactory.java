@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public abstract class RMISocketFactory
      * @param  host   the host name
      * @param  port   the port number
      * @return a socket connected to the specified host and port.
-     * @exception IOException if an I/O error occurs during socket creation
+     * @throws IOException if an I/O error occurs during socket creation
      * @since 1.1
      */
     public abstract Socket createSocket(String host, int port)
@@ -109,7 +109,7 @@ public abstract class RMISocketFactory
      * an anonymous port).
      * @param  port the port number
      * @return the server socket on the specified port
-     * @exception IOException if an I/O error occurs during server socket
+     * @throws IOException if an I/O error occurs during server socket
      * creation
      * @since 1.1
      */
@@ -124,9 +124,9 @@ public abstract class RMISocketFactory
      * setting a socket factory; if disallowed, a SecurityException will be
      * thrown.
      * @param fac the socket factory
-     * @exception IOException if the RMI socket factory is already set
-     * @exception  SecurityException  if a security manager exists and its
-     *             <code>checkSetFactory</code> method doesn't allow the operation.
+     * @throws IOException if the RMI socket factory is already set
+     * @throws  SecurityException  if a security manager exists and its
+     *          <code>checkSetFactory</code> method doesn't allow the operation.
      * @see #getSocketFactory
      * @see java.lang.SecurityManager#checkSetFactory()
      * @since 1.1

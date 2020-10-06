@@ -507,16 +507,19 @@ nmethod* TieredThresholdPolicy::event(const methodHandle& method, const methodHa
     // method == inlinee if the event originated in the main method
     method_back_branch_event(method, inlinee, bci, comp_level, nm, THREAD);
     // Check if event led to a higher level OSR compilation
-    CompLevel expected_comp_level = comp_level;
+    CompLevel expected_comp_level = MIN2(CompLevel_full_optimization, static_cast<CompLevel>(comp_level + 1));
     if (!CompilationModeFlag::disable_intermediate() && inlinee->is_not_osr_compilable(expected_comp_level)) {
       // It's not possble to reach the expected level so fall back to simple.
       expected_comp_level = CompLevel_simple;
     }
-    nmethod* osr_nm = inlinee->lookup_osr_nmethod_for(bci, expected_comp_level, false);
-    assert(osr_nm == NULL || osr_nm->comp_level() >= expected_comp_level, "lookup_osr_nmethod_for is broken");
-    if (osr_nm != NULL) {
-      // Perform OSR with new nmethod
-      return osr_nm;
+    CompLevel max_osr_level = static_cast<CompLevel>(inlinee->highest_osr_comp_level());
+    if (max_osr_level >= expected_comp_level) { // fast check to avoid locking in a typical scenario
+      nmethod* osr_nm = inlinee->lookup_osr_nmethod_for(bci, expected_comp_level, false);
+      assert(osr_nm == NULL || osr_nm->comp_level() >= expected_comp_level, "lookup_osr_nmethod_for is broken");
+      if (osr_nm != NULL && osr_nm->comp_level() != comp_level) {
+        // Perform OSR with new nmethod
+        return osr_nm;
+      }
     }
   }
   return NULL;

@@ -46,9 +46,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.kill.kill001.kill001
- *        nsk.jdb.kill.kill001.kill001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.kill.kill001.kill001
+ * @build nsk.jdb.kill.kill001.kill001a
+ * @run main/othervm
+ *      nsk.jdb.kill.kill001.kill001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

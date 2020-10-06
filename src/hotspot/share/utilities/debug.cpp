@@ -71,6 +71,9 @@ static intx g_asserting_thread = 0;
 static void* g_assertion_context = NULL;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
+// Set to suppress secondary error reporting.
+bool Debugging = false;
+
 #ifndef ASSERT
 #  ifdef _DEBUG
    // NOTE: don't turn the lines below into a comment -- if you're getting
@@ -367,9 +370,9 @@ class Command : public StackObj {
   }
 
   ~Command() {
-        tty->flush();
-        Debugging = debug_save;
-        level--;
+    tty->flush();
+    Debugging = debug_save;
+    level--;
   }
 };
 

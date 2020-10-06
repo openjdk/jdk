@@ -1079,7 +1079,7 @@ public:
     _method_InjectedProfile,
     _method_LambdaForm_Compiled,
     _method_Hidden,
-    _method_HotSpotIntrinsicCandidate,
+    _method_IntrinsicCandidate,
     _jdk_internal_vm_annotation_Contended,
     _field_Stable,
     _jdk_internal_vm_annotation_ReservedStackAccess,
@@ -2102,10 +2102,10 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _method_Hidden;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_HotSpotIntrinsicCandidate_signature): {
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_IntrinsicCandidate_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
-      return _method_HotSpotIntrinsicCandidate;
+      return _method_IntrinsicCandidate;
     }
     case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Stable_signature): {
       if (_location != _in_field)   break;  // only allow for fields
@@ -2159,7 +2159,7 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
     m->set_intrinsic_id(vmIntrinsics::_compiledLambdaForm);
   if (has_annotation(_method_Hidden))
     m->set_hidden(true);
-  if (has_annotation(_method_HotSpotIntrinsicCandidate) && !m->is_synthetic())
+  if (has_annotation(_method_IntrinsicCandidate) && !m->is_synthetic())
     m->set_intrinsic_candidate(true);
   if (has_annotation(_jdk_internal_vm_annotation_ReservedStackAccess))
     m->set_has_reserved_stack_access(true);
@@ -5165,22 +5165,22 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
 
       if (CheckIntrinsics) {
         // Check if an intrinsic is defined for method 'method',
-        // but the method is not annotated with @HotSpotIntrinsicCandidate.
+        // but the method is not annotated with @IntrinsicCandidate.
         if (method->intrinsic_id() != vmIntrinsics::_none &&
             !method->intrinsic_candidate()) {
               tty->print("Compiler intrinsic is defined for method [%s], "
-              "but the method is not annotated with @HotSpotIntrinsicCandidate.%s",
+              "but the method is not annotated with @IntrinsicCandidate.%s",
               method->name_and_sig_as_C_string(),
               NOT_DEBUG(" Method will not be inlined.") DEBUG_ONLY(" Exiting.")
             );
           tty->cr();
           DEBUG_ONLY(vm_exit(1));
         }
-        // Check is the method 'method' is annotated with @HotSpotIntrinsicCandidate,
+        // Check is the method 'method' is annotated with @IntrinsicCandidate,
         // but there is no intrinsic available for it.
         if (method->intrinsic_candidate() &&
           method->intrinsic_id() == vmIntrinsics::_none) {
-            tty->print("Method [%s] is annotated with @HotSpotIntrinsicCandidate, "
+            tty->print("Method [%s] is annotated with @IntrinsicCandidate, "
               "but no compiler intrinsic is defined for the method.%s",
               method->name_and_sig_as_C_string(),
               NOT_DEBUG("") DEBUG_ONLY(" Exiting.")

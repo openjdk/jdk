@@ -98,8 +98,12 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
         // The callee has no clue whether the register holds an int,
         // long or is unused.  He always saves a long.  Here we know
         // a long was saved, but we only want an int back.  Narrow the
-        // saved long to the int that the JVM wants.
-        value.noop =  (narrowOop) *(julong*) value_addr;
+        // saved long to the int that the JVM wants.  We can't just
+        // use narrow_oop_cast directly, because we don't know what
+        // the high bits of the value might be.
+        static_assert(sizeof(narrowOop) == sizeof(juint), "size mismatch");
+        juint narrow_value = (juint) *(julong*)value_addr;
+        value.noop = CompressedOops::narrow_oop_cast(narrow_value);
       } else {
         value.noop = *(narrowOop*) value_addr;
       }

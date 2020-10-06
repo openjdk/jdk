@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public abstract class ControlFactory {
       * @param ctl A non-null control.
       *
       * @return A possibly null Control.
-      * @exception NamingException If {@code ctl} contains invalid data that prevents it
+      * @throws NamingException If {@code ctl} contains invalid data that prevents it
       * from being used to create a control. A factory should only throw
       * an exception if it knows how to produce the control (identified by the OID)
       * but is unable to because of, for example invalid BER data.
@@ -126,7 +126,7 @@ public abstract class ControlFactory {
       * @return A control object created using {@code ctl}; or
       *         {@code ctl} if a control object cannot be created using
       *         the algorithm described above.
-      * @exception NamingException if a naming exception was encountered
+      * @throws NamingException if a naming exception was encountered
       *         while attempting to create the control object.
       *         If one of the factories accessed throws an
       *         exception, it is propagated up to the caller.
