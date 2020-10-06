@@ -27,7 +27,6 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.instrument
- *          java.management
  * @requires vm.jvmti
  * @build compiler.profiling.spectrapredefineclass_classloaders.Agent
  *        compiler.profiling.spectrapredefineclass_classloaders.Test

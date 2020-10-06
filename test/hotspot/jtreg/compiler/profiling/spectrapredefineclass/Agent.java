@@ -28,7 +28,6 @@ import jdk.test.lib.Utils;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
-import java.lang.management.ManagementFactory;
 import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 
@@ -84,9 +83,7 @@ public class Agent implements ClassFileTransformer {
         // Create speculative trap entries
         Test.m();
 
-        String nameOfRunningVM = ManagementFactory.getRuntimeMXBean().getName();
-        int p = nameOfRunningVM.indexOf('@');
-        String pid = nameOfRunningVM.substring(0, p);
+        String pid = String.valueOf(ProcessHandle.current().pid());
 
         // Make the nmethod go away
         for (int i = 0; i < 10; i++) {

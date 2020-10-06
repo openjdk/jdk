@@ -45,7 +45,6 @@ import java.io.InputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -134,10 +133,7 @@ public class RedefineClassTest extends TypeUniverse {
     }
 
     public static void loadAgent(Path agent) throws Exception {
-        String vmName = ManagementFactory.getRuntimeMXBean().getName();
-        int p = vmName.indexOf('@');
-        assumeTrue(p != -1);
-        String pid = vmName.substring(0, p);
+        String pid = String.valueOf(ProcessHandle.current().pid());
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         Class<?> c = Class.forName("com.sun.tools.attach.VirtualMachine", true, cl);
         Method attach = c.getDeclaredMethod("attach", String.class);
