@@ -78,6 +78,7 @@ import static jdk.internal.jshell.debug.InternalDebugControl.DBG_COMPA;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
@@ -1368,7 +1369,13 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             };
         }
         String baseURL = BASE_DOCUMENTATION_URI.get();
-        URI uri = URI.create(baseURL + moduleName + "/" + typeName.replace(".", "/") + ".html" + (anchor != null ? "#" + anchor : ""));
+        URI uri;
+        try {
+            uri = new URL(baseURL + moduleName + "/" + typeName.replace(".", "/") + ".html" + (anchor != null ? "#" + anchor : "")).toURI();
+        } catch (MalformedURLException | URISyntaxException ex) {
+            proc.debug(ex, "SourceCodeAnalysisImpl.element2String(..., " + el + ")");
+            uri = null;
+        }
         return new DocumentationImpl(signature,  javadoc, uri);
     }
 

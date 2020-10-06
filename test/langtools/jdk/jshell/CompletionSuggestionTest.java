@@ -791,7 +791,7 @@ public class CompletionSuggestionTest extends KullaTesting {
     static {
         try {
             Class scai = Class.forName("jdk.jshell.SourceCodeAnalysisImpl");
-            Field baseDocumentation = scai.getDeclaredField("BASE_DOCUMENTATION_URL");
+            Field baseDocumentation = scai.getDeclaredField("BASE_DOCUMENTATION_URI");
             baseDocumentation.setAccessible(true);
             baseDocumentation.set(null, (Supplier<String>) () -> "http://documentation/");
         } catch (Throwable t) {
