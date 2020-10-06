@@ -43,14 +43,14 @@ import java.net.URI;
  *     <li>{@link #getRequestMethod()} to determine the command.
  *     <li>{@link #getRequestHeaders()} to examine the request headers (if
  *     needed).
- *     <li>{@link #getRequestBody()} returns an {@link java.io.InputStream} for
+ *     <li>{@link #getRequestBody()} returns an {@link InputStream} for
  *     reading the request body. After reading the request body, the stream
  *     should be closed.
  *     <li>{@link #getResponseHeaders()} to set any response headers, except
  *     content-length.
  *     <li>{@link #sendResponseHeaders(int,long)} to send the response headers.
  *     Must be called before next step.
- *     <li>{@link #getResponseBody()} to get a {@link java.io.OutputStream} to
+ *     <li>{@link #getResponseBody()} to get a {@link OutputStream} to
  *     send the response body. When the response body has been written, the
  *     stream must be closed to terminate the exchange.
  * </ol>
@@ -131,8 +131,8 @@ public abstract class HttpExchange implements AutoCloseable {
     /**
      * Ends this exchange by doing the following in sequence:
      * <ol>
-     *      <li> close the request {@link java.io.InputStream}, if not already closed.
-     *      <li> close the response {@link java.io.OutputStream}, if not already closed.
+     *      <li> close the request {@link InputStream}, if not already closed.
+     *      <li> close the response {@link OutputStream}, if not already closed.
      * </ol>
      */
     public abstract void close();
@@ -142,7 +142,7 @@ public abstract class HttpExchange implements AutoCloseable {
      * Multiple calls to this method will return the same stream.
      * It is recommended that applications should consume (read) all of the data
      * from this stream before closing it. If a stream is closed before all data
-     * has been read, then the {@link java.io.InputStream#close()} call will read
+     * has been read, then the {@link InputStream#close()} call will read
      * and discard remaining data (up to an implementation specific number of
      * bytes).
      *
@@ -157,15 +157,15 @@ public abstract class HttpExchange implements AutoCloseable {
      * will return the same stream. In order to correctly terminate each exchange,
      * the output stream must be closed, even if no response body is being sent.
      *
-     * <p> Closing this stream implicitly closes the {@link java.io.InputStream}
+     * <p> Closing this stream implicitly closes the {@link InputStream}
      * returned from {@link #getRequestBody()} (if it is not already closed).
      *
      * <p> If the call to {@link #sendResponseHeaders(int, long)} specified a
      * fixed response body length, then the exact number of bytes specified in
      * that call must be written to this stream. If too many bytes are written,
-     * then {@link java.io.OutputStream#write()} will throw an {@code IOException}.
+     * then {@link OutputStream#write()} will throw an {@code IOException}.
      * If too few bytes are written then the stream
-     * {@link java.io.OutputStream#close()} will throw an {@code IOException}.
+     * {@link OutputStream#close()} will throw an {@code IOException}.
      * In both cases, the exchange is aborted and the underlying TCP connection
      * closed.
      *
@@ -183,7 +183,7 @@ public abstract class HttpExchange implements AutoCloseable {
      * amount of data. If the response length parameter is {@code zero}, then
      * chunked transfer encoding is used and an arbitrary amount of data may be
      * sent. The application terminates the response body by closing the
-     * {@link java.io.OutputStream}.
+     * {@link OutputStream}.
      * If response length has the value {@code -1} then no response body is
      * being sent.
      *
@@ -273,8 +273,8 @@ public abstract class HttpExchange implements AutoCloseable {
 
     /**
      * Used by {@linkplain com.sun.net.httpserver.Filter Filters} to wrap either
-     * (or both) of this exchange's {@link java.io.InputStream} and
-     * {@link java.io.OutputStream}, with the given filtered streams so that
+     * (or both) of this exchange's {@link InputStream} and
+     * {@link OutputStream}, with the given filtered streams so that
      * subsequent calls to {@link #getRequestBody()} will return the given
      * {@code InputStream}, and calls to {@link #getResponseBody()} will return
      * the given {@code OutputStream}. The streams provided to this call must wrap
