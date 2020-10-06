@@ -147,6 +147,13 @@ static const int processor_id_assigning = -2;
 static const int processor_id_map_size = 256;
 static volatile int processor_id_map[processor_id_map_size];
 static volatile int processor_id_next = 0;
+
+struct vmmap {
+  char* addr;
+  size_t size;
+};
+
+static GrowableArray<vmmap>* execmaps = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<vmmap>(8, mtInternal);
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -530,6 +537,60 @@ void os::init_system_properties_values() {
 #undef SYS_EXT_DIR
 #undef EXTENSIONS_DIR
 }
+
+#ifdef __APPLE__
+static void execmap_add(char* addr, size_t size) {
+  for (int i = 0; i < execmaps->length(); ++i) {
+    vmmap* m = execmaps->adr_at(i);
+    if (m->addr < addr) {
+      guarantee(m->addr + m->size <= addr, "unexpected intersection");
+      continue;
+    }
+    guarantee(addr + size <= m->addr, "unexpected intersection");
+    execmaps->insert_before(i, { addr, size });
+    return;
+  }
+  execmaps->append({ addr, size });
+}
+
+static void execmap_remove(char* addr, size_t size) {
+  char* e = addr + size;
+  for (int i = 0; i < execmaps->length();) {
+    vmmap* m = execmaps->adr_at(i);
+    char* me = m->addr + m->size;
+    if (me < addr || e <= m->addr) {
+      ++i;
+      continue;
+    }
+    if (addr <= m->addr && me <= e) {
+      execmaps->remove_at(i);
+    } else if (addr <= m->addr && e < me) {
+      m->addr = e;
+      m->size = me - m->addr;
+      ++i;
+    } else if (m->addr < addr && me <= e) {
+      m->size = m->addr - addr;
+      ++i;
+    } else {
+      assert(m->addr < addr && e < me, "last option");
+      m->size = m->addr - addr;
+      execmaps->insert_before(i + 1, { e, size_t(me - e) });
+      i += 2;
+    }
+  }
+}
+
+static bool execmap_intersect(char* addr, size_t size) {
+  for (int i = 0; i < execmaps->length(); ++i) {
+    vmmap* m = execmaps->adr_at(i);
+    if (m->addr + m->size < addr || addr + size <= m->addr) {
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
+#endif // __APPLE__
 
 ////////////////////////////////////////////////////////////////////////////////
 // breakpoint support
@@ -1912,6 +1973,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
     uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
                                        MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
     if (res != (uintptr_t) MAP_FAILED) {
+      execmap_remove(addr, size);
       return true;
     }
   } else {
@@ -2007,15 +2069,14 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
   Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
   return ::mprotect(addr, size, PROT_NONE) == 0;
 #elif defined(__APPLE__)
-  if (false) {
-    if (::madvise(addr, size, MADV_FREE) != 0) {
-      return false;
-    }
-    return ::mprotect(addr, size, PROT_NONE) == 0;
-  } else {
+  bool exec = execmap_intersect(addr, size);
+  if (!exec) {
     uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
-        MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
+                                       MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
     return res  != (uintptr_t) MAP_FAILED;
+  } else {
+    ::madvise(addr, size, MADV_FREE);
+    return ::mprotect(addr, size, PROT_NONE) == 0;
   }
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
@@ -2037,24 +2098,34 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 // 'requested_addr' is only treated as a hint, the return value may or
 // may not start from the requested address. Unlike Bsd mmap(), this
 // function returns NULL to indicate failure.
-static char* anon_mmap(char* requested_addr, size_t bytes, bool executable) {
+static char* anon_mmap(char* requested_addr, size_t bytes) {
   // MAP_FIXED is intentionally left out, to leave existing mappings intact.
-  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS MACOS_ONLY(| (executable ? MAP_JIT : 0));
+  // On MacOS, always use MAP_JIT and drop that on a first exec/non-exec pd_commit_memory
+  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS MACOS_ONLY(| MAP_JIT);
 
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
   // succeed if we have enough swap space to back the physical page.
   char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, -1, 0);
 
+#ifdef __APPLE__
+  if (MAP_FAILED != addr) {
+    execmap_add(addr, bytes);
+  }
+#endif
+
   return addr == MAP_FAILED ? NULL : addr;
 }
 
 static int anon_munmap(char * addr, size_t size) {
+#ifdef __APPLE__
+  execmap_remove(addr, size);
+#endif
   return ::munmap(addr, size) == 0;
 }
 
-char* os::pd_reserve_memory(size_t bytes, bool executable) {
-  return anon_mmap(NULL /* addr */, bytes, executable);
+char* os::pd_reserve_memory(size_t bytes) {
+  return anon_mmap(NULL /* addr */, bytes);
 }
 
 bool os::pd_release_memory(char* addr, size_t size) {
@@ -2164,7 +2235,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
 
   // Bsd mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.
-  char * addr = anon_mmap(requested_addr, bytes, false/*executable*/);
+  char * addr = anon_mmap(requested_addr, bytes);
   if (addr == requested_addr) {
     return requested_addr;
   }
