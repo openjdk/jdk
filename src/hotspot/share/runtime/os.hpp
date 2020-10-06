@@ -113,7 +113,7 @@ class os: AllStatic {
     _page_sizes[1] = 0; // sentinel
   }
 
-  static char*  pd_reserve_memory(size_t bytes);
+  static char*  pd_reserve_memory(size_t bytes, bool executable);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc);
@@ -314,7 +314,7 @@ class os: AllStatic {
 
   // Reserves virtual memory.
   // alignment_hint - currently only used by AIX
-  static char*  reserve_memory(size_t bytes, MEMFLAGS flags = mtOther);
+  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtOther);
 
   // Reserves virtual memory.
   // if file_desc != -1, also attaches the memory to the file.

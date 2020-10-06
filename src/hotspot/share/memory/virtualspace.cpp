@@ -194,7 +194,11 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
         base = NULL;
       }
     } else {
-      base = os::reserve_memory_with_fd(size, _fd_for_heap);
+      if (!_executable) {
+        base = os::reserve_memory_with_fd(size, _fd_for_heap);
+      } else {
+        base = os::reserve_memory(size, ExecMem);
+      }
     }
 
     if (base == NULL) return;
@@ -378,7 +382,11 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
       // When reserving a large address range, most OSes seem to align to at
       // least 64K.
       // If the returned memory is not aligned we will release and retry.
-      base = os::reserve_memory_with_fd(size, _fd_for_heap);
+      if (!executable()) {
+        base = os::reserve_memory_with_fd(size, _fd_for_heap);
+      } else {
+        base = os::reserve_memory(size, ExecMem);
+      }
     }
   }
   if (base == NULL) { return; }

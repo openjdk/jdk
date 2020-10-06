@@ -1901,11 +1901,23 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
 //       problem.
 bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
   Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   if (::mprotect(addr, size, prot) == 0) {
     return true;
+  }
+#elif defined(__APPLE__)
+  if (!exec) {
+    uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
+                                       MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
+    if (res != (uintptr_t) MAP_FAILED) {
+      return true;
+    }
+  } else {
+    if (::mprotect(addr, size, prot) == 0) {
+      return true;
+    }
   }
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
@@ -1990,10 +2002,21 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 
 
 bool os::pd_uncommit_memory(char* addr, size_t size) {
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
   Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
   return ::mprotect(addr, size, PROT_NONE) == 0;
+#elif defined(__APPLE__)
+  if (false) {
+    if (::madvise(addr, size, MADV_FREE) != 0) {
+      return false;
+    }
+    return ::mprotect(addr, size, PROT_NONE) == 0;
+  } else {
+    uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
+        MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
+    return res  != (uintptr_t) MAP_FAILED;
+  }
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
                                      MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
@@ -2014,9 +2037,9 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 // 'requested_addr' is only treated as a hint, the return value may or
 // may not start from the requested address. Unlike Bsd mmap(), this
 // function returns NULL to indicate failure.
-static char* anon_mmap(char* requested_addr, size_t bytes) {
+static char* anon_mmap(char* requested_addr, size_t bytes, bool executable) {
   // MAP_FIXED is intentionally left out, to leave existing mappings intact.
-  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS;
+  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS MACOS_ONLY(| (executable ? MAP_JIT : 0));
 
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
@@ -2030,8 +2053,8 @@ static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
 
-char* os::pd_reserve_memory(size_t bytes) {
-  return anon_mmap(NULL /* addr */, bytes);
+char* os::pd_reserve_memory(size_t bytes, bool executable) {
+  return anon_mmap(NULL /* addr */, bytes, executable);
 }
 
 bool os::pd_release_memory(char* addr, size_t size) {
@@ -2141,7 +2164,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
 
   // Bsd mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.
-  char * addr = anon_mmap(requested_addr, bytes);
+  char * addr = anon_mmap(requested_addr, bytes, false/*executable*/);
   if (addr == requested_addr) {
     return requested_addr;
   }
