@@ -44,7 +44,7 @@ public enum StandardProtocolFamily implements ProtocolFamily {
     INET6,
 
     /**
-     * Local (Unix domain) interprocess communication.
+     * Unix domain (Local) interprocess communication.
      * @since 16
      */
     UNIX

@@ -338,23 +338,23 @@ public class ProtocolFamilies {
 
     private static SocketChannel openSC(StandardProtocolFamily family)
             throws IOException {
-        SocketChannel chan = family == null ? SocketChannel.open()
+        SocketChannel sc = family == null ? SocketChannel.open()
                 : SocketChannel.open(family);
-        return chan;
+        return sc;
     }
 
     private static ServerSocketChannel openSSC(StandardProtocolFamily family)
             throws IOException {
-        ServerSocketChannel chan = family == null ? ServerSocketChannel.open()
+        ServerSocketChannel ssc = family == null ? ServerSocketChannel.open()
                 : ServerSocketChannel.open(family);
-        return chan;
+        return ssc;
     }
 
     private static DatagramChannel openDC(StandardProtocolFamily family)
             throws IOException {
-        DatagramChannel chan = family == null ? DatagramChannel.open()
+        DatagramChannel dc = family == null ? DatagramChannel.open()
                 : DatagramChannel.open(family);
-        return chan;
+        return dc;
     }
 
     private static SocketAddress getSocketAddress(StandardProtocolFamily family) {

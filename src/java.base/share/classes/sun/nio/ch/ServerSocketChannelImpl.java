@@ -44,7 +44,7 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * An implementation of ServerSocketChannels
+ * Base implementation of ServerSocketChannels
  */
 
 abstract class ServerSocketChannelImpl
@@ -79,9 +79,6 @@ abstract class ServerSocketChannelImpl
     // Binding
     private SocketAddress localAddress; // null => unbound
 
-    // Our socket adaptor, if any
-    private ServerSocket socket;
-
     // -- End of fields protected by stateLock
 
     ServerSocketChannelImpl(SelectorProvider sp, FileDescriptor fd, boolean bound)
@@ -107,10 +104,13 @@ abstract class ServerSocketChannelImpl
     @Override
     public ServerSocket socket() {
         synchronized (stateLock) {
-            if (socket == null)
-                socket = ServerSocketAdaptor.create((InetServerSocketChannelImpl)this);
-            return socket;
+            return implSocket();
         }
+    }
+
+    // Override when supported
+    ServerSocket implSocket() {
+        throw new UnsupportedOperationException("socket not supported");
     }
 
     @Override

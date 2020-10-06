@@ -25,7 +25,6 @@
  * A Launcher to launch a java process with its standard input, output,
  * and error streams connected to a socket.
  */
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;

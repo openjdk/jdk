@@ -257,7 +257,7 @@
  * creation method.
  *
  * <p> Channels for <a id="unixdomain"></a><i>Unix Domain</i> sockets are created
- * using the {@link java.net.StandardProtocolFamily#UNIX UNIX} protocol family only.
+ * using the {@link java.net.StandardProtocolFamily#UNIX UNIX} protocol family.
  * <i>Unix Domain</i> sockets support local inter-process
  * communication on the same host, and are addressed using {@link
  * java.net.UnixDomainSocketAddress}es which encapsulate a filesystem pathname

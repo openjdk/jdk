@@ -40,12 +40,6 @@
 #define NET_WAIT_WRITE   0x02
 #define NET_WAIT_CONNECT 0x04
 
-/* 2 bytes to allow for null at end of string and null at start of string
- * for abstract name
- */
-#define MAX_UNIX_DOMAIN_PATH_LEN \
-        (int)(sizeof(((struct sockaddr_un *)0)->sun_path)-2)
-
 /************************************************************************
  * Cached field IDs
  *
@@ -159,15 +153,6 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
 
 JNIEXPORT jobject JNICALL
 NET_SockaddrToInetAddress(JNIEnv *env, SOCKETADDRESS *sa, int *port);
-
-JNIEXPORT jbyteArray JNICALL
-NET_SockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, socklen_t len);
-
-JNIEXPORT jint JNICALL
-NET_UnixSocketAddressToSockaddr(JNIEnv *env,
-                                jbyteArray uaddr,
-                                struct sockaddr_un *sa,
-                                int *len);
 
 void platformInit();
 

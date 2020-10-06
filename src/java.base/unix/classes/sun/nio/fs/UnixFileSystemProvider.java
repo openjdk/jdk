@@ -560,8 +560,6 @@ public abstract class UnixFileSystemProvider
 
     @Override
     public byte[] getSunPathForSocketFile(Path obj) {
-        if (obj == null)
-            return null;
         UnixPath file = UnixPath.toUnixPath(obj);
         return file.getByteArrayForSysCalls();
     }

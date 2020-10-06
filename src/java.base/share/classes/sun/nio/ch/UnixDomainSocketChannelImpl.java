@@ -135,7 +135,7 @@ public class UnixDomainSocketChannelImpl extends SocketChannelImpl
 
     @Override
     SocketAddress implBind(SocketAddress local) throws IOException {
-        UnixDomainSockets.checkCapability();
+        UnixDomainSockets.checkPermission();
         UnixDomainSocketAddress usa = UnixDomainSockets.checkAddress(local);
         Path path = usa == null ? null : usa.getPath();
         UnixDomainSockets.bind(getFD(), path);
@@ -152,7 +152,7 @@ public class UnixDomainSocketChannelImpl extends SocketChannelImpl
     @Override
     SocketAddress checkRemote(SocketAddress sa) throws IOException {
         Objects.requireNonNull(sa);
-        UnixDomainSockets.checkCapability();
+        UnixDomainSockets.checkPermission();
         UnixDomainSocketAddress usa = UnixDomainSockets.checkAddress(sa);
         return usa;
     }

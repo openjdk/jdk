@@ -272,10 +272,9 @@ public class Bind {
             }
         );
 
-        // bind and connect to name of max size
+        // bind and connect to name of close to max size
         checkNormal(() -> {
-            int len = Integer.parseInt(System.getProperty("jdk.nio.channels.unixdomain.maxnamelength"));
-            System.out.printf("jdk.nio.channels.unixdomain.maxnamelength = %d\n", len);
+            int len = 100;
             char[] chars = new char[len];
             Arrays.fill(chars, 'x');
             String name = new String(chars);

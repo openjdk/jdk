@@ -74,14 +74,12 @@ public class Security {
     public static void main(String[] args) throws Exception {
         try {
            SocketChannel.open(UNIX);
-       }
-       catch (UnsupportedOperationException e) {}
-
-        int namelen = Integer.parseInt(System.getProperty("jdk.nio.channels.unixdomain.maxnamelength"));
-        if (namelen == -1) {
+        }
+        catch (UnsupportedOperationException e) {
             System.out.println("Unix domain not supported");
             return;
         }
+
         String policy = args[0];
         switch (policy) {
             case "policy1":

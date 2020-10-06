@@ -35,6 +35,8 @@ import java.net.StandardSocketOptions;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collections;
@@ -90,29 +92,22 @@ public class UnixDomainServerSocketChannelImpl
         return (T) Net.getSocketOption(getFD(), Net.UNSPEC, name);
     }
 
-    private static class DefaultOptionsHolder {
-        static final Set<SocketOption<?>> defaultOptions = defaultOptions();
-
-        private static Set<SocketOption<?>> defaultOptions() {
-            HashSet<SocketOption<?>> set = new HashSet<>();
-            set.add(StandardSocketOptions.SO_RCVBUF);
-            return Collections.unmodifiableSet(set);
-        }
-    }
+    private static Set<SocketOption<?>> supportedOptions =
+        Collections.unmodifiableSet(Set.of(StandardSocketOptions.SO_RCVBUF));
 
     @Override
     public final Set<SocketOption<?>> supportedOptions() {
-        return DefaultOptionsHolder.defaultOptions;
+        return supportedOptions;
     }
 
     @Override
     public SocketAddress implBind(SocketAddress local, int backlog) throws IOException {
         boolean found = false;
 
-        UnixDomainSockets.checkCapability();
+        UnixDomainSockets.checkPermission();
 
-        // Attempt up to 10 times to find an unused name in temp directory
-        // Unlikely to fail
+        // Attempt up to 10 times to find an unused name in temp directory.
+        // If local address supplied then bind called only once
         for (int i = 0; i < 10; i++) {
             UnixDomainSocketAddress usa = null;
             if (local == null) {
@@ -131,7 +126,7 @@ public class UnixDomainServerSocketChannelImpl
             }
         }
         if (!found)
-            throw new IOException("could not bind to temporary name");
+            throw new BindException("Could not bind to temporary name");
         Net.listen(getFD(), backlog < 1 ? 50 : backlog);
         return UnixDomainSockets.localAddress(getFD());
     }
@@ -148,20 +143,26 @@ public class UnixDomainServerSocketChannelImpl
 
     /**
      * Return a possible temporary name to bind to, which is different for each call
-     * Name is of the form <temp dir>/niosocket_<pid>_<random>
+     * Name is of the form <temp dir>/socket_<random>
      */
     private static UnixDomainSocketAddress getTempName() throws IOException {
+        String dir = UnixDomainSockets.tempDir;
+        if (dir == null)
+            throw new BindException("Could not locate temporary directory for sockets");
         int rnd = random.nextInt(Integer.MAX_VALUE);
-        StringBuilder sb = new StringBuilder();
-        sb.append(UnixDomainSockets.tempDir).append("/niosocket_").append(rnd);
-        return UnixDomainSocketAddress.of(sb.toString());
+        try {
+            Path path = Path.of(dir, "socket_" + Integer.toString(rnd));
+            return UnixDomainSocketAddress.of(path);
+        } catch (InvalidPathException e) {
+            throw new BindException("Invalid temporary directory");
+        }
     }
 
     @Override
     protected int implAccept(FileDescriptor fd, FileDescriptor newfd, SocketAddress[] addrs)
         throws IOException
     {
-        UnixDomainSockets.checkCapability();
+        UnixDomainSockets.checkPermission();
         String[] addrArray = new String[1];
         int n = UnixDomainSockets.accept(fd, newfd, addrArray);
         if (n > 0) {
@@ -187,7 +188,7 @@ public class UnixDomainServerSocketChannelImpl
             sb.append("closed");
         } else {
             UnixDomainSocketAddress addr = (UnixDomainSocketAddress) localAddress();
-            if (addr == null) { // TODO: ???
+            if (addr == null) {
                 sb.append("unbound");
             } else {
                 sb.append(getRevealedLocalAddressAsString(addr));

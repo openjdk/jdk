@@ -45,10 +45,9 @@ public class IOExchanges {
 
     @BeforeTest()
     public void setup() {
-        try {SocketChannel.open(UNIX); }
-           catch (IOException | UnsupportedOperationException e) {}
-        int namelen = Integer.parseInt(System.getProperty("jdk.nio.channels.unixdomain.maxnamelength"));
-        if (namelen == -1) {
+        try {
+            SocketChannel.open(UNIX);
+        } catch (IOException | UnsupportedOperationException e) {
             supported = false;
             out.println("Unix domain channels not supported");
         }

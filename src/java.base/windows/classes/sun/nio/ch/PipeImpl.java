@@ -61,8 +61,8 @@ class PipeImpl
     private static final Random RANDOM_NUMBER_GENERATOR = new SecureRandom();
 
     // Source and sink channels
-    private SourceChannel source;
-    private SinkChannel sink;
+    private SourceChannelImpl source;
+    private SinkChannelImpl sink;
 
     private class Initializer
         implements PrivilegedExceptionAction<Void>
@@ -151,10 +151,6 @@ class PipeImpl
                     // Create source and sink channels
                     source = new SourceChannelImpl(sp, sc1);
                     sink = new SinkChannelImpl(sp, sc2);
-                    if (sc2 instanceof InetSocketChannelImpl) {
-                        var isc = (InetSocketChannelImpl)sc2;
-                        isc.setOption(StandardSocketOptions.TCP_NODELAY, true);
-                    }
                 } catch (IOException e) {
                     try {
                         if (sc1 != null)
@@ -176,8 +172,20 @@ class PipeImpl
     }
 
     PipeImpl(final SelectorProvider sp) throws IOException {
+        this(sp, true);
+    }
+
+    // if buffering is false and TCP sockets being used, then TCP_NODELAY
+    // is set on the sink channel.
+
+    PipeImpl(final SelectorProvider sp, boolean buffering) throws IOException {
         try {
             AccessController.doPrivileged(new Initializer(sp));
+            SocketChannel sc = sink.channel();
+            if (!buffering && (sc instanceof InetSocketChannelImpl)) {
+                var isc = (InetSocketChannelImpl)sc;
+                isc.setOption(StandardSocketOptions.TCP_NODELAY, true);
+            }
         } catch (PrivilegedActionException x) {
             throw (IOException)x.getCause();
         }

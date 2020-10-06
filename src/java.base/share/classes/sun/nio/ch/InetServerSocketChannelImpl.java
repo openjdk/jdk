@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
 import java.net.StandardProtocolFamily;
+import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
@@ -51,6 +52,9 @@ class InetServerSocketChannelImpl
 {
     // the protocol family requested by the user, or Net.UNSPEC if not specified
     private final ProtocolFamily family;
+
+    // Our socket adaptor, if any
+    private ServerSocket socket;
 
     // set true when exclusive binding is on and SO_REUSEADDR is emulated
     private boolean isReuseAddress;
@@ -156,6 +160,13 @@ class InetServerSocketChannelImpl
         Net.bind(family, getFD(), isa.getAddress(), isa.getPort());
         Net.listen(getFD(), backlog < 1 ? 50 : backlog);
         return Net.localAddress(getFD());
+    }
+
+    @Override
+    ServerSocket implSocket() {
+        if (socket == null)
+            socket = ServerSocketAdaptor.create(this);
+        return socket;
     }
 
     @Override

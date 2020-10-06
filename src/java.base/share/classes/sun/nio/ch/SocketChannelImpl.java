@@ -54,7 +54,7 @@ import sun.net.NetHooks;
 import sun.net.util.SocketExceptions;
 
 /**
- * An implementation of SocketChannels
+ * Base implementation of SocketChannels
  */
 
 abstract class SocketChannelImpl
@@ -102,9 +102,6 @@ abstract class SocketChannelImpl
     // Binding
     private SocketAddress localAddress;
     private SocketAddress remoteAddress;
-
-    // Socket adaptor, created on demand
-    private Socket socket;
 
     // -- End of fields protected by stateLock
 
@@ -178,10 +175,13 @@ abstract class SocketChannelImpl
     @Override
     public Socket socket() {
         synchronized (stateLock) {
-            if (socket == null)
-                socket = SocketAdaptor.create((InetSocketChannelImpl)this);
-            return socket;
+            return implSocket();
         }
+    }
+
+    // Override when supported
+    Socket implSocket() {
+        throw new UnsupportedOperationException("socket not supported");
     }
 
     @Override

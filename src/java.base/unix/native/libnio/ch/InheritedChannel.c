@@ -34,6 +34,7 @@
 #include "jni.h"
 #include "jni_util.h"
 #include "net_util.h"
+#include "nio_util.h"
 
 #include "sun_nio_ch_InheritedChannel.h"
 
@@ -74,7 +75,7 @@ Java_sun_nio_ch_InheritedChannel_peerAddressUnix0(JNIEnv *env, jclass cla, jint 
 
     if (getpeername(fd, (struct sockaddr *)&sa, &len) == 0) {
         if (sa.sun_family == AF_UNIX) {
-            remote_sa = NET_SockaddrToUnixAddressBytes(env, &sa, len);
+            remote_sa = sockaddrToUnixAddressBytes(env, &sa, len);
         }
     }
     return remote_sa;

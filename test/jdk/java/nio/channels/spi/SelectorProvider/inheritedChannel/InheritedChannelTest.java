@@ -75,17 +75,16 @@ public class InheritedChannelTest {
     public Object[][] testCases() {
         return new Object[][] {
             { "UnixDomainChannelTest", List.of(UnixDomainChannelTest.class.getName())},
-            //{ "UnixSocketTest", List.of(UnixSocketTest.class.getName())},
-            //{ "StateTest", List.of(StateTest.class.getName()) },
-            //{ "EchoTest",  List.of(EchoTest.class.getName())  },
-            //{ "CloseTest", List.of(CloseTest.class.getName()) },
+            { "UnixSocketTest", List.of(UnixSocketTest.class.getName())},
+            { "StateTest", List.of(StateTest.class.getName()) },
+            { "EchoTest",  List.of(EchoTest.class.getName())  },
+            { "CloseTest", List.of(CloseTest.class.getName()) },
 
             // run StateTest with a SecurityManager set
             // Note that the system properties are arguments to StateTest and not options.
             // These system properties are passed to the launched service as options:
             // java [-options] class [args...]
 
-/*
             { "StateTest run with " + POLICY_PASS, List.of(StateTest.class.getName(),
                                                            "-Djava.security.manager",
                                                            "-Djava.security.policy="
@@ -97,7 +96,6 @@ public class InheritedChannelTest {
                                                            "-Djava.security.policy="
                                                            + POLICY_FAIL)
             }
-*/
         };
     }
 

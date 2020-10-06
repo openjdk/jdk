@@ -127,10 +127,10 @@ public final class UnixDomainSocketAddress extends SocketAddress {
     private UnixDomainSocketAddress(Path path) {
         FileSystem fs = path.getFileSystem();
         if (fs != FileSystems.getDefault()) {
-            throw new IllegalArgumentException(); // fix message
+            throw new IllegalArgumentException();
         }
         if (fs.getClass().getModule() != Object.class.getModule()) {
-            throw new IllegalArgumentException();  // fix message
+            throw new IllegalArgumentException();
         }
         this.path = path;
     }
@@ -145,6 +145,8 @@ public final class UnixDomainSocketAddress extends SocketAddress {
      *
      * @throws InvalidPathException
      *         If the path cannot be converted to a Path
+     *
+     * @throws NullPointerException if pathname is {@code null}
      */
     public static UnixDomainSocketAddress of(String pathname) {
         return of(Path.of(pathname));
@@ -160,6 +162,8 @@ public final class UnixDomainSocketAddress extends SocketAddress {
      *
      * @throws IllegalArgumentException
      *         If the path is not associated with the default file system
+     *
+     * @throws NullPointerException if path is {@code null}
      */
     public static UnixDomainSocketAddress of(Path path) {
         return new UnixDomainSocketAddress(path);
@@ -189,7 +193,7 @@ public final class UnixDomainSocketAddress extends SocketAddress {
      */
     @Override
     public boolean equals(Object o) {
-        if (! (o instanceof UnixDomainSocketAddress))
+        if (!(o instanceof UnixDomainSocketAddress))
             return false;
         UnixDomainSocketAddress that = (UnixDomainSocketAddress)o;
         return this.path.equals(that.path);

@@ -31,6 +31,7 @@ import java.net.InetAddress;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
+import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.StandardProtocolFamily;
@@ -51,6 +52,9 @@ class InetSocketChannelImpl extends SocketChannelImpl
 {
     // the protocol family of the socket
     private final ProtocolFamily family;
+
+    // Socket adaptor, created on demand
+    private Socket socket;
 
     // set true when exclusive binding is on and SO_REUSEADDR is emulated
     private boolean isReuseAddress;
@@ -245,6 +249,13 @@ class InetSocketChannelImpl extends SocketChannelImpl
         } else {
             return isa;
         }
+    }
+
+    @Override
+    Socket implSocket() {
+        if (socket == null)
+            socket = SocketAdaptor.create(this);
+        return socket;
     }
 
     @Override

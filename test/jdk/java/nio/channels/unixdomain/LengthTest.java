@@ -43,16 +43,14 @@ import java.nio.file.Path;
 
 public class LengthTest {
     static boolean supported = true;
-    volatile int namelen;
+    final int namelen = 100;    // length close to max
 
     @BeforeTest
     public void setup() {
         try {
             SocketChannel.open(UNIX);
         }
-        catch (IOException | UnsupportedOperationException e) {}
-        namelen = Integer.parseInt(System.getProperty("jdk.nio.channels.unixdomain.maxnamelength"));
-        if (namelen == -1) {
+        catch (IOException | UnsupportedOperationException e) {
             supported = false;
             out.println("Unix domain channels not supported. Test not run.");
         }

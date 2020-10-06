@@ -64,6 +64,10 @@ class SinkChannelImpl
             kill();
     }
 
+    SocketChannel channel() {
+        return sc;
+    }
+
     public void kill() throws IOException {
         sc.close();
     }

@@ -38,8 +38,7 @@
 #include "sun_nio_ch_Net.h"
 #include "sun_nio_ch_PollArrayWrapper.h"
 
-JNIEXPORT jbyteArray JNICALL
-NET_SockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, socklen_t len) {
+jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, socklen_t len) {
 
     if (sa->sun_family == AF_UNIX) {
         int namelen = (int)strlen(sa->sun_path);
@@ -52,8 +51,7 @@ NET_SockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, socklen_t le
     return NULL;
 }
 
-JNIEXPORT jint JNICALL
-NET_UnixSocketAddressToSockaddr(JNIEnv *env, jbyteArray addr, struct sockaddr_un *sa, int *len)
+jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray addr, struct sockaddr_un *sa, int *len)
 {
     memset(sa, 0, sizeof(struct sockaddr_un));
     sa->sun_family = AF_UNIX;
@@ -109,7 +107,7 @@ Java_sun_nio_ch_UnixDomainSockets_socket0(JNIEnv *env, jclass cl)
 }
 
 /**
- * Windows does not support auto bind. So, the windows version of NET_UnixSocketAddressToSockaddr
+ * Windows does not support auto bind. So, the windows version of unixSocketAddressToSockaddr
  * looks out for a null 'uaddr' and handles it specially
  */
 JNIEXPORT void JNICALL
@@ -119,7 +117,7 @@ Java_sun_nio_ch_UnixDomainSockets_bind0(JNIEnv *env, jclass clazz, jobject fdo, 
     int sa_len = 0;
     int rv = 0;
 
-    if (NET_UnixSocketAddressToSockaddr(env, addr, &sa, &sa_len) != 0)
+    if (unixSocketAddressToSockaddr(env, addr, &sa, &sa_len) != 0)
         return;
 
     int fd = fdval(env, fdo);
@@ -138,7 +136,7 @@ Java_sun_nio_ch_UnixDomainSockets_connect0(JNIEnv *env, jclass clazz, jobject fd
     int sa_len = 0;
     int rv;
 
-    if (NET_UnixSocketAddressToSockaddr(env, addr, &sa, &sa_len) != 0) {
+    if (unixSocketAddressToSockaddr(env, addr, &sa, &sa_len) != 0) {
         return IOS_THROWN;
     }
 
@@ -178,7 +176,7 @@ Java_sun_nio_ch_UnixDomainSockets_accept0(JNIEnv *env, jclass clazz, jobject fdo
     SetHandleInformation((HANDLE)(UINT_PTR)newfd, HANDLE_FLAG_INHERIT, 0);
     setfdval(env, newfdo, newfd);
 
-    usa = NET_SockaddrToUnixAddressBytes(env, &sa, sa_len);
+    usa = sockaddrToUnixAddressBytes(env, &sa, sa_len);
     CHECK_NULL_RETURN(usa, IOS_THROWN);
 
     (*env)->SetObjectArrayElement(env, usaa, 0, usa);
@@ -193,10 +191,10 @@ Java_sun_nio_ch_UnixDomainSockets_localAddress0(JNIEnv *env, jclass clazz, jobje
     int sa_len = sizeof(sa);
 
     if (getsockname(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) == SOCKET_ERROR) {
-        NET_ThrowNew(env, WSAGetLastError(), "getsockname");
+        JNU_ThrowIOExceptionWithLastError(env, "getsockname");
         return NULL;
     }
-    return NET_SockaddrToUnixAddressBytes(env, &sa, sa_len);
+    return sockaddrToUnixAddressBytes(env, &sa, sa_len);
 }
 
 JNIEXPORT jbyteArray JNICALL
@@ -206,8 +204,8 @@ Java_sun_nio_ch_UnixDomainSockets_remoteAddress0(JNIEnv *env, jclass clazz, jobj
     int sa_len = sizeof(sa);
 
     if (getpeername(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) == SOCKET_ERROR) {
-        NET_ThrowNew(env, WSAGetLastError(), "getsockname");
+        JNU_ThrowIOExceptionWithLastError(env, "getpeername");
         return NULL;
     }
-    return NET_SockaddrToUnixAddressBytes(env, &sa, sa_len);
+    return sockaddrToUnixAddressBytes(env, &sa, sa_len);
 }

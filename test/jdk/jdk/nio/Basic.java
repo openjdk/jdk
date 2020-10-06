@@ -265,20 +265,11 @@ public class Basic {
     }
 
     private static FileDescriptor getFD(SocketChannel sc) {
-        return getFD1(sc, sc.getClass());
-    }
-
-    private static FileDescriptor getFD1(SocketChannel sc, Class<?> clazz) {
         try {
+            Class<?> clazz = Class.forName("sun.nio.ch.SocketChannelImpl");
             Field f = clazz.getDeclaredField("fd");
             f.setAccessible(true);
             return (FileDescriptor) f.get(sc);
-        } catch (NoSuchFieldException e1) {
-            Class<?> superclass = clazz.getSuperclass();
-            if (superclass == null)
-                throw new Error(e1);
-            else
-                return getFD1(sc, superclass);
         } catch (Exception e) {
             throw new Error(e);
         }

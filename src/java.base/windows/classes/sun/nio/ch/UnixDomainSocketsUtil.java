@@ -27,9 +27,7 @@ package sun.nio.ch;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.net.NetProperties;
@@ -52,24 +50,18 @@ class UnixDomainSocketsUtil {
      * 4. ${java.io.tmpdir}
      *
      */
-    static Path getTempDir() {
-        PrivilegedAction<Path> action = () -> {
-            try {
-                String s = NetProperties.get("jdk.nio.unixdomain.tmpdir");
-                if (s != null) {
-                    return Path.of(s);
-                }
-                String temp = System.getenv("TEMP");
-                if (temp != null) {
-                    Path p = Path.of(temp);
-                    if (Files.exists(p)) {
-                        return p;
-                    }
-                }
-                return Path.of(System.getProperty("java.io.tmpdir"));
-            } catch (InvalidPathException ipe) {
-                return null;
+    static String getTempDir() {
+        PrivilegedAction<String> action = () -> {
+            String s = NetProperties.get("jdk.nio.unixdomain.tmpdir");
+            if (s != null) {
+                return s;
             }
+
+            String temp = System.getenv("TEMP");
+            if (temp != null) {
+                return temp;
+            }
+            return System.getProperty("java.io.tmpdir");
         };
         return AccessController.doPrivileged(action);
     }
