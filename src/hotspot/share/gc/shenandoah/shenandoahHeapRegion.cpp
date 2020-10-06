@@ -628,7 +628,7 @@ void ShenandoahHeapRegion::do_commit() {
 
 void ShenandoahHeapRegion::do_uncommit() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!heap->is_heap_region_special() && !os::uncommit_memory((char *) bottom(), RegionSizeBytes, !ExecMem)) {
+  if (!heap->is_heap_region_special() && !os::uncommit_memory((char *) bottom(), RegionSizeBytes)) {
     report_java_out_of_memory("Unable to uncommit region");
   }
   if (!heap->uncommit_bitmap_slice(this)) {
