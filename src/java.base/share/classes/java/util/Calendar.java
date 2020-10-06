@@ -1796,8 +1796,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param date the given Date.
      * @see #getTime()
      * @see #setTimeInMillis(long)
+     * @throws NullPointerException if {@code date} is {@code null}
      */
     public final void setTime(Date date) {
+        Objects.requireNonNull(date, "date must not be null");
         setTimeInMillis(date.getTime());
     }
 

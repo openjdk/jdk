@@ -162,10 +162,6 @@ class Universe: AllStatic {
   // otherwise return the given default error.
   static oop        gen_out_of_memory_error(oop default_err);
 
-  // Historic gc information
-  static size_t _heap_capacity_at_last_gc;
-  static size_t _heap_used_at_last_gc;
-
   static OopStorage* _vm_weak;
   static OopStorage* _vm_global;
 
@@ -236,7 +232,6 @@ class Universe: AllStatic {
 
   static oop java_mirror(BasicType t);
   static void replace_mirror(BasicType t, oop obj);
-  static void clear_basic_type_mirrors();
 
   static oop      main_thread_group();
   static void set_main_thread_group(oop group);
@@ -309,11 +304,6 @@ class Universe: AllStatic {
   // Reserve Java heap and determine CompressedOops mode
   static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
 
-  // Historic gc information
-  static size_t get_heap_free_at_last_gc()             { return _heap_capacity_at_last_gc - _heap_used_at_last_gc; }
-  static size_t get_heap_used_at_last_gc()             { return _heap_used_at_last_gc; }
-  static void update_heap_info_at_gc();
-
   // Global OopStorages
   static OopStorage* vm_weak();
   static OopStorage* vm_global();
@@ -366,8 +356,6 @@ class Universe: AllStatic {
   static int  verify_count()       { return _verify_count; }
   static void print_on(outputStream* st);
   static void print_heap_at_SIGBREAK();
-  static void print_heap_before_gc();
-  static void print_heap_after_gc();
 
   // Change the number of dummy objects kept reachable by the full gc dummy
   // array; this should trigger relocation in a sliding compaction collector.

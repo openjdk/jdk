@@ -237,7 +237,7 @@ void ShenandoahControlThread::run_service() {
         // Notify Universe about new heap usage. This has implications for
         // global soft refs policy, and we better report it every time heap
         // usage goes down.
-        Universe::update_heap_info_at_gc();
+        Universe::heap()->update_capacity_and_used_at_gc();
 
         // Signal that we have completed a visit to all live objects.
         Universe::heap()->record_whole_heap_examined_timestamp();

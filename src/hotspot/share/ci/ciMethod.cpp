@@ -1241,7 +1241,7 @@ bool ciMethod::has_unloaded_classes_in_signature() {
   {
     EXCEPTION_MARK;
     methodHandle m(THREAD, get_Method());
-    bool has_unloaded = Method::has_unloaded_classes_in_signature(m, (JavaThread *)THREAD);
+    bool has_unloaded = Method::has_unloaded_classes_in_signature(m, thread);
     if( HAS_PENDING_EXCEPTION ) {
       CLEAR_PENDING_EXCEPTION;
       return true;     // Declare that we may have unloaded classes

@@ -87,7 +87,7 @@ static void grow_from_back_callback(const ZMemory* area, size_t size) {
   coalesce_into_one_placeholder(area->start(), area->size() + size);
 }
 
-void ZVirtualMemoryManager::initialize_os() {
+void ZVirtualMemoryManager::pd_initialize() {
   // Each reserved virtual memory address area registered in _manager is
   // exactly covered by a single placeholder. Callbacks are installed so
   // that whenever a memory area changes, the corresponding placeholder
@@ -116,34 +116,13 @@ void ZVirtualMemoryManager::initialize_os() {
   _manager.register_callbacks(callbacks);
 }
 
-bool ZVirtualMemoryManager::reserve_contiguous_platform(uintptr_t start, size_t size) {
-  assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
+bool ZVirtualMemoryManager::pd_reserve(uintptr_t addr, size_t size) {
+  uintptr_t res = ZMapper::reserve(addr, size);
 
-  // Reserve address views
-  const uintptr_t marked0 = ZAddress::marked0(start);
-  const uintptr_t marked1 = ZAddress::marked1(start);
-  const uintptr_t remapped = ZAddress::remapped(start);
+  assert(res == addr || res == NULL, "Should not reserve other memory than requested");
+  return res == addr;
+}
 
-  // Reserve address space
-  if (ZMapper::reserve(marked0, size) != marked0) {
-    return false;
-  }
-
-  if (ZMapper::reserve(marked1, size) != marked1) {
-    ZMapper::unreserve(marked0, size);
-    return false;
-  }
-
-  if (ZMapper::reserve(remapped, size) != remapped) {
-    ZMapper::unreserve(marked0, size);
-    ZMapper::unreserve(marked1, size);
-    return false;
-  }
-
-  // Register address views with native memory tracker
-  nmt_reserve(marked0, size);
-  nmt_reserve(marked1, size);
-  nmt_reserve(remapped, size);
-
-  return true;
+void ZVirtualMemoryManager::pd_unreserve(uintptr_t addr, size_t size) {
+  ZMapper::unreserve(addr, size);
 }

@@ -41,8 +41,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
@@ -553,6 +552,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseNewFieldLayout",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseSemaphoreGCThreadsSynchronization", JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "ForceNUMA",                     JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "InsertMemBarAfterArraycopy",    JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "Debugging",                     JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
@@ -876,7 +877,7 @@ void Arguments::describe_range_error(ArgsRange errcode) {
 }
 
 static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlag::Flags origin) {
-  if (JVMFlag::boolAtPut(flag, &value, origin) == JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::boolAtPut(flag, &value, origin) == JVMFlag::SUCCESS) {
     return true;
   } else {
     return false;
@@ -891,7 +892,7 @@ static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origi
     return false;
   }
 
-  if (JVMFlag::doubleAtPut(flag, &v, origin) == JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::doubleAtPut(flag, &v, origin) == JVMFlag::SUCCESS) {
     return true;
   }
   return false;
@@ -923,35 +924,35 @@ static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origin) 
     if (is_neg) {
       int_v = -int_v;
     }
-    return JVMFlag::intAtPut(flag, &int_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::intAtPut(flag, &int_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint()) {
     uint uint_v = (uint) v;
-    return JVMFlag::uintAtPut(flag, &uint_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::uintAtPut(flag, &uint_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_intx()) {
     intx_v = (intx) v;
     if (is_neg) {
       intx_v = -intx_v;
     }
-    return JVMFlag::intxAtPut(flag, &intx_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::intxAtPut(flag, &intx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uintx()) {
     uintx uintx_v = (uintx) v;
-    return JVMFlag::uintxAtPut(flag, &uintx_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::uintxAtPut(flag, &uintx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint64_t()) {
     uint64_t uint64_t_v = (uint64_t) v;
-    return JVMFlag::uint64_tAtPut(flag, &uint64_t_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::uint64_tAtPut(flag, &uint64_t_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_size_t()) {
     size_t size_t_v = (size_t) v;
-    return JVMFlag::size_tAtPut(flag, &size_t_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::size_tAtPut(flag, &size_t_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_double()) {
     double double_v = (double) v;
-    return JVMFlag::doubleAtPut(flag, &double_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::doubleAtPut(flag, &double_v, origin) == JVMFlag::SUCCESS;
   } else {
     return false;
   }
 }
 
 static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlag::Flags origin) {
-  if (JVMFlag::ccstrAtPut(flag, &value, origin) != JVMFlag::SUCCESS) return false;
+  if (JVMFlagAccess::ccstrAtPut(flag, &value, origin) != JVMFlag::SUCCESS) return false;
   // Contract:  JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
   return true;
@@ -959,7 +960,7 @@ static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlag::Flags ori
 
 static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlag::Flags origin) {
   const char* old_value = "";
-  if (JVMFlag::ccstrAt(flag, &old_value) != JVMFlag::SUCCESS) return false;
+  if (JVMFlagAccess::ccstrAt(flag, &old_value) != JVMFlag::SUCCESS) return false;
   size_t old_len = old_value != NULL ? strlen(old_value) : 0;
   size_t new_len = strlen(new_value);
   const char* value;
@@ -976,7 +977,7 @@ static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlag:
     value = buf;
     free_this_too = buf;
   }
-  (void) JVMFlag::ccstrAtPut(flag, &value, origin);
+  (void) JVMFlagAccess::ccstrAtPut(flag, &value, origin);
   // JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
   // JVMFlag made its own copy, so I must delete my own temp. buffer.
@@ -1354,7 +1355,7 @@ bool Arguments::process_argument(const char* arg,
       jio_fprintf(defaultStream::error_stream(),
                   "Did you mean '%s%s%s'? ",
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
-                  fuzzy_matched->_name,
+                  fuzzy_matched->name(),
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
     }
   }
@@ -1458,7 +1459,14 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
   if (is_internal_module_property(key) ||
       strcmp(key, "jdk.module.main") == 0) {
     MetaspaceShared::disable_optimized_module_handling();
-    log_info(cds)("Using optimized module handling disabled due to incompatible property: %s=%s", key, value);
+    log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
+  }
+  if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
+      strcmp(key, "jdk.module.illegalAccess") == 0 ||
+      strcmp(key, "jdk.module.validation") == 0 ||
+      strcmp(key, "java.system.class.loader") == 0) {
+    MetaspaceShared::disable_full_module_graph();
+    log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
   }
 #endif
 
@@ -2507,7 +2515,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       Arguments::append_sysclasspath(tail);
 #if INCLUDE_CDS
       MetaspaceShared::disable_optimized_module_handling();
-      log_info(cds)("Using optimized module handling disabled due to bootclasspath was appended");
+      log_info(cds)("optimized module handling: disabled because bootclasspath was appended");
 #endif
     // -bootclasspath/p:
     } else if (match_option(option, "-Xbootclasspath/p:", &tail)) {
@@ -3897,10 +3905,7 @@ bool Arguments::handle_deprecated_print_gc_flags() {
 
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   assert(verify_special_jvm_flags(false), "deprecated and obsolete flag table inconsistent");
-
-  // Initialize ranges and constraints
-  JVMFlagRangeList::init();
-  JVMFlagConstraintList::init();
+  JVMFlag::check_all_flag_declarations();
 
   // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
   const char* hotspotrc = ".hotspotrc";

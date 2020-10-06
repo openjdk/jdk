@@ -134,6 +134,10 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 
       WARNINGS_ENABLE_ALL="-W3"
       DISABLED_WARNINGS="4800"
+      if test "x$TOOLCHAIN_VERSION" = x2017; then
+        # VS2017 incorrectly triggers this warning for constexpr
+        DISABLED_WARNINGS+=" 4307"
+      fi
       ;;
 
     gcc)
@@ -662,7 +666,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 
   # toolchain dependend, per-cpu
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    if test "x$FLAGS_CPU" = xx86_64; then
+    if test "x$FLAGS_CPU" = xaarch64; then
+      $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_ARM64_ -Darm64"
+    elif test "x$FLAGS_CPU" = xx86_64; then
       $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_AMD64_ -Damd64"
     else
       $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_X86_ -Dx86"

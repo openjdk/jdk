@@ -189,7 +189,7 @@ public class Processor extends AbstractProcessor {
         }
 
         @Override public boolean isNameCompatible(String simpleName, Kind kind) {
-            return true;
+            return simpleName.equals("Source") && kind == Kind.SOURCE;
         }
     }
 

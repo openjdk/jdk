@@ -208,14 +208,19 @@ public class LinkInfoImpl extends LinkInfo {
         PROPERTY_COPY,
 
         /**
-         * A receiver type
+         * A receiver type.
          */
         RECEIVER_TYPE,
 
         /**
-         * A record component within a class signature
+         * A record component within a class signature.
          */
-        RECORD_COMPONENT
+        RECORD_COMPONENT,
+
+        /**
+         * A type thrown from a method.
+         */
+        THROWS_TYPE
     }
 
     public final HtmlConfiguration configuration;
@@ -389,9 +394,8 @@ public class LinkInfoImpl extends LinkInfo {
 
             case RETURN_TYPE:
             case SUMMARY_RETURN_TYPE:
-                excludeTypeBounds = true;
-                break;
             case EXECUTABLE_MEMBER_PARAM:
+            case THROWS_TYPE:
                 excludeTypeBounds = true;
                 break;
         }

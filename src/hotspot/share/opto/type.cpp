@@ -62,12 +62,14 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ARRAY,      "array:",        false, Node::NotAMachineReg, relocInfo::none          },  // Array
 
 #if defined(PPC64)
+  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
   { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX,              relocInfo::none          },  // VectorX
   { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
   { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
 #elif defined(S390)
+  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
   { Bad,             T_ILLEGAL,    "vectorx:",      false, 0,                    relocInfo::none          },  // VectorX
@@ -248,7 +250,7 @@ const Type* Type::make_from_constant(ciConstant constant, bool require_constant,
           guarantee(require_constant || oop_constant->should_be_constant(), "con_type must get computed");
           con_type = TypeOopPtr::make_from_constant(oop_constant, require_constant);
           if (Compile::current()->eliminate_boxing() && is_autobox_cache) {
-            con_type = con_type->is_aryptr()->cast_to_autobox_cache(true);
+            con_type = con_type->is_aryptr()->cast_to_autobox_cache();
           }
           if (stable_dimension > 0) {
             assert(FoldStableValues, "sanity");
@@ -4201,15 +4203,14 @@ int TypeAryPtr::stable_dimension() const {
 }
 
 //----------------------cast_to_autobox_cache-----------------------------------
-const TypeAryPtr* TypeAryPtr::cast_to_autobox_cache(bool cache) const {
-  if (is_autobox_cache() == cache)  return this;
+const TypeAryPtr* TypeAryPtr::cast_to_autobox_cache() const {
+  if (is_autobox_cache())  return this;
   const TypeOopPtr* etype = elem()->make_oopptr();
   if (etype == NULL)  return this;
   // The pointers in the autobox arrays are always non-null.
-  TypePtr::PTR ptr_type = cache ? TypePtr::NotNull : TypePtr::AnyNull;
   etype = etype->cast_to_ptr_type(TypePtr::NotNull)->is_oopptr();
   const TypeAry* new_ary = TypeAry::make(etype, size(), is_stable());
-  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth, cache);
+  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth, /*is_autobox_cache=*/true);
 }
 
 //------------------------------eq---------------------------------------------

@@ -283,7 +283,6 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
         ik->is_shared_app_class())) {
     // Archiving resolved references for classes from non-builtin loaders
     // is not yet supported.
-    set_resolved_references(OopHandle());
     return;
   }
 
@@ -316,7 +315,6 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
     // resolved references will be created using the normal process
     // when there is no archived value.
     _cache->set_archived_references(archived);
-    set_resolved_references(OopHandle());
   }
 }
 
@@ -396,15 +394,7 @@ void ConstantPool::remove_unshareable_info() {
   // at runtime.
   set_resolved_reference_length(
     resolved_references() != NULL ? resolved_references()->length() : 0);
-
-  // If archiving heap objects is not allowed, clear the resolved references.
-  // Otherwise, it is cleared after the resolved references array is cached
-  // (see archive_resolved_references()).
-  // If DynamicDumpSharedSpaces is enabled, clear the resolved references also
-  // as java objects are not archived in the top layer.
-  if (!HeapShared::is_heap_object_archiving_allowed() || DynamicDumpSharedSpaces) {
-    set_resolved_references(OopHandle());
-  }
+  set_resolved_references(OopHandle());
 
   // Shared ConstantPools are in the RO region, so the _flags cannot be modified.
   // The _on_stack flag is used to prevent ConstantPools from deallocation during
@@ -492,8 +482,7 @@ void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Kla
 
 Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
                                    bool save_resolution_error, TRAPS) {
-  assert(THREAD->is_Java_thread(), "must be a Java thread");
-  JavaThread* javaThread = (JavaThread*)THREAD;
+  JavaThread* javaThread = THREAD->as_Java_thread();
 
   // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
   // It is not safe to rely on the tag bit's here, since we don't have a lock, and

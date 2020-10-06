@@ -457,7 +457,7 @@ JVM_handle_bsd_signal(int sig,
   if (os::Bsd::signal_handlers_are_installed) {
     if (t != NULL ){
       if(t->is_Java_thread()) {
-        thread = (JavaThread*)t;
+        thread = t->as_Java_thread();
       }
       else if(t->is_VM_thread()){
         vmthread = (VMThread *)t;
@@ -791,7 +791,7 @@ bool os::is_allocatable(size_t bytes) {
     return true;
   }
 
-  char* addr = reserve_memory(bytes, NULL);
+  char* addr = reserve_memory(bytes);
 
   if (addr != NULL) {
     release_memory(addr, bytes);

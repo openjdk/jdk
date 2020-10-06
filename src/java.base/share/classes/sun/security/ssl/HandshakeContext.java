@@ -102,11 +102,11 @@ abstract class HandshakeContext implements ConnectionContext {
     boolean                                 isResumption;
     SSLSessionImpl                          resumingSession;
     // Session is using stateless resumption
-    boolean                                 statelessResumption = false;
+    boolean                                 statelessResumption;
 
     final Queue<Map.Entry<Byte, ByteBuffer>> delegatedActions;
-    volatile boolean                        taskDelegated = false;
-    volatile Exception                      delegatedThrown = null;
+    volatile boolean                        taskDelegated;
+    volatile Exception                      delegatedThrown;
 
     ProtocolVersion                         negotiatedProtocol;
     CipherSuite                             negotiatedCipherSuite;

@@ -206,7 +206,7 @@ jobjectRefType JNIHandles::handle_type(Thread* thread, jobject handle) {
       // Not in global storage.  Might be a local handle.
       if (is_local_handle(thread, handle) ||
           (thread->is_Java_thread() &&
-           is_frame_handle((JavaThread*)thread, handle))) {
+           is_frame_handle(thread->as_Java_thread(), handle))) {
         result = JNILocalRefType;
       }
       break;
@@ -301,7 +301,7 @@ void JNIHandles::verify() {
 bool JNIHandles::current_thread_in_native() {
   Thread* thread = Thread::current();
   return (thread->is_Java_thread() &&
-          JavaThread::current()->thread_state() == _thread_in_native);
+          thread->as_Java_thread()->thread_state() == _thread_in_native);
 }
 
 

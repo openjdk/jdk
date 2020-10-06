@@ -47,6 +47,8 @@ class CodeHeapState : public CHeapObj<mtCode> {
     // The nMethod_* values correspond to the CompiledMethod enum values.
     // We can't use the CompiledMethod values 1:1 because we depend on noType == 0.
     nMethod_inconstruction, // under construction. Very soon, the type will transition to "in_use".
+                            // can't be observed while holding Compile_lock and CodeCache_lock simultaneously.
+                            // left in here for completeness (and to document we spent a thought).
     nMethod_inuse,          // executable. This is the "normal" state for a nmethod.
     nMethod_notused,        // assumed inactive, marked not entrant. Could be revived if necessary.
     nMethod_notentrant,     // no new activations allowed, marked for deoptimization. Old activations may still exist.
@@ -95,7 +97,9 @@ class CodeHeapState : public CHeapObj<mtCode> {
   static void print_line_delim(outputStream* out, bufferedStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
   static void print_line_delim(outputStream* out, outputStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
   static blobType get_cbType(CodeBlob* cb);
-  static bool blob_access_is_safe(CodeBlob* this_blob, CodeBlob* prev_blob);
+  static bool blob_access_is_safe(CodeBlob* this_blob);
+  static bool nmethod_access_is_safe(nmethod* nm);
+  static bool holding_required_locks();
 
  public:
   static void discard(outputStream* out, CodeHeap* heap);
@@ -164,12 +168,16 @@ struct FreeBlk : public CHeapObj<mtCode> {
 //  know about those largest blocks.
 //  All TopSizeBlks of a heap segment are stored in the related TopSizeArray.
 struct TopSizeBlk : public CHeapObj<mtCode> {
-  HeapBlock*     start;       // address of block
+  HeapBlock*     start;        // address of block
+  const char*    blob_name;    // name of blob (mostly: name_and_sig of nmethod)
   unsigned int   len;          // length of block, in _segment_size units. Will never overflow int.
 
   unsigned int   index;        // ordering index, 0 is largest block
                                // contains array index of next smaller block
                                // -1 indicates end of list
+
+  unsigned int   nm_size;      // nmeethod total size (if nmethod, 0 otherwise)
+  int            temperature;  // nmethod temperature (if nmethod, 0 otherwise)
   CompLevel      level;        // optimization level (see globalDefinitions.hpp)
   u2             compiler;     // compiler which generated this blob
   u2             type;         // blob type
@@ -216,7 +224,6 @@ struct CodeHeapStat {
     unsigned int  nBlocks_t2;
     unsigned int  nBlocks_alive;
     unsigned int  nBlocks_dead;
-    unsigned int  nBlocks_inconstr;
     unsigned int  nBlocks_unloaded;
     unsigned int  nBlocks_stub;
     // FreeBlk data

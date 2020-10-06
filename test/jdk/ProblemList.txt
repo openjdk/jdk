@@ -42,7 +42,7 @@
 # List items are testnames followed by labels, all MUST BE commented
 #   as to why they are here and use a label:
 #     generic-all   Problems on all platforms
-#     generic-ARCH  Where ARCH is one of: x64, i586, ppc64, ppc64le, s390x etc.
+#     generic-ARCH  Where ARCH is one of: x64, i586, ppc64, ppc64le, s390x, aarch64 etc.
 #     OSNAME-all    Where OSNAME is one of: linux, windows, macosx, aix
 #     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. macosx-x64
 #     OSNAME-REV    Specific on to one OSNAME and REV, e.g. macosx-10.7.4
@@ -272,7 +272,6 @@ sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
 sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
 sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196185 generic-all
 
-sun/java2d/pipe/InterpolationQualityTest.java 8171303 windows-all,linux-all,macosx-all
 sun/java2d/X11SurfaceData/SharedMemoryPixmapsTest/SharedMemoryPixmapsTest.sh 8221451 linux-all
 java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469 windows-all
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8197796 generic-all
@@ -778,7 +777,6 @@ javax/swing/JFileChooser/8062561/bug8062561.java 8196466 linux-all,macosx-all
 javax/swing/JInternalFrame/Test6325652.java 8224977 macosx-all
 javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8225045 linux-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
-javax/swing/JPopupMenu/4966112/bug4966112.java 8064915 macosx-all
 javax/swing/MultiUIDefaults/Test6860438.java 8198391 generic-all
 javax/swing/UITest/UITest.java 8198392 generic-all
 javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java 8198394 generic-all
@@ -837,7 +835,6 @@ javax/swing/JMenuItem/4171437/bug4171437.java 8233641 macosx-all
 javax/swing/JMenu/4692443/bug4692443.java 8171998 macosx-all
 javax/swing/plaf/synth/7158712/bug7158712.java 8238720 windows-all
 javax/swing/plaf/basic/BasicComboPopup/JComboBoxPopupLocation/JComboBoxPopupLocation.java 8238720 windows-all
-javax/swing/plaf/basic/BasicComboPopup/7072653/bug7072653.java 8238720 windows-all
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
@@ -855,7 +852,8 @@ sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 
 # core_tools
 
-tools/jlink/JLinkReproducibleTest.java                          8217166 windows-all
+tools/jlink/JLinkReproducibleTest.java                          8217166 windows-all,linux-aarch64
+tools/jlink/JLinkReproducible3Test.java                         8253688 linux-aarch64
 tools/jlink/plugins/CompressorPluginTest.java                   8247407 generic-all
 
 ############################################################################
@@ -891,8 +889,6 @@ sun/tools/jhsdb/BasicLauncherTest.java                          8211767 linux-pp
 
 # jdk_other
 
-com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i586,macosx-all,windows-x64
-
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
 javax/script/Test7.java                                         8239361 generic-all
@@ -908,8 +904,6 @@ jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-
 ############################################################################
 
 # jdk_internal
-
-jdk/internal/platform/docker/TestDockerMemoryMetrics.java 8250984 linux-5.4.0-1019-oracle
 
 ############################################################################
 

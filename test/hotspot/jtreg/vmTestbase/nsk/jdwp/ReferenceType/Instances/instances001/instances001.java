@@ -64,8 +64,7 @@
  * @requires !vm.graal.enabled
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ReferenceType.Instances.instances001.instances001
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdwp.ReferenceType.Instances.instances001.instances001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
@@ -77,21 +76,24 @@
 
 package nsk.jdwp.ReferenceType.Instances.instances001;
 
-import java.io.*;
 import nsk.share.Consts;
-import nsk.share.jdwp.*;
-import nsk.share.jpda.AbstractDebuggeeTest;
+import nsk.share.jdwp.CommandPacket;
+import nsk.share.jdwp.JDWP;
+import nsk.share.jdwp.ReplyPacket;
+import nsk.share.jdwp.TestDebuggerType1;
+
+import java.io.PrintStream;
 
 public class instances001 extends TestDebuggerType1 {
     protected String getDebugeeClassName() {
         return nsk.jdwp.ReferenceType.Instances.instances001.instances001a.class.getName();
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
+    public static int run(String[] argv, PrintStream out) {
         return new instances001().runIt(argv, out);
     }
 

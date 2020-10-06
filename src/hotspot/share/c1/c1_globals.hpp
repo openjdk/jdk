@@ -32,17 +32,15 @@
 #include OS_HEADER(c1_globals)
 
 //
-// Defines all global flags used by the client compiler.
+// Declare all global flags used by the client compiler.
 //
-#define C1_FLAGS(develop, \
-                 develop_pd, \
-                 product, \
-                 product_pd, \
-                 diagnostic, \
-                 diagnostic_pd, \
-                 notproduct, \
-                 range, \
-                 constraint) \
+#define C1_FLAGS(develop,                                                   \
+                 develop_pd,                                                \
+                 product,                                                   \
+                 product_pd,                                                \
+                 notproduct,                                                \
+                 range,                                                     \
+                 constraint)                                                \
                                                                             \
   /* Printing */                                                            \
   notproduct(bool, PrintC1Statistics, false,                                \
@@ -158,7 +156,7 @@
   product(bool, InlineSynchronizedMethods, true,                            \
           "Inline synchronized methods")                                    \
                                                                             \
-  diagnostic(bool, InlineNIOCheckIndex, true,                               \
+  product(bool, InlineNIOCheckIndex, true, DIAGNOSTIC,                      \
           "Intrinsify java.nio.Buffer.checkIndex")                          \
                                                                             \
   develop(bool, CanonicalizeNodes, true,                                    \
@@ -337,7 +335,8 @@
           "Update MethodData*s in Tier1-generated code")                    \
                                                                             \
   develop(bool, PrintCFGToFile, false,                                      \
-          "print control flow graph to a separate file during compilation") \
-                                                                            \
+          "print control flow graph to a separate file during compilation")
+
+// end of C1_FLAGS
 
 #endif // SHARE_C1_C1_GLOBALS_HPP

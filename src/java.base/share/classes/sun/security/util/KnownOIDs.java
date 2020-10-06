@@ -154,6 +154,14 @@ public enum KnownOIDs {
     SHA256withDSA("2.16.840.1.101.3.4.3.2"),
     SHA384withDSA("2.16.840.1.101.3.4.3.3"),
     SHA512withDSA("2.16.840.1.101.3.4.3.4"),
+    SHA3_224withDSA("2.16.840.1.101.3.4.3.5", "SHA3-224withDSA"),
+    SHA3_256withDSA("2.16.840.1.101.3.4.3.6", "SHA3-256withDSA"),
+    SHA3_384withDSA("2.16.840.1.101.3.4.3.7", "SHA3-384withDSA"),
+    SHA3_512withDSA("2.16.840.1.101.3.4.3.8", "SHA3-512withDSA"),
+    SHA3_224withECDSA("2.16.840.1.101.3.4.3.9", "SHA3-224withECDSA"),
+    SHA3_256withECDSA("2.16.840.1.101.3.4.3.10", "SHA3-256withECDSA"),
+    SHA3_384withECDSA("2.16.840.1.101.3.4.3.11", "SHA3-384withECDSA"),
+    SHA3_512withECDSA("2.16.840.1.101.3.4.3.12", "SHA3-512withECDSA"),
     SHA3_224withRSA("2.16.840.1.101.3.4.3.13", "SHA3-224withRSA"),
     SHA3_256withRSA("2.16.840.1.101.3.4.3.14", "SHA3-256withRSA"),
     SHA3_384withRSA("2.16.840.1.101.3.4.3.15", "SHA3-384withRSA"),
@@ -429,9 +437,9 @@ public enum KnownOIDs {
         if (debug != null) {
             debug.println("Setting up name2enum:");
         }
-        List.of(KnownOIDs.values()).forEach(o -> {
+        for (KnownOIDs o : KnownOIDs.values()) {
             register(o);
-        });
+        };
     }
 
     private static void register(KnownOIDs o) {

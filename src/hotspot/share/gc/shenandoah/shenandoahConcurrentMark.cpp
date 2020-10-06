@@ -107,20 +107,7 @@ public:
 
 private:
   void do_work(ShenandoahHeap* heap, OopClosure* oops, uint worker_id) {
-    // The rationale for selecting the roots to scan is as follows:
-    //   a. With unload_classes = true, we only want to scan the actual strong roots from the
-    //      code cache. This will allow us to identify the dead classes, unload them, *and*
-    //      invalidate the relevant code cache blobs. This could be only done together with
-    //      class unloading.
-    //   b. With unload_classes = false, we have to nominally retain all the references from code
-    //      cache, because there could be the case of embedded class/oop in the generated code,
-    //      which we will never visit during mark. Without code cache invalidation, as in (a),
-    //      we risk executing that code cache blob, and crashing.
-    if (heap->unload_classes()) {
-      _rp->strong_roots_do(worker_id, oops);
-    } else {
-      _rp->roots_do(worker_id, oops);
-    }
+    _rp->roots_do(worker_id, oops);
   }
 };
 
@@ -206,8 +193,7 @@ public:
           // * Weakly reachable otherwise
           // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
           // live by the SATB invariant but other oops recorded in nmethods may behave differently.
-          JavaThread* jt = (JavaThread*)thread;
-          jt->nmethods_do(_code_cl);
+          thread->as_Java_thread()->nmethods_do(_code_cl);
         }
       }
     }
@@ -257,7 +243,6 @@ private:
   ShenandoahConcurrentMark* _cm;
   TaskTerminator*           _terminator;
   bool                      _dedup_string;
-  ShenandoahSharedFlag      _claimed_syncroots;
 
 public:
   ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, bool dedup_string) :
@@ -295,9 +280,6 @@ public:
                                                           ShenandoahStoreValEnqueueBarrier ? &resolve_mark_cl : NULL,
                                                           do_nmethods ? &blobsCl : NULL);
         Threads::threads_do(&tc);
-        if (ShenandoahStoreValEnqueueBarrier && _claimed_syncroots.try_set()) {
-          ObjectSynchronizer::oops_do(&resolve_mark_cl);
-        }
       } else {
         ShenandoahMarkRefsClosure mark_cl(q, rp);
         MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
@@ -305,9 +287,6 @@ public:
                                                           ShenandoahStoreValEnqueueBarrier ? &mark_cl : NULL,
                                                           do_nmethods ? &blobsCl : NULL);
         Threads::threads_do(&tc);
-        if (ShenandoahStoreValEnqueueBarrier && _claimed_syncroots.try_set()) {
-          ObjectSynchronizer::oops_do(&mark_cl);
-        }
       }
     }
 

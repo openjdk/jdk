@@ -26,8 +26,6 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
 
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
@@ -37,7 +35,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/resolvedMethodTable.hpp"
 #include "runtime/safepoint.hpp"
 
 template <bool CONCURRENT>
@@ -198,7 +195,6 @@ void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAliv
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
 
   // Process serial-claiming roots first
-  _serial_roots.oops_do(keep_alive, worker_id);
   _serial_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
 
   // Process light-weight/limited parallel roots then

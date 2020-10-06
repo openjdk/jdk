@@ -693,7 +693,6 @@ static void check_for_lazy_critical_native(JavaThread *thread, JavaThreadState s
 
 void SafepointSynchronize::block(JavaThread *thread) {
   assert(thread != NULL, "thread must be set");
-  assert(thread->is_Java_thread(), "not a Java thread");
 
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
@@ -783,7 +782,6 @@ void SafepointSynchronize::block(JavaThread *thread) {
 
 
 void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
-  assert(thread->is_Java_thread(), "polling reference encountered by VM thread");
   assert(thread->thread_state() == _thread_in_Java, "should come from Java code");
 
   if (log_is_enabled(Info, safepoint, stats)) {

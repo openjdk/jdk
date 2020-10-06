@@ -266,7 +266,6 @@ class SharedRuntime: AllStatic {
 
   // To be used as the entry point for unresolved native methods.
   static address native_method_throw_unsatisfied_link_error_entry();
-  static address native_method_throw_unsupported_operation_exception_entry();
 
   static oop retrieve_receiver(Symbol* sig, frame caller);
 
@@ -355,10 +354,6 @@ class SharedRuntime: AllStatic {
                                         CallInfo& callinfo, TRAPS);
 
   static Method* extract_attached_method(vframeStream& vfst);
-
-  static address clean_virtual_call_entry();
-  static address clean_opt_virtual_call_entry();
-  static address clean_static_call_entry();
 
 #if defined(X86) && defined(COMPILER1)
   // For Object.hashCode, System.identityHashCode try to pull hashCode from object header if available.

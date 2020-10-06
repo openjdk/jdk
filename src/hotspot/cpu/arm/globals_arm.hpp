@@ -70,11 +70,12 @@ define_pd_global(bool, CompactStrings, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
-#define ARCH_FLAGS(develop, \
-                   product, \
-                   diagnostic, \
-                   experimental, \
-                   notproduct, \
-                   range, \
+#define ARCH_FLAGS(develop,     \
+                   product,     \
+                   notproduct,  \
+                   range,       \
                    constraint)
+
+// end of ARCH_FLAGS
+
 #endif // CPU_ARM_GLOBALS_ARM_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,11 @@ public class JdbArgumentHandler extends nsk.share.jdi.ArgumentHandler {
      * Returns command line options <code>jdb</code> was launched with.
      */
     public String getJdbOptions() {
-        return options.getProperty("jdb.option", "");
+        String value = options.getProperty("jdb.option", "").trim();
+        if (value.length() > 1 && value.startsWith("\"") && value.endsWith("\"")) {
+            value = value.substring(1, value.length() - 1).trim();
+        }
+        return value;
     }
 
     /**

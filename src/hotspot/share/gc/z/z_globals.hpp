@@ -28,13 +28,7 @@
                    develop_pd,                                              \
                    product,                                                 \
                    product_pd,                                              \
-                   diagnostic,                                              \
-                   diagnostic_pd,                                           \
-                   experimental,                                            \
                    notproduct,                                              \
-                   manageable,                                              \
-                   product_rw,                                              \
-                   lp64_product,                                            \
                    range,                                                   \
                    constraint)                                              \
                                                                             \
@@ -61,23 +55,25 @@
           "Uncommit memory if it has been unused for the specified "        \
           "amount of time (in seconds)")                                    \
                                                                             \
-  diagnostic(uint, ZStatisticsInterval, 10,                                 \
+  product(uint, ZStatisticsInterval, 10, DIAGNOSTIC,                        \
           "Time between statistics print outs (in seconds)")                \
           range(1, (uint)-1)                                                \
                                                                             \
-  diagnostic(bool, ZVerifyViews, false,                                     \
+  product(bool, ZVerifyViews, false, DIAGNOSTIC,                            \
           "Verify heap view accesses")                                      \
                                                                             \
-  diagnostic(bool, ZVerifyRoots, trueInDebug,                               \
+  product(bool, ZVerifyRoots, trueInDebug, DIAGNOSTIC,                      \
           "Verify roots")                                                   \
                                                                             \
-  diagnostic(bool, ZVerifyObjects, false,                                   \
+  product(bool, ZVerifyObjects, false, DIAGNOSTIC,                          \
           "Verify objects")                                                 \
                                                                             \
-  diagnostic(bool, ZVerifyMarking, trueInDebug,                             \
+  product(bool, ZVerifyMarking, trueInDebug, DIAGNOSTIC,                    \
           "Verify marking stacks")                                          \
                                                                             \
-  diagnostic(bool, ZVerifyForwarding, false,                                \
+  product(bool, ZVerifyForwarding, false, DIAGNOSTIC,                       \
           "Verify forwarding tables")
+
+// end of GC_Z_FLAGS
 
 #endif // SHARE_GC_Z_Z_GLOBALS_HPP

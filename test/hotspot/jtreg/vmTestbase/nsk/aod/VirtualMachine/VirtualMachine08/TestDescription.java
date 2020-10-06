@@ -41,12 +41,12 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.aod.VirtualMachine.VirtualMachine07.VirtualMachine07
- *        nsk.share.aod.TargetApplicationWaitingAgents
- * @run main/othervm/native -XX:+UsePerfData PropertyResolvingWrapper
+ * @build nsk.share.aod.TargetApplicationWaitingAgents
+ * @run main/othervm/native
+ *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachine.VirtualMachine07.VirtualMachine07
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -na ${test.nativepath}/VirtualMachine07agent00,${test.nativepath}/VirtualMachine07agent01,${test.nativepath}/VirtualMachine07agent02,${test.nativepath}/VirtualMachine07agent03
  *      -testedMethod loadAgentPath

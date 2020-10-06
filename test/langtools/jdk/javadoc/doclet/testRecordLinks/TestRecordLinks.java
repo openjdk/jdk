@@ -28,8 +28,8 @@
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    toolbox.ToolBox javadoc.tester.*
- * @compile --enable-preview --source ${jdk.version} TestRecordLinks.java
- * @run main/othervm --enable-preview TestRecordLinks
+ * @compile TestRecordLinks.java
+ * @run main TestRecordLinks
  */
 
 import java.nio.file.Path;

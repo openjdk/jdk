@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,33 +20,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package nsk.share.aod;
 
-import nsk.share.*;
-import java.util.*;
+import nsk.share.ArgumentParser;
+import nsk.share.TestBug;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class AODRunnerArgParser extends ArgumentParser {
-
-    public static final String jarAgentParam = "ja";
-
-    public static final String nativeAgentParam = "na";
-
-    public static final String targetAppParam = "target";
-
-    public static final String javaOptsParam = "javaOpts";
-
-    public static final String testedJdkParam = "jdk";
-
-    private static List<String> supportedOptions;
-
-    static {
-        supportedOptions = new ArrayList<String>();
-        supportedOptions.add(jarAgentParam);
-        supportedOptions.add(nativeAgentParam);
-        supportedOptions.add(targetAppParam);
-        supportedOptions.add(javaOptsParam);
-        supportedOptions.add(testedJdkParam);
-    }
+    private static final String JAR_AGENT_PARAM = "ja";
+    private static final String NATIVE_AGENT_PARAM = "na";
+    private static final String TARGET_APP_PARAM = "target";
+    private static final String JAVA_OPTS_PARAM = "javaOpts";
+    private static final String TESTED_JDK_PARAM = "jdk";
+    private static final Set<String> SUPPORTED_OPTIONS = Set.of(
+            JAR_AGENT_PARAM,
+            NATIVE_AGENT_PARAM,
+            TARGET_APP_PARAM,
+            JAVA_OPTS_PARAM,
+            TESTED_JDK_PARAM);
 
     private List<AgentInformation> agents;
 
@@ -55,17 +50,19 @@ public class AODRunnerArgParser extends ArgumentParser {
     }
 
     protected boolean checkOption(String option, String value) {
-        if (super.checkOption(option, value))
+        if (super.checkOption(option, value)) {
             return true;
+        }
 
-        if (!supportedOptions.contains(option))
+        if (!SUPPORTED_OPTIONS.contains(option)) {
             return false;
+        }
 
-        if (option.equals(jarAgentParam)) {
+        if (option.equals(JAR_AGENT_PARAM)) {
             addAgentInfo(true, value);
         }
 
-        if (option.equals(nativeAgentParam)) {
+        if (option.equals(NATIVE_AGENT_PARAM)) {
             addAgentInfo(false, value);
         }
 
@@ -74,21 +71,22 @@ public class AODRunnerArgParser extends ArgumentParser {
 
     protected void checkOptions() {
         if (agents == null) {
-            agents = new ArrayList<AgentInformation>();
+            agents = new ArrayList<>();
         }
     }
 
     private void addAgentInfo(boolean jarAgent, String unsplittedAgentsString) {
         if (agents == null) {
-            agents = new ArrayList<AgentInformation>();
+            agents = new ArrayList<>();
         }
 
-        String agentStrings[];
+        String[] agentStrings;
 
-        if (unsplittedAgentsString.contains(","))
+        if (unsplittedAgentsString.contains(",")) {
             agentStrings = unsplittedAgentsString.split(",");
-        else
-            agentStrings = new String[]{unsplittedAgentsString};
+        } else {
+            agentStrings = new String[]{ unsplittedAgentsString };
+        }
 
         for (String agentString : agentStrings) {
             int index = agentString.indexOf('=');
@@ -104,21 +102,27 @@ public class AODRunnerArgParser extends ArgumentParser {
     }
 
     public String getTargetApp() {
-        if (!options.containsKey(targetAppParam))
+        if (!options.containsKey(TARGET_APP_PARAM)) {
             throw new TestBug("Target application isn't specified");
+        }
 
-        return options.getProperty(targetAppParam);
+        return options.getProperty(TARGET_APP_PARAM);
     }
 
     public String getTestedJDK() {
-        if (!options.containsKey(testedJdkParam))
+        if (!options.containsKey(TESTED_JDK_PARAM)) {
             throw new TestBug("Tested JDK isn't specified");
+        }
 
-        return options.getProperty(testedJdkParam);
+        return options.getProperty(TESTED_JDK_PARAM);
     }
 
     public String getJavaOpts() {
-        return options.getProperty(javaOptsParam, "");
+        var value = options.getProperty(JAVA_OPTS_PARAM, "");
+        if (value.length() > 1 && value.startsWith("\"") && value.endsWith("\"")) {
+            value = value.substring(1, value.length() - 1);
+        }
+        return value.trim();
     }
 
     public List<AgentInformation> getAgents() {

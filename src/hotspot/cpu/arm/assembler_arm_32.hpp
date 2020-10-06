@@ -55,12 +55,8 @@ class AsmOperand {
     encode(imm_8);
   }
 
-#ifdef ASSERT
-  AsmOperand(ByteSize bytesize_8) {
-    const int imm_8 = in_bytes(bytesize_8);
-    encode(imm_8);
-  }
-#endif // ASSERT
+  AsmOperand(ByteSize bytesize_8) :
+    AsmOperand(in_bytes(bytesize_8)) {}
 
   AsmOperand(Register rm, AsmShift shift, int shift_imm) {
     encode(rm,shift,shift_imm);

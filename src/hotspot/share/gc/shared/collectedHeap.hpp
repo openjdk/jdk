@@ -90,6 +90,7 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 class ParallelObjectIterator : public CHeapObj<mtGC> {
 public:
   virtual void object_iterate(ObjectClosure* cl, uint worker_id) = 0;
+  virtual ~ParallelObjectIterator() {}
 };
 
 //
@@ -109,6 +110,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
  private:
   GCHeapLog* _gc_heap_log;
+
+  // Historic gc information
+  size_t _capacity_at_last_gc;
+  size_t _used_at_last_gc;
 
  protected:
   // Not used by all GCs
@@ -239,6 +244,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Returns unused capacity.
   virtual size_t unused() const;
 
+  // Historic gc information
+  size_t free_at_last_gc() const { return _capacity_at_last_gc - _used_at_last_gc; }
+  size_t used_at_last_gc() const { return _used_at_last_gc; }
+  void update_capacity_and_used_at_gc();
+
   // Return "true" if the part of the heap that allocates Java
   // objects has reached the maximal committed limit that it can
   // reach, without a garbage collection.
@@ -343,13 +353,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // are merely filled or also retired, thus preventing further
   // allocation from them and necessitating allocation of new TLABs.
   virtual void ensure_parsability(bool retire_tlabs);
-
-  // Section on thread-local allocation buffers (TLABs)
-  // If the heap supports thread-local allocation buffers, it should override
-  // the following methods:
-  // Returns "true" iff the heap supports thread-local allocation buffers.
-  // The default is "no".
-  virtual bool supports_tlab_allocation() const = 0;
 
   // The amount of space available for thread-local allocation buffers.
   virtual size_t tlab_capacity(Thread *thr) const = 0;

@@ -39,6 +39,8 @@ import javax.tools.JavaCompiler.CompilationTask;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.EntityTree;
+import com.sun.source.tree.CompilationUnitTree;
 
 /**
  * Provides access to syntax trees for doc comments.
@@ -202,19 +204,17 @@ public abstract class DocTrees extends Trees {
      * @param root the compilation unit that contains tree
      */
     public abstract void printMessage(Diagnostic.Kind kind, CharSequence msg,
-            com.sun.source.doctree.DocTree t,
-            com.sun.source.doctree.DocCommentTree c,
-            com.sun.source.tree.CompilationUnitTree root);
+            DocTree t, DocCommentTree c, CompilationUnitTree root);
 
     /**
      * Sets the break iterator to compute the first sentence of
      * documentation comments.
-     * @param breakiterator a break iterator or {@code null} to specify the default
+     * @param breakIterator a break iterator or {@code null} to specify the default
      *                      sentence breaker
      *
      * @since 9
      */
-    public abstract void setBreakIterator(BreakIterator breakiterator);
+    public abstract void setBreakIterator(BreakIterator breakIterator);
 
     /**
      * Returns a utility object for creating {@code DocTree} objects.
@@ -223,4 +223,16 @@ public abstract class DocTrees extends Trees {
      * @since 9
      */
     public abstract DocTreeFactory getDocTreeFactory();
+
+    /**
+     * Returns a string containing the characters for the entity in a given entity tree,
+     * or {@code null} if the tree does not represent a valid series of characters.
+     *
+     * <p>The interpretation of entities is based on section
+     * <a href="https://www.w3.org/TR/html52/syntax.html#character-references">8.1.4. Character references</a>
+     * in the HTML 5.2 specification.</p>
+     *
+     * @return a string containing the characters
+     */
+    public abstract String getCharacters(EntityTree tree);
 }
