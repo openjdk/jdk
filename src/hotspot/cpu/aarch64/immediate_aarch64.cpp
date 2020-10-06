@@ -69,7 +69,7 @@ int compare_immediate_pair(const void *i1, const void *i2)
 // for i = 1, ... N result<i-1> = 1 other bits are zero
 static inline uint64_t ones(int N)
 {
-  return (N == 64 ? -1ULL : (1ULL << N) - 1);
+  return (N == 64 ? ~0 : (1ULL << N) - 1);
 }
 
 /*
