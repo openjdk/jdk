@@ -322,8 +322,9 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
-        if (thread->in_stack_yellow_reserved_zone(addr)) {
-          thread->disable_stack_yellow_reserved_zone();
+        StackOverflow* overflow_state = thread->stack_overflow_state();
+        if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
+          overflow_state->disable_stack_yellow_reserved_zone();
           if (thread->thread_state() == _thread_in_Java) {
             // Throw a stack overflow exception.  Guard pages will be reenabled
             // while unwinding the stack.
@@ -332,10 +333,10 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
             // Thread was in the vm or native code.  Return and try to finish.
             return 1;
           }
-        } else if (thread->in_stack_red_zone(addr)) {
+        } else if (overflow_state->in_stack_red_zone(addr)) {
           // Fatal red zone violation.  Disable the guard pages and fall through
           // to handle_unexpected_exception way down below.
-          thread->disable_stack_red_zone();
+          overflow_state->disable_stack_red_zone();
           tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
         } else {
           // Accessing stack address below sp may cause SEGV if current
