@@ -2951,7 +2951,7 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
 // Verification
 
 void JavaThread::frames_do(void f(frame*, const RegisterMap* map)) {
-  // ignore is there is no stack
+  // ignore if there is no stack
   if (!has_last_Java_frame()) return;
   // traverse the stack frames. Starts from top frame.
   for (StackFrameStream fst(this); !fst.is_done(); fst.next()) {

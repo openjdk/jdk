@@ -34,7 +34,7 @@ class StackOverflow {
   friend class JVMCIVMStructs;
   friend class JavaThread;
  public:
-  // State of the stack guard pages for this thread.
+  // State of the stack guard pages for the containing thread.
   enum StackGuardState {
     stack_guard_unused,         // not needed
     stack_guard_reserved_disabled,
