@@ -101,6 +101,7 @@ class outputStream;
   f(conc_rendezvous_roots,                          "Rendezvous")                      \
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
   f(conc_evac,                                      "Concurrent Evacuation")           \
+  f(conc_update_thread_roots,                       "Concurrent Update Thread Roots")  \
                                                                                        \
   f(init_update_refs_gross,                         "Pause Init  Update Refs (G)")     \
   f(init_update_refs,                               "Pause Init  Update Refs (N)")     \
