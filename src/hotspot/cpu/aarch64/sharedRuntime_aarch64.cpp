@@ -2469,7 +2469,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ sub(sp, sp, r19);
 
   // Push interpreter frames in a loop
-  __ mov(rscratch1, (address)0xDEADDEAD);        // Make a recognizable pattern
+  __ mov(rscratch1, (uint64_t)0xDEADDEAD);        // Make a recognizable pattern
   __ mov(rscratch2, rscratch1);
   Label loop;
   __ bind(loop);
