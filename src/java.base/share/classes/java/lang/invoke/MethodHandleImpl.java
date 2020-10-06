@@ -1765,7 +1765,7 @@ abstract class MethodHandleImpl {
 
             @Override
             public Map<String, byte[]> generateHolderClasses(Stream<String> traces) {
-                return GenerateJLIClassesHelper.generateHolderClasses(traces, false/*not from cds*/);
+                return GenerateJLIClassesHelper.generateHolderClasses(traces);
             }
 
             @Override

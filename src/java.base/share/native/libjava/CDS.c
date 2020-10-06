@@ -60,6 +60,6 @@ Java_jdk_internal_misc_CDS_isDumpLoadedClassListSetAndOpen(JNIEnv *env, jclass j
 }
 
 JNIEXPORT void JNICALL
-Java_jdk_internal_misc_CDS_logTraceResolve0(JNIEnv *env, jclass jcls, jstring line) {
-    JVM_LogTraceResolve(env, line);
+Java_jdk_internal_misc_CDS_logLambdaFormInvoker(JNIEnv *env, jclass jcls, jstring line) {
+    JVM_LogLambdaFormInvoker(env, line);
 }

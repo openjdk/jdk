@@ -3872,8 +3872,8 @@ JVM_ENTRY(jboolean, JVM_IsDumpLoadedClassListSetAndOpen(JNIEnv *env))
   return DumpLoadedClassList != NULL && classlist_file->is_open();
 JVM_END
 
-JVM_ENTRY(void, JVM_LogTraceResolve(JNIEnv *env, jstring line))
-  JVMWrapper("JVM_LogTraceResolve");
+JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
+  JVMWrapper("JVM_LogLambdaFormInvoker");
 #if INCLUDE_CDS
   assert(DumpLoadedClassList != NULL && classlist_file->is_open(), "Should be set and open");
   if (line != NULL) {

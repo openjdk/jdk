@@ -59,9 +59,9 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   assert(_lambdaform_lines != NULL, "Bad List");
   ResourceMark rm(THREAD);
 
-  Symbol* helper_name  = vmSymbols::java_lang_invoke_GenerateJLIClassesHelper();
-  Klass*  helper_klass = SystemDictionary::resolve_or_null(helper_name, THREAD);
-  guarantee(helper_klass != NULL, "java/lang/invoke/GenerateJLIClassesHelper must exist!");
+  Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
+  Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
+  guarantee(cds_klass != NULL, "jdk/internal/misc/CDS must exist!");
 
   int len = _lambdaform_lines->length();
   objArrayHandle list_lines = oopFactory::new_objArray_handle(SystemDictionary::String_klass(), len, CHECK);
@@ -73,18 +73,18 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   }
 
   //
-  // Object[] GenerateJLIClassesHelper.cdsGenerateHolderClasses(String[] lines)
+  // Object[] CDS.generateLambdaFormHolderClasses(String[] lines)
   // the returned Object[] layout:
   //   name, byte[], name, byte[] ....
-  Symbol* method = vmSymbols::cdsGenerateHolderClasses();
-  Symbol* signrs = vmSymbols::cdsGenerateHolderClasses_signature();
+  Symbol* method = vmSymbols::generateLambdaFormHolderClasses();
+  Symbol* signrs = vmSymbols::generateLambdaFormHolderClasses_signature();
 
   JavaValue result(T_OBJECT);
-  JavaCalls::call_static(&result, helper_klass, method, signrs, list_lines, THREAD);
+  JavaCalls::call_static(&result, cds_klass, method, signrs, list_lines, THREAD);
   objArrayHandle h_array(THREAD, (objArrayOop)result.get_jobject());
   if (!HAS_PENDING_EXCEPTION) {
     if (h_array() == NULL) {
-      log_info(cds)("Failed call to %s.%s", helper_name->as_C_string(), method->as_C_string());
+      log_info(cds)("Failed call to %s.%s", cds_name->as_C_string(), method->as_C_string());
       return;
     }
   } else {

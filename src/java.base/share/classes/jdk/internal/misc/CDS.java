@@ -25,6 +25,14 @@
 
 package jdk.internal.misc;
 
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
+
+import jdk.internal.access.JavaLangInvokeAccess;
+import jdk.internal.access.SharedSecrets;
+
 public class CDS {
     // cache the result
     static private boolean isDumpLoadedClassList;
@@ -33,7 +41,7 @@ public class CDS {
     }
 
     private static native boolean isDumpLoadedClassListSetAndOpen();
-    private static native void logTraceResolve0(String line);
+    private static native void logLambdaFormInvoker(String line);
 
     /**
      * Initialize archived static fields in the given Class using archived
@@ -79,9 +87,112 @@ public class CDS {
     /**
      * log output to DumpLoadedClassList
      */
-    public static void logTraceResolve(String line) {
+    public static void traceLambdaFormInvoker(String line) {
         if (isDumpLoadedClassList) {
-            logTraceResolve0(line);
+            logLambdaFormInvoker(line);
+        }
+    }
+
+    static final String DIRECT_HOLDER_CLASS_NAME  = "java.lang.invoke.DirectMethodHandle$Holder";
+    static final String DELEGATING_HOLDER_CLASS_NAME = "java.lang.invoke.DelegatingMethodHandle$Holder";
+    static final String BASIC_FORMS_HOLDER_CLASS_NAME = "java.lang.invoke.LambdaForm$Holder";
+    static final String INVOKERS_HOLDER_CLASS_NAME = "java.lang.invoke.Invokers$Holder";
+
+    private static boolean isValidHolderName(String name) {
+        return name.equals(DIRECT_HOLDER_CLASS_NAME)      ||
+               name.equals(DELEGATING_HOLDER_CLASS_NAME)  ||
+               name.equals(BASIC_FORMS_HOLDER_CLASS_NAME) ||
+               name.equals(INVOKERS_HOLDER_CLASS_NAME);
+    }
+
+    private static boolean isBasicTypeChar(char c) {
+         return "LIJFDV".indexOf(c) >= 0;
+    }
+
+    private static boolean isValidMethodType(String type) {
+        String[] typeParts = type.split("_");
+        // check return type (second part)
+        if (typeParts.length != 2 || typeParts[1].length() != 1
+                || !isBasicTypeChar(typeParts[1].charAt(0))) {
+            return false;
+        }
+        // first part
+        if (!isBasicTypeChar(typeParts[0].charAt(0))) {
+            return false;
+        }
+        for (int i = 1; i < typeParts[0].length(); i++) {
+            char c = typeParts[0].charAt(i);
+            if (!isBasicTypeChar(c)) {
+                if (!(c >= '0' && c <= '9')) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // return null for invalid input
+    private static Stream<String>  validateInputLines(String[] lines) {
+        ArrayList<String> list = new ArrayList<String>(lines.length);
+        for (String s: lines) {
+            String line = s.trim();
+            if (!line.startsWith("[LF_RESOLVE]") && !line.startsWith("[SPECIES_RESOLVE]")) {
+                System.out.println("Wrong prefix: " + line);
+                return null;
+            }
+
+            String[] parts = line.split(" ");
+            boolean isLF = line.startsWith("[LF_RESOLVE]");
+
+            if (isLF) {
+                if (parts.length != 4) {
+                    System.out.println("Incorrecct number of items in the line: " + parts.length);
+                    System.out.println("line: " + line);
+                    return null;
+                }
+                if (!isValidHolderName(parts[1])) {
+                    System.out.println("Invalid holder class name: " + parts[1]);
+                    return null;
+                }
+                if (!isValidMethodType(parts[3])) {
+                    System.out.println("Invalid method type: " + parts[3]);
+                    return null;
+                }
+            } else {
+                if (parts.length != 2) {
+                   System.out.println("Incorrect number of items in the line: " + parts.length);
+                   return null;
+                }
+           }
+           list.add(line);
+      }
+      return list.stream();
+    }
+
+    /**
+     * called from vm to generate MethodHandle holder classes
+     * @return @code { Object[] } if holder classes can be generated.
+     * @param lines in format of LF_RESOLVE or SPECIES_RESOLVE output
+     */
+    private static Object[] generateLambdaFormHolderClasses(String[] lines) {
+        Objects.requireNonNull(lines);
+        try {
+            Stream<String> lineStream = validateInputLines(lines);
+            if (lineStream == null) {
+                return null;
+            }
+            Map<String, byte[]> result = SharedSecrets.getJavaLangInvokeAccess().generateHolderClasses(lineStream);
+            int size = result.size();
+            Object[] retArray = new Object[size * 2];
+            int index = 0;
+            for (Map.Entry<String, byte[]> entry : result.entrySet()) {
+                retArray[index++] = entry.getKey();
+                retArray[index++] = entry.getValue();
+            };
+            return retArray;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
     }
 }

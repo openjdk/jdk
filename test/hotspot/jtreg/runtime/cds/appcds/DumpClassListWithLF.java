@@ -33,57 +33,78 @@
  */
 
 public class DumpClassListWithLF extends ClassListFormatBase {
-    static final String MESSAGE_OK = "Replaced class java/lang/invoke/DirectMethodHandle$Holder";
-    static final String MESSAGE_NOT_OK = "Failed call to java/lang/invoke/GenerateJLIClassesHelper.cdsGenerateHolderClasses";
+    static final String REPLACE_OK = "Replaced class java/lang/invoke/DirectMethodHandle$Holder";
+    static final String REPLACE_NOT_OK = "Failed call to jdk/internal/misc/CDS.generateLambdaFormHolderClasses";
 
     public static void main(String[] args) throws Throwable {
-
         String appJar = JarBuilder.getOrCreateHelloJar();
         //
         // Note the class regeneration via java/lang/invoke/GenerateJLIClassesHelper.cdsGenerateHolderClasses(String[] lines)
         // Whether the regeneration successes or fails, the dump should pass. Only the message can be checked for result.
         //
-        // 1. The two lines are copied from build default_jli.txt which will be add to class generating list as additional (besides the default)
-        //  classlist), but will be ignored since they will be added to the (methodType) set which already contain them.
+        // 1. With correct line format.
         dumpShouldPass(
-            "TESTCASE 1: With correct output format",
+            "TESTCASE 1: With correct line format",
             appJar, classlist(
                 "Hello",
-                "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic L7_L",
                 "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic LL_I"),
-                MESSAGE_OK);
+                REPLACE_OK);
 
-        // 2. The two lines with incorrect format of function signitures lead regeneration of holder class failed.
+        // 2. The line with incorrect (less) number of items.
         dumpShouldPass(
-            "TESTCASE 2: With incorrect signature",
+            "TESTCASE 2: With incorrect (less) number of items",
             appJar, classlist(
                 "Hello",
-                "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic L7_L-XXX",
-                "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic LL_I-YYY"),
-                MESSAGE_NOT_OK);
-        // 3. The two lines with arbitrary invoke names is OK, also ending with any word is OK.
+                "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic"),
+                "Incorrecct number of items in the line: 3");
+        // 3. The two lines with non existed class name, since only 4 holder classes recognizable, all other names will be rejected.
         dumpShouldPass(
-            "TESTCASE 3: With incorrect invoke names is OK",
+            "TESTCASE 3: With incorrect class name will be rejected",
             appJar, classlist(
                 "Hello",
-                "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeNothing  L7_L (anyword)",
-                "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeNothing  LL_I anyword"),
-                MESSAGE_OK);
-        // 4. The two lines with non existed class name, since only 4 holder classes recognizable, all other names will be ignored.
+                "@lambda-form-invoker [LF_RESOLVE] my.nonexist.package.MyNonExistClassName$holder invokeStatic LL_I"),
+                "Invalid holder class name: my.nonexist.package.MyNonExistClassName$holder" );
+        // 4. The two lines with arbitrary invoke names is OK. The method type will not be added.
         dumpShouldPass(
-            "TESTCASE 4: With incorrect class name will be ignored",
+            "TESTCASE 4: With incorrect invoke names is OK",
             appJar, classlist(
                 "Hello",
-                "@lambda-form-invoker [LF_RESOLVE] my.nonexist.package.MyNonExistClassName$holder invokeStatic  L7_L",
-                "@lambda-form-invoker [LF_RESOLVE] my.nonexist.package.MyNonExistClassName$holder invokeStatic  LL_I"),
-                MESSAGE_OK);
-        // 5. The two lines with worng LF format
+                "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeNothing LL_I"),
+                REPLACE_OK);
+        // 5. The line with worng signature format of return type, will be rejected
         dumpShouldPass(
-            "TESTCASE 5: With incorrect LF format, the line will be ignored",
+            "TESTCASE 5: With incorrect signature format of return type will be rejected",
             appJar, classlist(
                 "Hello",
-                "@lambda-form-invoker [LF_XYRESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic  L7_L (any)",
-                "@lambda-form-invoker [LF_XYRESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic  LL_I (any)"),
-                MESSAGE_OK);
+                "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic LL_G"),
+                REPLACE_NOT_OK);
+        // 6. The line with worng signature format of arg types, will be rejected
+        dumpShouldPass(
+            "TESTCASE 6: With incorrect signature format of arg types will be rejected",
+            appJar, classlist(
+                "Hello",
+                "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic MGLL_I"),
+                REPLACE_NOT_OK);
+        // 7. The line with worng prefix will ge rejected
+        dumpShouldPass(
+            "TESTCASE 7: With incorrect LF format, the line will be rejected",
+            appJar, classlist(
+                "Hello",
+                "@lambda-form-invoker [LF_XYRESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic LL_I"),
+                "Wrong prefix: [LF_XYRESOLVE]");
+        // 8. The line with correct species format
+        dumpShouldPass(
+            "TESTCASE 8: With correct correct species format",
+            appJar, classlist(
+                "Hello",
+                "@lambda-form-invoker [SPECIES_RESOLVE] java.lang.invoke.BoundMethodHandle$Species_L"),
+                REPLACE_OK);
+       // 9. The line with incorrect species length is not OK
+        dumpShouldPass(
+            "TESTCASE 9: With incorrect species length is not OK",
+            appJar, classlist(
+                "Hello",
+                "@lambda-form-invoker [SPECIES_RESOLVE] java.lang.invoke.BoundMethodHandle$Species_L L"),
+                "Incorrect number of items in the line: 3");
     }
 }

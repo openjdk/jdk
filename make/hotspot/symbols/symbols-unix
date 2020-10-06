@@ -159,7 +159,7 @@ JVM_LatestUserDefinedLoader
 JVM_LoadLibrary
 JVM_LookupDefineClass
 JVM_LookupLambdaProxyClassFromArchive
-JVM_LogTraceResolve
+JVM_LogLambdaFormInvoker
 JVM_MaxMemory
 JVM_MaxObjectInspectionAge
 JVM_MonitorNotify
