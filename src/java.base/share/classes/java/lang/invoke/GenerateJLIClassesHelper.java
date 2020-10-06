@@ -90,11 +90,8 @@ class GenerateJLIClassesHelper {
             );
 
     static final String DIRECT_HOLDER = "java/lang/invoke/DirectMethodHandle$Holder";
-    static final String DIRECT_HOLDER_CLASS_NAME = DIRECT_HOLDER.replace('/', '.');
     static final String DELEGATING_HOLDER = "java/lang/invoke/DelegatingMethodHandle$Holder";
-    static final String DELEGATING_HOLDER_CLASS_NAME = DELEGATING_HOLDER.replace('/', '.');
     static final String BASIC_FORMS_HOLDER = "java/lang/invoke/LambdaForm$Holder";
-    static final String BASIC_FORMS_HOLDER_CLASS_NAME = BASIC_FORMS_HOLDER.replace('/', '.');
     static final String INVOKERS_HOLDER = "java/lang/invoke/Invokers$Holder";
     static final String INVOKERS_HOLDER_CLASS_NAME = INVOKERS_HOLDER.replace('/', '.');
     static final String BMH_SPECIES_PREFIX = "java.lang.invoke.BoundMethodHandle$Species_";

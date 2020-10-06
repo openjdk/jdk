@@ -39,7 +39,7 @@ public class DumpClassListWithLF extends ClassListFormatBase {
     public static void main(String[] args) throws Throwable {
         String appJar = JarBuilder.getOrCreateHelloJar();
         //
-        // Note the class regeneration via java/lang/invoke/GenerateJLIClassesHelper.cdsGenerateHolderClasses(String[] lines)
+        // Note the class regeneration via jdk/internal/misc/CDS.generateLambdaFormHolderClasses(String[] lines)
         // Whether the regeneration successes or fails, the dump should pass. Only the message can be checked for result.
         //
         // 1. With correct line format.
