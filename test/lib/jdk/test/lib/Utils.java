@@ -830,19 +830,6 @@ public final class Utils {
         NULL_VALUES.put(double.class, 0.0d);
     }
 
-    /**
-     * Returns mandatory property value
-     * @param propName is a name of property to request
-     * @return a String with requested property value
-     */
-    public static String getMandatoryProperty(String propName) {
-        Objects.requireNonNull(propName, "Requested null property");
-        String prop = System.getProperty(propName);
-        Objects.requireNonNull(prop,
-                String.format("A mandatory property '%s' isn't set", propName));
-        return prop;
-    }
-
     /*
      * Run uname with specified arguments.
      */
