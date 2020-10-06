@@ -2898,7 +2898,7 @@ void MacroAssembler::merge_ldst(Register rt,
   // Overwrite previous generated binary.
   code_section()->set_end(prev);
 
-  const int sz = prev_ldst->size_in_bytes();
+  const size_t sz = prev_ldst->size_in_bytes();
   assert(sz == 8 || sz == 4, "only supports 64/32bit merging.");
   if (!is_store) {
     BLOCK_COMMENT("merged ldr pair");
