@@ -103,6 +103,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     static final int RESPONSE_CODE = 200;
     static final int ITERATION_COUNT = 4;
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    static final Class<CompletionException> CE = CompletionException.class;
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = new TestExecutor(Executors.newCachedThreadPool());
     static final ConcurrentMap<String, Throwable> FAILURES = new ConcurrentHashMap<>();
@@ -543,6 +544,13 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                 description.replace("null", "length(-1)"));
     }
 
+    private static final Throwable completionCause(CompletionException x) {
+        while (x.getCause() instanceof CompletionException) {
+            x = (CompletionException)x.getCause();
+        }
+        return x.getCause();
+    }
+
     @Test(dataProvider = "negativeRequests")
     public void testNegativeRequest(long n) {
         assert n <= 0 : "test for negative request called with n > 0 : " + n;
@@ -551,8 +559,15 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         RequestSubscriber subscriber = new RequestSubscriber();
         publisher.subscribe(subscriber);
         Subscription subscription = subscriber.subscriptionCF.join();
-        IllegalArgumentException iae = expectThrows(IAE, () -> subscription.request(n));
-        System.out.printf("Got expected IAE for %d: %s%n", n, iae);
+        subscription.request(n);
+        CompletionException expected = expectThrows(CE, () -> subscriber.resultCF.join());
+        Throwable cause = completionCause(expected);
+        if (cause instanceof IllegalArgumentException) {
+            System.out.printf("Got expected IAE for %d: %s%n", n, cause);
+        } else {
+            throw new AssertionError("Unexpected exception: " + cause,
+                    (cause == null) ? expected : cause);
+        }
     }
 
     @Test(dataProvider = "contentLengths")

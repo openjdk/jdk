@@ -560,6 +560,7 @@ public final class RequestPublishers {
         final Demand demand = new Demand(); // from upstream
         final Demand demanded = new Demand(); // requested downstream
         final AtomicReference<Throwable> error = new AtomicReference<>();
+        volatile Throwable illegalRequest;
         volatile BodyPublisher publisher; // downstream
         volatile Flow.Subscription subscription; // downstream
         volatile boolean cancelled;
@@ -574,7 +575,11 @@ public final class RequestPublishers {
             if (cancelled || publisher == null && bodies.isEmpty()) {
                 return;
             }
-            demand.increase(n);
+            try {
+                demand.increase(n);
+            } catch (IllegalArgumentException x) {
+                illegalRequest = x;
+            }
             scheduler.runOrSchedule();
         }
 
@@ -582,6 +587,17 @@ public final class RequestPublishers {
         public void cancel() {
             cancelled = true;
             scheduler.runOrSchedule();
+        }
+
+        private boolean cancelSubscription() {
+            Flow.Subscription subscription = this.subscription;
+            if (subscription != null) {
+                this.subscription = null;
+                this.publisher = null;
+                subscription.cancel();
+            }
+            scheduler.stop();
+            return subscription != null;
         }
 
         public void run() {
@@ -592,13 +608,10 @@ public final class RequestPublishers {
                     boolean cancelled = this.cancelled;
                     BodyPublisher publisher = this.publisher;
                     Flow.Subscription subscription = this.subscription;
+                    Throwable illegalRequest = this.illegalRequest;
                     if (cancelled) {
-                        this.publisher = null;
-                        bodies.removeIf((b) -> true);
-                        if (subscription != null) {
-                            subscription.cancel();
-                        }
-                        scheduler.stop();
+                        bodies.clear();
+                        cancelSubscription();
                         return;
                     }
                     if (publisher == null && !bodies.isEmpty()) {
@@ -606,6 +619,10 @@ public final class RequestPublishers {
                         publisher.subscribe(this);
                         subscription = this.subscription;
                     } else if (publisher == null) {
+                        return;
+                    }
+                    if (illegalRequest != null) {
+                        onError(illegalRequest);
                         return;
                     }
                     if (subscription == null) return;
@@ -629,6 +646,13 @@ public final class RequestPublishers {
 
         @Override
         public void onNext(ByteBuffer item) {
+            // make sure to cancel the subscription if we receive
+            // an item after the subscription was cancelled or
+            // an error was reported.
+            if (cancelled || error.get() != null) {
+                cancelSubscription();
+                return;
+            }
             demanded.tryDecrement();
             subscriber.onNext(item);
         }
@@ -636,7 +660,10 @@ public final class RequestPublishers {
         @Override
         public void onError(Throwable throwable) {
             if (error.compareAndSet(null, throwable)) {
+                publisher = null;
+                subscription = null;
                 subscriber.onError(throwable);
+                scheduler.stop();
             }
         }
 
@@ -652,7 +679,9 @@ public final class RequestPublishers {
             } else {
                 publisher = null;
                 subscription = null;
-                subscriber.onComplete();
+                if (!cancelled) {
+                    subscriber.onComplete();
+                }
                 scheduler.stop();
             }
         }
