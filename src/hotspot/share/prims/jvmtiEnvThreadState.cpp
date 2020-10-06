@@ -194,7 +194,7 @@ JvmtiFramePops* JvmtiEnvThreadState::get_frame_pops() {
 #ifdef ASSERT
   Thread *current = Thread::current();
 #endif
-  assert(get_thread() == current || current == get_thread()->active_handshaker(),
+  assert(get_thread()->is_handshake_safe_for(current),
          "frame pop data only accessible from same thread or direct handshake");
   if (_frame_pops == NULL) {
     _frame_pops = new JvmtiFramePops();
@@ -212,7 +212,7 @@ void JvmtiEnvThreadState::set_frame_pop(int frame_number) {
 #ifdef ASSERT
   Thread *current = Thread::current();
 #endif
-  assert(get_thread() == current || current == get_thread()->active_handshaker(),
+  assert(get_thread()->is_handshake_safe_for(current),
          "frame pop data only accessible from same thread or direct handshake");
   JvmtiFramePop fpop(frame_number);
   JvmtiEventController::set_frame_pop(this, fpop);
@@ -223,7 +223,7 @@ void JvmtiEnvThreadState::clear_frame_pop(int frame_number) {
 #ifdef ASSERT
   Thread *current = Thread::current();
 #endif
-  assert(get_thread() == current || current == get_thread()->active_handshaker(),
+  assert(get_thread()->is_handshake_safe_for(current),
          "frame pop data only accessible from same thread or direct handshake");
   JvmtiFramePop fpop(frame_number);
   JvmtiEventController::clear_frame_pop(this, fpop);
@@ -234,7 +234,7 @@ bool JvmtiEnvThreadState::is_frame_pop(int cur_frame_number) {
 #ifdef ASSERT
   Thread *current = Thread::current();
 #endif
-  assert(get_thread() == current || current == get_thread()->active_handshaker(),
+  assert(get_thread()->is_handshake_safe_for(current),
          "frame pop data only accessible from same thread or direct handshake");
   if (!get_thread()->is_interp_only_mode() || _frame_pops == NULL) {
     return false;
@@ -248,12 +248,13 @@ class GetCurrentLocationClosure : public HandshakeClosure {
  private:
    jmethodID _method_id;
    int _bci;
-
+   bool _completed;
  public:
   GetCurrentLocationClosure()
     : HandshakeClosure("GetCurrentLocation"),
       _method_id(NULL),
-      _bci(0) {}
+      _bci(0),
+      _completed(false) {}
   void do_thread(Thread *target) {
     JavaThread *jt = target->as_Java_thread();
     ResourceMark rmark; // jt != Thread::current()
@@ -272,10 +273,14 @@ class GetCurrentLocationClosure : public HandshakeClosure {
       _method_id = (jmethodID)NULL;
       _bci = 0;
     }
+    _completed = true;
   }
   void get_current_location(jmethodID *method_id, int *bci) {
     *method_id = _method_id;
     *bci = _bci;
+  }
+  bool completed() {
+    return _completed;
   }
 };
 
@@ -314,11 +319,11 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
       // so get current location with direct handshake.
       GetCurrentLocationClosure op;
       Thread *current = Thread::current();
-      if (current == _thread || _thread->active_handshaker() == current) {
+      if (_thread->is_handshake_safe_for(current)) {
         op.do_thread(_thread);
       } else {
-        bool executed = Handshake::execute_direct(&op, _thread);
-        guarantee(executed, "Direct handshake failed. Target thread is not alive?");
+        Handshake::execute(&op, _thread);
+        guarantee(op.completed(), "Handshake failed. Target thread is not alive?");
       }
       op.get_current_location(&method_id, &bci);
       set_current_location(method_id, bci);

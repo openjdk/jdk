@@ -454,12 +454,8 @@ static bool prepare_for_emergency_dump(Thread* thread) {
     Heap_lock->unlock();
   }
 
-  if (VMOperationQueue_lock->owned_by_self()) {
-    VMOperationQueue_lock->unlock();
-  }
-
-  if (VMOperationRequest_lock->owned_by_self()) {
-    VMOperationRequest_lock->unlock();
+  if (VMOperation_lock->owned_by_self()) {
+    VMOperation_lock->unlock();
   }
 
   if (Service_lock->owned_by_self()) {

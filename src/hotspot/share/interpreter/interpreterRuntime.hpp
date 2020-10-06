@@ -101,7 +101,7 @@ class InterpreterRuntime: AllStatic {
  public:
   // Synchronization
   static void    monitorenter(JavaThread* thread, BasicObjectLock* elem);
-  static void    monitorexit (JavaThread* thread, BasicObjectLock* elem);
+  static void    monitorexit (BasicObjectLock* elem);
 
   static void    throw_illegal_monitor_state_exception(JavaThread* thread);
   static void    new_illegal_monitor_state_exception(JavaThread* thread);

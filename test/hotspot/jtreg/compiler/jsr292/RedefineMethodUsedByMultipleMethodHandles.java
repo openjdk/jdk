@@ -31,6 +31,7 @@
  *          java.instrument
  *          java.management
  *          jdk.attach
+ * @requires vm.jvmti
  *
  * @run main/othervm -Djdk.attach.allowAttachSelf compiler.jsr292.RedefineMethodUsedByMultipleMethodHandles
  */

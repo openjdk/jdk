@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,18 @@
 
 package java.beans.beancontext;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-
-import java.util.TooManyListenersException;
-
 import java.util.Locale;
+import java.util.Map;
+import java.util.TooManyListenersException;
 
 /**
  * <p>
@@ -1209,9 +1205,11 @@ public class      BeanContextServicesSupport extends BeanContextSupport
     }
 
     /**
-     * serialize the instance
+     * Serialize the instance.
+     *
+     * @param  oos the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      */
-
     private synchronized void writeObject(ObjectOutputStream oos) throws IOException {
         oos.defaultWriteObject();
 
@@ -1219,9 +1217,13 @@ public class      BeanContextServicesSupport extends BeanContextSupport
     }
 
     /**
-     * deserialize the instance
+     * Deserialize the instance.
+     *
+     * @param  ois the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      */
-
     private synchronized void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
 
         ois.defaultReadObject();

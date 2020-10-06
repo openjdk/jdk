@@ -2742,9 +2742,21 @@ public class Resolve {
             // Check that there is already a method symbol for the method
             // type and owner
             if (types.isSameType(mtype, sym.type) &&
-                spMethod.owner == sym.owner) {
+                    spMethod.owner == sym.owner) {
                 return sym;
             }
+        }
+
+        Type spReturnType = spMethod.asType().getReturnType();
+        if (types.isSameType(spReturnType, syms.objectType)) {
+            // Polymorphic return, pass through mtype
+        } else if (!types.isSameType(spReturnType, mtype.getReturnType())) {
+            // Retain the sig poly method's return type, which differs from that of mtype
+            // Will result in an incompatible return type error
+            mtype = new MethodType(mtype.getParameterTypes(),
+                    spReturnType,
+                    mtype.getThrownTypes(),
+                    syms.methodClass);
         }
 
         // Create the desired method

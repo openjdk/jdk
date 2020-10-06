@@ -26,6 +26,7 @@
  * @test
  * @bug 8173743
  * @requires vm.compMode != "Xcomp"
+ * @requires vm.jvmti
  * @summary Failures during class definition can lead to memory leaks in metaspace
  * @requires vm.opt.final.ClassUnloading
  * @library /test/lib

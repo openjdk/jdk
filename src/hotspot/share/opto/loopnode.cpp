@@ -49,7 +49,7 @@
 // Determine if a node is a counted loop induction variable.
 // NOTE: The method is declared in "node.hpp".
 bool Node::is_cloop_ind_var() const {
-  return (is_Phi() && !as_Phi()->is_copy() &&
+  return (is_Phi() &&
           as_Phi()->region()->is_CountedLoop() &&
           as_Phi()->region()->as_CountedLoop()->phi() == this);
 }

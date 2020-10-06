@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package nsk.aod.VirtualMachine.VirtualMachine06;
 
-import java.lang.instrument.Instrumentation;
-
 import nsk.share.aod.TargetApplicationWaitingAgents;
+
+import java.lang.instrument.Instrumentation;
 
 public class VM06Agent01 {
     public static void agentmain(String options, Instrumentation inst) {
