@@ -571,41 +571,44 @@ bool DwarfFile::get_line_number(const int offset_in_library, char* buf, size_t b
   }
   tty->print_cr("Compilation unit offset: 0x%016lx", compilation_unit_offset);
 
-  uint64_t debug_line_offset = 0; // TODO: For 32-bit DWARF it needs to be uint32_t
+  uint32_t debug_line_offset = 0; // For 32-bit DWARF, the debug line offset is 32-bit.
   if (!find_debug_line_offset(offset_in_library, compilation_unit_offset, &debug_line_offset)) {
     return false;
   }
 
-  tty->print_cr("Line Offset: %lx", debug_line_offset);
+  tty->print_cr("Line Offset: %x", debug_line_offset);
+
+  if (find_line_number(offset_in_library, debug_line_offset)) {
+    return false;
+  }
   return true;
 }
 
 bool DwarfFile::find_compilation_unit_offset(const int offset_in_library, uint64_t *compilation_unit_offset) {
 
   Elf_Shdr shdr;
-  section_by_name(".debug_aranges", shdr);
-
-
-  MarkedFileReader mfd(fd());
-  if (!mfd.has_mark() || !mfd.set_position(_elfHdr.e_shoff)) {
+  if (section_by_name(".debug_aranges", shdr) == -1) {
     return false;
   }
+
+  MarkedDwarfFileReader reader(fd(), (long)shdr.sh_size);
   DebugArangesSetHeader32 next_set_header;
-  mfd.set_position(shdr.sh_offset);
 
+  if (!reader.set_position(shdr.sh_offset)) {
+    return false;
+  }
 
-  Elf64_Xword read_bytes = 0;
-  while (read_bytes < shdr.sh_size) {
-    if (!mfd.read(&next_set_header.unit_length, sizeof(next_set_header.unit_length))) {
+  while (reader.has_bytes_left()) {
+    if (!reader.read_dword(&next_set_header.unit_length)) {
       return false;
     }
     if (next_set_header.unit_length == 0xFFFFFFFF) {
       // For 64-bit DWARF, the first 32-bit value is 0xFFFFFFFF
-      // The current implementation only supports 32-bit DWARF format
+      // The current implementation only supports 32-bit DWARF format since GCC only emits 32-bit DWARF
       return false;
     }
 
-    if (!mfd.read(&next_set_header.version, sizeof(next_set_header.version))) {
+    if (!reader.read_word(&next_set_header.version)) {
       return false;
     }
 
@@ -614,114 +617,397 @@ bool DwarfFile::find_compilation_unit_offset(const int offset_in_library, uint64
       return false;
     }
 
-    if (!mfd.read(&next_set_header.debug_info_offset, sizeof(next_set_header.debug_info_offset))) {
+    if (!reader.read_dword(&next_set_header.debug_info_offset)) {
       return false;
     }
 
-    if (!mfd.read(&next_set_header.address_size, sizeof(next_set_header.address_size))) {
+    if (!reader.read_byte(&next_set_header.address_size)) {
       return false;
     }
 
     if (next_set_header.address_size != 8) {
-      // The current implementation only supports 64 bit addresses
+      // TODO: The current implementation only supports 64 bit addresses
       return false;
     }
 
-    if (!mfd.read(&next_set_header.segment_size, sizeof(next_set_header.segment_size))) {
+    if (!reader.read_byte(&next_set_header.segment_size)) {
       return false;
     }
-//    next_set_header.print_fields();
 
-    read_bytes += DebugArangesSetHeader32::SIZE + 4; // Header size + padding (must be alignment that is twice the address size)
-
-    mfd.set_position(shdr.sh_offset + read_bytes); // Account for additional padding
+    // TODO: 32-bits? Reader must be set to alignment of address size of 8 bytes: Header size (4 + 2 + 4 + 1 + 1) + padding (4) = 16
+    if (!reader.move_position(4)) {
+      return false;
+    }
 
     DebugArangesSet64 set;
     int i = 0;
     do {
       i++;
-//      uint32_t bla;
-      if (!mfd.read(&set, 16)) {
+      if (!reader.read_qword(&set.beginning_address)) {
         return false;
       }
-//      uint8_t asdf;
-//      if (!mfd.read(&asdf, 1)) {
-//           return false;
-//         }
 
-//      tty->print_cr("%p", set.beginning_address);
-//      tty->print_cr("%lx", set.length);
-//      tty->print_cr("%p", set.beginning_address + set.length);
-//
-//      tty->print_cr("[0x%p - 0x%p)", set.beginning_address, set.beginning_address + set.length);
-      read_bytes += sizeof(set); // Header size
+      if (!reader.read_qword(&set.length)) {
+        return false;
+      }
 
       // TODO: needs checks because offset is 32 bit int and beginning address is 64 bit...
-      if ((uint64_t)set.beginning_address <= (uint64_t)offset_in_library && (uint64_t)offset_in_library < (uint64_t)set.beginning_address + set.length) {
-//        tty->print_cr("Found: ");
-//        tty->print_cr("%x", next_set_header.debug_info_offset);
+      if (set.beginning_address <= (uint64_t)offset_in_library && (uint64_t)offset_in_library < set.beginning_address + set.length) {
         *compilation_unit_offset = next_set_header.debug_info_offset;
         return true;
       }
-
     } while (!is_terminating_set(set));
-//    tty->print_cr("%lx", read_bytes);
   }
   return false;
 }
 
-bool DwarfFile::find_debug_line_offset(const int offset_in_library, const uint64_t compilation_unit_offset, uint64_t *debug_line_offset) {
+bool DwarfFile::find_debug_line_offset(const int offset_in_library, const uint64_t compilation_unit_offset, uint32_t *debug_line_offset) {
   Elf_Shdr shdr;
-  section_by_name(".debug_info", shdr);
+  if (section_by_name(".debug_info", shdr) == -1) {
+    return false;
+  }
 
-  MarkedFileReader mfd(fd());
-
-  // TODO: DO we need that?
-//  if (!mfd.has_mark() || !mfd.set_position(_elfHdr.e_shoff)) {
-//    return false;
-//  }
+  MarkedDwarfFileReader reader(fd(), (long)shdr.sh_size);
   CompilationUnitHeader32 compilation_unit_header;
-  mfd.set_position(  shdr.sh_offset + compilation_unit_offset);
 
-  if (!mfd.read(&compilation_unit_header.unit_length, sizeof(compilation_unit_header.unit_length))) {
+  if (!reader.set_position(shdr.sh_offset + compilation_unit_offset)) {
     return false;
   }
-  if (compilation_unit_header.unit_length == 0xFFFFFFFF) {
+
+  get_compilation_unit_header(&compilation_unit_header, &reader);
+  uint64_t abbrev_code;
+  if (!reader.read_uleb128(&abbrev_code)) {
+    return false;
+  }
+  return get_debug_line_offset_from_debug_abbrev(&compilation_unit_header, abbrev_code, debug_line_offset);
+}
+
+// Follows the parsing instruction of section 7.5.3 in DWARF 4 spec.
+bool DwarfFile::get_debug_line_offset_from_debug_abbrev(const CompilationUnitHeader32* cu_header, const uint64_t abbrev_code, uint32_t* debug_line_offset) {
+  MarkedDwarfFileReader debug_info_reader(fd(), cu_header->unit_length);
+  if (!debug_info_reader.set_position(ftell(fd()))) {
+    return false;
+  }
+
+  Elf_Shdr shdr;
+  if (section_by_name(".debug_abbrev", shdr) == -1) {
+    return false;
+  }
+
+  MarkedDwarfFileReader debug_abbrev_reader(fd(), (long)shdr.sh_size);
+  if (!debug_abbrev_reader.set_position(shdr.sh_offset + cu_header->debug_abbrev_offset)) {
+    return false;
+  }
+
+  while (debug_abbrev_reader.has_bytes_left()) {
+    uint64_t next_abbrev_code;
+    if (!debug_abbrev_reader.read_uleb128(&next_abbrev_code)) {
+      return false;
+    }
+
+    if (next_abbrev_code == 0) {
+      break;
+    }
+
+    uint64_t next_tag;
+    if (!debug_abbrev_reader.read_uleb128(&next_tag)) {
+      return false;
+    }
+
+    tty->print_cr("Code: %lx, Tag: %lx", next_abbrev_code, next_tag);
+
+    uint8_t has_children;
+    if (!debug_abbrev_reader.read_byte(&has_children)) {
+      return false;
+    }
+
+    if (next_abbrev_code == abbrev_code) {
+      // Found the correct entry
+      if (next_tag != DW_TAG_compile_unit || has_children != DW_CHILDREN_yes) {
+        // Is not DW_TAG_compile_unit as specified in Figure 18 in DWARF 4 spec.
+        // It could also be DW_TAG_partial_unit (0x3c) which is currently not supported by this parser.
+        // Must have children.
+        return false;
+      }
+
+      return process_attribute_specs(&debug_abbrev_reader, cu_header->address_size, &debug_info_reader, debug_line_offset);
+    } else {
+      if (!read_attribute_specs(&debug_abbrev_reader)) {
+        return false;
+      }
+    }
+  }
+  // Not found
+  return false;
+}
+
+bool DwarfFile::process_attribute(const uint64_t attribute, const uint8_t address_size, MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset) {
+  debug_info_reader->update_to_stored_position();
+  uint8_t next_byte = 0;
+  uint16_t next_word = 0;
+  uint32_t next_dword = 0;
+  uint64_t next_qword = 0;
+
+  switch (attribute) {
+    case DW_FORM_addr:
+      debug_info_reader->move_position(address_size);
+      break;
+    case DW_FORM_block2:
+      // New position: length + data length (next_word)
+      if (!debug_info_reader->read_word(&next_word) || !debug_info_reader->move_position(next_word)) {
+        return false;
+      }
+      break;
+    case DW_FORM_block4:
+      // New position: length + data length (next_dword)
+      if (!debug_info_reader->read_dword(&next_dword) || !debug_info_reader->move_position(next_dword)) {
+        return false;
+      }
+      break;
+    case DW_FORM_data2:
+    case DW_FORM_ref2:
+      if (!debug_info_reader->move_position(2)) {
+        return false;
+      }
+      break;
+    case DW_FORM_data4:
+    case DW_FORM_strp: // 4 bytes in 32-bit DWARF
+    case DW_FORM_ref_addr: // second type of reference: 4 bytes in 32-bit DWARF
+    case DW_FORM_ref4:
+      if (!debug_info_reader->move_position(4)) {
+        return false;
+      }
+      break;
+    case DW_FORM_data8:
+    case DW_FORM_ref8:
+    case DW_FORM_ref_sig8: // 64-bit type signature
+      if (!debug_info_reader->move_position(8)) {
+        return false;
+      }
+      break;
+    case DW_FORM_string:
+      if (!debug_info_reader->read_byte(&next_byte)) {
+        return false;
+      }
+      while (next_byte != 0) {
+        if (!debug_info_reader->read_byte(&next_byte)) {
+          return false;
+        }
+      }
+      break;
+    case DW_FORM_block:
+    case DW_FORM_exprloc:
+      next_qword = 0;
+      // New position: length + data length (next_qword)
+      if (!debug_info_reader->read_uleb128(&next_qword) || !debug_info_reader->move_position(next_qword)) {
+        return false;
+      }
+      break;
+    case DW_FORM_block1:
+      // New position: length + data length (next_byte)
+      if (!debug_info_reader->read_byte(&next_byte) || !debug_info_reader->move_position(next_byte)) {
+        return false;
+      }
+      break;
+    case DW_FORM_data1:
+    case DW_FORM_ref1:
+    case DW_FORM_flag:
+    case DW_FORM_flag_present:
+      if (!debug_info_reader->move_position(1)) {
+        return false;
+      }
+      break;
+    case DW_FORM_sdata:
+    case DW_FORM_udata:
+    case DW_FORM_ref_udata:
+      if (!debug_info_reader->read_uleb128(&next_qword)) {
+        return false;
+      }
+      break;
+    case DW_FORM_indirect:
+      // Should not be used and therefore is not supported by this parser
+      return false;
+    case DW_FORM_sec_offset:
+      // The one we are interested in
+      if (debug_line_offset != nullptr) {
+        // 4 bytes for 32-bit DWARF
+        if (!debug_info_reader->read_dword(debug_line_offset)) {
+          return false;
+        }
+        break;
+      } else {
+        if (!debug_info_reader->move_position(4)) {
+          return false;
+        }
+        break;
+      }
+    default:
+      // Unknown encoding TODO warning
+      return false;
+  }
+  debug_info_reader->reset_to_previous_position();
+  return true;
+}
+
+bool DwarfFile::find_line_number(const int offset_in_library, const uint64_t debug_line_offset) {
+  Elf_Shdr shdr;
+  if (section_by_name(".debug_line", shdr) == -1) {
+    return false;
+  }
+
+  return true;
+}
+
+bool DwarfFile::get_compilation_unit_header(DwarfFile::CompilationUnitHeader32* compilation_unit_header,
+                                            DwarfFile::MarkedDwarfFileReader* reader) {
+
+  if (!reader->read_dword(&compilation_unit_header->unit_length)) {
+    return false;
+  }
+
+  if (compilation_unit_header->unit_length == 0xFFFFFFFF) {
     // For 64-bit DWARF, the first 32-bit value is 0xFFFFFFFF
-    // The current implementation only supports 32-bit DWARF format
+    // The current implementation only supports 32-bit DWARF format since GCC only emits 32-bit DWARF
     return false;
   }
 
-  if (!mfd.read(&compilation_unit_header.version, sizeof(compilation_unit_header.version))) {
+  if (!reader->read_word(&compilation_unit_header->version)) {
     return false;
   }
 
-  if (compilation_unit_header.version != 4) {
+  if (compilation_unit_header->version != 4) {
     // DWARF 4 uses version 4 as specified in DWARF 4 spec, Appendix 7.5.1.1
     return false;
   }
 
-  if (!mfd.read(&compilation_unit_header.debug_abbrev_offset, sizeof(compilation_unit_header.debug_abbrev_offset))) {
+  if (!reader->read_dword(&compilation_unit_header->debug_abbrev_offset)) {
     return false;
   }
 
-  if (!mfd.read(&compilation_unit_header.address_size, sizeof(compilation_unit_header.address_size))) {
+  if (!reader->read_byte(&compilation_unit_header->address_size)) {
     return false;
   }
 
-  uint64_t abbrev_code;
-  if (!read_uleb128(&mfd, &abbrev_code)) {
-    return false;
-  }
-
-  return get_debug_line_offset_from_debug_abbrev(&mfd, &compilation_unit_header, abbrev_code, debug_line_offset);
+  return true;
 }
 
-bool DwarfFile::read_uleb128(MarkedFileReader* mfd, uint64_t* result) {
+// Read the attribute specifications from .debug_abbrev but do not process them in any way.
+bool DwarfFile::read_attribute_specs(DwarfFile::MarkedDwarfFileReader* debug_abbrev_reader) {
+
+  uint64_t next_attribute_name;
+  uint64_t next_attribute_form;
+  while (debug_abbrev_reader->has_bytes_left()) {
+    if (!debug_abbrev_reader->read_uleb128(&next_attribute_name)) {
+      return false;
+    }
+
+    if (!debug_abbrev_reader->read_uleb128(&next_attribute_form)) {
+      return false;
+    }
+
+    tty->print_cr("  Attribute: %lx, Form: %lx", next_attribute_name, next_attribute_form);
+    if (next_attribute_name == 0 && next_attribute_form == 0) {
+      // Processed all attributes. New entry starts.
+      return true;
+    }
+  }
+  return false;
+}
+
+// Read the attribute specifications from .debug_abbrev and then read the attributes from the .debug_info section.
+bool DwarfFile::process_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader, const uint8_t address_size,
+                                        MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset) {
+  uint64_t next_attribute_name;
+  uint64_t next_attribute_form;
+  while (debug_abbrev_reader->has_bytes_left()) {
+    if (!debug_abbrev_reader->read_uleb128(&next_attribute_name)) {
+      return false;
+    }
+
+    if (!debug_abbrev_reader->read_uleb128(&next_attribute_form)) {
+      return false;
+    }
+
+    tty->print_cr("  Attribute: %lx, Form: %lx", next_attribute_name, next_attribute_form);
+
+    if (next_attribute_name == 0 && next_attribute_form == 0) {
+      // Have not found DW_AT_stmt_list
+      return false;
+    }
+
+    if (next_attribute_name == DW_AT_stmt_list) {
+      // Found DW_AT_stmt_list
+      return process_attribute(next_attribute_form, address_size, debug_info_reader,
+                               debug_line_offset);
+    } else {
+      if (!process_attribute(next_attribute_form, address_size, debug_info_reader)) {
+        return false;
+      }
+    }
+  }
+  return false;
+}
+
+bool DwarfFile::MarkedDwarfFileReader::set_position(long new_pos) {
+  if (new_pos < 0) {
+    return false;
+  }
+  if (_start_pos == -1) {
+    _start_pos = new_pos;
+  }
+  _current_pos = new_pos;
+  return FileReader::set_position(new_pos);
+}
+
+bool DwarfFile::MarkedDwarfFileReader::has_bytes_left() const {
+  if (_start_pos == -1) {
+    return false;
+  }
+  return _current_pos - _start_pos < _max_bytes_read;
+}
+
+bool DwarfFile::MarkedDwarfFileReader::update_to_stored_position() {
+  _marked_pos = ftell(_fd);
+  if (_marked_pos < 0) {
+    return false;
+  }
+  return FileReader::set_position(_current_pos);
+}
+
+bool DwarfFile::MarkedDwarfFileReader::reset_to_previous_position() {
+  return FileReader::set_position(_marked_pos);
+}
+
+bool DwarfFile::MarkedDwarfFileReader::move_position(long offset) {
+  return set_position(_current_pos + offset);
+}
+
+bool DwarfFile::MarkedDwarfFileReader::read_byte(uint8_t *result) {
+  _current_pos++;
+  return read(result, 1);
+}
+
+bool DwarfFile::MarkedDwarfFileReader::read_word(uint16_t *result) {
+  _current_pos += 2;
+  return read(result, 2);
+}
+
+bool DwarfFile::MarkedDwarfFileReader::read_dword(uint32_t *result) {
+  _current_pos += 4;
+  return read(result, 4);
+}
+
+bool DwarfFile::MarkedDwarfFileReader::read_qword(uint64_t *result) {
+  _current_pos += 8;
+  return read(result, 8);
+}
+
+bool DwarfFile::MarkedDwarfFileReader::read_uleb128(uint64_t *result) {
+  *result = 0; // Ensure a proper result by zeroing it first
   uint8_t buf;
   uint32_t shift = 0;
   while (true) {
-    if (!mfd->read(&buf, sizeof(buf))) {
+    if (!read_byte(&buf)) {
       return false;
     }
     *result |= (buf & 0x7fU) << shift;
@@ -730,214 +1016,6 @@ bool DwarfFile::read_uleb128(MarkedFileReader* mfd, uint64_t* result) {
       break;
     }
   }
-  return true;
-}
-
-bool DwarfFile::get_debug_line_offset_from_debug_abbrev(MarkedFileReader* debug_info_reader, const CompilationUnitHeader32 *cu_header, const uint64_t abbrev_code, uint64_t *debug_line_offset) {
-
-  long current_debug_info_position = ftell(fd());
-  if (current_debug_info_position < 0) {
-    // Should be set
-    return false;
-  }
-
-  Elf_Shdr shdr;
-  section_by_name(".debug_abbrev", shdr);
-
-  MarkedFileReader mfd(fd());
-  mfd.set_position(shdr.sh_offset + cu_header->debug_abbrev_offset);
-
-  // TODO: add check with size from header to avoid reading further then debug_abbrev section
-  while (true) {
-    uint64_t next_abbrev_code = 0;
-    if (!read_uleb128(&mfd, &next_abbrev_code)) {
-      return false;
-    }
-
-    if (next_abbrev_code == 0) {
-      break;
-    }
-
-    bool found_compile_unit = next_abbrev_code == abbrev_code;
-
-    uint64_t next_tag = 0;
-    if (!read_uleb128(&mfd, &next_tag)) {
-      return false;
-    }
-
-    tty->print_cr("Code: %lx, Tag: %lx", next_abbrev_code, next_tag);
-
-    if (found_compile_unit) {
-      if (next_tag != DW_TAG_compile_unit) {
-        // Is not DW_TAG_compile_unit as specified in Figure 18 in DWARF 4 spec.
-        // It could also be DW_TAG_partial_unit (0x3c) which is currently not supported.
-        return false;
-      }
-    }
-
-    uint8_t has_children = 0;
-    if (!mfd.read(&has_children, 1)) {
-      return false;
-    }
-
-    if (found_compile_unit) {
-      if (has_children != DW_CHILDREN_yes) {
-        // Must have children
-        return false;
-      }
-    }
-
-    uint64_t next_attribute_name;
-    uint64_t next_attribute_form;
-    // TODO: add check for size to step endless reading
-    while (true) {
-      next_attribute_name = 0;
-      if (!read_uleb128(&mfd, &next_attribute_name)) {
-        return false;
-      }
-
-      next_attribute_form = 0;
-      if (!read_uleb128(&mfd, &next_attribute_form)) {
-        return false;
-      }
-
-      tty->print_cr("  Attribute: %lx, Form: %lx", next_attribute_name, next_attribute_form);
-
-      if (found_compile_unit) {
-        if (next_attribute_name == 0 && next_attribute_form == 0) {
-          // Have not found DW_AT_stmt_list
-          return false;
-        }
-
-        if (next_attribute_name == DW_AT_stmt_list) {
-          // Found DW_AT_stmt_list
-          return process_attribute(next_attribute_form, cu_header->address_size, &current_debug_info_position,
-                                   debug_line_offset);
-        } else {
-          if (!process_attribute(next_attribute_form, cu_header->address_size, &current_debug_info_position)) {
-            return false;
-          }
-        }
-      } else if (next_attribute_name == 0 && next_attribute_form == 0) {
-        // Processed all attributes. New entry starts.
-        break;
-      }
-    }
-
-  }
-  return true;
-}
-
-bool DwarfFile::process_attribute(const uint64_t attribute, const uint8_t address_size, long* current_debug_info_position,uint64_t* debug_line_offset) {
-
-  MarkedFileReader mfd(fd());
-  mfd.set_position(*current_debug_info_position);
-  uint64_t new_offset = 0;
-  uint8_t next_byte = 0;
-  uint16_t next_word = 0;
-  uint32_t next_dword = 0;
-  uint64_t next_qword = 0;
-
-  switch (attribute) {
-    case DW_FORM_addr:
-      *current_debug_info_position += address_size;
-      mfd.set_position(*current_debug_info_position);
-      break;
-    case DW_FORM_block2:
-      if (!mfd.read(&next_word, 2)) {
-        return false;
-      }
-      *current_debug_info_position += 2 + next_word; // length + data length
-      mfd.set_position(*current_debug_info_position);
-      break;
-    case DW_FORM_block4:
-      if (!mfd.read(&next_dword, 4)) {
-        return false;
-      }
-      *current_debug_info_position += 4 + next_dword; // length + data length
-      mfd.set_position(*current_debug_info_position);
-      break;
-    case DW_FORM_data2:
-    case DW_FORM_ref2:
-      *current_debug_info_position += 2;
-      mfd.set_position(*current_debug_info_position);
-      break;
-    case DW_FORM_data4:
-    case DW_FORM_strp: // 4 bytes in 32-bit DWARF
-    case DW_FORM_ref_addr: // second type of reference: 4 bytes in 32-bit DWARF
-    case DW_FORM_ref4:
-      *current_debug_info_position += 4;
-      mfd.set_position(*current_debug_info_position);
-      break;
-    case DW_FORM_data8:
-    case DW_FORM_ref8:
-    case DW_FORM_ref_sig8: // 64-bit type signature
-      *current_debug_info_position += 8;
-      mfd.set_position(*current_debug_info_position);
-      break;
-    case DW_FORM_string:
-      if (!mfd.read(&next_byte, 1)) {
-        return false;
-      }
-      while (next_byte != 0) {
-        if (!mfd.read(&next_byte, 1)) {
-          return false;
-        }
-      }
-      break;
-    case DW_FORM_block:
-    case DW_FORM_exprloc:
-      next_qword = 0;
-      if (read_uleb128(&mfd, &next_qword)) {
-        return false;
-      }
-      *current_debug_info_position = ftell(fd()) + next_qword; // length + data length
-      mfd.set_position(*current_debug_info_position);
-      break;
-    case DW_FORM_block1:
-      if (!mfd.read(&next_byte, 1)) {
-        return false;
-      }
-      *current_debug_info_position += 1 + next_byte; // length + data length
-      mfd.set_position(*current_debug_info_position);
-      break;
-    case DW_FORM_data1:
-    case DW_FORM_ref1:
-    case DW_FORM_flag:
-    case DW_FORM_flag_present:
-      *current_debug_info_position += 1;
-      mfd.set_position(*current_debug_info_position);
-      break;
-    case DW_FORM_sdata:
-    case DW_FORM_udata:
-    case DW_FORM_ref_udata:
-      // Reads an LEB128 encoded number. Update by ftell because the read number could be of variable length.
-      if (read_uleb128(&mfd, &next_qword)) {
-        return false;
-      }
-      *current_debug_info_position = ftell(fd());
-      break;
-    case DW_FORM_indirect:
-      // Should not be used and therefore is not supported by this parser
-      return false;
-    case DW_FORM_sec_offset:
-      // The one we are interested in
-      if (debug_line_offset != nullptr) {
-        // 4 bytes for 32-bit DWARF TODO: change debug_line_offset to uint32_t
-        if (!mfd.read(debug_line_offset, 4)) {
-          return false;
-        }
-        return true;
-      } else {
-        *current_debug_info_position += 4;
-        mfd.set_position(*current_debug_info_position);
-        break;
-      }
-    default:
-      // Unknown encoding TODO warning
-      return false;
-  }
-
   return true;
 }
 
