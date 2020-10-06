@@ -94,6 +94,7 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DocRootTaglet;
+import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -332,27 +333,52 @@ public class HtmlDocletWriter {
         if (utils.isExecutableElement(e) && !utils.isConstructor(e)) {
             addMethodInfo((ExecutableElement)e, dl);
         }
-        Content output = new ContentBuilder();
-        TagletWriter.genTagOutput(configuration.tagletManager, e,
-            configuration.tagletManager.getBlockTaglets(e),
-                getTagletWriterInstance(false), output);
+        Content output = getBlockTagOutput(e);
         dl.add(output);
         htmlTree.add(dl);
     }
 
     /**
-     * Check whether there are any tags for Serialization Overview
-     * section to be printed.
+     * Returns the content generated from the default supported set of block tags
+     * for this element.
      *
-     * @param field the VariableElement object to check for tags.
-     * @return true if there are tags to be printed else return false.
+     * @param element the element
+     *
+     * @return the content
+     */
+    protected Content getBlockTagOutput(Element element) {
+        return getBlockTagOutput(element, configuration.tagletManager.getBlockTaglets(element));
+    }
+
+    /**
+     * Returns the content generated from a specified set of block tags
+     * for this element.
+     *
+     * @param element the element
+     * @param taglets the taglets to handle the required set of tags
+     *
+     * @return the content
+     */
+    protected Content getBlockTagOutput(Element element, List<Taglet> taglets) {
+        return getTagletWriterInstance(false)
+                .getBlockTagOutput(configuration.tagletManager, element, taglets);
+    }
+
+    /**
+     * Returns whether there are any tags in a field for the Serialization Overview
+     * section to be generated.
+     *
+     * @param field the field to check
+     * @return {@code true} if and only if there are tags to be included
      */
     protected boolean hasSerializationOverviewTags(VariableElement field) {
-        Content output = new ContentBuilder();
-        TagletWriter.genTagOutput(configuration.tagletManager, field,
-                configuration.tagletManager.getBlockTaglets(field),
-                getTagletWriterInstance(false), output);
+        Content output = getBlockTagOutput(field);
         return !output.isEmpty();
+    }
+
+    private Content getInlineTagOutput(Element element, DocTree holder, DocTree tree, boolean isFirstSentence, boolean inSummary) {
+        return getTagletWriterInstance(isFirstSentence, inSummary)
+                .getInlineTagOutput(element, configuration.tagletManager, holder, tree);
     }
 
     /**
@@ -1440,11 +1466,8 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitDocRoot(DocRootTree node, Content c) {
-                    Content docRootContent = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager,
-                            holderTag,
-                            node,
-                            getTagletWriterInstance(isFirstSentence));
+                    Content docRootContent = getInlineTagOutput(element, holderTag, node,
+                            isFirstSentence, false);
                     if (c != null) {
                         c.add(docRootContent);
                     } else {
@@ -1476,9 +1499,8 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitInheritDoc(InheritDocTree node, Content c) {
-                    Content output = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager, holderTag,
-                            tag, getTagletWriterInstance(isFirstSentence));
+                    Content output = getInlineTagOutput(element, holderTag, node,
+                            isFirstSentence, false);
                     result.add(output);
                     // if we obtained the first sentence successfully, nothing more to do
                     return (isFirstSentence && !output.isEmpty());
@@ -1486,9 +1508,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitIndex(IndexTree node, Content p) {
-                    Content output = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager, holderTag, tag,
-                            getTagletWriterInstance(isFirstSentence, inSummary));
+                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, inSummary);
                     if (output != null) {
                         result.add(output);
                     }
@@ -1535,18 +1555,14 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitSummary(SummaryTree node, Content c) {
-                    Content output = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager, holderTag, tag,
-                            getTagletWriterInstance(isFirstSentence));
+                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, false);
                     result.add(output);
                     return false;
                 }
 
                 @Override
                 public Boolean visitSystemProperty(SystemPropertyTree node, Content p) {
-                    Content output = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager, holderTag, tag,
-                            getTagletWriterInstance(isFirstSentence, inSummary));
+                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, inSummary);
                     if (output != null) {
                         result.add(output);
                     }
@@ -1579,9 +1595,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 protected Boolean defaultAction(DocTree node, Content c) {
-                    Content output = TagletWriter.getInlineTagOutput(element,
-                            configuration.tagletManager, holderTag, tag,
-                            getTagletWriterInstance(isFirstSentence));
+                    Content output = getInlineTagOutput(element, holderTag, node, isFirstSentence, false);
                     if (output != null) {
                         result.add(output);
                     }

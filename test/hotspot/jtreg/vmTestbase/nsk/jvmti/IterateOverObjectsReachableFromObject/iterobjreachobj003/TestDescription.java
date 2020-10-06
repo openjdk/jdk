@@ -52,10 +52,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.IterateOverObjectsReachableFromObject.iterobjreachobj003
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:iterobjreachobj003=-waittime=5 -verbose"
+ * @build nsk.jvmti.IterateOverObjectsReachableFromObject.iterobjreachobj003
+ * @run main/othervm/native
+ *      -agentlib:iterobjreachobj003=-waittime=5,-verbose
  *      nsk.jvmti.IterateOverObjectsReachableFromObject.iterobjreachobj003
  */
 

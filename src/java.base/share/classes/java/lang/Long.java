@@ -33,8 +33,8 @@ import java.math.*;
 import java.util.Objects;
 import java.util.Optional;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
@@ -1198,7 +1198,7 @@ public final class Long extends Number
      * @return a {@code Long} instance representing {@code l}.
      * @since  1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static Long valueOf(long l) {
         final int offset = 128;
         if (l >= -128 && l <= 127) { // will cache
@@ -1375,7 +1375,7 @@ public final class Long extends Number
      * Returns the value of this {@code Long} as a
      * {@code long} value.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public long longValue() {
         return value;
     }
@@ -1786,7 +1786,7 @@ public final class Long extends Number
      *     is equal to zero.
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int numberOfLeadingZeros(long i) {
         int x = (int)(i >>> 32);
         return x == 0 ? 32 + Integer.numberOfLeadingZeros((int)i)
@@ -1807,7 +1807,7 @@ public final class Long extends Number
      *     to zero.
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int numberOfTrailingZeros(long i) {
         int x = (int)i;
         return x == 0 ? 32 + Integer.numberOfTrailingZeros((int)(i >>> 32))
@@ -1824,7 +1824,7 @@ public final class Long extends Number
      *     representation of the specified {@code long} value.
      * @since 1.5
      */
-     @HotSpotIntrinsicCandidate
+     @IntrinsicCandidate
      public static int bitCount(long i) {
         // HD, Figure 5-2
         i = i - ((i >>> 1) & 0x5555555555555555L);
@@ -1926,7 +1926,7 @@ public final class Long extends Number
      *     {@code long} value.
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long reverseBytes(long i) {
         i = (i & 0x00ff00ff00ff00ffL) << 8 | (i >>> 8) & 0x00ff00ff00ff00ffL;
         return (i << 48) | ((i & 0xffff0000L) << 16) |

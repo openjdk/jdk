@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public interface InitialContextFactory {
           *             of the initial context.
           * @return A non-null initial context object that implements the Context
           *             interface.
-          * @exception NamingException If cannot create an initial context.
+          * @throws NamingException If cannot create an initial context.
           */
         public Context getInitialContext(Hashtable<?,?> environment)
             throws NamingException;

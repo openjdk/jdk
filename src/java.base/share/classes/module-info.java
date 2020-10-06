@@ -140,7 +140,6 @@ module java.base {
         java.security.sasl;
     exports jdk.internal to
         java.compiler,
-        jdk.jfr,
         jdk.compiler,
         jdk.jshell;
     exports jdk.internal.access to
@@ -230,6 +229,7 @@ module java.base {
     exports jdk.internal.vm.annotation to
         jdk.internal.vm.ci,
         jdk.incubator.foreign,
+        jdk.jfr,
         jdk.unsupported;
     exports jdk.internal.util to
             jdk.incubator.foreign;
