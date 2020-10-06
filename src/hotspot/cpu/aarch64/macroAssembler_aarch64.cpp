@@ -1834,7 +1834,7 @@ bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size
     return true;
   } else {
     assert(size_in_bytes == 8 || size_in_bytes == 4, "only 8 bytes or 4 bytes load/store is supported.");
-    const unsigned mask = size_in_bytes - 1;
+    const uint64_t mask = size_in_bytes - 1;
     if (adr.getMode() == Address::base_plus_offset &&
         (adr.offset() & mask) == 0) { // only supports base_plus_offset.
       code()->set_last_insn(pc());
