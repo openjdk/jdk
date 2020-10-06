@@ -179,7 +179,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
   }
 
   if (base == NULL) {
-    // Optimistically assume that the OSes returns an aligned base pointer.
+    // Optimistically assume that the OS returns an aligned base pointer.
     // When reserving a large address range, most OSes seem to align to at
     // least 64K.
 
@@ -194,7 +194,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
         base = NULL;
       }
     } else {
-      base = os::reserve_memory_with_fd(size, alignment, _fd_for_heap);
+      base = os::reserve_memory_with_fd(size, _fd_for_heap);
     }
 
     if (base == NULL) return;
@@ -371,18 +371,14 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
       log_debug(gc, heap, coops)("Reserve regular memory without large pages");
     }
 
-    // Optimistically assume that the OSes returns an aligned base pointer.
-    // When reserving a large address range, most OSes seem to align to at
-    // least 64K.
-
-    // If the memory was requested at a particular address, use
-    // os::attempt_reserve_memory_at() to avoid over mapping something
-    // important.  If available space is not detected, return NULL.
-
     if (requested_address != 0) {
       base = os::attempt_reserve_memory_at(requested_address, size, _fd_for_heap);
     } else {
-      base = os::reserve_memory_with_fd(size, alignment, _fd_for_heap);
+      // Optimistically assume that the OSes returns an aligned base pointer.
+      // When reserving a large address range, most OSes seem to align to at
+      // least 64K.
+      // If the returned memory is not aligned we will release and retry.
+      base = os::reserve_memory_with_fd(size, _fd_for_heap);
     }
   }
   if (base == NULL) { return; }

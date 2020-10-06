@@ -229,8 +229,17 @@ public class LinuxHelper {
         final Path packageFile = cmd.outputBundle();
         switch (cmd.packageType()) {
             case LINUX_DEB:
-                return Long.parseLong(getDebBundleProperty(packageFile,
+                Long estimate = Long.parseLong(getDebBundleProperty(packageFile,
                         "Installed-Size"));
+                if (estimate == 0L) {
+                    // if the estimate in KB is 0, check if it is really empty
+                    // or just < 1KB as with AppImagePackageTest.testEmpty()
+                    if (getPackageFiles(cmd).count() > 01L) {
+                        // there is something there so round up to 1 KB
+                        estimate = 01L;
+                    }
+                }
+                return estimate;
 
             case LINUX_RPM:
                 String size = getRpmBundleProperty(packageFile, "Size");

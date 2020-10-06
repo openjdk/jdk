@@ -2651,9 +2651,17 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
   fatal("DEBUG MESSAGE: %s", msg);
 }
 
+RegSet MacroAssembler::call_clobbered_registers() {
+  RegSet regs = RegSet::range(r0, r17) - RegSet::of(rscratch1, rscratch2);
+#ifndef R18_RESERVED
+  regs += r18_tls;
+#endif
+  return regs;
+}
+
 void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude) {
   int step = 4 * wordSize;
-  push(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2) - exclude, sp);
+  push(call_clobbered_registers() - exclude, sp);
   sub(sp, sp, step);
   mov(rscratch1, -step);
   // Push v0-v7, v16-v31.
@@ -2673,7 +2681,7 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
           as_FloatRegister(i+3), T1D, Address(post(sp, 4 * wordSize)));
   }
 
-  pop(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2) - exclude, sp);
+  pop(call_clobbered_registers() - exclude, sp);
 }
 
 void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,

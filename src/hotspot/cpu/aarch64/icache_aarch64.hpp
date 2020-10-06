@@ -26,19 +26,6 @@
 #ifndef CPU_AARCH64_ICACHE_AARCH64_HPP
 #define CPU_AARCH64_ICACHE_AARCH64_HPP
 
-// Interface for updating the instruction cache.  Whenever the VM
-// modifies code, part of the processor instruction cache potentially
-// has to be flushed.
-
-class ICache : public AbstractICache {
- public:
-  static void initialize();
-  static void invalidate_word(address addr) {
-    __builtin___clear_cache((char *)addr, (char *)(addr + 3));
-  }
-  static void invalidate_range(address start, int nbytes) {
-    __builtin___clear_cache((char *)start, (char *)(start + nbytes));
-  }
-};
+#include OS_CPU_HEADER(icache)
 
 #endif // CPU_AARCH64_ICACHE_AARCH64_HPP
