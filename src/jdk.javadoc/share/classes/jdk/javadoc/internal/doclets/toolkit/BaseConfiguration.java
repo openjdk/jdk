@@ -407,10 +407,8 @@ public abstract class BaseConfiguration {
     public boolean setOptions() throws DocletException {
         initPackages();
         initModules();
-        if (!finishOptionSettings0() || !finishOptionSettings())
-            return false;
-
-        return true;
+        return finishOptionSettings0()
+                && finishOptionSettings();
     }
 
     private void initDestDirectory() throws DocletException {
