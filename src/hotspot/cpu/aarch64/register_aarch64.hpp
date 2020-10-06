@@ -368,7 +368,7 @@ public:
 private:
 
   Register first() {
-    uint32_t first = _bitset & -_bitset;
+    uint32_t first = _bitset & (~_bitset + 1);
     return first ? as_Register(exact_log2(first)) : noreg;
   }
 
