@@ -244,6 +244,11 @@ abstract class FeedbackCipher {
         return 0;
     }
 
+    /*
+     * ByteBuffer methods should not be accessed as CipherCore and AESCipher
+     * copy the data to byte arrays.  These methods are to satisfy the compiler.
+     *
+     */
     int encrypt(ByteBuffer src, ByteBuffer dst) {
         throw new UnsupportedOperationException("ByteBuffer not supported");
     };

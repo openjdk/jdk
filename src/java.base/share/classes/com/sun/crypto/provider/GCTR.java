@@ -141,7 +141,7 @@ final class GCTR extends CounterMode {
     }
 
     // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
-    final int MAX_LEN = 4096;
+    final int MAX_LEN = 1024;
 
     int doFinal(ByteBuffer src, ByteBuffer dst) throws IllegalBlockSizeException {
         int len = src.remaining();

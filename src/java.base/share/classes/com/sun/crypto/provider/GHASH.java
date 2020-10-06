@@ -200,7 +200,7 @@ final class GHASH {
     }
 
     // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
-    static final int MAX_LEN = 4096;
+    static final int MAX_LEN = 1024;
 
     // Will process as many blocks it can and will leave the remaining.
     int update(ByteBuffer src, int inLen) {

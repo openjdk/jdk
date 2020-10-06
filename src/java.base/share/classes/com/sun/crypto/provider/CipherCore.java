@@ -1238,13 +1238,15 @@ final class CipherCore {
         cipher.updateAAD(src, offset, len);
     }
 
+    // This must only be used with GCM.
+    // If some data has been buffered from an update call, operate on the buffer
+    // then run doFinal.
     int doFinal(ByteBuffer src, ByteBuffer dst) throws ShortBufferException,
         IllegalBlockSizeException, BadPaddingException {
         int estOutSize = getOutputSizeByOperation(src.remaining(), true);
         if (estOutSize > dst.remaining()) {
             throw new ShortBufferException("output buffer too small");
         }
-        // GCM has no padding
 
         if (decrypting) {
             if (buffered > 0) {

@@ -156,16 +156,6 @@ class CounterMode extends FeedbackCipher {
         return crypt(in, inOff, len, out, outOff);
     }
 
-    @Override
-    public int encryptFinal(ByteBuffer src, ByteBuffer dst) {
-        throw new UnsupportedOperationException("ByteBuffer unsupported directly");
-    }
-
-    @Override
-    public int decryptFinal(ByteBuffer src, ByteBuffer dst) {
-        throw new UnsupportedOperationException("ByteBuffer unsupported directly");
-    }
-
     /**
      * Increment the counter value.
      */
