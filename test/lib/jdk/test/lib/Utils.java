@@ -853,17 +853,6 @@ public final class Utils {
         return ProcessTools.executeCommand(cmds);
     }
 
-    /*
-     * Returns the system distro.
-     */
-    public static String distro() {
-        try {
-            return uname("-v").asLines().get(0);
-        } catch (Throwable t) {
-            throw new RuntimeException("Failed to determine distro.", t);
-        }
-    }
-
     /**
      * Creates an empty file in "user.dir" if the property set.
      * <p>
