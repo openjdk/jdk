@@ -291,13 +291,15 @@ class DwarfFile : public ElfFile {
     long _start_pos;
     long _max_bytes_read; // Do not read more than this many bytes. Used for stopping in case of a corrupted DWARF file
    public:
-    MarkedDwarfFileReader(FILE *const fd, long max_bytes_read) : MarkedFileReader(fd),
-      _current_pos(-1), _start_pos(-1), _max_bytes_read(max_bytes_read) {}
+    MarkedDwarfFileReader(FILE* const fd) : MarkedFileReader(fd),
+      _current_pos(-1), _start_pos(-1), _max_bytes_read(-1) {}
     bool set_position(long new_pos);
+    void set_max_bytes_left(long max_bytes_read) { _max_bytes_read = max_bytes_read; }
     bool has_bytes_left() const; // Have we reached the limit of maximally allowable bytes to read?
     bool update_to_stored_position(); // Call this if another file reader has changed the position of the same file handle
     bool reset_to_previous_position();
     bool move_position(long offset);
+    bool read_sbyte(int8_t* result);
     bool read_byte(uint8_t* result);
     bool read_word(uint16_t* result);
     bool read_dword(uint32_t* result);
@@ -446,21 +448,26 @@ class DwarfFile : public ElfFile {
     discriminator(0) {}
   };
 
-  bool get_debug_line_offset_from_debug_abbrev(const CompilationUnitHeader32* cu_header, uint64_t abbrev_code, uint32_t *debug_line_offset);
-  bool process_attribute(uint64_t attribute, uint8_t address_size, MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset = nullptr);
+  // .debug_aranges
   bool find_compilation_unit_offset(int offset_in_library, uint64_t* compilation_unit_offset);
-  bool find_line_number(int offset_in_library, uint64_t debug_line_offset);
+  static bool read_debug_aranges_set_header(DebugArangesSetHeader32* header, MarkedDwarfFileReader* reader);
+
+  // .debug_abbrev and .debug_info
   bool find_debug_line_offset(int offset_in_library, uint64_t compilation_unit_offset, uint32_t* debug_line_offset);
-  bool get_compilation_unit_header(CompilationUnitHeader32 *compilation_unit_header, MarkedDwarfFileReader* reader);
+  static bool read_compilation_unit_header(CompilationUnitHeader32 *compilation_unit_header, MarkedDwarfFileReader* reader);
+  bool get_debug_line_offset_from_debug_abbrev(const CompilationUnitHeader32* cu_header, uint64_t abbrev_code, uint32_t* debug_line_offset);
+  bool process_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader, uint8_t address_size,
+                               MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset);
+  static bool process_attribute(uint64_t attribute, uint8_t address_size, MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset = nullptr);
+  static bool read_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader);
+
+  // .debug_line
+  bool find_line_number(int offset_in_library, uint64_t debug_line_offset);
+  static bool read_line_number_program_header(LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
 
  public:
   DwarfFile(const char* filepath) : ElfFile(filepath) {}
   bool get_line_number(int offset_in_library, char* buf, size_t buflen, int* line);
-
-  bool read_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader);
-
-  bool process_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader, uint8_t address_size,
-                               MarkedDwarfFileReader* debug_info_reader, uint32_t* pInt);
 };
 
 #endif // !_WINDOWS && !__APPLE__
