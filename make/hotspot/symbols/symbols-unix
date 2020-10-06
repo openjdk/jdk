@@ -146,7 +146,7 @@ JVM_IsArrayClass
 JVM_IsDynamicDumpingEnabled
 JVM_IsSharingEnabled
 JVM_IsConstructorIx
-JVM_IsDumpLoadedClassListSetAndOpen
+JVM_IsDumpingClassList
 JVM_IsHiddenClass
 JVM_IsInterface
 JVM_IsPrimitiveClass

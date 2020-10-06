@@ -55,8 +55,8 @@ Java_jdk_internal_misc_CDS_isSharingEnabled(JNIEnv *env, jclass jcls) {
 }
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_CDS_isDumpLoadedClassListSetAndOpen(JNIEnv *env, jclass jcls) {
-    return JVM_IsDumpLoadedClassListSetAndOpen(env);
+Java_jdk_internal_misc_CDS_isDumpingClassList0(JNIEnv *env, jclass jcls) {
+    return JVM_IsDumpingClassList(env);
 }
 
 JNIEXPORT void JNICALL

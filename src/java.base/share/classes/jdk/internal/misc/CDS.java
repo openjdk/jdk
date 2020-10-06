@@ -34,13 +34,15 @@ import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 
 public class CDS {
-    // cache the result
-    static private boolean isDumpLoadedClassList;
+    /**
+      * indicator for dumping class list.
+      */
+    static public final boolean isDumpingClassList;
     static {
-        isDumpLoadedClassList = isDumpLoadedClassListSetAndOpen();
+        isDumpingClassList = isDumpingClassList0();
     }
 
-    private static native boolean isDumpLoadedClassListSetAndOpen();
+    private static native boolean isDumpingClassList0();
     private static native void logLambdaFormInvoker(String line);
 
     /**
@@ -78,18 +80,20 @@ public class CDS {
     public static native boolean isSharingEnabled();
 
     /**
-     * check if -XX:+DumpLoadedClassList and given file is open
+     * log lambda form invoker holder, name and method type
      */
-    public static boolean isDumpLoadedClassList() {
-        return isDumpLoadedClassList;
+    public static void traceLambdaFormInvoker(String prefix, String holder, String name, String type) {
+        if (isDumpingClassList) {
+            logLambdaFormInvoker(prefix + " " + holder + " " + name + " " + type);
+        }
     }
 
     /**
-     * log output to DumpLoadedClassList
-     */
-    public static void traceLambdaFormInvoker(String line) {
-        if (isDumpLoadedClassList) {
-            logLambdaFormInvoker(line);
+      * log species
+      */
+    public static void traceSpeciesType(String prefix, String cn) {
+        if (isDumpingClassList) {
+            logLambdaFormInvoker(prefix + " " + cn);
         }
     }
 

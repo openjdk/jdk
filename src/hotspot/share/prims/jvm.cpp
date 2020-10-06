@@ -3867,8 +3867,8 @@ JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
   }
 JVM_END
 
-JVM_ENTRY(jboolean, JVM_IsDumpLoadedClassListSetAndOpen(JNIEnv *env))
-  JVMWrapper("JVM_IsDumpLoadedClassListSetAndOpen");
+JVM_ENTRY(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
+  JVMWrapper("JVM_IsDumpingClassList");
   return DumpLoadedClassList != NULL && classlist_file->is_open();
 JVM_END
 

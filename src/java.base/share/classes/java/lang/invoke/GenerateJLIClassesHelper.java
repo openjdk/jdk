@@ -55,23 +55,22 @@ class GenerateJLIClassesHelper {
     private static final String SPECIES_RESOLVE = "[SPECIES_RESOLVE]";
 
     static void traceLambdaForm(String name, MethodType type, Class<?> holder, MemberName resolvedMember) {
-        if (TRACE_RESOLVE || CDS.isDumpLoadedClassList()) {
-            String traceLF = LF_RESOLVE + " " + holder.getName() + " " + name + " " +
-                    shortenSignature(basicTypeSignature(type));
-            if (TRACE_RESOLVE) {
-                System.out.println(traceLF + (resolvedMember != null ? " (success)" : " (fail)"));
-            }
-            CDS.traceLambdaFormInvoker(traceLF);
+        if (TRACE_RESOLVE) {
+            System.out.println(LF_RESOLVE + " " + holder.getName() + " " + name + " " +
+                     shortenSignature(basicTypeSignature(type)) +
+                     (resolvedMember != null ? " (success)" : " (fail)"));
+        }
+        if (CDS.isDumpingClassList) {
+            CDS.traceLambdaFormInvoker(LF_RESOLVE, holder.getName(), name, shortenSignature(basicTypeSignature(type)));
         }
     }
 
     static void traceSpeciesType(String cn, Class<?> salvage) {
-        if (TRACE_RESOLVE || CDS.isDumpLoadedClassList()) {
-            String traceSP = SPECIES_RESOLVE + " " + cn;
-            if (TRACE_RESOLVE) {
-                System.out.println(traceSP + (salvage != null ? " (salvaged)" : " (generated)"));
-            }
-            CDS.traceLambdaFormInvoker(traceSP);
+        if (TRACE_RESOLVE) {
+            System.out.println(SPECIES_RESOLVE + " " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
+        }
+        if (CDS.isDumpingClassList) {
+            CDS.traceSpeciesType(SPECIES_RESOLVE, cn);
         }
     }
 

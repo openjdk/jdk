@@ -204,7 +204,7 @@ JNIEXPORT jboolean JNICALL
 JVM_IsSharingEnabled(JNIEnv* env);
 
 JNIEXPORT jboolean JNICALL
-JVM_IsDumpLoadedClassListSetAndOpen(JNIEnv* env);
+JVM_IsDumpingClassList(JNIEnv* env);
 
 JNIEXPORT jlong JNICALL
 JVM_GetRandomSeedForDumping();
