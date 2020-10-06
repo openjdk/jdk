@@ -39,7 +39,7 @@ void C2SafepointPollStubTable::emit_stub_impl(MacroAssembler& masm, C2SafepointP
 
   __ bind(entry->_stub_label);
   InternalAddress safepoint_pc(masm.pc() - masm.offset() + entry->_safepoint_offset);
-  __ lea(rscratch1, safepoint_pc);
+  __ adr(rscratch1, safepoint_pc);
   __ str(rscratch1, Address(rthread, JavaThread::saved_exception_pc_offset()));
   __ far_jump(callback_addr);
 }
