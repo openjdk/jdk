@@ -101,11 +101,6 @@ public:
   }
 
   void decrement() {
-#ifdef ASSERT
-    T old = Atomic::load_acquire(&_c);
-    assert(old >= 1,
-        "underflow (" UINT64_FORMAT "-1)", (uint64_t)old);
-#endif
     Atomic::dec(&_c);
   }
 
@@ -114,11 +109,6 @@ public:
   }
 
   void decrement_by(T v) {
-#ifdef ASSERT
-    T old = Atomic::load_acquire(&_c);
-    assert(old >= v,
-        "underflow (" UINT64_FORMAT "+" UINT64_FORMAT ")", (uint64_t)old, (uint64_t)v);
-#endif
     Atomic::sub(&_c, v);
   }
 

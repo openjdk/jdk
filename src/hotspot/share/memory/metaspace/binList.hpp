@@ -85,16 +85,8 @@ class BinListImpl {
     {}
   };
 
-  // a mask to speed up searching for populated lists.
-  // 0 marks an empty list, 1 for a non-empty one.
-  typedef uint32_t mask_t;
-  STATIC_ASSERT(num_lists <= sizeof(mask_t) * 8);
-
-  mask_t _mask;
-
   // Smallest block size must be large enough to hold a Block structure.
   STATIC_ASSERT(smallest_word_size * sizeof(MetaWord) >= sizeof(Block));
-
   STATIC_ASSERT(num_lists > 0);
 
 public:
@@ -126,27 +118,15 @@ private:
   int index_for_next_non_empty_list(int index) {
     assert(index >= 0 && index < num_lists, "Invalid index %d", index);
     int i2 = index;
-    mask_t m = _mask >> i2;
-    if (m > 0) {
-      while ((m & 1) == 0) {
-        assert(_blocks[i2] == NULL, "mask mismatch");
-        i2++;
-        m >>= 1;
-      }
-      // We must have found something.
-      assert(i2 < num_lists, "sanity.");
-      assert(_blocks[i2] != NULL, "mask mismatch");
-      return i2;
+    while (i2 < num_lists && _blocks[i2] == NULL) {
+      i2 ++;
     }
-    return -1;
+    return i2 == num_lists ? -1 : i2;
   }
-
-  void mask_set_bit(int bit) { _mask |= (((mask_t)1) << bit); }
-  void mask_clr_bit(int bit) { _mask &= ~(((mask_t)1) << bit); }
 
 public:
 
-  BinListImpl() : _mask(0) {
+  BinListImpl() {
     for (int i = 0; i < num_lists; i++) {
       _blocks[i] = NULL;
     }
@@ -160,7 +140,6 @@ public:
     Block* new_head = new(p)Block(old_head, word_size);
     _blocks[index] = new_head;
     _counter.add(word_size);
-    mask_set_bit(index);
   }
 
   // Given a word_size, searches and returns a block of at least that size.
@@ -178,9 +157,6 @@ public:
       const size_t real_word_size = word_size_for_index(index);
 
       _blocks[index] = _blocks[index]->_next;
-      if (_blocks[index] == NULL) {
-        mask_clr_bit(index);
-      }
 
       _counter.sub(real_word_size);
       *p_real_word_size = real_word_size;
@@ -199,13 +175,12 @@ public:
   // Returns total size, in words, of all elements.
   size_t total_size() const { return _counter.total_size(); }
 
-  bool is_empty() const { return _mask == 0; }
+  bool is_empty() const { return count() == 0; }
 
 #ifdef ASSERT
   void verify() const {
     MemRangeCounter local_counter;
     for (int i = 0; i < num_lists; i++) {
-      assert(((_mask >> i) & 1) == ((_blocks[i] == 0) ? 0 : 1), "sanity");
       const size_t s = MinWordSize + i;
       for (Block* b = _blocks[i]; b != NULL; b = b->_next) {
         assert(b->_word_size == s, "bad block size");

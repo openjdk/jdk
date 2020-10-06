@@ -66,7 +66,7 @@ namespace metaspace {
 //    commit granule, so 99% of all searches would end at the first chunk (which is either
 //    uncommitted or committed to at least one commit granule size).
 //  - in all likelihood chunks, when added to this list, are either fully committed
-//    or fully uncommitted (see Settings::uncommit_on_return_min_word_size()).
+//    or fully uncommitted.
 //
 // Should we ever encounter situations where the O(n) search is a bottleneck, this
 //  structure can easily be optimized (e.g. a BST). But for now lets keep this simple.
@@ -161,20 +161,6 @@ public:
       remove(c);
     }
     return c;
-  }
-
-  // Find and removes a chunk in this list which has at least min_committed_words committed words.
-  // Returns NULL if not found.
-  Metachunk* find_matching(size_t min_committed_words) {
-    Metachunk* c = _first;
-    while (c != NULL && c->committed_words() > 0) {
-      if (c->committed_words() <= min_committed_words) {
-        remove(c);
-        return c;
-      }
-      c = c->next();
-    }
-    return NULL;
   }
 
   // Returns reference to the first chunk in the list, or NULL

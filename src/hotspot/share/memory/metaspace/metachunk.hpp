@@ -216,7 +216,7 @@ public:
 
   void inc_level()                { _level++; DEBUG_ONLY(chunklevel::is_valid_level(_level);) }
   void dec_level()                { _level --; DEBUG_ONLY(chunklevel::is_valid_level(_level);) }
-  chunklevel_t level() const          { return _level; }
+  chunklevel_t level() const      { return _level; }
 
   // Convenience functions for extreme levels.
   bool is_root_chunk() const      { return chunklevel::ROOT_CHUNK_LEVEL == _level; }
@@ -238,9 +238,6 @@ public:
   // Fails if we hit a commit limit.
   bool ensure_committed(size_t new_committed_words);
   bool ensure_committed_locked(size_t new_committed_words);
-
-  bool ensure_fully_committed()           { return ensure_committed(word_size()); }
-  bool ensure_fully_committed_locked()    { return ensure_committed_locked(word_size()); }
 
   // Ensure that the chunk is committed far enough to serve an additional allocation of word_size.
   bool ensure_committed_additional(size_t additional_word_size)   {
