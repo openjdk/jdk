@@ -156,8 +156,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.ALLPACKAGES_INDEX),
                                              contents.allPackagesLabel));
         }
-        boolean anySystemProperties = mainIndex.getItems(Category.TAGS).stream()
-                .anyMatch(sii -> sii.getDocTree().getKind() == DocTree.Kind.SYSTEM_PROPERTY);
+        boolean anySystemProperties = !mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
         if (anySystemProperties) {
             contentTree.add(getVerticalSeparator());
             contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.SYSTEM_PROPERTIES),

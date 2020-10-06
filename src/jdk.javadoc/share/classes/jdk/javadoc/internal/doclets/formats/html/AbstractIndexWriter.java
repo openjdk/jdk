@@ -147,7 +147,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
             case METHOD:
             case FIELD:
             case ENUM_CONSTANT:
-                TypeElement containingType = item.getTypeElement();
+                TypeElement containingType = item.getContainingTypeElement();
                 dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.memberNameLink,
                         getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element, new StringContent(label))));
                 dt.add(" - ");

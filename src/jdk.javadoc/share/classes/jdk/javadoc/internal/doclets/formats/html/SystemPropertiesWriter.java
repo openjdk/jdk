@@ -88,8 +88,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
 
     private static void generate(HtmlConfiguration configuration, DocPath fileName) throws DocFileIOException {
         boolean hasSystemProperties = configuration.mainIndex != null
-                && configuration.mainIndex.getItems(Category.TAGS).stream()
-                        .anyMatch(sii -> sii.getDocTree().getKind() == DocTree.Kind.SYSTEM_PROPERTY);
+                && !configuration.mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
         if (!hasSystemProperties) {
             // Cannot defer this check any further, because of the super() call
             // that prints out notices on creating files, etc.
@@ -156,8 +155,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     }
 
     private Map<String, List<IndexItem>> groupSystemProperties() {
-        return configuration.mainIndex.getItems(Category.TAGS).stream()
-                .filter(ssi -> ssi.getDocTree().getKind() == DocTree.Kind.SYSTEM_PROPERTY)
+        return configuration.mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).stream()
                 .collect(groupingBy(IndexItem::getLabel, TreeMap::new, toList()));
     }
 

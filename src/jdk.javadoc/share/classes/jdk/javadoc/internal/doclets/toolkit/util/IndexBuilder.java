@@ -33,6 +33,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 
@@ -189,9 +190,28 @@ public class IndexBuilder {
         return new ArrayList<>(itemsByFirstChar.keySet());
     }
 
+    /**
+     * Returns a sorted list of items in a given category.
+     *
+     * @param cat the category
+     * @return list of items keyed by the provided character
+     */
     public SortedSet<IndexItem> getItems(IndexItem.Category cat) {
         Objects.requireNonNull(cat);
         return itemsByCategory.getOrDefault(cat, Collections.emptySortedSet());
+    }
+
+    /**
+     * Returns a sorted list of items with a given kind of doc tree.
+     *
+     * @param kind the kind
+     * @return list of items keyed by the provided character
+     */
+    public SortedSet<IndexItem> getItems(DocTree.Kind kind) {
+        Objects.requireNonNull(kind);
+        return itemsByCategory.getOrDefault(IndexItem.Category.TAGS, Collections.emptySortedSet()).stream()
+                .filter(i -> i.getDocTree().getKind() == kind)
+                .collect(Collectors.toCollection(() -> new TreeSet<>(mainComparator)));
     }
 
     /**

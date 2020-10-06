@@ -178,7 +178,7 @@ public class IndexItem {
      *
      * @return the item
      *
-     * @see #getTypeElement()
+     * @see #getContainingTypeElement()
      */
     public static IndexItem of(TypeElement typeElement, Element member, Utils utils) {
         String name = utils.getSimpleName(member);
@@ -188,7 +188,7 @@ public class IndexItem {
         }
         return new IndexItem(member, name) {
             @Override
-            public TypeElement getTypeElement() {
+            public TypeElement getContainingTypeElement() {
                 return typeElement;
             }
         };
@@ -312,7 +312,7 @@ public class IndexItem {
      * @return the fully qualified name
      */
     public String getFullyQualifiedLabel(Utils utils) {
-        TypeElement typeElement = getTypeElement();
+        TypeElement typeElement = getContainingTypeElement();
         if (typeElement != null) {
             return utils.getFullyQualifiedName(typeElement) + "." + label;
         } else if (isElementItem()) {
@@ -389,7 +389,7 @@ public class IndexItem {
      *
      * @return the type element
      */
-    public TypeElement getTypeElement() {
+    public TypeElement getContainingTypeElement() {
         return null;
     }
 
@@ -503,7 +503,7 @@ public class IndexItem {
      *
      * @return a string representing this item in JSON notation
      */
-    public String toJavaScript() {
+    public String toJSON() {
         // TODO: Additional processing is required, see JDK-8238495
         StringBuilder item = new StringBuilder();
         Category category = getCategory();

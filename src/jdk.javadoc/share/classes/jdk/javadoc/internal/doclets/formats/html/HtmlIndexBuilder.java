@@ -135,7 +135,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
             case METHOD:
             case FIELD:
             case ENUM_CONSTANT:
-                TypeElement containingType = item.getTypeElement();
+                TypeElement containingType = item.getContainingTypeElement();
                 item.setContainingPackage(utils.getPackageName(utils.containingPackage(element)));
                 item.setContainingClass(utils.getSimpleName(containingType));
                 if (configuration.showModules && addModuleInfo) {
@@ -230,7 +230,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
                 } else {
                     wr.write(",");
                 }
-                wr.write(item.toJavaScript());
+                wr.write(item.toJSON());
             }
             wr.write("];");
             wr.write("updateSearchResults();");

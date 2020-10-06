@@ -134,8 +134,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
             contentTree.add(links.createLink(DocPaths.ALLPACKAGES_INDEX,
                                              contents.allPackagesLabel));
         }
-        boolean anySystemProperties = mainIndex.getItems(Category.TAGS).stream()
-                .anyMatch(sii -> sii.getDocTree().getKind() == DocTree.Kind.SYSTEM_PROPERTY);
+        boolean anySystemProperties = !mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
         if (anySystemProperties) {
             contentTree.add(getVerticalSeparator());
             contentTree.add(links.createLink(DocPaths.SYSTEM_PROPERTIES, contents.systemPropertiesLabel));
