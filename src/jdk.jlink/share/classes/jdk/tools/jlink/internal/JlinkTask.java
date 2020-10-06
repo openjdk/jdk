@@ -276,7 +276,7 @@ public class JlinkTask {
 
             return EXIT_OK;
         } catch (FindException e) {
-            log.println(taskHelper.getMessage("err.prefix") + " " + e.getMessage());
+            log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
             e.printStackTrace(log);
             return EXIT_ERROR;
         } catch (PluginException | IllegalArgumentException |
