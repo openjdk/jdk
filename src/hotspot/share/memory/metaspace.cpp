@@ -479,8 +479,8 @@ const MetaspaceTracer* Metaspace::_tracer = NULL;
 DEBUG_ONLY(bool Metaspace::_frozen = false;)
 
 bool Metaspace::initialized() {
-  return metaspace::MetaspaceContext::context_nonclass() != NULL &&
-      (using_class_space() ? Metaspace::class_space_is_initialized() : true);
+  return metaspace::MetaspaceContext::context_nonclass() != NULL
+      LP64_ONLY(&& (using_class_space() ? Metaspace::class_space_is_initialized() : true));
 }
 
 #ifdef _LP64
