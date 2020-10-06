@@ -94,7 +94,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, T* load_
   }
 
   oop fwd = load_reference_barrier_not_null(obj);
-  if (fwd != NULL && load_addr != NULL && fwd != obj) {
+  if (ShenandoahSelfFixing && load_addr != NULL && fwd != obj) {
     // Since we are here and we know the load address, update the reference.
     ShenandoahHeap::cas_oop(fwd, load_addr, obj);
   }
