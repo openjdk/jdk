@@ -315,7 +315,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * @param obj The non-null object to compare against.
      * @return  A negative integer, zero, or a positive integer as this Rdn
      *          is less than, equal to, or greater than the given Object.
-     * @exception ClassCastException if obj is null or not a Rdn.
+     * @throws ClassCastException if obj is null or not a Rdn.
      */
     public int compareTo(Object obj) {
         if (!(obj instanceof Rdn)) {

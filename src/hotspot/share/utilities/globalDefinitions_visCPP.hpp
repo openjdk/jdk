@@ -136,4 +136,8 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 // Alignment
 #define ATTRIBUTE_ALIGNED(x) __declspec(align(x))
 
+#ifdef _M_ARM64
+#define USE_VECTORED_EXCEPTION_HANDLING
+#endif
+
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_VISCPP_HPP

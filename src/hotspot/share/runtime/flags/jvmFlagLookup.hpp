@@ -51,14 +51,14 @@ class JVMFlagLookup {
 
   // This is executed at build-time only, so it doesn't matter if we walk
   // the string twice.
-  static constexpr u2 hash_code(const char* s) {
+  static constexpr unsigned int hash_code(const char* s) {
     return hash_code(s, string_len(s));
   }
 
-  static constexpr u2 hash_code(const char* s, size_t len) {
-    u2 h = 0;
+  static constexpr unsigned int hash_code(const char* s, size_t len) {
+    unsigned int h = 0;
     while (len -- > 0) {
-      h = (u2)(31*h + (u2) *s);
+      h = 31*h + (unsigned int) *s;
       s++;
     }
     return h;

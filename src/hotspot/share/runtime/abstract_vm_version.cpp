@@ -291,6 +291,22 @@ unsigned int Abstract_VM_Version::jvm_version() {
          (Abstract_VM_Version::vm_build_number() & 0xFF);
 }
 
+void Abstract_VM_Version::insert_features_names(char* buf, size_t buflen, const char* features_names[]) {
+  uint64_t features = _features;
+  uint features_names_index = 0;
+
+  while (features != 0) {
+    if (features & 1) {
+      int res = jio_snprintf(buf, buflen, ", %s", features_names[features_names_index]);
+      assert(res > 0, "not enough temporary space allocated");
+      buf += res;
+      buflen -= res;
+    }
+    features >>= 1;
+    ++features_names_index;
+  }
+}
+
 bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
   char line[500];
   FILE* fp = fopen(filename, "r");

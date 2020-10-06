@@ -3667,7 +3667,7 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
     extra_size += alignment;
   }
 
-  char* start = anon_mmap(req_addr, bytes);
+  char* start = anon_mmap(req_addr, extra_size);
   if (start != NULL) {
     if (req_addr != NULL) {
       if (start != req_addr) {
@@ -3694,8 +3694,7 @@ static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
 
-char* os::pd_reserve_memory(size_t bytes, size_t alignment_hint) {
-  // Ignores alignment hint
+char* os::pd_reserve_memory(size_t bytes) {
   return anon_mmap(NULL, bytes);
 }
 

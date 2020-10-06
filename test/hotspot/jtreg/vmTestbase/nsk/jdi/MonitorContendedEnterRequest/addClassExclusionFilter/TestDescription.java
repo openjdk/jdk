@@ -39,7 +39,7 @@
  *                 - begins with '*' ('*Subclass')
  *                 - ending  with '*' ('nsk.share.jdi.MonitorEnterExecutor_*')
  *                 - class name ('nsk.share.jdi.MonitorEnterExecutor_1Subclass')
- *         Test executes class nsk.share.jdi.EventTestTemplates$ClassExclusionFilterTest which uses JDI events testing
+ *         Test executes class nsk.share.jdi.ClassExclusionFilterTest which uses JDI events testing
  *         framework based on classes from package nsk.share.jdi.*.
  *         This framework uses following scenario:
  *                 - debugger VM forces debugge VM to create number of objects which should generate events during test
@@ -57,17 +57,17 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.share.jdi.EventTestTemplates
+ * @build nsk.share.jdi.ClassExclusionFilterTest
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
- * @run main/othervm/native PropertyResolvingWrapper
- *      nsk.share.jdi.EventTestTemplates$ClassExclusionFilterTest
+ * @run main/othervm/native
+ *      nsk.share.jdi.ClassExclusionFilterTest
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  *      -allowMissedEvents MONITOR_CONTENTED_ENTER
  *      -eventType MONITOR_CONTENTED_ENTER
  *      -debuggeeClassName nsk.share.jdi.MonitorEventsDebuggee
