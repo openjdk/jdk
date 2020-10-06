@@ -101,9 +101,7 @@ static volatile jint pending_signals[NSIG+1] = { 0 };
 
 static const struct {
   int sig; const char* name;
-}
-
-g_signal_info[] = {
+} g_signal_info[] = {
   {  SIGABRT,     "SIGABRT" },
 #ifdef SIGAIO
   {  SIGAIO,      "SIGAIO" },
@@ -1568,10 +1566,6 @@ int PosixSignals::SR_initialize() {
   act.sa_handler = (void (*)(int)) SR_handler;
 
   // SR_signum is blocked by default.
-  // 4528190 - We also need to block pthread restart signal (32 on all
-  // supported Bsd platforms). Note that BsdThreads/LinuxThreads need to block
-  // this signal for all threads to work properly. So we don't have
-  // to use hard-coded signal number when setting up the mask.
   pthread_sigmask(SIG_BLOCK, NULL, &act.sa_mask);
 
   if (sigaction(SR_signum, &act, 0) == -1) {
