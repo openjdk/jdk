@@ -37,7 +37,7 @@ bool ShenandoahConcurrentRoots::should_do_concurrent_roots() {
 }
 
 bool ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() {
-  return true;
+  return ClassUnloading;
 }
 
 bool ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() {
