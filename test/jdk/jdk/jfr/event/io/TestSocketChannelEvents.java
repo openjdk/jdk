@@ -28,9 +28,13 @@ package jdk.jfr.event.io;
 import static jdk.test.lib.Asserts.assertEquals;
 
 import java.io.IOException;
+import java.net.SocketAddress;
+import java.net.InetSocketAddress;
+import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,12 +45,15 @@ import jdk.test.lib.jfr.Events;
 import jdk.test.lib.thread.TestThread;
 import jdk.test.lib.thread.XRun;
 
+import static java.net.StandardProtocolFamily.UNIX;
+
 /**
  * @test
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.event.io.TestSocketChannelEvents
+ * @run main/othervm jdk.jfr.event.io.TestSocketChannelEvents inet
+ * @run main/othervm jdk.jfr.event.io.TestSocketChannelEvents unix
  */
 public class TestSocketChannelEvents {
     private static final int bufSizeA = 10;
@@ -58,19 +65,70 @@ public class TestSocketChannelEvents {
         expectedEvents.add(event);
     }
 
-    public static void main(String[] args) throws Throwable {
-        new TestSocketChannelEvents().test();
+    static ServerSocketChannel getListener(String arg) throws IOException {
+        if (arg.equals("inet")) {
+            return ServerSocketChannel.open();
+        } else if (arg.equals("unix"))
+            return ServerSocketChannel.open(UNIX);
+        else
+            throw new RuntimeException("invalid arg");
     }
 
-    public void test() throws Throwable {
+    static IOEvent getReadEvent(int size, SocketChannel sc) throws IOException {
+        SocketAddress addr = sc.getLocalAddress();
+        if (addr instanceof InetSocketAddress) {
+            return IOEvent.createSocketReadEvent(size, sc.socket());
+        } else if (addr instanceof UnixDomainSocketAddress) {
+            return IOEvent.createUnixSocketReadEvent(size, sc);
+        } else
+            throw new RuntimeException("unexpected channel type");
+    }
+
+    static IOEvent getWriteEvent(int size, SocketChannel sc) throws IOException {
+        SocketAddress addr = sc.getLocalAddress();
+        if (addr instanceof InetSocketAddress) {
+            return IOEvent.createSocketWriteEvent(size, sc.socket());
+        } else if (addr instanceof UnixDomainSocketAddress) {
+            return IOEvent.createUnixSocketWriteEvent(size, sc);
+        } else
+            throw new RuntimeException("unexpected channel type");
+    }
+
+    static String getReadEventName(String mode) {
+        if (mode.equals("inet"))
+            return IOEvent.EVENT_SOCKET_READ;
+        else if (mode.equals("unix"))
+            return IOEvent.EVENT_UNIX_SOCKET_READ;
+        else
+            throw new RuntimeException();
+    }
+
+    static String getWriteEventName(String mode) {
+        if (mode.equals("inet"))
+            return IOEvent.EVENT_SOCKET_WRITE;
+        else if (mode.equals("unix"))
+            return IOEvent.EVENT_UNIX_SOCKET_WRITE;
+        else
+            throw new RuntimeException();
+    }
+
+    public static void main(String[] args) throws Throwable {
+        new TestSocketChannelEvents().test(args[0]);
+    }
+
+    public void test(String mode) throws Throwable {
         try (Recording recording = new Recording()) {
-            try (ServerSocketChannel ss = ServerSocketChannel.open()) {
-                recording.enable(IOEvent.EVENT_SOCKET_READ).withThreshold(Duration.ofMillis(0));
-                recording.enable(IOEvent.EVENT_SOCKET_WRITE).withThreshold(Duration.ofMillis(0));
+            SocketAddress local = null;
+            try (ServerSocketChannel ss = getListener(mode)) {
+                recording.enable(getReadEventName(mode)).withThreshold(Duration.ofMillis(0));
+                recording.enable(getWriteEventName(mode)).withThreshold(Duration.ofMillis(0));
                 recording.start();
 
-                ss.socket().setReuseAddress(true);
-                ss.socket().bind(null);
+                ss.bind(null);
+                local = ss.getLocalAddress();
+                if (ss.getLocalAddress() instanceof InetSocketAddress) {
+                    ss.socket().setReuseAddress(true);
+                }
 
                 TestThread readerThread = new TestThread(new XRun() {
                     @Override
@@ -80,13 +138,13 @@ public class TestSocketChannelEvents {
                         try (SocketChannel sc = ss.accept()) {
                             int readSize = sc.read(bufA);
                             assertEquals(readSize, bufSizeA, "Wrong readSize bufA");
-                            addExpectedEvent(IOEvent.createSocketReadEvent(bufSizeA, sc.socket()));
+                            addExpectedEvent(getReadEvent(bufSizeA, sc));
 
                             bufA.clear();
                             bufA.limit(1);
                             readSize = (int) sc.read(new ByteBuffer[] { bufA, bufB });
                             assertEquals(readSize, 1 + bufSizeB, "Wrong readSize 1+bufB");
-                            addExpectedEvent(IOEvent.createSocketReadEvent(readSize, sc.socket()));
+                            addExpectedEvent(getReadEvent(readSize, sc));
 
                             // We try to read, but client have closed. Should
                             // get EOF.
@@ -94,13 +152,13 @@ public class TestSocketChannelEvents {
                             bufA.limit(1);
                             readSize = sc.read(bufA);
                             assertEquals(readSize, -1, "Wrong readSize at EOF");
-                            addExpectedEvent(IOEvent.createSocketReadEvent(-1, sc.socket()));
+                            addExpectedEvent(getReadEvent(-1, sc));
                         }
                     }
                 });
                 readerThread.start();
 
-                try (SocketChannel sc = SocketChannel.open(ss.socket().getLocalSocketAddress())) {
+                try (SocketChannel sc = SocketChannel.open(ss.getLocalAddress())) {
                     ByteBuffer bufA = ByteBuffer.allocateDirect(bufSizeA);
                     ByteBuffer bufB = ByteBuffer.allocateDirect(bufSizeB);
                     for (int i = 0; i < bufSizeA; ++i) {
@@ -113,19 +171,24 @@ public class TestSocketChannelEvents {
                     bufB.flip();
 
                     sc.write(bufA);
-                    addExpectedEvent(IOEvent.createSocketWriteEvent(bufSizeA, sc.socket()));
+                    addExpectedEvent(getWriteEvent(bufSizeA, sc));
 
                     bufA.clear();
                     bufA.limit(1);
                     int bytesWritten = (int) sc.write(new ByteBuffer[] { bufA, bufB });
                     assertEquals(bytesWritten, 1 + bufSizeB, "Wrong bytesWritten 1+bufB");
-                    addExpectedEvent(IOEvent.createSocketWriteEvent(bytesWritten, sc.socket()));
+                    addExpectedEvent(getWriteEvent(bytesWritten, sc));
                 }
 
                 readerThread.joinAndThrow();
                 recording.stop();
                 List<RecordedEvent> events = Events.fromRecording(recording);
                 IOHelper.verifyEquals(events, expectedEvents);
+            } finally {
+                if (local instanceof UnixDomainSocketAddress) {
+                    var ua = (UnixDomainSocketAddress)local;
+                    Files.deleteIfExists(ua.getPath());
+                }
             }
         }
     }

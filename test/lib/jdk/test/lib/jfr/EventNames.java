@@ -187,6 +187,8 @@ public class EventNames {
     public static final String FileWrite = PREFIX + "FileWrite";
     public static final String SocketRead = PREFIX + "SocketRead";
     public static final String SocketWrite = PREFIX + "SocketWrite";
+    public static final String UnixSocketRead = PREFIX + "UnixSocketRead";
+    public static final String UnixSocketWrite = PREFIX + "UnixSocketWrite";
     public final static String ExceptionStatistics = PREFIX + "ExceptionStatistics";
     public final static String JavaExceptionThrow = PREFIX + "JavaExceptionThrow";
     public final static String JavaErrorThrow = PREFIX + "JavaErrorThrow";

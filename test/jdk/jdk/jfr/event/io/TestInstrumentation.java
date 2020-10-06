@@ -192,7 +192,8 @@ public class TestInstrumentation implements ClassFileTransformer {
                 String[] noArgs = new String[0];
                 TestRandomAccessFileEvents.main(noArgs);
                 TestSocketEvents.main(noArgs);
-                TestSocketChannelEvents.main(noArgs);
+                TestSocketChannelEvents.main(new String[] {"inet"});
+                TestSocketChannelEvents.main(new String[] {"unix"});
                 TestFileChannelEvents.main(noArgs);
                 TestFileStreamEvents.main(noArgs);
                 TestDisabledEvents.main(noArgs);

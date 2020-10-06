@@ -46,14 +46,14 @@ class UnixDomainSocketsUtil {
      *
      * On UNIX we search the following directories in sequence:
      *
-     * 1. ${jdk.nio.unixdomain.tmpdir} if set as system property
-     * 2. ${jdk.nio.unixdomain.tmpdir} if set as net property
+     * 1. ${jdk.net.unixdomain.tmpdir} if set as system property
+     * 2. ${jdk.net.unixdomain.tmpdir} if set as net property
      * 3. ${java.io.tmpdir} system property
      *
      */
     static String getTempDir() {
         PrivilegedAction<String> action = () -> {
-            String s = NetProperties.get("jdk.nio.unixdomain.tmpdir");
+            String s = NetProperties.get("jdk.net.unixdomain.tmpdir");
             if (s != null && s.length() > 0) {
                 return s;
             }

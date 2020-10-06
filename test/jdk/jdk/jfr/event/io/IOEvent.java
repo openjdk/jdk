@@ -28,6 +28,10 @@ package jdk.jfr.event.io;
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
+import java.nio.channels.SocketChannel;
 
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedThread;
@@ -77,19 +81,41 @@ public class IOEvent {
     public static final String EVENT_FILE_WRITE = EventNames.FileWrite;
     public static final String EVENT_SOCKET_READ = EventNames.SocketRead;
     public static final String EVENT_SOCKET_WRITE = EventNames.SocketWrite;
+    public static final String EVENT_UNIX_SOCKET_READ = EventNames.UnixSocketRead;
+    public static final String EVENT_UNIX_SOCKET_WRITE = EventNames.UnixSocketWrite;
 
-    public enum EventType { UnknownEvent, FileForce, FileRead, FileWrite, SocketRead, SocketWrite }
+    public enum EventType {
+        UnknownEvent, FileForce,
+        FileRead, FileWrite,
+        SocketRead, SocketWrite,
+        UnixSocketRead, UnixSocketWrite
+    }
 
     private static final String[] eventPaths = {
-        EVENT_UNKNOWN, EVENT_FILE_FORCE, EVENT_FILE_READ, EVENT_FILE_WRITE, EVENT_SOCKET_READ, EVENT_SOCKET_WRITE
+        EVENT_UNKNOWN, EVENT_FILE_FORCE, EVENT_FILE_READ, EVENT_FILE_WRITE,
+        EVENT_SOCKET_READ, EVENT_SOCKET_WRITE, EVENT_UNIX_SOCKET_READ, EVENT_UNIX_SOCKET_WRITE
     };
 
     public static boolean isWriteEvent(EventType eventType) {
-        return (eventType == EventType.SocketWrite || eventType == EventType.FileWrite);
+        return (eventType == EventType.SocketWrite
+                || eventType == EventType.FileWrite
+                || eventType == EventType.UnixSocketWrite);
+    }
+
+    public static boolean isInetEvent(EventType eventType) {
+        return (eventType == EventType.SocketRead
+                || eventType == EventType.SocketWrite);
+    }
+
+    public static boolean isUnixEvent(EventType eventType) {
+        return (eventType == EventType.UnixSocketRead
+                || eventType == EventType.UnixSocketWrite);
     }
 
     public static boolean isReadEvent(EventType eventType) {
-        return (eventType == EventType.SocketRead || eventType == EventType.FileRead);
+        return (eventType == EventType.SocketRead
+                || eventType == EventType.FileRead
+                || eventType == EventType.UnixSocketRead);
     }
 
     public static boolean isFileEvent(EventType eventType) {
@@ -110,6 +136,24 @@ public class IOEvent {
             endOfStream = true;
         }
         return new IOEvent(Thread.currentThread().getName(), EventType.SocketRead, size, getAddress(s), endOfStream);
+    }
+
+    public static IOEvent createUnixSocketWriteEvent(long size, SocketChannel c) {
+        if (size < 0) {
+            size = 0;
+        }
+        return new IOEvent(Thread.currentThread().getName(), EventType.UnixSocketWrite,
+                                size, getUnixAddress(c), false);
+    }
+
+    public static IOEvent createUnixSocketReadEvent(long size, SocketChannel c) {
+        boolean endOfStream = false;
+        if (size < 0) {
+            size = 0;
+            endOfStream = true;
+        }
+        return new IOEvent(Thread.currentThread().getName(), EventType.UnixSocketRead,
+                                size, getUnixAddress(c), endOfStream);
     }
 
     public static IOEvent createFileForceEvent(File file) {
@@ -186,7 +230,8 @@ public class IOEvent {
     }
 
     public static String getEventAddress(RecordedEvent event) {
-        if (isFileEvent(getEventType(event))) {
+        EventType eventType = getEventType(event);
+        if (isFileEvent(eventType)) {
             String address = Events.assertField(event, "path").getValue();
             // must ensure canonical format
             String canonical_path = null;
@@ -196,12 +241,26 @@ public class IOEvent {
                 throw new RuntimeException();
             }
             return canonical_path;
-        } else {
+        } else if (isInetEvent(eventType)) {
             return event.getValue("address") + ":"  + event.getValue("port");
+        } else {
+            return event.getValue("path");
         }
     }
 
     private static String getAddress(Socket s) {
         return s.getInetAddress().getHostAddress() + ":" + s.getPort();
+    }
+
+    private static String getUnixAddress(SocketChannel c) {
+        SocketAddress a = null;
+        try {
+            a = c.getRemoteAddress();
+        } catch (IOException e) {}
+        if (a instanceof UnixDomainSocketAddress) {
+            UnixDomainSocketAddress ua = (UnixDomainSocketAddress)a;
+            return ua.getPath().toString();
+        } else
+            throw new RuntimeException("unexpected channel type");
     }
 }
