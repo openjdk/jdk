@@ -1353,7 +1353,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             proc.debug(ex, "SourceCodeAnalysisImpl.element2String(..., " + el + ")");
         }
         String signature = Util.expunge(elementHeader(at, el, !hasSyntheticParameterNames(el), true));
-        String moduleName = at.getElements().getModuleOf(el).getQualifiedName().toString(); //XXX - unnamed module
+        String moduleName = at.getElements().getModuleOf(el).getQualifiedName().toString();
         String typeName;
         String anchor;
         if (el.getKind().isClass() || el.getKind().isInterface()) {

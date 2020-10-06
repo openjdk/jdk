@@ -359,7 +359,7 @@ public class CommandCompletionTest extends ReplToolTesting {
                 a -> assertCompletion(a, "/se|", false, "/set "),
                 a -> assertCompletion(a, "/set |", false, "browser ", "editor ", "feedback ", "format ", "indent ", "mode ", "prompt ", "start ", "truncation "),
 
-                // /set editor
+                // /set browser
                 a -> assertCompletion(a, "/set b|", false, "browser "),
                 a -> assertCompletion(a, "/set browser |", false, p1.toArray(new String[p1.size()])),
 

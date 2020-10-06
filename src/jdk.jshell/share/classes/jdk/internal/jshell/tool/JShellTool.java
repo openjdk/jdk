@@ -94,6 +94,7 @@ import jdk.jshell.Snippet.Kind;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.SnippetEvent;
 import jdk.jshell.SourceCodeAnalysis;
+import jdk.jshell.SourceCodeAnalysis.CompletionContext;
 import jdk.jshell.SourceCodeAnalysis.CompletionInfo;
 import jdk.jshell.SourceCodeAnalysis.Completeness;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
@@ -123,8 +124,6 @@ import jdk.internal.editor.external.ExternalEditor;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.singletonList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Snippet.SubKind.TEMP_VAR_EXPRESSION_SUBKIND;
@@ -137,7 +136,6 @@ import static jdk.internal.jshell.debug.InternalDebugControl.DBG_FMGR;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_WRAP;
 import static jdk.internal.jshell.tool.ContinuousCompletionProvider.STARTSWITH_MATCHER;
-import jdk.jshell.SourceCodeAnalysis.CompletionContext;
 
 /**
  * Command line REPL tool for Java using the JShell API.
