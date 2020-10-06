@@ -86,7 +86,7 @@ void SafepointMechanism::process(JavaThread *thread) {
   // The call to start_processing fixes the thread's oops and the first few frames.
   //
   // The call has been carefully placed here to cater for a few situations:
-  // 1) After we exit from block after a global pool
+  // 1) After we exit from block after a global poll
   // 2) After a thread races with the disarming of the global poll and transitions from native/blocked
   // 3) Before the handshake code is run
   StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
@@ -98,14 +98,14 @@ void SafepointMechanism::process(JavaThread *thread) {
 
 uintptr_t SafepointMechanism::compute_poll_word(bool armed, uintptr_t stack_watermark) {
   if (armed) {
-    log_debug(stackbarrier)("Computed armed at %d", Thread::current()->osthread()->thread_id());
+    log_debug(stackbarrier)("Computed armed for tid %d", Thread::current()->osthread()->thread_id());
     return _poll_word_armed_value;
   }
   if (stack_watermark == 0) {
-    log_debug(stackbarrier)("Computed disarmed at %d", Thread::current()->osthread()->thread_id());
+    log_debug(stackbarrier)("Computed disarmed for tid %d", Thread::current()->osthread()->thread_id());
     return _poll_word_disarmed_value;
   }
-  log_debug(stackbarrier)("Computed watermark at %d", Thread::current()->osthread()->thread_id());
+  log_debug(stackbarrier)("Computed watermark for tid %d", Thread::current()->osthread()->thread_id());
   return stack_watermark;
 }
 
