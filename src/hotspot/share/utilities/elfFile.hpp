@@ -103,15 +103,16 @@ public:
   FileReader(FILE* const fd) : _fd(fd) {};
   bool read(void* buf, size_t size);
   int  read_buffer(void* buf, size_t size);
-  bool set_position(long offset);
+
+  virtual bool set_position(long offset);
 };
 
 // Mark current position, so we can get back to it after
 // reads.
 class MarkedFileReader : public FileReader {
-private:
+ protected:
   long  _marked_pos;
-public:
+ public:
   MarkedFileReader(FILE* const fd);
   ~MarkedFileReader();
 
@@ -264,6 +265,45 @@ class DwarfFile : public ElfFile {
   static constexpr uint8_t DW_FORM_flag_present = 0x19; // flag
   static constexpr uint8_t DW_FORM_ref_sig8 = 0x20; // reference
 
+  // Standard Opcodes for line number program from section 6.2.5.2 in DWARF 4 spec
+  static constexpr uint8_t DW_LNS_copy = 1;
+  static constexpr uint8_t DW_LNS_advance_pc = 2;
+  static constexpr uint8_t DW_LNS_advance_line = 3;
+  static constexpr uint8_t DW_LNS_set_file = 4;
+  static constexpr uint8_t DW_LNS_set_column = 5;
+  static constexpr uint8_t DW_LNS_negate_stmt = 6;
+  static constexpr uint8_t DW_LNS_set_basic_block = 7;
+  static constexpr uint8_t DW_LNS_const_add_pc = 8;
+  static constexpr uint8_t DW_LNS_fixed_advance_pc = 9;
+  static constexpr uint8_t DW_LNS_set_prologue_end = 10;
+  static constexpr uint8_t DW_LNS_set_epilogue_begin = 11;
+  static constexpr uint8_t DW_LNS_set_isa = 12;
+
+  // Standard Opcodes for line number program from section 6.2.5.3 in DWARF 4 spec
+  static constexpr uint8_t DW_LNE_end_sequence = 1;
+  static constexpr uint8_t DW_LNE_set_address = 2;
+  static constexpr uint8_t DW_LNE_define_file = 3;
+  static constexpr uint8_t DW_LNE_set_discriminator = 4;
+
+  class MarkedDwarfFileReader : public MarkedFileReader {
+   private:
+    long _current_pos;
+    long _start_pos;
+    long _max_bytes_read; // Do not read more than this many bytes. Used for stopping in case of a corrupted DWARF file
+   public:
+    MarkedDwarfFileReader(FILE *const fd, long max_bytes_read) : MarkedFileReader(fd),
+      _current_pos(-1), _start_pos(-1), _max_bytes_read(max_bytes_read) {}
+    bool set_position(long new_pos);
+    bool has_bytes_left() const; // Have we reached the limit of maximally allowable bytes to read?
+    bool update_to_stored_position(); // Call this if another file reader has changed the position of the same file handle
+    bool reset_to_previous_position();
+    bool move_position(long offset);
+    bool read_byte(uint8_t* result);
+    bool read_word(uint16_t* result);
+    bool read_dword(uint32_t* result);
+    bool read_qword(uint64_t* result);
+    bool read_uleb128(uint64_t* result);
+  };
 
   // See DWARF4 specification section 6.1.2.
   struct DebugArangesSetHeader32 {
@@ -285,8 +325,6 @@ class DwarfFile : public ElfFile {
     // this value is 0.
     uint8_t segment_size;
 
-    static const uint SIZE = 12; // 4 + 2 + 4 + 1 + 1
-
     void print_fields() const {
       tty->print_cr("%x", unit_length);
       tty->print_cr("%x", version);
@@ -297,7 +335,7 @@ class DwarfFile : public ElfFile {
   };
 
   struct DebugArangesSet64 {
-    address beginning_address;
+    uint64_t beginning_address;
     uint64_t length;
   };
 
@@ -307,7 +345,7 @@ class DwarfFile : public ElfFile {
 
   // See DWARF4 spec section 7.5.1.1
   struct CompilationUnitHeader32 {
-    //  the length of the .debug_info contribution for that compilation unit, not including the length field itself.
+    // The length of the .debug_info contribution for that compilation unit, not including the length field itself.
     uint32_t unit_length;
 
     // The version of the DWARF information for the compilation unit. The value in this field is 4 for DWARF 4.
@@ -322,18 +360,107 @@ class DwarfFile : public ElfFile {
     uint8_t  address_size;
   };
 
-  static bool read_uleb128(MarkedFileReader* mfd, uint64_t* result);
+  // See DWARF 4 spec, section 6.2.4
+  struct LineNumberProgramHeader32 {
+    // The size in bytes of the line number information for this compilation unit, not including the
+    // unit_length field itself. 32-bit DWARF uses 4 bytes.
+    uint32_t unit_length;
+
+    // A version number (see Appendix F). This number is specific to the line number information
+    // and is independent of the DWARF version number.
+    uint16_t version;
+
+    // The number of bytes following the header_length field to the beginning of the first byte of
+    // the line number program itself. In the 32-bit DWARF format uses 4 bytes.
+    uint32_t header_length;
+
+    // The size in bytes of the smallest target machine instruction. Line number program opcodes that alter the address
+    // and op_index registers use this and maximum_operations_per_instruction in their calculations.
+    uint8_t minimum_instruction_length;
+
+    // The maximum number of individual operations that may be encoded in an instruction. Line number program opcodes
+    // that alter the address and op_index registers use this and minimum_instruction_length in their calculations.
+    // For non-VLIW architectures, this field is 1, the op_index register is always 0, and the operation pointer is
+    // simply the address register.
+    uint8_t maximum_operations_per_instruction;
+
+    // The initial value of the is_stmt register.
+    uint8_t default_is_stmt;
+
+    // This parameter affects the meaning of the special opcodes.
+    int8_t line_base;
+
+    // This parameter affects the meaning of the special opcodes.
+    uint8_t line_range;
+
+    // The number assigned to the first special opcode.
+    uint8_t opcode_base;
+
+    // This array specifies the number of LEB128 operands for each of the standard opcodes. The
+    // first element of the array corresponds to the opcode whose value is 1, and the last element
+    // corresponds to the opcode whose value is opcode_base - 1. DWARF 4 uses 12 standard opcodes.
+    uint8_t standard_opcode_lengths[12];
+  };
+
+  // Defined in DWARF 4, Section 6.2.2
+  struct LineNumberState {
+    // The program-counter value corresponding to a machine instruction generated by the compiler.
+    uint64_t address; // TODO 32 bit?
+
+    // The index of an operation within a VLIW instruction. The index of the first operation is 0. For non-VLIW
+    // architectures, this register will always be 0.
+    // The address and op_index registers, taken together, form an operation pointer that can reference any
+    // individual operation with the instruction stream.
+    uint32_t op_index;
+
+    // The identity of the source file corresponding to a machine instruction.
+    uint32_t file;
+
+    // A source line number. Lines are numbered beginning at 1. The compiler may emit the value 0 in cases where an
+    // instruction cannot be attributed to any source line.
+    uint32_t line;
+
+    // A column number within a source line. Columns are numbered beginning at 1. The value 0 is reserved to indicate
+    // that a statement begins at the “left edge” of the line.
+    uint32_t column;
+
+    uint8_t is_stmt;
+    bool basic_block;
+    bool end_sequence;
+    bool prologue_end;
+    bool epilogue_begin;
+    uint32_t isa;
+    uint32_t discriminator;
+
+    LineNumberState(uint8_t default_is_stmt) :
+    address(0),
+    op_index(0),
+    file(1),
+    column(1),
+    is_stmt(default_is_stmt),
+    basic_block(false),
+    end_sequence(false),
+    prologue_end(false),
+    epilogue_begin(false),
+    isa(0),
+    discriminator(0) {}
+  };
+
+  bool get_debug_line_offset_from_debug_abbrev(const CompilationUnitHeader32* cu_header, uint64_t abbrev_code, uint32_t *debug_line_offset);
+  bool process_attribute(uint64_t attribute, uint8_t address_size, MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset = nullptr);
+  bool find_compilation_unit_offset(int offset_in_library, uint64_t* compilation_unit_offset);
+  bool find_line_number(int offset_in_library, uint64_t debug_line_offset);
+  bool find_debug_line_offset(int offset_in_library, uint64_t compilation_unit_offset, uint32_t* debug_line_offset);
+  bool get_compilation_unit_header(CompilationUnitHeader32 *compilation_unit_header, MarkedDwarfFileReader* reader);
 
  public:
-  bool find_compilation_unit_offset(const int offset_in_library, uint64_t* compilation_unit_offset);
-  bool find_debug_line_offset(const int offset_in_library, const uint64_t compilation_unit_offset, uint64_t* debug_line_offset);
-
   DwarfFile(const char* filepath) : ElfFile(filepath) {}
   bool get_line_number(int offset_in_library, char* buf, size_t buflen, int* line);
 
-  bool get_debug_line_offset_from_debug_abbrev(MarkedFileReader* debug_info_reader, const CompilationUnitHeader32 *cu_header, const uint64_t abbrev_code, uint64_t *debug_line_offset);
+  bool read_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader);
 
-  bool process_attribute(const uint64_t attribute, const uint8_t address_size, long* current_debug_info_position,uint64_t* debug_line_offset = nullptr);
+  bool process_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader, uint8_t address_size,
+                               MarkedDwarfFileReader* debug_info_reader, uint32_t* pInt);
 };
 
 #endif // !_WINDOWS && !__APPLE__
