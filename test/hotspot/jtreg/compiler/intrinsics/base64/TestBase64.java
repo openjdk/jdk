@@ -86,7 +86,8 @@ public class TestBase64 {
 
         ran.nextBytes(srcBuf);
 
-        // This should be enough to get both the decoder and encoder intrinsic loaded up and running.
+        // This should be enough to get both encodeBlock() and
+        // decodeBlock() compiled on the highest tier.
         for (int i = 0; i < warmupCount; i++) {
             Base64.getEncoder().encode(srcBuf, encBuf);
             Base64.getDecoder().decode(encBuf, decBuf);
