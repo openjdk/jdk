@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 
 import jdk.internal.HotSpotIntrinsicCandidate;

@@ -925,7 +925,7 @@ final class CipherCore {
         int estOutSize = getOutputSizeByOperation(inputLen, true);
         int outputCapacity = checkOutputCapacity(output, outputOffset,
                 estOutSize);
-        int offset = outputOffset; // 0 for decrypting
+        int offset = outputOffset;
         byte[] finalBuf = prepareInputBuffer(input, inputOffset,
                 inputLen, output, outputOffset);
         byte[] internalOutput = null; // for decrypting only
@@ -939,12 +939,10 @@ final class CipherCore {
             // content of cipher has to be preserved in order for
             // users to retry the call with a larger buffer in the
             // case of ShortBufferException.
-            if (outputCapacity < estOutSize) {
-                cipher.save();
-            }
-            // create temporary output buffer if the estimated size is larger
-            // than the user-provided buffer.
             if (output.length - outputOffset < estOutSize) {
+                cipher.save();
+                // create temporary output buffer if the estimated size is larger
+                // than the user-provided buffer.
                 internalOutput = new byte[estOutSize];
                 offset = 0;
             }

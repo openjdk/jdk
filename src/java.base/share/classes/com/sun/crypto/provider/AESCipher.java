@@ -657,9 +657,12 @@ abstract class AESCipher extends CipherSpi {
         return bufferCrypt(input, output, false);
     }
 
-        /**
+    /**
      * Implementation for encryption using ByteBuffers. Used for both
      * engineUpdate() and engineDoFinal().
+     *
+     * This replaces CipherSpi.bufferCrypt to allow GCM to use ByteBuffers;
+     * otherwise the two should be kept the same.
      */
     private int bufferCrypt(ByteBuffer input, ByteBuffer output,
             boolean isUpdate) throws ShortBufferException,
