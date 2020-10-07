@@ -30,12 +30,34 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
+class jvmtiDeferredLocalVariable : public CHeapObj<mtCompiler> {
+
+  private:
+
+    BasicType _type;
+    jvalue    _value;
+    int       _index;
+
+  public:
+
+    jvmtiDeferredLocalVariable(int index, BasicType type, jvalue value);
+
+    BasicType type(void)         { return _type; }
+    int index(void)              { return _index; }
+    jvalue value(void)           { return _value; }
+
+    // Only mutator is for value as only it can change
+    void set_value(jvalue value) { _value = value; }
+
+    // For gc
+    oop* oop_addr(void)          { return (oop*) &_value.l; }
+};
+
 // In order to implement set_locals for compiled vframes we must
 // store updated locals in a data structure that contains enough
 // information to recognize equality with a vframe and to store
 // any updated locals.
 
-class jvmtiDeferredLocalVariable;
 class StackValueCollection;
 
 class jvmtiDeferredLocalVariableSet : public CHeapObj<mtCompiler> {
@@ -83,32 +105,8 @@ private:
   ~jvmtiDeferredLocalVariableSet();
 };
 
-class jvmtiDeferredLocalVariable : public CHeapObj<mtCompiler> {
-
-  private:
-
-    BasicType _type;
-    jvalue    _value;
-    int       _index;
-
-  public:
-
-    jvmtiDeferredLocalVariable(int index, BasicType type, jvalue value);
-
-    BasicType type(void)         { return _type; }
-    int index(void)              { return _index; }
-    jvalue value(void)           { return _value; }
-
-    // Only mutator is for value as only it can change
-    void set_value(jvalue value) { _value = value; }
-
-    // For gc
-    oop* oop_addr(void)          { return (oop*) &_value.l; }
-};
-
-
 // Holds updates for compiled frames by JVMTI agents that cannot be performed immediately.
-class jvmtiDeferredLocalVariableSet;
+
 class JvmtiDeferredUpdates : public CHeapObj<mtCompiler> {
 
   // Relocking has to be deferred if the lock owning thread is currently waiting on the monitor.
