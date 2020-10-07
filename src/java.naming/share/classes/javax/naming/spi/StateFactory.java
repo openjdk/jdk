@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ public interface StateFactory {
  *              be used in the creation of the object's state.
  * @return The object's state for binding;
  *              null if the factory is not returning any changes.
- * @exception NamingException if this factory encountered an exception
+ * @throws NamingException if this factory encountered an exception
  * while attempting to get the object's state, and no other factories are
  * to be tried.
  *

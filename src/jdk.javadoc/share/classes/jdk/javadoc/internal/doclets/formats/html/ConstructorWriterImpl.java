@@ -125,7 +125,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         }
         constructorDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, constructorDocTree)
-                .setId(links.getName(writer.getAnchor(constructor)));
+                .setId(links.getAnchor(constructor));
     }
 
     @Override
