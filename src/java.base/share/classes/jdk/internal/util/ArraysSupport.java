@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
  */
 package jdk.internal.util;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * Utility methods to work with arrays.  This includes a set of methods
@@ -108,7 +108,7 @@ public class ArraysSupport {
      * compliment of the number of remaining pairs of elements to be checked in
      * the tail of the two arrays.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int vectorizedMismatch(Object a, long aOffset,
                                          Object b, long bOffset,
                                          int length,

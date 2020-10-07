@@ -75,7 +75,7 @@ class ThreadStateTransition : public StackObj {
  public:
   ThreadStateTransition(JavaThread *thread) {
     _thread = thread;
-    assert(thread != NULL && thread->is_Java_thread(), "must be Java thread");
+    assert(thread != NULL, "must be active Java thread");
   }
 
   // Change threadstate in a manner, so safepoint can detect changes.
@@ -132,10 +132,6 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
   void transition_back() {
     // This can be invoked from transition states and must return to the original state properly
     assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
-    // Change to transition state and ensure it is seen by the VM thread.
-    _thread->set_thread_state_fence(_thread_in_vm_trans);
-
-    SafepointMechanism::process_if_requested(_thread);
 
     _thread->set_thread_state(_original_state);
 
@@ -156,6 +152,9 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
     }
 
     thread->set_thread_state(_thread_in_vm);
+
+    // Threads shouldn't block if they are in the middle of printing, but...
+    ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
   }
 
   ~ThreadInVMForHandshake() {
@@ -186,7 +185,7 @@ class ThreadInVMfromUnknown {
   ThreadInVMfromUnknown() : _thread(NULL) {
     Thread* t = Thread::current();
     if (t->is_Java_thread()) {
-      JavaThread* t2 = (JavaThread*) t;
+      JavaThread* t2 = t->as_Java_thread();
       if (t2->thread_state() == _thread_in_native) {
         _thread = t2;
         ThreadStateTransition::transition_from_native(t2, _thread_in_vm);

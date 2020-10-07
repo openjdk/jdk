@@ -189,10 +189,12 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
             boolean skip = false;
             for (final DisplayMode dmUnique : dmSubset) {
                 int bitDepth = dm.getBitDepth();
-                if (bitDepth == 24 ||
-                        (dmUnique.getWidth() == dm.getWidth() &&
-                         dmUnique.getHeight() == dm.getHeight() &&
-                         dmUnique.getBitDepth() == dm.getBitDepth())) {
+                int width = dm.getWidth();
+                int height = dm.getHeight();
+                if (bitDepth == 24 || width <= 800 || height <= 600 ||
+                        (dmUnique.getWidth() == width &&
+                         dmUnique.getHeight() == height &&
+                         dmUnique.getBitDepth() == bitDepth)) {
                     skip = true;
                     break;
                 }
@@ -267,6 +269,7 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
                 continue;
             }
             done = false;
+            DisplayMode currentDM = gd.getDisplayMode();
             Frame frame = new Frame(gd.getDefaultConfiguration());
             try {
                 frame.setSize(400, 400);
@@ -285,6 +288,8 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
                     }
                 }
             } finally {
+                gd.setDisplayMode(currentDM);
+                gd.setFullScreenWindow(null);
                 frame.dispose();
             }
             if (errorMessage != null) {
@@ -292,7 +297,7 @@ public class CycleDMImage extends Component implements Runnable, KeyListener {
             }
             // delay a bit just to let the fullscreen window disposing complete
             // before switching to next display
-            delay(4000);
+            delay(10000);
         }
     }
 }

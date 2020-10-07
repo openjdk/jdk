@@ -25,9 +25,13 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -36,7 +40,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.util.DocTreePath;
-
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
@@ -51,6 +54,7 @@ import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 
 /**
  * Configure the output based on the command-line options.
@@ -90,7 +94,16 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     public TypeElement currentTypeElement = null;  // Set this TypeElement in the ClassWriter.
 
-    protected SearchIndexItems searchItems;
+    /**
+     * The collections of items for the main index.
+     * This field is only initialized if {@code options.createIndex()}
+     * is {@code true}.
+     * This index is populated somewhat lazily:
+     * 1. items found in doc comments are found while generating declaration pages
+     * 2. items for elements are added in bulk before generating the index files
+     * 3. additional items are added as needed
+     */
+    protected HtmlIndexBuilder mainIndex;
 
     public final Contents contents;
 
@@ -198,10 +211,13 @@ public class HtmlConfiguration extends BaseConfiguration {
                 }
             }
         }
+        if (options.createIndex()) {
+            mainIndex = new HtmlIndexBuilder(this);
+        }
         docPaths = new DocPaths(utils);
         setCreateOverview();
         setTopFile(docEnv);
-        workArounds.initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
+        initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
         return true;
     }
 
@@ -321,12 +337,12 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     @Override
     public boolean showMessage(DocTreePath path, String key) {
-        return (path == null || workArounds.haveDocLint());
+        return (path == null || !haveDocLint());
     }
 
     @Override
     public boolean showMessage(Element e, String key) {
-        return (e == null || workArounds.haveDocLint());
+        return (e == null || !haveDocLint());
     }
 
     @Override
@@ -348,11 +364,5 @@ public class HtmlConfiguration extends BaseConfiguration {
             }
         }
         return super.finishOptionSettings0();
-    }
-
-    @Override
-    protected void initConfiguration(DocletEnvironment docEnv) {
-        super.initConfiguration(docEnv);
-        searchItems = new SearchIndexItems(utils);
     }
 }

@@ -99,7 +99,14 @@ public abstract class ColorSpace implements Serializable {
      */
     private static final long serialVersionUID = -409452704308689724L;
 
+    /**
+     * One of the {@code ColorSpace} type constants.
+     */
     private int type;
+
+    /**
+     * The number of components in the color space.
+     */
     private int numComponents;
     private transient String [] compName = null;
 

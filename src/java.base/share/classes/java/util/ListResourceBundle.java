@@ -206,5 +206,5 @@ public abstract class ListResourceBundle extends ResourceBundle {
         lookup = temp;
     }
 
-    private volatile Map<String,Object> lookup = null;
+    private volatile Map<String,Object> lookup;
 }

@@ -1250,7 +1250,7 @@ size_t ShenandoahHeap::tlab_capacity(Thread *thr) const {
 class ObjectIterateScanRootClosure : public BasicOopIterateClosure {
 private:
   MarkBitMap* _bitmap;
-  Stack<oop,mtGC>* _oop_stack;
+  ShenandoahScanObjectStack* _oop_stack;
   ShenandoahHeap* const _heap;
   ShenandoahMarkingContext* const _marking_context;
 
@@ -1273,7 +1273,7 @@ private:
     }
   }
 public:
-  ObjectIterateScanRootClosure(MarkBitMap* bitmap, Stack<oop,mtGC>* oop_stack) :
+  ObjectIterateScanRootClosure(MarkBitMap* bitmap, ShenandoahScanObjectStack* oop_stack) :
     _bitmap(bitmap), _oop_stack(oop_stack), _heap(ShenandoahHeap::heap()),
     _marking_context(_heap->marking_context()) {}
   void do_oop(oop* p)       { do_oop_work(p); }
@@ -1306,29 +1306,16 @@ void ShenandoahHeap::ensure_parsability(bool retire_tlabs) {
  * is allowed to report dead objects, but is not required to do so.
  */
 void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
-  assert(SafepointSynchronize::is_at_safepoint(), "safe iteration is only available during safepoints");
-  if (!_aux_bitmap_region_special && !os::commit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), false)) {
-    log_warning(gc)("Could not commit native memory for auxiliary marking bitmap for heap iteration");
-    return;
-  }
-
   // Reset bitmap
-  _aux_bit_map.clear();
+  if (!prepare_aux_bitmap_for_iteration())
+    return;
 
-  Stack<oop,mtGC> oop_stack;
-
+  ShenandoahScanObjectStack oop_stack;
   ObjectIterateScanRootClosure oops(&_aux_bit_map, &oop_stack);
+  // Seed the stack with root scan
+  scan_roots_for_iteration(&oop_stack, &oops);
 
-  {
-    // First, we process GC roots according to current GC cycle.
-    // This populates the work stack with initial objects.
-    // It is important to relinquish the associated locks before diving
-    // into heap dumper.
-    ShenandoahHeapIterationRootScanner rp;
-    rp.roots_do(&oops);
-  }
-
-  // Work through the oop stack to traverse heap.
+  // Work through the oop stack to traverse heap
   while (! oop_stack.is_empty()) {
     oop obj = oop_stack.pop();
     assert(oopDesc::is_oop(obj), "must be a valid oop");
@@ -1337,10 +1324,177 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
   }
 
   assert(oop_stack.is_empty(), "should be empty");
+  // Reclaim bitmap
+  reclaim_aux_bitmap_for_iteration();
+}
 
+bool ShenandoahHeap::prepare_aux_bitmap_for_iteration() {
+  assert(SafepointSynchronize::is_at_safepoint(), "safe iteration is only available during safepoints");
+
+  if (!_aux_bitmap_region_special && !os::commit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), false)) {
+    log_warning(gc)("Could not commit native memory for auxiliary marking bitmap for heap iteration");
+    return false;
+  }
+  // Reset bitmap
+  _aux_bit_map.clear();
+  return true;
+}
+
+void ShenandoahHeap::scan_roots_for_iteration(ShenandoahScanObjectStack* oop_stack, ObjectIterateScanRootClosure* oops) {
+  // Process GC roots according to current GC cycle
+  // This populates the work stack with initial objects
+  // It is important to relinquish the associated locks before diving
+  // into heap dumper
+  ShenandoahHeapIterationRootScanner rp;
+  rp.roots_do(oops);
+}
+
+void ShenandoahHeap::reclaim_aux_bitmap_for_iteration() {
   if (!_aux_bitmap_region_special && !os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size())) {
     log_warning(gc)("Could not uncommit native memory for auxiliary marking bitmap for heap iteration");
   }
+}
+
+// Closure for parallelly iterate objects
+class ShenandoahObjectIterateParScanClosure : public BasicOopIterateClosure {
+private:
+  MarkBitMap* _bitmap;
+  ShenandoahObjToScanQueue* _queue;
+  ShenandoahHeap* const _heap;
+  ShenandoahMarkingContext* const _marking_context;
+
+  template <class T>
+  void do_oop_work(T* p) {
+    T o = RawAccess<>::oop_load(p);
+    if (!CompressedOops::is_null(o)) {
+      oop obj = CompressedOops::decode_not_null(o);
+      if (_heap->is_concurrent_weak_root_in_progress() && !_marking_context->is_marked(obj)) {
+        // There may be dead oops in weak roots in concurrent root phase, do not touch them.
+        return;
+      }
+      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+
+      assert(oopDesc::is_oop(obj), "Must be a valid oop");
+      if (_bitmap->par_mark(obj)) {
+        _queue->push(ShenandoahMarkTask(obj));
+      }
+    }
+  }
+public:
+  ShenandoahObjectIterateParScanClosure(MarkBitMap* bitmap, ShenandoahObjToScanQueue* q) :
+    _bitmap(bitmap), _queue(q), _heap(ShenandoahHeap::heap()),
+    _marking_context(_heap->marking_context()) {}
+  void do_oop(oop* p)       { do_oop_work(p); }
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+};
+
+// Object iterator for parallel heap iteraion.
+// The root scanning phase happenes in construction as a preparation of
+// parallel marking queues.
+// Every worker processes it's own marking queue. work-stealing is used
+// to balance workload.
+class ShenandoahParallelObjectIterator : public ParallelObjectIterator {
+private:
+  uint                         _num_workers;
+  bool                         _init_ready;
+  MarkBitMap*                  _aux_bit_map;
+  ShenandoahHeap*              _heap;
+  ShenandoahScanObjectStack    _roots_stack; // global roots stack
+  ShenandoahObjToScanQueueSet* _task_queues;
+public:
+  ShenandoahParallelObjectIterator(uint num_workers, MarkBitMap* bitmap) :
+        _num_workers(num_workers),
+        _init_ready(false),
+        _aux_bit_map(bitmap),
+        _heap(ShenandoahHeap::heap()) {
+    // Initialize bitmap
+    _init_ready = _heap->prepare_aux_bitmap_for_iteration();
+    if (!_init_ready) {
+      return;
+    }
+
+    ObjectIterateScanRootClosure oops(_aux_bit_map, &_roots_stack);
+    _heap->scan_roots_for_iteration(&_roots_stack, &oops);
+
+    _init_ready = prepare_worker_queues();
+  }
+
+  ~ShenandoahParallelObjectIterator() {
+    // Reclaim bitmap
+    _heap->reclaim_aux_bitmap_for_iteration();
+    // Reclaim queue for workers
+    if (_task_queues!= NULL) {
+      for (uint i = 0; i < _num_workers; ++i) {
+        ShenandoahObjToScanQueue* q = _task_queues->queue(i);
+        if (q != NULL) {
+          delete q;
+          _task_queues->register_queue(i, NULL);
+        }
+      }
+      delete _task_queues;
+      _task_queues = NULL;
+    }
+  }
+
+  virtual void object_iterate(ObjectClosure* cl, uint worker_id) {
+    if (_init_ready) {
+      object_iterate_parallel(cl, worker_id, _task_queues);
+    }
+  }
+
+private:
+  // Divide global root_stack into worker queues
+  bool prepare_worker_queues() {
+    _task_queues = new ShenandoahObjToScanQueueSet((int) _num_workers);
+    // Initialize queues for every workers
+    for (uint i = 0; i < _num_workers; ++i) {
+      ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
+      task_queue->initialize();
+      _task_queues->register_queue(i, task_queue);
+    }
+    // Divide roots among the workers. Assume that object referencing distribution
+    // is related with root kind, use round-robin to make every worker have same chance
+    // to process every kind of roots
+    size_t roots_num = _roots_stack.size();
+    if (roots_num == 0) {
+      // No work to do
+      return false;
+    }
+
+    for (uint j = 0; j < roots_num; j++) {
+      uint stack_id = j % _num_workers;
+      oop obj = _roots_stack.pop();
+      _task_queues->queue(stack_id)->push(ShenandoahMarkTask(obj));
+    }
+    return true;
+  }
+
+  void object_iterate_parallel(ObjectClosure* cl,
+                               uint worker_id,
+                               ShenandoahObjToScanQueueSet* queue_set) {
+    assert(SafepointSynchronize::is_at_safepoint(), "safe iteration is only available during safepoints");
+    assert(queue_set != NULL, "task queue must not be NULL");
+
+    ShenandoahObjToScanQueue* q = queue_set->queue(worker_id);
+    assert(q != NULL, "object iterate queue must not be NULL");
+
+    ShenandoahMarkTask t;
+    ShenandoahObjectIterateParScanClosure oops(_aux_bit_map, q);
+
+    // Work through the queue to traverse heap.
+    // Steal when there is no task in queue.
+    while (q->pop(t) || queue_set->steal(worker_id, t)) {
+      oop obj = t.obj();
+      assert(oopDesc::is_oop(obj), "must be a valid oop");
+      cl->do_object(obj);
+      obj->oop_iterate(&oops);
+    }
+    assert(q->is_empty(), "should be empty");
+  }
+};
+
+ParallelObjectIterator* ShenandoahHeap::parallel_object_iterator(uint workers) {
+  return new ShenandoahParallelObjectIterator(workers, &_aux_bit_map);
 }
 
 // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
@@ -2162,10 +2316,11 @@ bool ShenandoahHeap::try_cancel_gc() {
     else if (prev == CANCELLED) return false;
     assert(ShenandoahSuspendibleWorkers, "should not get here when not using suspendible workers");
     assert(prev == NOT_CANCELLED, "must be NOT_CANCELLED");
-    if (Thread::current()->is_Java_thread()) {
+    Thread* thread = Thread::current();
+    if (thread->is_Java_thread()) {
       // We need to provide a safepoint here, otherwise we might
       // spin forever if a SP is pending.
-      ThreadBlockInVM sp(JavaThread::current());
+      ThreadBlockInVM sp(thread->as_Java_thread());
       SpinPause();
     }
   }

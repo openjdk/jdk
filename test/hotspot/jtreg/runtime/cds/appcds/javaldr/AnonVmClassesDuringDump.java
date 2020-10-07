@@ -31,7 +31,7 @@
  *          See https://blogs.oracle.com/jrose/anonymous-classes-in-the-vm.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds
- * @requires vm.flavor != "minimal"
+ * @requires vm.jvmti
  * @run driver AnonVmClassesDuringDump
  */
 

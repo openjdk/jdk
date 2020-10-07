@@ -75,13 +75,11 @@ define_pd_global(intx, InitArrayShortSize, BytesPerLong);
 define_pd_global(intx, InlineSmallCode,          1000);
 #endif
 
-#define ARCH_FLAGS(develop, \
-                   product, \
-                   diagnostic, \
-                   experimental, \
-                   notproduct, \
-                   range, \
-                   constraint) \
+#define ARCH_FLAGS(develop,                                             \
+                   product,                                             \
+                   notproduct,                                          \
+                   range,                                               \
+                   constraint)                                          \
                                                                         \
   product(bool, NearCpool, true,                                        \
          "constant pool is close to instructions")                      \
@@ -112,5 +110,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use prfm hint with specified distance in compiled code."     \
           "Value -1 means off.")                                        \
           range(-1, 4096)
+
+// end of ARCH_FLAGS
 
 #endif // CPU_AARCH64_GLOBALS_AARCH64_HPP

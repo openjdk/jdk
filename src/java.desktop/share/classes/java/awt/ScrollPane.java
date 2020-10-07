@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.awt.peer.ScrollPanePeer;
-import java.awt.event.*;
-import javax.accessibility.*;
-import sun.awt.ScrollPaneWheelScroller;
-import sun.awt.SunToolkit;
-
 import java.beans.ConstructorProperties;
 import java.beans.Transient;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.IOException;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+
+import sun.awt.ScrollPaneWheelScroller;
+import sun.awt.SunToolkit;
 
 /**
  * A container class which implements automatic horizontal and/or
@@ -672,6 +679,9 @@ public class ScrollPane extends Container implements Accessible {
 
     /**
      * Writes default serializable fields to stream.
+     *
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      */
     private void writeObject(ObjectOutputStream s) throws IOException {
         // 4352819: We only need this degenerate writeObject to make
@@ -682,9 +692,13 @@ public class ScrollPane extends Container implements Accessible {
 
     /**
      * Reads default serializable fields to stream.
-     * @exception HeadlessException if
-     * {@code GraphicsEnvironment.isHeadless()} returns
-     * {@code true}
+     *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     private void readObject(ObjectInputStream s)
@@ -719,6 +733,9 @@ public class ScrollPane extends Container implements Accessible {
 //      }
     }
 
+    /**
+     * Invoked when the value of the adjustable has changed.
+     */
     class PeerFixer implements AdjustmentListener, java.io.Serializable
     {
         private static final long serialVersionUID = 1043664721353696630L;
@@ -790,6 +807,11 @@ public class ScrollPane extends Container implements Accessible {
          * JDK 1.3 serialVersionUID
          */
         private static final long serialVersionUID = 6100703663886637L;
+
+        /**
+         * Constructs an {@code AccessibleAWTScrollPane}.
+         */
+        protected AccessibleAWTScrollPane() {}
 
         /**
          * Get the role of this object.

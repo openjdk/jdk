@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/java.hpp"
 #include "runtime/jniHandles.hpp"
 #include "services/writeableFlags.hpp"
@@ -39,12 +40,11 @@ static void buffer_concat(char* buffer, const char* src) {
 }
 
 static void print_flag_error_message_bounds(const JVMFlag* flag, char* buffer) {
-  JVMFlagRange* range = JVMFlagRangeList::find(flag);
-  if (range != NULL) {
+  if (JVMFlagLimit::get_range(flag) != NULL) {
     buffer_concat(buffer, "must have value in range ");
 
     stringStream stream;
-    range->print(&stream);
+    JVMFlagAccess::print_range(&stream, flag);
     const char* range_string = stream.as_string();
     size_t j = strlen(buffer);
     for (size_t i=0; j<TEMP_BUF_SIZE-1; i++) {
@@ -64,7 +64,7 @@ static void print_flag_error_message_if_needed(JVMFlag::Error error, const JVMFl
     return;
   }
 
-  const char* name = flag->_name;
+  const char* name = flag->name();
   char buffer[TEMP_BUF_SIZE] = {'\0'};
   if ((error != JVMFlag::MISSING_NAME) && (name != NULL)) {
     buffer_concat(buffer, name);
@@ -109,7 +109,7 @@ JVMFlag::Error WriteableFlags::set_bool_flag(const char* name, const char* arg, 
 
 JVMFlag::Error WriteableFlags::set_bool_flag(const char* name, bool value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
-  JVMFlag::Error err = JVMFlag::boolAtPut(flag, &value, origin);
+  JVMFlag::Error err = JVMFlagAccess::boolAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
   return err;
 }
@@ -127,7 +127,7 @@ JVMFlag::Error WriteableFlags::set_int_flag(const char* name, const char* arg, J
 
 JVMFlag::Error WriteableFlags::set_int_flag(const char* name, int value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
-  JVMFlag::Error err = JVMFlag::intAtPut(flag, &value, origin);
+  JVMFlag::Error err = JVMFlagAccess::intAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
   return err;
 }
@@ -145,7 +145,7 @@ JVMFlag::Error WriteableFlags::set_uint_flag(const char* name, const char* arg, 
 
 JVMFlag::Error WriteableFlags::set_uint_flag(const char* name, uint value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
-  JVMFlag::Error err = JVMFlag::uintAtPut(flag, &value, origin);
+  JVMFlag::Error err = JVMFlagAccess::uintAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
   return err;
 }
@@ -163,7 +163,7 @@ JVMFlag::Error WriteableFlags::set_intx_flag(const char* name, const char* arg, 
 
 JVMFlag::Error WriteableFlags::set_intx_flag(const char* name, intx value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
-  JVMFlag::Error err = JVMFlag::intxAtPut(flag, &value, origin);
+  JVMFlag::Error err = JVMFlagAccess::intxAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
   return err;
 }
@@ -181,7 +181,7 @@ JVMFlag::Error WriteableFlags::set_uintx_flag(const char* name, const char* arg,
 
 JVMFlag::Error WriteableFlags::set_uintx_flag(const char* name, uintx value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
-  JVMFlag::Error err = JVMFlag::uintxAtPut(flag, &value, origin);
+  JVMFlag::Error err = JVMFlagAccess::uintxAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
   return err;
 }
@@ -199,7 +199,7 @@ JVMFlag::Error WriteableFlags::set_uint64_t_flag(const char* name, const char* a
 
 JVMFlag::Error WriteableFlags::set_uint64_t_flag(const char* name, uint64_t value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
-  JVMFlag::Error err = JVMFlag::uint64_tAtPut(flag, &value, origin);
+  JVMFlag::Error err = JVMFlagAccess::uint64_tAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
   return err;
 }
@@ -217,7 +217,7 @@ JVMFlag::Error WriteableFlags::set_size_t_flag(const char* name, const char* arg
 
 JVMFlag::Error WriteableFlags::set_size_t_flag(const char* name, size_t value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
-  JVMFlag::Error err = JVMFlag::size_tAtPut(flag, &value, origin);
+  JVMFlag::Error err = JVMFlagAccess::size_tAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
   return err;
 }
@@ -235,7 +235,7 @@ JVMFlag::Error WriteableFlags::set_double_flag(const char* name, const char* arg
 
 JVMFlag::Error WriteableFlags::set_double_flag(const char* name, double value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
-  JVMFlag::Error err = JVMFlag::doubleAtPut(flag, &value, origin);
+  JVMFlag::Error err = JVMFlagAccess::doubleAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
   return err;
 }
@@ -243,7 +243,7 @@ JVMFlag::Error WriteableFlags::set_double_flag(const char* name, double value, J
 // set a string global flag using value from AttachOperation
 JVMFlag::Error WriteableFlags::set_ccstr_flag(const char* name, const char* value, JVMFlag::Flags origin, FormatBuffer<80>& err_msg) {
   JVMFlag* flag = JVMFlag::find_flag(name);
-  JVMFlag::Error err = JVMFlag::ccstrAtPut(flag, &value, origin);
+  JVMFlag::Error err = JVMFlagAccess::ccstrAtPut(flag, &value, origin);
   print_flag_error_message_if_needed(err, flag, err_msg);
   return err;
 }
@@ -300,23 +300,23 @@ JVMFlag::Error WriteableFlags::set_flag_from_char(JVMFlag* f, const void* value,
     return JVMFlag::MISSING_VALUE;
   }
   if (f->is_bool()) {
-    return set_bool_flag(f->_name, flag_value, origin, err_msg);
+    return set_bool_flag(f->name(), flag_value, origin, err_msg);
   } else if (f->is_int()) {
-    return set_int_flag(f->_name, flag_value, origin, err_msg);
+    return set_int_flag(f->name(), flag_value, origin, err_msg);
   } else if (f->is_uint()) {
-    return set_uint_flag(f->_name, flag_value, origin, err_msg);
+    return set_uint_flag(f->name(), flag_value, origin, err_msg);
   } else if (f->is_intx()) {
-    return set_intx_flag(f->_name, flag_value, origin, err_msg);
+    return set_intx_flag(f->name(), flag_value, origin, err_msg);
   } else if (f->is_uintx()) {
-    return set_uintx_flag(f->_name, flag_value, origin, err_msg);
+    return set_uintx_flag(f->name(), flag_value, origin, err_msg);
   } else if (f->is_uint64_t()) {
-    return set_uint64_t_flag(f->_name, flag_value, origin, err_msg);
+    return set_uint64_t_flag(f->name(), flag_value, origin, err_msg);
   } else if (f->is_size_t()) {
-    return set_size_t_flag(f->_name, flag_value, origin, err_msg);
+    return set_size_t_flag(f->name(), flag_value, origin, err_msg);
   } else if (f->is_double()) {
-    return set_double_flag(f->_name, flag_value, origin, err_msg);
+    return set_double_flag(f->name(), flag_value, origin, err_msg);
   } else if (f->is_ccstr()) {
-    return set_ccstr_flag(f->_name, flag_value, origin, err_msg);
+    return set_ccstr_flag(f->name(), flag_value, origin, err_msg);
   } else {
     ShouldNotReachHere();
   }
@@ -329,28 +329,28 @@ JVMFlag::Error WriteableFlags::set_flag_from_jvalue(JVMFlag* f, const void* valu
   jvalue new_value = *(jvalue*)value;
   if (f->is_bool()) {
     bool bvalue = (new_value.z == JNI_TRUE ? true : false);
-    return set_bool_flag(f->_name, bvalue, origin, err_msg);
+    return set_bool_flag(f->name(), bvalue, origin, err_msg);
   } else if (f->is_int()) {
     int ivalue = (int)new_value.j;
-    return set_int_flag(f->_name, ivalue, origin, err_msg);
+    return set_int_flag(f->name(), ivalue, origin, err_msg);
   } else if (f->is_uint()) {
     uint uvalue = (uint)new_value.j;
-    return set_uint_flag(f->_name, uvalue, origin, err_msg);
+    return set_uint_flag(f->name(), uvalue, origin, err_msg);
   } else if (f->is_intx()) {
     intx ivalue = (intx)new_value.j;
-    return set_intx_flag(f->_name, ivalue, origin, err_msg);
+    return set_intx_flag(f->name(), ivalue, origin, err_msg);
   } else if (f->is_uintx()) {
     uintx uvalue = (uintx)new_value.j;
-    return set_uintx_flag(f->_name, uvalue, origin, err_msg);
+    return set_uintx_flag(f->name(), uvalue, origin, err_msg);
   } else if (f->is_uint64_t()) {
     uint64_t uvalue = (uint64_t)new_value.j;
-    return set_uint64_t_flag(f->_name, uvalue, origin, err_msg);
+    return set_uint64_t_flag(f->name(), uvalue, origin, err_msg);
   } else if (f->is_size_t()) {
     size_t svalue = (size_t)new_value.j;
-    return set_size_t_flag(f->_name, svalue, origin, err_msg);
+    return set_size_t_flag(f->name(), svalue, origin, err_msg);
   } else if (f->is_double()) {
     double dvalue = (double)new_value.d;
-    return set_double_flag(f->_name, dvalue, origin, err_msg);
+    return set_double_flag(f->name(), dvalue, origin, err_msg);
   } else if (f->is_ccstr()) {
     oop str = JNIHandles::resolve_external_guard(new_value.l);
     if (str == NULL) {
@@ -358,7 +358,7 @@ JVMFlag::Error WriteableFlags::set_flag_from_jvalue(JVMFlag* f, const void* valu
       return JVMFlag::MISSING_VALUE;
     }
     ccstr svalue = java_lang_String::as_utf8_string(str);
-    JVMFlag::Error ret = WriteableFlags::set_ccstr_flag(f->_name, svalue, origin, err_msg);
+    JVMFlag::Error ret = WriteableFlags::set_ccstr_flag(f->name(), svalue, origin, err_msg);
     if (ret != JVMFlag::SUCCESS) {
       FREE_C_HEAP_ARRAY(char, svalue);
     }

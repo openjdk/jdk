@@ -450,7 +450,7 @@ void JfrRecorderService::pre_safepoint_clear() {
 
 void JfrRecorderService::invoke_safepoint_clear() {
   JfrVMOperation<JfrRecorderService, &JfrRecorderService::safepoint_clear> safepoint_task(*this);
-  ThreadInVMfromNative transition((JavaThread*)Thread::current());
+  ThreadInVMfromNative transition(JavaThread::current());
   VMThread::execute(&safepoint_task);
 }
 
@@ -561,7 +561,7 @@ void JfrRecorderService::pre_safepoint_write() {
 void JfrRecorderService::invoke_safepoint_write() {
   JfrVMOperation<JfrRecorderService, &JfrRecorderService::safepoint_write> safepoint_task(*this);
   // can safepoint here
-  ThreadInVMfromNative transition((JavaThread*)Thread::current());
+  ThreadInVMfromNative transition(JavaThread::current());
   VMThread::execute(&safepoint_task);
 }
 

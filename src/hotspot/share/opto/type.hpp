@@ -1226,7 +1226,7 @@ public:
   const TypeAryPtr* cast_to_stable(bool stable, int stable_dimension = 1) const;
   int stable_dimension() const;
 
-  const TypeAryPtr* cast_to_autobox_cache(bool cache) const;
+  const TypeAryPtr* cast_to_autobox_cache() const;
 
   static jint max_array_length(BasicType etype) ;
 

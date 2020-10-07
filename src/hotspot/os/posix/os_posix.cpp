@@ -26,6 +26,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "os_posix.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -315,17 +316,18 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
 
   char* extra_base;
   if (file_desc != -1) {
-    // For file mapping, we do not call os:reserve_memory(extra_size, NULL, alignment, file_desc) because
-    // we need to deal with shrinking of the file space later when we release extra memory after alignment.
-    // We also cannot called os:reserve_memory() with file_desc set to -1 because on aix we might get SHM memory.
-    // So here to call a helper function while reserve memory for us. After we have a aligned base,
-    // we will replace anonymous mapping with file mapping.
+    // For file mapping, we do not call os:reserve_memory_with_fd since:
+    // - we later chop away parts of the mapping using os::release_memory and that could fail if the
+    //   original mmap call had been tied to an fd.
+    // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
+    //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
+    //   chopping off and unmapping excess bits back and front (see below) would not work.
     extra_base = reserve_mmapped_memory(extra_size, NULL);
     if (extra_base != NULL) {
       MemTracker::record_virtual_memory_reserve((address)extra_base, extra_size, CALLER_PC);
     }
   } else {
-    extra_base = os::reserve_memory(extra_size, NULL, alignment);
+    extra_base = os::reserve_memory(extra_size);
   }
 
   if (extra_base == NULL) {
@@ -1523,9 +1525,10 @@ bool os::Posix::matches_effective_uid_and_gid_or_root(uid_t uid, gid_t gid) {
 
 Thread* os::ThreadCrashProtection::_protected_thread = NULL;
 os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
-volatile intptr_t os::ThreadCrashProtection::_crash_mux = 0;
 
 os::ThreadCrashProtection::ThreadCrashProtection() {
+  _protected_thread = Thread::current();
+  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
 }
 
 /*
@@ -1536,11 +1539,6 @@ os::ThreadCrashProtection::ThreadCrashProtection() {
  */
 bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
   sigset_t saved_sig_mask;
-
-  Thread::muxAcquire(&_crash_mux, "CrashProtection");
-
-  _protected_thread = Thread::current_or_null();
-  assert(_protected_thread != NULL, "Cannot crash protect a NULL thread");
 
   // we cannot rely on sigsetjmp/siglongjmp to save/restore the signal mask
   // since on at least some systems (OS X) siglongjmp will restore the mask
@@ -1554,14 +1552,12 @@ bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
     // and clear the crash protection
     _crash_protection = NULL;
     _protected_thread = NULL;
-    Thread::muxRelease(&_crash_mux);
     return true;
   }
   // this happens when we siglongjmp() back
   pthread_sigmask(SIG_SETMASK, &saved_sig_mask, NULL);
   _crash_protection = NULL;
   _protected_thread = NULL;
-  Thread::muxRelease(&_crash_mux);
   return false;
 }
 
@@ -2073,9 +2069,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   // since we are doing a lock-free update to _counter.
   if (Atomic::xchg(&_counter, 0) > 0) return;
 
-  Thread* thread = Thread::current();
-  assert(thread->is_Java_thread(), "Must be JavaThread");
-  JavaThread *jt = (JavaThread *)thread;
+  JavaThread *jt = JavaThread::current();
 
   // Optional optimization -- avoid state transitions if there's
   // an interrupt pending.
@@ -2120,7 +2114,7 @@ void Parker::park(bool isAbsolute, jlong time) {
     return;
   }
 
-  OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
+  OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
   jt->set_suspend_equivalent();
   // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
 

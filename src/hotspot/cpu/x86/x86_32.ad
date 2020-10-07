@@ -131,8 +131,8 @@ alloc_class chunk0( ECX,   EBX,   EBP,   EDI,   EAX,   EDX,   ESI, ESP,
 // Several register classes are automatically defined based upon information in
 // this architecture description.
 // 1) reg_class inline_cache_reg           ( /* as def'd in frame section */ )
-// 2) reg_class compiler_method_oop_reg    ( /* as def'd in frame section */ )
-// 2) reg_class interpreter_method_oop_reg ( /* as def'd in frame section */ )
+// 2) reg_class compiler_method_reg        ( /* as def'd in frame section */ )
+// 2) reg_class interpreter_method_reg     ( /* as def'd in frame section */ )
 // 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 // Class for no registers (empty set).
@@ -1371,10 +1371,6 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 //=============================================================================
 
-int Matcher::regnum_to_fpu_offset(int regnum) {
-  return regnum - 32; // The FP registers are in the second chunk
-}
-
 // This is UltraSparc specific, true just means we have fast l2f conversion
 const bool Matcher::convL2FSupported(void) {
   return true;
@@ -1931,7 +1927,7 @@ encode %{
 //   enc_class Java_Interpreter_Call (label labl) %{    // JAVA INTERPRETER CALL
 //     // int ic_reg     = Matcher::inline_cache_reg();
 //     // int ic_encode  = Matcher::_regEncode[ic_reg];
-//     // int imo_reg    = Matcher::interpreter_method_oop_reg();
+//     // int imo_reg    = Matcher::interpreter_method_reg();
 //     // int imo_encode = Matcher::_regEncode[imo_reg];
 //
 //     // // Interpreter expects method_ptr in EBX, currently a callee-saved register,
@@ -3191,13 +3187,10 @@ encode %{
 //         the region from SP to FP meets the minimum stack alignment.
 
 frame %{
-  // What direction does stack grow in (assumed to be same for C & Java)
-  stack_direction(TOWARDS_LOW);
-
   // These three registers define part of the calling convention
   // between compiled code and the interpreter.
   inline_cache_reg(EAX);                // Inline Cache Register
-  interpreter_method_oop_reg(EBX);      // Method Oop Register when calling interpreter
+  interpreter_method_reg(EBX);          // Method Register when calling interpreter
 
   // Optional: name the operand used by cisc-spilling to access [stack_pointer + offset]
   cisc_spilling_operand_name(indOffset32);

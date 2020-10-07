@@ -408,8 +408,7 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
 
   jstring js = NULL;
   {
-    assert(THREAD->is_Java_thread(), "must be java thread");
-    JavaThread* thread = (JavaThread*)THREAD;
+    JavaThread* thread = THREAD->as_Java_thread();
     HandleMark hm(thread);
     ThreadToNativeFromVM ttn(thread);
     js = (_to_java_string_fn)(thread->jni_environment(), str);
@@ -435,8 +434,7 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
   }
 
   char *native_platform_string;
-  { JavaThread* thread = (JavaThread*)THREAD;
-    assert(thread->is_Java_thread(), "must be java thread");
+  { JavaThread* thread = THREAD->as_Java_thread();
     jstring js = (jstring) JNIHandles::make_local(thread, java_string());
     bool is_copy;
     HandleMark hm(thread);
@@ -1181,8 +1179,7 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
     if (!(ik->is_shared_boot_class() || ik->is_shared_platform_class() ||
           ik->is_shared_app_class())) {
       // Archiving mirror for classes from non-builtin loaders is not
-      // supported. Clear the _java_mirror within the archived class.
-      k->clear_java_mirror_handle();
+      // supported.
       return NULL;
     }
   }
@@ -2416,7 +2413,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   clear_stacktrace(throwable());
 
   int max_depth = MaxJavaStackTraceDepth;
-  JavaThread* thread = (JavaThread*)THREAD;
+  JavaThread* thread = THREAD->as_Java_thread();
 
   BacktraceBuilder bt(CHECK);
 
@@ -3394,12 +3391,17 @@ void java_lang_Module::set_name(oop module, oop value) {
   module->obj_field_put(_name_offset, value);
 }
 
-ModuleEntry* java_lang_Module::module_entry(oop module) {
+ModuleEntry* java_lang_Module::module_entry_raw(oop module) {
   assert(_module_entry_offset != 0, "Uninitialized module_entry_offset");
   assert(module != NULL, "module can't be null");
   assert(oopDesc::is_oop(module), "module must be oop");
 
   ModuleEntry* module_entry = (ModuleEntry*)module->address_field(_module_entry_offset);
+  return module_entry;
+}
+
+ModuleEntry* java_lang_Module::module_entry(oop module) {
+  ModuleEntry* module_entry = module_entry_raw(module);
   if (module_entry == NULL) {
     // If the inject field containing the ModuleEntry* is null then return the
     // class loader's unnamed module.
@@ -4789,6 +4791,27 @@ void java_lang_reflect_RecordComponent::set_typeAnnotations(oop element, oop val
   element->obj_field_put(_typeAnnotations_offset, value);
 }
 
+// java_lang_InternalError
+int java_lang_InternalError::_during_unsafe_access_offset;
+
+void java_lang_InternalError::set_during_unsafe_access(oop internal_error) {
+  internal_error->bool_field_put(_during_unsafe_access_offset, true);
+}
+
+jboolean java_lang_InternalError::during_unsafe_access(oop internal_error) {
+  return internal_error->bool_field(_during_unsafe_access_offset);
+}
+
+void java_lang_InternalError::compute_offsets() {
+  INTERNALERROR_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
+  INTERNALERROR_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
 #define DO_COMPUTE_OFFSETS(k) k::compute_offsets();
 
 // Compute field offsets of all the classes in this file
@@ -4823,9 +4846,8 @@ bool JavaClasses::is_supported_for_archiving(oop obj) {
   Klass* klass = obj->klass();
 
   if (klass == SystemDictionary::ClassLoader_klass() ||  // ClassLoader::loader_data is malloc'ed.
-      klass == SystemDictionary::Module_klass() ||       // Module::module_entry is malloc'ed
       // The next 3 classes are used to implement java.lang.invoke, and are not used directly in
-      // regular Java code. The implementation of java.lang.invoke uses generated anonymoys classes
+      // regular Java code. The implementation of java.lang.invoke uses generated anonymous classes
       // (e.g., as referenced by ResolvedMethodName::vmholder) that are not yet supported by CDS.
       // So for now we cannot not support these classes for archiving.
       //

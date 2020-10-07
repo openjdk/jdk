@@ -280,7 +280,7 @@ JVM_handle_linux_signal(int sig,
   if (os::Linux::signal_handlers_are_installed) {
     if (t != NULL) {
       if(t->is_Java_thread()) {
-        thread = (JavaThread*)t;
+        thread = t->as_Java_thread();
       } else if(t->is_VM_thread()) {
         vmthread = (VMThread *)t;
       }

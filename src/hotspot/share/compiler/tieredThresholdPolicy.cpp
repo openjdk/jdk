@@ -29,6 +29,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -480,10 +481,10 @@ void TieredThresholdPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
 }
 
 nmethod* TieredThresholdPolicy::event(const methodHandle& method, const methodHandle& inlinee,
-                                      int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread) {
+                                      int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, TRAPS) {
   if (comp_level == CompLevel_none &&
       JvmtiExport::can_post_interpreter_events() &&
-      thread->is_interp_only_mode()) {
+      THREAD->as_Java_thread()->is_interp_only_mode()) {
     return NULL;
   }
   if (ReplayCompiles) {
@@ -501,28 +502,31 @@ nmethod* TieredThresholdPolicy::event(const methodHandle& method, const methodHa
   }
 
   if (bci == InvocationEntryBci) {
-    method_invocation_event(method, inlinee, comp_level, nm, thread);
+    method_invocation_event(method, inlinee, comp_level, nm, THREAD);
   } else {
     // method == inlinee if the event originated in the main method
-    method_back_branch_event(method, inlinee, bci, comp_level, nm, thread);
+    method_back_branch_event(method, inlinee, bci, comp_level, nm, THREAD);
     // Check if event led to a higher level OSR compilation
-    CompLevel expected_comp_level = comp_level;
+    CompLevel expected_comp_level = MIN2(CompLevel_full_optimization, static_cast<CompLevel>(comp_level + 1));
     if (!CompilationModeFlag::disable_intermediate() && inlinee->is_not_osr_compilable(expected_comp_level)) {
       // It's not possble to reach the expected level so fall back to simple.
       expected_comp_level = CompLevel_simple;
     }
-    nmethod* osr_nm = inlinee->lookup_osr_nmethod_for(bci, expected_comp_level, false);
-    assert(osr_nm == NULL || osr_nm->comp_level() >= expected_comp_level, "lookup_osr_nmethod_for is broken");
-    if (osr_nm != NULL) {
-      // Perform OSR with new nmethod
-      return osr_nm;
+    CompLevel max_osr_level = static_cast<CompLevel>(inlinee->highest_osr_comp_level());
+    if (max_osr_level >= expected_comp_level) { // fast check to avoid locking in a typical scenario
+      nmethod* osr_nm = inlinee->lookup_osr_nmethod_for(bci, expected_comp_level, false);
+      assert(osr_nm == NULL || osr_nm->comp_level() >= expected_comp_level, "lookup_osr_nmethod_for is broken");
+      if (osr_nm != NULL && osr_nm->comp_level() != comp_level) {
+        // Perform OSR with new nmethod
+        return osr_nm;
+      }
     }
   }
   return NULL;
 }
 
 // Check if the method can be compiled, change level if necessary
-void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
+void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel level, TRAPS) {
   assert(verify_level(level) && level <= TieredStopAtLevel, "Invalid compilation level %d", level);
 
   if (level == CompLevel_none) {
@@ -534,9 +538,10 @@ void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
         mh->code()->make_not_used();
       }
       // Deoptimize immediately (we don't have to wait for a compile).
-      RegisterMap map(thread, false);
-      frame fr = thread->last_frame().sender(&map);
-      Deoptimization::deoptimize_frame(thread, fr.id());
+      JavaThread* jt = THREAD->as_Java_thread();
+      RegisterMap map(jt, false);
+      frame fr = jt->last_frame().sender(&map);
+      Deoptimization::deoptimize_frame(jt, fr.id());
     }
     return;
   }
@@ -566,7 +571,7 @@ void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
     // pure C1.
     if ((bci == InvocationEntryBci && !can_be_compiled(mh, level))) {
       if (level == CompLevel_full_optimization && can_be_compiled(mh, CompLevel_simple)) {
-        compile(mh, bci, CompLevel_simple, thread);
+        compile(mh, bci, CompLevel_simple, THREAD);
       }
       return;
     }
@@ -577,7 +582,7 @@ void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
           // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
           osr_nm->make_not_entrant();
         }
-        compile(mh, bci, CompLevel_simple, thread);
+        compile(mh, bci, CompLevel_simple, THREAD);
       }
       return;
     }
@@ -591,7 +596,7 @@ void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
     }
     int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
     update_rate(nanos_to_millis(os::javaTimeNanos()), mh());
-    CompileBroker::compile_method(mh, bci, level, mh, hot_count, CompileTask::Reason_Tiered, thread);
+    CompileBroker::compile_method(mh, bci, level, mh, hot_count, CompileTask::Reason_Tiered, THREAD);
   }
 }
 
@@ -810,7 +815,7 @@ bool TieredThresholdPolicy::should_not_inline(ciEnv* env, ciMethod* callee) {
 }
 
 // Create MDO if necessary.
-void TieredThresholdPolicy::create_mdo(const methodHandle& mh, JavaThread* THREAD) {
+void TieredThresholdPolicy::create_mdo(const methodHandle& mh, Thread* THREAD) {
   if (mh->is_native() ||
       mh->is_abstract() ||
       mh->is_accessor() ||
@@ -991,7 +996,7 @@ CompLevel TieredThresholdPolicy::common(Predicate p, const methodHandle& method,
 
 
 // Determine if a method should be compiled with a normal entry point at a different level.
-CompLevel TieredThresholdPolicy::call_event(const methodHandle& method, CompLevel cur_level, JavaThread* thread) {
+CompLevel TieredThresholdPolicy::call_event(const methodHandle& method, CompLevel cur_level, Thread* thread) {
   CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(),
                              common(&TieredThresholdPolicy::loop_predicate, method, cur_level, true));
   CompLevel next_level = common(&TieredThresholdPolicy::call_predicate, method, cur_level);
@@ -1012,7 +1017,7 @@ CompLevel TieredThresholdPolicy::call_event(const methodHandle& method, CompLeve
 }
 
 // Determine if we should do an OSR compilation of a given method.
-CompLevel TieredThresholdPolicy::loop_event(const methodHandle& method, CompLevel cur_level, JavaThread* thread) {
+CompLevel TieredThresholdPolicy::loop_event(const methodHandle& method, CompLevel cur_level, Thread* thread) {
   CompLevel next_level = common(&TieredThresholdPolicy::loop_predicate, method, cur_level, true);
   if (cur_level == CompLevel_none) {
     // If there is a live OSR method that means that we deopted to the interpreter
@@ -1025,7 +1030,7 @@ CompLevel TieredThresholdPolicy::loop_event(const methodHandle& method, CompLeve
   return next_level;
 }
 
-bool TieredThresholdPolicy::maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread) {
+bool TieredThresholdPolicy::maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, Thread* thread) {
   if (UseAOT) {
     if (cur_level == CompLevel_full_profile || cur_level == CompLevel_none) {
       // If the current level is full profile or interpreter and we're switching to any other level,
@@ -1047,18 +1052,18 @@ bool TieredThresholdPolicy::maybe_switch_to_aot(const methodHandle& mh, CompLeve
 
 // Handle the invocation event.
 void TieredThresholdPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
-                                                      CompLevel level, CompiledMethod* nm, JavaThread* thread) {
+                                                      CompLevel level, CompiledMethod* nm, TRAPS) {
   if (should_create_mdo(mh, level)) {
-    create_mdo(mh, thread);
+    create_mdo(mh, THREAD);
   }
-  CompLevel next_level = call_event(mh, level, thread);
+  CompLevel next_level = call_event(mh, level, THREAD);
   if (next_level != level) {
-    if (maybe_switch_to_aot(mh, level, next_level, thread)) {
+    if (maybe_switch_to_aot(mh, level, next_level, THREAD)) {
       // No JITting necessary
       return;
     }
     if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh)) {
-      compile(mh, InvocationEntryBci, next_level, thread);
+      compile(mh, InvocationEntryBci, next_level, THREAD);
     }
   }
 }
@@ -1066,21 +1071,21 @@ void TieredThresholdPolicy::method_invocation_event(const methodHandle& mh, cons
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
 void TieredThresholdPolicy::method_back_branch_event(const methodHandle& mh, const methodHandle& imh,
-                                                     int bci, CompLevel level, CompiledMethod* nm, JavaThread* thread) {
+                                                     int bci, CompLevel level, CompiledMethod* nm, TRAPS) {
   if (should_create_mdo(mh, level)) {
-    create_mdo(mh, thread);
+    create_mdo(mh, THREAD);
   }
   // Check if MDO should be created for the inlined method
   if (should_create_mdo(imh, level)) {
-    create_mdo(imh, thread);
+    create_mdo(imh, THREAD);
   }
 
   if (is_compilation_enabled()) {
-    CompLevel next_osr_level = loop_event(imh, level, thread);
+    CompLevel next_osr_level = loop_event(imh, level, THREAD);
     CompLevel max_osr_level = (CompLevel)imh->highest_osr_comp_level();
     // At the very least compile the OSR version
     if (!CompileBroker::compilation_is_in_queue(imh) && (next_osr_level != level)) {
-      compile(imh, bci, next_osr_level, thread);
+      compile(imh, bci, next_osr_level, CHECK);
     }
 
     // Use loop event as an opportunity to also check if there's been
@@ -1091,13 +1096,13 @@ void TieredThresholdPolicy::method_back_branch_event(const methodHandle& mh, con
         // Recompile the enclosing method to prevent infinite OSRs. Stay at AOT level while it's compiling.
         if (max_osr_level != CompLevel_none && !CompileBroker::compilation_is_in_queue(mh)) {
           CompLevel enclosing_level = limit_level(CompLevel_full_profile);
-          compile(mh, InvocationEntryBci, enclosing_level, thread);
+          compile(mh, InvocationEntryBci, enclosing_level, THREAD);
         }
       } else {
         // Current loop event level is not AOT
         guarantee(nm != NULL, "Should have nmethod here");
         cur_level = comp_level(mh());
-        next_level = call_event(mh, cur_level, thread);
+        next_level = call_event(mh, cur_level, THREAD);
 
         if (max_osr_level == CompLevel_full_optimization) {
           // The inlinee OSRed to full opt, we need to modify the enclosing method to avoid deopts
@@ -1126,17 +1131,17 @@ void TieredThresholdPolicy::method_back_branch_event(const methodHandle& mh, con
           next_level = CompLevel_full_profile;
         }
         if (cur_level != next_level) {
-          if (!maybe_switch_to_aot(mh, cur_level, next_level, thread) && !CompileBroker::compilation_is_in_queue(mh)) {
-            compile(mh, InvocationEntryBci, next_level, thread);
+          if (!maybe_switch_to_aot(mh, cur_level, next_level, THREAD) && !CompileBroker::compilation_is_in_queue(mh)) {
+            compile(mh, InvocationEntryBci, next_level, THREAD);
           }
         }
       }
     } else {
       cur_level = comp_level(mh());
-      next_level = call_event(mh, cur_level, thread);
+      next_level = call_event(mh, cur_level, THREAD);
       if (next_level != cur_level) {
-        if (!maybe_switch_to_aot(mh, cur_level, next_level, thread) && !CompileBroker::compilation_is_in_queue(mh)) {
-          compile(mh, InvocationEntryBci, next_level, thread);
+        if (!maybe_switch_to_aot(mh, cur_level, next_level, THREAD) && !CompileBroker::compilation_is_in_queue(mh)) {
+          compile(mh, InvocationEntryBci, next_level, THREAD);
         }
       }
     }

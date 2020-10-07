@@ -114,8 +114,8 @@ reg_def R16     ( SOC, SOC, Op_RegI, 16, r16->as_VMReg()        );
 reg_def R16_H   ( SOC, SOC, Op_RegI, 16, r16->as_VMReg()->next());
 reg_def R17     ( SOC, SOC, Op_RegI, 17, r17->as_VMReg()        );
 reg_def R17_H   ( SOC, SOC, Op_RegI, 17, r17->as_VMReg()->next());
-reg_def R18     ( SOC, SOC, Op_RegI, 18, r18->as_VMReg()        );
-reg_def R18_H   ( SOC, SOC, Op_RegI, 18, r18->as_VMReg()->next());
+reg_def R18     ( SOC, SOC, Op_RegI, 18, r18_tls->as_VMReg()        );
+reg_def R18_H   ( SOC, SOC, Op_RegI, 18, r18_tls->as_VMReg()->next());
 reg_def R19     ( SOC, SOE, Op_RegI, 19, r19->as_VMReg()        );
 reg_def R19_H   ( SOC, SOE, Op_RegI, 19, r19->as_VMReg()->next());
 reg_def R20     ( SOC, SOE, Op_RegI, 20, r20->as_VMReg()        ); // caller esp
@@ -247,8 +247,8 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
   reg_def V7_N ( SOC, SOC, Op_RegF, 7, v7->as_VMReg()->next(6) );
   reg_def V7_O ( SOC, SOC, Op_RegF, 7, v7->as_VMReg()->next(7) );
 
-  reg_def V8   ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()          );
-  reg_def V8_H ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next()  );
+  reg_def V8   ( SOC, SOE, Op_RegF, 8, v8->as_VMReg()          );
+  reg_def V8_H ( SOC, SOE, Op_RegF, 8, v8->as_VMReg()->next()  );
   reg_def V8_J ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next(2) );
   reg_def V8_K ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next(3) );
   reg_def V8_L ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next(4) );
@@ -256,8 +256,8 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
   reg_def V8_N ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next(6) );
   reg_def V8_O ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next(7) );
 
-  reg_def V9   ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()          );
-  reg_def V9_H ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next()  );
+  reg_def V9   ( SOC, SOE, Op_RegF, 9, v9->as_VMReg()          );
+  reg_def V9_H ( SOC, SOE, Op_RegF, 9, v9->as_VMReg()->next()  );
   reg_def V9_J ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next(2) );
   reg_def V9_K ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next(3) );
   reg_def V9_L ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next(4) );
@@ -265,8 +265,8 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
   reg_def V9_N ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next(6) );
   reg_def V9_O ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next(7) );
 
-  reg_def V10   ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()          );
-  reg_def V10_H ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next()  );
+  reg_def V10   ( SOC, SOE, Op_RegF, 10, v10->as_VMReg()          );
+  reg_def V10_H ( SOC, SOE, Op_RegF, 10, v10->as_VMReg()->next()  );
   reg_def V10_J ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next(2) );
   reg_def V10_K ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next(3) );
   reg_def V10_L ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next(4) );
@@ -274,8 +274,8 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
   reg_def V10_N ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next(6) );
   reg_def V10_O ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next(7) );
 
-  reg_def V11   ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()          );
-  reg_def V11_H ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next()  );
+  reg_def V11   ( SOC, SOE, Op_RegF, 11, v11->as_VMReg()          );
+  reg_def V11_H ( SOC, SOE, Op_RegF, 11, v11->as_VMReg()->next()  );
   reg_def V11_J ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next(2) );
   reg_def V11_K ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next(3) );
   reg_def V11_L ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next(4) );
@@ -283,8 +283,8 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
   reg_def V11_N ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next(6) );
   reg_def V11_O ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next(7) );
 
-  reg_def V12   ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()          );
-  reg_def V12_H ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next()  );
+  reg_def V12   ( SOC, SOE, Op_RegF, 12, v12->as_VMReg()          );
+  reg_def V12_H ( SOC, SOE, Op_RegF, 12, v12->as_VMReg()->next()  );
   reg_def V12_J ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next(2) );
   reg_def V12_K ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next(3) );
   reg_def V12_L ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next(4) );
@@ -292,8 +292,8 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
   reg_def V12_N ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next(6) );
   reg_def V12_O ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next(7) );
 
-  reg_def V13   ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()          );
-  reg_def V13_H ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next()  );
+  reg_def V13   ( SOC, SOE, Op_RegF, 13, v13->as_VMReg()          );
+  reg_def V13_H ( SOC, SOE, Op_RegF, 13, v13->as_VMReg()->next()  );
   reg_def V13_J ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next(2) );
   reg_def V13_K ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next(3) );
   reg_def V13_L ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next(4) );
@@ -301,8 +301,8 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
   reg_def V13_N ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next(6) );
   reg_def V13_O ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next(7) );
 
-  reg_def V14   ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()          );
-  reg_def V14_H ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next()  );
+  reg_def V14   ( SOC, SOE, Op_RegF, 14, v14->as_VMReg()          );
+  reg_def V14_H ( SOC, SOE, Op_RegF, 14, v14->as_VMReg()->next()  );
   reg_def V14_J ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next(2) );
   reg_def V14_K ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next(3) );
   reg_def V14_L ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next(4) );
@@ -310,8 +310,8 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
   reg_def V14_N ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next(6) );
   reg_def V14_O ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next(7) );
 
-  reg_def V15   ( SOC, SOC, Op_RegF, 15, v15->as_VMReg()          );
-  reg_def V15_H ( SOC, SOC, Op_RegF, 15, v15->as_VMReg()->next()  );
+  reg_def V15   ( SOC, SOE, Op_RegF, 15, v15->as_VMReg()          );
+  reg_def V15_H ( SOC, SOE, Op_RegF, 15, v15->as_VMReg()->next()  );
   reg_def V15_J ( SOC, SOC, Op_RegF, 15, v15->as_VMReg()->next(2) );
   reg_def V15_K ( SOC, SOC, Op_RegF, 15, v15->as_VMReg()->next(3) );
   reg_def V15_L ( SOC, SOC, Op_RegF, 15, v15->as_VMReg()->next(4) );
@@ -614,8 +614,8 @@ alloc_class chunk3(RFLAGS);
 // Several register classes are automatically defined based upon information in
 // this architecture description.
 // 1) reg_class inline_cache_reg           ( /* as def'd in frame section */ )
-// 2) reg_class compiler_method_oop_reg    ( /* as def'd in frame section */ )
-// 2) reg_class interpreter_method_oop_reg ( /* as def'd in frame section */ )
+// 2) reg_class compiler_method_reg        ( /* as def'd in frame section */ )
+// 2) reg_class interpreter_method_reg     ( /* as def'd in frame section */ )
 // 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
@@ -716,6 +716,10 @@ reg_class any_reg %{
 
 // Class for non-allocatable 32 bit registers
 reg_class non_allocatable_reg32(
+#ifdef R18_RESERVED
+    // See comment in register_aarch64.hpp
+    R18,                        // tls on Windows
+#endif
     R28,                        // thread
     R30,                        // lr
     R31                         // sp
@@ -723,6 +727,10 @@ reg_class non_allocatable_reg32(
 
 // Class for non-allocatable 64 bit registers
 reg_class non_allocatable_reg(
+#ifdef R18_RESERVED
+    // See comment in register_aarch64.hpp
+    R18, R18_H,                 // tls on Windows, platform register on macOS
+#endif
     R28, R28_H,                 // thread
     R30, R30_H,                 // lr
     R31, R31_H                  // sp
@@ -2410,12 +2418,6 @@ const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
 
-int Matcher::regnum_to_fpu_offset(int regnum)
-{
-  Unimplemented();
-  return 0;
-}
-
 // Is this branch offset short enough that a short branch can be used?
 //
 // NOTE: If the platform does not provide any short branch variants, then
@@ -4043,17 +4045,14 @@ encode %{
 //         SP meets the minimum alignment.
 
 frame %{
-  // What direction does stack grow in (assumed to be same for C & Java)
-  stack_direction(TOWARDS_LOW);
-
   // These three registers define part of the calling convention
   // between compiled code and the interpreter.
 
   // Inline Cache Register or Method for I2C.
   inline_cache_reg(R12);
 
-  // Method Oop Register when calling interpreter.
-  interpreter_method_oop_reg(R12);
+  // Method Register when calling interpreter.
+  interpreter_method_reg(R12);
 
   // Number of stack slots consumed by locking an object
   sync_stack_slots(2);
@@ -5622,9 +5621,9 @@ operand inline_cache_RegP(iRegP reg)
   interface(REG_INTER);
 %}
 
-operand interpreter_method_oop_RegP(iRegP reg)
+operand interpreter_method_RegP(iRegP reg)
 %{
-  constraint(ALLOC_IN_RC(method_reg)); // interpreter_method_oop_reg
+  constraint(ALLOC_IN_RC(method_reg)); // interpreter_method_reg
   match(reg);
   match(iRegPNoSp);
   op_cost(0);
@@ -6295,7 +6294,7 @@ pipeline %{
 attributes %{
   // ARM instructions are of fixed length
   fixed_size_instructions;        // Fixed size instructions TODO does
-  max_instructions_per_bundle = 2;   // A53 = 2, A57 = 4
+  max_instructions_per_bundle = 4;   // A53 = 2, A57 = 4
   // ARM instructions come in 32-bit word units
   instruction_unit_size = 4;         // An instruction is 4 bytes long
   instruction_fetch_unit_size = 64;  // The processor fetches one line

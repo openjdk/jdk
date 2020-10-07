@@ -55,6 +55,8 @@ import java.util.stream.Stream;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
+import jdk.internal.misc.CDS;
+import jdk.internal.misc.VM;
 import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
@@ -246,12 +248,55 @@ public final class Module implements AnnotatedElement {
     // --
 
     // special Module to mean "all unnamed modules"
-    private static final Module ALL_UNNAMED_MODULE = new Module(null);
-    private static final Set<Module> ALL_UNNAMED_MODULE_SET = Set.of(ALL_UNNAMED_MODULE);
+    private static final Module ALL_UNNAMED_MODULE;
+    private static final Set<Module> ALL_UNNAMED_MODULE_SET;
 
     // special Module to mean "everyone"
-    private static final Module EVERYONE_MODULE = new Module(null);
-    private static final Set<Module> EVERYONE_SET = Set.of(EVERYONE_MODULE);
+    private static final Module EVERYONE_MODULE;
+    private static final Set<Module> EVERYONE_SET;
+
+    private static class ArchivedData {
+        private static ArchivedData archivedData;
+        private final Module allUnnamedModule;
+        private final Set<Module> allUnnamedModules;
+        private final Module everyoneModule;
+        private final Set<Module> everyoneSet;
+
+        private ArchivedData() {
+            this.allUnnamedModule = ALL_UNNAMED_MODULE;
+            this.allUnnamedModules = ALL_UNNAMED_MODULE_SET;
+            this.everyoneModule = EVERYONE_MODULE;
+            this.everyoneSet = EVERYONE_SET;
+        }
+
+        static void archive() {
+            archivedData = new ArchivedData();
+        }
+
+        static ArchivedData get() {
+            return archivedData;
+        }
+
+        static {
+            CDS.initializeFromArchive(ArchivedData.class);
+        }
+    }
+
+    static {
+        ArchivedData archivedData = ArchivedData.get();
+        if (archivedData != null) {
+            ALL_UNNAMED_MODULE = archivedData.allUnnamedModule;
+            ALL_UNNAMED_MODULE_SET = archivedData.allUnnamedModules;
+            EVERYONE_MODULE = archivedData.everyoneModule;
+            EVERYONE_SET = archivedData.everyoneSet;
+        } else {
+            ALL_UNNAMED_MODULE = new Module(null);
+            ALL_UNNAMED_MODULE_SET = Set.of(ALL_UNNAMED_MODULE);
+            EVERYONE_MODULE = new Module(null);
+            EVERYONE_SET = Set.of(EVERYONE_MODULE);
+            ArchivedData.archive();
+        }
+    }
 
     /**
      * The holder of data structures to support readability, exports, and
