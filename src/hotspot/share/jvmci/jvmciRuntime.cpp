@@ -1582,6 +1582,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
   if (TieredCompilation && method->get_method_counters(THREAD) == NULL) {
     // Tiered policy requires method counters.
     result = JVMCI::cache_full;
+    failure_detail = (char*) "can't create method counters";
   }
 
   if (result == JVMCI::ok) {
