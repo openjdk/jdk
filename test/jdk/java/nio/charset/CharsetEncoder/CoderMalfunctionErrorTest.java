@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
+/* @test
+ * @bug 8253832
+ * @run testng CoderMalfunctionErrorTest
+ * @summary Check CoderMalfunctionError is thrown for any RuntimeException
+ *      on CharsetEncoder.encodeLoop() invocation.
+ */
 
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+import org.testng.annotations.Test;
 
-bool ShenandoahConcurrentRoots::can_do_concurrent_roots() {
-  return true;
-}
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.*;
 
-bool ShenandoahConcurrentRoots::should_do_concurrent_roots() {
-  return can_do_concurrent_roots() &&
-         !ShenandoahHeap::heap()->is_stw_gc_in_progress();
-}
-
-bool ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() {
-  return ClassUnloading;
-}
-
-bool ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  return can_do_concurrent_class_unloading() &&
-         heap->unload_classes() &&
-         !heap->is_stw_gc_in_progress();
+@Test
+public class CoderMalfunctionErrorTest {
+    @Test (expectedExceptions = CoderMalfunctionError.class)
+    public void testEncodeLoop() {
+        new CharsetEncoder(StandardCharsets.US_ASCII, 1, 1) {
+            @Override
+            protected CoderResult encodeLoop(CharBuffer charBuffer, ByteBuffer byteBuffer) {
+                throw new RuntimeException("This exception should be wrapped in CoderMalfunctionError");
+            }
+        }.encode(null, null, true);
+    }
 }

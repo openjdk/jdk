@@ -5066,9 +5066,10 @@ void os::pause() {
 
 Thread* os::ThreadCrashProtection::_protected_thread = NULL;
 os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
-volatile intptr_t os::ThreadCrashProtection::_crash_mux = 0;
 
 os::ThreadCrashProtection::ThreadCrashProtection() {
+  _protected_thread = Thread::current();
+  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
 }
 
 // See the caveats for this class in os_windows.hpp
@@ -5078,12 +5079,6 @@ os::ThreadCrashProtection::ThreadCrashProtection() {
 // The callback is supposed to provide the method that should be protected.
 //
 bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
-
-  Thread::muxAcquire(&_crash_mux, "CrashProtection");
-
-  _protected_thread = Thread::current_or_null();
-  assert(_protected_thread != NULL, "Cannot crash protect a NULL thread");
-
   bool success = true;
   __try {
     _crash_protection = this;
@@ -5094,7 +5089,6 @@ bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
   }
   _crash_protection = NULL;
   _protected_thread = NULL;
-  Thread::muxRelease(&_crash_mux);
   return success;
 }
 
