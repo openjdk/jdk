@@ -208,6 +208,9 @@ public class WindowsHelper {
         private void verifyStartMenuShortcut(Path shortcutsRoot, boolean exists) {
             Path shortcutPath = shortcutsRoot.resolve(startMenuShortcutPath());
             verifyShortcut(shortcutPath, exists);
+            if (!exists) {
+                TKit.assertPathNotEmptyDirectory(shortcutPath.getParent());
+            }
         }
 
         private void verifySystemStartMenuShortcut(boolean exists) {
