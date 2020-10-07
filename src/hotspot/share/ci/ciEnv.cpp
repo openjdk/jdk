@@ -974,8 +974,8 @@ void ciEnv::register_method(ciMethod* target,
   {
     methodHandle method(THREAD, target->get_Method());
 
-    if (TieredCompilation && method->get_method_counters(THREAD) == NULL) {
-      // Tiered policy requires method counters.
+    // We require method counters to store some method state (max compilation levels) required by the compilation policy.
+    if (method->get_method_counters(THREAD) == NULL) {
       record_failure("can't create method counters");
       // All buffers in the CodeBuffer are allocated in the CodeCache.
       // If the code buffer is created on each compile attempt

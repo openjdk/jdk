@@ -1579,8 +1579,8 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
 
   JVMCI::CodeInstallResult result(JVMCI::ok);
 
-  if (TieredCompilation && method->get_method_counters(THREAD) == NULL) {
-    // Tiered policy requires method counters.
+  // We require method counters to store some method state (max compilation levels) required by the compilation policy.
+  if (method->get_method_counters(THREAD) == NULL) {
     result = JVMCI::cache_full;
     failure_detail = (char*) "can't create method counters";
   }
