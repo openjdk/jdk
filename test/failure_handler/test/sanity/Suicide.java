@@ -30,12 +30,12 @@ public class Suicide {
     public static void main(String[] args) {
         String cmd = null;
         try {
-            String pidStr = String.valueOf(ProcessHandle.current().pid());
+            long pid = ProcessHandle.current().pid();
             String osName = System.getProperty("os.name");
             if (osName.contains("Windows")) {
-                cmd = "taskkill.exe /F /PID " + pidStr;
+                cmd = "taskkill.exe /F /PID " + pid;
             } else {
-                cmd = "kill -9 " + pidStr;
+                cmd = "kill -9 " + pid;
             }
 
             System.out.printf("executing `%s'%n", cmd);
