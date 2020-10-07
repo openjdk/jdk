@@ -24,10 +24,10 @@
 /*
  * @test
  * @bug 4279339
- * @summary Verify that an anonymous class cannot contain a static field.
+ * @summary Verify that an anonymous class can contain a static field.
  * @author maddox
  *
- * @run compile/fail AnonStaticMember_1.java
+ * @compile AnonStaticMember_1.java
  */
 
 class AnonStaticMember_1 {

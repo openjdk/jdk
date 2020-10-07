@@ -5278,18 +5278,6 @@ public class Attr extends JCTree.Visitor {
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
             // Attribute declaration
             attribStat(l.head, env);
-            // Check that declarations in inner classes are not static (JLS 8.1.2)
-            // Make an exception for static constants.
-            if (c.owner.kind != PCK &&
-                ((c.flags() & STATIC) == 0 || c.name == names.empty) &&
-                (TreeInfo.flags(l.head) & (STATIC | INTERFACE)) != 0) {
-                Symbol sym = null;
-                if (l.head.hasTag(VARDEF)) sym = ((JCVariableDecl) l.head).sym;
-                if (sym == null ||
-                    sym.kind != VAR ||
-                    ((VarSymbol) sym).getConstValue() == null)
-                    log.error(l.head.pos(), Errors.IclsCantHaveStaticDecl(c));
-            }
         }
 
         // Check for cycles among non-initial constructors.

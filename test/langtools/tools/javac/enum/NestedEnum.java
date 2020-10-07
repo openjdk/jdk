@@ -1,10 +1,10 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 5071831
- * @summary javac allows enum in an inner class
+ * @summary javac should allow enum in an inner class
  * @author gafter
  *
- * @compile/fail/ref=NestedEnum.out -XDrawDiagnostics  NestedEnum.java
+ * @compile NestedEnum.java
  */
 
 class NestedEnum {

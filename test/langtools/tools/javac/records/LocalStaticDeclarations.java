@@ -30,8 +30,13 @@
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
- * @compile --enable-preview -source ${jdk.version} LocalStaticDeclarations.java
- * @run main/othervm --enable-preview LocalStaticDeclarations
+ * @run main LocalStaticDeclarations
+ */
+
+/** this test checks two thinks:
+ *  1 - that static declarations are allowed inside inner classes
+ *  2 - and in addtion that non-static variables can't be captured
+ *      by static contexts
  */
 
 import javax.lang.model.element.Element;
@@ -58,10 +63,12 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
                 int INSTANCE_FIELD = 0;
                 static int STATIC_FIELD = 0;
                 // instance initializer
-                { int LOCAL_VARIABLE = 0;
+                {
+                    int LOCAL_VARIABLE = 0;
                     #{CONTAINER}
                 }
                 Test() {
+                    int LOCAL_VARIABLE = 0;
                     #{CONTAINER}
                 }
                 void m() {
@@ -94,7 +101,7 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
         ),
         RECORD("record CR() { #{STATIC_LOCAL} }"),
         CLASS("class CC { #{STATIC_LOCAL} }"),
-        ENUM("enum CE { #{STATIC_LOCAL} }"),
+        ENUM("enum CE { CE1; #{STATIC_LOCAL} }"),
         LAMBDA("Runnable run = () -> { #{STATIC_LOCAL} };");
 
         String container;
@@ -125,7 +132,6 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     }
 
     enum Member implements ComboParameter {
-        NONE(""),
         METHOD("int foo() { return #{EXPR}; }"),
         DEFAULT_METHOD("default int foo() { return #{EXPR}; }");
 
@@ -141,14 +147,14 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     }
 
     enum Expression implements ComboParameter {
-         LITERAL("1"),
-         STATIC_FIELD("STATIC_FIELD"),
-         LOCAL_VARIABLE("LOCAL_VARIABLE"),
-         INSTANCE_FIELD("INSTANCE_FIELD");
+        LITERAL("1"),
+        STATIC_FIELD("STATIC_FIELD"),
+        LOCAL_VARIABLE("LOCAL_VARIABLE"),
+        INSTANCE_FIELD("INSTANCE_FIELD");
 
-         String expr;
+        String expr;
 
-         Expression(String expr) {
+        Expression(String expr) {
              this.expr = expr;
          }
 
@@ -175,19 +181,18 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     @Override
     public void doWork() throws Throwable {
         newCompilationTask()
-                .withOptions(new String[]{"--enable-preview", "-source", Integer.toString(Runtime.version().feature())})
                 .withSourceFromTemplate("Test", sourceTemplate)
                 .generate(this::check);
     }
 
     boolean notTriviallyIncorrect() {
-        return decl == StaticLocalDecl.INTERFACE && (member == Member.DEFAULT_METHOD || member == Member.NONE) ||
-               decl != StaticLocalDecl.INTERFACE && (member == Member.METHOD || member == Member.NONE);
+        return decl == StaticLocalDecl.INTERFACE && member == Member.DEFAULT_METHOD ||
+               decl != StaticLocalDecl.INTERFACE && member == Member.METHOD;
     }
 
     void check(ComboTask.Result<Iterable<? extends JavaFileObject>> result) {
         if (shouldFail()) {
-            Assert.check(result.hasErrors(), result.compilationInfo());
+            Assert.check(result.hasErrors(), "unexpected compilation\n" + result.compilationInfo());
             if (!expectedDiagFound(result)) {
                 fail("test failing with unexpected error message\n" + result.compilationInfo());
             }
@@ -197,10 +202,7 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     }
 
     boolean shouldFail() {
-        return ((container != Container.NO_CONTAINER &&
-                container != Container.LAMBDA &&
-                container != Container.ANONYMOUS)) ||
-                (member != Member.NONE && !acceptableExpr());
+        return (expr == Expression.LOCAL_VARIABLE || expr == Expression.INSTANCE_FIELD);
     }
 
     boolean acceptableExpr() {
@@ -208,14 +210,9 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     }
 
     boolean expectedDiagFound(ComboTask.Result<Iterable<? extends JavaFileObject>> result) {
-        if ((container == Container.NO_CONTAINER ||
-                container == Container.LAMBDA ||
-                container == Container.ANONYMOUS) &&
-                !acceptableExpr()) {
+        if (expr == Expression.LOCAL_VARIABLE || expr == Expression.INSTANCE_FIELD) {
             return result.containsKey("compiler.err.non-static.cant.be.ref");
-        } else if (container == Container.ENUM) {
-            return result.containsKey("compiler.err.enum.constant.expected" );
         }
-        return result.containsKey("compiler.err.static.declaration.not.allowed.in.inner.classes" );
+        return false;
     }
 }

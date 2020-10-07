@@ -1217,24 +1217,19 @@ public class Check {
                 implicit |= sym.owner.flags_field & STRICTFP;
             break;
         case TYP:
-            if (sym.isLocal()) {
+            if (sym.owner.kind.matches(KindSelector.VAL_MTH)) {
                 boolean implicitlyStatic = !sym.isAnonymous() &&
                         ((flags & RECORD) != 0 || (flags & ENUM) != 0 || (flags & INTERFACE) != 0);
                 boolean staticOrImplicitlyStatic = (flags & STATIC) != 0 || implicitlyStatic;
                 mask = staticOrImplicitlyStatic && allowRecords && (flags & ANNOTATION) == 0 ? StaticLocalFlags : LocalClassFlags;
                 implicit = implicitlyStatic ? STATIC : implicit;
-                if (staticOrImplicitlyStatic) {
-                    if (sym.owner.kind == TYP) {
-                        log.error(pos, Errors.StaticDeclarationNotAllowedInInnerClasses);
-                    }
-                }
             } else if (sym.owner.kind == TYP) {
-                mask = (flags & RECORD) != 0 ? MemberRecordFlags : ExtendedMemberClassFlags;
+                mask = ((flags & STATIC) != 0) && allowRecords ? ExtendedMemberStaticClassFlags : ExtendedMemberClassFlags;
                 if (sym.owner.owner.kind == PCK ||
                     (sym.owner.flags_field & STATIC) != 0)
                     mask |= STATIC;
                 else if ((flags & ENUM) != 0 || (flags & RECORD) != 0) {
-                    log.error(pos, Errors.StaticDeclarationNotAllowedInInnerClasses);
+                    //log.error(pos, Errors.StaticDeclarationNotAllowedInInnerClasses);
                 }
                 // Nested interfaces and enums are always STATIC (Spec ???)
                 if ((flags & (INTERFACE | ENUM | RECORD)) != 0 ) implicit = STATIC;
@@ -1307,7 +1302,10 @@ public class Check {
                            SEALED | NON_SEALED)
                  && checkDisjoint(pos, flags,
                                 SEALED,
-                           FINAL | NON_SEALED)) {
+                           FINAL | NON_SEALED)
+                 && checkDisjoint(pos, flags,
+                                RECORD,
+                                SEALED | NON_SEALED)  ) {
             // skip
         }
         return flags & (mask | ~ExtendedStandardFlags) | implicit;

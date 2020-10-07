@@ -485,7 +485,7 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.already.defined", template);
     }
 
-    public void testStaticLocalTypes() {
+    public void testStaticDefinitionsInLocalandInner() {
         // local records can also be final
         assertOK("class R { \n" +
                 "    void m() { \n" +
@@ -778,6 +778,120 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "    }\n" +
                 "}");
 
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class C {\n" +
+                "    String hello = \"hello\";\n" +
+                "    class Inner {\n" +
+                "        enum E {\n" +
+                "            A;\n" +
+                "            public void test1() {\n" +
+                "                class X {\n" +
+                "                    public void test2() {\n" +
+                "                        System.err.println(hello);\n" +
+                "                    }\n" +
+                "                }\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "}");
+
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class C {\n" +
+                "    String hello = \"hello\";\n" +
+                "    class Inner {\n" +
+                "        enum E {\n" +
+                "            A;\n" +
+                "            public void test1() {\n" +
+                "                System.err.println(hello);\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "}");
+
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class C {\n" +
+                "    String hello = \"hello\";\n" +
+                "    class Inner {\n" +
+                "        record R() {\n" +
+                "            public void test1() {\n" +
+                "                class X {\n" +
+                "                    public void test2() {\n" +
+                "                        System.err.println(hello);\n" +
+                "                    }\n" +
+                "                }\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "}");
+
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class C {\n" +
+                "    String hello = \"hello\";\n" +
+                "    class Inner {\n" +
+                "        record R() {\n" +
+                "            public void test1() {\n" +
+                "                System.err.println(hello);\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "}");
+
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class C {\n" +
+                "    String hello = \"hello\";\n" +
+                "    class Inner {\n" +
+                "        interface I {\n" +
+                "            public default void test1() {\n" +
+                "                class X {\n" +
+                "                    public void test2() {\n" +
+                "                        System.err.println(hello);\n" +
+                "                    }\n" +
+                "                }\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "}");
+
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class C {\n" +
+                "    String hello = \"hello\";\n" +
+                "    class Inner {\n" +
+                "        interface I {\n" +
+                "            public default void test1() {\n" +
+                "                System.err.println(hello);\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "}");
+
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class C {\n" +
+                "    String hello = \"hello\";\n" +
+                "    class Inner {\n" +
+                "        static class SC {\n" +
+                "            public void test1() {\n" +
+                "                class X {\n" +
+                "                    public void test2() {\n" +
+                "                        System.err.println(hello);\n" +
+                "                    }\n" +
+                "                }\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "}");
+
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class C {\n" +
+                "    String hello = \"hello\";\n" +
+                "    class Inner {\n" +
+                "        static class SC {\n" +
+                "            public void test1() {\n" +
+                "                System.err.println(hello);\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "}");
+
         // but static fields are OK
         assertOK("class R { \n" +
                 "    static int z = 0;\n" +
@@ -847,6 +961,31 @@ public class RecordCompilationTests extends CompilationTestCase {
                 }
                 """
         );
+
+        // inner classes can contain static methods too
+        assertOK(
+                """
+                class C {
+                    class Inner {
+                        // static method inside inner class
+                        static void m() {}
+                    }
+                }
+                """
+        );
+
+        assertOK(
+                """
+                class C {
+                     void m() {
+                         new Object() {
+                            // static method inside inner class
+                            static void m() {}
+                         };
+                     }
+                }
+                """
+        );
     }
 
     public void testReturnInCanonical_Compact() {
@@ -877,7 +1016,7 @@ public class RecordCompilationTests extends CompilationTestCase {
     }
 
     public void testRecordsInsideInner() {
-        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
+        assertOK(
                 """
                 class Outer {
                     class Inner {
@@ -886,7 +1025,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                 }
                 """
         );
-        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
+        assertOK(
                 """
                 class Outer {
                     public void test() {
@@ -896,7 +1035,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                     }
                 }
                 """);
-        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
+        assertOK(
                 """
                 class Outer {
                     Runnable run = new Runnable() {
@@ -905,7 +1044,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                     };
                 }
                 """);
-        assertFail("compiler.err.static.declaration.not.allowed.in.inner.classes",
+        assertOK(
                 """
                 class Outer {
                     void m() {
