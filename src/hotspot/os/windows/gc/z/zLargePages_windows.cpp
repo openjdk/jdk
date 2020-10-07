@@ -24,6 +24,6 @@
 #include "precompiled.hpp"
 #include "gc/z/zLargePages.hpp"
 
-void ZLargePages::initialize_platform() {
+void ZLargePages::pd_initialize() {
   _state = Disabled;
 }

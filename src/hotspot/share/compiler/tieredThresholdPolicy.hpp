@@ -166,8 +166,6 @@ class TieredThresholdPolicy : public CompilationPolicy {
   jlong _start_time;
   int _c1_count, _c2_count;
 
-  // Check if the counter is big enough and set carry (effectively infinity).
-  inline void set_carry_if_necessary(InvocationCounter *counter);
   // Set carry flags in the counters (in Method* and MDO).
   inline void handle_counter_overflow(Method* method);
   // Verify that a level is consistent with the compilation mode
@@ -187,10 +185,10 @@ class TieredThresholdPolicy : public CompilationPolicy {
   // Transition functions.
   // call_event determines if a method should be compiled at a different
   // level with a regular invocation entry.
-  CompLevel call_event(const methodHandle& method, CompLevel cur_level, JavaThread* thread);
+  CompLevel call_event(const methodHandle& method, CompLevel cur_level, Thread* thread);
   // loop_event checks if a method should be OSR compiled at a different
   // level.
-  CompLevel loop_event(const methodHandle& method, CompLevel cur_level, JavaThread* thread);
+  CompLevel loop_event(const methodHandle& method, CompLevel cur_level, Thread* thread);
   void print_counters(const char* prefix, Method* m);
   // Has a method been long around?
   // We don't remove old methods from the compile queue even if they have
@@ -213,13 +211,13 @@ class TieredThresholdPolicy : public CompilationPolicy {
   // determines whether we should do that.
   inline bool should_create_mdo(const methodHandle& method, CompLevel cur_level);
   // Create MDO if necessary.
-  void create_mdo(const methodHandle& mh, JavaThread* thread);
+  void create_mdo(const methodHandle& mh, Thread* thread);
   // Is method profiled enough?
   bool is_method_profiled(const methodHandle& method);
 
   double _increase_threshold_at_ratio;
 
-  bool maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread);
+  bool maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, Thread* thread);
 
   int c1_count() const     { return _c1_count; }
   int c2_count() const     { return _c2_count; }
@@ -229,7 +227,7 @@ class TieredThresholdPolicy : public CompilationPolicy {
   enum EventType { CALL, LOOP, COMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
   void print_event(EventType type, Method* m, Method* im, int bci, CompLevel level);
   // Check if the method can be compiled, change level if necessary
-  void compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
+  void compile(const methodHandle& mh, int bci, CompLevel level, TRAPS);
   // Simple methods are as good being compiled with C1 as C2.
   // This function tells if it's such a function.
   inline static bool is_trivial(Method* method);
@@ -244,9 +242,9 @@ class TieredThresholdPolicy : public CompilationPolicy {
   // Get a compilation level for a given method.
   static CompLevel comp_level(Method* method);
   void method_invocation_event(const methodHandle& method, const methodHandle& inlinee,
-                               CompLevel level, CompiledMethod* nm, JavaThread* thread);
+                               CompLevel level, CompiledMethod* nm, TRAPS);
   void method_back_branch_event(const methodHandle& method, const methodHandle& inlinee,
-                                int bci, CompLevel level, CompiledMethod* nm, JavaThread* thread);
+                                int bci, CompLevel level, CompiledMethod* nm, TRAPS);
 
   void set_increase_threshold_at_ratio() { _increase_threshold_at_ratio = 100 / (100 - (double)IncreaseFirstTierCompileThresholdAt); }
   void set_start_time(jlong t) { _start_time = t;    }
@@ -266,7 +264,7 @@ public:
   virtual void disable_compilation(Method* method) { }
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr);
   virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee,
-                         int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread);
+                         int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, TRAPS);
   // Select task is called by CompileBroker. We should return a task or NULL.
   virtual CompileTask* select_task(CompileQueue* compile_queue);
   // Tell the runtime if we think a given method is adequately profiled.

@@ -54,7 +54,6 @@ class G1RootProcessor : public StackObj {
 
   enum G1H_process_roots_tasks {
     G1RP_PS_Universe_oops_do,
-    G1RP_PS_ObjectSynchronizer_oops_do,
     G1RP_PS_Management_oops_do,
     G1RP_PS_ClassLoaderDataGraph_oops_do,
     G1RP_PS_jvmti_oops_do,

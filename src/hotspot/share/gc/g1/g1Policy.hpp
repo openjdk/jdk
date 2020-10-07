@@ -264,12 +264,13 @@ private:
   void maybe_start_marking();
 
   // The kind of STW pause.
-  enum PauseKind {
+  enum PauseKind : uint {
     FullGC,
     YoungOnlyGC,
     MixedGC,
     LastYoungGC,
-    ConcurrentStartGC,
+    ConcurrentStartMarkGC,
+    ConcurrentStartUndoGC,
     Cleanup,
     Remark
   };
@@ -279,9 +280,16 @@ private:
   static bool is_last_young_pause(PauseKind kind);
   static bool is_concurrent_start_pause(PauseKind kind);
   // Calculate PauseKind from internal state.
-  PauseKind young_gc_pause_kind() const;
+  PauseKind young_gc_pause_kind(bool concurrent_operation_is_full_mark) const;
+  // Manage time-to-mixed tracking.
+  void update_time_to_mixed_tracking(PauseKind pause, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
   void record_pause(PauseKind kind, double start, double end);
+
+  bool should_update_gc_stats();
+
+  void update_gc_pause_time_ratios(PauseKind kind, double start_sec, double end_sec);
+
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
 
@@ -314,18 +322,20 @@ public:
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
+  bool concurrent_operation_is_full_mark(const char* msg = NULL);
+
   bool about_to_start_mixed_phase() const;
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
-  virtual void record_collection_pause_end(double pause_time_ms);
+  virtual void record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
   virtual void record_full_collection_end();
 
   // Must currently be called while the world is stopped.
-  void record_concurrent_mark_init_end(double mark_init_elapsed_time_ms);
+  void record_concurrent_mark_init_end();
 
   // Record start and end of remark.
   void record_concurrent_mark_remark_start();

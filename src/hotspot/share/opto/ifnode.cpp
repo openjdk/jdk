@@ -86,7 +86,6 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   i1 = cmp->in(1);
   if( i1 == NULL || !i1->is_Phi() ) return NULL;
   PhiNode *phi = i1->as_Phi();
-  if( phi->is_copy() ) return NULL;
   Node *con2 = cmp->in(2);
   if( !con2->is_Con() ) return NULL;
   // See that the merge point contains some constants

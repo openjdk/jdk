@@ -46,6 +46,7 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import jdk.incubator.jpackage.internal.Arguments.CLIOptions;
 import static jdk.incubator.jpackage.internal.LinuxAppImageBuilder.DEFAULT_ICON;
 import static jdk.incubator.jpackage.internal.LinuxAppImageBuilder.ICON_PNG;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
@@ -54,6 +55,7 @@ import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.ICON;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
 /**
  * Helper to create files for desktop integration.
@@ -133,12 +135,32 @@ final class DesktopIntegration {
                 createDataForDesktopFile(params));
 
         nestedIntegrations = new ArrayList<>();
-        for (var launcherParams : launchers) {
-            launcherParams = AddLauncherArguments.merge(params, launcherParams,
+        // Read launchers information from predefine app image
+        if (launchers.isEmpty() &&
+                PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
+            List<String> launcherPaths = AppImageFile.getLauncherNames(
+                    PREDEFINED_APP_IMAGE.fetchFrom(params), params);
+            if (!launcherPaths.isEmpty()) {
+                launcherPaths.remove(0); // Remove main launcher
+            }
+            for (var launcherPath : launcherPaths) {
+                Map<String, ? super Object> launcherParams = new HashMap<>();
+                Arguments.putUnlessNull(launcherParams, CLIOptions.NAME.getId(),
+                        launcherPath);
+                launcherParams = AddLauncherArguments.merge(params, launcherParams,
                     ICON.getID(), ICON_PNG.getID(), ADD_LAUNCHERS.getID(),
-                    FILE_ASSOCIATIONS.getID());
-            nestedIntegrations.add(new DesktopIntegration(thePackage,
-                    launcherParams, params));
+                    FILE_ASSOCIATIONS.getID(), PREDEFINED_APP_IMAGE.getID());
+                nestedIntegrations.add(new DesktopIntegration(thePackage,
+                        launcherParams, params));
+            }
+        } else {
+            for (var launcherParams : launchers) {
+                launcherParams = AddLauncherArguments.merge(params, launcherParams,
+                        ICON.getID(), ICON_PNG.getID(), ADD_LAUNCHERS.getID(),
+                        FILE_ASSOCIATIONS.getID());
+                nestedIntegrations.add(new DesktopIntegration(thePackage,
+                        launcherParams, params));
+            }
         }
     }
 

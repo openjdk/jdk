@@ -27,6 +27,7 @@
  * @summary Test jvmti class file loader hook interaction with AppCDS
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @requires vm.cds
+ * @requires vm.jvmti
  * @build ClassFileLoadHook
  * @run main/othervm/native ClassFileLoadHookTest
  */

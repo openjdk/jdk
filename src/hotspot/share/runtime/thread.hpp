@@ -401,9 +401,6 @@ class Thread: public ThreadShadow {
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_FIELD_JFR;)      // Thread-local data for jfr
 
-  int   _vm_operation_started_count;            // VM_Operation support
-  int   _vm_operation_completed_count;          // VM_Operation support
-
   ObjectMonitor* _current_pending_monitor;      // ObjectMonitor this thread
                                                 // is waiting to lock
   bool _current_pending_monitor_is_from_java;   // locking is from Java code
@@ -493,6 +490,7 @@ class Thread: public ThreadShadow {
   virtual bool is_ConcurrentGC_thread() const        { return false; }
   virtual bool is_Named_thread() const               { return false; }
   virtual bool is_Worker_thread() const              { return false; }
+  virtual bool is_JfrSampler_thread() const          { return false; }
 
   // Can this thread make Java upcalls
   virtual bool can_call_java() const                 { return false; }
@@ -620,11 +618,6 @@ class Thread: public ThreadShadow {
   JFR_ONLY(DEFINE_THREAD_LOCAL_ACCESSOR_JFR;)
 
   bool is_trace_suspend()               { return (_suspend_flags & _trace_flag) != 0; }
-
-  // VM operation support
-  int vm_operation_ticket()                      { return ++_vm_operation_started_count; }
-  int vm_operation_completed_count()             { return _vm_operation_completed_count; }
-  void increment_vm_operation_completed_count()  { _vm_operation_completed_count++; }
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
@@ -766,6 +759,7 @@ protected:
   address stack_end()  const           { return stack_base() - stack_size(); }
   void    record_stack_base_and_size();
   void    register_thread_stack_with_NMT() NOT_NMT_RETURN;
+  void    unregister_thread_stack_with_NMT() NOT_NMT_RETURN;
 
   int     lgrp_id() const        { return _lgrp_id; }
   void    set_lgrp_id(int value) { _lgrp_id = value; }
@@ -1353,24 +1347,12 @@ class JavaThread: public Thread {
   // Support for thread handshake operations
   HandshakeState _handshake;
  public:
-  void set_handshake_operation(HandshakeOperation* op) {
-    _handshake.set_operation(op);
-  }
+  HandshakeState* handshake_state() { return &_handshake; }
 
-  bool has_handshake() const {
-    return _handshake.has_operation();
-  }
-
-  void handshake_process_by_self() {
-    _handshake.process_by_self();
-  }
-
-  HandshakeState::ProcessResult handshake_try_process(HandshakeOperation* op) {
-    return _handshake.try_process(op);
-  }
-
-  Thread* active_handshaker() const {
-    return _handshake.active_handshaker();
+  // A JavaThread can always safely operate on it self and other threads
+  // can do it safely if they are the active handshaker.
+  bool is_handshake_safe_for(Thread* th) const {
+    return _handshake.active_handshaker() == th || this == th;
   }
 
   // Suspend/resume support for JavaThread

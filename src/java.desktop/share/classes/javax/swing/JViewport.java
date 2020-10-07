@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1405,6 +1405,11 @@ public class JViewport extends JComponent implements Accessible
     @SuppressWarnings("serial") // Same-version serialization only
     protected class ViewListener extends ComponentAdapter implements Serializable
     {
+        /**
+         * Constructs a {@code ViewListener}.
+         */
+        protected ViewListener() {}
+
         public void componentResized(ComponentEvent e) {
             fireStateChanged();
             revalidate();
@@ -1875,6 +1880,12 @@ public class JViewport extends JComponent implements Accessible
      */
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJViewport extends AccessibleJComponent {
+
+        /**
+         * Constructs an {@code AccessibleJViewport}.
+         */
+        protected AccessibleJViewport() {}
+
         /**
          * Get the role of this object.
          *

@@ -46,9 +46,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.interrupt.interrupt001.interrupt001
- *        nsk.jdb.interrupt.interrupt001.interrupt001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.interrupt.interrupt001.interrupt001
+ * @build nsk.jdb.interrupt.interrupt001.interrupt001a
+ * @run main/othervm
+ *      nsk.jdb.interrupt.interrupt001.interrupt001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

@@ -67,7 +67,7 @@ const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 #if INCLUDE_CDS_JAVA_HEAP
 inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
   assert(sizeof(narrowOop) == sizeof(offset), "must be");
-  narrowOop v = (narrowOop)offset;
+  narrowOop v = CompressedOops::narrow_oop_cast(offset);
   return HeapShared::decode_from_archive(v);
 }
 
@@ -750,7 +750,7 @@ public:
     }
 
     // add to the compact table
-    _writer->add(hash, CompressedOops::encode(new_s));
+    _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
     return true;
   }
 };

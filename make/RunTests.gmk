@@ -609,6 +609,7 @@ define SetupRunGtestTestBody
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, ( \
+	    $$(CD) $$($1_TEST_SUPPORT_DIR) && \
 	    $$(FIXPATH) $$(TEST_IMAGE_DIR)/hotspot/gtest/$$($1_VARIANT)/gtestLauncher \
 	        -jdk $(JDK_UNDER_TEST) $$($1_GTEST_FILTER) \
 	        --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \

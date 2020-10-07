@@ -50,6 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
@@ -1662,8 +1663,7 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
 
 address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode) {
   size_t offset = spc->mapping_offset();
-  assert(offset == (size_t)(uint32_t)offset, "must be 32-bit only");
-  uint n = (uint)offset;
+  narrowOop n = CompressedOops::narrow_oop_cast(offset);
   if (with_current_oop_encoding_mode) {
     return cast_from_oop<address>(CompressedOops::decode_not_null(n));
   } else {
@@ -1846,6 +1846,7 @@ void FileMapInfo::map_heap_regions() {
 
   if (!HeapShared::open_archive_heap_region_mapped()) {
     assert(open_archive_heap_ranges == NULL && num_open_archive_heap_ranges == 0, "sanity");
+    MetaspaceShared::disable_full_module_graph();
   }
 }
 
