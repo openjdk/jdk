@@ -1379,7 +1379,7 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
   }
 
   write_region(MetaspaceShared::bm, (char*)buffer, size_in_bytes, /*read_only=*/true, /*allow_exec=*/false);
-  return (char*)buffer;
+  return buffer;
 }
 
 // Write out the given archive heap memory regions.  GC code combines multiple

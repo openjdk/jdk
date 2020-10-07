@@ -785,7 +785,7 @@ void ArchiveBuilder::write_cds_map_to_log(FileMapInfo* mapinfo,
                                           GrowableArray<MemRegion> *open_heap_regions,
                                           char* bitmap, size_t bitmap_size_in_bytes) {
   if (log_is_enabled(Info, cds, map)) {
-    CDSMapLogger::write(this, mapinfo, closed_heap_regions,open_heap_regions,
+    CDSMapLogger::write(this, mapinfo, closed_heap_regions, open_heap_regions,
                         bitmap, bitmap_size_in_bytes);
   }
 }
