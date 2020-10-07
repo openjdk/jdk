@@ -328,7 +328,7 @@ class TemplateTable: AllStatic {
   // initialization helpers
   static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(            ), char filler );
   static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(int arg     ), int arg     );
- static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(bool arg    ), bool arg    );
+  static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(bool arg    ), bool arg    );
   static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(TosState tos), TosState tos);
   static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(Operation op), Operation op);
   static void def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(Condition cc), Condition cc);
@@ -341,7 +341,6 @@ class TemplateTable: AllStatic {
  public:
   // Initialization
   static void initialize();
-  static void pd_initialize();
 
   // Templates
   static Template* template_for     (Bytecodes::Code code)  { Bytecodes::check     (code); return &_template_table     [code]; }
