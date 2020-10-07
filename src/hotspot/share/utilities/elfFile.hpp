@@ -279,7 +279,7 @@ class DwarfFile : public ElfFile {
   static constexpr uint8_t DW_LNS_set_epilogue_begin = 11;
   static constexpr uint8_t DW_LNS_set_isa = 12;
 
-  // Standard Opcodes for line number program from section 6.2.5.3 in DWARF 4 spec
+  // Exnteded Opcodes for line number program from section 6.2.5.3 in DWARF 4 spec
   static constexpr uint8_t DW_LNE_end_sequence = 1;
   static constexpr uint8_t DW_LNE_set_address = 2;
   static constexpr uint8_t DW_LNE_define_file = 3;
@@ -289,12 +289,14 @@ class DwarfFile : public ElfFile {
    private:
     long _current_pos;
     long _start_pos;
-    long _max_bytes_read; // Do not read more than this many bytes. Used for stopping in case of a corrupted DWARF file
+    long _max_pos; // Used to guarantee that we stop reading in case of a corrupted DWARF file
+
+    bool read_leb128(uint64_t* result, int8_t check_size, bool is_signed);
    public:
     MarkedDwarfFileReader(FILE* const fd) : MarkedFileReader(fd),
-      _current_pos(-1), _start_pos(-1), _max_bytes_read(-1) {}
+                                            _current_pos(-1), _start_pos(-1), _max_pos(-1) {}
     bool set_position(long new_pos);
-    void set_max_bytes_left(long max_bytes_read) { _max_bytes_read = max_bytes_read; }
+    void set_max_pos(long max_pos) { _max_pos = max_pos; }
     bool has_bytes_left() const; // Have we reached the limit of maximally allowable bytes to read?
     bool update_to_stored_position(); // Call this if another file reader has changed the position of the same file handle
     bool reset_to_previous_position();
@@ -304,7 +306,9 @@ class DwarfFile : public ElfFile {
     bool read_word(uint16_t* result);
     bool read_dword(uint32_t* result);
     bool read_qword(uint64_t* result);
-    bool read_uleb128(uint64_t* result);
+    bool read_uleb128(uint64_t* result, int8_t check_size = -1);
+    bool read_sleb128(int64_t* result, int8_t check_size = -1);
+    bool read_string(/* ignore result */);
   };
 
   // See DWARF4 specification section 6.1.2.
@@ -426,7 +430,7 @@ class DwarfFile : public ElfFile {
     // that a statement begins at the “left edge” of the line.
     uint32_t column;
 
-    uint8_t is_stmt;
+    bool is_stmt;
     bool basic_block;
     bool end_sequence;
     bool prologue_end;
@@ -434,7 +438,10 @@ class DwarfFile : public ElfFile {
     uint32_t isa;
     uint32_t discriminator;
 
-    LineNumberState(uint8_t default_is_stmt) :
+    // Implementation specific
+    bool append_row;
+
+    LineNumberState(bool default_is_stmt) :
     address(0),
     op_index(0),
     file(1),
@@ -445,7 +452,12 @@ class DwarfFile : public ElfFile {
     prologue_end(false),
     epilogue_begin(false),
     isa(0),
-    discriminator(0) {}
+    discriminator(0),
+    append_row(false) {}
+
+    // Defined in section 6.2.5.1. set_address_register must always be executed before set_index_register
+    void set_address_register(LineNumberProgramHeader32* header, uint8_t operation_advance);
+    void set_index_register(LineNumberProgramHeader32* header, uint8_t operation_advance);
   };
 
   // .debug_aranges
@@ -464,6 +476,10 @@ class DwarfFile : public ElfFile {
   // .debug_line
   bool find_line_number(int offset_in_library, uint64_t debug_line_offset);
   static bool read_line_number_program_header(LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
+  bool read_line_number_program(LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
+  bool read_extended_opcode(LineNumberState* state, MarkedDwarfFileReader* reader);
+  bool read_standard_opcode(uint8_t opcode, LineNumberState* state, LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
+  bool read_special_opcode(uint8_t opcode, LineNumberState* state, LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
 
  public:
   DwarfFile(const char* filepath) : ElfFile(filepath) {}

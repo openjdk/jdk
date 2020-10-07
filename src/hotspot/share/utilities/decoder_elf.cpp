@@ -54,8 +54,6 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
 }
 
 bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line) {
-
-
   char filepath[JVM_MAXPATHLEN];
   int offset_in_library;
   if (!os::dll_address_to_library_name(pc, filepath, sizeof(filepath), &offset_in_library)) {

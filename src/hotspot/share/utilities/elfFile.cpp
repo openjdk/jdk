@@ -538,7 +538,7 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, uint crc) {
   fclose(file);
 
   if (crc == file_crc) {
-    _debuginfo_file = new DwarfFile(filepath);
+    _debuginfo_file = new (std::nothrow) DwarfFile(filepath);
     return true;
   } else {
     assert(_debuginfo_file == NULL, "still NULL");
@@ -566,7 +566,7 @@ bool DwarfFile::get_line_number(const int offset_in_library, char* buf, size_t b
   return true;
 }
 
-bool DwarfFile::find_compilation_unit_offset(const int offset_in_library, uint64_t *compilation_unit_offset) {
+bool DwarfFile::find_compilation_unit_offset(const int offset_in_library, uint64_t* compilation_unit_offset) {
 
   Elf_Shdr shdr;
   if (section_by_name(".debug_aranges", shdr) == -1) {
@@ -574,7 +574,7 @@ bool DwarfFile::find_compilation_unit_offset(const int offset_in_library, uint64
   }
 
   MarkedDwarfFileReader reader(fd());
-  reader.set_max_bytes_left(shdr.sh_size);
+  reader.set_max_pos(shdr.sh_offset + shdr.sh_size);
   DebugArangesSetHeader32 next_set_header;
 
   if (!reader.set_position(shdr.sh_offset)) {
@@ -642,7 +642,7 @@ bool DwarfFile::read_debug_aranges_set_header(DwarfFile::DebugArangesSetHeader32
   return true;
 }
 
-bool DwarfFile::find_debug_line_offset(const int offset_in_library, const uint64_t compilation_unit_offset, uint32_t *debug_line_offset) {
+bool DwarfFile::find_debug_line_offset(const int offset_in_library, const uint64_t compilation_unit_offset, uint32_t* debug_line_offset) {
   Elf_Shdr shdr;
   if (section_by_name(".debug_info", shdr) == -1) {
     return false;
@@ -693,10 +693,11 @@ bool DwarfFile::read_compilation_unit_header(DwarfFile::CompilationUnitHeader32*
 // Follows the parsing instruction of section 7.5.3 in DWARF 4 spec.
 bool DwarfFile::get_debug_line_offset_from_debug_abbrev(const CompilationUnitHeader32* cu_header, const uint64_t abbrev_code, uint32_t* debug_line_offset) {
   MarkedDwarfFileReader debug_info_reader(fd());
-  debug_info_reader.set_max_bytes_left(cu_header->unit_length);
-  if (!debug_info_reader.set_position(ftell(fd()))) {
+  long current_pos = ftell(fd());
+  if (!debug_info_reader.set_position(current_pos)) {
     return false;
   }
+  debug_info_reader.set_max_pos(current_pos + cu_header->unit_length + 4); // add 4 because unit_length is not included
 
   Elf_Shdr shdr;
   if (section_by_name(".debug_abbrev", shdr) == -1) {
@@ -704,7 +705,7 @@ bool DwarfFile::get_debug_line_offset_from_debug_abbrev(const CompilationUnitHea
   }
 
   MarkedDwarfFileReader debug_abbrev_reader(fd());
-  debug_abbrev_reader.set_max_bytes_left(shdr.sh_size - cu_header->debug_abbrev_offset);
+  debug_abbrev_reader.set_max_pos(shdr.sh_offset + shdr.sh_size);
   if (!debug_abbrev_reader.set_position(shdr.sh_offset + cu_header->debug_abbrev_offset)) {
     return false;
   }
@@ -830,13 +831,8 @@ bool DwarfFile::process_attribute(const uint64_t attribute, const uint8_t addres
       }
       break;
     case DW_FORM_string:
-      if (!debug_info_reader->read_byte(&next_byte)) {
+      if (!debug_info_reader->read_string()) {
         return false;
-      }
-      while (next_byte != 0) {
-        if (!debug_info_reader->read_byte(&next_byte)) {
-          return false;
-        }
       }
       break;
     case DW_FORM_block:
@@ -926,11 +922,17 @@ bool DwarfFile::find_line_number(const int offset_in_library, const uint64_t deb
   if (!reader.set_position(shdr.sh_offset + debug_line_offset)) {
     return false;
   }
+
   LineNumberProgramHeader32 header;
   if (!read_line_number_program_header(&header, &reader)) {
     return false;
   }
-  //  reader.set_max_bytes_left(header.unit_length);
+
+  reader.set_max_pos(shdr.sh_offset + header.unit_length + 4); // add 4 because unit_length is not included
+
+  if (!read_line_number_program(&header, &reader)) {
+    return false;
+  }
   return true;
 }
 
@@ -952,8 +954,6 @@ bool DwarfFile::read_line_number_program_header(DwarfFile::LineNumberProgramHead
   if (!reader->read_dword(&header->header_length)) {
     return false;
   }
-  // In the first step only read until reaching the end of the real header (all 12 fields processed as specified in 6.2.4)
-  reader->set_max_bytes_left(header->header_length);
 
   if (!reader->read_byte(&header->minimum_instruction_length)) {
     return false;
@@ -985,7 +985,214 @@ bool DwarfFile::read_line_number_program_header(DwarfFile::LineNumberProgramHead
       return false;
     }
   }
+
+  // Skip reading field 11 and 12 as we do not need this information. Directly jump to the line number program
+  if (!reader->set_position(10 + header->header_length)) {
+    return false;
+  }
+
   return true;
+}
+
+bool DwarfFile::read_line_number_program(DwarfFile::LineNumberProgramHeader32* header,
+                                         DwarfFile::MarkedDwarfFileReader* reader) {
+
+  LineNumberState state(header->default_is_stmt != 0);
+  uint8_t opcode;
+  if (!reader->read_byte(&opcode)) {
+    return false;
+  }
+
+  while (reader->has_bytes_left()) {
+    if (opcode == 0) {
+      // Extended opcodes start with a zero byte
+      if (!read_extended_opcode(&state, reader)) {
+        return false;
+      }
+    } else if (opcode <= 12) {
+      // 12 standard opcodes in DWARF 4
+      if (!read_standard_opcode(opcode, &state, header, reader)) {
+        return false;
+      }
+    } else {
+      if (!read_special_opcode(opcode, &state, header, reader)) {
+        return false;
+      }
+    }
+
+    if (state.append_row) {
+      // TODO: process it to create matrix, print maybe
+      tty->print_cr("Address: %lx", state.address);
+      tty->print_cr("Line: %d, Column: %d", state.line, state.column);
+      state.append_row = false;
+    }
+  }
+
+  return false;
+}
+
+// Specified in section 6.2.5.3 of DWARF 4 spec.
+bool DwarfFile::read_extended_opcode(LineNumberState* state, DwarfFile::MarkedDwarfFileReader* reader) {
+  uint64_t extended_opcode_length; // Does not include the already written zero byte and the length leb128.
+  if (!reader->read_uleb128(&extended_opcode_length)) {
+    return false;
+  }
+
+  uint8_t extended_opcode;
+  if (!reader->read_byte(&extended_opcode)) {
+    return false;
+  }
+  tty->print_cr("Extended Opcode: %d", extended_opcode);
+
+  switch (extended_opcode) {
+    case DW_LNE_end_sequence: // No operands
+      state->end_sequence = true;
+      state->append_row = true;
+      // TODO reset state registers needed? only one in a sequence?
+      break;
+    case DW_LNE_set_address: // 1 operand
+      // TODO this is for 64-bit target adress (64-bit PC)
+      if (!reader->read_qword(&state->address)) {
+        return false;
+      }
+      state->op_index = 0;
+      break;
+    case DW_LNE_define_file: // 4 operands
+      if (!reader->read_string()) {
+        return false;
+      }
+      uint64_t dont_care;
+      // Operand 2-4: uleb128 numbers we do not care about
+      if (!reader->read_uleb128(&dont_care)
+          || !reader->read_uleb128(&dont_care)
+          || !reader->read_uleb128(&dont_care)) {
+        return false;
+      }
+      break;
+    case DW_LNE_set_discriminator: // 1 operand
+      uint64_t descriminator;
+      if (!reader->read_uleb128(&descriminator, 4)) {
+        // Must be an unsigned integer as specified in section 6.2.2 of the DWARF 4 spec for the descriminator register
+        return false;
+      }
+      state->discriminator = descriminator;
+      break;
+  }
+  return true;
+}
+
+// Specified in section 6.2.5.2 in DWARF 4 spec.
+bool DwarfFile::read_standard_opcode(const uint8_t opcode, LineNumberState* state, DwarfFile::LineNumberProgramHeader32* header,
+                                     DwarfFile::MarkedDwarfFileReader* reader) {
+  tty->print_cr("Standard Opcode: %d", opcode);
+  switch (opcode) {
+    case DW_LNS_copy: // No operands
+      state->append_row = true;
+      state->discriminator = 0;
+      state->basic_block = false;
+      state->prologue_end = false;
+      state->epilogue_begin = false;
+      break;
+    case DW_LNS_advance_pc: // 1 operand
+      uint64_t operation_advance;
+      if (!reader->read_uleb128(&operation_advance, 1)) {
+        // Must be 1 byte since the value is defined as calculated from opcodes of 1-byte size.
+        return false;
+      }
+
+      state->set_address_register(header, operation_advance);
+      state->set_index_register(header, operation_advance);
+      break;
+    case DW_LNS_advance_line: // 1 operand
+      int64_t line;
+      if (!reader->read_sleb128(&line, 4)) {
+        // Must be 1 byte since the value is defined as calculated from opcodes of 1-byte size.
+        return false;
+      }
+      state->line += line;
+      break;
+    case DW_LNS_set_file: // 1 operand
+      uint64_t file;
+      if (!reader->read_uleb128(&file, 4)) {
+        // file register is 4 bytes wide.
+        return false;
+      }
+      state->file = file;
+      break;
+    case DW_LNS_set_column: // 1 operand
+      uint64_t column;
+      if (!reader->read_uleb128(&column, 4)) {
+        // column register is 4 bytes wide.
+        return false;
+      }
+      state->column = column;
+      break;
+    case DW_LNS_negate_stmt: // No operands
+      state->is_stmt = !state->is_stmt;
+      break;
+    case DW_LNS_set_basic_block: // No operands
+      state->basic_block = true;
+      break;
+    case DW_LNS_const_add_pc: { // No operands
+      // Update address and op_index registers by the increments of special opcode 255
+      uint8_t adjusted_opcode_255 = 255 - header->opcode_base;
+      uint8_t operation_advance = adjusted_opcode_255 / header->line_range;
+      state->set_address_register(header, operation_advance);
+      state->set_index_register(header, operation_advance);
+      break;
+    }
+    case DW_LNS_fixed_advance_pc: // 1 operand
+      uint16_t operand;
+      if (!reader->read_word(&operand)) {
+        return false;
+      }
+      state->address += operand;
+      state->op_index = 0;
+      break;
+    case DW_LNS_set_prologue_end: // No operands
+      state->prologue_end = true;
+      break;
+    case DW_LNS_set_epilogue_begin: // No operands
+      state->epilogue_begin = true;
+      break;
+    case DW_LNS_set_isa: // 1 operand
+      uint64_t isa;
+      if (!reader->read_uleb128(&isa, 4)) {
+        // isa register is 4 bytes wide.
+        return false;
+      }
+      state->isa = isa;
+      break;
+    default:
+      // Should not happend
+      return false;
+  }
+  return true;
+}
+
+// Specified in section 6.2.5.1 in DWARF 4 spec.
+bool DwarfFile::read_special_opcode(const uint8_t opcode, LineNumberState* state, DwarfFile::LineNumberProgramHeader32* header,
+                                     DwarfFile::MarkedDwarfFileReader* reader) {
+  uint8_t adjusted_opcode = opcode - header->opcode_base;
+  uint8_t operation_advance = adjusted_opcode / header->line_range;
+  state->set_address_register(header, operation_advance);
+  state->set_index_register(header, operation_advance);
+  state->line += header->line_base + (adjusted_opcode % header->line_range);
+  state->append_row = true;
+  state->basic_block = false;
+  state->prologue_end = false;
+  state->epilogue_begin = false;
+  state->discriminator = 0;
+  return true;
+}
+
+void DwarfFile::LineNumberState::set_address_register(LineNumberProgramHeader32* header, uint8_t operation_advance) {
+  address = address + header->minimum_instruction_length *
+                   ((op_index + operation_advance) / header->maximum_operations_per_instruction);
+}
+
+void DwarfFile::LineNumberState::set_index_register(LineNumberProgramHeader32* header, uint8_t operation_advance) {
+  op_index = (op_index + operation_advance) % header->maximum_operations_per_instruction;
 }
 
 bool DwarfFile::MarkedDwarfFileReader::set_position(long new_pos) {
@@ -1000,10 +1207,10 @@ bool DwarfFile::MarkedDwarfFileReader::set_position(long new_pos) {
 }
 
 bool DwarfFile::MarkedDwarfFileReader::has_bytes_left() const {
-  if (_start_pos == -1 || _max_bytes_read == -1) {
+  if (_start_pos == -1 || _max_pos == -1) {
     return false;
   }
-  return _current_pos - _start_pos < _max_bytes_read;
+  return _current_pos < _max_pos;
 }
 
 bool DwarfFile::MarkedDwarfFileReader::update_to_stored_position() {
@@ -1022,43 +1229,75 @@ bool DwarfFile::MarkedDwarfFileReader::move_position(long offset) {
   return set_position(_current_pos + offset);
 }
 
-bool DwarfFile::MarkedDwarfFileReader::read_sbyte(int8_t *result) {
+bool DwarfFile::MarkedDwarfFileReader::read_sbyte(int8_t* result) {
   _current_pos++;
   return read(result, 1);
 }
 
-bool DwarfFile::MarkedDwarfFileReader::read_byte(uint8_t *result) {
+bool DwarfFile::MarkedDwarfFileReader::read_byte(uint8_t* result) {
   _current_pos++;
   return read(result, 1);
 }
 
-bool DwarfFile::MarkedDwarfFileReader::read_word(uint16_t *result) {
+bool DwarfFile::MarkedDwarfFileReader::read_word(uint16_t* result) {
   _current_pos += 2;
   return read(result, 2);
 }
 
-bool DwarfFile::MarkedDwarfFileReader::read_dword(uint32_t *result) {
+bool DwarfFile::MarkedDwarfFileReader::read_dword(uint32_t* result) {
   _current_pos += 4;
   return read(result, 4);
 }
 
-bool DwarfFile::MarkedDwarfFileReader::read_qword(uint64_t *result) {
+bool DwarfFile::MarkedDwarfFileReader::read_qword(uint64_t* result) {
   _current_pos += 8;
   return read(result, 8);
 }
 
-bool DwarfFile::MarkedDwarfFileReader::read_uleb128(uint64_t *result) {
+bool DwarfFile::MarkedDwarfFileReader::read_leb128(uint64_t* result, int8_t check_size, bool is_signed) {
   *result = 0; // Ensure a proper result by zeroing it first
   uint8_t buf;
-  uint32_t shift = 0;
-  while (true) {
+  uint8_t shift = 0;
+  uint8_t bytes_read = 0;
+  // leb128 is not larger than 8 bytes
+  while (bytes_read < 8) {
     if (!read_byte(&buf)) {
       return false;
     }
+    bytes_read++;
     *result |= (buf & 0x7fU) << shift;
     shift += 7;
     if ((buf & 0x80U) == 0) {
       break;
+    }
+  }
+  if (bytes_read > 8 || (check_size != -1 && check_size > bytes_read)) {
+    // Invalid uleb128 encoding or the read uleb128 was bigger than expected.
+    return false;
+  }
+
+  if (is_signed && (shift < 64) && (buf & 0x40)) {
+    *result |= static_cast<uint64_t>(-1L) << shift;
+  }
+  return true;
+}
+
+bool DwarfFile::MarkedDwarfFileReader::read_uleb128(uint64_t* result, int8_t check_size) {
+  return read_leb128(result, check_size, false);
+}
+
+bool DwarfFile::MarkedDwarfFileReader::read_sleb128(int64_t* result, int8_t check_size) {
+  return read_leb128((uint64_t*)result, check_size, true);
+}
+
+bool DwarfFile::MarkedDwarfFileReader::read_string(/* ignore result */) {
+  uint8_t next_byte;
+  if (read_byte(&next_byte)) {
+    return false;
+  }
+  while (next_byte != 0) {
+    if (read_byte(&next_byte)) {
+      return false;
     }
   }
   return true;
