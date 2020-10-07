@@ -100,8 +100,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private static final String DEFAULT_KEY_PBE_ALGORITHM
             = "PBEWithHmacSHA256AndAES_256";
     private static final String DEFAULT_MAC_ALGORITHM = "HmacPBESHA256";
-    private static final int DEFAULT_PBE_ITERATION_COUNT = 50000;
-    private static final int DEFAULT_MAC_ITERATION_COUNT = 100000;
+    private static final int DEFAULT_CERT_PBE_ITERATION_COUNT = 10000;
+    private static final int DEFAULT_KEY_PBE_ITERATION_COUNT = 10000;
+    private static final int DEFAULT_MAC_ITERATION_COUNT = 10000;
 
     // Legacy settings. Used when "keystore.pkcs12.legacy" is set.
     private static final String LEGACY_CERT_PBE_ALGORITHM
@@ -2649,7 +2650,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 "keystore.pkcs12.certPbeIterationCount");
         return (result != null && !result.isEmpty())
                 ? string2IC("certPbeIterationCount", result)
-                : DEFAULT_PBE_ITERATION_COUNT;
+                : DEFAULT_CERT_PBE_ITERATION_COUNT;
     }
 
     // Read both "keystore.pkcs12.keyProtectionAlgorithm" and
@@ -2690,7 +2691,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 "keystore.pkcs12.keyPbeIterationCount");
         return (result != null && !result.isEmpty())
                 ? string2IC("keyPbeIterationCount", result)
-                : DEFAULT_PBE_ITERATION_COUNT;
+                : DEFAULT_KEY_PBE_ITERATION_COUNT;
     }
 
     private static String defaultMacAlgorithm() {

@@ -103,10 +103,10 @@ public class ParamsTest  {
                 + "-destkeystore ksnormal -deststorepass changeit");
 
         data = Files.readAllBytes(Path.of("ksnormal"));
-        checkInt(data, "22", 100000); // Mac ic
+        checkInt(data, "22", 10000); // Mac ic
         checkAlg(data, "2000", SHA_256); // Mac alg
         checkAlg(data, "110c010c01000", PBES2); // key alg
-        checkInt(data, "110c010c01001011", 50000); // key ic
+        checkInt(data, "110c010c01001011", 10000); // key ic
         checkAlg(data, "110c10", ENCRYPTED_DATA_OID);
         checkAlg(data, "110c110110", PBES2); // cert alg
         check("ksnormal", "a", "changeit", "changeit", true, true, true);
@@ -135,12 +135,12 @@ public class ParamsTest  {
                 + "-J-Dkeystore.pkcs12.certProtectionAlgorithm=NONE "
                 + "-J-Dkeystore.pkcs12.macAlgorithm=NONE");
         data = Files.readAllBytes(Path.of("ksnormal"));
-        checkInt(data, "22", 100000); // Mac ic
+        checkInt(data, "22", 10000); // Mac ic
         checkAlg(data, "2000", SHA_256); // Mac alg
         checkAlg(data, "110c010c01000", PBES2); // key alg
-        checkInt(data, "110c010c01001011", 50000); // key ic
+        checkInt(data, "110c010c01001011", 10000); // key ic
         checkAlg(data, "110c010c11000", PBES2); // new key alg
-        checkInt(data, "110c010c11001011", 50000); // new key ic
+        checkInt(data, "110c010c11001011", 10000); // new key ic
         checkAlg(data, "110c10", ENCRYPTED_DATA_OID);
         checkAlg(data, "110c110110", PBES2); // cert alg
         check("ksnormal", "b", null, "changeit", true, false, true);
@@ -155,7 +155,7 @@ public class ParamsTest  {
         data = Files.readAllBytes(Path.of("ksnopass"));
         shouldNotExist(data, "2"); // no Mac
         checkAlg(data, "110c010c01000", PBEWithSHA1AndRC4_128);
-        checkInt(data, "110c010c010011", 50000);
+        checkInt(data, "110c010c010011", 10000);
         checkAlg(data, "110c10", DATA_OID);
         check("ksnopass", "a", null, "changeit", true, true, true);
         check("ksnopass", "a", "changeit", "changeit", true, true, true);
@@ -167,9 +167,9 @@ public class ParamsTest  {
         data = Files.readAllBytes(Path.of("ksnopass"));
         shouldNotExist(data, "2"); // no Mac
         checkAlg(data, "110c010c01000", PBEWithSHA1AndRC4_128);
-        checkInt(data, "110c010c010011", 50000);
+        checkInt(data, "110c010c010011", 10000);
         checkAlg(data, "110c010c11000", PBES2);
-        checkInt(data, "110c010c11001011", 50000);
+        checkInt(data, "110c010c11001011", 10000);
         checkAlg(data, "110c10", DATA_OID);
         check("ksnopass", "a", null, "changeit", true, true, true);
         check("ksnopass", "b", null, "changeit", true, true, true);
@@ -204,7 +204,7 @@ public class ParamsTest  {
         checkAlg(data, "110c010c01000", PBES2); // key alg
         checkInt(data, "110c010c01001011", 7777); // key ic
         checkAlg(data, "110c010c11000", PBEWithSHA1AndRC4_128); // new key alg
-        checkInt(data, "110c010c110011", 50000); // new key ic
+        checkInt(data, "110c010c110011", 10000); // new key ic
         checkAlg(data, "110c110110", PBES2); // cert alg
         checkInt(data, "110c110111011", 6666); // cert ic
 
@@ -216,15 +216,15 @@ public class ParamsTest  {
             ks.store(fos, "changeit".toCharArray());
         }
         data = Files.readAllBytes(Path.of("ksnormaldup"));
-        checkInt(data, "22", 100000); // Mac ic
+        checkInt(data, "22", 10000); // Mac ic
         checkAlg(data, "2000", SHA_256); // Mac alg
         checkAlg(data, "110c010c01000", PBES2); // key alg
-        checkInt(data, "110c010c01001011", 50000); // key ic
+        checkInt(data, "110c010c01001011", 10000); // key ic
         checkAlg(data, "110c010c11000", PBES2); // new key alg
-        checkInt(data, "110c010c11001011", 50000); // new key ic
+        checkInt(data, "110c010c11001011", 10000); // new key ic
         checkAlg(data, "110c10", ENCRYPTED_DATA_OID);
         checkAlg(data, "110c110110", PBES2); // cert alg
-        checkInt(data, "110c110111011", 50000); // cert ic
+        checkInt(data, "110c110111011", 10000); // cert ic
 
         try (FileInputStream fis = new FileInputStream("ksnopass");
              FileOutputStream fos = new FileOutputStream("ksnopassdup")) {
@@ -234,9 +234,9 @@ public class ParamsTest  {
         data = Files.readAllBytes(Path.of("ksnopassdup"));
         shouldNotExist(data, "2"); // no Mac
         checkAlg(data, "110c010c01000", PBEWithSHA1AndRC4_128);
-        checkInt(data, "110c010c010011", 50000);
+        checkInt(data, "110c010c010011", 10000);
         checkAlg(data, "110c010c11000", PBES2);
-        checkInt(data, "110c010c11001011", 50000);
+        checkInt(data, "110c010c11001011", 10000);
         checkAlg(data, "110c10", DATA_OID);
 
         try (FileInputStream fis = new FileInputStream("ksnewic");
@@ -250,7 +250,7 @@ public class ParamsTest  {
         checkAlg(data, "110c010c01000", PBES2); // key alg
         checkInt(data, "110c010c01001011", 7777); // key ic
         checkAlg(data, "110c010c11000", PBEWithSHA1AndRC4_128); // new key alg
-        checkInt(data, "110c010c110011", 50000); // new key ic
+        checkInt(data, "110c010c110011", 10000); // new key ic
         checkAlg(data, "110c110110", PBES2); // cert alg
         checkInt(data, "110c110111011", 6666); // cert ic
 

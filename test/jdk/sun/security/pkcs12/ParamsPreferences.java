@@ -23,7 +23,6 @@
 
 import jdk.test.lib.SecurityTools;
 import sun.security.util.KnownOIDs;
-import sun.security.util.ObjectIdentifier;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,9 +52,9 @@ public class ParamsPreferences {
         test(c++,
                 Map.of(),
                 Map.of(),
-                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 50000,
-                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 50000,
-                SHA_256, 100000);
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                SHA_256, 10000);
 
         // legacy settings
         test(c++,
@@ -85,7 +84,7 @@ public class ParamsPreferences {
                         "keystore.pkcs12.macAlgorithm", "NONE"),
                 Map.of(),
                 null,
-                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 50000,
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
                 null);
 
         // password-less with security property
@@ -94,7 +93,7 @@ public class ParamsPreferences {
                 Map.of("keystore.pkcs12.certProtectionAlgorithm", "NONE",
                         "keystore.pkcs12.macAlgorithm", "NONE"),
                 null,
-                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 50000,
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
                 null);
 
         // back to with storepass by overriding security property with system property
@@ -103,9 +102,9 @@ public class ParamsPreferences {
                         "keystore.pkcs12.macAlgorithm", "HmacPBESHA256"),
                 Map.of("keystore.pkcs12.certProtectionAlgorithm", "NONE",
                         "keystore.pkcs12.macAlgorithm", "NONE"),
-                PBEWithSHA1AndDESede, 50000,
-                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 50000,
-                SHA_256, 100000);
+                PBEWithSHA1AndDESede, 10000,
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                SHA_256, 10000);
 
         // back to with storepass by using "" to force hardcoded default
         test(c++,
@@ -115,9 +114,9 @@ public class ParamsPreferences {
                 Map.of("keystore.pkcs12.certProtectionAlgorithm", "NONE",
                         "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
                         "keystore.pkcs12.macAlgorithm", "NONE"),
-                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 50000,
-                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 50000,
-                SHA_256, 100000);
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                SHA_256, 10000);
 
         // change everything with system property
         test(c++,
@@ -169,31 +168,31 @@ public class ParamsPreferences {
         test(c++,
                 Map.of(),
                 Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128"),
-                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 50000,
-                PBEWithSHA1AndRC2_128, 50000,
-                SHA_256, 100000);
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBEWithSHA1AndRC2_128, 10000,
+                SHA_256, 10000);
         test(c++,
                 Map.of(),
                 Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
                         "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40"),
-                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 50000,
-                PBEWithSHA1AndRC2_40, 50000,
-                SHA_256, 100000);
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBEWithSHA1AndRC2_40, 10000,
+                SHA_256, 10000);
         test(c++,
                 Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_128"),
                 Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
                         "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40"),
-                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 50000,
-                PBEWithSHA1AndRC4_128, 50000,
-                SHA_256, 100000);
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBEWithSHA1AndRC4_128, 10000,
+                SHA_256, 10000);
         test(c++,
                 Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_128",
                         "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_40"),
                 Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
                         "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40"),
-                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 50000,
-                PBEWithSHA1AndRC4_40, 50000,
-                SHA_256, 100000);
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBEWithSHA1AndRC4_40, 10000,
+                SHA_256, 10000);
     }
 
     /**

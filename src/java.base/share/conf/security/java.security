@@ -1148,8 +1148,8 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #keystore.pkcs12.certProtectionAlgorithm = PBEWithHmacSHA256AndAES_256
 
 # The iteration count used by the PBE algorithm when encrypting a certificate.
-# This value must be a positive integer. The default value is 50000.
-#keystore.pkcs12.certPbeIterationCount = 50000
+# This value must be a positive integer. The default value is 10000.
+#keystore.pkcs12.certPbeIterationCount = 10000
 
 # The algorithm used to encrypt a private key or secret key. This can be
 # any non-Hmac PBE algorithm defined in the Cipher section of the Java
@@ -1159,8 +1159,8 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 
 # The iteration count used by the PBE algorithm when encrypting a private key
 # or a secret key. This value must be a positive integer. The default value
-# is 50000.
-#keystore.pkcs12.keyPbeIterationCount = 50000
+# is 10000.
+#keystore.pkcs12.keyPbeIterationCount = 10000
 
 # The algorithm used to calculate the optional MacData at the end of a PKCS12
 # file. This can be any HmacPBE algorithm defined in the Mac section of the
@@ -1169,8 +1169,8 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #keystore.pkcs12.macAlgorithm = HmacPBESHA256
 
 # The iteration count used by the MacData algorithm. This value must be a
-# positive integer. The default value is 100000.
-#keystore.pkcs12.macIterationCount = 100000
+# positive integer. The default value is 10000.
+#keystore.pkcs12.macIterationCount = 10000
 
 #
 # Enhanced exception message information

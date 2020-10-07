@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8223063
+ * @bug 8223063 8153005
  * @requires os.family == "windows"
  * @library /test/lib
  * @summary Support CNG RSA keys
