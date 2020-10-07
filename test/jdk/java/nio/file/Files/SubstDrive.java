@@ -91,7 +91,7 @@ public class SubstDrive {
      */
     @AfterMethod
     public void deleteSubstDrive() throws IOException {
-        Stream<String> substitutedDrives = substList();
+        Stream<String> substitutedDrives = substFindMappedDrives();
         // Only delete `SUBST_DRIVE` if it is currently being substituted
         if (substitutedDrives.anyMatch(e -> e.contains(SUBST_DRIVE.toString()))) {
             substDelete(SUBST_DRIVE);
@@ -439,7 +439,7 @@ public class SubstDrive {
      * For reference, see:
      * https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/subst
      */
-    private Stream<String> substList() throws UnsupportedEncodingException {
+    private Stream<String> substFindMappedDrives() throws UnsupportedEncodingException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         String utf8 = StandardCharsets.UTF_8.name();
         try (PrintStream ps = new PrintStream(baos, true, utf8)) {
