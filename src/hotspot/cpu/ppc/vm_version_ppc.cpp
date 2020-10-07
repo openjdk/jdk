@@ -157,7 +157,7 @@ void VM_Version::initialize() {
     }
     if (UseBASE64Intrinsics) {
       warning("UseBASE64Intrinsics specified, but needs at least Power9.");
-      FLAG_SET_DEFAULT(UseCharacterCompareIntrinsics, false);
+      FLAG_SET_DEFAULT(UseBASE64Intrinsics, false);
     }
   }
 
