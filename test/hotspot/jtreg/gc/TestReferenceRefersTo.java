@@ -136,6 +136,14 @@ public class TestReferenceRefersTo {
         }
     }
 
+    private static void expectNotValue(Reference<TestObject> ref,
+                                       TestObject value,
+                                       String which) throws Exception {
+        if (ref.refersTo(value)) {
+            fail(which + " refers to unexpected value");
+        }
+    }
+
     private static void checkInitialStates() throws Exception {
         expectValue(testPhantom1, testObject1, "testPhantom1");
         expectValue(testWeak2, testObject2, "testWeak2");
@@ -146,7 +154,7 @@ public class TestReferenceRefersTo {
     private static void discardStrongReferences() {
         testObject1 = null;
         testObject2 = null;
-        testObject3 = null;
+        // testObject3 not dropped
         testObject4 = null;
     }
 
@@ -174,6 +182,9 @@ public class TestReferenceRefersTo {
             expectNotCleared(testWeak2, "testWeak2");
             expectNotCleared(testWeak3, "testWeak3");
 
+            expectNotValue(testWeak2, testObject3, "testWeak2");
+            expectValue(testWeak3, testObject3, "testWeak3");
+
             // For some collectors, calling get() will keep testObject4 alive.
             if (testWeak4.get() == null) {
                 fail("testWeak4 unexpectedly == null");
@@ -185,21 +196,30 @@ public class TestReferenceRefersTo {
             progress("verify expected clears");
             expectCleared(testPhantom1, "testPhantom1");
             expectCleared(testWeak2, "testWeak2");
-            expectCleared(testWeak3, "testWeak3");
+            expectNotCleared(testWeak3, "testWeak3");
             expectNotCleared(testWeak4, "testWeak4");
+
+            expectNotValue(testPhantom1, testObject3, "testPhantom1");
+            expectValue(testWeak3, testObject3, "testWeak3");
+            expectNotValue(testWeak4, testObject3, "testWeak4");
 
             progress("verify get returns expected values");
             if (testWeak2.get() != null) {
                 fail("testWeak2.get() != null");
-            } else if (testWeak3.get() != null) {
-                fail("testWeak3.get() != null");
+            }
+
+            TestObject obj3 = testWeak3.get();
+            if (obj3 == null) {
+                fail("testWeak3.get() returned null");
+            } else if (obj3.value != 3) {
+                fail("testWeak3.get().value is " + obj3.value);
             }
 
             TestObject obj4 = testWeak4.get();
-            if (obj4 != null) {
-                if (obj4.value != 4) {
-                    fail("testWeak4.get().value is " + obj4.value);
-                }
+            if (obj4 == null) {
+                fail("testWeak4.get() returned null");
+            } else if (obj4.value != 4) {
+                fail("testWeak4.get().value is " + obj4.value);
             }
 
             progress("verify queue entries");
@@ -224,8 +244,8 @@ public class TestReferenceRefersTo {
                 fail("testPhantom1 not notified");
             } else if (testWeak2 != null) {
                 fail("testWeak2 not notified");
-            } else if (testWeak3 != null) {
-                fail("testWeak3 not notified");
+            } else if (testWeak3 == null) {
+                fail("testWeak3 notified");
             } else if (testWeak4 == null) {
                 if (obj4 != null) {
                     fail("testWeak4 notified");
@@ -258,15 +278,18 @@ public class TestReferenceRefersTo {
         progress("verify expected clears");
         expectCleared(testPhantom1, "testPhantom1");
         expectCleared(testWeak2, "testWeak2");
-        expectCleared(testWeak3, "testWeak3");
+        expectNotCleared(testWeak3, "testWeak3");
         expectNotCleared(testWeak4, "testWeak4");
+
+        expectNotValue(testWeak2, testObject3, "testWeak2");
+        expectValue(testWeak3, testObject3, "testWeak3");
 
         progress("verify get returns expected values");
         if (testWeak2.get() != null) {
             fail("testWeak2.get() != null");
-        } else if (testWeak3.get() != null) {
-            fail("testWeak3.get() != null");
-        } else if (tw4 != testWeak4.get()) {
+        } else if (testWeak3.get() != testObject3) {
+            fail("testWeak3.get() is not expected value");
+        } else if (testWeak4.get() != tw4) {
             fail("testWeak4.get() is not expected value");
         }
 
