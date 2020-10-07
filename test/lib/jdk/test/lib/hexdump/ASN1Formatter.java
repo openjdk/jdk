@@ -165,8 +165,11 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 // multi-byte encoded length
                 int nbytes = len & 0x7f;
                 if (nbytes > 4) {
-                    out.append("***** Tag: " + tagName(tag) +
-                            ", Range of length error: " + len + " bytes");
+                    out.append("***** Tag: ")
+                            .append(tagName(tag))
+                            .append(", Range of length error: ")
+                            .append(Integer.toString(len))
+                            .append(" bytes");
                     out.append(System.lineSeparator());
                     return available;       // return the unread length
                 }
