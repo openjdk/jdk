@@ -134,10 +134,12 @@ class StackOverflow {
     assert(_stack_red_zone_size > 0, "Don't call this before the field is initialized.");
     return _stack_red_zone_size;
   }
-  address stack_red_zone_base() {
+
+  address stack_red_zone_base() const {
     return (address)(stack_end() + stack_red_zone_size());
   }
-  bool in_stack_red_zone(address a) {
+
+  bool in_stack_red_zone(address a) const {
     return a <= stack_red_zone_base() && a >= stack_end();
   }
 
@@ -155,7 +157,7 @@ class StackOverflow {
     return (address)(stack_end() +
                      (stack_red_zone_size() + stack_yellow_zone_size() + stack_reserved_zone_size()));
   }
-  bool in_stack_reserved_zone(address a) {
+  bool in_stack_reserved_zone(address a) const {
     return (a <= stack_reserved_zone_base()) &&
            (a >= (address)((intptr_t)stack_reserved_zone_base() - stack_reserved_zone_size()));
   }
@@ -163,7 +165,7 @@ class StackOverflow {
   static size_t stack_yellow_reserved_zone_size() {
     return _stack_yellow_zone_size + _stack_reserved_zone_size;
   }
-  bool in_stack_yellow_reserved_zone(address a) {
+  bool in_stack_yellow_reserved_zone(address a) const {
     return (a <= stack_reserved_zone_base()) && (a >= stack_red_zone_base());
   }
 
@@ -187,13 +189,13 @@ class StackOverflow {
   void enable_stack_red_zone();
   void disable_stack_red_zone();
 
-  bool stack_guard_zone_unused() { return _stack_guard_state == stack_guard_unused; }
+  bool stack_guard_zone_unused() const { return _stack_guard_state == stack_guard_unused; }
 
-  bool stack_yellow_reserved_zone_disabled() {
+  bool stack_yellow_reserved_zone_disabled() const {
     return _stack_guard_state == stack_guard_yellow_reserved_disabled;
   }
 
-  size_t stack_available(address cur_sp) {
+  size_t stack_available(address cur_sp) const {
     // This code assumes java stacks grow down
     address low_addr; // Limit on the address for deepest stack depth
     if (_stack_guard_state == stack_guard_unused) {
@@ -204,7 +206,7 @@ class StackOverflow {
     return cur_sp > low_addr ? cur_sp - low_addr : 0;
   }
 
-  bool stack_guards_enabled();
+  bool stack_guards_enabled() const;
 
   address reserved_stack_activation() const { return _reserved_stack_activation; }
   void set_reserved_stack_activation(address addr) {

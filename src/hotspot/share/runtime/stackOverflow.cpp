@@ -61,7 +61,7 @@ void StackOverflow::initialize_stack_zone_sizes(size_t alignment) {
   _stack_shadow_zone_size = align_up(StackShadowPages * alignment, page_size);
 }
 
-bool StackOverflow::stack_guards_enabled() {
+bool StackOverflow::stack_guards_enabled() const {
 #ifdef ASSERT
   if (os::uses_stack_guard_pages() &&
       !(DisablePrimordialThreadGuardPages && os::is_primordial_thread())) {
