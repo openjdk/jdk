@@ -26,8 +26,6 @@
 package jdk.internal.foreign;
 
 import jdk.incubator.foreign.MappedMemorySegment;
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
 import sun.nio.ch.FileChannelImpl;
 
@@ -55,7 +53,6 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl implements 
 
     @Override
     ByteBuffer makeByteBuffer() {
-        JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
         return nioAccess.newMappedByteBuffer(unmapper, min, (int)length, null, this);
     }
 
@@ -104,7 +101,7 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl implements 
         if (bytesOffset < 0) throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
         try (FileChannelImpl channelImpl = (FileChannelImpl)FileChannel.open(path, openOptions(mapMode))) {
             UnmapperProxy unmapperProxy = channelImpl.mapInternal(mapMode, bytesOffset, bytesSize);
-            MemoryScope scope = MemoryScope.create(null, unmapperProxy::unmap);
+            MemoryScope scope = MemoryScope.createConfined(null, unmapperProxy::unmap, null);
             int modes = defaultAccessModes(bytesSize);
             if (mapMode == FileChannel.MapMode.READ_ONLY) {
                 modes &= ~WRITE;

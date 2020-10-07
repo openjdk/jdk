@@ -975,7 +975,7 @@ public abstract class $Type$Buffer
             if (this.order() == src.order()) {
 #end[!byte]
                 try {
-                    UNSAFE.copyMemory(srcBase,
+                    SCOPED_MEMORY_ACCESS.copyMemory(scope(), src.scope(), srcBase,
                                       srcAddr,
                                       base,
                                       addr,
@@ -987,7 +987,7 @@ public abstract class $Type$Buffer
 #if[!byte]
             } else {
                 try {
-                    UNSAFE.copySwapMemory(srcBase,
+                    SCOPED_MEMORY_ACCESS.copySwapMemory(scope(), src.scope(), srcBase,
                                           srcAddr,
                                           base,
                                           addr,

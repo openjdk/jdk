@@ -26,7 +26,6 @@
  * @run testng TestSpliterator
  */
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
@@ -61,9 +60,9 @@ public class TestSpliterator {
         SequenceLayout layout = MemoryLayout.ofSequence(size, MemoryLayouts.JAVA_INT);
 
         //setup
-        MemorySegment segment = MemorySegment.allocateNative(layout);
+        MemorySegment segment = MemorySegment.allocateNative(layout).share();
         for (int i = 0; i < layout.elementCount().getAsLong(); i++) {
-            INT_HANDLE.set(segment.baseAddress(), (long) i, i);
+            INT_HANDLE.set(segment, (long) i, i);
         }
         long expected = LongStream.range(0, layout.elementCount().getAsLong()).sum();
         //serial
@@ -88,7 +87,7 @@ public class TestSpliterator {
         //setup
         MemorySegment segment = MemorySegment.allocateNative(layout);
         for (int i = 0; i < layout.elementCount().getAsLong(); i++) {
-            INT_HANDLE.set(segment.baseAddress(), (long) i, i);
+            INT_HANDLE.set(segment, (long) i, i);
         }
         long expected = LongStream.range(0, layout.elementCount().getAsLong()).sum();
 
@@ -100,15 +99,14 @@ public class TestSpliterator {
     }
 
     static long sumSingle(long acc, MemorySegment segment) {
-        return acc + (int)INT_HANDLE.get(segment.baseAddress(), 0L);
+        return acc + (int)INT_HANDLE.get(segment, 0L);
     }
 
     static long sum(long start, MemorySegment segment) {
         long sum = start;
-        MemoryAddress base = segment.baseAddress();
         int length = (int)segment.byteSize();
         for (int i = 0 ; i < length / CARRIER_SIZE ; i++) {
-            sum += (int)INT_HANDLE.get(base, (long)i);
+            sum += (int)INT_HANDLE.get(segment, (long)i);
         }
         return sum;
     }
@@ -216,8 +214,8 @@ public class TestSpliterator {
             () -> spliterator(mallocSegment.withAccessModes(READ), layout), READ,
             () -> spliterator(mallocSegment.withAccessModes(CLOSE), layout), 0,
             () -> spliterator(mallocSegment.withAccessModes(READ|WRITE), layout), READ|WRITE,
-            () -> spliterator(mallocSegment.withAccessModes(READ|WRITE|ACQUIRE), layout), READ|WRITE|ACQUIRE,
-            () -> spliterator(mallocSegment.withAccessModes(READ|WRITE|ACQUIRE|HANDOFF), layout), READ|WRITE|ACQUIRE|HANDOFF
+            () -> spliterator(mallocSegment.withAccessModes(READ|WRITE| SHARE), layout), READ|WRITE| SHARE,
+            () -> spliterator(mallocSegment.withAccessModes(READ|WRITE| SHARE |HANDOFF), layout), READ|WRITE| SHARE |HANDOFF
 
         );
         return l.entrySet().stream().map(e -> new Object[] { e.getKey(), e.getValue() }).toArray(Object[][]::new);

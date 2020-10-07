@@ -85,9 +85,9 @@ public class ParallelSum {
         for (int i = 0; i < ELEM_SIZE; i++) {
             unsafe.putInt(address + (i * CARRIER_SIZE), i);
         }
-        segment = MemorySegment.allocateNative(ALLOC_SIZE);
+        segment = MemorySegment.allocateNative(ALLOC_SIZE).share();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            VH_int.set(segment.baseAddress(), (long) i, i);
+            VH_int.set(segment, (long) i, i);
         }
     }
 
@@ -100,9 +100,8 @@ public class ParallelSum {
     @Benchmark
     public int segment_serial() {
         int res = 0;
-        MemoryAddress base = segment.baseAddress();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            res += (int)VH_int.get(base, (long) i);
+            res += (int)VH_int.get(segment, (long) i);
         }
         return res;
     }
@@ -139,13 +138,12 @@ public class ParallelSum {
     }
 
     final static ToIntFunction<MemorySegment> SEGMENT_TO_INT = slice ->
-            (int) VH_int.get(slice.baseAddress(), 0L);
+            (int) VH_int.get(slice, 0L);
 
     final static ToIntFunction<MemorySegment> SEGMENT_TO_INT_BULK = slice -> {
         int res = 0;
-        MemoryAddress base = slice.baseAddress();
         for (int i = 0; i < BULK_FACTOR ; i++) {
-            res += (int)VH_int.get(base, (long) i);
+            res += (int)VH_int.get(slice, (long) i);
         }
         return res;
     };
@@ -179,12 +177,11 @@ public class ParallelSum {
     }
 
     final static Predicate<MemorySegment> FIND_SINGLE = slice ->
-            (int)VH_int.get(slice.baseAddress(), 0L) == (ELEM_SIZE - 1);
+            (int)VH_int.get(slice, 0L) == (ELEM_SIZE - 1);
 
     final static Predicate<MemorySegment> FIND_BULK = slice -> {
-        MemoryAddress base = slice.baseAddress();
         for (int i = 0; i < BULK_FACTOR ; i++) {
-            if ((int)VH_int.get(base, (long)i) == (ELEM_SIZE - 1)) {
+            if ((int)VH_int.get(slice, (long)i) == (ELEM_SIZE - 1)) {
                 return true;
             }
         }
@@ -193,7 +190,7 @@ public class ParallelSum {
 
     @Benchmark
     public int unsafe_parallel() {
-        return new SumUnsafe(address, 0, ALLOC_SIZE).invoke();
+        return new SumUnsafe(address, 0, ALLOC_SIZE / CARRIER_SIZE).invoke();
     }
 
     static class SumUnsafe extends RecursiveTask<Integer> {
@@ -212,15 +209,19 @@ public class ParallelSum {
         @Override
         protected Integer compute() {
             if (length > SPLIT_THRESHOLD) {
-                SumUnsafe s1 = new SumUnsafe(address, start, length / 2);
-                SumUnsafe s2 = new SumUnsafe(address, length / 2, length / 2);
+                int rem = length % 2;
+                int split = length / 2;
+                int lobound = split;
+                int hibound = lobound + rem;
+                SumUnsafe s1 = new SumUnsafe(address, start, lobound);
+                SumUnsafe s2 = new SumUnsafe(address, start + lobound, hibound);
                 s1.fork();
                 s2.fork();
                 return s1.join() + s2.join();
             } else {
                 int res = 0;
-                for (int i = 0; i < length; i += CARRIER_SIZE) {
-                    res += unsafe.getInt(start + address + i);
+                for (int i = 0; i < length; i ++) {
+                    res += unsafe.getInt(address + (start + i) * CARRIER_SIZE);
                 }
                 return res;
             }

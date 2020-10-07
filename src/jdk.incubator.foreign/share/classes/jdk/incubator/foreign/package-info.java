@@ -28,8 +28,9 @@
  * <p> Classes to support low-level, safe and efficient memory access.
  * <p>
  * The key abstractions introduced by this package are {@link jdk.incubator.foreign.MemorySegment} and {@link jdk.incubator.foreign.MemoryAddress}.
- * The first models a contiguous memory region, which can reside either inside or outside the Java heap; the latter models an address - which can
- * sometimes be expressed as an offset into a given segment. A memory address represents the main access coordinate of a memory access var handle, which can be obtained
+ * The first models a contiguous memory region, which can reside either inside or outside the Java heap; the latter models an address - which also can
+ * reside either inside or outside the Java heap (and can sometimes be expressed as an offset into a given segment).
+ * A memory segment represents the main access coordinate of a memory access var handle, which can be obtained
  * using the combinator methods defined in the {@link jdk.incubator.foreign.MemoryHandles} class. Finally, the {@link jdk.incubator.foreign.MemoryLayout} class
  * hierarchy enables description of <em>memory layouts</em> and basic operations such as computing the size in bytes of a given
  * layout, obtain its alignment requirements, and so on. Memory layouts also provide an alternate, more abstract way, to produce
@@ -42,9 +43,8 @@
 static final VarHandle intHandle = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
 
 try (MemorySegment segment = MemorySegment.allocateNative(10 * 4)) {
-    MemoryAddress base = segment.baseAddress();
     for (long i = 0 ; i < 10 ; i++) {
-       intHandle.set(base.addOffset(i * 4), (int)i);
+       intHandle.set(base.asSlice(i * 4), (int)i);
     }
 }
  * }</pre>
@@ -77,18 +77,18 @@ try (MemorySegment segment = MemorySegment.allocateNative(10 * 4)) {
  *
  * <h2><a id="safety"></a>Safety</h2>
  *
- * This API provides strong safety guarantees when it comes to memory access. First, when dereferencing a memory segment using
- * a memory address, such an address is validated (upon access), to make sure that it does not point to a memory location
- * which resides <em>outside</em> the boundaries of the memory segment it refers to. We call this guarantee <em>spatial safety</em>;
+ * This API provides strong safety guarantees when it comes to memory access. First, when dereferencing a memory segment,
+ * the access coordinates are validated (upon access), to make sure that access does not occur at an address which resides
+ * <em>outside</em> the boundaries of the memory segment used by the dereference operation. We call this guarantee <em>spatial safety</em>;
  * in other words, access to memory segments is bounds-checked, in the same way as array access is, as described in
  * Section {@jls 15.10.4} of <cite>The Java Language Specification</cite>.
  * <p>
- * Since memory segments can be closed (see above), a memory address is also validated (upon access) to make sure that
- * the segment it belongs to has not been closed prematurely. We call this guarantee <em>temporal safety</em>. Note that,
+ * Since memory segments can be closed (see above), segments are also validated (upon access) to make sure that
+ * the segment being accessed has not been closed prematurely. We call this guarantee <em>temporal safety</em>. Note that,
  * in the general case, guaranteeing temporal safety can be hard, as multiple threads could attempt to access and/or close
  * the same memory segment concurrently. The memory access API addresses this problem by imposing strong
- * <a href="MemorySegment.html#thread-confinement"><em>thread-confinement</em></a> guarantees on memory segments: each
- * memory segment is associated with an owner thread, which is the only thread that can either access or close the segment.
+ * <em>thread-confinement</em> guarantees on memory segments: upon creation, a memory segment is associated with an owner thread,
+ * which is the only thread that can either access or close the segment.
  * <p>
  * Together, spatial and temporal safety ensure that each memory access operation either succeeds - and accesses a valid
  * memory location - or fails.
