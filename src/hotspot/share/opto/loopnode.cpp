@@ -1726,7 +1726,6 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     igvn->replace_node(outer_le, iff);
     inner_cl->clear_strip_mined();
   }
-  igvn->C->print_method(PHASE_DEBUG, 2);
 }
 
 const Type* OuterStripMinedLoopEndNode::Value(PhaseGVN* phase) const {
