@@ -307,7 +307,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
-  bool inline_sha_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
                                         bool long_state, address stubAddr, const char *stubName,
