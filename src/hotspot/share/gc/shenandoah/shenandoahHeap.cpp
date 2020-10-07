@@ -1828,7 +1828,7 @@ void ShenandoahUpdateThreadClosure::do_thread(Thread* thread) {
 
 void ShenandoahHeap::op_update_thread_roots() {
   ShenandoahUpdateThreadClosure cl;
-    Handshake::execute(&cl);
+  Handshake::execute(&cl);
 }
 
 void ShenandoahHeap::op_stw_evac() {
