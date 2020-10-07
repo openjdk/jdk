@@ -85,6 +85,7 @@ import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
@@ -372,14 +373,16 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
             }
             @Override
             public void request(long n) {
-                while (!cancelled && --n >= 0 && at <= Math.min(errorAt, content.size())) {
+                while (!cancelled && --n >= 0 && at < Math.min(errorAt+1, content.size())) {
                     if (at++ == errorAt) {
                         subscriber.onError(errorSupplier.get());
+                        return;
                     } else if (at <= content.size()){
                         subscriber.onNext(ByteBuffer.wrap(
                                 content.get(at-1).getBytes()));
                         if (at == content.size()) {
                             subscriber.onComplete();
+                            return;
                         }
                     }
                 }
@@ -433,6 +436,11 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     static PublishWithError withNoError(String content) {
         return new PublishWithError(List.of(content), 1,
+                () -> new AssertionError("Should not happen!"));
+    }
+
+    static PublishWithError withNoError(List<String> content) {
+        return new PublishWithError(content, content.size(),
                 () -> new AssertionError("Should not happen!"));
     }
 
@@ -570,6 +578,52 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         }
     }
 
+    static BodyPublisher[] ofStrings(String... strings) {
+        return Stream.of(strings).map(BodyPublishers::ofString).toArray(BodyPublisher[]::new);
+    }
+
+    @Test
+    public void testPositiveRequests()  {
+        // A composite array of publishers
+        BodyPublisher[] publishers = Stream.of(
+                Stream.of(ofStrings("Lorem", " ", "ipsum", " ")),
+                Stream.of(BodyPublishers.concat(ofStrings("dolor", " ", "sit", " ", "amet", ", "))),
+                Stream.<BodyPublisher>of(withNoError(List.of("consectetur", " ", "adipiscing"))),
+                Stream.of(ofStrings(" ")),
+                Stream.of(BodyPublishers.concat(ofStrings("elit", ".")))
+        ).flatMap((s) -> s).toArray(BodyPublisher[]::new);
+        BodyPublisher publisher = BodyPublishers.concat(publishers);
+
+        // Test that we can request all 13 items in a single request call.
+        RequestSubscriber requestSubscriber1 = new RequestSubscriber();
+        publisher.subscribe(requestSubscriber1);
+        Subscription subscription1 = requestSubscriber1.subscriptionCF.join();
+        subscription1.request(16);
+        assertTrue(requestSubscriber1.resultCF().isDone());
+        List<ByteBuffer> list1 = requestSubscriber1.resultCF().join();
+        String result1 = stringFromBytes(list1.stream());
+        assertEquals(result1, "Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
+        System.out.println("Got expected sentence with one request: \"%s\"".formatted(result1));
+
+        // Test that we can split our requests call any which way we want
+        // (whether in the 'middle of a publisher' or at the boundaries.
+        RequestSubscriber requestSubscriber2 = new RequestSubscriber();
+        publisher.subscribe(requestSubscriber2);
+        Subscription subscription2 = requestSubscriber2.subscriptionCF.join();
+        subscription2.request(1);
+        assertFalse(requestSubscriber2.resultCF().isDone());
+        subscription2.request(10);
+        assertFalse(requestSubscriber2.resultCF().isDone());
+        subscription2.request(4);
+        assertFalse(requestSubscriber2.resultCF().isDone());
+        subscription2.request(1);
+        assertTrue(requestSubscriber2.resultCF().isDone());
+        List<ByteBuffer> list2 = requestSubscriber2.resultCF().join();
+        String result2 = stringFromBytes(list2.stream());
+        assertEquals(result2, "Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
+        System.out.println("Got expected sentence with 4 requests: \"%s\"".formatted(result1));
+    }
+
     @Test(dataProvider = "contentLengths")
     public void testContentLength(long expected, List<Long> lengths) {
         BodyPublisher[] publishers = ContentLengthPublisher.of(lengths);
@@ -636,7 +690,6 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
             out.println(subscribers.get(rs) + ": PASSED");
         };
         subscribers.keySet().stream().forEach(check);
-
     }
 
     // Verifies that cancelling the subscription is propagated downstream
