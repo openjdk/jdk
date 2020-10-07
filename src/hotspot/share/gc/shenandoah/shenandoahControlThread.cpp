@@ -444,12 +444,13 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     heap->entry_evac();
     if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_evac)) return;
 
+    // Perform update-refs phase.
+    heap->vmop_entry_init_updaterefs();
+
     // Concurrent update thread roots
     heap->entry_update_thread_roots();
     if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_updaterefs)) return;
 
-    // Perform update-refs phase.
-    heap->vmop_entry_init_updaterefs();
     heap->entry_updaterefs();
     if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_updaterefs)) return;
 
