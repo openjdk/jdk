@@ -46,8 +46,6 @@
 
 #if COMPILER2_OR_JVMCI
 
-class jvmtiDeferredLocalVariableSet;
-
 // Returns true iff objects were reallocated and relocked because of access through JVMTI
 bool EscapeBarrier::objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
   // first/oldest update holds the flag

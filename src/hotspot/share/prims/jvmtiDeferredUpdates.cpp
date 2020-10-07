@@ -80,7 +80,7 @@ void JvmtiDeferredUpdates::delete_updates_for_frame(JavaThread* jt, intptr_t* fr
     if (updates->count() == 0) {
       jt->set_deferred_updates(NULL);
       // Free deferred updates.
-      // (Note the 'list' of local variable updates is embedded in 'updates')
+      // Note, the 'list' of local variable updates is embedded in 'updates'.
       delete updates;
     }
   }

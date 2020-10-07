@@ -426,7 +426,7 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, B
   , _type(type)
   , _jvf(NULL)
   , _set(false)
-  , _eb(type == T_OBJECT, NULL, NULL)
+  , _eb(false, NULL, NULL)
   , _result(JVMTI_ERROR_NONE)
 {
 }

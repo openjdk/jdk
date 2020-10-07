@@ -36,7 +36,9 @@ class JavaThread;
 // references held by java threads.
 // They provide means to revert optimizations based on escape analysis in a well synchronized manner
 // just before local references escape through JVMTI.
+
 class EscapeBarrier : StackObj {
+
 #if COMPILER2_OR_JVMCI
   JavaThread* const _calling_thread;
   JavaThread* const _deoptee_thread;
@@ -77,7 +79,9 @@ public:
   {
     if (_barrier_active) sync_and_suspend_all();
   }
+
 #else
+
 public:
   EscapeBarrier(bool barrier_active, JavaThread* calling_thread, JavaThread* deoptee_thread) { }
   EscapeBarrier(bool barrier_active, JavaThread* calling_thread) { }
@@ -90,17 +94,20 @@ public:
   bool deoptimize_objects(intptr_t* fr_id) {
     return true COMPILER2_OR_JVMCI_PRESENT(&& deoptimize_objects_internal(deoptee_thread(), fr_id));
   }
+
   bool deoptimize_objects(int depth)                           NOT_COMPILER2_OR_JVMCI_RETURN_(true);
+
   // Find and deoptimize non escaping objects and the holding frames on all stacks.
   bool deoptimize_objects_all_threads()                        NOT_COMPILER2_OR_JVMCI_RETURN_(true);
 
-  // A java thread was added to the list of threads
+  // A java thread was added to the list of threads.
   static void thread_added(JavaThread* jt)                     NOT_COMPILER2_OR_JVMCI_RETURN;
-  // A java thread was removed from the list of threads
+
+  // A java thread was removed from the list of threads.
   static void thread_removed(JavaThread* jt)                   NOT_COMPILER2_OR_JVMCI_RETURN;
 
 #if COMPILER2_OR_JVMCI
-  // Returns true iff objects were reallocated and relocked because of access through JVMTI
+  // Returns true iff objects were reallocated and relocked because of access through JVMTI.
   static bool objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id);
 
   static bool deoptimizing_objects_for_all_threads() { return _deoptimizing_objects_for_all_threads; }
@@ -116,8 +123,10 @@ public:
 
   // Should revert optimizations for all threads.
   bool all_threads()    const { return _deoptee_thread == NULL; }
+
   // Current thread deoptimizes its own objects.
   bool self_deopt()     const { return _calling_thread == _deoptee_thread; }
+
   // Inactive barriers are created if no local objects can escape.
   bool barrier_active() const { return _barrier_active; }
 
