@@ -705,7 +705,7 @@ final public class TKit {
                     TKit.assertFalse(files.findFirst().isEmpty(), String.format
                             ("Check [%s] is not an empty directory", path));
                 }
-            }).run(); 
+            }).run();
          }
     }
 
