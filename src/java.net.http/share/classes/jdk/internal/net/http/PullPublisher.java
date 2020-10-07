@@ -102,7 +102,7 @@ class PullPublisher<T> implements Flow.Publisher<T> {
                     return;
                 }
 
-                while (demand.tryDecrement() && !cancelled && error == null) {
+                while (demand.tryDecrement() && !cancelled) {
                     T next;
                     try {
                         if (!iter.hasNext()) {
@@ -121,11 +121,6 @@ class PullPublisher<T> implements Flow.Publisher<T> {
                     completed = true;
                     pullScheduler.stop();
                     subscriber.onComplete();
-                } else if ((t = error) != null && !completed) {
-                    completed = true;
-                    pullScheduler.stop();
-                    subscriber.onError(t);
-                    return;
                 }
             }
         }
