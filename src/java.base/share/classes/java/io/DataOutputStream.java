@@ -29,6 +29,10 @@ package java.io;
  * A data output stream lets an application write primitive Java data
  * types to an output stream in a portable way. An application can
  * then use a data input stream to read the data back in.
+ * <p>
+ * DataInputStream is not necessarily safe for multithreaded access.
+ * Thread safety is optional and is the responsibility of users of
+ * methods in this class.
  *
  * @author  unascribed
  * @see     java.io.DataInputStream
