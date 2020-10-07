@@ -129,6 +129,56 @@ void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue val
   locals->set_value_at(index, type, value);
 }
 
+// After object deoptimization, that is object reallocation and relocking, we
+// create deferred updates for all objects in scope. No new update will be
+// created if a deferred update already exists. It is not easy to see how this
+// is achieved: the deoptimized objects are in the arrays returned by locals(),
+// expressions(), and monitors(). For each object in these arrays we create a
+// deferred updated. If an update already exists, then it will override the
+// corresponding deoptimized object returned in one of the arrays. So the
+// original update is kept.
+void compiledVFrame::create_deferred_updates_after_object_deoptimization() {
+  // locals
+  GrowableArray<ScopeValue*>* scopeLocals = scope()->locals();
+  StackValueCollection* lcls = locals();
+  if (lcls != NULL) {
+    for (int i2 = 0; i2 < lcls->size(); i2++) {
+      StackValue* var = lcls->at(i2);
+      if (var->type() == T_OBJECT && scopeLocals->at(i2)->is_object()) {
+        jvalue val;
+        val.l = cast_from_oop<jobject>(lcls->at(i2)->get_obj()());
+        update_local(T_OBJECT, i2, val);
+      }
+    }
+  }
+
+  // expressions
+  GrowableArray<ScopeValue*>* scopeExpressions = scope()->expressions();
+  StackValueCollection* exprs = expressions();
+  if (exprs != NULL) {
+    for (int i2 = 0; i2 < exprs->size(); i2++) {
+      StackValue* var = exprs->at(i2);
+      if (var->type() == T_OBJECT && scopeExpressions->at(i2)->is_object()) {
+        jvalue val;
+        val.l = cast_from_oop<jobject>(exprs->at(i2)->get_obj()());
+        update_stack(T_OBJECT, i2, val);
+      }
+    }
+  }
+
+  // monitors
+  GrowableArray<MonitorInfo*>* mtrs = monitors();
+  if (mtrs != NULL) {
+    for (int i2 = 0; i2 < mtrs->length(); i2++) {
+      if (mtrs->at(i2)->eliminated()) {
+        assert(!mtrs->at(i2)->owner_is_scalar_replaced(),
+               "reallocation failure, should not update");
+        update_monitor(i2, mtrs->at(i2));
+      }
+    }
+  }
+}
+
 StackValueCollection* compiledVFrame::expressions() const {
   // Natives has no scope
   if (scope() == NULL) return new StackValueCollection(0);

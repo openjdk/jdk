@@ -28,6 +28,9 @@
 #include "runtime/vframe.hpp"
 
 class compiledVFrame: public javaVFrame {
+
+  friend class EscapeBarrier;
+
  public:
   // JVM state
   Method*                      method()             const;
@@ -54,6 +57,11 @@ class compiledVFrame: public javaVFrame {
   }
 
   void update_deferred_value(BasicType type, int index, jvalue value);
+
+  // After object deoptimization, that is object reallocation and relocking, we
+  // create deferred updates for all objects in scope. No new update will be
+  // created if a deferred update already exists.
+  void create_deferred_updates_after_object_deoptimization();
 
  public:
   // Constructors

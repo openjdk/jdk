@@ -338,46 +338,7 @@ bool EscapeBarrier::deoptimize_objects_internal(JavaThread* deoptee, intptr_t* f
       // now do the updates
       for (int frame_index = 0; frame_index < vfs->length(); frame_index++) {
         cvf = vfs->at(frame_index);
-
-        // locals
-        GrowableArray<ScopeValue*>* scopeLocals = cvf->scope()->locals();
-        StackValueCollection* locals = cvf->locals();
-        if (locals != NULL) {
-          for (int i2 = 0; i2 < locals->size(); i2++) {
-            StackValue* var = locals->at(i2);
-            if (var->type() == T_OBJECT && scopeLocals->at(i2)->is_object()) {
-              jvalue val;
-              val.l = cast_from_oop<jobject>(locals->at(i2)->get_obj()());
-              cvf->update_local(T_OBJECT, i2, val);
-            }
-          }
-        }
-
-        // expressions
-        GrowableArray<ScopeValue*>* scopeExpressions = cvf->scope()->expressions();
-        StackValueCollection* expressions = cvf->expressions();
-        if (expressions != NULL) {
-          for (int i2 = 0; i2 < expressions->size(); i2++) {
-            StackValue* var = expressions->at(i2);
-            if (var->type() == T_OBJECT && scopeExpressions->at(i2)->is_object()) {
-              jvalue val;
-              val.l = cast_from_oop<jobject>(expressions->at(i2)->get_obj()());
-              cvf->update_stack(T_OBJECT, i2, val);
-            }
-          }
-        }
-
-        // monitors
-        GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
-        if (monitors != NULL) {
-          for (int i2 = 0; i2 < monitors->length(); i2++) {
-            if (monitors->at(i2)->eliminated()) {
-              assert(!monitors->at(i2)->owner_is_scalar_replaced(),
-                     "reallocation failure, should not update");
-              cvf->update_monitor(i2, monitors->at(i2));
-            }
-          }
-        }
+        cvf->create_deferred_updates_after_object_deoptimization();
       }
       set_objs_are_deoptimized(deoptee, fr_id);
     }
