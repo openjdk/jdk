@@ -1577,8 +1577,14 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
     nmethod_mirror_index = -1;
   }
 
-  JVMCI::CodeInstallResult result;
-  {
+  JVMCI::CodeInstallResult result(JVMCI::ok);
+
+  if (TieredCompilation && method->get_method_counters(THREAD) == NULL) {
+    // Tiered policy requires method counters.
+    result = JVMCI::cache_full;
+  }
+
+  if (result == JVMCI::ok) {
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 
