@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,19 @@
 
 package java.awt.event;
 
-import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
-import sun.awt.SunToolkit;
-
 import java.awt.AWTEvent;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.font.TextHitInfo;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.lang.annotation.Native;
 import java.text.AttributedCharacterIterator;
 import java.text.CharacterIterator;
-import java.lang.annotation.Native;
+
+import sun.awt.AWTAccessor;
+import sun.awt.AppContext;
+import sun.awt.SunToolkit;
 
 /**
  * Input method events contain information about text that is being
@@ -414,6 +414,11 @@ public class InputMethodEvent extends AWTEvent {
      * Initializes the {@code when} field if it is not present in the
      * object input stream. In that case, the field will be initialized by
      * invoking {@link java.awt.EventQueue#getMostRecentEventTime()}.
+     *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      */
     private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
         s.defaultReadObject();

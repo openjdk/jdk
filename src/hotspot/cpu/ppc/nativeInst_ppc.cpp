@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -196,7 +196,7 @@ intptr_t NativeMovConstReg::data() const {
 
   CodeBlob* cb = CodeCache::find_blob_unsafe(addr);
   if (MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) {
-    narrowOop no = (narrowOop)MacroAssembler::get_narrow_oop(addr, cb->content_begin());
+    narrowOop no = MacroAssembler::get_narrow_oop(addr, cb->content_begin());
     return cast_from_oop<intptr_t>(CompressedOops::decode(no));
   } else {
     assert(MacroAssembler::is_load_const_from_method_toc_at(addr), "must be load_const_from_pool");
@@ -293,10 +293,11 @@ void NativeMovConstReg::set_data(intptr_t data) {
 void NativeMovConstReg::set_narrow_oop(narrowOop data, CodeBlob *code /* = NULL */) {
   address   inst2_addr = addr_at(0);
   CodeBlob* cb = (code) ? code : CodeCache::find_blob(instruction_address());
-  if (MacroAssembler::get_narrow_oop(inst2_addr, cb->content_begin()) == (long)data)
+  if (MacroAssembler::get_narrow_oop(inst2_addr, cb->content_begin()) == data) {
     return;
+  }
   const address inst1_addr =
-    MacroAssembler::patch_set_narrow_oop(inst2_addr, cb->content_begin(), (long)data);
+    MacroAssembler::patch_set_narrow_oop(inst2_addr, cb->content_begin(), data);
   assert(inst1_addr != NULL && inst1_addr < inst2_addr, "first instruction must be found");
   const int range = inst2_addr - inst1_addr + BytesPerInstWord;
   ICache::ppc64_flush_icache_bytes(inst1_addr, range);

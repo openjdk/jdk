@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.beans;
 
-import java.io.Serializable;
-import java.io.ObjectStreamField;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Map.Entry;
 
@@ -423,6 +424,10 @@ public class PropertyChangeSupport implements Serializable {
     }
 
     /**
+     * Writes serializable fields to stream.
+     *
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @serialData Null terminated list of {@code PropertyChangeListeners}.
      * <p>
      * At serialization time we skip non-serializable listeners and
@@ -462,6 +467,14 @@ public class PropertyChangeSupport implements Serializable {
         s.writeObject(null);
     }
 
+    /**
+     * Reads the {@code ObjectInputStream}.
+     *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     */
     private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
         this.map = new PropertyChangeListenerMap();
 
@@ -491,9 +504,13 @@ public class PropertyChangeSupport implements Serializable {
     private Object source;
 
     /**
-     * @serialField children                                   Hashtable
-     * @serialField source                                     Object
+     * @serialField children Hashtable
+     *              The list of {@code PropertyChangeListeners}
+     * @serialField source Object
+     *              The object to be provided as the "source" for any generated
+     *              events
      * @serialField propertyChangeSupportSerializedDataVersion int
+     *              The version
      */
     private static final ObjectStreamField[] serialPersistentFields = {
             new ObjectStreamField("children", Hashtable.class),
