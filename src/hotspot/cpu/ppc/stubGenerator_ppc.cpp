@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020, SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3657,22 +3657,27 @@ class StubGenerator: public StubCodeGenerator {
     // The amount of loop unrolling was determined by running a benchmark
     // that decodes a 20k block of Base64 data on a Power9 machine:
     // loop_unrolls = 1 :
-    // (min, avg, max) = (101097.676, 101611.387, 101838.460), stdev = 182.156
+    // (min, avg, max) = (102011.070, 103007.654, 103385.576), stdev = 274.914
     // loop_unrolls = 2 :
-    // (min, avg, max) = (106430.268, 106717.050, 106977.072), stdev = 171.667
+    // (min, avg, max) = (105869.171, 106268.478, 106641.559), stdev = 240.833
     // loop_unrolls = 4 :
-    // (min, avg, max) = (105342.240, 106084.930, 106390.059), stdev = 264.617
+    // (min, avg, max) = (96981.562, 107306.291, 108382.325), stdev = 2720.824
     // loop_unrolls = 8 :
-    // min, avg, max) = (105790.841, 106318.585, 106602.132), stdev = 243.740
+    // (min, avg, max) = (107385.501, 108192.973, 108580.890), stdev = 304.418
+    // loop_unrolls = 16 :
+    // (min, avg, max) = (108151.519, 108408.000, 108636.058), stdev = 139.843
     //
-    // Given that the performance is about 5% better at 2, and that there's
-    // an advantage to keeping loop_unrolls small (to be able to process
-    // smaller buffers), 2 is clearly the best choice.
-    const unsigned loop_unrolls = 2;
+    // Comparing only the max values, there's a clear bend in the curve at 4.
+    // The performance goes up slightly at 8, but is essentially flat at
+    // 16.  Since it's desirable to have a loop_unrolls value on the
+    // smaller side to help have smaller buffers be able to take advantage
+    // of the decodeBlock intrinsic, the value 4 was chosen, which gives a
+    // minimum src buffer size of 64 bytes.
+    const unsigned loop_unrolls = 4;
 
     const unsigned vec_size = 16; // size of vector registers in bytes
     const unsigned block_size = vec_size * loop_unrolls;  // number of bytes to process in each pass through the loop
-    const unsigned block_size_clear = exact_log2(block_size); // the lower log2(block_size) bits of the size
+    const unsigned block_size_shift = exact_log2(block_size);
 
     // According to the ELF V2 ABI, registers r3-r12 are volatile and available for use without save/restore
     Register s      = R3_ARG1; // source starting address of Base64 characters
@@ -3689,7 +3694,6 @@ class StubGenerator: public StubCodeGenerator {
     // Re-use R9 and R10 to avoid using non-volatile registers (requires save/restore)
     Register out           = R9;  // moving out (destination) pointer
     Register in            = R10; // moving in (source) pointer
-    Register end           = R11; // pointer to the last byte of the source
 
     // Volatile VSRS are 0..13, 32..51 (VR0..VR13)
     // VR Constants
@@ -3793,13 +3797,14 @@ class StubGenerator: public StubCodeGenerator {
     // characters become 12 bytes of binary data), so for this reason we
     // need to subtract an additional 8 bytes from the source length, in
     // order not to write past the end of the destination buffer.  The
-    // result of this subtraction implies that the non-instrinsic routine
-    // will be used to process the last 12 characters.
+    // result of this subtraction implies that a Java function in the
+    // Base64 class will be used to process the last 12 characters.
     __ sub(sl, sl, sp);
     __ subi(sl, sl, 12);
-
-    // Round sl down to the nearest multiple of block_size
-    __ clrrdi(sl, sl, block_size_clear);
+    // Load CTR with the number of passes through the unrolled loop
+    // = sl >> block_size_shift
+    __ srawi(sl, sl, block_size_shift);
+    __ mtctr(sl);
 
     // out starts at d + dp
     __ add(out, d, dp);
@@ -3807,15 +3812,8 @@ class StubGenerator: public StubCodeGenerator {
     // in starts at s + sp
     __ add(in, s, sp);
 
-    // Address of the last byte of the source is (in + sl - 1)
-    __ add(end, in, sl);
-    __ subi(end, end, 1);
-
-    __ bind(unrolled_loop_start);
-
-    __ cmpd(CCR0, end, in);
-    __ blt_predict_not_taken(CCR0, unrolled_loop_exit);
     __ align(32);
+    __ bind(unrolled_loop_start);
     for (unsigned unroll_cnt=0; unroll_cnt < loop_unrolls; unroll_cnt++) {
         // We can use a static displacement in the load since it's always a
         // multiple of 16, which is a requirement of lxv/stxv.  This saves
@@ -3833,7 +3831,7 @@ class StubGenerator: public StubCodeGenerator {
         // a lookup table indexed by the upper 4 bits of the character
         __ xxperm(offsets->to_vsr(), offsetLUT, higher_nibble->to_vsr());
 
-        // Find out which elemets are the special case character (isURL ? '/' : '-')
+        // Find out which elements are the special case character (isURL ? '/' : '-')
         __ vcmpequb_(eq_special_case_char, input, vec_special_case_char);
         //
         // There's a (63/64)^16 = 77.7% chance that there are no special
@@ -3976,7 +3974,7 @@ class StubGenerator: public StubCodeGenerator {
         __ addi(out, out, 12);
     }
     __ addi(in, in, 16 * loop_unrolls);
-    __ b(unrolled_loop_start);
+    __ bdnz(unrolled_loop_start);
 
     __ bind(unrolled_loop_exit);
 
