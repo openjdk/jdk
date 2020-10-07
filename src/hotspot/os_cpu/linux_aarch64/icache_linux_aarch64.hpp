@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +23,22 @@
  *
  */
 
-/* @test TestCodeCacheRootStyles
- * @requires vm.gc.Shenandoah
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+UseShenandoahGC -XX:ShenandoahCodeRootsStyle=0 TestCodeCacheRootStyles
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+UseShenandoahGC -XX:ShenandoahCodeRootsStyle=1 TestCodeCacheRootStyles
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+UseShenandoahGC -XX:ShenandoahCodeRootsStyle=2 TestCodeCacheRootStyles
- */
+#ifndef OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP
+#define OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP
 
-public class TestCodeCacheRootStyles {
-    public static void main(String[] args) {
-        // Bug should crash before we get here.
-    }
-}
+// Interface for updating the instruction cache.  Whenever the VM
+// modifies code, part of the processor instruction cache potentially
+// has to be flushed.
+
+class ICache : public AbstractICache {
+ public:
+  static void initialize();
+  static void invalidate_word(address addr) {
+    __builtin___clear_cache((char *)addr, (char *)(addr + 4));
+  }
+  static void invalidate_range(address start, int nbytes) {
+    __builtin___clear_cache((char *)start, (char *)(start + nbytes));
+  }
+};
+
+#endif // OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP

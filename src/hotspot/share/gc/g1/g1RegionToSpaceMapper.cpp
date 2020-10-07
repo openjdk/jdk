@@ -42,7 +42,7 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
                                              size_t page_size,
                                              size_t region_granularity,
                                              size_t commit_factor,
-                                             MemoryType type) :
+                                             MEMFLAGS type) :
   _listener(NULL),
   _storage(rs, used_size, page_size),
   _region_granularity(region_granularity),
@@ -67,7 +67,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                       size_t page_size,
                                       size_t alloc_granularity,
                                       size_t commit_factor,
-                                      MemoryType type) :
+                                      MEMFLAGS type) :
     G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
     _pages_per_region(alloc_granularity / (page_size * commit_factor)) {
 
@@ -130,7 +130,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                        size_t page_size,
                                        size_t alloc_granularity,
                                        size_t commit_factor,
-                                       MemoryType type) :
+                                       MEMFLAGS type) :
     G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
     _regions_per_page((page_size * commit_factor) / alloc_granularity) {
 
@@ -220,7 +220,7 @@ static bool map_nvdimm_space(ReservedSpace rs) {
     return false;
   }
   // commit this memory in nv-dimm
-  char* ret = os::attempt_reserve_memory_at(rs.size(), rs.base(), _backing_fd);
+  char* ret = os::attempt_reserve_memory_at(rs.base(), rs.size(), _backing_fd);
 
   if (ret != rs.base()) {
     if (ret != NULL) {
@@ -240,7 +240,7 @@ G1RegionToHeteroSpaceMapper::G1RegionToHeteroSpaceMapper(ReservedSpace rs,
                                                          size_t page_size,
                                                          size_t alloc_granularity,
                                                          size_t commit_factor,
-                                                         MemoryType type) :
+                                                         MEMFLAGS type) :
   G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
   _rs(rs),
   _dram_mapper(NULL),
@@ -267,7 +267,7 @@ bool G1RegionToHeteroSpaceMapper::initialize() {
   assert(rs_dram.size() == rs_nvdimm.size() && rs_nvdimm.size() == MaxHeapSize, "They all should be same");
 
   // Reserve dram memory
-  char* base = os::attempt_reserve_memory_at(rs_dram.size(), rs_dram.base());
+  char* base = os::attempt_reserve_memory_at(rs_dram.base(), rs_dram.size());
   if (base != rs_dram.base()) {
     if (base != NULL) {
       os::release_memory(base, rs_dram.size());
@@ -337,7 +337,7 @@ G1RegionToSpaceMapper* G1RegionToSpaceMapper::create_heap_mapper(ReservedSpace r
                                                                  size_t page_size,
                                                                  size_t region_granularity,
                                                                  size_t commit_factor,
-                                                                 MemoryType type) {
+                                                                 MEMFLAGS type) {
   if (AllocateOldGenAt != NULL) {
     G1RegionToHeteroSpaceMapper* mapper = new G1RegionToHeteroSpaceMapper(rs, actual_size, page_size, region_granularity, commit_factor, type);
     if (!mapper->initialize()) {
@@ -355,7 +355,7 @@ G1RegionToSpaceMapper* G1RegionToSpaceMapper::create_mapper(ReservedSpace rs,
                                                             size_t page_size,
                                                             size_t region_granularity,
                                                             size_t commit_factor,
-                                                            MemoryType type) {
+                                                            MEMFLAGS type) {
   if (region_granularity >= (page_size * commit_factor)) {
     return new G1RegionsLargerThanCommitSizeMapper(rs, actual_size, page_size, region_granularity, commit_factor, type);
   } else {

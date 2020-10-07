@@ -806,8 +806,6 @@ jint Universe::initialize_heap() {
 void Universe::initialize_tlab() {
   ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
   if (UseTLAB) {
-    assert(Universe::heap()->supports_tlab_allocation(),
-           "Should support thread-local allocation buffers");
     ThreadLocalAllocBuffer::startup_initialization();
   }
 }

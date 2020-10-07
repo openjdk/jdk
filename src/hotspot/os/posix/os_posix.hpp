@@ -146,7 +146,7 @@ public:
 };
 
 /*
- * Crash protection for the watcher thread. Wrap the callback
+ * Crash protection for the JfrSampler thread. Wrap the callback
  * with a sigsetjmp and in case of a SIGSEGV/SIGBUS we siglongjmp
  * back.
  * To be able to use this - don't take locks, don't rely on destructors,
@@ -167,7 +167,6 @@ public:
 private:
   static Thread* _protected_thread;
   static ThreadCrashProtection* _crash_protection;
-  static volatile intptr_t _crash_mux;
   void restore();
   sigjmp_buf _jmpbuf;
 };

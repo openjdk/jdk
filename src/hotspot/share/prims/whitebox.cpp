@@ -92,7 +92,7 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
-#include "gc/g1/g1ConcurrentMarkThread.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heterogeneousHeapRegionManager.hpp"
 #endif // INCLUDE_G1GC
@@ -473,7 +473,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    return g1h->concurrent_mark()->cm_thread()->during_cycle();
+    return g1h->concurrent_mark()->cm_thread()->in_progress();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
@@ -481,7 +481,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (!g1h->concurrent_mark()->cm_thread()->during_cycle()) {
+    if (!g1h->concurrent_mark()->cm_thread()->in_progress()) {
       g1h->collect(GCCause::_wb_conc_mark);
       return true;
     }
@@ -762,7 +762,7 @@ WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
 WB_END
 
 WB_ENTRY(jlong, WB_NMTAttemptReserveMemoryAt(JNIEnv* env, jobject o, jlong addr, jlong size))
-  addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((size_t)size, (char*)(uintptr_t)addr);
+  addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size);
   MemTracker::record_virtual_memory_type((address)addr, mtTest);
 
   return addr;
@@ -1473,7 +1473,7 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
   static char c;
   static volatile char* p;
 
-  p = os::reserve_memory(os::vm_allocation_granularity(), NULL, 0);
+  p = os::reserve_memory(os::vm_allocation_granularity());
   if (p == NULL) {
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "Failed to reserve memory");
   }
@@ -2026,6 +2026,32 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
   return tsc.num_threads_completed();
 WB_END
 
+WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle))
+  class TraceSelfClosure : public AsyncHandshakeClosure {
+    JavaThread* _self;
+    void do_thread(Thread* th) {
+      assert(th->is_Java_thread(), "sanity");
+      // AsynchHandshake handshakes are only executed by target.
+      assert(_self == th, "Must be");
+      assert(Thread::current() == th, "Must be");
+      JavaThread* jt = th->as_Java_thread();
+      ResourceMark rm;
+      jt->print_on(tty);
+      jt->print_stack_on(tty);
+      tty->cr();
+    }
+
+  public:
+    TraceSelfClosure(JavaThread* self_target) : AsyncHandshakeClosure("WB_TraceSelf"), _self(self_target) {}
+  };
+  oop thread_oop = JNIHandles::resolve(thread_handle);
+  if (thread_oop != NULL) {
+    JavaThread* target = java_lang_Thread::thread(thread_oop);
+    TraceSelfClosure* tsc = new TraceSelfClosure(target);
+    Handshake::execute(tsc, target);
+  }
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -2263,6 +2289,10 @@ WB_ENTRY(jboolean, WB_IsJVMTIIncluded(JNIEnv* env, jobject wb))
   return INCLUDE_JVMTI ? JNI_TRUE : JNI_FALSE;
 WB_END
 
+WB_ENTRY(void, WB_WaitUnsafe(JNIEnv* env, jobject wb, jint time))
+    os::naked_short_sleep(time);
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2487,6 +2517,7 @@ static JNINativeMethod methods[] = {
 
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
+  {CC"asyncHandshakeWalkStack", CC"(Ljava/lang/Thread;)V", (void*)&WB_AsyncHandshakeWalkStack },
   {CC"checkThreadObjOfTerminatingThread", CC"(Ljava/lang/Thread;)V", (void*)&WB_CheckThreadObjOfTerminatingThread },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
                                                       (void*)&WB_AddCompilerDirective },
@@ -2513,6 +2544,7 @@ static JNINativeMethod methods[] = {
   {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
   {CC"getKlassMetadataSize", CC"(Ljava/lang/Class;)I",(void*)&WB_GetKlassMetadataSize},
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
+  {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
 };
 
 

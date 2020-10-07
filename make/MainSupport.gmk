@@ -185,7 +185,6 @@ endef
 # Param 1: Name of list to add targets to
 # Named params:
 # TARGET_SUFFIX : Suffix of target to create for recipe
-# MAKE_SUBDIR : Subdir for this build phase
 # FILE_PREFIX : File prefix for this build phase
 # CHECK_MODULES : List of modules to try
 # MULTIPLE_MAKEFILES : Set to true to handle makefiles for the same module and
