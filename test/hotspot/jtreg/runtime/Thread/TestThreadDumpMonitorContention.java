@@ -49,7 +49,7 @@ public class TestThreadDumpMonitorContention {
     // so use getTestJDKTool() instead of getCompileJDKTool() or even
     // getJDKTool() which can fall back to "compile.jdk".
     final static String JSTACK = JDKToolFinder.getTestJDKTool("jstack");
-    final static String PID = String.valueOf(ProcessHandle.current().pid());
+    final static String PID = Long.toString(ProcessHandle.current().pid());
 
     // looking for header lines with these patterns:
     // "ContendingThread-1" #19 prio=5 os_prio=64 tid=0x000000000079c000 nid=0x23 runnable [0xffff80ffb8b87000]

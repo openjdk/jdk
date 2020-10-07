@@ -83,7 +83,7 @@ public class Agent implements ClassFileTransformer {
         // Create speculative trap entries
         Test.m();
 
-        String pid = String.valueOf(ProcessHandle.current().pid());
+        String pid = Long.toString(ProcessHandle.current().pid());
 
         // Make the nmethod go away
         for (int i = 0; i < 10; i++) {

@@ -133,7 +133,7 @@ public class RedefineClassTest extends TypeUniverse {
     }
 
     public static void loadAgent(Path agent) throws Exception {
-        String pid = String.valueOf(ProcessHandle.current().pid());
+        String pid = Long.toString(ProcessHandle.current().pid());
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         Class<?> c = Class.forName("com.sun.tools.attach.VirtualMachine", true, cl);
         Method attach = c.getDeclaredMethod("attach", String.class);
