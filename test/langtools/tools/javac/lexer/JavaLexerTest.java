@@ -94,11 +94,11 @@ public class JavaLexerTest {
             new TestTuple(DOUBLELITERAL, "0x8pd", "0x8pd"),
             new TestTuple(INTLITERAL,    "0xpd", "0x"),
 
-            new TestTuple(STRINGLITERAL, "\"\\u20\""),
-            new TestTuple(STRINGLITERAL, "\"\\u\""),
-            new TestTuple(STRINGLITERAL, "\"\\uG000\""),
-            new TestTuple(STRINGLITERAL, "\"\\u \""),
-            new TestTuple(STRINGLITERAL, "\"\\q\""),
+            new TestTuple(ERROR,         "\"\\u20\""),
+            new TestTuple(ERROR,         "\"\\u\""),
+            new TestTuple(ERROR,         "\"\\uG000\""),
+            new TestTuple(ERROR,         "\"\\u \""),
+            new TestTuple(ERROR,         "\"\\q\""),
 
             new TestTuple(ERROR,         "\'\'"),
             new TestTuple(ERROR,         "\'\\q\'", "\'\\"),
@@ -138,6 +138,7 @@ public class JavaLexerTest {
         boolean normal = failed == willFail;
 
         if (!normal) {
+            System.err.println("input: " + test.input);
             String message = willFail ? "Expected to fail: " : "Expected to pass: ";
             throw new AssertionError(message + test.input);
         }
@@ -145,10 +146,12 @@ public class JavaLexerTest {
         String actual = test.input.substring(token.pos, token.endPos);
 
         if (token.kind != test.kind) {
+            System.err.println("input: " + test.input);
             throw new AssertionError("Unexpected token kind: " + token.kind.name());
         }
 
         if (!Objects.equals(test.expected, actual)) {
+            System.err.println("input: " + test.input);
             throw new AssertionError("Unexpected token content: " + actual);
         }
     }
