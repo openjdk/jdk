@@ -35,9 +35,14 @@ size_t StackOverflow::_stack_yellow_zone_size = 0;
 size_t StackOverflow::_stack_reserved_zone_size = 0;
 size_t StackOverflow::_stack_shadow_zone_size = 0;
 
-void StackOverflow::initialize_stack_zone_sizes(size_t alignment) {
+void StackOverflow::initialize_stack_zone_sizes() {
   // Stack zone sizes must be page aligned.
   size_t page_size = os::vm_page_size();
+
+  // We need to adapt the configured number of stack protection pages given
+  // in 4K pages to the actual os page size. We must do this before setting
+  // up minimal stack sizes etc. in os::init_2().
+  size_t alignment = 4*K;
 
   assert(_stack_red_zone_size == 0, "This should be called only once.");
   _stack_red_zone_size = align_up(StackRedPages * alignment, page_size);

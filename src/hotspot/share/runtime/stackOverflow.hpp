@@ -31,7 +31,9 @@
 class JavaThread;
 
 // StackOverflow handling is encapsulated in this class.  This class contains state variables
-// for each JavaThread that implement stack overflow checking and guard page implementation.
+// for each JavaThread that are used to detect stack overflow though explicit checks or through
+// checks in the signal handler when stack banging into guard pages causes a trap.
+// The state variables also record whether guard pages are enabled or disabled.
 
 class StackOverflow {
   friend class JVMCIVMStructs;
@@ -128,7 +130,7 @@ class StackOverflow {
   static size_t _stack_shadow_zone_size;
 
  public:
-  static void initialize_stack_zone_sizes(size_t alignment);
+  static void initialize_stack_zone_sizes();
 
   static size_t stack_red_zone_size() {
     assert(_stack_red_zone_size > 0, "Don't call this before the field is initialized.");

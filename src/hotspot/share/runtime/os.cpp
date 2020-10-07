@@ -454,10 +454,7 @@ void os::init_before_ergo() {
   // decisions depending on large page support and the calculated large page size.
   large_page_init();
 
-  // We need to adapt the configured number of stack protection pages given
-  // in 4K pages to the actual os page size. We must do this before setting
-  // up minimal stack sizes etc. in os::init_2().
-  StackOverflow::initialize_stack_zone_sizes(4 * K);
+  StackOverflow::initialize_stack_zone_sizes();
 
   // VM version initialization identifies some characteristics of the
   // platform that are used during ergonomic decisions.
