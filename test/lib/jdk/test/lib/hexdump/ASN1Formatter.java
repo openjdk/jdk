@@ -167,7 +167,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 if (nbytes > 4) {
                     out.append("***** Tag: " + tagName(tag) +
                             ", Range of length error: " + len + " bytes");
-                    out.append('\n');       // End with NL
+                    out.append(System.lineSeparator());
                     return available;       // return the unread length
                 }
                 len = 0;
@@ -187,7 +187,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
             switch (tag) {
                 case TAG_EndOfContent:    // End-of-contents octets; len == 0
                     out.append("END-OF-CONTENT");
-                    out.append('\n');  // End with NL
+                    out.append(System.lineSeparator());
                     // end of indefinite-length constructed, return zero remaining
                     return 0;
                 case TAG_Integer:
@@ -321,7 +321,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     }
                 }
             }
-            out.append('\n');   // End with NL
+            out.append(System.lineSeparator());
         }
         return available;
     }
