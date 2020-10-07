@@ -128,7 +128,7 @@ public:
 };
 
 /*
- * Crash protection for the watcher thread. Wrap the callback
+ * Crash protection for the JfrSampler thread. Wrap the callback
  * with a __try { call() }
  * To be able to use this - don't take locks, don't rely on destructors,
  * don't make OS library calls, don't allocate memory, don't print,
@@ -146,7 +146,6 @@ public:
 private:
   static Thread* _protected_thread;
   static ThreadCrashProtection* _crash_protection;
-  static volatile intptr_t _crash_mux;
 };
 
 class PlatformEvent : public CHeapObj<mtSynchronizer> {

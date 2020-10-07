@@ -29,12 +29,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
-import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -47,6 +45,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem.Category;
 
 /**
  * Generate Separate Index Files for all the member names with Indexing in
@@ -70,14 +69,12 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      *
      * @param configuration the configuration for this doclet
      * @param path       Path to the file which is getting generated.
-     * @param indexBuilder Unicode based Index from {@link IndexBuilder}
      * @param elements the collection of characters for which to generate index files
      */
     public SplitIndexWriter(HtmlConfiguration configuration,
                             DocPath path,
-                            IndexBuilder indexBuilder,
                             Collection<Character> elements) {
-        super(configuration, path, indexBuilder);
+        super(configuration, path);
         this.indexElements = new ArrayList<>(elements);
     }
 
@@ -86,30 +83,19 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * the members starting with the particular unicode character.
      *
      * @param configuration the configuration for this doclet
-     * @param indexBuilder IndexBuilder built by {@link IndexBuilder}
      * @throws DocFileIOException if there is a problem generating the index files
      */
-    public static void generate(HtmlConfiguration configuration,
-                                IndexBuilder indexBuilder) throws DocFileIOException
-    {
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath path = DocPaths.INDEX_FILES;
-        SortedSet<Character> keys = new TreeSet<>(indexBuilder.asMap().keySet());
-        Set<Character> searchItemsKeys = configuration.searchItems
-                .itemsOfCategories(Category.INDEX, Category.SYSTEM_PROPERTY)
-                .map(i -> keyCharacter(i.getLabel()))
-                .collect(Collectors.toSet());
-        keys.addAll(searchItemsKeys);
+        IndexBuilder mainIndex = configuration.mainIndex;
+        SortedSet<Character> keys = new TreeSet<>(mainIndex.getFirstCharacters());
         ListIterator<Character> li = new ArrayList<>(keys).listIterator();
         while (li.hasNext()) {
             Character ch = li.next();
             DocPath filename = DocPaths.indexN(li.nextIndex());
             SplitIndexWriter indexgen = new SplitIndexWriter(configuration,
-                                                             path.resolve(filename),
-                                                             indexBuilder, keys);
+                                                             path.resolve(filename), keys);
             indexgen.generateIndexFile(ch);
-            if (!li.hasNext()) {
-                indexgen.createSearchIndexFiles();
-            }
         }
     }
 
@@ -135,10 +121,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
                         contents.getContent("doclet.Index"))));
         Content mainContent = new ContentBuilder();
         addLinksForIndexes(mainContent);
-        if (tagSearchIndexMap.get(unicode) != null) {
-            indexBuilder.addSearchTags(unicode, tagSearchIndexMap.get(unicode));
-        }
-        addContents(unicode, indexBuilder.getMemberList(unicode), mainContent);
+        addContents(unicode, mainIndex.getItems(unicode), mainContent);
         addLinksForIndexes(mainContent);
         main.add(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
@@ -173,7 +156,8 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.ALLPACKAGES_INDEX),
                                              contents.allPackagesLabel));
         }
-        if (searchItems.containsAnyOfCategories(Category.SYSTEM_PROPERTY)) {
+        boolean anySystemProperties = !mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
+        if (anySystemProperties) {
             contentTree.add(getVerticalSeparator());
             contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.SYSTEM_PROPERTIES),
                                              contents.systemPropertiesLabel));

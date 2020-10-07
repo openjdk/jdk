@@ -71,8 +71,8 @@ public interface ActivationMonitor extends Remote {
      * results in re-activating the remote object.
      *
      * @param id the object's activation identifier
-     * @exception UnknownObjectException if object is unknown
-     * @exception RemoteException if remote call fails
+     * @throws UnknownObjectException if object is unknown
+     * @throws RemoteException if remote call fails
      * @since 1.2
      */
     public void inactiveObject(ActivationID id)
@@ -86,8 +86,8 @@ public interface ActivationMonitor extends Remote {
      *
      * @param id the active object's id
      * @param obj the marshalled form of the object's stub
-     * @exception UnknownObjectException if object is unknown
-     * @exception RemoteException if remote call fails
+     * @throws UnknownObjectException if object is unknown
+     * @throws RemoteException if remote call fails
      * @since 1.2
      */
     public void activeObject(ActivationID id,
@@ -102,8 +102,8 @@ public interface ActivationMonitor extends Remote {
      *
      * @param id the group's id
      * @param incarnation the group's incarnation number
-     * @exception UnknownGroupException if group is unknown
-     * @exception RemoteException if remote call fails
+     * @throws UnknownGroupException if group is unknown
+     * @throws RemoteException if remote call fails
      * @since 1.2
      */
     public void inactiveGroup(ActivationGroupID id,

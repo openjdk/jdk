@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,8 @@ public interface RowSetReader {
    * @param caller the <code>RowSet</code> object (1) that has implemented the
    *         <code>RowSetInternal</code> interface, (2) with which this reader is
    *        registered, and (3) whose <code>execute</code> method called this reader
-   * @exception SQLException if a database access error occurs or this method
-   *            invokes the <code>RowSet.execute</code> method
+   * @throws SQLException if a database access error occurs or this method
+   *         invokes the {@code RowSet.execute} method
    */
   void readData(RowSetInternal caller) throws SQLException;
 

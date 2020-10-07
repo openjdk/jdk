@@ -44,13 +44,6 @@
 #define __ _masm->
 
 //----------------------------------------------------------------------------------------------------
-// Platform-dependent initialization
-
-void TemplateTable::pd_initialize() {
-  // No arm specific initialization
-}
-
-//----------------------------------------------------------------------------------------------------
 // Address computation
 
 // local variables
@@ -3606,12 +3599,6 @@ void TemplateTable::fast_xaccess(TosState state) {
 
 //----------------------------------------------------------------------------------------------------
 // Calls
-
-void TemplateTable::count_calls(Register method, Register temp) {
-  // implemented elsewhere
-  ShouldNotReachHere();
-}
-
 
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register method,  // linked method (or i-klass)

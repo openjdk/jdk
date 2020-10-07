@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public interface CommonDataSource {
      *
      * @return the log writer for this data source or null if
      *        logging is disabled
-     * @exception java.sql.SQLException if a database access error occurs
+     * @throws java.sql.SQLException if a database access error occurs
      * @see #setLogWriter
      */
     java.io.PrintWriter getLogWriter() throws SQLException;
@@ -76,7 +76,7 @@ public interface CommonDataSource {
      * disabled.
      *
      * @param out the new log writer; to disable logging, set to null
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @see #getLogWriter
      */
     void setLogWriter(java.io.PrintWriter out) throws SQLException;
@@ -90,7 +90,7 @@ public interface CommonDataSource {
      * initially zero.
      *
      * @param seconds the data source login time limit
-     * @exception SQLException if a database access error occurs.
+     * @throws SQLException if a database access error occurs.
      * @see #getLoginTimeout
      */
     void setLoginTimeout(int seconds) throws SQLException;
@@ -104,7 +104,7 @@ public interface CommonDataSource {
      * initially zero.
      *
      * @return the data source login time limit
-     * @exception SQLException if a database access error occurs.
+     * @throws SQLException if a database access error occurs.
      * @see #setLoginTimeout
      */
     int getLoginTimeout() throws SQLException;

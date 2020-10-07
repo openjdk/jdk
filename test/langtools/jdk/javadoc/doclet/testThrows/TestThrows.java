@@ -68,6 +68,7 @@
                      """);
 
          javadoc("-d", base.resolve("out").toString(),
+                 "--no-platform-links",
                  src.resolve("C.java").toString());
          checkExit(Exit.OK);
 

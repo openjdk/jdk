@@ -463,7 +463,6 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   address src = ref->obj();
   int bytes = src_info->size_in_bytes();
   char* dest;
-  size_t alignment = BytesPerWord;
   char* oldtop;
   char* newtop;
 
@@ -476,10 +475,10 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     Klass* klass = (Klass*)src;
     if (klass->is_instance_klass()) {
       SystemDictionaryShared::validate_before_archiving(InstanceKlass::cast(klass));
-      dump_region->allocate(sizeof(address), BytesPerWord);
+      dump_region->allocate(sizeof(address));
     }
   }
-  dest = dump_region->allocate(bytes, alignment);
+  dest = dump_region->allocate(bytes);
   newtop = dump_region->top();
 
   memcpy(dest, src, bytes);
