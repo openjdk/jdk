@@ -772,7 +772,7 @@ public class Base64 {
          * @param  sp
          *         the offset into src array to begin reading
          * @param  sl
-         *         the total length of source array
+         *         the offset (exclusive) past the last byte to be converted.
          * @param  dst
          *         the destination byte array of decoded data bytes
          * @param  dp
@@ -809,7 +809,7 @@ public class Base64 {
             int shiftto = 18;       // pos of first byte of 4-byte atom
 
             while (sp < sl) {
-                if (shiftto == 18 && sp + 4 < sl) {       // fast path
+                if (shiftto == 18 && sp < sl - 4) {       // fast path
                     int dl = decodeBlock(src, sp, sl, dst, dp, isURL);
                     /*
                      * Calculate how many characters were processed by how many
