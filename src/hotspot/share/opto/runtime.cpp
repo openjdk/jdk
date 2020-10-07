@@ -1208,7 +1208,7 @@ const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
 
   // result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms + 0] = TypeInt::INT; // dst ofs, or -1
+  fields[TypeFunc::Parms + 0] = TypeInt::INT; // count of bytes written to dst
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
   return TypeFunc::make(domain, range);
 }
