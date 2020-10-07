@@ -1032,7 +1032,7 @@ public class HtmlDocletWriter {
             ExecutableElement emd = (ExecutableElement) element;
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(links.getAnchor(emd)))
+                .where(links.getAnchor(emd))
                 .whereMember(element));
         } else if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
