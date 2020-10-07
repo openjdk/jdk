@@ -175,8 +175,6 @@ public class TestReferenceRefersTo {
             expectNotCleared(testWeak3, "testWeak3");
 
             // For some collectors, calling get() will keep testObject4 alive.
-            // For example, SATB collectors or ZGC, but not collectors using
-            // incremental update barriers like CMS.
             if (testWeak4.get() == null) {
                 fail("testWeak4 unexpectedly == null");
             }
