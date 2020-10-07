@@ -536,7 +536,7 @@ public class TreeInfo {
             }
             case BINDINGPATTERN: {
                 JCBindingPattern node = (JCBindingPattern)tree;
-                return getStartPos(node.vartype);
+                return getStartPos(node.var);
             }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
@@ -927,8 +927,6 @@ public class TreeInfo {
             if (node.type != null)
                 return node.type.tsym;
             return null;
-        case BINDINGPATTERN:
-            return ((JCBindingPattern) node).symbol;
         default:
             return null;
         }
@@ -966,18 +964,6 @@ public class TreeInfo {
         default:
             return null;
         }
-    }
-
-    /** If this tree introduces a variable (i.e. is JCVariableDecl
-     *  or JCBindingPattern), return the variable's symbol.
-     *  Fail otherwise.
-     */
-    public static VarSymbol variableSymbol(JCTree tree) {
-        return switch (tree.getTag()) {
-            case VARDEF -> ((JCVariableDecl) tree).sym;
-            case BINDINGPATTERN -> ((JCBindingPattern) tree).symbol;
-            default -> throw new AssertionError("Unexpected tree: " + tree);
-        };
     }
 
     /** If this tree has a modifiers field, return it otherwise return null

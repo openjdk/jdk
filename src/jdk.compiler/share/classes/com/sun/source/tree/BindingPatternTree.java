@@ -35,16 +35,29 @@ import javax.lang.model.element.Name;
 public interface BindingPatternTree extends PatternTree {
 
     /**
+     * Returns the binding variable.
+     * @return the binding variable
+     */
+    VariableTree getVariable();
+
+    /**
      * Returns the type of the bind variable.
      * @return the type
+     * @deprecated Use getVariable().getType()
      */
-    Tree getType();
+    @Deprecated
+    default Tree getType() {
+        return getVariable().getType();
+    }
 
     /**
      * A binding variable name.
      * @return the name of the binding variable
+     * @deprecated Use getVariable().getName()
      */
-    Name getBinding();
+    @Deprecated
+    default Name getBinding() {
+        return getVariable().getName();
+    }
 
 }
-

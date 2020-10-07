@@ -1691,7 +1691,7 @@ public class Flow {
 
         /** A mapping from addresses to variable symbols.
          */
-        protected JCTree[] vardecls;
+        protected JCVariableDecl[] vardecls;
 
         /** The current class being defined.
          */
@@ -1759,7 +1759,7 @@ public class Flow {
                 inits.inclRange(returnadr, nextadr);
             } else {
                 for (int address = returnadr; address < nextadr; address++) {
-                    if (!(isFinalUninitializedStaticField(TreeInfo.variableSymbol(vardecls[address])))) {
+                    if (!(isFinalUninitializedStaticField(vardecls[address].sym))) {
                         inits.incl(address);
                     }
                 }
@@ -1793,8 +1793,8 @@ public class Flow {
          *  to the next available sequence number and entering it under that
          *  index into the vars array.
          */
-        void newVar(JCTree varDecl) {
-            VarSymbol sym = TreeInfo.variableSymbol(varDecl);
+        void newVar(JCVariableDecl varDecl) {
+            VarSymbol sym = varDecl.sym;
             vardecls = ArrayUtils.ensureCapacity(vardecls, nextadr);
             if ((sym.flags() & FINAL) == 0) {
                 sym.flags_field |= EFFECTIVELY_FINAL;
@@ -2104,8 +2104,8 @@ public class Flow {
                         boolean isSynthesized = (tree.sym.flags() &
                                                  GENERATEDCONSTR) != 0;
                         for (int i = firstadr; i < nextadr; i++) {
-                            JCTree vardecl = vardecls[i];
-                            VarSymbol var = TreeInfo.variableSymbol(vardecl);
+                            JCVariableDecl vardecl = vardecls[i];
+                            VarSymbol var = vardecl.sym;
                             if (var.owner == classDef.sym) {
                                 // choose the diagnostic position based on whether
                                 // the ctor is default(synthesized) or not
@@ -2163,7 +2163,7 @@ public class Flow {
                     Assert.check(exit instanceof AssignPendingExit);
                     inits.assign(((AssignPendingExit) exit).exit_inits);
                     for (int i = firstadr; i < nextadr; i++) {
-                        checkInit(exit.tree.pos(), TreeInfo.variableSymbol(vardecls[i]));
+                        checkInit(exit.tree.pos(), vardecls[i].sym);
                     }
                 }
             }
@@ -2761,10 +2761,8 @@ public class Flow {
 
         @Override
         public void visitBindingPattern(JCBindingPattern tree) {
-            newVar(tree);
-            inits.incl(tree.symbol.adr);
-            uninits.excl(tree.symbol.adr);
             super.visitBindingPattern(tree);
+            initParam(tree.var);
         }
 
         void referenced(Symbol sym) {
@@ -2795,7 +2793,7 @@ public class Flow {
                 startPos = tree.pos().getStartPosition();
 
                 if (vardecls == null)
-                    vardecls = new JCTree[32];
+                    vardecls = new JCVariableDecl[32];
                 else
                     for (int i=0; i<vardecls.length; i++)
                         vardecls[i] = null;
