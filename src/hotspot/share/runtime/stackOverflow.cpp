@@ -35,6 +35,32 @@ size_t StackOverflow::_stack_yellow_zone_size = 0;
 size_t StackOverflow::_stack_reserved_zone_size = 0;
 size_t StackOverflow::_stack_shadow_zone_size = 0;
 
+void StackOverflow::initialize_stack_zone_sizes(size_t alignment) {
+  // Stack zone sizes must be page aligned.
+  size_t page_size = os::vm_page_size();
+
+  assert(_stack_red_zone_size == 0, "This should be called only once.");
+  _stack_red_zone_size = align_up(StackRedPages * alignment, page_size);
+
+  assert(_stack_yellow_zone_size == 0, "This should be called only once.");
+  _stack_yellow_zone_size = align_up(StackYellowPages * alignment, page_size);
+
+  assert(_stack_reserved_zone_size == 0, "This should be called only once.");
+  _stack_reserved_zone_size = align_up(StackReservedPages * alignment, page_size);
+
+  // The shadow area is not allocated or protected, so
+  // it needs not be page aligned.
+  // But the stack bang currently assumes that it is a
+  // multiple of page size. This guarantees that the bang
+  // loop touches all pages in the shadow zone.
+  // This can be guaranteed differently, as well.  E.g., if
+  // the page size is a multiple of 4K, banging in 4K steps
+  // suffices to touch all pages. (Some pages are banged
+  // several times, though.)
+  assert(_stack_shadow_zone_size == 0, "This should be called only once.");
+  _stack_shadow_zone_size = align_up(StackShadowPages * alignment, page_size);
+}
+
 bool StackOverflow::stack_guards_enabled() {
 #ifdef ASSERT
   if (os::uses_stack_guard_pages() &&

@@ -72,26 +72,26 @@ class StackOverflow {
   address          _stack_end;
 
   address stack_end()  const           { return _stack_end; }
-  address stack_base() const           { assert(_stack_base != nullptr,"Sanity check"); return _stack_base; }
+  address stack_base() const           { assert(_stack_base != nullptr, "Sanity check"); return _stack_base; }
 
   // Stack overflow support
   //
-  //  (small addresses)
+  //  (low addresses)
   //
   //  --  <-- stack_end()                   ---
   //  |                                      |
-  //  |  red pages                           |
+  //  |  red zone                            |
   //  |                                      |
   //  --  <-- stack_red_zone_base()          |
   //  |                                      |
   //  |                                     guard
-  //  |  yellow pages                       zone
+  //  |  yellow zone                        zone
   //  |                                      |
   //  |                                      |
   //  --  <-- stack_yellow_zone_base()       |
   //  |                                      |
   //  |                                      |
-  //  |  reserved pages                      |
+  //  |  reserved zone                       |
   //  |                                      |
   //  --  <-- stack_reserved_zone_base()    ---      ---
   //                                                 /|\  shadow     <--  stack_overflow_limit() (somewhere in here)
@@ -116,27 +116,23 @@ class StackOverflow {
   //  x    frame 0
   //  --  <-- stack_base()
   //
-  //  (large addresses)
+  //  (high addresses)
   //
 
  private:
   // These values are derived from flags StackRedPages, StackYellowPages,
-  // StackReservedPages and StackShadowPages. The zone size is determined
-  // ergonomically if page_size > 4K.
+  // StackReservedPages and StackShadowPages.
   static size_t _stack_red_zone_size;
   static size_t _stack_yellow_zone_size;
   static size_t _stack_reserved_zone_size;
   static size_t _stack_shadow_zone_size;
+
  public:
+  static void initialize_stack_zone_sizes(size_t alignment);
+
   static size_t stack_red_zone_size() {
     assert(_stack_red_zone_size > 0, "Don't call this before the field is initialized.");
     return _stack_red_zone_size;
-  }
-  static void set_stack_red_zone_size(size_t s) {
-    assert(is_aligned(s, os::vm_page_size()),
-           "We can not protect if the red zone size is not page aligned.");
-    assert(_stack_red_zone_size == 0, "This should be called only once.");
-    _stack_red_zone_size = s;
   }
   address stack_red_zone_base() {
     return (address)(stack_end() + stack_red_zone_size());
@@ -149,23 +145,12 @@ class StackOverflow {
     assert(_stack_yellow_zone_size > 0, "Don't call this before the field is initialized.");
     return _stack_yellow_zone_size;
   }
-  static void set_stack_yellow_zone_size(size_t s) {
-    assert(is_aligned(s, os::vm_page_size()),
-           "We can not protect if the yellow zone size is not page aligned.");
-    assert(_stack_yellow_zone_size == 0, "This should be called only once.");
-    _stack_yellow_zone_size = s;
-  }
 
   static size_t stack_reserved_zone_size() {
     // _stack_reserved_zone_size may be 0. This indicates the feature is off.
     return _stack_reserved_zone_size;
   }
-  static void set_stack_reserved_zone_size(size_t s) {
-    assert(is_aligned(s, os::vm_page_size()),
-           "We can not protect if the reserved zone size is not page aligned.");
-    assert(_stack_reserved_zone_size == 0, "This should be called only once.");
-    _stack_reserved_zone_size = s;
-  }
+
   address stack_reserved_zone_base() const {
     return (address)(stack_end() +
                      (stack_red_zone_size() + stack_yellow_zone_size() + stack_reserved_zone_size()));
@@ -190,21 +175,6 @@ class StackOverflow {
   static size_t stack_shadow_zone_size() {
     assert(_stack_shadow_zone_size > 0, "Don't call this before the field is initialized.");
     return _stack_shadow_zone_size;
-  }
-  static void set_stack_shadow_zone_size(size_t s) {
-    // The shadow area is not allocated or protected, so
-    // it needs not be page aligned.
-    // But the stack bang currently assumes that it is a
-    // multiple of page size. This guarantees that the bang
-    // loop touches all pages in the shadow zone.
-    // This can be guaranteed differently, as well.  E.g., if
-    // the page size is a multiple of 4K, banging in 4K steps
-    // suffices to touch all pages. (Some pages are banged
-    // several times, though.)
-    assert(is_aligned(s, os::vm_page_size()),
-           "Stack bang assumes multiple of page size.");
-    assert(_stack_shadow_zone_size == 0, "This should be called only once.");
-    _stack_shadow_zone_size = s;
   }
 
   void create_stack_guard_pages();

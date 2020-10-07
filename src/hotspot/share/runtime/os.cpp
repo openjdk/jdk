@@ -457,10 +457,7 @@ void os::init_before_ergo() {
   // We need to adapt the configured number of stack protection pages given
   // in 4K pages to the actual os page size. We must do this before setting
   // up minimal stack sizes etc. in os::init_2().
-  StackOverflow::set_stack_red_zone_size     (align_up(StackRedPages      * 4 * K, vm_page_size()));
-  StackOverflow::set_stack_yellow_zone_size  (align_up(StackYellowPages   * 4 * K, vm_page_size()));
-  StackOverflow::set_stack_reserved_zone_size(align_up(StackReservedPages * 4 * K, vm_page_size()));
-  StackOverflow::set_stack_shadow_zone_size  (align_up(StackShadowPages   * 4 * K, vm_page_size()));
+  StackOverflow::initialize_stack_zone_sizes(4 * K);
 
   // VM version initialization identifies some characteristics of the
   // platform that are used during ergonomic decisions.
