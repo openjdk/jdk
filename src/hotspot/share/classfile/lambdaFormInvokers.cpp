@@ -126,11 +126,11 @@ void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
   Symbol* class_name = SymbolTable::new_symbol((const char*)name);
   // the class must exist
   Klass* klass = SystemDictionary::resolve_or_null(class_name, THREAD);
-  assert(klass->is_instance_klass(), "Should be");
   if (klass == NULL) {
     log_info(cds)("Class %s not present, skip", name);
     return;
   }
+  assert(klass->is_instance_klass(), "Should be");
 
   ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
   Handle protection_domain;

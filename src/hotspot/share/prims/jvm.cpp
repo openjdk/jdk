@@ -3869,7 +3869,7 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
   JVMWrapper("JVM_IsDumpingClassList");
-  return DumpLoadedClassList != NULL && classlist_file->is_open();
+  return DumpLoadedClassList != NULL && classlist_file != NULL && classlist_file->is_open();
 JVM_END
 
 JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
