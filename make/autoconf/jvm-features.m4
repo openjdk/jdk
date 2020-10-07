@@ -237,8 +237,9 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_AOT],
   JVM_FEATURES_CHECK_AVAILABILITY(aot, [
     AC_MSG_CHECKING([if platform is supported by AOT])
     # AOT is only available where JVMCI is available since it requires JVMCI.
-    if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
-        test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
+    if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
+      AC_MSG_RESULT([yes])
+    elif test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-aarch64"; then
       AC_MSG_RESULT([yes])
     else
       AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])
@@ -303,8 +304,9 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_GRAAL],
   JVM_FEATURES_CHECK_AVAILABILITY(graal, [
     AC_MSG_CHECKING([if platform is supported by Graal])
     # Graal is only available where JVMCI is available since it requires JVMCI.
-    if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
-        test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
+    if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
+      AC_MSG_RESULT([yes])
+    elif test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-aarch64"; then
       AC_MSG_RESULT([yes])
     else
       AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])
@@ -336,8 +338,9 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_JVMCI],
 [
   JVM_FEATURES_CHECK_AVAILABILITY(jvmci, [
     AC_MSG_CHECKING([if platform is supported by JVMCI])
-    if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
-        test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
+    if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
+      AC_MSG_RESULT([yes])
+    elif test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-aarch64"; then
       AC_MSG_RESULT([yes])
     else
       AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])

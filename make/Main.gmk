@@ -112,7 +112,6 @@ $(eval $(call SetupTarget, generate-exported-symbols, \
 $(eval $(call DeclareRecipesForPhase, GENSRC, \
     TARGET_SUFFIX := gensrc-src, \
     FILE_PREFIX := Gensrc, \
-    MAKE_SUBDIR := gensrc, \
     CHECK_MODULES := $(ALL_MODULES), \
 ))
 
@@ -150,7 +149,6 @@ ALL_TARGETS += $(GENSRC_TARGETS)
 $(eval $(call DeclareRecipesForPhase, GENDATA, \
     TARGET_SUFFIX := gendata, \
     FILE_PREFIX := Gendata, \
-    MAKE_SUBDIR := gendata, \
     CHECK_MODULES := $(ALL_MODULES), \
 ))
 
@@ -161,7 +159,6 @@ ALL_TARGETS += $(GENDATA_TARGETS)
 $(eval $(call DeclareRecipesForPhase, COPY, \
     TARGET_SUFFIX := copy, \
     FILE_PREFIX := Copy, \
-    MAKE_SUBDIR := copy, \
     CHECK_MODULES := $(ALL_MODULES), \
 ))
 
@@ -203,7 +200,6 @@ ALL_TARGETS += $(JAVA_TARGETS)
 $(eval $(call DeclareRecipesForPhase, LIBS, \
     TARGET_SUFFIX := libs, \
     FILE_PREFIX := Lib, \
-    MAKE_SUBDIR := lib, \
     CHECK_MODULES := $(ALL_MODULES), \
 ))
 
@@ -216,7 +212,6 @@ ALL_TARGETS += $(LIBS_TARGETS)
 $(eval $(call DeclareRecipesForPhase, STATIC_LIBS, \
     TARGET_SUFFIX := static-libs, \
     FILE_PREFIX := Lib, \
-    MAKE_SUBDIR := lib, \
     CHECK_MODULES := $(ALL_MODULES), \
     EXTRA_ARGS := STATIC_LIBS=true, \
 ))
@@ -228,7 +223,6 @@ ALL_TARGETS += $(STATIC_LIBS_TARGETS)
 $(eval $(call DeclareRecipesForPhase, LAUNCHER, \
     TARGET_SUFFIX := launchers, \
     FILE_PREFIX := Launcher, \
-    MAKE_SUBDIR := launcher, \
     CHECK_MODULES := $(ALL_MODULES), \
 ))
 

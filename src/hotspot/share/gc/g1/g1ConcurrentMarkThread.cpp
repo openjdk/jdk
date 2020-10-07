@@ -164,8 +164,6 @@ void G1ConcurrentMarkThread::stop_service() {
 }
 
 bool G1ConcurrentMarkThread::wait_for_next_cycle() {
-  assert(!in_progress(), "should have been cleared");
-
   MonitorLocker ml(CGC_lock, Mutex::_no_safepoint_check_flag);
   while (!in_progress() && !should_terminate()) {
     ml.wait();
