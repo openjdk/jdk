@@ -3600,12 +3600,6 @@ void TemplateTable::fast_xaccess(TosState state) {
 //----------------------------------------------------------------------------------------------------
 // Calls
 
-void TemplateTable::count_calls(Register method, Register temp) {
-  // implemented elsewhere
-  ShouldNotReachHere();
-}
-
-
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register method,  // linked method (or i-klass)
                                    Register index,   // itable index, MethodType, etc.
