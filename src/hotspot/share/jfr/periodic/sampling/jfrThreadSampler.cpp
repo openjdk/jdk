@@ -343,6 +343,7 @@ class JfrThreadSampler : public NonJavaThread {
   virtual void post_run();
  public:
   virtual char* name() const { return (char*)"JFR Thread Sampler"; }
+  bool is_JfrSampler_thread() const { return true; }
   void run();
   static Monitor* transition_block() { return JfrThreadSampler_lock; }
   static void on_javathread_suspend(JavaThread* thread);

@@ -49,6 +49,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "signals_posix.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -255,7 +256,7 @@ JVM_handle_linux_signal(int sig,
 
   if (sig == SIGPIPE || sig == SIGXFSZ) {
     // allow chained handler to go first
-    if (os::Linux::chained_handler(sig, info, ucVoid)) {
+    if (PosixSignals::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
       // Ignoring SIGPIPE/SIGXFSZ - see bugs 4229104 or 6499219
@@ -273,7 +274,7 @@ JVM_handle_linux_signal(int sig,
 
   JavaThread* thread = NULL;
   VMThread* vmthread = NULL;
-  if (os::Linux::signal_handlers_are_installed) {
+  if (PosixSignals::are_signal_handlers_installed()) {
     if (t != NULL ){
       if(t->is_Java_thread()) {
         thread = t->as_Java_thread();
@@ -554,7 +555,7 @@ JVM_handle_linux_signal(int sig,
   }
 
   // signal-chaining
-  if (os::Linux::chained_handler(sig, info, ucVoid)) {
+  if (PosixSignals::chained_handler(sig, info, ucVoid)) {
      return true;
   }
 
@@ -650,7 +651,7 @@ bool os::is_allocatable(size_t bytes) {
     return true;
   }
 
-  char* addr = reserve_memory(bytes, NULL);
+  char* addr = reserve_memory(bytes);
 
   if (addr != NULL) {
     release_memory(addr, bytes);
@@ -859,7 +860,7 @@ void os::workaround_expand_exec_shield_cs_limit() {
    */
   char* hint = (char*)(Linux::initial_thread_stack_bottom() -
                        (JavaThread::stack_guard_zone_size() + page_size));
-  char* codebuf = os::attempt_reserve_memory_at(page_size, hint);
+  char* codebuf = os::attempt_reserve_memory_at(hint, page_size);
 
   if (codebuf == NULL) {
     // JDK-8197429: There may be a stack gap of one megabyte between
@@ -867,7 +868,7 @@ void os::workaround_expand_exec_shield_cs_limit() {
     // Linux kernel workaround for CVE-2017-1000364.  If we failed to
     // map our codebuf, try again at an address one megabyte lower.
     hint -= 1 * M;
-    codebuf = os::attempt_reserve_memory_at(page_size, hint);
+    codebuf = os::attempt_reserve_memory_at(hint, page_size);
   }
 
   if ((codebuf == NULL) || (!os::commit_memory(codebuf, page_size, true))) {

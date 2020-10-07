@@ -49,6 +49,14 @@
   product(bool, StressGCM, false, DIAGNOSTIC,                               \
           "Randomize instruction scheduling in GCM")                        \
                                                                             \
+  product(bool, StressIGVN, false, DIAGNOSTIC,                              \
+          "Randomize worklist traversal in IGVN")                           \
+                                                                            \
+  product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
+          "Seed for IGVN stress testing (if unset, a random one is "        \
+          "generated")                                                      \
+          range(0, max_juint)                                               \
+                                                                            \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
                                                                             \
@@ -96,6 +104,10 @@
                                                                             \
   notproduct(bool, PrintIdeal, false,                                       \
           "Print ideal graph before code generation")                       \
+                                                                            \
+  notproduct(uintx, PrintIdealIndentThreshold, 0,                           \
+          "A depth threshold of ideal graph. Indentation is disabled "      \
+          "when users attempt to dump an ideal graph deeper than it.")      \
                                                                             \
   notproduct(bool, PrintOpto, false,                                        \
           "Print compiler2 attempts")                                       \

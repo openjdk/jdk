@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include <type_traits>
 
 class outputStream;
 class ReservedHeapSpace;
@@ -76,6 +77,10 @@ public:
     AnyNarrowOopMode = 4
   };
 
+  // The representation type for narrowOop is assumed to be uint32_t.
+  static_assert(std::is_same<uint32_t, std::underlying_type_t<narrowOop>>::value,
+                "narrowOop has unexpected representation type");
+
   static void initialize(const ReservedHeapSpace& heap_space);
 
   static void set_base(address base);
@@ -112,7 +117,7 @@ public:
   static void     print_mode(outputStream* st);
 
   static bool is_null(oop v)       { return v == NULL; }
-  static bool is_null(narrowOop v) { return v == 0; }
+  static bool is_null(narrowOop v) { return v == narrowOop::null; }
 
   static inline oop decode_raw(narrowOop v);
   static inline oop decode_not_null(narrowOop v);
@@ -125,6 +130,12 @@ public:
   static oop decode(oop v)                      { return v; }
   static narrowOop encode_not_null(narrowOop v) { return v; }
   static narrowOop encode(narrowOop v)          { return v; }
+
+  static inline uint32_t narrow_oop_value(oop o);
+  static inline uint32_t narrow_oop_value(narrowOop o);
+
+  template<typename T>
+  static inline narrowOop narrow_oop_cast(T i);
 };
 
 // For UseCompressedClassPointers.

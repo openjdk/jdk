@@ -48,6 +48,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         javadoc("-Xdoclint:none",
                 "-d", "out",
                 "-use",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg", "pkg1", "pkg2");
         checkExit(Exit.OK);

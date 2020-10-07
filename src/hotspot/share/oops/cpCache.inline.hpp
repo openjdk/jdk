@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ inline ConstantPoolCache::ConstantPoolCache(int length,
                                             const intStack& invokedynamic_references_map) :
                                                   _length(length),
                                                   _constant_pool(NULL) {
-  CDS_JAVA_HEAP_ONLY(_archived_references = 0;)
+  CDS_JAVA_HEAP_ONLY(_archived_references = narrowOop::null;)
   initialize(inverse_index_map, invokedynamic_inverse_index_map,
              invokedynamic_references_map);
   for (int i = 0; i < length; i++) {

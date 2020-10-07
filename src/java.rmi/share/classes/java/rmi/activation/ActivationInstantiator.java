@@ -84,8 +84,8 @@ public interface ActivationInstantiator extends Remote {
     * @param desc the object's descriptor
     * @return a marshalled object containing the serialized
     * representation of remote object's stub
-    * @exception ActivationException if object activation fails
-    * @exception RemoteException if remote call fails
+    * @throws ActivationException if object activation fails
+    * @throws RemoteException if remote call fails
     * @since 1.2
     */
     public MarshalledObject<? extends Remote> newInstance(ActivationID id,

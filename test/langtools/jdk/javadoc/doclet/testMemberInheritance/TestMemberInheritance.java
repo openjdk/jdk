@@ -46,6 +46,7 @@ public class TestMemberInheritance extends JavadocTester {
     public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "pkg", "diamond", "inheritDist", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
 
@@ -218,6 +219,7 @@ public class TestMemberInheritance extends JavadocTester {
         javadoc("-d", "out-split",
                 "-splitindex",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "pkg", "diamond", "inheritDist", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
 
