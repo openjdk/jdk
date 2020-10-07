@@ -140,7 +140,7 @@ intptr_t narrow(BasicType type, intptr_t result) {
       return result;
     default:
       ShouldNotReachHere();
-      return result;
+      return result; // silence compiler warnings
   }
 }
 
