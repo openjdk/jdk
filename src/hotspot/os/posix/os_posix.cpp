@@ -1525,9 +1525,10 @@ bool os::Posix::matches_effective_uid_and_gid_or_root(uid_t uid, gid_t gid) {
 
 Thread* os::ThreadCrashProtection::_protected_thread = NULL;
 os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
-volatile intptr_t os::ThreadCrashProtection::_crash_mux = 0;
 
 os::ThreadCrashProtection::ThreadCrashProtection() {
+  _protected_thread = Thread::current();
+  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
 }
 
 /*
@@ -1538,11 +1539,6 @@ os::ThreadCrashProtection::ThreadCrashProtection() {
  */
 bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
   sigset_t saved_sig_mask;
-
-  Thread::muxAcquire(&_crash_mux, "CrashProtection");
-
-  _protected_thread = Thread::current_or_null();
-  assert(_protected_thread != NULL, "Cannot crash protect a NULL thread");
 
   // we cannot rely on sigsetjmp/siglongjmp to save/restore the signal mask
   // since on at least some systems (OS X) siglongjmp will restore the mask
@@ -1556,14 +1552,12 @@ bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
     // and clear the crash protection
     _crash_protection = NULL;
     _protected_thread = NULL;
-    Thread::muxRelease(&_crash_mux);
     return true;
   }
   // this happens when we siglongjmp() back
   pthread_sigmask(SIG_SETMASK, &saved_sig_mask, NULL);
   _crash_protection = NULL;
   _protected_thread = NULL;
-  Thread::muxRelease(&_crash_mux);
   return false;
 }
 

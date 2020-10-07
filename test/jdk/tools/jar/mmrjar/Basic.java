@@ -269,7 +269,7 @@ public class Basic {
         jar("-d --file mr.jar");
 
         String uri = (Paths.get("mr.jar")).toUri().toString();
-        uri = "jar:" + uri + "/!module-info.class";
+        uri = "jar:" + uri + "!/module-info.class";
 
         actual = lines(outbytes);
         expected = Set.of(
@@ -423,7 +423,7 @@ public class Basic {
         actual = lines(outbytes);
         expected = Set.of(
                 "releases: 9 10",
-                "m1 " + uriPrefix + "/!META-INF/versions/9/module-info.class",
+                "m1 " + uriPrefix + "!/META-INF/versions/9/module-info.class",
                 "requires java.base mandated",
                 "exports p",
                 "main-class p.Main"
@@ -434,7 +434,7 @@ public class Basic {
         actual = lines(outbytes);
         expected = Set.of(
                 "releases: 9 10",
-                "m1 " + uriPrefix + "/!META-INF/versions/10/module-info.class",
+                "m1 " + uriPrefix + "!/META-INF/versions/10/module-info.class",
                 "requires java.base mandated",
                 "exports p",
                 "main-class p.Main"
