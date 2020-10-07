@@ -933,12 +933,16 @@ public class JavacParser implements Parser {
             if (token.kind == INSTANCEOF) {
                 int pos = token.pos;
                 nextToken();
+                int typePos = token.pos;
                 JCExpression type = parseType();
                 JCTree pattern;
                 if (token.kind == IDENTIFIER) {
                     checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
-                    JCVariableDecl var = F.at(token.pos).VarDef(F.Modifiers(0), ident(), type, null);
-                    pattern = toP(F.at(pos).BindingPattern(var));
+                    JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
+                    JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), type, null));
+                    TreeInfo.getStartPos(var);
+                    pattern = toP(F.at(typePos).BindingPattern(var));
+                    TreeInfo.getStartPos(pattern);
                 } else {
                     pattern = type;
                 }

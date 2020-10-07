@@ -3960,10 +3960,10 @@ public class Attr extends JCTree.Visitor {
         BindingSymbol v = new BindingSymbol(tree.var.name, tree.var.vartype.type, env.info.scope.owner);
         v.pos = tree.pos;
         tree.var.sym = v;
-        if (chk.checkUnique(tree.pos(), v, env.info.scope)) {
-            chk.checkTransparentVar(tree.pos(), v, env.info.scope);
+        if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
+            chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
-        annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.pos());
+        annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
         annotate.flush();
         result = tree.type;
         matchBindings = new MatchBindings(List.of(v), List.nil());
