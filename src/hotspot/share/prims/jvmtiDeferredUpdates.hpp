@@ -84,6 +84,13 @@ private:
 };
 
 class jvmtiDeferredLocalVariable : public CHeapObj<mtCompiler> {
+
+  private:
+
+    BasicType _type;
+    jvalue    _value;
+    int       _index;
+
   public:
 
     jvmtiDeferredLocalVariable(int index, BasicType type, jvalue value);
@@ -97,12 +104,6 @@ class jvmtiDeferredLocalVariable : public CHeapObj<mtCompiler> {
 
     // For gc
     oop* oop_addr(void)          { return (oop*) &_value.l; }
-
-  private:
-
-    BasicType         _type;
-    jvalue            _value;
-    int               _index;
 };
 
 
