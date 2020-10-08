@@ -802,7 +802,7 @@ public final class Utils {
      */
     public static Path createTempFile(String prefix, String suffix, FileAttribute<?>... attrs) throws IOException {
         Path dir = Paths.get(System.getProperty("user.dir", "."));
-        return Files.createTempFile(dir, prefix, suffix);
+        return Files.createTempFile(dir, prefix, suffix, attrs);
     }
 
     /**
@@ -822,6 +822,6 @@ public final class Utils {
      */
     public static Path createTempDirectory(String prefix, FileAttribute<?>... attrs) throws IOException {
         Path dir = Paths.get(System.getProperty("user.dir", "."));
-        return Files.createTempDirectory(dir, prefix);
+        return Files.createTempDirectory(dir, prefix, attrs);
     }
 }
