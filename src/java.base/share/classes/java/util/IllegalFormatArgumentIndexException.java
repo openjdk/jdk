@@ -26,8 +26,10 @@
 package java.util;
 
 /**
- * Unchecked exception thrown when the argument index is too large or too small
- * to be represented by an int type or the value is otherwise unsupported.
+ * Unchecked exception thrown when the argument index is not within the valid
+ * range of supported argument index values. If an index value isn't
+ * representable by an {@code int} type, then the value
+ * {@code Integer.MIN_VALUE} will be used in the exception.
  *
  * @since 16
  */
@@ -48,6 +50,8 @@ public class IllegalFormatArgumentIndexException extends IllegalFormatException 
 
     /**
      * Get the value of the illegal index.
+     * Returns {@code Integer.MIN_VALUE} if the illegal index is not
+     * representable by an integer type.
      * @return The value of the illegal index from a format string.
      */
     public int getIndex() {
